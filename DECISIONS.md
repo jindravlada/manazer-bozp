@@ -1,0 +1,1 @@
+# Architektonická rozhodnutí
