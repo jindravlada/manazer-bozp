@@ -1,0 +1,22 @@
+Dialog:
+
+Přidat checkbox:
+
+☐ Vyžaduje kontrolu účinnosti
+
+Výchozí:
+False (ruční opatření)
+
+Pokud False:
+- skrýt / zakázat:
+    Kontrola do
+    Datum kontroly
+    Kontroloval
+
+Pokud True:
+- po zatržení 'Splněno'
+    Splněno dne = dnes
+    Kontrola do = +15 dní (pokud není zadáno)
+
+Zdrojové moduly:
+Úraz/Audit/Kontrola nastaví checkbox automaticky na True.

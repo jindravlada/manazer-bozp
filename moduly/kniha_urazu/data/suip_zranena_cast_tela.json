@@ -1,0 +1,330 @@
+[
+  {
+    "kod": "00",
+    "nazev": "Zraněná část těla nespecifikovaná",
+    "display": "00 – Zraněná část těla nespecifikovaná",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "10",
+    "nazev": "Hlava bez podrobnějšího rozlišení, dále nespecifikovaná",
+    "display": "10 – Hlava bez podrobnějšího rozlišení, dále nespecifikovaná",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "11",
+    "nazev": "Hlava, mozek, lebeční nervy a cévy",
+    "display": "11 – Hlava, mozek, lebeční nervy a cévy",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "12",
+    "nazev": "Tvář",
+    "display": "12 – Tvář",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "13",
+    "nazev": "Oko",
+    "display": "13 – Oko",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "14",
+    "nazev": "Ucho",
+    "display": "14 – Ucho",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "15",
+    "nazev": "Zuby",
+    "display": "15 – Zuby",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "18",
+    "nazev": "Hlava - více postižených oblastí",
+    "display": "18 – Hlava - více postižených oblastí",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "19",
+    "nazev": "Hlava - jiné části výše neuvedené",
+    "display": "19 – Hlava - jiné části výše neuvedené",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "20",
+    "nazev": "Krk včetně páteře a krčních obratlů",
+    "display": "20 – Krk včetně páteře a krčních obratlů",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "21",
+    "nazev": "Krk včetně páteře a krčních obratlů",
+    "display": "21 – Krk včetně páteře a krčních obratlů",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "29",
+    "nazev": "Krk - jiné části dosud neuvedené",
+    "display": "29 – Krk - jiné části dosud neuvedené",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "30",
+    "nazev": "Záda včetně páteře a zádových obratlů",
+    "display": "30 – Záda včetně páteře a zádových obratlů",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "31",
+    "nazev": "Záda včetně páteře a zádových obratlů",
+    "display": "31 – Záda včetně páteře a zádových obratlů",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "39",
+    "nazev": "Záda - jiné části výše neuvedené",
+    "display": "39 – Záda - jiné části výše neuvedené",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "40",
+    "nazev": "Trup a orgány bez podrobnějšího rozlišení",
+    "display": "40 – Trup a orgány bez podrobnějšího rozlišení",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "41",
+    "nazev": "Hrudní koš, žebra včetně kloubů a lopatek",
+    "display": "41 – Hrudní koš, žebra včetně kloubů a lopatek",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "42",
+    "nazev": "Oblast hrudníku včetně orgánů",
+    "display": "42 – Oblast hrudníku včetně orgánů",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "43",
+    "nazev": "Pánevní a břišní oblast včetně orgánů",
+    "display": "43 – Pánevní a břišní oblast včetně orgánů",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "48",
+    "nazev": "Trup - více postižených oblastí",
+    "display": "48 – Trup - více postižených oblastí",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "49",
+    "nazev": "Trup - jiné části výše neuvedené",
+    "display": "49 – Trup - jiné části výše neuvedené",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "50",
+    "nazev": "Horní končetiny bez podrobnějšího rozlišení",
+    "display": "50 – Horní končetiny bez podrobnějšího rozlišení",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "51",
+    "nazev": "Rameno a ramenní klouby",
+    "display": "51 – Rameno a ramenní klouby",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "52",
+    "nazev": "Ruka včetně lokte",
+    "display": "52 – Ruka včetně lokte",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "53",
+    "nazev": "Ruka od zápěstí dolů",
+    "display": "53 – Ruka od zápěstí dolů",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "54",
+    "nazev": "Prst",
+    "display": "54 – Prst",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "55",
+    "nazev": "Zápěstí",
+    "display": "55 – Zápěstí",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "58",
+    "nazev": "Horní končetiny - více postižených oblastí",
+    "display": "58 – Horní končetiny - více postižených oblastí",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "59",
+    "nazev": "Horní končetiny - jiné části výše neuvedené",
+    "display": "59 – Horní končetiny - jiné části výše neuvedené",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "60",
+    "nazev": "Dolní končetiny bez podrobnějšího rozlišení",
+    "display": "60 – Dolní končetiny bez podrobnějšího rozlišení",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "61",
+    "nazev": "Bedra, bederní klouby",
+    "display": "61 – Bedra, bederní klouby",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "62",
+    "nazev": "Noha včetně kolena",
+    "display": "62 – Noha včetně kolena",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "63",
+    "nazev": "Kotník",
+    "display": "63 – Kotník",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "64",
+    "nazev": "Noha od kotníku dolů",
+    "display": "64 – Noha od kotníku dolů",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "65",
+    "nazev": "Prst na noze",
+    "display": "65 – Prst na noze",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "68",
+    "nazev": "Dolní končetiny - více postižených oblastí",
+    "display": "68 – Dolní končetiny - více postižených oblastí",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "69",
+    "nazev": "Dolní končetiny - jiné části výše neuvedené",
+    "display": "69 – Dolní končetiny - jiné části výše neuvedené",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "70",
+    "nazev": "Celé tělo a více oblastí bez podrobnějšího rozlišení",
+    "display": "70 – Celé tělo a více oblastí bez podrobnějšího rozlišení",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "71",
+    "nazev": "Celé tělo (systémové účinky)",
+    "display": "71 – Celé tělo (systémové účinky)",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "78",
+    "nazev": "Tělo - více postižených oblastí",
+    "display": "78 – Tělo - více postižených oblastí",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "79",
+    "nazev": "Tělo - jiná zraněná část těla výše neuvedená",
+    "display": "79 – Tělo - jiná zraněná část těla výše neuvedená",
+    "aktivni": true,
+    "zdroj": "ESAW zraněná část těla",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  }
+]

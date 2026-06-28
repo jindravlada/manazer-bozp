@@ -1,0 +1,92 @@
+[
+  {
+    "kod": "0",
+    "nazev": "Nezjištěno",
+    "display": "0 – Nezjištěno",
+    "aktivni": true
+  },
+  {
+    "kod": "1",
+    "nazev": "Vadný nebo nepříznivý stav zdroje úrazu (nikoliv pracoviště)",
+    "display": "1 – Vadný nebo nepříznivý stav zdroje úrazu (nikoliv pracoviště)",
+    "aktivni": true
+  },
+  {
+    "kod": "10",
+    "nazev": "Nepoužívání (nesprávné používání) předepsaných a předělených OOPP (přístrojů)",
+    "display": "10 – Nepoužívání (nesprávné používání) předepsaných a předělených OOPP (přístrojů)",
+    "aktivni": true
+  },
+  {
+    "kod": "11",
+    "nazev": "Ohrožení jinými osobami (odvedení pozornosti při práci, žerty, hádky a jiná nesprávní ači nebezpečná jednání druhých osob",
+    "display": "11 – Ohrožení jinými osobami (odvedení pozornosti při práci, žerty, hádky a jiná nesprávní ači nebezpečná jednání druhých osob",
+    "aktivni": true
+  },
+  {
+    "kod": "12",
+    "nazev": "Nedostatky osobních předpokladů k řádnému pracovnímu výkonu (chybějící tělesné předpoklady, smyslové nedostatky, nepříznié osobní vlastnosti a okamžité psychofiziologické stavy)",
+    "display": "12 – Nedostatky osobních předpokladů k řádnému pracovnímu výkonu (chybějící tělesné předpoklady, smyslové nedostatky, nepříznié osobní vlastnosti a okamžité psychofiziologické stavy)",
+    "aktivni": true
+  },
+  {
+    "kod": "13",
+    "nazev": "Ohrožení zvířaty a přírodními živly",
+    "display": "13 – Ohrožení zvířaty a přírodními živly",
+    "aktivni": true
+  },
+  {
+    "kod": "14",
+    "nazev": "Špatně nebo nedostatečně odhadnuté riziko",
+    "display": "14 – Špatně nebo nedostatečně odhadnuté riziko",
+    "aktivni": true
+  },
+  {
+    "kod": "2",
+    "nazev": "Chybějící nebo nedostatečná ochranná zařízení a zajištění",
+    "display": "2 – Chybějící nebo nedostatečná ochranná zařízení a zajištění",
+    "aktivni": true
+  },
+  {
+    "kod": "3",
+    "nazev": "Chybějící (nepřidělené), nedostatečné nebo nevhodné OOPP",
+    "display": "3 – Chybějící (nepřidělené), nedostatečné nebo nevhodné OOPP",
+    "aktivni": true
+  },
+  {
+    "kod": "4",
+    "nazev": "Nepříznivý stav nebo vadné uspořádání pracoviště popř. komunikace",
+    "display": "4 – Nepříznivý stav nebo vadné uspořádání pracoviště popř. komunikace",
+    "aktivni": true
+  },
+  {
+    "kod": "5",
+    "nazev": "Závady v osvětlení a viditelnosti, nepříznivé vlivy hluku, otřesů a vadného ovzduší na pracovišti (komunikaci)",
+    "display": "5 – Závady v osvětlení a viditelnosti, nepříznivé vlivy hluku, otřesů a vadného ovzduší na pracovišti (komunikaci)",
+    "aktivni": true
+  },
+  {
+    "kod": "6",
+    "nazev": "Nesprávná organizace práce",
+    "display": "6 – Nesprávná organizace práce",
+    "aktivni": true
+  },
+  {
+    "kod": "7",
+    "nazev": "Neobeznámenost s podmínkami bezpečné práce a nedostatek potřebné kvalifikace (teoret. znalostí, dovedností, zácviku, přizpůsobení apod.)",
+    "display": "7 – Neobeznámenost s podmínkami bezpečné práce a nedostatek potřebné kvalifikace (teoret. znalostí, dovedností, zácviku, přizpůsobení apod.)",
+    "aktivni": true
+  },
+  {
+    "kod": "8",
+    "nazev": "Používání nebezpečných postupů nebo způsobu práce včetně jednání bezp oprávnění, proti zákazu, prodlévání v ohroženém prostoru.",
+    "display": "8 – Používání nebezpečných postupů nebo způsobu práce včetně jednání bezp oprávnění, proti zákazu, prodlévání v ohroženém prostoru.",
+    "aktivni": true
+  },
+  {
+    "kod": "9",
+    "nazev": "Odstranění nebo nepoužívání předepsaných bezpečnostních zařízení a ochranných opatření",
+    "display": "9 – Odstranění nebo nepoužívání předepsaných bezpečnostních zařízení a ochranných opatření",
+    "aktivni": true
+  }
+]

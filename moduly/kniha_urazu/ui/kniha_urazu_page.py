@@ -1,0 +1,163 @@
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
+
+from core.widgets.filter_bar import FilterBar
+from moduly.kniha_urazu.sluzby.accident_service import accident_service
+from moduly.kniha_urazu.ui.accident_dialog import AccidentDialog
+from moduly.kniha_urazu.ui.accident_table import AccidentTable
+from moduly.kniha_urazu.ui.setreni.setreni_dialog import SetreniDialog
+from moduly.kniha_urazu.sluzby.zaverecna_zprava_service import zaverecna_zprava_service
+from moduly.kniha_urazu.sluzby.vypis_urazu_service import vypis_urazu_service
+
+
+class KnihaUrazuPage(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        layout = QVBoxLayout(self)
+
+        toolbar = QHBoxLayout()
+
+        self.new_btn = QPushButton("Nový úraz")
+        self.edit_btn = QPushButton("Upravit")
+        self.investigation_btn = QPushButton("Šetření úrazu")
+        self.vypis_btn = QPushButton("Výpis o pracovním úrazu")
+        self.final_report_btn = QPushButton("Závěrečná zpráva")
+
+        toolbar.addWidget(self.new_btn)
+        toolbar.addWidget(self.edit_btn)
+        toolbar.addWidget(self.investigation_btn)
+        toolbar.addWidget(self.vypis_btn)
+        toolbar.addWidget(self.final_report_btn)
+        toolbar.addStretch()
+
+        self.table = AccidentTable()
+        self.text_filter = FilterBar(self.table)
+
+        layout.addLayout(toolbar)
+        layout.addWidget(self.text_filter)
+        layout.addWidget(self.table)
+
+        self.new_btn.clicked.connect(self.new_accident)
+        self.edit_btn.clicked.connect(self.edit_selected_accident)
+        self.investigation_btn.clicked.connect(self.open_investigation)
+        self.vypis_btn.clicked.connect(self.generate_accident_report)
+        self.final_report_btn.clicked.connect(self.generate_final_report)
+        self.table.doubleClicked.connect(self.edit_selected_accident)
+
+        self.refresh()
+
+    def refresh(self):
+        accidents = accident_service.get_all()
+        self.table.load_accidents(accidents)
+        self.table.clearSelection()
+        self.table.setCurrentCell(-1, -1)
+
+        self.table.setColumnWidth(0, 22)
+        self.table.setColumnWidth(2, 90)
+        self.table.setColumnWidth(3, 110)
+        self.table.setColumnWidth(4, 220)
+        self.table.setColumnWidth(5, 160)
+        self.table.setColumnWidth(6, 190)
+        self.table.setColumnWidth(7, 190)
+        self.table.setColumnWidth(8, 420)
+        self.table.setColumnWidth(9, 35)
+        self.table.setColumnWidth(10, 35)
+
+        self.text_filter.update_count()
+
+    def _selected_accident_id(self):
+        selected = self.table.selectionModel().selectedRows()
+        if not selected:
+            return None
+
+        item = self.table.item(selected[0].row(), 1)
+        return int(item.text()) if item else None
+
+    def new_accident(self):
+        dialog = AccidentDialog(self)
+        if dialog.exec():
+            data = dialog.get_data()
+            if data["jmeno_prijmeni"] or data["popis_urazoveho_deje"]:
+                accident_service.create_accident(**data)
+                self.refresh()
+
+    def edit_selected_accident(self):
+        accident_id = self._selected_accident_id()
+        if accident_id is None:
+            QMessageBox.information(self, "Kniha úrazů", "Vyberte úraz.")
+            return
+
+        accident = accident_service.get_by_id(accident_id)
+        if accident is None:
+            QMessageBox.warning(self, "Kniha úrazů", "Úraz nebyl nalezen.")
+            self.refresh()
+            return
+
+        dialog = AccidentDialog(self, accident=accident)
+        if dialog.exec():
+            data = dialog.get_data()
+            accident_service.update_accident(accident_id, **data)
+            self.refresh()
+
+    def generate_accident_report(self):
+        accident_id = self._selected_accident_id()
+        if accident_id is None:
+            QMessageBox.information(self, "Výpis o pracovním úrazu", "Vyberte úraz.")
+            return
+
+        accident = accident_service.get_by_id(accident_id)
+        if accident is None:
+            QMessageBox.warning(self, "Výpis o pracovním úrazu", "Úraz nebyl nalezen.")
+            self.refresh()
+            return
+
+        try:
+            vypis_urazu_service.open_for_accident(accident)
+        except Exception as exc:
+            QMessageBox.warning(
+                self,
+                "Výpis o pracovním úrazu",
+                f"Výpis o pracovním úrazu se nepodařilo vygenerovat.\n\n{exc}",
+            )
+
+    def generate_final_report(self):
+        accident_id = self._selected_accident_id()
+        if accident_id is None:
+            QMessageBox.information(self, "Závěrečná zpráva", "Vyberte úraz.")
+            return
+
+        accident = accident_service.get_by_id(accident_id)
+        if accident is None:
+            QMessageBox.warning(self, "Závěrečná zpráva", "Úraz nebyl nalezen.")
+            self.refresh()
+            return
+
+        try:
+            zaverecna_zprava_service.open_for_accident(accident)
+        except Exception as exc:
+            QMessageBox.warning(
+                self,
+                "Závěrečná zpráva",
+                f"Závěrečnou zprávu se nepodařilo vygenerovat.\n\n{exc}",
+            )
+
+    def open_investigation(self):
+        accident_id = self._selected_accident_id()
+        if accident_id is None:
+            QMessageBox.information(self, "Šetření úrazu", "Vyberte úraz.")
+            return
+
+        accident = accident_service.get_by_id(accident_id)
+        if accident is None:
+            QMessageBox.warning(self, "Šetření úrazu", "Úraz nebyl nalezen.")
+            self.refresh()
+            return
+
+        dialog = SetreniDialog(self, accident=accident)
+        dialog.exec()

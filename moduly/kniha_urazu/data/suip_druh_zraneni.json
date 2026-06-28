@@ -1,0 +1,370 @@
+[
+  {
+    "kod": "000",
+    "nazev": "Neznámý nebo neurčený druh zranění",
+    "display": "000 – Neznámý nebo neurčený druh zranění",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "010",
+    "nazev": "Rány a povrchová zranění",
+    "display": "010 – Rány a povrchová zranění",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "011",
+    "nazev": "Povrchové zranění",
+    "display": "011 – Povrchové zranění",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "012",
+    "nazev": "Otevřené rány",
+    "display": "012 – Otevřené rány",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "019",
+    "nazev": "Jiné typy ran a povrchových zranění",
+    "display": "019 – Jiné typy ran a povrchových zranění",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "020",
+    "nazev": "Zlomeniny kostí",
+    "display": "020 – Zlomeniny kostí",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "021",
+    "nazev": "Zavřené zlomeniny",
+    "display": "021 – Zavřené zlomeniny",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "022",
+    "nazev": "Otevřené zlomeniny",
+    "display": "022 – Otevřené zlomeniny",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "029",
+    "nazev": "Jiné typy zlomenin kostí",
+    "display": "029 – Jiné typy zlomenin kostí",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "030",
+    "nazev": "Vykloubení, vyvrtnutí, natažení",
+    "display": "030 – Vykloubení, vyvrtnutí, natažení",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "031",
+    "nazev": "Vykloubení nebo neúplné vykloubení",
+    "display": "031 – Vykloubení nebo neúplné vykloubení",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "032",
+    "nazev": "Vyvrtnutí nebo natažení",
+    "display": "032 – Vyvrtnutí nebo natažení",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "039",
+    "nazev": "Jiné typy vykloubení, vyvrtnutí, natažení",
+    "display": "039 – Jiné typy vykloubení, vyvrtnutí, natažení",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "040",
+    "nazev": "Traumatická amputace (ztráta části těla)",
+    "display": "040 – Traumatická amputace (ztráta části těla)",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "050",
+    "nazev": "Otřes mozku a vnitřní zranění",
+    "display": "050 – Otřes mozku a vnitřní zranění",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "051",
+    "nazev": "Otřes mozku a vnitrolebeční zranění",
+    "display": "051 – Otřes mozku a vnitrolebeční zranění",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "052",
+    "nazev": "Vnitřní zranění",
+    "display": "052 – Vnitřní zranění",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "059",
+    "nazev": "Jiné typy otřesů mozku a vnitřních zranění",
+    "display": "059 – Jiné typy otřesů mozku a vnitřních zranění",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "060",
+    "nazev": "Popáleniny, opařeniny a omrzliny",
+    "display": "060 – Popáleniny, opařeniny a omrzliny",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "061",
+    "nazev": "Popáleniny a opařeniny (tepelné)",
+    "display": "061 – Popáleniny a opařeniny (tepelné)",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "062",
+    "nazev": "Chemické popáleniny (poleptání)",
+    "display": "062 – Chemické popáleniny (poleptání)",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "063",
+    "nazev": "Omrzliny",
+    "display": "063 – Omrzliny",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "069",
+    "nazev": "Jiné typy popálenin, opařenin a omrzlin",
+    "display": "069 – Jiné typy popálenin, opařenin a omrzlin",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "070",
+    "nazev": "Otravy a infekce",
+    "display": "070 – Otravy a infekce",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "071",
+    "nazev": "Akutní otravy",
+    "display": "071 – Akutní otravy",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "072",
+    "nazev": "Akutní infekce",
+    "display": "072 – Akutní infekce",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "079",
+    "nazev": "Jiné typy otrav a infekcí",
+    "display": "079 – Jiné typy otrav a infekcí",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "080",
+    "nazev": "Tonutí a dušení",
+    "display": "080 – Tonutí a dušení",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "081",
+    "nazev": "Dušení",
+    "display": "081 – Dušení",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "082",
+    "nazev": "Tonutí bez smrtelných následků",
+    "display": "082 – Tonutí bez smrtelných následků",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "089",
+    "nazev": "Jiné typy tonutí a dušení",
+    "display": "089 – Jiné typy tonutí a dušení",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "090",
+    "nazev": "Účinky zvuku, vibrací a tlaku",
+    "display": "090 – Účinky zvuku, vibrací a tlaku",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "091",
+    "nazev": "Akutní ztráta sluchu",
+    "display": "091 – Akutní ztráta sluchu",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "092",
+    "nazev": "Působení tlaku (barotrauma)",
+    "display": "092 – Působení tlaku (barotrauma)",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "099",
+    "nazev": "Jiné účinky zvuku, vibrací a tlaku",
+    "display": "099 – Jiné účinky zvuku, vibrací a tlaku",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "100",
+    "nazev": "Účinky extrémních teplot, světla a ozáření",
+    "display": "100 – Účinky extrémních teplot, světla a ozáření",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "101",
+    "nazev": "Úpal z tepla a slunečního záření",
+    "display": "101 – Úpal z tepla a slunečního záření",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "102",
+    "nazev": "Účinky ozáření (netepelné)",
+    "display": "102 – Účinky ozáření (netepelné)",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "103",
+    "nazev": "Účinky snížené teploty",
+    "display": "103 – Účinky snížené teploty",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "109",
+    "nazev": "Jiné účinky extrémních teplot, světla a ozáření",
+    "display": "109 – Jiné účinky extrémních teplot, světla a ozáření",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "110",
+    "nazev": "Šok",
+    "display": "110 – Šok",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "111",
+    "nazev": "Šoky po agresích a hrozbách",
+    "display": "111 – Šoky po agresích a hrozbách",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "112",
+    "nazev": "Traumatické šoky",
+    "display": "112 – Traumatické šoky",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "119",
+    "nazev": "Jiné typy šoků",
+    "display": "119 – Jiné typy šoků",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "120",
+    "nazev": "Vícenásobné zranění",
+    "display": "120 – Vícenásobné zranění",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  },
+  {
+    "kod": "999",
+    "nazev": "Jiná specifická zranění nezahrnutá do jiných kategorií",
+    "display": "999 – Jiná specifická zranění nezahrnutá do jiných kategorií",
+    "aktivni": true,
+    "zdroj": "ESAW druh zranění",
+    "platnost": "NV 322/2025 Sb., příloha č. 1"
+  }
+]

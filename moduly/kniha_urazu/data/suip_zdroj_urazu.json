@@ -1,0 +1,1148 @@
+[
+  {
+    "kod": "00.00",
+    "nazev": "Žádný zdroj nebo žádné informace o zdroji",
+    "display": "00.00 – Žádný zdroj nebo žádné informace o zdroji",
+    "aktivni": true
+  },
+  {
+    "kod": "00.01",
+    "nazev": "Žádný zdroj",
+    "display": "00.01 – Žádný zdroj",
+    "aktivni": true
+  },
+  {
+    "kod": "00.02",
+    "nazev": "Žádné informace o zdroji",
+    "display": "00.02 – Žádné informace o zdroji",
+    "aktivni": true
+  },
+  {
+    "kod": "00.99",
+    "nazev": "Ostatní výše neuvedené případy spadající do skupiny 00",
+    "display": "00.99 – Ostatní výše neuvedené případy spadající do skupiny 00",
+    "aktivni": true
+  },
+  {
+    "kod": "01.00",
+    "nazev": "Budovy, stavební konstrukce, povrchy – v úrovni země (uvnitř i vně, pevné či mobilní, dočasné nebo trvalé) – nespecifikováno",
+    "display": "01.00 – Budovy, stavební konstrukce, povrchy – v úrovni země (uvnitř i vně, pevné či mobilní, dočasné nebo trvalé) – nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "10.00",
+    "nazev": "Stroje a zařízení stabilní – nespecifikováno",
+    "display": "10.00 – Stroje a zařízení stabilní – nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "10.01",
+    "nazev": "Stabilní stroje pro dobývání materiálu a pro zemní práce",
+    "display": "10.01 – Stabilní stroje pro dobývání materiálu a pro zemní práce",
+    "aktivni": true
+  },
+  {
+    "kod": "10.02",
+    "nazev": "Stroje pro přípravu materiálů, drcení, mletí, prosívání, třídění, míchání, dávkování",
+    "display": "10.02 – Stroje pro přípravu materiálů, drcení, mletí, prosívání, třídění, míchání, dávkování",
+    "aktivni": true
+  },
+  {
+    "kod": "10.03",
+    "nazev": "Stroje pro zpracování materiálů – chemické procesy – reaktory, fermentory",
+    "display": "10.03 – Stroje pro zpracování materiálů – chemické procesy – reaktory, fermentory",
+    "aktivni": true
+  },
+  {
+    "kod": "10.04",
+    "nazev": "Stroje pro zpracování materiálu – horké procesy (pece, sušičky)",
+    "display": "10.04 – Stroje pro zpracování materiálu – horké procesy (pece, sušičky)",
+    "aktivni": true
+  },
+  {
+    "kod": "10.05",
+    "nazev": "Stroje pro zpracování materiálu –chladící procesy (výroba chladu)",
+    "display": "10.05 – Stroje pro zpracování materiálu –chladící procesy (výroba chladu)",
+    "aktivni": true
+  },
+  {
+    "kod": "10.06",
+    "nazev": "Stroje pro zpracování materiálu – ostatní procesy",
+    "display": "10.06 – Stroje pro zpracování materiálu – ostatní procesy",
+    "aktivni": true
+  },
+  {
+    "kod": "10.07",
+    "nazev": "Tvářecí stroje – lisování, kování",
+    "display": "10.07 – Tvářecí stroje – lisování, kování",
+    "aktivni": true
+  },
+  {
+    "kod": "10.08",
+    "nazev": "Tvářecí stroje – kalandrování, válcování, válcové lisy (včetně papírenských strojů)",
+    "display": "10.08 – Tvářecí stroje – kalandrování, válcování, válcové lisy (včetně papírenských strojů)",
+    "aktivni": true
+  },
+  {
+    "kod": "10.09",
+    "nazev": "Tvářecí stroje – vstřikování, vyfukování, vytlačování, protlačování, navíjení, odlévání, tavení",
+    "display": "10.09 – Tvářecí stroje – vstřikování, vyfukování, vytlačování, protlačování, navíjení, odlévání, tavení",
+    "aktivni": true
+  },
+  {
+    "kod": "01.01",
+    "nazev": "Stavební díly, konstrukční součásti – dveře, zdi, příčky a další části (okna atd.)",
+    "display": "01.01 – Stavební díly, konstrukční součásti – dveře, zdi, příčky a další části (okna atd.)",
+    "aktivni": true
+  },
+  {
+    "kod": "10.10",
+    "nazev": "Obráběcí stroje – pro hoblování, frézování, soustružení, broušení, vrtání, leštění",
+    "display": "10.10 – Obráběcí stroje – pro hoblování, frézování, soustružení, broušení, vrtání, leštění",
+    "aktivni": true
+  },
+  {
+    "kod": "10.12",
+    "nazev": "Stroje pro řezání (nožem), štípání, ořezávání strojní nůžky, prostřihovací lisy",
+    "display": "10.12 – Stroje pro řezání (nožem), štípání, ořezávání strojní nůžky, prostřihovací lisy",
+    "aktivni": true
+  },
+  {
+    "kod": "10.13",
+    "nazev": "Stroje pro úpravu povrchu – čištění, mytí, sušení, potiskování, lakování",
+    "display": "10.13 – Stroje pro úpravu povrchu – čištění, mytí, sušení, potiskování, lakování",
+    "aktivni": true
+  },
+  {
+    "kod": "10.14",
+    "nazev": "Zařízení pro úpravu povrchu – galvanizace, elektrolytická úprava povrchu",
+    "display": "10.14 – Zařízení pro úpravu povrchu – galvanizace, elektrolytická úprava povrchu",
+    "aktivni": true
+  },
+  {
+    "kod": "10.15",
+    "nazev": "Zařízení na spojování (svařování, lepení, spojování hřebíky a šrouby, nýtování, spřádání, sešívání, sešívání sponkami, svazování drátem)",
+    "display": "10.15 – Zařízení na spojování (svařování, lepení, spojování hřebíky a šrouby, nýtování, spřádání, sešívání, sešívání sponkami, svazování drátem)",
+    "aktivni": true
+  },
+  {
+    "kod": "10.16",
+    "nazev": "Balící a etiketovací stroje (plnění, uzavíraní, etiketování)",
+    "display": "10.16 – Balící a etiketovací stroje (plnění, uzavíraní, etiketování)",
+    "aktivni": true
+  },
+  {
+    "kod": "10.17",
+    "nazev": "Ostatní stroje pro zvláštní účely (monitorování, zkoušení, měření)",
+    "display": "10.17 – Ostatní stroje pro zvláštní účely (monitorování, zkoušení, měření)",
+    "aktivni": true
+  },
+  {
+    "kod": "10.18",
+    "nazev": "Speciální stroje používané v zemědělství, výše neuvedené",
+    "display": "10.18 – Speciální stroje používané v zemědělství, výše neuvedené",
+    "aktivni": true
+  },
+  {
+    "kod": "01.02",
+    "nazev": "Povrchy na úrovni země – podlahy a povrchy (vnější i vnitřní, zemědělská, půda, sportoviště, kluzké podlahy)",
+    "display": "01.02 – Povrchy na úrovni země – podlahy a povrchy (vnější i vnitřní, zemědělská, půda, sportoviště, kluzké podlahy)",
+    "aktivni": true
+  },
+  {
+    "kod": "01.03",
+    "nazev": "Povrchy na úrovni země – plovoucí",
+    "display": "01.03 – Povrchy na úrovni země – plovoucí",
+    "aktivni": true
+  },
+  {
+    "kod": "10.99",
+    "nazev": "Ostatní známé stabilní stroje a zařízení skupiny10, výše neuvedené",
+    "display": "10.99 – Ostatní známé stabilní stroje a zařízení skupiny10, výše neuvedené",
+    "aktivni": true
+  },
+  {
+    "kod": "11.00",
+    "nazev": "Systémy pro dopravu, manipulaci a skladování– nespecifikováno",
+    "display": "11.00 – Systémy pro dopravu, manipulaci a skladování– nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "11.01",
+    "nazev": "Stabilní dopravníky, kontinuální manipulační zařízení a systémy",
+    "display": "11.01 – Stabilní dopravníky, kontinuální manipulační zařízení a systémy",
+    "aktivni": true
+  },
+  {
+    "kod": "11.02",
+    "nazev": "Výtahy, elevátory, zdvihací zařízení",
+    "display": "11.02 – Výtahy, elevátory, zdvihací zařízení",
+    "aktivni": true
+  },
+  {
+    "kod": "11.03",
+    "nazev": "Stabilní jeřáby, mobilní jeřáby, autojeřáby, mostové jeřáby, zdvihací zařízení se zavěšeným břemenem",
+    "display": "11.03 – Stabilní jeřáby, mobilní jeřáby, autojeřáby, mostové jeřáby, zdvihací zařízení se zavěšeným břemenem",
+    "aktivni": true
+  },
+  {
+    "kod": "11.04",
+    "nazev": "Mobilní manipulační zařízení, dopravní vozíky (poháněné i nepoháněné), kolečka, trakaře",
+    "display": "11.04 – Mobilní manipulační zařízení, dopravní vozíky (poháněné i nepoháněné), kolečka, trakaře",
+    "aktivni": true
+  },
+  {
+    "kod": "11.05",
+    "nazev": "Závěsné prostředky, zajišťující, uchopující a různé manipulační prostředky (včetně vázacích lan, řetězů, háků, úvazků atd.)",
+    "display": "11.05 – Závěsné prostředky, zajišťující, uchopující a různé manipulační prostředky (včetně vázacích lan, řetězů, háků, úvazků atd.)",
+    "aktivni": true
+  },
+  {
+    "kod": "11.06",
+    "nazev": "Skladovací systémy, obalové prostředky, nádrže, sila, zásobníky – stabilní",
+    "display": "11.06 – Skladovací systémy, obalové prostředky, nádrže, sila, zásobníky – stabilní",
+    "aktivni": true
+  },
+  {
+    "kod": "11.07",
+    "nazev": "Skladovací systémy, obalové prostředky, nádrže – mobilní",
+    "display": "11.07 – Skladovací systémy, obalové prostředky, nádrže – mobilní",
+    "aktivni": true
+  },
+  {
+    "kod": "11.08",
+    "nazev": "Příslušenství pro skladování, regály, paletové regály, palety",
+    "display": "11.08 – Příslušenství pro skladování, regály, paletové regály, palety",
+    "aktivni": true
+  },
+  {
+    "kod": "11.09",
+    "nazev": "Různé mobilní obaly malé a střední velikosti (skipové nádoby,různé nádoby, láhve, demižony, hasicí přístroje, bedny)",
+    "display": "11.09 – Různé mobilní obaly malé a střední velikosti (skipové nádoby,různé nádoby, láhve, demižony, hasicí přístroje, bedny)",
+    "aktivni": true
+  },
+  {
+    "kod": "11.99",
+    "nazev": "Ostatní známé dopravní, přepravní a skladovací systémy skupiny 11, výše neuvedené",
+    "display": "11.99 – Ostatní známé dopravní, přepravní a skladovací systémy skupiny 11, výše neuvedené",
+    "aktivni": true
+  },
+  {
+    "kod": "12.00",
+    "nazev": "Pozemní vozidla - nespecifikováno",
+    "display": "12.00 – Pozemní vozidla - nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "12.01",
+    "nazev": "Vozidla pro těžké náklady",
+    "display": "12.01 – Vozidla pro těžké náklady",
+    "aktivni": true
+  },
+  {
+    "kod": "12.02",
+    "nazev": "Lehká vozidla osobní i nákladní",
+    "display": "12.02 – Lehká vozidla osobní i nákladní",
+    "aktivni": true
+  },
+  {
+    "kod": "12.03",
+    "nazev": "Vozidla dvoukolá, tříkolky, poháněná i nepoháněná",
+    "display": "12.03 – Vozidla dvoukolá, tříkolky, poháněná i nepoháněná",
+    "aktivni": true
+  },
+  {
+    "kod": "12.04",
+    "nazev": "Ostatní pozemní vozidla (lyže, kolečkové brusle)",
+    "display": "12.04 – Ostatní pozemní vozidla (lyže, kolečkové brusle)",
+    "aktivni": true
+  },
+  {
+    "kod": "12.99",
+    "nazev": "Ostatní známá pozemní vozidla skupiny 12, ale výše neuvedená",
+    "display": "12.99 – Ostatní známá pozemní vozidla skupiny 12, ale výše neuvedená",
+    "aktivni": true
+  },
+  {
+    "kod": "13.00",
+    "nazev": "Ostatní dopravní prostředky - nespecifikováno",
+    "display": "13.00 – Ostatní dopravní prostředky - nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "13.01",
+    "nazev": "Kolejová vozidla pro dopravu zboží včetně podvěsné jednokolejnicové dráhy",
+    "display": "13.01 – Kolejová vozidla pro dopravu zboží včetně podvěsné jednokolejnicové dráhy",
+    "aktivni": true
+  },
+  {
+    "kod": "13.02",
+    "nazev": "Kolejová vozidla pro dopravu osob včetně podvěsné jednokolejnicové dráhy",
+    "display": "13.02 – Kolejová vozidla pro dopravu osob včetně podvěsné jednokolejnicové dráhy",
+    "aktivni": true
+  },
+  {
+    "kod": "13.03",
+    "nazev": "Lodě pro dopravu zboží",
+    "display": "13.03 – Lodě pro dopravu zboží",
+    "aktivni": true
+  },
+  {
+    "kod": "13.04",
+    "nazev": "Lodě pro dopravu osob",
+    "display": "13.04 – Lodě pro dopravu osob",
+    "aktivni": true
+  },
+  {
+    "kod": "13.05",
+    "nazev": "Lodě pro lov ryb",
+    "display": "13.05 – Lodě pro lov ryb",
+    "aktivni": true
+  },
+  {
+    "kod": "13.06",
+    "nazev": "Vzdušné dopravní prostředky pro dopravu zboží",
+    "display": "13.06 – Vzdušné dopravní prostředky pro dopravu zboží",
+    "aktivni": true
+  },
+  {
+    "kod": "13.07",
+    "nazev": "Vzdušné dopravní prostředky pro dopravu osob",
+    "display": "13.07 – Vzdušné dopravní prostředky pro dopravu osob",
+    "aktivni": true
+  },
+  {
+    "kod": "13.99",
+    "nazev": "Ostatní dopravní prostředky skupiny 13, výše neuvedené",
+    "display": "13.99 – Ostatní dopravní prostředky skupiny 13, výše neuvedené",
+    "aktivni": true
+  },
+  {
+    "kod": "14.00",
+    "nazev": "Materiály, předměty, výrobky, součásti, strojů a vozidel, úlomky,prach – nespecifikováno",
+    "display": "14.00 – Materiály, předměty, výrobky, součásti, strojů a vozidel, úlomky,prach – nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "14.01",
+    "nazev": "Stavební materiály velké i malé - :prefabrikáty, bednění, nosníky, panely cihly, dlaždice atd.",
+    "display": "14.01 – Stavební materiály velké i malé - :prefabrikáty, bednění, nosníky, panely cihly, dlaždice atd.",
+    "aktivni": true
+  },
+  {
+    "kod": "14.02",
+    "nazev": "Strojní součásti, díly vozidel, podvozky, převodové skříně, kola, páky atd.",
+    "display": "14.02 – Strojní součásti, díly vozidel, podvozky, převodové skříně, kola, páky atd.",
+    "aktivni": true
+  },
+  {
+    "kod": "14.03",
+    "nazev": "Obráběné díly nebo součásti, nářadí (včetně jejich částí úlomků a třísek z nich)",
+    "display": "14.03 – Obráběné díly nebo součásti, nářadí (včetně jejich částí úlomků a třísek z nich)",
+    "aktivni": true
+  },
+  {
+    "kod": "14.04",
+    "nazev": "Spojovací části: šrouby, hřebíky, svorníky,nýty",
+    "display": "14.04 – Spojovací části: šrouby, hřebíky, svorníky,nýty",
+    "aktivni": true
+  },
+  {
+    "kod": "14.05",
+    "nazev": "Částice, prach, úlomky, třísky atd.",
+    "display": "14.05 – Částice, prach, úlomky, třísky atd.",
+    "aktivni": true
+  },
+  {
+    "kod": "14.06",
+    "nazev": "Zemědělské výrobky (včetně semen, slámy a ostatních zemědělských výrobků)",
+    "display": "14.06 – Zemědělské výrobky (včetně semen, slámy a ostatních zemědělských výrobků)",
+    "aktivni": true
+  },
+  {
+    "kod": "14.07",
+    "nazev": "Výrobky pro použití v zemědělství (včetně hnojiv a krmiv)",
+    "display": "14.07 – Výrobky pro použití v zemědělství (včetně hnojiv a krmiv)",
+    "aktivni": true
+  },
+  {
+    "kod": "14.08",
+    "nazev": "Skladované výrobky včetně předmětů a obalů ve skladech",
+    "display": "14.08 – Skladované výrobky včetně předmětů a obalů ve skladech",
+    "aktivni": true
+  },
+  {
+    "kod": "14.09",
+    "nazev": "Skladované výrobky v rolích a cívkách",
+    "display": "14.09 – Skladované výrobky v rolích a cívkách",
+    "aktivni": true
+  },
+  {
+    "kod": "14.10",
+    "nazev": "Břemena dopravovaná mechanickou manipulací nebo dopravníky",
+    "display": "14.10 – Břemena dopravovaná mechanickou manipulací nebo dopravníky",
+    "aktivni": true
+  },
+  {
+    "kod": "14.11",
+    "nazev": "Břemena zavěšené na zvedacím zařízení, jeřábu",
+    "display": "14.11 – Břemena zavěšené na zvedacím zařízení, jeřábu",
+    "aktivni": true
+  },
+  {
+    "kod": "14.12",
+    "nazev": "Břemena dopravovaná ručně",
+    "display": "14.12 – Břemena dopravovaná ručně",
+    "aktivni": true
+  },
+  {
+    "kod": "14.99",
+    "nazev": "Ostatní materiály, předměty, výrobky nebo části strojů skupiny 14, výše neuvedené",
+    "display": "14.99 – Ostatní materiály, předměty, výrobky nebo části strojů skupiny 14, výše neuvedené",
+    "aktivni": true
+  },
+  {
+    "kod": "15.00",
+    "nazev": "Nebezpečné látky a přípravky, radioaktivní látky, biologické látky – nespecifikováno",
+    "display": "15.00 – Nebezpečné látky a přípravky, radioaktivní látky, biologické látky – nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "15.01",
+    "nazev": "Nebezpečné látky a přípravky žíravé, korozívní (pevné, kapalné nebo plynné)",
+    "display": "15.01 – Nebezpečné látky a přípravky žíravé, korozívní (pevné, kapalné nebo plynné)",
+    "aktivni": true
+  },
+  {
+    "kod": "15.02",
+    "nazev": "Nebezpečné látky a přípravky, jedovaté (pevné, kapalné nebo plynné)",
+    "display": "15.02 – Nebezpečné látky a přípravky, jedovaté (pevné, kapalné nebo plynné)",
+    "aktivni": true
+  },
+  {
+    "kod": "15.03",
+    "nazev": "Nebezpečné látky a přípravky hořlavé (pevné, kapalné nebo plynné)",
+    "display": "15.03 – Nebezpečné látky a přípravky hořlavé (pevné, kapalné nebo plynné)",
+    "aktivni": true
+  },
+  {
+    "kod": "15.04",
+    "nazev": "Nebezpečné látky a přípravky výbušné, reaktivní (pevné, kapalné nebo plynné)",
+    "display": "15.04 – Nebezpečné látky a přípravky výbušné, reaktivní (pevné, kapalné nebo plynné)",
+    "aktivni": true
+  },
+  {
+    "kod": "15.05",
+    "nazev": "Plyny, páry bez specifických účinků (biologicky inertní, dusivé)",
+    "display": "15.05 – Plyny, páry bez specifických účinků (biologicky inertní, dusivé)",
+    "aktivni": true
+  },
+  {
+    "kod": "15.06",
+    "nazev": "Radioaktivní látky",
+    "display": "15.06 – Radioaktivní látky",
+    "aktivni": true
+  },
+  {
+    "kod": "15.07",
+    "nazev": "Biologické látky",
+    "display": "15.07 – Biologické látky",
+    "aktivni": true
+  },
+  {
+    "kod": "15.08",
+    "nazev": "Látky, materiály – bez specifického rizika (voda, inertní materiály atd.)",
+    "display": "15.08 – Látky, materiály – bez specifického rizika (voda, inertní materiály atd.)",
+    "aktivni": true
+  },
+  {
+    "kod": "15.99",
+    "nazev": "Ostatní chemikálie, výbušniny, radioaktivní látky, biologické látky skupiny 15, výše neuvedené",
+    "display": "15.99 – Ostatní chemikálie, výbušniny, radioaktivní látky, biologické látky skupiny 15, výše neuvedené",
+    "aktivni": true
+  },
+  {
+    "kod": "16.00",
+    "nazev": "Ochranná zařízení a prostředky – nespecifikováno",
+    "display": "16.00 – Ochranná zařízení a prostředky – nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "16.01",
+    "nazev": "Ochranná zařízení na strojích",
+    "display": "16.01 – Ochranná zařízení na strojích",
+    "aktivni": true
+  },
+  {
+    "kod": "16.02",
+    "nazev": "Osobní ochranné prostředky",
+    "display": "16.02 – Osobní ochranné prostředky",
+    "aktivni": true
+  },
+  {
+    "kod": "16.03",
+    "nazev": "Záchranné prostředky a přístroje",
+    "display": "16.03 – Záchranné prostředky a přístroje",
+    "aktivni": true
+  },
+  {
+    "kod": "16.99",
+    "nazev": "Ostatní bezpečnostní zařízení, prostředky a přístroje skupiny 16, výše neuvedené",
+    "display": "16.99 – Ostatní bezpečnostní zařízení, prostředky a přístroje skupiny 16, výše neuvedené",
+    "aktivni": true
+  },
+  {
+    "kod": "17.00",
+    "nazev": "Kancelářské zařízení, osobní potřeby, sportovní potřeby, zbraně, potřeby pro domácnost – nespecifikováno",
+    "display": "17.00 – Kancelářské zařízení, osobní potřeby, sportovní potřeby, zbraně, potřeby pro domácnost – nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "17.01",
+    "nazev": "Nábytek",
+    "display": "17.01 – Nábytek",
+    "aktivni": true
+  },
+  {
+    "kod": "17.02",
+    "nazev": "Kancelářská zařízení – počítače, kancelářská, reprografická a komunikační technika",
+    "display": "17.02 – Kancelářská zařízení – počítače, kancelářská, reprografická a komunikační technika",
+    "aktivni": true
+  },
+  {
+    "kod": "17.03",
+    "nazev": "Zařízení pro výuku, psaní, a kreslení včetně psacích strojů, razítkovacích strojů, zvětšovacích přístrojů, kontrolních hodin atd.",
+    "display": "17.03 – Zařízení pro výuku, psaní, a kreslení včetně psacích strojů, razítkovacích strojů, zvětšovacích přístrojů, kontrolních hodin atd.",
+    "aktivni": true
+  },
+  {
+    "kod": "17.04",
+    "nazev": "Sportovní potřeby",
+    "display": "17.04 – Sportovní potřeby",
+    "aktivni": true
+  },
+  {
+    "kod": "17.05",
+    "nazev": "Zbraně",
+    "display": "17.05 – Zbraně",
+    "aktivni": true
+  },
+  {
+    "kod": "17.06",
+    "nazev": "Osobní potřeby, oděv",
+    "display": "17.06 – Osobní potřeby, oděv",
+    "aktivni": true
+  },
+  {
+    "kod": "17.07",
+    "nazev": "Hudební nástroje",
+    "display": "17.07 – Hudební nástroje",
+    "aktivni": true
+  },
+  {
+    "kod": "17.08",
+    "nazev": "Potřeby pro domácnost, přístroje, nářadí, předměty a prádlo (pro použití při práci)",
+    "display": "17.08 – Potřeby pro domácnost, přístroje, nářadí, předměty a prádlo (pro použití při práci)",
+    "aktivni": true
+  },
+  {
+    "kod": "17.99",
+    "nazev": "Ostatní kancelářské zařízení, osobní potřeby, sportovní potřeby, zbraně skupiny 17, výše neuvedené",
+    "display": "17.99 – Ostatní kancelářské zařízení, osobní potřeby, sportovní potřeby, zbraně skupiny 17, výše neuvedené",
+    "aktivni": true
+  },
+  {
+    "kod": "18.00",
+    "nazev": "Živé organismy a lidské bytosti – nespecifikováno",
+    "display": "18.00 – Živé organismy a lidské bytosti – nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "18.01",
+    "nazev": "Stromy, rostliny, zemědělské plodiny",
+    "display": "18.01 – Stromy, rostliny, zemědělské plodiny",
+    "aktivni": true
+  },
+  {
+    "kod": "18.02",
+    "nazev": "Zvířata domácí a hospodářská",
+    "display": "18.02 – Zvířata domácí a hospodářská",
+    "aktivni": true
+  },
+  {
+    "kod": "18.03",
+    "nazev": "Divoká zvěř, hmyz, plazi",
+    "display": "18.03 – Divoká zvěř, hmyz, plazi",
+    "aktivni": true
+  },
+  {
+    "kod": "18.04",
+    "nazev": "Mikroorganismy",
+    "display": "18.04 – Mikroorganismy",
+    "aktivni": true
+  },
+  {
+    "kod": "18.05",
+    "nazev": "Infekční viry",
+    "display": "18.05 – Infekční viry",
+    "aktivni": true
+  },
+  {
+    "kod": "18.06",
+    "nazev": "Lidé",
+    "display": "18.06 – Lidé",
+    "aktivni": true
+  },
+  {
+    "kod": "18.99",
+    "nazev": "Ostatní známé živé organismy a lidské bytosti skupiny 18, výše neuvedené",
+    "display": "18.99 – Ostatní známé živé organismy a lidské bytosti skupiny 18, výše neuvedené",
+    "aktivni": true
+  },
+  {
+    "kod": "19.00",
+    "nazev": "Hromadný odpad – nespecifikováno",
+    "display": "19.00 – Hromadný odpad – nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "19.01",
+    "nazev": "Hromadný odpad ze surovin, výrobků, předmětů, materiálů",
+    "display": "19.01 – Hromadný odpad ze surovin, výrobků, předmětů, materiálů",
+    "aktivni": true
+  },
+  {
+    "kod": "19.02",
+    "nazev": "Hromadný odpad z chemikálií",
+    "display": "19.02 – Hromadný odpad z chemikálií",
+    "aktivni": true
+  },
+  {
+    "kod": "19.03",
+    "nazev": "Hromadný odpad z biologických látek, rostlin, zvířat",
+    "display": "19.03 – Hromadný odpad z biologických látek, rostlin, zvířat",
+    "aktivni": true
+  },
+  {
+    "kod": "01.99",
+    "nazev": "Ostatní známé budovy, konstrukce a povrchy skupiny 01, které zde nejsou uvedeny",
+    "display": "01.99 – Ostatní známé budovy, konstrukce a povrchy skupiny 01, které zde nejsou uvedeny",
+    "aktivni": true
+  },
+  {
+    "kod": "19.99",
+    "nazev": "Ostatní hromadný odpad skupiny 19, výše neuvedený",
+    "display": "19.99 – Ostatní hromadný odpad skupiny 19, výše neuvedený",
+    "aktivni": true
+  },
+  {
+    "kod": "02.00",
+    "nazev": "Budovy, konstrukce, povrchy nad úrovní země (uvnitř i vně) - nespecifikováno",
+    "display": "02.00 – Budovy, konstrukce, povrchy nad úrovní země (uvnitř i vně) - nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "20.00",
+    "nazev": "Fyzikální jevy a přírodní živly – nespecifikováno",
+    "display": "20.00 – Fyzikální jevy a přírodní živly – nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "20.01",
+    "nazev": "Fyzikální jevy – hluk, přírodní záření (světlo, světelný oblouk, tlak vzduchu, podtlak, tlak atd.)",
+    "display": "20.01 – Fyzikální jevy – hluk, přírodní záření (světlo, světelný oblouk, tlak vzduchu, podtlak, tlak atd.)",
+    "aktivni": true
+  },
+  {
+    "kod": "20.02",
+    "nazev": "Přírodní a atmosférické živly (včetně přívalů vody, bahna, krup, deště, sněhu, ledu, větru atd.)",
+    "display": "20.02 – Přírodní a atmosférické živly (včetně přívalů vody, bahna, krup, deště, sněhu, ledu, větru atd.)",
+    "aktivni": true
+  },
+  {
+    "kod": "20.03",
+    "nazev": "Přírodní katastrofy (včetně záplav, povodní, vulkanických erupcí, zemětřesení, přívalových vln, požárů atd.)",
+    "display": "20.03 – Přírodní katastrofy (včetně záplav, povodní, vulkanických erupcí, zemětřesení, přívalových vln, požárů atd.)",
+    "aktivni": true
+  },
+  {
+    "kod": "02.01",
+    "nazev": "Části budov, nad úrovní země – pevné (střechy, terasy, dveře a okna, schodiště, plošiny)",
+    "display": "02.01 – Části budov, nad úrovní země – pevné (střechy, terasy, dveře a okna, schodiště, plošiny)",
+    "aktivni": true
+  },
+  {
+    "kod": "02.02",
+    "nazev": "Konstrukce, povrchy, nad úrovní země – pevné (včetně můstků, lávek, pevných žebříků, sloupů)",
+    "display": "02.02 – Konstrukce, povrchy, nad úrovní země – pevné (včetně můstků, lávek, pevných žebříků, sloupů)",
+    "aktivni": true
+  },
+  {
+    "kod": "02.03",
+    "nazev": "Konstrukce, povrchy, nad úrovní země – mobilní (včetně lešení, mobilních žebříků, plošin a zdvižných plošin)",
+    "display": "02.03 – Konstrukce, povrchy, nad úrovní země – mobilní (včetně lešení, mobilních žebříků, plošin a zdvižných plošin)",
+    "aktivni": true
+  },
+  {
+    "kod": "02.04",
+    "nazev": "Konstrukce, povrchy, nad úrovní země – dočasné (včetně dočasných lešení, závěsných a visutých lešení)",
+    "display": "02.04 – Konstrukce, povrchy, nad úrovní země – dočasné (včetně dočasných lešení, závěsných a visutých lešení)",
+    "aktivni": true
+  },
+  {
+    "kod": "02.05",
+    "nazev": "Konstrukce, povrchy, nad úrovní země – plovoucí (včetně vrtných plošin, lešení na člunech, pontonech)",
+    "display": "02.05 – Konstrukce, povrchy, nad úrovní země – plovoucí (včetně vrtných plošin, lešení na člunech, pontonech)",
+    "aktivni": true
+  },
+  {
+    "kod": "20.99",
+    "nazev": "Ostatní fyzikální jevy a přírodní živly skupiny 20, výše neuvedené",
+    "display": "20.99 – Ostatní fyzikální jevy a přírodní živly skupiny 20, výše neuvedené",
+    "aktivni": true
+  },
+  {
+    "kod": "02.99",
+    "nazev": "Ostatní známé budovy, konstrukce a povrchy, nad úrovní země skupiny 02, ale výše neuvedené",
+    "display": "02.99 – Ostatní známé budovy, konstrukce a povrchy, nad úrovní země skupiny 02, ale výše neuvedené",
+    "aktivni": true
+  },
+  {
+    "kod": "03.00",
+    "nazev": "Budovy, stavební konstrukce, povrchy – pod úrovní země (uvnitř i vně) – nespecifikováno",
+    "display": "03.00 – Budovy, stavební konstrukce, povrchy – pod úrovní země (uvnitř i vně) – nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "03.01",
+    "nazev": "Výkopy, studně,příkopy, strmé svahy",
+    "display": "03.01 – Výkopy, studně,příkopy, strmé svahy",
+    "aktivni": true
+  },
+  {
+    "kod": "03.02",
+    "nazev": "Podzemní prostory, tunely",
+    "display": "03.02 – Podzemní prostory, tunely",
+    "aktivni": true
+  },
+  {
+    "kod": "03.03",
+    "nazev": "Prostředí pod vodou",
+    "display": "03.03 – Prostředí pod vodou",
+    "aktivni": true
+  },
+  {
+    "kod": "03.99",
+    "nazev": "Ostatní známé budovy, konstrukce a povrchy pod úrovní země skupiny 03, ale výše neuvedené",
+    "display": "03.99 – Ostatní známé budovy, konstrukce a povrchy pod úrovní země skupiny 03, ale výše neuvedené",
+    "aktivni": true
+  },
+  {
+    "kod": "04.00",
+    "nazev": "Systémy pro dodávku a distribuci materiálu, potrubní sítě – nespecifikováno",
+    "display": "04.00 – Systémy pro dodávku a distribuci materiálu, potrubní sítě – nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "04.01",
+    "nazev": "Systémy pro dodávku a distribuci materiálu, potrubní sítě – pevné ( pro plyn vzduch, kapaliny a pevné látky) včetně násypek",
+    "display": "04.01 – Systémy pro dodávku a distribuci materiálu, potrubní sítě – pevné ( pro plyn vzduch, kapaliny a pevné látky) včetně násypek",
+    "aktivni": true
+  },
+  {
+    "kod": "04.02",
+    "nazev": "Systémy pro dodávku a distribuci materiálu, potrubní sítě – mobilní",
+    "display": "04.02 – Systémy pro dodávku a distribuci materiálu, potrubní sítě – mobilní",
+    "aktivni": true
+  },
+  {
+    "kod": "04.03",
+    "nazev": "Kanalizace, odvodnění",
+    "display": "04.03 – Kanalizace, odvodnění",
+    "aktivni": true
+  },
+  {
+    "kod": "04.99",
+    "nazev": "Ostatní známé systémy pro dodávku a distribuci materiálů skupiny 04, ale výše neuvedené",
+    "display": "04.99 – Ostatní známé systémy pro dodávku a distribuci materiálů skupiny 04, ale výše neuvedené",
+    "aktivni": true
+  },
+  {
+    "kod": "05.00",
+    "nazev": "Motory, systémy pro přenos a skladování energie – nespecifikováno",
+    "display": "05.00 – Motory, systémy pro přenos a skladování energie – nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "05.01",
+    "nazev": "Motory, generátory (tepelné, elektrické, radiační) včetně kompresorů a čerpadel",
+    "display": "05.01 – Motory, generátory (tepelné, elektrické, radiační) včetně kompresorů a čerpadel",
+    "aktivni": true
+  },
+  {
+    "kod": "05.02",
+    "nazev": "Systémy pro přenos a skladování energie (mechanické, pneumatické, elektrické, včetně baterií a akumulátorů)",
+    "display": "05.02 – Systémy pro přenos a skladování energie (mechanické, pneumatické, elektrické, včetně baterií a akumulátorů)",
+    "aktivni": true
+  },
+  {
+    "kod": "05.99",
+    "nazev": "Ostatní známé motory a systémy pro přenos a zpracování energie skupiny 05, ale výše neuvedené",
+    "display": "05.99 – Ostatní známé motory a systémy pro přenos a zpracování energie skupiny 05, ale výše neuvedené",
+    "aktivni": true
+  },
+  {
+    "kod": "06.00",
+    "nazev": "Ruční nářadí, nepoháněné – nespecifikováno",
+    "display": "06.00 – Ruční nářadí, nepoháněné – nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "06.01",
+    "nazev": "Ruční nářadí, nepoháněné – pro řezání (pilou)",
+    "display": "06.01 – Ruční nářadí, nepoháněné – pro řezání (pilou)",
+    "aktivni": true
+  },
+  {
+    "kod": "06.02",
+    "nazev": "Ruční nářadí, nepoháněné – pro řezání (nožem), oddělování (včetně nůžek, zahradnických nůžek, pákových nůžek)",
+    "display": "06.02 – Ruční nářadí, nepoháněné – pro řezání (nožem), oddělování (včetně nůžek, zahradnických nůžek, pákových nůžek)",
+    "aktivni": true
+  },
+  {
+    "kod": "06.03",
+    "nazev": "Ruční nářadí, nepoháněné – pro vyřezávání, drážkování, ořezávání, vystřihování, ostřihování, práci s dlátem",
+    "display": "06.03 – Ruční nářadí, nepoháněné – pro vyřezávání, drážkování, ořezávání, vystřihování, ostřihování, práci s dlátem",
+    "aktivni": true
+  },
+  {
+    "kod": "06.04",
+    "nazev": "Ruční nářadí, nepoháněné – pro škrábání, broušení, leštění",
+    "display": "06.04 – Ruční nářadí, nepoháněné – pro škrábání, broušení, leštění",
+    "aktivni": true
+  },
+  {
+    "kod": "06.05",
+    "nazev": "Ruční nářadí, nepoháněné – pro vrtání, šroubování, utahování",
+    "display": "06.05 – Ruční nářadí, nepoháněné – pro vrtání, šroubování, utahování",
+    "aktivni": true
+  },
+  {
+    "kod": "06.06",
+    "nazev": "Ruční nářadí, nepoháněné – pro spojování hřebíky, nýtování, sešívání sponami",
+    "display": "06.06 – Ruční nářadí, nepoháněné – pro spojování hřebíky, nýtování, sešívání sponami",
+    "aktivni": true
+  },
+  {
+    "kod": "06.07",
+    "nazev": "Ruční nářadí, nepoháněné – pro šití a pletení",
+    "display": "06.07 – Ruční nářadí, nepoháněné – pro šití a pletení",
+    "aktivni": true
+  },
+  {
+    "kod": "06.08",
+    "nazev": "Ruční nářadí, nepoháněné – pro sváření (pájení), lepení (klížení)",
+    "display": "06.08 – Ruční nářadí, nepoháněné – pro sváření (pájení), lepení (klížení)",
+    "aktivni": true
+  },
+  {
+    "kod": "06.09",
+    "nazev": "Ruční nářadí, nepoháněné – pro dobývání surovin a zemní práce (včetně zemědělského nářadí)",
+    "display": "06.09 – Ruční nářadí, nepoháněné – pro dobývání surovin a zemní práce (včetně zemědělského nářadí)",
+    "aktivni": true
+  },
+  {
+    "kod": "06.10",
+    "nazev": "Ruční nářadí, nepoháněné – pro mazání, voskování, praní, čištění",
+    "display": "06.10 – Ruční nářadí, nepoháněné – pro mazání, voskování, praní, čištění",
+    "aktivni": true
+  },
+  {
+    "kod": "06.11",
+    "nazev": "Ruční nářadí, nepoháněné – pro lakování, malování",
+    "display": "06.11 – Ruční nářadí, nepoháněné – pro lakování, malování",
+    "aktivni": true
+  },
+  {
+    "kod": "06.12",
+    "nazev": "Ruční nářadí, nepoháněné – pro přidržování, svírání",
+    "display": "06.12 – Ruční nářadí, nepoháněné – pro přidržování, svírání",
+    "aktivni": true
+  },
+  {
+    "kod": "06.13",
+    "nazev": "Ruční nářadí, nepoháněné – pro kuchařské práce (vyjma nožů)",
+    "display": "06.13 – Ruční nářadí, nepoháněné – pro kuchařské práce (vyjma nožů)",
+    "aktivni": true
+  },
+  {
+    "kod": "06.14",
+    "nazev": "Ruční nářadí, nepoháněné – pro zdravotnické a chirurgické práce – ostré, řezné",
+    "display": "06.14 – Ruční nářadí, nepoháněné – pro zdravotnické a chirurgické práce – ostré, řezné",
+    "aktivni": true
+  },
+  {
+    "kod": "06.15",
+    "nazev": "Ruční nářadí, nepoháněné – pro zdravotnické a chirurgické práce, neřezné, ostatní",
+    "display": "06.15 – Ruční nářadí, nepoháněné – pro zdravotnické a chirurgické práce, neřezné, ostatní",
+    "aktivni": true
+  },
+  {
+    "kod": "06.99",
+    "nazev": "Ostatní známé ruční nářadí, nepoháněné, skupiny 06, ale výše neuvedené",
+    "display": "06.99 – Ostatní známé ruční nářadí, nepoháněné, skupiny 06, ale výše neuvedené",
+    "aktivni": true
+  },
+  {
+    "kod": "07.00",
+    "nazev": "V ruce držené či ručně vedené mechanické nářadí– nespecifikováno",
+    "display": "07.00 – V ruce držené či ručně vedené mechanické nářadí– nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "07.01",
+    "nazev": "Ruční mechanické nářadí –pily",
+    "display": "07.01 – Ruční mechanické nářadí –pily",
+    "aktivni": true
+  },
+  {
+    "kod": "07.02",
+    "nazev": "Ruční mechanické nářadí – pro řezání, oddělování břitem (včetně nůžek, pákových nůžek a zahradnických nůžek)",
+    "display": "07.02 – Ruční mechanické nářadí – pro řezání, oddělování břitem (včetně nůžek, pákových nůžek a zahradnických nůžek)",
+    "aktivni": true
+  },
+  {
+    "kod": "07.03",
+    "nazev": "Ruční mechanické nářadí – pro vyřezávání, drážkování, vysekávání ořezávání (nůžky na živé ploty viz. 09.02), postřihování",
+    "display": "07.03 – Ruční mechanické nářadí – pro vyřezávání, drážkování, vysekávání ořezávání (nůžky na živé ploty viz. 09.02), postřihování",
+    "aktivni": true
+  },
+  {
+    "kod": "07.04",
+    "nazev": "Ruční mechanické nářadí – pro broušení, leštění včetně rozbrušovaček",
+    "display": "07.04 – Ruční mechanické nářadí – pro broušení, leštění včetně rozbrušovaček",
+    "aktivni": true
+  },
+  {
+    "kod": "07.05",
+    "nazev": "Ruční mechanické nářadí – pro vrtání, utahování, šroubování",
+    "display": "07.05 – Ruční mechanické nářadí – pro vrtání, utahování, šroubování",
+    "aktivni": true
+  },
+  {
+    "kod": "07.06",
+    "nazev": "Ruční mechanické nářadí – pro stloukání hřebíky, nýtování, sešívání sponami",
+    "display": "07.06 – Ruční mechanické nářadí – pro stloukání hřebíky, nýtování, sešívání sponami",
+    "aktivni": true
+  },
+  {
+    "kod": "07.07",
+    "nazev": "Ruční mechanické nářadí – pro šití, pletení",
+    "display": "07.07 – Ruční mechanické nářadí – pro šití, pletení",
+    "aktivni": true
+  },
+  {
+    "kod": "07.08",
+    "nazev": "Ruční mechanické nářadí – pro svařování, pájení, lepení",
+    "display": "07.08 – Ruční mechanické nářadí – pro svařování, pájení, lepení",
+    "aktivni": true
+  },
+  {
+    "kod": "07.09",
+    "nazev": "Ruční mechanické nářadí – pro dobývání surovin a práci se zeminou (včetně zemědělského nářadí a sbíjecích kladiv na beton)",
+    "display": "07.09 – Ruční mechanické nářadí – pro dobývání surovin a práci se zeminou (včetně zemědělského nářadí a sbíjecích kladiv na beton)",
+    "aktivni": true
+  },
+  {
+    "kod": "07.10",
+    "nazev": "Ruční mechanické nářadí – pro mazání, voskování, mytí, čištění (včetně vysavačů a vysokotlakých čistících zařízení)",
+    "display": "07.10 – Ruční mechanické nářadí – pro mazání, voskování, mytí, čištění (včetně vysavačů a vysokotlakých čistících zařízení)",
+    "aktivni": true
+  },
+  {
+    "kod": "07.11",
+    "nazev": "Ruční mechanické nářadí – pro malování, natírání",
+    "display": "07.11 – Ruční mechanické nářadí – pro malování, natírání",
+    "aktivni": true
+  },
+  {
+    "kod": "07.12",
+    "nazev": "Ruční mechanické nářadí – pro přidržení, sevření",
+    "display": "07.12 – Ruční mechanické nářadí – pro přidržení, sevření",
+    "aktivni": true
+  },
+  {
+    "kod": "07.13",
+    "nazev": "Ruční mechanické nářadí – pro kuchařské práce (vyjma nožů)",
+    "display": "07.13 – Ruční mechanické nářadí – pro kuchařské práce (vyjma nožů)",
+    "aktivni": true
+  },
+  {
+    "kod": "07.14",
+    "nazev": "Ruční mechanické nářadí – pro ohřívání (včetně sušiček, horkovzdušných pistolí, žehliček)",
+    "display": "07.14 – Ruční mechanické nářadí – pro ohřívání (včetně sušiček, horkovzdušných pistolí, žehliček)",
+    "aktivni": true
+  },
+  {
+    "kod": "07.15",
+    "nazev": "Ruční mechanické nářadí – pro zdravotnické a chirurgické práce – ostré, řezné",
+    "display": "07.15 – Ruční mechanické nářadí – pro zdravotnické a chirurgické práce – ostré, řezné",
+    "aktivni": true
+  },
+  {
+    "kod": "07.16",
+    "nazev": "Ruční mechanické nářadí – pro zdravotnické a chirurgické práce – neřezající, ostatní",
+    "display": "07.16 – Ruční mechanické nářadí – pro zdravotnické a chirurgické práce – neřezající, ostatní",
+    "aktivni": true
+  },
+  {
+    "kod": "07.17",
+    "nazev": "Pneumatické pistole (bez rozlišení nástroje)",
+    "display": "07.17 – Pneumatické pistole (bez rozlišení nástroje)",
+    "aktivni": true
+  },
+  {
+    "kod": "07.99",
+    "nazev": "Ostatní známé ruční mechanické nářadí patřící do skupiny 07, ale výše neuvedené",
+    "display": "07.99 – Ostatní známé ruční mechanické nářadí patřící do skupiny 07, ale výše neuvedené",
+    "aktivni": true
+  },
+  {
+    "kod": "08.00",
+    "nazev": "Ruční nářadí – bez rozlišení zdroje energie – nespecifikováno",
+    "display": "08.00 – Ruční nářadí – bez rozlišení zdroje energie – nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "08.01",
+    "nazev": "Ruční nářadí, bez rozlišení pohonu – pro šití",
+    "display": "08.01 – Ruční nářadí, bez rozlišení pohonu – pro šití",
+    "aktivni": true
+  },
+  {
+    "kod": "08.02",
+    "nazev": "Ruční nářadí, bez rozlišení pohonu – pro řezání, oddělování (včetně nůžek, pákových nůžek a zahradnických nůžek)",
+    "display": "08.02 – Ruční nářadí, bez rozlišení pohonu – pro řezání, oddělování (včetně nůžek, pákových nůžek a zahradnických nůžek)",
+    "aktivni": true
+  },
+  {
+    "kod": "08.03",
+    "nazev": "Ruční nářadí, bez rozlišení pohonu – pro vyřezávání, drážkování, ořezávání, prostřihování",
+    "display": "08.03 – Ruční nářadí, bez rozlišení pohonu – pro vyřezávání, drážkování, ořezávání, prostřihování",
+    "aktivni": true
+  },
+  {
+    "kod": "08.04",
+    "nazev": "Ruční nářadí, bez rozlišení pohonu – pro oškrabávání, broušení, leštění",
+    "display": "08.04 – Ruční nářadí, bez rozlišení pohonu – pro oškrabávání, broušení, leštění",
+    "aktivni": true
+  },
+  {
+    "kod": "08.05",
+    "nazev": "Ruční nářadí, bez rozlišení pohonu – pro vrtání, šroubování, utahování",
+    "display": "08.05 – Ruční nářadí, bez rozlišení pohonu – pro vrtání, šroubování, utahování",
+    "aktivni": true
+  },
+  {
+    "kod": "08.07",
+    "nazev": "Ruční nářadí, bez rozlišení pohonu – pro šití, pletení",
+    "display": "08.07 – Ruční nářadí, bez rozlišení pohonu – pro šití, pletení",
+    "aktivni": true
+  },
+  {
+    "kod": "08.08",
+    "nazev": "Ruční nářadí, bez rozlišení pohonu – pro sváření, pájení, lepení",
+    "display": "08.08 – Ruční nářadí, bez rozlišení pohonu – pro sváření, pájení, lepení",
+    "aktivni": true
+  },
+  {
+    "kod": "08.09",
+    "nazev": "Ruční nářadí, bez rozlišení pohonu – pro dobývání materiálu a zemní práce (včetně zemědělského nářadí)",
+    "display": "08.09 – Ruční nářadí, bez rozlišení pohonu – pro dobývání materiálu a zemní práce (včetně zemědělského nářadí)",
+    "aktivni": true
+  },
+  {
+    "kod": "08.10",
+    "nazev": "Ruční nářadí, bez rozlišení pohonu – pro mazání, voskování, mytí, čištění",
+    "display": "08.10 – Ruční nářadí, bez rozlišení pohonu – pro mazání, voskování, mytí, čištění",
+    "aktivni": true
+  },
+  {
+    "kod": "08.11",
+    "nazev": "Ruční nářadí, bez rozlišení pohonu – pro malování, natírání",
+    "display": "08.11 – Ruční nářadí, bez rozlišení pohonu – pro malování, natírání",
+    "aktivni": true
+  },
+  {
+    "kod": "08.12",
+    "nazev": "Ruční nářadí, bez rozlišení pohonu – pro přidržení, sevření",
+    "display": "08.12 – Ruční nářadí, bez rozlišení pohonu – pro přidržení, sevření",
+    "aktivni": true
+  },
+  {
+    "kod": "08.13",
+    "nazev": "Ruční nářadí, bez rozlišení pohonu – pro kuchařské práce (mimo nožů)",
+    "display": "08.13 – Ruční nářadí, bez rozlišení pohonu – pro kuchařské práce (mimo nožů)",
+    "aktivni": true
+  },
+  {
+    "kod": "08.14",
+    "nazev": "Ruční nářadí, bez rozlišení pohonu – pro zdravotnické a chirurgické práce – ostré, řezné",
+    "display": "08.14 – Ruční nářadí, bez rozlišení pohonu – pro zdravotnické a chirurgické práce – ostré, řezné",
+    "aktivni": true
+  },
+  {
+    "kod": "08.15",
+    "nazev": "Ruční nářadí, bez rozlišení pohonu – pro zdravotnické a chirurgické práce – neřezné, ostatní",
+    "display": "08.15 – Ruční nářadí, bez rozlišení pohonu – pro zdravotnické a chirurgické práce – neřezné, ostatní",
+    "aktivni": true
+  },
+  {
+    "kod": "08.99",
+    "nazev": "Ostatní známé ruční nářadí bez rozlišení pohonu skupiny 08, ale výše neuvedené",
+    "display": "08.99 – Ostatní známé ruční nářadí bez rozlišení pohonu skupiny 08, ale výše neuvedené",
+    "aktivni": true
+  },
+  {
+    "kod": "09.00",
+    "nazev": "Stroje a zařízení přenosné nebo mobilní - nespecifikováno",
+    "display": "09.00 – Stroje a zařízení přenosné nebo mobilní - nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "09.01",
+    "nazev": "Přenosné nebo mobilní stroje – pro dobývání materiálů nebo zemní práce pro doly, lomy, stavební a inženýrské práce",
+    "display": "09.01 – Přenosné nebo mobilní stroje – pro dobývání materiálů nebo zemní práce pro doly, lomy, stavební a inženýrské práce",
+    "aktivni": true
+  },
+  {
+    "kod": "09.02",
+    "nazev": "Přenosné nebo mobilní stroje – pro obdělávání půdy (zemědělství)",
+    "display": "09.02 – Přenosné nebo mobilní stroje – pro obdělávání půdy (zemědělství)",
+    "aktivni": true
+  },
+  {
+    "kod": "09.03",
+    "nazev": "Přenosné nebo mobilní stroje pro stavební práce (ne pro zemní práce)",
+    "display": "09.03 – Přenosné nebo mobilní stroje pro stavební práce (ne pro zemní práce)",
+    "aktivni": true
+  },
+  {
+    "kod": "09.04",
+    "nazev": "Mobilní stroje pro čištění podlah",
+    "display": "09.04 – Mobilní stroje pro čištění podlah",
+    "aktivni": true
+  },
+  {
+    "kod": "99:00",
+    "nazev": "Ostatní zdroje neuvedené v tomto třídníku",
+    "display": "99:00 – Ostatní zdroje neuvedené v tomto třídníku",
+    "aktivni": true
+  },
+  {
+    "kod": "09.99",
+    "nazev": "Ostatní přenosné nebo mobilní stroje patřící do skupiny 09, ale výše neuvedené",
+    "display": "09.99 – Ostatní přenosné nebo mobilní stroje patřící do skupiny 09, ale výše neuvedené",
+    "aktivni": true
+  }
+]

@@ -1,0 +1,1364 @@
+[
+  {
+    "kod": "0",
+    "nazev": "Nezjištěno",
+    "display": "0 – Nezjištěno",
+    "aktivni": true
+  },
+  {
+    "kod": "1000",
+    "nazev": "Zacházení, manipulace a zpracování hmotných věcí, živých rostlin a živočichů",
+    "display": "1000 – Zacházení, manipulace a zpracování hmotných věcí, živých rostlin a živočichů",
+    "aktivni": true
+  },
+  {
+    "kod": "1100",
+    "nazev": "Zpracování materiálů, atd. n.s.",
+    "display": "1100 – Zpracování materiálů, atd. n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1110",
+    "nazev": "Způsob zpracování n.s.",
+    "display": "1110 – Způsob zpracování n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1111",
+    "nazev": "Tavení a štěpení",
+    "display": "1111 – Tavení a štěpení",
+    "aktivni": true
+  },
+  {
+    "kod": "1112",
+    "nazev": "Elektrolýza",
+    "display": "1112 – Elektrolýza",
+    "aktivni": true
+  },
+  {
+    "kod": "1113",
+    "nazev": "Trvrzení",
+    "display": "1113 – Trvrzení",
+    "aktivni": true
+  },
+  {
+    "kod": "1114",
+    "nazev": "Pálení",
+    "display": "1114 – Pálení",
+    "aktivni": true
+  },
+  {
+    "kod": "1115",
+    "nazev": "Přenos elektřiny",
+    "display": "1115 – Přenos elektřiny",
+    "aktivni": true
+  },
+  {
+    "kod": "1116",
+    "nazev": "Spotřeba a obnova energie, např. vodní a větrná energie, atd.",
+    "display": "1116 – Spotřeba a obnova energie, např. vodní a větrná energie, atd.",
+    "aktivni": true
+  },
+  {
+    "kod": "1117",
+    "nazev": "Kvašení",
+    "display": "1117 – Kvašení",
+    "aktivni": true
+  },
+  {
+    "kod": "1118",
+    "nazev": "Klíčení, vzrůst",
+    "display": "1118 – Klíčení, vzrůst",
+    "aktivni": true
+  },
+  {
+    "kod": "1119",
+    "nazev": "Způsob zpracování n.o.s",
+    "display": "1119 – Způsob zpracování n.o.s",
+    "aktivni": true
+  },
+  {
+    "kod": "1120",
+    "nazev": "Homogenizace a třídění",
+    "display": "1120 – Homogenizace a třídění",
+    "aktivni": true
+  },
+  {
+    "kod": "1130",
+    "nazev": "Míchání",
+    "display": "1130 – Míchání",
+    "aktivni": true
+  },
+  {
+    "kod": "1140",
+    "nazev": "Třídění, čištění",
+    "display": "1140 – Třídění, čištění",
+    "aktivni": true
+  },
+  {
+    "kod": "1150",
+    "nazev": "Sušení; vzduchem, mrazem",
+    "display": "1150 – Sušení; vzduchem, mrazem",
+    "aktivni": true
+  },
+  {
+    "kod": "1160",
+    "nazev": "Tepelný proces n.s.",
+    "display": "1160 – Tepelný proces n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1161",
+    "nazev": "Topení,pečení,grilování,ne pálení",
+    "display": "1161 – Topení,pečení,grilování,ne pálení",
+    "aktivni": true
+  },
+  {
+    "kod": "1162",
+    "nazev": "Vaření",
+    "display": "1162 – Vaření",
+    "aktivni": true
+  },
+  {
+    "kod": "1163",
+    "nazev": "Smažení",
+    "display": "1163 – Smažení",
+    "aktivni": true
+  },
+  {
+    "kod": "1164",
+    "nazev": "Chlazení nad O C, mrazení; ne hašení",
+    "display": "1164 – Chlazení nad O C, mrazení; ne hašení",
+    "aktivni": true
+  },
+  {
+    "kod": "1165",
+    "nazev": "Chlazení na 0 nebo níže",
+    "display": "1165 – Chlazení na 0 nebo níže",
+    "aktivni": true
+  },
+  {
+    "kod": "1166",
+    "nazev": "Hašení ohně",
+    "display": "1166 – Hašení ohně",
+    "aktivni": true
+  },
+  {
+    "kod": "1169",
+    "nazev": "Tepelný proces n.o.s.",
+    "display": "1169 – Tepelný proces n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1199",
+    "nazev": "Zpracování materiálů, atd. n.o.s.",
+    "display": "1199 – Zpracování materiálů, atd. n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1200",
+    "nazev": "Tváření n.s.",
+    "display": "1200 – Tváření n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1210",
+    "nazev": "Úprava povrchu n.s..",
+    "display": "1210 – Úprava povrchu n.s..",
+    "aktivni": true
+  },
+  {
+    "kod": "1211",
+    "nazev": "Obrábění na hrubo,(např. mletí, sekání)",
+    "display": "1211 – Obrábění na hrubo,(např. mletí, sekání)",
+    "aktivni": true
+  },
+  {
+    "kod": "1212",
+    "nazev": "Konečné obrábění, např. leštění, odhrocování, broušení",
+    "display": "1212 – Konečné obrábění, např. leštění, odhrocování, broušení",
+    "aktivni": true
+  },
+  {
+    "kod": "1213",
+    "nazev": "Leptání, rytí, ražení",
+    "display": "1213 – Leptání, rytí, ražení",
+    "aktivni": true
+  },
+  {
+    "kod": "1219",
+    "nazev": "Úpravy povrchu n.o.s.",
+    "display": "1219 – Úpravy povrchu n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1220",
+    "nazev": "Vrtání, vyvrtávání, atd. n.s.",
+    "display": "1220 – Vrtání, vyvrtávání, atd. n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1221",
+    "nazev": "Vrtání, vyvrtávání",
+    "display": "1221 – Vrtání, vyvrtávání",
+    "aktivni": true
+  },
+  {
+    "kod": "1222",
+    "nazev": "Děrování",
+    "display": "1222 – Děrování",
+    "aktivni": true
+  },
+  {
+    "kod": "1229",
+    "nazev": "Vrtání, vyvrtávání, atd. n.o.s.",
+    "display": "1229 – Vrtání, vyvrtávání, atd. n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1230",
+    "nazev": "Sekání n.s.",
+    "display": "1230 – Sekání n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1231",
+    "nazev": "Sekání, řezání, seřezávání, stříhání apod. (soustavné tvarování koruny stromu)",
+    "display": "1231 – Sekání, řezání, seřezávání, stříhání apod. (soustavné tvarování koruny stromu)",
+    "aktivni": true
+  },
+  {
+    "kod": "1232",
+    "nazev": "Štípání,/ oddělování; štípání, oklešťování",
+    "display": "1232 – Štípání,/ oddělování; štípání, oklešťování",
+    "aktivni": true
+  },
+  {
+    "kod": "1233",
+    "nazev": "Vyrážení",
+    "display": "1233 – Vyrážení",
+    "aktivni": true
+  },
+  {
+    "kod": "1234",
+    "nazev": "Odstřelování, ( odstřelování skály) atd.",
+    "display": "1234 – Odstřelování, ( odstřelování skály) atd.",
+    "aktivni": true
+  },
+  {
+    "kod": "1235",
+    "nazev": "Řezání",
+    "display": "1235 – Řezání",
+    "aktivni": true
+  },
+  {
+    "kod": "1239",
+    "nazev": "Sekání n.o.s.",
+    "display": "1239 – Sekání n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1240",
+    "nazev": "Tváření n.s..",
+    "display": "1240 – Tváření n.s..",
+    "aktivni": true
+  },
+  {
+    "kod": "1241",
+    "nazev": "Ohybání, kování, lití, lisování, válcování",
+    "display": "1241 – Ohybání, kování, lití, lisování, válcování",
+    "aktivni": true
+  },
+  {
+    "kod": "1242",
+    "nazev": "Kopání, čerpání",
+    "display": "1242 – Kopání, čerpání",
+    "aktivni": true
+  },
+  {
+    "kod": "1243",
+    "nazev": "Odlévání, lití",
+    "display": "1243 – Odlévání, lití",
+    "aktivni": true
+  },
+  {
+    "kod": "1244",
+    "nazev": "Panceřování",
+    "display": "1244 – Panceřování",
+    "aktivni": true
+  },
+  {
+    "kod": "1245",
+    "nazev": "Skládání; skládání listů, skládání obleků",
+    "display": "1245 – Skládání; skládání listů, skládání obleků",
+    "aktivni": true
+  },
+  {
+    "kod": "1249",
+    "nazev": "Tváření n.o.s.",
+    "display": "1249 – Tváření n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1250",
+    "nazev": "Příprava půdy, kultivace, atd. n.s.",
+    "display": "1250 – Příprava půdy, kultivace, atd. n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1251",
+    "nazev": "Okopávání, vláčení, orání, plužení a kultivování, atd.",
+    "display": "1251 – Okopávání, vláčení, orání, plužení a kultivování, atd.",
+    "aktivni": true
+  },
+  {
+    "kod": "1252",
+    "nazev": "Válcování, zarovnávání, stlačování",
+    "display": "1252 – Válcování, zarovnávání, stlačování",
+    "aktivni": true
+  },
+  {
+    "kod": "1253",
+    "nazev": "Pletí",
+    "display": "1253 – Pletí",
+    "aktivni": true
+  },
+  {
+    "kod": "1254",
+    "nazev": "Setí",
+    "display": "1254 – Setí",
+    "aktivni": true
+  },
+  {
+    "kod": "1255",
+    "nazev": "Sklízení",
+    "display": "1255 – Sklízení",
+    "aktivni": true
+  },
+  {
+    "kod": "1256",
+    "nazev": "Zalévání",
+    "display": "1256 – Zalévání",
+    "aktivni": true
+  },
+  {
+    "kod": "1257",
+    "nazev": "Zůrodňování",
+    "display": "1257 – Zůrodňování",
+    "aktivni": true
+  },
+  {
+    "kod": "1258",
+    "nazev": "Používání pesticidů",
+    "display": "1258 – Používání pesticidů",
+    "aktivni": true
+  },
+  {
+    "kod": "1259",
+    "nazev": "Příprava půdy, kultivace, atd. n.o.s.",
+    "display": "1259 – Příprava půdy, kultivace, atd. n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1299",
+    "nazev": "Tváření n.o.s..",
+    "display": "1299 – Tváření n.o.s..",
+    "aktivni": true
+  },
+  {
+    "kod": "1300",
+    "nazev": "Úprava povrchu n.s.",
+    "display": "1300 – Úprava povrchu n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1310",
+    "nazev": "Malování (malování, lakování)",
+    "display": "1310 – Malování (malování, lakování)",
+    "aktivni": true
+  },
+  {
+    "kod": "1320",
+    "nazev": "Natírání (použití filmu)",
+    "display": "1320 – Natírání (použití filmu)",
+    "aktivni": true
+  },
+  {
+    "kod": "1330",
+    "nazev": "Plnění, nanášení (plnění, nanášení, spárování, spojování)",
+    "display": "1330 – Plnění, nanášení (plnění, nanášení, spárování, spojování)",
+    "aktivni": true
+  },
+  {
+    "kod": "1340",
+    "nazev": "Příprava ( příprava, mazání, hlazení, voskování, zalévání, vlhčení,",
+    "display": "1340 – Příprava ( příprava, mazání, hlazení, voskování, zalévání, vlhčení,",
+    "aktivni": true
+  },
+  {
+    "kod": "1350",
+    "nazev": "Toxické rozprašování",
+    "display": "1350 – Toxické rozprašování",
+    "aktivni": true
+  },
+  {
+    "kod": "1360",
+    "nazev": "Tisk n.s.",
+    "display": "1360 – Tisk n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1361",
+    "nazev": "Hodnocení",
+    "display": "1361 – Hodnocení",
+    "aktivni": true
+  },
+  {
+    "kod": "1362",
+    "nazev": "Tisk, např. tisk na papír, sítotisk, fotokopírování",
+    "display": "1362 – Tisk, např. tisk na papír, sítotisk, fotokopírování",
+    "aktivni": true
+  },
+  {
+    "kod": "1363",
+    "nazev": "Vyvolávání papíru a filmu",
+    "display": "1363 – Vyvolávání papíru a filmu",
+    "aktivni": true
+  },
+  {
+    "kod": "1369",
+    "nazev": "Tisk n.o.s.",
+    "display": "1369 – Tisk n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1370",
+    "nazev": "Čištění (čištění; mytí pomocí kyseliny, odmašťování)",
+    "display": "1370 – Čištění (čištění; mytí pomocí kyseliny, odmašťování)",
+    "aktivni": true
+  },
+  {
+    "kod": "1399",
+    "nazev": "Další způsoby úpravy povrchu n.o.s.",
+    "display": "1399 – Další způsoby úpravy povrchu n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1400",
+    "nazev": "Montáž, demontáž, výměna, systematické ukládání (stiohování, atd.)",
+    "display": "1400 – Montáž, demontáž, výměna, systematické ukládání (stiohování, atd.)",
+    "aktivni": true
+  },
+  {
+    "kod": "1410",
+    "nazev": "Montáž, spojování, atd. n.s.",
+    "display": "1410 – Montáž, spojování, atd. n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1411",
+    "nazev": "Mazání, lepení",
+    "display": "1411 – Mazání, lepení",
+    "aktivni": true
+  },
+  {
+    "kod": "1412",
+    "nazev": "Svařování, pájení",
+    "display": "1412 – Svařování, pájení",
+    "aktivni": true
+  },
+  {
+    "kod": "1413",
+    "nazev": "Montáž pomocí šroubů, hřebíků, svorníků, skob",
+    "display": "1413 – Montáž pomocí šroubů, hřebíků, svorníků, skob",
+    "aktivni": true
+  },
+  {
+    "kod": "1414",
+    "nazev": "Nýtování atd.",
+    "display": "1414 – Nýtování atd.",
+    "aktivni": true
+  },
+  {
+    "kod": "1415",
+    "nazev": "Montáž pomocí lana, vlákna (např. šití, stehování, spojování,vázání)",
+    "display": "1415 – Montáž pomocí lana, vlákna (např. šití, stehování, spojování,vázání)",
+    "aktivni": true
+  },
+  {
+    "kod": "1416",
+    "nazev": "Pletení, oplétání, tkaní",
+    "display": "1416 – Pletení, oplétání, tkaní",
+    "aktivni": true
+  },
+  {
+    "kod": "1417",
+    "nazev": "Montáž sdružováním částic (bez použití lepidla, hřebiků, vlákna atd.)",
+    "display": "1417 – Montáž sdružováním částic (bez použití lepidla, hřebiků, vlákna atd.)",
+    "aktivni": true
+  },
+  {
+    "kod": "1418",
+    "nazev": "Stavění z cihel, atd.",
+    "display": "1418 – Stavění z cihel, atd.",
+    "aktivni": true
+  },
+  {
+    "kod": "1419",
+    "nazev": "Montáž, spojování, šroubování atd. n.o.s.",
+    "display": "1419 – Montáž, spojování, šroubování atd. n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1420",
+    "nazev": "Demontáž, nahrazování/výměna, n.s.",
+    "display": "1420 – Demontáž, nahrazování/výměna, n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1421",
+    "nazev": "Vyjmutí; odstraněním šroubů/ hřebiků, vypáčením",
+    "display": "1421 – Vyjmutí; odstraněním šroubů/ hřebiků, vypáčením",
+    "aktivni": true
+  },
+  {
+    "kod": "1422",
+    "nazev": "Řezání- plamenem",
+    "display": "1422 – Řezání- plamenem",
+    "aktivni": true
+  },
+  {
+    "kod": "1423",
+    "nazev": "Parání",
+    "display": "1423 – Parání",
+    "aktivni": true
+  },
+  {
+    "kod": "1424",
+    "nazev": "Nahrazování/ výměna",
+    "display": "1424 – Nahrazování/ výměna",
+    "aktivni": true
+  },
+  {
+    "kod": "1429",
+    "nazev": "Demontáž, nahrazování/ výměna n.o.s.",
+    "display": "1429 – Demontáž, nahrazování/ výměna n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1480",
+    "nazev": "Ukládání n.s.",
+    "display": "1480 – Ukládání n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1499",
+    "nazev": "Montáž atd. n.o.s.",
+    "display": "1499 – Montáž atd. n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1500",
+    "nazev": "Plnění a vyprazdňování n.s.",
+    "display": "1500 – Plnění a vyprazdňování n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1510",
+    "nazev": "Plnění",
+    "display": "1510 – Plnění",
+    "aktivni": true
+  },
+  {
+    "kod": "1511",
+    "nazev": "Plnění, např. nádrží, plechovek, kontejnerů",
+    "display": "1511 – Plnění, např. nádrží, plechovek, kontejnerů",
+    "aktivni": true
+  },
+  {
+    "kod": "1512",
+    "nazev": "Balení, obalování, balení do papíru",
+    "display": "1512 – Balení, obalování, balení do papíru",
+    "aktivni": true
+  },
+  {
+    "kod": "1519",
+    "nazev": "Plnění n.o.s.",
+    "display": "1519 – Plnění n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1520",
+    "nazev": "Vyprazdňování n.s.",
+    "display": "1520 – Vyprazdňování n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1521",
+    "nazev": "Vyprazdňování, např. nádrží, plechovek, kontejnerů s odpadními láhvemi ap.",
+    "display": "1521 – Vyprazdňování, např. nádrží, plechovek, kontejnerů s odpadními láhvemi ap.",
+    "aktivni": true
+  },
+  {
+    "kod": "1522",
+    "nazev": "Rozbalování, otevírání",
+    "display": "1522 – Rozbalování, otevírání",
+    "aktivni": true
+  },
+  {
+    "kod": "1529",
+    "nazev": "Vyprazdňování n.o.s.",
+    "display": "1529 – Vyprazdňování n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1599",
+    "nazev": "Plnění a vyprazdňování n.o.s.",
+    "display": "1599 – Plnění a vyprazdňování n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1600",
+    "nazev": "Čištění, posazování, stoupání, atd. n.s. (ne stroje v servisu)",
+    "display": "1600 – Čištění, posazování, stoupání, atd. n.s. (ne stroje v servisu)",
+    "aktivni": true
+  },
+  {
+    "kod": "1610",
+    "nazev": "Čištění, rafinace n.s.",
+    "display": "1610 – Čištění, rafinace n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1611",
+    "nazev": "Čištění a mytí; desinfekce, zametení,čištění, proplachování, máchání, praní, otírání,",
+    "display": "1611 – Čištění a mytí; desinfekce, zametení,čištění, proplachování, máchání, praní, otírání,",
+    "aktivni": true
+  },
+  {
+    "kod": "1612",
+    "nazev": "Rafinace",
+    "display": "1612 – Rafinace",
+    "aktivni": true
+  },
+  {
+    "kod": "1619",
+    "nazev": "Čištění, rafinace n.o.s.",
+    "display": "1619 – Čištění, rafinace n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1650",
+    "nazev": "Posazování , stoupání, atd. n.s. (ne stroje v servisu)",
+    "display": "1650 – Posazování , stoupání, atd. n.s. (ne stroje v servisu)",
+    "aktivni": true
+  },
+  {
+    "kod": "1651",
+    "nazev": "Posazování a stoupání; nastavení,seřízení",
+    "display": "1651 – Posazování a stoupání; nastavení,seřízení",
+    "aktivni": true
+  },
+  {
+    "kod": "1652",
+    "nazev": "Připevňování/ upínání obrobků, atd. na stroji nebo aparatůře ( zatím ne v servisu)",
+    "display": "1652 – Připevňování/ upínání obrobků, atd. na stroji nebo aparatůře ( zatím ne v servisu)",
+    "aktivni": true
+  },
+  {
+    "kod": "1659",
+    "nazev": "Posazování a stoupání, atd. n.o.s.",
+    "display": "1659 – Posazování a stoupání, atd. n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1700",
+    "nazev": "Přemisťování, koupě a prodej zboží",
+    "display": "1700 – Přemisťování, koupě a prodej zboží",
+    "aktivni": true
+  },
+  {
+    "kod": "1710",
+    "nazev": "Doprava zboží; (hmotných věcí, živých rostlin a živočichů)",
+    "display": "1710 – Doprava zboží; (hmotných věcí, živých rostlin a živočichů)",
+    "aktivni": true
+  },
+  {
+    "kod": "1800",
+    "nazev": "Koupě a prodej hmotných věcí",
+    "display": "1800 – Koupě a prodej hmotných věcí",
+    "aktivni": true
+  },
+  {
+    "kod": "1810",
+    "nazev": "Koupě a prodej hmotných věcí, živých rostlin a živočichů n.s.",
+    "display": "1810 – Koupě a prodej hmotných věcí, živých rostlin a živočichů n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1811",
+    "nazev": "Maloobchodní prodej hmotných věcí, živých rostlin a živočichů",
+    "display": "1811 – Maloobchodní prodej hmotných věcí, živých rostlin a živočichů",
+    "aktivni": true
+  },
+  {
+    "kod": "1812",
+    "nazev": "Velkoobchodní prodej hmotných věcí, živých rostlin a živočichů",
+    "display": "1812 – Velkoobchodní prodej hmotných věcí, živých rostlin a živočichů",
+    "aktivni": true
+  },
+  {
+    "kod": "1813",
+    "nazev": "Prodejní obchod hmotných věcí, živých rostlin a živočichů",
+    "display": "1813 – Prodejní obchod hmotných věcí, živých rostlin a živočichů",
+    "aktivni": true
+  },
+  {
+    "kod": "1819",
+    "nazev": "Koupě a prodej hmotných věcí, živých rostlin a živočichů n.o.s.",
+    "display": "1819 – Koupě a prodej hmotných věcí, živých rostlin a živočichů n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "1900",
+    "nazev": "Opravy",
+    "display": "1900 – Opravy",
+    "aktivni": true
+  },
+  {
+    "kod": "1999",
+    "nazev": "Zacházení, manipulace a zpracování hmotných věcí, živých rostlin a živočichů n.o.s.",
+    "display": "1999 – Zacházení, manipulace a zpracování hmotných věcí, živých rostlin a živočichů n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "2000",
+    "nazev": "Zacházení s živými živočichy n.s.",
+    "display": "2000 – Zacházení s živými živočichy n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "2100",
+    "nazev": "Fyzická obsluha",
+    "display": "2100 – Fyzická obsluha",
+    "aktivni": true
+  },
+  {
+    "kod": "2110",
+    "nazev": "Péče a laické (ne lékařské) zacházení) n.s.",
+    "display": "2110 – Péče a laické (ne lékařské) zacházení) n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "2111",
+    "nazev": "Mytí a čištění",
+    "display": "2111 – Mytí a čištění",
+    "aktivni": true
+  },
+  {
+    "kod": "2112",
+    "nazev": "Krmení",
+    "display": "2112 – Krmení",
+    "aktivni": true
+  },
+  {
+    "kod": "2113",
+    "nazev": "Pomoc s porody",
+    "display": "2113 – Pomoc s porody",
+    "aktivni": true
+  },
+  {
+    "kod": "2114",
+    "nazev": "Pomoc s rozmnožováním",
+    "display": "2114 – Pomoc s rozmnožováním",
+    "aktivni": true
+  },
+  {
+    "kod": "2115",
+    "nazev": "Péče ( Služba, stříhání srsti, paznechtů, kopyt zvířat)",
+    "display": "2115 – Péče ( Služba, stříhání srsti, paznechtů, kopyt zvířat)",
+    "aktivni": true
+  },
+  {
+    "kod": "2118",
+    "nazev": "Zabíjení, užití v boji",
+    "display": "2118 – Zabíjení, užití v boji",
+    "aktivni": true
+  },
+  {
+    "kod": "2119",
+    "nazev": "Péče a laické ( ne lékařské) zacházení n.o.s.",
+    "display": "2119 – Péče a laické ( ne lékařské) zacházení n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "2200",
+    "nazev": "Zacházení při nemocech a nákazách",
+    "display": "2200 – Zacházení při nemocech a nákazách",
+    "aktivni": true
+  },
+  {
+    "kod": "2210",
+    "nazev": "Zacházení při nemocech a nákazách n.s.",
+    "display": "2210 – Zacházení při nemocech a nákazách n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "2211",
+    "nazev": "Masáže, atd.",
+    "display": "2211 – Masáže, atd.",
+    "aktivni": true
+  },
+  {
+    "kod": "2212",
+    "nazev": "Léčení",
+    "display": "2212 – Léčení",
+    "aktivni": true
+  },
+  {
+    "kod": "2213",
+    "nazev": "Chirurgie",
+    "display": "2213 – Chirurgie",
+    "aktivni": true
+  },
+  {
+    "kod": "2219",
+    "nazev": "Zacházení při nemocech a nákazách n.o.s.",
+    "display": "2219 – Zacházení při nemocech a nákazách n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "2300",
+    "nazev": "Znovunabytí produktů z živočichů n.s.",
+    "display": "2300 – Znovunabytí produktů z živočichů n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "2310",
+    "nazev": "Znovunabytí produktů z živých živočichů n.s.",
+    "display": "2310 – Znovunabytí produktů z živých živočichů n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "2311",
+    "nazev": "Dojení",
+    "display": "2311 – Dojení",
+    "aktivni": true
+  },
+  {
+    "kod": "2312",
+    "nazev": "Znovunabytí chlupů, vlny, srsti atd. (stříhání srsti, odstřihávání)",
+    "display": "2312 – Znovunabytí chlupů, vlny, srsti atd. (stříhání srsti, odstřihávání)",
+    "aktivni": true
+  },
+  {
+    "kod": "2319",
+    "nazev": "Znovunabytí produktů z živých živočichů n.o.s.",
+    "display": "2319 – Znovunabytí produktů z živých živočichů n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "2400",
+    "nazev": "Sport a hra s živými zvířaty",
+    "display": "2400 – Sport a hra s živými zvířaty",
+    "aktivni": true
+  },
+  {
+    "kod": "2700",
+    "nazev": "Doprava živých zvířat",
+    "display": "2700 – Doprava živých zvířat",
+    "aktivni": true
+  },
+  {
+    "kod": "2800",
+    "nazev": "Koupě a prodej živých živočichů",
+    "display": "2800 – Koupě a prodej živých živočichů",
+    "aktivni": true
+  },
+  {
+    "kod": "2810",
+    "nazev": "Koupě a prodej živých živočichů n.s.",
+    "display": "2810 – Koupě a prodej živých živočichů n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "2811",
+    "nazev": "Koupě a prodej živých živočichů.",
+    "display": "2811 – Koupě a prodej živých živočichů.",
+    "aktivni": true
+  },
+  {
+    "kod": "2812",
+    "nazev": "Velkoobchodní prodej s živými zvířaty",
+    "display": "2812 – Velkoobchodní prodej s živými zvířaty",
+    "aktivni": true
+  },
+  {
+    "kod": "2813",
+    "nazev": "Prodejní obchod s živými zvířaty",
+    "display": "2813 – Prodejní obchod s živými zvířaty",
+    "aktivni": true
+  },
+  {
+    "kod": "2819",
+    "nazev": "Koupě a prodej živých živočichů n.o.s.",
+    "display": "2819 – Koupě a prodej živých živočichů n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "2999",
+    "nazev": "Další zacházení a prodej s živými živočichy n.o.s.",
+    "display": "2999 – Další zacházení a prodej s živými živočichy n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "3000",
+    "nazev": "Zacházení s lidmi n.s.",
+    "display": "3000 – Zacházení s lidmi n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "3100",
+    "nazev": "Fyzické zacházení n.s.",
+    "display": "3100 – Fyzické zacházení n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "3110",
+    "nazev": "Péče a laické (nelékařské) zacházení n.s.",
+    "display": "3110 – Péče a laické (nelékařské) zacházení n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "3111",
+    "nazev": "Pomoc a osobní hyguiena, např. mytí, použití toalety",
+    "display": "3111 – Pomoc a osobní hyguiena, např. mytí, použití toalety",
+    "aktivni": true
+  },
+  {
+    "kod": "3112",
+    "nazev": "Krmení, servírování jídla",
+    "display": "3112 – Krmení, servírování jídla",
+    "aktivni": true
+  },
+  {
+    "kod": "3113",
+    "nazev": "Pomoc s porody.",
+    "display": "3113 – Pomoc s porody.",
+    "aktivni": true
+  },
+  {
+    "kod": "3118",
+    "nazev": "Užití násilí; zadržení vězení",
+    "display": "3118 – Užití násilí; zadržení vězení",
+    "aktivni": true
+  },
+  {
+    "kod": "3119",
+    "nazev": "Péče a laické (nelékařské) zacházení n.o.s.",
+    "display": "3119 – Péče a laické (nelékařské) zacházení n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "3200",
+    "nazev": "Zacházení při nemocech a nákazách.",
+    "display": "3200 – Zacházení při nemocech a nákazách.",
+    "aktivni": true
+  },
+  {
+    "kod": "3210",
+    "nazev": "Zacházení při nemocech a nákazách n.s..",
+    "display": "3210 – Zacházení při nemocech a nákazách n.s..",
+    "aktivni": true
+  },
+  {
+    "kod": "3211",
+    "nazev": "Masáže, psychoterapie, stresová úleva",
+    "display": "3211 – Masáže, psychoterapie, stresová úleva",
+    "aktivni": true
+  },
+  {
+    "kod": "3212",
+    "nazev": "Léčení, injekce",
+    "display": "3212 – Léčení, injekce",
+    "aktivni": true
+  },
+  {
+    "kod": "3213",
+    "nazev": "Chirurgické a zubní ošetření",
+    "display": "3213 – Chirurgické a zubní ošetření",
+    "aktivni": true
+  },
+  {
+    "kod": "3219",
+    "nazev": "Zacházení při nemocech a nákazách n.o.s..",
+    "display": "3219 – Zacházení při nemocech a nákazách n.o.s..",
+    "aktivni": true
+  },
+  {
+    "kod": "3300",
+    "nazev": "Intelektuální a mentální práce",
+    "display": "3300 – Intelektuální a mentální práce",
+    "aktivni": true
+  },
+  {
+    "kod": "3310",
+    "nazev": "Intelektuální a mentální práce n.s.",
+    "display": "3310 – Intelektuální a mentální práce n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "3311",
+    "nazev": "Hovor, např. telefoní hovor, setkání",
+    "display": "3311 – Hovor, např. telefoní hovor, setkání",
+    "aktivni": true
+  },
+  {
+    "kod": "3312",
+    "nazev": "Zdělování informací (mluvení, prezentace, pruvodcovství, atd.)",
+    "display": "3312 – Zdělování informací (mluvení, prezentace, pruvodcovství, atd.)",
+    "aktivni": true
+  },
+  {
+    "kod": "3313",
+    "nazev": "Výuka, učení",
+    "display": "3313 – Výuka, učení",
+    "aktivni": true
+  },
+  {
+    "kod": "3314",
+    "nazev": "Konzultace",
+    "display": "3314 – Konzultace",
+    "aktivni": true
+  },
+  {
+    "kod": "3315",
+    "nazev": "Psychoterapie",
+    "display": "3315 – Psychoterapie",
+    "aktivni": true
+  },
+  {
+    "kod": "3316",
+    "nazev": "Slavnostní a náboženské akce, např. vysvědcení, bohoslužby, křest,, svadba atd.",
+    "display": "3316 – Slavnostní a náboženské akce, např. vysvědcení, bohoslužby, křest,, svadba atd.",
+    "aktivni": true
+  },
+  {
+    "kod": "3318",
+    "nazev": "Udílení příkazů, kontrola, organizace",
+    "display": "3318 – Udílení příkazů, kontrola, organizace",
+    "aktivni": true
+  },
+  {
+    "kod": "3319",
+    "nazev": "Intelektuální a mentální procesy n.o.s.",
+    "display": "3319 – Intelektuální a mentální procesy n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "3400",
+    "nazev": "Sport a hra (např. hra s dětmi, sportovní hra, karty, šachy)",
+    "display": "3400 – Sport a hra (např. hra s dětmi, sportovní hra, karty, šachy)",
+    "aktivni": true
+  },
+  {
+    "kod": "3500",
+    "nazev": "Spánek, odpočinek (pouze dobrovolný) n.s.",
+    "display": "3500 – Spánek, odpočinek (pouze dobrovolný) n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "3510",
+    "nazev": "Spánek odpočinek (pouze dobrovolný) n.s.",
+    "display": "3510 – Spánek odpočinek (pouze dobrovolný) n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "3511",
+    "nazev": "Spánek",
+    "display": "3511 – Spánek",
+    "aktivni": true
+  },
+  {
+    "kod": "3512",
+    "nazev": "Odpočinek, přestávky",
+    "display": "3512 – Odpočinek, přestávky",
+    "aktivni": true
+  },
+  {
+    "kod": "3519",
+    "nazev": "Spánek, odpočinek (pouze dobrovolný) n.o.s.",
+    "display": "3519 – Spánek, odpočinek (pouze dobrovolný) n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "3700",
+    "nazev": "Osobní doprava",
+    "display": "3700 – Osobní doprava",
+    "aktivni": true
+  },
+  {
+    "kod": "3701",
+    "nazev": "Chůze",
+    "display": "3701 – Chůze",
+    "aktivni": true
+  },
+  {
+    "kod": "3999",
+    "nazev": "Další zacházení s lidmi n.o.s.",
+    "display": "3999 – Další zacházení s lidmi n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "4000",
+    "nazev": "Získávání informací, obsluhování, zpracování, komunikování, přenos, koupě/prodej",
+    "display": "4000 – Získávání informací, obsluhování, zpracování, komunikování, přenos, koupě/prodej",
+    "aktivni": true
+  },
+  {
+    "kod": "4100",
+    "nazev": "Získávání informací, shromažďování n.s.",
+    "display": "4100 – Získávání informací, shromažďování n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "4110",
+    "nazev": "Pozorování n.s.",
+    "display": "4110 – Pozorování n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "4111",
+    "nazev": "Sledování, např. paměti, hlídání ne stroje v sevrisu",
+    "display": "4111 – Sledování, např. paměti, hlídání ne stroje v sevrisu",
+    "aktivni": true
+  },
+  {
+    "kod": "4112",
+    "nazev": "Kontrolování, lineární měření, fotografování, měření teplot, počítání",
+    "display": "4112 – Kontrolování, lineární měření, fotografování, měření teplot, počítání",
+    "aktivni": true
+  },
+  {
+    "kod": "4113",
+    "nazev": "Sundavání vzorů",
+    "display": "4113 – Sundavání vzorů",
+    "aktivni": true
+  },
+  {
+    "kod": "4114",
+    "nazev": "Testování",
+    "display": "4114 – Testování",
+    "aktivni": true
+  },
+  {
+    "kod": "4119",
+    "nazev": "Pozorování n.o.s.",
+    "display": "4119 – Pozorování n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "4120",
+    "nazev": "Informativní procesy",
+    "display": "4120 – Informativní procesy",
+    "aktivni": true
+  },
+  {
+    "kod": "4199",
+    "nazev": "Získávání ínformací, shromažďování n.o.s.",
+    "display": "4199 – Získávání ínformací, shromažďování n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "4200",
+    "nazev": "Obsluha a poskytování informací atd. n.s.",
+    "display": "4200 – Obsluha a poskytování informací atd. n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "4210",
+    "nazev": "Zaznamenávání informací atd.",
+    "display": "4210 – Zaznamenávání informací atd.",
+    "aktivni": true
+  },
+  {
+    "kod": "4220",
+    "nazev": "Klasifikační procesy n.s.",
+    "display": "4220 – Klasifikační procesy n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "4221",
+    "nazev": "Výběr ze souboru návrhů; vyúčtování",
+    "display": "4221 – Výběr ze souboru návrhů; vyúčtování",
+    "aktivni": true
+  },
+  {
+    "kod": "4222",
+    "nazev": "Údržba záznamů např. účetnictví, plnění",
+    "display": "4222 – Údržba záznamů např. účetnictví, plnění",
+    "aktivni": true
+  },
+  {
+    "kod": "4229",
+    "nazev": "Klasifikační procesy n.o.s.",
+    "display": "4229 – Klasifikační procesy n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "4230",
+    "nazev": "Kreslící procesy, ukončení kreslení (kreslení, kresličství, výroba map, výroba uměleckých děl)",
+    "display": "4230 – Kreslící procesy, ukončení kreslení (kreslení, kresličství, výroba map, výroba uměleckých děl)",
+    "aktivni": true
+  },
+  {
+    "kod": "4240",
+    "nazev": "Procesy založené na čtení, poslechu, pozorování (zahrnují sledování textu, diagramů, filmů, atd.)",
+    "display": "4240 – Procesy založené na čtení, poslechu, pozorování (zahrnují sledování textu, diagramů, filmů, atd.)",
+    "aktivni": true
+  },
+  {
+    "kod": "4299",
+    "nazev": "Informační a obslužní procesy n.o.s.",
+    "display": "4299 – Informační a obslužní procesy n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "4300",
+    "nazev": "Informace, komunikace a rozšiřování n.s.",
+    "display": "4300 – Informace, komunikace a rozšiřování n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "4310",
+    "nazev": "Proces psaní bez originálu (zahrnující překladání)",
+    "display": "4310 – Proces psaní bez originálu (zahrnující překladání)",
+    "aktivni": true
+  },
+  {
+    "kod": "4320",
+    "nazev": "Výpočetní proces ne ze souboru návrhů (projektu)",
+    "display": "4320 – Výpočetní proces ne ze souboru návrhů (projektu)",
+    "aktivni": true
+  },
+  {
+    "kod": "4330",
+    "nazev": "Kreslící procesy ne ze souboru navrhu (např. nastínění)",
+    "display": "4330 – Kreslící procesy ne ze souboru navrhu (např. nastínění)",
+    "aktivni": true
+  },
+  {
+    "kod": "4340",
+    "nazev": "Programovací procesy",
+    "display": "4340 – Programovací procesy",
+    "aktivni": true
+  },
+  {
+    "kod": "4350",
+    "nazev": "Umělecké procesy (např. modelování)",
+    "display": "4350 – Umělecké procesy (např. modelování)",
+    "aktivni": true
+  },
+  {
+    "kod": "4399",
+    "nazev": "Informace, komunikace a rozšiřování n.o.s.",
+    "display": "4399 – Informace, komunikace a rozšiřování n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "4700",
+    "nazev": "Přenos informací, odesílání n.s.",
+    "display": "4700 – Přenos informací, odesílání n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "4710",
+    "nazev": "Přenos informací, bez pomoci (např.mluvením, křik)",
+    "display": "4710 – Přenos informací, bez pomoci (např.mluvením, křik)",
+    "aktivni": true
+  },
+  {
+    "kod": "4720",
+    "nazev": "Přenos informací, s pomocí n.s.",
+    "display": "4720 – Přenos informací, s pomocí n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "4721",
+    "nazev": "Telefoní ústředna",
+    "display": "4721 – Telefoní ústředna",
+    "aktivni": true
+  },
+  {
+    "kod": "4722",
+    "nazev": "Kopírování mezi uloženými medii, např. kazety, disky",
+    "display": "4722 – Kopírování mezi uloženými medii, např. kazety, disky",
+    "aktivni": true
+  },
+  {
+    "kod": "4723",
+    "nazev": "Odesílání, např. přes kabel, bezdrátově",
+    "display": "4723 – Odesílání, např. přes kabel, bezdrátově",
+    "aktivni": true
+  },
+  {
+    "kod": "4729",
+    "nazev": "Další odesílání informací s pomocí",
+    "display": "4729 – Další odesílání informací s pomocí",
+    "aktivni": true
+  },
+  {
+    "kod": "4799",
+    "nazev": "Přenos informací, odesílání. n.o.s.",
+    "display": "4799 – Přenos informací, odesílání. n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "4800",
+    "nazev": "Koupě a prodej informací n.s. (Zahrnuje platební přenos)",
+    "display": "4800 – Koupě a prodej informací n.s. (Zahrnuje platební přenos)",
+    "aktivni": true
+  },
+  {
+    "kod": "4810",
+    "nazev": "Koupě a prodej informací n.s.",
+    "display": "4810 – Koupě a prodej informací n.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "4811",
+    "nazev": "Maloobchodování s informacemi, např. prodej lístků, přesun materiálu",
+    "display": "4811 – Maloobchodování s informacemi, např. prodej lístků, přesun materiálu",
+    "aktivni": true
+  },
+  {
+    "kod": "4812",
+    "nazev": "Velkoobchodování s informacemi, např. prodej lístků, přesun materiálu",
+    "display": "4812 – Velkoobchodování s informacemi, např. prodej lístků, přesun materiálu",
+    "aktivni": true
+  },
+  {
+    "kod": "4813",
+    "nazev": "Prodejní obchod",
+    "display": "4813 – Prodejní obchod",
+    "aktivni": true
+  },
+  {
+    "kod": "4814",
+    "nazev": "Finance",
+    "display": "4814 – Finance",
+    "aktivni": true
+  },
+  {
+    "kod": "4819",
+    "nazev": "Koupě a prodej informací n.o.s.",
+    "display": "4819 – Koupě a prodej informací n.o.s.",
+    "aktivni": true
+  },
+  {
+    "kod": "4999",
+    "nazev": "Získávání informací, obsluhování, zpracování, komunikování, přenos, koupě/prodej n.s.",
+    "display": "4999 – Získávání informací, obsluhování, zpracování, komunikování, přenos, koupě/prodej n.s.",
+    "aktivni": true
+  }
+]

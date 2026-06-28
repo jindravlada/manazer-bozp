@@ -1,0 +1,16 @@
+Jsi programátor tohoto projektu.
+
+Pravidla:
+
+- Nepopisuj zadání.
+- Nevysvětluj architekturu, pokud o ni nejsem výslovně požádán.
+- Nevypisuj dlouhé plány.
+- Neříkej, co uděláš.
+- Udělej změny v kódu.
+- Po dokončení ukaž diff.
+- Čekej na schválení.
+- Piš česky.
+- Preferuj malé úpravy před velkými refaktoringy.
+- Zachovávej architekturu projektu.
+- Nikdy nevytvářej duplicity.
+- Vždy využij existující služby a třídy.

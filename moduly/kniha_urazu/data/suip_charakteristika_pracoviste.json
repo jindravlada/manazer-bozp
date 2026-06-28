@@ -1,0 +1,512 @@
+[
+  {
+    "kod": "0",
+    "nazev": "Bez informací",
+    "display": "0 – Bez informací",
+    "aktivni": true
+  },
+  {
+    "kod": "100",
+    "nazev": "Průmyslové odvětví – nespecifikováno",
+    "display": "100 – Průmyslové odvětví – nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "1000",
+    "nazev": "Podzemí, mimo stavenišť – nespecifikováno",
+    "display": "1000 – Podzemí, mimo stavenišť – nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "101",
+    "nazev": "Výrobní prostor, dílna, schodiště v závodě, slévárna, provozní místnosti, autoopravny, laboratoř.",
+    "display": "101 – Výrobní prostor, dílna, schodiště v závodě, slévárna, provozní místnosti, autoopravny, laboratoř.",
+    "aktivni": true
+  },
+  {
+    "kod": "1010",
+    "nazev": "Podzemí – tunel (silniční, železniční, metro)",
+    "display": "1010 – Podzemí – tunel (silniční, železniční, metro)",
+    "aktivni": true
+  },
+  {
+    "kod": "1020",
+    "nazev": "Podzemí – důl",
+    "display": "1020 – Podzemí – důl",
+    "aktivni": true
+  },
+  {
+    "kod": "1030",
+    "nazev": "Podzemí – kanalizace, stoka",
+    "display": "1030 – Podzemí – kanalizace, stoka",
+    "aktivni": true
+  },
+  {
+    "kod": "1090",
+    "nazev": "Ostatní výše neuvedené skupiny míst úrazu typu 100, mimo stavenišť",
+    "display": "1090 – Ostatní výše neuvedené skupiny míst úrazu typu 100, mimo stavenišť",
+    "aktivni": true
+  },
+  {
+    "kod": "110",
+    "nazev": "Výroba, továrna, dílna",
+    "display": "110 – Výroba, továrna, dílna",
+    "aktivni": true
+  },
+  {
+    "kod": "1100",
+    "nazev": "Na vodě i pod vodou, mimo stavenišť – nespecifikováno",
+    "display": "1100 – Na vodě i pod vodou, mimo stavenišť – nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "1110",
+    "nazev": "Moře nebo oceán – na palubě všech typů lodí, plošin, člunů a bárek",
+    "display": "1110 – Moře nebo oceán – na palubě všech typů lodí, plošin, člunů a bárek",
+    "aktivni": true
+  },
+  {
+    "kod": "1120",
+    "nazev": "Jezero, řeka, přístav – na palubě všech typů lodí, plošin, člunů a bárek",
+    "display": "1120 – Jezero, řeka, přístav – na palubě všech typů lodí, plošin, člunů a bárek",
+    "aktivni": true
+  },
+  {
+    "kod": "1190",
+    "nazev": "Ostatní výše neuvedené skupiny míst úrazu typu 110, mimo staveniště",
+    "display": "1190 – Ostatní výše neuvedené skupiny míst úrazu typu 110, mimo staveniště",
+    "aktivni": true
+  },
+  {
+    "kod": "120",
+    "nazev": "Údržba, opravna",
+    "display": "120 – Údržba, opravna",
+    "aktivni": true
+  },
+  {
+    "kod": "1200",
+    "nazev": "Prostředí s vysokým tlakem, mimo stavenišť – nespecifikováno",
+    "display": "1200 – Prostředí s vysokým tlakem, mimo stavenišť – nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "1210",
+    "nazev": "Prostředí s vysokým tlakem – pod vodou (např. potápění)",
+    "display": "1210 – Prostředí s vysokým tlakem – pod vodou (např. potápění)",
+    "aktivni": true
+  },
+  {
+    "kod": "1220",
+    "nazev": "Prostředí s vysokým tlakem– přetlaková komora",
+    "display": "1220 – Prostředí s vysokým tlakem– přetlaková komora",
+    "aktivni": true
+  },
+  {
+    "kod": "1290",
+    "nazev": "Ostatní výše neuvedené skupiny míst úrazu typu 120,",
+    "display": "1290 – Ostatní výše neuvedené skupiny míst úrazu typu 120,",
+    "aktivni": true
+  },
+  {
+    "kod": "130",
+    "nazev": "Prostor užívaný hlavně pro skladování, nakládku a vykládku",
+    "display": "130 – Prostor užívaný hlavně pro skladování, nakládku a vykládku",
+    "aktivni": true
+  },
+  {
+    "kod": "190",
+    "nazev": "Ostatní výše neuvedené skupiny míst úrazu typu 010,",
+    "display": "190 – Ostatní výše neuvedené skupiny míst úrazu typu 010,",
+    "aktivni": true
+  },
+  {
+    "kod": "200",
+    "nazev": "Staveniště, povrchové lomy, povrchové doly-nespecifikováno",
+    "display": "200 – Staveniště, povrchové lomy, povrchové doly-nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "201",
+    "nazev": "Prostředí kde se provádí výstavba a demolice",
+    "display": "201 – Prostředí kde se provádí výstavba a demolice",
+    "aktivni": true
+  },
+  {
+    "kod": "210",
+    "nazev": "Staveniště – stavba budov",
+    "display": "210 – Staveniště – stavba budov",
+    "aktivni": true
+  },
+  {
+    "kod": "220",
+    "nazev": "Staveniště – oprava, údržba a demolice budov",
+    "display": "220 – Staveniště – oprava, údržba a demolice budov",
+    "aktivni": true
+  },
+  {
+    "kod": "230",
+    "nazev": "Povrchové doly, povrchové lomy, výkopy,",
+    "display": "230 – Povrchové doly, povrchové lomy, výkopy,",
+    "aktivni": true
+  },
+  {
+    "kod": "240",
+    "nazev": "Staveniště – v podzemí",
+    "display": "240 – Staveniště – v podzemí",
+    "aktivni": true
+  },
+  {
+    "kod": "250",
+    "nazev": "Staveniště – na vodě i pod vodou",
+    "display": "250 – Staveniště – na vodě i pod vodou",
+    "aktivni": true
+  },
+  {
+    "kod": "260",
+    "nazev": "Staveniště – ve vysokotlakém prostředí",
+    "display": "260 – Staveniště – ve vysokotlakém prostředí",
+    "aktivni": true
+  },
+  {
+    "kod": "290",
+    "nazev": "Ostatní výše neuvedené skupiny míst úrazu typu 020,",
+    "display": "290 – Ostatní výše neuvedené skupiny míst úrazu typu 020,",
+    "aktivni": true
+  },
+  {
+    "kod": "300",
+    "nazev": "Zemědělství, chovatelství, lesnictví, chov ryb - nespecifikováno",
+    "display": "300 – Zemědělství, chovatelství, lesnictví, chov ryb - nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "301",
+    "nazev": "Zemědělská budova",
+    "display": "301 – Zemědělská budova",
+    "aktivni": true
+  },
+  {
+    "kod": "310",
+    "nazev": "Chovatelství",
+    "display": "310 – Chovatelství",
+    "aktivni": true
+  },
+  {
+    "kod": "320",
+    "nazev": "Pěstování plodin rostoucích na zemi",
+    "display": "320 – Pěstování plodin rostoucích na zemi",
+    "aktivni": true
+  },
+  {
+    "kod": "330",
+    "nazev": "Pěstování plodin rostoucích na stromech a keřích",
+    "display": "330 – Pěstování plodin rostoucích na stromech a keřích",
+    "aktivni": true
+  },
+  {
+    "kod": "340",
+    "nazev": "Lesnictví",
+    "display": "340 – Lesnictví",
+    "aktivni": true
+  },
+  {
+    "kod": "341",
+    "nazev": "Les, prales, ovocná zahrada",
+    "display": "341 – Les, prales, ovocná zahrada",
+    "aktivni": true
+  },
+  {
+    "kod": "350",
+    "nazev": "Chov ryb, lov ryb, hydroponie (ne v nádobách)",
+    "display": "350 – Chov ryb, lov ryb, hydroponie (ne v nádobách)",
+    "aktivni": true
+  },
+  {
+    "kod": "360",
+    "nazev": "Park, botanická zahrada, zoologická zahrada",
+    "display": "360 – Park, botanická zahrada, zoologická zahrada",
+    "aktivni": true
+  },
+  {
+    "kod": "390",
+    "nazev": "Ostatní výše neuvedené skupiny míst úrazu typu 030,",
+    "display": "390 – Ostatní výše neuvedené skupiny míst úrazu typu 030,",
+    "aktivni": true
+  },
+  {
+    "kod": "400",
+    "nazev": "Terciální sféra, úřady, zábavní parky, různé - nespecifikováno",
+    "display": "400 – Terciální sféra, úřady, zábavní parky, různé - nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "401",
+    "nazev": "Obchod, hotel, kavárna, restaurace, bar, kino, divadlo, knihovna, vnitřní sportovní zařízení",
+    "display": "401 – Obchod, hotel, kavárna, restaurace, bar, kino, divadlo, knihovna, vnitřní sportovní zařízení",
+    "aktivni": true
+  },
+  {
+    "kod": "402",
+    "nazev": "Tržiště, zábav. park",
+    "display": "402 – Tržiště, zábav. park",
+    "aktivni": true
+  },
+  {
+    "kod": "410",
+    "nazev": "Úřad, zasedací síň, knihovna atd.",
+    "display": "410 – Úřad, zasedací síň, knihovna atd.",
+    "aktivni": true
+  },
+  {
+    "kod": "411",
+    "nazev": "Úřady pro veřejnost",
+    "display": "411 – Úřady pro veřejnost",
+    "aktivni": true
+  },
+  {
+    "kod": "420",
+    "nazev": "Výukové zařízení, škola, střední škola, univerzita, mateřská školka, jesle",
+    "display": "420 – Výukové zařízení, škola, střední škola, univerzita, mateřská školka, jesle",
+    "aktivni": true
+  },
+  {
+    "kod": "430",
+    "nazev": "Malé i velké prodejní prostory, (včetně pouličního prodeje)",
+    "display": "430 – Malé i velké prodejní prostory, (včetně pouličního prodeje)",
+    "aktivni": true
+  },
+  {
+    "kod": "440",
+    "nazev": "Restaurace, rekreační zařízení, přechodné ubytování (včetně museí, hledišť, sálů, stadionů, veletrhů atd.)",
+    "display": "440 – Restaurace, rekreační zařízení, přechodné ubytování (včetně museí, hledišť, sálů, stadionů, veletrhů atd.)",
+    "aktivni": true
+  },
+  {
+    "kod": "441",
+    "nazev": "Kuchyň, prostory pro přípravu jídla, závodní jídelna a pod.",
+    "display": "441 – Kuchyň, prostory pro přípravu jídla, závodní jídelna a pod.",
+    "aktivni": true
+  },
+  {
+    "kod": "490",
+    "nazev": "Ostatní výše neuvedené skupiny míst úrazu typu 040",
+    "display": "490 – Ostatní výše neuvedené skupiny míst úrazu typu 040",
+    "aktivni": true
+  },
+  {
+    "kod": "491",
+    "nazev": "Budovy nebo části budov užívané veřejností",
+    "display": "491 – Budovy nebo části budov užívané veřejností",
+    "aktivni": true
+  },
+  {
+    "kod": "492",
+    "nazev": "Budovy spojené s veřejnou dopravou lidí",
+    "display": "492 – Budovy spojené s veřejnou dopravou lidí",
+    "aktivni": true
+  },
+  {
+    "kod": "500",
+    "nazev": "Zdravotnické zařízení – nespecifikováno",
+    "display": "500 – Zdravotnické zařízení – nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "510",
+    "nazev": "Zdravotnické zařízení, soukromá nemocnice, nemocnice, sanatorium",
+    "display": "510 – Zdravotnické zařízení, soukromá nemocnice, nemocnice, sanatorium",
+    "aktivni": true
+  },
+  {
+    "kod": "590",
+    "nazev": "Ostatní výše neuvedené skupiny míst úrazu typu 050,",
+    "display": "590 – Ostatní výše neuvedené skupiny míst úrazu typu 050,",
+    "aktivni": true
+  },
+  {
+    "kod": "600",
+    "nazev": "Veřejný prostor – nespecifikováno",
+    "display": "600 – Veřejný prostor – nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "601",
+    "nazev": "Volná plocha pro zemědělské,sportovní a rekreační využití;odpadová plocha",
+    "display": "601 – Volná plocha pro zemědělské,sportovní a rekreační využití;odpadová plocha",
+    "aktivni": true
+  },
+  {
+    "kod": "610",
+    "nazev": "Prostor trvale otevřený pro veřejnou dopravu – (dálnice, silnice, parkoviště, čekárny na nádražích a letištích atd.)",
+    "display": "610 – Prostor trvale otevřený pro veřejnou dopravu – (dálnice, silnice, parkoviště, čekárny na nádražích a letištích atd.)",
+    "aktivni": true
+  },
+  {
+    "kod": "620",
+    "nazev": "Dopravní prostředky – silniční nebo železniční – soukromé/veřejné (všechny druhy = autobusy, vlaky, automobily atd.)",
+    "display": "620 – Dopravní prostředky – silniční nebo železniční – soukromé/veřejné (všechny druhy = autobusy, vlaky, automobily atd.)",
+    "aktivni": true
+  },
+  {
+    "kod": "630",
+    "nazev": "Prostory přilehlé k veřejnému prostranství, ale se zákazem vstupu: železniční tratě, letištní plochy, dálnice",
+    "display": "630 – Prostory přilehlé k veřejnému prostranství, ale se zákazem vstupu: železniční tratě, letištní plochy, dálnice",
+    "aktivni": true
+  },
+  {
+    "kod": "690",
+    "nazev": "Ostatní výše neuvedené skupiny míst úrazu typu 060,",
+    "display": "690 – Ostatní výše neuvedené skupiny míst úrazu typu 060,",
+    "aktivni": true
+  },
+  {
+    "kod": "691",
+    "nazev": "Veřejné parkovací budovy",
+    "display": "691 – Veřejné parkovací budovy",
+    "aktivni": true
+  },
+  {
+    "kod": "700",
+    "nazev": "Domácnost – nespecifikováno",
+    "display": "700 – Domácnost – nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "710",
+    "nazev": "Soukromý dům (byt)",
+    "display": "710 – Soukromý dům (byt)",
+    "aktivni": true
+  },
+  {
+    "kod": "720",
+    "nazev": "Společné prostory budov, přístavby, soukromé zahrádky",
+    "display": "720 – Společné prostory budov, přístavby, soukromé zahrádky",
+    "aktivni": true
+  },
+  {
+    "kod": "790",
+    "nazev": "Ostatní výše neuvedené skupiny míst úrazu typu 070,",
+    "display": "790 – Ostatní výše neuvedené skupiny míst úrazu typu 070,",
+    "aktivni": true
+  },
+  {
+    "kod": "800",
+    "nazev": "Sportoviště – nespecifikováno",
+    "display": "800 – Sportoviště – nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "810",
+    "nazev": "Kryté sportoviště – sportovní hala, tělocvična, krytý plavecký bazén",
+    "display": "810 – Kryté sportoviště – sportovní hala, tělocvična, krytý plavecký bazén",
+    "aktivni": true
+  },
+  {
+    "kod": "820",
+    "nazev": "Venkovní sportoviště – hřiště, venkovní plavecký bazén, sjezdovka",
+    "display": "820 – Venkovní sportoviště – hřiště, venkovní plavecký bazén, sjezdovka",
+    "aktivni": true
+  },
+  {
+    "kod": "890",
+    "nazev": "Ostatní výše neuvedené skupiny míst úrazu typu 080,",
+    "display": "890 – Ostatní výše neuvedené skupiny míst úrazu typu 080,",
+    "aktivni": true
+  },
+  {
+    "kod": "900",
+    "nazev": "Ve vzduchu, ve výšce, vyjma staveniště, nespecifikováno",
+    "display": "900 – Ve vzduchu, ve výšce, vyjma staveniště, nespecifikováno",
+    "aktivni": true
+  },
+  {
+    "kod": "910",
+    "nazev": "Ve výšce – na pevné ploše (střecha, terasa atp.)",
+    "display": "910 – Ve výšce – na pevné ploše (střecha, terasa atp.)",
+    "aktivni": true
+  },
+  {
+    "kod": "920",
+    "nazev": "Ve výšce – sloup, pilíř, zavěšená plošina",
+    "display": "920 – Ve výšce – sloup, pilíř, zavěšená plošina",
+    "aktivni": true
+  },
+  {
+    "kod": "930",
+    "nazev": "Ve vzduchu – na palubě letadla",
+    "display": "930 – Ve vzduchu – na palubě letadla",
+    "aktivni": true
+  },
+  {
+    "kod": "990",
+    "nazev": "Ostatní výše neuvedené skupiny míst úrazu typu 090,",
+    "display": "990 – Ostatní výše neuvedené skupiny míst úrazu typu 090,",
+    "aktivni": true
+  },
+  {
+    "kod": "991",
+    "nazev": "Zavěšený na laně atd.",
+    "display": "991 – Zavěšený na laně atd.",
+    "aktivni": true
+  },
+  {
+    "kod": "9990",
+    "nazev": "Ostatní místa úrazu výše neuvedená",
+    "display": "9990 – Ostatní místa úrazu výše neuvedená",
+    "aktivni": true
+  },
+  {
+    "kod": "9991",
+    "nazev": "Budovy a části budov bez normálního přístupu veřejnosti",
+    "display": "9991 – Budovy a části budov bez normálního přístupu veřejnosti",
+    "aktivni": true
+  },
+  {
+    "kod": "9992",
+    "nazev": "Spojovací části budovy",
+    "display": "9992 – Spojovací části budovy",
+    "aktivni": true
+  },
+  {
+    "kod": "9993",
+    "nazev": "Zahrnující koridor, pasáž, schodiště. výtah a výtahovou šachtu, eskalátor, spojovací části budov bez normálního přístupu veřejnosti pod kod. 250",
+    "display": "9993 – Zahrnující koridor, pasáž, schodiště. výtah a výtahovou šachtu, eskalátor, spojovací části budov bez normálního přístupu veřejnosti pod kod. 250",
+    "aktivni": true
+  },
+  {
+    "kod": "9994",
+    "nazev": "Venku na zemi",
+    "display": "9994 – Venku na zemi",
+    "aktivni": true
+  },
+  {
+    "kod": "9995",
+    "nazev": "Dvůr, stezka, zahrada, trávník, atd. přilehlé k provozním kancelářím nebo s nimi spojené",
+    "display": "9995 – Dvůr, stezka, zahrada, trávník, atd. přilehlé k provozním kancelářím nebo s nimi spojené",
+    "aktivni": true
+  },
+  {
+    "kod": "9996",
+    "nazev": "Soukromá (závodní) komunikace",
+    "display": "9996 – Soukromá (závodní) komunikace",
+    "aktivni": true
+  },
+  {
+    "kod": "9997",
+    "nazev": "Venku na vzduchu ale né vznášející se",
+    "display": "9997 – Venku na vzduchu ale né vznášející se",
+    "aktivni": true
+  },
+  {
+    "kod": "9998",
+    "nazev": "Zvnějšku budovy",
+    "display": "9998 – Zvnějšku budovy",
+    "aktivni": true
+  },
+  {
+    "kod": "9999",
+    "nazev": "Na lešení, žebříku, tyči, stožáru atd.",
+    "display": "9999 – Na lešení, žebříku, tyči, stožáru atd.",
+    "aktivni": true
+  }
+]

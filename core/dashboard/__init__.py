@@ -1,0 +1,6 @@
+from .widget_summary import SummaryWidget
+from .widget_today import TodayWidget
+from .widget_upcoming_tasks import UpcomingTasksWidget
+from .widget_recent_activity import RecentActivityWidget
+from .widget_calendar_placeholder import CalendarPlaceholderWidget
+from .widget_statistics_placeholder import StatisticsPlaceholderWidget

@@ -1,0 +1,18 @@
+Doplnit do Task:
+
+requires_verification = Boolean(default=False)
+
+Upravit computed_status():
+
+if canceled:
+    Zrušeno
+elif completed:
+    if requires_verification:
+        if checked_date:
+            Ukončeno
+        else:
+            Splněno - čeká na kontrolu
+    else:
+        Ukončeno
+else:
+    Aktivní
