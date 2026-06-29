@@ -20,7 +20,15 @@ from core.widgets.thp_worker_selector import ThpWorkerSelector
 
 
 class FindingDialog(QDialog):
-    def __init__(self, parent=None, finding=None, *, title: str = "Zjištění"):
+    def __init__(
+        self,
+        parent=None,
+        finding=None,
+        *,
+        title: str = "Zjištění",
+        allowed_finding_types=None,
+        default_finding_type=None,
+    ):
         super().__init__(parent)
 
         self.setWindowTitle(title)
@@ -30,7 +38,8 @@ class FindingDialog(QDialog):
         form = QFormLayout()
 
         self.type_combo = QComboBox()
-        for finding_type in sorted(VALID_FINDING_TYPES):
+        finding_types = sorted(allowed_finding_types or VALID_FINDING_TYPES)
+        for finding_type in finding_types:
             self.type_combo.addItem(FINDING_TYPE_LABELS[finding_type], finding_type)
 
         self.reference_edit = QLineEdit()
@@ -90,7 +99,10 @@ class FindingDialog(QDialog):
                 self.status_combo.setCurrentIndex(status_index)
             self.resolution_note_edit.setPlainText(finding.resolution_note or "")
         else:
-            default_index = self.type_combo.findData(FINDING_TYPE_ZJISTENI)
+            default_type = default_finding_type or (
+                finding_types[0] if allowed_finding_types else FINDING_TYPE_ZJISTENI
+            )
+            default_index = self.type_combo.findData(default_type)
             if default_index >= 0:
                 self.type_combo.setCurrentIndex(default_index)
             default_status = self.status_combo.findData(FINDING_STATUS_OTEVRENE)

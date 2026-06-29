@@ -34,6 +34,7 @@ from PySide6.QtWidgets import (
 )
 
 
+from moduly.kniha_urazu.ui.setreni.accident_findings_widget import AccidentFindingsWidget
 from moduly.kniha_urazu.sluzby.investigation_service import investigation_service
 from core.services.attachment_service import attachment_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
@@ -73,6 +74,8 @@ class SetreniDialog(QDialog):
         self._init_administrativa_widgets()
         self._init_analyza_pricin_widgets()
 
+        self.findings_widget = AccidentFindingsWidget()
+
         self.tabs = QTabWidget()
         self.tabs.addTab(self._tab_oznameni(), "Oznámení")
         self.tabs.addTab(self._tab_zajisteni_dukazu(), "Zajištění důkazů")
@@ -82,8 +85,12 @@ class SetreniDialog(QDialog):
         self.tabs.addTab(self._tab_analyza_pricin(), "Analýza příčin")
         self.tabs.addTab(self._tab_administrativa(), "Administrativa")
         self.tabs.addTab(self._tab_opatreni(), "Opatření")
+        self.tabs.addTab(self.findings_widget, "Zjištění")
 
         self.tabs.addTab(self._tab_formulare(), "Formuláře")
+
+        if self.accident is not None:
+            self.findings_widget.set_accident_id(self.accident.id)
 
         layout.addWidget(self.tabs)
 
