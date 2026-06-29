@@ -58,16 +58,18 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         widths = {
             0: 0,    # ID
             1: 24,   # Priorita - barevný proužek
-            2: 620,  # Opatření
+            2: 520,  # Opatření
             3: 105,  # Termín
-            4: 240,  # Odpovídá
-            5: 230,  # Pracoviště
-            6: 100,  # Zdroj
+            4: 200,  # Odpovídá
+            5: 130,  # Pracoviště
+            6: 130,  # Zdroj
+            7: 220,  # Zdrojový záznam
         }
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
         header.setSectionResizeMode(2, QHeaderView.Stretch)
+        header.setSectionResizeMode(7, QHeaderView.Stretch)
 
     elif profile == "controls":
         widths = {

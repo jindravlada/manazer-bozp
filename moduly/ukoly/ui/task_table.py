@@ -3,6 +3,13 @@ from datetime import date
 from PySide6.QtGui import QColor, QBrush
 from PySide6.QtWidgets import QHeaderView, QTableWidget, QTableWidgetItem
 
+from core.shared.constants import (
+    ENTITY_ACCIDENT,
+    ENTITY_AUDITY,
+    ENTITY_FINDING,
+    ENTITY_PROVERKY,
+)
+from core.shared.sluzby.finding_service import finding_service
 from core.widgets.info_tooltip import format_info_card
 
 
@@ -10,7 +17,7 @@ class TaskTable(QTableWidget):
     def __init__(self):
         super().__init__()
 
-        self.setColumnCount(7)
+        self.setColumnCount(8)
         self.setHorizontalHeaderLabels([
             "ID",
             "",
@@ -19,6 +26,7 @@ class TaskTable(QTableWidget):
             "Odpovídá",
             "Pracoviště",
             "Zdroj",
+            "Zdrojový záznam",
         ])
 
         self.setColumnHidden(0, True)
@@ -47,7 +55,8 @@ class TaskTable(QTableWidget):
                 "" if task.due_date is None else task.due_date.strftime("%d.%m.%Y"),
                 task.responsible_person or "—",
                 task.workplace_name or "—",
-                self._source_display(task.source_module),
+                self._source_type_display(task),
+                self._source_record_display(task),
             ]
 
             for column, value in enumerate(values):
@@ -78,7 +87,8 @@ class TaskTable(QTableWidget):
             ("Kontrola do:", check_due_date),
             ("Datum kontroly:", checked_date),
             ("Kontroloval:", task.checked_by_name or "—"),
-            ("Zdroj:", self._source_display(task.source_module)),
+            ("Zdroj:", self._source_type_display(task)),
+            ("Zdrojový záznam:", self._source_record_display(task)),
         ]
 
         return format_info_card(
@@ -124,16 +134,85 @@ class TaskTable(QTableWidget):
         }
         return tooltips.get(row_state, "")
 
-    def _source_display(self, source: str) -> str:
+    def _source_type_display(self, task) -> str:
+        source_module = task.source_module or ""
+        if source_module == ENTITY_FINDING and task.source_record_id:
+            finding = finding_service.get_by_id(task.source_record_id)
+            if finding is not None:
+                return self._finding_entity_type_label(finding.entity_type)
+            return "Zjištění"
+
+        return self._legacy_source_type_label(source_module)
+
+    def _source_record_display(self, task) -> str:
+        source_module = task.source_module or ""
+        if source_module == ENTITY_FINDING and task.source_record_id:
+            finding = finding_service.get_by_id(task.source_record_id)
+            if finding is not None:
+                return self._finding_source_record(finding)
+            return "—"
+
+        if source_module in ("kniha_urazu", "kniha_urazu_opatreni", "uraz") and task.source_record_id:
+            return self._accident_record_label(task.source_record_id)
+        if source_module in ("audity", "audit") and task.source_record_id:
+            return self._audit_record_label(task.source_record_id)
+
+        return "—"
+
+    def _finding_entity_type_label(self, entity_type: str) -> str:
+        labels = {
+            ENTITY_AUDITY: "Audit IMS",
+            ENTITY_ACCIDENT: "Šetření úrazu",
+            ENTITY_PROVERKY: "Prověrka BOZP",
+        }
+        return labels.get(entity_type, entity_type or "—")
+
+    def _legacy_source_type_label(self, source: str) -> str:
         mapping = {
             "manual": "Ručně",
             "uraz": "Kniha úrazů",
             "kniha_urazu": "Kniha úrazů",
-            "audit": "Audit",
-            "proverka": "Prověrka",
+            "kniha_urazu_opatreni": "Kniha úrazů",
+            "audit": "Audit IMS",
+            "audity": "Audit IMS",
+            "proverka": "Prověrka BOZP",
+            "proverky": "Prověrka BOZP",
             "kontrola": "Kontrola",
+            ENTITY_FINDING: "Zjištění",
         }
         return mapping.get(source or "", source or "—")
+
+    def _finding_source_record(self, finding) -> str:
+        if finding.entity_type == ENTITY_AUDITY:
+            label = self._audit_record_label(finding.entity_id)
+            if label != "—":
+                return label
+        elif finding.entity_type == ENTITY_ACCIDENT:
+            label = self._accident_record_label(finding.entity_id)
+            if label != "—":
+                return label
+
+        reference = (finding.reference_label or "").strip()
+        if reference:
+            return reference
+
+        return "—"
+
+    def _audit_record_label(self, entity_id: int) -> str:
+        from moduly.audity.sluzby.internal_audit_service import internal_audit_service
+
+        audit = internal_audit_service.get_by_id(entity_id)
+        if audit is not None and audit.number:
+            return f"Audit IMS {audit.number}"
+        return "—"
+
+    def _accident_record_label(self, entity_id: int) -> str:
+        from moduly.kniha_urazu.sluzby.accident_service import accident_service
+
+        accident = accident_service.get_by_id(entity_id)
+        if accident is not None and accident.number:
+            return f"Úraz č. {accident.number}"
+        return "—"
 
     def _priority_color(self, priority: str) -> QColor:
         if priority == "Kritická":
