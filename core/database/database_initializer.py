@@ -5,6 +5,7 @@ from core.database.session import create_database, engine
 
 def initialize_database() -> None:
     from core.models.attachment import Attachment  # noqa: F401
+    from core.shared.modely.finding import Finding  # noqa: F401
     from moduly.ukoly.modely.task import Task  # noqa: F401
     from moduly.kontroly.modely.control import Control  # noqa: F401
     from moduly.kontroly.modely.thp_monthly_control import ThpMonthlyControl  # noqa: F401
