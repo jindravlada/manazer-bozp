@@ -34,6 +34,7 @@ class MuInvestigation(Base):
     conclusion: Mapped[str] = mapped_column(Text, default="")
     ohledani_mista_json: Mapped[str] = mapped_column(Text, default="")
     zajisteni_dukazu_json: Mapped[str] = mapped_column(Text, default="")
+    svedci_json: Mapped[str] = mapped_column(Text, default="")
 
     oznameni_kdo: Mapped[str] = mapped_column(String(200), default="")
     oznameni_komu: Mapped[str] = mapped_column(String(200), default="")

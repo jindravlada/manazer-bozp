@@ -14,7 +14,6 @@ from PySide6.QtWidgets import (
     QPushButton,
     QRadioButton,
     QScrollArea,
-    QSpinBox,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -94,12 +93,6 @@ class MuZajisteniDukazuWidget(QWidget):
             "datum": self._date_to_json(self.dukazy_datum),
             "cas": self.dukazy_cas.text().strip(),
             "provedl": self.dukazy_provedl.currentText().strip(),
-            "pocet_svedku": self.dukazy_pocet_svedku.value(),
-            "svedci": [w.text().strip() for w in self.dukazy_svedek_widgets],
-            "svedci_oddeleni": self.dukazy_svedci_oddeleni.isChecked(),
-            "vyjadreni_obsahuje_udaje": self.dukazy_vyjadreni_obsahuje_udaje.isChecked(),
-            "vyjadreni_vracena": self.dukazy_vyjadreni_vracena.isChecked(),
-            "rozhovor_po_vyjadreni": self.dukazy_rozhovor_po_vyjadreni.isChecked(),
             "presne_misto": self.dukazy_presne_misto_text.toPlainText().strip(),
             "stav_povrchu": self.dukazy_stav_povrchu_text.toPlainText().strip(),
             "osvetleni_viditelnost": self.dukazy_osvetleni_viditelnost_text.toPlainText().strip(),
@@ -142,21 +135,6 @@ class MuZajisteniDukazuWidget(QWidget):
                 self.dukazy_provedl.setCurrentIndex(index)
             else:
                 self.dukazy_provedl.setEditText(provedl)
-
-        self.dukazy_pocet_svedku = QSpinBox()
-        self.dukazy_pocet_svedku.setRange(0, 20)
-        self.dukazy_pocet_svedku.setValue(int(saved.get("pocet_svedku") or 0))
-        self.dukazy_svedci_form: QFormLayout | None = None
-        self.dukazy_svedek_widgets: list[QLineEdit] = []
-
-        self.dukazy_svedci_oddeleni = QCheckBox("Oddělit svědky a předat formulář k písemnému vyjádření")
-        self.dukazy_vyjadreni_obsahuje_udaje = QCheckBox("Vyjádření obsahují datum, čas, jméno a podpis")
-        self.dukazy_vyjadreni_vracena = QCheckBox("Vráceny formuláře s vyjádřením od všech svědků (včetně dotčené osoby)")
-        self.dukazy_rozhovor_po_vyjadreni = QCheckBox("Doplňující rozhovor byl veden až po prvotním písemném vyjádření")
-        self.dukazy_svedci_oddeleni.setChecked(bool(saved.get("svedci_oddeleni", False)))
-        self.dukazy_vyjadreni_obsahuje_udaje.setChecked(bool(saved.get("vyjadreni_obsahuje_udaje", False)))
-        self.dukazy_vyjadreni_vracena.setChecked(bool(saved.get("vyjadreni_vracena", False)))
-        self.dukazy_rozhovor_po_vyjadreni.setChecked(bool(saved.get("rozhovor_po_vyjadreni", False)))
 
         self.dukazy_presne_misto_text = QTextEdit()
         self.dukazy_stav_povrchu_text = QTextEdit()
@@ -227,12 +205,6 @@ class MuZajisteniDukazuWidget(QWidget):
                 self.dukazy_provedl.setCurrentIndex(index)
             else:
                 self.dukazy_provedl.setEditText(provedl)
-        self.dukazy_pocet_svedku.setValue(int(saved.get("pocet_svedku") or 0))
-        self._refresh_svedci_rows()
-        self.dukazy_svedci_oddeleni.setChecked(bool(saved.get("svedci_oddeleni", False)))
-        self.dukazy_vyjadreni_obsahuje_udaje.setChecked(bool(saved.get("vyjadreni_obsahuje_udaje", False)))
-        self.dukazy_vyjadreni_vracena.setChecked(bool(saved.get("vyjadreni_vracena", False)))
-        self.dukazy_rozhovor_po_vyjadreni.setChecked(bool(saved.get("rozhovor_po_vyjadreni", False)))
         for key, widget in {
             "presne_misto": self.dukazy_presne_misto_text,
             "stav_povrchu": self.dukazy_stav_povrchu_text,
@@ -287,20 +259,6 @@ class MuZajisteniDukazuWidget(QWidget):
         zaklad_form.addRow("Čas provedení:", self.dukazy_cas)
         zaklad_form.addRow("Provedl:", self.dukazy_provedl)
         layout.addWidget(zaklad_group)
-
-        svedci_group = QGroupBox("1. Svědci a prvotní vyjádření")
-        svedci_outer = QVBoxLayout(svedci_group)
-        svedci_form = QFormLayout()
-        svedci_form.addRow("Počet zjištěných svědků:", self.dukazy_pocet_svedku)
-        self.dukazy_svedci_form = svedci_form
-        self._refresh_svedci_rows()
-        self.dukazy_pocet_svedku.valueChanged.connect(self._refresh_svedci_rows)
-        svedci_outer.addLayout(svedci_form)
-        svedci_outer.addWidget(self.dukazy_svedci_oddeleni)
-        svedci_outer.addWidget(self.dukazy_vyjadreni_obsahuje_udaje)
-        svedci_outer.addWidget(self.dukazy_vyjadreni_vracena)
-        svedci_outer.addWidget(self.dukazy_rozhovor_po_vyjadreni)
-        layout.addWidget(svedci_group)
 
         misto_group = QGroupBox("2. Popis místa události")
         misto_form = QFormLayout(misto_group)
@@ -390,21 +348,6 @@ class MuZajisteniDukazuWidget(QWidget):
         layout.addStretch()
         scroll.setWidget(content)
         outer.addWidget(scroll)
-
-    def _refresh_svedci_rows(self) -> None:
-        if self.dukazy_svedci_form is None:
-            return
-        existing = [w.text() for w in self.dukazy_svedek_widgets]
-        saved = self._saved_data.get("svedci", []) or []
-        while len(self.dukazy_svedek_widgets) > 0:
-            row = self.dukazy_svedci_form.rowCount() - 1
-            self.dukazy_svedci_form.removeRow(row)
-            self.dukazy_svedek_widgets.pop()
-        for idx in range(self.dukazy_pocet_svedku.value()):
-            value = existing[idx] if idx < len(existing) else (saved[idx] if idx < len(saved) else "")
-            edit = QLineEdit(value)
-            self.dukazy_svedek_widgets.append(edit)
-            self.dukazy_svedci_form.addRow(f"Svědek {idx + 1}:", edit)
 
     def _photo_row(self, form_layout: QFormLayout, label: str) -> None:
         row = QHBoxLayout()

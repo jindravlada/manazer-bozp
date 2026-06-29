@@ -24,6 +24,7 @@ from moduly.vysetrovani_mu.constants import (
 from moduly.vysetrovani_mu.sluzby.mu_investigation_service import mu_investigation_service
 from moduly.vysetrovani_mu.ui.mu_investigation_dialog import MuInvestigationDialog
 from moduly.vysetrovani_mu.ui.mu_investigation_table import MuInvestigationTable
+from moduly.vysetrovani_mu.ui.mu_sedmero_dialog import MuSedmeroDialog
 
 
 class VysetrovaniMuPage(QWidget):
@@ -37,6 +38,7 @@ class VysetrovaniMuPage(QWidget):
         self.new_btn = QPushButton("Nové vyšetřování")
         self.edit_btn = QPushButton("Upravit")
         self.delete_btn = QPushButton("Smazat")
+        self.sedmero_btn = QPushButton("Sedmero")
 
         self.status_filter = QComboBox()
         self.status_filter.addItems([
@@ -53,6 +55,7 @@ class VysetrovaniMuPage(QWidget):
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.delete_btn)
+        toolbar.addWidget(self.sedmero_btn)
         toolbar.addStretch()
         toolbar.addWidget(QLabel("Stav:"))
         toolbar.addWidget(self.status_filter)
@@ -70,6 +73,7 @@ class VysetrovaniMuPage(QWidget):
         self.new_btn.clicked.connect(self.new_investigation)
         self.edit_btn.clicked.connect(self.edit_selected_investigation)
         self.delete_btn.clicked.connect(self.delete_selected_investigation)
+        self.sedmero_btn.clicked.connect(self.show_sedmero)
         self.table.doubleClicked.connect(self.edit_selected_investigation)
         self.status_filter.currentIndexChanged.connect(self.refresh)
         self.year_filter.currentIndexChanged.connect(self.refresh)
@@ -131,6 +135,9 @@ class VysetrovaniMuPage(QWidget):
             return None
 
         return int(item.text())
+
+    def show_sedmero(self):
+        MuSedmeroDialog(self).exec()
 
     def new_investigation(self):
         dialog = MuInvestigationDialog(self)

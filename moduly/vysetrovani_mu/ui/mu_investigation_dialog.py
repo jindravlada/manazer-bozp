@@ -1,4 +1,5 @@
 from datetime import date
+import json
 
 from PySide6.QtWidgets import (
     QComboBox,
@@ -38,6 +39,7 @@ from moduly.vysetrovani_mu.ui.mu_investigation_source_panel import MuInvestigati
 from moduly.vysetrovani_mu.ui.mu_ohledani_mista_widget import MuOhledaniMistaWidget
 from moduly.vysetrovani_mu.ui.mu_oznameni_widget import MuOznameniWidget
 from moduly.vysetrovani_mu.ui.mu_source_selector_widget import MuSourceSelectorWidget
+from moduly.vysetrovani_mu.ui.mu_svedci_widget import MuSvedciWidget
 from moduly.vysetrovani_mu.ui.mu_zajisteni_dukazu_widget import MuZajisteniDukazuWidget
 from moduly.vysetrovani_mu.sluzby.mu_source_context import resolve_mu_source_context
 
@@ -70,6 +72,8 @@ class MuInvestigationDialog(QDialog):
         self.tabs.addTab(self.zajisteni_dukazu_widget, "Zajištění důkazů")
         self.ohledani_mista_widget = MuOhledaniMistaWidget()
         self.tabs.addTab(self.ohledani_mista_widget, "Ohledání místa")
+        self.svedci_widget = MuSvedciWidget()
+        self.tabs.addTab(self.svedci_widget, "Svědci")
         self.findings_widget = MuFindingsWidget()
         self.tabs.addTab(self.findings_widget, "Zjištění")
         self.tabs.addTab(self._conclusion_tab(), "Závěr")
@@ -101,6 +105,7 @@ class MuInvestigationDialog(QDialog):
             self.conclusion_edit.setPlainText(investigation.conclusion or "")
             self.ohledani_mista_widget.load_json(getattr(investigation, "ohledani_mista_json", "") or "")
             self.zajisteni_dukazu_widget.load_json(getattr(investigation, "zajisteni_dukazu_json", "") or "")
+            self.svedci_widget.load_json(self._svedci_json_for_load(investigation))
             self.oznameni_widget.load_from_investigation(investigation)
         else:
             self._on_source_type_changed()
@@ -248,6 +253,33 @@ class MuInvestigationDialog(QDialog):
             event_number=context.event_number,
             investigation_number=investigation_number,
         )
+        self.svedci_widget.set_context(
+            investigation_id,
+            event_number=context.event_number,
+        )
+
+    def _svedci_json_for_load(self, investigation) -> str:
+        raw = getattr(investigation, "svedci_json", "") or ""
+        if raw.strip():
+            return raw
+
+        witness_keys = (
+            "pocet_svedku",
+            "svedci",
+            "svedci_oddeleni",
+            "vyjadreni_obsahuje_udaje",
+            "vyjadreni_vracena",
+            "rozhovor_po_vyjadreni",
+        )
+        try:
+            zajisteni_data = json.loads(getattr(investigation, "zajisteni_dukazu_json", "") or "{}")
+        except Exception:
+            zajisteni_data = {}
+
+        migrated = {key: zajisteni_data[key] for key in witness_keys if key in zajisteni_data}
+        if not migrated:
+            return raw
+        return json.dumps(migrated, ensure_ascii=False)
 
     def _current_source_type(self) -> str:
         return self.source_type_combo.currentData() or DEFAULT_SOURCE_TYPE
@@ -334,5 +366,6 @@ class MuInvestigationDialog(QDialog):
             "conclusion": self.conclusion_edit.toPlainText().strip(),
             "ohledani_mista_json": self.ohledani_mista_widget.get_json(),
             "zajisteni_dukazu_json": self.zajisteni_dukazu_widget.get_json(),
+            "svedci_json": self.svedci_widget.get_json(),
             **self.oznameni_widget.get_data(),
         }

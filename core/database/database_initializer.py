@@ -147,6 +147,7 @@ def _ensure_mu_investigation_columns() -> None:
     additions = {
         "ohledani_mista_json": "ohledani_mista_json TEXT DEFAULT ''",
         "zajisteni_dukazu_json": "zajisteni_dukazu_json TEXT DEFAULT ''",
+        "svedci_json": "svedci_json TEXT DEFAULT ''",
         "oznameni_kdo": "oznameni_kdo VARCHAR(200) DEFAULT ''",
         "oznameni_komu": "oznameni_komu VARCHAR(200) DEFAULT ''",
         "oznameni_datum": "oznameni_datum DATE",
