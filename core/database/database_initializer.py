@@ -14,6 +14,7 @@ def initialize_database() -> None:
     from moduly.kontroly.modely.thp_yearly_kl_usage import ThpYearlyKlUsage  # noqa: F401
     from moduly.nastaveni.modely.employer import Employer  # noqa: F401
     from moduly.nastaveni.modely.thp_worker import ThpWorker  # noqa: F401
+    from moduly.nastaveni.modely.person import Person  # noqa: F401
     from moduly.nastaveni.modely.workplace import Workplace  # noqa: F401
     from moduly.kniha_urazu.modely.accident import Accident  # noqa: F401
     from moduly.kniha_urazu.modely.investigation import AccidentInvestigation  # noqa: F401

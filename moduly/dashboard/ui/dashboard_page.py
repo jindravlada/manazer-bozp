@@ -15,7 +15,9 @@ from PySide6.QtWidgets import (
 from core.services.backup_service import backup_service
 
 from core.dashboard import (
+    AccidentsWidget,
     CalendarPlaceholderWidget,
+    ControlsWidget,
     DaysWithoutAccidentWidget,
     RecentActivityWidget,
     StatisticsPlaceholderWidget,
@@ -31,11 +33,20 @@ class DashboardPage(QWidget):
     Dashboard je složený z menších widgetů.
     """
 
-    def __init__(self, open_tasks_callback=None, open_accidents_callback=None, open_search_callback=None) -> None:
+    def __init__(
+        self,
+        open_tasks_callback=None,
+        open_accidents_callback=None,
+        open_search_callback=None,
+        open_kontroly_callback=None,
+        open_kniha_urazu_callback=None,
+    ) -> None:
         super().__init__()
         self.open_tasks_callback = open_tasks_callback
         self.open_accidents_callback = open_accidents_callback
         self.open_search_callback = open_search_callback
+        self.open_kontroly_callback = open_kontroly_callback
+        self.open_kniha_urazu_callback = open_kniha_urazu_callback
 
         self.setStyleSheet("""
             QFrame#HeaderCard,
@@ -112,11 +123,15 @@ class DashboardPage(QWidget):
         self.calendar = CalendarPlaceholderWidget()
         self.activity = RecentActivityWidget()
         self.stats = StatisticsPlaceholderWidget()
+        self.controls = ControlsWidget(open_kontroly_callback=self.open_kontroly_callback)
+        self.accidents = AccidentsWidget(open_kniha_urazu_callback=self.open_kniha_urazu_callback)
 
         # Pevné výšky u panelů, které nemají roztahovat celou pracovní plochu.
         self.today.setFixedHeight(170)
         self.calendar.setFixedHeight(280)
         self.stats.setFixedHeight(130)
+        self.controls.setFixedHeight(170)
+        self.accidents.setFixedHeight(170)
         self.upcoming.setMinimumHeight(260)
         self.activity.setMinimumHeight(220)
 
@@ -126,6 +141,8 @@ class DashboardPage(QWidget):
         right_layout.setSpacing(14)
         right_layout.addWidget(self.calendar)
         right_layout.addWidget(self.stats)
+        right_layout.addWidget(self.controls)
+        right_layout.addWidget(self.accidents)
         right_layout.addStretch(1)
 
         grid.addWidget(self.today, 0, 0)
@@ -198,6 +215,8 @@ class DashboardPage(QWidget):
                 button.clicked.connect(self.open_tasks_callback)
             elif text == "🔎 Hledat" and self.open_search_callback:
                 button.clicked.connect(self.open_search_callback)
+            elif text == "📋 Kontrola" and self.open_kontroly_callback:
+                button.clicked.connect(self.open_kontroly_callback)
             elif text == "📋 Kontrola":
                 button.clicked.connect(self.show_kontroly_info)
             elif text == "💾 Záloha":
@@ -295,6 +314,8 @@ class DashboardPage(QWidget):
             self.calendar,
             self.activity,
             self.stats,
+            self.controls,
+            self.accidents,
             self.days_without_accident,
         ]:
             if hasattr(widget, "refresh"):

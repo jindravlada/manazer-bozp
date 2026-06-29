@@ -138,7 +138,7 @@ class SetreniDialog(QDialog):
 
         from core.widgets.attachment_widget import AttachmentWidget
         from core.widgets.nullable_date_edit import NullableDateEdit
-        from core.widgets.person_selector import PersonSelector
+        from core.widgets.thp_worker_selector import ThpWorkerSelector
 
         outer = QWidget()
         outer_layout = QVBoxLayout(outer)
@@ -174,7 +174,7 @@ class SetreniDialog(QDialog):
         elif a and a.employee_name:
             self.oznameni_kdo.setText(a.employee_name)
 
-        self.oznameni_komu = PersonSelector()
+        self.oznameni_komu = ThpWorkerSelector()
         self.oznameni_komu.setEditable(True)
         komu = inv.oznameni_komu if inv and inv.oznameni_komu else ""
         if not komu and a and a.zapsal_jmeno:
@@ -638,7 +638,7 @@ class SetreniDialog(QDialog):
             self.dukazy_svedci_form.addRow(f"Svědek {idx + 1}:", edit)
 
     def _init_zajisteni_dukazu_widgets(self):
-        from core.widgets.person_selector import PersonSelector
+        from core.widgets.thp_worker_selector import ThpWorkerSelector
 
         saved = self._zajisteni_saved_data
         a = self.accident
@@ -656,7 +656,7 @@ class SetreniDialog(QDialog):
         elif a and a.accident_time:
             self.dukazy_cas.setText(a.accident_time)
 
-        self.dukazy_provedl = PersonSelector()
+        self.dukazy_provedl = ThpWorkerSelector()
         self.dukazy_provedl.setEditable(True)
         provedl = saved.get("provedl") or ""
         if not provedl and a and a.zapsal_jmeno:
@@ -917,12 +917,12 @@ class SetreniDialog(QDialog):
         self._dukazy_cas_fotek_manual = True
 
     def _init_ohledani_mista_widgets(self):
-        from core.widgets.person_selector import PersonSelector
+        from core.widgets.thp_worker_selector import ThpWorkerSelector
         from core.widgets.workplace_selector import WorkplaceSelector
 
         saved = self._zajisteni_saved_data
 
-        self.ohledani_zapsal = PersonSelector()
+        self.ohledani_zapsal = ThpWorkerSelector()
         self.ohledani_zapsal.setEditable(True)
         if saved.get("ohledani_zapsal"):
             self.ohledani_zapsal.setCurrentText(saved.get("ohledani_zapsal", ""))
@@ -2783,10 +2783,10 @@ class SetreniDialog(QDialog):
                     self._set_date_widget(row["lhuta"], deadline)
 
     def _init_administrativa_widgets(self):
-        from core.widgets.person_selector import PersonSelector
+        from core.widgets.thp_worker_selector import ThpWorkerSelector
         saved = self._zajisteni_saved_data
 
-        self.admin_setreni_jmeno = PersonSelector()
+        self.admin_setreni_jmeno = ThpWorkerSelector()
         self.admin_setreni_jmeno.setEditable(True)
         if saved.get("admin_setreni_jmeno"):
             self.admin_setreni_jmeno.setCurrentText(saved.get("admin_setreni_jmeno", ""))

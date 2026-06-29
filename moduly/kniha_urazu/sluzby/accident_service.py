@@ -1,8 +1,17 @@
-from datetime import datetime
+from dataclasses import dataclass
+from datetime import date, datetime, timedelta
 
 from moduly.kniha_urazu.modely.accident import Accident
 from moduly.kniha_urazu.repository.accident_repository import AccidentRepository
 from moduly.nastaveni.sluzby.settings_service import settings_service
+
+
+@dataclass(frozen=True)
+class AccidentDashboardSummary:
+    has_accidents: bool
+    total_this_year: int = 0
+    last_30_days: int = 0
+    days_without_accident: int = 0
 
 
 class AccidentService:
@@ -14,6 +23,36 @@ class AccidentService:
 
     def get_by_id(self, accident_id: int):
         return self.repository.get_by_id(accident_id)
+
+    def get_last_accident_date(self) -> date | None:
+        dates = [
+            accident.accident_date
+            for accident in self.get_all()
+            if accident.accident_date is not None
+        ]
+        return max(dates) if dates else None
+
+    def get_dashboard_summary(self) -> AccidentDashboardSummary:
+        today = date.today()
+        year_start = date(today.year, 1, 1)
+        threshold_30_days = today - timedelta(days=30)
+
+        accident_dates = [
+            accident.accident_date
+            for accident in self.get_all()
+            if accident.accident_date is not None
+        ]
+
+        if not accident_dates:
+            return AccidentDashboardSummary(has_accidents=False)
+
+        last_date = max(accident_dates)
+        return AccidentDashboardSummary(
+            has_accidents=True,
+            total_this_year=sum(1 for accident_date in accident_dates if accident_date >= year_start),
+            last_30_days=sum(1 for accident_date in accident_dates if accident_date >= threshold_30_days),
+            days_without_accident=(today - last_date).days,
+        )
 
     def create_accident(self, **data):
         self._enrich_workplace(data)

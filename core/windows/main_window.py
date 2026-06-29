@@ -103,6 +103,8 @@ class MainWindow(QMainWindow):
                 open_tasks_callback=self._open_new_task,
                 open_accidents_callback=self._open_new_accident,
                 open_search_callback=self._focus_search,
+                open_kontroly_callback=self._open_kontroly,
+                open_kniha_urazu_callback=self._open_kniha_urazu,
             )
 
         return module.page_factory()
@@ -189,6 +191,12 @@ class MainWindow(QMainWindow):
         page = self._page_widgets.get("kniha_urazu")
         if page is not None:
             page.new_accident()
+
+    def _open_kontroly(self):
+        self._show("kontroly")
+
+    def _open_kniha_urazu(self):
+        self._show("kniha_urazu")
 
     def _focus_search(self):
         self.search_edit.setFocus()

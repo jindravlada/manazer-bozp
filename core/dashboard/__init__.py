@@ -5,3 +5,5 @@ from .widget_recent_activity import RecentActivityWidget
 from .widget_calendar_placeholder import CalendarPlaceholderWidget
 from .widget_statistics_placeholder import StatisticsPlaceholderWidget
 from .widget_days_without_accident import DaysWithoutAccidentWidget
+from .widget_controls import ControlsWidget
+from .widget_accidents import AccidentsWidget

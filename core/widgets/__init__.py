@@ -1,6 +1,7 @@
 from .filter_bar import FilterBar
 from .table_toolbar import TableToolbar
 from .person_selector import PersonSelector
+from .thp_worker_selector import ThpWorkerSelector, sorted_person_names
 from .search_combo_box import SearchComboBox
 from .workplace_selector import WorkplaceSelector
 from .date_edit import DateEdit

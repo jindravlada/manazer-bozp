@@ -20,7 +20,7 @@ from core.services.cz_nace_service import cz_nace_service
 from core.utils.czech_sort import czech_sorted, person_display_name_sort_key
 from core.widgets.code_selector import CodeSelector
 from core.widgets.nullable_date_edit import NullableDateEdit
-from core.widgets.person_selector import PersonSelector
+from core.widgets.thp_worker_selector import ThpWorkerSelector
 from moduly.nastaveni.sluzby.settings_service import settings_service
 
 
@@ -33,7 +33,7 @@ class TabZapisovatelZamestnavatel(QWidget):
 
         self.datum_zapisu = NullableDateEdit()
 
-        self.zapisovatel = PersonSelector()
+        self.zapisovatel = ThpWorkerSelector()
         self.zapisovatel.setEditable(True)
         self._setup_person_completer()
         self.zapisovatel.currentIndexChanged.connect(self._zapisovatel_changed)

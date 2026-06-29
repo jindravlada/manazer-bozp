@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
 from core.widgets.attachment_widget import AttachmentWidget
 from core.widgets.date_edit import DateEdit
 from core.widgets.nullable_date_edit import NullableDateEdit
-from core.widgets.person_selector import PersonSelector
+from core.widgets.thp_worker_selector import ThpWorkerSelector
 from core.widgets.workplace_selector import WorkplaceSelector
 
 
@@ -77,7 +77,7 @@ class TaskDialog(QDialog):
         self.title_edit.setPlaceholderText("Popište stanovené opatření / úkol.")
         self.title_edit.setFixedHeight(95)
 
-        self.person_selector = PersonSelector()
+        self.person_selector = ThpWorkerSelector()
 
         self.priority_combo = QComboBox()
         self.priority_combo.addItems(["Nízká", "Normální", "Vysoká", "Kritická"])
@@ -94,7 +94,7 @@ class TaskDialog(QDialog):
 
         self.check_due_date_edit = NullableDateEdit()
         self.checked_date_edit = NullableDateEdit()
-        self.checked_by_selector = PersonSelector()
+        self.checked_by_selector = ThpWorkerSelector()
 
         self.canceled_checkbox = QCheckBox("Opatření zrušeno / netrvá")
 

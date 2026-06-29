@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.widgets.person_selector import PersonSelector
+from core.widgets.thp_worker_selector import ThpWorkerSelector
 from moduly.nastaveni.sluzby.settings_service import settings_service
 
 
@@ -66,7 +66,7 @@ class TabSvedci(QWidget):
         self.vyjadreni_oo = QTextEdit()
         self.vyjadreni_oo.setFixedHeight(70)
 
-        self.zapsal_jmeno = PersonSelector()
+        self.zapsal_jmeno = ThpWorkerSelector()
         self.zapsal_jmeno.setEditable(True)
         self.zapsal_jmeno.currentIndexChanged.connect(self._vedouci_changed)
 
@@ -179,7 +179,7 @@ class TabSvedci(QWidget):
             return not widget.toPlainText().strip()
         if isinstance(widget, QLineEdit):
             return not widget.text().strip()
-        if isinstance(widget, PersonSelector):
+        if isinstance(widget, ThpWorkerSelector):
             return not widget.currentText().strip()
         return False
 

@@ -21,12 +21,7 @@ class DaysWithoutAccidentWidget(DashboardPanel):
         self.refresh()
 
     def _last_accident_date(self) -> date | None:
-        dates = [
-            accident.accident_date
-            for accident in accident_service.get_all()
-            if accident.accident_date is not None
-        ]
-        return max(dates) if dates else None
+        return accident_service.get_last_accident_date()
 
     def refresh(self):
         last_date = self._last_accident_date()

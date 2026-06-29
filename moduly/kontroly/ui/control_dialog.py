@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.date_edit import DateEdit
-from core.widgets.person_selector import PersonSelector
+from core.widgets.thp_worker_selector import ThpWorkerSelector
 from core.widgets.workplace_selector import WorkplaceSelector
 
 
@@ -36,7 +36,7 @@ class ControlDialog(QDialog):
 
         self.inspection_date_edit = DateEdit()
 
-        self.inspector_selector = PersonSelector()
+        self.inspector_selector = ThpWorkerSelector()
         self.workplace_selector = WorkplaceSelector()
 
         self.checklist_edit = QLineEdit()
