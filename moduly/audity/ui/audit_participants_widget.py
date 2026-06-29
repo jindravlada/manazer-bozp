@@ -23,8 +23,7 @@ class AuditParticipantsWidget(QWidget):
         layout = QVBoxLayout(self)
 
         self.info_label = QLabel(
-            "Účastníky auditu lze přidat až po uložení auditu. "
-            "Později půjde vybrat THP pracovníka i obecnou osobu."
+            "Účastníky auditu lze přidat až po uložení auditu."
         )
         self.info_label.setWordWrap(True)
 

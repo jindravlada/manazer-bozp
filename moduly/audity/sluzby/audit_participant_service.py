@@ -18,9 +18,11 @@ class AuditParticipantService:
         name: str = "",
         role: str = "",
         organization: str = "",
+        person_id: int | None = None,
     ) -> AuditParticipant:
         participant = AuditParticipant(
             audit_id=audit_id,
+            person_id=person_id,
             name=name.strip(),
             role=role.strip(),
             organization=organization.strip(),
@@ -34,11 +36,13 @@ class AuditParticipantService:
         name: str = "",
         role: str = "",
         organization: str = "",
+        person_id: int | None = None,
     ) -> AuditParticipant | None:
         participant = self.repository.get_by_id(participant_id)
         if participant is None:
             return None
 
+        participant.person_id = person_id
         participant.name = name.strip()
         participant.role = role.strip()
         participant.organization = organization.strip()

@@ -26,6 +26,7 @@ def initialize_database() -> None:
     _ensure_investigation_columns()
     _ensure_control_columns()
     _ensure_internal_audit_columns()
+    _ensure_audit_participant_columns()
     _normalize_task_status_values()
     _normalize_internal_audit_status_values()
     _normalize_accident_legacy_values()
@@ -124,6 +125,12 @@ def _ensure_internal_audit_columns() -> None:
         _add_column("internal_audits", "planned_year INTEGER")
     if "planned_month" not in columns:
         _add_column("internal_audits", "planned_month INTEGER")
+
+
+def _ensure_audit_participant_columns() -> None:
+    columns = _table_columns("audit_participants")
+    if "person_id" not in columns:
+        _add_column("audit_participants", "person_id INTEGER")
 
 
 def _normalize_internal_audit_status_values() -> None:

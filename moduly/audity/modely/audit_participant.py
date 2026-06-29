@@ -11,6 +11,7 @@ class AuditParticipant(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     audit_id: Mapped[int] = mapped_column(Integer, nullable=False)
 
+    person_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     name: Mapped[str] = mapped_column(String(150), default="")
     role: Mapped[str] = mapped_column(String(150), default="")
     organization: Mapped[str] = mapped_column(String(150), default="")
