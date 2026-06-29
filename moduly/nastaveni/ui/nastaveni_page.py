@@ -151,7 +151,13 @@ class NastaveniPage(QWidget):
         self.person_active_toggle_button.clicked.connect(self.toggle_selected_person_active)
 
         self.person_filter = QComboBox()
-        self.person_filter.addItems(["Aktivní", "Neaktivní", "Vše"])
+        self.person_filter.addItems([
+            "Aktivní",
+            "Zaměstnanci",
+            "Ostatní osoby",
+            "Neaktivní",
+            "Vše",
+        ])
         self.person_filter.currentIndexChanged.connect(self.refresh_persons)
 
         toolbar.addWidget(self.person_add_button)
@@ -541,6 +547,16 @@ class NastaveniPage(QWidget):
             persons = [
                 person for person in person_service.get_all(include_inactive=True)
                 if not person.active
+            ]
+        elif mode == "Zaměstnanci":
+            persons = [
+                person for person in person_service.get_all(include_inactive=False)
+                if person.is_employee
+            ]
+        elif mode == "Ostatní osoby":
+            persons = [
+                person for person in person_service.get_all(include_inactive=False)
+                if not person.is_employee
             ]
         else:
             persons = person_service.get_all(include_inactive=False)
