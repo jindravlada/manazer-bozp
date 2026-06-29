@@ -37,6 +37,7 @@ class MuInvestigationService:
         lead_thp_worker_name: str = "",
         short_description: str = "",
         conclusion: str = "",
+        ohledani_mista_json: str = "",
     ) -> MuInvestigation:
         if status not in VALID_MU_STATUSES:
             raise ValueError(f"Neplatný stav vyšetřování: {status}")
@@ -53,6 +54,7 @@ class MuInvestigationService:
             lead_thp_worker_name=lead_thp_worker_name.strip() or self.resolve_lead_thp_worker_name(lead_thp_worker_id),
             short_description=short_description.strip(),
             conclusion=conclusion.strip(),
+            ohledani_mista_json=ohledani_mista_json or "",
         )
         saved = self.repository.add(investigation)
         saved.number = self._make_number(saved)
@@ -72,6 +74,7 @@ class MuInvestigationService:
         lead_thp_worker_name: str = "",
         short_description: str = "",
         conclusion: str = "",
+        ohledani_mista_json: str = "",
     ) -> MuInvestigation | None:
         investigation = self.repository.get_by_id(investigation_id)
         if investigation is None:
@@ -91,6 +94,7 @@ class MuInvestigationService:
         investigation.lead_thp_worker_name = lead_thp_worker_name.strip() or self.resolve_lead_thp_worker_name(lead_thp_worker_id)
         investigation.short_description = short_description.strip()
         investigation.conclusion = conclusion.strip()
+        investigation.ohledani_mista_json = ohledani_mista_json or ""
         investigation.updated_at = datetime.now()
 
         return self.repository.update(investigation)

@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.navigation.source_navigator import source_navigator
+from core.navigation.source_navigator import ACCIDENT_OPEN_RECORD, source_navigator
 from core.shared.constants import ENTITY_ACCIDENT, ENTITY_AUDITY
 from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.thp_worker_selector import ThpWorkerSelector
@@ -35,6 +35,7 @@ from moduly.vysetrovani_mu.constants import (
 )
 from moduly.vysetrovani_mu.ui.mu_findings_widget import MuFindingsWidget
 from moduly.vysetrovani_mu.ui.mu_investigation_source_panel import MuInvestigationSourcePanel
+from moduly.vysetrovani_mu.ui.mu_ohledani_mista_widget import MuOhledaniMistaWidget
 from moduly.vysetrovani_mu.ui.mu_source_selector_widget import MuSourceSelectorWidget
 
 
@@ -60,6 +61,8 @@ class MuInvestigationDialog(QDialog):
 
         self.tabs = QTabWidget()
         self.tabs.addTab(self._basic_tab(), "Spis")
+        self.ohledani_mista_widget = MuOhledaniMistaWidget()
+        self.tabs.addTab(self.ohledani_mista_widget, "Ohledání místa")
         self.findings_widget = MuFindingsWidget()
         self.tabs.addTab(self.findings_widget, "Zjištění")
         self.tabs.addTab(self._conclusion_tab(), "Závěr")
@@ -72,6 +75,7 @@ class MuInvestigationDialog(QDialog):
 
         investigation_id = investigation.id if investigation is not None else None
         self.findings_widget.set_investigation_id(investigation_id)
+        self._refresh_ohledani_context()
 
         if investigation is not None:
             number = investigation.number or "—"
@@ -89,6 +93,7 @@ class MuInvestigationDialog(QDialog):
             self.lead_thp_worker_selector.set_person_id(investigation.lead_thp_worker_id)
             self.short_description_edit.setPlainText(investigation.short_description or "")
             self.conclusion_edit.setPlainText(investigation.conclusion or "")
+            self.ohledani_mista_widget.load_json(getattr(investigation, "ohledani_mista_json", "") or "")
         else:
             self._on_source_type_changed()
 
@@ -128,6 +133,7 @@ class MuInvestigationDialog(QDialog):
         self.source_selector.audit_combo.currentIndexChanged.connect(self._update_source_panel)
         self.source_selector.control_combo.currentIndexChanged.connect(self._update_source_panel)
         self.source_selector.text_edit.textChanged.connect(self._update_source_panel)
+        self.source_selector.accident_combo.currentIndexChanged.connect(self._refresh_ohledani_context)
 
         self.started_at_edit = NullableDateEdit()
         self.started_at_edit.set_date_value(date.today())
@@ -186,6 +192,35 @@ class MuInvestigationDialog(QDialog):
         source_type = self.source_type_combo.currentData() or DEFAULT_SOURCE_TYPE
         self.source_selector.set_source_type(source_type)
         self._update_source_panel()
+        self._refresh_ohledani_context()
+
+    def _accident_number_for_ohledani(self) -> str:
+        source_type = self._current_source_type()
+        if source_type != SOURCE_TYPE_ACCIDENT:
+            return ""
+
+        source_id = self.source_selector.current_source_id()
+        if source_id is None and self.investigation is not None:
+            source_id = self.investigation.source_id
+
+        if not isinstance(source_id, int) or source_id <= 0:
+            return ""
+
+        from moduly.kniha_urazu.sluzby.accident_service import accident_service
+
+        accident = accident_service.get_by_id(source_id)
+        if accident is None:
+            return ""
+        return accident.number or ""
+
+    def _refresh_ohledani_context(self) -> None:
+        investigation_id = self.investigation.id if self.investigation is not None else None
+        investigation_number = self.investigation.number if self.investigation is not None else ""
+        self.ohledani_mista_widget.set_context(
+            investigation_id,
+            accident_number=self._accident_number_for_ohledani(),
+            investigation_number=investigation_number,
+        )
 
     def _current_source_type(self) -> str:
         return self.source_type_combo.currentData() or DEFAULT_SOURCE_TYPE
@@ -239,7 +274,16 @@ class MuInvestigationDialog(QDialog):
         if entity_type is None or source_id is None:
             return
 
-        if not source_navigator.open(entity_type, source_id):
+        if entity_type == ENTITY_ACCIDENT:
+            opened = source_navigator.open(
+                entity_type,
+                source_id,
+                accident_target=ACCIDENT_OPEN_RECORD,
+            )
+        else:
+            opened = source_navigator.open(entity_type, source_id)
+
+        if not opened:
             QMessageBox.warning(
                 self,
                 "Navigace",
@@ -261,4 +305,5 @@ class MuInvestigationDialog(QDialog):
             "lead_thp_worker_name": worker.display_name if worker is not None else self.lead_thp_worker_selector.currentText().strip(),
             "short_description": self.short_description_edit.toPlainText().strip(),
             "conclusion": self.conclusion_edit.toPlainText().strip(),
+            "ohledani_mista_json": self.ohledani_mista_widget.get_json(),
         }
