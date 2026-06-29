@@ -6,6 +6,7 @@ from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.vysetrovani_mu.constants import DEFAULT_MU_STATUS, VALID_MU_STATUSES
 from moduly.vysetrovani_mu.modely.mu_investigation import MuInvestigation
 from moduly.vysetrovani_mu.repository.mu_investigation_repository import MuInvestigationRepository
+from moduly.vysetrovani_mu.sluzby.mu_number_utils import mu_number_sort_key
 
 
 class MuInvestigationService:
@@ -13,7 +14,12 @@ class MuInvestigationService:
         self.repository = MuInvestigationRepository()
 
     def get_all(self) -> list[MuInvestigation]:
-        return self.repository.get_all()
+        investigations = self.repository.get_all()
+        return sorted(
+            investigations,
+            key=lambda investigation: mu_number_sort_key(investigation.number or ""),
+            reverse=True,
+        )
 
     def get_by_id(self, investigation_id: int) -> MuInvestigation | None:
         return self.repository.get_by_id(investigation_id)
