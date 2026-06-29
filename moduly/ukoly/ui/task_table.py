@@ -7,6 +7,7 @@ from core.shared.constants import (
     ENTITY_ACCIDENT,
     ENTITY_AUDITY,
     ENTITY_FINDING,
+    ENTITY_MU_INVESTIGATION,
     ENTITY_PROVERKY,
 )
 from core.shared.sluzby.finding_service import finding_service
@@ -163,6 +164,7 @@ class TaskTable(QTableWidget):
         labels = {
             ENTITY_AUDITY: "Audit IMS",
             ENTITY_ACCIDENT: "Šetření úrazu",
+            ENTITY_MU_INVESTIGATION: "Vyšetřování MU",
             ENTITY_PROVERKY: "Prověrka BOZP",
         }
         return labels.get(entity_type, entity_type or "—")
@@ -191,6 +193,10 @@ class TaskTable(QTableWidget):
             label = self._accident_record_label(finding.entity_id)
             if label != "—":
                 return label
+        elif finding.entity_type == ENTITY_MU_INVESTIGATION:
+            label = self._mu_investigation_record_label(finding.entity_id)
+            if label != "—":
+                return label
 
         reference = (finding.reference_label or "").strip()
         if reference:
@@ -212,6 +218,14 @@ class TaskTable(QTableWidget):
         accident = accident_service.get_by_id(entity_id)
         if accident is not None and accident.number:
             return f"Úraz č. {accident.number}"
+        return "—"
+
+    def _mu_investigation_record_label(self, entity_id: int) -> str:
+        from moduly.vysetrovani_mu.sluzby.mu_investigation_service import mu_investigation_service
+
+        investigation = mu_investigation_service.get_by_id(entity_id)
+        if investigation is not None and investigation.number:
+            return investigation.number
         return "—"
 
     def _priority_color(self, priority: str) -> QColor:

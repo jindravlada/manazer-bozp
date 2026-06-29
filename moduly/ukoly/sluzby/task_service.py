@@ -66,7 +66,8 @@ class TaskService:
             source_record_id=source_record_id,
         )
         self._sync_legacy_status(task)
-        return self.repository.add(task)
+        saved = self.repository.add(task)
+        return saved
 
     def update_task(
         self,
@@ -115,7 +116,9 @@ class TaskService:
         task.note = note
         self._sync_legacy_status(task)
 
-        return self.repository.update(task)
+        saved = self.repository.update(task)
+        self._resolve_linked_finding(saved)
+        return saved
 
     def mark_completed(self, task_id: int) -> bool:
         task = self.repository.get_by_id(task_id)
@@ -130,7 +133,8 @@ class TaskService:
             task.check_due_date = task.completed_date + timedelta(days=15)
 
         self._sync_legacy_status(task)
-        self.repository.update(task)
+        saved = self.repository.update(task)
+        self._resolve_linked_finding(saved)
         return True
 
     def reopen_task(self, task_id: int) -> bool:
@@ -162,6 +166,14 @@ class TaskService:
 
     def _sync_legacy_status(self, task: Task) -> None:
         task.status = task.computed_status
+
+    def _resolve_linked_finding(self, task: Task | None) -> None:
+        if task is None:
+            return
+
+        from core.shared.sluzby.finding_task_service import finding_task_service
+
+        finding_task_service.resolve_finding_for_verified_task(task)
 
     def _person_name(self, person_id: int | None) -> str:
         if not person_id:

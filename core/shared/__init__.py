@@ -1,7 +1,7 @@
 from core.shared.constants import (
     ENTITY_ACCIDENT,
     ENTITY_AUDITY,
-    ENTITY_EXTRAORDINARY_EVENT,
+    ENTITY_MU_INVESTIGATION,
     ENTITY_FINDING,
     ENTITY_PROVERKY,
     ENTITY_TASK,
@@ -26,7 +26,7 @@ from core.shared.sluzby.finding_service import finding_service
 __all__ = [
     "ENTITY_ACCIDENT",
     "ENTITY_AUDITY",
-    "ENTITY_EXTRAORDINARY_EVENT",
+    "ENTITY_MU_INVESTIGATION",
     "ENTITY_FINDING",
     "ENTITY_PROVERKY",
     "ENTITY_TASK",

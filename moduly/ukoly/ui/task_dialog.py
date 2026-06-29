@@ -43,7 +43,10 @@ class TaskDialog(QDialog):
                 task_source_label(task),
                 self._finding.description,
             )
-            self.source_panel.open_button.clicked.connect(self._open_source_record)
+            if source_navigator.can_open(self._finding.entity_type, self._finding.entity_id):
+                self.source_panel.open_button.clicked.connect(self._open_source_record)
+            else:
+                self.source_panel.open_button.setVisible(False)
             main_layout.addWidget(self.source_panel)
 
         self.tabs = QTabWidget()

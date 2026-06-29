@@ -18,6 +18,7 @@ def initialize_database() -> None:
     from moduly.nastaveni.modely.workplace import Workplace  # noqa: F401
     from moduly.kniha_urazu.modely.accident import Accident  # noqa: F401
     from moduly.kniha_urazu.modely.investigation import AccidentInvestigation  # noqa: F401
+    from moduly.vysetrovani_mu.modely.mu_investigation import MuInvestigation  # noqa: F401
 
     create_database()
     _ensure_thp_worker_title_columns()

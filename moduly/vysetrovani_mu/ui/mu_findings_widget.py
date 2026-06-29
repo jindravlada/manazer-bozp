@@ -13,7 +13,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.shared.constants import ENTITY_AUDITY
+from core.shared.constants import (
+    ENTITY_MU_INVESTIGATION,
+    FINDING_TYPE_BEZPROSTREDNI_PRICINA,
+)
 from core.shared.finding_display import (
     finding_status_background,
     finding_status_label,
@@ -24,20 +27,19 @@ from core.shared.sluzby.finding_service import finding_service
 from core.widgets.finding_dialog import FindingDialog
 from core.widgets.finding_summary_panel import FindingSummaryPanel
 from core.widgets.finding_task_actions import FindingTaskActions
+from moduly.vysetrovani_mu.constants import MU_INVESTIGATION_FINDING_TYPES
 
 
-class AuditFindingsWidget(QWidget):
+class MuFindingsWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.audit_id: int | None = None
+        self.investigation_id: int | None = None
 
         layout = QVBoxLayout(self)
 
-        self.info_label = QLabel("Zjištění lze přidat až po uložení auditu.")
-        self.info_label.setWordWrap(True)
-
         self.summary_panel = FindingSummaryPanel()
+        self.info_label = QLabel("Zjištění lze přidat až po uložení vyšetřování.")
 
         toolbar = QHBoxLayout()
         self.add_btn = QPushButton("Přidat")
@@ -85,7 +87,7 @@ class AuditFindingsWidget(QWidget):
         self.empty_page = QWidget()
         empty_layout = QVBoxLayout(self.empty_page)
         empty_layout.addStretch()
-        self.empty_label = QLabel("Audit zatím neobsahuje žádné zjištění.")
+        self.empty_label = QLabel("Vyšetřování zatím neobsahuje žádné zjištění.")
         self.empty_label.setAlignment(Qt.AlignCenter)
         empty_layout.addWidget(self.empty_label)
         empty_layout.addStretch()
@@ -98,8 +100,8 @@ class AuditFindingsWidget(QWidget):
         self.content_stack.addWidget(self.empty_page)
         self.content_stack.addWidget(self.table_page)
 
-        layout.addWidget(self.info_label)
         layout.addWidget(self.summary_panel)
+        layout.addWidget(self.info_label)
         layout.addLayout(toolbar)
         layout.addWidget(self.content_stack, 1)
 
@@ -112,8 +114,8 @@ class AuditFindingsWidget(QWidget):
         self._update_state()
         self.task_actions.update_state()
 
-    def set_audit_id(self, audit_id: int | None) -> None:
-        self.audit_id = audit_id
+    def set_investigation_id(self, investigation_id: int | None) -> None:
+        self.investigation_id = investigation_id
         self.refresh()
         self._update_state()
 
@@ -121,14 +123,21 @@ class AuditFindingsWidget(QWidget):
         findings = []
         summary = {"total": 0}
 
-        if self.audit_id is not None:
-            findings = finding_service.get_for_entity(ENTITY_AUDITY, self.audit_id)
-            summary = finding_service.summarize(ENTITY_AUDITY, self.audit_id)
+        if self.investigation_id is not None:
+            findings = finding_service.get_for_entity(
+                ENTITY_MU_INVESTIGATION,
+                self.investigation_id,
+            )
+            summary = finding_service.summarize(
+                ENTITY_MU_INVESTIGATION,
+                self.investigation_id,
+            )
 
         self.summary_panel.update_summary(summary)
-        self.summary_panel.setVisible(self.audit_id is not None)
+        self.summary_panel.setVisible(self.investigation_id is not None)
+        self.info_label.setVisible(self.investigation_id is None)
 
-        if self.audit_id is not None and not findings:
+        if self.investigation_id is not None and not findings:
             self.content_stack.setCurrentWidget(self.empty_page)
         else:
             self.content_stack.setCurrentWidget(self.table_page)
@@ -186,8 +195,7 @@ class AuditFindingsWidget(QWidget):
         return "\n".join(lines)
 
     def _update_state(self) -> None:
-        enabled = self.audit_id is not None
-        self.info_label.setVisible(not enabled)
+        enabled = self.investigation_id is not None
         self.add_btn.setEnabled(enabled)
         self.edit_btn.setEnabled(enabled)
         self.delete_btn.setEnabled(enabled)
@@ -200,17 +208,26 @@ class AuditFindingsWidget(QWidget):
         item = self.table.item(selected[0].row(), 0)
         return int(item.text()) if item else None
 
+    def _finding_dialog(self, finding=None) -> FindingDialog:
+        return FindingDialog(
+            self,
+            finding=finding,
+            title="Zjištění vyšetřování MU",
+            allowed_finding_types=MU_INVESTIGATION_FINDING_TYPES,
+            default_finding_type=FINDING_TYPE_BEZPROSTREDNI_PRICINA,
+        )
+
     def add_finding(self) -> None:
-        if self.audit_id is None:
+        if self.investigation_id is None:
             return
 
-        dialog = FindingDialog(self, title="Zjištění auditu")
+        dialog = self._finding_dialog()
         if dialog.exec():
             data = dialog.get_data()
             if not data["description"]:
                 QMessageBox.information(self, "Zjištění", "Vyplňte popis zjištění.")
                 return
-            finding_service.create(ENTITY_AUDITY, self.audit_id, **data)
+            finding_service.create(ENTITY_MU_INVESTIGATION, self.investigation_id, **data)
             self.refresh()
 
     def edit_finding(self) -> None:
@@ -225,7 +242,7 @@ class AuditFindingsWidget(QWidget):
             self.refresh()
             return
 
-        dialog = FindingDialog(self, finding=finding, title="Zjištění auditu")
+        dialog = self._finding_dialog(finding=finding)
         if dialog.exec():
             data = dialog.get_data()
             if not data["description"]:

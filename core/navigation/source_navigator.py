@@ -28,6 +28,18 @@ class SourceNavigator:
     ) -> None:
         self._routes[entity_type] = SourceRoute(module_key=module_key, opener=opener)
 
+    def can_open(self, entity_type: str, entity_id: int | None) -> bool:
+        if not isinstance(entity_id, int) or entity_id <= 0:
+            return False
+        if self._host is None:
+            return False
+
+        route = self._routes.get(entity_type)
+        if route is None:
+            return False
+
+        return self._host._page_widgets.get(route.module_key) is not None
+
     def open(self, entity_type: str, entity_id: int) -> bool:
         if self._host is None:
             return False
@@ -68,7 +80,7 @@ class SourceNavigator:
             lambda page, entity_id: page.open_investigation(entity_id),
         )
         # Další typy: source_navigator.register(ENTITY_PROVERKY, "proverky", opener)
-        #             source_navigator.register(ENTITY_EXTRAORDINARY_EVENT, "...", opener)
+        #             source_navigator.register(ENTITY_MU_INVESTIGATION, "...", opener)
 
 
 source_navigator = SourceNavigator()

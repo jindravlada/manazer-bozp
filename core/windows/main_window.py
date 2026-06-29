@@ -127,6 +127,7 @@ class MainWindow(QMainWindow):
         preferred_order = [
             "ukoly",
             "kniha_urazu",
+            "vysetrovani_mu",
             "kontroly",
             "audity",
             "proverky",

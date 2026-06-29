@@ -52,7 +52,7 @@ class KnihaUrazuPage(QWidget):
 
         self.new_btn.clicked.connect(self.new_accident)
         self.edit_btn.clicked.connect(self.edit_selected_accident)
-        self.investigation_btn.clicked.connect(self.open_investigation)
+        self.investigation_btn.clicked.connect(lambda: self.open_investigation())
         self.vypis_btn.clicked.connect(self.generate_accident_report)
         self.final_report_btn.clicked.connect(self.generate_final_report)
         self.table.doubleClicked.connect(self.edit_selected_accident)

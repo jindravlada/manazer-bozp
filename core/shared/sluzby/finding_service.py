@@ -23,6 +23,9 @@ class FindingService:
     def get_by_id(self, finding_id: int) -> Finding | None:
         return self.repository.get_by_id(finding_id)
 
+    def get_by_task_id(self, task_id: int) -> Finding | None:
+        return self.repository.get_by_task_id(task_id)
+
     def create(self, entity_type: str, entity_id: int, **fields) -> Finding:
         self._validate_entity(entity_type, entity_id)
         display_order = fields.pop("display_order", None)

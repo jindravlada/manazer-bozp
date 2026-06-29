@@ -3,6 +3,7 @@ from moduly.ukoly.module import get_module_definition as ukoly_module
 from moduly.kniha_urazu.module import get_module_definition as kniha_urazu_module
 from moduly.kontroly.module import get_module_definition as kontroly_module
 from moduly.audity.module import get_module_definition as audity_module
+from moduly.vysetrovani_mu.module import get_module_definition as vysetrovani_mu_module
 from moduly.nastaveni.module import get_module_definition as nastaveni_module
 
 
@@ -14,6 +15,7 @@ class ModuleManager:
             kniha_urazu_module(),
             kontroly_module(),
             audity_module(),
+            vysetrovani_mu_module(),
             nastaveni_module(),
         ]
 

@@ -23,6 +23,11 @@ class FindingRepository:
         with get_session() as session:
             return session.get(Finding, finding_id)
 
+    def get_by_task_id(self, task_id: int) -> Finding | None:
+        with get_session() as session:
+            stmt = select(Finding).where(Finding.task_id == task_id)
+            return session.scalar(stmt)
+
     def save(self, finding: Finding) -> Finding:
         with get_session() as session:
             finding.updated_at = datetime.now()

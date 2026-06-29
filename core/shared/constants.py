@@ -1,7 +1,7 @@
 ENTITY_AUDITY = "audity"
 ENTITY_PROVERKY = "proverky"
 ENTITY_ACCIDENT = "accident"
-ENTITY_EXTRAORDINARY_EVENT = "extraordinary_event"
+ENTITY_MU_INVESTIGATION = "mu_investigation"
 
 ENTITY_FINDING = "finding"
 ENTITY_TASK = "task"
@@ -11,7 +11,7 @@ VALID_ENTITY_TYPES = frozenset(
         ENTITY_AUDITY,
         ENTITY_PROVERKY,
         ENTITY_ACCIDENT,
-        ENTITY_EXTRAORDINARY_EVENT,
+        ENTITY_MU_INVESTIGATION,
         ENTITY_FINDING,
         ENTITY_TASK,
     }
