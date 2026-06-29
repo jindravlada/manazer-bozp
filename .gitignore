@@ -72,3 +72,16 @@ Thumbs.db
 *~
 *.bak
 *.tmp
+
+# Build
+build/
+dist/
+AppDir/
+
+# AppImage
+*.AppImage
+linuxdeploy-x86_64.AppImage
+squashfs-root/
+
+# PyInstaller
+*.spec
