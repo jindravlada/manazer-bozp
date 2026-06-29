@@ -8,6 +8,28 @@ from moduly.vysetrovani_mu.modely.mu_investigation import MuInvestigation
 from moduly.vysetrovani_mu.repository.mu_investigation_repository import MuInvestigationRepository
 from moduly.vysetrovani_mu.sluzby.mu_number_utils import mu_number_sort_key
 
+_OZNAMENI_FIELDS = (
+    "oznameni_kdo",
+    "oznameni_komu",
+    "oznameni_datum",
+    "oznameni_cas",
+    "oznameni_bezodkladne",
+    "oznameni_duvod_pozde",
+    "oznameni_popis",
+    "opatreni_prvni_pomoc",
+    "opatreni_zzs",
+    "opatreni_zastavena_cinnost",
+    "opatreni_zajisteno_misto",
+    "opatreni_zabraneno_manipulaci",
+    "opatreni_informovan_nadrizeny",
+    "opatreni_informovan_bozp",
+    "oznameni_bozp_datum",
+    "oznameni_bozp_cas",
+    "opatreni_informovany_dalsi",
+    "dalsi_postup",
+    "dalsi_postup_jiny",
+)
+
 
 class MuInvestigationService:
     def __init__(self):
@@ -38,6 +60,8 @@ class MuInvestigationService:
         short_description: str = "",
         conclusion: str = "",
         ohledani_mista_json: str = "",
+        zajisteni_dukazu_json: str = "",
+        **kwargs,
     ) -> MuInvestigation:
         if status not in VALID_MU_STATUSES:
             raise ValueError(f"Neplatný stav vyšetřování: {status}")
@@ -55,7 +79,9 @@ class MuInvestigationService:
             short_description=short_description.strip(),
             conclusion=conclusion.strip(),
             ohledani_mista_json=ohledani_mista_json or "",
+            zajisteni_dukazu_json=zajisteni_dukazu_json or "",
         )
+        self._apply_oznameni_fields(investigation, kwargs)
         saved = self.repository.add(investigation)
         saved.number = self._make_number(saved)
         return self.repository.update(saved)
@@ -75,6 +101,8 @@ class MuInvestigationService:
         short_description: str = "",
         conclusion: str = "",
         ohledani_mista_json: str = "",
+        zajisteni_dukazu_json: str = "",
+        **kwargs,
     ) -> MuInvestigation | None:
         investigation = self.repository.get_by_id(investigation_id)
         if investigation is None:
@@ -95,9 +123,24 @@ class MuInvestigationService:
         investigation.short_description = short_description.strip()
         investigation.conclusion = conclusion.strip()
         investigation.ohledani_mista_json = ohledani_mista_json or ""
+        investigation.zajisteni_dukazu_json = zajisteni_dukazu_json or ""
+        self._apply_oznameni_fields(investigation, kwargs)
         investigation.updated_at = datetime.now()
 
         return self.repository.update(investigation)
+
+    def _apply_oznameni_fields(self, investigation: MuInvestigation, data: dict) -> None:
+        for key in _OZNAMENI_FIELDS:
+            if key not in data:
+                continue
+            value = data[key]
+            if key in ("oznameni_datum", "oznameni_bozp_datum"):
+                setattr(investigation, key, value)
+                continue
+            if isinstance(value, str):
+                setattr(investigation, key, value.strip())
+            else:
+                setattr(investigation, key, value or "")
 
     def delete_investigation(self, investigation_id: int) -> bool:
         finding_service.delete_for_entity(ENTITY_MU_INVESTIGATION, investigation_id)

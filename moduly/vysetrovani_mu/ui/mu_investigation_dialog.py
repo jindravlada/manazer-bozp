@@ -36,7 +36,10 @@ from moduly.vysetrovani_mu.constants import (
 from moduly.vysetrovani_mu.ui.mu_findings_widget import MuFindingsWidget
 from moduly.vysetrovani_mu.ui.mu_investigation_source_panel import MuInvestigationSourcePanel
 from moduly.vysetrovani_mu.ui.mu_ohledani_mista_widget import MuOhledaniMistaWidget
+from moduly.vysetrovani_mu.ui.mu_oznameni_widget import MuOznameniWidget
 from moduly.vysetrovani_mu.ui.mu_source_selector_widget import MuSourceSelectorWidget
+from moduly.vysetrovani_mu.ui.mu_zajisteni_dukazu_widget import MuZajisteniDukazuWidget
+from moduly.vysetrovani_mu.sluzby.mu_source_context import resolve_mu_source_context
 
 
 class MuInvestigationDialog(QDialog):
@@ -45,7 +48,7 @@ class MuInvestigationDialog(QDialog):
         SOURCE_TYPE_AUDIT: ENTITY_AUDITY,
     }
     _OPEN_BUTTON_LABELS = {
-        SOURCE_TYPE_ACCIDENT: "Otevřít úraz",
+        SOURCE_TYPE_ACCIDENT: "Otevřít zdrojový záznam",
         SOURCE_TYPE_AUDIT: "Otevřít audit",
     }
 
@@ -61,6 +64,10 @@ class MuInvestigationDialog(QDialog):
 
         self.tabs = QTabWidget()
         self.tabs.addTab(self._basic_tab(), "Spis")
+        self.oznameni_widget = MuOznameniWidget()
+        self.tabs.addTab(self.oznameni_widget, "Oznámení")
+        self.zajisteni_dukazu_widget = MuZajisteniDukazuWidget()
+        self.tabs.addTab(self.zajisteni_dukazu_widget, "Zajištění důkazů")
         self.ohledani_mista_widget = MuOhledaniMistaWidget()
         self.tabs.addTab(self.ohledani_mista_widget, "Ohledání místa")
         self.findings_widget = MuFindingsWidget()
@@ -75,7 +82,6 @@ class MuInvestigationDialog(QDialog):
 
         investigation_id = investigation.id if investigation is not None else None
         self.findings_widget.set_investigation_id(investigation_id)
-        self._refresh_ohledani_context()
 
         if investigation is not None:
             number = investigation.number or "—"
@@ -94,9 +100,12 @@ class MuInvestigationDialog(QDialog):
             self.short_description_edit.setPlainText(investigation.short_description or "")
             self.conclusion_edit.setPlainText(investigation.conclusion or "")
             self.ohledani_mista_widget.load_json(getattr(investigation, "ohledani_mista_json", "") or "")
+            self.zajisteni_dukazu_widget.load_json(getattr(investigation, "zajisteni_dukazu_json", "") or "")
+            self.oznameni_widget.load_from_investigation(investigation)
         else:
             self._on_source_type_changed()
 
+        self._refresh_source_dependent_widgets()
         self._update_source_panel()
 
     def _basic_tab(self) -> QWidget:
@@ -133,7 +142,10 @@ class MuInvestigationDialog(QDialog):
         self.source_selector.audit_combo.currentIndexChanged.connect(self._update_source_panel)
         self.source_selector.control_combo.currentIndexChanged.connect(self._update_source_panel)
         self.source_selector.text_edit.textChanged.connect(self._update_source_panel)
-        self.source_selector.accident_combo.currentIndexChanged.connect(self._refresh_ohledani_context)
+        self.source_selector.accident_combo.currentIndexChanged.connect(self._refresh_source_dependent_widgets)
+        self.source_selector.audit_combo.currentIndexChanged.connect(self._refresh_source_dependent_widgets)
+        self.source_selector.control_combo.currentIndexChanged.connect(self._refresh_source_dependent_widgets)
+        self.source_selector.text_edit.textChanged.connect(self._refresh_source_dependent_widgets)
 
         self.started_at_edit = NullableDateEdit()
         self.started_at_edit.set_date_value(date.today())
@@ -192,33 +204,48 @@ class MuInvestigationDialog(QDialog):
         source_type = self.source_type_combo.currentData() or DEFAULT_SOURCE_TYPE
         self.source_selector.set_source_type(source_type)
         self._update_source_panel()
-        self._refresh_ohledani_context()
+        self._refresh_source_dependent_widgets()
 
-    def _accident_number_for_ohledani(self) -> str:
-        source_type = self._current_source_type()
-        if source_type != SOURCE_TYPE_ACCIDENT:
-            return ""
-
+    def _current_source_id(self) -> int | None:
         source_id = self.source_selector.current_source_id()
-        if source_id is None and self.investigation is not None:
-            source_id = self.investigation.source_id
+        if source_id is not None:
+            return source_id
+        if self.investigation is not None:
+            return self.investigation.source_id
+        return None
 
-        if not isinstance(source_id, int) or source_id <= 0:
-            return ""
-
-        from moduly.kniha_urazu.sluzby.accident_service import accident_service
-
-        accident = accident_service.get_by_id(source_id)
-        if accident is None:
-            return ""
-        return accident.number or ""
-
-    def _refresh_ohledani_context(self) -> None:
+    def _refresh_source_dependent_widgets(self) -> None:
         investigation_id = self.investigation.id if self.investigation is not None else None
         investigation_number = self.investigation.number if self.investigation is not None else ""
+        source_type = self._current_source_type()
+        source_id = self._current_source_id()
+        source_label = self.source_selector.current_source_label() or (
+            (self.investigation.source_label or "") if self.investigation is not None else ""
+        )
+
+        context = resolve_mu_source_context(
+            source_type,
+            source_id,
+            source_label,
+            investigation_number,
+        )
+        if not context.event_number and investigation_number:
+            context.event_number = investigation_number
+
+        self.oznameni_widget.set_context(
+            source_type,
+            source_id,
+            source_label,
+            investigation_number,
+        )
+        self.zajisteni_dukazu_widget.set_context(
+            investigation_id,
+            event_number=context.event_number,
+            context=context if self.investigation is None else None,
+        )
         self.ohledani_mista_widget.set_context(
             investigation_id,
-            accident_number=self._accident_number_for_ohledani(),
+            event_number=context.event_number,
             investigation_number=investigation_number,
         )
 
@@ -306,4 +333,6 @@ class MuInvestigationDialog(QDialog):
             "short_description": self.short_description_edit.toPlainText().strip(),
             "conclusion": self.conclusion_edit.toPlainText().strip(),
             "ohledani_mista_json": self.ohledani_mista_widget.get_json(),
+            "zajisteni_dukazu_json": self.zajisteni_dukazu_widget.get_json(),
+            **self.oznameni_widget.get_data(),
         }

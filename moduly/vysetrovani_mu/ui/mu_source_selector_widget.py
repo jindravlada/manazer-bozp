@@ -176,7 +176,7 @@ class MuSourceSelectorWidget(QWidget):
         accident = accident_service.get_by_id(accident_id)
         if accident is None or not accident.number:
             return ""
-        return f"Úraz č. {accident.number}"
+        return f"Událost č. {accident.number}"
 
     def _audit_label(self, audit_id: int) -> str:
         from moduly.audity.sluzby.internal_audit_service import internal_audit_service

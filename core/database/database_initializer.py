@@ -144,8 +144,32 @@ def _ensure_person_columns() -> None:
 
 def _ensure_mu_investigation_columns() -> None:
     columns = _table_columns("mu_investigations")
-    if "ohledani_mista_json" not in columns:
-        _add_column("mu_investigations", "ohledani_mista_json TEXT DEFAULT ''")
+    additions = {
+        "ohledani_mista_json": "ohledani_mista_json TEXT DEFAULT ''",
+        "zajisteni_dukazu_json": "zajisteni_dukazu_json TEXT DEFAULT ''",
+        "oznameni_kdo": "oznameni_kdo VARCHAR(200) DEFAULT ''",
+        "oznameni_komu": "oznameni_komu VARCHAR(200) DEFAULT ''",
+        "oznameni_datum": "oznameni_datum DATE",
+        "oznameni_cas": "oznameni_cas VARCHAR(20) DEFAULT ''",
+        "oznameni_bezodkladne": "oznameni_bezodkladne VARCHAR(10) DEFAULT ''",
+        "oznameni_duvod_pozde": "oznameni_duvod_pozde TEXT DEFAULT ''",
+        "oznameni_popis": "oznameni_popis TEXT DEFAULT ''",
+        "opatreni_prvni_pomoc": "opatreni_prvni_pomoc VARCHAR(10) DEFAULT ''",
+        "opatreni_zzs": "opatreni_zzs VARCHAR(10) DEFAULT ''",
+        "opatreni_zastavena_cinnost": "opatreni_zastavena_cinnost VARCHAR(10) DEFAULT ''",
+        "opatreni_zajisteno_misto": "opatreni_zajisteno_misto VARCHAR(10) DEFAULT ''",
+        "opatreni_zabraneno_manipulaci": "opatreni_zabraneno_manipulaci VARCHAR(10) DEFAULT ''",
+        "opatreni_informovan_nadrizeny": "opatreni_informovan_nadrizeny VARCHAR(10) DEFAULT ''",
+        "opatreni_informovan_bozp": "opatreni_informovan_bozp VARCHAR(10) DEFAULT ''",
+        "oznameni_bozp_datum": "oznameni_bozp_datum DATE",
+        "oznameni_bozp_cas": "oznameni_bozp_cas VARCHAR(20) DEFAULT ''",
+        "opatreni_informovany_dalsi": "opatreni_informovany_dalsi VARCHAR(10) DEFAULT ''",
+        "dalsi_postup": "dalsi_postup VARCHAR(250) DEFAULT ''",
+        "dalsi_postup_jiny": "dalsi_postup_jiny TEXT DEFAULT ''",
+    }
+    for column_name, column_sql in additions.items():
+        if column_name not in columns:
+            _add_column("mu_investigations", column_sql)
 
 
 def _normalize_internal_audit_status_values() -> None:

@@ -37,12 +37,13 @@ class MuOhledaniMistaWidget(QWidget):
         self,
         investigation_id: int | None,
         *,
+        event_number: str = "",
         accident_number: str = "",
         investigation_number: str = "",
     ) -> None:
         self._investigation_id = investigation_id
-        self.accident_number_label.setText(accident_number or "")
-        number = investigation_number.strip() or accident_number.strip()
+        number = event_number.strip() or accident_number.strip() or investigation_number.strip()
+        self.accident_number_label.setText(number)
         self._number_slug = str(number).replace("/", "-").replace("\\", "-").strip() or "bez-cisla"
 
     def load_json(self, raw_json: str) -> None:
@@ -109,10 +110,10 @@ class MuOhledaniMistaWidget(QWidget):
         layout = QVBoxLayout(content)
         layout.setContentsMargins(10, 10, 10, 10)
 
-        zaklad = QGroupBox("Protokol o ohledání místa úrazu")
+        zaklad = QGroupBox("Protokol o ohledání místa události")
         form = QFormLayout(zaklad)
         self.accident_number_label = QLabel("")
-        form.addRow("Číslo úrazu:", self.accident_number_label)
+        form.addRow("Číslo události:", self.accident_number_label)
         form.addRow("Záznam provedl:", self.ohledani_zapsal)
         form.addRow("Provoz:", self.ohledani_provoz)
         self.ohledani_provedli.setMinimumHeight(170)
