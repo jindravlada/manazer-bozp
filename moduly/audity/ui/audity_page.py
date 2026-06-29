@@ -1,5 +1,7 @@
 from PySide6.QtWidgets import (
+    QComboBox,
     QHBoxLayout,
+    QLabel,
     QMessageBox,
     QPushButton,
     QVBoxLayout,
@@ -8,6 +10,14 @@ from PySide6.QtWidgets import (
 
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
+from moduly.audity.constants import (
+    AUDIT_STATUS_BY_FILTER,
+    AUDIT_STATUS_FILTER_DOKONCENE,
+    AUDIT_STATUS_FILTER_PLANOVANE,
+    AUDIT_STATUS_FILTER_PROBEHAJICI,
+    AUDIT_STATUS_FILTER_VSE,
+    DEFAULT_AUDIT_STATUS_FILTER,
+)
 from moduly.audity.sluzby.internal_audit_service import internal_audit_service
 from moduly.audity.ui.internal_audit_dialog import InternalAuditDialog
 from moduly.audity.ui.internal_audit_table import InternalAuditTable
@@ -25,10 +35,21 @@ class AudityPage(QWidget):
         self.edit_btn = QPushButton("Upravit")
         self.delete_btn = QPushButton("Smazat")
 
+        self.status_filter = QComboBox()
+        self.status_filter.addItems([
+            AUDIT_STATUS_FILTER_PROBEHAJICI,
+            AUDIT_STATUS_FILTER_PLANOVANE,
+            AUDIT_STATUS_FILTER_DOKONCENE,
+            AUDIT_STATUS_FILTER_VSE,
+        ])
+        self.status_filter.setCurrentText(DEFAULT_AUDIT_STATUS_FILTER)
+
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.delete_btn)
         toolbar.addStretch()
+        toolbar.addWidget(QLabel("Zobrazit:"))
+        toolbar.addWidget(self.status_filter)
 
         self.table = InternalAuditTable()
         configure_table_columns(self.table, "internal_audits")
@@ -42,14 +63,27 @@ class AudityPage(QWidget):
         self.edit_btn.clicked.connect(self.edit_selected_audit)
         self.delete_btn.clicked.connect(self.delete_selected_audit)
         self.table.doubleClicked.connect(self.edit_selected_audit)
+        self.status_filter.currentIndexChanged.connect(self.refresh)
 
         self.refresh()
 
     def refresh(self):
         audits = internal_audit_service.get_all()
+        audits = self._filter_audits(audits)
         self.table.load_audits(audits)
         configure_table_columns(self.table, "internal_audits")
         self.text_filter.update_count()
+
+    def _filter_audits(self, audits):
+        mode = self.status_filter.currentText()
+        if mode == AUDIT_STATUS_FILTER_VSE:
+            return audits
+
+        status = AUDIT_STATUS_BY_FILTER.get(mode)
+        if status is None:
+            return audits
+
+        return [audit for audit in audits if audit.status == status]
 
     def _selected_audit_id(self) -> int | None:
         selected = self.table.selectionModel().selectedRows()

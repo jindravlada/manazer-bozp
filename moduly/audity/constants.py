@@ -1,13 +1,54 @@
-AUDIT_STATUS_KONCEPT = "Koncept"
+from core.shared.finding_display import FINDING_TYPE_LABELS, finding_type_label
+
+AUDIT_STATUS_PLANOVANY = "Plánovaný"
 AUDIT_STATUS_PROBIHA = "Probíhá"
 AUDIT_STATUS_DOKONCEN = "Dokončen"
 
-DEFAULT_AUDIT_STATUS = AUDIT_STATUS_KONCEPT
+DEFAULT_AUDIT_STATUS = AUDIT_STATUS_PLANOVANY
 
 VALID_AUDIT_STATUSES = frozenset(
     {
-        AUDIT_STATUS_KONCEPT,
+        AUDIT_STATUS_PLANOVANY,
         AUDIT_STATUS_PROBIHA,
         AUDIT_STATUS_DOKONCEN,
     }
 )
+
+AUDIT_STATUS_FILTER_PROBEHAJICI = "Probíhající"
+AUDIT_STATUS_FILTER_PLANOVANE = "Plánované"
+AUDIT_STATUS_FILTER_DOKONCENE = "Dokončené"
+AUDIT_STATUS_FILTER_VSE = "Vše"
+
+DEFAULT_AUDIT_STATUS_FILTER = AUDIT_STATUS_FILTER_PROBEHAJICI
+
+AUDIT_STATUS_BY_FILTER = {
+    AUDIT_STATUS_FILTER_PROBEHAJICI: AUDIT_STATUS_PROBIHA,
+    AUDIT_STATUS_FILTER_PLANOVANE: AUDIT_STATUS_PLANOVANY,
+    AUDIT_STATUS_FILTER_DOKONCENE: AUDIT_STATUS_DOKONCEN,
+}
+
+
+def format_planned_period(planned_year: int | None, planned_month: int | None) -> str:
+    if planned_year and planned_month:
+        return f"{planned_month:02d}/{planned_year}"
+    if planned_year:
+        return str(planned_year)
+    return "—"
+
+
+__all__ = [
+    "AUDIT_STATUS_BY_FILTER",
+    "AUDIT_STATUS_DOKONCEN",
+    "AUDIT_STATUS_FILTER_DOKONCENE",
+    "AUDIT_STATUS_FILTER_PLANOVANE",
+    "AUDIT_STATUS_FILTER_PROBEHAJICI",
+    "AUDIT_STATUS_FILTER_VSE",
+    "AUDIT_STATUS_PLANOVANY",
+    "AUDIT_STATUS_PROBIHA",
+    "DEFAULT_AUDIT_STATUS",
+    "DEFAULT_AUDIT_STATUS_FILTER",
+    "FINDING_TYPE_LABELS",
+    "VALID_AUDIT_STATUSES",
+    "format_planned_period",
+    "finding_type_label",
+]

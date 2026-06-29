@@ -7,6 +7,7 @@ def initialize_database() -> None:
     from core.models.attachment import Attachment  # noqa: F401
     from core.shared.modely.finding import Finding  # noqa: F401
     from moduly.audity.modely.internal_audit import InternalAudit  # noqa: F401
+    from moduly.audity.modely.audit_participant import AuditParticipant  # noqa: F401
     from moduly.ukoly.modely.task import Task  # noqa: F401
     from moduly.kontroly.modely.control import Control  # noqa: F401
     from moduly.kontroly.modely.thp_monthly_control import ThpMonthlyControl  # noqa: F401
@@ -23,7 +24,9 @@ def initialize_database() -> None:
     _ensure_accident_columns()
     _ensure_investigation_columns()
     _ensure_control_columns()
+    _ensure_internal_audit_columns()
     _normalize_task_status_values()
+    _normalize_internal_audit_status_values()
     _normalize_accident_legacy_values()
 
 
@@ -110,6 +113,27 @@ def _ensure_control_columns() -> None:
     columns = _table_columns("controls")
     if "sd_reference" not in columns:
         _add_column("controls", "sd_reference VARCHAR(200) DEFAULT ''")
+
+
+def _ensure_internal_audit_columns() -> None:
+    columns = _table_columns("internal_audits")
+    if "summary" not in columns:
+        _add_column("internal_audits", "summary TEXT DEFAULT ''")
+    if "planned_year" not in columns:
+        _add_column("internal_audits", "planned_year INTEGER")
+    if "planned_month" not in columns:
+        _add_column("internal_audits", "planned_month INTEGER")
+
+
+def _normalize_internal_audit_status_values() -> None:
+    columns = _table_columns("internal_audits")
+    if "status" not in columns:
+        return
+    with engine.connect() as connection:
+        connection.execute(
+            text("UPDATE internal_audits SET status = 'Plánovaný' WHERE status = 'Koncept'")
+        )
+        connection.commit()
 
 
 def _normalize_task_status_values() -> None:

@@ -1,5 +1,6 @@
 from datetime import date, datetime
 
+from moduly.audity.sluzby.audit_participant_service import audit_participant_service
 from core.shared.constants import ENTITY_AUDITY
 from core.shared.sluzby.finding_service import finding_service
 from moduly.audity.constants import DEFAULT_AUDIT_STATUS, VALID_AUDIT_STATUSES
@@ -22,23 +23,32 @@ class InternalAuditService:
         self,
         title: str = "",
         audit_date: date | None = None,
+        planned_year: int | None = None,
+        planned_month: int | None = None,
         workplace: str = "",
         status: str = DEFAULT_AUDIT_STATUS,
+        summary: str = "",
     ) -> InternalAudit:
         if status not in VALID_AUDIT_STATUSES:
             raise ValueError(f"Neplatný stav auditu: {status}")
 
-        if audit_date is None:
-            audit_date = date.today()
+        today = date.today()
+        if planned_year is None:
+            planned_year = today.year
+        if planned_month is None:
+            planned_month = today.month
 
         audit = InternalAudit(
             title=title.strip(),
             audit_date=audit_date,
+            planned_year=planned_year,
+            planned_month=planned_month,
             workplace=workplace.strip(),
             status=status,
+            summary=summary.strip(),
         )
         saved = self.repository.add(audit)
-        saved.number = self._make_number(saved.id, saved.audit_date.year)
+        saved.number = self._make_number(saved.id, self._number_year(saved))
         return self.repository.update(saved)
 
     def update_audit(
@@ -46,8 +56,11 @@ class InternalAuditService:
         audit_id: int,
         title: str = "",
         audit_date: date | None = None,
+        planned_year: int | None = None,
+        planned_month: int | None = None,
         workplace: str = "",
         status: str = DEFAULT_AUDIT_STATUS,
+        summary: str = "",
     ) -> InternalAudit | None:
         audit = self.repository.get_by_id(audit_id)
         if audit is None:
@@ -58,14 +71,18 @@ class InternalAuditService:
 
         audit.title = title.strip()
         audit.audit_date = audit_date
+        audit.planned_year = planned_year
+        audit.planned_month = planned_month
         audit.workplace = workplace.strip()
         audit.status = status
+        audit.summary = summary.strip()
         audit.updated_at = datetime.now()
 
         return self.repository.update(audit)
 
     def delete_audit(self, audit_id: int) -> bool:
         finding_service.delete_for_entity(ENTITY_AUDITY, audit_id)
+        audit_participant_service.delete_for_audit(audit_id)
         return self.repository.delete(audit_id)
 
     def resolve_workplace_name(self, workplace_id: int | None) -> str:
@@ -74,6 +91,13 @@ class InternalAuditService:
 
         workplace = settings_service.get_workplace_by_id(workplace_id)
         return workplace.name if workplace else ""
+
+    def _number_year(self, audit: InternalAudit) -> int:
+        if audit.audit_date is not None:
+            return audit.audit_date.year
+        if audit.planned_year is not None:
+            return audit.planned_year
+        return date.today().year
 
     def _make_number(self, audit_id: int, year: int) -> str:
         return f"{audit_id}/{year}"
