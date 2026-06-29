@@ -28,6 +28,7 @@ class PersonService:
         phone: str = "",
         note: str = "",
         active: bool = True,
+        is_employee: bool = False,
     ) -> Person:
         self._validate_name(first_name, last_name)
 
@@ -42,6 +43,7 @@ class PersonService:
             phone=phone.strip(),
             note=note.strip(),
             active=active,
+            is_employee=is_employee,
         )
         return self.repository.add(person)
 
@@ -58,6 +60,7 @@ class PersonService:
         phone: str = "",
         note: str = "",
         active: bool = True,
+        is_employee: bool = False,
     ) -> Person | None:
         person = self.repository.get_by_id(person_id)
         if person is None:
@@ -75,6 +78,7 @@ class PersonService:
         person.phone = phone.strip()
         person.note = note.strip()
         person.active = active
+        person.is_employee = is_employee
         person.updated_at = datetime.now()
 
         return self.repository.update(person)

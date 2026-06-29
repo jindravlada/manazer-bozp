@@ -31,6 +31,7 @@ class PersonDialog(QDialog):
         self.note.setMinimumHeight(90)
         self.active_checkbox = QCheckBox("Aktivní")
         self.active_checkbox.setChecked(True)
+        self.is_employee_checkbox = QCheckBox("Zaměstnanec")
 
         form.addRow("Titul před:", self.title_before)
         form.addRow("Jméno:", self.first_name)
@@ -41,6 +42,7 @@ class PersonDialog(QDialog):
         form.addRow("E-mail:", self.email)
         form.addRow("Telefon:", self.phone)
         form.addRow("Poznámka:", self.note)
+        form.addRow("", self.is_employee_checkbox)
         form.addRow("", self.active_checkbox)
 
         layout.addLayout(form)
@@ -60,6 +62,7 @@ class PersonDialog(QDialog):
             self.email.setText(person.email or "")
             self.phone.setText(person.phone or "")
             self.note.setPlainText(person.note or "")
+            self.is_employee_checkbox.setChecked(person.is_employee)
             self.active_checkbox.setChecked(person.active)
 
     def get_data(self) -> dict:
@@ -74,4 +77,5 @@ class PersonDialog(QDialog):
             "phone": self.phone.text().strip(),
             "note": self.note.toPlainText().strip(),
             "active": self.active_checkbox.isChecked(),
+            "is_employee": self.is_employee_checkbox.isChecked(),
         }

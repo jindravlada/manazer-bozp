@@ -45,12 +45,13 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             3: 180,
             4: 180,
             5: 120,
-            6: 90,
+            6: 55,
+            7: 90,
         }
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
-        for column in (1, 2, 3, 4, 5, 6):
+        for column in (1, 2, 3, 4, 5, 6, 7):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 
     elif profile == "tasks":

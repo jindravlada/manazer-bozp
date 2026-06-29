@@ -27,6 +27,7 @@ def initialize_database() -> None:
     _ensure_control_columns()
     _ensure_internal_audit_columns()
     _ensure_audit_participant_columns()
+    _ensure_person_columns()
     _normalize_task_status_values()
     _normalize_internal_audit_status_values()
     _normalize_accident_legacy_values()
@@ -131,6 +132,12 @@ def _ensure_audit_participant_columns() -> None:
     columns = _table_columns("audit_participants")
     if "person_id" not in columns:
         _add_column("audit_participants", "person_id INTEGER")
+
+
+def _ensure_person_columns() -> None:
+    columns = _table_columns("persons")
+    if "is_employee" not in columns:
+        _add_column("persons", "is_employee BOOLEAN DEFAULT 0")
 
 
 def _normalize_internal_audit_status_values() -> None:

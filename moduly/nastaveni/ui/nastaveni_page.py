@@ -162,9 +162,9 @@ class NastaveniPage(QWidget):
         toolbar.addWidget(self.person_filter)
 
         self.person_table = QTableWidget()
-        self.person_table.setColumnCount(7)
+        self.person_table.setColumnCount(8)
         self.person_table.setHorizontalHeaderLabels(
-            ["ID", "Jméno", "Organizace", "Pracovní zařazení", "E-mail", "Telefon", "Stav"]
+            ["ID", "Jméno", "Organizace", "Pracovní zařazení", "E-mail", "Telefon", "Zam.", "Stav"]
         )
         self.person_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.person_table.setSelectionMode(QTableWidget.SingleSelection)
@@ -553,7 +553,8 @@ class NastaveniPage(QWidget):
             self.person_table.setItem(row, 3, QTableWidgetItem(person.job_title or ""))
             self.person_table.setItem(row, 4, QTableWidgetItem(person.email or ""))
             self.person_table.setItem(row, 5, QTableWidgetItem(person.phone or ""))
-            self.person_table.setItem(row, 6, QTableWidgetItem("Aktivní" if person.active else "Neaktivní"))
+            self.person_table.setItem(row, 6, QTableWidgetItem("Ano" if person.is_employee else "Ne"))
+            self.person_table.setItem(row, 7, QTableWidgetItem("Aktivní" if person.active else "Neaktivní"))
 
         configure_table_columns(self.person_table, "persons")
         self.person_text_filter.update_count()
