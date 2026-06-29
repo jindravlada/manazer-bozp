@@ -148,8 +148,9 @@ class KnihaUrazuPage(QWidget):
                 f"Závěrečnou zprávu se nepodařilo vygenerovat.\n\n{exc}",
             )
 
-    def open_investigation(self):
-        accident_id = self._selected_accident_id()
+    def open_investigation(self, accident_id: int | None = None):
+        if accident_id is None:
+            accident_id = self._selected_accident_id()
         if accident_id is None:
             QMessageBox.information(self, "Šetření úrazu", "Vyberte úraz.")
             return

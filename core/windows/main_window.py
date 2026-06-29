@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.modules.module_manager import ModuleManager
+from core.navigation.source_navigator import source_navigator
 from core.search.global_search_service import global_search_service
 
 
@@ -52,6 +53,8 @@ class MainWindow(QMainWindow):
         status_bar = QStatusBar()
         status_bar.showMessage("Připraveno")
         self.setStatusBar(status_bar)
+
+        source_navigator.configure(self)
 
         self._show("dashboard")
 

@@ -7,13 +7,18 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QFormLayout,
     QLabel,
+    QMessageBox,
     QTabWidget,
     QTextEdit,
     QVBoxLayout,
     QWidget,
 )
 
+from core.navigation.source_navigator import source_navigator
+from core.shared.sluzby.finding_task_service import finding_task_service
+from core.shared.task_source_display import task_source_label
 from core.widgets.attachment_widget import AttachmentWidget
+from core.widgets.task_finding_source_panel import TaskFindingSourcePanel
 from core.widgets.date_edit import DateEdit
 from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.thp_worker_selector import ThpWorkerSelector
@@ -25,11 +30,21 @@ class TaskDialog(QDialog):
         super().__init__(parent)
 
         self.task = task
+        self._finding = finding_task_service.get_finding_for_task(task) if task is not None else None
 
         self.setWindowTitle("Nápravné opatření")
         self.resize(760, 680)
 
         main_layout = QVBoxLayout(self)
+
+        if self._finding is not None:
+            self.source_panel = TaskFindingSourcePanel()
+            self.source_panel.set_content(
+                task_source_label(task),
+                self._finding.description,
+            )
+            self.source_panel.open_button.clicked.connect(self._open_source_record)
+            main_layout.addWidget(self.source_panel)
 
         self.tabs = QTabWidget()
         self.tabs.addTab(self._main_tab(), "Opatření")
@@ -68,6 +83,17 @@ class TaskDialog(QDialog):
 
         self._verification_changed()
         self._refresh_status()
+
+    def _open_source_record(self) -> None:
+        if self._finding is None:
+            return
+
+        if not source_navigator.open(self._finding.entity_type, self._finding.entity_id):
+            QMessageBox.warning(
+                self,
+                "Navigace",
+                "Zdrojový záznam se nepodařilo otevřít.",
+            )
 
     def _main_tab(self):
         tab = QWidget()
