@@ -1,5 +1,13 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QComboBox, QLineEdit, QSizePolicy, QStackedWidget, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QComboBox,
+    QLineEdit,
+    QLabel,
+    QSizePolicy,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 from core.widgets.search_combo_box import SearchComboBox
 from moduly.vysetrovani_mu.constants import (
@@ -33,15 +41,20 @@ class MuSourceSelectorWidget(QWidget):
         self.control_combo = self._make_record_combo()
         self.text_edit = QLineEdit()
         self.text_edit.setPlaceholderText("Popište zdroj podnětu")
-        self.manual_info = QLineEdit("Bez navázaného zdrojového záznamu")
-        self.manual_info.setReadOnly(True)
-        self.manual_info.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.manual_page = QWidget()
+        manual_layout = QVBoxLayout(self.manual_page)
+        manual_layout.setContentsMargins(0, 0, 0, 0)
+        manual_layout.setSpacing(0)
+        self.manual_info = QLabel("Zdrojový záznam není navázán")
+        self.manual_info.setObjectName("InfoText")
+        self.manual_info.setWordWrap(True)
+        manual_layout.addWidget(self.manual_info, alignment=Qt.AlignmentFlag.AlignVCenter)
 
         self.stack.addWidget(self.accident_combo)
         self.stack.addWidget(self.audit_combo)
         self.stack.addWidget(self.control_combo)
         self.stack.addWidget(self.text_edit)
-        self.stack.addWidget(self.manual_info)
+        self.stack.addWidget(self.manual_page)
 
         layout.addWidget(self.stack)
 
@@ -92,9 +105,9 @@ class MuSourceSelectorWidget(QWidget):
 
     def current_source_label(self) -> str:
         current = self.stack.currentWidget()
-        if current in (self.text_edit, self.manual_info):
-            if current is self.text_edit:
-                return self.text_edit.text().strip()
+        if current is self.text_edit:
+            return self.text_edit.text().strip()
+        if current is self.manual_page:
             return ""
 
         source_id = self.current_source_id()
@@ -111,7 +124,7 @@ class MuSourceSelectorWidget(QWidget):
 
     def has_binding(self) -> bool:
         current = self.stack.currentWidget()
-        if current is self.manual_info:
+        if current is self.manual_page:
             return False
         if current is self.text_edit:
             return bool(self.text_edit.text().strip())
