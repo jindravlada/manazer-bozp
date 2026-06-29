@@ -39,6 +39,7 @@ from moduly.vysetrovani_mu.ui.mu_investigation_source_panel import MuInvestigati
 from moduly.vysetrovani_mu.ui.mu_ohledani_mista_widget import MuOhledaniMistaWidget
 from moduly.vysetrovani_mu.ui.mu_oznameni_widget import MuOznameniWidget
 from moduly.vysetrovani_mu.ui.mu_source_selector_widget import MuSourceSelectorWidget
+from moduly.vysetrovani_mu.ui.mu_casova_osa_widget import MuCasovaOsaWidget
 from moduly.vysetrovani_mu.ui.mu_svedci_widget import MuSvedciWidget
 from moduly.vysetrovani_mu.ui.mu_zajisteni_dukazu_widget import MuZajisteniDukazuWidget
 from moduly.vysetrovani_mu.sluzby.mu_source_context import resolve_mu_source_context
@@ -74,6 +75,8 @@ class MuInvestigationDialog(QDialog):
         self.tabs.addTab(self.ohledani_mista_widget, "Ohledání místa")
         self.svedci_widget = MuSvedciWidget()
         self.tabs.addTab(self.svedci_widget, "Svědci")
+        self.casova_osa_widget = MuCasovaOsaWidget()
+        self.tabs.addTab(self.casova_osa_widget, "Časová osa")
         self.findings_widget = MuFindingsWidget()
         self.tabs.addTab(self.findings_widget, "Zjištění")
         self.tabs.addTab(self._conclusion_tab(), "Závěr")
@@ -106,6 +109,7 @@ class MuInvestigationDialog(QDialog):
             self.ohledani_mista_widget.load_json(getattr(investigation, "ohledani_mista_json", "") or "")
             self.zajisteni_dukazu_widget.load_json(getattr(investigation, "zajisteni_dukazu_json", "") or "")
             self.svedci_widget.load_json(self._svedci_json_for_load(investigation))
+            self.casova_osa_widget.load_json(getattr(investigation, "casova_osa_json", "") or "")
             self.oznameni_widget.load_from_investigation(investigation)
         else:
             self._on_source_type_changed()
@@ -257,6 +261,10 @@ class MuInvestigationDialog(QDialog):
             investigation_id,
             event_number=context.event_number,
         )
+        self.casova_osa_widget.set_context(
+            investigation_id,
+            event_number=context.event_number,
+        )
 
     def _svedci_json_for_load(self, investigation) -> str:
         raw = getattr(investigation, "svedci_json", "") or ""
@@ -367,5 +375,6 @@ class MuInvestigationDialog(QDialog):
             "ohledani_mista_json": self.ohledani_mista_widget.get_json(),
             "zajisteni_dukazu_json": self.zajisteni_dukazu_widget.get_json(),
             "svedci_json": self.svedci_widget.get_json(),
+            "casova_osa_json": self.casova_osa_widget.get_json(),
             **self.oznameni_widget.get_data(),
         }
