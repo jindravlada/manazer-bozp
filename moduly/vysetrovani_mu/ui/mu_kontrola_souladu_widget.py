@@ -14,8 +14,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-_STANOVISKO_MU = "Jedná se o mimořádnou událost"
-_STANOVISKO_NEMU = "Nejedná se o mimořádnou událost"
+from moduly.vysetrovani_mu.constants import EVENT_CHARACTER_URAZ
+
+_STANOVISKO_PU = "Jedná se o pracovní úraz"
+_STANOVISKO_NEPU = "Nejedná se o pracovní úraz"
 _STANOVISKO_NELZE = "Nelze zatím uzavřít"
 
 _PODKLADY = (
@@ -47,11 +49,18 @@ class MuKontrolaSouladuWidget(QWidget):
         super().__init__(parent)
 
         self._saved_data: dict = {}
+        self._event_character = ""
+        self._is_uraz = False
         self.soulad_podklady: dict[str, QCheckBox] = {}
         self.soulad_nesrovnalosti: dict[str, QCheckBox] = {}
 
         self._init_widgets()
         self._build_ui()
+
+    def set_event_character(self, event_character: str) -> None:
+        self._event_character = (event_character or "").strip()
+        self._is_uraz = self._event_character == EVENT_CHARACTER_URAZ
+        self._update_bottom_section_visibility()
 
     def load_json(self, raw_json: str) -> None:
         try:
@@ -75,6 +84,7 @@ class MuKontrolaSouladuWidget(QWidget):
             "soulad_mimo_praci": self._radio_choice_value(self.soulad_mimo_praci),
             "soulad_stanovisko_bozp": self.soulad_stanovisko_bozp.currentText().strip(),
             "soulad_oduvodneni": self.soulad_oduvodneni.toPlainText().strip(),
+            "soulad_poznamky": self.soulad_poznamky.toPlainText().strip(),
         }
 
     def _init_widgets(self) -> None:
@@ -109,13 +119,15 @@ class MuKontrolaSouladuWidget(QWidget):
         self._set_radio_choice(self.soulad_mimo_praci, saved.get("soulad_mimo_praci", ""))
 
         self.soulad_stanovisko_bozp = QComboBox()
-        self.soulad_stanovisko_bozp.addItems([_STANOVISKO_MU, _STANOVISKO_NEMU, _STANOVISKO_NELZE])
+        self.soulad_stanovisko_bozp.addItems([_STANOVISKO_PU, _STANOVISKO_NEPU, _STANOVISKO_NELZE])
         self.soulad_stanovisko_bozp.setCurrentText(
             self._normalize_stanovisko(saved.get("soulad_stanovisko_bozp", _STANOVISKO_NELZE))
         )
 
         self.soulad_oduvodneni = QTextEdit()
         self.soulad_oduvodneni.setPlainText(saved.get("soulad_oduvodneni", ""))
+        self.soulad_poznamky = QTextEdit()
+        self.soulad_poznamky.setPlainText(saved.get("soulad_poznamky", ""))
 
     def _apply_saved_data(self) -> None:
         saved = self._saved_data
@@ -141,6 +153,8 @@ class MuKontrolaSouladuWidget(QWidget):
         self._refresh_stanovisko_bozp()
 
         self.soulad_oduvodneni.setPlainText(saved.get("soulad_oduvodneni", ""))
+        self.soulad_poznamky.setPlainText(saved.get("soulad_poznamky", ""))
+        self._update_bottom_section_visibility()
 
     def _build_ui(self) -> None:
         outer = QVBoxLayout(self)
@@ -177,17 +191,25 @@ class MuKontrolaSouladuWidget(QWidget):
         self._add_textedit_row(vyhodnoceni_f, "", self.soulad_vyhodnoceni, 180)
         layout.addWidget(vyhodnoceni)
 
-        posouzeni = QGroupBox("Posouzení mimořádné události")
+        posouzeni = QGroupBox("Posouzení pracovního úrazu")
+        self.posouzeni_group = posouzeni
         form = QFormLayout(posouzeni)
         form.addRow("Vzniklo poškození zdraví:", self.soulad_vzniklo_poskozeni)
         form.addRow("Došlo k němu při plnění pracovních úkolů nebo v přímé souvislosti:", self.soulad_pri_plneni)
         form.addRow("Šlo o náhlé, krátkodobé a zevní působení:", self.soulad_nahle_pusobeni)
-        form.addRow("Jedná se o událost mimo práci nebo cestu do/z práce:", self.soulad_mimo_praci)
+        form.addRow("Jedná se o úraz mimo práci nebo cestu do/z práce:", self.soulad_mimo_praci)
         form.addRow("Stanovisko specialisty BOZP:", self.soulad_stanovisko_bozp)
         self._add_textedit_row(form, "Odůvodnění stanoviska:", self.soulad_oduvodneni, 180)
         layout.addWidget(posouzeni)
 
+        poznamky = QGroupBox("Poznámky ke kontrole souladu")
+        self.poznamky_group = poznamky
+        poznamky_f = QFormLayout(poznamky)
+        self._add_textedit_row(poznamky_f, "", self.soulad_poznamky, 180)
+        layout.addWidget(poznamky)
+
         self._connect_stanovisko_bozp_refresh()
+        self._update_bottom_section_visibility()
 
         layout.addStretch()
         scroll.setWidget(content)
@@ -214,19 +236,25 @@ class MuKontrolaSouladuWidget(QWidget):
         if any(not hodnota for hodnota in hodnoty):
             self.soulad_stanovisko_bozp.setCurrentText(_STANOVISKO_NELZE)
         elif hodnoty == ["ANO", "ANO", "ANO", "NE"]:
-            self.soulad_stanovisko_bozp.setCurrentText(_STANOVISKO_MU)
+            self.soulad_stanovisko_bozp.setCurrentText(_STANOVISKO_PU)
         else:
-            self.soulad_stanovisko_bozp.setCurrentText(_STANOVISKO_NEMU)
+            self.soulad_stanovisko_bozp.setCurrentText(_STANOVISKO_NEPU)
+
+    def _update_bottom_section_visibility(self) -> None:
+        if hasattr(self, "posouzeni_group"):
+            self.posouzeni_group.setVisible(self._is_uraz)
+        if hasattr(self, "poznamky_group"):
+            self.poznamky_group.setVisible(not self._is_uraz)
 
     def _normalize_stanovisko(self, value: str) -> str:
         value = (value or "").strip()
         legacy_map = {
-            "Jedná se o pracovní úraz": _STANOVISKO_MU,
-            "Nejedná se o pracovní úraz": _STANOVISKO_NEMU,
+            "Jedná se o mimořádnou událost": _STANOVISKO_PU,
+            "Nejedná se o mimořádnou událost": _STANOVISKO_NEPU,
         }
         if value in legacy_map:
             return legacy_map[value]
-        if value in (_STANOVISKO_MU, _STANOVISKO_NEMU, _STANOVISKO_NELZE):
+        if value in (_STANOVISKO_PU, _STANOVISKO_NEPU, _STANOVISKO_NELZE):
             return value
         return _STANOVISKO_NELZE
 

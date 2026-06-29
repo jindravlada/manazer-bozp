@@ -130,6 +130,10 @@ class MuInvestigationDialog(QDialog):
 
         self._refresh_source_dependent_widgets()
         self._update_source_panel()
+        self._sync_kontrola_souladu_event_character()
+
+    def _sync_kontrola_souladu_event_character(self) -> None:
+        self.kontrola_souladu_widget.set_event_character(self.event_character_combo.currentText())
 
     def _basic_tab(self) -> QWidget:
         tab = QWidget()
@@ -154,6 +158,7 @@ class MuInvestigationDialog(QDialog):
 
         self.event_character_combo = QComboBox()
         self.event_character_combo.addItems(EVENT_CHARACTERS)
+        self.event_character_combo.currentTextChanged.connect(self._sync_kontrola_souladu_event_character)
 
         self.source_type_combo = QComboBox()
         for source_type in SOURCE_TYPES:
