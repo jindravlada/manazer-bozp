@@ -25,6 +25,7 @@ from moduly.vysetrovani_mu.constants import (
     DEFAULT_EVENT_CHARACTER,
     DEFAULT_MU_STATUS,
     DEFAULT_SOURCE_TYPE,
+    EVENT_CHARACTER_URAZ,
     EVENT_CHARACTERS,
     MU_STATUS_DOKONCENO,
     MU_STATUS_ODLOZENO,
@@ -32,6 +33,7 @@ from moduly.vysetrovani_mu.constants import (
     SOURCE_TYPE_ACCIDENT,
     SOURCE_TYPE_AUDIT,
     SOURCE_TYPE_CONTROL,
+    SOURCE_TYPE_MANUAL,
     SOURCE_TYPE_LABELS,
     SOURCE_TYPES,
 )
@@ -63,6 +65,7 @@ class MuInvestigationDialog(QDialog):
         super().__init__(parent)
 
         self.investigation = investigation
+        self._suppress_event_character_source_switch = False
 
         self.setWindowTitle("Vyšetřování mimořádné události")
         self.resize(860, 720)
@@ -139,6 +142,25 @@ class MuInvestigationDialog(QDialog):
         self._refresh_source_dependent_widgets()
         self._update_source_panel()
         self._sync_kontrola_souladu_event_character()
+        self._previous_event_character = self.event_character_combo.currentText()
+
+    def _on_event_character_changed(self, new_character: str) -> None:
+        self._sync_kontrola_souladu_event_character()
+
+        if self._suppress_event_character_source_switch:
+            return
+
+        previous_character = getattr(self, "_previous_event_character", "")
+        if (
+            previous_character == EVENT_CHARACTER_URAZ
+            and new_character != EVENT_CHARACTER_URAZ
+            and self._current_source_type() == SOURCE_TYPE_ACCIDENT
+        ):
+            self._set_source_type(SOURCE_TYPE_MANUAL)
+            self._refresh_source_dependent_widgets()
+            self._update_source_panel()
+
+        self._previous_event_character = new_character
 
     def _accept_dialog(self) -> None:
         investigation_id = self.investigation.id if self.investigation is not None else None
@@ -198,7 +220,7 @@ class MuInvestigationDialog(QDialog):
 
         self.event_character_combo = QComboBox()
         self.event_character_combo.addItems(EVENT_CHARACTERS)
-        self.event_character_combo.currentTextChanged.connect(self._sync_kontrola_souladu_event_character)
+        self.event_character_combo.currentTextChanged.connect(self._on_event_character_changed)
 
         self.source_type_combo = QComboBox()
         for source_type in SOURCE_TYPES:
@@ -245,9 +267,12 @@ class MuInvestigationDialog(QDialog):
         return tab
 
     def _set_event_character(self, value: str) -> None:
+        self._suppress_event_character_source_switch = True
         index = self.event_character_combo.findText(value)
         if index >= 0:
             self.event_character_combo.setCurrentIndex(index)
+        self._previous_event_character = self.event_character_combo.currentText()
+        self._suppress_event_character_source_switch = False
 
     def _set_source_type(self, source_type: str) -> None:
         index = self.source_type_combo.findData(source_type)
@@ -373,6 +398,9 @@ class MuInvestigationDialog(QDialog):
         return ""
 
     def _has_source_binding(self) -> bool:
+        if self._current_source_type() == SOURCE_TYPE_MANUAL:
+            return False
+
         if self.source_selector.has_binding():
             return True
         if self.investigation is None:

@@ -6,7 +6,8 @@ from moduly.vysetrovani_mu.constants import (
     SOURCE_TYPE_ACCIDENT,
     SOURCE_TYPE_AUDIT,
     SOURCE_TYPE_CONTROL,
-    SOURCE_TYPES_WITH_TEXT,
+    SOURCE_TYPE_MANUAL,
+    SOURCE_TYPE_OTHER,
 )
 
 
@@ -14,7 +15,8 @@ class MuSourceSelectorWidget(QWidget):
     _PAGE_ACCIDENT = 0
     _PAGE_AUDIT = 1
     _PAGE_CONTROL = 2
-    _PAGE_TEXT = 3
+    _PAGE_OTHER = 3
+    _PAGE_MANUAL = 4
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -31,11 +33,15 @@ class MuSourceSelectorWidget(QWidget):
         self.control_combo = self._make_record_combo()
         self.text_edit = QLineEdit()
         self.text_edit.setPlaceholderText("Popište zdroj podnětu")
+        self.manual_info = QLineEdit("Bez navázaného zdrojového záznamu")
+        self.manual_info.setReadOnly(True)
+        self.manual_info.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         self.stack.addWidget(self.accident_combo)
         self.stack.addWidget(self.audit_combo)
         self.stack.addWidget(self.control_combo)
         self.stack.addWidget(self.text_edit)
+        self.stack.addWidget(self.manual_info)
 
         layout.addWidget(self.stack)
 
@@ -57,8 +63,10 @@ class MuSourceSelectorWidget(QWidget):
             self.stack.setCurrentIndex(self._PAGE_AUDIT)
         elif source_type == SOURCE_TYPE_CONTROL:
             self.stack.setCurrentIndex(self._PAGE_CONTROL)
+        elif source_type == SOURCE_TYPE_OTHER:
+            self.stack.setCurrentIndex(self._PAGE_OTHER)
         else:
-            self.stack.setCurrentIndex(self._PAGE_TEXT)
+            self.stack.setCurrentIndex(self._PAGE_MANUAL)
 
     def set_source(self, source_type: str, source_id: int | None, source_label: str) -> None:
         self.set_source_type(source_type)
@@ -69,7 +77,7 @@ class MuSourceSelectorWidget(QWidget):
             self._set_combo_value(self.audit_combo, source_id)
         elif source_type == SOURCE_TYPE_CONTROL:
             self._set_combo_value(self.control_combo, source_id)
-        elif source_type in SOURCE_TYPES_WITH_TEXT:
+        elif source_type == SOURCE_TYPE_OTHER:
             self.text_edit.setText(source_label or "")
 
     def current_source_id(self) -> int | None:
@@ -84,8 +92,10 @@ class MuSourceSelectorWidget(QWidget):
 
     def current_source_label(self) -> str:
         current = self.stack.currentWidget()
-        if current is self.text_edit:
-            return self.text_edit.text().strip()
+        if current in (self.text_edit, self.manual_info):
+            if current is self.text_edit:
+                return self.text_edit.text().strip()
+            return ""
 
         source_id = self.current_source_id()
         if source_id is None:
@@ -101,6 +111,8 @@ class MuSourceSelectorWidget(QWidget):
 
     def has_binding(self) -> bool:
         current = self.stack.currentWidget()
+        if current is self.manual_info:
+            return False
         if current is self.text_edit:
             return bool(self.text_edit.text().strip())
         return self.current_source_id() is not None

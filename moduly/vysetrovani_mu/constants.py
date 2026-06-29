@@ -78,7 +78,6 @@ SOURCE_TYPES_WITH_RECORD = frozenset(
 SOURCE_TYPES_WITH_TEXT = frozenset(
     {
         SOURCE_TYPE_OTHER,
-        SOURCE_TYPE_MANUAL,
     }
 )
 
