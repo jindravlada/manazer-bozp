@@ -70,6 +70,22 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             header.setSectionResizeMode(column, QHeaderView.Fixed)
         header.setSectionResizeMode(7, QHeaderView.Stretch)
 
+    elif profile == "internal_audits":
+        widths = {
+            0: 0,    # ID
+            1: 90,   # Číslo
+            2: 105,  # Datum auditu
+            3: 200,  # Pracoviště
+            4: 360,  # Název
+            5: 110,  # Stav
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        for column in (1, 2, 3, 5):
+            header.setSectionResizeMode(column, QHeaderView.Fixed)
+        header.setSectionResizeMode(4, QHeaderView.Stretch)
+
     elif profile == "controls_year_matrix":
         table.setColumnWidth(0, 230)
         table.setColumnWidth(1, 55)
