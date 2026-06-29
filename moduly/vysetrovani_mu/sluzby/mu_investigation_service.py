@@ -63,6 +63,8 @@ class MuInvestigationService:
         zajisteni_dukazu_json: str = "",
         svedci_json: str = "",
         casova_osa_json: str = "",
+        dodrzovani_predpisu_json: str = "",
+        kontrola_souladu_json: str = "",
         **kwargs,
     ) -> MuInvestigation:
         if status not in VALID_MU_STATUSES:
@@ -84,6 +86,8 @@ class MuInvestigationService:
             zajisteni_dukazu_json=zajisteni_dukazu_json or "",
             svedci_json=svedci_json or "",
             casova_osa_json=casova_osa_json or "",
+            dodrzovani_predpisu_json=dodrzovani_predpisu_json or "",
+            kontrola_souladu_json=kontrola_souladu_json or "",
         )
         self._apply_oznameni_fields(investigation, kwargs)
         saved = self.repository.add(investigation)
@@ -108,6 +112,8 @@ class MuInvestigationService:
         zajisteni_dukazu_json: str = "",
         svedci_json: str = "",
         casova_osa_json: str = "",
+        dodrzovani_predpisu_json: str = "",
+        kontrola_souladu_json: str = "",
         **kwargs,
     ) -> MuInvestigation | None:
         investigation = self.repository.get_by_id(investigation_id)
@@ -132,6 +138,8 @@ class MuInvestigationService:
         investigation.zajisteni_dukazu_json = zajisteni_dukazu_json or ""
         investigation.svedci_json = svedci_json or ""
         investigation.casova_osa_json = casova_osa_json or ""
+        investigation.dodrzovani_predpisu_json = dodrzovani_predpisu_json or ""
+        investigation.kontrola_souladu_json = kontrola_souladu_json or ""
         self._apply_oznameni_fields(investigation, kwargs)
         investigation.updated_at = datetime.now()
 
