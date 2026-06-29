@@ -1,7 +1,7 @@
 import json
 import unicodedata
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
 from PySide6.QtWidgets import (
@@ -43,6 +43,7 @@ class MuCasovaOsaWidget(QWidget):
 
         self._saved_data: dict = {}
         self._investigation_id: int | None = None
+        self._started_at: date | None = None
         self._number_slug = "bez-cisla"
         self._chronologie_entries: list[dict] = []
 
@@ -54,10 +55,15 @@ class MuCasovaOsaWidget(QWidget):
         investigation_id: int | None,
         *,
         event_number: str = "",
+        started_at: date | None = None,
     ) -> None:
         self._investigation_id = investigation_id
+        self._started_at = started_at
         number = event_number.strip()
         self._number_slug = str(number).replace("/", "-").replace("\\", "-").strip() or "bez-cisla"
+
+    def set_started_at(self, started_at: date | None) -> None:
+        self._started_at = started_at
 
     def load_json(self, raw_json: str) -> None:
         try:
@@ -373,7 +379,11 @@ class MuCasovaOsaWidget(QWidget):
         return None
 
     def _add_chronologie_entry(self) -> None:
-        dialog = MuChronologieEntryDialog(self, title="Přidat událost")
+        dialog = MuChronologieEntryDialog(
+            self,
+            title="Přidat událost",
+            default_date=self._started_at,
+        )
         if not dialog.exec():
             return
         entry = dialog.get_entry()

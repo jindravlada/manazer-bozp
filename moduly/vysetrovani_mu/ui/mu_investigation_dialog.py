@@ -87,6 +87,8 @@ class MuInvestigationDialog(QDialog):
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
+        self.started_at_edit.dateChanged.connect(self._sync_casova_osa_started_at)
+
         investigation_id = investigation.id if investigation is not None else None
         self.findings_widget.set_investigation_id(investigation_id)
 
@@ -264,7 +266,11 @@ class MuInvestigationDialog(QDialog):
         self.casova_osa_widget.set_context(
             investigation_id,
             event_number=context.event_number,
+            started_at=self.started_at_edit.get_date(),
         )
+
+    def _sync_casova_osa_started_at(self) -> None:
+        self.casova_osa_widget.set_started_at(self.started_at_edit.get_date())
 
     def _svedci_json_for_load(self, investigation) -> str:
         raw = getattr(investigation, "svedci_json", "") or ""

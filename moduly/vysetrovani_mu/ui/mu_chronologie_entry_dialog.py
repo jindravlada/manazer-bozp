@@ -1,3 +1,5 @@
+from datetime import date
+
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
@@ -11,7 +13,14 @@ from core.widgets.nullable_date_edit import NullableDateEdit
 
 
 class MuChronologieEntryDialog(QDialog):
-    def __init__(self, parent=None, entry=None, *, title: str = "Událost v časové ose"):
+    def __init__(
+        self,
+        parent=None,
+        entry=None,
+        *,
+        title: str = "Událost v časové ose",
+        default_date: date | None = None,
+    ):
         super().__init__(parent)
 
         self.setWindowTitle(title)
@@ -46,6 +55,8 @@ class MuChronologieEntryDialog(QDialog):
             self.cas_edit.setText(entry.get("cas") or "")
             self.typ_edit.setText(entry.get("typ") or "")
             self.popis_edit.setPlainText(entry.get("popis") or "")
+        elif default_date is not None:
+            self.datum_edit.set_date_value(default_date)
 
     def get_entry(self) -> dict:
         date_value = self.datum_edit.get_date()
