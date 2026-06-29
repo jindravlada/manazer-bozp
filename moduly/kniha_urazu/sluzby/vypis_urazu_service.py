@@ -84,6 +84,14 @@ class VypisUrazuService:
     def _accident_attr(self, accident, name, default=""):
         return getattr(accident, name, default) or default
 
+    def _blank_if_empty(self, value) -> str:
+        text = str(value or "").strip()
+        return text
+
+    def _text_block(self, value) -> str:
+        text = str(value or "").replace("\r\n", "\n").replace("\r", "\n")
+        return text.strip()
+
     def _task_lines(self, accident_id: int) -> str:
         try:
             tasks = [
@@ -115,22 +123,28 @@ class VypisUrazuService:
         return "\n".join(str(line).strip() for line in lines if str(line or "").strip())
 
     def _contact_line(self, accident) -> str:
-        existing = self._accident_attr(accident, "telefon_email")
-        if existing:
-            return existing
+        combined = self._blank_if_empty(self._accident_attr(accident, "telefon_email"))
+        if combined:
+            return combined
 
-        parts = [
-            self._accident_attr(accident, "telefon"),
-            self._accident_attr(accident, "email"),
-            self._accident_attr(accident, "zamestnanec_telefon"),
-            self._accident_attr(accident, "zamestnanec_email"),
-        ]
-        return " / ".join(str(part).strip() for part in parts if str(part or "").strip())
+        telefon = (
+            self._blank_if_empty(self._accident_attr(accident, "telefon"))
+            or self._blank_if_empty(self._accident_attr(accident, "zamestnanec_telefon"))
+        )
+        email = (
+            self._blank_if_empty(self._accident_attr(accident, "email"))
+            or self._blank_if_empty(self._accident_attr(accident, "zamestnanec_email"))
+        )
+
+        parts = [part for part in (telefon, email) if part]
+        return " / ".join(parts)
 
     def _delivery_address(self, accident) -> str:
-        address = self._accident_attr(accident, "adresa_dorucovani")
-        stay = self._accident_attr(accident, "adresa_pobytu")
-        if address and stay and address.strip() == stay.strip():
+        address = self._text_block(self._accident_attr(accident, "adresa_dorucovani"))
+        if not address:
+            return ""
+        stay = self._text_block(self._accident_attr(accident, "adresa_pobytu"))
+        if stay and address == stay:
             return ""
         return address
 
@@ -138,18 +152,28 @@ class VypisUrazuService:
         value = self._accident_attr(accident, "svedci")
         if not value:
             return "Nejsou"
+
         if isinstance(value, (list, tuple, set)):
-            return self._join_nonempty(value) or "Nejsou"
-        return str(value).strip() or "Nejsou"
+            lines = [str(item).strip() for item in value if str(item or "").strip()]
+            return "\n".join(lines) if lines else "Nejsou"
+
+        text = str(value).strip()
+        if not text or text == "Nebyl zjištěn žádný svědek":
+            return "Nejsou"
+
+        lines = [part.strip() for part in text.split(";") if part.strip()]
+        return "\n".join(lines) if lines else "Nejsou"
 
     def _placeholder_values(self, accident, investigation, data: dict) -> dict:
         svedci = self._witness_lines(accident)
-        opatreni = self._task_lines(accident.id) or self._accident_attr(accident, "opatreni") or self._accident_attr(accident, "measures_summary")
+        opatreni = self._task_lines(accident.id) or self._text_block(
+            self._accident_attr(accident, "opatreni") or self._accident_attr(accident, "measures_summary")
+        )
         if not opatreni:
             opatreni = "Nejsou evidována."
 
         stav_setreni = "Zahájeno"
-        stanovisko = data.get("soulad_stanovisko_bozp", "")
+        stanovisko = self._text_block(data.get("soulad_stanovisko_bozp", ""))
 
         return {
             "cislo_urazu": self._accident_attr(accident, "number"),
@@ -160,18 +184,18 @@ class VypisUrazuService:
             "zamestnavatel_nazev": self._accident_attr(accident, "zamestnavatel_nazev"),
             "zamestnavatel_ico": self._accident_attr(accident, "zamestnavatel_ico"),
             "vrchni_dozor": self._accident_attr(accident, "vrchni_dozor"),
-            "zamestnavatel_adresa": self._accident_attr(accident, "zamestnavatel_adresa"),
+            "zamestnavatel_adresa": self._text_block(self._accident_attr(accident, "zamestnavatel_adresa")),
             "hlavni_cinnost_zamestnavatele": self._accident_attr(accident, "hlavni_cinnost_zamestnavatele"),
             "dalsi_zamestnavatel_nazev": self._accident_attr(accident, "dalsi_zamestnavatel_nazev"),
             "dalsi_zamestnavatel_ico": self._accident_attr(accident, "dalsi_zamestnavatel_ico"),
-            "dalsi_zamestnavatel_adresa": self._accident_attr(accident, "dalsi_zamestnavatel_adresa"),
+            "dalsi_zamestnavatel_adresa": self._text_block(self._accident_attr(accident, "dalsi_zamestnavatel_adresa")),
             "dalsi_zamestnavatel_cinnost": self._accident_attr(accident, "dalsi_zamestnavatel_cinnost"),
             "zamestnanec": getattr(accident, "employee_name", "") or self._accident_attr(accident, "jmeno_prijmeni"),
             "pohlavi": self._accident_attr(accident, "pohlavi"),
             "datum_narozeni": self._fmt_date(self._accident_attr(accident, "datum_narozeni")),
             "osobni_cislo": self._accident_attr(accident, "osobni_cislo"),
             "statni_obcanstvi": self._accident_attr(accident, "statni_obcanstvi"),
-            "adresa_pobytu": self._accident_attr(accident, "adresa_pobytu"),
+            "adresa_pobytu": self._text_block(self._accident_attr(accident, "adresa_pobytu")),
             "adresa_dorucovani": self._delivery_address(accident),
             "telefon_email": self._contact_line(accident),
             "zdravotni_pojistovna": self._accident_attr(accident, "zdravotni_pojistovna"),
@@ -181,24 +205,26 @@ class VypisUrazuService:
             "druh_urazu": self._accident_attr(accident, "druh_urazu"),
             "podezreni_trestny_cin": self._accident_attr(accident, "podezreni_trestny_cin"),
             "datum_a_cas_urazu": self._fmt_datetime_text(self._accident_attr(accident, "accident_date"), self._accident_attr(accident, "accident_time")),
-            "druh_zraneni": self._accident_attr(accident, "druh_zraneni") or self._accident_attr(accident, "injury_type"),
-            "zranena_cast_tela": self._accident_attr(accident, "zranena_cast_tela") or self._accident_attr(accident, "injured_body_part"),
+            "druh_zraneni": self._text_block(self._accident_attr(accident, "druh_zraneni") or self._accident_attr(accident, "injury_type")),
+            "zranena_cast_tela": self._text_block(self._accident_attr(accident, "zranena_cast_tela") or self._accident_attr(accident, "injured_body_part")),
             "celkovy_pocet_zranenych": self._accident_attr(accident, "celkovy_pocet_zranenych"),
             "hromadny_uraz": self._accident_attr(accident, "hromadny_uraz"),
             "cinnost_pri_urazu": self._accident_attr(accident, "cinnost_pri_urazu"),
-            "misto_urazu": self._accident_attr(accident, "misto_urazu"),
-            "popis_urazoveho_deje": self._accident_attr(accident, "popis_urazoveho_deje") or self._accident_attr(accident, "description"),
-            "charakteristika_pracoviste": self._accident_attr(accident, "charakteristika_pracoviste"),
-            "zdroj_urazu": self._accident_attr(accident, "zdroj_urazu"),
-            "pricina_urazu": self._accident_attr(accident, "pricina_urazu"),
+            "misto_urazu": self._text_block(self._accident_attr(accident, "misto_urazu")),
+            "popis_urazoveho_deje": self._text_block(
+                self._accident_attr(accident, "popis_urazoveho_deje") or self._accident_attr(accident, "description")
+            ),
+            "charakteristika_pracoviste": self._text_block(self._accident_attr(accident, "charakteristika_pracoviste")),
+            "zdroj_urazu": self._text_block(self._accident_attr(accident, "zdroj_urazu")),
+            "pricina_urazu": self._text_block(self._accident_attr(accident, "pricina_urazu")),
             "uraz_pracoviste_zamestnavatele": self._accident_attr(accident, "uraz_pracoviste_zamestnavatele"),
             "subjekt_registrovan": self._accident_attr(accident, "subjekt_registrovan"),
-            "adresa_sidla_subjektu": self._accident_attr(accident, "adresa_sidla_subjektu"),
+            "adresa_sidla_subjektu": self._text_block(self._accident_attr(accident, "adresa_sidla_subjektu")),
             "ico_subjektu": self._accident_attr(accident, "ico_subjektu"),
             "ekonomicka_cinnost_subjektu": self._accident_attr(accident, "ekonomicka_cinnost_subjektu"),
             "ekonomicka_cinnost_pracoviste": self._accident_attr(accident, "ekonomicka_cinnost_pracoviste"),
-            "adresa_pracoviste": self._accident_attr(accident, "adresa_pracoviste"),
-            "okres_pracoviste": self._accident_attr(accident, "okres_pracoviste"),
+            "adresa_pracoviste": self._text_block(self._accident_attr(accident, "adresa_pracoviste")),
+            "okres_pracoviste": self._blank_if_empty(self._accident_attr(accident, "okres_pracoviste")),
             "stav_setreni": stav_setreni,
             "pripad_uzavren": "ANO" if getattr(accident, "closed", False) else "NE",
             "datum_zahajeni": self._fmt_date(getattr(accident, "investigation_started_at", None)),
@@ -207,12 +233,12 @@ class VypisUrazuService:
             "kontrola_alkohol": self._accident_attr(accident, "kontrola_alkohol"),
             "vysledek_kontroly_alkohol": self._accident_attr(accident, "vysledek_kontroly_alkohol"),
             "mnozstvi_alkohol": self._accident_attr(accident, "mnozstvi_alkohol"),
-            "kontrola_alkohol_duvod_neprovedeni": self._accident_attr(accident, "kontrola_alkohol_duvod_neprovedeni"),
+            "kontrola_alkohol_duvod_neprovedeni": self._text_block(self._accident_attr(accident, "kontrola_alkohol_duvod_neprovedeni")),
             "kontrola_navykove_latky": self._accident_attr(accident, "kontrola_navykove_latky"),
             "vysledek_kontroly_navykove_latky": self._accident_attr(accident, "vysledek_kontroly_navykove_latky"),
-            "navykove_latky_popis": self._accident_attr(accident, "navykove_latky_popis"),
-            "kontrola_navykove_latky_duvod_neprovedeni": self._accident_attr(accident, "kontrola_navykove_latky_duvod_neprovedeni"),
-            "porusene_predpisy": self._accident_attr(accident, "porusene_predpisy") or data.get("dodrz_poruseni_predpisu", ""),
+            "navykove_latky_popis": self._text_block(self._accident_attr(accident, "navykove_latky_popis")),
+            "kontrola_navykove_latky_duvod_neprovedeni": self._text_block(self._accident_attr(accident, "kontrola_navykove_latky_duvod_neprovedeni")),
+            "porusene_predpisy": self._text_block(self._accident_attr(accident, "porusene_predpisy") or data.get("dodrz_poruseni_predpisu", "")),
             "opatreni": opatreni,
             "svedci": svedci,
             "zapsal_jmeno": self._accident_attr(accident, "zapsal_jmeno"),

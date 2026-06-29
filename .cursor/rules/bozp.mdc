@@ -1,0 +1,199 @@
+Nejlepší kód je ten, který už v projektu existuje.
+
+Před napsáním nové funkce vždy ověř, zda již obdobná funkce neexistuje.
+
+Pokud existuje, rozšiř ji místo vytváření nové.
+
+# Manažer BOZP 3.0 – pravidla projektu
+
+## Poslání
+
+Tento projekt je profesionální desktopová aplikace pro řízení BOZP.
+Prioritou je stabilita, přehlednost, jednoduchost a dlouhodobá udržovatelnost.
+
+---
+
+## Architektura
+
+- Dodržuj stávající architekturu projektu.
+- Nepřesouvej soubory bez výslovného pokynu.
+- Nepřejmenovávej moduly.
+- Nevytvářej novou architekturu.
+- Nevytvářej nové frameworky.
+
+---
+
+## Duplicitní kód
+
+Než vytvoříš novou funkci:
+
+1. najdi, zda již podobná existuje
+2. pokud ano, použij ji
+3. nevytvářej duplicitní dialogy
+4. nevytvářej duplicitní služby
+5. nevytvářej duplicitní utility
+
+Preferuj rozšíření existujícího řešení.
+
+---
+
+## Core
+
+Do core patří pouze:
+
+- společné služby
+- společné dialogy
+- společné widgety
+- export
+- storage
+- audit
+- nastavení
+- dashboard
+
+Core nesmí obsahovat logiku konkrétního modulu.
+
+---
+
+## Moduly
+
+Každý modul obsahuje pouze vlastní logiku.
+
+Například:
+
+- Kniha úrazů
+- Úkoly
+- Dashboard
+
+Moduly nesmí kopírovat společný kód.
+
+---
+
+## Storage
+
+Veškeré cesty řeší StorageService.
+
+Nikdy nepoužívej natvrdo:
+
+- ~/.local
+- absolutní cesty
+- os.path.expanduser()
+
+Používej pouze StorageService.
+
+---
+
+## Export
+
+Všechny exporty používají společný exportní engine.
+
+Šablony:
+
+.local/templates
+
+Výstupy:
+
+.local/export
+
+Nikdy nevytvářej speciální export mimo exportní engine.
+
+---
+
+## GUI
+
+Dodržuj jednotný vzhled.
+
+Nepoužívej jiné styly.
+
+Nevytvářej nové dialogy, pokud již obdobný existuje.
+
+Preferuj opětovné použití widgetů.
+
+---
+
+## Databáze
+
+Nikdy nemaž existující data.
+
+Migrace musí být zpětně kompatibilní.
+
+Preferuj rozšíření tabulek.
+
+---
+
+## Git
+
+Nikdy necommituj.
+
+Nikdy nemergeuj.
+
+Pouze připrav diff.
+
+---
+
+## Styl práce
+
+Neopisuj zadání.
+
+Nevysvětluj architekturu.
+
+Nevytvářej dlouhé plány.
+
+Prováděj změny.
+
+Po dokončení:
+
+- vypiš změněné soubory
+- ukaž diff
+- čekej na schválení
+
+---
+
+## Když si nejsi jistý
+
+Neodhaduj.
+
+Raději se zeptej.
+
+---
+
+## Cíl
+
+Piš kód tak, aby projekt bez problémů fungoval i za několik let.
+
+Každá změna má být:
+
+- jednoduchá
+- čitelná
+- znovupoužitelná
+- bez duplicit
+- konzistentní s architekturou projektu
+
+
+## Refaktoring
+
+Nikdy neprováděj refaktoring bez výslovného zadání.
+
+Pokud objevíš lepší architekturu,
+pouze ji navrhni.
+
+Neimplementuj ji sám.
+
+Prioritou je funkční aplikace.
+
+
+## Velké soubory
+
+Pokud soubor přesáhne přibližně 1000 řádků,
+navrhni rozdělení.
+
+Nikdy jej nerozděluj bez schválení.
+
+## BOZP
+
+Tento projekt vyvíjí jeden autor.
+
+Preferuj evoluci projektu.
+
+Nikdy nenavrhuj rozsáhlé přepisování.
+
+Každá změna má být co nejmenší.

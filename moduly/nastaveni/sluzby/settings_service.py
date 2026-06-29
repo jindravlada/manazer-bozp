@@ -28,6 +28,9 @@ class SettingsService:
     def get_workers(self, include_inactive: bool = False) -> list[ThpWorker]:
         return self.repository.get_workers(include_inactive=include_inactive)
 
+    def get_workers_for_controls(self) -> list[ThpWorker]:
+        return self.repository.get_workers_for_controls()
+
     def get_worker_by_id(self, worker_id: int | None) -> ThpWorker | None:
         if not worker_id:
             return None

@@ -17,11 +17,11 @@ class RecentActivityWidget(DashboardPanel):
         tasks.sort(key=lambda task: task.updated_at, reverse=True)
 
         lines = []
-        for task in tasks[:6]:
+        for task in tasks[:5]:
             stamp = task.updated_at.strftime("%d.%m.%Y %H:%M") if task.updated_at else ""
             lines.append(f"<b>{stamp}</b><br>{task.title}<br><span style='color:#666;'>{task.computed_status}</span><br>")
 
         if not lines:
-            lines.append("Zatím není žádná aktivita.")
+            lines.append("Dosud není evidována žádná aktivita.")
 
         self.content.setText("<br>".join(lines))

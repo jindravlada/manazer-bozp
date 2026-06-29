@@ -14,15 +14,15 @@ class SummaryWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(12)
 
-        self.overdue = DashboardCard("🔴 Po termínu", "0", "kritické věci k řešení")
-        self.waiting = DashboardCard("🟡 Čeká kontrola", "0", "splněno, čeká na ověření")
-        self.today = DashboardCard("🔵 Dnes", "0", "termín splnění dnes")
-        self.done = DashboardCard("🟢 Dokončeno", "0", "ukončeno dnes")
+        self.overdue = DashboardCard("🔴 Po termínu", "0", "úkoly po termínu")
+        self.today = DashboardCard("🔵 Dnes", "0", "úkoly na dnes")
+        self.waiting = DashboardCard("🟡 Čeká kontrolu", "0", "splněno, čeká na ověření")
+        self.open_total = DashboardCard("📋 Otevřeno", "0", "celkem otevřených úkolů")
 
         layout.addWidget(self.overdue)
-        layout.addWidget(self.waiting)
         layout.addWidget(self.today)
-        layout.addWidget(self.done)
+        layout.addWidget(self.waiting)
+        layout.addWidget(self.open_total)
 
         self.refresh()
 
@@ -33,10 +33,13 @@ class SummaryWidget(QWidget):
         overdue = 0
         waiting = 0
         due_today = 0
-        done_today = 0
+        open_total = 0
 
         for task in tasks:
             status = task.computed_status
+
+            if status not in ["Ukončeno", "Zrušeno"]:
+                open_total += 1
 
             if task.due_date and task.due_date < today and status not in ["Ukončeno", "Zrušeno"]:
                 overdue += 1
@@ -47,10 +50,7 @@ class SummaryWidget(QWidget):
             if task.due_date == today and status not in ["Ukončeno", "Zrušeno"]:
                 due_today += 1
 
-            if task.checked_date == today or (task.completed_date == today and status == "Ukončeno"):
-                done_today += 1
-
-        self.overdue.set_value(str(overdue), "kritické věci k řešení")
+        self.overdue.set_value(str(overdue), "úkoly po termínu")
+        self.today.set_value(str(due_today), "úkoly na dnes")
         self.waiting.set_value(str(waiting), "čeká na kontrolu účinnosti")
-        self.today.set_value(str(due_today), "termín splnění dnes")
-        self.done.set_value(str(done_today), "ukončeno dnes")
+        self.open_total.set_value(str(open_total), "celkem otevřených úkolů")

@@ -6,6 +6,9 @@ from core.database.session import create_database, engine
 def initialize_database() -> None:
     from core.models.attachment import Attachment  # noqa: F401
     from moduly.ukoly.modely.task import Task  # noqa: F401
+    from moduly.kontroly.modely.control import Control  # noqa: F401
+    from moduly.kontroly.modely.thp_monthly_control import ThpMonthlyControl  # noqa: F401
+    from moduly.kontroly.modely.thp_yearly_kl_usage import ThpYearlyKlUsage  # noqa: F401
     from moduly.nastaveni.modely.employer import Employer  # noqa: F401
     from moduly.nastaveni.modely.thp_worker import ThpWorker  # noqa: F401
     from moduly.nastaveni.modely.workplace import Workplace  # noqa: F401
@@ -17,6 +20,7 @@ def initialize_database() -> None:
     _ensure_task_columns()
     _ensure_accident_columns()
     _ensure_investigation_columns()
+    _ensure_control_columns()
     _normalize_task_status_values()
     _normalize_accident_legacy_values()
 
@@ -39,6 +43,8 @@ def _ensure_thp_worker_title_columns() -> None:
         _add_column("thp_workers", "title_before VARCHAR(50) DEFAULT ''")
     if "title_after" not in columns:
         _add_column("thp_workers", "title_after VARCHAR(50) DEFAULT ''")
+    if "performs_controls" not in columns:
+        _add_column("thp_workers", "performs_controls BOOLEAN DEFAULT 0")
 
 
 def _ensure_task_columns() -> None:
@@ -96,6 +102,12 @@ def _ensure_investigation_columns() -> None:
     for column_name, column_sql in additions.items():
         if column_name not in columns:
             _add_column("accident_investigations", column_sql)
+
+
+def _ensure_control_columns() -> None:
+    columns = _table_columns("controls")
+    if "sd_reference" not in columns:
+        _add_column("controls", "sd_reference VARCHAR(200) DEFAULT ''")
 
 
 def _normalize_task_status_values() -> None:

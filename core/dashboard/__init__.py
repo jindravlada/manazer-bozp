@@ -4,3 +4,4 @@ from .widget_upcoming_tasks import UpcomingTasksWidget
 from .widget_recent_activity import RecentActivityWidget
 from .widget_calendar_placeholder import CalendarPlaceholderWidget
 from .widget_statistics_placeholder import StatisticsPlaceholderWidget
+from .widget_days_without_accident import DaysWithoutAccidentWidget

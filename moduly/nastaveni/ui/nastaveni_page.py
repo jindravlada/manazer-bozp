@@ -107,9 +107,9 @@ class NastaveniPage(QWidget):
         toolbar.addWidget(self.worker_filter)
 
         self.worker_table = QTableWidget()
-        self.worker_table.setColumnCount(9)
+        self.worker_table.setColumnCount(10)
         self.worker_table.setHorizontalHeaderLabels(
-            ["ID", "Titul před", "Příjmení", "Jméno", "Titul za", "Funkce", "Telefon", "E-mail", "Aktivní"]
+            ["ID", "Titul před", "Příjmení", "Jméno", "Titul za", "Funkce", "Telefon", "E-mail", "Kont.", "Aktivní"]
         )
         self.worker_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.worker_table.setSelectionMode(QTableWidget.SingleSelection)
@@ -211,7 +211,7 @@ class NastaveniPage(QWidget):
         if dialog.exec():
             data = dialog.get_data()
             if data["first_name"] and data["last_name"]:
-                settings_service.add_worker(**data)
+                settings_service.save_worker(**data)
                 self.refresh_workers()
 
     def _selected_worker_id(self) -> int | None:
@@ -228,6 +228,11 @@ class NastaveniPage(QWidget):
             QMessageBox.information(self, "THP pracovníci", "Vyberte pracovníka.")
             return
 
+        self.open_worker(worker_id)
+
+    def open_worker(self, worker_id: int):
+        self.tabs.setCurrentIndex(0)
+
         worker = settings_service.get_worker_by_id(worker_id)
         if worker is None:
             QMessageBox.warning(self, "THP pracovníci", "Pracovník nebyl nalezen.")
@@ -238,7 +243,7 @@ class NastaveniPage(QWidget):
         if dialog.exec():
             data = dialog.get_data()
             if data["first_name"] and data["last_name"]:
-                settings_service.update_worker(worker_id=worker_id, **data)
+                settings_service.save_worker(id=worker_id, **data)
                 self.refresh_workers()
 
     def toggle_selected_worker_active(self):
@@ -289,7 +294,7 @@ class NastaveniPage(QWidget):
         if dialog.exec():
             data = dialog.get_data()
             if data["name"]:
-                settings_service.add_workplace(**data)
+                settings_service.save_workplace(**data)
                 self.refresh_workplaces()
 
     def _selected_workplace_id(self) -> int | None:
@@ -316,7 +321,7 @@ class NastaveniPage(QWidget):
         if dialog.exec():
             data = dialog.get_data()
             if data["name"]:
-                settings_service.update_workplace(workplace_id=workplace_id, **data)
+                settings_service.save_workplace(id=workplace_id, **data)
                 self.refresh_workplaces()
 
     def toggle_selected_workplace_active(self):
@@ -387,7 +392,8 @@ class NastaveniPage(QWidget):
             self.worker_table.setItem(row, 5, QTableWidgetItem(worker.position))
             self.worker_table.setItem(row, 6, QTableWidgetItem(worker.phone))
             self.worker_table.setItem(row, 7, QTableWidgetItem(worker.email))
-            self.worker_table.setItem(row, 8, QTableWidgetItem("Ano" if worker.active else "Ne"))
+            self.worker_table.setItem(row, 8, QTableWidgetItem("Ano" if worker.performs_controls else "Ne"))
+            self.worker_table.setItem(row, 9, QTableWidgetItem("Ano" if worker.active else "Ne"))
 
         configure_table_columns(self.worker_table, "thp_workers")
         self.worker_text_filter.update_count()

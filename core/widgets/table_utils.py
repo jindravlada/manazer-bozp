@@ -15,7 +15,8 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             5: 240,
             6: 130,
             7: 260,
-            8: 80,
+            8: 55,
+            9: 80,
         }
         for column, width in widths.items():
             table.setColumnWidth(column, width)
@@ -51,5 +52,34 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         table.setColumnHidden(0, True)
         header.setSectionResizeMode(2, QHeaderView.Stretch)
 
+    elif profile == "controls":
+        widths = {
+            0: 0,    # ID
+            1: 105,  # Datum
+            2: 320,  # Kontrolní list
+            3: 180,  # THP pracovník
+            4: 180,  # Pracoviště
+            5: 70,   # Závada
+            6: 120,  # SD
+            7: 220,  # Poznámka
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        for column in (1, 2, 3, 4, 5, 6):
+            header.setSectionResizeMode(column, QHeaderView.Fixed)
+        header.setSectionResizeMode(7, QHeaderView.Stretch)
+
+    elif profile == "controls_year_matrix":
+        table.setColumnWidth(0, 230)
+        table.setColumnWidth(1, 55)
+        header.setSectionResizeMode(0, QHeaderView.Fixed)
+        header.setSectionResizeMode(1, QHeaderView.Fixed)
+        for column in range(2, 14):
+            header.setSectionResizeMode(column, QHeaderView.Stretch)
+            table.setColumnWidth(column, 62)
+        table.setAlternatingRowColors(False)
+
     table.verticalHeader().setVisible(False)
-    table.setAlternatingRowColors(True)
+    if profile != "controls_year_matrix":
+        table.setAlternatingRowColors(True)

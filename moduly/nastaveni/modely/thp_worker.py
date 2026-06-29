@@ -21,6 +21,7 @@ class ThpWorker(Base):
     email: Mapped[str] = mapped_column(String(150), default="")
 
     active: Mapped[bool] = mapped_column(Boolean, default=True)
+    performs_controls: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
 
     @property

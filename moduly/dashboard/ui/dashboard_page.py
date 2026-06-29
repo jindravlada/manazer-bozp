@@ -16,6 +16,7 @@ from core.services.backup_service import backup_service
 
 from core.dashboard import (
     CalendarPlaceholderWidget,
+    DaysWithoutAccidentWidget,
     RecentActivityWidget,
     StatisticsPlaceholderWidget,
     SummaryWidget,
@@ -30,9 +31,11 @@ class DashboardPage(QWidget):
     Dashboard je složený z menších widgetů.
     """
 
-    def __init__(self, open_tasks_callback=None) -> None:
+    def __init__(self, open_tasks_callback=None, open_accidents_callback=None, open_search_callback=None) -> None:
         super().__init__()
         self.open_tasks_callback = open_tasks_callback
+        self.open_accidents_callback = open_accidents_callback
+        self.open_search_callback = open_search_callback
 
         self.setStyleSheet("""
             QFrame#HeaderCard,
@@ -91,9 +94,11 @@ class DashboardPage(QWidget):
 
         top_row = QHBoxLayout()
         top_row.setSpacing(14)
-        top_row.addWidget(self._create_header(), 1)
+        self.days_without_accident = DaysWithoutAccidentWidget(compact=True)
+        top_row.addWidget(self._create_header(), 0)
+        top_row.addWidget(self._create_vertical_separator())
+        top_row.addWidget(self.days_without_accident, 1)
         top_row.addWidget(self._create_quick_actions(), 0)
-        top_row.addStretch(1)
         layout.addLayout(top_row)
 
         self.summary = SummaryWidget()
@@ -107,11 +112,10 @@ class DashboardPage(QWidget):
         self.calendar = CalendarPlaceholderWidget()
         self.activity = RecentActivityWidget()
         self.stats = StatisticsPlaceholderWidget()
-        self.days_without_accident = self._placeholder_panel("Dny bez pracovního úrazu", "Aktivuje se po dokončení Knihy úrazů.")
 
         # Pevné výšky u panelů, které nemají roztahovat celou pracovní plochu.
         self.today.setFixedHeight(170)
-        self.calendar.setFixedHeight(310)
+        self.calendar.setFixedHeight(280)
         self.stats.setFixedHeight(130)
         self.upcoming.setMinimumHeight(260)
         self.activity.setMinimumHeight(220)
@@ -128,14 +132,12 @@ class DashboardPage(QWidget):
         grid.addWidget(right_column, 0, 1, 3, 1)
         grid.addWidget(self.upcoming, 1, 0)
         grid.addWidget(self.activity, 2, 0)
-        grid.addWidget(self.days_without_accident, 3, 0, 1, 2)
 
         grid.setColumnStretch(0, 1)
         grid.setColumnStretch(1, 1)
         grid.setRowStretch(0, 0)
         grid.setRowStretch(1, 0)
         grid.setRowStretch(2, 0)
-        grid.setRowStretch(3, 0)
 
         layout.addLayout(grid)
         layout.addStretch(1)
@@ -143,7 +145,8 @@ class DashboardPage(QWidget):
     def _create_header(self) -> QFrame:
         header = QFrame()
         header.setObjectName("HeaderCard")
-        header.setFixedSize(520, 92)
+        header.setFixedHeight(92)
+        header.setMinimumWidth(280)
 
         layout = QVBoxLayout(header)
         layout.setContentsMargins(18, 14, 18, 14)
@@ -159,6 +162,13 @@ class DashboardPage(QWidget):
 
         return header
 
+    def _create_vertical_separator(self) -> QFrame:
+        line = QFrame()
+        line.setFrameShape(QFrame.VLine)
+        line.setFrameShadow(QFrame.Sunken)
+        line.setFixedHeight(72)
+        return line
+
     def _create_quick_actions(self) -> QFrame:
         panel = QFrame()
         panel.setObjectName("DashboardPanel")
@@ -169,10 +179,10 @@ class DashboardPage(QWidget):
         layout.setSpacing(10)
 
         buttons = [
-            ("+ Úraz", False),
+            ("+ Úraz", True),
             ("✓ Úkol", True),
-            ("📋 Kontrola", False),
-            ("🔎 Hledat", False),
+            ("📋 Kontrola", True),
+            ("🔎 Hledat", True),
             ("💾 Záloha", True),
             ("♻ Obnova", True),
         ]
@@ -182,8 +192,14 @@ class DashboardPage(QWidget):
             button.setObjectName("QuickButton")
             button.setEnabled(enabled)
 
-            if text == "✓ Úkol" and self.open_tasks_callback:
+            if text == "+ Úraz" and self.open_accidents_callback:
+                button.clicked.connect(self.open_accidents_callback)
+            elif text == "✓ Úkol" and self.open_tasks_callback:
                 button.clicked.connect(self.open_tasks_callback)
+            elif text == "🔎 Hledat" and self.open_search_callback:
+                button.clicked.connect(self.open_search_callback)
+            elif text == "📋 Kontrola":
+                button.clicked.connect(self.show_kontroly_info)
             elif text == "💾 Záloha":
                 button.clicked.connect(self.create_backup)
             elif text == "♻ Obnova":
@@ -193,6 +209,9 @@ class DashboardPage(QWidget):
 
         layout.addStretch()
         return panel
+
+    def show_kontroly_info(self):
+        QMessageBox.information(self, "Kontroly", "Modul Kontroly zatím není aktivní.")
 
     def create_backup(self):
         default_path = str(backup_service.default_backup_path())
@@ -273,8 +292,10 @@ class DashboardPage(QWidget):
             self.summary,
             self.today,
             self.upcoming,
+            self.calendar,
             self.activity,
             self.stats,
+            self.days_without_accident,
         ]:
             if hasattr(widget, "refresh"):
                 widget.refresh()

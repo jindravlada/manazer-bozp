@@ -11,6 +11,8 @@ class SearchResult:
     category: str
     title: str
     subtitle: str = ""
+    record_id: int | None = None
+    record_type: str = ""
 
     @property
     def display(self) -> str:
@@ -59,6 +61,8 @@ class GlobalSearchService:
                         category="Kniha úrazů",
                         title=f"{accident.number or 'bez čísla'} | {accident.employee_name or 'bez osoby'}",
                         subtitle=accident.description[:80] if accident.description else "",
+                        record_id=accident.id,
+                        record_type="accident",
                     )
                 )
 
@@ -83,6 +87,8 @@ class GlobalSearchService:
                         category="Úkoly",
                         title=task.title or "—",
                         subtitle=f"{task.computed_status} | {task.responsible_person or 'bez osoby'}",
+                        record_id=task.id,
+                        record_type="task",
                     )
                 )
 
@@ -105,6 +111,8 @@ class GlobalSearchService:
                         category="THP",
                         title=worker.display_name,
                         subtitle=worker.position or "bez funkce",
+                        record_id=worker.id,
+                        record_type="worker",
                     )
                 )
 

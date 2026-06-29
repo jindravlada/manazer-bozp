@@ -12,12 +12,46 @@ class TaskCalendarWidget(QCalendarWidget):
     def __init__(self):
         super().__init__()
         self._task_dates = {}
+        self.setObjectName("TaskCalendarWidget")
         self.setGridVisible(False)
         self.setVerticalHeaderFormat(QCalendarWidget.NoVerticalHeader)
         self.setHorizontalHeaderFormat(QCalendarWidget.ShortDayNames)
         self.setSelectedDate(QDate.currentDate())
-        self.setFixedSize(620, 245)
+        self.setFixedSize(620, 220)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.setStyleSheet("""
+            QCalendarWidget#TaskCalendarWidget {
+                background-color: #ffffff;
+                border: none;
+            }
+            QCalendarWidget#TaskCalendarWidget QWidget#qt_calendar_navigationbar {
+                min-height: 26px;
+                max-height: 26px;
+            }
+            QCalendarWidget#TaskCalendarWidget QHeaderView::section {
+                padding: 0px;
+                border: none;
+                background-color: #ffffff;
+                color: #6b7280;
+                font-size: 11px;
+            }
+            QCalendarWidget#TaskCalendarWidget QTableView {
+                gridline-color: transparent;
+                border: none;
+                background-color: #ffffff;
+                alternate-background-color: #ffffff;
+                outline: 0;
+            }
+            QCalendarWidget#TaskCalendarWidget QTableView::item {
+                border: none;
+                padding: 0px;
+            }
+            QCalendarWidget#TaskCalendarWidget QAbstractItemView:enabled {
+                selection-background-color: transparent;
+                selection-color: #111827;
+                font-size: 11px;
+            }
+        """)
         self._apply_formats()
 
     def _apply_formats(self):
@@ -30,10 +64,48 @@ class TaskCalendarWidget(QCalendarWidget):
         self.updateCells()
 
     def paintCell(self, painter: QPainter, rect: QRect, qdate: QDate):
-        super().paintCell(painter, rect, qdate)
+        inset_y = 1
+        cell = QRect(
+            rect.left(),
+            rect.top() + inset_y,
+            rect.width(),
+            max(1, rect.height() - inset_y * 2),
+        )
+
+        painter.save()
+        painter.setRenderHint(QPainter.Antialiasing, True)
+
+        fmt = self.dateTextFormat(qdate)
+        if fmt.background().style() != Qt.BrushStyle.NoBrush:
+            painter.fillRect(cell, fmt.background().color())
+
+        is_outside = (
+            qdate.month() != self.monthShown()
+            or qdate.year() != self.yearShown()
+        )
+        font = painter.font()
+        font.setPointSize(10)
+        font.setBold(qdate == QDate.currentDate())
+        painter.setFont(font)
+
+        if fmt.foreground().style() != Qt.BrushStyle.NoBrush:
+            painter.setPen(fmt.foreground().color())
+        elif is_outside:
+            painter.setPen(QColor("#cbd5e1"))
+        else:
+            painter.setPen(QColor("#374151"))
+
+        day_rect = QRect(cell.left(), cell.top() + 1, cell.width(), 12)
+        painter.drawText(
+            day_rect,
+            int(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop),
+            str(qdate.day()),
+        )
+
         py_date = date(qdate.year(), qdate.month(), qdate.day())
         statuses = self._task_dates.get(py_date, set())
         if not statuses:
+            painter.restore()
             return
 
         colors = []
@@ -46,16 +118,15 @@ class TaskCalendarWidget(QCalendarWidget):
         if "done" in statuses:
             colors.append(QColor("#1f8f3a"))
 
-        painter.save()
-        painter.setRenderHint(QPainter.Antialiasing, True)
         radius = 4
         spacing = 4
         total = len(colors) * radius * 2 + max(0, len(colors) - 1) * spacing
-        x = rect.center().x() - total // 2
-        y = rect.bottom() - 12
+        x = cell.center().x() - total // 2
+        y = day_rect.bottom() + 2
+        y = min(y, cell.bottom() - radius * 2 - 1)
         for color in colors[:4]:
             painter.setBrush(color)
-            painter.setPen(Qt.NoPen)
+            painter.setPen(Qt.PenStyle.NoPen)
             painter.drawEllipse(x, y, radius * 2, radius * 2)
             x += radius * 2 + spacing
         painter.restore()
@@ -67,8 +138,7 @@ class CalendarPlaceholderWidget(DashboardPanel):
 
         self.calendar = TaskCalendarWidget()
         self.layout.addWidget(self.calendar, 0, Qt.AlignHCenter)
-        self.layout.addStretch(1)
-        self.setFixedHeight(310)
+        self.setFixedHeight(280)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.refresh()
 

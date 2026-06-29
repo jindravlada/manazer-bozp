@@ -113,6 +113,9 @@ class UkolyPage(QWidget):
             QMessageBox.information(self, "Úkoly", "Vyberte opatření.")
             return
 
+        self.open_task(task_id)
+
+    def open_task(self, task_id: int):
         task = task_service.get_task_by_id(task_id)
         if task is None:
             QMessageBox.warning(self, "Úkoly", "Opatření nebylo nalezeno.")

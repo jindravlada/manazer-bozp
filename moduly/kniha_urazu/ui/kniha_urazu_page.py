@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
 from core.widgets.filter_bar import FilterBar
 from moduly.kniha_urazu.sluzby.accident_service import accident_service
 from moduly.kniha_urazu.ui.accident_dialog import AccidentDialog
+from moduly.kniha_urazu.ui.accident_summary_panel import AccidentSummaryPanel
 from moduly.kniha_urazu.ui.accident_table import AccidentTable
 from moduly.kniha_urazu.ui.setreni.setreni_dialog import SetreniDialog
 from moduly.kniha_urazu.sluzby.zaverecna_zprava_service import zaverecna_zprava_service
@@ -38,9 +39,15 @@ class KnihaUrazuPage(QWidget):
 
         self.table = AccidentTable()
         self.text_filter = FilterBar(self.table)
+        self.summary_panel = AccidentSummaryPanel()
+
+        filter_row = QHBoxLayout()
+        filter_row.setContentsMargins(0, 0, 0, 0)
+        filter_row.addWidget(self.text_filter, 1)
+        filter_row.addWidget(self.summary_panel)
 
         layout.addLayout(toolbar)
-        layout.addWidget(self.text_filter)
+        layout.addLayout(filter_row)
         layout.addWidget(self.table)
 
         self.new_btn.clicked.connect(self.new_accident)
@@ -57,17 +64,8 @@ class KnihaUrazuPage(QWidget):
         self.table.load_accidents(accidents)
         self.table.clearSelection()
         self.table.setCurrentCell(-1, -1)
-
-        self.table.setColumnWidth(0, 22)
-        self.table.setColumnWidth(2, 90)
-        self.table.setColumnWidth(3, 110)
-        self.table.setColumnWidth(4, 220)
-        self.table.setColumnWidth(5, 160)
-        self.table.setColumnWidth(6, 190)
-        self.table.setColumnWidth(7, 190)
-        self.table.setColumnWidth(8, 420)
-        self.table.setColumnWidth(9, 35)
-        self.table.setColumnWidth(10, 35)
+        self.table.configure_columns()
+        self.summary_panel.update_summary(self.table.compute_summary(accidents))
 
         self.text_filter.update_count()
 
@@ -93,6 +91,9 @@ class KnihaUrazuPage(QWidget):
             QMessageBox.information(self, "Kniha úrazů", "Vyberte úraz.")
             return
 
+        self.open_accident(accident_id)
+
+    def open_accident(self, accident_id: int):
         accident = accident_service.get_by_id(accident_id)
         if accident is None:
             QMessageBox.warning(self, "Kniha úrazů", "Úraz nebyl nalezen.")
@@ -161,3 +162,4 @@ class KnihaUrazuPage(QWidget):
 
         dialog = SetreniDialog(self, accident=accident)
         dialog.exec()
+        self.refresh()

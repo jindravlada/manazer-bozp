@@ -1,6 +1,6 @@
 import json
 import unicodedata
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from pathlib import Path
 
 from PySide6.QtCore import Qt
@@ -169,24 +169,38 @@ class SetreniDialog(QDialog):
 
         cislo = QLabel(a.number if a else "")
         self.oznameni_kdo = QLineEdit()
-        self.oznameni_kdo.setText(inv.oznameni_kdo if inv else "")
+        if inv and inv.oznameni_kdo:
+            self.oznameni_kdo.setText(inv.oznameni_kdo)
+        elif a and a.employee_name:
+            self.oznameni_kdo.setText(a.employee_name)
 
         self.oznameni_komu = PersonSelector()
         self.oznameni_komu.setEditable(True)
-        if inv and inv.oznameni_komu:
-            index = self.oznameni_komu.findText(inv.oznameni_komu)
+        komu = inv.oznameni_komu if inv and inv.oznameni_komu else ""
+        if not komu and a and a.zapsal_jmeno:
+            komu = a.zapsal_jmeno
+        if komu:
+            index = self.oznameni_komu.findText(komu)
             if index >= 0:
                 self.oznameni_komu.setCurrentIndex(index)
             else:
-                self.oznameni_komu.setEditText(inv.oznameni_komu)
+                self.oznameni_komu.setEditText(komu)
 
         self.oznameni_datum = NullableDateEdit()
         if inv and inv.oznameni_datum:
             self.oznameni_datum.set_date_value(inv.oznameni_datum)
+        elif a and a.accident_date:
+            self.oznameni_datum.set_date_value(a.accident_date)
 
         self.oznameni_cas = QLineEdit()
         self.oznameni_cas.setPlaceholderText("např. 14:35")
-        self.oznameni_cas.setText(inv.oznameni_cas if inv else "")
+        if inv and inv.oznameni_cas:
+            self.oznameni_cas.setText(inv.oznameni_cas)
+        elif a and a.accident_time:
+            self.oznameni_cas.setText(a.accident_time)
+
+        self.oznameni_datum.dateChanged.connect(self._refresh_dukazy_casove_rozdily)
+        self.oznameni_cas.textChanged.connect(self._refresh_dukazy_casove_rozdily)
 
         self.oznameni_bezodkladne_ano = QRadioButton("ANO")
         self.oznameni_bezodkladne_ne = QRadioButton("NE")
@@ -627,23 +641,39 @@ class SetreniDialog(QDialog):
         from core.widgets.person_selector import PersonSelector
 
         saved = self._zajisteni_saved_data
+        a = self.accident
 
         self.dukazy_datum = self._new_date_edit()
         if saved.get("datum"):
             self._set_date_widget(self.dukazy_datum, saved.get("datum"))
+        elif a and a.accident_date:
+            self._set_date_widget(self.dukazy_datum, a.accident_date)
 
         self.dukazy_cas = QLineEdit()
         self.dukazy_cas.setPlaceholderText("např. 14:35")
-        self.dukazy_cas.setText(saved.get("cas", ""))
+        if saved.get("cas"):
+            self.dukazy_cas.setText(saved.get("cas"))
+        elif a and a.accident_time:
+            self.dukazy_cas.setText(a.accident_time)
 
         self.dukazy_provedl = PersonSelector()
         self.dukazy_provedl.setEditable(True)
-        if saved.get("provedl"):
-            self.dukazy_provedl.setCurrentText(saved.get("provedl", ""))
+        provedl = saved.get("provedl") or ""
+        if not provedl and a and a.zapsal_jmeno:
+            provedl = a.zapsal_jmeno
+        if provedl:
+            index = self.dukazy_provedl.findText(provedl)
+            if index >= 0:
+                self.dukazy_provedl.setCurrentIndex(index)
+            else:
+                self.dukazy_provedl.setEditText(provedl)
 
         self.dukazy_pocet_svedku = QSpinBox()
         self.dukazy_pocet_svedku.setRange(0, 20)
-        self.dukazy_pocet_svedku.setValue(int(saved.get("pocet_svedku", 1) or 0))
+        if "pocet_svedku" in saved:
+            self.dukazy_pocet_svedku.setValue(int(saved.get("pocet_svedku") or 0))
+        else:
+            self.dukazy_pocet_svedku.setValue(0)
         self.dukazy_svedci_form = None
         self.dukazy_svedek_widgets = []
 
@@ -686,9 +716,22 @@ class SetreniDialog(QDialog):
         self.dukazy_datum_fotek = self._new_date_edit()
         if saved.get("datum_fotek"):
             self._set_date_widget(self.dukazy_datum_fotek, saved.get("datum_fotek"))
+        elif a and a.accident_date:
+            self._set_date_widget(self.dukazy_datum_fotek, a.accident_date)
         self.dukazy_cas_fotek = QLineEdit()
         self.dukazy_cas_fotek.setPlaceholderText("čas pořízení fotek / videa")
-        self.dukazy_cas_fotek.setText(saved.get("cas_fotek", ""))
+        if saved.get("cas_fotek"):
+            self.dukazy_cas_fotek.setText(saved.get("cas_fotek"))
+        elif a and a.accident_time:
+            self.dukazy_cas_fotek.setText(a.accident_time)
+
+        if "cas_fotek" in saved and saved.get("cas_fotek"):
+            self._dukazy_cas_fotek_manual = saved.get("cas_fotek") != self.dukazy_cas.text()
+        else:
+            self._dukazy_cas_fotek_manual = False
+        self._dukazy_syncing_cas_fotek = False
+        self.dukazy_cas.textChanged.connect(self._sync_dukazy_cas_fotek_from_provedeni)
+        self.dukazy_cas_fotek.textChanged.connect(self._on_dukazy_cas_fotek_user_edit)
 
         self.caszarizeni_fotodokumentace = self._radio_choice(["Pořízena", "Nepořízena"])
         self._set_radio_choice(self.caszarizeni_fotodokumentace, saved.get("caszarizeni_fotodokumentace", ""))
@@ -732,6 +775,146 @@ class SetreniDialog(QDialog):
         self.dukazy_provozni_zaznamy_text.setPlainText(saved.get("provozni_zaznamy", ""))
         self.dukazy_poznamka = QTextEdit()
         self.dukazy_poznamka.setPlainText(saved.get("poznamka", ""))
+
+        self.dukazy_rozdil_oznameni_label = QLabel("Oznámení úrazu: nelze spočítat")
+        self.dukazy_rozdil_zajisteni_label = QLabel("Zajištění důkazů: nelze spočítat")
+        self.dukazy_rozdil_foto_label = QLabel("Fotodokumentace: nelze spočítat")
+        self.dukazy_casova_upozorneni_label = QLabel("")
+        for lbl in (
+            self.dukazy_rozdil_oznameni_label,
+            self.dukazy_rozdil_zajisteni_label,
+            self.dukazy_rozdil_foto_label,
+            self.dukazy_casova_upozorneni_label,
+        ):
+            lbl.setWordWrap(True)
+            lbl.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.dukazy_casova_upozorneni_label.setVisible(False)
+
+        self.dukazy_datum.dateChanged.connect(self._refresh_dukazy_casove_rozdily)
+        self.dukazy_datum_fotek.dateChanged.connect(self._refresh_dukazy_casove_rozdily)
+        self.dukazy_cas.textChanged.connect(self._refresh_dukazy_casove_rozdily)
+        self.dukazy_cas_fotek.textChanged.connect(self._refresh_dukazy_casove_rozdily)
+
+    def _casove_rozdily_labels_ready(self):
+        return all(
+            hasattr(self, name)
+            for name in (
+                "dukazy_rozdil_oznameni_label",
+                "dukazy_rozdil_zajisteni_label",
+                "dukazy_rozdil_foto_label",
+            )
+        )
+
+    def _datetime_from_date_and_time(self, date_value, time_text):
+        if date_value is None:
+            return None
+        seconds = self._parse_time_minutes(time_text)
+        if seconds is None:
+            return None
+        h = seconds // 3600
+        m = (seconds % 3600) // 60
+        s = seconds % 60
+        return datetime.combine(date_value, time(h, m, s))
+
+    def _casovy_rozdil_barva(self, minutes):
+        if minutes < 0:
+            return "#c62828"
+        if minutes <= 60:
+            return "#2e7d32"
+        if minutes <= 180:
+            return "#b8860b"
+        if minutes <= 480:
+            return "#ef6c00"
+        return "#c62828"
+
+    def _format_od_urazu_rozdil(self, accident_dt, target_dt, pred_urazem_text=None):
+        if accident_dt is None or target_dt is None:
+            return None
+        total_seconds = int((target_dt - accident_dt).total_seconds())
+        if total_seconds < 0:
+            return (pred_urazem_text or "Čas je před vznikem úrazu.", "#c62828")
+        total_minutes = total_seconds // 60
+        h = total_seconds // 3600
+        m = (total_seconds % 3600) // 60
+        if h and m:
+            body = f"{h} h {m} min"
+        elif h:
+            body = f"{h} h"
+        else:
+            body = f"{m} min"
+        return (f"+{body} od úrazu", self._casovy_rozdil_barva(total_minutes))
+
+    def _set_casovy_rozdil_label(self, label, prefix, formatted):
+        if formatted is None:
+            label.setText(f"{prefix}: nelze spočítat")
+            label.setStyleSheet("")
+            return
+        text, color = formatted
+        label.setText(f"{prefix}: {text}")
+        label.setStyleSheet(f"color: {color};")
+
+    def _refresh_dukazy_casove_rozdily(self, *_args):
+        if not self._casove_rozdily_labels_ready():
+            return
+        if not hasattr(self, "dukazy_datum") or not hasattr(self, "dukazy_cas"):
+            return
+        a = self.accident
+        accident_dt = None
+        if a and a.accident_date and (a.accident_time or "").strip():
+            accident_dt = self._datetime_from_date_and_time(a.accident_date, a.accident_time)
+
+        zajisteni_dt = self._datetime_from_date_and_time(
+            self._date_value(self.dukazy_datum),
+            self.dukazy_cas.text(),
+        )
+        foto_dt = self._datetime_from_date_and_time(
+            self._date_value(self.dukazy_datum_fotek),
+            self.dukazy_cas_fotek.text(),
+        )
+        oznameni_dt = None
+        if hasattr(self, "oznameni_datum") and hasattr(self, "oznameni_cas"):
+            oznameni_dt = self._datetime_from_date_and_time(
+                self._date_value(self.oznameni_datum),
+                self.oznameni_cas.text(),
+            )
+
+        oznameni_rozdil = self._format_od_urazu_rozdil(
+            accident_dt, oznameni_dt, "Čas oznámení je před vznikem úrazu."
+        )
+        zajisteni_rozdil = self._format_od_urazu_rozdil(
+            accident_dt, zajisteni_dt, "Zajištění důkazů je před vznikem úrazu."
+        )
+        foto_rozdil = self._format_od_urazu_rozdil(
+            accident_dt, foto_dt, "Fotodokumentace je před vznikem úrazu."
+        )
+
+        self._set_casovy_rozdil_label(self.dukazy_rozdil_oznameni_label, "Oznámení úrazu", oznameni_rozdil)
+        self._set_casovy_rozdil_label(self.dukazy_rozdil_zajisteni_label, "Zajištění důkazů", zajisteni_rozdil)
+        self._set_casovy_rozdil_label(self.dukazy_rozdil_foto_label, "Fotodokumentace", foto_rozdil)
+
+        if hasattr(self, "dukazy_casova_upozorneni_label"):
+            if zajisteni_dt and foto_dt and foto_dt < zajisteni_dt:
+                self.dukazy_casova_upozorneni_label.setText(
+                    "Fotodokumentace byla pořízena před zajištěním důkazů. Zkontrolujte správnost údajů."
+                )
+                self.dukazy_casova_upozorneni_label.setStyleSheet("color: #b8860b;")
+                self.dukazy_casova_upozorneni_label.setVisible(True)
+            else:
+                self.dukazy_casova_upozorneni_label.setText("")
+                self.dukazy_casova_upozorneni_label.setStyleSheet("")
+                self.dukazy_casova_upozorneni_label.setVisible(False)
+
+    def _sync_dukazy_cas_fotek_from_provedeni(self, text):
+        if self._dukazy_cas_fotek_manual:
+            return
+        self._dukazy_syncing_cas_fotek = True
+        self.dukazy_cas_fotek.setText(text)
+        self._dukazy_syncing_cas_fotek = False
+
+    def _on_dukazy_cas_fotek_user_edit(self, _text):
+        if self._dukazy_syncing_cas_fotek:
+            return
+        self._dukazy_cas_fotek_manual = True
 
     def _init_ohledani_mista_widgets(self):
         from core.widgets.person_selector import PersonSelector
@@ -1676,7 +1859,22 @@ class SetreniDialog(QDialog):
         zaklad_form.addRow("Datum provedení:", self.dukazy_datum)
         zaklad_form.addRow("Čas provedení:", self.dukazy_cas)
         zaklad_form.addRow("Provedl:", self.dukazy_provedl)
-        layout.addWidget(zaklad_group)
+
+        cas_rozdily_group = QGroupBox("Kontrola časové návaznosti")
+        cas_rozdily_layout = QVBoxLayout(cas_rozdily_group)
+        cas_rozdily_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        cas_rozdily_layout.addWidget(self.dukazy_rozdil_oznameni_label)
+        cas_rozdily_layout.addWidget(self.dukazy_rozdil_zajisteni_label)
+        cas_rozdily_layout.addWidget(self.dukazy_rozdil_foto_label)
+        cas_rozdily_layout.addWidget(self.dukazy_casova_upozorneni_label)
+        cas_rozdily_layout.addStretch()
+
+        top_row = QHBoxLayout()
+        top_row.setAlignment(Qt.AlignmentFlag.AlignTop)
+        top_row.addWidget(zaklad_group, 1)
+        top_row.addWidget(cas_rozdily_group, 1)
+        layout.addLayout(top_row)
+        self._refresh_dukazy_casove_rozdily()
 
         svedci_group = QGroupBox("1. Svědci a prvotní vyjádření")
         svedci_outer = QVBoxLayout(svedci_group)

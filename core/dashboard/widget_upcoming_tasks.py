@@ -38,6 +38,6 @@ class UpcomingTasksWidget(DashboardPanel):
             lines.append(f"<b>{term}</b><br>{task.title}<br><span style='color:#666;'>📍 {place}</span><br>")
 
         if not lines:
-            lines.append("Žádné aktivní úkoly.")
+            lines.append("Nejsou evidovány žádné aktivní úkoly.")
 
         self.content.setText("<br>".join(lines))

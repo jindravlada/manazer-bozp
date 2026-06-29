@@ -30,6 +30,16 @@ class SettingsRepository:
 
         return czech_sorted(workers, key=worker_sort_key)
 
+    def get_workers_for_controls(self) -> list[ThpWorker]:
+        with get_session() as session:
+            stmt = select(ThpWorker).where(
+                ThpWorker.active == True,  # noqa: E712
+                ThpWorker.performs_controls == True,  # noqa: E712
+            )
+            workers = list(session.scalars(stmt))
+
+        return czech_sorted(workers, key=worker_sort_key)
+
     def get_worker_by_id(self, worker_id: int) -> ThpWorker | None:
         with get_session() as session:
             return session.get(ThpWorker, worker_id)

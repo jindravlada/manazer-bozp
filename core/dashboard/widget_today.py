@@ -45,18 +45,17 @@ class TodayWidget(DashboardPanel):
                 due_today.append(task)
 
         burning.sort(key=lambda task: (task.due_date or date.max, task.id))
-        waiting.sort(key=lambda task: (task.check_due_date or date.max, task.id))
         due_today.sort(key=lambda task: (task.due_date or date.max, task.id))
+        waiting.sort(key=lambda task: (task.check_due_date or date.max, task.id))
 
-        lines = []
-        for task in burning[:4]:
-            lines.append(self._task_line(task, "🔴"))
-        for task in waiting[:3]:
-            lines.append(self._task_line(task, "🟡"))
-        for task in due_today[:3]:
-            lines.append(self._task_line(task, "🔵"))
+        ordered = []
+        ordered.extend((task, "🔴") for task in burning)
+        ordered.extend((task, "🔵") for task in due_today)
+        ordered.extend((task, "🟡") for task in waiting)
+
+        lines = [self._task_line(task, prefix) for task, prefix in ordered[:5]]
 
         if not lines:
-            lines.append("Žádný úkol ani opatření po termínu.")
+            lines.append("Dnes není nic kritického.")
 
         self.content.setText("<br>".join(lines))

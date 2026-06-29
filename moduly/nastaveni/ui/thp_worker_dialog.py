@@ -1,4 +1,5 @@
 from PySide6.QtWidgets import (
+    QCheckBox,
     QDialog,
     QDialogButtonBox,
     QFormLayout,
@@ -11,7 +12,7 @@ class ThpWorkerDialog(QDialog):
         super().__init__(parent)
 
         self.setWindowTitle("THP pracovník")
-        self.resize(460, 300)
+        self.resize(460, 340)
 
         layout = QFormLayout(self)
 
@@ -22,6 +23,7 @@ class ThpWorkerDialog(QDialog):
         self.position = QLineEdit()
         self.phone = QLineEdit()
         self.email = QLineEdit()
+        self.performs_controls_checkbox = QCheckBox("Provádí kontroly")
 
         layout.addRow("Titul před:", self.title_before)
         layout.addRow("Jméno:", self.first_name)
@@ -30,6 +32,7 @@ class ThpWorkerDialog(QDialog):
         layout.addRow("Funkce:", self.position)
         layout.addRow("Telefon:", self.phone)
         layout.addRow("E-mail:", self.email)
+        layout.addRow("", self.performs_controls_checkbox)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
@@ -44,6 +47,7 @@ class ThpWorkerDialog(QDialog):
             self.position.setText(worker.position)
             self.phone.setText(worker.phone)
             self.email.setText(worker.email)
+            self.performs_controls_checkbox.setChecked(worker.performs_controls)
 
     def get_data(self) -> dict:
         return {
@@ -54,4 +58,5 @@ class ThpWorkerDialog(QDialog):
             "position": self.position.text().strip(),
             "phone": self.phone.text().strip(),
             "email": self.email.text().strip(),
+            "performs_controls": self.performs_controls_checkbox.isChecked(),
         }
