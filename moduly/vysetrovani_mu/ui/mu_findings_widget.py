@@ -1,6 +1,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
+    QGroupBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -37,6 +38,19 @@ class MuFindingsWidget(QWidget):
         self.investigation_id: int | None = None
 
         layout = QVBoxLayout(self)
+
+        analyza_group = QGroupBox("Analýza příčin")
+        analyza_layout = QVBoxLayout(analyza_group)
+        analyza_info = QLabel(
+            "V této části budou postupně integrovány metody:\n\n"
+            "• Ishikawa+\n"
+            "• CAST Handbook\n\n"
+            "Výsledky analýzy budou sloužit jako podklad "
+            "pro vytváření jednotlivých zjištění."
+        )
+        analyza_info.setWordWrap(True)
+        analyza_layout.addWidget(analyza_info)
+        layout.addWidget(analyza_group)
 
         self.summary_panel = FindingSummaryPanel()
         self.info_label = QLabel("Zjištění lze přidat až po uložení vyšetřování.")
