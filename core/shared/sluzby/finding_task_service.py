@@ -1,6 +1,10 @@
 from datetime import date
 
-from core.shared.constants import ENTITY_FINDING, FINDING_STATUS_VYPORADANO
+from core.shared.constants import (
+    ENTITY_FINDING,
+    FINDING_STATUS_V_PROCESU,
+    FINDING_STATUS_VYPORADANO,
+)
 from core.shared.finding_display import finding_type_label
 from core.shared.modely.finding import Finding
 from core.shared.sluzby.finding_service import finding_service
@@ -56,6 +60,8 @@ class FindingTaskService:
 
         existing_task = self.get_linked_task(finding)
         if existing_task is not None:
+            if finding.status not in (FINDING_STATUS_V_PROCESU, FINDING_STATUS_VYPORADANO):
+                finding_service.update(finding_id, status=FINDING_STATUS_V_PROCESU)
             return existing_task
 
         title = self._task_title(finding)
@@ -78,8 +84,26 @@ class FindingTaskService:
             task.responsible_person = finding.responsible_person_name
             task_service.repository.update(task)
 
-        finding_service.update(finding_id, task_id=task.id)
+        finding_service.update(
+            finding_id,
+            task_id=task.id,
+            status=FINDING_STATUS_V_PROCESU,
+        )
         return task
+
+    def reopen_finding_for_task(self, task: Task | None) -> Finding | None:
+        if task is None:
+            return None
+
+        finding = self.get_finding_for_task(task)
+        if finding is None or finding.status != FINDING_STATUS_VYPORADANO:
+            return finding
+
+        return finding_service.update(
+            finding.id,
+            status=FINDING_STATUS_V_PROCESU,
+            resolved_at=None,
+        )
 
     def resolve_finding_for_verified_task(self, task: Task | None) -> Finding | None:
         if task is None or not self.is_task_verified(task):

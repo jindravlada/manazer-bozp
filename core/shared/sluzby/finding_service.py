@@ -52,8 +52,19 @@ class FindingService:
             raise ValueError("entity_type a entity_id zjištění nelze měnit.")
 
         data = self._validated_fields(fields, partial=True)
+
+        if "task_id" in data and "status" not in data:
+            if data["task_id"]:
+                if finding.status != FINDING_STATUS_VYPORADANO:
+                    data["status"] = FINDING_STATUS_V_PROCESU
+            elif finding.status == FINDING_STATUS_V_PROCESU:
+                data["status"] = FINDING_STATUS_OTEVRENE
+
         for key, value in data.items():
             setattr(finding, key, value)
+
+        if "resolved_at" in fields:
+            finding.resolved_at = fields["resolved_at"]
 
         self._apply_status_side_effects(finding)
         return self.repository.save(finding)

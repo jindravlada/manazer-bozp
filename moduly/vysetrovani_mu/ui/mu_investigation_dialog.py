@@ -17,7 +17,8 @@ from PySide6.QtWidgets import (
 )
 
 from core.navigation.source_navigator import ACCIDENT_OPEN_RECORD, source_navigator
-from core.shared.constants import ENTITY_ACCIDENT, ENTITY_AUDITY
+from core.shared.constants import ENTITY_ACCIDENT, ENTITY_AUDITY, ENTITY_MU_INVESTIGATION
+from core.shared.sluzby.finding_service import finding_service
 from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.thp_worker_selector import ThpWorkerSelector
 from moduly.vysetrovani_mu.constants import (
@@ -43,6 +44,7 @@ from moduly.vysetrovani_mu.ui.mu_casova_osa_widget import MuCasovaOsaWidget
 from moduly.vysetrovani_mu.ui.mu_dodrzovani_predpisu_widget import MuDodrzovaniPredpisuWidget
 from moduly.vysetrovani_mu.ui.mu_kontrola_souladu_widget import MuKontrolaSouladuWidget
 from moduly.vysetrovani_mu.ui.mu_svedci_widget import MuSvedciWidget
+from moduly.vysetrovani_mu.ui.mu_zaver_widget import MuZaverWidget
 from moduly.vysetrovani_mu.ui.mu_zajisteni_dukazu_widget import MuZajisteniDukazuWidget
 from moduly.vysetrovani_mu.sluzby.mu_source_context import resolve_mu_source_context
 
@@ -85,11 +87,13 @@ class MuInvestigationDialog(QDialog):
         self.tabs.addTab(self.kontrola_souladu_widget, "Kontrola souladu")
         self.findings_widget = MuFindingsWidget()
         self.tabs.addTab(self.findings_widget, "Zjištění")
-        self.tabs.addTab(self._conclusion_tab(), "Závěr")
+        self.zaver_widget = MuZaverWidget()
+        self.tabs.addTab(self.zaver_widget, "Závěr")
+        self.tabs.currentChanged.connect(self._on_tab_changed)
         layout.addWidget(self.tabs)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        buttons.accepted.connect(self.accept)
+        buttons.accepted.connect(self._accept_dialog)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
@@ -99,6 +103,7 @@ class MuInvestigationDialog(QDialog):
 
         investigation_id = investigation.id if investigation is not None else None
         self.findings_widget.set_investigation_id(investigation_id)
+        self.zaver_widget.set_investigation_id(investigation_id)
 
         if investigation is not None:
             number = investigation.number or "—"
@@ -115,7 +120,9 @@ class MuInvestigationDialog(QDialog):
             self.status_combo.setCurrentText(investigation.status or DEFAULT_MU_STATUS)
             self.lead_thp_worker_selector.set_person_id(investigation.lead_thp_worker_id)
             self.short_description_edit.setPlainText(investigation.short_description or "")
-            self.conclusion_edit.setPlainText(investigation.conclusion or "")
+            self.zaver_widget.set_conclusion(investigation.conclusion or "")
+            self.zaver_widget.load_json(getattr(investigation, "zaver_json", "") or "")
+            self._refresh_zaver_sources()
             self.ohledani_mista_widget.load_json(getattr(investigation, "ohledani_mista_json", "") or "")
             self.zajisteni_dukazu_widget.load_json(getattr(investigation, "zajisteni_dukazu_json", "") or "")
             self.svedci_widget.load_json(self._svedci_json_for_load(investigation))
@@ -128,9 +135,42 @@ class MuInvestigationDialog(QDialog):
         else:
             self._on_source_type_changed()
 
+        self._refresh_zaver_sources()
         self._refresh_source_dependent_widgets()
         self._update_source_panel()
         self._sync_kontrola_souladu_event_character()
+
+    def _accept_dialog(self) -> None:
+        investigation_id = self.investigation.id if self.investigation is not None else None
+        if investigation_id is not None and finding_service.has_unresolved(
+            ENTITY_MU_INVESTIGATION,
+            investigation_id,
+        ):
+            QMessageBox.information(
+                self,
+                "Závěr",
+                "Vyšetřování obsahuje otevřená zjištění.",
+            )
+        self.accept()
+
+    def _on_tab_changed(self, index: int) -> None:
+        if self.tabs.widget(index) is self.zaver_widget:
+            self._refresh_zaver_sources()
+            self.zaver_widget.refresh_measures_summary()
+
+    def _refresh_zaver_sources(self) -> None:
+        worker = self.lead_thp_worker_selector.current_person()
+        oznameni_data = self.oznameni_widget.get_data()
+        self.zaver_widget.apply_investigation_sources(
+            short_description=self.short_description_edit.toPlainText(),
+            oznameni_popis=oznameni_data.get("oznameni_popis", ""),
+            lead_thp_worker_id=self.lead_thp_worker_selector.current_person_id(),
+            lead_thp_worker_name=(
+                worker.display_name
+                if worker is not None
+                else self.lead_thp_worker_selector.currentText().strip()
+            ),
+        )
 
     def _sync_kontrola_souladu_event_character(self) -> None:
         self.kontrola_souladu_widget.set_event_character(self.event_character_combo.currentText())
@@ -202,17 +242,6 @@ class MuInvestigationDialog(QDialog):
         form.addRow("Stručný popis:", self.short_description_edit)
 
         layout.addWidget(card, 1)
-        return tab
-
-    def _conclusion_tab(self) -> QWidget:
-        tab = QWidget()
-        layout = QVBoxLayout(tab)
-
-        self.conclusion_edit = QTextEdit()
-        self.conclusion_edit.setPlaceholderText("Závěr vyšetřování")
-        self.conclusion_edit.setMinimumHeight(220)
-
-        layout.addWidget(self.conclusion_edit)
         return tab
 
     def _set_event_character(self, value: str) -> None:
@@ -411,12 +440,13 @@ class MuInvestigationDialog(QDialog):
             "lead_thp_worker_id": self.lead_thp_worker_selector.current_person_id(),
             "lead_thp_worker_name": worker.display_name if worker is not None else self.lead_thp_worker_selector.currentText().strip(),
             "short_description": self.short_description_edit.toPlainText().strip(),
-            "conclusion": self.conclusion_edit.toPlainText().strip(),
+            "conclusion": self.zaver_widget.get_conclusion(),
             "ohledani_mista_json": self.ohledani_mista_widget.get_json(),
             "zajisteni_dukazu_json": self.zajisteni_dukazu_widget.get_json(),
             "svedci_json": self.svedci_widget.get_json(),
             "casova_osa_json": self.casova_osa_widget.get_json(),
             "dodrzovani_predpisu_json": self.dodrzovani_predpisu_widget.get_json(),
             "kontrola_souladu_json": self.kontrola_souladu_widget.get_json(),
+            "zaver_json": self.zaver_widget.get_json(),
             **self.oznameni_widget.get_data(),
         }

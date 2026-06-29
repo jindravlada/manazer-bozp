@@ -151,7 +151,8 @@ class TaskService:
         task.canceled = False
         self._sync_legacy_status(task)
 
-        self.repository.update(task)
+        saved = self.repository.update(task)
+        self._reopen_linked_finding(saved)
         return True
 
     def cancel_task(self, task_id: int) -> bool:
@@ -174,6 +175,14 @@ class TaskService:
         from core.shared.sluzby.finding_task_service import finding_task_service
 
         finding_task_service.resolve_finding_for_verified_task(task)
+
+    def _reopen_linked_finding(self, task: Task | None) -> None:
+        if task is None:
+            return
+
+        from core.shared.sluzby.finding_task_service import finding_task_service
+
+        finding_task_service.reopen_finding_for_task(task)
 
     def _person_name(self, person_id: int | None) -> str:
         if not person_id:
