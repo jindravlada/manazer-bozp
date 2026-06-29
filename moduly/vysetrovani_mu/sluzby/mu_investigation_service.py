@@ -65,6 +65,7 @@ class MuInvestigationService:
         casova_osa_json: str = "",
         dodrzovani_predpisu_json: str = "",
         kontrola_souladu_json: str = "",
+        zaver_json: str = "",
         **kwargs,
     ) -> MuInvestigation:
         if status not in VALID_MU_STATUSES:
@@ -88,6 +89,7 @@ class MuInvestigationService:
             casova_osa_json=casova_osa_json or "",
             dodrzovani_predpisu_json=dodrzovani_predpisu_json or "",
             kontrola_souladu_json=kontrola_souladu_json or "",
+            zaver_json=zaver_json or "",
         )
         self._apply_oznameni_fields(investigation, kwargs)
         saved = self.repository.add(investigation)
@@ -114,6 +116,7 @@ class MuInvestigationService:
         casova_osa_json: str = "",
         dodrzovani_predpisu_json: str = "",
         kontrola_souladu_json: str = "",
+        zaver_json: str = "",
         **kwargs,
     ) -> MuInvestigation | None:
         investigation = self.repository.get_by_id(investigation_id)
@@ -140,6 +143,7 @@ class MuInvestigationService:
         investigation.casova_osa_json = casova_osa_json or ""
         investigation.dodrzovani_predpisu_json = dodrzovani_predpisu_json or ""
         investigation.kontrola_souladu_json = kontrola_souladu_json or ""
+        investigation.zaver_json = zaver_json or ""
         self._apply_oznameni_fields(investigation, kwargs)
         investigation.updated_at = datetime.now()
 

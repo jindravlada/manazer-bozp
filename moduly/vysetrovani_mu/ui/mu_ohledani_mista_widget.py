@@ -2,6 +2,8 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+import subprocess
+
 from PySide6.QtWidgets import (
     QFileDialog,
     QFormLayout,
@@ -9,6 +11,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QScrollArea,
     QTextEdit,
@@ -128,8 +131,11 @@ class MuOhledaniMistaWidget(QWidget):
         vf.addRow("Podrobný popis místa:", self.ohledani_popis_mista)
         btn = QPushButton("Přiložit podepsaný protokol o ohledání místa")
         btn.clicked.connect(self.add_ohledani_attachment)
+        open_btn = QPushButton("Otevřít")
+        open_btn.clicked.connect(self.open_ohledani_attachment)
         row = QHBoxLayout()
         row.addWidget(btn)
+        row.addWidget(open_btn)
         row.addWidget(self.ohledani_priloha)
         vf.addRow("", row)
         layout.addWidget(vysl)
@@ -139,6 +145,14 @@ class MuOhledaniMistaWidget(QWidget):
         outer.addWidget(scroll)
 
     def add_ohledani_attachment(self):
+        if self._investigation_id is None:
+            QMessageBox.information(
+                self,
+                "Příloha",
+                "Protokol lze přiložit až po uložení vyšetřování.",
+            )
+            return
+
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Vyberte podepsaný protokol o ohledání místa",
@@ -151,13 +165,45 @@ class MuOhledaniMistaWidget(QWidget):
         source = Path(file_path)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         new_name = f"Ohledani-{self._number_slug}_{timestamp}{source.suffix.lower()}"
-        attachment = None
-        if self._investigation_id is not None:
-            attachment = attachment_service.add_file_as(
-                ENTITY_MU_INVESTIGATION,
-                self._investigation_id,
-                str(source),
-                new_name,
+        attachment = attachment_service.add_file_as(
+            ENTITY_MU_INVESTIGATION,
+            self._investigation_id,
+            str(source),
+            new_name,
+        )
+        if attachment is None:
+            QMessageBox.warning(self, "Příloha", "Protokol se nepodařilo uložit.")
+            return
+        self.ohledani_priloha.setText(attachment.filename)
+
+    def open_ohledani_attachment(self) -> None:
+        filename = self.ohledani_priloha.text().strip()
+        if not filename:
+            QMessageBox.information(self, "Příloha", "Není přiložen žádný protokol.")
+            return
+        if self._investigation_id is None:
+            QMessageBox.information(
+                self,
+                "Příloha",
+                "Protokol lze otevřít až po uložení vyšetřování.",
             )
-        final_name = attachment.filename if attachment is not None else new_name
-        self.ohledani_priloha.setText(final_name)
+            return
+
+        attachments = attachment_service.get_for_entity(
+            ENTITY_MU_INVESTIGATION,
+            self._investigation_id,
+        )
+        attachment = next((item for item in attachments if item.filename == filename), None)
+        if attachment is None:
+            QMessageBox.warning(self, "Příloha", "Soubor protokolu nebyl nalezen.")
+            return
+
+        path = attachment_service.resolve_path(attachment)
+        if not path.exists():
+            QMessageBox.warning(self, "Příloha", "Soubor protokolu nebyl nalezen.")
+            return
+
+        try:
+            subprocess.Popen(["xdg-open", str(path)])
+        except Exception as exc:
+            QMessageBox.warning(self, "Příloha", f"Protokol se nepodařilo otevřít.\n\n{exc}")

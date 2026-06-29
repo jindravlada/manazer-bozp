@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QRadioButton,
     QScrollArea,
@@ -375,6 +376,14 @@ class MuZajisteniDukazuWidget(QWidget):
         form_layout.addRow(label, row)
 
     def _select_photo(self, status_label: QLabel, item_key: str) -> None:
+        if self._investigation_id is None:
+            QMessageBox.information(
+                self,
+                "Fotografie",
+                "Fotografii lze přiložit až po uložení vyšetřování.",
+            )
+            return
+
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Vyberte fotografii",
@@ -387,15 +396,16 @@ class MuZajisteniDukazuWidget(QWidget):
         source = Path(file_path)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         new_name = f"Foto-{item_key}-{self._number_slug}_{timestamp}{source.suffix.lower()}"
-        attachment = None
-        if self._investigation_id is not None:
-            attachment = attachment_service.add_file_as(
-                ENTITY_MU_INVESTIGATION,
-                self._investigation_id,
-                str(source),
-                new_name,
-            )
-        final_name = attachment.filename if attachment is not None else new_name
+        attachment = attachment_service.add_file_as(
+            ENTITY_MU_INVESTIGATION,
+            self._investigation_id,
+            str(source),
+            new_name,
+        )
+        if attachment is None:
+            QMessageBox.warning(self, "Fotografie", "Fotografii se nepodařilo uložit.")
+            return
+        final_name = attachment.filename
         self.dukazy_photo_paths[item_key] = final_name
         status_label.setText(f"Přiloženo: {final_name}")
 

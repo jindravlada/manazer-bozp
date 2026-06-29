@@ -319,6 +319,14 @@ class MuCasovaOsaWidget(QWidget):
             widget.setVisible(True)
 
     def add_caszarizeni_photo(self, row: int) -> None:
+        if self._investigation_id is None:
+            QMessageBox.information(
+                self,
+                "Fotografie",
+                "Fotografii lze přiložit až po uložení vyšetřování.",
+            )
+            return
+
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Vyberte fotografii času zařízení",
@@ -334,16 +342,16 @@ class MuCasovaOsaWidget(QWidget):
         new_name = (
             f"Foto-CasZarizeni-{self._slug(device_name)}-{self._number_slug}_{timestamp}{source.suffix.lower()}"
         )
-        attachment = None
-        if self._investigation_id is not None:
-            attachment = attachment_service.add_file_as(
-                ENTITY_MU_INVESTIGATION,
-                self._investigation_id,
-                str(source),
-                new_name,
-            )
-        final_name = attachment.filename if attachment is not None else new_name
-        getattr(self, f"caszarizeni_{row}_foto").setText(final_name)
+        attachment = attachment_service.add_file_as(
+            ENTITY_MU_INVESTIGATION,
+            self._investigation_id,
+            str(source),
+            new_name,
+        )
+        if attachment is None:
+            QMessageBox.warning(self, "Fotografie", "Fotografii se nepodařilo uložit.")
+            return
+        getattr(self, f"caszarizeni_{row}_foto").setText(attachment.filename)
 
     def _connect_caszarizeni_calculation(self) -> None:
         self.caszarizeni_srovnani_cas.textChanged.connect(self._recalculate_caszarizeni)

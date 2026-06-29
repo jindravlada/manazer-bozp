@@ -151,6 +151,7 @@ def _ensure_mu_investigation_columns() -> None:
         "casova_osa_json": "casova_osa_json TEXT DEFAULT ''",
         "dodrzovani_predpisu_json": "dodrzovani_predpisu_json TEXT DEFAULT ''",
         "kontrola_souladu_json": "kontrola_souladu_json TEXT DEFAULT ''",
+        "zaver_json": "zaver_json TEXT DEFAULT ''",
         "oznameni_kdo": "oznameni_kdo VARCHAR(200) DEFAULT ''",
         "oznameni_komu": "oznameni_komu VARCHAR(200) DEFAULT ''",
         "oznameni_datum": "oznameni_datum DATE",

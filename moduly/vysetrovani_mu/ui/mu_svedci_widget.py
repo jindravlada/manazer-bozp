@@ -234,10 +234,11 @@ class MuSvedciWidget(QWidget):
                     xml = xml.replace("${cislo_urazu}", escaped_number)
                     xml = xml.replace(
                         "Číslo pracovního úrazu    ${cislo_urazu}",
-                        f"Číslo pracovního úrazu    {escaped_number}",
+                        f"Číslo události    {escaped_number}",
                     )
+                    xml = xml.replace("Číslo pracovního úrazu", "Číslo události")
                     if "Číslo úrazu:" in xml:
-                        xml = xml.replace("Číslo úrazu:", f"Číslo úrazu: {escaped_number}", 1)
+                        xml = xml.replace("Číslo úrazu:", f"Číslo události: {escaped_number}", 1)
                     data = xml.encode("utf-8")
                 zout.writestr(item, data)
 

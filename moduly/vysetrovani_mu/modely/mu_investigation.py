@@ -38,6 +38,7 @@ class MuInvestigation(Base):
     casova_osa_json: Mapped[str] = mapped_column(Text, default="")
     dodrzovani_predpisu_json: Mapped[str] = mapped_column(Text, default="")
     kontrola_souladu_json: Mapped[str] = mapped_column(Text, default="")
+    zaver_json: Mapped[str] = mapped_column(Text, default="")
 
     oznameni_kdo: Mapped[str] = mapped_column(String(200), default="")
     oznameni_komu: Mapped[str] = mapped_column(String(200), default="")
