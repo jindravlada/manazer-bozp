@@ -34,7 +34,14 @@ class MuInvestigationSourcePanel(QFrame):
         self.open_button.clicked.connect(self.open_requested.emit)
         self.setVisible(False)
 
-    def set_content(self, source_type_label: str, source_record_label: str, *, can_open: bool) -> None:
+    def set_content(
+        self,
+        source_type_label: str,
+        source_record_label: str,
+        *,
+        can_open: bool,
+        open_button_text: str = "Otevřít",
+    ) -> None:
         has_binding = bool(source_type_label.strip() and source_record_label.strip())
         self.setVisible(has_binding)
         if not has_binding:
@@ -42,4 +49,5 @@ class MuInvestigationSourcePanel(QFrame):
 
         self.source_type_label.setText(source_type_label)
         self.source_record_label.setText(source_record_label)
+        self.open_button.setText(open_button_text)
         self.open_button.setVisible(can_open)

@@ -1,12 +1,11 @@
-from PySide6.QtWidgets import QComboBox, QLineEdit, QStackedWidget, QVBoxLayout, QWidget
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QComboBox, QLineEdit, QSizePolicy, QStackedWidget, QVBoxLayout, QWidget
 
+from core.widgets.search_combo_box import SearchComboBox
 from moduly.vysetrovani_mu.constants import (
     SOURCE_TYPE_ACCIDENT,
     SOURCE_TYPE_AUDIT,
     SOURCE_TYPE_CONTROL,
-    SOURCE_TYPE_MANUAL,
-    SOURCE_TYPE_OTHER,
-    SOURCE_TYPES_WITH_RECORD,
     SOURCE_TYPES_WITH_TEXT,
 )
 
@@ -22,8 +21,10 @@ class MuSourceSelectorWidget(QWidget):
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
         self.stack = QStackedWidget()
+        self.stack.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         self.accident_combo = self._make_record_combo()
         self.audit_combo = self._make_record_combo()
@@ -38,10 +39,15 @@ class MuSourceSelectorWidget(QWidget):
 
         layout.addWidget(self.stack)
 
-        self._current_source_type = SOURCE_TYPE_MANUAL
+        row_height = self.accident_combo.sizeHint().height()
+        self.stack.setFixedHeight(row_height)
+        self.setFixedHeight(row_height)
+
+        self._current_source_type = SOURCE_TYPE_ACCIDENT
         self._populate_accidents()
         self._populate_audits()
         self._populate_controls()
+        self.set_source_type(SOURCE_TYPE_ACCIDENT)
 
     def set_source_type(self, source_type: str) -> None:
         self._current_source_type = source_type
@@ -66,53 +72,58 @@ class MuSourceSelectorWidget(QWidget):
         elif source_type in SOURCE_TYPES_WITH_TEXT:
             self.text_edit.setText(source_label or "")
 
-    def current_source_type(self) -> str:
-        return self._current_source_type
-
     def current_source_id(self) -> int | None:
-        if self._current_source_type == SOURCE_TYPE_ACCIDENT:
+        current = self.stack.currentWidget()
+        if current is self.accident_combo:
             return self._current_combo_id(self.accident_combo)
-        if self._current_source_type == SOURCE_TYPE_AUDIT:
+        if current is self.audit_combo:
             return self._current_combo_id(self.audit_combo)
-        if self._current_source_type == SOURCE_TYPE_CONTROL:
+        if current is self.control_combo:
             return self._current_combo_id(self.control_combo)
         return None
 
     def current_source_label(self) -> str:
-        if self._current_source_type in SOURCE_TYPES_WITH_TEXT:
+        current = self.stack.currentWidget()
+        if current is self.text_edit:
             return self.text_edit.text().strip()
 
         source_id = self.current_source_id()
         if source_id is None:
             return ""
 
-        if self._current_source_type == SOURCE_TYPE_ACCIDENT:
+        if current is self.accident_combo:
             return self._accident_label(source_id)
-        if self._current_source_type == SOURCE_TYPE_AUDIT:
+        if current is self.audit_combo:
             return self._audit_label(source_id)
-        if self._current_source_type == SOURCE_TYPE_CONTROL:
+        if current is self.control_combo:
             return self._control_label(source_id)
         return ""
 
     def has_binding(self) -> bool:
-        if self._current_source_type in SOURCE_TYPES_WITH_RECORD:
-            return self.current_source_id() is not None
-        if self._current_source_type in SOURCE_TYPES_WITH_TEXT:
+        current = self.stack.currentWidget()
+        if current is self.text_edit:
             return bool(self.text_edit.text().strip())
-        return False
+        return self.current_source_id() is not None
 
-    def _make_record_combo(self) -> QComboBox:
-        combo = QComboBox()
+    def _make_record_combo(self) -> SearchComboBox:
+        combo = SearchComboBox(allow_custom_value=False)
         combo.addItem("— vyberte záznam —", None)
         return combo
 
     def _set_combo_value(self, combo: QComboBox, value: int | None) -> None:
-        index = combo.findData(value)
+        combo.blockSignals(True)
+        index = combo.findData(value, role=Qt.ItemDataRole.UserRole)
         combo.setCurrentIndex(index if index >= 0 else 0)
+        combo.blockSignals(False)
 
     def _current_combo_id(self, combo: QComboBox) -> int | None:
-        value = combo.currentData()
-        return value if isinstance(value, int) else None
+        value = combo.currentData(Qt.ItemDataRole.UserRole)
+        if value is None:
+            return None
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
 
     def _populate_accidents(self) -> None:
         from moduly.kniha_urazu.sluzby.accident_service import accident_service

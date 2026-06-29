@@ -43,6 +43,10 @@ class MuInvestigationDialog(QDialog):
         SOURCE_TYPE_ACCIDENT: ENTITY_ACCIDENT,
         SOURCE_TYPE_AUDIT: ENTITY_AUDITY,
     }
+    _OPEN_BUTTON_LABELS = {
+        SOURCE_TYPE_ACCIDENT: "Otevřít úraz",
+        SOURCE_TYPE_AUDIT: "Otevřít audit",
+    }
 
     def __init__(self, parent=None, investigation=None):
         super().__init__(parent)
@@ -85,6 +89,8 @@ class MuInvestigationDialog(QDialog):
             self.lead_thp_worker_selector.set_person_id(investigation.lead_thp_worker_id)
             self.short_description_edit.setPlainText(investigation.short_description or "")
             self.conclusion_edit.setPlainText(investigation.conclusion or "")
+        else:
+            self._on_source_type_changed()
 
         self._update_source_panel()
 
@@ -188,7 +194,22 @@ class MuInvestigationDialog(QDialog):
         return SOURCE_TYPE_LABELS.get(self._current_source_type(), self._current_source_type())
 
     def _source_record_label(self) -> str:
-        return self.source_selector.current_source_label()
+        label = self.source_selector.current_source_label()
+        if label:
+            return label
+        if self.investigation is not None:
+            return (self.investigation.source_label or "").strip()
+        return ""
+
+    def _has_source_binding(self) -> bool:
+        if self.source_selector.has_binding():
+            return True
+        if self.investigation is None:
+            return False
+        source_type = self._current_source_type()
+        if source_type in (SOURCE_TYPE_ACCIDENT, SOURCE_TYPE_AUDIT, SOURCE_TYPE_CONTROL):
+            return isinstance(self.investigation.source_id, int) and self.investigation.source_id > 0
+        return bool((self.investigation.source_label or "").strip())
 
     def _can_open_source_record(self) -> bool:
         source_type = self._current_source_type()
@@ -199,14 +220,16 @@ class MuInvestigationDialog(QDialog):
         return source_navigator.can_open(entity_type, source_id)
 
     def _update_source_panel(self) -> None:
-        if not self.source_selector.has_binding():
+        if not self._has_source_binding():
             self.source_panel.setVisible(False)
             return
 
+        source_type = self._current_source_type()
         self.source_panel.set_content(
             self._source_type_label(),
             self._source_record_label(),
             can_open=self._can_open_source_record(),
+            open_button_text=self._OPEN_BUTTON_LABELS.get(source_type, "Otevřít"),
         )
 
     def _open_source_record(self) -> None:
