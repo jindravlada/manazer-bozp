@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QRadioButton,
     QScrollArea,
@@ -24,6 +25,7 @@ from PySide6.QtWidgets import (
 
 from core.services.attachment_service import attachment_service
 from core.shared.constants import ENTITY_MU_INVESTIGATION
+from moduly.vysetrovani_mu.sluzby.mu_chronologie_events import build_system_chronologie_events
 from moduly.vysetrovani_mu.ui.mu_chronologie_entry_dialog import MuChronologieEntryDialog
 
 
@@ -33,10 +35,10 @@ class MuCasovaOsaWidget(QWidget):
     JSON struktura (casova_osa_json):
     - cas_synchronizace: data sekce synchronizace zařízení (1:1 ze Šetření úrazu)
     - chronologie: ručně zadané události (source=manual)
-    - system_events: rezervováno pro budoucí automatické systémové události
+    - system_events: rezervováno; systémové události se počítají živě při zobrazení
     """
 
-    _CHRONOLOGIE_COLUMNS = ("Datum", "Čas", "Typ události", "Popis")
+    _CHRONOLOGIE_COLUMNS = ("Datum", "Čas", "Typ události", "Popis", "Zdroj")
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -44,8 +46,13 @@ class MuCasovaOsaWidget(QWidget):
         self._saved_data: dict = {}
         self._investigation_id: int | None = None
         self._started_at: date | None = None
+        self._source_type: str = ""
+        self._source_id: int | None = None
+        self._oznameni_datum: date | None = None
+        self._oznameni_cas: str = ""
         self._number_slug = "bez-cisla"
         self._chronologie_entries: list[dict] = []
+        self._display_entries: list[dict] = []
 
         self._init_cas_synchronizace_widgets()
         self._build_ui()
@@ -56,14 +63,34 @@ class MuCasovaOsaWidget(QWidget):
         *,
         event_number: str = "",
         started_at: date | None = None,
+        source_type: str = "",
+        source_id: int | None = None,
+        oznameni_datum: date | None = None,
+        oznameni_cas: str = "",
     ) -> None:
         self._investigation_id = investigation_id
         self._started_at = started_at
+        self._source_type = source_type or ""
+        self._source_id = source_id
+        self._oznameni_datum = oznameni_datum
+        self._oznameni_cas = (oznameni_cas or "").strip()
         number = event_number.strip()
         self._number_slug = str(number).replace("/", "-").replace("\\", "-").strip() or "bez-cisla"
+        self._refresh_chronologie_table()
 
     def set_started_at(self, started_at: date | None) -> None:
         self._started_at = started_at
+        self._refresh_chronologie_table()
+
+    def set_oznameni_context(
+        self,
+        *,
+        oznameni_datum: date | None = None,
+        oznameni_cas: str = "",
+    ) -> None:
+        self._oznameni_datum = oznameni_datum
+        self._oznameni_cas = (oznameni_cas or "").strip()
+        self._refresh_chronologie_table()
 
     def load_json(self, raw_json: str) -> None:
         try:
@@ -240,8 +267,8 @@ class MuCasovaOsaWidget(QWidget):
         layout = QVBoxLayout(group)
 
         info = QLabel(
-            "Ručně evidované milníky vyšetřování. Automatické systémové události "
-            "budou doplněny v další fázi."
+            "Chronologie spojuje ručně zadané milníky se systémovými událostmi "
+            "odvozenými ze spisu a zdrojového záznamu. Systémové záznamy nelze upravit."
         )
         info.setWordWrap(True)
         layout.addWidget(info)
@@ -263,6 +290,9 @@ class MuCasovaOsaWidget(QWidget):
         self.chronologie_table.setSelectionMode(QTableWidget.SingleSelection)
         self.chronologie_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.chronologie_table.doubleClicked.connect(self._edit_chronologie_entry)
+        self.chronologie_table.selectionModel().selectionChanged.connect(
+            self._update_chronologie_toolbar_state
+        )
         layout.addWidget(self.chronologie_table)
 
         self.chronologie_add_btn.clicked.connect(self._add_chronologie_entry)
@@ -394,25 +424,45 @@ class MuCasovaOsaWidget(QWidget):
         self._refresh_chronologie_table()
 
     def _edit_chronologie_entry(self) -> None:
-        row = self._selected_chronologie_row()
-        if row is None:
+        entry = self._selected_display_entry()
+        if entry is None:
             return
-        entry = self._chronologie_entries[row]
+        if entry.get("source") == "system":
+            QMessageBox.information(
+                self,
+                "Chronologie událostí",
+                "Systémovou událost nelze upravit.",
+            )
+            return
+        manual_index = self._manual_entry_index(entry.get("id"))
+        if manual_index is None:
+            return
+        entry = self._chronologie_entries[manual_index]
         dialog = MuChronologieEntryDialog(self, entry=entry, title="Upravit událost")
         if not dialog.exec():
             return
         updated = dialog.get_entry()
         updated["id"] = entry.get("id") or str(uuid.uuid4())
-        updated["source"] = entry.get("source") or "manual"
-        self._chronologie_entries[row] = updated
+        updated["source"] = "manual"
+        self._chronologie_entries[manual_index] = updated
         self._sort_chronologie_entries()
         self._refresh_chronologie_table()
 
     def _delete_chronologie_entry(self) -> None:
-        row = self._selected_chronologie_row()
-        if row is None:
+        entry = self._selected_display_entry()
+        if entry is None:
             return
-        self._chronologie_entries.pop(row)
+        if entry.get("source") == "system":
+            QMessageBox.information(
+                self,
+                "Chronologie událostí",
+                "Systémovou událost nelze odebrat.",
+            )
+            return
+        manual_index = self._manual_entry_index(entry.get("id"))
+        if manual_index is None:
+            return
+        self._chronologie_entries.pop(manual_index)
         self._refresh_chronologie_table()
 
     def _selected_chronologie_row(self) -> int | None:
@@ -421,10 +471,45 @@ class MuCasovaOsaWidget(QWidget):
             return None
         return selected[0].row()
 
+    def _selected_display_entry(self) -> dict | None:
+        row = self._selected_chronologie_row()
+        if row is None or row >= len(self._display_entries):
+            return None
+        return self._display_entries[row]
+
+    def _manual_entry_index(self, entry_id: str | None) -> int | None:
+        if not entry_id:
+            return None
+        for index, entry in enumerate(self._chronologie_entries):
+            if entry.get("id") == entry_id:
+                return index
+        return None
+
+    def _update_chronologie_toolbar_state(self) -> None:
+        entry = self._selected_display_entry()
+        is_system = entry is not None and entry.get("source") == "system"
+        self.chronologie_edit_btn.setEnabled(not is_system)
+        self.chronologie_delete_btn.setEnabled(not is_system)
+
+    def _system_chronologie_events(self) -> list[dict]:
+        return build_system_chronologie_events(
+            started_at=self._started_at,
+            source_type=self._source_type,
+            source_id=self._source_id,
+            oznameni_datum=self._oznameni_datum,
+            oznameni_cas=self._oznameni_cas,
+        )
+
+    def _merged_chronologie_entries(self) -> list[dict]:
+        merged = self._system_chronologie_events() + list(self._chronologie_entries)
+        return self._sort_chronologie_entries_list(merged)
+
     def _normalize_chronologie(self, entries: list[dict]) -> list[dict]:
         normalized = []
         for entry in entries:
             if not isinstance(entry, dict):
+                continue
+            if entry.get("source") == "system":
                 continue
             normalized.append(
                 {
@@ -433,7 +518,7 @@ class MuCasovaOsaWidget(QWidget):
                     "cas": (entry.get("cas") or "").strip(),
                     "typ": (entry.get("typ") or "").strip(),
                     "popis": (entry.get("popis") or "").strip(),
-                    "source": entry.get("source") or "manual",
+                    "source": "manual",
                 }
             )
         return self._sort_chronologie_entries_list(normalized)
@@ -450,16 +535,23 @@ class MuCasovaOsaWidget(QWidget):
         return (date_key, time_key, entry.get("typ") or "", entry.get("id") or "")
 
     def _refresh_chronologie_table(self) -> None:
-        self.chronologie_table.setRowCount(len(self._chronologie_entries))
-        for row, entry in enumerate(self._chronologie_entries):
+        self._display_entries = self._merged_chronologie_entries()
+        self.chronologie_table.setRowCount(len(self._display_entries))
+        for row, entry in enumerate(self._display_entries):
+            is_system = entry.get("source") == "system"
             values = (
                 self._format_chronologie_date(entry.get("datum")),
                 entry.get("cas") or "",
                 entry.get("typ") or "",
                 entry.get("popis") or "",
+                "Systém" if is_system else "Ruční",
             )
             for column, value in enumerate(values):
-                self.chronologie_table.setItem(row, column, QTableWidgetItem(value))
+                item = QTableWidgetItem(value)
+                if is_system:
+                    item.setToolTip("Systémová událost odvozená ze spisu nebo zdrojového záznamu.")
+                self.chronologie_table.setItem(row, column, item)
+        self._update_chronologie_toolbar_state()
 
     def _format_chronologie_date(self, raw_date: str) -> str:
         raw_date = (raw_date or "").strip()

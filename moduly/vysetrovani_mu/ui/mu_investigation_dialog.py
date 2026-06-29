@@ -88,6 +88,8 @@ class MuInvestigationDialog(QDialog):
         layout.addWidget(buttons)
 
         self.started_at_edit.dateChanged.connect(self._sync_casova_osa_started_at)
+        self.oznameni_widget.oznameni_datum.dateChanged.connect(self._sync_casova_osa_oznameni)
+        self.oznameni_widget.oznameni_cas.textChanged.connect(self._sync_casova_osa_oznameni)
 
         investigation_id = investigation.id if investigation is not None else None
         self.findings_widget.set_investigation_id(investigation_id)
@@ -267,10 +269,23 @@ class MuInvestigationDialog(QDialog):
             investigation_id,
             event_number=context.event_number,
             started_at=self.started_at_edit.get_date(),
+            source_type=source_type,
+            source_id=source_id,
+            **self._casova_osa_oznameni_context(),
         )
+
+    def _casova_osa_oznameni_context(self) -> dict:
+        oznameni = self.oznameni_widget.get_data()
+        return {
+            "oznameni_datum": oznameni.get("oznameni_datum"),
+            "oznameni_cas": oznameni.get("oznameni_cas") or "",
+        }
 
     def _sync_casova_osa_started_at(self) -> None:
         self.casova_osa_widget.set_started_at(self.started_at_edit.get_date())
+
+    def _sync_casova_osa_oznameni(self) -> None:
+        self.casova_osa_widget.set_oznameni_context(**self._casova_osa_oznameni_context())
 
     def _svedci_json_for_load(self, investigation) -> str:
         raw = getattr(investigation, "svedci_json", "") or ""
