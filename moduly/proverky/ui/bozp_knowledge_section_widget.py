@@ -4,7 +4,10 @@ from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
 
 from core.widgets.dialog_utils import wrap_in_scroll_area
 from moduly.proverky.constants import KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT
-from moduly.proverky.sluzby.proverky_knowledge_service import SECTION_LIST_BLOCKS
+from moduly.proverky.sluzby.proverky_knowledge_service import (
+    SECTION_LIST_BLOCKS,
+    proverky_knowledge_service,
+)
 
 
 class BozpKnowledgeSectionWidget(QWidget):
@@ -51,10 +54,79 @@ class BozpKnowledgeSectionWidget(QWidget):
         return self._build_block("Popis", self._build_info_label(KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT))
 
     def _build_list_block(self, title: str, section: dict, field: str) -> QWidget:
-        values = section.get(field) or []
-        if values:
-            return self._build_block(title, self._build_info_label("Obsah bloku bude doplněn v další fázi."))
-        return self._build_block(title, self._build_info_label(KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT))
+        if field == "historie":
+            return self._build_historie_block(title, section)
+
+        items = proverky_knowledge_service.get_active_items(section.get(field))
+        if not items:
+            return self._build_block(title, self._build_info_label(KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT))
+
+        if field == "legislativa":
+            content = self._build_reference_list(items)
+        else:
+            content = self._build_knowledge_items_list(items)
+
+        return self._build_block(title, content)
+
+    def _build_historie_block(self, title: str, section: dict) -> QWidget:
+        items = proverky_knowledge_service.get_active_items(section.get("historie"))
+        if not items:
+            return self._build_block(title, self._build_info_label(KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT))
+        return self._build_block(title, self._build_knowledge_items_list(items))
+
+    def _build_knowledge_items_list(self, items: list[dict]) -> QWidget:
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(10)
+
+        for item in items:
+            layout.addWidget(self._build_knowledge_item_row(item))
+
+        return container
+
+    def _build_knowledge_item_row(self, item: dict) -> QWidget:
+        row = QWidget()
+        row_layout = QVBoxLayout(row)
+        row_layout.setContentsMargins(0, 0, 0, 0)
+        row_layout.setSpacing(2)
+
+        nazev = str(item.get("nazev") or "—").strip() or "—"
+        title_label = QLabel(f"• {nazev}")
+        title_label.setWordWrap(True)
+        row_layout.addWidget(title_label)
+
+        popis = str(item.get("popis") or "").strip()
+        if popis:
+            description = QLabel(popis)
+            description.setObjectName("InfoText")
+            description.setWordWrap(True)
+            description.setContentsMargins(16, 0, 0, 0)
+            row_layout.addWidget(description)
+
+        return row
+
+    def _build_reference_list(self, items: list[dict]) -> QWidget:
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(8)
+
+        for item in items:
+            nazev = str(item.get("nazev") or "—").strip() or "—"
+            label = QLabel(f"• {nazev}")
+            label.setWordWrap(True)
+            layout.addWidget(label)
+
+            popis = str(item.get("popis") or "").strip()
+            if popis:
+                description = QLabel(popis)
+                description.setObjectName("InfoText")
+                description.setWordWrap(True)
+                description.setContentsMargins(16, 0, 0, 0)
+                layout.addWidget(description)
+
+        return container
 
     def _build_block(self, title: str, content: QWidget) -> QWidget:
         container = QWidget()

@@ -13,10 +13,133 @@
       "poradi": 10,
       "aktivni": true,
       "sekce": [],
-      "kontrolni_body": [],
-      "typicke_zavady": [],
-      "doporucene_postupy": [],
-      "legislativa": [],
+      "kontrolni_body": [
+        {
+          "id": "umisteni",
+          "nazev": "Lékárnička je na určeném místě",
+          "popis": "Zkontrolujte, zda je lékárnička umístěna na místě určeném zaměstnavatelem a odpovídá schválenému plánu první pomoci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni",
+          "nazev": "Lékárnička je řádně označena",
+          "popis": "Ověřte viditelné označení lékárničky symbolem první pomoci a případným textem podle vnitřních předpisů.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pristupnost",
+          "nazev": "Lékárnička je volně přístupná",
+          "popis": "Zkontrolujte, zda není přístup k lékárničce blokován nábytkem, materiálem nebo uzamčením.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "obsah",
+          "nazev": "Obsah odpovídá požadavkům",
+          "popis": "Porovnejte skutečný obsah lékárničky s požadovaným seznamem prostředků první pomoci.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "expirace",
+          "nazev": "Prostředky nejsou prošlé",
+          "popis": "Zkontrolujte data expirace obvazů, desinfekce a dalších prostředků s omezenou trvanlivostí.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_kontrol",
+          "nazev": "Evidence kontrol je vedena",
+          "popis": "Ověřte, zda existuje záznam o pravidelných kontrolách lékárničky včetně data a odpovědné osoby.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "prosle_obvazy",
+          "nazev": "Prošlé obvazy",
+          "popis": "V lékárničce jsou obvazy nebo jiné prostředky po datu expirace.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_obsah",
+          "nazev": "Chybí obsah",
+          "popis": "Lékárnička neobsahuje všechny požadované prostředky první pomoci.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "neoznacena",
+          "nazev": "Lékárnička není označena",
+          "popis": "Chybí viditelné označení nebo symbol první pomoci.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "zablokovany_pristup",
+          "nazev": "Zablokovaný přístup",
+          "popis": "Přístup k lékárničce je fyzicky ztížen nebo znemožněn.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "pravidelna_kontrola",
+          "nazev": "Pravidelná kontrola obsahu",
+          "popis": "Provádějte kontrolu lékárničky v intervalech stanovených vnitřním předpisem, nejméně jednou za čtvrtletí.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "doplneni_obsahu",
+          "nazev": "Doplňování chybějících prostředků",
+          "popis": "Bez prodlení doplňte chybějící nebo spotřebované prostředky první pomoci.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vymena_prosle",
+          "nazev": "Výměna prošlých prostředků",
+          "popis": "Prošlé prostředky okamžitě vyřaďte a nahraďte novými s platnou expirací.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_kontrol_postup",
+          "nazev": "Vedení záznamu o kontrole",
+          "popis": "Po každé kontrole zaznamenejte datum, výsledek a osobu, která kontrolu provedla.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "nv_746_2021",
+          "nazev": "Nařízení vlády č. 746/2021 Sb., o požadavcích na pracovní prostředí",
+          "popis": "První pomoc — obsah lékárničky a organizace první pomoci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Plán první pomoci, odpovědnosti a periodicita kontrol lékárniček.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "metodicky_pokyn",
+          "nazev": "Metodický pokyn OOPP a první pomoc",
+          "popis": "Doporučený obsah lékárničky podle typu pracoviště.",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
       "historie": []
     },
     {

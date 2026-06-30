@@ -114,6 +114,20 @@ class ProverkyKnowledgeService:
         )
         return active
 
+    def get_active_items(self, items: list | None) -> list[dict]:
+        active = [
+            item
+            for item in (items or [])
+            if isinstance(item, dict) and item.get("aktivni", True)
+        ]
+        active.sort(
+            key=lambda item: (
+                int(item.get("poradi") or 0),
+                str(item.get("nazev") or "").lower(),
+            )
+        )
+        return active
+
     def section_has_content(self, section: dict) -> bool:
         nested = section.get("sekce") or []
         if nested:
