@@ -1,7 +1,16 @@
 """Pracovní karta znalostního uzlu sekce prověrky."""
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QMessageBox, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
 
 from core.shared.constants import ENTITY_PROVERKY
 from core.shared.control_result_display import allows_finding
@@ -24,10 +33,22 @@ from moduly.proverky.constants import (
     ProverkyFindingKnowledgeContext,
 )
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
-from moduly.proverky.sluzby.proverky_knowledge_service import (
-    SECTION_LIST_BLOCKS,
-    proverky_knowledge_service,
+from moduly.proverky.sluzby.proverky_knowledge_service import proverky_knowledge_service
+
+
+_LEFT_COLUMN_BLOCKS: tuple[tuple[str, str], ...] = (
+    ("Kontrolní body", "kontrolni_body"),
 )
+
+_RIGHT_COLUMN_BLOCKS: tuple[tuple[str, str], ...] = (
+    ("Typické závady", "typicke_zavady"),
+    ("Historie", "historie"),
+    ("Doporučené postupy", "doporucene_postupy"),
+    ("Legislativa", "legislativa"),
+)
+
+_COLUMN_SPLIT_LEFT_STRETCH = 65
+_COLUMN_SPLIT_RIGHT_STRETCH = 35
 
 
 class BozpKnowledgeSectionWidget(QWidget):
@@ -51,7 +72,7 @@ class BozpKnowledgeSectionWidget(QWidget):
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
-        outer.addWidget(wrap_in_scroll_area(self._content_host))
+        outer.addWidget(self._content_host, 1)
 
     def set_section(
         self,
@@ -91,11 +112,32 @@ class BozpKnowledgeSectionWidget(QWidget):
             self._section_label = str(section.get("nazev") or "").strip()
 
         self._content_layout.addWidget(self._build_popis_block(section))
+        self._content_layout.addWidget(self._build_columns(section), 1)
 
-        for title, field in SECTION_LIST_BLOCKS:
-            self._content_layout.addWidget(self._build_list_block(title, section, field))
+    def _build_columns(self, section: dict) -> QWidget:
+        left_host = self._build_column_host(_LEFT_COLUMN_BLOCKS, section)
+        right_host = self._build_column_host(_RIGHT_COLUMN_BLOCKS, section)
 
-        self._content_layout.addStretch()
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+        splitter.setObjectName("KnowledgeSectionSplitter")
+        splitter.setChildrenCollapsible(False)
+        splitter.addWidget(wrap_in_scroll_area(left_host))
+        splitter.addWidget(wrap_in_scroll_area(right_host))
+        splitter.setStretchFactor(0, _COLUMN_SPLIT_LEFT_STRETCH)
+        splitter.setStretchFactor(1, _COLUMN_SPLIT_RIGHT_STRETCH)
+        return splitter
+
+    def _build_column_host(self, blocks: tuple[tuple[str, str], ...], section: dict) -> QWidget:
+        host = QWidget()
+        layout = QVBoxLayout(host)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(12)
+
+        for title, field in blocks:
+            layout.addWidget(self._build_list_block(title, section, field))
+
+        layout.addStretch()
+        return host
 
     def _clear_content(self) -> None:
         while self._content_layout.count():
