@@ -1,3 +1,5 @@
+from datetime import date
+
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
@@ -15,6 +17,8 @@ from moduly.proverky.constants import (
     DEFAULT_INSPECTION_TYPE,
     INSPECTION_SPIS_STATUSES,
     INSPECTION_TYPES,
+    PLANNED_MONTH_NAMES,
+    PLANNED_MONTH_NOT_SET_LABEL,
 )
 
 
@@ -44,8 +48,11 @@ class BozpInspectionSpisWidget(QWidget):
         self.number_label = QLabel("—")
         self.number_label.setObjectName("InfoText")
 
-        self.year_label = QLabel("—")
-        self.year_label.setObjectName("InfoText")
+        self.year_combo = QComboBox()
+        self._populate_year_combo()
+
+        self.planned_month_combo = QComboBox()
+        self._populate_planned_month_combo()
 
         self.inspection_date_edit = NullableDateEdit()
         self.started_at_edit = NullableDateEdit()
@@ -60,7 +67,8 @@ class BozpInspectionSpisWidget(QWidget):
         self.workplace_selector = WorkplaceSelector()
 
         left_form.addRow("Číslo prověrky:", self.number_label)
-        left_form.addRow("Rok:", self.year_label)
+        left_form.addRow("Rok:", self.year_combo)
+        left_form.addRow("Plánovaný měsíc:", self.planned_month_combo)
         left_form.addRow("Datum prověrky:", self.inspection_date_edit)
         left_form.addRow("Zahájení:", self.started_at_edit)
         left_form.addRow("Ukončení:", self.finished_at_edit)
@@ -92,13 +100,30 @@ class BozpInspectionSpisWidget(QWidget):
 
         layout.addStretch()
 
-        self.inspection_date_edit.dateChanged.connect(self._sync_year_from_inspection_date)
         self._set_defaults()
+
+    def _populate_year_combo(self) -> None:
+        current_year = date.today().year
+
+        self.year_combo.blockSignals(True)
+        self.year_combo.clear()
+        for year in range(current_year - 2, current_year + 4):
+            self.year_combo.addItem(str(year), year)
+        self.year_combo.setCurrentText(str(current_year))
+        self.year_combo.blockSignals(False)
+
+    def _populate_planned_month_combo(self) -> None:
+        self.planned_month_combo.clear()
+        self.planned_month_combo.addItem(PLANNED_MONTH_NOT_SET_LABEL, None)
+        for month_number, month_name in enumerate(PLANNED_MONTH_NAMES, start=1):
+            self.planned_month_combo.addItem(month_name, month_number)
+        self.planned_month_combo.setCurrentIndex(0)
 
     def _set_defaults(self) -> None:
         self.status_combo.setCurrentText(DEFAULT_INSPECTION_SPIS_STATUS)
         self.type_combo.setCurrentText(DEFAULT_INSPECTION_TYPE)
-        self._clear_year()
+        self._populate_year_combo()
+        self.planned_month_combo.setCurrentIndex(0)
         self._set_unsaved_history_placeholder()
 
     def _set_unsaved_history_placeholder(self) -> None:
@@ -113,16 +138,25 @@ class BozpInspectionSpisWidget(QWidget):
             "Přehled historie pracoviště bude doplněn po napojení na data prověrek."
         )
 
-    def _sync_year_from_inspection_date(self) -> None:
-        inspection_date = self.inspection_date_edit.get_date()
-        if inspection_date is None:
-            self._clear_year()
+    def _set_year(self, year: int) -> None:
+        index = self.year_combo.findData(year)
+        if index >= 0:
+            self.year_combo.setCurrentIndex(index)
             return
 
-        self.year_label.setText(str(inspection_date.year))
+        self.year_combo.blockSignals(True)
+        self.year_combo.insertItem(0, str(year), year)
+        self.year_combo.setCurrentIndex(0)
+        self.year_combo.blockSignals(False)
 
-    def _clear_year(self) -> None:
-        self.year_label.setText("—")
+    def _set_planned_month(self, planned_month: int | None) -> None:
+        if planned_month is None:
+            self.planned_month_combo.setCurrentIndex(0)
+            return
+
+        index = self.planned_month_combo.findData(planned_month)
+        if index >= 0:
+            self.planned_month_combo.setCurrentIndex(index)
 
     def set_number(self, number: str | None) -> None:
         display = (number or "").strip() or "—"
@@ -147,6 +181,13 @@ class BozpInspectionSpisWidget(QWidget):
             if index >= 0:
                 self.type_combo.setCurrentIndex(index)
 
+        year = getattr(inspection, "year", None)
+        if year:
+            self._set_year(year)
+
+        planned_month = getattr(inspection, "planned_month", None)
+        self._set_planned_month(planned_month)
+
         inspection_date = getattr(inspection, "inspection_date", None)
         if inspection_date is not None:
             self.inspection_date_edit.set_date_value(inspection_date)
@@ -165,5 +206,4 @@ class BozpInspectionSpisWidget(QWidget):
         if workplace_id:
             self.workplace_selector.set_workplace_id(workplace_id)
 
-        self._sync_year_from_inspection_date()
         self._set_saved_history_placeholder()

@@ -26,7 +26,22 @@ INSPECTION_TYPES = (
 
 DEFAULT_INSPECTION_TYPE = INSPECTION_TYPE_RADNA
 
-# Zpětná kompatibilita pro filtry stránky modulu
+PLANNED_MONTH_NAMES = (
+    "leden",
+    "únor",
+    "březen",
+    "duben",
+    "květen",
+    "červen",
+    "červenec",
+    "srpen",
+    "září",
+    "říjen",
+    "listopad",
+    "prosinec",
+)
+
+PLANNED_MONTH_NOT_SET_LABEL = "—"
 INSPECTION_STATUS_PLANOVANA = INSPECTION_STATUS_PLANOVANO
 INSPECTION_STATUS_DOKONCENA = INSPECTION_STATUS_DOKONCENO
 INSPECTION_STATUS_UZAVRENA = INSPECTION_STATUS_DOKONCENO
