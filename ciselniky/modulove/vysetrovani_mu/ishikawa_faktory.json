@@ -871,15 +871,6 @@
       }
     ]
   },
-  "Technika / zařízení": {
-    "question": "Selhalo zařízení, nástroj nebo jeho ochranný prvek?",
-    "factors": [
-      {
-        "name": "Jiné",
-        "questions": []
-      }
-    ]
-  },
   "Organizace práce": {
     "question": "Jak organizace práce přispěla ke vzniku mimořádné události?",
     "factors": [
@@ -2213,7 +2204,7 @@
             "factor": "Nedostatečná údržba pracoviště"
           },
           {
-            "category": "Technika / zařízení",
+            "category": "Zařízení a technika",
             "factor": "Únik kapaliny ze zařízení"
           }
         ]
@@ -2863,7 +2854,7 @@
             "factor": "Nevhodné OOPP dýchacích cest"
           },
           {
-            "category": "Technika / zařízení",
+            "category": "Zařízení a technika",
             "factor": "Porucha odsávání"
           },
           {
@@ -3224,7 +3215,7 @@
             "factor": "Nedostatečný dohled"
           },
           {
-            "category": "Technika / zařízení",
+            "category": "Zařízení a technika",
             "factor": "Technický stav zařízení"
           }
         ]
@@ -3286,6 +3277,1270 @@
           {
             "category": "Člověk",
             "factor": "Únava z horka"
+          }
+        ]
+      },
+      {
+        "name": "Jiné",
+        "questions": [],
+        "evidence": [],
+        "related": [],
+        "parent": "",
+        "supports": [],
+        "contradicts": [],
+        "actions": [],
+        "suggest": []
+      }
+    ]
+  },
+  "Zařízení a technika": {
+    "question": "Přispěl technický stav zařízení nebo jeho vlastnosti ke vzniku mimořádné události?",
+    "factors": [
+      {
+        "name": "Technická závada",
+        "questions": [
+          "Došlo k technické závadě zařízení, nástroje nebo pracovní pomůcky?",
+          "Byla závada předvídatelná z předchozích kontrol nebo provozu?",
+          "Projevila se závada náhle, nebo postupně?",
+          "Bylo zařízení před událostí technicky způsobilé?",
+          "Souvisela závada s údržbou, opotřebením nebo nastavením?",
+          "Měl pracovník možnost závadu rozpoznat před MU?"
+        ],
+        "evidence": [
+          "Technická zpráva nebo posudek",
+          "Servisní záznamy",
+          "Záznamy údržby a kontrol",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Fotodokumentace zařízení",
+          "Provozní záznamy"
+        ],
+        "related": [
+          "Elektrická závada",
+          "Mechanická závada",
+          "Hydraulická / pneumatická závada",
+          "Nedostatečná údržba",
+          "Porucha během provozu"
+        ],
+        "parent": "",
+        "supports": [
+          "Zařízení selhalo nebo přestalo fungovat správně",
+          "Závada byla příčinou nebo spolupříčinou MU",
+          "Závada nebyla včas odstraněna",
+          "Předchozí kontrola upozornila na problém",
+          "Porucha souvisela s technickým stavem"
+        ],
+        "contradicts": [
+          "Zařízení fungovalo správně",
+          "Selhání nebylo technické",
+          "Příčina byla čistě lidská nebo organizační",
+          "Závada vznikla až následkem MU",
+          "Zařízení bylo právě revidováno a v pořádku"
+        ],
+        "actions": [
+          "Posoudit technický stav zařízení",
+          "Ověřit servisní a údržbové záznamy",
+          "Zajistit posudek nebo prohlídku odborníkem",
+          "Vyslechnout pracovníky k chování zařízení",
+          "Porovnat stav s požadavky výrobce",
+          "Prověřit, zda závada nebyla předem známa"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečná údržba"
+          },
+          {
+            "category": "Zařízení a technika",
+            "factor": "Chybějící revize"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nesprávné použití zařízení"
+          }
+        ]
+      },
+      {
+        "name": "Elektrická závada",
+        "questions": [
+          "Došlo k poruše elektrického obvodu, izolace nebo ochrany?",
+          "Bylo zařízení elektricky revidováno?",
+          "Projevily se před událostí poruchové signály (jiskření, vypnutí, závada)?",
+          "Byl pracovník oprávněn pracovat s daným zařízením?",
+          "Bylo elektrické zařízení použito v souladu s návodem?"
+        ],
+        "evidence": [
+          "Revizní zpráva",
+          "Servisní záznamy",
+          "Fotodokumentace",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Záznamy poruch"
+        ],
+        "related": [
+          "Technická závada",
+          "Chybějící revize",
+          "Nedostatečná údržba"
+        ],
+        "parent": "Technická závada",
+        "supports": [
+          "Porucha elektrického obvodu nebo ochrany",
+          "Chybějící nebo neplatná revize",
+          "Předchozí poruchové projevy",
+          "Pracovník nebyl oprávněn",
+          "Zařízení nebylo v bezpečném stavu"
+        ],
+        "contradicts": [
+          "Elektrická část byla v pořádku",
+          "Revize byla platná",
+          "Příčina nebyla elektrická",
+          "Zařízení nebylo pod napětím"
+        ],
+        "actions": [
+          "Ověřit revizní zprávy",
+          "Posoudit stav elektrického zařízení",
+          "Prověřit oprávnění pracovníka",
+          "Zajistit posudek elektroodborníka",
+          "Vyslechnout svědky k poruchovým signálům"
+        ],
+        "suggest": [
+          {
+            "category": "Zařízení a technika",
+            "factor": "Chybějící revize"
+          },
+          {
+            "category": "Zařízení a technika",
+            "factor": "Nedostatečná údržba"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nedostatečná kvalifikace"
+          }
+        ]
+      },
+      {
+        "name": "Mechanická závada",
+        "questions": [
+          "Došlo k poruše mechanické části, pohyblivého prvku nebo převodu?",
+          "Bylo slyšet nebo vidět abnormalitu před událostí?",
+          "Souvisela porucha s opotřebením nebo přetížením?",
+          "Byla mechanická část udržována podle plánu?",
+          "Bylo zařízení používáno v mezích výrobce?"
+        ],
+        "evidence": [
+          "Servisní záznamy",
+          "Záznamy údržby",
+          "Fotodokumentace",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Technická zpráva"
+        ],
+        "related": [
+          "Technická závada",
+          "Opotřebení zařízení",
+          "Nedostatečná údržba"
+        ],
+        "parent": "Technická závada",
+        "supports": [
+          "Mechanická část selhala",
+          "Opotřebení nebo poškození bylo znatelné",
+          "Přetížení nebo nesprávné použití",
+          "Údržba nebyla provedena",
+          "Svědci popisují abnormalitu"
+        ],
+        "contradicts": [
+          "Mechanická část byla v pořádku",
+          "Porucha nebyla příčinou MU",
+          "Zařízení nebylo v provozu",
+          "Stav odpovídal požadavkům"
+        ],
+        "actions": [
+          "Prohlédnout mechanické části",
+          "Ověřit záznamy údržby",
+          "Posoudit opotřebení",
+          "Zajistit technické posouzení",
+          "Porovnat s návodem výrobce"
+        ],
+        "suggest": [
+          {
+            "category": "Zařízení a technika",
+            "factor": "Nedostatečná údržba"
+          },
+          {
+            "category": "Zařízení a technika",
+            "factor": "Opotřebení zařízení"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Nejasný nebo neproveditelný postup"
+          }
+        ]
+      },
+      {
+        "name": "Hydraulická / pneumatická závada",
+        "questions": [
+          "Došlo k poruše hydraulického nebo pneumatického systému?",
+          "Byl tlak, hadice, spoj nebo ventil v pořádku?",
+          "Projevila se netěsnost, únik nebo výpadek tlaku?",
+          "Byla revize nebo kontrola tlakového systému aktuální?",
+          "Byl systém používán v mezích výrobce?"
+        ],
+        "evidence": [
+          "Servisní záznamy",
+          "Revizní zprávy",
+          "Fotodokumentace",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Záznamy údržby"
+        ],
+        "related": [
+          "Technická závada",
+          "Chybějící revize",
+          "Nedostatečná údržba"
+        ],
+        "parent": "Technická závada",
+        "supports": [
+          "Porucha hydrauliky nebo pneumatiky",
+          "Netěsnost nebo únik",
+          "Výpadek tlaku",
+          "Chybějící revize",
+          "Systém nebyl udržován"
+        ],
+        "contradicts": [
+          "Tlakový systém byl v pořádku",
+          "Porucha nebyla příčinou MU",
+          "Revize byla platná",
+          "Únik nebyl přítomen"
+        ],
+        "actions": [
+          "Posoudit stav tlakového systému",
+          "Ověřit revize a kontroly",
+          "Zajistit odborné posouzení",
+          "Vyslechnout pracovníky",
+          "Prověřit záznamy údržby"
+        ],
+        "suggest": [
+          {
+            "category": "Zařízení a technika",
+            "factor": "Nedostatečná údržba"
+          },
+          {
+            "category": "Zařízení a technika",
+            "factor": "Chybějící revize"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Práce s tlakovými systémy"
+          }
+        ]
+      },
+      {
+        "name": "Nevhodné zařízení",
+        "questions": [
+          "Bylo pro danou práci použito vhodné zařízení nebo nástroj?",
+          "Odpovídalo zařízení charakteru a riziku práce?",
+          "Nebylo zařízení improvizované nebo nevhodně nahrazené?",
+          "Bylo k dispozici vhodnější zařízení?",
+          "Bylo použití nevhodného zařízení předem známo?",
+          "Ovlivnilo nevhodné zařízení bezpečnost práce?"
+        ],
+        "evidence": [
+          "Návod výrobce",
+          "Pracovní postup",
+          "Fotodokumentace zařízení",
+          "Výpověď pracovníka",
+          "Výpověď nadřízeného",
+          "Výpovědi svědků",
+          "Seznam dostupné techniky"
+        ],
+        "related": [
+          "Nevhodný pracovní nástroj",
+          "Nesprávné nastavení zařízení",
+          "Nevhodná ergonomie zařízení"
+        ],
+        "parent": "",
+        "supports": [
+          "Použito nevhodné zařízení",
+          "Vhodnější zařízení bylo k dispozici",
+          "Improvizace místo vhodného nástroje",
+          "Nadřízený přidělil nevhodnou techniku",
+          "Riziko bylo známé"
+        ],
+        "contradicts": [
+          "Zařízení bylo vhodné pro danou práci",
+          "Jiné zařízení nebylo dostupné ani potřebné",
+          "Příčina nesouvisela s volbou zařízení",
+          "Pracovník použil předepsané zařízení"
+        ],
+        "actions": [
+          "Porovnat použité zařízení s požadavky práce",
+          "Ověřit dostupnost vhodné techniky",
+          "Vyslechnout nadřízeného k přidělení",
+          "Posoudit návod a postup",
+          "Prověřit, zda volba nebyla běžná praxe"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Nesprávné použití zařízení"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Nevhodné rozdělení práce"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Nejasný nebo neproveditelný postup"
+          }
+        ]
+      },
+      {
+        "name": "Chybějící ochranné prvky",
+        "questions": [
+          "Chyběl na zařízení předepsaný ochranný prvek?",
+          "Byl kryt, zábrana, nouzové zastavení nebo jiná ochrana funkční?",
+          "Bylo zařízení provozováno bez ochrany?",
+          "Bylo absence ochrany předem známo?",
+          "Mohla absence ochrany přímo přispět k MU?",
+          "Bylo zařízení bez ochrany běžně používáno?"
+        ],
+        "evidence": [
+          "Návod výrobce",
+          "Fotodokumentace zařízení",
+          "Záznamy kontrol",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Hodnocení rizik",
+          "Servisní záznamy"
+        ],
+        "related": [
+          "Poškozený bezpečnostní prvek",
+          "Vadné zabezpečení zařízení",
+          "Poškozené zařízení"
+        ],
+        "parent": "",
+        "supports": [
+          "Ochranný prvek chyběl nebo nefungoval",
+          "Zařízení bylo provozováno bez ochrany",
+          "Absence ochrany byla známa",
+          "Obdobný stav trval delší dobu",
+          "MU souvisela s nechráněným pohybem nebo rizikem"
+        ],
+        "contradicts": [
+          "Ochranné prvky byly funkční",
+          "Zařízení nevyžadovalo ochranu pro danou činnost",
+          "Příčina nesouvisela s chybějící ochranou",
+          "Ochrana byla dočasně demontována oprávněně a řízeně"
+        ],
+        "actions": [
+          "Ověřit požadované ochranné prvky",
+          "Prohlédnout zařízení a dokumentaci",
+          "Vyslechnout pracovníky k běžné praxi",
+          "Prověřit záznamy kontrol",
+          "Posoudit vliv absence ochrany na MU"
+        ],
+        "suggest": [
+          {
+            "category": "OOPP",
+            "factor": "Nevhodné OOPP"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný dohled"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící ochranné prvky v postupu"
+          }
+        ]
+      },
+      {
+        "name": "Vadné zabezpečení zařízení",
+        "questions": [
+          "Bylo zařízení před prací správně zabezpečeno proti nežádoucímu spuštění?",
+          "Byl použit lockout/tagout nebo ekvivalentní postup?",
+          "Bylo zařízení skutečně od odstaveno od energie?",
+          "Mohl někdo zařízení neoprávněně spustit?",
+          "Byl postup zabezpečení dodržen všemi zúčastněnými?"
+        ],
+        "evidence": [
+          "Pracovní postup",
+          "Záznam o zabezpečení",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Fotodokumentace",
+          "Revizní a servisní záznamy"
+        ],
+        "related": [
+          "Chybějící ochranné prvky",
+          "Neprovedená kontrola zařízení",
+          "Technická závada"
+        ],
+        "parent": "",
+        "supports": [
+          "Zařízení nebylo řádně zabezpečeno",
+          "Lockout/tagout nebyl proveden",
+          "Došlo k nežádoucímu spuštění",
+          "Postup nebyl dodržen",
+          "Více pracovníků na zařízení bez koordinace"
+        ],
+        "contradicts": [
+          "Zařízení bylo správně zabezpečeno",
+          "Energie byla spolehlivě odpojena",
+          "Spuštění nebylo příčinou MU",
+          "Postup byl dodržen"
+        ],
+        "actions": [
+          "Ověřit postup zabezpečení zařízení",
+          "Vyslechnout všechny zúčastněné",
+          "Porovnat s lockout/tagout pravidly",
+          "Prověřit stav ovládání a energie",
+          "Posoudit koordinaci více pracovníků"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní postup",
+            "factor": "Lockout/Tagout"
+          },
+          {
+            "category": "Zařízení a technika",
+            "factor": "Chybějící revize"
+          },
+          {
+            "category": "Zařízení a technika",
+            "factor": "Neprovedená kontrola zařízení"
+          }
+        ]
+      },
+      {
+        "name": "Nedostatečná údržba",
+        "questions": [
+          "Byla na zařízení prováděna předepsaná údržba?",
+          "Byly známé závady včas odstraňovány?",
+          "Existoval plán preventivní údržby?",
+          "Byla údržba dokumentována?",
+          "Souvisela MU s opomenutou nebo neprovedenou údržbou?",
+          "Byl stav zařízení před MU posuzován jako bezpečný?"
+        ],
+        "evidence": [
+          "Plán údržby",
+          "Servisní záznamy",
+          "Záznamy oprav",
+          "Výpověď pracovníka",
+          "Výpověď údržbáře",
+          "Výpovědi svědků",
+          "Technická zpráva"
+        ],
+        "related": [
+          "Chybějící preventivní údržba",
+          "Neodstraněná známá závada",
+          "Opotřebení zařízení",
+          "Technická závada"
+        ],
+        "parent": "",
+        "supports": [
+          "Údržba nebyla provedena v termínu",
+          "Známa závada nebyla odstraněna",
+          "Chyběl plán preventivní údržby",
+          "Stav zařízení se zhoršoval",
+          "MU souvisela s technickým stavem"
+        ],
+        "contradicts": [
+          "Údržba probíhala podle plánu",
+          "Závady byly včas odstraněny",
+          "Technický stav nebyl příčinou MU",
+          "Zařízení bylo právě servisováno"
+        ],
+        "actions": [
+          "Ověřit plán a záznamy údržby",
+          "Vyslechnout údržbáře a provoz",
+          "Posoudit stav zařízení",
+          "Prověřit, zda závada nebyla předem hlášena",
+          "Porovnat s požadavky výrobce"
+        ],
+        "suggest": [
+          {
+            "category": "Organizace práce",
+            "factor": "Nevhodné rozdělení práce"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečná údržba"
+          },
+          {
+            "category": "Zařízení a technika",
+            "factor": "Chybějící revize"
+          }
+        ]
+      },
+      {
+        "name": "Chybějící preventivní údržba",
+        "questions": [
+          "Byla preventivní údržba plánována, ale neprovedena?",
+          "Prošel termín údržby?",
+          "Bylo zařízení provozováno i po termínu?",
+          "Chyběl odpovědný pracovník nebo kapacita pro údržbu?",
+          "Bylo opomenutí údržby předem známo?"
+        ],
+        "evidence": [
+          "Plán preventivní údržby",
+          "Servisní záznamy",
+          "Výpověď údržbáře",
+          "Výpověď provozu",
+          "Provozní záznamy"
+        ],
+        "related": [
+          "Nedostatečná údržba",
+          "Opotřebení zařízení",
+          "Chybějící revize"
+        ],
+        "parent": "Nedostatečná údržba",
+        "supports": [
+          "Preventivní údržba nebyla provedena",
+          "Termín byl překročen",
+          "Zařízení bylo provozováno bez údržby",
+          "Kapacita údržby nestačila",
+          "Opomenutí bylo známo"
+        ],
+        "contradicts": [
+          "Preventivní údržba proběhla",
+          "Termín nebyl dán",
+          "Údržba nebyla vyžadována",
+          "MU nesouvisela s údržbou"
+        ],
+        "actions": [
+          "Ověřit plán preventivní údržby",
+          "Zjistit důvod neprovedení",
+          "Vyslechnout odpovědné osoby",
+          "Posoudit vliv na technický stav"
+        ],
+        "suggest": [
+          {
+            "category": "Organizace práce",
+            "factor": "Nedostatek pracovníků"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečná údržba"
+          }
+        ]
+      },
+      {
+        "name": "Neodstraněná známá závada",
+        "questions": [
+          "Byla na zařízení známa závada před MU?",
+          "Byla závada nahlášena?",
+          "Bylo rozhodnuto o odstranění nebo dočasném provozu?",
+          "Bylo zařízení provozováno se známou závadou?",
+          "Souvisela MU přímo se známou závadou?"
+        ],
+        "evidence": [
+          "Hlášení závady",
+          "Servisní záznamy",
+          "Výpověď pracovníka",
+          "Výpověď údržbáře",
+          "E-mailová nebo písemná komunikace",
+          "Záznamy kontrol"
+        ],
+        "related": [
+          "Nedostatečná údržba",
+          "Technická závada",
+          "Porucha během provozu"
+        ],
+        "parent": "Nedostatečná údržba",
+        "supports": [
+          "Závada byla předem známa",
+          "Nebyla odstraněna",
+          "Zařízení zůstalo v provozu",
+          "MU souvisela se stejnou závadou",
+          "Odpovědnost nebyla jasně určena"
+        ],
+        "contradicts": [
+          "Závada nebyla známa",
+          "Byla včas odstraněna",
+          "MU nesouvisela se závadou",
+          "Zařízení bylo odstaveno"
+        ],
+        "actions": [
+          "Dohledat hlášení závady",
+          "Ověřit rozhodnutí o provozu",
+          "Vyslechnout odpovědné osoby",
+          "Posoudit souvislost se MU"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný dohled"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Nevhodné rozdělení práce"
+          }
+        ]
+      },
+      {
+        "name": "Porucha během provozu",
+        "questions": [
+          "Došlo k poruše zařízení během běžného provozu?",
+          "Projevila se porucha náhle v průběhu práce?",
+          "Měl pracovník možnost reagovat na poruchu bezpečně?",
+          "Bylo zařízení před provozem kontrolováno?",
+          "Souvisela porucha s předchozím technickým stavem?"
+        ],
+        "evidence": [
+          "Provozní záznamy",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Servisní záznamy",
+          "Fotodokumentace"
+        ],
+        "related": [
+          "Technická závada",
+          "Nedostatečná údržba",
+          "Opotřebení zařízení"
+        ],
+        "parent": "",
+        "supports": [
+          "Porucha nastala během provozu",
+          "Pracovník nemohl bezpečně reagovat",
+          "Předchozí stav naznačoval riziko",
+          "Porucha byla nečekaná, ale technicky vysvětlitelná",
+          "MU souvisela s náhlým selháním"
+        ],
+        "contradicts": [
+          "Zařízení nebylo v provozu",
+          "Porucha nebyla příčinou MU",
+          "Pracovník měl situaci pod kontrolou",
+          "Selhání bylo způsobeno jinak"
+        ],
+        "actions": [
+          "Rekonstruovat průběh provozu",
+          "Ověřit technický stav před provozem",
+          "Vyslechnout svědky",
+          "Posoudit servisní historii",
+          "Prověřit reakci pracovníka"
+        ],
+        "suggest": [
+          {
+            "category": "Zařízení a technika",
+            "factor": "Nedostatečná údržba"
+          },
+          {
+            "category": "Zařízení a technika",
+            "factor": "Chybějící revize"
+          },
+          {
+            "category": "Zařízení a technika",
+            "factor": "Technická závada"
+          }
+        ]
+      },
+      {
+        "name": "Nevyhovující pracovní pomůcka",
+        "questions": [
+          "Byla použita pracovní pomůcka vhodná pro danou činnost?",
+          "Byla pomůcka v dobrém technickém stavu?",
+          "Nebyla pomůcka poškozená, upravená nebo necertifikovaná?",
+          "Byla pomůcka určena pro daný typ práce?",
+          "Měl pracovník k dispozici vhodnější pomůcku?"
+        ],
+        "evidence": [
+          "Fotodokumentace pomůcky",
+          "Návod nebo certifikát",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Záznamy kontrol",
+          "Pracovní postup"
+        ],
+        "related": [
+          "Nevhodný pracovní nástroj",
+          "Nevhodné zařízení",
+          "Poškozené zařízení"
+        ],
+        "parent": "",
+        "supports": [
+          "Pomůcka nevyhovovala účelu",
+          "Pomůcka byla poškozená",
+          "Chyběla certifikace nebo kontrola",
+          "Pracovník použil improvizaci",
+          "Vhodnější pomůcka byla k dispozici"
+        ],
+        "contradicts": [
+          "Pomůcka byla vhodná a v pořádku",
+          "Použití odpovídalo určení",
+          "Příčina nesouvisela s pomůckou",
+          "Pomůcka byla právě kontrolována"
+        ],
+        "actions": [
+          "Prohlédnout použitou pomůcku",
+          "Ověřit určení a certifikaci",
+          "Porovnat s požadavky postupu",
+          "Vyslechnout pracovníka",
+          "Posoudit dostupnost vhodné pomůcky"
+        ],
+        "suggest": [
+          {
+            "category": "Organizace práce",
+            "factor": "Nevhodné rozdělení práce"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nesprávné použití zařízení"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný dohled"
+          }
+        ]
+      },
+      {
+        "name": "Nevhodný pracovní nástroj",
+        "questions": [
+          "Byl pro danou práci použit vhodný nástroj?",
+          "Odpovídal nástroj síle, rozměru a typu práce?",
+          "Nebyl nástroj poškozený nebo upravený?",
+          "Byl nástroj určen pro daný materiál nebo zařízení?",
+          "Použil pracovník nástroj improvizovaně?"
+        ],
+        "evidence": [
+          "Fotodokumentace nástroje",
+          "Návod výrobce",
+          "Pracovní postup",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Seznam nástrojů"
+        ],
+        "related": [
+          "Nevyhovující pracovní pomůcka",
+          "Nevhodné zařízení",
+          "Nesprávné nastavení zařízení"
+        ],
+        "parent": "",
+        "supports": [
+          "Použit nevhodný nástroj",
+          "Nástroj byl poškozený",
+          "Improvizace místo správného nástroje",
+          "Pracovník neměl vhodný nástroj k dispozici",
+          "Obdobná praxe byla tolerována"
+        ],
+        "contradicts": [
+          "Nástroj byl vhodný",
+          "Pracovník postupoval podle postupu",
+          "Příčina nesouvisela s nástrojem",
+          "Nástroj byl v dobrém stavu"
+        ],
+        "actions": [
+          "Identifikovat použitý nástroj",
+          "Porovnat s požadavky práce",
+          "Ověřit dostupnost vhodného nástroje",
+          "Vyslechnout pracovníka a svědky",
+          "Posoudit stav nástroje"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Nesprávné použití zařízení"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Nevhodné rozdělení práce"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Nejasný nebo neproveditelný postup"
+          }
+        ]
+      },
+      {
+        "name": "Poškozené zařízení",
+        "questions": [
+          "Bylo zařízení v místě nebo čase události poškozené?",
+          "Ovlivnilo poškození bezpečnost nebo funkci?",
+          "Bylo poškození předem známo?",
+          "Bylo zařízení s poškozením dále provozováno?",
+          "Mohlo poškození způsobit selhání ochrany nebo ovládání?"
+        ],
+        "evidence": [
+          "Fotodokumentace zařízení",
+          "Servisní záznamy",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Záznamy kontrol",
+          "Technická zpráva"
+        ],
+        "related": [
+          "Poškozený kryt",
+          "Poškozený ovládací prvek",
+          "Poškozený bezpečnostní prvek",
+          "Opotřebení zařízení"
+        ],
+        "parent": "",
+        "supports": [
+          "Zařízení bylo viditelně poškozené",
+          "Poškození ovlivnilo bezpečnost",
+          "Zařízení zůstalo v provozu",
+          "Poškození nebylo odstraněno",
+          "MU souvisela s poškozenou částí"
+        ],
+        "contradicts": [
+          "Zařízení nebylo poškozené",
+          "Poškození neovlivnilo MU",
+          "Poškození vzniklo až následkem MU",
+          "Zařízení bylo odstaveno"
+        ],
+        "actions": [
+          "Prohlédnout poškození zařízení",
+          "Ověřit, kdy poškození vzniklo",
+          "Vyslechnout pracovníky",
+          "Prověřit záznamy kontrol a oprav",
+          "Posoudit vliv na bezpečnost"
+        ],
+        "suggest": [
+          {
+            "category": "Zařízení a technika",
+            "factor": "Nedostatečná údržba"
+          },
+          {
+            "category": "Zařízení a technika",
+            "factor": "Neprovedená kontrola zařízení"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný dohled"
+          }
+        ]
+      },
+      {
+        "name": "Poškozený kryt",
+        "questions": [
+          "Chyběl nebo byl poškozen kryt pohyblivé části?",
+          "Bylo zařízení provozováno bez krytu?",
+          "Bylo poškození krytu předem známo?",
+          "Mohla absence krytu umožnit kontakt s nebezpečnou částí?"
+        ],
+        "evidence": [
+          "Fotodokumentace",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Servisní záznamy",
+          "Návod výrobce"
+        ],
+        "related": [
+          "Poškozené zařízení",
+          "Chybějící ochranné prvky",
+          "Poškozený bezpečnostní prvek"
+        ],
+        "parent": "Poškozené zařízení",
+        "supports": [
+          "Kryt chyběl nebo byl poškozen",
+          "Zařízení bylo provozováno bez krytu",
+          "Poškození bylo známo",
+          "MU souvisela s nechráněnou částí"
+        ],
+        "contradicts": [
+          "Kryt byl v pořádku",
+          "Kryt nebyl potřeba pro danou činnost",
+          "MU nesouvisela s krytem"
+        ],
+        "actions": [
+          "Ověřit stav krytu",
+          "Zjistit, kdy kryt chyběl nebo byl poškozen",
+          "Vyslechnout pracovníky",
+          "Porovnat s požadavky výrobce"
+        ],
+        "suggest": [
+          {
+            "category": "Zařízení a technika",
+            "factor": "Chybějící ochranné prvky"
+          },
+          {
+            "category": "Zařízení a technika",
+            "factor": "Nedostatečná údržba"
+          }
+        ]
+      },
+      {
+        "name": "Poškozený ovládací prvek",
+        "questions": [
+          "Byl ovládací prvek poškozený nebo nefunkční?",
+          "Mohlo poškození ovlivnit bezpečné ovládání?",
+          "Reagovalo zařízení jinak, než pracovník očekával?",
+          "Bylo poškození ovládání předem známo?"
+        ],
+        "evidence": [
+          "Fotodokumentace",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Servisní záznamy",
+          "Kamerový záznam"
+        ],
+        "related": [
+          "Poškozené zařízení",
+          "Technická závada",
+          "Nesprávné nastavení zařízení"
+        ],
+        "parent": "Poškozené zařízení",
+        "supports": [
+          "Ovládací prvek byl poškozený",
+          "Pracovník neočekával chování zařízení",
+          "Poškození bylo známo",
+          "MU souvisela s ovládáním"
+        ],
+        "contradicts": [
+          "Ovládání fungovalo správně",
+          "Pracovník zařízení ovládal správně",
+          "MU nesouvisela s ovládáním"
+        ],
+        "actions": [
+          "Prohlédnout ovládací prvky",
+          "Ověřit funkčnost před MU",
+          "Vyslechnout pracovníka k ovládání",
+          "Prověřit servisní historii"
+        ],
+        "suggest": [
+          {
+            "category": "Zařízení a technika",
+            "factor": "Nedostatečná údržba"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nesprávné použití zařízení"
+          }
+        ]
+      },
+      {
+        "name": "Poškozený bezpečnostní prvek",
+        "questions": [
+          "Byl poškozen bezpečnostní prvek (spínač, snímač, pojistka, blokace)?",
+          "Fungoval bezpečnostní prvek správně?",
+          "Bylo zařízení provozováno s nefunkčním bezpečnostním prvkem?",
+          "Bylo poškození předem známo?"
+        ],
+        "evidence": [
+          "Fotodokumentace",
+          "Servisní záznamy",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Návod výrobce"
+        ],
+        "related": [
+          "Poškozené zařízení",
+          "Chybějící ochranné prvky",
+          "Vadné zabezpečení zařízení"
+        ],
+        "parent": "Poškozené zařízení",
+        "supports": [
+          "Bezpečnostní prvek nefungoval",
+          "Zařízení bylo provozováno navzdory poruše",
+          "Poškození bylo známo",
+          "MU souvisela se selháním ochrany"
+        ],
+        "contradicts": [
+          "Bezpečnostní prvek fungoval",
+          "Porucha nebyla příčinou MU",
+          "Zařízení bylo odstaveno"
+        ],
+        "actions": [
+          "Ověřit stav bezpečnostních prvků",
+          "Prověřit záznamy oprav",
+          "Vyslechnout pracovníky",
+          "Posoudit vliv na MU"
+        ],
+        "suggest": [
+          {
+            "category": "Zařízení a technika",
+            "factor": "Chybějící ochranné prvky"
+          },
+          {
+            "category": "Zařízení a technika",
+            "factor": "Neprovedená kontrola zařízení"
+          }
+        ]
+      },
+      {
+        "name": "Nesprávné nastavení zařízení",
+        "questions": [
+          "Bylo zařízení nastaveno podle požadavků práce a návodu?",
+          "Nebylo zařízení přenastaveno bez autorizace?",
+          "Rozuměl pracovník nastavení a jeho vlivu na bezpečnost?",
+          "Bylo nastavení kontrolováno před zahájením práce?",
+          "Mohlo nesprávné nastavení způsobit MU?"
+        ],
+        "evidence": [
+          "Návod výrobce",
+          "Pracovní postup",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Servisní záznamy",
+          "Fotodokumentace nastavení"
+        ],
+        "related": [
+          "Nevhodné zařízení",
+          "Neprovedená kontrola zařízení",
+          "Nesprávné použití zařízení"
+        ],
+        "parent": "",
+        "supports": [
+          "Zařízení bylo nastaveno jinak než požadováno",
+          "Pracovník nerozuměl nastavení",
+          "Nastavení nebylo kontrolováno",
+          "Přenastavení nebylo autorizováno",
+          "MU souvisela s chybným režimem"
+        ],
+        "contradicts": [
+          "Nastavení bylo správné",
+          "Pracovník postupoval podle návodu",
+          "MU nesouvisela s nastavením",
+          "Nastavení provedl oprávněný pracovník"
+        ],
+        "actions": [
+          "Ověřit požadované a skutečné nastavení",
+          "Vyslechnout pracovníka k nastavení",
+          "Porovnat s návodem a postupem",
+          "Prověřit, kdo nastavení prováděl",
+          "Posoudit vliv na bezpečnost"
+        ],
+        "suggest": [
+          {
+            "category": "Školení",
+            "factor": "Nedostatečné seznámení"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Nejasný nebo neproveditelný postup"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nedostatečná kvalifikace"
+          }
+        ]
+      },
+      {
+        "name": "Neprovedená kontrola zařízení",
+        "questions": [
+          "Měla být před prací provedena kontrola zařízení?",
+          "Byla kontrola skutečně provedena?",
+          "Nebyla kontrola formalita bez reálného posouzení?",
+          "Mohla neprovedená kontrola odhalit riziko?",
+          "Existuje postup pro kontrolu před použitím?"
+        ],
+        "evidence": [
+          "Pracovní postup",
+          "Kontrolní list",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Servisní záznamy",
+          "Fotodokumentace"
+        ],
+        "related": [
+          "Chybějící revize",
+          "Nedostatečná údržba",
+          "Poškozené zařízení"
+        ],
+        "parent": "",
+        "supports": [
+          "Kontrola nebyla provedena",
+          "Kontrola byla pouze formální",
+          "Závadu by kontrola odhalila",
+          "Postup kontroly existoval, ale nebyl dodržen",
+          "Pracovník kontrolu přeskočil"
+        ],
+        "contradicts": [
+          "Kontrola byla provedena",
+          "Závada nebyla kontrolou zjistitelná",
+          "MU nesouvisela s kontrolou",
+          "Kontrola nebyla pro danou práci vyžadována"
+        ],
+        "actions": [
+          "Ověřit požadavek na kontrolu",
+          "Zjistit, zda kontrola proběhla",
+          "Porovnat s postupem",
+          "Vyslechnout pracovníka",
+          "Posoudit, co kontrola mohla odhalit"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný dohled"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící kontrola před zahájením"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nedodržení pracovního postupu"
+          }
+        ]
+      },
+      {
+        "name": "Chybějící revize",
+        "questions": [
+          "Vyžadovalo zařízení platnou revizi?",
+          "Byla revize v době události platná?",
+          "Bylo zařízení provozováno bez platné revize?",
+          "Byly nedostatky z revize včas odstraněny?",
+          "Byla odpovědnost za revize jasně určena?"
+        ],
+        "evidence": [
+          "Revizní zpráva",
+          "Evidence revizí",
+          "Výpověď odpovědné osoby",
+          "Výpověď pracovníka",
+          "Servisní záznamy",
+          "Právní požadavky"
+        ],
+        "related": [
+          "Neprovedená kontrola zařízení",
+          "Nedostatečná údržba",
+          "Technická závada"
+        ],
+        "parent": "",
+        "supports": [
+          "Revize chyběla nebo byla prošlá",
+          "Zařízení bylo provozováno bez revize",
+          "Nedostatky nebyly odstraněny",
+          "Odpovědnost nebyla jasná",
+          "MU souvisela s technickým stavem"
+        ],
+        "contradicts": [
+          "Revize byla platná",
+          "Revize nebyla pro dané zařízení vyžadována",
+          "MU nesouvisela s revizí",
+          "Nedostatky byly odstraněny"
+        ],
+        "actions": [
+          "Ověřit platnost revize",
+          "Dohledat revizní zprávy",
+          "Vyslechnout odpovědné osoby",
+          "Posoudit právní požadavky",
+          "Prověřit odstranění závad z revize"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečná údržba"
+          },
+          {
+            "category": "Legislativa",
+            "factor": "Neprovedená povinná revize"
+          }
+        ]
+      },
+      {
+        "name": "Opotřebení zařízení",
+        "questions": [
+          "Bylo zařízení viditelně opotřebené?",
+          "Ovlivnilo opotřebení bezpečnost nebo funkci?",
+          "Bylo opotřebení předem známo?",
+          "Bylo zařízení vyměněno nebo opraveno včas?",
+          "Odpovídalo opotřebení stáří a režimu používání?"
+        ],
+        "evidence": [
+          "Fotodokumentace",
+          "Servisní záznamy",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Plán údržby",
+          "Technická zpráva"
+        ],
+        "related": [
+          "Nedostatečná údržba",
+          "Poškozené zařízení",
+          "Mechanická závada"
+        ],
+        "parent": "",
+        "supports": [
+          "Zařízení bylo opotřebené",
+          "Opotřebení ovlivnilo bezpečnost",
+          "Výměna nebo oprava neproběhla",
+          "Opotřebení bylo známo",
+          "MU souvisela s opotřebenou částí"
+        ],
+        "contradicts": [
+          "Zařízení nebylo nadměrně opotřebené",
+          "Opotřebení neovlivnilo MU",
+          "Zařízení bylo včas vyměněno",
+          "Stav odpovídal věku zařízení"
+        ],
+        "actions": [
+          "Posoudit stupeň opotřebení",
+          "Ověřit plán výměn a údržby",
+          "Vyslechnout pracovníky",
+          "Prověřit, zda opotřebení bylo známo",
+          "Porovnat s požadavky výrobce"
+        ],
+        "suggest": [
+          {
+            "category": "Zařízení a technika",
+            "factor": "Nedostatečná údržba"
+          },
+          {
+            "category": "Zařízení a technika",
+            "factor": "Neprovedená kontrola zařízení"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Nevhodné rozdělení práce"
+          }
+        ]
+      },
+      {
+        "name": "Nevhodná ergonomie zařízení",
+        "questions": [
+          "Bylo zařízení ergonomicky vhodné pro danou práci a pracovníka?",
+          "Vyžadovalo zařízení nepřirozenou polohu nebo nadměrnou sílu?",
+          "Ovlivnila ergonomie ovládání, držení nebo dosah?",
+          "Bylo zařízení upraveno nebo používáno jinak kvůli ergonomii?",
+          "Bylo riziko ergonomické nepohodlnosti známo?"
+        ],
+        "evidence": [
+          "Fotodokumentace pracoviště",
+          "Návod výrobce",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Hodnocení ergonomických rizik",
+          "Pracovní postup"
+        ],
+        "related": [
+          "Nevhodné zařízení",
+          "Omezený manipulační prostor",
+          "Nevyhovující pracovní pomůcka"
+        ],
+        "parent": "",
+        "supports": [
+          "Zařízení vyžadovalo nepřirozenou polohu",
+          "Pracovník musel překonávat nepohodlí",
+          "Ergonomické riziko bylo známo",
+          "Improvizace kvůli nevhodnému zařízení",
+          "MU souvisela s ovládáním nebo držením"
+        ],
+        "contradicts": [
+          "Zařízení bylo ergonomicky vhodné",
+          "Pracovník neměl potíže s ovládáním",
+          "MU nesouvisela s ergonomií",
+          "Bylo použito vhodné upravené pracoviště"
+        ],
+        "actions": [
+          "Posoudit pracovní polohu a ovládání",
+          "Ověřit ergonomické hodnocení",
+          "Vyslechnout pracovníka",
+          "Porovnat s požadavky práce",
+          "Prověřit možnosti úpravy pracoviště"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Zdravotní indispozice"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Nepřiměřená pracovní zátěž"
+          },
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Omezený manipulační prostor"
           }
         ]
       },

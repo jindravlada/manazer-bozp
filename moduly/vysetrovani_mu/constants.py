@@ -88,7 +88,7 @@ MU_INVESTIGATION_FINDING_TYPES = ACCIDENT_FINDING_TYPES
 ISHIKAWA_CATEGORIES = (
     "Člověk",
     "Pracovní postup",
-    "Technika / zařízení",
+    "Zařízení a technika",
     "Pracovní prostředí",
     "Organizace práce",
     "Řízení a kontrola",

@@ -51,11 +51,21 @@ class IshikawaFactorsService:
 
     @staticmethod
     def _migrate_catalog_keys(raw: dict) -> dict:
-        if "Pracovní prostředí" not in raw and isinstance(raw.get("Prostředí"), dict):
-            migrated = dict(raw)
+        if not isinstance(raw, dict):
+            return raw
+
+        migrated = dict(raw)
+        changed = False
+
+        if "Pracovní prostředí" not in migrated and isinstance(migrated.get("Prostředí"), dict):
             migrated["Pracovní prostředí"] = migrated.pop("Prostředí")
-            return migrated
-        return raw
+            changed = True
+
+        if "Zařízení a technika" not in migrated and isinstance(migrated.get("Technika / zařízení"), dict):
+            migrated["Zařízení a technika"] = migrated.pop("Technika / zařízení")
+            changed = True
+
+        return migrated if changed else raw
 
     def _read_json_file(self) -> dict | None:
         catalog_path = self._catalog_path()
