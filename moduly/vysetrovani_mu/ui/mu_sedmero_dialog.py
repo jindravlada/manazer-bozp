@@ -20,13 +20,16 @@ class SedmeroPrinciple:
 
 
 SEDMERO_INTRO = (
-    "Vyšetřování mimořádné události není hledáním viníka.\n"
-    "Je hledáním příčin a příležitostí ke zlepšení systému."
+    "Mimořádná událost je téměř vždy výsledkem souběhu více faktorů.\n"
+    "Cílem vyšetřování není najít viníka ani jedinou příčinu, ale pochopit,\n"
+    "jak se jednotlivé okolnosti spojily a umožnily vznik události.\n\n"
+    "Teprve pochopením těchto souvislostí lze navrhnout opatření,\n"
+    "která zabrání opakování obdobné události."
 )
 
 SEDMERO_PRINCIPLES: tuple[SedmeroPrinciple, ...] = (
     SedmeroPrinciple(1, "Proč vyšetřujeme?", "Nehledej viníka. Hledej příčiny."),
-    SedmeroPrinciple(2, "Jak přemýšlíme?", "Každá mimořádná událost má více příčin."),
+    SedmeroPrinciple(2, "Jak přemýšlíme?", "Každá mimořádná událost vzniká souběhem více faktorů."),
     SedmeroPrinciple(
         3,
         "Jak chápeme lidskou chybu?",
@@ -44,7 +47,7 @@ class MuSedmeroDialog(QDialog):
         super().__init__(parent)
 
         self.setWindowTitle("Sedmero vyšetřování")
-        self.resize(560, 580)
+        self.resize(700, 760)
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(16, 16, 16, 16)
