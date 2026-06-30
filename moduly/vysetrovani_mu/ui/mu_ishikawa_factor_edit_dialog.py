@@ -148,6 +148,10 @@ class MuIshikawaFactorEditDialog(QDialog):
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
+    def exec(self) -> int:
+        self.showMaximized()
+        return super().exec()
+
     def get_data(self) -> dict:
         return {
             "name": self.name_edit.text().strip(),
