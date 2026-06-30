@@ -1,43 +1,39 @@
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QFrame,
     QLabel,
-    QListWidget,
-    QListWidgetItem,
     QSplitter,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
 
-from moduly.proverky.constants import AREA_NOT_IMPLEMENTED_TEXT, AREA_PANEL_LEFT_WIDTH
+from moduly.proverky.constants import AREA_NOT_IMPLEMENTED_TEXT
 from moduly.proverky.sluzby.proverky_knowledge_service import (
-    InspectionAreaDefinition,
+    KnowledgeTreeNode,
     proverky_knowledge_service,
 )
 from moduly.proverky.ui.bozp_area_knowledge_widget import BozpAreaKnowledgeWidget
+from moduly.proverky.ui.bozp_knowledge_tree_widget import BozpKnowledgeTreeWidget
 
 
 class BozpInspectionAreasWidget(QWidget):
-    """Záložka Kontrolované oblasti — výběr oblasti a obsah vpravo."""
+    """Záložka Kontrolované oblasti — znalostní strom a pracovní karta."""
 
-    _AREA_ROLE = Qt.ItemDataRole.UserRole
-    _PAGE_PLACEHOLDER = 0
-    _PAGE_KNOWLEDGE = 1
+    _PAGE_HINT = 0
+    _PAGE_PLACEHOLDER = 1
+    _PAGE_KNOWLEDGE = 2
 
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self._areas: list[InspectionAreaDefinition] = []
-
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        splitter = QSplitter(Qt.Orientation.Horizontal)
+        splitter = QSplitter()
 
-        self.area_list = QListWidget()
-        self.area_list.setAlternatingRowColors(True)
-        self.area_list.currentItemChanged.connect(self._on_area_changed)
+        self.knowledge_tree = BozpKnowledgeTreeWidget()
+        self.knowledge_tree.section_selected.connect(self._on_section_selected)
+        self.knowledge_tree.area_selected.connect(self._on_area_selected)
 
         self.detail_panel = QFrame()
         self.detail_panel.setObjectName("ModulePanel")
@@ -54,6 +50,7 @@ class BozpInspectionAreasWidget(QWidget):
         self.area_description_label.setWordWrap(True)
 
         self.content_stack = QStackedWidget()
+        self.content_stack.addWidget(self._build_hint_page())
         self.content_stack.addWidget(self._build_placeholder_page())
         self.knowledge_widget = BozpAreaKnowledgeWidget()
         self.content_stack.addWidget(self.knowledge_widget)
@@ -63,11 +60,10 @@ class BozpInspectionAreasWidget(QWidget):
         detail_layout.addSpacing(4)
         detail_layout.addWidget(self.content_stack, 1)
 
-        splitter.addWidget(self.area_list)
+        splitter.addWidget(self.knowledge_tree)
         splitter.addWidget(self.detail_panel)
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
-        splitter.setSizes([AREA_PANEL_LEFT_WIDTH, 1])
 
         layout.addWidget(splitter)
 
@@ -83,20 +79,20 @@ class BozpInspectionAreasWidget(QWidget):
         self.knowledge_widget.refresh_findings_display()
 
     def reload_areas(self) -> None:
-        self._areas = proverky_knowledge_service.get_areas()
+        self.knowledge_tree.reload_tree()
+        self._show_hint()
 
-        self.area_list.blockSignals(True)
-        self.area_list.clear()
-        for area in self._areas:
-            item = QListWidgetItem(area.nazev)
-            item.setData(self._AREA_ROLE, area.id)
-            self.area_list.addItem(item)
-        self.area_list.blockSignals(False)
+    def _build_hint_page(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
 
-        if self.area_list.count() > 0:
-            self.area_list.setCurrentRow(0)
-        else:
-            self._show_empty_detail()
+        label = QLabel("Vyberte sekci ve stromu znalostí vlevo.")
+        label.setObjectName("InfoText")
+        label.setWordWrap(True)
+        layout.addWidget(label)
+        layout.addStretch()
+        return page
 
     def _build_placeholder_page(self) -> QWidget:
         page = QWidget()
@@ -110,47 +106,52 @@ class BozpInspectionAreasWidget(QWidget):
         layout.addStretch()
         return page
 
-    def _area_by_id(self, area_id: str) -> InspectionAreaDefinition | None:
-        for area in self._areas:
-            if area.id == area_id:
-                return area
-        return None
+    def _show_hint(self) -> None:
+        self.area_title_label.setText("Kontrolované oblasti")
+        self.area_description_label.setText("Vyberte sekci ve stromu znalostí vlevo.")
+        self.area_description_label.setVisible(True)
+        self.knowledge_widget.clear_section()
+        self.content_stack.setCurrentIndex(self._PAGE_HINT)
 
-    def _on_area_changed(
-        self,
-        current: QListWidgetItem | None,
-        _previous: QListWidgetItem | None,
-    ) -> None:
-        if current is None:
-            self._show_empty_detail()
-            return
+    def _on_area_selected(self, node: KnowledgeTreeNode) -> None:
+        area_def = proverky_knowledge_service.get_area_by_id(node.area_id)
 
-        area_id = current.data(self._AREA_ROLE)
-        area = self._area_by_id(str(area_id or ""))
-        if area is None:
-            self._show_empty_detail()
-            return
+        self.area_title_label.setText(node.area_label)
+        if area_def and area_def.popis:
+            self.area_description_label.setText(area_def.popis)
+            self.area_description_label.setVisible(True)
+        else:
+            self.area_description_label.setText("Vyberte sekci pod touto oblastí.")
+            self.area_description_label.setVisible(True)
 
-        self._show_area_detail(area)
-
-    def _show_area_detail(self, area: InspectionAreaDefinition) -> None:
-        self.area_title_label.setText(area.nazev)
-        self.area_description_label.setText(area.popis)
-        self.area_description_label.setVisible(bool(area.popis))
-
-        if area.has_knowledge_file:
-            knowledge = proverky_knowledge_service.load_area_knowledge(area)
-            self.knowledge_widget.set_knowledge(
-                knowledge,
-                area_id=area.id,
-                area_label=area.nazev,
-            )
-            self.content_stack.setCurrentIndex(self._PAGE_KNOWLEDGE)
+        self.knowledge_widget.clear_section()
+        if area_def and area_def.has_knowledge_file and node.children:
+            self.content_stack.setCurrentIndex(self._PAGE_HINT)
         else:
             self.content_stack.setCurrentIndex(self._PAGE_PLACEHOLDER)
 
-    def _show_empty_detail(self) -> None:
-        self.area_title_label.setText("Kontrolovaná oblast")
-        self.area_description_label.setText("Vyberte oblast v seznamu vlevo.")
-        self.area_description_label.setVisible(True)
-        self.content_stack.setCurrentIndex(self._PAGE_PLACEHOLDER)
+    def _on_section_selected(self, node: KnowledgeTreeNode | None) -> None:
+        if node is None:
+            return
+
+        section = node.section
+        if section is None:
+            self._show_hint()
+            return
+
+        self.area_title_label.setText(node.area_label)
+        section_label = str(section.get("nazev") or "").strip()
+        section_popis = str(section.get("popis") or "").strip()
+        if section_popis:
+            self.area_description_label.setText(section_popis)
+            self.area_description_label.setVisible(True)
+        else:
+            self.area_description_label.setVisible(False)
+
+        self.knowledge_widget.show_section(
+            section,
+            area_id=node.area_id,
+            area_label=node.area_label,
+            section_label=section_label,
+        )
+        self.content_stack.setCurrentIndex(self._PAGE_KNOWLEDGE)

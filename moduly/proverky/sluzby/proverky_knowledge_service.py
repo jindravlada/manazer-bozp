@@ -1,6 +1,6 @@
 import json
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from core.services.editable_catalog_service import editable_catalog_service
@@ -8,6 +8,9 @@ from core.services.storage_service import storage_service
 
 _CATALOG_DIR = "proverky"
 _OBLASTI_FILE = f"{_CATALOG_DIR}/oblasti.json"
+
+KNOWLEDGE_NODE_AREA = "area"
+KNOWLEDGE_NODE_SECTION = "section"
 
 _KNOWLEDGE_LIST_FIELDS = (
     "kontrolni_body",
@@ -38,6 +41,19 @@ class InspectionAreaDefinition:
     @property
     def has_knowledge_file(self) -> bool:
         return bool(self.soubor_znalosti)
+
+
+@dataclass(frozen=True)
+class KnowledgeTreeNode:
+    """Uzel znalostního stromu — oblast nebo sekce s volitelnými potomky."""
+
+    node_type: str
+    node_id: str
+    label: str
+    area_id: str
+    area_label: str
+    section: dict | None = None
+    children: tuple["KnowledgeTreeNode", ...] = field(default_factory=tuple)
 
 
 class ProverkyKnowledgeService:
@@ -89,6 +105,86 @@ class ProverkyKnowledgeService:
 
         areas.sort(key=lambda item: (item.poradi, item.nazev.lower()))
         return areas
+
+    def get_area_by_id(self, area_id: str) -> InspectionAreaDefinition | None:
+        for area in self.get_areas(include_inactive=True):
+            if area.id == area_id:
+                return area
+        return None
+
+    def get_knowledge_tree(self) -> list[KnowledgeTreeNode]:
+        roots: list[KnowledgeTreeNode] = []
+        for area in self.get_areas():
+            children: tuple[KnowledgeTreeNode, ...] = ()
+            if area.has_knowledge_file:
+                knowledge = self.load_area_knowledge(area)
+                if knowledge:
+                    children = self._build_section_nodes(area, self.get_active_sections(knowledge))
+
+            roots.append(
+                KnowledgeTreeNode(
+                    node_type=KNOWLEDGE_NODE_AREA,
+                    node_id=area.id,
+                    label=area.nazev,
+                    area_id=area.id,
+                    area_label=area.nazev,
+                    children=children,
+                )
+            )
+        return roots
+
+    def find_tree_node(
+        self,
+        roots: list[KnowledgeTreeNode],
+        *,
+        area_id: str,
+        section_id: str | None = None,
+    ) -> KnowledgeTreeNode | None:
+        for root in roots:
+            if root.area_id != area_id:
+                continue
+            if section_id is None:
+                return root
+            found = self._find_section_node(root.children, section_id)
+            if found is not None:
+                return found
+        return None
+
+    def _build_section_nodes(
+        self,
+        area: InspectionAreaDefinition,
+        sections: list[dict],
+    ) -> tuple[KnowledgeTreeNode, ...]:
+        nodes: list[KnowledgeTreeNode] = []
+        for section in sections:
+            nested = self.get_active_sections(section) if section.get("sekce") else []
+            child_nodes = self._build_section_nodes(area, nested) if nested else ()
+            nodes.append(
+                KnowledgeTreeNode(
+                    node_type=KNOWLEDGE_NODE_SECTION,
+                    node_id=str(section.get("id") or ""),
+                    label=str(section.get("nazev") or "—"),
+                    area_id=area.id,
+                    area_label=area.nazev,
+                    section=section,
+                    children=child_nodes,
+                )
+            )
+        return tuple(nodes)
+
+    @staticmethod
+    def _find_section_node(
+        nodes: tuple[KnowledgeTreeNode, ...],
+        section_id: str,
+    ) -> KnowledgeTreeNode | None:
+        for node in nodes:
+            if node.node_id == section_id:
+                return node
+            if node.children:
+                found = ProverkyKnowledgeService._find_section_node(node.children, section_id)
+                if found is not None:
+                    return found
+        return None
 
     def load_area_knowledge(self, area: InspectionAreaDefinition) -> dict | None:
         if not area.soubor_znalosti:
