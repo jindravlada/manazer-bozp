@@ -46,6 +46,7 @@ def build_system_chronologie_events(
 
 
 def _accident_chronologie_event(source_id: int) -> dict | None:
+    from moduly.vysetrovani_mu.sluzby.mu_source_context import _normalize_time_text
     from moduly.kniha_urazu.sluzby.accident_service import accident_service
 
     accident = accident_service.get_by_id(source_id)
@@ -55,7 +56,7 @@ def _accident_chronologie_event(source_id: int) -> dict | None:
     return {
         "id": "system:accident_event",
         "datum": accident.accident_date.isoformat(),
-        "cas": (accident.accident_time or "").strip(),
+        "cas": _normalize_time_text(accident.accident_time),
         "typ": "Událost",
         "popis": "Vznik události podle zdrojového záznamu.",
         "source": "system",

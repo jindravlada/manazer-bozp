@@ -48,6 +48,11 @@ class MuInvestigationService:
     def get_by_id(self, investigation_id: int) -> MuInvestigation | None:
         return self.repository.get_by_id(investigation_id)
 
+    def find_by_source(self, source_type: str, source_id: int | None) -> MuInvestigation | None:
+        if not source_type or not isinstance(source_id, int) or source_id <= 0:
+            return None
+        return self.repository.find_by_source(source_type.strip(), source_id)
+
     def create_investigation(
         self,
         title: str = "",

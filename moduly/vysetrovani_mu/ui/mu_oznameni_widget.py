@@ -47,9 +47,7 @@ class MuOznameniWidget(QWidget):
 
         context = self._resolve_context()
         self._apply_source_context(context)
-
-        if not self._loaded_from_record:
-            self._apply_source_defaults(context)
+        self._apply_source_defaults(context)
 
     def load_from_investigation(self, investigation) -> None:
         self._loaded_from_record = True

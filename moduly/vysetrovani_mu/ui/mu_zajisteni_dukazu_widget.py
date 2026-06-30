@@ -59,7 +59,7 @@ class MuZajisteniDukazuWidget(QWidget):
         if hasattr(self, "dukazy_attachment_widget"):
             self.dukazy_attachment_widget.set_entity(ENTITY_MU_INVESTIGATION, investigation_id)
 
-        if self._loaded_from_record or context is None:
+        if context is None:
             return
 
         if context.default_oznameni_datum and self.dukazy_datum.get_date() is None:

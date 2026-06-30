@@ -85,10 +85,13 @@ class MuSourceSelectorWidget(QWidget):
         self.set_source_type(source_type)
 
         if source_type == SOURCE_TYPE_ACCIDENT:
+            self._populate_accidents()
             self._set_combo_value(self.accident_combo, source_id)
         elif source_type == SOURCE_TYPE_AUDIT:
+            self._populate_audits()
             self._set_combo_value(self.audit_combo, source_id)
         elif source_type == SOURCE_TYPE_CONTROL:
+            self._populate_controls()
             self._set_combo_value(self.control_combo, source_id)
         elif source_type == SOURCE_TYPE_OTHER:
             self.text_edit.setText(source_label or "")

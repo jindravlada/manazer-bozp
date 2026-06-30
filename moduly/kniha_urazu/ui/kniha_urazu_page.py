@@ -17,8 +17,10 @@ from moduly.kniha_urazu.sluzby.vypis_urazu_service import vypis_urazu_service
 
 
 class KnihaUrazuPage(QWidget):
-    def __init__(self):
+    def __init__(self, open_mu_investigation_callback=None):
         super().__init__()
+
+        self.open_mu_investigation_callback = open_mu_investigation_callback
 
         layout = QVBoxLayout(self)
 
@@ -27,12 +29,14 @@ class KnihaUrazuPage(QWidget):
         self.new_btn = QPushButton("Nový úraz")
         self.edit_btn = QPushButton("Upravit")
         self.investigation_btn = QPushButton("Šetření úrazu")
+        self.mu_investigation_btn = QPushButton("Vyšetřování MU")
         self.vypis_btn = QPushButton("Výpis o pracovním úrazu")
         self.final_report_btn = QPushButton("Závěrečná zpráva")
 
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.investigation_btn)
+        toolbar.addWidget(self.mu_investigation_btn)
         toolbar.addWidget(self.vypis_btn)
         toolbar.addWidget(self.final_report_btn)
         toolbar.addStretch()
@@ -53,6 +57,7 @@ class KnihaUrazuPage(QWidget):
         self.new_btn.clicked.connect(self.new_accident)
         self.edit_btn.clicked.connect(self.edit_selected_accident)
         self.investigation_btn.clicked.connect(lambda: self.open_investigation())
+        self.mu_investigation_btn.clicked.connect(self.open_mu_investigation)
         self.vypis_btn.clicked.connect(self.generate_accident_report)
         self.final_report_btn.clicked.connect(self.generate_final_report)
         self.table.doubleClicked.connect(self.edit_selected_accident)
@@ -93,7 +98,23 @@ class KnihaUrazuPage(QWidget):
 
         self.open_accident(accident_id)
 
+    def _select_accident(self, accident_id: int) -> bool:
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 1)
+            if item is None:
+                continue
+            try:
+                if int(item.text()) == accident_id:
+                    self.table.selectRow(row)
+                    self.table.setCurrentCell(row, 0)
+                    return True
+            except ValueError:
+                continue
+        return False
+
     def open_accident(self, accident_id: int):
+        self._select_accident(accident_id)
+
         accident = accident_service.get_by_id(accident_id)
         if accident is None:
             QMessageBox.warning(self, "Kniha úrazů", "Úraz nebyl nalezen.")
@@ -149,6 +170,7 @@ class KnihaUrazuPage(QWidget):
             )
 
     def open_investigation(self, accident_id: int | None = None):
+        # TODO: Cílově bude proces šetření úrazu nahrazen modulem Vyšetřování MU.
         if accident_id is None:
             accident_id = self._selected_accident_id()
         if accident_id is None:
@@ -164,3 +186,26 @@ class KnihaUrazuPage(QWidget):
         dialog = SetreniDialog(self, accident=accident)
         dialog.exec()
         self.refresh()
+
+    def open_mu_investigation(self, accident_id: int | None = None):
+        if accident_id is None:
+            accident_id = self._selected_accident_id()
+        if accident_id is None:
+            QMessageBox.information(self, "Vyšetřování MU", "Vyberte úraz.")
+            return
+
+        accident = accident_service.get_by_id(accident_id)
+        if accident is None:
+            QMessageBox.warning(self, "Vyšetřování MU", "Úraz nebyl nalezen.")
+            self.refresh()
+            return
+
+        if self.open_mu_investigation_callback is None:
+            QMessageBox.warning(
+                self,
+                "Vyšetřování MU",
+                "Modul Vyšetřování MU není dostupný.",
+            )
+            return
+
+        self.open_mu_investigation_callback(accident_id)

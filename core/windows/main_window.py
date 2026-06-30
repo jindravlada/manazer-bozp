@@ -110,6 +110,10 @@ class MainWindow(QMainWindow):
                 open_kniha_urazu_callback=self._open_kniha_urazu,
             )
 
+        if module.key == "kniha_urazu":
+            from moduly.kniha_urazu.ui.kniha_urazu_page import KnihaUrazuPage
+            return KnihaUrazuPage(open_mu_investigation_callback=self._open_mu_from_accident)
+
         return module.page_factory()
 
     def _sidebar(self):
@@ -201,6 +205,12 @@ class MainWindow(QMainWindow):
 
     def _open_kniha_urazu(self):
         self._show("kniha_urazu")
+
+    def _open_mu_from_accident(self, accident_id: int):
+        self._show("vysetrovani_mu")
+        page = self._page_widgets.get("vysetrovani_mu")
+        if page is not None:
+            page.open_from_accident(accident_id)
 
     def _focus_search(self):
         self.search_edit.setFocus()

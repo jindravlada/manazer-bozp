@@ -19,6 +19,7 @@ from moduly.vysetrovani_mu.constants import (
     MU_STATUS_FILTER_DOKONCENO,
     MU_STATUS_FILTER_PROBIHA,
     MU_STATUS_FILTER_VSE,
+    SOURCE_TYPE_ACCIDENT,
     YEAR_FILTER_VSE,
 )
 from moduly.vysetrovani_mu.sluzby.mu_investigation_service import mu_investigation_service
@@ -166,6 +167,25 @@ class VysetrovaniMuPage(QWidget):
         if dialog.exec():
             data = dialog.get_data()
             mu_investigation_service.update_investigation(investigation_id, **data)
+            self._populate_year_filter()
+            self.refresh()
+
+    def open_from_accident(self, accident_id: int) -> None:
+        existing = mu_investigation_service.find_by_source(SOURCE_TYPE_ACCIDENT, accident_id)
+        if existing is not None:
+            self.open_investigation(existing.id)
+            return
+
+        from moduly.kniha_urazu.sluzby.accident_service import accident_service
+
+        if accident_service.get_by_id(accident_id) is None:
+            QMessageBox.warning(self, "Vyšetřování MU", "Úraz nebyl nalezen.")
+            return
+
+        dialog = MuInvestigationDialog(self, accident_id=accident_id)
+        if dialog.exec():
+            data = dialog.get_data()
+            mu_investigation_service.create_investigation(**data)
             self._populate_year_filter()
             self.refresh()
 

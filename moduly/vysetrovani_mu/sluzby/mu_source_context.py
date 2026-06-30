@@ -23,6 +23,25 @@ class MuSourceContext:
     default_oznameni_popis: str = ""
 
 
+def _normalize_time_text(value) -> str:
+    if isinstance(value, int):
+        if 0 <= value <= 2359:
+            hours = value // 100
+            minutes = value % 100
+            if 0 <= hours <= 23 and 0 <= minutes <= 59:
+                return f"{hours:02d}:{minutes:02d}"
+        value = str(value)
+
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    text = text.replace(".", ":")
+    parts = text.split(":")
+    if len(parts) >= 2:
+        return f"{parts[0].zfill(2)}:{parts[1].zfill(2)}"
+    return text
+
+
 def resolve_mu_source_context(
     source_type: str,
     source_id: int | None,
@@ -54,6 +73,7 @@ def _context_from_accident(source_id: int | None) -> MuSourceContext:
         return MuSourceContext()
 
     datum_urazu = accident.accident_date.strftime("%d.%m.%Y") if accident.accident_date else ""
+    event_cas = _normalize_time_text(accident.accident_time)
     workplace = (accident.workplace_name or accident.pracoviste or "").strip()
     affected_person_html = (
         f"<b>Dotčená osoba:</b> {accident.employee_name or ''}<br>"
@@ -62,12 +82,10 @@ def _context_from_accident(source_id: int | None) -> MuSourceContext:
     )
     source_record_html = (
         f"<b>Datum události:</b> {datum_urazu}<br>"
-        f"<b>Čas události:</b> {accident.accident_time or ''}<br>"
+        f"<b>Čas události:</b> {event_cas}<br>"
         f"<b>Místo události:</b> {accident.misto_urazu or ''}<br>"
         f"<b>Druh poškození:</b> {accident.druh_zraneni or ''}"
     )
-
-    event_cas = (accident.accident_time or "").strip()
 
     return MuSourceContext(
         event_number=accident.number or "",

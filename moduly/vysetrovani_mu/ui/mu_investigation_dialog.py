@@ -61,10 +61,11 @@ class MuInvestigationDialog(QDialog):
         SOURCE_TYPE_AUDIT: "Otevřít audit",
     }
 
-    def __init__(self, parent=None, investigation=None):
+    def __init__(self, parent=None, investigation=None, *, accident_id: int | None = None):
         super().__init__(parent)
 
         self.investigation = investigation
+        self._preset_accident_id = accident_id
         self._suppress_event_character_source_switch = False
 
         self.setWindowTitle("Vyšetřování mimořádné události")
@@ -140,6 +141,8 @@ class MuInvestigationDialog(QDialog):
             self.kontrola_souladu_widget.load_json(getattr(investigation, "kontrola_souladu_json", "") or "")
             self.findings_widget.load_ishikawa_json(getattr(investigation, "ishikawa_json", "") or "")
             self.oznameni_widget.load_from_investigation(investigation)
+        elif accident_id is not None:
+            self._preset_from_accident(accident_id)
         else:
             self._on_source_type_changed()
 
@@ -301,6 +304,39 @@ class MuInvestigationDialog(QDialog):
             return self.investigation.source_id
         return None
 
+    def _current_source_label(self) -> str:
+        label = self.source_selector.current_source_label()
+        if label:
+            return label
+        if self.investigation is not None:
+            return (self.investigation.source_label or "").strip()
+        return ""
+
+    def _preset_from_accident(self, accident_id: int) -> None:
+        from moduly.kniha_urazu.sluzby.accident_service import accident_service
+
+        accident = accident_service.get_by_id(accident_id)
+        if accident is None:
+            self._on_source_type_changed()
+            return
+
+        self._set_event_character(EVENT_CHARACTER_URAZ)
+        self._set_source_type(SOURCE_TYPE_ACCIDENT)
+
+        label = accident.number or f"ID {accident.id}"
+        name = (accident.employee_name or "").strip()
+        if name:
+            label = f"{label} — {name}"
+        self.source_selector.set_source(SOURCE_TYPE_ACCIDENT, accident_id, label)
+
+        if accident.accident_date is not None and self.started_at_edit.get_date() is None:
+            self.started_at_edit.set_date_value(accident.accident_date)
+
+        if not self.title_edit.text().strip():
+            popis = (accident.popis_urazoveho_deje or "").strip()
+            if popis:
+                self.title_edit.setText(popis.splitlines()[0][:250])
+
     def _refresh_source_dependent_widgets(self) -> None:
         investigation_id = self.investigation.id if self.investigation is not None else None
         investigation_number = self.investigation.number if self.investigation is not None else ""
@@ -328,7 +364,7 @@ class MuInvestigationDialog(QDialog):
         self.zajisteni_dukazu_widget.set_context(
             investigation_id,
             event_number=context.event_number,
-            context=context if self.investigation is None else None,
+            context=context,
         )
         self.ohledani_mista_widget.set_context(
             investigation_id,
@@ -433,7 +469,7 @@ class MuInvestigationDialog(QDialog):
     def _can_open_source_record(self) -> bool:
         source_type = self._current_source_type()
         entity_type = self._SOURCE_ENTITY_TYPES.get(source_type)
-        source_id = self.source_selector.current_source_id()
+        source_id = self._current_source_id()
         if entity_type is None or source_id is None:
             return False
         return source_navigator.can_open(entity_type, source_id)
@@ -454,7 +490,7 @@ class MuInvestigationDialog(QDialog):
     def _open_source_record(self) -> None:
         source_type = self._current_source_type()
         entity_type = self._SOURCE_ENTITY_TYPES.get(source_type)
-        source_id = self.source_selector.current_source_id()
+        source_id = self._current_source_id()
         if entity_type is None or source_id is None:
             return
 
@@ -481,8 +517,8 @@ class MuInvestigationDialog(QDialog):
             "title": self.title_edit.text().strip(),
             "event_character": self.event_character_combo.currentText(),
             "source_type": self._current_source_type(),
-            "source_id": self.source_selector.current_source_id(),
-            "source_label": self.source_selector.current_source_label(),
+            "source_id": self._current_source_id(),
+            "source_label": self._current_source_label(),
             "started_at": self.started_at_edit.get_date(),
             "status": self.status_combo.currentText(),
             "lead_thp_worker_id": self.lead_thp_worker_selector.current_person_id(),

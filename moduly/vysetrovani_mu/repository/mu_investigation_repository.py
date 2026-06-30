@@ -17,6 +17,18 @@ class MuInvestigationRepository:
         with get_session() as session:
             return session.get(MuInvestigation, investigation_id)
 
+    def find_by_source(self, source_type: str, source_id: int) -> MuInvestigation | None:
+        with get_session() as session:
+            stmt = (
+                select(MuInvestigation)
+                .where(
+                    MuInvestigation.source_type == source_type,
+                    MuInvestigation.source_id == source_id,
+                )
+                .order_by(MuInvestigation.id.desc())
+            )
+            return session.scalars(stmt).first()
+
     def add(self, investigation: MuInvestigation) -> MuInvestigation:
         with get_session() as session:
             session.add(investigation)
