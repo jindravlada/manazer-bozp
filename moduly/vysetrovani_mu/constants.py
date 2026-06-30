@@ -94,6 +94,7 @@ ISHIKAWA_CATEGORIES = (
     "Řízení a kontrola",
     "Komunikace",
     "OOPP",
+    "Materiál",
     "Ostatní",
 )
 

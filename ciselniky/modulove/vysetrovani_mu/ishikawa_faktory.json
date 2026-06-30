@@ -9851,7 +9851,7 @@
           },
           {
             "category": "Materiál",
-            "factor": "Nevhodné skladování"
+            "factor": "Nesprávně skladovaný materiál"
           },
           {
             "category": "Organizace práce",
@@ -10649,6 +10649,1874 @@
           {
             "category": "OOPP",
             "factor": "Chybějící OOPP"
+          }
+        ]
+      },
+      {
+        "name": "Jiné",
+        "parent": "",
+        "questions": [],
+        "evidence": [],
+        "related": [],
+        "supports": [],
+        "contradicts": [],
+        "actions": [],
+        "suggest": []
+      }
+    ]
+  },
+  "Materiál": {
+    "question": "Přispěly vlastnosti, stav, manipulace, skladování nebo označení materiálu ke vzniku mimořádné události?",
+    "factors": [
+      {
+        "name": "Nevhodný materiál",
+        "parent": "",
+        "questions": [
+          "Byl materiál vhodný pro daný účel a podmínky použití?",
+          "Odpovídal materiál požadavkům pracovního postupu?",
+          "Byl materiál kompatibilní s použitým zařízením?",
+          "Byly vlastnosti materiálu pracovníkům známé?",
+          "Byl výběr materiálu odborně posouzen?",
+          "Nebyl použit materiál určený pro jiný účel?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Vadný materiál",
+          "Poškozený materiál",
+          "Nebezpečná látka"
+        ],
+        "supports": [
+          "Materiál neodpovídal účelu",
+          "Byl použit materiál jiné kategorie nebo jakosti",
+          "Vlastnosti materiálu nebyly vhodné pro práci",
+          "Výběr nebyl posouzen",
+          "Pracovníci neznali rizika materiálu"
+        ],
+        "contradicts": [
+          "Materiál odpovídal účelu",
+          "Výběr byl v souladu s postupem",
+          "Nevhodnost nebyla prokázána"
+        ],
+        "actions": [
+          "Identifikovat materiál a jeho určení",
+          "Porovnat s požadavky postupu a zařízení",
+          "Ověřit bezpečnostní list",
+          "Vyslechnout pracovníky o volbě materiálu",
+          "Posoudit proces výběru a přejímky"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící pracovní postup"
+          },
+          {
+            "category": "Zařízení a technika",
+            "factor": "Nevhodné zařízení"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Chybějící analýza rizik"
+          }
+        ]
+      },
+      {
+        "name": "Poškozený materiál",
+        "parent": "",
+        "questions": [
+          "Byl materiál v době manipulace poškozený?",
+          "Bylo poškození viditelné?",
+          "Kdy a jak poškození vzniklo?",
+          "Bylo poškození před MU známo?",
+          "Snižovalo poškození bezpečnost nebo stabilitu?",
+          "Byla kontrola stavu materiálu provedena?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Vadný materiál",
+          "Poškozený obal",
+          "Nestabilní materiál"
+        ],
+        "supports": [
+          "Materiál byl poškozený",
+          "Poškození ovlivnilo manipulaci nebo bezpečnost",
+          "Poškození bylo dříve známo",
+          "Kontrola neodhalila nebo neřešila poškození"
+        ],
+        "contradicts": [
+          "Materiál byl v pořádku",
+          "Poškození vzniklo až následkem MU",
+          "Poškození neovlivnilo událost"
+        ],
+        "actions": [
+          "Prohlédnout materiál a dokumentovat poškození",
+          "Ověřit záznamy kontroly přejímky",
+          "Vyslechnout pracovníky o stavu materiálu",
+          "Posoudit vliv poškození na MU"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný systém kontrol"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící kontrolní krok"
+          },
+          {
+            "category": "OOPP",
+            "factor": "Chybějící ochrana rukou"
+          }
+        ]
+      },
+      {
+        "name": "Vadný materiál",
+        "parent": "",
+        "questions": [
+          "Byl materiál vadný již při dodání nebo přejímce?",
+          "Byla vada materiálu zjistitelná?",
+          "Proběhla kontrola jakosti při přejímce?",
+          "Byl materiál certifikován a v souladu s dodávkou?",
+          "Byla vada příčinou selhání nebo MU?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Poškozený materiál",
+          "Nevhodný materiál",
+          "Poškozený obal"
+        ],
+        "supports": [
+          "Materiál neodpovídal specifikaci",
+          "Vada byla zjistitelná",
+          "Kontrola přejímky selhala",
+          "Vada souvisela s MU"
+        ],
+        "contradicts": [
+          "Materiál odpovídal jakosti",
+          "Vada nebyla prokázána",
+          "MU nesouvisela s vadou materiálu"
+        ],
+        "actions": [
+          "Ověřit dodací dokumentaci a certifikát",
+          "Prohlédnout materiál",
+          "Prověřit proces přejímky",
+          "Posoudit souvislost vady s MU"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný systém kontrol"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící kontrolní krok"
+          }
+        ]
+      },
+      {
+        "name": "Nestabilní materiál",
+        "parent": "",
+        "questions": [
+          "Byl materiál nestabilní při manipulaci nebo skladování?",
+          "Hrozilo převrácení, sklouznutí nebo sesun?",
+          "Byla nestabilita předvídatelná?",
+          "Bylo zajištění nebo ukotvení dostatečné?",
+          "Odpovídala manipulace hmotnosti a tvaru materiálu?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Nevhodně uložený materiál",
+          "Nezajištěný náklad",
+          "Těžký materiál"
+        ],
+        "supports": [
+          "Materiál byl nestabilní",
+          "Došlo k posunu nebo pádu",
+          "Zajištění chybělo nebo bylo nedostatečné",
+          "Nestabilita byla předvídatelná"
+        ],
+        "contradicts": [
+          "Materiál byl stabilní",
+          "Zajištění odpovídalo požadavkům",
+          "Nestabilita nebyla příčinou MU"
+        ],
+        "actions": [
+          "Prohlédnout místo a způsob uložení",
+          "Posoudit stabilitu materiálu",
+          "Vyslechnout svědky",
+          "Porovnat s postupem manipulace"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Omezený manipulační prostor"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Práce o samotě"
+          },
+          {
+            "category": "Materiál",
+            "factor": "Nezajištěný náklad"
+          }
+        ]
+      },
+      {
+        "name": "Ostré hrany materiálu",
+        "parent": "",
+        "questions": [
+          "Měl materiál ostré hrany nebo neobroušené povrchy?",
+          "Bylo riziko pořezání identifikováno?",
+          "Byly hrany označeny nebo zabezpečeny?",
+          "Byla použita ochrana rukou?",
+          "Byla manipulace s materiálem v postupu upravena?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Poškozený materiál",
+          "Nevhodný materiál"
+        ],
+        "supports": [
+          "Materiál měl ostré hrany",
+          "Riziko pořezání bylo přítomné",
+          "Ochrana rukou nebyla použita",
+          "Hrany nebyly zabezpečeny"
+        ],
+        "contradicts": [
+          "Hrany nebyly ostré",
+          "Ochrana byla použita",
+          "Pořezání nesouviselo s materiálem"
+        ],
+        "actions": [
+          "Prohlédnout materiál a hrany",
+          "Ověřit požadavky postupu a OOPP",
+          "Vyslechnout pracovníka",
+          "Posoudit identifikaci rizika"
+        ],
+        "suggest": [
+          {
+            "category": "OOPP",
+            "factor": "Chybějící ochrana rukou"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící pracovní postup"
+          }
+        ]
+      },
+      {
+        "name": "Těžký materiál",
+        "parent": "",
+        "questions": [
+          "Odpovídala hmotnost materiálu možnostem pracovníka nebo zařízení?",
+          "Byla manipulace plánována pro danou hmotnost?",
+          "Bylo k dispozici vhodné zařízení nebo dostatek pracovníků?",
+          "Byly překročeny limity ruční manipulace?",
+          "Ovlivnila hmotnost únavu nebo ztrátu kontroly?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Nadměrný rozměr materiálu",
+          "Nestabilní materiál",
+          "Nezajištěný náklad"
+        ],
+        "supports": [
+          "Materiál byl příliš těžký pro ruční manipulaci",
+          "Chybělo vhodné zařízení nebo pomocník",
+          "Limity manipulace byly překročeny",
+          "Hmotnost ovlivnila průběh MU"
+        ],
+        "contradicts": [
+          "Hmotnost odpovídala možnostem",
+          "Manipulace byla plánována správně",
+          "Hmotnost nebyla příčinou MU"
+        ],
+        "actions": [
+          "Zvážit nebo ověřit hmotnost materiálu",
+          "Porovnat s limity a postupem",
+          "Posoudit dostupnost zařízení a pracovníků",
+          "Vyslechnout pracovníky"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Únava"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Nedostatek pracovníků"
+          },
+          {
+            "category": "Zařízení a technika",
+            "factor": "Nevhodné zařízení"
+          }
+        ]
+      },
+      {
+        "name": "Nadměrný rozměr materiálu",
+        "parent": "",
+        "questions": [
+          "Byly rozměry materiálu vhodné pro manipulaci v daném prostoru?",
+          "Omezovaly rozměry výhled, pohyb nebo komunikaci?",
+          "Byla manipulace s břemenem plánována pro dané rozměry?",
+          "Bylo nutné pracovat v nepohodlné poloze?",
+          "Ovlivnily rozměry návěstění nebo koordinaci?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Těžký materiál",
+          "Nestabilní materiál",
+          "Nezajištěný náklad"
+        ],
+        "supports": [
+          "Rozměry bránily bezpečné manipulaci",
+          "Omezený výhled nebo pohyb",
+          "Manipulace nebyla plánována pro rozměr",
+          "Rozměry ovlivnily koordinaci"
+        ],
+        "contradicts": [
+          "Rozměry odpovídaly prostoru",
+          "Manipulace proběhla standardně",
+          "Rozměry neovlivnily MU"
+        ],
+        "actions": [
+          "Změřit rozměry a prostor",
+          "Posoudit plán manipulace",
+          "Vyslechnout pracovníky",
+          "Prověřit koordinaci a návěstění"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Omezený manipulační prostor"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Chyba při návěstění"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Práce o samotě"
+          }
+        ]
+      },
+      {
+        "name": "Nevhodně uložený materiál",
+        "parent": "",
+        "questions": [
+          "Byl materiál uložen na vhodném místě?",
+          "Nebránil materiál v průchodu nebo manipulaci?",
+          "Bylo uložení v souladu s plánem skladování?",
+          "Bylo riziko pádu nebo sesunu?",
+          "Bylo nevhodné uložení dlouhodobě tolerováno?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Materiál v komunikaci",
+          "Materiál ve výšce",
+          "Materiál uložený nestabilně",
+          "Nesprávně skladovaný materiál"
+        ],
+        "supports": [
+          "Materiál byl uložen nevhodně",
+          "Uložení bránilo průchodu nebo práci",
+          "Riziko pádu nebo sesunu",
+          "Nebylo v souladu s plánem",
+          "Vedení tolerovalo nevhodné uložení"
+        ],
+        "contradicts": [
+          "Uložení odpovídalo pravidlům",
+          "Materiál nebránil provozu",
+          "Uložení nebylo příčinou MU"
+        ],
+        "actions": [
+          "Prohlédnout místo uložení",
+          "Porovnat s plánem skladování",
+          "Vyslechnout pracovníky a vedení",
+          "Posoudit riziko pádu a překážky"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Překážka v cestě"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný dohled"
+          },
+          {
+            "category": "Materiál",
+            "factor": "Nesprávně skladovaný materiál"
+          }
+        ]
+      },
+      {
+        "name": "Materiál v komunikaci",
+        "parent": "Nevhodně uložený materiál",
+        "questions": [
+          "Byl materiál uložen v průchodu nebo komunikaci?",
+          "Bránil průchodu osob nebo vozidel?",
+          "Bylo místo určeno pro skladování?",
+          "Bylo uložení v komunikaci tolerováno?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Nevhodně uložený materiál",
+          "Překážka v cestě"
+        ],
+        "supports": [
+          "Materiál blokoval komunikaci",
+          "Průchod nebyl volný",
+          "Uložení nebylo na určeném místě",
+          "Bylo tolerováno vedením"
+        ],
+        "contradicts": [
+          "Komunikace byla volná",
+          "Materiál nebyl v dráze pohybu"
+        ],
+        "actions": [
+          "Prohlédnout místo a dráhu pohybu",
+          "Ověřit plán skladování",
+          "Vyslechnout svědky"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Překážka v cestě"
+          },
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Nevhodné uspořádání pracoviště"
+          }
+        ]
+      },
+      {
+        "name": "Materiál ve výšce",
+        "parent": "Nevhodně uložený materiál",
+        "questions": [
+          "Byl materiál skladován ve výšce?",
+          "Hrozil pád materiálu z výšky?",
+          "Bylo uložení ve výšce stabilní a zajištěné?",
+          "Bylo skladování ve výšce povoleno?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Materiál uložený nestabilně",
+          "Nezajištěný náklad",
+          "Pád nákladu"
+        ],
+        "supports": [
+          "Materiál byl ve výšce",
+          "Hrozil pád",
+          "Zajištění chybělo",
+          "Skladování neodpovídalo pravidlům"
+        ],
+        "contradicts": [
+          "Materiál nebyl ve výšce",
+          "Uložení bylo stabilní"
+        ],
+        "actions": [
+          "Prohlédnout uložení ve výšce",
+          "Posoudit stabilitu a zajištění",
+          "Ověřit pravidla skladování"
+        ],
+        "suggest": [
+          {
+            "category": "Materiál",
+            "factor": "Nezajištěný náklad"
+          },
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Práce ve výšce / pádová hrana"
+          }
+        ]
+      },
+      {
+        "name": "Materiál uložený nestabilně",
+        "parent": "Nevhodně uložený materiál",
+        "questions": [
+          "Bylo uložení materiálu nestabilní?",
+          "Hrozilo převrácení nebo sesun?",
+          "Bylo skladování vícevrstvé bez zajištění?",
+          "Byla nestabilita viditelná?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Nestabilní materiál",
+          "Nezajištěný náklad",
+          "Materiál ve výšce"
+        ],
+        "supports": [
+          "Uložení bylo nestabilní",
+          "Hrozil sesun nebo pád",
+          "Chybělo ukotvení",
+          "Nestabilita byla zjevná"
+        ],
+        "contradicts": [
+          "Uložení bylo stabilní",
+          "Materiál byl zajištěn"
+        ],
+        "actions": [
+          "Prohlédnout způsob uložení",
+          "Posoudit riziko sesunu",
+          "Vyslechnout pracovníky"
+        ],
+        "suggest": [
+          {
+            "category": "Materiál",
+            "factor": "Nestabilní materiál"
+          },
+          {
+            "category": "Materiál",
+            "factor": "Nezajištěný náklad"
+          }
+        ]
+      },
+      {
+        "name": "Nesprávně skladovaný materiál",
+        "parent": "",
+        "questions": [
+          "Bylo skladování v souladu s požadavky materiálu?",
+          "Byly dodrženy podmínky (teplota, vlhkost, oddělení)?",
+          "Byl materiál skladován s nekompatibilními látkami?",
+          "Existoval postup skladování?",
+          "Bylo nesprávné skladování dlouhodobě známé?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Nevhodně uložený materiál",
+          "Nebezpečná látka",
+          "Poškozený materiál"
+        ],
+        "supports": [
+          "Skladování neodpovídalo požadavkům",
+          "Podmínky nebyly dodrženy",
+          "Materiál byl poškozen nesprávným skladováním",
+          "Chyběl postup skladování"
+        ],
+        "contradicts": [
+          "Skladování bylo správné",
+          "Podmínky odpovídaly požadavkům"
+        ],
+        "actions": [
+          "Ověřit požadavky na skladování z SDS a postupu",
+          "Prohlédnout skladovací podmínky",
+          "Porovnat s praxí",
+          "Vyslechnout skladníky"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný systém kontrol"
+          },
+          {
+            "category": "Materiál",
+            "factor": "Nebezpečná látka"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící pracovní postup"
+          }
+        ]
+      },
+      {
+        "name": "Špatně označený materiál",
+        "parent": "",
+        "questions": [
+          "Byl materiál správně označen?",
+          "Odpovídal štítek skutečnému obsahu?",
+          "Mohlo špatné označení vést k chybné manipulaci?",
+          "Bylo označení čitelné a viditelné?",
+          "Byla k dispozici bezpečnostní dokumentace?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Chybějící označení materiálu",
+          "Nebezpečná látka",
+          "Nevhodný materiál"
+        ],
+        "supports": [
+          "Štítek neodpovídal obsahu",
+          "Pracovník jednal podle chybného označení",
+          "Označení bylo nečitelné",
+          "Chybné označení vedlo k MU"
+        ],
+        "contradicts": [
+          "Označení bylo správné",
+          "Pracovník znal skutečný obsah",
+          "Označení neovlivnilo MU"
+        ],
+        "actions": [
+          "Porovnat označení s obsahem",
+          "Ověřit SDS a dodací list",
+          "Vyslechnout pracovníky",
+          "Fotodokumentace štítků"
+        ],
+        "suggest": [
+          {
+            "category": "Materiál",
+            "factor": "Nebezpečná látka"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný systém kontrol"
+          }
+        ]
+      },
+      {
+        "name": "Chybějící označení materiálu",
+        "parent": "",
+        "questions": [
+          "Měl být materiál označen?",
+          "Chyběl štítek, symbol nebo varování?",
+          "Věděli pracovníci, co materiál obsahuje?",
+          "Bylo označení vyžadováno předpisem?",
+          "Mohlo chybějící označení vést k chybné manipulaci?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Špatně označený materiál",
+          "Nebezpečná látka",
+          "Neověřené informace"
+        ],
+        "supports": [
+          "Označení chybělo",
+          "Pracovníci neznali obsah",
+          "Označení bylo povinné",
+          "Chybějící info ovlivnilo rozhodnutí"
+        ],
+        "contradicts": [
+          "Materiál byl označen",
+          "Pracovníci obsah znali",
+          "Označení nebylo vyžadováno"
+        ],
+        "actions": [
+          "Ověřit požadavek na označení",
+          "Prověřit znalost pracovníků",
+          "Posoudit dopad na MU"
+        ],
+        "suggest": [
+          {
+            "category": "Materiál",
+            "factor": "Nebezpečná látka"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Domněnka místo informace"
+          }
+        ]
+      },
+      {
+        "name": "Nebezpečná látka",
+        "parent": "",
+        "questions": [
+          "Byla přítomna nebezpečná látka?",
+          "Bylo riziko látky identifikováno a posouzeno?",
+          "Byla k dispozici bezpečnostní dokumentace (SDS)?",
+          "Byly stanoveny požadavky na OOPP a manipulaci?",
+          "Byli pracovníci seznámeni s riziky látky?",
+          "Bylo nakládání s látkou v souladu s předpisy?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Chemická látka",
+          "Hořlavá látka",
+          "Žíravá látka",
+          "Toxická látka",
+          "Rozlitá látka"
+        ],
+        "supports": [
+          "Nebezpečná látka byla přítomna",
+          "Riziko nebylo řádně řízeno",
+          "SDS nebyla dostupná nebo nebyla dodržena",
+          "OOPP neodpovídaly riziku",
+          "Pracovníci nebyli seznámeni"
+        ],
+        "contradicts": [
+          "Látka nebyla nebezpečná",
+          "Riziko bylo řízeno",
+          "MU nesouvisela s látkou"
+        ],
+        "actions": [
+          "Identifikovat látku a získat SDS",
+          "Ověřit posouzení rizik",
+          "Prověřit OOPP a postupy",
+          "Vyslechnout pracovníky o znalosti rizik"
+        ],
+        "suggest": [
+          {
+            "category": "OOPP",
+            "factor": "Chybějící ochrana dýchacích cest"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící pracovní postup"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečná komunikace rizik"
+          },
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Prašnost"
+          }
+        ]
+      },
+      {
+        "name": "Chemická látka",
+        "parent": "Nebezpečná látka",
+        "questions": [
+          "Jaká chemická látka byla přítomna?",
+          "Byla látka správně identifikována?",
+          "Byly dodrženy požadavky manipulace?",
+          "Byla látka kompatibilní s okolím a obaly?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Nebezpečná látka",
+          "Rozlitá látka",
+          "Nesprávně skladovaný materiál"
+        ],
+        "supports": [
+          "Chemická látka byla přítomna",
+          "Manipulace neodpovídala SDS",
+          "Kompatibilita nebyla zajištěna"
+        ],
+        "contradicts": [
+          "Látka nebyla chemická",
+          "Manipulace byla správná"
+        ],
+        "actions": [
+          "Identifikovat chemickou látku",
+          "Ověřit SDS a postup",
+          "Posoudit kompatibilitu skladování"
+        ],
+        "suggest": [
+          {
+            "category": "Materiál",
+            "factor": "Rozlitá látka"
+          },
+          {
+            "category": "OOPP",
+            "factor": "Chybějící ochrana rukou"
+          }
+        ]
+      },
+      {
+        "name": "Hořlavá látka",
+        "parent": "Nebezpečná látka",
+        "questions": [
+          "Byla přítomna hořlavá látka?",
+          "Bylo riziko vznícení identifikováno?",
+          "Byly dodrženy požadavky na skladování a zdroje ignition?",
+          "Byla látka mimo určené prostory?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Nebezpečná látka",
+          "Chemická látka",
+          "Nesprávně skladovaný materiál"
+        ],
+        "supports": [
+          "Hořlavá látka byla přítomna",
+          "Riziko vznícení nebylo řízeno",
+          "Skladování neodpovídalo požadavkům",
+          "Zdroj ignition byl v blízkosti"
+        ],
+        "contradicts": [
+          "Látka nebyla hořlavá",
+          "Požadavky byly dodrženy"
+        ],
+        "actions": [
+          "Identifikovat hořlavou látku",
+          "Ověřit podmínky skladování",
+          "Posoudit zdroje ignition"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Nevhodné klimatické podmínky"
+          },
+          {
+            "category": "Materiál",
+            "factor": "Nesprávně skladovaný materiál"
+          }
+        ]
+      },
+      {
+        "name": "Žíravá látka",
+        "parent": "Nebezpečná látka",
+        "questions": [
+          "Byla přítomna žíravá látka?",
+          "Bylo riziko poleptání identifikováno?",
+          "Byly použity vhodné OOPP?",
+          "Byla látka správně skladována a označena?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Nebezpečná látka",
+          "Rozlitá látka",
+          "OOPP"
+        ],
+        "supports": [
+          "Žíravá látka byla přítomna",
+          "OOPP neodpovídaly",
+          "Došlo k expozici nebo kontaktu",
+          "Označení nebo SDS chyběly"
+        ],
+        "contradicts": [
+          "Látka nebyla žíravá",
+          "OOPP byly použity správně",
+          "Kontakt nebyl prokázán"
+        ],
+        "actions": [
+          "Identifikovat látku",
+          "Ověřit SDS a OOPP",
+          "Posoudit expozici"
+        ],
+        "suggest": [
+          {
+            "category": "OOPP",
+            "factor": "Chybějící ochrana rukou"
+          },
+          {
+            "category": "Materiál",
+            "factor": "Rozlitá látka"
+          }
+        ]
+      },
+      {
+        "name": "Toxická látka",
+        "parent": "Nebezpečná látka",
+        "questions": [
+          "Byla přítomna toxická nebo zdraví škodlivá látka?",
+          "Bylo riziko inhalace nebo expozice posouzeno?",
+          "Byly dodrženy limity expozice?",
+          "Byla OOPP dýchacích cest použita?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Nebezpečná látka",
+          "Prašný materiál",
+          "Chemická látka"
+        ],
+        "supports": [
+          "Toxická látka byla přítomna",
+          "Expozice nebyla řízena",
+          "OOPP dýchacích cest chyběly",
+          "Limity expozice mohly být překročeny"
+        ],
+        "contradicts": [
+          "Látka nebyla toxická",
+          "Expozice byla řízena",
+          "MU nesouvisela s látkou"
+        ],
+        "actions": [
+          "Identifikovat látku a SDS",
+          "Posoudit expozici",
+          "Ověřit OOPP a větrání"
+        ],
+        "suggest": [
+          {
+            "category": "OOPP",
+            "factor": "Chybějící ochrana dýchacích cest"
+          },
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Prašnost"
+          }
+        ]
+      },
+      {
+        "name": "Rozlitá látka",
+        "parent": "",
+        "questions": [
+          "Došlo k úniku nebo rozlití látky?",
+          "Byla látka identifikována?",
+          "Bylo místo označeno a uklizeno?",
+          "Vzniklo riziko uklouznutí nebo expozice?",
+          "Byl únik předvídatelný nebo opakovaný?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Kluzká kapalina",
+          "Únik provozní kapaliny",
+          "Neoznačené znečištění"
+        ],
+        "supports": [
+          "Látka byla rozlitá",
+          "Místo nebylo označeno nebo uklizeno",
+          "Vzniklo riziko uklouznutí nebo kontaktu",
+          "Únik nebyl včas řešen"
+        ],
+        "contradicts": [
+          "K rozlití nedošlo",
+          "Místo bylo uklizeno",
+          "Rozlití nesouviselo s MU"
+        ],
+        "actions": [
+          "Identifikovat látku a rozsah úniku",
+          "Fotodokumentace místa",
+          "Ověřit postup úklidu",
+          "Vyslechnout svědky"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Kluzký povrch"
+          },
+          {
+            "category": "OOPP",
+            "factor": "Nevhodná obuv"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný dohled"
+          }
+        ]
+      },
+      {
+        "name": "Kluzká kapalina",
+        "parent": "Rozlitá látka",
+        "questions": [
+          "Vznikla kluzká plocha z rozlití?",
+          "Byla kapalina identifikována?",
+          "Bylo místo označeno jako kluzké?",
+          "Byl proveden úklid?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Rozlitá látka",
+          "Únik provozní kapaliny",
+          "Kluzký povrch"
+        ],
+        "supports": [
+          "Rozlití vytvořilo kluzkou plochu",
+          "Místo nebylo označeno",
+          "Úklid neproběhl včas",
+          "Pracovník uklouzl"
+        ],
+        "contradicts": [
+          "Povrch nebyl kluzký",
+          "Rozlití nebylo v místě MU"
+        ],
+        "actions": [
+          "Prohlédnout místo a typ kapaliny",
+          "Ověřit úklid a označení",
+          "Vyslechnout svědky"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Mokrá podlaha"
+          },
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Kluzký povrch"
+          }
+        ]
+      },
+      {
+        "name": "Únik provozní kapaliny",
+        "parent": "Rozlitá látka",
+        "questions": [
+          "Vzešel únik z provozního zařízení nebo nádrže?",
+          "Byl únik známý před MU?",
+          "Bylo zařízení udržováno a kontrolováno?",
+          "Byl únik opraven?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Rozlitá látka",
+          "Kluzká kapalina",
+          "Poškozený materiál"
+        ],
+        "supports": [
+          "Došlo k úniku provozní kapaliny",
+          "Únik nebyl odstraněn",
+          "Zařízení netěsnilo",
+          "Únik byl dříve známy"
+        ],
+        "contradicts": [
+          "Únik nebyl prokázán",
+          "Zařízení bylo v pořádku"
+        ],
+        "actions": [
+          "Identifikovat zdroj úniku",
+          "Ověřit údržbu zařízení",
+          "Posoudit dobu trvání úniku"
+        ],
+        "suggest": [
+          {
+            "category": "Zařízení a technika",
+            "factor": "Technická závada"
+          },
+          {
+            "category": "Materiál",
+            "factor": "Poškozený materiál"
+          }
+        ]
+      },
+      {
+        "name": "Neoznačené znečištění",
+        "parent": "Rozlitá látka",
+        "questions": [
+          "Bylo znečištění viditelné, ale neoznačené?",
+          "Věděli pracovníci o znečištění?",
+          "Bylo znečištění uklizeno?",
+          "Mohlo znečištění vést k uklouznutí nebo expozici?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Rozlitá látka",
+          "Kluzká kapalina",
+          "Chybějící označení materiálu"
+        ],
+        "supports": [
+          "Znečištění nebylo označeno",
+          "Pracovníci o něm nevěděli",
+          "Úklid neproběhl",
+          "Znečištění ovlivnilo MU"
+        ],
+        "contradicts": [
+          "Znečištění bylo označeno",
+          "Pracovníci o něm věděli"
+        ],
+        "actions": [
+          "Prohlédnout místo",
+          "Vyslechnout pracovníky",
+          "Ověřit postup hlášení a úklidu"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný dohled"
+          },
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Kluzký povrch"
+          }
+        ]
+      },
+      {
+        "name": "Prašný materiál",
+        "parent": "",
+        "questions": [
+          "Vznikala při manipulaci prach nebo prašnost?",
+          "Bylo riziko inhalace identifikováno?",
+          "Byla OOPP dýchacích cest použita?",
+          "Bylo větrání nebo odsávání zajištěno?",
+          "Byly limity expozice dodrženy?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Nebezpečná látka",
+          "Toxická látka",
+          "Prašnost"
+        ],
+        "supports": [
+          "Materiál produkoval prach",
+          "Ochrana dýchacích cest chyběla",
+          "Větrání nebylo dostatečné",
+          "Expozice nebyla řízena"
+        ],
+        "contradicts": [
+          "Prašnost nevznikala",
+          "OOPP a větrání byly zajištěny"
+        ],
+        "actions": [
+          "Posoudit charakter materiálu",
+          "Ověřit OOPP a větrání",
+          "Vyslechnout pracovníky",
+          "Porovnat s posouzením rizik"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Prašnost"
+          },
+          {
+            "category": "OOPP",
+            "factor": "Chybějící ochrana dýchacích cest"
+          }
+        ]
+      },
+      {
+        "name": "Horký materiál",
+        "parent": "",
+        "questions": [
+          "Byl materiál horký nebo tepelně nebezpečný?",
+          "Bylo riziko popálení identifikováno?",
+          "Byla použita ochrana rukou nebo oděvu?",
+          "Byl materiál označen jako horký?",
+          "Byla manipulace s horkým materiálem v postupu?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Studený materiál",
+          "Nebezpečná látka"
+        ],
+        "supports": [
+          "Materiál byl horký",
+          "Ochrana proti teplu chyběla",
+          "Riziko popálení nebylo řízeno",
+          "Pracovník nebyl varován"
+        ],
+        "contradicts": [
+          "Materiál nebyl horký",
+          "Ochrana byla použita",
+          "Teplo nebylo příčinou MU"
+        ],
+        "actions": [
+          "Ověřit teplotu materiálu",
+          "Posoudit OOPP a postup",
+          "Vyslechnout pracovníka"
+        ],
+        "suggest": [
+          {
+            "category": "OOPP",
+            "factor": "Chybějící ochrana rukou"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Únava z horka"
+          },
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Vysoká teplota"
+          }
+        ]
+      },
+      {
+        "name": "Studený materiál",
+        "parent": "",
+        "questions": [
+          "Byl materiál studený nebo mrazící?",
+          "Bylo riziko omrzlin nebo kontaktu identifikováno?",
+          "Byla použita vhodná ochrana rukou?",
+          "Byla manipulace s chladným materiálem v postupu?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Horký materiál",
+          "Nebezpečná látka"
+        ],
+        "supports": [
+          "Materiál byl studený nebo mrazící",
+          "Ochrana rukou chyběla",
+          "Riziko nebylo řízeno",
+          "Došlo ke kontaktu"
+        ],
+        "contradicts": [
+          "Materiál nebyl studený",
+          "Ochrana byla použita"
+        ],
+        "actions": [
+          "Ověřit teplotu materiálu",
+          "Posoudit OOPP",
+          "Vyslechnout pracovníka"
+        ],
+        "suggest": [
+          {
+            "category": "OOPP",
+            "factor": "Chybějící ochrana rukou"
+          },
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Nízká teplota"
+          }
+        ]
+      },
+      {
+        "name": "Nevhodný obal",
+        "parent": "",
+        "questions": [
+          "Byl obal vhodný pro daný materiál?",
+          "Odpovídal obal požadavkům bezpečnosti a přepravy?",
+          "Nebyl obal poškozen nebo degradovaný?",
+          "Byl materiál v nevhodném obalu skladován?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Poškozený obal",
+          "Nebezpečná látka",
+          "Nesprávně skladovaný materiál"
+        ],
+        "supports": [
+          "Obal neodpovídal materiálu",
+          "Obal nebyl certifikován pro danou látku",
+          "Obal zhoršoval manipulaci",
+          "Riziko nebylo řízeno"
+        ],
+        "contradicts": [
+          "Obal byl vhodný",
+          "Obal odpovídal požadavkům"
+        ],
+        "actions": [
+          "Prohlédnout obal a materiál",
+          "Porovnat s požadavky SDS",
+          "Ověřit dodací dokumentaci"
+        ],
+        "suggest": [
+          {
+            "category": "Materiál",
+            "factor": "Poškozený obal"
+          },
+          {
+            "category": "Materiál",
+            "factor": "Nebezpečná látka"
+          }
+        ]
+      },
+      {
+        "name": "Poškozený obal",
+        "parent": "",
+        "questions": [
+          "Byl obal poškozen?",
+          "Mohlo poškození vést k úniku nebo selhání?",
+          "Bylo poškození před MU známo?",
+          "Byl obal vyměněn nebo opraven?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Nevhodný obal",
+          "Rozlitá látka",
+          "Poškozený materiál"
+        ],
+        "supports": [
+          "Obal byl poškozený",
+          "Došlo k úniku nebo selhání",
+          "Poškození bylo známo",
+          "Výměna neproběhla"
+        ],
+        "contradicts": [
+          "Obal byl v pořádku",
+          "Poškození neovlivnilo MU"
+        ],
+        "actions": [
+          "Prohlédnout obal",
+          "Fotodokumentace",
+          "Ověřit záznamy kontroly"
+        ],
+        "suggest": [
+          {
+            "category": "Materiál",
+            "factor": "Rozlitá látka"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný systém kontrol"
+          }
+        ]
+      },
+      {
+        "name": "Nezajištěný náklad",
+        "parent": "",
+        "questions": [
+          "Byl náklad nebo materiál řádně zajištěn proti posunu nebo pádu?",
+          "Odpovídalo zajištění typu a hmotnosti nákladu?",
+          "Bylo zajištění kontrolováno před přepravou nebo manipulací?",
+          "Bylo nezajištění tolerováno?",
+          "Byla manipulace v souladu s postupem?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Nedostatečné upevnění",
+          "Posunutí nákladu",
+          "Pád nákladu",
+          "Nestabilní materiál"
+        ],
+        "supports": [
+          "Náklad nebyl zajištěn",
+          "Upevnění bylo nedostatečné",
+          "Došlo k posunu nebo pádu",
+          "Kontrola zajištění chyběla"
+        ],
+        "contradicts": [
+          "Náklad byl zajištěn",
+          "Zajištění odpovídalo požadavkům",
+          "Pád nebyl způsoben zajištěním"
+        ],
+        "actions": [
+          "Prohlédnout způsob zajištění",
+          "Porovnat s postupem a předpisy",
+          "Vyslechnout pracovníky",
+          "Fotodokumentace"
+        ],
+        "suggest": [
+          {
+            "category": "Komunikace",
+            "factor": "Chyba při návěstění"
+          },
+          {
+            "category": "Zařízení a technika",
+            "factor": "Nevhodné zařízení"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící kontrolní krok"
+          }
+        ]
+      },
+      {
+        "name": "Nedostatečné upevnění",
+        "parent": "Nezajištěný náklad",
+        "questions": [
+          "Bylo upevnění nákladu provedeno?",
+          "Odpovídalo upevnění hmotnosti a typu nákladu?",
+          "Byly použity správné prostředky upevnění?",
+          "Kdo upevnění prováděl a kontroloval?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Nezajištěný náklad",
+          "Posunutí nákladu",
+          "Pád nákladu"
+        ],
+        "supports": [
+          "Upevnění chybělo nebo bylo slabé",
+          "Použity nevhodné prostředky",
+          "Kontrola upevnění neproběhla"
+        ],
+        "contradicts": [
+          "Upevnění bylo dostatečné"
+        ],
+        "actions": [
+          "Posoudit způsob upevnění",
+          "Ověřit postup",
+          "Vyslechnout odpovědné osoby"
+        ],
+        "suggest": [
+          {
+            "category": "Materiál",
+            "factor": "Nezajištěný náklad"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Vynechání kroku"
+          }
+        ]
+      },
+      {
+        "name": "Posunutí nákladu",
+        "parent": "Nezajištěný náklad",
+        "questions": [
+          "Došlo k posunu nákladu?",
+          "Předcházel posunu nezajištění?",
+          "Mohlo posunutí způsobit MU?",
+          "Bylo posunutí předvídatelné?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Nezajištěný náklad",
+          "Pád nákladu",
+          "Nestabilní materiál"
+        ],
+        "supports": [
+          "Náklad se posunul",
+          "Zajištění chybělo",
+          "Posunutí souviselo s MU"
+        ],
+        "contradicts": [
+          "K posunu nedošlo",
+          "Náklad byl stabilní"
+        ],
+        "actions": [
+          "Zmapovat posun nákladu",
+          "Vyslechnout svědky",
+          "Prověřit zajištění"
+        ],
+        "suggest": [
+          {
+            "category": "Materiál",
+            "factor": "Nestabilní materiál"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Chyba při návěstění"
+          }
+        ]
+      },
+      {
+        "name": "Pád nákladu",
+        "parent": "Nezajištěný náklad",
+        "questions": [
+          "Spadl náklad nebo materiál?",
+          "Bylo zajištění před pádem nedostatečné?",
+          "Z jaké výšky náklad spadl?",
+          "Mohlo být pádu zabráněno?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Nezajištěný náklad",
+          "Materiál ve výšce",
+          "Posunutí nákladu"
+        ],
+        "supports": [
+          "Náklad spadl",
+          "Zajištění chybělo",
+          "Pád způsobil nebo souvisel s MU"
+        ],
+        "contradicts": [
+          "K pádu nedošlo",
+          "Pád nesouvisel s MU"
+        ],
+        "actions": [
+          "Prohlédnout místo pádu",
+          "Fotodokumentace",
+          "Vyslechnout svědky",
+          "Posoudit zajištění"
+        ],
+        "suggest": [
+          {
+            "category": "Materiál",
+            "factor": "Materiál ve výšce"
+          },
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Překážka v cestě"
+          }
+        ]
+      },
+      {
+        "name": "Přemístění materiálu bez zajištění",
+        "parent": "",
+        "questions": [
+          "Byl materiál přemístěn bez řádného zajištění?",
+          "Bylo přemístění plánováno a schváleno?",
+          "Bylo riziko posunu nebo pádu při přemístění?",
+          "Odpovídala manipulace hmotnosti a rozměrům?",
+          "Byl postup přemístění dodržen?"
+        ],
+        "evidence": [
+          "Identifikace materiálu a štítek",
+          "Bezpečnostní list (SDS/BL)",
+          "Dodací list nebo certifikát jakosti",
+          "Fotodokumentace materiálu a místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán skladování a manipulace",
+          "Pracovní postup",
+          "Záznam přejímky a kontroly materiálu",
+          "Měření (hmotnost, teplota, koncentrace)"
+        ],
+        "related": [
+          "Nezajištěný náklad",
+          "Nestabilní materiál",
+          "Těžký materiál"
+        ],
+        "supports": [
+          "Materiál byl přemístěn bez zajištění",
+          "Postup nebyl dodržen",
+          "Riziko nebylo řízeno",
+          "Přemístění souviselo s MU"
+        ],
+        "contradicts": [
+          "Přemístění bylo zajištěno",
+          "Postup byl dodržen"
+        ],
+        "actions": [
+          "Zmapovat průběh přemístění",
+          "Porovnat s postupem",
+          "Vyslechnout pracovníky",
+          "Posoudit zajištění"
+        ],
+        "suggest": [
+          {
+            "category": "Materiál",
+            "factor": "Nezajištěný náklad"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Nedodržení pracovního postupu"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Práce o samotě"
           }
         ]
       },
