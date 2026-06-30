@@ -1,12 +1,13 @@
-import json
 import subprocess
 from datetime import date, datetime
 from pathlib import Path
 
 from core.export import OdtExportEngine
 from core.services.storage_service import storage_service
-from moduly.kniha_urazu.sluzby.investigation_service import investigation_service
-from moduly.ukoly.sluzby.task_service import task_service
+from moduly.kniha_urazu.sluzby.accident_export_context_service import (
+    AccidentExportContext,
+    accident_export_context_service,
+)
 
 
 class VypisUrazuService:
@@ -35,9 +36,9 @@ class VypisUrazuService:
         if not template.exists():
             raise FileNotFoundError(f"Šablona výpisu nebyla nalezena: {template}")
 
-        investigation = investigation_service.get_or_create(accident.id)
-        data = self._investigation_json(investigation)
-        values = self._placeholder_values(accident, investigation, data)
+        context = accident_export_context_service.build(accident)
+        data = context.merged_data()
+        values = self._placeholder_values(accident, context, data)
 
         output_path = storage_service.export_file(self.EXPORT_SUBDIR, self._output_filename(accident))
         return self.engine.render(template, output_path, values)
@@ -46,13 +47,6 @@ class VypisUrazuService:
         path = self.generate_for_accident(accident)
         subprocess.Popen(["xdg-open", str(path)])
         return path
-
-    def _investigation_json(self, investigation) -> dict:
-        raw = getattr(investigation, "zajisteni_dukazu_json", "") or "{}"
-        try:
-            return json.loads(raw)
-        except Exception:
-            return {}
 
     def _output_filename(self, accident) -> str:
         number = str(getattr(accident, "number", "") or "bez-cisla").replace("/", "-").replace("\\", "-")
@@ -92,12 +86,9 @@ class VypisUrazuService:
         text = str(value or "").replace("\r\n", "\n").replace("\r", "\n")
         return text.strip()
 
-    def _task_lines(self, accident_id: int) -> str:
+    def _task_lines(self, context: AccidentExportContext) -> str:
         try:
-            tasks = [
-                task for task in task_service.get_all_tasks()
-                if getattr(task, "source_module", "") == "accident" and getattr(task, "source_record_id", None) == accident_id
-            ]
+            tasks = context.collect_tasks()
         except Exception:
             tasks = []
 
@@ -164,16 +155,30 @@ class VypisUrazuService:
         lines = [part.strip() for part in text.split(";") if part.strip()]
         return "\n".join(lines) if lines else "Nejsou"
 
-    def _placeholder_values(self, accident, investigation, data: dict) -> dict:
-        svedci = self._witness_lines(accident)
-        opatreni = self._task_lines(accident.id) or self._text_block(
+    def _placeholder_values(self, accident, context: AccidentExportContext, data: dict) -> dict:
+        svedci = context.witness_lines(accident)
+        if svedci is None:
+            svedci = self._witness_lines(accident)
+
+        opatreni = self._task_lines(context) or self._text_block(
             self._accident_attr(accident, "opatreni") or self._accident_attr(accident, "measures_summary")
         )
+        immediate = context.immediate_measures_summary()
+        if immediate:
+            opatreni = self._join_nonempty([immediate, opatreni])
         if not opatreni:
             opatreni = "Nejsou evidována."
 
-        stav_setreni = "Zahájeno"
+        stav_setreni = context.investigation_status_label()
         stanovisko = self._text_block(data.get("soulad_stanovisko_bozp", ""))
+        if not stanovisko and context.has_mu and context.mu_investigation is not None:
+            stanovisko = self._text_block(context.mu_investigation.conclusion)
+
+        popis_deje = (
+            context.oznameni_value("oznameni_popis")
+            or self._accident_attr(accident, "popis_urazoveho_deje")
+            or self._accident_attr(accident, "description")
+        )
 
         return {
             "cislo_urazu": self._accident_attr(accident, "number"),
@@ -211,9 +216,7 @@ class VypisUrazuService:
             "hromadny_uraz": self._accident_attr(accident, "hromadny_uraz"),
             "cinnost_pri_urazu": self._accident_attr(accident, "cinnost_pri_urazu"),
             "misto_urazu": self._text_block(self._accident_attr(accident, "misto_urazu")),
-            "popis_urazoveho_deje": self._text_block(
-                self._accident_attr(accident, "popis_urazoveho_deje") or self._accident_attr(accident, "description")
-            ),
+            "popis_urazoveho_deje": self._text_block(popis_deje),
             "charakteristika_pracoviste": self._text_block(self._accident_attr(accident, "charakteristika_pracoviste")),
             "zdroj_urazu": self._text_block(self._accident_attr(accident, "zdroj_urazu")),
             "pricina_urazu": self._text_block(self._accident_attr(accident, "pricina_urazu")),
@@ -226,9 +229,9 @@ class VypisUrazuService:
             "adresa_pracoviste": self._text_block(self._accident_attr(accident, "adresa_pracoviste")),
             "okres_pracoviste": self._blank_if_empty(self._accident_attr(accident, "okres_pracoviste")),
             "stav_setreni": stav_setreni,
-            "pripad_uzavren": "ANO" if getattr(accident, "closed", False) else "NE",
-            "datum_zahajeni": self._fmt_date(getattr(accident, "investigation_started_at", None)),
-            "datum_oznameni": self._fmt_date(getattr(investigation, "oznameni_datum", None)),
+            "pripad_uzavren": context.case_closed_label(accident),
+            "datum_zahajeni": self._fmt_date(context.investigation_started_at(accident)),
+            "datum_oznameni": self._fmt_date(context.oznameni_value("oznameni_datum")),
             "stanovisko_bozp": stanovisko,
             "kontrola_alkohol": self._accident_attr(accident, "kontrola_alkohol"),
             "vysledek_kontroly_alkohol": self._accident_attr(accident, "vysledek_kontroly_alkohol"),

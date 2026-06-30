@@ -1,5 +1,4 @@
 import html
-import json
 import subprocess
 import zipfile
 from datetime import date, datetime
@@ -7,8 +6,10 @@ from pathlib import Path
 
 from core.services.attachment_service import attachment_service
 from core.services.storage_service import storage_service
-from moduly.kniha_urazu.sluzby.investigation_service import investigation_service
-from moduly.ukoly.sluzby.task_service import task_service
+from moduly.kniha_urazu.sluzby.accident_export_context_service import (
+    AccidentExportContext,
+    accident_export_context_service,
+)
 
 
 class ZaverecnaZpravaService:
@@ -31,9 +32,9 @@ class ZaverecnaZpravaService:
         if not template.exists():
             raise FileNotFoundError(f"Šablona závěrečné zprávy nebyla nalezena: {template}")
 
-        investigation = investigation_service.get_or_create(accident.id)
-        data = self._investigation_json(investigation)
-        values = self._placeholder_values(accident, investigation, data)
+        context = accident_export_context_service.build(accident)
+        data = context.merged_data()
+        values = self._placeholder_values(accident, context, data)
 
         exports_dir = storage_service.exports_dir / "zaverecne_zpravy"
         exports_dir.mkdir(parents=True, exist_ok=True)
@@ -49,13 +50,6 @@ class ZaverecnaZpravaService:
         path = self.generate_for_accident(accident)
         subprocess.Popen(["xdg-open", str(path)])
         return path
-
-    def _investigation_json(self, investigation) -> dict:
-        raw = getattr(investigation, "zajisteni_dukazu_json", "") or "{}"
-        try:
-            return json.loads(raw)
-        except Exception:
-            return {}
 
     def _output_filename(self, accident) -> str:
         number = str(getattr(accident, "number", "") or "bez-cisla").replace("/", "-").replace("\\", "-")
@@ -90,12 +84,9 @@ class ZaverecnaZpravaService:
     def _accident_attr(self, accident, name, default=""):
         return getattr(accident, name, default) or default
 
-    def _task_lines(self, accident_id: int) -> str:
+    def _task_lines(self, context: AccidentExportContext) -> str:
         try:
-            tasks = [
-                task for task in task_service.get_all_tasks()
-                if getattr(task, "source_module", "") == "accident" and getattr(task, "source_record_id", None) == accident_id
-            ]
+            tasks = context.collect_tasks()
         except Exception:
             tasks = []
 
@@ -105,7 +96,9 @@ class ZaverecnaZpravaService:
         lines = []
         for task in tasks:
             due = self._fmt_date(getattr(task, "due_date", None))
-            completed = self._fmt_date(getattr(task, "completed_date", None)) or ("NE" if not getattr(task, "completed", False) else "")
+            completed = self._fmt_date(getattr(task, "completed_date", None)) or (
+                "NE" if not getattr(task, "completed", False) else ""
+            )
             parts = [getattr(task, "title", "") or "Opatření"]
             if getattr(task, "responsible_person", ""):
                 parts.append(f"odpovídá: {task.responsible_person}")
@@ -118,14 +111,14 @@ class ZaverecnaZpravaService:
             lines.append("- " + "; ".join(parts))
         return "\n".join(lines)
 
-    def _placeholder_values(self, accident, investigation, data: dict) -> dict:
+    def _placeholder_values(self, accident, context: AccidentExportContext, data: dict) -> dict:
         datum_a_cas_urazu = self._fmt_datetime_text(
             self._accident_attr(accident, "accident_date"),
             self._accident_attr(accident, "accident_time"),
         )
-        datum_oznameni = self._fmt_date(getattr(investigation, "oznameni_datum", None))
-        datum_zahajeni = self._fmt_date(data.get("admin_zahajeni") or getattr(accident, "investigation_started_at", None))
-        datum_ukonceni = self._fmt_date(data.get("admin_ukonceni"))
+        datum_oznameni = self._fmt_date(context.oznameni_value("oznameni_datum"))
+        datum_zahajeni = self._fmt_date(context.investigation_started_at(accident))
+        datum_ukonceni = self._fmt_date(context.investigation_closed_at())
 
         pracoviste = self._accident_attr(accident, "workplace_name") or self._accident_attr(accident, "pracoviste")
         lokalita = self._join_nonempty([
@@ -148,6 +141,8 @@ class ZaverecnaZpravaService:
             data.get("dodrz_poruseni_predpisu"),
             data.get("dodrz_ostatni_1"),
             data.get("dodrz_ostatni_2"),
+            context.chronologie_summary(),
+            context.immediate_measures_summary(),
         ])
 
         poruseni = self._join_nonempty([
@@ -155,13 +150,19 @@ class ZaverecnaZpravaService:
             data.get("dodrz_poruseni_predpisu"),
         ])
 
-        opatreni = self._task_lines(accident.id) or self._accident_attr(accident, "opatreni") or self._accident_attr(accident, "measures_summary")
+        opatreni = (
+            self._task_lines(context)
+            or self._accident_attr(accident, "opatreni")
+            or self._accident_attr(accident, "measures_summary")
+        )
 
-        zpracoval = data.get("admin_setreni_jmeno") or data.get("provedl") or getattr(investigation, "oznameni_komu", "") or ""
+        zpracoval = context.investigator_name()
 
-        zaver = data.get("soulad_stanovisko_bozp") or ""
-        if data.get("soulad_oduvodneni"):
-            zaver = self._join_nonempty([zaver, data.get("soulad_oduvodneni")])
+        zaver = self._join_nonempty([
+            context.mu_investigation.conclusion if context.has_mu and context.mu_investigation else "",
+            data.get("soulad_stanovisko_bozp"),
+            data.get("soulad_oduvodneni"),
+        ])
 
         return {
             "cislo_urazu": self._accident_attr(accident, "number"),
@@ -179,7 +180,11 @@ class ZaverecnaZpravaService:
             "lokalita": lokalita,
             "misto_urazu": self._accident_attr(accident, "misto_urazu"),
             "charakteristika_pracoviste": self._accident_attr(accident, "charakteristika_pracoviste"),
-            "popis_urazu": getattr(investigation, "oznameni_popis", "") or self._accident_attr(accident, "popis_urazoveho_deje") or self._accident_attr(accident, "description"),
+            "popis_urazu": (
+                context.oznameni_value("oznameni_popis")
+                or self._accident_attr(accident, "popis_urazoveho_deje")
+                or self._accident_attr(accident, "description")
+            ),
             "vysledky_setreni": vysledky,
             "bezprostredni_pricina": data.get("analyza_bezprostredni_pricina", "") or self._accident_attr(accident, "pricina_urazu"),
             "zakladni_pricina": data.get("analyza_korenova_pricina", ""),
