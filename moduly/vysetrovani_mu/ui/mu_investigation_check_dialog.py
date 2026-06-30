@@ -3,6 +3,7 @@ from PySide6.QtGui import QColor, QBrush
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
+    QFormLayout,
     QGroupBox,
     QHeaderView,
     QLabel,
@@ -10,14 +11,17 @@ from PySide6.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
+    QWidget,
 )
 
 from moduly.vysetrovani_mu.sluzby.mu_investigation_check import (
+    ACTION_TYPE_LABELS,
     CHECK_SEVERITY_ERROR,
     CHECK_SEVERITY_OK,
     CHECK_SEVERITY_RECOMMENDATION,
     CHECK_SEVERITY_WARNING,
     InvestigationCheckResult,
+    PRIORITY_LABELS,
     SEVERITY_LABELS,
     SEVERITY_ORDER,
     run_investigation_checks,
@@ -31,6 +35,7 @@ _SEVERITY_COLORS = {
 }
 
 _RESULT_ROLE = Qt.ItemDataRole.UserRole
+_NO_SUGGESTION_TEXT = "Pro tuto kontrolu není připraven doporučený pracovní krok."
 
 
 class MuInvestigationCheckDialog(QDialog):
@@ -38,7 +43,7 @@ class MuInvestigationCheckDialog(QDialog):
         super().__init__(parent)
 
         self.setWindowTitle("Kontrola spisu")
-        self.resize(980, 640)
+        self.resize(980, 720)
 
         self._results = run_investigation_checks(snapshot)
         self._navigation_result: InvestigationCheckResult | None = None
@@ -53,15 +58,8 @@ class MuInvestigationCheckDialog(QDialog):
                 continue
             layout.addWidget(self._build_group(severity, group_results), 1)
 
-        buttons = QDialogButtonBox()
-        self._navigate_btn = QPushButton("Přejít")
-        self._navigate_btn.setEnabled(False)
-        self._navigate_btn.clicked.connect(self._navigate_to_selected)
-        buttons.addButton(self._navigate_btn, QDialogButtonBox.ActionRole)
-        close_btn = buttons.addButton(QDialogButtonBox.Close)
-        close_btn.setText("Zavřít")
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        layout.addWidget(self._build_suggestion_panel())
+        layout.addWidget(self._build_buttons())
 
     def navigation_result(self) -> InvestigationCheckResult | None:
         return self._navigation_result
@@ -79,6 +77,51 @@ class MuInvestigationCheckDialog(QDialog):
         label = QLabel(" | ".join(parts) if parts else "Kontrola neobsahuje žádné položky.")
         label.setWordWrap(True)
         return label
+
+    def _build_suggestion_panel(self) -> QGroupBox:
+        group = QGroupBox("Navržený další krok")
+        layout = QVBoxLayout(group)
+
+        self._suggestion_empty_label = QLabel(_NO_SUGGESTION_TEXT)
+        self._suggestion_empty_label.setWordWrap(True)
+        self._suggestion_empty_label.setObjectName("InfoText")
+
+        self._suggestion_title_label = QLabel()
+        self._suggestion_title_label.setWordWrap(True)
+        self._suggestion_title_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+
+        self._suggestion_description_label = QLabel()
+        self._suggestion_description_label.setWordWrap(True)
+        self._suggestion_description_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+
+        self._suggestion_priority_label = QLabel()
+        self._suggestion_type_label = QLabel()
+
+        self._suggestion_details = QWidget()
+        details_layout = QFormLayout(self._suggestion_details)
+        details_layout.setContentsMargins(0, 0, 0, 0)
+        details_layout.addRow("Název:", self._suggestion_title_label)
+        details_layout.addRow("Popis:", self._suggestion_description_label)
+        details_layout.addRow("Priorita:", self._suggestion_priority_label)
+        details_layout.addRow("Typ:", self._suggestion_type_label)
+
+        layout.addWidget(self._suggestion_empty_label)
+        layout.addWidget(self._suggestion_details)
+
+        self._suggestion_details.setVisible(False)
+        self._suggestion_empty_label.setText("Vyberte položku kontroly pro zobrazení doporučeného kroku.")
+        return group
+
+    def _build_buttons(self) -> QDialogButtonBox:
+        buttons = QDialogButtonBox()
+        self._navigate_btn = QPushButton("Přejít")
+        self._navigate_btn.setEnabled(False)
+        self._navigate_btn.clicked.connect(self._navigate_to_selected)
+        buttons.addButton(self._navigate_btn, QDialogButtonBox.ActionRole)
+        close_btn = buttons.addButton(QDialogButtonBox.Close)
+        close_btn.setText("Zavřít")
+        buttons.rejected.connect(self.reject)
+        return buttons
 
     def _build_group(self, severity: str, results: list[InvestigationCheckResult]) -> QGroupBox:
         group = QGroupBox(SEVERITY_LABELS[severity])
@@ -108,10 +151,10 @@ class MuInvestigationCheckDialog(QDialog):
                 item.navigate_tab or item.tab_name,
             ]
             tooltip = item.message
-            if item.suggested_task_title:
-                tooltip += f"\n\nNavržený úkol: {item.suggested_task_title}"
-            if item.suggested_task_description:
-                tooltip += f"\n{item.suggested_task_description}"
+            if item.has_suggested_action():
+                tooltip += f"\n\nNavržený krok: {item.suggested_task_title}"
+                if item.suggested_task_description:
+                    tooltip += f"\n{item.suggested_task_description}"
 
             for column, value in enumerate(values):
                 cell = QTableWidgetItem(value)
@@ -124,11 +167,22 @@ class MuInvestigationCheckDialog(QDialog):
                     cell.setTextAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
                 table.setItem(row, column, cell)
 
-        table.itemSelectionChanged.connect(self._update_navigate_button)
+        table.itemSelectionChanged.connect(lambda t=table: self._on_table_selection_changed(t))
         table.doubleClicked.connect(self._navigate_to_selected)
         self._tables.append(table)
         layout.addWidget(table)
         return group
+
+    def _on_table_selection_changed(self, source_table: QTableWidget) -> None:
+        if source_table.selectedItems():
+            for table in self._tables:
+                if table is source_table:
+                    continue
+                table.blockSignals(True)
+                table.clearSelection()
+                table.blockSignals(False)
+        self._update_navigate_button()
+        self._update_suggestion_panel()
 
     def _selected_result(self) -> InvestigationCheckResult | None:
         for table in self._tables:
@@ -145,6 +199,28 @@ class MuInvestigationCheckDialog(QDialog):
 
     def _update_navigate_button(self) -> None:
         self._navigate_btn.setEnabled(self._can_navigate(self._selected_result()))
+
+    def _update_suggestion_panel(self) -> None:
+        result = self._selected_result()
+        if result is None or not result.has_suggested_action():
+            self._suggestion_empty_label.setVisible(True)
+            self._suggestion_details.setVisible(False)
+            if result is None:
+                self._suggestion_empty_label.setText("Vyberte položku kontroly pro zobrazení doporučeného kroku.")
+            else:
+                self._suggestion_empty_label.setText(_NO_SUGGESTION_TEXT)
+            return
+
+        self._suggestion_empty_label.setVisible(False)
+        self._suggestion_details.setVisible(True)
+        self._suggestion_title_label.setText(result.suggested_task_title)
+        self._suggestion_description_label.setText(result.suggested_task_description or "—")
+        self._suggestion_priority_label.setText(
+            PRIORITY_LABELS.get(result.suggested_priority, result.suggested_priority or "—")
+        )
+        self._suggestion_type_label.setText(
+            ACTION_TYPE_LABELS.get(result.suggested_action_type, result.suggested_action_type or "—")
+        )
 
     def _navigate_to_selected(self) -> None:
         result = self._selected_result()

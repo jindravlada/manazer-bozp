@@ -39,6 +39,57 @@ SEVERITY_LABELS = {
     CHECK_SEVERITY_ERROR: "Chyba",
 }
 
+ACTION_TYPE_WITNESS = "witness"
+ACTION_TYPE_EVIDENCE = "evidence"
+ACTION_TYPE_ISHIKAWA = "ishikawa"
+ACTION_TYPE_TIMELINE = "timeline"
+ACTION_TYPE_ADMINISTRATION = "administration"
+ACTION_TYPE_PREVENTION = "prevention"
+ACTION_TYPE_COMMUNICATION = "communication"
+ACTION_TYPE_POLICE = "police"
+ACTION_TYPE_HZS = "hzs"
+ACTION_TYPE_MEDICAL = "medical"
+
+ACTION_TYPES = (
+    ACTION_TYPE_WITNESS,
+    ACTION_TYPE_EVIDENCE,
+    ACTION_TYPE_ISHIKAWA,
+    ACTION_TYPE_TIMELINE,
+    ACTION_TYPE_ADMINISTRATION,
+    ACTION_TYPE_PREVENTION,
+    ACTION_TYPE_COMMUNICATION,
+    ACTION_TYPE_POLICE,
+    ACTION_TYPE_HZS,
+    ACTION_TYPE_MEDICAL,
+)
+
+ACTION_TYPE_LABELS = {
+    ACTION_TYPE_WITNESS: "Svědek",
+    ACTION_TYPE_EVIDENCE: "Důkazy",
+    ACTION_TYPE_ISHIKAWA: "Ishikawa+",
+    ACTION_TYPE_TIMELINE: "Časová osa",
+    ACTION_TYPE_ADMINISTRATION: "Administrace spisu",
+    ACTION_TYPE_PREVENTION: "Preventivní opatření",
+    ACTION_TYPE_COMMUNICATION: "Komunikace",
+    ACTION_TYPE_POLICE: "Policie",
+    ACTION_TYPE_HZS: "HZS",
+    ACTION_TYPE_MEDICAL: "Zdravotní péče",
+}
+
+PRIORITY_LOW = "low"
+PRIORITY_NORMAL = "normal"
+PRIORITY_HIGH = "high"
+PRIORITY_CRITICAL = "critical"
+
+PRIORITIES = (PRIORITY_LOW, PRIORITY_NORMAL, PRIORITY_HIGH, PRIORITY_CRITICAL)
+
+PRIORITY_LABELS = {
+    PRIORITY_LOW: "Nízká",
+    PRIORITY_NORMAL: "Běžná",
+    PRIORITY_HIGH: "Vysoká",
+    PRIORITY_CRITICAL: "Kritická",
+}
+
 
 @dataclass(frozen=True)
 class InvestigationCheckResult:
@@ -49,8 +100,14 @@ class InvestigationCheckResult:
     check_code: str
     suggested_task_title: str = ""
     suggested_task_description: str = ""
+    suggested_action_type: str = ""
+    suggested_priority: str = ""
+    can_create_task: bool = False
     navigate_tab: str = ""
     navigate_field: str = ""
+
+    def has_suggested_action(self) -> bool:
+        return self.can_create_task
 
 
 _CHECK_NAVIGATION: dict[str, tuple[str, str]] = {
@@ -112,6 +169,162 @@ def _navigation_for(check_code: str, tab_name: str) -> tuple[str, str]:
     return tab_name, ""
 
 
+# (action_type, priority, default_title, default_description)
+_CHECK_ACTION_DEFAULTS: dict[str, tuple[str, str, str, str]] = {
+    "spis.lead_missing": (
+        ACTION_TYPE_ADMINISTRATION,
+        PRIORITY_HIGH,
+        "Doplnit vedoucího vyšetřování",
+        "Určit a zapsat vedoucího šetření do spisu MU.",
+    ),
+    "spis.status_missing": (ACTION_TYPE_ADMINISTRATION, PRIORITY_NORMAL, "Doplnit stav šetření", ""),
+    "spis.event_character_missing": (ACTION_TYPE_ADMINISTRATION, PRIORITY_NORMAL, "Doplnit charakter události", ""),
+    "spis.source_missing": (
+        ACTION_TYPE_ADMINISTRATION,
+        PRIORITY_HIGH,
+        "Doplnit zdroj vyšetřování",
+        "Doplnit zdroj podnětu a propojení se zdrojovým záznamem.",
+    ),
+    "oznameni.date_missing": (
+        ACTION_TYPE_ADMINISTRATION,
+        PRIORITY_NORMAL,
+        "Doplnit datum oznámení",
+        "Doplnit datum oznámení události zaměstnavateli.",
+    ),
+    "oznameni.time_missing": (
+        ACTION_TYPE_ADMINISTRATION,
+        PRIORITY_NORMAL,
+        "Doplnit čas oznámení",
+        "Doplnit čas oznámení události a ověřit návaznost v časové ose.",
+    ),
+    "oznameni.measures_missing": (
+        ACTION_TYPE_ADMINISTRATION,
+        PRIORITY_NORMAL,
+        "Doplnit okamžitá opatření",
+        "Projít průběh události a zaznamenat provedená okamžitá opatření.",
+    ),
+    "zajisteni.site_missing": (
+        ACTION_TYPE_EVIDENCE,
+        PRIORITY_HIGH,
+        "Doplnit zajištění místa události",
+        "Zaznamenat, kdo a kdy zajistil místo události a jaká opatření byla provedena.",
+    ),
+    "zajisteni.photo_missing": (
+        ACTION_TYPE_EVIDENCE,
+        PRIORITY_HIGH,
+        "Prověřit pořízení fotodokumentace",
+        "Ověřit, zda byla pořízena fotodokumentace místa události, a doplnit údaje do spisu.",
+    ),
+    "zajisteni.photo_time_missing": (
+        ACTION_TYPE_EVIDENCE,
+        PRIORITY_NORMAL,
+        "Doplnit čas fotodokumentace",
+        "Doplnit čas pořízení fotodokumentace a ověřit návaznost v časové ose.",
+    ),
+    "zajisteni.emergency_timeline_missing": (
+        ACTION_TYPE_TIMELINE,
+        PRIORITY_HIGH,
+        "Doplnit záznam zásahu IZS",
+        "Doplnit do časové osy čas příjezdu nebo další údaje o zásahu složky IZS.",
+    ),
+    "svedci.none": (
+        ACTION_TYPE_WITNESS,
+        PRIORITY_HIGH,
+        "Vyslechnout svědka",
+        "Zjistit identitu svědka, domluvit termín výslechu a doplnit výpověď do spisu.",
+    ),
+    "svedci.statement_missing": (ACTION_TYPE_WITNESS, PRIORITY_HIGH, "", ""),
+    "casova_osa.events_missing": (
+        ACTION_TYPE_TIMELINE,
+        PRIORITY_HIGH,
+        "Doplnit časovou osu vyšetřování",
+        "Doplnit klíčové události do časové osy MU.",
+    ),
+    "casova_osa.sequence_error": (
+        ACTION_TYPE_TIMELINE,
+        PRIORITY_HIGH,
+        "Prověřit časovou návaznost událostí",
+        "Zkontrolovat datum a čas události, oznámení, zajištění důkazů a fotodokumentace.",
+    ),
+    "ishikawa.none": (
+        ACTION_TYPE_ISHIKAWA,
+        PRIORITY_HIGH,
+        "Zpracovat analýzu příčin Ishikawa+",
+        "Doplnit příčiny události v Ishikawa+.",
+    ),
+    "ishikawa.rejected_chain": (
+        ACTION_TYPE_ISHIKAWA,
+        PRIORITY_HIGH,
+        "Přehodnotit řetězec příčin",
+        "Prověřit vyvrácené příčiny a navazující větve v Ishikawa+.",
+    ),
+    "findings.none": (
+        ACTION_TYPE_PREVENTION,
+        PRIORITY_HIGH,
+        "Vytvořit zjištění z vyšetřování",
+        "Zpracovat zjištění z analýzy příčin a dalších zdrojů.",
+    ),
+    "zaver.conclusion_missing": (
+        ACTION_TYPE_ADMINISTRATION,
+        PRIORITY_NORMAL,
+        "Vypracovat závěr vyšetřování",
+        "Sepsat závěrečné shrnutí vyšetřování mimořádné události.",
+    ),
+    "zaver.causes_missing": (
+        ACTION_TYPE_ADMINISTRATION,
+        PRIORITY_NORMAL,
+        "Doplnit shrnutí hlavních příčin",
+        "Doplnit hlavní příčiny do závěru vyšetřování.",
+    ),
+    "zaver.measures_missing": (
+        ACTION_TYPE_PREVENTION,
+        PRIORITY_HIGH,
+        "Navrhnout preventivní opatření",
+        "Na základě analýzy příčin navrhnout preventivní opatření.",
+    ),
+    "zaver.closed_with_issues": (
+        ACTION_TYPE_ADMINISTRATION,
+        PRIORITY_CRITICAL,
+        "Prověřit nedostatky před uzavřením spisu",
+        "Projít kontrolní nálezy a doplnit chybějící části spisu.",
+    ),
+}
+
+_CHECK_ACTION_PREFIXES: tuple[tuple[str, tuple[str, str, str, str]], ...] = (
+    ("svedci.identity_", (ACTION_TYPE_WITNESS, PRIORITY_NORMAL, "", "Doplnit jméno, pracovní zařazení nebo kontakt svědka.")),
+    ("ishikawa.status_", (ACTION_TYPE_ISHIKAWA, PRIORITY_NORMAL, "Doplnit stav příčiny", "")),
+    ("ishikawa.status_missing_", (ACTION_TYPE_ISHIKAWA, PRIORITY_NORMAL, "Doplnit stav příčiny", "")),
+    ("ishikawa.evidence_", (ACTION_TYPE_EVIDENCE, PRIORITY_HIGH, "", "Doplnit důkazní materiál nebo popis důkazů u potvrzené příčiny.")),
+    ("ishikawa.root_no_finding_", (ACTION_TYPE_PREVENTION, PRIORITY_HIGH, "", "Z potvrzené kořenové příčiny vytvořit zjištění a navrhnout opatření.")),
+    ("findings.task_missing_", (ACTION_TYPE_PREVENTION, PRIORITY_HIGH, "", "Navázat na zjištění nápravné opatření nebo úkol.")),
+    ("findings.responsible_missing_", (ACTION_TYPE_PREVENTION, PRIORITY_NORMAL, "", "Doplnit odpovědnou osobu pro realizaci opatření.")),
+    ("findings.due_missing_", (ACTION_TYPE_PREVENTION, PRIORITY_NORMAL, "", "Doplnit termín pro realizaci opatření.")),
+)
+
+
+def _action_defaults_for(check_code: str) -> tuple[str, str, str, str]:
+    if check_code in _CHECK_ACTION_DEFAULTS:
+        return _CHECK_ACTION_DEFAULTS[check_code]
+
+    for prefix, defaults in _CHECK_ACTION_PREFIXES:
+        if check_code.startswith(prefix):
+            return defaults
+
+    return "", "", "", ""
+
+
+def _resolve_suggested_action(
+    check_code: str,
+    suggested_task_title: str,
+    suggested_task_description: str,
+) -> tuple[str, str, str, str, bool]:
+    action_type, priority, default_title, default_description = _action_defaults_for(check_code)
+    title = _text(suggested_task_title) or _text(default_title)
+    description = _text(suggested_task_description) or _text(default_description)
+    can_create_task = bool(title and action_type)
+    return title, description, action_type, priority, can_create_task
+
+
 def _collect_issue_checks(snapshot: dict) -> list[InvestigationCheckResult]:
     return (
         _check_spis(snapshot)
@@ -142,14 +355,22 @@ def _result(
     suggested_task_description: str = "",
 ) -> InvestigationCheckResult:
     navigate_tab, navigate_field = _navigation_for(check_code, tab_name)
+    task_title, task_description, action_type, priority, can_create_task = _resolve_suggested_action(
+        check_code,
+        suggested_task_title,
+        suggested_task_description,
+    )
     return InvestigationCheckResult(
         severity=severity,
         title=title,
         message=message,
         tab_name=tab_name,
         check_code=check_code,
-        suggested_task_title=suggested_task_title,
-        suggested_task_description=suggested_task_description,
+        suggested_task_title=task_title,
+        suggested_task_description=task_description,
+        suggested_action_type=action_type,
+        suggested_priority=priority,
+        can_create_task=can_create_task,
         navigate_tab=navigate_tab,
         navigate_field=navigate_field,
     )
@@ -222,8 +443,6 @@ def _check_spis(snapshot: dict) -> list[InvestigationCheckResult]:
                 message="Ve spisu není vyplněn vedoucí šetření.",
                 tab_name="Spis",
                 check_code="spis.lead_missing",
-                suggested_task_title="Doplnit vedoucího vyšetřování MU",
-                suggested_task_description="Určit a zapsat vedoucího šetření do spisu MU.",
             )
         )
 
@@ -279,8 +498,6 @@ def _check_spis(snapshot: dict) -> list[InvestigationCheckResult]:
                 message="Ve spisu chybí zdroj podnětu nebo jeho vazba na záznam.",
                 tab_name="Spis",
                 check_code="spis.source_missing",
-                suggested_task_title="Doplnit zdroj vyšetřování MU",
-                suggested_task_description="Doplnit zdroj podnětu a propojení se zdrojovým záznamem.",
             )
         )
 
@@ -309,8 +526,6 @@ def _check_oznameni(snapshot: dict) -> list[InvestigationCheckResult]:
                 message="Na kartě Oznámení chybí datum oznámení události.",
                 tab_name="Oznámení",
                 check_code="oznameni.date_missing",
-                suggested_task_title="Doplnit datum oznámení MU",
-                suggested_task_description="Doplnit datum oznámení události zaměstnavateli.",
             )
         )
 
@@ -332,8 +547,6 @@ def _check_oznameni(snapshot: dict) -> list[InvestigationCheckResult]:
                 message="Na kartě Oznámení chybí čas oznámení události.",
                 tab_name="Oznámení",
                 check_code="oznameni.time_missing",
-                suggested_task_title="Doplnit čas oznámení MU",
-                suggested_task_description="Doplnit čas oznámení události a ověřit návaznost v časové ose.",
             )
         )
 
@@ -367,8 +580,6 @@ def _check_oznameni(snapshot: dict) -> list[InvestigationCheckResult]:
                 message="Na kartě Oznámení není zaškrtnuto žádné okamžité opatření.",
                 tab_name="Oznámení",
                 check_code="oznameni.measures_missing",
-                suggested_task_title="Doplnit okamžitá opatření po události",
-                suggested_task_description="Projít průběh události a zaznamenat provedená okamžitá opatření.",
             )
         )
 
@@ -404,8 +615,6 @@ def _check_zajisteni(snapshot: dict) -> list[InvestigationCheckResult]:
                 message="Není zaznamenáno zajištění místa události ani v Oznámení, ani v Zajištění důkazů.",
                 tab_name="Zajištění důkazů",
                 check_code="zajisteni.site_missing",
-                suggested_task_title="Doplnit zajištění místa události",
-                suggested_task_description="Zaznamenat, kdo a kdy zajistil místo události a jaká opatření byla provedena.",
             )
         )
 
@@ -427,8 +636,6 @@ def _check_zajisteni(snapshot: dict) -> list[InvestigationCheckResult]:
                 message="Ve spisu není zaznamenáno, zda byla pořízena fotodokumentace.",
                 tab_name="Zajištění důkazů",
                 check_code="zajisteni.photo_missing",
-                suggested_task_title="Prověřit fotodokumentaci místa události",
-                suggested_task_description="Ověřit, zda byla pořízena fotodokumentace, a doplnit údaje v Zajištění důkazů.",
             )
         )
 
@@ -440,8 +647,6 @@ def _check_zajisteni(snapshot: dict) -> list[InvestigationCheckResult]:
                 message="Fotodokumentace je uvedena, ale chybí čas pořízení.",
                 tab_name="Zajištění důkazů",
                 check_code="zajisteni.photo_time_missing",
-                suggested_task_title="Doplnit čas fotodokumentace",
-                suggested_task_description="Doplnit čas pořízení fotodokumentace a ověřit návaznost v časové ose.",
             )
         )
 
@@ -462,8 +667,6 @@ def _check_zajisteni(snapshot: dict) -> list[InvestigationCheckResult]:
                     message="V Oznámení je uvedena Policie nebo HZS, doporučuje se doplnit čas příjezdu nebo záznam do časové osy.",
                     tab_name="Zajištění důkazů",
                     check_code="zajisteni.emergency_timeline_missing",
-                    suggested_task_title="Doplnit záznam příjezdu Policie/HZS",
-                    suggested_task_description="Doplnit do časové osy čas příjezdu nebo další údaje o zásahu složky IZS.",
                 )
             )
 
@@ -484,8 +687,6 @@ def _check_svedci(snapshot: dict) -> list[InvestigationCheckResult]:
                 message="Na kartě Svědci není uveden žádný svědek.",
                 tab_name="Svědci",
                 check_code="svedci.none",
-                suggested_task_title="Prověřit a doplnit svědky události",
-                suggested_task_description="Ověřit, zda existují svědci události, a doplnit jejich identifikaci do spisu.",
             )
         )
         return results
@@ -512,7 +713,7 @@ def _check_svedci(snapshot: dict) -> list[InvestigationCheckResult]:
                 check_code="svedci.statement_missing",
                 suggested_task_title=f"Vyslechnout svědka {label}",
                 suggested_task_description=(
-                    f"Domluvit termín výslechu, ověřit dostupnost svědka a doplnit vyjádření do spisu MU."
+                    "Zjistit identitu svědka, domluvit termín výslechu a doplnit výpověď do spisu."
                 ),
             )
         )
@@ -556,8 +757,6 @@ def _check_casova_osa(snapshot: dict) -> list[InvestigationCheckResult]:
                 message="Časová osa neobsahuje systémové ani ručně zadané události.",
                 tab_name="Časová osa",
                 check_code="casova_osa.events_missing",
-                suggested_task_title="Doplnit časovou osu vyšetřování",
-                suggested_task_description="Doplnit klíčové události do časové osy MU.",
             )
         )
 
@@ -587,8 +786,6 @@ def _check_casova_osa(snapshot: dict) -> list[InvestigationCheckResult]:
                 message=" ".join(timeline_issues),
                 tab_name="Časová osa",
                 check_code="casova_osa.sequence_error",
-                suggested_task_title="Prověřit časovou návaznost událostí",
-                suggested_task_description="Zkontrolovat datum a čas události, oznámení, zajištění důkazů a fotodokumentace.",
             )
         )
     elif reference_dt and (oznameni_dt or zajisteni_dt or foto_dt):
@@ -617,8 +814,6 @@ def _check_ishikawa(snapshot: dict) -> list[InvestigationCheckResult]:
                 message="V Ishikawa+ není zadána žádná příčina.",
                 tab_name="Zjištění",
                 check_code="ishikawa.none",
-                suggested_task_title="Zpracovat analýzu příčin Ishikawa+",
-                suggested_task_description="Doplnit příčiny události v Ishikawa+.",
             )
         )
         return results
@@ -721,8 +916,6 @@ def _check_findings(snapshot: dict) -> list[InvestigationCheckResult]:
                 message="Vyšetřování neobsahuje žádné zjištění.",
                 tab_name="Zjištění",
                 check_code="findings.none",
-                suggested_task_title="Vytvořit zjištění z vyšetřování MU",
-                suggested_task_description="Zpracovat zjištění z analýzy příčin a dalších zdrojů.",
             )
         )
         return results
@@ -807,8 +1000,6 @@ def _check_zaver(snapshot: dict) -> list[InvestigationCheckResult]:
                 message="Na kartě Závěr chybí závěrečné shrnutí vyšetřování.",
                 tab_name="Závěr",
                 check_code="zaver.conclusion_missing",
-                suggested_task_title="Doplnit závěr vyšetřování MU",
-                suggested_task_description="Sepsat závěrečné shrnutí vyšetřování mimořádné události.",
             )
         )
 
@@ -830,8 +1021,6 @@ def _check_zaver(snapshot: dict) -> list[InvestigationCheckResult]:
                 message="Ve Závěru chybí shrnutí hlavních příčin.",
                 tab_name="Závěr",
                 check_code="zaver.causes_missing",
-                suggested_task_title="Doplnit shrnutí hlavních příčin",
-                suggested_task_description="Doplnit hlavní příčiny do závěru vyšetřování.",
             )
         )
 
@@ -854,8 +1043,6 @@ def _check_zaver(snapshot: dict) -> list[InvestigationCheckResult]:
                 message="Ve spisu zatím nejsou zjištění, ze kterých by šlo odvodit preventivní opatření.",
                 tab_name="Závěr",
                 check_code="zaver.measures_missing",
-                suggested_task_title="Navrhnout preventivní opatření",
-                suggested_task_description="Na základě analýzy příčin navrhnout preventivní opatření.",
             )
         )
 
@@ -884,7 +1071,5 @@ def _check_closed_with_errors(
             message=f"Vyšetřování je ve stavu Dokončeno, ale kontrola našla {len(issues)} problém(ů).",
             tab_name="Závěr",
             check_code="zaver.closed_with_issues",
-            suggested_task_title="Prověřit nedostatky před uzavřením spisu",
-            suggested_task_description="Projít kontrolní nálezy a doplnit chybějící části spisu.",
         )
     ]
