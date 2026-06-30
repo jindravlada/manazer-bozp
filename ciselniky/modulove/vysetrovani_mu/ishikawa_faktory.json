@@ -3016,7 +3016,7 @@
           },
           {
             "category": "Komunikace",
-            "factor": "Nedostupnost spojení"
+            "factor": "Komunikace vysílačkou"
           }
         ]
       },
@@ -3511,7 +3511,7 @@
           },
           {
             "category": "Komunikace",
-            "factor": "Nejasné pokyny"
+            "factor": "Nejasný pokyn"
           },
           {
             "category": "Hodnocení rizik",
@@ -3693,7 +3693,7 @@
           },
           {
             "category": "Komunikace",
-            "factor": "Nejasné pokyny"
+            "factor": "Nejasný pokyn"
           },
           {
             "category": "Pracovní postup",
@@ -3918,7 +3918,7 @@
         "suggest": [
           {
             "category": "Komunikace",
-            "factor": "Nejasné pokyny"
+            "factor": "Nejasný pokyn"
           },
           {
             "category": "Řízení a kontrola",
@@ -4360,8 +4360,1971 @@
     "question": "Měli všichni potřebné informace ve správný čas?",
     "factors": [
       {
+        "name": "Nejasný pokyn",
+        "parent": "",
+        "questions": [
+          "Byl pokyn formulován jednoznačně?",
+          "Mohli účastníci pokyn chápat rozdílně?",
+          "Obsahoval pokyn vše potřebné pro bezpečné provedení?",
+          "Byly v pokynu neurčité nebo vágní formulace?",
+          "Měl příjemce možnost si pokyn vyjasnit?",
+          "Byl pokyn v souladu s pracovním postupem?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Neúplný pokyn",
+          "Pokyn nebyl pochopen",
+          "Chybná interpretace pokynu"
+        ],
+        "supports": [
+          "Pokyn obsahoval nejednoznačné formulace",
+          "Účastníci pokyn chápali rozdílně",
+          "Chyběly klíčové detaily",
+          "Příjemce si nebyl jist významem pokynu",
+          "Nejasnost ovlivnila rozhodnutí před MU"
+        ],
+        "contradicts": [
+          "Pokyn byl jednoznačný a srozumitelný",
+          "Všichni účastníci chápali pokyn shodně",
+          "Nejasnost neovlivnila průběh události"
+        ],
+        "actions": [
+          "Analyzovat text pokynu",
+          "Vyslechnout všechny strany o chápání pokynu",
+          "Porovnat pokyn s pracovním postupem",
+          "Prověřit záznam komunikace",
+          "Posoudit, zda nejasnost vedla k MU"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní postup",
+            "factor": "Nejasný pracovní postup"
+          },
+          {
+            "category": "Školení",
+            "factor": "Nedostatečné seznámení"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Nedodržení předpisové frazeologie"
+          }
+        ]
+      },
+      {
+        "name": "Neúplný pokyn",
+        "parent": "",
+        "questions": [
+          "Obsahoval pokyn všechny potřebné informace?",
+          "Chyběly v pokynu bezpečnostní nebo provozní detaily?",
+          "Byl pokyn předán bez klíčových parametrů (místo, čas, rozsah)?",
+          "Musel příjemce doplnit informace sám?",
+          "Byl neúplný pokyn běžný?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Nejasný pokyn",
+          "Pokyn nebyl předán",
+          "Nedostatečné předání informací"
+        ],
+        "supports": [
+          "Pokyn neobsahoval potřebné informace",
+          "Příjemce musel domýšlet chybějící údaje",
+          "Chyběly bezpečnostní parametry",
+          "Neúplnost byla opakovaná"
+        ],
+        "contradicts": [
+          "Pokyn byl úplný",
+          "Chybějící informace nebyly pro situaci potřebné",
+          "Příjemce měl informace z jiného zdroje"
+        ],
+        "actions": [
+          "Porovnat pokyn s požadovaným obsahem dle postupu",
+          "Vyslechnout příjemce o chybějících informacích",
+          "Prověřit záznam komunikace",
+          "Posoudit standardy pro vydávání pokynů"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící kontrolní krok"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Domněnka místo informace"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečná komunikace rizik"
+          }
+        ]
+      },
+      {
+        "name": "Pokyn nebyl předán",
+        "parent": "",
+        "questions": [
+          "Měl být pokyn vydán nebo předán?",
+          "Kdo měl pokyn vydat?",
+          "Komu měl být pokyn určen?",
+          "Existuje důkaz o předání pokynu?",
+          "Bylo vydání pokynu povinné podle postupu nebo předpisu?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Neúplný pokyn",
+          "Předčasné jednání bez pokynu",
+          "Nedostatečné předání informací"
+        ],
+        "supports": [
+          "Pokyn nebyl vydán",
+          "Chybí záznam o předání",
+          "Příjemce pokyn neobdržel",
+          "Vydání pokynu bylo povinné"
+        ],
+        "contradicts": [
+          "Pokyn byl prokazatelně předán",
+          "Vydání pokynu nebylo vyžadováno",
+          "Informace byla předána jiným kanálem"
+        ],
+        "actions": [
+          "Určit, kdo měl pokyn vydat",
+          "Prověřit záznamy komunikace",
+          "Vyslechnout obě strany",
+          "Porovnat s požadavky postupu"
+        ],
+        "suggest": [
+          {
+            "category": "Komunikace",
+            "factor": "Předčasné jednání bez pokynu"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící pracovní postup"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Nedostatečné předání směny"
+          }
+        ]
+      },
+      {
+        "name": "Pokyn nebyl pochopen",
+        "parent": "",
+        "questions": [
+          "Rozuměl příjemce pokynu?",
+          "Byl pokyn srozumitelný pro danou úroveň zkušeností?",
+          "Měl příjemce možnost si pokyn vyjasnit?",
+          "Bylo pochopení ověřeno?",
+          "Nebyl pokyn příliš složitý nebo odborný?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Nejasný pokyn",
+          "Chybná interpretace pokynu",
+          "Jazyková bariéra"
+        ],
+        "supports": [
+          "Příjemce pokyn nepochopil",
+          "Pochopení nebylo ověřeno",
+          "Příjemce jednal v rozporu s vydaným pokynem",
+          "Chyběla zpětná vazba o nedorozumění"
+        ],
+        "contradicts": [
+          "Příjemce pokyn správně pochopil",
+          "Pochopení bylo ověřeno",
+          "Odchylka nevznikla nedorozuměním"
+        ],
+        "actions": [
+          "Vyslechnout příjemce o chápání pokynu",
+          "Porovnat pokyn se skutečným jednáním",
+          "Prověřit, zda bylo pochopení ověřeno",
+          "Posoudit srozumitelnost pokynu"
+        ],
+        "suggest": [
+          {
+            "category": "Školení",
+            "factor": "Nedostatečné seznámení"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Nevyžádání potvrzení pokynu"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Neprovedení opakování pokynu"
+          }
+        ]
+      },
+      {
+        "name": "Chybná interpretace pokynu",
+        "parent": "",
+        "questions": [
+          "Pochopil příjemce pokyn jinak, než zadavatel zamýšlel?",
+          "Byla interpretace logická z pohledu příjemce?",
+          "Mohla formulace pokynu vést k více výkladům?",
+          "Byla interpretace ověřena před jednáním?",
+          "Jednal příjemce v dobré víře podle svého chápání?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Nejasný pokyn",
+          "Pokyn nebyl pochopen",
+          "Nedodržení předpisové frazeologie"
+        ],
+        "supports": [
+          "Příjemce interpretoval pokyn jinak než zadavatel",
+          "Formulace umožňovala více výkladů",
+          "Interpretace nebyla ověřena",
+          "Skutečné jednání odpovídalo chybné interpretaci"
+        ],
+        "contradicts": [
+          "Interpretace odpovídala záměru zadavatele",
+          "Pokyn byl jednoznačný",
+          "Chybná interpretace neovlivnila MU"
+        ],
+        "actions": [
+          "Porovnat záměr zadavatele a chápání příjemce",
+          "Analyzovat formulaci pokynu",
+          "Vyslechnout všechny strany",
+          "Prověřit záznam komunikace"
+        ],
+        "suggest": [
+          {
+            "category": "Komunikace",
+            "factor": "Nejasný pokyn"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Nedodržení předpisové frazeologie"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Nejasný pracovní postup"
+          }
+        ]
+      },
+      {
+        "name": "Chybějící zpětná vazba",
+        "parent": "",
+        "questions": [
+          "Měla být poskytnuta zpětná vazba o stavu nebo průběhu?",
+          "Byl odesílatel informován o plnění pokynu?",
+          "Chyběla informace o dokončení nebo problému?",
+          "Existoval postup pro hlášení stavu?",
+          "Mohla chybějící zpětná vazba ovlivnit rozhodnutí druhé strany?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Nedostatečné předání informací",
+          "Neověřené informace",
+          "Nevyžádání potvrzení pokynu"
+        ],
+        "supports": [
+          "Zpětná vazba nebyla poskytnuta",
+          "Druhá strana jednala bez aktuálních informací",
+          "Chybělo hlášení stavu nebo problému",
+          "Postup zpětné vazby nebyl dodržen"
+        ],
+        "contradicts": [
+          "Zpětná vazba byla poskytnuta včas",
+          "Chybějící informace neovlivnila MU",
+          "Zpětná vazba nebyla vyžadována"
+        ],
+        "actions": [
+          "Ověřit požadavek na zpětnou vazbu",
+          "Prověřit záznamy hlášení",
+          "Vyslechnout obě strany",
+          "Posoudit dopad na průběh události"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Chybí zpětná vazba"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Nedostatečné předání směny"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící kontrolní krok"
+          }
+        ]
+      },
+      {
+        "name": "Nedostatečné předání informací",
+        "parent": "",
+        "questions": [
+          "Byly všechny potřebné informace předány?",
+          "Byla informace předána včas?",
+          "Byla informace předána správným kanálem?",
+          "Byli všichni dotčení pracovníci informováni?",
+          "Chyběla klíčová informace pro bezpečné provedení práce?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Neúplný pokyn",
+          "Pokyn nebyl předán",
+          "Chybějící upozornění na riziko"
+        ],
+        "supports": [
+          "Klíčová informace nebyla předána",
+          "Informace byla předána opožděně",
+          "Nebyli informováni všichni dotčení",
+          "Kanál předání nebyl vhodný"
+        ],
+        "contradicts": [
+          "Všechny informace byly předány včas",
+          "Chybějící informace nebyly pro MU relevantní",
+          "Pracovníci informace měli z jiného zdroje"
+        ],
+        "actions": [
+          "Mapovat, jaké informace měly být předány",
+          "Prověřit záznamy a výpovědi",
+          "Určit odpovědnost za předání",
+          "Posoudit včasnost a úplnost"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečná komunikace rizik"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Nedostatečné předání směny"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Domněnka místo informace"
+          }
+        ]
+      },
+      {
+        "name": "Nedostatečná komunikace mezi směnami",
+        "parent": "",
+        "questions": [
+          "Proběhlo předání směny?",
+          "Byly předány informace o rizicích a probíhající práci?",
+          "Byl předávající i přebírající pracovník přítomen?",
+          "Existoval standardizovaný postup předání?",
+          "Byly nedostatky z předchozí směny komunikovány?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Nedostatečné předání informací",
+          "Chybějící zpětná vazba",
+          "Neověřené informace"
+        ],
+        "supports": [
+          "Předání směny neproběhlo nebo bylo neúplné",
+          "Informace o riziku nebyla předána",
+          "Nastupující směna neznala stav pracoviště",
+          "Předání proběhlo pouze formálně"
+        ],
+        "contradicts": [
+          "Předání směny proběhlo řádně",
+          "Všechny informace byly předány",
+          "MU nesouvisela s informacemi ze směny"
+        ],
+        "actions": [
+          "Vyžádat záznamy o předání směny",
+          "Vyslechnout obě směny",
+          "Ověřit postup předání",
+          "Posoudit, jaké informace měly být předány"
+        ],
+        "suggest": [
+          {
+            "category": "Organizace práce",
+            "factor": "Nedostatečné předání směny"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Neúčinný systém předání směny"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící postup předání směny"
+          }
+        ]
+      },
+      {
+        "name": "Chybějící upozornění na riziko",
+        "parent": "",
+        "questions": [
+          "Bylo riziko předem známo?",
+          "Mělo být riziko sděleno pracovníkům?",
+          "Bylo upozornění provedeno včas?",
+          "Bylo upozornění srozumitelné?",
+          "Bylo riziko vizuálně nebo ústně označeno?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Nedostatečné předání informací",
+          "Chybějící zpětná vazba",
+          "Neověřené informace"
+        ],
+        "supports": [
+          "Riziko nebylo pracovníkům sděleno",
+          "Upozornění chybělo nebo bylo opožděné",
+          "Pracovníci riziko neznali",
+          "Riziko bylo známo odpovědné osobě"
+        ],
+        "contradicts": [
+          "Riziko bylo sděleno a potvrzeno",
+          "Pracovníci riziko vnímali",
+          "Upozornění nebylo pro situaci potřeba"
+        ],
+        "actions": [
+          "Ověřit, zda riziko bylo známo",
+          "Prověřit způsob a čas upozornění",
+          "Vyslechnout pracovníky",
+          "Posoudit povinnost upozornit"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečná komunikace rizik"
+          },
+          {
+            "category": "Školení",
+            "factor": "Nedostatečné seznámení"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící kontrolní krok"
+          }
+        ]
+      },
+      {
+        "name": "Neslyšitelný pokyn",
+        "parent": "",
+        "questions": [
+          "Byl pokyn slyšitelný v místě a čase události?",
+          "Působily rušivé vlivy (hluk, vzdálenost, technická porucha)?",
+          "Byl použit vhodný komunikační prostředek?",
+          "Požádal příjemce o opakování pokynu?",
+          "Byl pokyn částečně nebo zcela neslyšen?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Rušivá komunikace",
+          "Komunikace vysílačkou",
+          "Neprovedení opakování pokynu"
+        ],
+        "supports": [
+          "Pokyn nebyl slyšitelný",
+          "Hluk nebo vzdálenost bránily vnímání",
+          "Technická porucha spojení",
+          "Příjemce neslyšel klíčovou část pokynu"
+        ],
+        "contradicts": [
+          "Pokyn byl slyšitelný",
+          "Příjemce pokyn slyšel a potvrdil",
+          "Rušení neovlivnilo vnímání"
+        ],
+        "actions": [
+          "Prověřit podmínky v místě komunikace",
+          "Ověřit technický stav prostředku",
+          "Vyslechnout účastníky",
+          "Analyzovat záznam komunikace"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Hluk"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Rušivá komunikace"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Neprovedení opakování pokynu"
+          }
+        ]
+      },
+      {
+        "name": "Jazyková bariéra",
+        "parent": "",
+        "questions": [
+          "Byl jazyk komunikace pro všechny strany srozumitelný?",
+          "Byly použity odborné termíny nebo cizí jazyk?",
+          "Měli účastníci dostatečnou jazykovou způsobilost?",
+          "Bylo možné použít tlumočníka nebo písemnou formu?",
+          "Došlo k nedorozumění kvůli jazyku?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Pokyn nebyl pochopen",
+          "Chybná interpretace pokynu",
+          "Nejasný pokyn"
+        ],
+        "supports": [
+          "Účastníci nerozuměli jazyku komunikace",
+          "Cizí jazyk nebo terminologie způsobily nedorozumění",
+          "Jazyková způsobilost nebyla ověřena",
+          "Chyběl tlumocení nebo písemná podpora"
+        ],
+        "contradicts": [
+          "Všichni účastníci jazyku rozuměli",
+          "Nedorozumění nevzniklo jazykovou bariérou",
+          "Byla zajištěna jazyková podpora"
+        ],
+        "actions": [
+          "Ověřit jazykovou způsobilost účastníků",
+          "Vyslechnout strany o chápání",
+          "Posoudit vhodnost jazyka komunikace",
+          "Prověřit možnosti jazykové podpory"
+        ],
+        "suggest": [
+          {
+            "category": "Školení",
+            "factor": "Nedostatečné seznámení"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Nedostatečná komunikace mezi dodavateli"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Chybná interpretace pokynu"
+          }
+        ]
+      },
+      {
+        "name": "Rušivá komunikace",
+        "parent": "",
+        "questions": [
+          "Byla komunikace rušena hlukem, vzdáleností nebo jinými podněty?",
+          "Probíhala současně více komunikací?",
+          "Byl komunikační kanál přetížen?",
+          "Ovlivnilo rušení slyšitelnost nebo pozornost?",
+          "Bylo rušení předvídatelné a řízené?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Neslyšitelný pokyn",
+          "Používání telefonu při komunikaci",
+          "Komunikace vysílačkou"
+        ],
+        "supports": [
+          "Komunikace byla rušena vnějšími vlivy",
+          "Souběžné komunikace odváděly pozornost",
+          "Kanál byl přetížen",
+          "Klíčová informace nebyla vnímána"
+        ],
+        "contradicts": [
+          "Komunikace probíhala bez rušení",
+          "Rušení neovlivnilo vnímání pokynu",
+          "Byly použity vhodné kompenzační prostředky"
+        ],
+        "actions": [
+          "Prověřit podmínky komunikace v době MU",
+          "Analyzovat záznamy",
+          "Vyslechnout účastníky",
+          "Posoudit organizaci komunikačních kanálů"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Hluk"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Přerušování práce"
+          }
+        ]
+      },
+      {
+        "name": "Používání telefonu při komunikaci",
+        "parent": "",
+        "questions": [
+          "Byla komunikace vedena telefonem?",
+          "Byl telefon vhodný pro danou situaci?",
+          "Nebyla komunikace telefonem rušena nebo přerušena?",
+          "Bylo telefonování povoleno pro danou činnost?",
+          "Mohlo použití telefonu ovlivnit kvalitu předání informace?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Rušivá komunikace",
+          "Neslyšitelný pokyn",
+          "Neúplný pokyn"
+        ],
+        "supports": [
+          "Klíčová komunikace probíhala telefonem",
+          "Telefonní spojení bylo nekvalitní",
+          "Informace telefonem nebyla kompletní",
+          "Telefonování nebylo pro situaci vhodné"
+        ],
+        "contradicts": [
+          "Telefon nebyl použit",
+          "Telefonní komunikace byla kvalitní a úplná",
+          "Telefon neovlivnil MU"
+        ],
+        "actions": [
+          "Prověřit telefonní záznamy",
+          "Vyslechnout účastníky",
+          "Posoudit vhodnost kanálu",
+          "Ověřit pravidla pro telefonování"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Používání telefonu"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící pravidla používání telefonu"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Rušivá komunikace"
+          }
+        ]
+      },
+      {
+        "name": "Komunikace vysílačkou",
+        "parent": "",
+        "questions": [
+          "Byla komunikace vedena vysílačkou nebo radiostanicí?",
+          "Bylo spojení spolehlivé a slyšitelné?",
+          "Byl použit správný kanál nebo frekvence?",
+          "Byly vysílačky technicky způsobilé?",
+          "Byla komunikace v souladu s předpisem?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Neslyšitelný pokyn",
+          "Rušivá komunikace",
+          "Nedodržení závazné komunikace"
+        ],
+        "supports": [
+          "Spojení bylo nekvalitní nebo přerušené",
+          "Byl použit nesprávný kanál",
+          "Vysílačka nefungovala správně",
+          "Pokyn přes vysílačku nebyl slyšet"
+        ],
+        "contradicts": [
+          "Vysílačkové spojení bylo kvalitní",
+          "Komunikace proběhla dle předpisu",
+          "Technika spojení nebyla příčinou"
+        ],
+        "actions": [
+          "Prověřit záznam radiového provozu",
+          "Ověřit technický stav vysílaček",
+          "Vyslechnout účastníky",
+          "Porovnat s předpisem pro radiokomunikaci"
+        ],
+        "suggest": [
+          {
+            "category": "Zařízení a technika",
+            "factor": "Technická závada"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Neslyšitelný pokyn"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Nedodržení předpisové frazeologie"
+          }
+        ]
+      },
+      {
+        "name": "Chyba při návěstění",
+        "parent": "",
+        "questions": [
+          "Bylo návěstění nebo signalizace provedeno správně?",
+          "Odpovídala signalizace skutečnému stavu?",
+          "Byla signalizace viditelná a srozumitelná?",
+          "Byl pracovník se signalizací seznámen?",
+          "Došlo k chybnému nebo opožděnému návěstění?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Chybná interpretace pokynu",
+          "Nedodržení závazné komunikace",
+          "Neověřené informace"
+        ],
+        "supports": [
+          "Signalizace neodpovídala stavu",
+          "Návěstění bylo chybné nebo opožděné",
+          "Pracovník signalizaci nevnímal",
+          "Chyba v návěstění ovlivnila rozhodnutí"
+        ],
+        "contradicts": [
+          "Návěstění bylo správné",
+          "Signalizace odpovídala stavu",
+          "Chyba návěstění nebyla prokázána"
+        ],
+        "actions": [
+          "Prověřit stav signalizace v době MU",
+          "Porovnat s požadovaným postupem návěstění",
+          "Vyslechnout účastníky",
+          "Analyzovat záznamy a dokumentaci"
+        ],
+        "suggest": [
+          {
+            "category": "Komunikace",
+            "factor": "Nedodržení závazné komunikace"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Nedodržení pracovního postupu"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          }
+        ]
+      },
+      {
+        "name": "Nedostatečná komunikace mezi zaměstnavateli",
+        "parent": "",
+        "questions": [
+          "Spolupracovaly dvě nebo více organizací na pracovišti?",
+          "Byly role a odpovědnosti mezi zaměstnavateli jasně určeny?",
+          "Byly informace o rizicích sdíleny mezi organizacemi?",
+          "Existoval koordinační mechanismus?",
+          "Došlo k mezerě v komunikaci mezi dodavatelem a objednatelem?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Nedostatečné předání informací",
+          "Chybějící upozornění na riziko",
+          "Nejasný pokyn"
+        ],
+        "supports": [
+          "Informace nebyly sdíleny mezi organizacemi",
+          "Odpovědnosti nebyly jasně určeny",
+          "Koordinace chyběla",
+          "Rizika nebyla komunikována mezi stranami"
+        ],
+        "contradicts": [
+          "Komunikace mezi zaměstnavateli fungovala",
+          "Role byly jasně definovány",
+          "MU nesouvisela s mezorganizační komunikací"
+        ],
+        "actions": [
+          "Mapovat vztahy mezi organizacemi",
+          "Ověřit smluvní a provozní dohody",
+          "Vyslechnout zástupce obou stran",
+          "Posoudit koordinační mechanismy"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nejasné kompetence"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Nejasné rozdělení odpovědností"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící odpovědnost v postupu"
+          }
+        ]
+      },
+      {
+        "name": "Neověřené informace",
+        "parent": "",
+        "questions": [
+          "Byla informace ověřena před jednáním?",
+          "Spoléhal se pracovník na neověřený údaj?",
+          "Bylo ověření možné a povinné?",
+          "Kdo měl informaci ověřit?",
+          "Mohla neověřená informace vést k MU?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Předpoklad místo ověření",
+          "Domněnka místo informace",
+          "Chybějící zpětná vazba"
+        ],
+        "supports": [
+          "Pracovník jednal podle neověřené informace",
+          "Ověření neproběhlo navzdory možnosti",
+          "Informace nebyla potvrzena druhou stranou",
+          "Neověření bylo běžné"
+        ],
+        "contradicts": [
+          "Informace byla ověřena",
+          "Ověření nebylo potřeba",
+          "Neověřená informace neovlivnila MU"
+        ],
+        "actions": [
+          "Identifikovat neověřenou informaci",
+          "Určit odpovědnost za ověření",
+          "Prověřit záznamy komunikace",
+          "Posoudit, zda ověření bylo povinné"
+        ],
+        "suggest": [
+          {
+            "category": "Komunikace",
+            "factor": "Předpoklad místo ověření"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Domněnka místo informace"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Podcenění rizika"
+          }
+        ]
+      },
+      {
         "name": "Jiné",
-        "questions": []
+        "parent": "",
+        "questions": [],
+        "evidence": [],
+        "related": [],
+        "supports": [],
+        "contradicts": [],
+        "actions": [],
+        "suggest": []
+      },
+      {
+        "name": "Předpoklad místo ověření",
+        "parent": "",
+        "questions": [
+          "Jakou informaci pracovník pouze předpokládal?",
+          "Kdo měl informaci skutečně potvrdit?",
+          "Bylo možné informaci ověřit?",
+          "Proč ověření neproběhlo?",
+          "Existuje důkaz, že informace byla opravdu předána?",
+          "Šlo pouze o domněnku?",
+          "Jak vznikl předpoklad?",
+          "Byla vytvořena nebezpečná rutina?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Myslel jsem, že...",
+          "Předpokládal jsem...",
+          "Domníval jsem se...",
+          "Nikdo mi neřekl...",
+          "Domněnka místo informace"
+        ],
+        "supports": [
+          "Pracovník jednal na základě domněnky, ne ověřené informace",
+          "Informace nebyla nikým potvrzena",
+          "Ověření bylo možné, ale neproběhlo",
+          "Chybí důkaz o skutečném předání informace",
+          "Předpoklad vznikl z dřívější praxe nebo zvyku",
+          "Obdobná domněnka se opakovala"
+        ],
+        "contradicts": [
+          "Informace byla prokazatelně předána a potvrzena",
+          "Ověření proběhlo před jednáním",
+          "Pracovník neměl důvod informaci ověřovat",
+          "Předpoklad neovlivnil průběh události"
+        ],
+        "actions": [
+          "Identifikovat, jakou informaci pracovník předpokládal",
+          "Určit, kdo měl informaci potvrdit",
+          "Prověřit dostupné záznamy komunikace",
+          "Vyslechnout všechny strany k předání informace",
+          "Posoudit, zda ověření bylo možné a povinné",
+          "Prověřit, zda šlo o opakující se praxi"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Rutina"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Podcenění rizika"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící kontrolní krok"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Tolerování nebezpečné praxe"
+          }
+        ]
+      },
+      {
+        "name": "Myslel jsem, že...",
+        "parent": "Předpoklad místo ověření",
+        "questions": [
+          "Jakou konkrétní informaci pracovník pouze domněl?",
+          "Na čem tento názor vycházel?",
+          "Měl pracovník důvod domnívat se, že informace platí?",
+          "Bylo možné názor ověřit před jednáním?",
+          "Uvedl pracovník tuto formulaci ve výpovědi?"
+        ],
+        "evidence": [
+          "Výpověď pracovníka",
+          "Výpovědi dalších účastníků",
+          "Záznam komunikace",
+          "Provozní dokumentace"
+        ],
+        "related": [
+          "Předpoklad místo ověření",
+          "Domněnka místo informace",
+          "Předpokládal jsem..."
+        ],
+        "supports": [
+          "Pracovník uvedl formulaci typu myslel jsem, že...",
+          "Informace nebyla ověřena",
+          "Domněnka ovlivnila rozhodnutí",
+          "Chybí důkaz o předání informace"
+        ],
+        "contradicts": [
+          "Pracovník informaci ověřil",
+          "Informace byla prokazatelně sdělena",
+          "Domněnka nehrála roli"
+        ],
+        "actions": [
+          "Vyslechnout pracovníka k formulaci domněnky",
+          "Porovnat domněnku se skutečným stavem",
+          "Prověřit záznamy komunikace"
+        ],
+        "suggest": [
+          {
+            "category": "Komunikace",
+            "factor": "Domněnka místo informace"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Rutina"
+          }
+        ]
+      },
+      {
+        "name": "Předpokládal jsem...",
+        "parent": "Předpoklad místo ověření",
+        "questions": [
+          "Co pracovník pouze předpokládal?",
+          "Vycházel předpoklad z dřívější praxe?",
+          "Měl být předpoklad ověřen?",
+          "Kdo měl stav nebo pokyn potvrdit?"
+        ],
+        "evidence": [
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Záznam komunikace",
+          "Historie obdobných situací"
+        ],
+        "related": [
+          "Předpoklad místo ověření",
+          "Myslel jsem, že...",
+          "Domníval jsem se..."
+        ],
+        "supports": [
+          "Pracovník jednal na základě předpokladu",
+          "Předpoklad nebyl ověřen",
+          "Vycházel z rutinní praxe",
+          "Chybí potvrzení druhé strany"
+        ],
+        "contradicts": [
+          "Předpoklad odpovídal skutečnosti a byl ověřen",
+          "Informace byla jednoznačně sdělena"
+        ],
+        "actions": [
+          "Zmapovat, z čeho předpoklad vzešel",
+          "Ověřit, zda měl být stav potvrzen",
+          "Vyslechnout druhou stranu komunikace"
+        ],
+        "suggest": [
+          {
+            "category": "Organizace práce",
+            "factor": "Monotónní práce"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Rutina"
+          }
+        ]
+      },
+      {
+        "name": "Domníval jsem se...",
+        "parent": "Předpoklad místo ověření",
+        "questions": [
+          "V čem se pracovník domníval?",
+          "Byla domněnka opodstatněná?",
+          "Měl pracovník ověřit skutečný stav?",
+          "Komu měl stav nebo pokyn konzultovat?"
+        ],
+        "evidence": [
+          "Výpověď pracovníka",
+          "Výpovědi dalších účastníků",
+          "Záznam komunikace",
+          "Provozní stav v době události"
+        ],
+        "related": [
+          "Předpoklad místo ověření",
+          "Domněnka místo informace",
+          "Nikdo mi neřekl..."
+        ],
+        "supports": [
+          "Pracovník se domníval v něčem, co nebylo pravda",
+          "Domněnka nebyla ověřena",
+          "Skutečný stav se lišil od domněnky"
+        ],
+        "contradicts": [
+          "Domněnka odpovídala skutečnosti",
+          "Stav byl pracovníkovi prokazatelně sdělen"
+        ],
+        "actions": [
+          "Porovnat domněnku se skutečným stavem",
+          "Vyslechnout pracovníka o důvodu domněnky",
+          "Prověřit, kdo měl informaci předat"
+        ],
+        "suggest": [
+          {
+            "category": "Komunikace",
+            "factor": "Domněnka místo informace"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          }
+        ]
+      },
+      {
+        "name": "Nikdo mi neřekl...",
+        "parent": "Předpoklad místo ověření",
+        "questions": [
+          "Jakou informaci pracovník nedostal?",
+          "Kdo měl informaci předat?",
+          "Byla informace skutečně nepředána, nebo nebyla vnímána?",
+          "Existuje záznam o předání?",
+          "Bylo předání informace povinné?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Domněnka místo informace",
+          "Nedostatečné předání informací",
+          "Předpoklad místo ověření"
+        ],
+        "supports": [
+          "Pracovník uvedl, že informaci nedostal",
+          "Odpovědná osoba informaci nepředala",
+          "Chybí záznam o předání",
+          "Předání bylo povinné"
+        ],
+        "contradicts": [
+          "Informace byla předána a zaznamenána",
+          "Pracovník informaci obdržel, ale nevnímal ji",
+          "Předání nebylo povinné"
+        ],
+        "actions": [
+          "Určit, kdo měl informaci předat",
+          "Prověřit záznamy předání",
+          "Vyslechnout obě strany",
+          "Posoudit povinnost předání"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečná komunikace rizik"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Nedostatečné předání směny"
+          },
+          {
+            "category": "Školení",
+            "factor": "Nedostatečné seznámení"
+          }
+        ]
+      },
+      {
+        "name": "Nedodržení závazné komunikace",
+        "parent": "",
+        "questions": [
+          "Jaký předpis upravuje komunikaci?",
+          "Jak měla komunikace správně proběhnout?",
+          "Který krok byl vynechán?",
+          "Bylo vyžadováno potvrzení?",
+          "Bylo potvrzení skutečně provedeno?",
+          "Kdo porušil komunikační postup?",
+          "Dochází k tomu běžně?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Vynechání povinného hlášení",
+          "Neprovedené potvrzení",
+          "Použití neoficiálních výrazů",
+          "Nedodržení předpisové frazeologie"
+        ],
+        "supports": [
+          "Komunikační postup nebyl dodržen",
+          "Povinný krok byl vynechán",
+          "Potvrzení neproběhlo",
+          "Porušení bylo opakované",
+          "Předpis komunikaci jednoznačně upravoval"
+        ],
+        "contradicts": [
+          "Komunikace proběhla dle předpisu",
+          "Všechny povinné kroky byly provedeny",
+          "Předpis pro situaci neexistoval"
+        ],
+        "actions": [
+          "Vyžádat předpis upravující komunikaci",
+          "Porovnat skutečný průběh s požadovaným postupem",
+          "Identifikovat vynechaný krok",
+          "Prověřit záznamy potvrzení",
+          "Vyslechnout všechny účastníky",
+          "Posoudit, zda jde o běžnou praxi"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní postup",
+            "factor": "Nedodržení pracovního postupu"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Tolerování nebezpečné praxe"
+          },
+          {
+            "category": "Školení",
+            "factor": "Nedostatečné seznámení"
+          }
+        ]
+      },
+      {
+        "name": "Vynechání povinného hlášení",
+        "parent": "Nedodržení závazné komunikace",
+        "questions": [
+          "Jaké hlášení mělo být provedeno?",
+          "Kdo měl hlášení podat?",
+          "Komu mělo být hlášení určeno?",
+          "Bylo hlášení povinné podle předpisu nebo postupu?",
+          "Mělo být hlášení provedeno před rizikovou činností?"
+        ],
+        "evidence": [
+          "Předpis upravující hlášení",
+          "Technologický postup",
+          "Záznam komunikace",
+          "Výpovědi účastníků",
+          "Provozní dokumentace"
+        ],
+        "related": [
+          "Nedodržení závazné komunikace",
+          "Neprovedené potvrzení",
+          "Předčasné jednání bez pokynu"
+        ],
+        "supports": [
+          "Povinné hlášení nebylo podáno",
+          "Chybí záznam o hlášení",
+          "Hlášení mělo předcházet rizikové činnosti",
+          "Odpovědnost za hlášení byla určena"
+        ],
+        "contradicts": [
+          "Hlášení bylo podáno včas",
+          "Hlášení nebylo pro situaci povinné",
+          "Informace byla předána jiným způsobem"
+        ],
+        "actions": [
+          "Ověřit požadavek na hlášení v předpisu",
+          "Prověřit, zda hlášení proběhlo",
+          "Určit odpovědnou osobu",
+          "Porovnat čas hlášení a události"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící kontrolní krok"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Předčasné jednání bez pokynu"
+          }
+        ]
+      },
+      {
+        "name": "Neprovedené potvrzení",
+        "parent": "Nedodržení závazné komunikace",
+        "questions": [
+          "Mělo být potvrzení provedeno?",
+          "Kdo měl potvrzení vyžádat a kdo provést?",
+          "Bylo potvrzení skutečně provedeno?",
+          "Existuje záznam o potvrzení?",
+          "Je potvrzení povinné podle předpisu?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Nevyžádání potvrzení pokynu",
+          "Nedodržení závazné komunikace",
+          "Neprovedení opakování pokynu"
+        ],
+        "supports": [
+          "Potvrzení nebylo provedeno",
+          "Chybí záznam o potvrzení",
+          "Potvrzení bylo povinné",
+          "Bez potvrzení došlo k jednání"
+        ],
+        "contradicts": [
+          "Potvrzení bylo prokazatelně provedeno",
+          "Potvrzení nebylo vyžadováno"
+        ],
+        "actions": [
+          "Ověřit požadavek na potvrzení",
+          "Prověřit záznamy komunikace",
+          "Vyslechnout obě strany",
+          "Porovnat s předpisem"
+        ],
+        "suggest": [
+          {
+            "category": "Komunikace",
+            "factor": "Nevyžádání potvrzení pokynu"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Vynechání kroku"
+          }
+        ]
+      },
+      {
+        "name": "Použití neoficiálních výrazů",
+        "parent": "Nedodržení závazné komunikace",
+        "questions": [
+          "Byly použity neoficiální nebo hovorové výrazy?",
+          "Mohly výrazy vést k jinému výkladu?",
+          "Jsou pracovníci školeni v oficiální terminologii?",
+          "Bylo použití neoficiálních výrazů běžné?",
+          "Existuje předepsaná frazeologie pro danou situaci?"
+        ],
+        "evidence": [
+          "Záznam komunikace",
+          "Předpis upravující frazeologii",
+          "Výpovědi účastníků",
+          "Záznam o školení"
+        ],
+        "related": [
+          "Nedodržení předpisové frazeologie",
+          "Hovorová komunikace",
+          "Nejednoznačné formulace"
+        ],
+        "supports": [
+          "Byly použity neoficiální výrazy",
+          "Výrazy neodpovídaly předpisu",
+          "Došlo k různému výkladu",
+          "Použití bylo běžné"
+        ],
+        "contradicts": [
+          "Byla použita správná terminologie",
+          "Neoficiální výrazy neovlivnily průběh"
+        ],
+        "actions": [
+          "Analyzovat záznam komunikace",
+          "Porovnat s předepsanou frazeologií",
+          "Vyslechnout účastníky k výkladu",
+          "Prověřit školení terminologie"
+        ],
+        "suggest": [
+          {
+            "category": "Komunikace",
+            "factor": "Nedodržení předpisové frazeologie"
+          },
+          {
+            "category": "Školení",
+            "factor": "Nedostatečné seznámení"
+          }
+        ]
+      },
+      {
+        "name": "Nedodržení předpisové frazeologie",
+        "parent": "",
+        "questions": [
+          "Byla použita správná formulace?",
+          "Mohlo dojít k různému výkladu?",
+          "Byly použity neoficiální výrazy?",
+          "Mohla být zpráva pochopena různě?",
+          "Jsou pracovníci školeni ve správné frazeologii?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Zkrácené povely",
+          "Nejednoznačné formulace",
+          "Hovorová komunikace",
+          "Použití neoficiálních výrazů"
+        ],
+        "supports": [
+          "Nebyla použita předepsaná formulace",
+          "Zpráva mohla být pochopena různě",
+          "Byly použity zkrácené nebo hovorové výrazy",
+          "Pracovníci nebyli dostatečně proškoleni",
+          "Frazeologie neodpovídala předpisu"
+        ],
+        "contradicts": [
+          "Formulace byla správná a jednoznačná",
+          "Účastníci zprávu chápali shodně",
+          "Frazeologie nebyla pro situaci předepsána"
+        ],
+        "actions": [
+          "Porovnat záznam komunikace s předpisem",
+          "Analyzovat možné výklady formulace",
+          "Vyslechnout účastníky o chápání zprávy",
+          "Ověřit školení frazeologie",
+          "Posoudit, zda nejednoznačnost ovlivnila MU"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní postup",
+            "factor": "Nejasný pracovní postup"
+          },
+          {
+            "category": "Školení",
+            "factor": "Nedostatečné seznámení"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Nedodržení závazné komunikace"
+          }
+        ]
+      },
+      {
+        "name": "Zkrácené povely",
+        "parent": "Nedodržení předpisové frazeologie",
+        "questions": [
+          "Byl pokyn nebo hlášení zkrácen oproti předpisu?",
+          "Mohlo zkrácení změnit význam?",
+          "Bylo zkracování běžné mezi pracovníky?",
+          "Chyběly povinné prvky formulace?"
+        ],
+        "evidence": [
+          "Záznam komunikace",
+          "Předpis upravující frazeologii",
+          "Výpovědi účastníků",
+          "Záznam o školení"
+        ],
+        "related": [
+          "Nedodržení předpisové frazeologie",
+          "Nejednoznačné formulace",
+          "Hovorová komunikace"
+        ],
+        "supports": [
+          "Pokyn byl zkrácen",
+          "Chyběly povinné prvky formulace",
+          "Zkrácení mohlo změnit význam",
+          "Zkracování bylo běžné"
+        ],
+        "contradicts": [
+          "Formulace byla úplná",
+          "Zkrácení nezměnilo význam"
+        ],
+        "actions": [
+          "Porovnat skutečnou formulaci s předpisem",
+          "Posoudit dopad zkrácení",
+          "Prověřit běžnost praxe"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Tolerování nebezpečné praxe"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Rutina"
+          }
+        ]
+      },
+      {
+        "name": "Nejednoznačné formulace",
+        "parent": "Nedodržení předpisové frazeologie",
+        "questions": [
+          "Byla formulace vícevýznamná?",
+          "Mohli účastníci zprávu chápat rozdílně?",
+          "Byla formulace v souladu s předpisem?",
+          "Vysvětlil odesílatel zprávu dodatečně?"
+        ],
+        "evidence": [
+          "Záznam komunikace",
+          "Výpovědi účastníků",
+          "Předpis upravující frazeologii",
+          "Záznam o školení"
+        ],
+        "related": [
+          "Nedodržení předpisové frazeologie",
+          "Zkrácené povely",
+          "Nejasný pokyn"
+        ],
+        "supports": [
+          "Formulace byla nejednoznačná",
+          "Účastníci zprávu chápali rozdílně",
+          "Nejednoznačnost ovlivnila jednání"
+        ],
+        "contradicts": [
+          "Formulace byla jednoznačná",
+          "Všichni chápali zprávu shodně"
+        ],
+        "actions": [
+          "Analyzovat text zprávy",
+          "Vyslechnout účastníky o výkladu",
+          "Porovnat s předepsanou formulací"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní postup",
+            "factor": "Nejasný pracovní postup"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Nejasný pokyn"
+          }
+        ]
+      },
+      {
+        "name": "Hovorová komunikace",
+        "parent": "Nedodržení předpisové frazeologie",
+        "questions": [
+          "Byla místo předepsané frazeologie použita hovorová řeč?",
+          "Mohla hovorová komunikace vést k omylu?",
+          "Bylo používání hovorové řeči běžné?",
+          "Byli pracovníci proškoleni v oficiální frazeologii?"
+        ],
+        "evidence": [
+          "Záznam komunikace",
+          "Výpovědi účastníků",
+          "Záznam o školení",
+          "Předpis upravující komunikaci"
+        ],
+        "related": [
+          "Použití neoficiálních výrazů",
+          "Zkrácené povely",
+          "Nedodržení předpisové frazeologie"
+        ],
+        "supports": [
+          "Byla použita hovorová místo oficiální komunikace",
+          "Hovorová řeč byla běžná",
+          "Došlo k nejasnému výkladu",
+          "Školení frazeologie chybělo nebo bylo nedostatečné"
+        ],
+        "contradicts": [
+          "Byla použita oficiální frazeologie",
+          "Hovorová řeč neovlivnila průběh"
+        ],
+        "actions": [
+          "Analyzovat záznam komunikace",
+          "Vyslechnout účastníky",
+          "Prověřit školení a běžnou praxi"
+        ],
+        "suggest": [
+          {
+            "category": "Školení",
+            "factor": "Nedostatečné seznámení"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Tolerování nebezpečné praxe"
+          }
+        ]
+      },
+      {
+        "name": "Nevyžádání potvrzení pokynu",
+        "parent": "",
+        "questions": [
+          "Měl být pokyn potvrzen?",
+          "Kdo měl potvrzení vyžádat?",
+          "Kdo měl potvrzení provést?",
+          "Proč potvrzení neproběhlo?",
+          "Je potvrzení povinné podle předpisu?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Neprovedené potvrzení",
+          "Neprovedení opakování pokynu",
+          "Nedodržení závazné komunikace"
+        ],
+        "supports": [
+          "Potvrzení mělo být vyžádáno, ale nebylo",
+          "Odesílatel potvrzení nevyžádal",
+          "Potvrzení je povinné dle předpisu",
+          "Bez potvrzení došlo k jednání"
+        ],
+        "contradicts": [
+          "Potvrzení bylo vyžádáno a provedeno",
+          "Potvrzení nebylo povinné",
+          "Pokyn nebyl vydán"
+        ],
+        "actions": [
+          "Ověřit požadavek na potvrzení v předpisu",
+          "Určit, kdo měl potvrzení vyžádat",
+          "Prověřit záznam komunikace",
+          "Vyslechnout odesílatele i příjemce pokynu"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící kontrolní krok"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný systém kontrol"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Neprovedené potvrzení"
+          }
+        ]
+      },
+      {
+        "name": "Neprovedení opakování pokynu",
+        "parent": "",
+        "questions": [
+          "Vyžaduje předpis opakování pokynu?",
+          "Bylo opakování provedeno správně?",
+          "Potvrdilo by opakování správné pochopení?",
+          "Kdo měl opakování provést?",
+          "Proč opakování neproběhlo?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Nevyžádání potvrzení pokynu",
+          "Neprovedené potvrzení",
+          "Nedodržení závazné komunikace"
+        ],
+        "supports": [
+          "Opakování pokynu bylo povinné, ale neprovedené",
+          "Chybí záznam o opakování",
+          "Pochopení pokynu nebylo ověřeno",
+          "Opakování mohlo odhalit nedorozumění"
+        ],
+        "contradicts": [
+          "Opakování bylo provedeno",
+          "Opakování nebylo vyžadováno",
+          "Pokyn byl jednoznačně pochopen"
+        ],
+        "actions": [
+          "Ověřit požadavek na opakování v předpisu",
+          "Prověřit záznam komunikace",
+          "Posoudit, zda chybějící opakování vedlo k nedorozumění",
+          "Vyslechnout účastníky"
+        ],
+        "suggest": [
+          {
+            "category": "Komunikace",
+            "factor": "Nevyžádání potvrzení pokynu"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Vynechání kroku"
+          },
+          {
+            "category": "Školení",
+            "factor": "Nedostatečné seznámení"
+          }
+        ]
+      },
+      {
+        "name": "Předčasné jednání bez pokynu",
+        "parent": "",
+        "questions": [
+          "Zahájil pracovník činnost bez oprávnění?",
+          "Domníval se, že pokyn již byl vydán?",
+          "Vyčkal na povolení?",
+          "Jak měl správně postupovat?",
+          "Bylo vydání pokynu povinné před zahájením?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Předpoklad místo ověření",
+          "Vynechání povinného hlášení",
+          "Domněnka místo informace"
+        ],
+        "supports": [
+          "Pracovník zahájil činnost bez pokynu",
+          "Pokyn nebyl vydán nebo nebyl doručen",
+          "Pracovník nevyčkal na povolení",
+          "Pracovník se domníval, že pokyn již platí"
+        ],
+        "contradicts": [
+          "Pokyn byl vydán před zahájením",
+          "Pracovník vyčkal na povolení",
+          "Zahájení bylo oprávněné"
+        ],
+        "actions": [
+          "Zmapovat časovou osu pokynu a zahájení činnosti",
+          "Prověřit záznamy komunikace",
+          "Vyslechnout pracovníka o důvodu zahájení",
+          "Porovnat s požadovaným postupem"
+        ],
+        "suggest": [
+          {
+            "category": "Komunikace",
+            "factor": "Předpoklad místo ověření"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Spěch"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Časový tlak"
+          }
+        ]
+      },
+      {
+        "name": "Domněnka místo informace",
+        "parent": "",
+        "questions": [
+          "Jaká informace chyběla?",
+          "Kdo ji měl předat?",
+          "Byla nahrazena domněnkou?",
+          "Jak bylo možné informaci ověřit?",
+          "Ovlivnila domněnka rozhodnutí před MU?"
+        ],
+        "evidence": [
+          "Záznam radiového provozu nebo vysílačky",
+          "Telefonní záznam",
+          "Záznam GSM-R nebo jiného provozního spojení",
+          "Kamerový záznam",
+          "Výpovědi všech účastníků komunikace",
+          "Provozní dokumentace",
+          "Záznamník komunikace",
+          "Předpis upravující komunikaci",
+          "Technologický postup",
+          "Záznam o školení zaměstnance",
+          "Ověření znalosti předpisu"
+        ],
+        "related": [
+          "Předpoklad místo ověření",
+          "Nikdo mi neřekl...",
+          "Myslel jsem, že..."
+        ],
+        "supports": [
+          "Klíčová informace nebyla předána",
+          "Pracovník jednal na základě domněnky",
+          "Ověření bylo možné, ale neproběhlo",
+          "Odpovědná osoba informaci nepředala"
+        ],
+        "contradicts": [
+          "Informace byla předána a potvrzena",
+          "Domněnka neovlivnila rozhodnutí",
+          "Informace nebyla pro situaci potřebná"
+        ],
+        "actions": [
+          "Identifikovat chybějící informaci",
+          "Určit odpovědnost za předání",
+          "Prověřit možnosti ověření",
+          "Vyslechnout všechny strany",
+          "Posoudit dopad domněnky na MU"
+        ],
+        "suggest": [
+          {
+            "category": "Komunikace",
+            "factor": "Předpoklad místo ověření"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Podcenění rizika"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečná komunikace rizik"
+          }
+        ]
       }
     ]
   },
