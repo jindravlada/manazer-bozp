@@ -131,7 +131,7 @@ class BozpInspectionAreasWidget(QWidget):
 
         if area.has_knowledge_file:
             knowledge = proverky_knowledge_service.load_area_knowledge(area)
-            self.knowledge_widget.set_knowledge(knowledge)
+            self.knowledge_widget.set_knowledge(knowledge, area_label=area.nazev)
             self.content_stack.setCurrentIndex(self._PAGE_KNOWLEDGE)
         else:
             self.content_stack.setCurrentIndex(self._PAGE_PLACEHOLDER)

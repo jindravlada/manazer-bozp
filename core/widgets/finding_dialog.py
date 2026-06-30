@@ -30,6 +30,7 @@ class FindingDialog(QDialog):
         title: str = "Zjištění",
         allowed_finding_types=None,
         default_finding_type=None,
+        knowledge_source: dict | None = None,
     ):
         super().__init__(parent)
 
@@ -39,6 +40,15 @@ class FindingDialog(QDialog):
         layout = QVBoxLayout(self)
         form_host = QWidget()
         form = QFormLayout(form_host)
+
+        if knowledge_source:
+            form.addRow("Zdroj:", self._readonly_label(str(knowledge_source.get("source_label") or "—")))
+            form.addRow("Oblast:", self._readonly_label(str(knowledge_source.get("area_label") or "—")))
+            form.addRow("Sekce:", self._readonly_label(str(knowledge_source.get("section_label") or "—")))
+            form.addRow(
+                "Kontrolní bod:",
+                self._readonly_label(str(knowledge_source.get("control_point_label") or "—")),
+            )
 
         self.type_combo = QComboBox()
         finding_types = sorted(allowed_finding_types or VALID_FINDING_TYPES)
@@ -111,6 +121,18 @@ class FindingDialog(QDialog):
             default_status = self.status_combo.findData(FINDING_STATUS_OTEVRENE)
             if default_status >= 0:
                 self.status_combo.setCurrentIndex(default_status)
+
+            if knowledge_source:
+                control_point = str(knowledge_source.get("control_point_label") or "").strip()
+                if control_point:
+                    self.reference_edit.setText(control_point)
+
+    @staticmethod
+    def _readonly_label(text: str) -> QLabel:
+        label = QLabel(text)
+        label.setObjectName("InfoText")
+        label.setWordWrap(True)
+        return label
 
     def get_data(self) -> dict:
         person = self.person_selector.current_person()

@@ -1,9 +1,16 @@
 """Pracovní karta znalostního uzlu sekce prověrky."""
 
-from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from core.widgets.dialog_utils import wrap_in_scroll_area
-from moduly.proverky.constants import KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT
+from core.widgets.finding_dialog import FindingDialog
+from moduly.proverky.constants import (
+    FINDING_CREATE_FROM_CONTROL_POINT_LABEL,
+    FINDING_DIALOG_TITLE,
+    FINDING_SOURCE_LABEL,
+    KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT,
+    ProverkyFindingKnowledgeContext,
+)
 from moduly.proverky.sluzby.proverky_knowledge_service import (
     SECTION_LIST_BLOCKS,
     proverky_knowledge_service,
@@ -16,6 +23,9 @@ class BozpKnowledgeSectionWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        self._area_label = ""
+        self._section_label = ""
+
         self._content_host = QWidget()
         self._content_layout = QVBoxLayout(self._content_host)
         self._content_layout.setContentsMargins(0, 0, 0, 0)
@@ -25,13 +35,24 @@ class BozpKnowledgeSectionWidget(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.addWidget(wrap_in_scroll_area(self._content_host))
 
-    def set_section(self, section: dict | None) -> None:
+    def set_section(
+        self,
+        section: dict | None,
+        *,
+        area_label: str = "",
+        section_label: str = "",
+    ) -> None:
+        self._area_label = area_label.strip()
+        self._section_label = section_label.strip()
         self._clear_content()
 
         if not section:
             self._content_layout.addWidget(self._build_info_label("Vyberte sekci v seznamu vlevo."))
             self._content_layout.addStretch()
             return
+
+        if not self._section_label:
+            self._section_label = str(section.get("nazev") or "").strip()
 
         self._content_layout.addWidget(self._build_popis_block(section))
 
@@ -61,7 +82,9 @@ class BozpKnowledgeSectionWidget(QWidget):
         if not items:
             return self._build_block(title, self._build_info_label(KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT))
 
-        if field == "legislativa":
+        if field == "kontrolni_body":
+            content = self._build_control_points_list(items)
+        elif field == "legislativa":
             content = self._build_reference_list(items)
         else:
             content = self._build_knowledge_items_list(items)
@@ -73,6 +96,67 @@ class BozpKnowledgeSectionWidget(QWidget):
         if not items:
             return self._build_block(title, self._build_info_label(KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT))
         return self._build_block(title, self._build_knowledge_items_list(items))
+
+    def _build_control_points_list(self, items: list[dict]) -> QWidget:
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(10)
+
+        for item in items:
+            layout.addWidget(self._build_control_point_row(item))
+
+        return container
+
+    def _build_control_point_row(self, item: dict) -> QWidget:
+        row = QWidget()
+        row_layout = QVBoxLayout(row)
+        row_layout.setContentsMargins(0, 0, 0, 0)
+        row_layout.setSpacing(4)
+
+        nazev = str(item.get("nazev") or "—").strip() or "—"
+        header_row = QHBoxLayout()
+        header_row.setContentsMargins(0, 0, 0, 0)
+        header_row.setSpacing(8)
+
+        title_label = QLabel(f"• {nazev}")
+        title_label.setWordWrap(True)
+        header_row.addWidget(title_label, 1)
+
+        create_btn = QPushButton(FINDING_CREATE_FROM_CONTROL_POINT_LABEL)
+        create_btn.clicked.connect(
+            lambda _checked=False, control_point=nazev: self._open_finding_dialog(control_point)
+        )
+        header_row.addWidget(create_btn, 0)
+        row_layout.addLayout(header_row)
+
+        popis = str(item.get("popis") or "").strip()
+        if popis:
+            description = QLabel(popis)
+            description.setObjectName("InfoText")
+            description.setWordWrap(True)
+            description.setContentsMargins(16, 0, 0, 0)
+            row_layout.addWidget(description)
+
+        return row
+
+    def _open_finding_dialog(self, control_point_label: str) -> None:
+        context = ProverkyFindingKnowledgeContext(
+            area_label=self._area_label,
+            section_label=self._section_label,
+            control_point_label=control_point_label,
+        )
+        dialog = FindingDialog(
+            self,
+            title=FINDING_DIALOG_TITLE,
+            knowledge_source={
+                "source_label": FINDING_SOURCE_LABEL,
+                "area_label": context.area_label,
+                "section_label": context.section_label,
+                "control_point_label": context.control_point_label,
+            },
+        )
+        dialog.exec()
 
     def _build_knowledge_items_list(self, items: list[dict]) -> QWidget:
         container = QWidget()

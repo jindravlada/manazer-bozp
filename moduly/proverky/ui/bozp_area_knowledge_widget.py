@@ -22,6 +22,7 @@ class BozpAreaKnowledgeWidget(QWidget):
         super().__init__(parent)
 
         self._sections: list[dict] = []
+        self._area_label = ""
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -42,7 +43,8 @@ class BozpAreaKnowledgeWidget(QWidget):
 
         layout.addWidget(splitter)
 
-    def set_knowledge(self, knowledge: dict | None) -> None:
+    def set_knowledge(self, knowledge: dict | None, *, area_label: str = "") -> None:
+        self._area_label = area_label.strip()
         self._sections = []
         self.section_list.blockSignals(True)
         self.section_list.clear()
@@ -83,4 +85,9 @@ class BozpAreaKnowledgeWidget(QWidget):
             return
 
         section_id = str(current.data(self._SECTION_ROLE) or "")
-        self.section_widget.set_section(self._section_by_id(section_id))
+        section = self._section_by_id(section_id)
+        self.section_widget.set_section(
+            section,
+            area_label=self._area_label,
+            section_label=str(section.get("nazev") or "") if section else "",
+        )

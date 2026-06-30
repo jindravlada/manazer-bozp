@@ -1,5 +1,7 @@
 """Metadata a konstanty modulu Prověrky BOZP."""
 
+from dataclasses import dataclass
+
 MODULE_KEY = "proverky"
 MODULE_NAME = "Prověrky BOZP"
 MODULE_DESCRIPTION = "Roční prověrky BOZP/PO na pracovištích."
@@ -80,3 +82,14 @@ AREA_PANEL_LEFT_WIDTH = 260
 AREA_NOT_IMPLEMENTED_TEXT = "Tato oblast zatím není implementována."
 AREA_PART_NOT_IMPLEMENTED_TEXT = "Tato část bude doplněna."
 KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT = "Tato část bude doplněna."
+
+FINDING_SOURCE_LABEL = "Prověrka BOZP"
+FINDING_DIALOG_TITLE = "Zjištění prověrky BOZP"
+FINDING_CREATE_FROM_CONTROL_POINT_LABEL = "➕ Založit zjištění"
+
+
+@dataclass(frozen=True)
+class ProverkyFindingKnowledgeContext:
+    area_label: str
+    section_label: str
+    control_point_label: str
