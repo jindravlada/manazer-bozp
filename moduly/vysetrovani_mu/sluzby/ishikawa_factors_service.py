@@ -28,6 +28,8 @@ class IshikawaFactorsService:
             self._catalog = deepcopy(ISHIKAWA_FALLBACK_CATALOG)
             return self._catalog
 
+        raw = self._migrate_catalog_keys(raw)
+
         normalized: dict[str, dict] = {}
         for category in ISHIKAWA_CATEGORIES:
             entry = raw.get(category)
@@ -46,6 +48,14 @@ class IshikawaFactorsService:
             storage_service.ciselniky_dir,
             _CATALOG_RELATIVE_PATH,
         )
+
+    @staticmethod
+    def _migrate_catalog_keys(raw: dict) -> dict:
+        if "Pracovní prostředí" not in raw and isinstance(raw.get("Prostředí"), dict):
+            migrated = dict(raw)
+            migrated["Pracovní prostředí"] = migrated.pop("Prostředí")
+            return migrated
+        return raw
 
     def _read_json_file(self) -> dict | None:
         catalog_path = self._catalog_path()

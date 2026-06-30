@@ -89,7 +89,7 @@ ISHIKAWA_CATEGORIES = (
     "Člověk",
     "Pracovní postup",
     "Technika / zařízení",
-    "Prostředí",
+    "Pracovní prostředí",
     "Organizace práce",
     "Řízení a kontrola",
     "Komunikace",

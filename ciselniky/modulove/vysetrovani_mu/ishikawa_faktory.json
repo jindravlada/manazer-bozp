@@ -207,11 +207,11 @@
             "factor": "Dlouhá směna"
           },
           {
-            "category": "Prostředí",
+            "category": "Pracovní prostředí",
             "factor": "Hluk"
           },
           {
-            "category": "Prostředí",
+            "category": "Pracovní prostředí",
             "factor": "Nedostatečné osvětlení"
           },
           {
@@ -348,7 +348,7 @@
             "factor": "Přesčasy"
           },
           {
-            "category": "Prostředí",
+            "category": "Pracovní prostředí",
             "factor": "Vysoká teplota"
           },
           {
@@ -468,7 +468,7 @@
         ],
         "suggest": [
           {
-            "category": "Prostředí",
+            "category": "Pracovní prostředí",
             "factor": "Vysoká teplota"
           },
           {
@@ -783,7 +783,7 @@
             "factor": "Nepřiměřená pracovní zátěž"
           },
           {
-            "category": "Prostředí",
+            "category": "Pracovní prostředí",
             "factor": "Vysoká teplota"
           },
           {
@@ -874,19 +874,6 @@
   "Technika / zařízení": {
     "question": "Selhalo zařízení, nástroj nebo jeho ochranný prvek?",
     "factors": [
-      {
-        "name": "Jiné",
-        "questions": []
-      }
-    ]
-  },
-  "Prostředí": {
-    "question": "Ovlivnily průběh události podmínky pracoviště?",
-    "factors": [
-      {
-        "name": "Vysoká teplota",
-        "questions": []
-      },
       {
         "name": "Jiné",
         "questions": []
@@ -1143,7 +1130,7 @@
             "factor": "Nepozornost"
           },
           {
-            "category": "Prostředí",
+            "category": "Pracovní prostředí",
             "factor": "Vysoká teplota"
           },
           {
@@ -1389,7 +1376,7 @@
             "factor": "Únava z horka"
           },
           {
-            "category": "Prostředí",
+            "category": "Pracovní prostředí",
             "factor": "Vysoká teplota"
           },
           {
@@ -1982,6 +1969,1336 @@
       {
         "name": "Jiné",
         "questions": []
+      }
+    ]
+  },
+  "Pracovní prostředí": {
+    "question": "Jak podmínky pracovního prostředí přispěly ke vzniku mimořádné události?",
+    "factors": [
+      {
+        "name": "Kluzký povrch",
+        "questions": [
+          "Byl povrch v místě události kluzký nebo méně adhezní, než pracovník očekával?",
+          "Bylo riziko uklouznutí nebo sklouznutí na pracovišti známé?",
+          "Byl povrch mokrý, namrzlý, olejový nebo jinak kontaminovaný?",
+          "Měl pracovník v daném místě obvykle chodit nebo pracovat?",
+          "Bylo riziko označeno, odstraněno nebo alespoň komunikováno?",
+          "Odpovídal typ obuvi nebo chůze skutečnému stavu povrchu?"
+        ],
+        "evidence": [
+          "Fotodokumentace místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Protokol úklidu nebo údržby",
+          "Záznam o kontrole pracoviště",
+          "Meteorologické údaje, pokud je relevantní"
+        ],
+        "related": [
+          "Mokrá podlaha",
+          "Námraza / sníh",
+          "Rozlitá látka",
+          "Nepozornost"
+        ],
+        "parent": "",
+        "supports": [
+          "Povrch byl mokrý, namrzlý nebo kontaminovaný",
+          "Svědci popisují kluzkost nebo uklouznutí",
+          "Pracovník nečekal kluzký povrch",
+          "Riziko nebylo označeno ani odstraněno",
+          "Obdobná situace se na pracovišti opakuje",
+          "Kamerový záznam ukazuje ztrátu stability"
+        ],
+        "contradicts": [
+          "Povrch byl suchý a nekluzký",
+          "Pracovník postupoval opatrně a vědomě",
+          "Příčina nesouvisela s adhezí povrchu",
+          "Riziko bylo označeno a pracovník ho vnímal",
+          "Událost vznikla z jiného důvodu než uklouznutí"
+        ],
+        "actions": [
+          "Prohlédnout místo a typ povrchu",
+          "Zjistit, zda byl povrch mokrý, namrzlý nebo kontaminovaný",
+          "Vyslechnout svědky k chůzi a stabilitě pracovníka",
+          "Ověřit úklid, údržbu a označení rizika",
+          "Porovnat stav s běžnou praxí na pracovišti",
+          "Posoudit vhodnost obuvi a OOPP"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          },
+          {
+            "category": "OOPP",
+            "factor": "Nevhodná obuv"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečná údržba pracoviště"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící postup při kluzkém povrchu"
+          }
+        ]
+      },
+      {
+        "name": "Mokrá podlaha",
+        "questions": [
+          "Byla podlaha v místě události mokrá?",
+          "Vznikla vlhkost úklidem, únikem, deštěm nebo kondenzací?",
+          "Bylo místo označeno jako kluzké?",
+          "Jak dlouho byla podlaha mokrá před událostí?",
+          "Byl úklid nebo odstranění vlhkosti zajištěn?"
+        ],
+        "evidence": [
+          "Fotodokumentace místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Záznam úklidu nebo údržby",
+          "Kamerový záznam",
+          "Evidence úniku kapaliny"
+        ],
+        "related": [
+          "Kluzký povrch",
+          "Rozlitá látka",
+          "Nepozornost"
+        ],
+        "parent": "Kluzký povrch",
+        "supports": [
+          "Podlaha byla mokrá",
+          "Vlhkost vznikla krátce před událostí",
+          "Nebylo označení kluzkého povrchu",
+          "Úklid nebyl proveden včas",
+          "Svědci potvrdili mokrý povrch"
+        ],
+        "contradicts": [
+          "Podlaha byla suchá",
+          "Vlhkost nemohla ovlivnit pohyb pracovníka",
+          "Mokro bylo mimo dráhu pohybu",
+          "Pracovník o mokrém povrchu věděl a postupoval opatrně"
+        ],
+        "actions": [
+          "Zjistit zdroj vlhkosti",
+          "Ověřit dobu existence mokrého povrchu",
+          "Prověřit označení a úklid",
+          "Vyslechnout svědky",
+          "Porovnat s údržbovým režimem"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečná údržba pracoviště"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící postup po úniku kapaliny"
+          }
+        ]
+      },
+      {
+        "name": "Námraza / sníh",
+        "questions": [
+          "Bylo v místě události námraza, sníh nebo led?",
+          "Pracoval pracovník venku nebo v nevyhřátém prostoru?",
+          "Bylo riziko uklouznutí předem známé?",
+          "Bylo posypání, ometení nebo jiné opatření provedeno?",
+          "Jaké byly povětrnostní podmínky v době události?"
+        ],
+        "evidence": [
+          "Fotodokumentace místa",
+          "Záznam počasí",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Záznam údržby venkovních ploch",
+          "Kamerový záznam"
+        ],
+        "related": [
+          "Kluzký povrch",
+          "Mokrá podlaha",
+          "Nízká teplota"
+        ],
+        "parent": "Kluzký povrch",
+        "supports": [
+          "V místě byla námraza nebo sníh",
+          "Opatření proti uklouznutí nebyla provedena",
+          "Pracovník nečekal kluzký povrch",
+          "Obdobné podmínky trvaly delší dobu",
+          "Svědci popisují uklouznutí"
+        ],
+        "contradicts": [
+          "Povrch nebyl namrzlý",
+          "Bylo provedeno posypání nebo ometení",
+          "Pracovník používal vhodnou obuv",
+          "Událost nesouvisela s kluzkostí"
+        ],
+        "actions": [
+          "Ověřit povětrnostní podmínky",
+          "Zjistit stav povrchu v době události",
+          "Prověřit údržbu a posypání",
+          "Vyslechnout svědky",
+          "Posoudit vhodnost obuvi a OOPP"
+        ],
+        "suggest": [
+          {
+            "category": "OOPP",
+            "factor": "Nevhodná obuv"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Práce v nepříznivém počasí"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečná opatření v zimě"
+          }
+        ]
+      },
+      {
+        "name": "Rozlitá látka",
+        "questions": [
+          "Byla na povrchu rozlitá kapalina, olej, prášek nebo jiná látka?",
+          "Vzniklo rolití krátce před událostí?",
+          "Bylo rolití označeno nebo odstraněno?",
+          "Věděl pracovník o rolití?",
+          "Souviselo rolití s provozem, údržbou nebo havárií?"
+        ],
+        "evidence": [
+          "Fotodokumentace místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Bezpečnostní list látky",
+          "Záznam úniku nebo havárie",
+          "Kamerový záznam",
+          "Protokol úklidu"
+        ],
+        "related": [
+          "Kluzký povrch",
+          "Mokrá podlaha",
+          "Nevhodné uspořádání pracoviště"
+        ],
+        "parent": "Kluzký povrch",
+        "supports": [
+          "Na povrchu byla rozlitá látka",
+          "Rolití nebylo včas odstraněno",
+          "Pracovník o rolití nevěděl",
+          "Látka zhoršila adhezi povrchu",
+          "Obdobné rolití se opakuje"
+        ],
+        "contradicts": [
+          "Povrch nebyl kontaminován",
+          "Rolití bylo označeno a obcházeno",
+          "Pracovník o rolití věděl",
+          "Událost nesouvisela s kluzkostí"
+        ],
+        "actions": [
+          "Identifikovat rozlité medium",
+          "Zjistit dobu a zdroj rolití",
+          "Ověřit označení a úklid",
+          "Vyslechnout svědky",
+          "Prověřit postup při úniku kapaliny"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící postup při úniku kapaliny"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečná údržba pracoviště"
+          },
+          {
+            "category": "Technika / zařízení",
+            "factor": "Únik kapaliny ze zařízení"
+          }
+        ]
+      },
+      {
+        "name": "Nerovný povrch",
+        "questions": [
+          "Byl povrch v místě události nerovný, poškozený nebo nestabilní?",
+          "Byly viditelné díry, prahy, štěrbiny nebo uvolněné desky?",
+          "Mohl nerovnost způsobit zakopnutí, ztrátu rovnováhy nebo pád?",
+          "Bylo poškození povrchu předem známo?",
+          "Bylo riziko označeno nebo odstraněno?",
+          "Odpovídal stav povrchu běžnému provozu?"
+        ],
+        "evidence": [
+          "Fotodokumentace místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Záznamy údržby",
+          "Kamerový záznam",
+          "Technická zpráva o stavu povrchu"
+        ],
+        "related": [
+          "Překážka v cestě",
+          "Nevhodné uspořádání pracoviště",
+          "Nepozornost"
+        ],
+        "parent": "",
+        "supports": [
+          "Povrch byl nerovný nebo poškozený",
+          "Pracovník zakopl nebo ztratil rovnováhu",
+          "Poškození bylo dlouhodobě známé",
+          "Riziko nebylo odstraněno",
+          "Svědci popisují překážku v povrchu"
+        ],
+        "contradicts": [
+          "Povrch byl rovný a v pořádku",
+          "Pracovník místo běžně používal bez potíží",
+          "Událost nesouvisela s povrchem",
+          "Poškození vzniklo až v souvislosti s MU"
+        ],
+        "actions": [
+          "Prohlédnout stav povrchu",
+          "Zjistit, zda bylo poškození známo",
+          "Ověřit záznamy údržby",
+          "Vyslechnout svědky",
+          "Posoudit, zda povrch odpovídal provozu"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečná údržba pracoviště"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící kontrola pracoviště"
+          }
+        ]
+      },
+      {
+        "name": "Překážka v cestě",
+        "questions": [
+          "Byla v dráze pohybu pracovníka překážka?",
+          "Byla překážka trvalá, dočasná nebo neočekávaná?",
+          "Měl pracovník volný a bezpečný průchod?",
+          "Byla překážka viditelná a předvídatelná?",
+          "Bylo místo označeno nebo udržováno průchozí?",
+          "Souvisela překážka s uskladněním materiálu nebo zařízení?"
+        ],
+        "evidence": [
+          "Fotodokumentace místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán pracoviště",
+          "Záznamy kontrol pořádku"
+        ],
+        "related": [
+          "Nevhodné uspořádání pracoviště",
+          "Nepřehledné pracoviště",
+          "Nerovný povrch"
+        ],
+        "parent": "",
+        "supports": [
+          "V dráze pohybu byla překážka",
+          "Pracovník zakopl nebo narazil",
+          "Překážka nebyla odstraněna",
+          "Průchod nebyl udržován",
+          "Materiál byl uložen mimo určené místo"
+        ],
+        "contradicts": [
+          "Dráha pohybu byla volná",
+          "Pracovník překážku viděl a obešel ji",
+          "Překážka nebyla v místě události",
+          "Událost nesouvisela s pohybem"
+        ],
+        "actions": [
+          "Zmapovat dráhu pohybu pracovníka",
+          "Identifikovat překážku a její původ",
+          "Ověřit pravidla skladování a pořádku",
+          "Vyslechnout svědky",
+          "Porovnat stav s plánem pracoviště"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Nevhodné uspořádání pracoviště"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný dohled"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          }
+        ]
+      },
+      {
+        "name": "Nedostatečné osvětlení",
+        "questions": [
+          "Bylo v místě události dostatečné osvětlení pro danou činnost?",
+          "Mohl pracovník spolehlivě vidět riziko, překážku nebo pracovní plochu?",
+          "Bylo osvětlení trvale nedostatečné, nebo dočasně?",
+          "Bylo osvětlení kontrolováno a udržováno?",
+          "Bylo riziko kvůli tmě předem známo?",
+          "Používal pracovník vlastní světlo nebo pomůcku?"
+        ],
+        "evidence": [
+          "Měření osvětlení",
+          "Fotodokumentace místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Záznamy údržby osvětlení",
+          "Kamerový záznam",
+          "Požadavky na osvětlení pro danou práci"
+        ],
+        "related": [
+          "Špatně viditelné riziko",
+          "Oslnění",
+          "Nepozornost",
+          "Podcenění rizika"
+        ],
+        "parent": "",
+        "supports": [
+          "Osvětlení bylo nedostatečné",
+          "Pracovník neviděl riziko včas",
+          "Porucha nebo vypnutí světla",
+          "Měření potvrdilo nízkou úroveň osvětlení",
+          "Svědci popisují špatnou viditelnost"
+        ],
+        "contradicts": [
+          "Osvětlení odpovídalo požadavkům",
+          "Pracovník riziko viděl",
+          "Bylo použito dostatečné doplnkové světlo",
+          "Událost nesouvisela s viditelností"
+        ],
+        "actions": [
+          "Ověřit stav osvětlení v době události",
+          "Porovnat s požadavky pro danou činnost",
+          "Prověřit údržbu a poruchy osvětlení",
+          "Vyslechnout svědky k viditelnosti",
+          "Posoudit vliv osvětlení na rozpoznání rizika"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Podcenění rizika"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečná údržba pracoviště"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Práce v nedostatečném osvětlení"
+          }
+        ]
+      },
+      {
+        "name": "Špatně viditelné riziko",
+        "questions": [
+          "Bylo konkrétní riziko špatně viditelné kvůli stínu, tmě nebo kontrastu?",
+          "Bylo riziko skryté za předmětem nebo mimo zorné pole?",
+          "Měl pracovník možnost riziko předem rozpoznat?",
+          "Bylo riziko označeno reflexní barvou, značením nebo osvětlením?",
+          "Byla viditelnost ovlivněna směrem pohybu nebo polohou těla?"
+        ],
+        "evidence": [
+          "Fotodokumentace místa",
+          "Měření osvětlení",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Značení rizika"
+        ],
+        "related": [
+          "Nedostatečné osvětlení",
+          "Nepřehledné pracoviště",
+          "Podcenění rizika"
+        ],
+        "parent": "Nedostatečné osvětlení",
+        "supports": [
+          "Riziko nebylo včas viditelné",
+          "Stín nebo nízký kontrast bránily rozpoznání",
+          "Chybělo označení rizika",
+          "Pracovník riziko přehlédl",
+          "Svědci potvrzují špatnou viditelnost"
+        ],
+        "contradicts": [
+          "Riziko bylo jasně viditelné",
+          "Pracovník riziko vnímal",
+          "Riziko bylo označeno",
+          "Událost nesouvisela s viditelností"
+        ],
+        "actions": [
+          "Posoudit viditelnost rizika z místa pracovníka",
+          "Ověřit označení a osvětlení rizika",
+          "Vyslechnout svědky",
+          "Porovnat s požadavky na viditelnost",
+          "Prověřit, zda nešlo o skryté riziko"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Podcenění rizika"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          },
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Skryté nebo špatně rozpoznatelné riziko"
+          }
+        ]
+      },
+      {
+        "name": "Oslnění",
+        "questions": [
+          "Byl pracovník oslněn světlem, odleskem nebo proti slunci?",
+          "Došlo k dočasné ztrátě nebo snížení viditelnosti?",
+          "Bylo oslnění předvídatelné v daném místě a čase?",
+          "Bylo možné polohu nebo směr práce upravit?",
+          "Bylo použito ochranné brýle nebo clonění?"
+        ],
+        "evidence": [
+          "Fotodokumentace místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam počasí",
+          "Hodnocení osvětlení a odlesků"
+        ],
+        "related": [
+          "Nedostatečné osvětlení",
+          "Práce na slunci",
+          "Nepozornost"
+        ],
+        "parent": "",
+        "supports": [
+          "Pracovník byl oslněn",
+          "Došlo k krátkodobé ztrátě viditelnosti",
+          "Odlesk nebo proti slunci ovlivnily činnost",
+          "Nebylo clonění ani ochranné brýle",
+          "Svědci popisují oslnění"
+        ],
+        "contradicts": [
+          "Oslnění nebylo přítomno",
+          "Pracovník viděl pracovní plochu",
+          "Bylo použito vhodné clonění",
+          "Událost nesouvisela s viditelností"
+        ],
+        "actions": [
+          "Zjistit směr světla a odlesků",
+          "Vyslechnout pracovníka k viditelnosti",
+          "Ověřit možnosti clonění nebo změny polohy",
+          "Posoudit vhodnost OOPP pro zrak",
+          "Vyslechnout svědky"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          },
+          {
+            "category": "OOPP",
+            "factor": "Nevhodné ochranné brýle"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Práce proti světlu"
+          }
+        ]
+      },
+      {
+        "name": "Hluk",
+        "questions": [
+          "Byl na pracovišti v době události nadměrný hluk?",
+          "Mohl hluk zakrýt varovný signál, hovor nebo zvuk zařízení?",
+          "Byl pracovník upozorněn na riziko jiným způsobem než slyšitelně?",
+          "Bylo používáno ochranné sluchátko nebo komunikační zařízení?",
+          "Byl hluk běžný a dlouhodobý, nebo náhlý?",
+          "Ovlivnil hluk komunikaci mezi pracovníky?"
+        ],
+        "evidence": [
+          "Měření hluku",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Provozní záznamy",
+          "Kamerový záznam",
+          "Předpisy pro hluk na pracovišti"
+        ],
+        "related": [
+          "Nepozornost",
+          "Přerušování práce",
+          "Stres"
+        ],
+        "parent": "",
+        "supports": [
+          "Hluk byl vysoký",
+          "Varovný signál nebyl slyšet",
+          "Komunikace byla ztížena",
+          "Pracovník nepřijal důležitou informaci",
+          "Hluk překračoval povolené hodnoty"
+        ],
+        "contradicts": [
+          "Hluk nebyl nadměrný",
+          "Pracovník signál slyšel",
+          "Byla použita vhodná komunikace",
+          "Událost nesouvisela se sluchem"
+        ],
+        "actions": [
+          "Ověřit hladinu hluku",
+          "Zjistit, zda byl slyšet varovný signál",
+          "Vyslechnout pracovníky ke komunikaci",
+          "Posoudit použití OOPP sluchu",
+          "Prověřit organizaci práce v hlučném prostředí"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Neslyšitelný pokyn"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Práce v hlučném prostředí"
+          }
+        ]
+      },
+      {
+        "name": "Vysoká teplota",
+        "questions": [
+          "Byla na pracovišti v době události vysoká teplota nebo tepelná zátěž?",
+          "Mohla teplota ovlivnit pozornost, reakci nebo fyzickou zdatnost pracovníka?",
+          "Byla práce v horku předvídatelná a řízená?",
+          "Byla zavedena režimová opatření pro práci v teple?",
+          "Byly poskytovány přestávky, pitný režim nebo střídání?",
+          "Bylo hodnocení mikroklimatu aktuální?"
+        ],
+        "evidence": [
+          "Měření teploty nebo mikroklimatu",
+          "Záznam počasí",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Režimová opatření",
+          "Evidence přestávek",
+          "Fotodokumentace pracoviště"
+        ],
+        "related": [
+          "Horko na pracovišti",
+          "Práce na slunci",
+          "Únava z horka",
+          "Nevhodné klimatické podmínky"
+        ],
+        "parent": "",
+        "supports": [
+          "Teplota byla vysoká",
+          "Pracovník projevil únavu nebo malátnost",
+          "Chyběla nebo nebyla dodržena režimová opatření",
+          "Práce probíhala v horkém prostředí",
+          "Svědci popisují nepříznivé podmínky"
+        ],
+        "contradicts": [
+          "Teplota nebyla zvýšená",
+          "Byla zajištěna režimová opatření",
+          "Pracovník neměl potíže s teplem",
+          "Událost nesouvisela s teplotou"
+        ],
+        "actions": [
+          "Ověřit teplotní podmínky v době události",
+          "Prověřit režimová opatření",
+          "Vyslechnout pracovníka k pocitu horka a únavy",
+          "Posoudit vliv tepla na průběh práce",
+          "Porovnat s hodnocením mikroklimatu"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Únava z horka"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Nedostatek přestávek"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečná opatření proti tepelné zátěži"
+          }
+        ]
+      },
+      {
+        "name": "Horko na pracovišti",
+        "questions": [
+          "Bylo horko způsobeno provozem, technologií nebo prostředím haly?",
+          "Byla tepelná zátěž dlouhodobá nebo krátkodobá?",
+          "Bylo v místě nedostatečné větrání nebo chlazení?",
+          "Pracoval pracovník v blízkosti zdroje tepla?",
+          "Byla tepelná zátěž vyhodnocena v hodnocení rizik?"
+        ],
+        "evidence": [
+          "Měření teploty",
+          "Provozní záznamy",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Technická dokumentace zdroje tepla",
+          "Hodnocení mikroklimatu"
+        ],
+        "related": [
+          "Vysoká teplota",
+          "Práce na slunci",
+          "Únava z horka"
+        ],
+        "parent": "Vysoká teplota",
+        "supports": [
+          "Zdroj tepla byl v blízkosti pracoviště",
+          "Větrání nebo chlazení nestačilo",
+          "Pracovník pracoval v horkém provozu",
+          "Tepelná zátěž byla známá",
+          "Režimová opatření nebyla dodržena"
+        ],
+        "contradicts": [
+          "Provoz teplotu nezvyšoval",
+          "Chlazení bylo funkční",
+          "Pracovník nebyl vystaven horku",
+          "Událost nesouvisela s teplem"
+        ],
+        "actions": [
+          "Identifikovat zdroj tepla",
+          "Ověřit větrání a chlazení",
+          "Posoudit režim práce v horku",
+          "Vyslechnout pracovníky",
+          "Porovnat s hodnocením rizik"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Únava z horka"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Nedostatek přestávek"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečná opatření proti tepelné zátěži"
+          }
+        ]
+      },
+      {
+        "name": "Práce na slunci",
+        "questions": [
+          "Pracoval pracovník na přímém slunci?",
+          "Byla k dispozici ochrana proti slunci nebo stín?",
+          "Jak dlouho trvala expozice slunci?",
+          "Byl zajištěn pitný režim a přestávky?",
+          "Mohlo slunce oslnit nebo zvýšit tepelnou zátěž?"
+        ],
+        "evidence": [
+          "Záznam počasí",
+          "Fotodokumentace místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Režimová opatření",
+          "Evidence přestávek"
+        ],
+        "related": [
+          "Vysoká teplota",
+          "Horko na pracovišti",
+          "Oslnění",
+          "Únava z horka"
+        ],
+        "parent": "Vysoká teplota",
+        "supports": [
+          "Práce probíhala na slunci",
+          "Chyběl stín nebo ochrana",
+          "Expozice byla delší",
+          "Pracovník projevil únavu nebo oslnění",
+          "Pitný režim nebyl dostatečný"
+        ],
+        "contradicts": [
+          "Práce neprobíhala na slunci",
+          "Byl zajištěn stín",
+          "Expozice byla krátká",
+          "Událost nesouvisela se sluncem"
+        ],
+        "actions": [
+          "Ověřit expozici slunci",
+          "Zjistit délku práce venku",
+          "Prověřit pitný režim a přestávky",
+          "Posoudit vliv slunce na viditelnost a teplo",
+          "Vyslechnout pracovníka"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Únava z horka"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Nedostatek přestávek"
+          },
+          {
+            "category": "OOPP",
+            "factor": "Nevhodné pracovní oděvy"
+          }
+        ]
+      },
+      {
+        "name": "Nízká teplota",
+        "questions": [
+          "Byla na pracovišti v době události nízká teplota?",
+          "Mohla zima ovlivnit citlivost, pohyblivost nebo držení nástroje?",
+          "Pracoval pracovník venku nebo v nevyhřátém prostoru?",
+          "Byla zajištěna ochrana proti chladu?",
+          "Byly prsty, ruce nebo nohy pracovníka omrzlé nebo strnulé?",
+          "Byla práce v chladu předvídatelná?"
+        ],
+        "evidence": [
+          "Měření teploty",
+          "Záznam počasí",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Režimová opatření",
+          "Použité OOPP proti chladu"
+        ],
+        "related": [
+          "Námraza / sníh",
+          "Nevhodné klimatické podmínky",
+          "Zdravotní indispozice"
+        ],
+        "parent": "",
+        "supports": [
+          "Teplota byla nízká",
+          "Pracovník pracoval v chladu",
+          "Ochrana proti chladu nebyla dostatečná",
+          "Pracovník popsal strnutí nebo sníženou citlivost",
+          "Podmínky odpovídaly zimnímu provozu"
+        ],
+        "contradicts": [
+          "Teplota nebyla nízká",
+          "Pracoviště bylo vyhřáté",
+          "Pracovník měl vhodné OOPP",
+          "Událost nesouvisela s chladem"
+        ],
+        "actions": [
+          "Ověřit teplotu v době události",
+          "Posoudit vhodnost OOPP proti chladu",
+          "Vyslechnout pracovníka k pocitu chladu",
+          "Prověřit režim práce v zimě",
+          "Porovnat s hodnocením mikroklimatu"
+        ],
+        "suggest": [
+          {
+            "category": "OOPP",
+            "factor": "Nevhodné pracovní oděvy"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Práce v nepříznivém počasí"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Zdravotní indispozice"
+          }
+        ]
+      },
+      {
+        "name": "Prašnost",
+        "questions": [
+          "Bylo na pracovišti v době události zvýšené množství prachu nebo aerosolu?",
+          "Mohla prašnost snížit viditelnost nebo způsobit podráždění?",
+          "Bylo větrání, odsávání nebo jiné opatření funkční?",
+          "Byl pracovník vystaven prachu déle, než je běžné?",
+          "Bylo použito vhodné OOPP dýchacích cest nebo ochrany očí?",
+          "Byla prašnost předvídatelná součástí provozu?"
+        ],
+        "evidence": [
+          "Měření expozice prachu",
+          "Fotodokumentace místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Záznamy údržby odsávání",
+          "Bezpečnostní list látky"
+        ],
+        "related": [
+          "Nedostatečné osvětlení",
+          "Nevhodné klimatické podmínky",
+          "Nepozornost"
+        ],
+        "parent": "",
+        "supports": [
+          "Prašnost byla zvýšená",
+          "Viditelnost byla snížená",
+          "Odsávání nebo větrání nefungovalo",
+          "Pracovník nebyl chráněn vhodným OOPP",
+          "Prašnost souvisela s provozem"
+        ],
+        "contradicts": [
+          "Prašnost nebyla zvýšená",
+          "Odsávání fungovalo",
+          "Pracovník měl vhodné OOPP",
+          "Událost nesouvisela s prašností"
+        ],
+        "actions": [
+          "Ověřit stav odsávání a větrání",
+          "Posoudit expozici prachu",
+          "Vyslechnout pracovníky",
+          "Prověřit použití OOPP",
+          "Porovnat s hodnocením rizik"
+        ],
+        "suggest": [
+          {
+            "category": "OOPP",
+            "factor": "Nevhodné OOPP dýchacích cest"
+          },
+          {
+            "category": "Technika / zařízení",
+            "factor": "Porucha odsávání"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečná údržba pracoviště"
+          }
+        ]
+      },
+      {
+        "name": "Omezený manipulační prostor",
+        "questions": [
+          "Byl prostor pro manipulaci s břemenem nebo zařízením omezený?",
+          "Měl pracovník dostatek místa pro bezpečný pohyb a úchop?",
+          "Bylo nutné pracovat v nepohodlné poloze kvůli stísnění?",
+          "Bylo riziko stísněného prostoru předem známo?",
+          "Byla práce plánována pro jednoho nebo více pracovníků?",
+          "Ovlivnilo stísnění použití nástroje nebo techniky zvedání?"
+        ],
+        "evidence": [
+          "Fotodokumentace místa",
+          "Plán pracoviště",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Pracovní postup"
+        ],
+        "related": [
+          "Stísněný prostor",
+          "Nevhodné uspořádání pracoviště",
+          "Nesprávné použití zařízení"
+        ],
+        "parent": "",
+        "supports": [
+          "Prostor pro manipulaci byl omezený",
+          "Pracovník pracoval v nepohodlné poloze",
+          "Bylo nutné improvizovat",
+          "Chyběla pomoc druhé osoby",
+          "Stísnění ovlivnilo držení nebo pohyb"
+        ],
+        "contradicts": [
+          "Prostor byl dostatečný",
+          "Práce byla provedena standardně",
+          "Manipulace nebyla omezena",
+          "Událost nesouvisela s prostorem"
+        ],
+        "actions": [
+          "Změřit a posoudit manipulační prostor",
+          "Ověřit plán pracoviště",
+          "Vyslechnout pracovníka k pohybu a úchopu",
+          "Posoudit potřebu dvou osob",
+          "Porovnat s pracovním postupem"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Nesprávné použití zařízení"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Práce o samotě"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Práce vyžadující dvě osoby"
+          }
+        ]
+      },
+      {
+        "name": "Stísněný prostor",
+        "questions": [
+          "Pracoval pracovník ve stísněném nebo stísněném prostoru?",
+          "Byl prostor určen pro vstup osob?",
+          "Bylo zajištěno větrání, osvětlení a nouzové opuštění?",
+          "Byla práce ve stísněném prostoru povolena a řízena?",
+          "Ovlivnilo stísnění pohyb, dýchání nebo komunikaci?",
+          "Bylo hodnocení rizik pro stísněný prostor provedeno?"
+        ],
+        "evidence": [
+          "Povolení ke vstupu",
+          "Hodnocení rizik",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Fotodokumentace místa",
+          "Pracovní postup",
+          "Záznamy o větrání"
+        ],
+        "related": [
+          "Omezený manipulační prostor",
+          "Nevhodné klimatické podmínky",
+          "Nepřehledné pracoviště"
+        ],
+        "parent": "",
+        "supports": [
+          "Práce probíhala ve stísněném prostoru",
+          "Pohyb nebo dýchání byly omezeny",
+          "Chybělo řízení vstupu",
+          "Větrání nebo osvětlení nebylo dostatečné",
+          "Pracovník pracoval v nepohodlné poloze"
+        ],
+        "contradicts": [
+          "Prostor nebyl stísněný",
+          "Práce ve stísněném prostoru byla řízena",
+          "Byla zajištěna všechna opatření",
+          "Událost nesouvisela se stísněním"
+        ],
+        "actions": [
+          "Posoudit charakter stísněného prostoru",
+          "Ověřit povolení a hodnocení rizik",
+          "Prověřit větrání, osvětlení a nouzový postup",
+          "Vyslechnout pracovníka",
+          "Porovnat s pracovním postupem"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní postup",
+            "factor": "Práce ve stísněném prostoru"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečné posouzení způsobilosti"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Práce o samotě"
+          }
+        ]
+      },
+      {
+        "name": "Nepřehledné pracoviště",
+        "questions": [
+          "Bylo pracoviště nepřehledné kvůli uspořádání, materiálu nebo provozu?",
+          "Mohl pracovník přehlédnout riziko, osobu nebo pohyb v okolí?",
+          "Byly průchody, pracovní zóny a nebezpečné oblasti jasně odděleny?",
+          "Bylo pracoviště dlouhodobě neuklizené nebo přeplněné?",
+          "Ovlivnila nepřehlednost komunikaci nebo koordinaci?"
+        ],
+        "evidence": [
+          "Fotodokumentace místa",
+          "Plán pracoviště",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznamy kontrol pořádku"
+        ],
+        "related": [
+          "Omezený výhled",
+          "Nevhodné uspořádání pracoviště",
+          "Překážka v cestě"
+        ],
+        "parent": "",
+        "supports": [
+          "Pracoviště bylo nepřehledné",
+          "Pracovník nepřehlédl riziko nebo osobu",
+          "Zóny nebyly jasně odděleny",
+          "Materiál nebo zařízení snižovaly přehled",
+          "Obdobný stav trvá delší dobu"
+        ],
+        "contradicts": [
+          "Pracoviště bylo přehledné",
+          "Pracovník měl dobrý výhled",
+          "Riziko bylo viditelné",
+          "Událost nesouvisela s přehledností"
+        ],
+        "actions": [
+          "Prohlédnout uspořádání pracoviště",
+          "Posoudit viditelnost z místa pracovníka",
+          "Ověřit oddělení zón a průchodů",
+          "Vyslechnout svědky",
+          "Porovnat s plánem a pravidly pořádku"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný dohled"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Nevhodné uspořádání pracoviště"
+          }
+        ]
+      },
+      {
+        "name": "Omezený výhled",
+        "questions": [
+          "Byl výhled pracovníka do rizikové oblasti omezen?",
+          "Zastavoval výhled materiál, konstrukce, zařízení nebo jiná osoba?",
+          "Pracoval pracovník v slepé zóně?",
+          "Měl pracovník možnost polohu upravit pro lepší výhled?",
+          "Bylo riziko omezeného výhledu známo?"
+        ],
+        "evidence": [
+          "Fotodokumentace místa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Plán pracoviště"
+        ],
+        "related": [
+          "Nepřehledné pracoviště",
+          "Nedostatečné osvětlení",
+          "Špatně viditelné riziko"
+        ],
+        "parent": "Nepřehledné pracoviště",
+        "supports": [
+          "Výhled do rizikové oblasti byl omezen",
+          "Pracovník pracoval ve slepé zóně",
+          "Překážka výhledu byla trvalá",
+          "Pracovník riziko neviděl včas",
+          "Svědci potvrzují omezený výhled"
+        ],
+        "contradicts": [
+          "Výhled byl volný",
+          "Pracovník viděl rizikovou oblast",
+          "Omezení výhledu nemělo vliv",
+          "Událost nesouvisela s viditelností"
+        ],
+        "actions": [
+          "Posoudit výhled z pracovní polohy",
+          "Identifikovat, co výhled omezovalo",
+          "Vyslechnout svědky",
+          "Ověřit možnost změny polohy",
+          "Porovnat s uspořádáním pracoviště"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný dohled"
+          },
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Nevhodné uspořádání pracoviště"
+          }
+        ]
+      },
+      {
+        "name": "Nevhodné uspořádání pracoviště",
+        "questions": [
+          "Bylo pracoviště uspořádáno tak, aby umožňovalo bezpečnou práci?",
+          "Byly nástroje, materiál a zařízení na správném místě?",
+          "Vedly uspořádání ke zbytečnému pohybu, stísnění nebo riziku kolize?",
+          "Bylo uspořádání dlouhodobě tolerované i přes riziko?",
+          "Byl pracoviště plán nebo standard?",
+          "Ovlivnilo uspořádání ergonomii nebo bezpečný postup?"
+        ],
+        "evidence": [
+          "Fotodokumentace místa",
+          "Plán pracoviště",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Záznamy kontrol",
+          "Pracovní postup"
+        ],
+        "related": [
+          "Překážka v cestě",
+          "Nepřehledné pracoviště",
+          "Omezený manipulační prostor"
+        ],
+        "parent": "",
+        "supports": [
+          "Uspořádání neodpovídalo bezpečné práci",
+          "Materiál nebo zařízení byly na nevhodném místě",
+          "Pracovník musel obcházet překážky",
+          "Stav byl dlouhodobě známý",
+          "Chyběl respekt k pravidlům pořádku"
+        ],
+        "contradicts": [
+          "Pracoviště bylo uspořádáno vhodně",
+          "Plán pracoviště byl dodržen",
+          "Událost nesouvisela s uspořádáním",
+          "Pracovník měl dostatek prostoru"
+        ],
+        "actions": [
+          "Porovnat skutečné uspořádání s plánem",
+          "Posoudit vliv uspořádání na pohyb a práci",
+          "Vyslechnout pracovníky",
+          "Prověřit kontroly pořádku",
+          "Zjistit, zda jde o opakující se stav"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný dohled"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Nevhodné rozdělení práce"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící standard pracoviště"
+          }
+        ]
+      },
+      {
+        "name": "Práce ve výšce / pádová hrana",
+        "questions": [
+          "Pracoval pracovník ve výšce nebo v blízkosti pádové hrany?",
+          "Bylo zajištěno proti pádu podle požadavků?",
+          "Bylo použito zábradlí, lanová technika nebo jiné kolektivní či individuální zajištění?",
+          "Byla plošina, žebřík nebo lešení vhodné a v pořádku?",
+          "Bylo riziku pádu věnováno dostatečné pozornost?",
+          "Odpovídal postup práci ve výšce?"
+        ],
+        "evidence": [
+          "Fotodokumentace místa",
+          "Pracovní postup",
+          "Hodnocení rizik",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kontrola zařízení pro práci ve výšce",
+          "Kamerový záznam"
+        ],
+        "related": [
+          "Nerovný povrch",
+          "Nedostatečné osvětlení",
+          "Podcenění rizika"
+        ],
+        "parent": "",
+        "supports": [
+          "Pracovník pracoval ve výšce nebo u hrany",
+          "Chybělo nebo bylo nevhodné zajištění proti pádu",
+          "Pracovník ztratil rovnováhu",
+          "Zařízení pro práci ve výšce nebylo v pořádku",
+          "Postup neodpovídal práci ve výšce"
+        ],
+        "contradicts": [
+          "Pracovník nepracoval ve výšce",
+          "Bylo zajištěno proti pádu",
+          "Pád nesouvisel s prací ve výšce",
+          "Pracovník byl zajištěn a postupoval podle pravidel"
+        ],
+        "actions": [
+          "Posoudit výšku a pádové riziko",
+          "Ověřit zajištění proti pádu a stav zařízení",
+          "Porovnat postup s požadavky pro práci ve výšce",
+          "Vyslechnout pracovníka a svědky",
+          "Prověřit OOPP a školení"
+        ],
+        "suggest": [
+          {
+            "category": "OOPP",
+            "factor": "Nevhodné zajištění proti pádu"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Práce ve výšce"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný dohled"
+          },
+          {
+            "category": "Technika / zařízení",
+            "factor": "Technický stav zařízení"
+          }
+        ]
+      },
+      {
+        "name": "Nevhodné klimatické podmínky",
+        "questions": [
+          "Byly klimatické podmínky na pracovišti nepříznivé pro danou práci?",
+          "Šlo o kombinaci teploty, vlhkosti, větru, prachu nebo jiných faktorů?",
+          "Byly podmínky dočasné, nebo dlouhodobě známé?",
+          "Byla práce naplánována s ohledem na počasí nebo mikroklima?",
+          "Byla zavedena režimová opatření?",
+          "Ovlivnily podmínky výkon, pozornost nebo bezpečnost?"
+        ],
+        "evidence": [
+          "Měření mikroklimatu",
+          "Záznam počasí",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Režimová opatření",
+          "Hodnocení rizik"
+        ],
+        "related": [
+          "Vysoká teplota",
+          "Nízká teplota",
+          "Prašnost",
+          "Hluk"
+        ],
+        "parent": "",
+        "supports": [
+          "Klimatické podmínky byly nepříznivé",
+          "Pracovník projevil potíže s výkonem nebo pozorností",
+          "Režimová opatření chyběla nebo nebyla dodržena",
+          "Podmínky byly předvídatelné",
+          "Kombinace více faktorů zhoršila situaci"
+        ],
+        "contradicts": [
+          "Podmínky byly běžné a vhodné",
+          "Práce byla přizpůsobena počasí",
+          "Pracovník neměl potíže",
+          "Událost nesouvisela s klimatem"
+        ],
+        "actions": [
+          "Vyhodnotit mikroklimatické podmínky",
+          "Porovnat s režimovými opatřeními",
+          "Vyslechnout pracovníky",
+          "Posoudit vliv podmínek na průběh práce",
+          "Prověřit plánování práce v nepříznivém počasí"
+        ],
+        "suggest": [
+          {
+            "category": "Organizace práce",
+            "factor": "Práce v nepříznivém počasí"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečná opatření proti tepelné zátěži"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Únava z horka"
+          }
+        ]
+      },
+      {
+        "name": "Jiné",
+        "questions": [],
+        "evidence": [],
+        "related": [],
+        "parent": "",
+        "supports": [],
+        "contradicts": [],
+        "actions": [],
+        "suggest": []
       }
     ]
   }
