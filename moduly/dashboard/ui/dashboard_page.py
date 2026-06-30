@@ -1,18 +1,26 @@
 from PySide6.QtWidgets import (
+    QApplication,
+    QFileDialog,
     QFrame,
     QGridLayout,
     QHBoxLayout,
     QLabel,
+    QMenu,
+    QMessageBox,
     QPushButton,
     QScrollArea,
-    QFileDialog,
-    QMessageBox,
-    QApplication,
     QVBoxLayout,
     QWidget,
 )
 
-from core.services.backup_service import backup_service
+from core.services.backup_service import (
+    BACKUP_TYPE_CATALOGS_TEMPLATES,
+    BACKUP_TYPE_DATABASE,
+    BACKUP_TYPE_FULL,
+    BACKUP_TYPE_LABELS,
+    BACKUP_TYPE_RESTORE_LABELS,
+    backup_service,
+)
 
 from core.dashboard import (
     AccidentsWidget,
@@ -220,9 +228,9 @@ class DashboardPage(QWidget):
             elif text == "📋 Kontrola":
                 button.clicked.connect(self.show_kontroly_info)
             elif text == "💾 Záloha":
-                button.clicked.connect(self.create_backup)
+                self._setup_backup_menu(button)
             elif text == "♻ Obnova":
-                button.clicked.connect(self.restore_backup)
+                self._setup_restore_menu(button)
 
             layout.addWidget(button)
 
@@ -232,11 +240,30 @@ class DashboardPage(QWidget):
     def show_kontroly_info(self):
         QMessageBox.information(self, "Kontroly", "Modul Kontroly zatím není aktivní.")
 
-    def create_backup(self):
-        default_path = str(backup_service.default_backup_path())
+    def _setup_backup_menu(self, button: QPushButton) -> None:
+        menu = QMenu(button)
+        for backup_type in (BACKUP_TYPE_FULL, BACKUP_TYPE_DATABASE, BACKUP_TYPE_CATALOGS_TEMPLATES):
+            action = menu.addAction(BACKUP_TYPE_LABELS[backup_type])
+            action.triggered.connect(
+                lambda _checked=False, t=backup_type: self.create_backup(t)
+            )
+        button.setMenu(menu)
+
+    def _setup_restore_menu(self, button: QPushButton) -> None:
+        menu = QMenu(button)
+        for restore_type in (BACKUP_TYPE_FULL, BACKUP_TYPE_DATABASE, BACKUP_TYPE_CATALOGS_TEMPLATES):
+            action = menu.addAction(BACKUP_TYPE_RESTORE_LABELS[restore_type])
+            action.triggered.connect(
+                lambda _checked=False, t=restore_type: self.restore_backup(t)
+            )
+        button.setMenu(menu)
+
+    def create_backup(self, backup_type: str = BACKUP_TYPE_FULL):
+        label = BACKUP_TYPE_LABELS[backup_type]
+        default_path = str(backup_service.default_backup_path(backup_type))
         file_path, _ = QFileDialog.getSaveFileName(
             self,
-            "Uložit zálohu programu",
+            f"Uložit – {label}",
             default_path,
             "ZIP záloha (*.zip)",
         )
@@ -246,17 +273,37 @@ class DashboardPage(QWidget):
             file_path += ".zip"
 
         try:
-            result = backup_service.create_backup(file_path)
+            result = backup_service.create_backup(file_path, backup_type=backup_type)
         except Exception as exc:
-            QMessageBox.critical(self, "Záloha", f"Zálohu se nepodařilo vytvořit.\n\n{exc}")
+            QMessageBox.critical(self, label, f"Zálohu se nepodařilo vytvořit.\n\n{exc}")
             return
 
-        QMessageBox.information(self, "Záloha", f"Záloha byla vytvořena:\n{result}")
+        QMessageBox.information(self, label, f"Záloha byla vytvořena:\n{result}")
 
-    def restore_backup(self):
+    def _restore_confirmation_text(self, restore_type: str) -> str:
+        safety = "Před obnovou bude automaticky vytvořena bezpečnostní záloha aktuálního stavu.\n\n"
+        if restore_type == BACKUP_TYPE_FULL:
+            return (
+                "Obnova přepíše celé pracovní prostředí: databázi, přílohy, exporty, "
+                "šablony a editovatelné číselníky.\n"
+                f"{safety}Pokračovat?"
+            )
+        if restore_type == BACKUP_TYPE_DATABASE:
+            return (
+                "Obnova přepíše pouze databázi. Číselníky a šablony zůstanou beze změny.\n"
+                f"{safety}Pokračovat?"
+            )
+        return (
+            "Obnova přepíše editovatelné číselníky a uživatelské šablony. "
+            "Databáze zůstane beze změny.\n"
+            f"{safety}Pokračovat?"
+        )
+
+    def restore_backup(self, restore_type: str = BACKUP_TYPE_FULL):
+        label = BACKUP_TYPE_RESTORE_LABELS[restore_type]
         file_path, _ = QFileDialog.getOpenFileName(
             self,
-            "Vybrat zálohu programu",
+            f"Vybrat – {label}",
             str(backup_service.default_backup_path().parent),
             "ZIP záloha (*.zip)",
         )
@@ -265,10 +312,8 @@ class DashboardPage(QWidget):
 
         answer = QMessageBox.question(
             self,
-            "Obnova dat",
-            "Obnova přepíše aktuální databázi, přílohy, exporty a šablony.\n"
-            "Před obnovou bude automaticky vytvořena bezpečnostní záloha aktuálního stavu.\n\n"
-            "Pokračovat?",
+            label,
+            self._restore_confirmation_text(restore_type),
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )
@@ -276,17 +321,26 @@ class DashboardPage(QWidget):
             return
 
         try:
-            backup_service.restore_backup(file_path)
+            backup_service.restore_backup(file_path, restore_type=restore_type)
         except Exception as exc:
-            QMessageBox.critical(self, "Obnova dat", f"Obnovu se nepodařilo dokončit.\n\n{exc}")
+            QMessageBox.critical(self, label, f"Obnovu se nepodařilo dokončit.\n\n{exc}")
+            return
+
+        if backup_service.requires_restart_after_restore(restore_type):
+            QMessageBox.information(
+                self,
+                label,
+                "Data byla obnovena. Aplikace se nyní ukončí. "
+                "Po novém spuštění se načtou obnovená data.",
+            )
+            QApplication.quit()
             return
 
         QMessageBox.information(
             self,
-            "Obnova dat",
-            "Data byla obnovena. Aplikace se nyní ukončí. Po novém spuštění se načtou obnovená data.",
+            label,
+            "Číselníky a šablony byly obnoveny. Databáze zůstala beze změny.",
         )
-        QApplication.quit()
 
     def _placeholder_panel(self, title: str, text: str) -> QFrame:
         panel = QFrame()
