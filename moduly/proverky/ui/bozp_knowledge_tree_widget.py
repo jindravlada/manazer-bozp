@@ -28,6 +28,7 @@ class BozpKnowledgeTreeWidget(QTreeWidget):
         self.setHeaderHidden(True)
         self.setAlternatingRowColors(True)
         self.setMinimumWidth(AREA_PANEL_LEFT_WIDTH)
+        self.setIndentation(22)
         self.setExpandsOnDoubleClick(True)
         self.currentItemChanged.connect(self._on_current_item_changed)
 
@@ -63,6 +64,10 @@ class BozpKnowledgeTreeWidget(QTreeWidget):
         item = QTreeWidgetItem([node.label])
         item.setData(0, self._ROLE_NODE_TYPE, node.node_type)
         item.setData(0, self._ROLE_NODE_ID, node.node_id)
+        if node.node_type == KNOWLEDGE_NODE_AREA:
+            font = item.font(0)
+            font.setBold(True)
+            item.setFont(0, font)
         self._nodes_by_item[id(item)] = node
         return item
 
