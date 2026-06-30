@@ -141,3 +141,13 @@ INSPECTION_AREAS: tuple[InspectionArea, ...] = (
 
 AREA_PANEL_LEFT_WIDTH = 260
 AREA_NOT_IMPLEMENTED_TEXT = "Tato oblast zatím není implementována."
+AREA_PART_NOT_IMPLEMENTED_TEXT = "Tato část bude doplněna."
+
+AREA_CODE_PRVNI_POMOC = "prvni_pomoc"
+
+FIRST_AID_PARTS = (
+    "Lékárnička",
+    "Oční sprcha",
+    "Školené osoby",
+    "Telefonní čísla",
+)
