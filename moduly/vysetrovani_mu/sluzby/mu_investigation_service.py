@@ -18,6 +18,8 @@ _OZNAMENI_FIELDS = (
     "oznameni_popis",
     "opatreni_prvni_pomoc",
     "opatreni_zzs",
+    "opatreni_policie",
+    "opatreni_hzs",
     "opatreni_zastavena_cinnost",
     "opatreni_zajisteno_misto",
     "opatreni_zabraneno_manipulaci",

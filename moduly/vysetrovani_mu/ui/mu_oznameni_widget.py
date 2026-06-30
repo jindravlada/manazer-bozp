@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 
 from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.thp_worker_selector import ThpWorkerSelector
+from moduly.vysetrovani_mu.sluzby.mu_oznameni_opatreni import format_checked_okamzita_opatreni
 from moduly.vysetrovani_mu.sluzby.mu_source_context import MuSourceContext, resolve_mu_source_context
 
 
@@ -80,6 +81,8 @@ class MuOznameniWidget(QWidget):
         pairs = [
             (self.op_prvni_pomoc, investigation.opatreni_prvni_pomoc),
             (self.op_zzs, investigation.opatreni_zzs),
+            (self.op_policie, investigation.opatreni_policie),
+            (self.op_hzs, investigation.opatreni_hzs),
             (self.op_zastavena_cinnost, investigation.opatreni_zastavena_cinnost),
             (self.op_zajisteno_misto, investigation.opatreni_zajisteno_misto),
             (self.op_zabraneno_manipulaci, investigation.opatreni_zabraneno_manipulaci),
@@ -113,6 +116,8 @@ class MuOznameniWidget(QWidget):
             "oznameni_popis": self.oznameni_popis.toPlainText().strip(),
             "opatreni_prvni_pomoc": "ANO" if self.op_prvni_pomoc.isChecked() else "",
             "opatreni_zzs": "ANO" if self.op_zzs.isChecked() else "",
+            "opatreni_policie": "ANO" if self.op_policie.isChecked() else "",
+            "opatreni_hzs": "ANO" if self.op_hzs.isChecked() else "",
             "opatreni_zastavena_cinnost": "ANO" if self.op_zastavena_cinnost.isChecked() else "",
             "opatreni_zajisteno_misto": "ANO" if self.op_zajisteno_misto.isChecked() else "",
             "opatreni_zabraneno_manipulaci": "ANO" if self.op_zabraneno_manipulaci.isChecked() else "",
@@ -206,6 +211,8 @@ class MuOznameniWidget(QWidget):
 
         self.op_prvni_pomoc = QCheckBox("Poskytnuta první pomoc")
         self.op_zzs = QCheckBox("Přivolána ZZS")
+        self.op_policie = QCheckBox("Přivolána Policie ČR")
+        self.op_hzs = QCheckBox("Přivolán Hasičský záchranný sbor")
         self.op_zastavena_cinnost = QCheckBox("Zastavena nebezpečná činnost")
         self.op_zajisteno_misto = QCheckBox("Zajištěno místo události")
         self.op_zabraneno_manipulaci = QCheckBox("Zabráněno manipulaci s předměty")
@@ -215,6 +222,8 @@ class MuOznameniWidget(QWidget):
         for checkbox in (
             self.op_prvni_pomoc,
             self.op_zzs,
+            self.op_policie,
+            self.op_hzs,
             self.op_zastavena_cinnost,
             self.op_zajisteno_misto,
             self.op_zabraneno_manipulaci,
@@ -296,6 +305,10 @@ class MuOznameniWidget(QWidget):
 
     def _refresh_jiny_postup(self) -> None:
         self.dalsi_postup_jiny.setVisible(self.dalsi_postup.currentText().strip().lower() == "jiný postup")
+
+    def export_okamzita_opatreni(self) -> str:
+        """Text zaškrtnutých okamžitých opatření pro tisk/export."""
+        return format_checked_okamzita_opatreni(self.get_data())
 
     def _date_value(self, widget) -> date | None:
         if hasattr(widget, "get_date"):

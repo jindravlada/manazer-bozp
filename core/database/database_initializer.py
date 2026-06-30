@@ -162,6 +162,8 @@ def _ensure_mu_investigation_columns() -> None:
         "oznameni_popis": "oznameni_popis TEXT DEFAULT ''",
         "opatreni_prvni_pomoc": "opatreni_prvni_pomoc VARCHAR(10) DEFAULT ''",
         "opatreni_zzs": "opatreni_zzs VARCHAR(10) DEFAULT ''",
+        "opatreni_policie": "opatreni_policie VARCHAR(10) DEFAULT ''",
+        "opatreni_hzs": "opatreni_hzs VARCHAR(10) DEFAULT ''",
         "opatreni_zastavena_cinnost": "opatreni_zastavena_cinnost VARCHAR(10) DEFAULT ''",
         "opatreni_zajisteno_misto": "opatreni_zajisteno_misto VARCHAR(10) DEFAULT ''",
         "opatreni_zabraneno_manipulaci": "opatreni_zabraneno_manipulaci VARCHAR(10) DEFAULT ''",

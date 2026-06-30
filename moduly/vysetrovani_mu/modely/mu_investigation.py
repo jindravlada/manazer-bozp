@@ -51,6 +51,8 @@ class MuInvestigation(Base):
 
     opatreni_prvni_pomoc: Mapped[str] = mapped_column(String(10), default="")
     opatreni_zzs: Mapped[str] = mapped_column(String(10), default="")
+    opatreni_policie: Mapped[str] = mapped_column(String(10), default="")
+    opatreni_hzs: Mapped[str] = mapped_column(String(10), default="")
     opatreni_zastavena_cinnost: Mapped[str] = mapped_column(String(10), default="")
     opatreni_zajisteno_misto: Mapped[str] = mapped_column(String(10), default="")
     opatreni_zabraneno_manipulaci: Mapped[str] = mapped_column(String(10), default="")

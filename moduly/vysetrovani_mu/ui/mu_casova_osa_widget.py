@@ -4,6 +4,7 @@ import uuid
 from datetime import date, datetime
 from pathlib import Path
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
@@ -25,6 +26,11 @@ from PySide6.QtWidgets import (
 
 from core.services.attachment_service import attachment_service
 from core.shared.constants import ENTITY_MU_INVESTIGATION
+from core.utils.casove_rozdily import (
+    datetime_from_date_and_time,
+    format_od_udalosti_rozdil,
+)
+from moduly.vysetrovani_mu.constants import SOURCE_TYPE_ACCIDENT
 from moduly.vysetrovani_mu.sluzby.mu_chronologie_events import build_system_chronologie_events
 from moduly.vysetrovani_mu.ui.mu_chronologie_entry_dialog import MuChronologieEntryDialog
 
@@ -50,10 +56,15 @@ class MuCasovaOsaWidget(QWidget):
         self._source_id: int | None = None
         self._oznameni_datum: date | None = None
         self._oznameni_cas: str = ""
+        self._zajisteni_datum: date | None = None
+        self._zajisteni_cas: str = ""
+        self._zajisteni_datum_fotek: date | None = None
+        self._zajisteni_cas_fotek: str = ""
         self._number_slug = "bez-cisla"
         self._chronologie_entries: list[dict] = []
         self._display_entries: list[dict] = []
 
+        self._init_casova_navaznost_widgets()
         self._init_cas_synchronizace_widgets()
         self._build_ui()
 
@@ -77,6 +88,7 @@ class MuCasovaOsaWidget(QWidget):
         number = event_number.strip()
         self._number_slug = str(number).replace("/", "-").replace("\\", "-").strip() or "bez-cisla"
         self._refresh_chronologie_table()
+        self._refresh_casove_rozdily()
 
     def set_started_at(self, started_at: date | None) -> None:
         self._started_at = started_at
@@ -91,6 +103,21 @@ class MuCasovaOsaWidget(QWidget):
         self._oznameni_datum = oznameni_datum
         self._oznameni_cas = (oznameni_cas or "").strip()
         self._refresh_chronologie_table()
+        self._refresh_casove_rozdily()
+
+    def set_zajisteni_context(
+        self,
+        *,
+        datum: date | None = None,
+        cas: str = "",
+        datum_fotek: date | None = None,
+        cas_fotek: str = "",
+    ) -> None:
+        self._zajisteni_datum = datum
+        self._zajisteni_cas = (cas or "").strip()
+        self._zajisteni_datum_fotek = datum_fotek
+        self._zajisteni_cas_fotek = (cas_fotek or "").strip()
+        self._refresh_casove_rozdily()
 
     def load_json(self, raw_json: str) -> None:
         try:
@@ -194,6 +221,108 @@ class MuCasovaOsaWidget(QWidget):
         self._refresh_chronologie_table()
         self._recalculate_caszarizeni()
 
+    def _init_casova_navaznost_widgets(self) -> None:
+        self.navaznost_rozdil_oznameni_label = QLabel("Oznámení události: nelze spočítat")
+        self.navaznost_rozdil_zajisteni_label = QLabel("Zajištění důkazů: nelze spočítat")
+        self.navaznost_rozdil_foto_label = QLabel("Fotodokumentace: nelze spočítat")
+        self.navaznost_casova_upozorneni_label = QLabel("")
+        for lbl in (
+            self.navaznost_rozdil_oznameni_label,
+            self.navaznost_rozdil_zajisteni_label,
+            self.navaznost_rozdil_foto_label,
+            self.navaznost_casova_upozorneni_label,
+        ):
+            lbl.setWordWrap(True)
+            lbl.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.navaznost_casova_upozorneni_label.setVisible(False)
+
+    def _build_casova_navaznost_group(self) -> QGroupBox:
+        group = QGroupBox("Kontrola časové návaznosti")
+        layout = QVBoxLayout(group)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        info = QLabel(
+            "Porovnání času oznámení, zajištění důkazů a fotodokumentace vůči vzniku události. "
+            "Údaje se přebírají z karet Oznámení a Zajištění důkazů."
+        )
+        info.setWordWrap(True)
+        layout.addWidget(info)
+        layout.addWidget(self.navaznost_rozdil_oznameni_label)
+        layout.addWidget(self.navaznost_rozdil_zajisteni_label)
+        layout.addWidget(self.navaznost_rozdil_foto_label)
+        layout.addWidget(self.navaznost_casova_upozorneni_label)
+        layout.addStretch()
+        self._refresh_casove_rozdily()
+        return group
+
+    def _reference_event_datetime(self) -> datetime | None:
+        if self._source_type != SOURCE_TYPE_ACCIDENT:
+            return None
+        if not isinstance(self._source_id, int) or self._source_id <= 0:
+            return None
+        from moduly.kniha_urazu.sluzby.accident_service import accident_service
+
+        accident = accident_service.get_by_id(self._source_id)
+        if accident is None or accident.accident_date is None:
+            return None
+        if not (accident.accident_time or "").strip():
+            return None
+        return datetime_from_date_and_time(accident.accident_date, accident.accident_time)
+
+    def _set_casovy_rozdil_label(self, label: QLabel, prefix: str, formatted) -> None:
+        if formatted is None:
+            label.setText(f"{prefix}: nelze spočítat")
+            label.setStyleSheet("")
+            return
+        text, color = formatted
+        label.setText(f"{prefix}: {text}")
+        label.setStyleSheet(f"color: {color};")
+
+    def _refresh_casove_rozdily(self, *_args) -> None:
+        if not hasattr(self, "navaznost_rozdil_oznameni_label"):
+            return
+
+        reference_dt = self._reference_event_datetime()
+        oznameni_dt = datetime_from_date_and_time(self._oznameni_datum, self._oznameni_cas)
+        zajisteni_dt = datetime_from_date_and_time(self._zajisteni_datum, self._zajisteni_cas)
+        foto_dt = datetime_from_date_and_time(self._zajisteni_datum_fotek, self._zajisteni_cas_fotek)
+
+        oznameni_rozdil = format_od_udalosti_rozdil(
+            reference_dt,
+            oznameni_dt,
+            pred_udalosti_text="Čas oznámení je před vznikem události.",
+        )
+        zajisteni_rozdil = format_od_udalosti_rozdil(
+            reference_dt,
+            zajisteni_dt,
+            pred_udalosti_text="Zajištění důkazů je před vznikem události.",
+        )
+        foto_rozdil = format_od_udalosti_rozdil(
+            reference_dt,
+            foto_dt,
+            pred_udalosti_text="Fotodokumentace je před vznikem události.",
+        )
+
+        self._set_casovy_rozdil_label(
+            self.navaznost_rozdil_oznameni_label, "Oznámení události", oznameni_rozdil
+        )
+        self._set_casovy_rozdil_label(
+            self.navaznost_rozdil_zajisteni_label, "Zajištění důkazů", zajisteni_rozdil
+        )
+        self._set_casovy_rozdil_label(
+            self.navaznost_rozdil_foto_label, "Fotodokumentace", foto_rozdil
+        )
+
+        if zajisteni_dt and foto_dt and foto_dt < zajisteni_dt:
+            self.navaznost_casova_upozorneni_label.setText(
+                "Fotodokumentace byla pořízena před zajištěním důkazů. Zkontrolujte správnost údajů."
+            )
+            self.navaznost_casova_upozorneni_label.setStyleSheet("color: #b8860b;")
+            self.navaznost_casova_upozorneni_label.setVisible(True)
+        else:
+            self.navaznost_casova_upozorneni_label.setText("")
+            self.navaznost_casova_upozorneni_label.setStyleSheet("")
+            self.navaznost_casova_upozorneni_label.setVisible(False)
+
     def _build_ui(self) -> None:
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
@@ -204,6 +333,7 @@ class MuCasovaOsaWidget(QWidget):
         layout = QVBoxLayout(content)
         layout.setContentsMargins(10, 10, 10, 10)
 
+        layout.addWidget(self._build_casova_navaznost_group())
         layout.addWidget(self._build_cas_synchronizace_group())
         layout.addWidget(self._build_chronologie_group())
         layout.addStretch()

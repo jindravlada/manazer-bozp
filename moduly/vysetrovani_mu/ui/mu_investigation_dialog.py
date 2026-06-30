@@ -103,6 +103,10 @@ class MuInvestigationDialog(QDialog):
         self.started_at_edit.dateChanged.connect(self._sync_casova_osa_started_at)
         self.oznameni_widget.oznameni_datum.dateChanged.connect(self._sync_casova_osa_oznameni)
         self.oznameni_widget.oznameni_cas.textChanged.connect(self._sync_casova_osa_oznameni)
+        self.zajisteni_dukazu_widget.dukazy_datum.dateChanged.connect(self._sync_casova_osa_zajisteni)
+        self.zajisteni_dukazu_widget.dukazy_cas.textChanged.connect(self._sync_casova_osa_zajisteni)
+        self.zajisteni_dukazu_widget.dukazy_datum_fotek.dateChanged.connect(self._sync_casova_osa_zajisteni)
+        self.zajisteni_dukazu_widget.dukazy_cas_fotek.textChanged.connect(self._sync_casova_osa_zajisteni)
 
         investigation_id = investigation.id if investigation is not None else None
         self.findings_widget.set_investigation_id(investigation_id)
@@ -343,6 +347,7 @@ class MuInvestigationDialog(QDialog):
             source_id=source_id,
             **self._casova_osa_oznameni_context(),
         )
+        self.casova_osa_widget.set_zajisteni_context(**self._casova_osa_zajisteni_context())
         self.dodrzovani_predpisu_widget.set_context(
             investigation_id,
             event_number=context.event_number,
@@ -360,6 +365,18 @@ class MuInvestigationDialog(QDialog):
 
     def _sync_casova_osa_oznameni(self) -> None:
         self.casova_osa_widget.set_oznameni_context(**self._casova_osa_oznameni_context())
+
+    def _casova_osa_zajisteni_context(self) -> dict:
+        widget = self.zajisteni_dukazu_widget
+        return {
+            "datum": widget.dukazy_datum.get_date(),
+            "cas": widget.dukazy_cas.text().strip(),
+            "datum_fotek": widget.dukazy_datum_fotek.get_date(),
+            "cas_fotek": widget.dukazy_cas_fotek.text().strip(),
+        }
+
+    def _sync_casova_osa_zajisteni(self) -> None:
+        self.casova_osa_widget.set_zajisteni_context(**self._casova_osa_zajisteni_context())
 
     def _svedci_json_for_load(self, investigation) -> str:
         raw = getattr(investigation, "svedci_json", "") or ""
