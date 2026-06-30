@@ -354,16 +354,76 @@ class IshikawaFactorsService:
 
         return None
 
+    def _factor_item_name(self, item) -> str:
+        if isinstance(item, dict):
+            return str(item.get("name") or "").strip()
+        if isinstance(item, str):
+            return item.strip()
+        return ""
+
+    def _user_category_lacks_seed_factors(
+        self,
+        raw_factors,
+        fallback_factors: list[dict],
+    ) -> bool:
+        if not isinstance(raw_factors, list):
+            return True
+
+        user_names = {self._factor_item_name(item) for item in raw_factors}
+        user_names.discard("")
+        seed_names = {
+            factor["name"]
+            for factor in fallback_factors
+            if factor.get("name") and factor["name"] != ISHIKAWA_OTHER_FACTOR
+        }
+        if not seed_names:
+            return False
+        return not (user_names & seed_names)
+
+    def _merge_factor_sources(
+        self,
+        raw_factors,
+        fallback_factors: list[dict],
+        bundled_by_name: dict[str, dict],
+    ) -> list:
+        user_items: list = []
+        user_by_name: dict[str, object] = {}
+        if isinstance(raw_factors, list):
+            for item in raw_factors:
+                name = self._factor_item_name(item)
+                if not name:
+                    continue
+                user_by_name[name] = item
+                user_items.append(item)
+
+        merged: list = []
+        seen: set[str] = set()
+
+        for seed_factor in fallback_factors:
+            name = seed_factor["name"]
+            seen.add(name)
+            if name in user_by_name:
+                merged.append(user_by_name[name])
+                continue
+            bundled = bundled_by_name.get(name)
+            merged.append(bundled if bundled else seed_factor)
+
+        for item in user_items:
+            name = self._factor_item_name(item)
+            if not name or name in seen:
+                continue
+            seen.add(name)
+            merged.append(item)
+
+        return merged if merged else list(fallback_factors)
+
     def _normalize_factors_list(self, category: str, raw_factors) -> list[dict]:
         fallback_factors = self._fallback_factors(category)
         fallback_by_name = self._fallback_factors_by_name(category)
         bundled_by_name = self._bundled_factors_by_name(category)
 
-        source = raw_factors if isinstance(raw_factors, list) and raw_factors else fallback_factors
-        raw_names = {
-            str(item.get("name") if isinstance(item, dict) else item).strip()
-            for item in source
-        }
+        source = self._merge_factor_sources(raw_factors, fallback_factors, bundled_by_name)
+        raw_names = {self._factor_item_name(item) for item in source}
         raw_names.discard("")
         valid_names = raw_names or {factor["name"] for factor in fallback_factors}
 
@@ -406,8 +466,14 @@ class IshikawaFactorsService:
 
     def _normalize_entry(self, category: str, entry: dict) -> dict:
         fallback = self._fallback_entry(category)
-        question = str(entry.get("question") or fallback["question"]).strip() or fallback["question"]
-        factors = self._normalize_factors_list(category, entry.get("factors"))
+        raw_factors = entry.get("factors")
+        factors = self._normalize_factors_list(category, raw_factors)
+        fallback_question = str(fallback.get("question") or "").strip()
+        user_question = str(entry.get("question") or "").strip()
+        if self._user_category_lacks_seed_factors(raw_factors, fallback["factors"]):
+            question = fallback_question
+        else:
+            question = user_question or fallback_question
         return {"question": question, "factors": factors}
 
     def _effective_parent(self, factor: dict, valid_names: set[str]) -> str:
