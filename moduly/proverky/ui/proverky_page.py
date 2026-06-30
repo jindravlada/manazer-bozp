@@ -148,7 +148,7 @@ class ProverkyPage(QWidget):
 
     def new_inspection(self) -> None:
         dialog = BozpInspectionDialog(self)
-        if dialog.exec():
+        if exec_maximized(dialog):
             data = dialog.get_data()
             workplace_name = bozp_inspection_service.resolve_workplace_name(data.pop("workplace_id"))
             bozp_inspection_service.create_inspection(workplace_name=workplace_name, **data)
@@ -170,7 +170,7 @@ class ProverkyPage(QWidget):
             return
 
         dialog = BozpInspectionDialog(self, inspection=inspection)
-        if dialog.exec():
+        if exec_maximized(dialog):
             data = dialog.get_data()
             workplace_name = bozp_inspection_service.resolve_workplace_name(data.pop("workplace_id"))
             bozp_inspection_service.update_inspection(inspection_id, workplace_name=workplace_name, **data)

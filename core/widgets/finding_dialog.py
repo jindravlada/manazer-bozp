@@ -2,6 +2,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QFormLayout,
+    QLabel,
     QLineEdit,
     QTextEdit,
     QVBoxLayout,
