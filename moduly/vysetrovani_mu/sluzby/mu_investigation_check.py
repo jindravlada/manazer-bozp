@@ -12,10 +12,7 @@ from moduly.vysetrovani_mu.constants import (
     ISHIKAWA_STATUS_POTVRZENO,
     ISHIKAWA_STATUSES,
     MU_STATUS_DOKONCENO,
-    SOURCE_TYPE_ACCIDENT,
-    SOURCE_TYPE_AUDIT,
-    SOURCE_TYPE_CONTROL,
-    SOURCE_TYPE_MANUAL,
+    SOURCE_TYPES_WITH_RECORD,
 )
 from moduly.vysetrovani_mu.sluzby.mu_chronologie_events import build_system_chronologie_events
 from moduly.vysetrovani_mu.ui.ishikawa_cause_chain import (
@@ -176,6 +173,17 @@ def _parse_date(value) -> date | None:
         return None
 
 
+def _source_requires_record_binding(source_type: str) -> bool:
+    return source_type in SOURCE_TYPES_WITH_RECORD
+
+
+def _source_binding_ok(snapshot: dict) -> bool:
+    source_type = _text(snapshot.get("source_type"))
+    if not _source_requires_record_binding(source_type):
+        return True
+    return isinstance(snapshot.get("source_id"), int) and snapshot.get("source_id", 0) > 0
+
+
 def _has_photo_documentation(zajisteni: dict, casova_osa: dict | None = None) -> bool:
     fotky = zajisteni.get("fotky") or {}
     if any(_text(path) for path in fotky.values()):
@@ -251,13 +259,7 @@ def _check_spis(snapshot: dict) -> list[InvestigationCheckResult]:
             )
         )
 
-    source_ok = False
-    if source_type == SOURCE_TYPE_MANUAL:
-        source_ok = bool(_text(snapshot.get("source_label")))
-    elif source_type in (SOURCE_TYPE_ACCIDENT, SOURCE_TYPE_AUDIT, SOURCE_TYPE_CONTROL):
-        source_ok = isinstance(snapshot.get("source_id"), int) and snapshot.get("source_id", 0) > 0
-    else:
-        source_ok = bool(source_type)
+    source_ok = _source_binding_ok(snapshot)
 
     if source_ok and event_character:
         results.append(
@@ -269,7 +271,7 @@ def _check_spis(snapshot: dict) -> list[InvestigationCheckResult]:
                 check_code="spis.source_present",
             )
         )
-    elif not source_ok:
+    elif not source_ok and _source_requires_record_binding(source_type):
         results.append(
             _result(
                 CHECK_SEVERITY_ERROR,

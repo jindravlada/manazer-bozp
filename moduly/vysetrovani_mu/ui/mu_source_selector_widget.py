@@ -41,6 +41,7 @@ class MuSourceSelectorWidget(QWidget):
         self.control_combo = self._make_record_combo()
         self.text_edit = QLineEdit()
         self.text_edit.setPlaceholderText("Popište zdroj podnětu")
+        self.text_edit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.manual_page = QWidget()
         manual_layout = QVBoxLayout(self.manual_page)
         manual_layout.setContentsMargins(0, 0, 0, 0)
@@ -48,6 +49,7 @@ class MuSourceSelectorWidget(QWidget):
         self.manual_info = QLabel("Zdrojový záznam není navázán")
         self.manual_info.setObjectName("InfoText")
         self.manual_info.setWordWrap(True)
+        self.manual_info.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         manual_layout.addWidget(self.manual_info, alignment=Qt.AlignmentFlag.AlignVCenter)
 
         self.stack.addWidget(self.accident_combo)
@@ -59,14 +61,19 @@ class MuSourceSelectorWidget(QWidget):
         layout.addWidget(self.stack)
 
         row_height = self.accident_combo.sizeHint().height()
-        self.stack.setFixedHeight(row_height)
-        self.setFixedHeight(row_height)
+        self.stack.setMinimumHeight(row_height)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
         self._current_source_type = SOURCE_TYPE_ACCIDENT
         self._populate_accidents()
         self._populate_audits()
         self._populate_controls()
         self.set_source_type(SOURCE_TYPE_ACCIDENT)
+
+        for combo in (self.accident_combo, self.audit_combo, self.control_combo):
+            combo.currentIndexChanged.connect(self._sync_display_tooltip)
+            combo.currentTextChanged.connect(self._sync_display_tooltip)
+        self.text_edit.textChanged.connect(self._sync_display_tooltip)
 
     def set_source_type(self, source_type: str) -> None:
         self._current_source_type = source_type
@@ -80,6 +87,8 @@ class MuSourceSelectorWidget(QWidget):
             self.stack.setCurrentIndex(self._PAGE_OTHER)
         else:
             self.stack.setCurrentIndex(self._PAGE_MANUAL)
+
+        self._sync_display_tooltip()
 
     def set_source(self, source_type: str, source_id: int | None, source_label: str) -> None:
         self.set_source_type(source_type)
@@ -95,6 +104,34 @@ class MuSourceSelectorWidget(QWidget):
             self._set_combo_value(self.control_combo, source_id)
         elif source_type == SOURCE_TYPE_OTHER:
             self.text_edit.setText(source_label or "")
+
+        self._sync_display_tooltip()
+
+    def _sync_display_tooltip(self) -> None:
+        current = self.stack.currentWidget()
+        text = ""
+        if current is self.accident_combo:
+            text = self.accident_combo.currentText()
+        elif current is self.audit_combo:
+            text = self.audit_combo.currentText()
+        elif current is self.control_combo:
+            text = self.control_combo.currentText()
+        elif current is self.text_edit:
+            text = self.text_edit.text()
+        elif current is self.manual_page:
+            text = self.manual_info.text()
+
+        tooltip = text.strip()
+        self.setToolTip(tooltip)
+        if current is self.text_edit:
+            self.text_edit.setToolTip(tooltip)
+        elif isinstance(current, QComboBox):
+            current.setToolTip(tooltip)
+            line_edit = current.lineEdit()
+            if line_edit is not None:
+                line_edit.setToolTip(tooltip)
+        elif current is self.manual_page:
+            self.manual_info.setToolTip(tooltip)
 
     def current_source_id(self) -> int | None:
         current = self.stack.currentWidget()
