@@ -1,18 +1,14 @@
-from datetime import date
-
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
     QFrame,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
     QVBoxLayout,
     QWidget,
 )
 
 from core.widgets.nullable_date_edit import NullableDateEdit
-from core.widgets.thp_worker_selector import ThpWorkerSelector
 from core.widgets.workplace_selector import WorkplaceSelector
 from moduly.proverky.constants import (
     DEFAULT_INSPECTION_SPIS_STATUS,
@@ -48,8 +44,8 @@ class BozpInspectionSpisWidget(QWidget):
         self.number_label = QLabel("—")
         self.number_label.setObjectName("InfoText")
 
-        self.year_combo = QComboBox()
-        self._populate_year_combo()
+        self.year_label = QLabel("—")
+        self.year_label.setObjectName("InfoText")
 
         self.inspection_date_edit = NullableDateEdit()
         self.started_at_edit = NullableDateEdit()
@@ -62,15 +58,9 @@ class BozpInspectionSpisWidget(QWidget):
         self.type_combo.addItems(INSPECTION_TYPES)
 
         self.workplace_selector = WorkplaceSelector()
-        self.workplace_manager_selector = ThpWorkerSelector()
-        self.bozp_specialist_selector = ThpWorkerSelector()
-        self.commission_chair_selector = ThpWorkerSelector()
-
-        self.title_edit = QLineEdit()
-        self.title_edit.setPlaceholderText("Např. Veřejná prověrka BOZP/PO")
 
         left_form.addRow("Číslo prověrky:", self.number_label)
-        left_form.addRow("Rok:", self.year_combo)
+        left_form.addRow("Rok:", self.year_label)
         left_form.addRow("Datum prověrky:", self.inspection_date_edit)
         left_form.addRow("Zahájení:", self.started_at_edit)
         left_form.addRow("Ukončení:", self.finished_at_edit)
@@ -78,10 +68,6 @@ class BozpInspectionSpisWidget(QWidget):
         left_form.addRow("Typ prověrky:", self.type_combo)
 
         right_form.addRow("Pracoviště:", self.workplace_selector)
-        right_form.addRow("Vedoucí pracoviště:", self.workplace_manager_selector)
-        right_form.addRow("Specialista BOZP:", self.bozp_specialist_selector)
-        right_form.addRow("Předseda komise:", self.commission_chair_selector)
-        right_form.addRow("Stručný název prověrky:", self.title_edit)
 
         columns.addLayout(left_form, 1)
         columns.addLayout(right_form, 1)
@@ -109,22 +95,10 @@ class BozpInspectionSpisWidget(QWidget):
         self.inspection_date_edit.dateChanged.connect(self._sync_year_from_inspection_date)
         self._set_defaults()
 
-    def _populate_year_combo(self) -> None:
-        current_year = date.today().year
-        years = range(current_year + 1, current_year - 6, -1)
-
-        self.year_combo.blockSignals(True)
-        self.year_combo.clear()
-        for year in years:
-            self.year_combo.addItem(str(year), year)
-        self.year_combo.blockSignals(False)
-
     def _set_defaults(self) -> None:
-        today = date.today()
         self.status_combo.setCurrentText(DEFAULT_INSPECTION_SPIS_STATUS)
         self.type_combo.setCurrentText(DEFAULT_INSPECTION_TYPE)
-        self.inspection_date_edit.set_date_value(today)
-        self._set_year(today.year)
+        self._clear_year()
         self._set_unsaved_history_placeholder()
 
     def _set_unsaved_history_placeholder(self) -> None:
@@ -141,19 +115,14 @@ class BozpInspectionSpisWidget(QWidget):
 
     def _sync_year_from_inspection_date(self) -> None:
         inspection_date = self.inspection_date_edit.get_date()
-        if inspection_date is not None:
-            self._set_year(inspection_date.year)
-
-    def _set_year(self, year: int) -> None:
-        index = self.year_combo.findData(year)
-        if index >= 0:
-            self.year_combo.setCurrentIndex(index)
+        if inspection_date is None:
+            self._clear_year()
             return
 
-        self.year_combo.blockSignals(True)
-        self.year_combo.insertItem(0, str(year), year)
-        self.year_combo.setCurrentIndex(0)
-        self.year_combo.blockSignals(False)
+        self.year_label.setText(str(inspection_date.year))
+
+    def _clear_year(self) -> None:
+        self.year_label.setText("—")
 
     def set_number(self, number: str | None) -> None:
         display = (number or "").strip() or "—"
@@ -165,9 +134,6 @@ class BozpInspectionSpisWidget(QWidget):
             return
 
         self.set_number(getattr(inspection, "number", None))
-        title = getattr(inspection, "title", None)
-        if title:
-            self.title_edit.setText(title)
 
         status = getattr(inspection, "status", None)
         if status:
@@ -181,13 +147,11 @@ class BozpInspectionSpisWidget(QWidget):
             if index >= 0:
                 self.type_combo.setCurrentIndex(index)
 
-        year = getattr(inspection, "year", None)
-        if year:
-            self._set_year(year)
-
         inspection_date = getattr(inspection, "inspection_date", None)
         if inspection_date is not None:
             self.inspection_date_edit.set_date_value(inspection_date)
+        else:
+            self.inspection_date_edit.clear_date()
 
         started_at = getattr(inspection, "started_at", None)
         if started_at is not None:
@@ -201,16 +165,5 @@ class BozpInspectionSpisWidget(QWidget):
         if workplace_id:
             self.workplace_selector.set_workplace_id(workplace_id)
 
-        workplace_manager_id = getattr(inspection, "workplace_manager_id", None)
-        if workplace_manager_id:
-            self.workplace_manager_selector.set_person_id(workplace_manager_id)
-
-        bozp_specialist_id = getattr(inspection, "bozp_specialist_id", None)
-        if bozp_specialist_id:
-            self.bozp_specialist_selector.set_person_id(bozp_specialist_id)
-
-        commission_chair_id = getattr(inspection, "commission_chair_id", None)
-        if commission_chair_id:
-            self.commission_chair_selector.set_person_id(commission_chair_id)
-
+        self._sync_year_from_inspection_date()
         self._set_saved_history_placeholder()
