@@ -27,7 +27,9 @@ class StorageService:
         self.logs_dir.mkdir(parents=True, exist_ok=True)
         self.templates_dir.mkdir(parents=True, exist_ok=True)
         self.config_dir.mkdir(parents=True, exist_ok=True)
+        self.ciselniky_dir.mkdir(parents=True, exist_ok=True)
         self.ensure_default_templates()
+        self.ensure_editable_catalogs()
 
     @property
     def database_dir(self) -> Path:
@@ -75,6 +77,15 @@ class StorageService:
     @property
     def config_dir(self) -> Path:
         return self.base / "konfigurace"
+
+    @property
+    def ciselniky_dir(self) -> Path:
+        return self.base / "ciselniky"
+
+    def ensure_editable_catalogs(self) -> None:
+        from core.services.editable_catalog_service import editable_catalog_service
+
+        editable_catalog_service.ensure_all(self.ciselniky_dir)
 
     def bundled_templates_dir(self) -> Path:
         """Výchozí šablony dodané s aplikací / AppImage."""
