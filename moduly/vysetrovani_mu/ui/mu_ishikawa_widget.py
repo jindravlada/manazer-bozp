@@ -67,11 +67,12 @@ class MuIshikawaWidget(QWidget):
         group_layout.addLayout(toolbar)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(6)
+        self.table.setColumnCount(7)
         self.table.setHorizontalHeaderLabels([
             "ID",
             "Kategorie",
             "Popis",
+            "Faktory",
             "Stav",
             "Úroveň",
             "Důkazy",
@@ -82,7 +83,8 @@ class MuIshikawaWidget(QWidget):
         self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(5, QHeaderView.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeToContents)
+        self.table.horizontalHeader().setSectionResizeMode(6, QHeaderView.Stretch)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setSelectionMode(QTableWidget.SingleSelection)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -176,7 +178,7 @@ class MuIshikawaWidget(QWidget):
             QMessageBox.information(self, "Ishikawa+", "Vyberte příčinu.")
             return
 
-        description = (cause.get("description") or "").strip()
+        description = self._finding_description(cause)
         if not description:
             QMessageBox.information(self, "Ishikawa+", "Vybraná příčina nemá popis.")
             return
@@ -210,6 +212,8 @@ class MuIshikawaWidget(QWidget):
         return {
             "id": str(uuid.uuid4()),
             "category": data["category"],
+            "factors": list(data.get("factors") or []),
+            "custom_factor": data.get("custom_factor") or "",
             "description": data["description"],
             "evidence": data["evidence"],
             "status": data["status"],
@@ -235,6 +239,12 @@ class MuIshikawaWidget(QWidget):
                 {
                     "id": str(raw.get("id") or uuid.uuid4()),
                     "category": category,
+                    "factors": [
+                        str(factor).strip()
+                        for factor in (raw.get("factors") or [])
+                        if str(factor).strip()
+                    ],
+                    "custom_factor": str(raw.get("custom_factor") or "").strip(),
                     "description": str(raw.get("description") or "").strip(),
                     "evidence": str(raw.get("evidence") or "").strip(),
                     "status": status,
@@ -263,6 +273,7 @@ class MuIshikawaWidget(QWidget):
                 cause.get("id", ""),
                 cause.get("category") or "—",
                 self._text_preview(cause.get("description")),
+                self._factors_summary(cause),
                 ISHIKAWA_STATUS_LABELS.get(cause.get("status"), "—"),
                 ISHIKAWA_LEVEL_LABELS.get(cause.get("cause_level"), "—"),
                 self._text_preview(cause.get("evidence")),
@@ -306,14 +317,46 @@ class MuIshikawaWidget(QWidget):
             return value
         return value[: max_len - 1].rstrip() + "…"
 
+    def _factors_summary(self, cause: dict, max_len: int = 80) -> str:
+        items = list(cause.get("factors") or [])
+        custom = (cause.get("custom_factor") or "").strip()
+        if custom:
+            items.append(custom)
+        if not items:
+            return "—"
+        return self._text_preview(", ".join(items), max_len=max_len)
+
+    def _finding_description(self, cause: dict) -> str:
+        parts = []
+        description = (cause.get("description") or "").strip()
+        if description:
+            parts.append(description)
+
+        factors = [factor for factor in (cause.get("factors") or []) if factor]
+        if factors:
+            parts.append("Faktory: " + ", ".join(factors))
+
+        custom_factor = (cause.get("custom_factor") or "").strip()
+        if custom_factor:
+            parts.append(f"Vlastní faktor: {custom_factor}")
+
+        return "\n\n".join(parts)
+
     def _cause_tooltip(self, cause: dict) -> str:
         lines = [
             f"Kategorie: {cause.get('category') or '—'}",
             f"Popis: {cause.get('description') or '—'}",
+        ]
+        factors = cause.get("factors") or []
+        if factors:
+            lines.append("Faktory: " + ", ".join(factors))
+        if cause.get("custom_factor"):
+            lines.append(f"Vlastní faktor: {cause.get('custom_factor')}")
+        lines.extend([
             f"Důkazy: {cause.get('evidence') or '—'}",
             f"Stav: {ISHIKAWA_STATUS_LABELS.get(cause.get('status'), '—')}",
             f"Úroveň: {ISHIKAWA_LEVEL_LABELS.get(cause.get('cause_level'), '—')}",
-        ]
+        ])
         if cause.get("note"):
             lines.append(f"Poznámka: {cause.get('note')}")
         return "\n".join(lines)

@@ -126,4 +126,27 @@ ISHIKAWA_LEVELS = (
     ISHIKAWA_LEVEL_SYSTEMOVA,
 )
 
+ISHIKAWA_OTHER_FACTOR = "Jiné"
+
+ISHIKAWA_CATEGORY_FACTORS: dict[str, tuple[str, ...]] = {
+    "Člověk": (
+        "Nedodržení pracovního postupu",
+        "Nesprávné použití zařízení",
+        "Nepozornost",
+        "Spěch",
+        "Únava",
+        "Stres",
+        "Zdravotní indispozice",
+        "Nedostatečná kvalifikace",
+        "Rutina",
+        "Podcenění rizika",
+        "Používání telefonu",
+        ISHIKAWA_OTHER_FACTOR,
+    ),
+}
+
+
+def ishikawa_factors_for_category(category: str) -> tuple[str, ...]:
+    return ISHIKAWA_CATEGORY_FACTORS.get(category, (ISHIKAWA_OTHER_FACTOR,))
+
 YEAR_FILTER_VSE = "Vše"
