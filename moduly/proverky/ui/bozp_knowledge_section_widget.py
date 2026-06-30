@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
 
 from core.widgets.dialog_utils import wrap_in_scroll_area
 from moduly.proverky.constants import KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT
-from moduly.proverky.sluzby.proverky_knowledge_service import proverky_knowledge_service
+from moduly.proverky.sluzby.proverky_knowledge_service import SECTION_LIST_BLOCKS
 
 
 class BozpKnowledgeSectionWidget(QWidget):
@@ -32,7 +32,7 @@ class BozpKnowledgeSectionWidget(QWidget):
 
         self._content_layout.addWidget(self._build_popis_block(section))
 
-        for title, field in proverky_knowledge_service.SECTION_LIST_BLOCKS:
+        for title, field in SECTION_LIST_BLOCKS:
             self._content_layout.addWidget(self._build_list_block(title, section, field))
 
         self._content_layout.addStretch()
