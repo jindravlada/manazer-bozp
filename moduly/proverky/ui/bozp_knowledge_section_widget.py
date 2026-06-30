@@ -1,19 +1,25 @@
 """Pracovní karta znalostního uzlu sekce prověrky."""
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QMessageBox, QPushButton, QVBoxLayout, QWidget
 
 from core.shared.constants import ENTITY_PROVERKY
+from core.shared.finding_display import finding_status_label
 from core.shared.sluzby.finding_service import finding_service
 from core.widgets.dialog_utils import wrap_in_scroll_area
 from core.widgets.finding_dialog import FindingDialog
 from moduly.proverky.constants import (
     FINDING_CREATE_FROM_CONTROL_POINT_LABEL,
+    FINDING_CREATED_LABEL,
     FINDING_DIALOG_TITLE,
+    FINDING_DUPLICATE_MESSAGE,
+    FINDING_OPEN_EXISTING_LABEL,
     FINDING_SOURCE_LABEL,
     INSPECTION_MUST_BE_SAVED_MESSAGE,
     KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT,
     ProverkyFindingKnowledgeContext,
 )
+from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 from moduly.proverky.sluzby.proverky_knowledge_service import (
     SECTION_LIST_BLOCKS,
     proverky_knowledge_service,
@@ -30,6 +36,7 @@ class BozpKnowledgeSectionWidget(QWidget):
         self._area_label = ""
         self._section_id = ""
         self._section_label = ""
+        self._current_section: dict | None = None
         self._inspection_id: int | None = None
         self._on_finding_saved = None
 
@@ -50,10 +57,25 @@ class BozpKnowledgeSectionWidget(QWidget):
         area_label: str = "",
         section_label: str = "",
     ) -> None:
+        self._current_section = section
         self._area_id = area_id.strip()
         self._area_label = area_label.strip()
         self._section_label = section_label.strip()
         self._section_id = str(section.get("id") or "").strip() if section else ""
+        self._rebuild_content()
+
+    def set_inspection_id(self, inspection_id: int | None) -> None:
+        self._inspection_id = inspection_id
+        self.refresh()
+
+    def set_on_finding_saved(self, callback) -> None:
+        self._on_finding_saved = callback
+
+    def refresh(self) -> None:
+        self._rebuild_content()
+
+    def _rebuild_content(self) -> None:
+        section = self._current_section
         self._clear_content()
 
         if not section:
@@ -70,12 +92,6 @@ class BozpKnowledgeSectionWidget(QWidget):
             self._content_layout.addWidget(self._build_list_block(title, section, field))
 
         self._content_layout.addStretch()
-
-    def set_inspection_id(self, inspection_id: int | None) -> None:
-        self._inspection_id = inspection_id
-
-    def set_on_finding_saved(self, callback) -> None:
-        self._on_finding_saved = callback
 
     def _clear_content(self) -> None:
         while self._content_layout.count():
@@ -130,21 +146,13 @@ class BozpKnowledgeSectionWidget(QWidget):
         row_layout.setContentsMargins(0, 0, 0, 0)
         row_layout.setSpacing(4)
 
-        nazev = str(item.get("nazev") or "—").strip() or "—"
-        header_row = QHBoxLayout()
-        header_row.setContentsMargins(0, 0, 0, 0)
-        header_row.setSpacing(8)
+        context = self._context_for_control_point(item)
+        finding = self._finding_for_context(context)
 
+        nazev = context.control_point_label
         title_label = QLabel(f"• {nazev}")
         title_label.setWordWrap(True)
-        header_row.addWidget(title_label, 1)
-
-        create_btn = QPushButton(FINDING_CREATE_FROM_CONTROL_POINT_LABEL)
-        create_btn.clicked.connect(
-            lambda _checked=False, item=item: self._open_finding_dialog(item)
-        )
-        header_row.addWidget(create_btn, 0)
-        row_layout.addLayout(header_row)
+        row_layout.addWidget(title_label)
 
         popis = str(item.get("popis") or "").strip()
         if popis:
@@ -154,15 +162,53 @@ class BozpKnowledgeSectionWidget(QWidget):
             description.setContentsMargins(16, 0, 0, 0)
             row_layout.addWidget(description)
 
+        if finding is not None:
+            row_layout.addWidget(self._build_linked_finding_block(finding, context))
+        else:
+            actions = QHBoxLayout()
+            actions.setContentsMargins(16, 4, 0, 0)
+            actions.addWidget(self._build_create_finding_button(item))
+            actions.addStretch()
+            row_layout.addLayout(actions)
+
         return row
 
-    def _open_finding_dialog(self, control_point: dict) -> None:
-        if self._inspection_id is None:
-            QMessageBox.information(self, "Zjištění", INSPECTION_MUST_BE_SAVED_MESSAGE)
-            return
+    def _build_create_finding_button(self, control_point: dict) -> QPushButton:
+        button = QPushButton(FINDING_CREATE_FROM_CONTROL_POINT_LABEL)
+        button.clicked.connect(lambda _checked=False, item=control_point: self._create_finding(item))
+        return button
 
+    def _build_linked_finding_block(self, finding, context: ProverkyFindingKnowledgeContext) -> QWidget:
+        panel = QFrame()
+        panel.setObjectName("ModulePanel")
+        panel_layout = QVBoxLayout(panel)
+        panel_layout.setContentsMargins(12, 10, 12, 10)
+        panel_layout.setSpacing(6)
+
+        header = QLabel(FINDING_CREATED_LABEL)
+        header.setObjectName("SectionTitle")
+        panel_layout.addWidget(header)
+
+        description = self._text_preview(finding.description)
+        panel_layout.addWidget(self._build_info_label(description))
+
+        status_label = QLabel(f"Stav: {finding_status_label(finding.status)}")
+        status_label.setObjectName("InfoText")
+        panel_layout.addWidget(status_label)
+
+        open_btn = QPushButton(FINDING_OPEN_EXISTING_LABEL)
+        open_btn.clicked.connect(lambda _checked=False, f=finding: self._open_existing_finding(f, context))
+        panel_layout.addWidget(open_btn, 0, Qt.AlignmentFlag.AlignLeft)
+
+        container = QWidget()
+        container_layout = QVBoxLayout(container)
+        container_layout.setContentsMargins(16, 4, 0, 0)
+        container_layout.addWidget(panel)
+        return container
+
+    def _context_for_control_point(self, control_point: dict) -> ProverkyFindingKnowledgeContext:
         control_point_label = str(control_point.get("nazev") or "—").strip() or "—"
-        context = ProverkyFindingKnowledgeContext(
+        return ProverkyFindingKnowledgeContext(
             area_id=self._area_id,
             area_label=self._area_label,
             section_id=self._section_id,
@@ -170,6 +216,41 @@ class BozpKnowledgeSectionWidget(QWidget):
             control_point_id=str(control_point.get("id") or "").strip(),
             control_point_label=control_point_label,
         )
+
+    def _finding_for_context(self, context: ProverkyFindingKnowledgeContext):
+        if self._inspection_id is None or not context.control_point_id:
+            return None
+
+        return bozp_inspection_service.finding_for_control_point(
+            self._inspection_id,
+            area_label=context.area_label,
+            section_label=context.section_label,
+            control_point_id=context.control_point_id,
+        )
+
+    def _create_finding(self, control_point: dict) -> None:
+        if self._inspection_id is None:
+            QMessageBox.information(self, "Zjištění", INSPECTION_MUST_BE_SAVED_MESSAGE)
+            return
+
+        context = self._context_for_control_point(control_point)
+        existing_open = bozp_inspection_service.open_finding_for_control_point(
+            self._inspection_id,
+            area_label=context.area_label,
+            section_label=context.section_label,
+            control_point_id=context.control_point_id,
+        )
+        if existing_open is not None:
+            QMessageBox.information(self, "Zjištění", FINDING_DUPLICATE_MESSAGE)
+            self._open_existing_finding(existing_open, context)
+            return
+
+        existing_any = self._finding_for_context(context)
+        if existing_any is not None:
+            QMessageBox.information(self, "Zjištění", FINDING_DUPLICATE_MESSAGE)
+            self._open_existing_finding(existing_any, context)
+            return
+
         dialog = FindingDialog(
             self,
             title=FINDING_DIALOG_TITLE,
@@ -201,6 +282,28 @@ class BozpKnowledgeSectionWidget(QWidget):
             source_control_point_id=context.control_point_id,
             source_control_point_label=context.control_point_label,
         )
+        self._notify_finding_saved()
+
+    def _open_existing_finding(self, finding, context: ProverkyFindingKnowledgeContext) -> None:
+        dialog = FindingDialog(
+            self,
+            finding=finding,
+            title=FINDING_DIALOG_TITLE,
+            knowledge_source={
+                "source_label": FINDING_SOURCE_LABEL,
+                "area_label": context.area_label,
+                "section_label": context.section_label,
+                "control_point_label": context.control_point_label,
+            },
+        )
+        if not dialog.exec():
+            return
+
+        finding_service.update(finding.id, **dialog.get_data())
+        self._notify_finding_saved()
+
+    def _notify_finding_saved(self) -> None:
+        self.refresh()
         if self._on_finding_saved is not None:
             self._on_finding_saved()
 
@@ -277,6 +380,15 @@ class BozpKnowledgeSectionWidget(QWidget):
         block_layout.addWidget(header)
         block_layout.addWidget(panel)
         return container
+
+    @staticmethod
+    def _text_preview(text: str, max_len: int = 120) -> str:
+        value = (text or "").strip()
+        if not value:
+            return "—"
+        if len(value) <= max_len:
+            return value
+        return value[: max_len - 1].rstrip() + "…"
 
     @staticmethod
     def _build_info_label(text: str) -> QLabel:

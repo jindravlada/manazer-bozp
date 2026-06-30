@@ -1,6 +1,11 @@
 from datetime import date, datetime
 
-from core.shared.constants import ENTITY_PROVERKY
+from core.shared.constants import (
+    ENTITY_PROVERKY,
+    FINDING_STATUS_OTEVRENE,
+    FINDING_STATUS_V_PROCESU,
+)
+from core.shared.modely.finding import Finding
 from core.shared.sluzby.finding_service import finding_service
 from moduly.proverky.constants import (
     DEFAULT_INSPECTION_SPIS_STATUS,
@@ -11,6 +16,13 @@ from moduly.proverky.constants import (
 from moduly.proverky.modely.bozp_inspection import BozpInspection
 from moduly.proverky.repository.bozp_inspection_repository import BozpInspectionRepository
 from moduly.nastaveni.sluzby.settings_service import settings_service
+
+_OPEN_FINDING_STATUSES = frozenset(
+    {
+        FINDING_STATUS_OTEVRENE,
+        FINDING_STATUS_V_PROCESU,
+    }
+)
 
 
 class BozpInspectionService:
@@ -54,6 +66,59 @@ class BozpInspectionService:
 
     def findings_count(self, inspection_id: int) -> int:
         return len(finding_service.get_for_entity(ENTITY_PROVERKY, inspection_id))
+
+    def finding_for_control_point(
+        self,
+        inspection_id: int,
+        *,
+        area_label: str,
+        section_label: str,
+        control_point_id: str,
+    ) -> Finding | None:
+        if not control_point_id:
+            return None
+
+        for finding in finding_service.get_for_entity(ENTITY_PROVERKY, inspection_id):
+            if self._matches_control_point(
+                finding,
+                area_label=area_label,
+                section_label=section_label,
+                control_point_id=control_point_id,
+            ):
+                return finding
+        return None
+
+    def open_finding_for_control_point(
+        self,
+        inspection_id: int,
+        *,
+        area_label: str,
+        section_label: str,
+        control_point_id: str,
+    ) -> Finding | None:
+        finding = self.finding_for_control_point(
+            inspection_id,
+            area_label=area_label,
+            section_label=section_label,
+            control_point_id=control_point_id,
+        )
+        if finding is None or finding.status not in _OPEN_FINDING_STATUSES:
+            return None
+        return finding
+
+    @staticmethod
+    def _matches_control_point(
+        finding: Finding,
+        *,
+        area_label: str,
+        section_label: str,
+        control_point_id: str,
+    ) -> bool:
+        return (
+            str(finding.source_control_point_id or "").strip() == control_point_id
+            and str(finding.source_area_label or "").strip() == area_label.strip()
+            and str(finding.source_section_label or "").strip() == section_label.strip()
+        )
 
     def _validated_fields(self, fields: dict) -> dict:
         data = dict(fields)

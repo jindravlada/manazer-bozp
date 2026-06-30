@@ -85,6 +85,9 @@ class BozpAreaKnowledgeWidget(QWidget):
         self._on_finding_saved = callback
         self.section_widget.set_on_finding_saved(callback)
 
+    def refresh_findings_display(self) -> None:
+        self.section_widget.refresh()
+
     def _section_by_id(self, section_id: str) -> dict | None:
         for section in self._sections:
             if str(section.get("id") or "") == section_id:

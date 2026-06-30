@@ -44,12 +44,16 @@ class BozpInspectionDialog(QDialog):
 
         inspection_id = inspection.id if inspection is not None else None
         self.set_inspection_id(inspection_id)
+        self.areas_widget.set_on_finding_saved(self._on_finding_changed)
         self.spis_widget.load_inspection(inspection)
 
     def set_inspection_id(self, inspection_id: int | None) -> None:
         self.areas_widget.set_inspection_id(inspection_id)
         self.findings_widget.set_inspection_id(inspection_id)
-        self.areas_widget.set_on_finding_saved(self.findings_widget.refresh)
+
+    def _on_finding_changed(self) -> None:
+        self.findings_widget.refresh()
+        self.areas_widget.refresh_findings_display()
 
     def get_data(self) -> dict:
         data = self.spis_widget.get_data()

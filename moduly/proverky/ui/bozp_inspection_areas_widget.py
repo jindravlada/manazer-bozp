@@ -79,6 +79,9 @@ class BozpInspectionAreasWidget(QWidget):
     def set_on_finding_saved(self, callback) -> None:
         self.knowledge_widget.set_on_finding_saved(callback)
 
+    def refresh_findings_display(self) -> None:
+        self.knowledge_widget.refresh_findings_display()
+
     def reload_areas(self) -> None:
         self._areas = proverky_knowledge_service.get_areas()
 

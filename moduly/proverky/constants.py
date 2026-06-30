@@ -86,6 +86,9 @@ KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT = "Tato část bude doplněna."
 FINDING_SOURCE_LABEL = "Prověrka BOZP"
 FINDING_DIALOG_TITLE = "Zjištění prověrky BOZP"
 FINDING_CREATE_FROM_CONTROL_POINT_LABEL = "➕ Založit zjištění"
+FINDING_OPEN_EXISTING_LABEL = "Otevřít zjištění"
+FINDING_CREATED_LABEL = "Zjištění založeno"
+FINDING_DUPLICATE_MESSAGE = "Pro tento kontrolní bod už existuje zjištění. Otevře se existující záznam."
 INSPECTION_MUST_BE_SAVED_MESSAGE = "Prověrku je nutné nejdříve uložit."
 
 
