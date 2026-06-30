@@ -1,0 +1,62 @@
+{
+  "verze": 1,
+  "id": "prvni_pomoc",
+  "nazev": "První pomoc",
+  "popis": "Lékárničky, vyškolení osoby pro první pomoc a vybavení pro ošetření.",
+  "poradi": 100,
+  "aktivni": true,
+  "sekce": [
+    {
+      "id": "lekarnicka",
+      "nazev": "Lékárnička",
+      "popis": "Kontrola vybavení lékárničky a doplňování prostředků první pomoci.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "kontrolni_body": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "doporucena_opatreni": []
+    },
+    {
+      "id": "ocni_sprcha",
+      "nazev": "Oční sprcha",
+      "popis": "Dostupnost, funkčnost a označení očních sprch a výlevů.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "kontrolni_body": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "doporucena_opatreni": []
+    },
+    {
+      "id": "skolene_osoby",
+      "nazev": "Školené osoby",
+      "popis": "Evidence a dostupnost osob vyškolených k poskytnutí první pomoci.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "kontrolni_body": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "doporucena_opatreni": []
+    },
+    {
+      "id": "telefonni_cisla",
+      "nazev": "Telefonní čísla",
+      "popis": "Viditelně uvedená tísňová a informační telefonní čísla pro první pomoc.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "kontrolni_body": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "doporucena_opatreni": []
+    }
+  ],
+  "kontrolni_body": [],
+  "typicke_zavady": [],
+  "doporucene_postupy": [],
+  "doporucena_opatreni": []
+}

@@ -10,14 +10,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from moduly.proverky.constants import (
-    AREA_CODE_PRVNI_POMOC,
-    AREA_NOT_IMPLEMENTED_TEXT,
-    AREA_PANEL_LEFT_WIDTH,
-    INSPECTION_AREAS,
-    InspectionArea,
+from moduly.proverky.constants import AREA_NOT_IMPLEMENTED_TEXT, AREA_PANEL_LEFT_WIDTH
+from moduly.proverky.sluzby.proverky_knowledge_service import (
+    InspectionAreaDefinition,
+    proverky_knowledge_service,
 )
-from moduly.proverky.ui.bozp_area_prvni_pomoc_widget import BozpAreaPrvniPomocWidget
+from moduly.proverky.ui.bozp_area_knowledge_widget import BozpAreaKnowledgeWidget
 
 
 class BozpInspectionAreasWidget(QWidget):
@@ -25,10 +23,12 @@ class BozpInspectionAreasWidget(QWidget):
 
     _AREA_ROLE = Qt.ItemDataRole.UserRole
     _PAGE_PLACEHOLDER = 0
-    _PAGE_PRVNI_POMOC = 1
+    _PAGE_KNOWLEDGE = 1
 
     def __init__(self, parent=None):
         super().__init__(parent)
+
+        self._areas: list[InspectionAreaDefinition] = []
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -37,12 +37,6 @@ class BozpInspectionAreasWidget(QWidget):
 
         self.area_list = QListWidget()
         self.area_list.setAlternatingRowColors(True)
-
-        for area in INSPECTION_AREAS:
-            item = QListWidgetItem(area.name)
-            item.setData(self._AREA_ROLE, area)
-            self.area_list.addItem(item)
-
         self.area_list.currentItemChanged.connect(self._on_area_changed)
 
         self.detail_panel = QFrame()
@@ -61,7 +55,8 @@ class BozpInspectionAreasWidget(QWidget):
 
         self.content_stack = QStackedWidget()
         self.content_stack.addWidget(self._build_placeholder_page())
-        self.content_stack.addWidget(BozpAreaPrvniPomocWidget())
+        self.knowledge_widget = BozpAreaKnowledgeWidget()
+        self.content_stack.addWidget(self.knowledge_widget)
 
         detail_layout.addWidget(self.area_title_label)
         detail_layout.addWidget(self.area_description_label)
@@ -75,6 +70,19 @@ class BozpInspectionAreasWidget(QWidget):
         splitter.setSizes([AREA_PANEL_LEFT_WIDTH, 1])
 
         layout.addWidget(splitter)
+
+        self.reload_areas()
+
+    def reload_areas(self) -> None:
+        self._areas = proverky_knowledge_service.get_areas()
+
+        self.area_list.blockSignals(True)
+        self.area_list.clear()
+        for area in self._areas:
+            item = QListWidgetItem(area.nazev)
+            item.setData(self._AREA_ROLE, area.id)
+            self.area_list.addItem(item)
+        self.area_list.blockSignals(False)
 
         if self.area_list.count() > 0:
             self.area_list.setCurrentRow(0)
@@ -93,6 +101,12 @@ class BozpInspectionAreasWidget(QWidget):
         layout.addStretch()
         return page
 
+    def _area_by_id(self, area_id: str) -> InspectionAreaDefinition | None:
+        for area in self._areas:
+            if area.id == area_id:
+                return area
+        return None
+
     def _on_area_changed(
         self,
         current: QListWidgetItem | None,
@@ -102,20 +116,23 @@ class BozpInspectionAreasWidget(QWidget):
             self._show_empty_detail()
             return
 
-        area = current.data(self._AREA_ROLE)
-        if not isinstance(area, InspectionArea):
+        area_id = current.data(self._AREA_ROLE)
+        area = self._area_by_id(str(area_id or ""))
+        if area is None:
             self._show_empty_detail()
             return
 
         self._show_area_detail(area)
 
-    def _show_area_detail(self, area: InspectionArea) -> None:
-        self.area_title_label.setText(area.name)
-        self.area_description_label.setText(area.description)
-        self.area_description_label.setVisible(True)
+    def _show_area_detail(self, area: InspectionAreaDefinition) -> None:
+        self.area_title_label.setText(area.nazev)
+        self.area_description_label.setText(area.popis)
+        self.area_description_label.setVisible(bool(area.popis))
 
-        if area.code == AREA_CODE_PRVNI_POMOC:
-            self.content_stack.setCurrentIndex(self._PAGE_PRVNI_POMOC)
+        if area.has_knowledge_file:
+            knowledge = proverky_knowledge_service.load_area_knowledge(area)
+            self.knowledge_widget.set_knowledge(knowledge)
+            self.content_stack.setCurrentIndex(self._PAGE_KNOWLEDGE)
         else:
             self.content_stack.setCurrentIndex(self._PAGE_PLACEHOLDER)
 

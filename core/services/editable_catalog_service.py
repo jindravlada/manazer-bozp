@@ -13,6 +13,8 @@ class EditableCatalog:
 # Registr editovatelných číselníků – pro nový číselník stačí přidat položku zde.
 EDITABLE_CATALOGS: tuple[EditableCatalog, ...] = (
     EditableCatalog("modulove/vysetrovani_mu/ishikawa_faktory.json"),
+    EditableCatalog("proverky/oblasti.json"),
+    EditableCatalog("proverky/prvni_pomoc.json"),
 )
 
 

@@ -1,0 +1,85 @@
+{
+  "verze": 1,
+  "oblasti": [
+    {
+      "id": "bozp",
+      "nazev": "BOZP obecně",
+      "popis": "Obecné požadavky na bezpečnost a ochranu zdraví při práci na pracovišti.",
+      "poradi": 10,
+      "aktivni": true,
+      "soubor_znalosti": null
+    },
+    {
+      "id": "po",
+      "nazev": "Požární ochrana",
+      "popis": "Prevence požárů, požární technika, evakuační cesty a organizace PO.",
+      "poradi": 20,
+      "aktivni": true,
+      "soubor_znalosti": null
+    },
+    {
+      "id": "oopp",
+      "nazev": "OOPP",
+      "popis": "Osobní ochranné pracovní prostředky — dostupnost, používání a evidence.",
+      "poradi": 30,
+      "aktivni": true,
+      "soubor_znalosti": null
+    },
+    {
+      "id": "dokumentace",
+      "nazev": "Dokumentace",
+      "popis": "Bezpečnostní dokumentace, posudky, směrnice a provozní předpisy.",
+      "poradi": 40,
+      "aktivni": true,
+      "soubor_znalosti": null
+    },
+    {
+      "id": "revize",
+      "nazev": "Revize a kontroly",
+      "popis": "Platnost revizí, pravidelné kontroly technických zařízení a záznamy o nich.",
+      "poradi": 50,
+      "aktivni": true,
+      "soubor_znalosti": null
+    },
+    {
+      "id": "doprava",
+      "nazev": "Doprava a manipulace",
+      "popis": "Vnitřní doprava, skladování, zdvihací zařízení a manipulace s břemeny.",
+      "poradi": 60,
+      "aktivni": true,
+      "soubor_znalosti": null
+    },
+    {
+      "id": "dodavatele",
+      "nazev": "Dodavatelé",
+      "popis": "Práce dodavatelů na pracovišti, koordinace BOZP a plnění povinností.",
+      "poradi": 70,
+      "aktivni": true,
+      "soubor_znalosti": null
+    },
+    {
+      "id": "rizikova_pracoviste",
+      "nazev": "Riziková pracoviště",
+      "popis": "Práce ve výškách, v hloubce, s nebezpečnými látkami a další zvýšená rizika.",
+      "poradi": 80,
+      "aktivni": true,
+      "soubor_znalosti": null
+    },
+    {
+      "id": "chemie",
+      "nazev": "Chemické látky",
+      "popis": "Skladování, označování, manipulace a evidence nebezpečných chemických látek.",
+      "poradi": 90,
+      "aktivni": true,
+      "soubor_znalosti": null
+    },
+    {
+      "id": "prvni_pomoc",
+      "nazev": "První pomoc",
+      "popis": "Lékárničky, vyškolení osoby pro první pomoc a vybavení pro ošetření.",
+      "poradi": 100,
+      "aktivni": true,
+      "soubor_znalosti": "prvni_pomoc.json"
+    }
+  ]
+}
