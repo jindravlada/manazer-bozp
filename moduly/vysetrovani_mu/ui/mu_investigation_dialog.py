@@ -524,7 +524,11 @@ class MuInvestigationDialog(QDialog):
     def _open_investigation_check(self) -> None:
         from moduly.vysetrovani_mu.ui.mu_investigation_check_dialog import MuInvestigationCheckDialog
 
-        dialog = MuInvestigationCheckDialog(self, snapshot=self.build_check_snapshot())
+        dialog = MuInvestigationCheckDialog(
+            self,
+            snapshot=self.build_check_snapshot(),
+            investigation_id=self.investigation.id if self.investigation is not None else None,
+        )
         if dialog.exec() and dialog.navigation_result() is not None:
             self.navigate_to_check_result(dialog.navigation_result())
 

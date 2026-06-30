@@ -6,10 +6,18 @@ from core.shared.constants import (
     ENTITY_PROVERKY,
 )
 from core.shared.sluzby.finding_service import finding_service
+from moduly.ukoly.constants import TASK_TYPE_LABELS
+
+
+def task_type_label(task) -> str:
+    task_type = getattr(task, "task_type", "") or "corrective"
+    return TASK_TYPE_LABELS.get(task_type, task_type or "—")
 
 
 def task_source_label(task) -> str:
     source_module = task.source_module or ""
+    if source_module == ENTITY_MU_INVESTIGATION and task.source_record_id:
+        return _finding_entity_source_label(ENTITY_MU_INVESTIGATION, task.source_record_id)
     if source_module == ENTITY_FINDING and task.source_record_id:
         finding = finding_service.get_by_id(task.source_record_id)
         if finding is not None:
@@ -67,5 +75,6 @@ def _legacy_source_label(source: str) -> str:
         "proverky": "Prověrka BOZP",
         "kontrola": "Kontrola",
         ENTITY_FINDING: "Zjištění",
+        ENTITY_MU_INVESTIGATION: "Vyšetřování MU",
     }
     return mapping.get(source or "", source or "—")

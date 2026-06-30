@@ -71,6 +71,8 @@ def _ensure_task_columns() -> None:
         "checked_by_name": "checked_by_name VARCHAR(150) DEFAULT ''",
         "canceled": "canceled BOOLEAN DEFAULT 0",
         "note": "note TEXT DEFAULT ''",
+        "task_type": "task_type VARCHAR(50) DEFAULT 'corrective'",
+        "source_check_code": "source_check_code VARCHAR(100) DEFAULT ''",
     }
     for column_name, column_sql in additions.items():
         if column_name not in columns:

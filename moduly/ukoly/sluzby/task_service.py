@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 
 from moduly.nastaveni.sluzby.settings_service import settings_service
+from moduly.ukoly.constants import DEFAULT_TASK_TYPE, TASK_TYPE_INVESTIGATION_ACTION
 from moduly.ukoly.modely.task import Task
 from moduly.ukoly.repository.task_repository import TaskRepository
 
@@ -15,6 +16,20 @@ class TaskService:
     def get_task_by_id(self, task_id: int):
         return self.repository.get_by_id(task_id)
 
+    def find_open_investigation_action(
+        self,
+        investigation_id: int,
+        title: str,
+    ):
+        from core.shared.constants import ENTITY_MU_INVESTIGATION
+
+        return self.repository.find_open_by_source(
+            source_module=ENTITY_MU_INVESTIGATION,
+            source_record_id=investigation_id,
+            task_type=TASK_TYPE_INVESTIGATION_ACTION,
+            title=title.strip(),
+        )
+
     def create_task(
         self,
         title: str,
@@ -25,7 +40,6 @@ class TaskService:
         workplace_id: int | None = None,
         completed: bool = False,
         completed_date: date | None = None,
-        requires_verification: bool = False,
         check_due_date: date | None = None,
         checked_date: date | None = None,
         checked_by_id: int | None = None,
@@ -33,9 +47,15 @@ class TaskService:
         note: str = "",
         source_module: str = "manual",
         source_record_id: int | None = None,
+        task_type: str = DEFAULT_TASK_TYPE,
+        source_check_code: str = "",
+        requires_verification: bool | None = None,
     ) -> Task:
-        if source_module != "manual":
-            requires_verification = True
+        if requires_verification is None:
+            if task_type == TASK_TYPE_INVESTIGATION_ACTION:
+                requires_verification = False
+            else:
+                requires_verification = source_module != "manual"
 
         if completed and completed_date is None:
             completed_date = date.today()
@@ -64,6 +84,8 @@ class TaskService:
             note=note,
             source_module=source_module,
             source_record_id=source_record_id,
+            task_type=task_type,
+            source_check_code=source_check_code,
         )
         self._sync_legacy_status(task)
         saved = self.repository.add(task)

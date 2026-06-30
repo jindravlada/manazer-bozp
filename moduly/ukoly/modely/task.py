@@ -45,6 +45,8 @@ class Task(Base):
 
     source_module: Mapped[str] = mapped_column(String(50), default="manual")
     source_record_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    task_type: Mapped[str] = mapped_column(String(50), default="corrective")
+    source_check_code: Mapped[str] = mapped_column(String(100), default="")
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(

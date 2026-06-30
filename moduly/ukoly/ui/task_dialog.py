@@ -14,11 +14,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.shared.constants import ENTITY_MU_INVESTIGATION
 from core.navigation.source_navigator import source_navigator
 from core.shared.sluzby.finding_task_service import finding_task_service
-from core.shared.task_source_display import task_source_label
+from core.shared.task_source_display import task_source_label, task_type_label
 from core.widgets.attachment_widget import AttachmentWidget
 from core.widgets.task_finding_source_panel import TaskFindingSourcePanel
+from moduly.ukoly.constants import TASK_TYPE_INVESTIGATION_ACTION
 from core.widgets.date_edit import DateEdit
 from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.thp_worker_selector import ThpWorkerSelector
@@ -31,8 +33,15 @@ class TaskDialog(QDialog):
 
         self.task = task
         self._finding = finding_task_service.get_finding_for_task(task) if task is not None else None
+        self._is_investigation_action = (
+            task is not None
+            and getattr(task, "task_type", "") == TASK_TYPE_INVESTIGATION_ACTION
+        )
 
-        self.setWindowTitle("Nápravné opatření")
+        if self._is_investigation_action:
+            self.setWindowTitle("Vyšetřovací úkon")
+        else:
+            self.setWindowTitle("Nápravné opatření")
         self.resize(760, 680)
 
         main_layout = QVBoxLayout(self)
@@ -48,9 +57,25 @@ class TaskDialog(QDialog):
             else:
                 self.source_panel.open_button.setVisible(False)
             main_layout.addWidget(self.source_panel)
+        elif (
+            task is not None
+            and task.source_module == ENTITY_MU_INVESTIGATION
+            and task.source_record_id
+        ):
+            self.source_panel = TaskFindingSourcePanel()
+            self.source_panel.set_content(
+                task_source_label(task),
+                (task.description or "").strip(),
+            )
+            if source_navigator.can_open(ENTITY_MU_INVESTIGATION, task.source_record_id):
+                self.source_panel.open_button.clicked.connect(self._open_mu_investigation)
+            else:
+                self.source_panel.open_button.setVisible(False)
+            main_layout.addWidget(self.source_panel)
 
+        tab_title = "Úkon" if self._is_investigation_action else "Opatření"
         self.tabs = QTabWidget()
-        self.tabs.addTab(self._main_tab(), "Opatření")
+        self.tabs.addTab(self._main_tab(), tab_title)
         self.tabs.addTab(self._attachments_tab(), "Přílohy")
 
         main_layout.addWidget(self.tabs)
@@ -82,7 +107,10 @@ class TaskDialog(QDialog):
             self.checked_date_edit.set_date_value(task.checked_date)
             self.checked_by_selector.set_person_id(task.checked_by_id)
             self.canceled_checkbox.setChecked(task.canceled)
-            self.note_edit.setPlainText(task.note)
+            note_text = task.note or ""
+            if self._is_investigation_action and not note_text.strip():
+                note_text = task.description or ""
+            self.note_edit.setPlainText(note_text)
 
         self._verification_changed()
         self._refresh_status()
@@ -96,6 +124,17 @@ class TaskDialog(QDialog):
                 self,
                 "Navigace",
                 "Zdrojový záznam se nepodařilo otevřít.",
+            )
+
+    def _open_mu_investigation(self) -> None:
+        if self.task is None or self.task.source_record_id is None:
+            return
+
+        if not source_navigator.open(ENTITY_MU_INVESTIGATION, self.task.source_record_id):
+            QMessageBox.warning(
+                self,
+                "Navigace",
+                "Vyšetřování se nepodařilo otevřít.",
             )
 
     def _main_tab(self):
@@ -131,7 +170,9 @@ class TaskDialog(QDialog):
         self.note_edit.setPlaceholderText("Poznámka, zjištěné závady nebo výsledek kontroly.")
 
         self.status_label = QLabel("Aktivní")
+        self.type_label = QLabel(task_type_label(self.task) if self.task is not None else "Nápravné opatření")
 
+        layout.addRow("Typ:", self.type_label)
         layout.addRow("Opatření:", self.title_edit)
         layout.addRow("Odpovídá:", self.person_selector)
         layout.addRow("Priorita:", self.priority_combo)

@@ -14,6 +14,31 @@ class TaskRepository:
         with get_session() as session:
             return session.get(Task, task_id)
 
+    def find_open_by_source(
+        self,
+        *,
+        source_module: str,
+        source_record_id: int,
+        task_type: str | None = None,
+        title: str | None = None,
+    ) -> Task | None:
+        with get_session() as session:
+            stmt = (
+                select(Task)
+                .where(
+                    Task.source_module == source_module,
+                    Task.source_record_id == source_record_id,
+                    Task.canceled.is_(False),
+                    Task.completed.is_(False),
+                )
+                .order_by(Task.id.desc())
+            )
+            if task_type:
+                stmt = stmt.where(Task.task_type == task_type)
+            if title is not None:
+                stmt = stmt.where(Task.title == title)
+            return session.scalars(stmt).first()
+
     def add(self, task: Task) -> Task:
         with get_session() as session:
             session.add(task)

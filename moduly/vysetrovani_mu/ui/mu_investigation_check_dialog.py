@@ -5,8 +5,10 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QFormLayout,
     QGroupBox,
+    QHBoxLayout,
     QHeaderView,
     QLabel,
+    QMessageBox,
     QPushButton,
     QTableWidget,
     QTableWidgetItem,
@@ -39,12 +41,13 @@ _NO_SUGGESTION_TEXT = "Pro tuto kontrolu není připraven doporučený pracovní
 
 
 class MuInvestigationCheckDialog(QDialog):
-    def __init__(self, parent=None, *, snapshot: dict):
+    def __init__(self, parent=None, *, snapshot: dict, investigation_id: int | None = None):
         super().__init__(parent)
 
         self.setWindowTitle("Kontrola spisu")
         self.resize(980, 720)
 
+        self._investigation_id = investigation_id
         self._results = run_investigation_checks(snapshot)
         self._navigation_result: InvestigationCheckResult | None = None
         self._tables: list[QTableWidget] = []
@@ -105,8 +108,17 @@ class MuInvestigationCheckDialog(QDialog):
         details_layout.addRow("Priorita:", self._suggestion_priority_label)
         details_layout.addRow("Typ:", self._suggestion_type_label)
 
+        self._create_action_btn = QPushButton("Vytvořit vyšetřovací úkon")
+        self._create_action_btn.setVisible(False)
+        self._create_action_btn.clicked.connect(self._create_investigation_action)
+
+        actions_row = QHBoxLayout()
+        actions_row.addStretch()
+        actions_row.addWidget(self._create_action_btn)
+
         layout.addWidget(self._suggestion_empty_label)
         layout.addWidget(self._suggestion_details)
+        layout.addLayout(actions_row)
 
         self._suggestion_details.setVisible(False)
         self._suggestion_empty_label.setText("Vyberte položku kontroly pro zobrazení doporučeného kroku.")
@@ -184,6 +196,78 @@ class MuInvestigationCheckDialog(QDialog):
         self._update_navigate_button()
         self._update_suggestion_panel()
 
+    def _update_create_action_button(self) -> None:
+        result = self._selected_result()
+        can_show = (
+            result is not None
+            and result.can_create_task
+            and self._investigation_id is not None
+        )
+        self._create_action_btn.setVisible(can_show)
+        if can_show:
+            self._create_action_btn.setEnabled(True)
+            self._create_action_btn.setToolTip("")
+        elif result is not None and result.can_create_task and self._investigation_id is None:
+            self._create_action_btn.setVisible(True)
+            self._create_action_btn.setEnabled(False)
+            self._create_action_btn.setToolTip("Vyšetřování musí být nejdříve uloženo.")
+        else:
+            self._create_action_btn.setEnabled(False)
+            self._create_action_btn.setToolTip("")
+
+    def _create_investigation_action(self) -> None:
+        result = self._selected_result()
+        if result is None or not result.can_create_task or self._investigation_id is None:
+            return
+
+        from moduly.vysetrovani_mu.sluzby.mu_investigation_action_service import (
+            mu_investigation_action_service,
+        )
+
+        try:
+            create_result = mu_investigation_action_service.create_from_check_result(
+                self._investigation_id,
+                result,
+            )
+        except ValueError as exc:
+            QMessageBox.warning(self, "Vyšetřovací úkon", str(exc))
+            return
+
+        if create_result.duplicate:
+            answer = QMessageBox.question(
+                self,
+                "Vyšetřovací úkon",
+                "Tento vyšetřovací úkon již existuje.\n\nChcete jej otevřít?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.Yes,
+            )
+            if answer == QMessageBox.StandardButton.Yes:
+                self._open_task(create_result.task_id)
+            return
+
+        answer = QMessageBox.question(
+            self,
+            "Vyšetřovací úkon",
+            "Vyšetřovací úkon byl vytvořen.\n\nOtevřít vytvořený úkon?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes,
+        )
+        if answer == QMessageBox.StandardButton.Yes:
+            self._open_task(create_result.task_id)
+
+    def _open_task(self, task_id: int) -> None:
+        from moduly.ukoly.sluzby.task_service import task_service
+        from moduly.ukoly.ui.task_dialog import TaskDialog
+
+        task = task_service.get_task_by_id(task_id)
+        if task is None:
+            QMessageBox.warning(self, "Vyšetřovací úkon", "Úkon se nepodařilo načíst.")
+            return
+
+        dialog = TaskDialog(self, task=task)
+        if dialog.exec():
+            task_service.update_task(task_id=task_id, **dialog.get_data())
+
     def _selected_result(self) -> InvestigationCheckResult | None:
         for table in self._tables:
             selected = table.selectedItems()
@@ -209,6 +293,7 @@ class MuInvestigationCheckDialog(QDialog):
                 self._suggestion_empty_label.setText("Vyberte položku kontroly pro zobrazení doporučeného kroku.")
             else:
                 self._suggestion_empty_label.setText(_NO_SUGGESTION_TEXT)
+            self._update_create_action_button()
             return
 
         self._suggestion_empty_label.setVisible(False)
@@ -221,6 +306,7 @@ class MuInvestigationCheckDialog(QDialog):
         self._suggestion_type_label.setText(
             ACTION_TYPE_LABELS.get(result.suggested_action_type, result.suggested_action_type or "—")
         )
+        self._update_create_action_button()
 
     def _navigate_to_selected(self) -> None:
         result = self._selected_result()

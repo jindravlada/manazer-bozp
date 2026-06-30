@@ -11,6 +11,7 @@ from core.shared.constants import (
     ENTITY_PROVERKY,
 )
 from core.shared.sluzby.finding_service import finding_service
+from core.shared.task_source_display import task_source_label, task_type_label
 from core.widgets.info_tooltip import format_info_card
 
 
@@ -18,10 +19,11 @@ class TaskTable(QTableWidget):
     def __init__(self):
         super().__init__()
 
-        self.setColumnCount(8)
+        self.setColumnCount(9)
         self.setHorizontalHeaderLabels([
             "ID",
             "",
+            "Typ",
             "Opatření",
             "Termín",
             "Odpovídá",
@@ -52,6 +54,7 @@ class TaskTable(QTableWidget):
             values = [
                 str(task.id),
                 "",
+                task_type_label(task),
                 task.title or "—",
                 "" if task.due_date is None else task.due_date.strftime("%d.%m.%Y"),
                 task.responsible_person or "—",
@@ -137,6 +140,8 @@ class TaskTable(QTableWidget):
 
     def _source_type_display(self, task) -> str:
         source_module = task.source_module or ""
+        if source_module == ENTITY_MU_INVESTIGATION:
+            return "Vyšetřování MU"
         if source_module == ENTITY_FINDING and task.source_record_id:
             finding = finding_service.get_by_id(task.source_record_id)
             if finding is not None:
@@ -147,6 +152,8 @@ class TaskTable(QTableWidget):
 
     def _source_record_display(self, task) -> str:
         source_module = task.source_module or ""
+        if source_module == ENTITY_MU_INVESTIGATION and task.source_record_id:
+            return self._mu_investigation_record_label(task.source_record_id)
         if source_module == ENTITY_FINDING and task.source_record_id:
             finding = finding_service.get_by_id(task.source_record_id)
             if finding is not None:
@@ -181,6 +188,7 @@ class TaskTable(QTableWidget):
             "proverky": "Prověrka BOZP",
             "kontrola": "Kontrola",
             ENTITY_FINDING: "Zjištění",
+            ENTITY_MU_INVESTIGATION: "Vyšetřování MU",
         }
         return mapping.get(source or "", source or "—")
 
