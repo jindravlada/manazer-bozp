@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QTabWidget,
     QVBoxLayout,
+    QWidget,
 )
 
 from moduly.vysetrovani_mu.ui.ishikawa_cause_chain import (
