@@ -3,12 +3,13 @@ from dataclasses import dataclass
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QDialog,
-    QDialogButtonBox,
     QLabel,
     QScrollArea,
     QVBoxLayout,
     QWidget,
 )
+
+from core.widgets.dialog_utils import create_close_box
 
 
 @dataclass(frozen=True)
@@ -77,9 +78,8 @@ class MuSedmeroDialog(QDialog):
         principles_layout.addStretch()
         scroll.setWidget(content)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.Close)
+        buttons = create_close_box(self)
         buttons.rejected.connect(self.reject)
-        buttons.accepted.connect(self.accept)
         outer.addWidget(buttons)
 
     def _build_principle_widget(self, principle: SedmeroPrinciple) -> QWidget:

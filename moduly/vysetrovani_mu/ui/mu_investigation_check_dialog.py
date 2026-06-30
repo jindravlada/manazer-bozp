@@ -2,7 +2,6 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QBrush
 from PySide6.QtWidgets import (
     QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
@@ -16,7 +15,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.widgets.dialog_utils import configure_resizable_form_dialog, wrap_in_scroll_area
+from core.widgets.dialog_utils import (
+    configure_close_push_button,
+    configure_navigate_button,
+    configure_resizable_form_dialog,
+    wrap_in_scroll_area,
+)
 from moduly.vysetrovani_mu.sluzby.mu_investigation_check import (
     ACTION_TYPE_LABELS,
     CHECK_SEVERITY_ERROR,
@@ -68,7 +72,7 @@ class MuInvestigationCheckDialog(QDialog):
 
         layout.addWidget(wrap_in_scroll_area(scroll_content), 1)
         layout.addWidget(self._build_suggestion_panel())
-        layout.addWidget(self._build_buttons())
+        layout.addLayout(self._build_buttons_row())
 
     def navigation_result(self) -> InvestigationCheckResult | None:
         return self._navigation_result
@@ -130,16 +134,21 @@ class MuInvestigationCheckDialog(QDialog):
         self._suggestion_empty_label.setText("Vyberte položku kontroly pro zobrazení doporučeného kroku.")
         return group
 
-    def _build_buttons(self) -> QDialogButtonBox:
-        buttons = QDialogButtonBox()
-        self._navigate_btn = QPushButton("Přejít")
+    def _build_buttons_row(self) -> QHBoxLayout:
+        self._navigate_btn = QPushButton()
+        configure_navigate_button(self._navigate_btn)
         self._navigate_btn.setEnabled(False)
         self._navigate_btn.clicked.connect(self._navigate_to_selected)
-        buttons.addButton(self._navigate_btn, QDialogButtonBox.ActionRole)
-        close_btn = buttons.addButton(QDialogButtonBox.Close)
-        close_btn.setText("Zavřít")
-        buttons.rejected.connect(self.reject)
-        return buttons
+
+        close_btn = QPushButton()
+        configure_close_push_button(close_btn)
+        close_btn.clicked.connect(self.reject)
+
+        row = QHBoxLayout()
+        row.addWidget(self._navigate_btn)
+        row.addStretch()
+        row.addWidget(close_btn)
+        return row
 
     def _build_group(self, severity: str, results: list[InvestigationCheckResult]) -> QGroupBox:
         group = QGroupBox(SEVERITY_LABELS[severity])

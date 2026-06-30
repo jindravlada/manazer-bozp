@@ -1,9 +1,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,
-    QDialogButtonBox,
     QFileDialog,
-    QHBoxLayout,
     QLabel,
     QMessageBox,
     QPushButton,
@@ -14,6 +12,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.widgets.dialog_utils import add_work_dialog_footer, create_close_box
 from moduly.vysetrovani_mu.ui.ishikawa_cause_chain import (
     build_cause_chain_text,
     format_rejected_cause_chain_warning_text,
@@ -74,18 +73,13 @@ class MuIshikawaChainDialog(QDialog):
 
         layout.addWidget(tabs)
 
-        footer = QHBoxLayout()
         self.export_pdf_btn = QPushButton("Export do PDF")
         self.export_pdf_btn.clicked.connect(self._export_pdf)
         self.export_pdf_btn.setEnabled(self._graph_widget.can_export_to_pdf())
-        footer.addWidget(self.export_pdf_btn)
-        footer.addStretch()
 
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        buttons.button(QDialogButtonBox.StandardButton.Close).setText("Zavřít")
+        buttons = create_close_box(self)
         buttons.rejected.connect(self.reject)
-        footer.addWidget(buttons)
-        layout.addLayout(footer)
+        add_work_dialog_footer(layout, work_widgets=[self.export_pdf_btn], buttons=buttons)
 
         self.showMaximized()
 

@@ -3,7 +3,6 @@ from PySide6.QtWidgets import (
     QButtonGroup,
     QComboBox,
     QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
@@ -19,6 +18,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.vysetrovani_mu.constants import (
     ISHIKAWA_CATEGORIES,
     ISHIKAWA_LEVEL_LABELS,
@@ -210,7 +210,7 @@ class MuIshikawaCauseDialog(QDialog):
         columns_layout.addWidget(right_scroll, stretch=1)
         root_layout.addLayout(columns_layout, stretch=1)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons = create_save_cancel_box(self)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         root_layout.addWidget(buttons)

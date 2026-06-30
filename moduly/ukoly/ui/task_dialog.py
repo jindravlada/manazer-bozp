@@ -4,7 +4,6 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QLabel,
     QMessageBox,
@@ -19,7 +18,7 @@ from core.navigation.source_navigator import source_navigator
 from core.shared.sluzby.finding_task_service import finding_task_service
 from core.shared.task_source_display import task_source_label, task_type_label
 from core.widgets.attachment_widget import AttachmentWidget
-from core.widgets.dialog_utils import apply_save_cancel_labels, configure_resizable_form_dialog, wrap_in_scroll_area
+from core.widgets.dialog_utils import create_save_cancel_box, configure_resizable_form_dialog, wrap_in_scroll_area
 from core.widgets.task_finding_source_panel import TaskFindingSourcePanel
 from moduly.ukoly.constants import TASK_TYPE_INVESTIGATION_ACTION
 from core.widgets.date_edit import DateEdit
@@ -81,8 +80,7 @@ class TaskDialog(QDialog):
 
         main_layout.addWidget(self.tabs, 1)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        apply_save_cancel_labels(buttons)
+        buttons = create_save_cancel_box(self)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
 

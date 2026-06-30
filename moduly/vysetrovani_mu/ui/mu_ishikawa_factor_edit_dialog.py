@@ -2,7 +2,6 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QHBoxLayout,
     QInputDialog,
@@ -18,6 +17,7 @@ from PySide6.QtWidgets import (
 
 from moduly.vysetrovani_mu.constants import ISHIKAWA_CATEGORIES, ISHIKAWA_OTHER_FACTOR
 from moduly.vysetrovani_mu.sluzby.ishikawa_factors_service import ishikawa_factors_service
+from core.widgets.dialog_utils import create_save_cancel_box
 
 _LIST_MIN_HEIGHT = 160
 _SECTION_SPACING = 24
@@ -191,8 +191,7 @@ class MuIshikawaFactorEditDialog(QDialog):
 
         button_row = QHBoxLayout()
         button_row.addStretch()
-        buttons = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
-        buttons.button(QDialogButtonBox.Save).setText("Uložit")
+        buttons = create_save_cancel_box(self)
         buttons.accepted.connect(self._accept)
         buttons.rejected.connect(self.reject)
         button_row.addWidget(buttons)

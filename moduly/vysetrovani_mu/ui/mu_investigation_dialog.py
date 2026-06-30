@@ -5,7 +5,6 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QFrame,
     QHBoxLayout,
@@ -50,7 +49,7 @@ from moduly.vysetrovani_mu.ui.mu_dodrzovani_predpisu_widget import MuDodrzovaniP
 from moduly.vysetrovani_mu.ui.mu_kontrola_souladu_widget import MuKontrolaSouladuWidget
 from moduly.vysetrovani_mu.ui.mu_svedci_widget import MuSvedciWidget
 from moduly.vysetrovani_mu.ui.mu_zaver_widget import MuZaverWidget
-from core.widgets.dialog_utils import apply_save_cancel_labels
+from core.widgets.dialog_utils import add_work_dialog_footer, create_save_cancel_box
 from moduly.vysetrovani_mu.ui.mu_zajisteni_dukazu_widget import MuZajisteniDukazuWidget
 from moduly.vysetrovani_mu.sluzby.mu_source_context import resolve_mu_source_context
 from moduly.vysetrovani_mu.sluzby.mu_investigation_check import InvestigationCheckResult
@@ -101,18 +100,12 @@ class MuInvestigationDialog(QDialog):
         self.tabs.currentChanged.connect(self._on_tab_changed)
         layout.addWidget(self.tabs)
 
-        footer = QHBoxLayout()
-        self.check_spis_btn = QPushButton("Kontrola spisu")
-        self.check_spis_btn.clicked.connect(self._open_investigation_check)
-        footer.addWidget(self.check_spis_btn)
-        footer.addStretch()
-        layout.addLayout(footer)
-
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        apply_save_cancel_labels(buttons)
+        buttons = create_save_cancel_box(self)
         buttons.accepted.connect(self._accept_dialog)
         buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        self.check_spis_btn = QPushButton("Kontrola spisu")
+        self.check_spis_btn.clicked.connect(self._open_investigation_check)
+        add_work_dialog_footer(layout, work_widgets=[self.check_spis_btn], buttons=buttons)
 
         self.started_at_edit.dateChanged.connect(self._sync_casova_osa_started_at)
         self.oznameni_widget.oznameni_datum.dateChanged.connect(self._sync_casova_osa_oznameni)

@@ -1,10 +1,12 @@
 from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QLineEdit,
+    QVBoxLayout,
 )
+
+from core.widgets.dialog_utils import create_save_cancel_box
 
 
 class ThpWorkerDialog(QDialog):
@@ -14,7 +16,8 @@ class ThpWorkerDialog(QDialog):
         self.setWindowTitle("THP pracovník")
         self.resize(460, 340)
 
-        layout = QFormLayout(self)
+        layout = QVBoxLayout(self)
+        form = QFormLayout()
 
         self.title_before = QLineEdit()
         self.first_name = QLineEdit()
@@ -25,19 +28,21 @@ class ThpWorkerDialog(QDialog):
         self.email = QLineEdit()
         self.performs_controls_checkbox = QCheckBox("Provádí kontroly")
 
-        layout.addRow("Titul před:", self.title_before)
-        layout.addRow("Jméno:", self.first_name)
-        layout.addRow("Příjmení:", self.last_name)
-        layout.addRow("Titul za:", self.title_after)
-        layout.addRow("Funkce:", self.position)
-        layout.addRow("Telefon:", self.phone)
-        layout.addRow("E-mail:", self.email)
-        layout.addRow("", self.performs_controls_checkbox)
+        form.addRow("Titul před:", self.title_before)
+        form.addRow("Jméno:", self.first_name)
+        form.addRow("Příjmení:", self.last_name)
+        form.addRow("Titul za:", self.title_after)
+        form.addRow("Funkce:", self.position)
+        form.addRow("Telefon:", self.phone)
+        form.addRow("E-mail:", self.email)
+        form.addRow("", self.performs_controls_checkbox)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        layout.addLayout(form)
+
+        buttons = create_save_cancel_box(self)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        layout.addRow(buttons)
+        layout.addWidget(buttons)
 
         if worker is not None:
             self.title_before.setText(worker.title_before)

@@ -2,13 +2,13 @@ from datetime import date
 
 from PySide6.QtWidgets import (
     QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QLineEdit,
     QTextEdit,
     QVBoxLayout,
 )
 
+from core.widgets.dialog_utils import create_save_cancel_box
 from core.widgets.nullable_date_edit import NullableDateEdit
 
 
@@ -44,7 +44,7 @@ class MuChronologieEntryDialog(QDialog):
         form.addRow("Popis:", self.popis_edit)
         layout.addLayout(form)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons = create_save_cancel_box(self)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)

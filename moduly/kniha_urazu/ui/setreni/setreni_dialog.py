@@ -8,7 +8,6 @@ from PySide6.QtGui import QColor
 
 from PySide6.QtWidgets import (
     QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QLabel,
     QLineEdit,
@@ -34,7 +33,7 @@ from PySide6.QtWidgets import (
 )
 
 
-from core.widgets.dialog_utils import apply_save_cancel_labels, exec_maximized
+from core.widgets.dialog_utils import create_save_cancel_box, exec_maximized
 from moduly.kniha_urazu.ui.setreni.accident_findings_widget import AccidentFindingsWidget
 from moduly.kniha_urazu.sluzby.investigation_service import investigation_service
 from core.services.attachment_service import attachment_service
@@ -79,8 +78,7 @@ class SetreniDialog(QDialog):
         self._init_administrativa_widgets()
         layout.addWidget(self._tab_administrativa(), 1)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
-        apply_save_cancel_labels(buttons)
+        buttons = create_save_cancel_box(self)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)

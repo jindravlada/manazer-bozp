@@ -3,7 +3,6 @@ from datetime import date
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QLineEdit,
     QTextEdit,
@@ -11,6 +10,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.date_edit import DateEdit
+from core.widgets.dialog_utils import create_save_cancel_box
 from core.widgets.thp_worker_selector import ThpWorkerSelector
 from core.widgets.workplace_selector import WorkplaceSelector
 
@@ -63,7 +63,7 @@ class ControlDialog(QDialog):
 
         layout.addLayout(form)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons = create_save_cancel_box(self)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)

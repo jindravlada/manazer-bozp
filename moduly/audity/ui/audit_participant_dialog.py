@@ -1,11 +1,11 @@
 from PySide6.QtWidgets import (
     QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QLineEdit,
     QVBoxLayout,
 )
 
+from core.widgets.dialog_utils import create_save_cancel_box
 from core.widgets.person_selector import PersonSelector
 
 
@@ -32,7 +32,7 @@ class AuditParticipantDialog(QDialog):
 
         layout.addLayout(form)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons = create_save_cancel_box(self)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
