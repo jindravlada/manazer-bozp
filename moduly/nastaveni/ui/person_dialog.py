@@ -6,7 +6,10 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QTextEdit,
     QVBoxLayout,
+    QWidget,
 )
+
+from core.widgets.dialog_utils import apply_save_cancel_labels, configure_resizable_form_dialog, wrap_in_scroll_area
 
 
 class PersonDialog(QDialog):
@@ -14,10 +17,11 @@ class PersonDialog(QDialog):
         super().__init__(parent)
 
         self.setWindowTitle("Osoba")
-        self.resize(520, 460)
+        configure_resizable_form_dialog(self, width=520, height=460, min_width=420, min_height=360)
 
         layout = QVBoxLayout(self)
-        form = QFormLayout()
+        form_host = QWidget()
+        form = QFormLayout(form_host)
 
         self.title_before = QLineEdit()
         self.first_name = QLineEdit()
@@ -45,9 +49,10 @@ class PersonDialog(QDialog):
         form.addRow("", self.is_employee_checkbox)
         form.addRow("", self.active_checkbox)
 
-        layout.addLayout(form)
+        layout.addWidget(wrap_in_scroll_area(form_host), 1)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        apply_save_cancel_labels(buttons)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)

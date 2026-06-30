@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.widgets.dialog_utils import configure_resizable_form_dialog, wrap_in_scroll_area
 from moduly.vysetrovani_mu.sluzby.mu_investigation_check import (
     ACTION_TYPE_LABELS,
     CHECK_SEVERITY_ERROR,
@@ -45,7 +46,7 @@ class MuInvestigationCheckDialog(QDialog):
         super().__init__(parent)
 
         self.setWindowTitle("Kontrola spisu")
-        self.resize(980, 720)
+        configure_resizable_form_dialog(self, width=900, height=680, min_width=640, min_height=480)
 
         self._investigation_id = investigation_id
         self._results = run_investigation_checks(snapshot)
@@ -53,14 +54,19 @@ class MuInvestigationCheckDialog(QDialog):
         self._tables: list[QTableWidget] = []
 
         layout = QVBoxLayout(self)
-        layout.addWidget(self._build_summary())
+
+        scroll_content = QWidget()
+        scroll_layout = QVBoxLayout(scroll_content)
+        scroll_layout.setContentsMargins(0, 0, 0, 0)
+        scroll_layout.addWidget(self._build_summary())
 
         for severity in SEVERITY_ORDER:
             group_results = [item for item in self._results if item.severity == severity]
             if not group_results:
                 continue
-            layout.addWidget(self._build_group(severity, group_results), 1)
+            scroll_layout.addWidget(self._build_group(severity, group_results), 1)
 
+        layout.addWidget(wrap_in_scroll_area(scroll_content), 1)
         layout.addWidget(self._build_suggestion_panel())
         layout.addWidget(self._build_buttons())
 

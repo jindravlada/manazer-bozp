@@ -14,6 +14,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.widgets.dialog_utils import apply_save_cancel_labels, configure_resizable_form_dialog, wrap_in_scroll_area
+
 from core.widgets.date_edit import DateEdit
 from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.workplace_selector import WorkplaceSelector
@@ -31,7 +33,7 @@ class AccidentDialog(QDialog):
 
         self.accident = accident
         self.setWindowTitle("Pracovní úraz")
-        self.resize(920, 780)
+        configure_resizable_form_dialog(self, width=860, height=680, min_width=640, min_height=480)
 
         layout = QVBoxLayout(self)
 
@@ -43,16 +45,17 @@ class AccidentDialog(QDialog):
         self.tab_dalsi_widget = TabDalsiUdaje()
         self.tab_svedci_widget = TabSvedci()
 
-        self.tabs.addTab(self.tab_podatel_widget, "Zapisovatel / zaměstnavatel")
-        self.tabs.addTab(self.tab_zamestnanec_widget, "Zaměstnanec")
-        self.tabs.addTab(self.tab_uraz_widget, "Údaje o úrazu")
-        self.tabs.addTab(self.tab_pracoviste_widget, "Pracoviště")
-        self.tabs.addTab(self.tab_dalsi_widget, "Další údaje")
-        self.tabs.addTab(self.tab_svedci_widget, "Svědci / podpisy")
+        self.tabs.addTab(wrap_in_scroll_area(self.tab_podatel_widget), "Zapisovatel / zaměstnavatel")
+        self.tabs.addTab(wrap_in_scroll_area(self.tab_zamestnanec_widget), "Zaměstnanec")
+        self.tabs.addTab(wrap_in_scroll_area(self.tab_uraz_widget), "Údaje o úrazu")
+        self.tabs.addTab(wrap_in_scroll_area(self.tab_pracoviste_widget), "Pracoviště")
+        self.tabs.addTab(wrap_in_scroll_area(self.tab_dalsi_widget), "Další údaje")
+        self.tabs.addTab(wrap_in_scroll_area(self.tab_svedci_widget), "Svědci / podpisy")
 
-        layout.addWidget(self.tabs)
+        layout.addWidget(self.tabs, 1)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        apply_save_cancel_labels(buttons)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)

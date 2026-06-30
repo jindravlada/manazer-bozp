@@ -50,6 +50,7 @@ from moduly.vysetrovani_mu.ui.mu_dodrzovani_predpisu_widget import MuDodrzovaniP
 from moduly.vysetrovani_mu.ui.mu_kontrola_souladu_widget import MuKontrolaSouladuWidget
 from moduly.vysetrovani_mu.ui.mu_svedci_widget import MuSvedciWidget
 from moduly.vysetrovani_mu.ui.mu_zaver_widget import MuZaverWidget
+from core.widgets.dialog_utils import apply_save_cancel_labels
 from moduly.vysetrovani_mu.ui.mu_zajisteni_dukazu_widget import MuZajisteniDukazuWidget
 from moduly.vysetrovani_mu.sluzby.mu_source_context import resolve_mu_source_context
 from moduly.vysetrovani_mu.sluzby.mu_investigation_check import InvestigationCheckResult
@@ -108,6 +109,7 @@ class MuInvestigationDialog(QDialog):
         layout.addLayout(footer)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        apply_save_cancel_labels(buttons)
         buttons.accepted.connect(self._accept_dialog)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)

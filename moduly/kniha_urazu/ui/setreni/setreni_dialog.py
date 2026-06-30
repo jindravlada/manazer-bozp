@@ -34,6 +34,7 @@ from PySide6.QtWidgets import (
 )
 
 
+from core.widgets.dialog_utils import apply_save_cancel_labels, exec_maximized
 from moduly.kniha_urazu.ui.setreni.accident_findings_widget import AccidentFindingsWidget
 from moduly.kniha_urazu.sluzby.investigation_service import investigation_service
 from core.services.attachment_service import attachment_service
@@ -61,7 +62,6 @@ class SetreniDialog(QDialog):
 
         number = accident.number if accident is not None else ""
         self.setWindowTitle(f"Administrace úrazu {number}".strip())
-        self.resize(1500, 900)
 
         layout = QVBoxLayout(self)
 
@@ -77,9 +77,10 @@ class SetreniDialog(QDialog):
         layout.addLayout(mu_row)
 
         self._init_administrativa_widgets()
-        layout.addWidget(self._tab_administrativa())
+        layout.addWidget(self._tab_administrativa(), 1)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
+        apply_save_cancel_labels(buttons)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
@@ -87,6 +88,9 @@ class SetreniDialog(QDialog):
     def accept(self):
         self._save_administrativa()
         super().accept()
+
+    def exec(self):
+        return exec_maximized(self)
 
     def _save_administrativa(self) -> None:
         if self.accident is None:

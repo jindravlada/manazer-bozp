@@ -19,6 +19,7 @@ from core.navigation.source_navigator import source_navigator
 from core.shared.sluzby.finding_task_service import finding_task_service
 from core.shared.task_source_display import task_source_label, task_type_label
 from core.widgets.attachment_widget import AttachmentWidget
+from core.widgets.dialog_utils import apply_save_cancel_labels, configure_resizable_form_dialog, wrap_in_scroll_area
 from core.widgets.task_finding_source_panel import TaskFindingSourcePanel
 from moduly.ukoly.constants import TASK_TYPE_INVESTIGATION_ACTION
 from core.widgets.date_edit import DateEdit
@@ -42,7 +43,7 @@ class TaskDialog(QDialog):
             self.setWindowTitle("Vyšetřovací úkon")
         else:
             self.setWindowTitle("Nápravné opatření")
-        self.resize(760, 680)
+        configure_resizable_form_dialog(self, width=720, height=640, min_width=520, min_height=420)
 
         main_layout = QVBoxLayout(self)
 
@@ -75,12 +76,13 @@ class TaskDialog(QDialog):
 
         tab_title = "Úkon" if self._is_investigation_action else "Opatření"
         self.tabs = QTabWidget()
-        self.tabs.addTab(self._main_tab(), tab_title)
-        self.tabs.addTab(self._attachments_tab(), "Přílohy")
+        self.tabs.addTab(wrap_in_scroll_area(self._main_tab()), tab_title)
+        self.tabs.addTab(wrap_in_scroll_area(self._attachments_tab()), "Přílohy")
 
-        main_layout.addWidget(self.tabs)
+        main_layout.addWidget(self.tabs, 1)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        apply_save_cancel_labels(buttons)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
 

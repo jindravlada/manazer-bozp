@@ -6,7 +6,10 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QTextEdit,
     QVBoxLayout,
+    QWidget,
 )
+
+from core.widgets.dialog_utils import apply_save_cancel_labels, configure_resizable_form_dialog, wrap_in_scroll_area
 
 from core.shared.constants import (
     FINDING_STATUS_OTEVRENE,
@@ -32,10 +35,11 @@ class FindingDialog(QDialog):
         super().__init__(parent)
 
         self.setWindowTitle(title)
-        self.resize(680, 560)
+        configure_resizable_form_dialog(self, width=680, height=560, min_width=520, min_height=400)
 
         layout = QVBoxLayout(self)
-        form = QFormLayout()
+        form_host = QWidget()
+        form = QFormLayout(form_host)
 
         self.type_combo = QComboBox()
         finding_types = sorted(allowed_finding_types or VALID_FINDING_TYPES)
@@ -75,9 +79,10 @@ class FindingDialog(QDialog):
         form.addRow("Stav:", self.status_combo)
         form.addRow("Poznámka k vypořádání:", self.resolution_note_edit)
 
-        layout.addLayout(form)
+        layout.addWidget(wrap_in_scroll_area(form_host), 1)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        apply_save_cancel_labels(buttons)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
