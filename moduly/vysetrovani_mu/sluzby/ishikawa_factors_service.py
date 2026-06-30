@@ -460,29 +460,50 @@ class IshikawaFactorsService:
             if self._effective_parent(factor, valid_names) == parent
         )
 
-    def get_expanded_parent(self, category: str, selected_factor: str) -> str | None:
+    def get_expanded_parents(self, category: str, selected_factor: str) -> frozenset[str]:
         selected = selected_factor.strip()
         if not selected or selected == ISHIKAWA_OTHER_FACTOR:
-            return None
+            return frozenset()
 
-        factor = self.get_factor(category, selected)
-        if factor is None:
-            return None
+        if self.get_factor(category, selected) is None:
+            return frozenset()
 
         valid_names = set(self.get_factors(category))
-        parent = self._effective_parent(factor, valid_names)
-        if parent:
-            return parent
+        expanded: set[str] = set()
+        current = selected
+        while True:
+            factor = self.get_factor(category, current)
+            if factor is None:
+                break
+            parent = self._effective_parent(factor, valid_names)
+            if not parent:
+                break
+            expanded.add(parent)
+            current = parent
 
         if self.get_child_factors(category, selected):
-            return selected
+            expanded.add(selected)
 
-        return None
+        return frozenset(expanded)
+
+    def get_expanded_parent(self, category: str, selected_factor: str) -> str | None:
+        expanded = self.get_expanded_parents(category, selected_factor)
+        if not expanded:
+            return None
+        factors = self._category_factors(category)
+        valid_names = {factor["name"] for factor in factors}
+        for factor in factors:
+            name = factor["name"]
+            if name in expanded and not self._effective_parent(factor, valid_names):
+                return name
+        return next(iter(expanded), None)
 
     def get_factors_display(
         self,
         category: str,
         expanded_parent: str | None = None,
+        *,
+        expanded_parents: frozenset[str] | set[str] | None = None,
     ) -> tuple[tuple[str, int], ...]:
         factors = self._category_factors(category)
         valid_names = {factor["name"] for factor in factors}
@@ -497,12 +518,20 @@ class IshikawaFactorsService:
             elif name != ISHIKAWA_OTHER_FACTOR:
                 main_factors.append(name)
 
+        expanded = set(expanded_parents or ())
+        if expanded_parent:
+            expanded.add(expanded_parent)
+
         display: list[tuple[str, int]] = []
-        for name in main_factors:
-            display.append((name, 0))
-            if expanded_parent and name == expanded_parent:
+
+        def append_tree(name: str, level: int) -> None:
+            display.append((name, level))
+            if name in expanded:
                 for child in children_by_parent.get(name, []):
-                    display.append((child, 1))
+                    append_tree(child, level + 1)
+
+        for name in main_factors:
+            append_tree(name, 0)
 
         if any(factor["name"] == ISHIKAWA_OTHER_FACTOR for factor in factors):
             display.append((ISHIKAWA_OTHER_FACTOR, 0))

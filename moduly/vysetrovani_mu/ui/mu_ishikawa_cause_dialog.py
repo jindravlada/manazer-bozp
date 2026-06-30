@@ -363,12 +363,15 @@ class MuIshikawaCauseDialog(QDialog):
         self._factor_radios = []
         category = self._current_category()
         available_factors = set(ishikawa_factors_service.get_factors(category))
-        expanded_parent = (
-            ishikawa_factors_service.get_expanded_parent(category, selected)
+        expanded_parents = (
+            ishikawa_factors_service.get_expanded_parents(category, selected)
             if selected
-            else None
+            else frozenset()
         )
-        display_factors = ishikawa_factors_service.get_factors_display(category, expanded_parent)
+        display_factors = ishikawa_factors_service.get_factors_display(
+            category,
+            expanded_parents=expanded_parents,
+        )
 
         if selected and selected not in available_factors and selected != ISHIKAWA_OTHER_FACTOR:
             if not self.custom_factor_edit.text().strip():
@@ -376,8 +379,9 @@ class MuIshikawaCauseDialog(QDialog):
             selected = ISHIKAWA_OTHER_FACTOR
 
         for factor_name, level in display_factors:
-            label = f"  – {factor_name}" if level else factor_name
-            radio = QRadioButton(label)
+            radio = QRadioButton(factor_name)
+            if level:
+                radio.setStyleSheet(f"margin-left: {24 * level}px;")
             radio.setProperty("factor_name", factor_name)
             self._factor_button_group.addButton(radio)
             self.factors_layout.addWidget(radio)
