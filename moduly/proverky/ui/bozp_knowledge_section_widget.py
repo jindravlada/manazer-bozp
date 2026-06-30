@@ -1,13 +1,16 @@
 """Pracovní karta znalostního uzlu sekce prověrky."""
 
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QMessageBox, QPushButton, QVBoxLayout, QWidget
 
+from core.shared.constants import ENTITY_PROVERKY
+from core.shared.sluzby.finding_service import finding_service
 from core.widgets.dialog_utils import wrap_in_scroll_area
 from core.widgets.finding_dialog import FindingDialog
 from moduly.proverky.constants import (
     FINDING_CREATE_FROM_CONTROL_POINT_LABEL,
     FINDING_DIALOG_TITLE,
     FINDING_SOURCE_LABEL,
+    INSPECTION_MUST_BE_SAVED_MESSAGE,
     KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT,
     ProverkyFindingKnowledgeContext,
 )
@@ -23,8 +26,12 @@ class BozpKnowledgeSectionWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        self._area_id = ""
         self._area_label = ""
+        self._section_id = ""
         self._section_label = ""
+        self._inspection_id: int | None = None
+        self._on_finding_saved = None
 
         self._content_host = QWidget()
         self._content_layout = QVBoxLayout(self._content_host)
@@ -39,11 +46,14 @@ class BozpKnowledgeSectionWidget(QWidget):
         self,
         section: dict | None,
         *,
+        area_id: str = "",
         area_label: str = "",
         section_label: str = "",
     ) -> None:
+        self._area_id = area_id.strip()
         self._area_label = area_label.strip()
         self._section_label = section_label.strip()
+        self._section_id = str(section.get("id") or "").strip() if section else ""
         self._clear_content()
 
         if not section:
@@ -60,6 +70,12 @@ class BozpKnowledgeSectionWidget(QWidget):
             self._content_layout.addWidget(self._build_list_block(title, section, field))
 
         self._content_layout.addStretch()
+
+    def set_inspection_id(self, inspection_id: int | None) -> None:
+        self._inspection_id = inspection_id
+
+    def set_on_finding_saved(self, callback) -> None:
+        self._on_finding_saved = callback
 
     def _clear_content(self) -> None:
         while self._content_layout.count():
@@ -125,7 +141,7 @@ class BozpKnowledgeSectionWidget(QWidget):
 
         create_btn = QPushButton(FINDING_CREATE_FROM_CONTROL_POINT_LABEL)
         create_btn.clicked.connect(
-            lambda _checked=False, control_point=nazev: self._open_finding_dialog(control_point)
+            lambda _checked=False, item=item: self._open_finding_dialog(item)
         )
         header_row.addWidget(create_btn, 0)
         row_layout.addLayout(header_row)
@@ -140,10 +156,18 @@ class BozpKnowledgeSectionWidget(QWidget):
 
         return row
 
-    def _open_finding_dialog(self, control_point_label: str) -> None:
+    def _open_finding_dialog(self, control_point: dict) -> None:
+        if self._inspection_id is None:
+            QMessageBox.information(self, "Zjištění", INSPECTION_MUST_BE_SAVED_MESSAGE)
+            return
+
+        control_point_label = str(control_point.get("nazev") or "—").strip() or "—"
         context = ProverkyFindingKnowledgeContext(
+            area_id=self._area_id,
             area_label=self._area_label,
+            section_id=self._section_id,
             section_label=self._section_label,
+            control_point_id=str(control_point.get("id") or "").strip(),
             control_point_label=control_point_label,
         )
         dialog = FindingDialog(
@@ -156,7 +180,29 @@ class BozpKnowledgeSectionWidget(QWidget):
                 "control_point_label": context.control_point_label,
             },
         )
-        dialog.exec()
+        if not dialog.exec():
+            return
+
+        data = dialog.get_data()
+        finding_service.create(
+            ENTITY_PROVERKY,
+            self._inspection_id,
+            finding_type=data["finding_type"],
+            reference_label=data["reference_label"] or context.control_point_label,
+            description=data["description"],
+            recommended_action=data["recommended_action"],
+            responsible_person_id=data["responsible_person_id"],
+            responsible_person_name=data["responsible_person_name"],
+            due_date=data["due_date"],
+            status=data["status"],
+            resolution_note=data["resolution_note"],
+            source_area_label=context.area_label,
+            source_section_label=context.section_label,
+            source_control_point_id=context.control_point_id,
+            source_control_point_label=context.control_point_label,
+        )
+        if self._on_finding_saved is not None:
+            self._on_finding_saved()
 
     def _build_knowledge_items_list(self, items: list[dict]) -> QWidget:
         container = QWidget()

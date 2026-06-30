@@ -32,6 +32,11 @@ class Finding(Base):
     reference_label: Mapped[str] = mapped_column(String(100), default="")
     description: Mapped[str] = mapped_column(Text, default="")
 
+    source_area_label: Mapped[str] = mapped_column(String(150), default="")
+    source_section_label: Mapped[str] = mapped_column(String(150), default="")
+    source_control_point_id: Mapped[str] = mapped_column(String(80), default="")
+    source_control_point_label: Mapped[str] = mapped_column(String(200), default="")
+
     recommended_action: Mapped[str] = mapped_column(Text, default="")
     due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 

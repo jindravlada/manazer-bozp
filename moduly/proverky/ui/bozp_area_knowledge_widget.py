@@ -22,6 +22,7 @@ class BozpAreaKnowledgeWidget(QWidget):
         super().__init__(parent)
 
         self._sections: list[dict] = []
+        self._area_id = ""
         self._area_label = ""
 
         layout = QVBoxLayout(self)
@@ -43,7 +44,14 @@ class BozpAreaKnowledgeWidget(QWidget):
 
         layout.addWidget(splitter)
 
-    def set_knowledge(self, knowledge: dict | None, *, area_label: str = "") -> None:
+    def set_knowledge(
+        self,
+        knowledge: dict | None,
+        *,
+        area_id: str = "",
+        area_label: str = "",
+    ) -> None:
+        self._area_id = area_id.strip()
         self._area_label = area_label.strip()
         self._sections = []
         self.section_list.blockSignals(True)
@@ -69,6 +77,14 @@ class BozpAreaKnowledgeWidget(QWidget):
         else:
             self.section_widget.set_section(None)
 
+    def set_inspection_id(self, inspection_id: int | None) -> None:
+        self._inspection_id = inspection_id
+        self.section_widget.set_inspection_id(inspection_id)
+
+    def set_on_finding_saved(self, callback) -> None:
+        self._on_finding_saved = callback
+        self.section_widget.set_on_finding_saved(callback)
+
     def _section_by_id(self, section_id: str) -> dict | None:
         for section in self._sections:
             if str(section.get("id") or "") == section_id:
@@ -88,6 +104,7 @@ class BozpAreaKnowledgeWidget(QWidget):
         section = self._section_by_id(section_id)
         self.section_widget.set_section(
             section,
+            area_id=self._area_id,
             area_label=self._area_label,
             section_label=str(section.get("nazev") or "") if section else "",
         )

@@ -207,3 +207,15 @@ class BozpInspectionSpisWidget(QWidget):
             self.workplace_selector.set_workplace_id(workplace_id)
 
         self._set_saved_history_placeholder()
+
+    def get_data(self) -> dict:
+        return {
+            "year": self.year_combo.currentData(),
+            "planned_month": self.planned_month_combo.currentData(),
+            "inspection_date": self.inspection_date_edit.get_date(),
+            "started_at": self.started_at_edit.get_date(),
+            "finished_at": self.finished_at_edit.get_date(),
+            "status": self.status_combo.currentText(),
+            "inspection_type": self.type_combo.currentText(),
+            "workplace_id": self.workplace_selector.current_workplace_id(),
+        }

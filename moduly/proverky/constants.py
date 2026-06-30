@@ -86,10 +86,14 @@ KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT = "Tato část bude doplněna."
 FINDING_SOURCE_LABEL = "Prověrka BOZP"
 FINDING_DIALOG_TITLE = "Zjištění prověrky BOZP"
 FINDING_CREATE_FROM_CONTROL_POINT_LABEL = "➕ Založit zjištění"
+INSPECTION_MUST_BE_SAVED_MESSAGE = "Prověrku je nutné nejdříve uložit."
 
 
 @dataclass(frozen=True)
 class ProverkyFindingKnowledgeContext:
+    area_id: str
     area_label: str
+    section_id: str
     section_label: str
+    control_point_id: str
     control_point_label: str

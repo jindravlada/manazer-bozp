@@ -1,19 +1,18 @@
 from PySide6.QtWidgets import (
     QDialog,
-    QLabel,
     QTabWidget,
     QVBoxLayout,
-    QWidget,
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.proverky.constants import TAB_KONTROLOVANE_OBLASTI
 from moduly.proverky.ui.bozp_inspection_areas_widget import BozpInspectionAreasWidget
+from moduly.proverky.ui.bozp_inspection_findings_widget import BozpInspectionFindingsWidget
 from moduly.proverky.ui.bozp_inspection_spis_widget import BozpInspectionSpisWidget
 
 
 class BozpInspectionDialog(QDialog):
-    """Dialog prověrky BOZP — bez ukládání a business logiky."""
+    """Dialog prověrky BOZP."""
 
     def __init__(self, parent=None, inspection=None):
         super().__init__(parent)
@@ -31,7 +30,8 @@ class BozpInspectionDialog(QDialog):
         self.tabs.addTab(self._placeholder_tab("Komise"), "Komise")
         self.areas_widget = BozpInspectionAreasWidget()
         self.tabs.addTab(self.areas_widget, TAB_KONTROLOVANE_OBLASTI)
-        self.tabs.addTab(self._placeholder_tab("Zjištění"), "Zjištění")
+        self.findings_widget = BozpInspectionFindingsWidget()
+        self.tabs.addTab(self.findings_widget, "Zjištění")
         self.tabs.addTab(self._placeholder_tab("Úkoly"), "Úkoly")
         self.tabs.addTab(self._placeholder_tab("Přílohy"), "Přílohy")
         self.tabs.addTab(self._placeholder_tab("Závěr"), "Závěr")
@@ -42,17 +42,30 @@ class BozpInspectionDialog(QDialog):
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
+        inspection_id = inspection.id if inspection is not None else None
+        self.set_inspection_id(inspection_id)
         self.spis_widget.load_inspection(inspection)
 
-    def _placeholder_tab(self, title: str) -> QWidget:
+    def set_inspection_id(self, inspection_id: int | None) -> None:
+        self.areas_widget.set_inspection_id(inspection_id)
+        self.findings_widget.set_inspection_id(inspection_id)
+        self.areas_widget.set_on_finding_saved(self.findings_widget.refresh)
+
+    def get_data(self) -> dict:
+        data = self.spis_widget.get_data()
+        data["title"] = ""
+        return data
+
+    def _placeholder_tab(self, title: str):
+        from PySide6.QtWidgets import QLabel, QWidget
+
         tab = QWidget()
-        layout = QVBoxLayout(tab)
+        tab_layout = QVBoxLayout(tab)
 
         info = QLabel(
-            f"Záložka „{title}“ bude doplněna v další fázi vývoje.\n"
-            "Modul zatím pracuje pouze jako kostra bez ukládání dat."
+            f"Záložka „{title}“ bude doplněna v další fázi vývoje."
         )
         info.setWordWrap(True)
-        layout.addWidget(info)
-        layout.addStretch()
+        tab_layout.addWidget(info)
+        tab_layout.addStretch()
         return tab

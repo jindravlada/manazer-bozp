@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
+    QMessageBox,
     QPushButton,
     QVBoxLayout,
     QWidget,
@@ -21,14 +22,27 @@ from moduly.proverky.constants import (
     INSPECTION_STATUS_FILTER_VSE,
     YEAR_FILTER_VSE,
 )
+from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 from moduly.proverky.ui.bozp_inspection_dialog import BozpInspectionDialog
 from moduly.proverky.ui.bozp_inspection_table import BozpInspectionTable
 from moduly.proverky.ui.rocni_plan_dialog import RocniPlanDialog
 from moduly.proverky.ui.rocni_zprava_dialog import RocniZpravaDialog
 
 
+class _InspectionRow:
+    def __init__(self, inspection):
+        self.id = inspection.id
+        self.number = inspection.number
+        self.inspection_date = inspection.inspection_date
+        self.workplace_name = inspection.workplace_name
+        self.lead_inspector_name = ""
+        self.findings_count = bozp_inspection_service.findings_count(inspection.id)
+        self.status = inspection.status
+        self.title = inspection.title
+
+
 class ProverkyPage(QWidget):
-    """Hlavní stránka modulu Prověrky BOZP — kostra bez persistence."""
+    """Hlavní stránka modulu Prověrky BOZP."""
 
     def __init__(self):
         super().__init__()
@@ -38,6 +52,8 @@ class ProverkyPage(QWidget):
         toolbar = QHBoxLayout()
 
         self.new_btn = QPushButton("Nová prověrka")
+        self.edit_btn = QPushButton("Upravit")
+        self.delete_btn = QPushButton("Smazat")
         self.plan_btn = QPushButton("Roční plán")
         self.report_btn = QPushButton("Roční zpráva")
 
@@ -54,6 +70,8 @@ class ProverkyPage(QWidget):
         self._populate_year_filter()
 
         toolbar.addWidget(self.new_btn)
+        toolbar.addWidget(self.edit_btn)
+        toolbar.addWidget(self.delete_btn)
         toolbar.addWidget(self.plan_btn)
         toolbar.addWidget(self.report_btn)
         toolbar.addStretch()
@@ -71,6 +89,8 @@ class ProverkyPage(QWidget):
         layout.addWidget(self.table)
 
         self.new_btn.clicked.connect(self.new_inspection)
+        self.edit_btn.clicked.connect(self.open_selected_inspection)
+        self.delete_btn.clicked.connect(self.delete_selected_inspection)
         self.plan_btn.clicked.connect(self.show_annual_plan)
         self.report_btn.clicked.connect(self.show_annual_report)
         self.table.doubleClicked.connect(self.open_selected_inspection)
@@ -80,8 +100,9 @@ class ProverkyPage(QWidget):
         self.refresh()
 
     def refresh(self) -> None:
-        inspections = self._filter_inspections([])
-        self.table.load_inspections(inspections)
+        inspections = self._filter_inspections(bozp_inspection_service.get_all())
+        rows = [_InspectionRow(inspection) for inspection in inspections]
+        self.table.load_inspections(rows)
         configure_table_columns(self.table, "bozp_inspections")
         self.text_filter.update_count()
 
@@ -102,35 +123,81 @@ class ProverkyPage(QWidget):
             if status is not None:
                 inspections = [
                     inspection for inspection in inspections
-                    if getattr(inspection, "status", None) == status
+                    if inspection.status == status
                 ]
 
         year_value = self.year_filter.currentData()
         if year_value != YEAR_FILTER_VSE:
             inspections = [
                 inspection for inspection in inspections
-                if getattr(inspection, "inspection_date", None) is not None
-                and inspection.inspection_date.year == year_value
+                if (
+                    (inspection.inspection_date is not None and inspection.inspection_date.year == year_value)
+                    or (inspection.inspection_date is None and inspection.year == year_value)
+                )
             ]
 
         return inspections
 
-    def new_inspection(self) -> None:
-        dialog = BozpInspectionDialog(self)
-        exec_maximized(dialog)
-
-    def open_selected_inspection(self) -> None:
+    def _selected_inspection_id(self) -> int | None:
         selected = self.table.selectionModel().selectedRows()
         if not selected:
+            return None
+
+        item = self.table.item(selected[0].row(), 0)
+        return int(item.text()) if item else None
+
+    def new_inspection(self) -> None:
+        dialog = BozpInspectionDialog(self)
+        if dialog.exec():
+            data = dialog.get_data()
+            workplace_name = bozp_inspection_service.resolve_workplace_name(data.pop("workplace_id"))
+            bozp_inspection_service.create_inspection(workplace_name=workplace_name, **data)
+            self.refresh()
+
+    def open_selected_inspection(self) -> None:
+        inspection_id = self._selected_inspection_id()
+        if inspection_id is None:
+            QMessageBox.information(self, "Prověrky BOZP", "Vyberte prověrku.")
             return
 
-        dialog = BozpInspectionDialog(self)
-        exec_maximized(dialog)
+        self.open_inspection(inspection_id)
 
-    def open_inspection(self, _inspection_id: int) -> None:
-        """Hook pro budoucí navigaci ze zdrojových záznamů."""
-        dialog = BozpInspectionDialog(self)
-        exec_maximized(dialog)
+    def open_inspection(self, inspection_id: int) -> None:
+        inspection = bozp_inspection_service.get_by_id(inspection_id)
+        if inspection is None:
+            QMessageBox.warning(self, "Prověrky BOZP", "Prověrka nebyla nalezena.")
+            self.refresh()
+            return
+
+        dialog = BozpInspectionDialog(self, inspection=inspection)
+        if dialog.exec():
+            data = dialog.get_data()
+            workplace_name = bozp_inspection_service.resolve_workplace_name(data.pop("workplace_id"))
+            bozp_inspection_service.update_inspection(inspection_id, workplace_name=workplace_name, **data)
+            self.refresh()
+
+    def delete_selected_inspection(self) -> None:
+        inspection_id = self._selected_inspection_id()
+        if inspection_id is None:
+            QMessageBox.information(self, "Prověrky BOZP", "Vyberte prověrku.")
+            return
+
+        inspection = bozp_inspection_service.get_by_id(inspection_id)
+        if inspection is None:
+            QMessageBox.warning(self, "Prověrky BOZP", "Prověrka nebyla nalezena.")
+            self.refresh()
+            return
+
+        answer = QMessageBox.question(
+            self,
+            "Smazat prověrku",
+            f"Opravdu smazat prověrku {inspection.number or inspection_id}?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer == QMessageBox.Yes:
+            bozp_inspection_service.delete_inspection(inspection_id)
+            self.refresh()
 
     def show_annual_plan(self) -> None:
         exec_maximized(RocniPlanDialog(self))

@@ -19,6 +19,7 @@ def initialize_database() -> None:
     from moduly.kniha_urazu.modely.accident import Accident  # noqa: F401
     from moduly.kniha_urazu.modely.investigation import AccidentInvestigation  # noqa: F401
     from moduly.vysetrovani_mu.modely.mu_investigation import MuInvestigation  # noqa: F401
+    from moduly.proverky.modely.bozp_inspection import BozpInspection  # noqa: F401
 
     create_database()
     _ensure_thp_worker_title_columns()
@@ -30,6 +31,7 @@ def initialize_database() -> None:
     _ensure_audit_participant_columns()
     _ensure_person_columns()
     _ensure_mu_investigation_columns()
+    _ensure_finding_columns()
     _normalize_task_status_values()
     _normalize_internal_audit_status_values()
     _normalize_accident_legacy_values()
@@ -180,6 +182,19 @@ def _ensure_mu_investigation_columns() -> None:
     for column_name, column_sql in additions.items():
         if column_name not in columns:
             _add_column("mu_investigations", column_sql)
+
+
+def _ensure_finding_columns() -> None:
+    columns = _table_columns("findings")
+    additions = {
+        "source_area_label": "source_area_label VARCHAR(150) DEFAULT ''",
+        "source_section_label": "source_section_label VARCHAR(150) DEFAULT ''",
+        "source_control_point_id": "source_control_point_id VARCHAR(80) DEFAULT ''",
+        "source_control_point_label": "source_control_point_label VARCHAR(200) DEFAULT ''",
+    }
+    for column_name, column_sql in additions.items():
+        if column_name not in columns:
+            _add_column("findings", column_sql)
 
 
 def _normalize_internal_audit_status_values() -> None:

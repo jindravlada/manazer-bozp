@@ -73,6 +73,12 @@ class BozpInspectionAreasWidget(QWidget):
 
         self.reload_areas()
 
+    def set_inspection_id(self, inspection_id: int | None) -> None:
+        self.knowledge_widget.set_inspection_id(inspection_id)
+
+    def set_on_finding_saved(self, callback) -> None:
+        self.knowledge_widget.set_on_finding_saved(callback)
+
     def reload_areas(self) -> None:
         self._areas = proverky_knowledge_service.get_areas()
 
@@ -131,7 +137,11 @@ class BozpInspectionAreasWidget(QWidget):
 
         if area.has_knowledge_file:
             knowledge = proverky_knowledge_service.load_area_knowledge(area)
-            self.knowledge_widget.set_knowledge(knowledge, area_label=area.nazev)
+            self.knowledge_widget.set_knowledge(
+                knowledge,
+                area_id=area.id,
+                area_label=area.nazev,
+            )
             self.content_stack.setCurrentIndex(self._PAGE_KNOWLEDGE)
         else:
             self.content_stack.setCurrentIndex(self._PAGE_PLACEHOLDER)
