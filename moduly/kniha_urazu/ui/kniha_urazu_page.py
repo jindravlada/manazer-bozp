@@ -182,13 +182,12 @@ class KnihaUrazuPage(QWidget):
             self.refresh()
             return
 
-        dialog = SetreniDialog(
-            self,
-            accident=accident,
-            open_mu_investigation_callback=self.open_mu_investigation_callback,
-        )
+        accident_id = accident.id
+        dialog = SetreniDialog(self, accident=accident)
         dialog.exec()
         self.refresh()
+        if dialog.open_mu_after_close:
+            self.open_mu_investigation(accident_id)
 
     def open_mu_investigation(self, accident_id: int | None = None):
         if accident_id is None:
