@@ -1,8 +1,12 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from core.shared.constants import ENTITY_ACCIDENT, ENTITY_AUDITY
+from core.shared.constants import ENTITY_ACCIDENT, ENTITY_AUDITY, ENTITY_MU_INVESTIGATION
 from core.shared.sluzby.finding_service import finding_service
+
+# Cílové chování navigace pro ENTITY_ACCIDENT
+ACCIDENT_OPEN_RECORD = "record"
+ACCIDENT_OPEN_INVESTIGATION = "investigation"
 
 
 @dataclass(frozen=True)
@@ -40,7 +44,13 @@ class SourceNavigator:
 
         return self._host._page_widgets.get(route.module_key) is not None
 
-    def open(self, entity_type: str, entity_id: int) -> bool:
+    def open(
+        self,
+        entity_type: str,
+        entity_id: int,
+        *,
+        accident_target: str = ACCIDENT_OPEN_INVESTIGATION,
+    ) -> bool:
         if self._host is None:
             return False
 
@@ -53,7 +63,10 @@ class SourceNavigator:
             return False
 
         self._host._show(route.module_key)
-        route.opener(page, entity_id)
+        if entity_type == ENTITY_ACCIDENT and accident_target == ACCIDENT_OPEN_RECORD:
+            page.open_accident(entity_id)
+        else:
+            route.opener(page, entity_id)
         return True
 
     def open_finding(self, finding_id: int) -> bool:
@@ -74,13 +87,18 @@ class SourceNavigator:
             "audity",
             lambda page, entity_id: page.open_audit(entity_id),
         )
+        # Skutečné vyšetřování úrazu vede do Vyšetřování MU; administrativa zůstává v dialogu úrazu.
         self.register(
             ENTITY_ACCIDENT,
             "kniha_urazu",
+            lambda page, entity_id: page.open_mu_investigation(entity_id),
+        )
+        self.register(
+            ENTITY_MU_INVESTIGATION,
+            "vysetrovani_mu",
             lambda page, entity_id: page.open_investigation(entity_id),
         )
         # Další typy: source_navigator.register(ENTITY_PROVERKY, "proverky", opener)
-        #             source_navigator.register(ENTITY_MU_INVESTIGATION, "...", opener)
 
 
 source_navigator = SourceNavigator()

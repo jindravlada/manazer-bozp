@@ -46,10 +46,11 @@ from core.widgets.search_combo_box import SearchComboBox
 class SetreniDialog(QDialog):
     """Administrativní karta pracovního úrazu (ohlášení, záznam o úrazu, ukončení)."""
 
-    def __init__(self, parent=None, accident=None):
+    def __init__(self, parent=None, accident=None, open_mu_investigation_callback=None):
         super().__init__(parent)
 
         self.accident = accident
+        self._open_mu_investigation_callback = open_mu_investigation_callback
         self.investigation = investigation_service.get_or_create(accident.id) if accident is not None else None
         self._zajisteni_saved_data = {}
         if self.investigation is not None and getattr(self.investigation, "zajisteni_dukazu_json", ""):
@@ -64,6 +65,17 @@ class SetreniDialog(QDialog):
 
         layout = QVBoxLayout(self)
 
+        mu_info = QLabel("Vyšetřování úrazu probíhá v modulu Vyšetřování MU.")
+        mu_info.setWordWrap(True)
+        layout.addWidget(mu_info)
+
+        mu_row = QHBoxLayout()
+        self.open_mu_btn = QPushButton("Otevřít Vyšetřování MU")
+        self.open_mu_btn.clicked.connect(self._open_mu_investigation)
+        mu_row.addWidget(self.open_mu_btn)
+        mu_row.addStretch()
+        layout.addLayout(mu_row)
+
         self._init_administrativa_widgets()
         layout.addWidget(self._tab_administrativa())
 
@@ -73,14 +85,33 @@ class SetreniDialog(QDialog):
         layout.addWidget(buttons)
 
     def accept(self):
-        if self.accident is not None:
-            merged = dict(self._zajisteni_saved_data)
-            merged.update(self._administrativa_save_data())
-            investigation_service.save_zajisteni_dukazu(
-                self.accident.id,
-                json.dumps(merged, ensure_ascii=False),
-            )
+        self._save_administrativa()
         super().accept()
+
+    def _save_administrativa(self) -> None:
+        if self.accident is None:
+            return
+        merged = dict(self._zajisteni_saved_data)
+        merged.update(self._administrativa_save_data())
+        investigation_service.save_zajisteni_dukazu(
+            self.accident.id,
+            json.dumps(merged, ensure_ascii=False),
+        )
+
+    def _open_mu_investigation(self) -> None:
+        if self.accident is None:
+            return
+        if self._open_mu_investigation_callback is None:
+            QMessageBox.warning(
+                self,
+                "Vyšetřování MU",
+                "Modul Vyšetřování MU není dostupný.",
+            )
+            return
+
+        self._save_administrativa()
+        self._open_mu_investigation_callback(self.accident.id)
+        self.done(QDialog.Accepted)
 
     def _administrativa_save_data(self):
         return {

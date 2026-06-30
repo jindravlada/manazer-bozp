@@ -182,7 +182,11 @@ class KnihaUrazuPage(QWidget):
             self.refresh()
             return
 
-        dialog = SetreniDialog(self, accident=accident)
+        dialog = SetreniDialog(
+            self,
+            accident=accident,
+            open_mu_investigation_callback=self.open_mu_investigation_callback,
+        )
         dialog.exec()
         self.refresh()
 
