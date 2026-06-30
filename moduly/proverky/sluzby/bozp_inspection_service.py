@@ -7,6 +7,7 @@ from core.shared.constants import (
 )
 from core.shared.modely.finding import Finding
 from core.shared.sluzby.finding_service import finding_service
+from core.shared.sluzby.control_result_service import control_result_service
 from moduly.proverky.constants import (
     DEFAULT_INSPECTION_SPIS_STATUS,
     DEFAULT_INSPECTION_TYPE,
@@ -55,6 +56,7 @@ class BozpInspectionService:
 
     def delete_inspection(self, inspection_id: int) -> bool:
         finding_service.delete_for_entity(ENTITY_PROVERKY, inspection_id)
+        control_result_service.delete_for_entity(ENTITY_PROVERKY, inspection_id)
         return self.repository.delete(inspection_id)
 
     def resolve_workplace_name(self, workplace_id: int | None) -> str:

@@ -20,6 +20,7 @@ def initialize_database() -> None:
     from moduly.kniha_urazu.modely.investigation import AccidentInvestigation  # noqa: F401
     from moduly.vysetrovani_mu.modely.mu_investigation import MuInvestigation  # noqa: F401
     from moduly.proverky.modely.bozp_inspection import BozpInspection  # noqa: F401
+    from core.shared.modely.control_result import ControlResult  # noqa: F401
 
     create_database()
     _ensure_thp_worker_title_columns()

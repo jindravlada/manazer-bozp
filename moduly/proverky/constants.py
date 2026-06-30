@@ -90,6 +90,7 @@ FINDING_OPEN_EXISTING_LABEL = "Otevřít zjištění"
 FINDING_CREATED_LABEL = "Zjištění založeno"
 FINDING_DUPLICATE_MESSAGE = "Pro tento kontrolní bod už existuje zjištění. Otevře se existující záznam."
 INSPECTION_MUST_BE_SAVED_MESSAGE = "Prověrku je nutné nejdříve uložit."
+FINDING_REQUIRES_NONCOMPLIANCE_MESSAGE = "Zjištění lze založit pouze u kontrolního bodu s výsledkem „Nevyhovuje“."
 
 
 @dataclass(frozen=True)

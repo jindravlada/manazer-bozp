@@ -4,8 +4,11 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QMessageBox, QPushButton, QVBoxLayout, QWidget
 
 from core.shared.constants import ENTITY_PROVERKY
+from core.shared.control_result_display import allows_finding
 from core.shared.finding_display import finding_status_label
+from core.shared.sluzby.control_result_service import ControlPointContext, control_result_service
 from core.shared.sluzby.finding_service import finding_service
+from core.widgets.control_result_selector import ControlResultSelectorWidget
 from core.widgets.dialog_utils import wrap_in_scroll_area
 from core.widgets.finding_dialog import FindingDialog
 from moduly.proverky.constants import (
@@ -14,6 +17,7 @@ from moduly.proverky.constants import (
     FINDING_DIALOG_TITLE,
     FINDING_DUPLICATE_MESSAGE,
     FINDING_OPEN_EXISTING_LABEL,
+    FINDING_REQUIRES_NONCOMPLIANCE_MESSAGE,
     FINDING_SOURCE_LABEL,
     INSPECTION_MUST_BE_SAVED_MESSAGE,
     KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT,
@@ -162,16 +166,87 @@ class BozpKnowledgeSectionWidget(QWidget):
             description.setContentsMargins(16, 0, 0, 0)
             row_layout.addWidget(description)
 
-        if finding is not None:
-            row_layout.addWidget(self._build_linked_finding_block(finding, context))
-        else:
-            actions = QHBoxLayout()
-            actions.setContentsMargins(16, 4, 0, 0)
-            actions.addWidget(self._build_create_finding_button(item))
-            actions.addStretch()
-            row_layout.addLayout(actions)
+        result_selector = ControlResultSelectorWidget()
+        result_selector.configure(
+            entity_type=ENTITY_PROVERKY,
+            entity_id=self._inspection_id,
+            context=self._control_point_context(context),
+            must_be_saved_message=INSPECTION_MUST_BE_SAVED_MESSAGE,
+        )
+        row_layout.addWidget(result_selector)
+
+        finding_host = QWidget()
+        finding_layout = QVBoxLayout(finding_host)
+        finding_layout.setContentsMargins(0, 0, 0, 0)
+        finding_layout.setSpacing(0)
+        row_layout.addWidget(finding_host)
+
+        self._populate_finding_section(
+            finding_host,
+            finding_layout,
+            item,
+            context,
+            finding,
+            result_selector.current_result(),
+        )
+        result_selector.result_changed.connect(
+            lambda result, host=finding_host, layout=finding_layout, cp=item, ctx=context: self._on_control_result_changed(
+                host,
+                layout,
+                cp,
+                ctx,
+                result,
+            )
+        )
 
         return row
+
+    def _populate_finding_section(
+        self,
+        host: QWidget,
+        layout: QVBoxLayout,
+        control_point: dict,
+        context: ProverkyFindingKnowledgeContext,
+        finding,
+        result: str,
+    ) -> None:
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+
+        finding = finding or self._finding_for_context(context)
+
+        if finding is not None:
+            layout.addWidget(self._build_linked_finding_block(finding, context))
+            return
+
+        if allows_finding(result):
+            actions = QHBoxLayout()
+            actions.setContentsMargins(16, 4, 0, 0)
+            actions.addWidget(self._build_create_finding_button(control_point))
+            actions.addStretch()
+            wrapper = QWidget()
+            wrapper.setLayout(actions)
+            layout.addWidget(wrapper)
+
+    def _on_control_result_changed(
+        self,
+        host: QWidget,
+        layout: QVBoxLayout,
+        control_point: dict,
+        context: ProverkyFindingKnowledgeContext,
+        result: str,
+    ) -> None:
+        self._populate_finding_section(
+            host,
+            layout,
+            control_point,
+            context,
+            self._finding_for_context(context),
+            result,
+        )
 
     def _build_create_finding_button(self, control_point: dict) -> QPushButton:
         button = QPushButton(FINDING_CREATE_FROM_CONTROL_POINT_LABEL)
@@ -217,6 +292,17 @@ class BozpKnowledgeSectionWidget(QWidget):
             control_point_label=control_point_label,
         )
 
+    @staticmethod
+    def _control_point_context(context: ProverkyFindingKnowledgeContext) -> ControlPointContext:
+        return ControlPointContext(
+            area_id=context.area_id,
+            area_label=context.area_label,
+            section_id=context.section_id,
+            section_label=context.section_label,
+            control_point_id=context.control_point_id,
+            control_point_label=context.control_point_label,
+        )
+
     def _finding_for_context(self, context: ProverkyFindingKnowledgeContext):
         if self._inspection_id is None or not context.control_point_id:
             return None
@@ -234,6 +320,16 @@ class BozpKnowledgeSectionWidget(QWidget):
             return
 
         context = self._context_for_control_point(control_point)
+        point_context = self._control_point_context(context)
+        current_result = control_result_service.current_result(
+            ENTITY_PROVERKY,
+            self._inspection_id,
+            point_context,
+        )
+        if not allows_finding(current_result):
+            QMessageBox.information(self, "Zjištění", FINDING_REQUIRES_NONCOMPLIANCE_MESSAGE)
+            return
+
         existing_open = bozp_inspection_service.open_finding_for_control_point(
             self._inspection_id,
             area_label=context.area_label,
