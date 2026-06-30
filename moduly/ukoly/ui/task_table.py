@@ -1,46 +1,61 @@
 from datetime import date
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QBrush
 from PySide6.QtWidgets import QHeaderView, QTableWidget, QTableWidgetItem
 
-from core.shared.constants import (
-    ENTITY_ACCIDENT,
-    ENTITY_AUDITY,
-    ENTITY_FINDING,
-    ENTITY_MU_INVESTIGATION,
-    ENTITY_PROVERKY,
-)
 from core.shared.sluzby.finding_service import finding_service
-from core.shared.task_source_display import task_source_label, task_type_label
+from core.shared.task_source_display import task_source_short_label
 from core.widgets.info_tooltip import format_info_card
+from moduly.ukoly.task_display import (
+    COL_DESCRIPTION,
+    COL_DUE_DATE,
+    COL_ID,
+    COL_INDICATOR,
+    COL_RESPONSIBLE,
+    COL_SOURCE,
+    COL_SOURCE_RECORD,
+    COL_TYPE,
+    COL_WORKPLACE,
+    COLUMN_COUNT,
+    task_description_table_text,
+    task_type_table_label,
+)
 
 
 class TaskTable(QTableWidget):
     def __init__(self):
         super().__init__()
 
-        self.setColumnCount(9)
+        self.setColumnCount(COLUMN_COUNT)
         self.setHorizontalHeaderLabels([
             "ID",
             "",
-            "Typ",
-            "Opatření",
+            "Popis",
             "Termín",
             "Odpovídá",
             "Pracoviště",
             "Zdroj",
             "Zdrojový záznam",
+            "Typ",
         ])
 
-        self.setColumnHidden(0, True)
+        self.setColumnHidden(COL_ID, True)
+        self.setWordWrap(True)
         self.verticalHeader().setVisible(False)
-        self.verticalHeader().setDefaultSectionSize(24)
-        self.verticalHeader().setMinimumSectionSize(24)
-        self.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
+        self.verticalHeader().setDefaultSectionSize(28)
+        self.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.setAlternatingRowColors(True)
         self.setSelectionBehavior(QTableWidget.SelectRows)
         self.setSelectionMode(QTableWidget.SingleSelection)
         self.setEditTriggers(QTableWidget.NoEditTriggers)
+
+        header = self.horizontalHeader()
+        header.setStretchLastSection(False)
+        header.setSectionResizeMode(COL_INDICATOR, QHeaderView.Fixed)
+        header.setSectionResizeMode(COL_DESCRIPTION, QHeaderView.Stretch)
+        for column in (COL_DUE_DATE, COL_RESPONSIBLE, COL_WORKPLACE, COL_SOURCE, COL_SOURCE_RECORD, COL_TYPE):
+            header.setSectionResizeMode(column, QHeaderView.Fixed)
 
     def load_tasks(self, tasks):
         self.setRowCount(len(tasks))
@@ -50,30 +65,36 @@ class TaskTable(QTableWidget):
         for row, task in enumerate(tasks):
             row_state = self._row_state(task, today)
             tooltip = self._task_tooltip(task, row_state)
+            description = task_description_table_text(task)
 
-            values = [
-                str(task.id),
-                "",
-                task_type_label(task),
-                task.title or "—",
-                "" if task.due_date is None else task.due_date.strftime("%d.%m.%Y"),
-                task.responsible_person or "—",
-                task.workplace_name or "—",
-                self._source_type_display(task),
-                self._source_record_display(task),
-            ]
+            values = {
+                COL_ID: str(task.id),
+                COL_INDICATOR: "",
+                COL_DESCRIPTION: description,
+                COL_DUE_DATE: "" if task.due_date is None else task.due_date.strftime("%d.%m.%Y"),
+                COL_RESPONSIBLE: task.responsible_person or "—",
+                COL_WORKPLACE: task.workplace_name or "—",
+                COL_SOURCE: task_source_short_label(task),
+                COL_SOURCE_RECORD: self._source_record_display(task),
+                COL_TYPE: task_type_table_label(task),
+            }
 
-            for column, value in enumerate(values):
+            for column, value in values.items():
                 item = QTableWidgetItem(value)
 
-                if column == 1:
+                if column == COL_INDICATOR:
                     item.setBackground(QBrush(self._priority_color(task.priority)))
                     item.setToolTip(f"Priorita: {task.priority or '—'}\n\n{tooltip}")
                 else:
                     item.setBackground(QBrush(self._row_color(row_state)))
                     item.setToolTip(tooltip)
 
+                if column == COL_DESCRIPTION:
+                    item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+
                 self.setItem(row, column, item)
+
+        self.resizeRowsToContents()
 
     def _task_tooltip(self, task, row_state: str) -> str:
         due_date = "—" if task.due_date is None else task.due_date.strftime("%d.%m.%Y")
@@ -82,6 +103,7 @@ class TaskTable(QTableWidget):
         checked_date = "—" if task.checked_date is None else task.checked_date.strftime("%d.%m.%Y")
 
         rows = [
+            ("Typ:", task_type_table_label(task)),
             ("Priorita:", task.priority or "—"),
             ("Odpovídá:", task.responsible_person or "—"),
             ("Pracoviště:", task.workplace_name or "—"),
@@ -91,12 +113,12 @@ class TaskTable(QTableWidget):
             ("Kontrola do:", check_due_date),
             ("Datum kontroly:", checked_date),
             ("Kontroloval:", task.checked_by_name or "—"),
-            ("Zdroj:", self._source_type_display(task)),
+            ("Zdroj:", task_source_short_label(task)),
             ("Zdrojový záznam:", self._source_record_display(task)),
         ]
 
         return format_info_card(
-            title=f"Opatření:\n{task.title or '—'}",
+            title=f"Popis:\n{task.title or '—'}",
             rows=rows,
             note=task.note or "",
         )
@@ -138,19 +160,9 @@ class TaskTable(QTableWidget):
         }
         return tooltips.get(row_state, "")
 
-    def _source_type_display(self, task) -> str:
-        source_module = task.source_module or ""
-        if source_module == ENTITY_MU_INVESTIGATION:
-            return "Vyšetřování MU"
-        if source_module == ENTITY_FINDING and task.source_record_id:
-            finding = finding_service.get_by_id(task.source_record_id)
-            if finding is not None:
-                return self._finding_entity_type_label(finding.entity_type)
-            return "Zjištění"
-
-        return self._legacy_source_type_label(source_module)
-
     def _source_record_display(self, task) -> str:
+        from core.shared.constants import ENTITY_FINDING, ENTITY_MU_INVESTIGATION
+
         source_module = task.source_module or ""
         if source_module == ENTITY_MU_INVESTIGATION and task.source_record_id:
             return self._mu_investigation_record_label(task.source_record_id)
@@ -167,32 +179,9 @@ class TaskTable(QTableWidget):
 
         return "—"
 
-    def _finding_entity_type_label(self, entity_type: str) -> str:
-        labels = {
-            ENTITY_AUDITY: "Audit IMS",
-            ENTITY_ACCIDENT: "Administrace úrazu",
-            ENTITY_MU_INVESTIGATION: "Vyšetřování MU",
-            ENTITY_PROVERKY: "Prověrka BOZP",
-        }
-        return labels.get(entity_type, entity_type or "—")
-
-    def _legacy_source_type_label(self, source: str) -> str:
-        mapping = {
-            "manual": "Ručně",
-            "uraz": "Kniha úrazů",
-            "kniha_urazu": "Kniha úrazů",
-            "kniha_urazu_opatreni": "Kniha úrazů",
-            "audit": "Audit IMS",
-            "audity": "Audit IMS",
-            "proverka": "Prověrka BOZP",
-            "proverky": "Prověrka BOZP",
-            "kontrola": "Kontrola",
-            ENTITY_FINDING: "Zjištění",
-            ENTITY_MU_INVESTIGATION: "Vyšetřování MU",
-        }
-        return mapping.get(source or "", source or "—")
-
     def _finding_source_record(self, finding) -> str:
+        from core.shared.constants import ENTITY_ACCIDENT, ENTITY_AUDITY, ENTITY_MU_INVESTIGATION
+
         if finding.entity_type == ENTITY_AUDITY:
             label = self._audit_record_label(finding.entity_id)
             if label != "—":
@@ -217,7 +206,7 @@ class TaskTable(QTableWidget):
 
         audit = internal_audit_service.get_by_id(entity_id)
         if audit is not None and audit.number:
-            return f"Audit IMS {audit.number}"
+            return audit.number
         return "—"
 
     def _accident_record_label(self, entity_id: int) -> str:
@@ -225,7 +214,7 @@ class TaskTable(QTableWidget):
 
         accident = accident_service.get_by_id(entity_id)
         if accident is not None and accident.number:
-            return f"Úraz č. {accident.number}"
+            return accident.number
         return "—"
 
     def _mu_investigation_record_label(self, entity_id: int) -> str:

@@ -55,21 +55,34 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 
     elif profile == "tasks":
+        from moduly.ukoly.task_display import (
+            COL_DESCRIPTION,
+            COL_DUE_DATE,
+            COL_INDICATOR,
+            COL_RESPONSIBLE,
+            COL_SOURCE,
+            COL_SOURCE_RECORD,
+            COL_TYPE,
+            COL_WORKPLACE,
+        )
+
         widths = {
-            0: 0,    # ID
-            1: 24,   # Priorita - barevný proužek
-            2: 520,  # Opatření
-            3: 105,  # Termín
-            4: 200,  # Odpovídá
-            5: 130,  # Pracoviště
-            6: 130,  # Zdroj
-            7: 220,  # Zdrojový záznam
+            COL_INDICATOR: 24,
+            COL_DESCRIPTION: 360,
+            COL_DUE_DATE: 90,
+            COL_RESPONSIBLE: 180,
+            COL_WORKPLACE: 160,
+            COL_SOURCE: 110,
+            COL_SOURCE_RECORD: 120,
+            COL_TYPE: 90,
         }
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
-        header.setSectionResizeMode(2, QHeaderView.Stretch)
-        header.setSectionResizeMode(7, QHeaderView.Stretch)
+        header.setSectionResizeMode(COL_INDICATOR, QHeaderView.Fixed)
+        header.setSectionResizeMode(COL_DESCRIPTION, QHeaderView.Stretch)
+        for column in (COL_DUE_DATE, COL_RESPONSIBLE, COL_WORKPLACE, COL_SOURCE, COL_SOURCE_RECORD, COL_TYPE):
+            header.setSectionResizeMode(column, QHeaderView.Fixed)
 
     elif profile == "mu_investigations":
         widths = {

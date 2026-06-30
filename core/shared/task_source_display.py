@@ -6,12 +6,52 @@ from core.shared.constants import (
     ENTITY_PROVERKY,
 )
 from core.shared.sluzby.finding_service import finding_service
-from moduly.ukoly.constants import TASK_TYPE_LABELS
 
 
 def task_type_label(task) -> str:
-    task_type = getattr(task, "task_type", "") or "corrective"
-    return TASK_TYPE_LABELS.get(task_type, task_type or "—")
+    from moduly.ukoly.task_display import task_type_table_label
+
+    return task_type_table_label(task)
+
+
+def task_source_short_label(task) -> str:
+    source_module = task.source_module or ""
+    if source_module == ENTITY_MU_INVESTIGATION:
+        return _entity_source_short_label(ENTITY_MU_INVESTIGATION)
+    if source_module == ENTITY_FINDING and task.source_record_id:
+        finding = finding_service.get_by_id(task.source_record_id)
+        if finding is not None:
+            return _entity_source_short_label(finding.entity_type)
+        return "Zjištění"
+
+    return _legacy_source_short_label(source_module)
+
+
+def _entity_source_short_label(entity_type: str) -> str:
+    labels = {
+        ENTITY_AUDITY: "Audit",
+        ENTITY_ACCIDENT: "Administrace",
+        ENTITY_MU_INVESTIGATION: "MU",
+        ENTITY_PROVERKY: "Prověrka",
+    }
+    return labels.get(entity_type, entity_type or "—")
+
+
+def _legacy_source_short_label(source: str) -> str:
+    mapping = {
+        "manual": "Ručně",
+        "uraz": "Úrazy",
+        "kniha_urazu": "Úrazy",
+        "kniha_urazu_opatreni": "Úrazy",
+        "audit": "Audit",
+        "audity": "Audit",
+        "proverka": "Prověrka",
+        "proverky": "Prověrka",
+        "kontrola": "Kontrola",
+        ENTITY_FINDING: "Zjištění",
+        ENTITY_MU_INVESTIGATION: "MU",
+    }
+    return mapping.get(source or "", source or "—")
 
 
 def task_source_label(task) -> str:
