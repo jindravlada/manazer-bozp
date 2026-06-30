@@ -1933,15 +1933,1325 @@
     ]
   },
   "Řízení a kontrola": {
-    "question": "Byla rizika řízena a kontrolována dostatečně?",
+    "question": "Selhalo řízení, organizace nebo kontrolní činnost zaměstnavatele?",
     "factors": [
       {
-        "name": "Nedostatečné plánování směn",
-        "questions": []
+        "name": "Nedostatečný dohled",
+        "parent": "",
+        "questions": [
+          "Byl na pracovišti zajištěn odpovídající dohled nad bezpečností práce?",
+          "Kdo měl povinnost dohled vykonávat a v jakém rozsahu?",
+          "Byl dohled skutečný, nebo pouze formální?",
+          "Jak často dohled probíhal v dané oblasti nebo u dané činnosti?",
+          "Byla rizika na pracovišti před událostí známa vedení?",
+          "Reagoval dohled na zjevné nebezpečné chování nebo stav?",
+          "Existoval systém interní kontroly nebo kontrolních prohlídek?"
+        ],
+        "evidence": [
+          "Organizační řád nebo popis pracovních míst",
+          "Plán kontrol a dohledu",
+          "Záznamy kontrol pracoviště",
+          "Výpovědi vedoucích pracovníků",
+          "Výpovědi pracovníků a svědků",
+          "Kamerový záznam",
+          "Záznamy BOZP nebo interních auditů"
+        ],
+        "related": [
+          "Chybějící kontrola pracoviště",
+          "Nedostatečný výkon dozoru",
+          "Formální kontrola",
+          "Tolerování nebezpečné praxe"
+        ],
+        "supports": [
+          "Dohled nebyl v místě nebo v době události zajištěn",
+          "Kontrolní prohlídky chyběly nebo byly nepravidelné",
+          "Vedení neznalo běžný stav pracoviště",
+          "Nebezpečná praxe byla dlouhodobě viditelná, ale neřešena",
+          "Odpovědnost za dohled nebyla jasně určena",
+          "Svědci potvrdili absenci nadřízeného v kritickém okamžiku"
+        ],
+        "contradicts": [
+          "Dohled byl pravidelný a prokazatelný",
+          "Vedení aktivně reagovalo na zjištěné nedostatky",
+          "Událost vznikla náhle bez souvislosti s dohledem",
+          "Pracovník jednal v rozporu s pokynem nadřízeného",
+          "Riziko nebylo předvídatelné ani při řádném dohledu"
+        ],
+        "actions": [
+          "Ověřit, kdo měl povinnost dohledu v době události",
+          "Vyžádat plán kontrol a záznamy prohlídek",
+          "Vyslechnout vedoucí pracovníky k praxi dohledu",
+          "Porovnat skutečný stav pracoviště s požadavky",
+          "Prověřit, zda byly dříve zjištěné nedostatky řešeny",
+          "Posoudit, zda dohled pokrýval danou činnost"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Nedodržení pracovního postupu"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Práce o samotě"
+          },
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Nevhodné uspořádání pracoviště"
+          }
+        ]
+      },
+      {
+        "name": "Chybějící kontrola pracoviště",
+        "parent": "Nedostatečný dohled",
+        "questions": [
+          "Byly prováděny pravidelné kontroly pracoviště?",
+          "Kdo měl kontrolu provádět a jak často?",
+          "Byla poslední kontrola provedena před událostí?",
+          "Byly zjištěné nedostatky zaznamenány a řešeny?",
+          "Pokrývala kontrola místo a podmínky, kde MU vznikla?"
+        ],
+        "evidence": [
+          "Kontrolní listy pracoviště",
+          "Plán BOZP kontrol",
+          "Fotodokumentace z kontrol",
+          "Záznamy o nápravných opatřeních",
+          "Výpovědi vedoucích pracovníků",
+          "Výpovědi pracovníků"
+        ],
+        "related": [
+          "Nedostatečný dohled",
+          "Formální kontrola",
+          "Nedostatečný systém kontrol"
+        ],
+        "supports": [
+          "Kontrola pracoviště nebyla provedena v požadované frekvenci",
+          "Chybí záznam o kontrole v relevantním období",
+          "Nedostatky na pracovišti nebyly dříve zaznamenány",
+          "Kontrola nezahrnovala místo události",
+          "Pracovníci potvrdili absenci pravidelných prohlídek"
+        ],
+        "contradicts": [
+          "Kontrola byla provedena nedávno před událostí",
+          "Nedostatky nebyly zjištěny ani při kontrole",
+          "Pracoviště bylo v souladu s požadavky",
+          "Událost nesouvisela se stavem pracoviště"
+        ],
+        "actions": [
+          "Vyžádat kontrolní listy a plán kontrol",
+          "Ověřit frekvenci a rozsah kontrol",
+          "Porovnat stav pracoviště se záznamy poslední kontroly",
+          "Vyslechnout odpovědné osoby",
+          "Prověřit, zda kontrola zahrnovala relevantní rizika"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Kluzký povrch"
+          },
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Překážka v cestě"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný systém kontrol"
+          }
+        ]
+      },
+      {
+        "name": "Nedostatečný výkon dozoru",
+        "parent": "Nedostatečný dohled",
+        "questions": [
+          "Byl dozor v místě události fyzicky přítomen?",
+          "Měl dozorující osoba kompetence pro danou činnost?",
+          "Věnoval dozor skutečnou pozornost rizikům?",
+          "Reagoval dozorující na varovné signály nebo odchylky?",
+          "Nebyl dozor současně zatížen jinými úkoly?"
+        ],
+        "evidence": [
+          "Rozpis směn vedoucích pracovníků",
+          "Výpověď dozorující osoby",
+          "Výpovědi pracovníků a svědků",
+          "Kamerový záznam",
+          "Popis pracovních povinností",
+          "Záznamy o dohledu"
+        ],
+        "related": [
+          "Nedostatečný dohled",
+          "Formální kontrola",
+          "Nejasné kompetence"
+        ],
+        "supports": [
+          "Dozorující nebyl v místě nebo nebyl k dispozici",
+          "Dozor byl pasivní, bez zásahu do rizikové činnosti",
+          "Dozorující neznal rizika dané práce",
+          "Dozorující současně vykonával jinou práci",
+          "Svědci potvrdili nedostatečnou přítomnost vedení"
+        ],
+        "contradicts": [
+          "Dozor byl aktivní a průběžný",
+          "Dozorující varoval před rizikem",
+          "Pracovník jednal proti pokynu dozoru",
+          "Událost nebyla ovlivnitelná dohledem"
+        ],
+        "actions": [
+          "Ověřit přítomnost dozorující osoby v čase události",
+          "Vyslechnout dozorujícího i pracovníky",
+          "Posoudit poměr dozoru a počtu pracovníků",
+          "Prověřit kompetence dozorující osoby",
+          "Analyzovat kamerový záznam, pokud existuje"
+        ],
+        "suggest": [
+          {
+            "category": "Organizace práce",
+            "factor": "Práce o samotě"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nedodržení pracovního postupu"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nejasné kompetence"
+          }
+        ]
+      },
+      {
+        "name": "Formální kontrola",
+        "parent": "Nedostatečný dohled",
+        "questions": [
+          "Byly kontroly prováděny skutečně, nebo jen na papíře?",
+          "Odpovídal záznam kontroly skutečnému stavu?",
+          "Byly kontroly prováděny bez návštěvy pracoviště?",
+          "Existovaly vzory kontrolních listů vyplněné předem?",
+          "Byla kontrola zaměřena na skutečná rizika, nebo jen na formalitu?"
+        ],
+        "evidence": [
+          "Kontrolní listy a jejich data vyplnění",
+          "Fotodokumentace z kontrol",
+          "Výpovědi pracovníků o průběhu kontrol",
+          "Výpovědi kontrolujících osob",
+          "Porovnání záznamu se stavem pracoviště",
+          "Záznamy interních auditů"
+        ],
+        "related": [
+          "Nedostatečný dohled",
+          "Kontroly jsou pouze formální",
+          "Tolerování nebezpečné praxe"
+        ],
+        "supports": [
+          "Kontrolní list neodpovídá skutečnému stavu",
+          "Pracovníci popisují kontrolu jako formalitu",
+          "Kontrola proběhla bez fyzické prohlídky",
+          "Stejné nedostatky se opakují navzdory záznamům o nápravě",
+          "Kontrola byla vyplněna hromadně nebo zpětně"
+        ],
+        "contradicts": [
+          "Kontrola byla důkladná a odpovídá skutečnosti",
+          "Kontrolující prokazatelně navštívil pracoviště",
+          "Zjištěné nedostatky byly reálně řešeny",
+          "Formalita nebyla příčinou selhání"
+        ],
+        "actions": [
+          "Porovnat kontrolní záznamy se stavem pracoviště",
+          "Vyslechnout pracovníky o průběhu kontrol",
+          "Prověřit metodiku a rozsah kontrol",
+          "Ověřit, zda kontrolující navštívil místo",
+          "Posoudit účinnost následných opatření"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Kontroly jsou pouze formální"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Neprovedení nápravných opatření"
+          },
+          {
+            "category": "Audity",
+            "factor": "Interní audit"
+          }
+        ]
+      },
+      {
+        "name": "Nedostatečné plánování práce",
+        "parent": "",
+        "questions": [
+          "Byla práce před událostí řádně naplánována?",
+          "Byly zohledněny bezpečnostní rizika při plánování?",
+          "Byl plán práce reálný s ohledem na kapacity a čas?",
+          "Byly určeny priority mezi výkonem a bezpečností?",
+          "Byl plán komunikován všem dotčeným pracovníkům?",
+          "Existovaly předchozí problémy s plněním podobných úkolů?"
+        ],
+        "evidence": [
+          "Pracovní plán nebo harmonogram",
+          "Zadání práce",
+          "Komunikace s vedením",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Provozní záznamy",
+          "Záznamy o předchozích MU nebo near-miss"
+        ],
+        "related": [
+          "Nedostatečné plánování kapacit",
+          "Tlak na výkon",
+          "Neřízená změna"
+        ],
+        "supports": [
+          "Práce nebyla předem naplánována",
+          "Plán nezohledňoval bezpečnostní rizika",
+          "Plán byl nereálný nebo chaotický",
+          "Pracovníci nebyli seznámeni s plánem",
+          "Předchozí zkušenosti s podobnou prací nebyly využity",
+          "Bezpečnost byla podřízena termínu"
+        ],
+        "contradicts": [
+          "Práce byla řádně naplánována",
+          "Plán zohledňoval bezpečnostní požadavky",
+          "Pracovníci plán znali a dodržovali",
+          "Událost nesouvisela s plánováním"
+        ],
+        "actions": [
+          "Vyžádat pracovní plán a zadání",
+          "Porovnat plán se skutečným průběhem",
+          "Vyslechnout plánující a provádějící pracovníky",
+          "Prověřit, zda plán zahrnoval bezpečnostní kroky",
+          "Posoudit zkušenosti z předchozích obdobných prací"
+        ],
+        "suggest": [
+          {
+            "category": "Organizace práce",
+            "factor": "Časový tlak"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Nahromadění práce"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Nejasný nebo neproveditelný postup"
+          }
+        ]
+      },
+      {
+        "name": "Nejasné kompetence",
+        "parent": "",
+        "questions": [
+          "Byla odpovědnost za bezpečnost dané činnosti jasně určena?",
+          "Věděl pracovník, kdo rozhoduje o bezpečnosti práce?",
+          "Byly kompetence vedoucích pracovníků definovány?",
+          "Nebyly pravomoci mezi rolemi překrývající nebo nevyjasněné?",
+          "Existovalo rozdělení odpovědnosti mezi provoz, BOZP a údržbu?",
+          "Věděl pracovník, komu hlásit riziko nebo problém?"
+        ],
+        "evidence": [
+          "Organizační řád",
+          "Popisy pracovních míst",
+          "Plán BOZP",
+          "Výpovědi vedoucích pracovníků",
+          "Výpovědi pracovníků",
+          "Interní směrnice",
+          "Záznamy o předání odpovědnosti"
+        ],
+        "related": [
+          "Nedostatečný dohled",
+          "Neúčinný systém předání směny",
+          "Chybějící interní pravidla"
+        ],
+        "supports": [
+          "Odpovědnost nebyla jasně určena",
+          "Pracovníci nevěděli, kdo rozhoduje",
+          "Kompetence vedení nebyly definovány",
+          "Došlo k předávání odpovědnosti mezi rolemi",
+          "Riziko nebylo nikomu přiřazeno k řešení",
+          "Svědci popisují nejasnosti v pravomocích"
+        ],
+        "contradicts": [
+          "Odpovědnost byla jasně definována",
+          "Pracovníci věděli, koho kontaktovat",
+          "Organizační struktura odpovídala požadavkům",
+          "Nejasnost kompetencí neovlivnila průběh práce"
+        ],
+        "actions": [
+          "Ověřit popisy pracovních míst a organizační řád",
+          "Vyslechnout pracovníky o vnímání odpovědnosti",
+          "Prověřit rozdělení kompetencí mezi role",
+          "Posoudit, kdo měl rozhodovat o bezpečnosti",
+          "Ověřit existenci a dostupnost interních pravidel"
+        ],
+        "suggest": [
+          {
+            "category": "Organizace práce",
+            "factor": "Práce o samotě"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Chybějící interní pravidla"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Nejasný nebo neproveditelný postup"
+          }
+        ]
+      },
+      {
+        "name": "Tlak na výkon",
+        "parent": "",
+        "questions": [
+          "Byl na pracovníky vyvíjen tlak na rychlost nebo množství výkonu?",
+          "Byly bezpečnostní požadavky v rozporu s výkonovými cíli?",
+          "Existovaly prémie, sankce nebo jiné motivátory upřednostňující výkon?",
+          "Byl tlak na výkon systémový, nebo jednorázový?",
+          "Měli pracovníci možnost práci přerušit kvůli bezpečnosti?",
+          "Byl tlak komunikován výslovně, nebo byl součástí kultury?"
+        ],
+        "evidence": [
+          "Pokyny nadřízeného",
+          "Výkonové ukazatele",
+          "Systém odměn a sankcí",
+          "Komunikace před událostí",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Provozní záznamy"
+        ],
+        "related": [
+          "Tolerování nebezpečné praxe",
+          "Nedostatečné plánování práce",
+          "Nedostatečné plánování kapacit"
+        ],
+        "supports": [
+          "Pracovníci uvedli tlak na výkon",
+          "Vedení urgovalo dokončení bez ohledu na rizika",
+          "Bezpečnostní kroky byly vynechány kvůli výkonu",
+          "Tlak byl dlouhodobě známý a tolerovaný",
+          "Systém odměn upřednostňoval rychlost",
+          "Svědci potvrdili kulturu upřednostňování výkonu před bezpečností"
+        ],
+        "contradicts": [
+          "Tlak na výkon nebyl prokázán",
+          "Vedení explicitně upřednostnilo bezpečnost",
+          "Pracovníci měli možnost práci přerušit",
+          "Událost nesouvisela s tempem práce"
+        ],
+        "actions": [
+          "Vyslechnout pracovníky o tlaku na výkon",
+          "Ověřit pokyny a komunikaci vedení",
+          "Prověřit systém odměn a ukazatelů",
+          "Posoudit, zda byl vynechán bezpečnostní krok",
+          "Ověřit, zda je tlak na výkon běžnou praxí"
+        ],
+        "suggest": [
+          {
+            "category": "Organizace práce",
+            "factor": "Časový tlak"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Spěch"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Podcenění rizika"
+          }
+        ]
+      },
+      {
+        "name": "Nedostatečná komunikace rizik",
+        "parent": "",
+        "questions": [
+          "Byla rizika dané práce nebo pracoviště pracovníkům sdělena?",
+          "Byla komunikace rizik včasná a srozumitelná?",
+          "Byly změny rizik na pracovišti komunikovány?",
+          "Existoval systém varování před nebezpečím?",
+          "Byly rizika komunikována pouze písemně, nebo i ústně a prakticky?",
+          "Rozuměli pracovníci sděleným rizikům?"
+        ],
+        "evidence": [
+          "Bezpečnostní informace a pokyny",
+          "Záznamy o školení a instruktáži",
+          "Nástěnky a varovné tabulky",
+          "Komunikace e-mailem nebo v systému",
+          "Výpovědi pracovníků",
+          "Výpovědi vedoucích pracovníků",
+          "Záznamy toolbox meetingů"
+        ],
+        "related": [
+          "Chybějící interní pravidla",
+          "Neúčinný systém předání směny",
+          "Chybějící analýza rizik"
+        ],
+        "supports": [
+          "Pracovníci nebyli seznámeni s riziky",
+          "Rizika nebyla komunikována po změně",
+          "Varování chybělo nebo nebylo viditelné",
+          "Komunikace byla nejasná nebo neúplná",
+          "Pracovníci rizika nechápali",
+          "Informace o riziku existovaly, ale nebyly předány"
+        ],
+        "contradicts": [
+          "Rizika byla pracovníkům sdělena",
+          "Pracovníci rizika znali a potvrdili",
+          "Varovné prvky byly na místě",
+          "Událost nesouvisela s nedostatkem informace"
+        ],
+        "actions": [
+          "Ověřit, jak a kdy byla rizika komunikována",
+          "Vyslechnout pracovníky o vnímání rizik",
+          "Prověřit existenci varovných prvků",
+          "Posoudit účinnost instruktáže a školení",
+          "Ověřit komunikaci po změnách na pracovišti"
+        ],
+        "suggest": [
+          {
+            "category": "Školení",
+            "factor": "Nedostatečné seznámení"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Nejasné pokyny"
+          },
+          {
+            "category": "Hodnocení rizik",
+            "factor": "Chybějící hodnocení rizik"
+          }
+        ]
+      },
+      {
+        "name": "Nedostatečné plánování kapacit",
+        "parent": "",
+        "questions": [
+          "Byl k dispozici dostatečný počet pracovníků pro danou práci?",
+          "Byly kapacity plánovány s ohledem na bezpečnost?",
+          "Nebyl tým přetížen nebo poddimenzován?",
+          "Byly zohledněny dovednosti a kvalifikace při plánování?",
+          "Existovaly opakované problémy s nedostatkem lidí?",
+          "Bylo plánování kapacit systematické, nebo ad hoc?"
+        ],
+        "evidence": [
+          "Směnové rozpisy",
+          "Plán práce a kapacit",
+          "Evidence absence a nemocí",
+          "Výpovědi vedoucích pracovníků",
+          "Výpovědi pracovníků",
+          "Provozní záznamy",
+          "Historie přesčasů"
+        ],
+        "related": [
+          "Nedostatečné plánování práce",
+          "Tlak na výkon",
+          "Neúčinný systém předání směny"
+        ],
+        "supports": [
+          "Práce byla plánována s nedostatečným počtem lidí",
+          "Chyběly klíčové dovednosti v týmu",
+          "Přetížení bylo dlouhodobě známé",
+          "Pracovníci pracovali nad rámec kapacity",
+          "Kapacity nebyly plánovány systematicky",
+          "Nedostatek lidí vedl k obcházení postupů"
+        ],
+        "contradicts": [
+          "Kapacity odpovídaly požadavkům",
+          "Počet pracovníků byl dostatečný",
+          "Událost nesouvisela s počtem lidí",
+          "Chybějící pracovník nebyl rozhodující faktor"
+        ],
+        "actions": [
+          "Ověřit rozpis směn a plán kapacit",
+          "Porovnat požadované a skutečné obsazení",
+          "Vyslechnout pracovníky o vytížení",
+          "Prověřit historii nedostatku lidí",
+          "Posoudit vliv kapacit na bezpečnost práce"
+        ],
+        "suggest": [
+          {
+            "category": "Organizace práce",
+            "factor": "Nedostatek pracovníků"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Přesčasy"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Práce o samotě"
+          }
+        ]
+      },
+      {
+        "name": "Neřízená změna",
+        "parent": "",
+        "questions": [
+          "Došlo před událostí ke změně procesu, zařízení, postupu nebo organizace?",
+          "Byla změna posouzena z hlediska bezpečnosti?",
+          "Byli pracovníci seznámeni se změnou?",
+          "Existoval proces řízení změn (MOC)?",
+          "Byla změna schválena odpovědnou osobou?",
+          "Byla ověřena účinnost opatření po změně?"
+        ],
+        "evidence": [
+          "Záznamy o řízení změn",
+          "Posouzení dopadu změny",
+          "Aktualizované postupy a dokumentace",
+          "Záznamy o školení po změně",
+          "Výpovědi pracovníků",
+          "Výpovědi vedoucích pracovníků",
+          "Provozní záznamy"
+        ],
+        "related": [
+          "Nedostatečná komunikace rizik",
+          "Chybějící interní pravidla",
+          "Chybějící analýza rizik"
+        ],
+        "supports": [
+          "Změna proběhla bez posouzení rizik",
+          "Pracovníci nebyli seznámeni se změnou",
+          "Proces řízení změn neexistoval nebo nebyl dodržen",
+          "Dokumentace nebyla aktualizována",
+          "Změna vytvořila nové riziko",
+          "Schválení změny chybí nebo bylo formální"
+        ],
+        "contradicts": [
+          "Změna byla řádně řízena a posouzena",
+          "Pracovníci byli proškoleni",
+          "Událost nesouvisela se změnou",
+          "Změna neovlivnila bezpečnost práce"
+        ],
+        "actions": [
+          "Identifikovat změny předcházející události",
+          "Vyžádat záznamy o řízení změn",
+          "Ověřit seznámení pracovníků",
+          "Posoudit aktualizaci postupů a dokumentace",
+          "Prověřit schvalovací proces"
+        ],
+        "suggest": [
+          {
+            "category": "Organizace práce",
+            "factor": "Změna pracovního postupu"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Neaktuální postup"
+          },
+          {
+            "category": "Hodnocení rizik",
+            "factor": "Chybějící hodnocení rizik"
+          }
+        ]
+      },
+      {
+        "name": "Neúčinný systém předání směny",
+        "parent": "",
+        "questions": [
+          "Probíhalo předání směny systematicky a písemně nebo ústně?",
+          "Byly předány informace o rizicích, závadách a probíhající práci?",
+          "Byl předávající i přebírající pracovník přítomen?",
+          "Existoval standardizovaný formulář nebo postup předání?",
+          "Byly nedostatky z předchozí směny komunikovány?",
+          "Byla předaná informace srozumitelná a úplná?"
+        ],
+        "evidence": [
+          "Záznamy o předání směny",
+          "Směnové deníky",
+          "Výpověď odcházející směny",
+          "Výpověď nastupující směny",
+          "Výpovědi svědků",
+          "Interní postup předání směny"
+        ],
+        "related": [
+          "Nedostatečná komunikace rizik",
+          "Nejasné kompetence",
+          "Nedostatečné plánování kapacit"
+        ],
+        "supports": [
+          "Předání směny neproběhlo nebo bylo neúplné",
+          "Informace o riziku nebyla předána",
+          "Chyběl standardizovaný postup",
+          "Nastupující směna neznala stav pracoviště",
+          "Závady z předchozí směny nebyly komunikovány",
+          "Předání proběhlo pouze formálně"
+        ],
+        "contradicts": [
+          "Předání směny proběhlo řádně",
+          "Rizika a stav byly komunikovány",
+          "Událost nesouvisela s informacemi ze směny",
+          "Pracovník měl všechny potřebné informace"
+        ],
+        "actions": [
+          "Vyžádat záznamy o předání směny",
+          "Vyslechnout obě směny",
+          "Ověřit existenci a dodržování postupu",
+          "Posoudit, jaké informace měly být předány",
+          "Prověřit komunikaci o závadách a rizicích"
+        ],
+        "suggest": [
+          {
+            "category": "Organizace práce",
+            "factor": "Nedostatečné plánování směn"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Nejasné pokyny"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící postup předání směny"
+          }
+        ]
+      },
+      {
+        "name": "Nedostatečný systém kontrol",
+        "parent": "",
+        "questions": [
+          "Existoval systém pravidelných kontrol BOZP?",
+          "Byly kontroly zaměřeny na skutečná rizika?",
+          "Byly výsledky kontrol vyhodnocovány a archivovány?",
+          "Byla zajištěna návaznost kontrol na nápravná opatření?",
+          "Kdo kontroly prováděl a měl pro to kompetence?",
+          "Byl systém kontrol ověřován (audit, revize)?"
+        ],
+        "evidence": [
+          "Plán BOZP kontrol",
+          "Kontrolní listy a protokoly",
+          "Záznamy o nápravných opatřeních",
+          "Záznamy interních auditů",
+          "Výpovědi odpovědných osob",
+          "Plán BOZP",
+          "Výpovědi pracovníků"
+        ],
+        "related": [
+          "Kontroly nejsou prováděny",
+          "Kontroly jsou pouze formální",
+          "Chybí zpětná vazba",
+          "Neprovedení nápravných opatření"
+        ],
+        "supports": [
+          "Systém kontrol neexistoval nebo nebyl dodržován",
+          "Kontroly nezahrnovaly relevantní oblasti",
+          "Výsledky kontrol nevedly k opatřením",
+          "Kontrolní systém nebyl aktualizován",
+          "Odpovědnost za kontroly nebyla určena",
+          "Opakovaně se objevovaly stejné nedostatky"
+        ],
+        "contradicts": [
+          "Systém kontrol fungoval efektivně",
+          "Kontroly byly pravidelné a důkladné",
+          "Nedostatky byly včas řešeny",
+          "Událost nebyla předvídatelná kontrolou"
+        ],
+        "actions": [
+          "Vyžádat plán a záznamy kontrol",
+          "Prověřit návaznost na nápravná opatření",
+          "Posoudit rozsah a frekvenci kontrol",
+          "Ověřit kompetence kontrolujících",
+          "Porovnat zjištění kontrol se stavem při MU"
+        ],
+        "suggest": [
+          {
+            "category": "Zařízení a technika",
+            "factor": "Neprovedená kontrola zařízení"
+          },
+          {
+            "category": "OOPP",
+            "factor": "Nekontrola OOPP"
+          },
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Nevhodné uspořádání pracoviště"
+          }
+        ]
+      },
+      {
+        "name": "Kontroly nejsou prováděny",
+        "parent": "Nedostatečný systém kontrol",
+        "questions": [
+          "Byly plánované kontroly skutečně provedeny?",
+          "Existují záznamy o provedených kontrolách?",
+          "Byly kontroly opakovaně odkládány nebo rušeny?",
+          "Chyběly kontroly v kritických oblastech?",
+          "Bylo neprovádění kontrol tolerováno vedením?"
+        ],
+        "evidence": [
+          "Plán kontrol vs. skutečné záznamy",
+          "Kontrolní listy",
+          "Výpovědi kontrolujících",
+          "Výpovědi pracovníků",
+          "Záznamy o zrušených nebo odložených kontrolách"
+        ],
+        "related": [
+          "Nedostatečný systém kontrol",
+          "Formální kontrola",
+          "Neprovedení nápravných opatření"
+        ],
+        "supports": [
+          "Plánované kontroly nebyly provedeny",
+          "Chybí záznamy o kontrolách",
+          "Kontroly byly opakovaně odkládány",
+          "Kritické oblasti nebyly kontrolovány",
+          "Neprovádění bylo tolerováno"
+        ],
+        "contradicts": [
+          "Kontroly byly provedeny dle plánu",
+          "Záznamy o kontrolách existují",
+          "Frekvence odpovídala požadavkům"
+        ],
+        "actions": [
+          "Porovnat plán kontrol se záznamy",
+          "Identifikovat neprovedené kontroly",
+          "Vyslechnout odpovědné osoby",
+          "Prověřit důvody neprovedení",
+          "Posoudit dopad na bezpečnost"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný dohled"
+          },
+          {
+            "category": "Audity",
+            "factor": "Interní audit"
+          },
+          {
+            "category": "Legislativa",
+            "factor": "Povinnost kontrol BOZP"
+          }
+        ]
+      },
+      {
+        "name": "Kontroly jsou pouze formální",
+        "parent": "Nedostatečný systém kontrol",
+        "questions": [
+          "Byly kontroly prováděny skutečně na místě?",
+          "Odpovídaly záznamy kontrol skutečnému stavu?",
+          "Byly kontrolní listy vyplňovány bez prohlídky?",
+          "Zaměřovaly se kontroly na klíčová rizika?",
+          "Byla kvalita kontrol někdy ověřována?"
+        ],
+        "evidence": [
+          "Kontrolní listy",
+          "Fotodokumentace z kontrol",
+          "Výpovědi pracovníků o průběhu kontrol",
+          "Výpovědi kontrolujících",
+          "Porovnání záznamů se stavem pracoviště"
+        ],
+        "related": [
+          "Formální kontrola",
+          "Nedostatečný systém kontrol",
+          "Tolerování nebezpečné praxe"
+        ],
+        "supports": [
+          "Kontrolní záznamy neodpovídají realitě",
+          "Kontrola proběhla bez návštěvy pracoviště",
+          "Pracovníci popisují formalitu kontrol",
+          "Stejné nedostatky přetrvávají navzdory záznamům",
+          "Kontrola nebyla zaměřena na skutečná rizika"
+        ],
+        "contradicts": [
+          "Kontroly byly důkladné a odpovídají skutečnosti",
+          "Kontrolující prokazatelně navštívil místo",
+          "Formalita nebyla prokázána"
+        ],
+        "actions": [
+          "Porovnat záznamy kontrol s fotodokumentací a výpověďmi",
+          "Vyslechnout pracovníky o průběhu kontrol",
+          "Prověřit metodiku kontrol",
+          "Posoudit kvalitu a hloubku kontrol"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Formální kontrola"
+          },
+          {
+            "category": "Audity",
+            "factor": "Interní audit"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Chybí zpětná vazba"
+          }
+        ]
+      },
+      {
+        "name": "Chybí zpětná vazba",
+        "parent": "Nedostatečný systém kontrol",
+        "questions": [
+          "Byli pracovníci informováni o výsledcích kontrol?",
+          "Byla zpětná vazba poskytována včas?",
+          "Věděli pracovníci, co měli po kontrole zlepšit?",
+          "Byla zpětná vazba dvousměrná (hlášení rizik směrem nahoru)?",
+          "Existoval systém pro hlášení nedostatků a near-miss?"
+        ],
+        "evidence": [
+          "Záznamy o předání výsledků kontrol",
+          "Komunikace po kontrolách",
+          "Výpovědi pracovníků",
+          "Výpovědi vedoucích pracovníků",
+          "Systém hlášení rizik",
+          "Záznamy near-miss"
+        ],
+        "related": [
+          "Nedostatečná komunikace rizik",
+          "Nedostatečný systém kontrol",
+          "Tolerování nebezpečné praxe"
+        ],
+        "supports": [
+          "Pracovníci nebyli informováni o výsledcích kontrol",
+          "Zpětná vazba chyběla nebo byla opožděná",
+          "Pracovníci neznali požadovaná zlepšení",
+          "Systém hlášení rizik nefungoval",
+          "Near-miss nebyly vyhodnocovány"
+        ],
+        "contradicts": [
+          "Zpětná vazba byla poskytována pravidelně",
+          "Pracovníci znali výsledky kontrol",
+          "Systém hlášení rizik fungoval"
+        ],
+        "actions": [
+          "Ověřit, jak byly výsledky kontrol komunikovány",
+          "Vyslechnout pracovníky o informovanosti",
+          "Prověřit systém hlášení rizik",
+          "Posoudit vyhodnocování near-miss"
+        ],
+        "suggest": [
+          {
+            "category": "Komunikace",
+            "factor": "Nejasné pokyny"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečná komunikace rizik"
+          },
+          {
+            "category": "Lessons Learned",
+            "factor": "Sdílení zkušeností"
+          }
+        ]
+      },
+      {
+        "name": "Neprovedení nápravných opatření",
+        "parent": "",
+        "questions": [
+          "Byla po předchozích zjištěních stanovena nápravná opatření?",
+          "Byla opatření skutečně provedena?",
+          "Byla ověřena účinnost opatření?",
+          "Byly termíny plnění dodrženy?",
+          "Byla odpovědnost za provedení jasně určena?",
+          "Existovaly opakované nedostatky navzdory opatřením?"
+        ],
+        "evidence": [
+          "Plány nápravných opatření",
+          "Záznamy z kontrol a auditů",
+          "Protokoly z předchozích MU",
+          "Výpovědi odpovědných osob",
+          "Fotodokumentace stavu před a po",
+          "Záznamy o termínech plnění"
+        ],
+        "related": [
+          "Opakovaná stejná závada",
+          "Neprovedené opatření z předchozí MU",
+          "Nedostatečný systém kontrol"
+        ],
+        "supports": [
+          "Nápravná opatření nebyla provedena",
+          "Termíny nebyly dodrženy",
+          "Účinnost opatření nebyla ověřena",
+          "Odpovědnost nebyla určena",
+          "Stejný nedostatek přetrvával",
+          "Opatření existovala pouze na papíře"
+        ],
+        "contradicts": [
+          "Opatření byla provedena včas",
+          "Účinnost byla ověřena",
+          "Nedostatek nebyl dříve identifikován",
+          "Provedení odpovídalo plánu"
+        ],
+        "actions": [
+          "Vyžádat plány nápravných opatření",
+          "Ověřit stav plnění a termíny",
+          "Porovnat stav před a po opatřeních",
+          "Vyslechnout odpovědné osoby",
+          "Prověřit historii obdobných zjištění"
+        ],
+        "suggest": [
+          {
+            "category": "Historie MU",
+            "factor": "Opakovaná MU"
+          },
+          {
+            "category": "Audity",
+            "factor": "Nápravná opatření z auditu"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Opakovaná stejná závada"
+          }
+        ]
+      },
+      {
+        "name": "Opakovaná stejná závada",
+        "parent": "Neprovedení nápravných opatření",
+        "questions": [
+          "Byl stejný nebo obdobný nedostatek zjištěn dříve?",
+          "Kolikrát se závada opakovala?",
+          "Byla při opakování přijata nová opatření?",
+          "Byla příčina opakování analyzována?",
+          "Bylo opakování tolerováno vedením?"
+        ],
+        "evidence": [
+          "Záznamy z předchozích kontrol",
+          "Protokoly z auditů",
+          "Záznamy z předchozích MU",
+          "Plány nápravných opatření",
+          "Výpovědi pracovníků",
+          "Výpovědi vedoucích pracovníků"
+        ],
+        "related": [
+          "Neprovedení nápravných opatření",
+          "Tolerování nebezpečné praxe",
+          "Nedostatečný systém kontrol"
+        ],
+        "supports": [
+          "Stejná závada byla zjištěna opakovaně",
+          "Opatření nevedla k odstranění problému",
+          "Příčina opakování nebyla řešena",
+          "Vedení tolerovalo opakující se stav",
+          "Historie ukazuje systémové selhání"
+        ],
+        "contradicts": [
+          "Závada nebyla dříve identifikována",
+          "Opatření úspěšně problém odstranila",
+          "Opakování nebylo prokázáno"
+        ],
+        "actions": [
+          "Prověřit historii zjištění obdobných nedostatků",
+          "Porovnat opatření z jednotlivých období",
+          "Analyzovat, proč opatření selhala",
+          "Posoudit odpovědnost za opakované selhání"
+        ],
+        "suggest": [
+          {
+            "category": "Historie MU",
+            "factor": "Opakovaná MU"
+          },
+          {
+            "category": "Analýza příčin",
+            "factor": "Systémová příčina"
+          },
+          {
+            "category": "Lessons Learned",
+            "factor": "Neimplementované poučení"
+          }
+        ]
+      },
+      {
+        "name": "Neprovedené opatření z předchozí MU",
+        "parent": "Neprovedení nápravných opatření",
+        "questions": [
+          "Byla po předchozí MU stanovena nápravná opatření?",
+          "Byla opatření z předchozí MU provedena?",
+          "Souvisela současná MU s nedostatkem z předchozí MU?",
+          "Byla odpovědnost za plnění určena a sledována?",
+          "Byla účinnost opatření z předchozí MU ověřena?"
+        ],
+        "evidence": [
+          "Zpráva z předchozí MU",
+          "Plán nápravných opatření",
+          "Záznamy o plnění opatření",
+          "Výpovědi odpovědných osob",
+          "Protokoly kontrol po MU"
+        ],
+        "related": [
+          "Neprovedení nápravných opatření",
+          "Nedostatečné vyhodnocení mimořádné události",
+          "Opakovaná stejná závada"
+        ],
+        "supports": [
+          "Opatření z předchozí MU nebyla provedena",
+          "Současná MU souvisí s neřešeným nedostatkem",
+          "Plnění nebylo sledováno",
+          "Termíny nebyly dodrženy",
+          "Účinnost nebyla ověřena"
+        ],
+        "contradicts": [
+          "Opatření z předchozí MU byla provedena",
+          "Současná MU nesouvisí s předchozí",
+          "Předchozí MU neidentifikovala relevantní nedostatek"
+        ],
+        "actions": [
+          "Vyžádat zprávu a opatření z předchozí MU",
+          "Ověřit stav plnění",
+          "Porovnat příčiny obou MU",
+          "Vyslechnout odpovědné osoby",
+          "Posoudit systém sledování opatření"
+        ],
+        "suggest": [
+          {
+            "category": "Historie MU",
+            "factor": "Opakovaná MU"
+          },
+          {
+            "category": "Analýza příčin",
+            "factor": "Nedokončená analýza"
+          },
+          {
+            "category": "Lessons Learned",
+            "factor": "Neimplementované poučení"
+          }
+        ]
+      },
+      {
+        "name": "Tolerování nebezpečné praxe",
+        "parent": "",
+        "questions": [
+          "Byla nebezpečná praxe na pracovišti dlouhodobě známá?",
+          "Reagovalo vedení na nebezpečné chování?",
+          "Byla nebezpečná praxe běžná a akceptovaná?",
+          "Byly dříve podniknuty kroky k nápravě?",
+          "Tolerovala kultura organizace odchylky od postupů?",
+          "Bylo nebezpečné chování normalizováno rutinou?"
+        ],
+        "evidence": [
+          "Výpovědi pracovníků",
+          "Výpovědi svědků",
+          "Výpovědi vedoucích pracovníků",
+          "Kamerový záznam",
+          "Záznamy kontrol",
+          "Historie MU a near-miss",
+          "Fotodokumentace běžné praxe"
+        ],
+        "related": [
+          "Nedostatečný dohled",
+          "Formální kontrola",
+          "Tlak na výkon"
+        ],
+        "supports": [
+          "Nebezpečná praxe byla dlouhodobě viditelná",
+          "Vedení nezasáhlo nebo tolerovalo odchylku",
+          "Praxe byla běžná mezi pracovníky",
+          "Dřívější upozornění nevedla ke změně",
+          "Kultura upřednostňovala výkon před bezpečností",
+          "Pracovníci považovali praxi za normální"
+        ],
+        "contradicts": [
+          "Nebezpečná praxe nebyla tolerována",
+          "Vedení aktivně korigovalo chování",
+          "Odchylka byla ojedinělá",
+          "Pracovník jednal proti běžné praxi"
+        ],
+        "actions": [
+          "Vyslechnout pracovníky o běžné praxi",
+          "Prověřit reakce vedení na dřívější odchylky",
+          "Analyzovat kamerové záznamy běžného provozu",
+          "Porovnat postup s běžným chováním",
+          "Posoudit kulturu bezpečnosti v týmu"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Rutina"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nedodržení pracovního postupu"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný dohled"
+          }
+        ]
+      },
+      {
+        "name": "Chybějící analýza rizik",
+        "parent": "",
+        "questions": [
+          "Bylo pro danou práci nebo pracoviště provedeno hodnocení rizik?",
+          "Byla analýza rizik aktuální?",
+          "Byly identifikovaná rizika komunikována pracovníkům?",
+          "Byla analýza provedena před zahájením práce?",
+          "Byly rizika posouzena při změně podmínek?",
+          "Existovala dokumentace hodnocení rizik?"
+        ],
+        "evidence": [
+          "Dokumentace hodnocení rizik",
+          "Plán BOZP",
+          "Posouzení rizik pracovních činností",
+          "Záznamy o aktualizaci hodnocení",
+          "Výpovědi odpovědných osob",
+          "Výpovědi pracovníků"
+        ],
+        "related": [
+          "Neřízená změna",
+          "Nedostatečná komunikace rizik",
+          "Chybějící interní pravidla"
+        ],
+        "supports": [
+          "Hodnocení rizik nebylo provedeno",
+          "Analýza byla zastaralá",
+          "Rizika nebyla identifikována",
+          "Dokumentace chybí",
+          "Analýza nezahrnovala danou činnost",
+          "Změna nebyla v hodnocení zohledněna"
+        ],
+        "contradicts": [
+          "Hodnocení rizik existovalo a bylo aktuální",
+          "Rizika byla identifikována a komunikována",
+          "Analýza pokrývala danou činnost",
+          "Událost nebyla předvídatelná z analýzy"
+        ],
+        "actions": [
+          "Vyžádat dokumentaci hodnocení rizik",
+          "Ověřit aktuálnost a rozsah analýzy",
+          "Posoudit, zda riziko MU bylo identifikovatelné",
+          "Prověřit aktualizaci po změnách",
+          "Vyslechnout odpovědné osoby za BOZP"
+        ],
+        "suggest": [
+          {
+            "category": "Hodnocení rizik",
+            "factor": "Chybějící hodnocení rizik"
+          },
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Neidentifikované riziko prostředí"
+          },
+          {
+            "category": "Zařízení a technika",
+            "factor": "Technická závada"
+          }
+        ]
+      },
+      {
+        "name": "Nedostatečné vyhodnocení mimořádné události",
+        "parent": "",
+        "questions": [
+          "Byly předchozí MU nebo near-miss řádně vyhodnoceny?",
+          "Byla určena příčina a systémová opatření?",
+          "Byla sdílena poučení z předchozích událostí?",
+          "Byla analýza příčin dokončena a schválena?",
+          "Byla ověřena účinnost opatření z předchozích MU?",
+          "Byly obdobné události trendem, nebo ojedinělé?"
+        ],
+        "evidence": [
+          "Zprávy z předchozích MU",
+          "Záznamy near-miss",
+          "Plány nápravných opatření",
+          "Protokoly vyhodnocení",
+          "Výpovědi odpovědných osob",
+          "Statistiky MU"
+        ],
+        "related": [
+          "Neprovedení nápravných opatření",
+          "Opakovaná stejná závada",
+          "Chybějící analýza rizik"
+        ],
+        "supports": [
+          "Předchozí MU nebyly důkladně vyhodnoceny",
+          "Poučení nebyla sdílena",
+          "Analýza příčin byla povrchní",
+          "Opatření neřešila systémovou příčinu",
+          "Trend obdobných událostí nebyl rozpoznán",
+          "Vyhodnocení skončilo na úrovni jednotlivce"
+        ],
+        "contradicts": [
+          "Předchozí MU byly řádně vyhodnoceny",
+          "Opatření byla účinná",
+          "Obdobná událost nebyla dříve",
+          "Analýza identifikovala systémové příčiny"
+        ],
+        "actions": [
+          "Prověřit historii MU a near-miss",
+          "Vyžádat zprávy a analýzy příčin",
+          "Posoudit kvalitu vyhodnocení",
+          "Ověřit sdílení poučení",
+          "Analyzovat trend obdobných událostí"
+        ],
+        "suggest": [
+          {
+            "category": "Analýza příčin",
+            "factor": "Povrchní analýza"
+          },
+          {
+            "category": "Lessons Learned",
+            "factor": "Neimplementované poučení"
+          },
+          {
+            "category": "Historie MU",
+            "factor": "Opakovaná MU"
+          }
+        ]
+      },
+      {
+        "name": "Chybějící interní pravidla",
+        "parent": "",
+        "questions": [
+          "Existovala interní pravidla pro danou činnost?",
+          "Byla pravidla dostupná pracovníkům?",
+          "Byla pravidla aktuální a v souladu s legislativou?",
+          "Byla pravidla srozumitelná a proveditelná?",
+          "Bylo seznámení s pravidly prokazatelné?",
+          "Chyběla pravidla pro specifickou situaci, která vedla k MU?"
+        ],
+        "evidence": [
+          "Interní směrnice a předpisy",
+          "Pracovní postupy",
+          "Místní provozní bezpečnostní předpisy",
+          "Záznamy o seznámení",
+          "Výpovědi pracovníků",
+          "Výpovědi vedoucích pracovníků"
+        ],
+        "related": [
+          "Nejasné kompetence",
+          "Neřízená změna",
+          "Nedostatečná komunikace rizik"
+        ],
+        "supports": [
+          "Pravidla pro danou činnost neexistovala",
+          "Pravidla nebyla pracovníkům dostupná",
+          "Pravidla byla zastaralá",
+          "Pravidla byla nejasná nebo neproveditelná",
+          "Seznámení nebylo prokazatelné",
+          "Mezera v pravidlech vytvořila riziko"
+        ],
+        "contradicts": [
+          "Pravidla existovala a byla aktuální",
+          "Pracovníci byli seznámeni",
+          "Pravidla pokrývala danou situaci",
+          "Událost nesouvisela s absencí pravidel"
+        ],
+        "actions": [
+          "Vyžádat relevantní interní předpisy",
+          "Ověřit dostupnost a aktuálnost",
+          "Posoudit pokrytí dané činnosti",
+          "Prověřit seznámení pracovníků",
+          "Identifikovat mezery v pravidlech"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící pracovní postup"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Neaktuální postup"
+          },
+          {
+            "category": "Legislativa",
+            "factor": "Povinnost interních předpisů"
+          }
+        ]
       },
       {
         "name": "Jiné",
-        "questions": []
+        "parent": "",
+        "questions": [],
+        "evidence": [],
+        "related": [],
+        "supports": [],
+        "contradicts": [],
+        "actions": [],
+        "suggest": []
       }
     ]
   },
