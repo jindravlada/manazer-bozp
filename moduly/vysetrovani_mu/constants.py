@@ -83,4 +83,47 @@ SOURCE_TYPES_WITH_TEXT = frozenset(
 
 MU_INVESTIGATION_FINDING_TYPES = ACCIDENT_FINDING_TYPES
 
+ISHIKAWA_CATEGORIES = (
+    "Člověk",
+    "Pracovní postup",
+    "Technika / zařízení",
+    "Prostředí",
+    "Organizace práce",
+    "Řízení a kontrola",
+    "Komunikace",
+    "Ostatní",
+)
+
+ISHIKAWA_STATUS_HYPOTEZA = "hypoteza"
+ISHIKAWA_STATUS_POTVRZENO = "potvrzeno"
+ISHIKAWA_STATUS_VYVRACENO = "vyvraceno"
+
+ISHIKAWA_STATUS_LABELS = {
+    ISHIKAWA_STATUS_HYPOTEZA: "Hypotéza",
+    ISHIKAWA_STATUS_POTVRZENO: "Potvrzeno",
+    ISHIKAWA_STATUS_VYVRACENO: "Vyvráceno",
+}
+
+ISHIKAWA_STATUSES = (
+    ISHIKAWA_STATUS_HYPOTEZA,
+    ISHIKAWA_STATUS_POTVRZENO,
+    ISHIKAWA_STATUS_VYVRACENO,
+)
+
+ISHIKAWA_LEVEL_BEZPROSTREDNI = "bezprostredni"
+ISHIKAWA_LEVEL_ZAKLADNI = "zakladni"
+ISHIKAWA_LEVEL_SYSTEMOVA = "systemova"
+
+ISHIKAWA_LEVEL_LABELS = {
+    ISHIKAWA_LEVEL_BEZPROSTREDNI: "Bezprostřední příčina",
+    ISHIKAWA_LEVEL_ZAKLADNI: "Základní příčina",
+    ISHIKAWA_LEVEL_SYSTEMOVA: "Systémová příčina",
+}
+
+ISHIKAWA_LEVELS = (
+    ISHIKAWA_LEVEL_BEZPROSTREDNI,
+    ISHIKAWA_LEVEL_ZAKLADNI,
+    ISHIKAWA_LEVEL_SYSTEMOVA,
+)
+
 YEAR_FILTER_VSE = "Vše"

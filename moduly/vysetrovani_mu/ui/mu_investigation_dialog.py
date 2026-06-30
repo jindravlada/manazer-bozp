@@ -134,6 +134,7 @@ class MuInvestigationDialog(QDialog):
                 getattr(investigation, "dodrzovani_predpisu_json", "") or ""
             )
             self.kontrola_souladu_widget.load_json(getattr(investigation, "kontrola_souladu_json", "") or "")
+            self.findings_widget.load_ishikawa_json(getattr(investigation, "ishikawa_json", "") or "")
             self.oznameni_widget.load_from_investigation(investigation)
         else:
             self._on_source_type_changed()
@@ -476,5 +477,6 @@ class MuInvestigationDialog(QDialog):
             "dodrzovani_predpisu_json": self.dodrzovani_predpisu_widget.get_json(),
             "kontrola_souladu_json": self.kontrola_souladu_widget.get_json(),
             "zaver_json": self.zaver_widget.get_json(),
+            "ishikawa_json": self.findings_widget.get_ishikawa_json(),
             **self.oznameni_widget.get_data(),
         }

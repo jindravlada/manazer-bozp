@@ -1,7 +1,6 @@
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
-    QGroupBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -29,6 +28,7 @@ from core.widgets.finding_dialog import FindingDialog
 from core.widgets.finding_summary_panel import FindingSummaryPanel
 from core.widgets.finding_task_actions import FindingTaskActions
 from moduly.vysetrovani_mu.constants import MU_INVESTIGATION_FINDING_TYPES
+from moduly.vysetrovani_mu.ui.mu_ishikawa_widget import MuIshikawaWidget
 
 
 class MuFindingsWidget(QWidget):
@@ -39,18 +39,8 @@ class MuFindingsWidget(QWidget):
 
         layout = QVBoxLayout(self)
 
-        analyza_group = QGroupBox("Analýza příčin")
-        analyza_layout = QVBoxLayout(analyza_group)
-        analyza_info = QLabel(
-            "V této části budou postupně integrovány metody:\n\n"
-            "• Ishikawa+\n"
-            "• CAST Handbook\n\n"
-            "Výsledky analýzy budou sloužit jako podklad "
-            "pro vytváření jednotlivých zjištění."
-        )
-        analyza_info.setWordWrap(True)
-        analyza_layout.addWidget(analyza_info)
-        layout.addWidget(analyza_group)
+        self.ishikawa_widget = MuIshikawaWidget(on_findings_changed=self.refresh)
+        layout.addWidget(self.ishikawa_widget)
 
         self.summary_panel = FindingSummaryPanel()
         self.info_label = QLabel("Zjištění lze přidat až po uložení vyšetřování.")
@@ -130,8 +120,15 @@ class MuFindingsWidget(QWidget):
 
     def set_investigation_id(self, investigation_id: int | None) -> None:
         self.investigation_id = investigation_id
+        self.ishikawa_widget.set_investigation_id(investigation_id)
         self.refresh()
         self._update_state()
+
+    def load_ishikawa_json(self, raw_json: str) -> None:
+        self.ishikawa_widget.load_json(raw_json)
+
+    def get_ishikawa_json(self) -> str:
+        return self.ishikawa_widget.get_json()
 
     def refresh(self) -> None:
         findings = []
