@@ -57,7 +57,7 @@ class KnihaUrazuPage(QWidget):
         self.new_btn.clicked.connect(self.new_accident)
         self.edit_btn.clicked.connect(self.edit_selected_accident)
         self.investigation_btn.clicked.connect(lambda: self.open_investigation())
-        self.mu_investigation_btn.clicked.connect(self.open_mu_investigation)
+        self.mu_investigation_btn.clicked.connect(lambda: self.open_mu_investigation())
         self.vypis_btn.clicked.connect(self.generate_accident_report)
         self.final_report_btn.clicked.connect(self.generate_final_report)
         self.table.doubleClicked.connect(self.edit_selected_accident)
@@ -190,7 +190,7 @@ class KnihaUrazuPage(QWidget):
             self.open_mu_investigation(accident_id)
 
     def open_mu_investigation(self, accident_id: int | None = None):
-        if accident_id is None:
+        if type(accident_id) is not int:
             accident_id = self._selected_accident_id()
         if accident_id is None:
             QMessageBox.information(self, "Vyšetřování MU", "Vyberte úraz.")
