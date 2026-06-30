@@ -4,7 +4,6 @@ from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QFormLayout,
-    QGroupBox,
     QHBoxLayout,
     QInputDialog,
     QLineEdit,
@@ -12,11 +11,65 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QMessageBox,
     QPushButton,
+    QScrollArea,
     QVBoxLayout,
+    QWidget,
 )
 
 from moduly.vysetrovani_mu.constants import ISHIKAWA_CATEGORIES, ISHIKAWA_OTHER_FACTOR
 from moduly.vysetrovani_mu.sluzby.ishikawa_factors_service import ishikawa_factors_service
+
+_LIST_MIN_HEIGHT = 160
+_SECTION_SPACING = 24
+
+
+class CollapsibleSection(QWidget):
+    """Sbalitelná sekce s nadpisem a počtem položek."""
+
+    def __init__(self, title: str, *, expanded: bool = True, parent=None):
+        super().__init__(parent)
+        self._title = title
+        self._expanded = expanded
+        self._count = 0
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(8)
+
+        self._header = QPushButton()
+        self._header.setFlat(True)
+        self._header.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._header.setStyleSheet(
+            "QPushButton { text-align: left; font-weight: bold; padding: 4px 0; }"
+        )
+        self._header.clicked.connect(self._toggle)
+
+        self._content = QWidget()
+        self._content_layout = QVBoxLayout(self._content)
+        self._content_layout.setContentsMargins(20, 0, 0, 0)
+        self._content_layout.setSpacing(8)
+
+        layout.addWidget(self._header)
+        layout.addWidget(self._content)
+
+        self._content.setVisible(expanded)
+        self._refresh_header()
+
+    def content_layout(self) -> QVBoxLayout:
+        return self._content_layout
+
+    def set_count(self, count: int) -> None:
+        self._count = max(0, count)
+        self._refresh_header()
+
+    def _refresh_header(self) -> None:
+        arrow = "▼" if self._expanded else "▶"
+        self._header.setText(f"{arrow} {self._title} ({self._count})")
+
+    def _toggle(self) -> None:
+        self._expanded = not self._expanded
+        self._content.setVisible(self._expanded)
+        self._refresh_header()
 
 
 class MuIshikawaFactorEditDialog(QDialog):
@@ -25,12 +78,26 @@ class MuIshikawaFactorEditDialog(QDialog):
 
         self._category = category
         self._original_name = (factor.get("name") or "").strip()
+        self._sections_by_list: dict[QListWidget, CollapsibleSection] = {}
 
         self.setWindowTitle(f"Správa faktoru – {category}")
         self.resize(620, 680)
 
-        layout = QVBoxLayout(self)
-        form = QFormLayout()
+        root_layout = QVBoxLayout(self)
+        root_layout.setContentsMargins(12, 12, 12, 12)
+        root_layout.setSpacing(12)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        scroll_content = QWidget()
+        scroll_layout = QVBoxLayout(scroll_content)
+        scroll_layout.setContentsMargins(4, 4, 4, 4)
+        scroll_layout.setSpacing(_SECTION_SPACING)
+        scroll.setWidget(scroll_content)
+
+        header_form = QFormLayout()
+        header_form.setSpacing(12)
 
         self.name_edit = QLineEdit()
         self.name_edit.setText(self._original_name)
@@ -51,47 +118,32 @@ class MuIshikawaFactorEditDialog(QDialog):
         if self._original_name == ISHIKAWA_OTHER_FACTOR:
             self.parent_combo.setEnabled(False)
 
-        questions_group = QGroupBox("Metodické otázky")
-        questions_layout = QVBoxLayout(questions_group)
-        self.questions_list = QListWidget()
-        questions_layout.addWidget(self.questions_list)
-        questions_layout.addLayout(self._list_toolbar(self.questions_list))
+        header_form.addRow("Název faktoru:", self.name_edit)
+        header_form.addRow("Nadřazený faktor:", self.parent_combo)
+        scroll_layout.addLayout(header_form)
 
-        evidence_group = QGroupBox("Typické důkazy")
-        evidence_layout = QVBoxLayout(evidence_group)
-        self.evidence_list = QListWidget()
-        evidence_layout.addWidget(self.evidence_list)
-        evidence_layout.addLayout(self._list_toolbar(self.evidence_list))
-
-        related_group = QGroupBox("Související faktory")
-        related_layout = QVBoxLayout(related_group)
-        self.related_list = QListWidget()
-        related_layout.addWidget(self.related_list)
-        related_layout.addLayout(self._related_toolbar())
-
-        supports_group = QGroupBox("Co tuto hypotézu podporuje")
-        supports_layout = QVBoxLayout(supports_group)
-        self.supports_list = QListWidget()
-        supports_layout.addWidget(self.supports_list)
-        supports_layout.addLayout(self._list_toolbar(self.supports_list))
-
-        contradicts_group = QGroupBox("Co tuto hypotézu oslabuje")
-        contradicts_layout = QVBoxLayout(contradicts_group)
-        self.contradicts_list = QListWidget()
-        contradicts_layout.addWidget(self.contradicts_list)
-        contradicts_layout.addLayout(self._list_toolbar(self.contradicts_list))
-
-        actions_group = QGroupBox("Doporučené vyšetřovací kroky")
-        actions_layout = QVBoxLayout(actions_group)
-        self.actions_list = QListWidget()
-        actions_layout.addWidget(self.actions_list)
-        actions_layout.addLayout(self._list_toolbar(self.actions_list))
-
-        suggest_group = QGroupBox("Doporučené další směry šetření")
-        suggest_layout = QVBoxLayout(suggest_group)
-        self.suggest_list = QListWidget()
-        suggest_layout.addWidget(self.suggest_list)
-        suggest_layout.addLayout(self._suggest_toolbar())
+        self.questions_list = self._create_list_section(
+            scroll_layout,
+            "Metodické otázky",
+        )
+        self.evidence_list = self._create_list_section(
+            scroll_layout,
+            "Typické důkazy",
+        )
+        self.related_list = self._create_related_section(scroll_layout)
+        self.supports_list = self._create_list_section(
+            scroll_layout,
+            "Co tuto hypotézu podporuje",
+        )
+        self.contradicts_list = self._create_list_section(
+            scroll_layout,
+            "Co tuto hypotézu oslabuje",
+        )
+        self.actions_list = self._create_list_section(
+            scroll_layout,
+            "Doporučené vyšetřovací kroky",
+        )
+        self.suggest_list = self._create_suggest_section(scroll_layout)
 
         for question in factor.get("questions") or []:
             value = str(question).strip()
@@ -131,26 +183,68 @@ class MuIshikawaFactorEditDialog(QDialog):
             if suggest_category and suggest_factor:
                 self._add_suggest_list_item(suggest_category, suggest_factor)
 
-        form.addRow("Název faktoru:", self.name_edit)
-        form.addRow("Nadřazený faktor:", self.parent_combo)
-        form.addRow("", questions_group)
-        form.addRow("", evidence_group)
-        form.addRow("", related_group)
-        form.addRow("", supports_group)
-        form.addRow("", contradicts_group)
-        form.addRow("", actions_group)
-        form.addRow("", suggest_group)
-        layout.addLayout(form)
+        for list_widget in self._sections_by_list:
+            self._refresh_section_count(list_widget)
 
+        scroll_layout.addStretch()
+        root_layout.addWidget(scroll, stretch=1)
+
+        button_row = QHBoxLayout()
+        button_row.addStretch()
         buttons = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
         buttons.button(QDialogButtonBox.Save).setText("Uložit")
         buttons.accepted.connect(self._accept)
         buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        button_row.addWidget(buttons)
+        root_layout.addLayout(button_row)
 
     def exec(self) -> int:
         self.showMaximized()
         return super().exec()
+
+    def _create_list_widget(self) -> QListWidget:
+        list_widget = QListWidget()
+        list_widget.setMinimumHeight(_LIST_MIN_HEIGHT)
+        return list_widget
+
+    def _bind_list_section(self, list_widget: QListWidget, section: CollapsibleSection) -> None:
+        self._sections_by_list[list_widget] = section
+        model = list_widget.model()
+        model.rowsInserted.connect(lambda *_: self._refresh_section_count(list_widget))
+        model.rowsRemoved.connect(lambda *_: self._refresh_section_count(list_widget))
+        model.modelReset.connect(lambda *_: self._refresh_section_count(list_widget))
+
+    def _refresh_section_count(self, list_widget: QListWidget) -> None:
+        section = self._sections_by_list.get(list_widget)
+        if section is not None:
+            section.set_count(list_widget.count())
+
+    def _create_list_section(self, parent_layout: QVBoxLayout, title: str) -> QListWidget:
+        section = CollapsibleSection(title, expanded=True)
+        list_widget = self._create_list_widget()
+        section.content_layout().addWidget(list_widget)
+        section.content_layout().addLayout(self._list_toolbar(list_widget))
+        self._bind_list_section(list_widget, section)
+        parent_layout.addWidget(section)
+        return list_widget
+
+    def _create_related_section(self, parent_layout: QVBoxLayout) -> QListWidget:
+        section = CollapsibleSection("Související faktory", expanded=True)
+        list_widget = self._create_list_widget()
+        section.content_layout().addWidget(list_widget)
+        section.content_layout().addLayout(self._related_toolbar())
+        self._bind_list_section(list_widget, section)
+        parent_layout.addWidget(section)
+        return list_widget
+
+    def _create_suggest_section(self, parent_layout: QVBoxLayout) -> QListWidget:
+        section = CollapsibleSection("Doporučené další směry šetření", expanded=True)
+        list_widget = self._create_list_widget()
+        section.content_layout().addWidget(list_widget)
+        section.content_layout().addLayout(self._suggest_toolbar())
+        self._bind_list_section(list_widget, section)
+        parent_layout.addWidget(section)
+        return list_widget
 
     def get_data(self) -> dict:
         return {
