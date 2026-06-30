@@ -128,25 +128,64 @@ ISHIKAWA_LEVELS = (
 
 ISHIKAWA_OTHER_FACTOR = "Jiné"
 
-ISHIKAWA_CATEGORY_FACTORS: dict[str, tuple[str, ...]] = {
-    "Člověk": (
-        "Nedodržení pracovního postupu",
-        "Nesprávné použití zařízení",
-        "Nepozornost",
-        "Spěch",
-        "Únava",
-        "Stres",
-        "Zdravotní indispozice",
-        "Nedostatečná kvalifikace",
-        "Rutina",
-        "Podcenění rizika",
-        "Používání telefonu",
-        ISHIKAWA_OTHER_FACTOR,
-    ),
+ISHIKAWA_FALLBACK_CATALOG: dict[str, dict] = {
+    "Člověk": {
+        "question": "Udělal někdo něco jinak, než měl?",
+        "factors": [
+            "Nedodržení pracovního postupu",
+            "Nesprávné použití zařízení",
+            "Nepozornost",
+            "Spěch",
+            "Únava",
+            "Stres",
+            "Zdravotní indispozice",
+            "Nedostatečná kvalifikace",
+            "Rutina",
+            "Podcenění rizika",
+            "Používání telefonu",
+            ISHIKAWA_OTHER_FACTOR,
+        ],
+    },
+    "Pracovní postup": {
+        "question": "Byl pracovní postup jasný, známý, použitelný a dodržený?",
+        "factors": [ISHIKAWA_OTHER_FACTOR],
+    },
+    "Technika / zařízení": {
+        "question": "Selhalo zařízení, nástroj nebo jeho ochranný prvek?",
+        "factors": [ISHIKAWA_OTHER_FACTOR],
+    },
+    "Prostředí": {
+        "question": "Ovlivnily průběh události podmínky pracoviště?",
+        "factors": [ISHIKAWA_OTHER_FACTOR],
+    },
+    "Organizace práce": {
+        "question": "Byla práce organizována tak, aby mohla být provedena bezpečně?",
+        "factors": [ISHIKAWA_OTHER_FACTOR],
+    },
+    "Řízení a kontrola": {
+        "question": "Byla rizika řízena a kontrolována dostatečně?",
+        "factors": [ISHIKAWA_OTHER_FACTOR],
+    },
+    "Komunikace": {
+        "question": "Měli všichni potřebné informace ve správný čas?",
+        "factors": [ISHIKAWA_OTHER_FACTOR],
+    },
+    "Ostatní": {
+        "question": "Existovala jiná okolnost, která mohla přispět ke vzniku události?",
+        "factors": [ISHIKAWA_OTHER_FACTOR],
+    },
 }
 
 
 def ishikawa_factors_for_category(category: str) -> tuple[str, ...]:
-    return ISHIKAWA_CATEGORY_FACTORS.get(category, (ISHIKAWA_OTHER_FACTOR,))
+    from moduly.vysetrovani_mu.sluzby.ishikawa_factors_service import ishikawa_factors_service
+
+    return ishikawa_factors_service.get_factors(category)
+
+
+def ishikawa_question_for_category(category: str) -> str:
+    from moduly.vysetrovani_mu.sluzby.ishikawa_factors_service import ishikawa_factors_service
+
+    return ishikawa_factors_service.get_question(category)
 
 YEAR_FILTER_VSE = "Vše"

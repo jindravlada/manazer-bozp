@@ -1,0 +1,61 @@
+{
+  "Člověk": {
+    "question": "Udělal někdo něco jinak, než měl?",
+    "factors": [
+      "Nedodržení pracovního postupu",
+      "Nesprávné použití zařízení",
+      "Nepozornost",
+      "Spěch",
+      "Únava",
+      "Stres",
+      "Zdravotní indispozice",
+      "Nedostatečná kvalifikace",
+      "Rutina",
+      "Podcenění rizika",
+      "Používání telefonu",
+      "Jiné"
+    ]
+  },
+  "Pracovní postup": {
+    "question": "Byl pracovní postup jasný, známý, použitelný a dodržený?",
+    "factors": [
+      "Jiné"
+    ]
+  },
+  "Technika / zařízení": {
+    "question": "Selhalo zařízení, nástroj nebo jeho ochranný prvek?",
+    "factors": [
+      "Jiné"
+    ]
+  },
+  "Prostředí": {
+    "question": "Ovlivnily průběh události podmínky pracoviště?",
+    "factors": [
+      "Jiné"
+    ]
+  },
+  "Organizace práce": {
+    "question": "Byla práce organizována tak, aby mohla být provedena bezpečně?",
+    "factors": [
+      "Jiné"
+    ]
+  },
+  "Řízení a kontrola": {
+    "question": "Byla rizika řízena a kontrolována dostatečně?",
+    "factors": [
+      "Jiné"
+    ]
+  },
+  "Komunikace": {
+    "question": "Měli všichni potřebné informace ve správný čas?",
+    "factors": [
+      "Jiné"
+    ]
+  },
+  "Ostatní": {
+    "question": "Existovala jiná okolnost, která mohla přispět ke vzniku události?",
+    "factors": [
+      "Jiné"
+    ]
+  }
+}
