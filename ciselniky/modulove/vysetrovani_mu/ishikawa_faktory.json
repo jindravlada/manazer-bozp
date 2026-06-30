@@ -863,11 +863,1112 @@
     ]
   },
   "Pracovní postup": {
-    "question": "Byl pracovní postup jasný, známý, použitelný a dodržený?",
+    "question": "Byl pracovní postup správně stanoven, pochopen a dodržen?",
     "factors": [
       {
+        "name": "Chybějící pracovní postup",
+        "parent": "",
+        "questions": [
+          "Existoval pro danou činnost písemný pracovní postup?",
+          "Byla činnost riziková nebo opakovaná?",
+          "Byl postup vyžadován legislativou nebo interními předpisy?",
+          "Jak pracovníci věděli, jak postupovat?",
+          "Existovaly alespoň neformální pokyny nebo zvyklosti?",
+          "Chybějící postup vedl k improvizaci nebo nejednoznačnosti?"
+        ],
+        "evidence": [
+          "Evidence pracovních postupů",
+          "Technologické postupy",
+          "Místní provozní bezpečnostní předpisy",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Výpovědi vedoucích pracovníků",
+          "Záznamy o školení"
+        ],
+        "related": [
+          "Improvizovaný postup",
+          "Rozpor mezi postupem a praxí",
+          "Chybějící odpovědnost v postupu"
+        ],
+        "supports": [
+          "Pro danou činnost neexistoval písemný postup",
+          "Pracovníci postupovali podle zvyklosti nebo ústních pokynů",
+          "Legislativa nebo riziko vyžadovaly postup",
+          "Chybějící postup vedl k nejednoznačnosti",
+          "Obdobná práce probíhala bez standardizace",
+          "Vedení postup nevypracovalo navzdory riziku"
+        ],
+        "contradicts": [
+          "Platný postup existoval",
+          "Pracovník byl s postupem seznámen",
+          "Činnost nevyžadovala písemný postup",
+          "Událost nesouvisela s absencí postupu"
+        ],
+        "actions": [
+          "Vyhledat existující postupy pro danou činnost",
+          "Ověřit požadavky legislativy a interních předpisů",
+          "Vyslechnout pracovníky, jak postupovali",
+          "Posoudit, zda absence postupu byla systémovým selháním",
+          "Prověřit historii požadavků na vytvoření postupu"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Chybějící interní pravidla"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Chybějící analýza rizik"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Neřízená změna"
+          }
+        ]
+      },
+      {
+        "name": "Nejasný pracovní postup",
+        "parent": "",
+        "questions": [
+          "Byl postup srozumitelný pro pracovníka bez dalšího vysvětlení?",
+          "Obsahoval postup jednoznačné kroky a rozhodovací body?",
+          "Neobsahoval postup protichůdné nebo nejednoznačné pokyny?",
+          "Byly v postupu definovány termíny a odpovědnosti?",
+          "Rozuměli postupu i méně zkušení pracovníci?",
+          "Vyvolával postup u pracovníků pochybnosti o správném postupu?"
+        ],
+        "evidence": [
+          "Platný pracovní postup",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Výpovědi vedoucích pracovníků",
+          "Záznamy o dotazech k postupu",
+          "Historie nejasností nebo chyb při plnění"
+        ],
+        "related": [
+          "Rozpor mezi postupem a praxí",
+          "Neproveditelný pracovní postup",
+          "Chybějící odpovědnost v postupu"
+        ],
+        "supports": [
+          "Pracovníci postup chápali rozdílně",
+          "Postup obsahoval nejednoznačné formulace",
+          "Chyběly rozhodovací body nebo kritéria",
+          "Pracovníci se ptali na výklad postupu",
+          "Různí pracovníci postupovali odlišně",
+          "Nejasnost vedla k chybnému kroku"
+        ],
+        "contradicts": [
+          "Postup byl jednoznačný a srozumitelný",
+          "Pracovník postup správně pochopil",
+          "Odchylka nevznikla nejasností postupu",
+          "Postup byl ověřen praxí bez problémů"
+        ],
+        "actions": [
+          "Analyzovat text postupu na nejednoznačnosti",
+          "Vyslechnout pracovníky o chápání postupu",
+          "Porovnat výklad různých pracovníků",
+          "Posoudit, zda postup vyžaduje odborný výklad",
+          "Prověřit, zda nejasnost byla dříve hlášena"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Chybějící interní pravidla"
+          },
+          {
+            "category": "Školení",
+            "factor": "Nedostatečné seznámení"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Rozpor mezi postupem a praxí"
+          }
+        ]
+      },
+      {
+        "name": "Zastaralý pracovní postup",
+        "parent": "",
+        "questions": [
+          "Odpovídal postup aktuální technologii a vybavení?",
+          "Byl postup revidován po poslední změně provozu?",
+          "Obsahoval postup zastaralé postupy nebo vybavení?",
+          "Kdy naposledy proběhla revize postupu?",
+          "Byly změny v provozu promítnuty do postupu?",
+          "Pracovníci postupovali jinak, než postup popisoval?"
+        ],
+        "evidence": [
+          "Platný pracovní postup a historie revizí",
+          "Záznamy o změnách provozu",
+          "Výpovědi pracovníků o běžné praxi",
+          "Fotodokumentace pracoviště a zařízení",
+          "Technologické změny",
+          "Záznamy o revizích dokumentace"
+        ],
+        "related": [
+          "Neaktuální postup",
+          "Rozpor mezi postupem a praxí",
+          "Neproveditelný pracovní postup"
+        ],
+        "supports": [
+          "Postup popisoval zastaralou technologii",
+          "Revize neproběhla po změně",
+          "Pracovníci postupovali podle aktuální praxe, ne podle dokumentu",
+          "Postup neodpovídal skutečnému vybavení",
+          "Zastaralost byla dlouhodobě známá"
+        ],
+        "contradicts": [
+          "Postup byl aktuální",
+          "Revize probíhala pravidelně",
+          "Provoz odpovídal postupu",
+          "Zastaralost neovlivnila průběh práce"
+        ],
+        "actions": [
+          "Porovnat postup se skutečným provozem",
+          "Ověřit datum poslední revize",
+          "Prověřit změny od poslední revize",
+          "Vyslechnout pracovníky o odchylkách od postupu",
+          "Posoudit proces aktualizace dokumentace"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Neřízená změna"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Neaktuální postup"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Změna pracovního postupu"
+          }
+        ]
+      },
+      {
+        "name": "Neproveditelný pracovní postup",
+        "parent": "",
+        "questions": [
+          "Byl postup v praxi reálně proveditelný?",
+          "Neobsahoval postup kroky, které nelze splnit současně?",
+          "Odpovídal postup časovým, prostorovým a technickým možnostem?",
+          "Dodržují ostatní pracovníci postup, nebo ho běžně obcházejí?",
+          "Byl postup psán bez konzultace s provozem?",
+          "Vedly neproveditelné kroky k systematickému obcházení?"
+        ],
+        "evidence": [
+          "Pracovní postup",
+          "Výpovědi pracovníků o proveditelnosti",
+          "Výpovědi vedoucích pracovníků",
+          "Časové a prostorové podmínky pracoviště",
+          "Kamerový záznam běžné praxe",
+          "Záznamy o připomínkách k postupu"
+        ],
+        "related": [
+          "Časově nereálný",
+          "Technicky neproveditelný",
+          "Rozpor mezi postupem a praxí",
+          "Improvizovaný postup"
+        ],
+        "supports": [
+          "Postup nebylo možné dodržet v praxi",
+          "Pracovníci postup běžně obcházeli",
+          "Postup neodpovídal podmínkám pracoviště",
+          "Vedení vědělo o neproveditelnosti",
+          "Obcházení bylo tolerováno",
+          "Postup vznikl bez zapojení provozu"
+        ],
+        "contradicts": [
+          "Postup byl proveditelný",
+          "Pracovníci postup dodržovali",
+          "Podmínky umožňovaly plnění postupu",
+          "Odchylka nevznikla neproveditelností"
+        ],
+        "actions": [
+          "Simulovat nebo prověřit proveditelnost kroků postupu",
+          "Vyslechnout pracovníky o běžné praxi",
+          "Porovnat postup s podmínkami pracoviště",
+          "Prověřit, zda byly připomínky k postupu hlášeny",
+          "Posoudit, zda obcházení bylo tolerováno"
+        ],
+        "suggest": [
+          {
+            "category": "Organizace práce",
+            "factor": "Časový tlak"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Tolerování nebezpečné praxe"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Rozpor mezi postupem a praxí"
+          }
+        ]
+      },
+      {
+        "name": "Časově nereálný",
+        "parent": "Neproveditelný pracovní postup",
+        "questions": [
+          "Bylo možné všechny kroky postupu stihnout v dostupném čase?",
+          "Neobsahoval postup nereálné časové požadavky?",
+          "Vedly časové limity k vynechávání kroků?",
+          "Byl postup testován v reálném provozu?",
+          "Odpovídal časový rámec běžnému tempu práce?"
+        ],
+        "evidence": [
+          "Pracovní postup s časovými údaji",
+          "Měření času jednotlivých kroků",
+          "Harmonogram práce",
+          "Výpovědi pracovníků",
+          "Provozní záznamy"
+        ],
+        "related": [
+          "Neproveditelný pracovní postup",
+          "Přeskočení pracovního kroku",
+          "Vynechání kroku"
+        ],
+        "supports": [
+          "Kroky postupu nelze stihnout v daném čase",
+          "Pracovníci kvůli času kroky vynechávali",
+          "Postup nebyl časově ověřen",
+          "Časový tlak vedl k obcházení",
+          "Harmonogram neodpovídal postupu"
+        ],
+        "contradicts": [
+          "Čas postačoval pro všechny kroky",
+          "Postup byl časově ověřen",
+          "Vynechání nesouviselo s časem"
+        ],
+        "actions": [
+          "Změřit skutečný čas kroků",
+          "Porovnat s požadavky postupu",
+          "Vyslechnout pracovníky o časovém tlaku",
+          "Posoudit vliv harmonogramu na plnění postupu"
+        ],
+        "suggest": [
+          {
+            "category": "Organizace práce",
+            "factor": "Časový tlak"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Spěch"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Přeskočení pracovního kroku"
+          }
+        ]
+      },
+      {
+        "name": "Technicky neproveditelný",
+        "parent": "Neproveditelný pracovní postup",
+        "questions": [
+          "Vyžadoval postup technické prostředky, které nebyly k dispozici?",
+          "Bylo možné fyzicky provést požadovaný krok?",
+          "Neobsahoval postup krok v rozporu s fyzikou prostoru nebo zařízení?",
+          "Byly k dispozici nástroje a pomůcky popsané v postupu?",
+          "Byl postup psán pro jiné vybavení, než je na pracovišti?"
+        ],
+        "evidence": [
+          "Pracovní postup",
+          "Fotodokumentace pracoviště",
+          "Seznam vybavení a nástrojů",
+          "Výpovědi pracovníků",
+          "Technická dokumentace"
+        ],
+        "related": [
+          "Neproveditelný pracovní postup",
+          "Improvizovaný postup",
+          "Chybějící pracovní postup"
+        ],
+        "supports": [
+          "Požadované prostředky nebyly k dispozici",
+          "Krok nebylo fyzicky možné provést",
+          "Postup neodpovídal vybavení pracoviště",
+          "Pracovníci museli improvizovat",
+          "Technická neproveditelnost byla známá"
+        ],
+        "contradicts": [
+          "Všechny prostředky byly k dispozici",
+          "Krok byl technicky proveditelný",
+          "Odchylka nevznikla technickým omezením"
+        ],
+        "actions": [
+          "Ověřit dostupnost prostředků popsaných v postupu",
+          "Prohlédnout pracoviště a porovnat s postupem",
+          "Vyslechnout pracovníky o technických překážkách",
+          "Posoudit, zda postup odpovídá vybavení"
+        ],
+        "suggest": [
+          {
+            "category": "Zařízení a technika",
+            "factor": "Nevhodné zařízení"
+          },
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Omezený manipulační prostor"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Nedostatek pracovníků"
+          }
+        ]
+      },
+      {
+        "name": "Nedodržení pracovního postupu",
+        "parent": "",
+        "questions": [
+          "Existoval pro danou činnost platný pracovní postup?",
+          "Byl pracovník s postupem seznámen?",
+          "V čem se skutečné provedení lišilo od postupu?",
+          "Bylo nedodržení jednorázové, nebo součást běžné praxe?",
+          "Bylo možné postup v dané situaci dodržet?",
+          "Nebylo nedodržení důsledkem neproveditelného nebo nejasného postupu?"
+        ],
+        "evidence": [
+          "Pracovní postup",
+          "Záznam o školení a seznámení",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Fotodokumentace místa",
+          "Záznam o dohledu"
+        ],
+        "related": [
+          "Vynechání kroku",
+          "Změna pořadí kroků",
+          "Vědomé porušení postupu",
+          "Rozpor mezi postupem a praxí"
+        ],
+        "supports": [
+          "Skutečné provedení se lišilo od postupu",
+          "Pracovník postup znal, ale nedodržel ho",
+          "Svědci potvrdili odchylku",
+          "Kamerový záznam zachytil odchylku",
+          "Odchylka byla běžná na pracovišti"
+        ],
+        "contradicts": [
+          "Postup neexistoval nebo nebyl seznámen",
+          "Postup nebylo možné dodržet",
+          "Pracovník postup dodržel",
+          "Příčina nesouvisela s postupem"
+        ],
+        "actions": [
+          "Porovnat postup se skutečným provedením",
+          "Ověřit seznámení pracovníka",
+          "Vyslechnout svědky k běžné praxi",
+          "Posoudit proveditelnost postupu",
+          "Prověřit, zda odchylka nebyla tolerována",
+          "Zvážit systémové příčiny místo viny jednotlivce"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Nedodržení pracovního postupu"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Časový tlak"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Neproveditelný pracovní postup"
+          }
+        ]
+      },
+      {
+        "name": "Vynechání kroku",
+        "parent": "Nedodržení pracovního postupu",
+        "questions": [
+          "Který krok postupu nebyl proveden?",
+          "Byl vynechaný krok bezpečnostně významný?",
+          "Proč pracovník krok vynechal?",
+          "Bylo vynechání běžné mezi ostatními pracovníky?",
+          "Byl vynechaný krok kontrolní nebo preventivní?"
+        ],
+        "evidence": [
+          "Pracovní postup",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Fotodokumentace"
+        ],
+        "related": [
+          "Přeskočení pracovního kroku",
+          "Chybějící kontrolní krok",
+          "Neproveditelný pracovní postup"
+        ],
+        "supports": [
+          "Konkrétní krok nebyl proveden",
+          "Vynechaný krok měl bezpečnostní význam",
+          "Pracovník krok vynechal záměrně nebo z nepozornosti",
+          "Vynechání bylo běžné",
+          "Vynechání souviselo s MU"
+        ],
+        "contradicts": [
+          "Všechny kroky byly provedeny",
+          "Vynechaný krok neměl vliv na MU",
+          "Krok nebyl součástí postupu"
+        ],
+        "actions": [
+          "Identifikovat vynechaný krok",
+          "Posoudit bezpečnostní význam kroku",
+          "Vyslechnout pracovníka o důvodu vynechání",
+          "Prověřit, zda vynechání je běžné"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící kontrolní krok"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Spěch"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Neproveditelný pracovní postup"
+          }
+        ]
+      },
+      {
+        "name": "Změna pořadí kroků",
+        "parent": "Nedodržení pracovního postupu",
+        "questions": [
+          "Byly kroky postupu provedeny v jiném pořadí?",
+          "Měla změna pořadí vliv na bezpečnost?",
+          "Byla změna pořadí běžná mezi pracovníky?",
+          "Vysvětlil postup důvod pořadí kroků?",
+          "Vedly podmínky na pracovišti ke změně pořadí?"
+        ],
+        "evidence": [
+          "Pracovní postup",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Analýza bezpečnostního dopadu"
+        ],
+        "related": [
+          "Vynechání kroku",
+          "Improvizovaný postup",
+          "Rozpor mezi postupem a praxí"
+        ],
+        "supports": [
+          "Pořadí kroků neodpovídalo postupu",
+          "Změna pořadí ovlivnila bezpečnost",
+          "Pracovníci běžně měnili pořadí",
+          "Postup neodůvodnil pořadí kroků",
+          "Změna pořadí vedla k riziku"
+        ],
+        "contradicts": [
+          "Pořadí kroků odpovídalo postupu",
+          "Změna pořadí neměla bezpečnostní dopad",
+          "Pořadí nebylo v postupu definováno"
+        ],
+        "actions": [
+          "Porovnat pořadí kroků s postupem",
+          "Posoudit bezpečnostní dopad změny",
+          "Vyslechnout pracovníky o běžném pořadí",
+          "Prověřit, zda postup zdůvodňuje pořadí"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní postup",
+            "factor": "Nejasný pracovní postup"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Rutina"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Rozpor mezi postupem a praxí"
+          }
+        ]
+      },
+      {
+        "name": "Vědomé porušení postupu",
+        "parent": "Nedodržení pracovního postupu",
+        "questions": [
+          "Věděl pracovník, že postup nedodržuje?",
+          "Bylo porušení záměrné?",
+          "Proč pracovník postup vědomě ne dodržel?",
+          "Očekával pracovník, že porušení nebude sankcionováno?",
+          "Bylo porušení tolerováno vedením?"
+        ],
+        "evidence": [
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznamy o dřívějších porušeních",
+          "Reakce vedení na odchylky"
+        ],
+        "related": [
+          "Rozpor mezi postupem a praxí",
+          "Improvizovaný postup",
+          "Tolerování nebezpečné praxe"
+        ],
+        "supports": [
+          "Pracovník věděl o odchylce od postupu",
+          "Porušení bylo záměrné",
+          "Pracovník očekával toleranci",
+          "Vedení dříve nereagovalo",
+          "Porušení bylo běžné v týmu"
+        ],
+        "contradicts": [
+          "Pracovník neznal postup",
+          "Odchylka nebyla vědomá",
+          "Postup nebylo možné dodržet",
+          "Pracovník jednal v dobré víře"
+        ],
+        "actions": [
+          "Vyslechnout pracovníka o vědomosti odchylky",
+          "Prověřit reakce vedení na dřívější porušení",
+          "Posoudit, zda šlo o individuální rozhodnutí nebo systémovou toleranci",
+          "Ověřit, zda postup nebyl neproveditelný"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Tolerování nebezpečné praxe"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Podcenění rizika"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Časový tlak"
+          }
+        ]
+      },
+      {
+        "name": "Chybějící kontrolní krok",
+        "parent": "",
+        "questions": [
+          "Obsahoval postup kontrolní krok před rizikovou činností?",
+          "Byl v postupu krok ověření stavu, signálu nebo zabezpečení?",
+          "Chyběl krok, který by riziko odhalil?",
+          "Byly kontrolní kroky v praxi vynechávány?",
+          "Existují obdobné postupy s kontrolním krokem?",
+          "Byl absence kontrolního kroku příčinou MU?"
+        ],
+        "evidence": [
+          "Pracovní postup",
+          "Obdobné postupy z jiných pracovišť",
+          "Výpovědi pracovníků",
+          "Hodnocení rizik",
+          "Best practice nebo normy",
+          "Analýza průběhu události"
+        ],
+        "related": [
+          "Vynechání kroku",
+          "Přeskočení pracovního kroku",
+          "Chybějící pracovní postup"
+        ],
+        "supports": [
+          "Postup neobsahoval potřebný kontrolní krok",
+          "Chybějící kontrola mohla riziko odhalit",
+          "Obdobné postupy kontrolní krok mají",
+          "Hodnocení rizik kontrolní krok vyžadovalo",
+          "Absence kroku byla systémová chyba postupu"
+        ],
+        "contradicts": [
+          "Kontrolní krok v postupu existoval",
+          "Krok byl proveden",
+          "Chybějící krok neměl vliv na MU",
+          "Riziko nebylo kontrolou odhalitelné"
+        ],
+        "actions": [
+          "Analyzovat postup na kontrolní body",
+          "Porovnat s obdobnými postupy a normami",
+          "Posoudit, zda chybějící krok mohl MU zabránit",
+          "Prověřit hodnocení rizik"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný systém kontrol"
+          },
+          {
+            "category": "Hodnocení rizik",
+            "factor": "Chybějící hodnocení rizik"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící pracovní postup"
+          }
+        ]
+      },
+      {
+        "name": "Přeskočení pracovního kroku",
+        "parent": "",
+        "questions": [
+          "Byl některý krok postupu přeskočen?",
+          "Byl přeskočený krok bezpečnostně kritický?",
+          "Proč došlo k přeskočení?",
+          "Bylo přeskočení ojedinělé, nebo běžné?",
+          "Souviselo přeskočení se spěchem nebo přerušením práce?",
+          "Nebylo přeskočení důsledkem neproveditelného postupu?"
+        ],
+        "evidence": [
+          "Pracovní postup",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Časová osa události"
+        ],
+        "related": [
+          "Vynechání kroku",
+          "Chybějící kontrola po přerušení práce",
+          "Neproveditelný pracovní postup"
+        ],
+        "supports": [
+          "Krok byl přeskočen",
+          "Přeskočený krok měl bezpečnostní význam",
+          "Přeskočení souviselo se spěchem",
+          "Přeskočení bylo běžné",
+          "Po přerušení nebyla práce ověřena"
+        ],
+        "contradicts": [
+          "Všechny kroky byly provedeny",
+          "Přeskočení nemělo vliv na MU",
+          "Krok nebyl součástí postupu"
+        ],
+        "actions": [
+          "Identifikovat přeskočený krok",
+          "Posoudit bezpečnostní význam",
+          "Vyslechnout pracovníka o důvodu",
+          "Prověřit, zda přeskočení je běžné",
+          "Posoudit vliv spěchu nebo přerušení"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Spěch"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Časový tlak"
+          }
+        ]
+      },
+      {
+        "name": "Improvizovaný postup",
+        "parent": "",
+        "questions": [
+          "Postupoval pracovník podle postupu, nebo improvizoval?",
+          "Chyběl postup pro danou situaci?",
+          "Byla improvizace nutná kvůli neočekávané situaci?",
+          "Byla improvizace schválena vedením?",
+          "Bylo riziko improvizace posouzeno?",
+          "Byla improvizace na pracovišti běžná?"
+        ],
+        "evidence": [
+          "Pracovní postup",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Fotodokumentace",
+          "Záznamy o schválení odchylky"
+        ],
+        "related": [
+          "Chybějící pracovní postup",
+          "Neproveditelný pracovní postup",
+          "Rozpor mezi postupem a praxí"
+        ],
+        "supports": [
+          "Pracovník postupoval mimo stanovený postup",
+          "Improvizace nebyla schválena",
+          "Chyběl postup pro situaci",
+          "Improvizace byla běžná",
+          "Riziko improvizace nebylo posouzeno"
+        ],
+        "contradicts": [
+          "Pracovník postupoval podle postupu",
+          "Improvizace byla schválena a posouzena",
+          "Postup situaci pokrýval",
+          "Improvizace nesouvisela s MU"
+        ],
+        "actions": [
+          "Porovnat skutečný postup s dokumentací",
+          "Vyslechnout pracovníky o běžné praxi",
+          "Posoudit, proč došlo k improvizaci",
+          "Prověřit, zda chyběl vhodný postup"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Podcenění rizika"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící pracovní postup"
+          }
+        ]
+      },
+      {
+        "name": "Rozpor mezi postupem a praxí",
+        "parent": "",
+        "questions": [
+          "Odpovídala běžná praxe na pracovišti písemnému postupu?",
+          "Postupovali všichni pracovníci stejně, nebo odlišně od postupu?",
+          "Vědělo vedení o rozdílu mezi postupem a praxí?",
+          "Byl rozdíl dlouhodobý a tolerovaný?",
+          "Byl postup psán pro ideální stav, ne pro realitu?",
+          "Reagovalo vedení na odchylky od postupu?"
+        ],
+        "evidence": [
+          "Pracovní postup",
+          "Výpovědi více pracovníků",
+          "Výpovědi vedoucích pracovníků",
+          "Kamerový záznam běžného provozu",
+          "Záznamy kontrol",
+          "Historie MU a near-miss"
+        ],
+        "related": [
+          "Neproveditelný pracovní postup",
+          "Tolerování nebezpečné praxe",
+          "Zastaralý pracovní postup"
+        ],
+        "supports": [
+          "Běžná praxe se lišila od postupu",
+          "Vedení o rozdílu vědělo",
+          "Odchylka byla tolerována",
+          "Postup neodpovídal realitě provozu",
+          "Různí pracovníci postupovali odlišně",
+          "Formální postup existoval, ale neplatil"
+        ],
+        "contradicts": [
+          "Praxe odpovídala postupu",
+          "Odchylky nebyly tolerovány",
+          "Vedení odchylky korigovalo",
+          "Rozpor nebyl prokázán"
+        ],
+        "actions": [
+          "Porovnat postup s pozorovanou praxí",
+          "Vyslechnout více pracovníků o běžném postupu",
+          "Prověřit reakce vedení na odchylky",
+          "Posoudit, zda jde o systémový problém dokumentace",
+          "Analyzovat kamerové záznamy běžného provozu"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Tolerování nebezpečné praxe"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Rutina"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Neproveditelný pracovní postup"
+          }
+        ]
+      },
+      {
+        "name": "Chybějící pravidla používání telefonu",
+        "parent": "",
+        "questions": [
+          "Existovala pravidla pro používání telefonu při práci?",
+          "Byla pravidla pracovníkům sdělena?",
+          "Pokrývala pravidla rizikovou činnost v době MU?",
+          "Bylo používání telefonu při činnosti tolerováno?",
+          "Byla pravidla dodržována nebo běžně porušována?"
+        ],
+        "evidence": [
+          "Interní směrnice",
+          "Pracovní postup",
+          "Výpovědi pracovníků",
+          "Výpovědi vedoucích pracovníků",
+          "Kamerový záznam",
+          "Záznamy o školení"
+        ],
+        "related": [
+          "Chybějící pracovní postup",
+          "Rozpor mezi postupem a praxí",
+          "Používání telefonu"
+        ],
+        "supports": [
+          "Pravidla pro telefon neexistovala",
+          "Pravidla nebyla komunikována",
+          "Používání telefonu bylo tolerováno",
+          "Pravidla nezahrnovala danou činnost",
+          "Porušování pravidel bylo běžné"
+        ],
+        "contradicts": [
+          "Pravidla existovala a byla známa",
+          "Telefon nebyl použit",
+          "Pravidla nebyla relevantní pro MU"
+        ],
+        "actions": [
+          "Vyhledat pravidla používání telefonu",
+          "Ověřit seznámení pracovníků",
+          "Posoudit toleranci používání telefonu",
+          "Prověřit souvislost s MU"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Používání telefonu"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Chybějící interní pravidla"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Přerušování práce"
+          }
+        ]
+      },
+      {
+        "name": "Chybějící kontrola po přerušení práce",
+        "parent": "",
+        "questions": [
+          "Byla práce před událostí přerušena?",
+          "Obsahoval postup krok obnovení práce po přerušení?",
+          "Bylo po přerušení ověřeno, že je bezpečné pokračovat?",
+          "Byly po přerušení zachovány bezpečnostní podmínky?",
+          "Chyběl postup pro restart po přerušení?"
+        ],
+        "evidence": [
+          "Pracovní postup",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Časová osa události"
+        ],
+        "related": [
+          "Přeskočení pracovního kroku",
+          "Chybějící kontrolní krok",
+          "Nepozornost"
+        ],
+        "supports": [
+          "Práce byla přerušena před MU",
+          "Postup neobsahoval kontrolu po přerušení",
+          "Po obnovení nebyl stav ověřen",
+          "Bezpečnostní podmínky nebyly obnoveny",
+          "Pracovník pokračoval bez kontroly"
+        ],
+        "contradicts": [
+          "Práce nebyla přerušena",
+          "Kontrola po přerušení proběhla",
+          "Postup obsahoval obnovovací krok",
+          "Přerušení nesouviselo s MU"
+        ],
+        "actions": [
+          "Zmapovat průběh práce před MU",
+          "Ověřit existenci postupu pro obnovu",
+          "Posoudit, co se změnilo po přerušení",
+          "Vyslechnout pracovníka o obnově práce"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Přerušování práce"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící kontrolní krok"
+          }
+        ]
+      },
+      {
+        "name": "Chybějící odpovědnost v postupu",
+        "parent": "",
+        "questions": [
+          "Určoval postup odpovědnost za jednotlivé kroky?",
+          "Bylo jasné, kdo rozhoduje o pokračování v rizikové fázi?",
+          "Byly v postupu definovány role (operátor, dozor, pomocník)?",
+          "Věděl pracovník, kdo má práci kontrolovat nebo schválit?",
+          "Nebyla odpovědnost mezi rolemi nejasná?"
+        ],
+        "evidence": [
+          "Pracovní postup",
+          "Organizační řád",
+          "Popisy pracovních míst",
+          "Výpovědi pracovníků",
+          "Výpovědi vedoucích pracovníků"
+        ],
+        "related": [
+          "Nejasný pracovní postup",
+          "Práce vyžadující dvě osoby",
+          "Chybějící pracovní postup"
+        ],
+        "supports": [
+          "Postup neurčoval odpovědnost",
+          "Pracovníci nevěděli, kdo rozhoduje",
+          "Role nebyly definovány",
+          "Odpovědnost byla předávána neformálně",
+          "Nejasnost odpovědnosti ovlivnila průběh práce"
+        ],
+        "contradicts": [
+          "Odpovědnost byla v postupu jasně určena",
+          "Pracovníci znali své role",
+          "Nejasnost odpovědnosti neovlivnila MU"
+        ],
+        "actions": [
+          "Analyzovat postup na určení odpovědnosti",
+          "Ověřit organizační řád a popisy míst",
+          "Vyslechnout pracovníky o vnímání odpovědnosti",
+          "Posoudit dopad nejasnosti na MU"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nejasné kompetence"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Nejasný pracovní postup"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Práce o samotě"
+          }
+        ]
+      },
+      {
+        "name": "Neaktuální postup",
+        "parent": "",
+        "questions": [
+          "Byl postup aktualizován po poslední změně podmínek?",
+          "Odpovídal postup současnému vybavení a organizaci práce?",
+          "Proběhla revize postupu v požadované lhůtě?",
+          "Byly změny schváleny a zdokumentovány?",
+          "Pracovníci pracovali podle staré verze postupu?"
+        ],
+        "evidence": [
+          "Pracovní postup a historie verzí",
+          "Záznamy o řízení změn",
+          "Výpovědi pracovníků",
+          "Distribuční seznam postupů",
+          "Záznamy o revizích"
+        ],
+        "related": [
+          "Zastaralý pracovní postup",
+          "Neřízená změna",
+          "Rozpor mezi postupem a praxí"
+        ],
+        "supports": [
+          "Postup nebyl aktualizován po změně",
+          "Pracovníci používali zastaralou verzi",
+          "Revize neproběhla v termínu",
+          "Změna nebyla promítnuta do dokumentace",
+          "Neaktuálnost byla známá"
+        ],
+        "contradicts": [
+          "Postup byl aktuální",
+          "Revize proběhla včas",
+          "Pracovníci měli poslední verzi",
+          "Neaktuálnost neovlivnila MU"
+        ],
+        "actions": [
+          "Ověřit verzi postupu a datum revize",
+          "Porovnat s aktuálním stavem provozu",
+          "Prověřit proces aktualizace dokumentace",
+          "Vyslechnout pracovníky o verzi postupu"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Neřízená změna"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Zastaralý pracovní postup"
+          },
+          {
+            "category": "Školení",
+            "factor": "Nedostatečné seznámení"
+          }
+        ]
+      },
+      {
+        "name": "Práce vyžadující dvě osoby",
+        "parent": "",
+        "questions": [
+          "Vyžadoval postup nebo riziko přítomnost dvou osob?",
+          "Pracoval pracovník sám, ačkoliv postup vyžadoval dvě osoby?",
+          "Byl druhý pracovník k dispozici, ale nebyl využit?",
+          "Byl postup pro práci dvou osob stanoven?",
+          "Byla práce o samotě tolerována navzdory požadavku?",
+          "Chyběl v postupu požadavek na asistenci?"
+        ],
+        "evidence": [
+          "Pracovní postup",
+          "Hodnocení rizik",
+          "Směnový rozpis",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Záznamy o plánování práce"
+        ],
+        "related": [
+          "Chybějící odpovědnost v postupu",
+          "Neproveditelný pracovní postup",
+          "Chybějící pracovní postup"
+        ],
+        "supports": [
+          "Postup nebo riziko vyžadovalo dvě osoby",
+          "Pracovník pracoval sám",
+          "Druhá osoba nebyla zajištěna",
+          "Práce o samotě byla tolerována",
+          "Postup neobsahoval požadavek na asistenci"
+        ],
+        "contradicts": [
+          "Práce nevyžadovala dvě osoby",
+          "Druhá osoba byla přítomna",
+          "Postup nepožadoval asistenci",
+          "Práce o samotě nebyla příčinou MU"
+        ],
+        "actions": [
+          "Ověřit požadavky postupu a hodnocení rizik",
+          "Zmapovat obsazení v době MU",
+          "Vyslechnout pracovníky o běžné praxi",
+          "Posoudit plánování kapacit",
+          "Prověřit toleranci práce o samotě"
+        ],
+        "suggest": [
+          {
+            "category": "Organizace práce",
+            "factor": "Práce o samotě"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Nedostatek pracovníků"
+          },
+          {
+            "category": "Hodnocení rizik",
+            "factor": "Chybějící hodnocení rizik"
+          }
+        ]
+      },
+      {
         "name": "Jiné",
-        "questions": []
+        "parent": "",
+        "questions": [],
+        "evidence": [],
+        "related": [],
+        "supports": [],
+        "contradicts": [],
+        "actions": [],
+        "suggest": []
       }
     ]
   },
