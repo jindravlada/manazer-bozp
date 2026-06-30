@@ -7,6 +7,8 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
+from moduly.proverky.constants import TAB_KONTROLOVANE_OBLASTI
+from moduly.proverky.ui.bozp_inspection_areas_widget import BozpInspectionAreasWidget
 from moduly.proverky.ui.bozp_inspection_spis_widget import BozpInspectionSpisWidget
 
 
@@ -27,7 +29,8 @@ class BozpInspectionDialog(QDialog):
         self.spis_widget = BozpInspectionSpisWidget()
         self.tabs.addTab(self.spis_widget, "Spis")
         self.tabs.addTab(self._placeholder_tab("Komise"), "Komise")
-        self.tabs.addTab(self._placeholder_tab("Průběh prověrky"), "Průběh prověrky")
+        self.areas_widget = BozpInspectionAreasWidget()
+        self.tabs.addTab(self.areas_widget, TAB_KONTROLOVANE_OBLASTI)
         self.tabs.addTab(self._placeholder_tab("Zjištění"), "Zjištění")
         self.tabs.addTab(self._placeholder_tab("Úkoly"), "Úkoly")
         self.tabs.addTab(self._placeholder_tab("Přílohy"), "Přílohy")
