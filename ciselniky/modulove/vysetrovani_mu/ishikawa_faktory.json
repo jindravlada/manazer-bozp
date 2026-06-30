@@ -8930,5 +8930,1739 @@
         "suggest": []
       }
     ]
+  },
+  "OOPP": {
+    "question": "Přispěl výběr, stav, používání nebo dostupnost osobních ochranných pracovních prostředků ke vzniku mimořádné události?",
+    "factors": [
+      {
+        "name": "OOPP nebyly použity",
+        "parent": "",
+        "questions": [
+          "Byly pro danou práci OOPP určeny a povinné?",
+          "Měl pracovník OOPP k dispozici v době události?",
+          "Byly OOPP skutečně použity?",
+          "Proč OOPP nebyly použity – vědomé rozhodnutí, opomenutí nebo sejmutí?",
+          "Bylo nepoužívání OOPP na pracovišti tolerováno?",
+          "Nebylo nepoužívání důsledkem nevhodnosti nebo nepohodlí OOPP?",
+          "Byl pracovník seznámen s povinností používat OOPP?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "Vědomé nepoužití OOPP",
+          "Opomenutí OOPP",
+          "OOPP sejmuté během práce",
+          "Nepohodlné OOPP"
+        ],
+        "supports": [
+          "OOPP nebyly v době MU použity",
+          "Povinné OOPP byly určeny, ale nepoužity",
+          "Nepoužívání bylo běžné nebo tolerované",
+          "Pracovník OOPP vědomě nepoužil",
+          "OOPP byly během práce sejmuty",
+          "Dohled nepoužívání nekorigoval"
+        ],
+        "contradicts": [
+          "OOPP byly použity správně",
+          "OOPP pro danou práci nebyly vyžadovány",
+          "OOPP nebyly k dispozici – jde o jiný faktor",
+          "MU nesouvisela s absencí OOPP"
+        ],
+        "actions": [
+          "Ověřit určení OOPP dle posouzení rizik",
+          "Zmapovat dostupnost a skutečné použití OOPP",
+          "Vyslechnout pracovníka o důvodu nepoužití",
+          "Prověřit dohled a tolerování nepoužívání",
+          "Posoudit vhodnost a pohodlnost OOPP",
+          "Analyzovat kamerový záznam"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Nedodržení pracovního postupu"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Podcenění rizika"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný dohled"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Tolerování nebezpečné praxe"
+          }
+        ]
+      },
+      {
+        "name": "Vědomé nepoužití OOPP",
+        "parent": "OOPP nebyly použity",
+        "questions": [
+          "Věděl pracovník, že má OOPP používat?",
+          "Bylo nepoužití vědomé rozhodnutí?",
+          "Proč pracovník OOPP nepoužil?",
+          "Očekával, že nepoužití nebude sankcionováno?",
+          "Bylo vědomé nepoužívání běžné v týmu?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "Opomenutí OOPP",
+          "OOPP sejmuté během práce",
+          "Nepohodlné OOPP"
+        ],
+        "supports": [
+          "Pracovník vědomě OOPP nepoužil",
+          "Pracovník znal povinnost",
+          "Nepoužití nebylo omylem",
+          "Tým toleroval nepoužívání"
+        ],
+        "contradicts": [
+          "Pracovník OOPP chtěl použít, ale nemohl",
+          "Pracovník neznal povinnost",
+          "OOPP nebyly k dispozici"
+        ],
+        "actions": [
+          "Vyslechnout pracovníka o vědomém rozhodnutí",
+          "Prověřit reakce vedení na dřívější případy",
+          "Posoudit systémovou toleranci nepoužívání"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Podcenění rizika"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Tolerování nebezpečné praxe"
+          }
+        ]
+      },
+      {
+        "name": "Opomenutí OOPP",
+        "parent": "OOPP nebyly použity",
+        "questions": [
+          "Zapomněl pracovník OOPP použít?",
+          "Bylo opomenutí ojedinělé, nebo opakované?",
+          "Nebylo opomenutí důsledkem spěchu nebo rutiny?",
+          "Byly OOPP na dosah, ale nebyly nasazeny?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "Vědomé nepoužití OOPP",
+          "OOPP sejmuté během práce",
+          "Nepohodlné OOPP"
+        ],
+        "supports": [
+          "Pracovník OOPP zapomněl nasadit",
+          "OOPP byly k dispozici, ale nepoužity",
+          "Opomenutí souviselo se spěchem nebo rutinou",
+          "Obdobné opomenutí se opakuje"
+        ],
+        "contradicts": [
+          "Pracovník OOPP vědomě odmítl",
+          "OOPP nebyly k dispozici",
+          "Opomenutí nebylo prokázáno"
+        ],
+        "actions": [
+          "Vyslechnout pracovníka o průběhu přípravy",
+          "Prověřit umístění OOPP",
+          "Posoudit vliv spěchu a rutiny"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Rutina"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Časový tlak"
+          }
+        ]
+      },
+      {
+        "name": "OOPP sejmuté během práce",
+        "parent": "OOPP nebyly použity",
+        "questions": [
+          "Byly OOPP na začátku práce použity?",
+          "Kdy a proč byly OOPP během práce sejmuty?",
+          "Bylo sejmutí dočasné nebo trvalé?",
+          "Zhoršovaly OOPP práci natolik, že je pracovník sundal?",
+          "Bylo sejmutí tolerováno?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "OOPP zhoršovaly práci",
+          "Nepohodlné OOPP",
+          "Nesprávné použití OOPP"
+        ],
+        "supports": [
+          "OOPP byly během práce sejmuty",
+          "Sejmutí předcházelo MU",
+          "Pracovník uvádí nepohodlí nebo překážení",
+          "Sejmutí bylo běžné"
+        ],
+        "contradicts": [
+          "OOPP zůstaly po celou dobu práce",
+          "Sejmutí nesouviselo s MU",
+          "OOPP nebyly nasazeny vůbec"
+        ],
+        "actions": [
+          "Zmapovat čas sejmutí OOPP",
+          "Vyslechnout pracovníka o důvodu",
+          "Prověřit kamerový záznam",
+          "Posoudit vhodnost OOPP pro práci"
+        ],
+        "suggest": [
+          {
+            "category": "OOPP",
+            "factor": "OOPP zhoršovaly práci"
+          },
+          {
+            "category": "OOPP",
+            "factor": "Nepohodlné OOPP"
+          }
+        ]
+      },
+      {
+        "name": "Nevhodné OOPP",
+        "parent": "",
+        "questions": [
+          "Odpovídaly použité OOPP identifikovanému riziku?",
+          "Byly OOPP vhodné pro danou práci a prostředí?",
+          "Byla zvolena správná kategorie a typ OOPP?",
+          "Byly OOPP certifikovány pro dané riziko?",
+          "Nebyl výběr OOPP pouze formální?",
+          "Byl výběr OOPP konzultován s posouzením rizik?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "Nesprávná velikost",
+          "Nevhodný typ OOPP",
+          "OOPP nevhodné pro dané prostředí",
+          "OOPP neodpovídaly riziku"
+        ],
+        "supports": [
+          "OOPP neodpovídaly riziku",
+          "Byl zvolen nesprávný typ nebo kategorie",
+          "OOPP nebyly vhodné pro prostředí",
+          "Výběr nebyl založen na posouzení rizik",
+          "Formálně přidělené OOPP nechránily"
+        ],
+        "contradicts": [
+          "OOPP odpovídaly riziku",
+          "Výběr byl v souladu s posouzením rizik",
+          "Nevhodnost nebyla prokázána"
+        ],
+        "actions": [
+          "Porovnat OOPP s požadavky posouzení rizik",
+          "Ověřit certifikaci a typ OOPP",
+          "Posoudit vhodnost pro práci a prostředí",
+          "Vyslechnout pracovníky o praktičnosti OOPP"
+        ],
+        "suggest": [
+          {
+            "category": "Hodnocení rizik",
+            "factor": "Chybějící hodnocení rizik"
+          },
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Nevhodné klimatické podmínky"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící pracovní postup"
+          }
+        ]
+      },
+      {
+        "name": "Nesprávná velikost",
+        "parent": "Nevhodné OOPP",
+        "questions": [
+          "Odpovídala velikost OOPP pracovníkovi?",
+          "Bránila nesprávná velikost správnému nasazení?",
+          "Byla velikost při přidělení ověřena?",
+          "Měl pracovník možnost vyměnit OOPP za správnou velikost?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "Nevhodné OOPP",
+          "Nesprávné použití OOPP",
+          "Nepohodlné OOPP"
+        ],
+        "supports": [
+          "OOPP neodpovídala velikosti pracovníka",
+          "OOPP neseděla a nechránila",
+          "Pracovník OOPP kvůli velikosti nepoužíval",
+          "Velikost nebyla ověřena při vydání"
+        ],
+        "contradicts": [
+          "Velikost odpovídala",
+          "Velikost neovlivnila ochranu"
+        ],
+        "actions": [
+          "Ověřit velikost přidělených OOPP",
+          "Vyslechnout pracovníka",
+          "Posoudit proces vydávání OOPP"
+        ],
+        "suggest": [
+          {
+            "category": "OOPP",
+            "factor": "OOPP nebyly přiděleny"
+          },
+          {
+            "category": "OOPP",
+            "factor": "Nepohodlné OOPP"
+          }
+        ]
+      },
+      {
+        "name": "Nevhodný typ OOPP",
+        "parent": "Nevhodné OOPP",
+        "questions": [
+          "Byl zvolen správný typ OOPP pro dané riziko?",
+          "Odpovídal typ požadavkům normy nebo posouzení rizik?",
+          "Nebyl použit OOPP určený pro jiné riziko?",
+          "Byla záměna typů OOPP běžná?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "OOPP neodpovídaly riziku",
+          "Nevhodné OOPP",
+          "Chybějící OOPP"
+        ],
+        "supports": [
+          "Byl použit nesprávný typ OOPP",
+          "Typ neodpovídal riziku",
+          "Chyběla certifikace pro dané riziko",
+          "Výběr typu nebyl odborně posouzen"
+        ],
+        "contradicts": [
+          "Typ OOPP byl správný",
+          "Typ odpovídal posouzení rizik"
+        ],
+        "actions": [
+          "Porovnat typ OOPP s požadavky rizika",
+          "Ověřit certifikát shody",
+          "Prověřit proces určování OOPP"
+        ],
+        "suggest": [
+          {
+            "category": "Hodnocení rizik",
+            "factor": "Chybějící hodnocení rizik"
+          },
+          {
+            "category": "OOPP",
+            "factor": "OOPP neodpovídaly riziku"
+          }
+        ]
+      },
+      {
+        "name": "OOPP nevhodné pro dané prostředí",
+        "parent": "Nevhodné OOPP",
+        "questions": [
+          "Byly OOPP vhodné pro teplotu, vlhkost nebo chemické prostředí?",
+          "Nezhoršovaly podmínky prostředí použitelnost OOPP?",
+          "Bylo prostředí zohledněno při výběru OOPP?",
+          "Existovaly OOPP vhodnější pro dané podmínky?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "Nevhodné OOPP",
+          "OOPP zhoršovaly práci",
+          "Nepohodlné OOPP"
+        ],
+        "supports": [
+          "OOPP nebyly vhodné pro prostředí",
+          "Prostředí snižovalo účinnost OOPP",
+          "Pracovník kvůli prostředí OOPP nepoužíval",
+          "Výběr nezohlednil podmínky pracoviště"
+        ],
+        "contradicts": [
+          "OOPP odpovídaly prostředí",
+          "Prostředí neovlivnilo OOPP"
+        ],
+        "actions": [
+          "Posoudit podmínky pracovního prostředí",
+          "Porovnat OOPP s požadavky prostředí",
+          "Vyslechnout pracovníky"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Vysoká teplota"
+          },
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Prašnost"
+          },
+          {
+            "category": "OOPP",
+            "factor": "OOPP zhoršovaly práci"
+          }
+        ]
+      },
+      {
+        "name": "Chybějící OOPP",
+        "parent": "",
+        "questions": [
+          "Byly pro danou práci OOPP určeny?",
+          "Byly OOPP fyzicky k dispozici v místě práce?",
+          "Chyběl konkrétní druh OOPP?",
+          "Bylo absencí OOPP riziko nechráněno?",
+          "Kdo měl OOPP zajistit?",
+          "Bylo chybění OOPP dlouhodobě známé?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "OOPP nebyly dostupné",
+          "OOPP nebyly přiděleny",
+          "OOPP neodpovídaly riziku"
+        ],
+        "supports": [
+          "Požadované OOPP chyběly",
+          "Pracovník neměl OOPP k dispozici",
+          "Chybění bylo předvídatelné",
+          "Odpovědnost za zajištění nebyla splněna"
+        ],
+        "contradicts": [
+          "OOPP byly k dispozici",
+          "OOPP pro danou práci nebyly vyžadovány",
+          "Chybění neovlivnilo MU"
+        ],
+        "actions": [
+          "Ověřit požadavky na OOPP dle rizika",
+          "Prověřit sklad a dostupnost",
+          "Určit odpovědnost za zajištění",
+          "Vyslechnout pracovníky a vedení"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Neprovedení nápravných opatření"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící pracovní postup"
+          },
+          {
+            "category": "Hodnocení rizik",
+            "factor": "Chybějící hodnocení rizik"
+          }
+        ]
+      },
+      {
+        "name": "Poškozené OOPP",
+        "parent": "",
+        "questions": [
+          "Byly OOPP v době použití v pořádku?",
+          "Bylo poškození viditelné?",
+          "Kdy a jak poškození vzniklo?",
+          "Bylo poškození před MU známo?",
+          "Byly poškozené OOPP vyměněny?",
+          "Snižovalo poškození ochrannou funkci?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "Opotřebené OOPP",
+          "Poškozené upevnění",
+          "Znečištěné OOPP",
+          "Nedostatečně udržované OOPP"
+        ],
+        "supports": [
+          "OOPP byly poškozené",
+          "Poškození snižovalo ochranu",
+          "Poškození bylo dříve známo",
+          "Výměna neproběhla",
+          "Kontrola poškození chyběla"
+        ],
+        "contradicts": [
+          "OOPP byly v pořádku",
+          "Poškození neovlivnilo ochranu",
+          "Poškození vzniklo až následkem MU"
+        ],
+        "actions": [
+          "Prohlédnout OOPP po MU",
+          "Ověřit záznamy kontrol a výměn",
+          "Vyslechnout pracovníka o stavu OOPP",
+          "Posoudit vliv poškození na ochranu"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný systém kontrol"
+          },
+          {
+            "category": "Materiál",
+            "factor": "Poškozený materiál"
+          },
+          {
+            "category": "OOPP",
+            "factor": "OOPP nebyly kontrolovány"
+          }
+        ]
+      },
+      {
+        "name": "Opotřebené OOPP",
+        "parent": "Poškozené OOPP",
+        "questions": [
+          "Byly OOPP opotřebené nad míru použitelnosti?",
+          "Byla životnost OOPP překročena?",
+          "Bylo opotřebení viditelné?",
+          "Existoval plán výměny OOPP?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "Poškozené OOPP",
+          "Nedostatečně udržované OOPP",
+          "OOPP nebyly kontrolovány"
+        ],
+        "supports": [
+          "OOPP byly nadměrně opotřebené",
+          "Životnost byla překročena",
+          "Výměna neproběhla",
+          "Opotřebení snižovalo ochranu"
+        ],
+        "contradicts": [
+          "OOPP byly v dobrém stavu",
+          "Opotřebení neovlivnilo funkci"
+        ],
+        "actions": [
+          "Prohlédnout stav OOPP",
+          "Ověřit datum vydání a plán výměny",
+          "Prověřit kontrolní záznamy"
+        ],
+        "suggest": [
+          {
+            "category": "OOPP",
+            "factor": "Nedostatečně udržované OOPP"
+          },
+          {
+            "category": "OOPP",
+            "factor": "OOPP nebyly kontrolovány"
+          }
+        ]
+      },
+      {
+        "name": "Poškozené upevnění",
+        "parent": "Poškozené OOPP",
+        "questions": [
+          "Bylo upevnění OOPP (popruhy, spony, elastika) v pořádku?",
+          "Mohlo poškozené upevnění vést k uvolnění OOPP?",
+          "Bylo poškození upevnění před MU známo?",
+          "Byla OOPP správně utažena a upevněna?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "Poškozené OOPP",
+          "Nesprávné použití OOPP",
+          "Opotřebené OOPP"
+        ],
+        "supports": [
+          "Upevnění bylo poškozené",
+          "OOPP se uvolnily nebo neseděly",
+          "Poškození snižovalo ochranu",
+          "Výměna upevnění neproběhla"
+        ],
+        "contradicts": [
+          "Upevnění bylo v pořádku",
+          "OOPP byly správně upevněny"
+        ],
+        "actions": [
+          "Prohlédnout upevnění OOPP",
+          "Fotodokumentace poškození",
+          "Vyslechnout pracovníka"
+        ],
+        "suggest": [
+          {
+            "category": "OOPP",
+            "factor": "Nesprávné použití OOPP"
+          },
+          {
+            "category": "OOPP",
+            "factor": "Nedostatečně udržované OOPP"
+          }
+        ]
+      },
+      {
+        "name": "Znečištěné OOPP",
+        "parent": "Poškozené OOPP",
+        "questions": [
+          "Byly OOPP znečištěny látkou snižující ochranu?",
+          "Bylo znečištění viditelné?",
+          "Měly být OOPP vyměněny nebo vyčištěny?",
+          "Snižovalo znečištění ochrannou funkci?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "Poškozené OOPP",
+          "Nedostatečně udržované OOPP",
+          "Materiál"
+        ],
+        "supports": [
+          "OOPP byly znečištěny",
+          "Znečištění snižovalo ochranu",
+          "Výměna nebo čištění neproběhlo",
+          "Pracovník používal znečištěné OOPP"
+        ],
+        "contradicts": [
+          "OOPP byly čisté",
+          "Znečištění neovlivnilo ochranu"
+        ],
+        "actions": [
+          "Prohlédnout OOPP",
+          "Identifikovat druh znečištění",
+          "Ověřit postup výměny a údržby"
+        ],
+        "suggest": [
+          {
+            "category": "Materiál",
+            "factor": "Nebezpečná látka"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící postup údržby OOPP"
+          }
+        ]
+      },
+      {
+        "name": "Nesprávné použití OOPP",
+        "parent": "",
+        "questions": [
+          "Byly OOPP použity podle návodu výrobce?",
+          "Byly OOPP nasazeny, utaženy a seřízeny správně?",
+          "Nebyly OOPP použity pro jiné účely?",
+          "Byl pracovník proškolen správnému použití?",
+          "Bylo nesprávné použití běžné?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "Nesprávná velikost",
+          "Nevhodný typ OOPP",
+          "OOPP nebyly použity"
+        ],
+        "supports": [
+          "OOPP nebyly použity správným způsobem",
+          "Pracovník OOPP nesprávně nasadil",
+          "Chybělo školení správnému použití",
+          "Nesprávné použití bylo běžné"
+        ],
+        "contradicts": [
+          "OOPP byly použity správně",
+          "Pracovník byl proškolen",
+          "Nesprávné použití nebylo prokázáno"
+        ],
+        "actions": [
+          "Porovnat použití s návodem výrobce",
+          "Ověřit školení",
+          "Vyslechnout svědky",
+          "Analyzovat kamerový záznam"
+        ],
+        "suggest": [
+          {
+            "category": "Školení",
+            "factor": "Nedostatečné seznámení"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Nejasný pracovní postup"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nedodržení pracovního postupu"
+          }
+        ]
+      },
+      {
+        "name": "Nedostatečně udržované OOPP",
+        "parent": "",
+        "questions": [
+          "Existoval postup údržby a kontroly OOPP?",
+          "Byly OOPP pravidelně kontrolovány a udržovány?",
+          "Byla údržba dokumentována?",
+          "Byly vadné OOPP včas vyřazeny?",
+          "Kdo měl odpovědnost za údržbu?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "Poškozené OOPP",
+          "OOPP nebyly kontrolovány",
+          "Opotřebené OOPP"
+        ],
+        "supports": [
+          "Údržba OOPP neprobíhala",
+          "Kontrola chyběla nebo byla formální",
+          "Vadné OOPP nebyly vyřazeny",
+          "Stav OOPP nebyl sledován"
+        ],
+        "contradicts": [
+          "OOPP byly řádně udržovány",
+          "Údržba odpovídala požadavkům"
+        ],
+        "actions": [
+          "Vyžádat postup údržby OOPP",
+          "Ověřit záznamy kontrol",
+          "Prohlédnout stav OOPP",
+          "Určit odpovědnost za údržbu"
+        ],
+        "suggest": [
+          {
+            "category": "OOPP",
+            "factor": "OOPP nebyly kontrolovány"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný systém kontrol"
+          }
+        ]
+      },
+      {
+        "name": "OOPP nebyly dostupné",
+        "parent": "",
+        "questions": [
+          "Byly OOPP fyzicky dostupné v místě práce?",
+          "Musel pracovník OOPP hledat nebo si pro ně jít?",
+          "Byly OOPP uloženy na přístupném místě?",
+          "Byla nedostupnost dlouhodobě známá?",
+          "Kdo měl dostupnost zajistit?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "Chybějící OOPP",
+          "OOPP nebyly přiděleny",
+          "OOPP nebyly použity"
+        ],
+        "supports": [
+          "OOPP nebyly v místě práce dostupné",
+          "Pracovník nemohl OOPP včas obdržet",
+          "Skladování bránilo dostupnosti",
+          "Nedostupnost byla opakovaná"
+        ],
+        "contradicts": [
+          "OOPP byly na dosah",
+          "Pracovník měl OOPP u sebe",
+          "Dostupnost nebyla problém"
+        ],
+        "actions": [
+          "Prověřit umístění a skladování OOPP",
+          "Vyslechnout pracovníky",
+          "Posoudit organizaci vydávání OOPP",
+          "Ověřit odpovědnost za dostupnost"
+        ],
+        "suggest": [
+          {
+            "category": "OOPP",
+            "factor": "Chybějící OOPP"
+          },
+          {
+            "category": "Materiál",
+            "factor": "Nevhodné skladování"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Nedostatek pracovníků"
+          }
+        ]
+      },
+      {
+        "name": "OOPP nebyly přiděleny",
+        "parent": "",
+        "questions": [
+          "Byly OOPP pracovníkovi formálně přiděleny?",
+          "Existuje doklad o vydání?",
+          "Odpovídaly přidělené OOPP požadovanému riziku?",
+          "Bylo přidělení pouze formální bez fyzického vydání?",
+          "Kdo měl OOPP přidělit?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "Chybějící OOPP",
+          "OOPP nebyly dostupné",
+          "Nevhodné OOPP"
+        ],
+        "supports": [
+          "OOPP nebyly přiděleny",
+          "Chybí doklad o vydání",
+          "Přidělení bylo pouze formální",
+          "Pracovník OOPP fyzicky nedostal"
+        ],
+        "contradicts": [
+          "OOPP byly přiděleny a vydány",
+          "Doklad o vydání existuje"
+        ],
+        "actions": [
+          "Vyžádat doklady o vydání OOPP",
+          "Ověřit skutečné přidělení",
+          "Vyslechnout pracovníka",
+          "Posoudit proces vydávání"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Formální kontrola"
+          },
+          {
+            "category": "OOPP",
+            "factor": "Chybějící OOPP"
+          }
+        ]
+      },
+      {
+        "name": "OOPP nebyly kontrolovány",
+        "parent": "",
+        "questions": [
+          "Probíhaly pravidelné kontroly OOPP?",
+          "Byly kontrolovány stav, funkčnost a platnost?",
+          "Byly výsledky kontrol zaznamenány?",
+          "Vedly kontroly k výměně vadných OOPP?",
+          "Kdo kontroly prováděl?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "Poškozené OOPP",
+          "Nedostatečně udržované OOPP",
+          "Opotřebené OOPP"
+        ],
+        "supports": [
+          "Kontroly OOPP neprobíhaly",
+          "Kontrola byla nepravidelná nebo formální",
+          "Vadné OOPP nebyly včas odhaleny",
+          "Chybí záznamy kontrol"
+        ],
+        "contradicts": [
+          "Kontroly probíhaly pravidelně",
+          "Stav OOPP byl sledován"
+        ],
+        "actions": [
+          "Vyžádat plán a záznamy kontrol OOPP",
+          "Porovnat s požadavky předpisů",
+          "Vyslechnout odpovědné osoby",
+          "Posoudit návaznost na výměny OOPP"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný systém kontrol"
+          },
+          {
+            "category": "OOPP",
+            "factor": "Poškozené OOPP"
+          }
+        ]
+      },
+      {
+        "name": "OOPP neodpovídaly riziku",
+        "parent": "",
+        "questions": [
+          "Bylo riziko správně identifikováno?",
+          "Byly OOPP určeny podle posouzení rizik?",
+          "Odpovídala úroveň ochrany OOPP identifikovanému riziku?",
+          "Nebyl výběr OOPP zastaralý nebo nepřiměřený?",
+          "Byla změna rizika promítnuta do výběru OOPP?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "Nevhodné OOPP",
+          "Nevhodný typ OOPP",
+          "Chybějící OOPP"
+        ],
+        "supports": [
+          "OOPP neodpovídaly identifikovanému riziku",
+          "Posouzení rizik nebylo aktuální",
+          "Úroveň ochrany byla nedostatečná",
+          "Výběr OOPP nebyl odborně posouzen"
+        ],
+        "contradicts": [
+          "OOPP odpovídaly riziku",
+          "Posouzení rizik bylo správné"
+        ],
+        "actions": [
+          "Porovnit OOPP s posouzením rizik",
+          "Ověřit aktuálnost hodnocení",
+          "Posoudit úroveň ochrany",
+          "Konzultovat s odborníkem BOZP"
+        ],
+        "suggest": [
+          {
+            "category": "Hodnocení rizik",
+            "factor": "Chybějící hodnocení rizik"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Chybějící analýza rizik"
+          },
+          {
+            "category": "OOPP",
+            "factor": "Nevhodné OOPP"
+          }
+        ]
+      },
+      {
+        "name": "OOPP zhoršovaly práci",
+        "parent": "",
+        "questions": [
+          "Omezovaly OOPP pohyb, výhled nebo komunikaci?",
+          "Vedly OOPP k obcházení nebo sejmutí?",
+          "Byla OOPP navržena s ohledem na reálnou práci?",
+          "Existovaly alternativní vhodné OOPP?",
+          "Bylo zhoršení práce dlouhodobě tolerováno?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "Omezení pohybu",
+          "Omezení výhledu",
+          "Zhoršení komunikace",
+          "Nepohodlné OOPP"
+        ],
+        "supports": [
+          "OOPP fyzicky ztěžovaly práci",
+          "Pracovníci OOPP kvůli tomu obcházeli",
+          "Omezení ovlivnilo bezpečnost",
+          "Alternativní OOPP nebyly k dispozici"
+        ],
+        "contradicts": [
+          "OOPP neomezovaly práci",
+          "Pracovníci pracovali s OOPP bez potíží",
+          "Zhoršení nebylo prokázáno"
+        ],
+        "actions": [
+          "Vyslechnout pracovníky o praktických omezeních",
+          "Posoudit ergonomii a vhodnost OOPP",
+          "Prověřit dostupnost alternativ",
+          "Ověřit tolerování obcházení"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Neslyšitelný pokyn"
+          },
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Omezený manipulační prostor"
+          }
+        ]
+      },
+      {
+        "name": "Omezení pohybu",
+        "parent": "OOPP zhoršovaly práci",
+        "questions": [
+          "Omezovaly OOPP pohyb nebo manipulaci?",
+          "Bránily OOPP bezpečnému provedení úkonu?",
+          "Měl pracovník kvůli OOPP nepohodlnou polohu?",
+          "Bylo omezení pohybu důvodem sejmutí OOPP?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "OOPP zhoršovaly práci",
+          "Nepohodlné OOPP",
+          "OOPP sejmuté během práce"
+        ],
+        "supports": [
+          "OOPP omezovaly pohyb",
+          "Pracovník kvůli OOPP nemohl pracovat bezpečně",
+          "Sejmutí OOPP souviselo s omezením pohybu"
+        ],
+        "contradicts": [
+          "Pohyb nebyl OOPP omezen",
+          "OOPP nebránily manipulaci"
+        ],
+        "actions": [
+          "Posoudit vliv OOPP na pohyb",
+          "Vyslechnout pracovníka",
+          "Prověřit vhodnější typ OOPP"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Omezený manipulační prostor"
+          },
+          {
+            "category": "OOPP",
+            "factor": "Nevhodné OOPP"
+          }
+        ]
+      },
+      {
+        "name": "Omezení výhledu",
+        "parent": "OOPP zhoršovaly práci",
+        "questions": [
+          "Omezovaly OOPP (helma, štít, brýle) výhled?",
+          "Bránilo omezení výhledu vnímání rizika?",
+          "Byly k dispozici OOPP s lepším výhledem?",
+          "Zaměnil pracovník OOPP kvůli výhledu?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "OOPP zhoršovaly práci",
+          "Chybějící ochrana zraku",
+          "Nepohodlné OOPP"
+        ],
+        "supports": [
+          "OOPP omezovaly výhled",
+          "Pracovník neviděl rizikové místo",
+          "OOPP kvůli výhledu sejmul nebo nepoužil"
+        ],
+        "contradicts": [
+          "Výhled nebyl omezen",
+          "OOPP neovlivnily vnímání"
+        ],
+        "actions": [
+          "Posoudit vliv OOPP na výhled",
+          "Vyslechnout pracovníka",
+          "Prověřit alternativní OOPP zraku"
+        ],
+        "suggest": [
+          {
+            "category": "OOPP",
+            "factor": "Chybějící ochrana zraku"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          }
+        ]
+      },
+      {
+        "name": "Zhoršení komunikace",
+        "parent": "OOPP zhoršovaly práci",
+        "questions": [
+          "Omezovaly OOPP (ochrana sluchu, helma) komunikaci?",
+          "Byly pokyny kvůli OOPP hůře slyšitelné?",
+          "Byla zvolena OOPP s ohledem na potřebu komunikace?",
+          "Existovaly vhodnější alternativy?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "OOPP zhoršovaly práci",
+          "Chybějící ochrana sluchu",
+          "Rušivá komunikace"
+        ],
+        "supports": [
+          "OOPP zhoršovaly slyšitelnost",
+          "Komunikace byla narušena",
+          "Pracovník neslyšel pokyn",
+          "Nebyla zvolena vhodná OOPP pro komunikaci"
+        ],
+        "contradicts": [
+          "Komunikace nebyla OOPP ovlivněna",
+          "Pokyny byly slyšitelné"
+        ],
+        "actions": [
+          "Posoudit vliv OOPP na komunikaci",
+          "Vyslechnout účastníky",
+          "Prověřit typ OOPP sluchu"
+        ],
+        "suggest": [
+          {
+            "category": "Komunikace",
+            "factor": "Neslyšitelný pokyn"
+          },
+          {
+            "category": "OOPP",
+            "factor": "Chybějící ochrana sluchu"
+          }
+        ]
+      },
+      {
+        "name": "Nepohodlné OOPP",
+        "parent": "",
+        "questions": [
+          "Byly OOPP pro pracovníka nepohodlné?",
+          "Vedly nepohodlí k nepoužívání nebo sejmutí?",
+          "Bylo nepohodlí dlouhodobě známé?",
+          "Byly k dispozici pohodlnější alternativy?",
+          "Bylo nepohodlí důvodem tolerování nepoužívání?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "OOPP nebyly použity",
+          "OOPP zhoršovaly práci",
+          "Nesprávná velikost"
+        ],
+        "supports": [
+          "Pracovníci uváděli nepohodlí",
+          "Nepohodlí vedlo k nepoužívání",
+          "Alternativy nebyly k dispozici",
+          "Vedení tolerovalo nepoužívání"
+        ],
+        "contradicts": [
+          "OOPP byly pohodlné",
+          "Nepohodlí nevedlo k nepoužívání"
+        ],
+        "actions": [
+          "Vyslechnout pracovníky o pohodlí",
+          "Posoudit ergonomii OOPP",
+          "Prověřit dostupnost alternativ",
+          "Ověřit reakci vedení"
+        ],
+        "suggest": [
+          {
+            "category": "OOPP",
+            "factor": "Nevhodné OOPP"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Tolerování nebezpečné praxe"
+          }
+        ]
+      },
+      {
+        "name": "Nevhodná obuv",
+        "parent": "",
+        "questions": [
+          "Byla obuv vhodná pro danou práci a povrch?",
+          "Měla obuv požadované vlastnosti (protiskluz, ochrana)?",
+          "Odpovídala obuv posouzení rizik?",
+          "Byla obuv v dobrém stavu?",
+          "Používal pracovník soukromou nebo nevhodnou obuv?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "Nevhodné OOPP",
+          "Poškozené OOPP",
+          "Nesprávné použití OOPP"
+        ],
+        "supports": [
+          "Obuv neodpovídala riziku",
+          "Chyběly protiskluzové vlastnosti",
+          "Pracovník používal nevhodnou obuv",
+          "Obuv byla opotřebená"
+        ],
+        "contradicts": [
+          "Obuv byla vhodná a v pořádku",
+          "Obuv nebyla pro MU relevantní"
+        ],
+        "actions": [
+          "Prohlédnout obuv",
+          "Porovnat s požadavky rizika",
+          "Vyslechnout pracovníka",
+          "Posoudit stav podlahy a obuvi"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Kluzký povrch"
+          },
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Nerovný povrch"
+          },
+          {
+            "category": "OOPP",
+            "factor": "Nevhodné OOPP"
+          }
+        ]
+      },
+      {
+        "name": "Nevhodný pracovní oděv",
+        "parent": "",
+        "questions": [
+          "Byl oděv vhodný pro danou práci a prostředí?",
+          "Odpovídal oděv požadavkům OOPP?",
+          "Neomezoval oděv pohyb nebo zvyšoval tepelnou zátěž?",
+          "Byl oděv v dobrém stavu?",
+          "Používal pracovník soukromý oděv místo pracovního?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "Nevhodné OOPP",
+          "Nepohodlné OOPP",
+          "OOPP nevhodné pro dané prostředí"
+        ],
+        "supports": [
+          "Oděv neodpovídal požadavkům",
+          "Oděv zvyšoval tepelnou zátěž",
+          "Oděv omezoval pohyb",
+          "Pracovník používal nevhodný oděv"
+        ],
+        "contradicts": [
+          "Oděv byl vhodný",
+          "Oděv neovlivnil MU"
+        ],
+        "actions": [
+          "Posoudit vhodnost oděvu",
+          "Porovnat s požadavky postupu",
+          "Vyslechnout pracovníka",
+          "Prověřit vliv na tepelnou zátěž"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Vysoká teplota"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Únava z horka"
+          },
+          {
+            "category": "OOPP",
+            "factor": "OOPP nevhodné pro dané prostředí"
+          }
+        ]
+      },
+      {
+        "name": "Chybějící ochrana zraku",
+        "parent": "",
+        "questions": [
+          "Bylo riziko poškození zraku identifikováno?",
+          "Měly být použity ochranné brýle nebo obličejový štít?",
+          "Byly OOPP zraku k dispozici?",
+          "Byly OOPP zraku použity?",
+          "Odpovídaly OOPP zraku typu rizika?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "Omezení výhledu",
+          "Chybějící OOPP",
+          "Nevhodné OOPP"
+        ],
+        "supports": [
+          "Ochrana zraku chyběla",
+          "Riziko pro oči bylo identifikovatelné",
+          "Brýle nebo štít nebyly použity",
+          "OOPP zraku nebyly k dispozici"
+        ],
+        "contradicts": [
+          "Ochrana zraku byla použita",
+          "Riziko pro oči neexistovalo"
+        ],
+        "actions": [
+          "Ověřit identifikaci rizika pro oči",
+          "Prověřit dostupnost a použití OOPP zraku",
+          "Vyslechnout pracovníka"
+        ],
+        "suggest": [
+          {
+            "category": "Zařízení a technika",
+            "factor": "Technická závada"
+          },
+          {
+            "category": "Materiál",
+            "factor": "Nebezpečná látka"
+          },
+          {
+            "category": "OOPP",
+            "factor": "Chybějící OOPP"
+          }
+        ]
+      },
+      {
+        "name": "Chybějící ochrana sluchu",
+        "parent": "",
+        "questions": [
+          "Bylo riziko hluku identifikováno?",
+          "Měly být použity chrániče sluchu?",
+          "Byly OOPP sluchu k dispozici?",
+          "Byly OOPP sluchu použity?",
+          "Odpovídala OOPP sluchu hladině hluku?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "Zhoršení komunikace",
+          "Chybějící OOPP",
+          "Nevhodné OOPP"
+        ],
+        "supports": [
+          "Ochrana sluchu chyběla",
+          "Hluk překračoval limity",
+          "Chrániče nebyly použity nebo k dispozici",
+          "Riziko hluku bylo známé"
+        ],
+        "contradicts": [
+          "Ochrana sluchu byla použita",
+          "Hluk nebyl nad limit"
+        ],
+        "actions": [
+          "Ověřit měření hluku",
+          "Prověřit dostupnost chráničů",
+          "Posoudit použití OOPP sluchu"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Hluk"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Neslyšitelný pokyn"
+          },
+          {
+            "category": "OOPP",
+            "factor": "Chybějící OOPP"
+          }
+        ]
+      },
+      {
+        "name": "Chybějící ochrana rukou",
+        "parent": "",
+        "questions": [
+          "Bylo riziko poškození rukou identifikováno?",
+          "Měly být použity ochranné rukavice?",
+          "Byly rukavice vhodné pro dané riziko?",
+          "Byly rukavice k dispozici a použity?",
+          "Nebyly rukavice sejmuty během manipulace?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "Chybějící OOPP",
+          "Nevhodný typ OOPP",
+          "OOPP sejmuté během práce"
+        ],
+        "supports": [
+          "Ochrana rukou chyběla",
+          "Rukavice nebyly použity",
+          "Riziko pro ruce bylo identifikovatelné",
+          "Rukavice nebyly k dispozici"
+        ],
+        "contradicts": [
+          "Rukavice byly použity",
+          "Riziko pro ruce neexistovalo"
+        ],
+        "actions": [
+          "Ověřit riziko pro ruce",
+          "Prověřit dostupnost a typ rukavic",
+          "Vyslechnout pracovníka"
+        ],
+        "suggest": [
+          {
+            "category": "Materiál",
+            "factor": "Nebezpečná látka"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící pracovní postup"
+          },
+          {
+            "category": "OOPP",
+            "factor": "Chybějící OOPP"
+          }
+        ]
+      },
+      {
+        "name": "Chybějící ochrana dýchacích cest",
+        "parent": "",
+        "questions": [
+          "Bylo riziko pro dýchací cesty identifikováno?",
+          "Měla být použita OOPP dýchacích cest?",
+          "Odpovídala OOPP typu a koncentraci nebezpečné látky?",
+          "Byla OOPP dýchacích cest k dispozici?",
+          "Byla OOPP správně nasazena a utěsněna?"
+        ],
+        "evidence": [
+          "Posouzení rizik a určení OOPP",
+          "Seznam přidělených OOPP",
+          "Doklad o vydání OOPP",
+          "Fotodokumentace OOPP na místě nebo u pracovníka",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam",
+          "Záznam kontroly OOPP",
+          "Certifikát shody nebo technický list výrobce",
+          "Pracovní postup s požadavky na OOPP",
+          "Záznam o školení a seznámení s OOPP"
+        ],
+        "related": [
+          "Chybějící OOPP",
+          "Nevhodný typ OOPP",
+          "OOPP nevhodné pro dané prostředí"
+        ],
+        "supports": [
+          "Ochrana dýchacích cest chyběla",
+          "Riziko inhalace bylo identifikovatelné",
+          "Respirátor nebo jiná OOPP nebyla použita",
+          "OOPP nebyly k dispozici"
+        ],
+        "contradicts": [
+          "OOPP dýchacích cest byla použita",
+          "Riziko inhalace neexistovalo"
+        ],
+        "actions": [
+          "Ověřit identifikaci rizika inhalace",
+          "Prověřit dostupnost a typ OOPP",
+          "Posoudit koncentraci a podmínky",
+          "Vyslechnout pracovníka"
+        ],
+        "suggest": [
+          {
+            "category": "Pracovní prostředí",
+            "factor": "Prašnost"
+          },
+          {
+            "category": "Materiál",
+            "factor": "Nebezpečná látka"
+          },
+          {
+            "category": "OOPP",
+            "factor": "Chybějící OOPP"
+          }
+        ]
+      },
+      {
+        "name": "Jiné",
+        "parent": "",
+        "questions": [],
+        "evidence": [],
+        "related": [],
+        "supports": [],
+        "contradicts": [],
+        "actions": [],
+        "suggest": []
+      }
+    ]
   }
 }
