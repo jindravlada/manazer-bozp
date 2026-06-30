@@ -21,7 +21,7 @@ def task_source_label(task) -> str:
 def _finding_entity_source_label(entity_type: str, entity_id: int) -> str:
     labels = {
         ENTITY_AUDITY: "Audit IMS",
-        ENTITY_ACCIDENT: "Šetření úrazu",
+        ENTITY_ACCIDENT: "Administrace úrazu",
         ENTITY_MU_INVESTIGATION: "Vyšetřování MU",
         ENTITY_PROVERKY: "Prověrka BOZP",
     }

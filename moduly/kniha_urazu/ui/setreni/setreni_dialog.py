@@ -44,10 +44,7 @@ from core.widgets.search_combo_box import SearchComboBox
 
 
 class SetreniDialog(QDialog):
-    """
-    První funkční návrh dialogu Šetření úrazu.
-    Dialog šetření úrazu.
-    """
+    """Administrativní karta pracovního úrazu (ohlášení, záznam o úrazu, ukončení)."""
 
     def __init__(self, parent=None, accident=None):
         super().__init__(parent)
@@ -62,52 +59,40 @@ class SetreniDialog(QDialog):
                 self._zajisteni_saved_data = {}
 
         number = accident.number if accident is not None else ""
-        self.setWindowTitle(f"Šetření úrazu {number}".strip())
+        self.setWindowTitle(f"Administrace úrazu {number}".strip())
         self.resize(1500, 900)
 
         layout = QVBoxLayout(self)
 
-        self._init_zajisteni_dukazu_widgets()
-        self._init_ohledani_mista_widgets()
-        self._init_dodrzovani_predpisu_widgets()
-        self._init_kontrola_souladu_widgets()
         self._init_administrativa_widgets()
-        self._init_analyza_pricin_widgets()
-
-        self.findings_widget = AccidentFindingsWidget()
-
-        self.tabs = QTabWidget()
-        self.tabs.addTab(self._tab_oznameni(), "Oznámení")
-        self.tabs.addTab(self._tab_zajisteni_dukazu(), "Zajištění důkazů")
-        self.tabs.addTab(self._tab_misto(), "Ohledání místa")
-        self.tabs.addTab(self._tab_dukazy(), "Dodržování předpisů")
-        self.tabs.addTab(self._tab_analyza(), "Kontrola souladu")
-        self.tabs.addTab(self._tab_analyza_pricin(), "Analýza příčin")
-        self.tabs.addTab(self._tab_administrativa(), "Administrativa")
-        self.tabs.addTab(self._tab_opatreni(), "Opatření")
-        self.tabs.addTab(self.findings_widget, "Zjištění")
-
-        self.tabs.addTab(self._tab_formulare(), "Formuláře")
-
-        if self.accident is not None:
-            self.findings_widget.set_accident_id(self.accident.id)
-
-        layout.addWidget(self.tabs)
+        layout.addWidget(self._tab_administrativa())
 
         buttons = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
-
     def accept(self):
         if self.accident is not None:
-            investigation_service.save_oznameni(self.accident.id, **self._oznameni_data())
+            merged = dict(self._zajisteni_saved_data)
+            merged.update(self._administrativa_save_data())
             investigation_service.save_zajisteni_dukazu(
                 self.accident.id,
-                json.dumps(self._zajisteni_dukazu_data(), ensure_ascii=False),
+                json.dumps(merged, ensure_ascii=False),
             )
         super().accept()
+
+    def _administrativa_save_data(self):
+        return {
+            "admin_setreni_jmeno": self.admin_setreni_jmeno.currentText().strip() if hasattr(self.admin_setreni_jmeno, "currentText") else "",
+            "admin_setreni_funkce": self.admin_setreni_funkce.text().strip(),
+            "admin_zahajeni": self._date_to_json(self.admin_zahajeni),
+            "admin_duvod_pozde": self.admin_duvod_pozde.text().strip(),
+            "admin_ukonceni": self._date_to_json(self.admin_ukonceni),
+            "admin_pripad_uzavren": self._radio_choice_value(self.admin_pripad_uzavren),
+            "admin_ohlaseni": self._admin_rows_data(self.admin_ohlaseni_rows),
+            "admin_zaslani": self._admin_rows_data(self.admin_zaslani_rows),
+        }
 
     def _date_value(self, widget):
         if hasattr(widget, "get_date"):

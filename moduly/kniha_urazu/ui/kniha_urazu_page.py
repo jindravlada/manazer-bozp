@@ -28,7 +28,7 @@ class KnihaUrazuPage(QWidget):
 
         self.new_btn = QPushButton("Nový úraz")
         self.edit_btn = QPushButton("Upravit")
-        self.investigation_btn = QPushButton("Šetření úrazu")
+        self.investigation_btn = QPushButton("Administrace úrazu")
         self.mu_investigation_btn = QPushButton("Vyšetřování MU")
         self.vypis_btn = QPushButton("Výpis o pracovním úrazu")
         self.final_report_btn = QPushButton("Závěrečná zpráva")
@@ -170,16 +170,15 @@ class KnihaUrazuPage(QWidget):
             )
 
     def open_investigation(self, accident_id: int | None = None):
-        # TODO: Cílově bude proces šetření úrazu nahrazen modulem Vyšetřování MU.
         if accident_id is None:
             accident_id = self._selected_accident_id()
         if accident_id is None:
-            QMessageBox.information(self, "Šetření úrazu", "Vyberte úraz.")
+            QMessageBox.information(self, "Administrace úrazu", "Vyberte úraz.")
             return
 
         accident = accident_service.get_by_id(accident_id)
         if accident is None:
-            QMessageBox.warning(self, "Šetření úrazu", "Úraz nebyl nalezen.")
+            QMessageBox.warning(self, "Administrace úrazu", "Úraz nebyl nalezen.")
             self.refresh()
             return
 

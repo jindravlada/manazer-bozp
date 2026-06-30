@@ -21,7 +21,7 @@ class AccidentTable(QTableWidget):
     def __init__(self):
         super().__init__()
 
-        self.setColumnCount(11)
+        self.setColumnCount(10)
         self.setHorizontalHeaderLabels([
             "",
             "ID",
@@ -33,7 +33,6 @@ class AccidentTable(QTableWidget):
             "Pracoviště",
             "Místo úrazu",
             "ZoÚ",
-            "Op.",
         ])
 
         self.setColumnHidden(1, True)
@@ -51,7 +50,6 @@ class AccidentTable(QTableWidget):
             2: 90,
             3: 110,
             9: 35,
-            10: 35,
         }.items():
             header.setSectionResizeMode(column, QHeaderView.ResizeMode.Fixed)
             self.setColumnWidth(column, width)
@@ -61,7 +59,6 @@ class AccidentTable(QTableWidget):
     def load_accidents(self, accidents):
         accident_ids = [accident.id for accident in accidents]
         investigations_by_accident = self._load_investigations(accident_ids)
-        tasks_by_accident = self._load_opatreni_tasks(accident_ids)
 
         self.setRowCount(len(accidents))
 
@@ -69,7 +66,6 @@ class AccidentTable(QTableWidget):
             investigation = investigations_by_accident.get(accident.id)
             admin_zaslani = self._admin_zaslani_rows(investigation)
             zou_color = self._zou_color(accident, admin_zaslani)
-            op_color = self._op_color(tasks_by_accident.get(accident.id, []))
 
             values = [
                 "",
@@ -81,7 +77,6 @@ class AccidentTable(QTableWidget):
                 accident.zapsal_jmeno or "—",
                 accident.workplace_name or accident.pracoviste or "—",
                 accident.misto_urazu or "—",
-                "",
                 "",
             ]
 
@@ -95,8 +90,6 @@ class AccidentTable(QTableWidget):
                     item.setBackground(self._injury_type_color(accident.druh_urazu or ""))
                 elif column == 9 and zou_color is not None:
                     item.setBackground(zou_color)
-                elif column == 10:
-                    item.setBackground(op_color)
 
                 self.setItem(row, column, item)
 

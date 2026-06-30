@@ -163,7 +163,7 @@ class TaskTable(QTableWidget):
     def _finding_entity_type_label(self, entity_type: str) -> str:
         labels = {
             ENTITY_AUDITY: "Audit IMS",
-            ENTITY_ACCIDENT: "Šetření úrazu",
+            ENTITY_ACCIDENT: "Administrace úrazu",
             ENTITY_MU_INVESTIGATION: "Vyšetřování MU",
             ENTITY_PROVERKY: "Prověrka BOZP",
         }
