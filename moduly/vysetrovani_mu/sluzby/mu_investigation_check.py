@@ -52,6 +52,67 @@ class InvestigationCheckResult:
     check_code: str
     suggested_task_title: str = ""
     suggested_task_description: str = ""
+    navigate_tab: str = ""
+    navigate_field: str = ""
+
+
+_CHECK_NAVIGATION: dict[str, tuple[str, str]] = {
+    "spis.lead_missing": ("Spis", "vedouci_setreni"),
+    "spis.lead_present": ("Spis", "vedouci_setreni"),
+    "spis.status_missing": ("Spis", "stav_setreni"),
+    "spis.status_present": ("Spis", "stav_setreni"),
+    "spis.event_character_missing": ("Spis", "charakter"),
+    "spis.source_missing": ("Spis", "zdroj"),
+    "spis.source_present": ("Spis", "zdroj"),
+    "oznameni.date_missing": ("Oznámení", "datum_oznameni"),
+    "oznameni.date_present": ("Oznámení", "datum_oznameni"),
+    "oznameni.time_missing": ("Oznámení", "cas_oznameni"),
+    "oznameni.time_present": ("Oznámení", "cas_oznameni"),
+    "oznameni.measures_missing": ("Oznámení", "okamzita_opatreni"),
+    "oznameni.measures_present": ("Oznámení", "okamzita_opatreni"),
+    "zajisteni.site_missing": ("Zajištění důkazů", "zajisteni_mista"),
+    "zajisteni.site_present": ("Zajištění důkazů", "zajisteni_mista"),
+    "zajisteni.photo_missing": ("Zajištění důkazů", "fotodokumentace"),
+    "zajisteni.photo_present": ("Zajištění důkazů", "fotodokumentace"),
+    "zajisteni.photo_time_missing": ("Zajištění důkazů", "cas_fotodokumentace"),
+    "zajisteni.emergency_timeline_missing": ("Časová osa", "casova_osa"),
+    "svedci.none": ("Svědci", ""),
+    "svedci.present": ("Svědci", "svedci"),
+    "svedci.statement_missing": ("Svědci", "svedci_vyjadreni"),
+    "casova_osa.events_missing": ("Časová osa", "casova_osa"),
+    "casova_osa.sequence_error": ("Časová osa", "casova_osa"),
+    "casova_osa.sequence_ok": ("Časová osa", "casova_osa"),
+    "ishikawa.none": ("Zjištění", "ishikawa"),
+    "ishikawa.rejected_chain": ("Zjištění", "ishikawa"),
+    "findings.unsaved": ("Zjištění", ""),
+    "findings.none": ("Zjištění", "zjištění"),
+    "findings.present": ("Zjištění", "zjištění"),
+    "zaver.conclusion_missing": ("Závěr", "zaver_shrnuti"),
+    "zaver.conclusion_present": ("Závěr", "zaver_shrnuti"),
+    "zaver.causes_missing": ("Závěr", "shrnuti_pricin"),
+    "zaver.causes_present": ("Závěr", "shrnuti_pricin"),
+    "zaver.measures_missing": ("Zjištění", "zjištění"),
+    "zaver.measures_present": ("Závěr", ""),
+    "zaver.closed_with_issues": ("Závěr", "zaver_shrnuti"),
+}
+
+
+def _navigation_for(check_code: str, tab_name: str) -> tuple[str, str]:
+    if check_code in _CHECK_NAVIGATION:
+        return _CHECK_NAVIGATION[check_code]
+
+    prefixes = (
+        ("ishikawa.", ("Zjištění", "ishikawa")),
+        ("findings.responsible_missing", ("Zjištění", "odpovedna_osoba")),
+        ("findings.due_missing", ("Zjištění", "termin")),
+        ("findings.task_missing", ("Zjištění", "zjištění")),
+        ("svedci.identity_", ("Svědci", "svedci")),
+    )
+    for prefix, navigation in prefixes:
+        if check_code.startswith(prefix):
+            return navigation
+
+    return tab_name, ""
 
 
 def _collect_issue_checks(snapshot: dict) -> list[InvestigationCheckResult]:
@@ -83,6 +144,7 @@ def _result(
     suggested_task_title: str = "",
     suggested_task_description: str = "",
 ) -> InvestigationCheckResult:
+    navigate_tab, navigate_field = _navigation_for(check_code, tab_name)
     return InvestigationCheckResult(
         severity=severity,
         title=title,
@@ -91,6 +153,8 @@ def _result(
         check_code=check_code,
         suggested_task_title=suggested_task_title,
         suggested_task_description=suggested_task_description,
+        navigate_tab=navigate_tab,
+        navigate_field=navigate_field,
     )
 
 

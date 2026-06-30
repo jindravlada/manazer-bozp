@@ -1,6 +1,7 @@
 from datetime import date
 import json
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -51,6 +52,7 @@ from moduly.vysetrovani_mu.ui.mu_svedci_widget import MuSvedciWidget
 from moduly.vysetrovani_mu.ui.mu_zaver_widget import MuZaverWidget
 from moduly.vysetrovani_mu.ui.mu_zajisteni_dukazu_widget import MuZajisteniDukazuWidget
 from moduly.vysetrovani_mu.sluzby.mu_source_context import resolve_mu_source_context
+from moduly.vysetrovani_mu.sluzby.mu_investigation_check import InvestigationCheckResult
 
 
 class MuInvestigationDialog(QDialog):
@@ -522,7 +524,85 @@ class MuInvestigationDialog(QDialog):
     def _open_investigation_check(self) -> None:
         from moduly.vysetrovani_mu.ui.mu_investigation_check_dialog import MuInvestigationCheckDialog
 
-        MuInvestigationCheckDialog(self, snapshot=self.build_check_snapshot()).exec()
+        dialog = MuInvestigationCheckDialog(self, snapshot=self.build_check_snapshot())
+        if dialog.exec() and dialog.navigation_result() is not None:
+            self.navigate_to_check_result(dialog.navigation_result())
+
+    def navigate_to_check_result(self, result: InvestigationCheckResult) -> None:
+        tab_name = result.navigate_tab or result.tab_name
+        field_name = result.navigate_field or None
+        self.navigate_to(tab_name, field_name)
+
+    def navigate_to(self, tab_name: str, field_name: str | None = None) -> None:
+        if not tab_name:
+            return
+
+        tab_index = self._tab_index(tab_name)
+        if tab_index >= 0:
+            self.tabs.setCurrentIndex(tab_index)
+
+        widget = self._field_widget(field_name)
+        self._focus_widget(widget)
+
+    def _tab_index(self, tab_name: str) -> int:
+        for index in range(self.tabs.count()):
+            if self.tabs.tabText(index) == tab_name:
+                return index
+        return -1
+
+    def _field_widget(self, field_name: str | None):
+        if not field_name:
+            return None
+
+        getters = {
+            "vedouci_setreni": lambda: self.lead_thp_worker_selector,
+            "stav_setreni": lambda: self.status_combo,
+            "charakter": lambda: self.event_character_combo,
+            "zdroj": self._source_focus_widget,
+            "datum_oznameni": lambda: self.oznameni_widget.oznameni_datum,
+            "cas_oznameni": lambda: self.oznameni_widget.oznameni_cas,
+            "okamzita_opatreni": lambda: self.oznameni_widget.op_prvni_pomoc,
+            "zajisteni_mista": lambda: self.zajisteni_dukazu_widget.dukazy_datum,
+            "fotodokumentace": lambda: self.zajisteni_dukazu_widget.dukazy_datum_fotek,
+            "cas_fotodokumentace": lambda: self.zajisteni_dukazu_widget.dukazy_cas_fotek,
+            "svedci": lambda: self.svedci_widget.pocet_svedku,
+            "svedci_vyjadreni": lambda: self.svedci_widget.svedci_obsah,
+            "casova_osa": lambda: self.casova_osa_widget.chronologie_table,
+            "ishikawa": lambda: self.findings_widget.ishikawa_widget.table,
+            "zjištění": lambda: self.findings_widget.table,
+            "odpovedna_osoba": lambda: self.findings_widget.table,
+            "termin": lambda: self.findings_widget.table,
+            "zaver_shrnuti": lambda: self.zaver_widget.zaverecne_shrnuti_edit,
+            "shrnuti_pricin": lambda: self.zaver_widget.vysledek_hlavni_priciny_edit,
+        }
+        getter = getters.get(field_name)
+        if getter is None:
+            return None
+        try:
+            return getter()
+        except Exception:
+            return None
+
+    def _source_focus_widget(self):
+        source_type = self._current_source_type()
+        selector = self.source_selector
+        if source_type == SOURCE_TYPE_MANUAL:
+            return selector.manual_page
+        if source_type == SOURCE_TYPE_ACCIDENT:
+            return selector.accident_combo
+        if source_type == SOURCE_TYPE_AUDIT:
+            return selector.audit_combo
+        if source_type == SOURCE_TYPE_CONTROL:
+            return selector.control_combo
+        return selector.text_edit
+
+    def _focus_widget(self, widget) -> None:
+        if widget is None:
+            return
+        try:
+            widget.setFocus(Qt.FocusReason.OtherFocusReason)
+        except Exception:
+            pass
 
     def build_check_snapshot(self) -> dict:
         data = self.get_data()

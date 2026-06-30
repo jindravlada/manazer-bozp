@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QHeaderView,
     QLabel,
+    QPushButton,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -29,6 +30,8 @@ _SEVERITY_COLORS = {
     CHECK_SEVERITY_ERROR: ("#ffebee", "#c62828"),
 }
 
+_RESULT_ROLE = Qt.ItemDataRole.UserRole
+
 
 class MuInvestigationCheckDialog(QDialog):
     def __init__(self, parent=None, *, snapshot: dict):
@@ -38,6 +41,8 @@ class MuInvestigationCheckDialog(QDialog):
         self.resize(980, 640)
 
         self._results = run_investigation_checks(snapshot)
+        self._navigation_result: InvestigationCheckResult | None = None
+        self._tables: list[QTableWidget] = []
 
         layout = QVBoxLayout(self)
         layout.addWidget(self._build_summary())
@@ -48,10 +53,18 @@ class MuInvestigationCheckDialog(QDialog):
                 continue
             layout.addWidget(self._build_group(severity, group_results), 1)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.Close)
-        buttons.button(QDialogButtonBox.Close).setText("Zavřít")
+        buttons = QDialogButtonBox()
+        self._navigate_btn = QPushButton("Přejít")
+        self._navigate_btn.setEnabled(False)
+        self._navigate_btn.clicked.connect(self._navigate_to_selected)
+        buttons.addButton(self._navigate_btn, QDialogButtonBox.ActionRole)
+        close_btn = buttons.addButton(QDialogButtonBox.Close)
+        close_btn.setText("Zavřít")
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
+
+    def navigation_result(self) -> InvestigationCheckResult | None:
+        return self._navigation_result
 
     def _build_summary(self) -> QLabel:
         counts = {severity: 0 for severity in SEVERITY_ORDER}
@@ -92,7 +105,7 @@ class MuInvestigationCheckDialog(QDialog):
                 SEVERITY_LABELS[item.severity],
                 item.title,
                 item.message,
-                item.tab_name,
+                item.navigate_tab or item.tab_name,
             ]
             tooltip = item.message
             if item.suggested_task_title:
@@ -105,9 +118,37 @@ class MuInvestigationCheckDialog(QDialog):
                 cell.setToolTip(tooltip)
                 cell.setBackground(QBrush(QColor(bg)))
                 cell.setForeground(QBrush(QColor(fg)))
+                if column == 0:
+                    cell.setData(_RESULT_ROLE, item)
                 if column in (2, 3):
                     cell.setTextAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
                 table.setItem(row, column, cell)
 
+        table.itemSelectionChanged.connect(self._update_navigate_button)
+        table.doubleClicked.connect(self._navigate_to_selected)
+        self._tables.append(table)
         layout.addWidget(table)
         return group
+
+    def _selected_result(self) -> InvestigationCheckResult | None:
+        for table in self._tables:
+            selected = table.selectedItems()
+            if not selected:
+                continue
+            result = selected[0].data(_RESULT_ROLE)
+            if isinstance(result, InvestigationCheckResult):
+                return result
+        return None
+
+    def _can_navigate(self, result: InvestigationCheckResult | None) -> bool:
+        return result is not None and bool(result.navigate_tab or result.tab_name)
+
+    def _update_navigate_button(self) -> None:
+        self._navigate_btn.setEnabled(self._can_navigate(self._selected_result()))
+
+    def _navigate_to_selected(self) -> None:
+        result = self._selected_result()
+        if not self._can_navigate(result):
+            return
+        self._navigation_result = result
+        self.accept()
