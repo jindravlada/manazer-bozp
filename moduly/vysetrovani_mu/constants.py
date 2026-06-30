@@ -127,52 +127,160 @@ ISHIKAWA_LEVELS = (
 )
 
 ISHIKAWA_OTHER_FACTOR = "Jiné"
+ISHIKAWA_TRIGGER_NONE_LABEL = "Žádná"
+
+
+def _ishikawa_factor(
+    name: str,
+    *questions: str,
+    evidence: list[str] | None = None,
+    related: list[str] | None = None,
+    parent: str = "",
+    supports: list[str] | None = None,
+    contradicts: list[str] | None = None,
+    actions: list[str] | None = None,
+    suggest: list[dict] | None = None,
+) -> dict:
+    return {
+        "name": name,
+        "questions": list(questions),
+        "evidence": list(evidence or []),
+        "related": list(related or []),
+        "parent": parent.strip(),
+        "supports": list(supports or []),
+        "contradicts": list(contradicts or []),
+        "actions": list(actions or []),
+        "suggest": [dict(item) for item in (suggest or [])],
+    }
+
 
 ISHIKAWA_FALLBACK_CATALOG: dict[str, dict] = {
     "Člověk": {
         "question": "Udělal někdo něco jinak, než měl?",
         "factors": [
-            "Nedodržení pracovního postupu",
-            "Nesprávné použití zařízení",
-            "Nepozornost",
-            "Spěch",
-            "Únava",
-            "Stres",
-            "Zdravotní indispozice",
-            "Nedostatečná kvalifikace",
-            "Rutina",
-            "Podcenění rizika",
-            "Používání telefonu",
-            ISHIKAWA_OTHER_FACTOR,
+            _ishikawa_factor(
+                "Nedodržení pracovního postupu",
+                "Znal pracovník platný pracovní postup?",
+                "Byl postup dodržen v místě a čase události?",
+            ),
+            _ishikawa_factor(
+                "Nesprávné použití zařízení",
+                "Bylo zařízení použito podle návodu a určení?",
+            ),
+            _ishikawa_factor(
+                "Nepozornost",
+                "Byl pracovník soustředěný na úkol v místě a čase události?",
+                "Nebyl rozptylován okolím, kolegy nebo jinými podněty?",
+                "Věnoval pozornost viditelným rizikům a varovným signálům?",
+                "Nevykonával současně více činností nebo nestíhal sledovat průběh práce?",
+                "Neodpovídal průběh práce spíše spěchu, únavě nebo rutině než vědomé chybě?",
+                evidence=[
+                    "Výpověď dotčené osoby",
+                    "Výpovědi svědků",
+                    "Záznam z kamery",
+                    "Pracovní postup a pokyny",
+                    "Fotodokumentace místa",
+                    "Záznamy komunikace (telefon, vysílačka)",
+                    "Rozpis směn a plnění úkolů",
+                ],
+                related=["Spěch", "Únava", "Používání telefonu"],
+                supports=[
+                    "Svědci popisují rozptýlení nebo nedostatek pozornosti",
+                    "Pracovník nevnímal viditelné nebezpečí nebo varování",
+                    "Souběžně probíhala rušivá činnost (hovor, konverzace, hluk)",
+                    "Došlo k přehlédnutí zjevného kroku postupu",
+                    "Práce probíhala rutinně bez vědomé kontroly rizik",
+                ],
+                contradicts=[
+                    "Pracovník postupoval systematicky a opakovaně kontroloval rizika",
+                    "Svědci potvrdili plné soustředění na úkol",
+                    "Chybu lépe vysvětluje technická závada, prostředí nebo nedostatek postupu",
+                    "Pracovník jednal v souladu s postupem a přesto došlo k jiné příčině",
+                ],
+                actions=[
+                    "Vyslechnout dotčenou osobu o průběhu práce a vnímání okolí",
+                    "Vyslechnout svědky k chování a soustředění pracovníka",
+                    "Prověřit záznamy z kamer v čase události",
+                    "Porovnat průběh činnosti s pracovním postupem",
+                    "Prověřit rušivé vlivy na pracovišti (hluk, pohyb osob, komunikace)",
+                    "Zvážit zpřesnění hypotézy podřízeným faktorem (Spěch, Únava, Používání telefonu)",
+                ],
+                suggest=[
+                    {"category": "Organizace práce", "factor": "Dlouhá směna"},
+                    {"category": "Prostředí", "factor": "Vysoká teplota"},
+                    {"category": "Pracovní postup", "factor": "Jiné"},
+                ],
+            ),
+            _ishikawa_factor("Spěch", parent="Nepozornost"),
+            _ishikawa_factor(
+                "Únava",
+                parent="Nepozornost",
+                supports=[
+                    "Dlouhá pracovní směna",
+                    "Vysoká teplota na pracovišti",
+                    "Svědci popsali únavu pracovníka",
+                ],
+                contradicts=[
+                    "Pracovník nastoupil po odpočinku",
+                    "Svědci únavu nepotvrdili",
+                ],
+                actions=[
+                    "Prověřit délku směny",
+                    "Ověřit rozpis směn za poslední dny",
+                    "Vyslechnout svědky k projevu únavy",
+                    "Prověřit klimatické podmínky pracoviště",
+                ],
+                suggest=[
+                    {"category": "Prostředí", "factor": "Vysoká teplota"},
+                    {"category": "Organizace práce", "factor": "Dlouhá směna"},
+                    {"category": "Řízení a kontrola", "factor": "Nedostatečné plánování směn"},
+                ],
+            ),
+            _ishikawa_factor("Stres"),
+            _ishikawa_factor("Zdravotní indispozice"),
+            _ishikawa_factor("Nedostatečná kvalifikace"),
+            _ishikawa_factor("Rutina"),
+            _ishikawa_factor("Podcenění rizika"),
+            _ishikawa_factor("Používání telefonu", parent="Nepozornost"),
+            _ishikawa_factor(ISHIKAWA_OTHER_FACTOR),
         ],
     },
     "Pracovní postup": {
         "question": "Byl pracovní postup jasný, známý, použitelný a dodržený?",
-        "factors": [ISHIKAWA_OTHER_FACTOR],
+        "factors": [_ishikawa_factor(ISHIKAWA_OTHER_FACTOR)],
     },
     "Technika / zařízení": {
         "question": "Selhalo zařízení, nástroj nebo jeho ochranný prvek?",
-        "factors": [ISHIKAWA_OTHER_FACTOR],
+        "factors": [_ishikawa_factor(ISHIKAWA_OTHER_FACTOR)],
     },
     "Prostředí": {
         "question": "Ovlivnily průběh události podmínky pracoviště?",
-        "factors": [ISHIKAWA_OTHER_FACTOR],
+        "factors": [
+            _ishikawa_factor("Vysoká teplota"),
+            _ishikawa_factor(ISHIKAWA_OTHER_FACTOR),
+        ],
     },
     "Organizace práce": {
         "question": "Byla práce organizována tak, aby mohla být provedena bezpečně?",
-        "factors": [ISHIKAWA_OTHER_FACTOR],
+        "factors": [
+            _ishikawa_factor("Dlouhá směna"),
+            _ishikawa_factor(ISHIKAWA_OTHER_FACTOR),
+        ],
     },
     "Řízení a kontrola": {
         "question": "Byla rizika řízena a kontrolována dostatečně?",
-        "factors": [ISHIKAWA_OTHER_FACTOR],
+        "factors": [
+            _ishikawa_factor("Nedostatečné plánování směn"),
+            _ishikawa_factor(ISHIKAWA_OTHER_FACTOR),
+        ],
     },
     "Komunikace": {
         "question": "Měli všichni potřebné informace ve správný čas?",
-        "factors": [ISHIKAWA_OTHER_FACTOR],
+        "factors": [_ishikawa_factor(ISHIKAWA_OTHER_FACTOR)],
     },
     "Ostatní": {
         "question": "Existovala jiná okolnost, která mohla přispět ke vzniku události?",
-        "factors": [ISHIKAWA_OTHER_FACTOR],
+        "factors": [_ishikawa_factor(ISHIKAWA_OTHER_FACTOR)],
     },
 }
 
