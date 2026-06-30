@@ -16,7 +16,8 @@
       "kontrolni_body": [],
       "typicke_zavady": [],
       "doporucene_postupy": [],
-      "doporucena_opatreni": []
+      "legislativa": [],
+      "historie": []
     },
     {
       "id": "ocni_sprcha",
@@ -28,7 +29,8 @@
       "kontrolni_body": [],
       "typicke_zavady": [],
       "doporucene_postupy": [],
-      "doporucena_opatreni": []
+      "legislativa": [],
+      "historie": []
     },
     {
       "id": "skolene_osoby",
@@ -40,7 +42,8 @@
       "kontrolni_body": [],
       "typicke_zavady": [],
       "doporucene_postupy": [],
-      "doporucena_opatreni": []
+      "legislativa": [],
+      "historie": []
     },
     {
       "id": "telefonni_cisla",
@@ -52,7 +55,8 @@
       "kontrolni_body": [],
       "typicke_zavady": [],
       "doporucene_postupy": [],
-      "doporucena_opatreni": []
+      "legislativa": [],
+      "historie": []
     }
   ],
   "kontrolni_body": [],

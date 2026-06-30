@@ -12,7 +12,16 @@ _KNOWLEDGE_LIST_FIELDS = (
     "kontrolni_body",
     "typicke_zavady",
     "doporucene_postupy",
-    "doporucena_opatreni",
+    "legislativa",
+    "historie",
+)
+
+SECTION_LIST_BLOCKS: tuple[tuple[str, str], ...] = (
+    ("Kontrolní body", "kontrolni_body"),
+    ("Typické závady", "typicke_zavady"),
+    ("Doporučené postupy", "doporucene_postupy"),
+    ("Legislativa", "legislativa"),
+    ("Historie", "historie"),
 )
 
 

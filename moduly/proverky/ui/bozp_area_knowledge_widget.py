@@ -1,86 +1,86 @@
-"""Panel oblasti prověrky vykreslený ze znalostního JSON."""
+"""Panel oblasti prověrky — seznam sekcí a pracovní karta vybraného uzlu."""
 
-from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
 
-from core.widgets.dialog_utils import wrap_in_scroll_area
-from moduly.proverky.constants import AREA_PART_NOT_IMPLEMENTED_TEXT
+from moduly.proverky.constants import AREA_PANEL_LEFT_WIDTH
 from moduly.proverky.sluzby.proverky_knowledge_service import proverky_knowledge_service
+from moduly.proverky.ui.bozp_knowledge_section_widget import BozpKnowledgeSectionWidget
 
 
 class BozpAreaKnowledgeWidget(QWidget):
+    _SECTION_ROLE = Qt.ItemDataRole.UserRole
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self._content_host = QWidget()
-        self._content_layout = QVBoxLayout(self._content_host)
-        self._content_layout.setContentsMargins(0, 0, 0, 0)
-        self._content_layout.setSpacing(12)
+        self._sections: list[dict] = []
 
-        outer = QVBoxLayout(self)
-        outer.setContentsMargins(0, 0, 0, 0)
-        outer.addWidget(wrap_in_scroll_area(self._content_host))
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+
+        self.section_list = QListWidget()
+        self.section_list.setAlternatingRowColors(True)
+        self.section_list.currentItemChanged.connect(self._on_section_changed)
+
+        self.section_widget = BozpKnowledgeSectionWidget()
+
+        splitter.addWidget(self.section_list)
+        splitter.addWidget(self.section_widget)
+        splitter.setStretchFactor(0, 0)
+        splitter.setStretchFactor(1, 1)
+        splitter.setSizes([AREA_PANEL_LEFT_WIDTH, 1])
+
+        layout.addWidget(splitter)
 
     def set_knowledge(self, knowledge: dict | None) -> None:
-        self._clear_content()
+        self._sections = []
+        self.section_list.blockSignals(True)
+        self.section_list.clear()
+        self.section_list.blockSignals(False)
 
         if not knowledge:
-            self._content_layout.addWidget(self._build_info_label("Znalostní soubor oblasti nebyl nalezen."))
-            self._content_layout.addStretch()
+            self.section_widget.set_section(None)
             return
 
-        sections = proverky_knowledge_service.get_active_sections(knowledge)
-        if not sections:
-            self._content_layout.addWidget(self._build_info_label("Oblast nemá aktivní sekce."))
-            self._content_layout.addStretch()
-            return
+        self._sections = proverky_knowledge_service.get_active_sections(knowledge)
 
-        for section in sections:
-            self._content_layout.addWidget(self._build_section(section))
+        self.section_list.blockSignals(True)
+        self.section_list.clear()
+        for section in self._sections:
+            item = QListWidgetItem(str(section.get("nazev") or "—"))
+            item.setData(self._SECTION_ROLE, str(section.get("id") or ""))
+            self.section_list.addItem(item)
+        self.section_list.blockSignals(False)
 
-        self._content_layout.addStretch()
-
-    def _clear_content(self) -> None:
-        while self._content_layout.count():
-            item = self._content_layout.takeAt(0)
-            widget = item.widget()
-            if widget is not None:
-                widget.deleteLater()
-
-    def _build_section(self, section: dict) -> QWidget:
-        container = QWidget()
-        section_layout = QVBoxLayout(container)
-        section_layout.setContentsMargins(0, 0, 0, 0)
-        section_layout.setSpacing(6)
-
-        title = str(section.get("nazev") or "—").strip() or "—"
-        header = QLabel(title)
-        header.setObjectName("SectionTitle")
-
-        panel = QFrame()
-        panel.setObjectName("ModulePanel")
-        panel_layout = QVBoxLayout(panel)
-        panel_layout.setContentsMargins(12, 12, 12, 12)
-        panel_layout.setSpacing(6)
-
-        popis = str(section.get("popis") or "").strip()
-        if popis:
-            description = QLabel(popis)
-            description.setObjectName("InfoText")
-            description.setWordWrap(True)
-            panel_layout.addWidget(description)
-
-        if proverky_knowledge_service.section_has_content(section):
-            panel_layout.addWidget(self._build_info_label("Obsah sekce bude doplněn v další fázi."))
+        if self.section_list.count() > 0:
+            self.section_list.setCurrentRow(0)
         else:
-            panel_layout.addWidget(self._build_info_label(AREA_PART_NOT_IMPLEMENTED_TEXT))
+            self.section_widget.set_section(None)
 
-        section_layout.addWidget(header)
-        section_layout.addWidget(panel)
-        return container
+    def _section_by_id(self, section_id: str) -> dict | None:
+        for section in self._sections:
+            if str(section.get("id") or "") == section_id:
+                return section
+        return None
 
-    @staticmethod
-    def _build_info_label(text: str) -> QLabel:
-        label = QLabel(text)
-        label.setObjectName("InfoText")
-        label.setWordWrap(True)
-        return label
+    def _on_section_changed(
+        self,
+        current: QListWidgetItem | None,
+        _previous: QListWidgetItem | None,
+    ) -> None:
+        if current is None:
+            self.section_widget.set_section(None)
+            return
+
+        section_id = str(current.data(self._SECTION_ROLE) or "")
+        self.section_widget.set_section(self._section_by_id(section_id))

@@ -79,3 +79,4 @@ TAB_LABELS = (
 AREA_PANEL_LEFT_WIDTH = 260
 AREA_NOT_IMPLEMENTED_TEXT = "Tato oblast zatím není implementována."
 AREA_PART_NOT_IMPLEMENTED_TEXT = "Tato část bude doplněna."
+KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT = "Tato část bude doplněna."
