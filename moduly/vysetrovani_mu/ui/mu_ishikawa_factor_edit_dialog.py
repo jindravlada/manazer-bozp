@@ -207,12 +207,8 @@ class MuIshikawaFactorEditDialog(QDialog):
         list_widget.setMinimumHeight(_LIST_MIN_HEIGHT)
         return list_widget
 
-    def _bind_list_section(self, list_widget: QListWidget, section: CollapsibleSection) -> None:
+    def _register_list_section(self, list_widget: QListWidget, section: CollapsibleSection) -> None:
         self._sections_by_list[list_widget] = section
-        model = list_widget.model()
-        model.rowsInserted.connect(lambda *_: self._refresh_section_count(list_widget))
-        model.rowsRemoved.connect(lambda *_: self._refresh_section_count(list_widget))
-        model.modelReset.connect(lambda *_: self._refresh_section_count(list_widget))
 
     def _refresh_section_count(self, list_widget: QListWidget) -> None:
         section = self._sections_by_list.get(list_widget)
@@ -224,7 +220,7 @@ class MuIshikawaFactorEditDialog(QDialog):
         list_widget = self._create_list_widget()
         section.content_layout().addWidget(list_widget)
         section.content_layout().addLayout(self._list_toolbar(list_widget))
-        self._bind_list_section(list_widget, section)
+        self._register_list_section(list_widget, section)
         parent_layout.addWidget(section)
         return list_widget
 
@@ -233,7 +229,7 @@ class MuIshikawaFactorEditDialog(QDialog):
         list_widget = self._create_list_widget()
         section.content_layout().addWidget(list_widget)
         section.content_layout().addLayout(self._related_toolbar())
-        self._bind_list_section(list_widget, section)
+        self._register_list_section(list_widget, section)
         parent_layout.addWidget(section)
         return list_widget
 
@@ -242,7 +238,7 @@ class MuIshikawaFactorEditDialog(QDialog):
         list_widget = self._create_list_widget()
         section.content_layout().addWidget(list_widget)
         section.content_layout().addLayout(self._suggest_toolbar())
-        self._bind_list_section(list_widget, section)
+        self._register_list_section(list_widget, section)
         parent_layout.addWidget(section)
         return list_widget
 
@@ -332,6 +328,7 @@ class MuIshikawaFactorEditDialog(QDialog):
         item.setData(Qt.ItemDataRole.UserRole, {"category": category, "factor": factor})
         self.suggest_list.addItem(item)
         self.suggest_list.setCurrentRow(self.suggest_list.count() - 1)
+        self._refresh_section_count(self.suggest_list)
 
     def _pick_suggest_entry(
         self,
@@ -444,6 +441,7 @@ class MuIshikawaFactorEditDialog(QDialog):
             return
         list_widget.addItem(value)
         list_widget.setCurrentRow(list_widget.count() - 1)
+        self._refresh_section_count(list_widget)
 
     def _add_related_factor(self) -> None:
         current_name = self._current_factor_name()
@@ -479,6 +477,7 @@ class MuIshikawaFactorEditDialog(QDialog):
 
         self.related_list.addItem(value)
         self.related_list.setCurrentRow(self.related_list.count() - 1)
+        self._refresh_section_count(self.related_list)
 
     def _edit_item(self, list_widget: QListWidget) -> None:
         item = list_widget.currentItem()
@@ -505,6 +504,7 @@ class MuIshikawaFactorEditDialog(QDialog):
             QMessageBox.information(self, "Správa faktoru", "Vyberte položku.")
             return
         list_widget.takeItem(row)
+        self._refresh_section_count(list_widget)
 
     def _accept(self) -> None:
         name = self.name_edit.text().strip()
