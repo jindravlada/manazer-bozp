@@ -894,15 +894,1063 @@
     ]
   },
   "Organizace práce": {
-    "question": "Byla práce organizována tak, aby mohla být provedena bezpečně?",
+    "question": "Jak organizace práce přispěla ke vzniku mimořádné události?",
     "factors": [
       {
+        "name": "Časový tlak",
+        "questions": [
+          "Byl pracovník nebo tým pod časovým tlakem?",
+          "Byl termín práce reálně splnitelný?",
+          "Vzniklo před událostí zpoždění?",
+          "Byla rychlost práce upřednostněna před bezpečností?",
+          "Mohl pracovník práci přerušit nebo zpomalit?",
+          "Byl tlak na dokončení práce výslovný, nebo nepřímý?"
+        ],
+        "evidence": [
+          "Pracovní plán",
+          "Harmonogram práce",
+          "Směnový rozpis",
+          "Komunikace s nadřízeným",
+          "Provozní záznamy",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Kamerový záznam"
+        ],
+        "related": [
+          "Tlak na výkon",
+          "Nahromadění práce",
+          "Nedostatek pracovníků",
+          "Spěch"
+        ],
+        "parent": "",
+        "supports": [
+          "Práce probíhala pod termínem",
+          "Před událostí vzniklo zpoždění",
+          "Pracovník uvedl tlak na rychlost",
+          "Svědci popsali spěch",
+          "Byl vynechán kontrolní nebo bezpečnostní krok",
+          "Výkon byl sledován nebo urgován"
+        ],
+        "contradicts": [
+          "Práce neměla pevný termín",
+          "Pracovník měl možnost práci přerušit",
+          "Nebyl zjištěn tlak na výkon",
+          "Událost nesouvisela s rychlostí práce",
+          "Práce probíhala běžným tempem"
+        ],
+        "actions": [
+          "Ověřit harmonogram a skutečný průběh práce",
+          "Vyslechnout pracovníka k časovému tlaku",
+          "Ověřit pokyny nadřízeného",
+          "Porovnat plán a skutečný stav práce",
+          "Prověřit, zda byl vynechán krok postupu",
+          "Ověřit, zda je tlak na rychlost běžnou praxí"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Spěch"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Tlak na výkon"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Příliš složitý postup"
+          }
+        ]
+      },
+      {
+        "name": "Tlak na výkon",
+        "questions": [
+          "Byl pracovník hodnocen podle výkonu nebo rychlosti?",
+          "Existovala prémie, sankce nebo jiný tlak související s výkonem?",
+          "Byly bezpečnostní požadavky v rozporu s výkonovými cíli?",
+          "Byl pracovník pobízen k urychlení práce?",
+          "Byl tlak na výkon dlouhodobý, nebo vznikl náhle?"
+        ],
+        "evidence": [
+          "Pokyny nadřízeného",
+          "Komunikace před událostí",
+          "Výkonové ukazatele",
+          "Systém odměn nebo sankcí",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Provozní záznamy"
+        ],
+        "related": [
+          "Časový tlak",
+          "Spěch",
+          "Podcenění rizika",
+          "Konflikt priorit"
+        ],
+        "parent": "Časový tlak",
+        "supports": [
+          "Pracovník uvedl tlak na výkon",
+          "Nadřízený urgoval dokončení práce",
+          "Výkonové cíle byly obtížně splnitelné",
+          "Bezpečnostní krok byl vnímán jako zdržení",
+          "Podobný tlak popisují i další pracovníci"
+        ],
+        "contradicts": [
+          "Výkon nebyl sledován ani hodnocen",
+          "Nebyla zjištěna urgence práce",
+          "Pracovník mohl postupovat pomalu a bezpečně",
+          "Událost nesouvisela s výkonem"
+        ],
+        "actions": [
+          "Prověřit způsob hodnocení výkonu",
+          "Ověřit komunikaci před událostí",
+          "Vyslechnout pracovníky k tlaku na výkon",
+          "Posoudit, zda výkonové cíle nejsou v rozporu s bezpečností",
+          "Ověřit roli nadřízeného"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Spěch"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nedodržení pracovního postupu"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nevhodné nastavení priorit"
+          }
+        ]
+      },
+      {
+        "name": "Nahromadění práce",
+        "questions": [
+          "Došlo před událostí k nahromadění práce?",
+          "Vzniklo zpoždění kvůli poruše, výpadku nebo nedostatku lidí?",
+          "Snažil se pracovník dohánět skluz?",
+          "Byly úkoly řešeny ve spěchu nebo souběžně?",
+          "Byl k dispozici plán řešení zpoždění?"
+        ],
+        "evidence": [
+          "Provozní záznamy",
+          "Harmonogram práce",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Evidence poruch nebo výpadků",
+          "Směnový rozpis",
+          "Komunikace dispečinku nebo nadřízených"
+        ],
+        "related": [
+          "Časový tlak",
+          "Nedostatek pracovníků",
+          "Nadměrné pracovní zatížení",
+          "Spěch"
+        ],
+        "parent": "Časový tlak",
+        "supports": [
+          "Práce byla ve skluzu",
+          "Došlo k výpadku nebo poruše",
+          "Pracovníci doháněli zpoždění",
+          "Úkoly byly kumulovány",
+          "Kontrolní kroky byly zkráceny nebo vynechány"
+        ],
+        "contradicts": [
+          "Práce nebyla ve skluzu",
+          "Úkoly byly rozloženy standardně",
+          "Nebyla zjištěna kumulace úkolů",
+          "Událost nesouvisela s objemem práce"
+        ],
+        "actions": [
+          "Ověřit skutečný objem práce před událostí",
+          "Zjistit důvod případného zpoždění",
+          "Porovnat plán a realitu",
+          "Vyslechnout pracovníky k dohánění skluzu",
+          "Prověřit, zda existoval plán řešení nahromaděné práce"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Spěch"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečné plánování práce"
+          }
+        ]
+      },
+      {
         "name": "Dlouhá směna",
-        "questions": []
+        "questions": [
+          "Jak dlouho pracovník pracoval před událostí?",
+          "Kolikátou směnu v řadě vykonával?",
+          "Byl dodržen odpočinek mezi směnami?",
+          "Vznikla událost v závěru směny?",
+          "Byla práce fyzicky nebo psychicky náročná?",
+          "Byla směna prodloužena mimo běžný plán?"
+        ],
+        "evidence": [
+          "Evidence pracovní doby",
+          "Směnový rozpis",
+          "Záznamy o přesčasech",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Provozní záznamy",
+          "Docházkový systém"
+        ],
+        "related": [
+          "Práce bez dostatečného odpočinku",
+          "Přesčasy",
+          "Nedostatek přestávek",
+          "Únava"
+        ],
+        "parent": "",
+        "supports": [
+          "Směna byla dlouhá",
+          "Pracovník pracoval více směn po sobě",
+          "Nebyl dostatečný odpočinek",
+          "Událost nastala ke konci směny",
+          "Svědci popsali únavu",
+          "Práce byla náročná"
+        ],
+        "contradicts": [
+          "Směna byla krátká nebo běžná",
+          "Pracovník měl dostatečný odpočinek",
+          "Událost nastala krátce po začátku směny",
+          "Nebyly zjištěny projevy únavy"
+        ],
+        "actions": [
+          "Ověřit délku směny",
+          "Ověřit odpočinek mezi směnami",
+          "Prověřit přesčasy",
+          "Vyslechnout svědky k projevům únavy",
+          "Posoudit náročnost práce",
+          "Porovnat směnový plán se skutečností"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Únava"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          },
+          {
+            "category": "Prostředí",
+            "factor": "Vysoká teplota"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečné plánování směn"
+          }
+        ]
+      },
+      {
+        "name": "Práce bez dostatečného odpočinku",
+        "questions": [
+          "Měl pracovník mezi směnami dostatečný odpočinek?",
+          "Byl před událostí povolán mimo běžný rozvrh?",
+          "Pracoval v noci, brzy ráno nebo po mimořádné směně?",
+          "Kolik hodin odpočinku skutečně měl?",
+          "Mohla únava ovlivnit jeho reakci nebo pozornost?"
+        ],
+        "evidence": [
+          "Docházka",
+          "Směnový rozpis",
+          "Evidence přesčasů",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Záznamy o mimořádném povolání do práce"
+        ],
+        "related": [
+          "Dlouhá směna",
+          "Přesčasy",
+          "Únava",
+          "Zdravotní indispozice"
+        ],
+        "parent": "Dlouhá směna",
+        "supports": [
+          "Odpočinek mezi směnami byl krátký",
+          "Pracovník pracoval mimo plán",
+          "Šlo o opakované směny bez regenerace",
+          "Pracovník uvedl únavu",
+          "Svědci popsali sníženou pozornost"
+        ],
+        "contradicts": [
+          "Pracovník měl dostatečný odpočinek",
+          "Nešlo o mimořádnou směnu",
+          "Nebyly zjištěny známky únavy",
+          "Příčina nesouvisela s únavou"
+        ],
+        "actions": [
+          "Zjistit skutečnou délku odpočinku",
+          "Prověřit rozpis směn",
+          "Ověřit mimořádné povolání do práce",
+          "Vyslechnout pracovníka k únavě",
+          "Posoudit dodržení pravidel odpočinku"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Únava"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečné plánování směn"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Přesčasy"
+          }
+        ]
+      },
+      {
+        "name": "Přesčasy",
+        "questions": [
+          "Pracoval pracovník před událostí přesčas?",
+          "Šlo o plánovaný, nebo mimořádný přesčas?",
+          "Byly přesčasy opakované?",
+          "Měl pracovník možnost přesčas odmítnout?",
+          "Ovlivnil přesčas únavu nebo pozornost?",
+          "Byla práce přesčas řízena a evidována?"
+        ],
+        "evidence": [
+          "Evidence pracovní doby",
+          "Docházkový systém",
+          "Příkaz k přesčasu",
+          "Směnový rozpis",
+          "Výpověď pracovníka",
+          "Výpověď nadřízeného",
+          "Záznamy provozu"
+        ],
+        "related": [
+          "Dlouhá směna",
+          "Nedostatek pracovníků",
+          "Únava",
+          "Časový tlak"
+        ],
+        "parent": "",
+        "supports": [
+          "Pracovník pracoval přesčas",
+          "Přesčasy byly opakované",
+          "Přesčas byl důsledkem nedostatku lidí",
+          "Pracovník uvedl únavu",
+          "Přesčas navazoval na náročnou směnu"
+        ],
+        "contradicts": [
+          "Pracovník nepracoval přesčas",
+          "Přesčas byl krátký a ojedinělý",
+          "Byl zajištěn dostatečný odpočinek",
+          "Událost nesouvisela s dobou práce"
+        ],
+        "actions": [
+          "Ověřit evidenci přesčasů",
+          "Zjistit důvod přesčasové práce",
+          "Ověřit plánování směn",
+          "Posoudit vliv přesčasů na únavu",
+          "Vyslechnout nadřízeného k organizaci práce"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Únava"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Dlouhá směna"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečné plánování kapacit"
+          }
+        ]
+      },
+      {
+        "name": "Nedostatek pracovníků",
+        "questions": [
+          "Byl na práci dostatečný počet pracovníků?",
+          "Musel pracovník vykonávat práci za více osob?",
+          "Byla práce provedena ve sníženém obsazení?",
+          "Byl nedostatek pracovníků předem znám?",
+          "Vedl nedostatek lidí ke spěchu nebo vynechání kontroly?",
+          "Bylo zajištěno zastupování nepřítomných pracovníků?"
+        ],
+        "evidence": [
+          "Směnový rozpis",
+          "Plán obsazení pracoviště",
+          "Evidence docházky",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Záznamy o absencích",
+          "Provozní záznamy"
+        ],
+        "related": [
+          "Časový tlak",
+          "Přesčasy",
+          "Nadměrné pracovní zatížení",
+          "Spěch"
+        ],
+        "parent": "",
+        "supports": [
+          "Pracoviště bylo podstavové",
+          "Pracovník vykonával práci za více osob",
+          "Nebyla zajištěna zastupitelnost",
+          "Došlo ke spěchu nebo přetížení",
+          "Nadřízený o nedostatku věděl"
+        ],
+        "contradicts": [
+          "Obsazení bylo standardní",
+          "Práce nevyžadovala více osob",
+          "Nedostatek lidí neměl vliv na událost",
+          "Byla zajištěna náhrada"
+        ],
+        "actions": [
+          "Porovnat plánované a skutečné obsazení",
+          "Zjistit důvod sníženého počtu pracovníků",
+          "Vyslechnout pracovníky k přetížení",
+          "Ověřit, zda práce nevyžadovala týmové provedení",
+          "Posoudit vliv nedostatku lidí na postup práce"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Spěch"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Únava"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečné plánování kapacit"
+          }
+        ]
+      },
+      {
+        "name": "Nedostatek přestávek",
+        "questions": [
+          "Měl pracovník možnost čerpat přestávky?",
+          "Byly přestávky skutečně čerpány?",
+          "Byla práce organizována tak, aby přestávky umožnila?",
+          "Došlo k omezení přestávek kvůli provozu?",
+          "Mohlo nečerpání přestávek vést k únavě nebo ztrátě pozornosti?",
+          "Byly přestávky důležité kvůli teplu, zátěži nebo monotónní práci?"
+        ],
+        "evidence": [
+          "Evidence pracovní doby",
+          "Směnový rozpis",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Provozní záznamy",
+          "Režimová opatření",
+          "Záznamy kontrol"
+        ],
+        "related": [
+          "Dlouhá směna",
+          "Únava",
+          "Únava z horka",
+          "Nadměrné pracovní zatížení"
+        ],
+        "parent": "",
+        "supports": [
+          "Pracovník přestávku nečerpal",
+          "Provoz přestávky fakticky neumožňoval",
+          "Práce byla fyzicky nebo psychicky náročná",
+          "Chybělo střídání pracovníků",
+          "Nečerpání přestávek bylo běžné"
+        ],
+        "contradicts": [
+          "Přestávky byly čerpány",
+          "Práce nebyla náročná",
+          "Přestávky nebyly omezeny",
+          "Událost nesouvisela s únavou nebo pozorností"
+        ],
+        "actions": [
+          "Ověřit skutečné čerpání přestávek",
+          "Vyslechnout pracovníky k možnosti přestávek",
+          "Posoudit režim práce",
+          "Prověřit střídání pracovníků",
+          "Ověřit vliv přestávek na únavu nebo teplotní zátěž"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Únava"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Únava z horka"
+          },
+          {
+            "category": "Prostředí",
+            "factor": "Vysoká teplota"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečná organizace přestávek"
+          }
+        ]
+      },
+      {
+        "name": "Přerušování práce",
+        "questions": [
+          "Byla práce před událostí přerušena?",
+          "Musel pracovník reagovat na jiné požadavky?",
+          "Vrátil se pracovník po přerušení ke správnému kroku?",
+          "Mohlo přerušení vést k opomenutí kontroly?",
+          "Byla přerušení na pracovišti běžná?",
+          "Existuje postup pro bezpečné navázání po přerušení?"
+        ],
+        "evidence": [
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Časová osa",
+          "Provozní komunikace",
+          "Kamerový záznam",
+          "Pracovní postup",
+          "Záznamy o mimořádných požadavcích"
+        ],
+        "related": [
+          "Nepozornost",
+          "Současné plnění více úkolů",
+          "Nedodržení pracovního postupu",
+          "Stres"
+        ],
+        "parent": "",
+        "supports": [
+          "Práce byla před událostí přerušena",
+          "Pracovník řešil jiný úkol",
+          "Po návratu vynechal kontrolu",
+          "Přerušování je na pracovišti běžné",
+          "Chybí postup pro navázání práce"
+        ],
+        "contradicts": [
+          "Práce nebyla přerušena",
+          "Pracovník po přerušení navázal správně",
+          "Událost nesouvisela s opomenutím",
+          "Existoval a byl použit kontrolní krok"
+        ],
+        "actions": [
+          "Sestavit časovou osu práce",
+          "Zjistit, co práci přerušilo",
+          "Ověřit navázání po přerušení",
+          "Prověřit postup pro obnovení práce",
+          "Vyslechnout svědky k rušivým zásahům"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Stres"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící kontrola po přerušení"
+          }
+        ]
+      },
+      {
+        "name": "Nadměrné pracovní zatížení",
+        "questions": [
+          "Byl pracovník zatížen více úkoly najednou?",
+          "Byl rozsah práce přiměřený času a počtu osob?",
+          "Musel pracovník rychle přepínat mezi činnostmi?",
+          "Byla práce fyzicky nebo psychicky náročná?",
+          "Měl pracovník možnost požádat o pomoc?",
+          "Vedlo zatížení k chybě, opomenutí nebo zbrklosti?"
+        ],
+        "evidence": [
+          "Pracovní plán",
+          "Směnový rozpis",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Provozní záznamy",
+          "Časová osa",
+          "Záznamy o obsazení pracoviště"
+        ],
+        "related": [
+          "Současné plnění více úkolů",
+          "Nedostatek pracovníků",
+          "Stres",
+          "Nepozornost"
+        ],
+        "parent": "",
+        "supports": [
+          "Pracovník vykonával více úkolů současně",
+          "Rozsah práce byl nepřiměřený",
+          "Pracovník uvedl přetížení",
+          "Svědci popsali zbrklost nebo chyby",
+          "Nebyla dostupná pomoc"
+        ],
+        "contradicts": [
+          "Rozsah práce byl běžný",
+          "Pracovník řešil jeden úkol",
+          "Měl dostatečnou podporu",
+          "Událost nesouvisela se zatížením"
+        ],
+        "actions": [
+          "Vyhodnotit skutečný rozsah práce",
+          "Porovnat úkoly s dostupným časem a lidmi",
+          "Vyslechnout pracovníka k přetížení",
+          "Ověřit možnost pomoci",
+          "Posoudit vliv zatížení na pozornost"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Stres"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečné plánování práce"
+          }
+        ]
+      },
+      {
+        "name": "Současné plnění více úkolů",
+        "questions": [
+          "Vykonával pracovník současně více činností?",
+          "Musel sledovat více zdrojů informací?",
+          "Přepínal mezi fyzickou prací a komunikací?",
+          "Mohlo dojít k opomenutí jednoho z úkolů?",
+          "Bylo takové souběžné zatížení běžné?"
+        ],
+        "evidence": [
+          "Časová osa",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Provozní komunikace",
+          "Kamerový záznam",
+          "Pracovní plán",
+          "Záznamy systému nebo zařízení"
+        ],
+        "related": [
+          "Nadměrné pracovní zatížení",
+          "Nepozornost",
+          "Přerušování práce",
+          "Stres"
+        ],
+        "parent": "Nadměrné pracovní zatížení",
+        "supports": [
+          "Pracovník řešil více úkolů najednou",
+          "Došlo k přerušení pozornosti",
+          "Jeden úkol byl opomenut",
+          "Souběh úkolů byl organizačně očekáván",
+          "Pracovník neměl podporu"
+        ],
+        "contradicts": [
+          "Pracovník vykonával jen jednu činnost",
+          "Úkoly nebyly časově souběžné",
+          "Opomenutí nesouviselo s více úkoly",
+          "Byla zajištěna asistence"
+        ],
+        "actions": [
+          "Sestavit časový průběh úkolů",
+          "Zjistit, které úkoly probíhaly souběžně",
+          "Ověřit komunikaci v době události",
+          "Posoudit, zda souběh úkolů byl přiměřený",
+          "Prověřit možnosti rozdělení práce"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Stres"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nevhodné rozdělení práce"
+          }
+        ]
+      },
+      {
+        "name": "Konflikt priorit",
+        "questions": [
+          "Byl pracovník postaven před protichůdné požadavky?",
+          "Měl současně splnit bezpečnostní a provozní cíl, které si odporovaly?",
+          "Bylo jasné, co má mít přednost?",
+          "Dostal pracovník pokyn, který zvyšoval riziko?",
+          "Existuje v organizaci jasné pravidlo, že bezpečnost má přednost?"
+        ],
+        "evidence": [
+          "Pokyny nadřízeného",
+          "Provozní komunikace",
+          "Interní pravidla",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Pracovní postup",
+          "Záznamy o hodnocení výkonu"
+        ],
+        "related": [
+          "Časový tlak",
+          "Tlak na výkon",
+          "Podcenění rizika",
+          "Nedodržení pracovního postupu"
+        ],
+        "parent": "",
+        "supports": [
+          "Pracovník řešil rozpor mezi bezpečností a výkonem",
+          "Nebylo jasné, která priorita má přednost",
+          "Nadřízený zdůrazňoval výkon nebo termín",
+          "Bezpečnostní požadavek byl vnímán jako překážka",
+          "Podobné konflikty se vyskytují opakovaně"
+        ],
+        "contradicts": [
+          "Priority byly jasné",
+          "Pracovník neměl protichůdné požadavky",
+          "Bezpečnostní pravidla byla jednoznačná a dodržena",
+          "Událost nesouvisela s rozhodováním mezi prioritami"
+        ],
+        "actions": [
+          "Ověřit pokyny dané pracovníkovi",
+          "Prověřit pravidla priorit bezpečnost/provoz",
+          "Vyslechnout nadřízeného",
+          "Posoudit, zda systém odměn nevytváří konflikt",
+          "Zjistit, zda jde o opakovaný problém"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nevhodné nastavení priorit"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Podcenění rizika"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Rozpor mezi postupem a praxí"
+          }
+        ]
+      },
+      {
+        "name": "Nejasné rozdělení odpovědností",
+        "questions": [
+          "Bylo jasné, kdo za činnost odpovídá?",
+          "Bylo jasné, kdo má dát pokyn k zahájení nebo ukončení práce?",
+          "Nepředpokládali pracovníci, že kontrolu provede někdo jiný?",
+          "Byly odpovědnosti předány mezi směnami nebo týmy?",
+          "Existuje písemné vymezení odpovědností?"
+        ],
+        "evidence": [
+          "Organizační dokumentace",
+          "Pracovní postup",
+          "Záznam předání směny",
+          "Výpovědi pracovníků",
+          "Výpověď nadřízeného",
+          "Provozní komunikace",
+          "Zápisy porad nebo pokynů"
+        ],
+        "related": [
+          "Nedostatečné předání směny",
+          "Konflikt priorit",
+          "Přerušování práce"
+        ],
+        "parent": "",
+        "supports": [
+          "Pracovníci si nebyli jistí odpovědností",
+          "Kontrola nebyla provedena, protože ji každý očekával od jiného",
+          "Pokyny byly nejasné",
+          "Odpovědnosti nebyly písemně stanoveny",
+          "Předání mezi osobami bylo nedostatečné"
+        ],
+        "contradicts": [
+          "Odpovědnosti byly jasně určeny",
+          "Odpovědná osoba provedla kontrolu",
+          "Nedošlo k selhání komunikace odpovědností",
+          "Událost nesouvisela s rozdělením rolí"
+        ],
+        "actions": [
+          "Zjistit rozdělení odpovědností",
+          "Vyslechnout zúčastněné osoby k jejich rolím",
+          "Prověřit předání informací",
+          "Porovnat skutečnou praxi s dokumentací",
+          "Ověřit, kdo měl provést rozhodující kontrolu"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nejasné kompetence"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící odpovědnost v postupu"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Nedostatečné předání informací"
+          }
+        ]
+      },
+      {
+        "name": "Nedostatečné předání směny",
+        "questions": [
+          "Proběhlo předání směny nebo práce?",
+          "Byly předány informace o rizicích, změnách nebo nedokončené práci?",
+          "Bylo předání písemné, ústní, nebo neproběhlo vůbec?",
+          "Pochopil přebírající pracovník stav pracoviště?",
+          "Chyběla informace, která mohla přispět ke vzniku MU?"
+        ],
+        "evidence": [
+          "Záznam o předání směny",
+          "Provozní deník",
+          "Výpověď předávající osoby",
+          "Výpověď přebírající osoby",
+          "Komunikace mezi směnami",
+          "Stav pracoviště",
+          "Časová osa události"
+        ],
+        "related": [
+          "Nejasné rozdělení odpovědností",
+          "Přerušování práce",
+          "Nepozornost"
+        ],
+        "parent": "",
+        "supports": [
+          "Informace nebyla předána",
+          "Předání bylo neúplné nebo formální",
+          "Přebírající pracovník neznal aktuální riziko",
+          "Chyběl záznam o změně stavu",
+          "Událost souvisela s nedokončenou prací"
+        ],
+        "contradicts": [
+          "Předání proběhlo řádně",
+          "Informace byla předána a pochopena",
+          "Událost nesouvisela s předáním",
+          "Chybějící informace neměla vliv na vznik MU"
+        ],
+        "actions": [
+          "Ověřit, jak proběhlo předání směny",
+          "Porovnat předané informace se skutečným stavem",
+          "Vyslechnout předávající a přebírající osoby",
+          "Prověřit provozní deník",
+          "Posoudit, zda byl systém předání dostatečný"
+        ],
+        "suggest": [
+          {
+            "category": "Komunikace",
+            "factor": "Nedostatečné předání informací"
+          },
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Neúčinný systém předání směny"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Chybějící kontrola převzetí práce"
+          }
+        ]
+      },
+      {
+        "name": "Změna organizace práce",
+        "questions": [
+          "Došlo před událostí ke změně organizace práce?",
+          "Byla změna pracovníkům vysvětlena?",
+          "Byla změna zanesena do postupů nebo pokynů?",
+          "Byla změna dočasná, nebo trvalá?",
+          "Byla vyhodnocena nová rizika vzniklá změnou?",
+          "Nemusel pracovník improvizovat podle nové situace?"
+        ],
+        "evidence": [
+          "Záznam o změně",
+          "Pokyny nadřízeného",
+          "Pracovní postup",
+          "Hodnocení rizik",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Provozní dokumentace"
+        ],
+        "related": [
+          "Nedostatečné předání směny",
+          "Nejasné rozdělení odpovědností",
+          "Nedodržení pracovního postupu",
+          "Podcenění rizika"
+        ],
+        "parent": "",
+        "supports": [
+          "Organizace práce byla změněna",
+          "Změna nebyla dostatečně komunikována",
+          "Pracovník neměl jasný pokyn",
+          "Nová rizika nebyla vyhodnocena",
+          "Změna vedla k improvizaci"
+        ],
+        "contradicts": [
+          "Organizace práce se nezměnila",
+          "Změna byla řádně řízena a komunikována",
+          "Pracovníci byli se změnou seznámeni",
+          "Událost nesouvisela se změnou"
+        ],
+        "actions": [
+          "Zjistit, co se oproti běžnému stavu změnilo",
+          "Ověřit komunikaci změny",
+          "Prověřit aktualizaci postupů a rizik",
+          "Vyslechnout pracovníky k pochopení změny",
+          "Posoudit dopad změny na bezpečnost"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Neřízená změna"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Neaktualizovaný postup"
+          },
+          {
+            "category": "Školení",
+            "factor": "Neseznámení se změnou"
+          }
+        ]
+      },
+      {
+        "name": "Monotónní práce",
+        "questions": [
+          "Byla práce opakovaná a jednotvárná?",
+          "Mohla monotónnost vést ke snížení pozornosti?",
+          "Jak dlouho pracovník činnost vykonával bez změny?",
+          "Byly zavedeny přestávky nebo střídání činností?",
+          "Docházelo u podobné práce k opakovaným chybám?",
+          "Byl pracovník dostatečně stimulován ke kontrole rizik?"
+        ],
+        "evidence": [
+          "Charakter pracovní činnosti",
+          "Směnový rozpis",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Záznamy o opakovaných chybách",
+          "Pracovní postup",
+          "Režim přestávek"
+        ],
+        "related": [
+          "Rutina",
+          "Nepozornost",
+          "Únava",
+          "Nedostatek přestávek"
+        ],
+        "parent": "",
+        "supports": [
+          "Činnost byla dlouhodobě monotónní",
+          "Pracovník vynechal kontrolní krok",
+          "Došlo ke snížení pozornosti",
+          "Nebylo zajištěno střídání práce",
+          "Podobné chyby se opakovaly"
+        ],
+        "contradicts": [
+          "Práce nebyla monotónní",
+          "Činnost byla krátká nebo proměnlivá",
+          "Pracovník postupoval pozorně",
+          "Událost nesouvisela s jednotvárností"
+        ],
+        "actions": [
+          "Posoudit charakter a délku monotónní činnosti",
+          "Ověřit přestávky a střídání práce",
+          "Vyslechnout pracovníka k únavě a pozornosti",
+          "Prověřit opakované chyby nebo skoro nehody",
+          "Posoudit vhodnost režimu práce"
+        ],
+        "suggest": [
+          {
+            "category": "Člověk",
+            "factor": "Rutina"
+          },
+          {
+            "category": "Člověk",
+            "factor": "Nepozornost"
+          },
+          {
+            "category": "Organizace práce",
+            "factor": "Nedostatek přestávek"
+          }
+        ]
+      },
+      {
+        "name": "Práce o samotě",
+        "questions": [
+          "Pracoval pracovník v době události sám?",
+          "Byla práce o samotě pro danou činnost přípustná?",
+          "Existoval způsob kontroly nebo spojení?",
+          "Mohl pracovník včas přivolat pomoc?",
+          "Byla práce o samotě zohledněna v hodnocení rizik?",
+          "Nebyla činnost vyžadující dvě osoby provedena jednou osobou?"
+        ],
+        "evidence": [
+          "Pracovní postup",
+          "Hodnocení rizik",
+          "Směnový rozpis",
+          "Výpověď pracovníka",
+          "Výpovědi svědků",
+          "Záznam komunikace",
+          "Časová osa události"
+        ],
+        "related": [
+          "Nejasné rozdělení odpovědností",
+          "Nedostatek pracovníků",
+          "Zdravotní indispozice",
+          "Podcenění rizika"
+        ],
+        "parent": "",
+        "supports": [
+          "Pracovník byl na místě sám",
+          "Práce vyžadovala asistenci nebo dohled",
+          "Nebyl zajištěn kontakt nebo kontrola",
+          "Pomoc nebyla dostupná včas",
+          "Práce o samotě nebyla vyhodnocena"
+        ],
+        "contradicts": [
+          "Pracovník nebyl sám",
+          "Práce o samotě byla přípustná a zajištěná",
+          "Dostupnost pomoci byla dostatečná",
+          "Událost nesouvisela s absencí druhé osoby"
+        ],
+        "actions": [
+          "Ověřit, zda pracovník pracoval sám",
+          "Posoudit vhodnost práce o samotě",
+          "Prověřit možnost přivolání pomoci",
+          "Zkontrolovat hodnocení rizik",
+          "Ověřit, zda práce nevyžadovala dvě osoby"
+        ],
+        "suggest": [
+          {
+            "category": "Řízení a kontrola",
+            "factor": "Nedostatečný dohled"
+          },
+          {
+            "category": "Pracovní postup",
+            "factor": "Práce vyžadující dvě osoby"
+          },
+          {
+            "category": "Komunikace",
+            "factor": "Nedostupnost spojení"
+          }
+        ]
       },
       {
         "name": "Jiné",
-        "questions": []
+        "questions": [],
+        "evidence": [],
+        "related": [],
+        "parent": "",
+        "supports": [],
+        "contradicts": [],
+        "actions": [],
+        "suggest": []
       }
     ]
   },
