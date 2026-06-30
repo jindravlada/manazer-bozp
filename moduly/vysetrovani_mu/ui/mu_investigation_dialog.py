@@ -7,9 +7,11 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QFormLayout,
     QFrame,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
     QMessageBox,
+    QPushButton,
     QTabWidget,
     QTextEdit,
     QVBoxLayout,
@@ -95,6 +97,13 @@ class MuInvestigationDialog(QDialog):
         self.tabs.addTab(self.zaver_widget, "Závěr")
         self.tabs.currentChanged.connect(self._on_tab_changed)
         layout.addWidget(self.tabs)
+
+        footer = QHBoxLayout()
+        self.check_spis_btn = QPushButton("Kontrola spisu")
+        self.check_spis_btn.clicked.connect(self._open_investigation_check)
+        footer.addWidget(self.check_spis_btn)
+        footer.addStretch()
+        layout.addLayout(footer)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self._accept_dialog)
@@ -509,6 +518,83 @@ class MuInvestigationDialog(QDialog):
                 "Navigace",
                 "Zdrojový záznam se nepodařilo otevřít.",
             )
+
+    def _open_investigation_check(self) -> None:
+        from moduly.vysetrovani_mu.ui.mu_investigation_check_dialog import MuInvestigationCheckDialog
+
+        MuInvestigationCheckDialog(self, snapshot=self.build_check_snapshot()).exec()
+
+    def build_check_snapshot(self) -> dict:
+        data = self.get_data()
+        context = resolve_mu_source_context(
+            self._current_source_type(),
+            self._current_source_id(),
+            self._current_source_label(),
+            self.investigation.number if self.investigation is not None else "",
+        )
+
+        investigation_id = self.investigation.id if self.investigation is not None else None
+        findings = []
+        if investigation_id is not None:
+            findings = finding_service.get_for_entity(ENTITY_MU_INVESTIGATION, investigation_id)
+
+        try:
+            causes = json.loads(self.findings_widget.get_ishikawa_json() or "[]")
+        except Exception:
+            causes = []
+
+        def _load_json(raw: str) -> dict:
+            try:
+                return json.loads(raw or "{}")
+            except Exception:
+                return {}
+
+        oznameni_keys = (
+            "oznameni_kdo",
+            "oznameni_komu",
+            "oznameni_datum",
+            "oznameni_cas",
+            "oznameni_bezodkladne",
+            "oznameni_duvod_pozde",
+            "oznameni_popis",
+            "opatreni_prvni_pomoc",
+            "opatreni_zzs",
+            "opatreni_policie",
+            "opatreni_hzs",
+            "opatreni_zastavena_cinnost",
+            "opatreni_zajisteno_misto",
+            "opatreni_zabraneno_manipulaci",
+            "opatreni_informovan_nadrizeny",
+            "opatreni_informovan_bozp",
+            "oznameni_bozp_datum",
+            "oznameni_bozp_cas",
+            "opatreni_informovany_dalsi",
+            "dalsi_postup",
+            "dalsi_postup_jiny",
+        )
+
+        return {
+            "investigation_id": investigation_id,
+            "investigation_number": self.investigation.number if self.investigation is not None else "",
+            "status": data.get("status"),
+            "event_character": data.get("event_character"),
+            "source_type": data.get("source_type"),
+            "source_id": data.get("source_id"),
+            "source_label": data.get("source_label"),
+            "started_at": data.get("started_at"),
+            "lead_thp_worker_id": data.get("lead_thp_worker_id"),
+            "lead_thp_worker_name": data.get("lead_thp_worker_name"),
+            "conclusion": data.get("conclusion"),
+            "event_datum": context.event_datum,
+            "event_cas": context.event_cas,
+            "oznameni": {key: data.get(key) for key in oznameni_keys},
+            "zajisteni": _load_json(data.get("zajisteni_dukazu_json", "")),
+            "svedci": _load_json(data.get("svedci_json", "")),
+            "casova_osa": _load_json(data.get("casova_osa_json", "")),
+            "zaver": _load_json(data.get("zaver_json", "")),
+            "causes": causes if isinstance(causes, list) else [],
+            "findings": findings,
+        }
 
     def get_data(self) -> dict:
         worker = self.lead_thp_worker_selector.current_person()
