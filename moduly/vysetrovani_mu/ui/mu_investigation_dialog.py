@@ -345,6 +345,8 @@ class MuInvestigationDialog(QDialog):
             started_at=self.started_at_edit.get_date(),
             source_type=source_type,
             source_id=source_id,
+            event_datum=context.event_datum,
+            event_cas=context.event_cas,
             **self._casova_osa_oznameni_context(),
         )
         self.casova_osa_widget.set_zajisteni_context(**self._casova_osa_zajisteni_context())
@@ -497,3 +499,7 @@ class MuInvestigationDialog(QDialog):
             "ishikawa_json": self.findings_widget.get_ishikawa_json(),
             **self.oznameni_widget.get_data(),
         }
+
+    def exec(self) -> int:
+        self.showMaximized()
+        return super().exec()

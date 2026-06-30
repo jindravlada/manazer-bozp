@@ -30,7 +30,6 @@ from core.utils.casove_rozdily import (
     datetime_from_date_and_time,
     format_od_udalosti_rozdil,
 )
-from moduly.vysetrovani_mu.constants import SOURCE_TYPE_ACCIDENT
 from moduly.vysetrovani_mu.sluzby.mu_chronologie_events import build_system_chronologie_events
 from moduly.vysetrovani_mu.ui.mu_chronologie_entry_dialog import MuChronologieEntryDialog
 
@@ -54,6 +53,8 @@ class MuCasovaOsaWidget(QWidget):
         self._started_at: date | None = None
         self._source_type: str = ""
         self._source_id: int | None = None
+        self._event_datum: date | None = None
+        self._event_cas: str = ""
         self._oznameni_datum: date | None = None
         self._oznameni_cas: str = ""
         self._zajisteni_datum: date | None = None
@@ -76,6 +77,8 @@ class MuCasovaOsaWidget(QWidget):
         started_at: date | None = None,
         source_type: str = "",
         source_id: int | None = None,
+        event_datum: date | None = None,
+        event_cas: str = "",
         oznameni_datum: date | None = None,
         oznameni_cas: str = "",
     ) -> None:
@@ -83,6 +86,8 @@ class MuCasovaOsaWidget(QWidget):
         self._started_at = started_at
         self._source_type = source_type or ""
         self._source_id = source_id
+        self._event_datum = event_datum
+        self._event_cas = (event_cas or "").strip()
         self._oznameni_datum = oznameni_datum
         self._oznameni_cas = (oznameni_cas or "").strip()
         number = event_number.strip()
@@ -255,27 +260,31 @@ class MuCasovaOsaWidget(QWidget):
         return group
 
     def _reference_event_datetime(self) -> datetime | None:
-        if self._source_type != SOURCE_TYPE_ACCIDENT:
+        if self._event_datum is None or not self._event_cas:
             return None
-        if not isinstance(self._source_id, int) or self._source_id <= 0:
-            return None
-        from moduly.kniha_urazu.sluzby.accident_service import accident_service
+        return datetime_from_date_and_time(self._event_datum, self._event_cas)
 
-        accident = accident_service.get_by_id(self._source_id)
-        if accident is None or accident.accident_date is None:
-            return None
-        if not (accident.accident_time or "").strip():
-            return None
-        return datetime_from_date_and_time(accident.accident_date, accident.accident_time)
-
-    def _set_casovy_rozdil_label(self, label: QLabel, prefix: str, formatted) -> None:
-        if formatted is None:
-            label.setText(f"{prefix}: nelze spočítat")
-            label.setStyleSheet("")
+    def _set_casovy_rozdil_label(
+        self,
+        label: QLabel,
+        prefix: str,
+        formatted,
+        *,
+        reference_dt: datetime | None,
+        target_dt: datetime | None,
+    ) -> None:
+        if formatted is not None:
+            text, color = formatted
+            label.setText(f"{prefix}: {text}")
+            label.setStyleSheet(f"color: {color};")
             return
-        text, color = formatted
-        label.setText(f"{prefix}: {text}")
-        label.setStyleSheet(f"color: {color};")
+        if reference_dt is None:
+            label.setText(f"{prefix}: nelze spočítat (chybí datum/čas vzniku události)")
+        elif target_dt is None:
+            label.setText(f"{prefix}: nelze spočítat (chybí datum nebo čas)")
+        else:
+            label.setText(f"{prefix}: nelze spočítat")
+        label.setStyleSheet("")
 
     def _refresh_casove_rozdily(self, *_args) -> None:
         if not hasattr(self, "navaznost_rozdil_oznameni_label"):
@@ -303,13 +312,25 @@ class MuCasovaOsaWidget(QWidget):
         )
 
         self._set_casovy_rozdil_label(
-            self.navaznost_rozdil_oznameni_label, "Oznámení události", oznameni_rozdil
+            self.navaznost_rozdil_oznameni_label,
+            "Oznámení události",
+            oznameni_rozdil,
+            reference_dt=reference_dt,
+            target_dt=oznameni_dt,
         )
         self._set_casovy_rozdil_label(
-            self.navaznost_rozdil_zajisteni_label, "Zajištění důkazů", zajisteni_rozdil
+            self.navaznost_rozdil_zajisteni_label,
+            "Zajištění důkazů",
+            zajisteni_rozdil,
+            reference_dt=reference_dt,
+            target_dt=zajisteni_dt,
         )
         self._set_casovy_rozdil_label(
-            self.navaznost_rozdil_foto_label, "Fotodokumentace", foto_rozdil
+            self.navaznost_rozdil_foto_label,
+            "Fotodokumentace",
+            foto_rozdil,
+            reference_dt=reference_dt,
+            target_dt=foto_dt,
         )
 
         if zajisteni_dt and foto_dt and foto_dt < zajisteni_dt:

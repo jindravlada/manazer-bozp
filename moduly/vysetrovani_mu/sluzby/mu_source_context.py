@@ -14,6 +14,8 @@ class MuSourceContext:
     event_number: str = ""
     affected_person_html: str = ""
     source_record_html: str = ""
+    event_datum: date | None = None
+    event_cas: str = ""
     default_oznameni_kdo: str = ""
     default_oznameni_komu: str = ""
     default_oznameni_datum: date | None = None
@@ -65,14 +67,18 @@ def _context_from_accident(source_id: int | None) -> MuSourceContext:
         f"<b>Druh poškození:</b> {accident.druh_zraneni or ''}"
     )
 
+    event_cas = (accident.accident_time or "").strip()
+
     return MuSourceContext(
         event_number=accident.number or "",
         affected_person_html=affected_person_html,
         source_record_html=source_record_html,
+        event_datum=accident.accident_date,
+        event_cas=event_cas,
         default_oznameni_kdo=(accident.employee_name or "").strip(),
         default_oznameni_komu=(accident.zapsal_jmeno or "").strip(),
         default_oznameni_datum=accident.accident_date,
-        default_oznameni_cas=(accident.accident_time or "").strip(),
+        default_oznameni_cas=event_cas,
         default_oznameni_popis=(accident.popis_urazoveho_deje or "").strip(),
     )
 
