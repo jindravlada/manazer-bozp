@@ -80,6 +80,7 @@ class ControlResultSelectorWidget(QWidget):
 
     def _reload_from_storage(self) -> None:
         self._loading = True
+        note_blocked = self._note_edit.blockSignals(True)
         try:
             if self._entity_id is None or self._context is None:
                 self._set_result_ui(CONTROL_RESULT_NEKONTROLOVANO)
@@ -107,12 +108,20 @@ class ControlResultSelectorWidget(QWidget):
                 radio.setEnabled(True)
             self._note_edit.setEnabled(True)
         finally:
+            self._note_edit.blockSignals(note_blocked)
             self._loading = False
 
     def _set_result_ui(self, result: str) -> None:
         radio = self._radios.get(result)
-        if radio is not None:
+        if radio is None:
+            return
+
+        blocked = {item: item.blockSignals(True) for item in self._radios.values()}
+        try:
             radio.setChecked(True)
+        finally:
+            for item, previous in blocked.items():
+                item.blockSignals(previous)
 
     def _on_radio_toggled(self, value: str, checked: bool) -> None:
         if not checked or self._loading:
