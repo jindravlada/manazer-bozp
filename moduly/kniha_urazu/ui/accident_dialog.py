@@ -109,6 +109,10 @@ class AccidentDialog(QDialog):
 
         super().accept()
 
+    def exec(self):
+        self.showMaximized()
+        return super().exec()
+
     def _line(self):
         return QLineEdit()
 
