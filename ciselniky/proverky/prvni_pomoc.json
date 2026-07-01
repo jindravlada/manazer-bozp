@@ -1,58 +1,58 @@
 {
-  "verze": 6,
+  "verze": 7,
   "id": "prvni_pomoc",
   "nazev": "První pomoc",
-  "popis": "Lékárničky, vyškolení osoby pro první pomoc a vybavení pro ošetření.",
+  "popis": "Lékárničky, oční sprchy, proškolené osoby a důležitá telefonní čísla.",
   "poradi": 100,
   "aktivni": true,
   "sekce": [
     {
       "id": "lekarnicka",
       "nazev": "Lékárnička",
-      "popis": "Kontrola vybavení lékárničky a doplňování prostředků první pomoci.",
+      "popis": "Prověrka umístění, označení, obsahu a platnosti prostředků v lékárničce.",
       "poradi": 10,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "umisteni_oznaceni",
-          "text": "Ověřte umístění lékárničky a viditelné označení symbolem první pomoci.",
+          "text": "Najděte lékárničku a ověřte označení symbolem první pomoci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "pristup",
-          "text": "Zkontrolujte, zda je k lékárničce volný a bezpečný přístup.",
+          "text": "Zkontrolujte volný přístup.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "obsah",
-          "text": "Otevřete lékárničku a porovnejte skutečný obsah s požadovaným seznamem prostředků.",
+          "text": "Otevřete lékárničku a porovnejte obsah se seznamem.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "expirace",
-          "text": "Prověřte data expirace obvazů, desinfekce a dalších prostředků s omezenou trvanlivostí.",
+          "text": "Zkontrolujte data expirace obvazů a desinfekce.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "evidence",
-          "text": "Zaznamenejte výsledek kontroly v evidenci včetně data a odpovědné osoby.",
+          "text": "Ověřte záznam poslední kontroly.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "doplneni",
-          "text": "Doplňte chybějící prostředky nebo vyměňte prošlé položky.",
+          "text": "Zapište chybějící nebo prošlé položky k doplnění.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "informovani",
-          "text": "Informujte odpovědnou osobu o zjištěných nedostatcích a domluvte nápravu.",
+          "text": "Informujte odpovědnou osobu o zjištěných nedostatcích.",
           "poradi": 70,
           "aktivni": true
         }
@@ -61,39 +61,39 @@
         {
           "id": "umisteni",
           "nazev": "Lékárnička je na určeném místě",
-          "popis": "Zkontrolujte, zda je lékárnička umístěna na místě určeném zaměstnavatelem a odpovídá schválenému plánu první pomoci.",
+          "popis": "Umístění odpovídá plánu první pomoci.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "oznaceni",
-          "nazev": "Lékárnička je řádně označena",
-          "popis": "Ověřte viditelné označení lékárničky symbolem první pomoci a případným textem podle vnitřních předpisů.",
+          "nazev": "Lékárnička je správně označena",
+          "popis": "Symbol první pomoci je viditelný a čitelný.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "pristupnost",
-          "nazev": "Lékárnička je volně přístupná",
-          "popis": "Zkontrolujte, zda není přístup k lékárničce blokován nábytkem, materiálem nebo uzamčením.",
+          "nazev": "Přístup k lékárničce je volný",
+          "popis": "Lékárnička není zakrytá materiálem ani uzamčená bez přístupu.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "kriticka"
         },
         {
           "id": "obsah",
-          "nazev": "Obsah odpovídá požadavkům",
-          "popis": "Porovnejte skutečný obsah lékárničky s požadovaným seznamem prostředků první pomoci.",
+          "nazev": "Obsah odpovídá seznamu",
+          "popis": "V lékárničce jsou všechny požadované prostředky.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "expirace",
           "nazev": "Prostředky nejsou prošlé",
-          "popis": "Zkontrolujte data expirace obvazů, desinfekce a dalších prostředků s omezenou trvanlivostí.",
+          "popis": "Obvazy, desinfekce a další materiál mají platnou expiraci.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -101,7 +101,7 @@
         {
           "id": "evidence_kontrol",
           "nazev": "Evidence kontrol je vedena",
-          "popis": "Ověřte, zda existuje záznam o pravidelných kontrolách lékárničky včetně data a odpovědné osoby.",
+          "popis": "Existuje záznam poslední kontroly s datem a jménem kontrolora.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -110,29 +110,29 @@
       "typicke_zavady": [
         {
           "id": "prosle_obvazy",
-          "nazev": "Prošlé obvazy",
-          "popis": "V lékárničce jsou obvazy nebo jiné prostředky po datu expirace.",
+          "nazev": "Prošlé obvazy nebo desinfekce",
+          "popis": "Obvazy nebo desinfekce jsou po datu expirace.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "chybi_obsah",
-          "nazev": "Chybí obsah",
-          "popis": "Lékárnička neobsahuje všechny požadované prostředky první pomoci.",
+          "nazev": "Chybí prostředky",
+          "popis": "V lékárničce chybí rukavice, obvazy nebo jiné povinné položky.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "neoznacena",
-          "nazev": "Lékárnička není označena",
-          "popis": "Chybí viditelné označení nebo symbol první pomoci.",
+          "nazev": "Chybí označení",
+          "popis": "Lékárnička není viditelně označena symbolem první pomoci.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "zablokovany_pristup",
           "nazev": "Zablokovaný přístup",
-          "popis": "Přístup k lékárničce je fyzicky ztížen nebo znemožněn.",
+          "popis": "Materiál nebo nábytek brání přístupu k lékárničce.",
           "poradi": 40,
           "aktivni": true
         }
@@ -140,29 +140,29 @@
       "doporucene_postupy": [
         {
           "id": "pravidelna_kontrola",
-          "nazev": "Pravidelná kontrola obsahu",
-          "popis": "Provádějte kontrolu lékárničky v intervalech stanovených vnitřním předpisem, nejméně jednou za čtvrtletí.",
+          "nazev": "Kontrolovat podle plánu",
+          "popis": "Kontrolujte lékárničku v intervalech z interní směrnice, nejméně čtvrtletně.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "doplneni_obsahu",
-          "nazev": "Doplňování chybějících prostředků",
-          "popis": "Bez prodlení doplňte chybějící nebo spotřebované prostředky první pomoci.",
+          "nazev": "Doplnit chybějící prostředky",
+          "popis": "Chybějící položky doplňte bez prodlení.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "vymena_prosle",
-          "nazev": "Výměna prošlých prostředků",
-          "popis": "Prošlé prostředky okamžitě vyřaďte a nahraďte novými s platnou expirací.",
+          "nazev": "Vyměnit prošlý materiál",
+          "popis": "Prošlé obvazy a desinfekci vyřaďte a nahraďte novými.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "evidence_kontrol_postup",
-          "nazev": "Vedení záznamu o kontrole",
-          "popis": "Po každé kontrole zaznamenejte datum, výsledek a osobu, která kontrolu provedla.",
+          "nazev": "Zapisovat kontroly",
+          "popis": "Po každé kontrole uveďte datum, výsledek a jméno kontrolora.",
           "poradi": 40,
           "aktivni": true
         }
@@ -170,21 +170,21 @@
       "legislativa": [
         {
           "id": "nv_746_2021",
-          "nazev": "Nařízení vlády č. 746/2021 Sb., o požadavcích na pracovní prostředí",
-          "popis": "První pomoc — obsah lékárničky a organizace první pomoci.",
+          "nazev": "Nařízení vlády č. 746/2021 Sb.",
+          "popis": "Požadavky na obsah lékárničky a organizaci první pomoci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Plán první pomoci, odpovědnosti a periodicita kontrol lékárniček.",
+          "popis": "Plán první pomoci, obsah lékárničky a lhůty kontrol.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "metodicky_pokyn",
-          "nazev": "Metodický pokyn OOPP a první pomoc",
+          "nazev": "Metodický pokyn MPSV",
           "popis": "Doporučený obsah lékárničky podle typu pracoviště.",
           "poradi": 30,
           "aktivni": true
@@ -195,50 +195,50 @@
     {
       "id": "ocni_sprcha",
       "nazev": "Oční sprcha",
-      "popis": "Kontrola dostupnosti, označení, technického stavu a funkčnosti zařízení pro výplach očí při zasažení nebezpečnými látkami.",
+      "popis": "Prověrka umístění, přístupu, označení a funkčnosti oční sprchy.",
       "poradi": 20,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "umisteni",
-          "text": "Ověřte, zda je oční sprcha umístěna na určeném místě.",
+          "text": "Najděte oční sprchu podle dokumentace pracoviště.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "oznaceni_viditelnost",
-          "text": "Zkontrolujte její označení a snadnou viditelnost.",
+          "text": "Ověřte viditelné označení.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "pristup",
-          "text": "Ověřte volný přístup bez překážek.",
+          "text": "Zkontrolujte volný přístup.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "technicky_stav",
-          "text": "Zkontrolujte technický stav zařízení.",
+          "text": "Zkontrolujte stav zařízení, ventilů a hadic.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "funkcni_zkouska",
-          "text": "Proveďte funkční zkoušku podle typu zařízení.",
+          "text": "Proveďte zkušební spuštění podle typu zařízení.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "cistota_vody",
-          "text": "Ověřte čistotu vody nebo expiraci výplachových lahví.",
+          "text": "Ověřte čistotu vody nebo platnost výplachových lahví.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "evidence_kontrol",
-          "text": "Zkontrolujte evidenci pravidelných kontrol.",
+          "text": "Ověřte záznam poslední kontroly.",
           "poradi": 70,
           "aktivni": true
         }
@@ -246,8 +246,8 @@
       "kontrolni_body": [
         {
           "id": "umisteni",
-          "nazev": "Oční sprcha je umístěna na určeném místě",
-          "popis": "Zařízení se nachází na stanoveném místě podle dokumentace pracoviště.",
+          "nazev": "Oční sprcha je na určeném místě",
+          "popis": "Umístění odpovídá dokumentaci pracoviště.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -255,7 +255,7 @@
         {
           "id": "oznaceni",
           "nazev": "Oční sprcha je správně označena",
-          "popis": "Označení je dobře viditelné a odpovídá bezpečnostním předpisům.",
+          "popis": "Označení je viditelné a čitelné.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -263,7 +263,7 @@
         {
           "id": "pristup",
           "nazev": "Přístup k zařízení je volný",
-          "popis": "Přístup není blokován materiálem ani zařízením.",
+          "popis": "Zařízení není zastavěné materiálem ani zařízením.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -271,7 +271,7 @@
         {
           "id": "funkcnost",
           "nazev": "Zařízení je funkční",
-          "popis": "Mechanismus spuštění pracuje správně.",
+          "popis": "Spuštění a výplach fungují při zkušebním testu.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -279,15 +279,15 @@
         {
           "id": "voda",
           "nazev": "Výplachová voda je použitelná",
-          "popis": "Voda je čistá nebo jsou použity platné sterilní výplachové lahve.",
+          "popis": "Voda je čistá nebo výplachové lahve mají platnou expiraci.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "evidence",
           "nazev": "Provádějí se pravidelné kontroly",
-          "popis": "Existuje evidence kontrol a jejich výsledků.",
+          "popis": "Existuje záznam poslední kontroly s datem a výsledkem.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -297,35 +297,35 @@
         {
           "id": "chybi_oznaceni",
           "nazev": "Chybí označení",
-          "popis": "Zařízení není viditelně označeno nebo chybí bezpečnostní symbol.",
+          "popis": "Zařízení není viditelně označeno bezpečnostním symbolem.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "zablokovany_pristup",
           "nazev": "Zablokovaný přístup",
-          "popis": "Přístup k oční sprše je fyzicky ztížen nebo znemožněn.",
+          "popis": "Materiál nebo zařízení brání rychlému přístupu ke sprše.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "nefunkcni",
-          "nazev": "Zařízení je nefunkční",
-          "popis": "Mechanismus spuštění nebo výplach nefunguje správně.",
+          "nazev": "Zařízení nefunguje",
+          "popis": "Ventil nejde otevřít, neteče voda nebo výplach nefunguje.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "znecistena_voda",
           "nazev": "Znečištěná voda",
-          "popis": "Výplachová voda není čistá nebo je znečištěná.",
+          "popis": "Ve výplachové vodě je viditelná nečistota nebo usazenina.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "prosle_lahve",
           "nazev": "Prošlé výplachové lahve",
-          "popis": "Sterilní výplachové lahve jsou po datu expirace.",
+          "popis": "Sterilní lahve jsou po datu expirace.",
           "poradi": 50,
           "aktivni": true
         },
@@ -340,36 +340,36 @@
       "doporucene_postupy": [
         {
           "id": "funkcni_zkousky",
-          "nazev": "Pravidelně provádět funkční zkoušky",
-          "popis": "Testujte funkčnost zařízení v intervalech stanovených vnitřním předpisem.",
+          "nazev": "Provádět funkční zkoušky",
+          "popis": "Testujte zařízení v intervalech z interní směrnice nebo návodu výrobce.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "volny_pristup",
           "nazev": "Udržovat volný přístup",
-          "popis": "Zajistěte trvale volný a bezpečný přístup k oční sprše.",
+          "popis": "Před oční sprchou neukládejte materiál ani zařízení.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "vymena_lahvi",
-          "nazev": "Včas měnit sterilní výplachové lahve",
-          "popis": "Prošlé lahve okamžitě vyřaďte a nahraďte novými s platnou expirací.",
+          "nazev": "Vyměnit prošlé lahve",
+          "popis": "Prošlé sterilní lahve okamžitě vyřaďte a nahraďte novými.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "evidence_kontrol",
-          "nazev": "Evidovat všechny provedené kontroly",
-          "popis": "Po každé kontrole zaznamenejte datum, výsledek a odpovědnou osobu.",
+          "nazev": "Zapisovat kontroly",
+          "popis": "Po každé kontrole uveďte datum, výsledek a jméno kontrolora.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "odstraneni_zavad",
-          "nazev": "Okamžitě odstranit zjištěné závady",
-          "popis": "Zjištěné nedostatky bez prodlení odstraňte nebo zajistěte nápravná opatření.",
+          "nazev": "Opravit nefunkční zařízení",
+          "popis": "Nefunkční ventil nebo hadici nechte opravit nebo vyměnit bez odkladu.",
           "poradi": 50,
           "aktivni": true
         }
@@ -378,28 +378,28 @@
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "K poskytování a zajištění zdravotních služeb a podmínkám jejich poskytování v pracovněprávních vztazích.",
+          "popis": "Zajištění zdravotních služeb v pracovněprávních vztazích.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_375_2017",
           "nazev": "Nařízení vlády č. 375/2017 Sb.",
-          "popis": "Pokud je relevantní podle typu pracoviště — požadavky na pracovní prostředí.",
+          "popis": "Požadavky na pracoviště s nebezpečnými chemickými látkami.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "havarijni_plan",
           "nazev": "Interní havarijní plán",
-          "popis": "Umístění, odpovědnosti a postupy při zasažení nebezpečnými látkami.",
+          "popis": "Umístění oční sprchy, odpovědnosti a postupy při zasažení.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "pokyny_vyrobce",
-          "nazev": "Pokyny výrobce zařízení",
-          "popis": "Návod k obsluze, údržbě a periodickým kontrolám oční sprchy.",
+          "nazev": "Návod výrobce zařízení",
+          "popis": "Obsluha, údržba a intervaly kontrol oční sprchy.",
           "poradi": 40,
           "aktivni": true
         }
@@ -409,50 +409,50 @@
     {
       "id": "skolene_osoby",
       "nazev": "Školené osoby",
-      "popis": "Kontrola zajištění dostatečného počtu zaměstnanců proškolených v poskytování první pomoci, jejich aktuální způsobilosti a informovanosti ostatních zaměstnanců o tom, kdo první pomoc poskytuje.",
+      "popis": "Prověrka určení, proškolení a dostupnosti osob pro první pomoc.",
       "poradi": 30,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "urceni_osob",
-          "text": "Zjistěte, kteří zaměstnanci jsou určeni k poskytování první pomoci.",
+          "text": "Zjistěte určené osoby pro první pomoc.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "overeni_proskoleni",
-          "text": "Ověřte jejich aktuální proškolení.",
+          "text": "Ověřte platnost školení u každé určené osoby.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "dostupnost_smeny",
-          "text": "Zkontrolujte dostupnost těchto osob během pracovních směn.",
+          "text": "Zkontrolujte dostupnost během pracovních směn.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "informovanost",
-          "text": "Ověřte, zda zaměstnanci vědí, na koho se mohou obrátit.",
+          "text": "Zeptejte se zaměstnance, na koho se obrátit.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "zverejneni_seznamu",
-          "text": "Zkontrolujte způsob zveřejnění seznamu školených osob.",
+          "text": "Ověřte zveřejněný seznam školených osob.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "aktualizace_zmen",
-          "text": "Ověřte, zda jsou změny pravidelně aktualizovány.",
+          "text": "Porovnejte seznam s aktuálním personálem.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "pocet_rizikovost",
-          "text": "Posuďte, zda počet školených osob odpovídá velikosti a rizikovosti pracoviště.",
+          "text": "Posuďte, zda počet odpovídá velikosti a rizikům pracoviště.",
           "poradi": 70,
           "aktivni": true
         }
@@ -460,24 +460,24 @@
       "kontrolni_body": [
         {
           "id": "urcene_osoby",
-          "nazev": "Jsou určeny osoby poskytující první pomoc",
-          "popis": "Zaměstnavatel určil osoby odpovědné za poskytování první pomoci.",
+          "nazev": "Jsou určeny osoby pro první pomoc",
+          "popis": "Zaměstnavatel má písemně určené osoby pro první pomoc.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "platna_skoleni",
           "nazev": "Školení jsou platná",
-          "popis": "Určené osoby absolvovaly školení v požadovaném rozsahu a ve stanovených intervalech.",
+          "popis": "Určené osoby mají platné školení první pomoci.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "dostatecny_pocet",
           "nazev": "Počet školených osob je dostatečný",
-          "popis": "Počet odpovídá velikosti pracoviště, počtu zaměstnanců a charakteru rizik.",
+          "popis": "Počet odpovídá velikosti pracoviště a charakteru rizik.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -485,23 +485,23 @@
         {
           "id": "dostupnost",
           "nazev": "Školené osoby jsou dostupné",
-          "popis": "Na každé směně je dostupná alespoň jedna určená osoba, pokud to charakter provozu vyžaduje.",
+          "popis": "Na směně je dostupná alespoň jedna určená osoba.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "zverejneny_seznam",
           "nazev": "Seznam školených osob je zveřejněn",
-          "popis": "Zaměstnanci vědí, kdo poskytuje první pomoc.",
+          "popis": "Zaměstnanci snadno najdou, kdo poskytuje první pomoc.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "evidence_skoleni",
           "nazev": "Evidence školení je vedena",
-          "popis": "Jsou doloženy termíny školení, účastníci i případná opakovací školení.",
+          "popis": "Jsou doloženy termíny školení a opakovací školení.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -511,14 +511,14 @@
         {
           "id": "chybi_urcene_osoby",
           "nazev": "Chybí určené osoby",
-          "popis": "Zaměstnavatel neurčil osoby odpovědné za poskytování první pomoci.",
+          "popis": "Zaměstnavatel nemá písemně určené osoby pro první pomoc.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "odchod_zamestnancu",
-          "nazev": "Proškolení zaměstnanci již ve firmě nepracují",
-          "popis": "Seznam určených osob neodpovídá aktuálnímu stavu zaměstnanců.",
+          "nazev": "Seznam neodpovídá personálu",
+          "popis": "Ve firmě nepracují osoby uvedené v seznamu školených.",
           "poradi": 20,
           "aktivni": true
         },
@@ -532,21 +532,21 @@
         {
           "id": "nedostatecny_pocet",
           "nazev": "Nedostatečný počet školených osob",
-          "popis": "Počet proškolených zaměstnanců neodpovídá velikosti a rizikovosti pracoviště.",
+          "popis": "Počet proškolených zaměstnanců neodpovídá velikosti nebo rizikům pracoviště.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "neinformovanost",
           "nazev": "Zaměstnanci nevědí, kdo první pomoc poskytuje",
-          "popis": "Chybí zveřejnění seznamu nebo informace nejsou zaměstnancům dostupné.",
+          "popis": "Chybí zveřejněný seznam nebo ho zaměstnanci neznají.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "chybi_evidence",
           "nazev": "Chybí evidence školení",
-          "popis": "Nejsou doloženy termíny školení, účastníci ani opakovací školení.",
+          "popis": "Nejsou doloženy osvědčení nebo záznamy o školeních.",
           "poradi": 60,
           "aktivni": true
         }
@@ -554,36 +554,36 @@
       "doporucene_postupy": [
         {
           "id": "obnoveni_skoleni",
-          "nazev": "Pravidelně obnovovat školení",
-          "popis": "Zajistěte opakovací školení v intervalech stanovených vnitřním předpisem a legislativou.",
+          "nazev": "Obnovovat školení včas",
+          "popis": "Zajistěte opakovací školení před uplynutím platnosti.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "aktualizace_seznamu",
-          "nazev": "Aktualizovat seznam určených osob",
-          "popis": "Po každé změně personálu nebo školení aktualizujte seznam odpovědných osob.",
+          "nazev": "Aktualizovat seznam po změnách",
+          "popis": "Po nástupu, odchodu nebo novém školení seznam ihned upravte.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "zverejneni_seznamu",
-          "nazev": "Seznam zveřejnit na viditelném místě",
-          "popis": "Umístěte seznam školených osob tak, aby byl všem zaměstnancům snadno dostupný.",
+          "nazev": "Zveřejnit seznam na pracovišti",
+          "popis": "Umístěte seznam tam, kde ho zaměstnanci snadno uvidí.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "prizpusobeni_poctu",
-          "nazev": "Přizpůsobit počet školených osob rizikovosti provozu",
-          "popis": "Vyhodnocujte počet proškolených zaměstnanců podle velikosti pracoviště a charakteru rizik.",
+          "nazev": "Přizpůsobit počet rizikům",
+          "popis": "Po změně provozu nebo počtu zaměstnanců počet školených osob přehodnoťte.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "kontrola_dostupnosti",
-          "nazev": "Pravidelně kontrolovat dostupnost během směn",
-          "popis": "Ověřujte, zda je na každé směně dostupná alespoň jedna určená osoba.",
+          "nazev": "Kontrolovat dostupnost na směnách",
+          "popis": "Ověřujte, že na každé směně je dostupná určená osoba.",
           "poradi": 50,
           "aktivni": true
         }
@@ -591,29 +591,29 @@
       "legislativa": [
         {
           "id": "zakon_262_2006",
-          "nazev": "Zákon č. 262/2006 Sb. (zákoník práce)",
-          "popis": "Povinnosti zaměstnavatele v oblasti bezpečnosti a ochrany zdraví při práci.",
+          "nazev": "Zákon č. 262/2006 Sb.",
+          "popis": "Zákoník práce — povinnosti zaměstnavatele v oblasti BOZP.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "K poskytování a zajištění zdravotních služeb v pracovněprávních vztazích.",
+          "popis": "Zajištění zdravotních služeb v pracovněprávních vztazích.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "interni_dokumentace",
           "nazev": "Interní dokumentace zaměstnavatele",
-          "popis": "Organizace poskytování první pomoci — určení osob, periodicita školení a evidence.",
+          "popis": "Určení osob, periodicita školení a evidence.",
           "poradi": 40,
           "aktivni": true
         }
@@ -623,50 +623,50 @@
     {
       "id": "telefonni_cisla",
       "nazev": "Telefonní čísla",
-      "popis": "Kontrola dostupnosti, aktuálnosti a znalosti důležitých telefonních čísel pro mimořádné události, první pomoc a interní postupy zaměstnavatele.",
+      "popis": "Prověrka vyvěšení, aktuálnosti a znalosti důležitých telefonních čísel.",
       "poradi": 40,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "vyveseni",
-          "text": "Zkontrolujte, zda jsou na pracovišti vyvěšena důležitá telefonní čísla.",
+          "text": "Zkontrolujte vyvěšený seznam důležitých čísel.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "citelnost",
-          "text": "Ověřte jejich čitelnost a dostupnost.",
+          "text": "Ověřte čitelnost a viditelnost seznamu.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "aktualnost",
-          "text": "Zkontrolujte aktuálnost uvedených kontaktů.",
+          "text": "Porovnejte kontakty s aktuálním stavem organizace.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "cisla_izs",
-          "text": "Ověřte, že jsou uvedena čísla složek IZS.",
+          "text": "Ověřte čísla složek IZS.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "interni_kontakty",
-          "text": "Ověřte, že jsou uvedeny interní kontakty zaměstnavatele.",
+          "text": "Ověřte interní kontakty zaměstnavatele.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "namatkova_otazka",
-          "text": "Namátkově se zeptejte zaměstnance, na jaké číslo by volal při pracovním úrazu.",
+          "text": "Zeptejte se zaměstnance, na jaké číslo volá při pracovním úrazu.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "mimo_pracovni_dobu",
-          "text": "Ověřte, že zaměstnanci vědí, jak přivolat pomoc mimo běžnou pracovní dobu.",
+          "text": "Zeptejte se, jak přivolat pomoc mimo pracovní dobu.",
           "poradi": 70,
           "aktivni": true
         }
@@ -675,23 +675,23 @@
         {
           "id": "vyvesena",
           "nazev": "Telefonní čísla jsou vyvěšena",
-          "popis": "Na pracovišti jsou na vhodném místě zveřejněna důležitá telefonní čísla.",
+          "popis": "Seznam je na viditelném místě na pracovišti.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "aktualni",
           "nazev": "Telefonní čísla jsou aktuální",
-          "popis": "Kontakty odpovídají současnému stavu organizace.",
+          "popis": "Uvedená čísla odpovídají současnému stavu organizace.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "citelna",
           "nazev": "Telefonní čísla jsou dobře čitelná",
-          "popis": "Nejsou poškozena ani zakryta.",
+          "popis": "Seznam není poškozený ani zakrytý.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "nizka"
@@ -702,65 +702,65 @@
           "popis": "Minimálně 112, 150, 155 a 158.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "interni_kontakty",
           "nazev": "Jsou uvedeny interní kontakty",
-          "popis": "Vedoucí zaměstnanci, první pomoc, ostraha nebo další osoby dle místních podmínek.",
+          "popis": "Vedoucí, první pomoc, ostraha nebo další osoby dle místních podmínek.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "znalost_zamestnancu",
-          "nazev": "Zaměstnanci vědí, kam volat při mimořádné události",
-          "popis": "Namátkově oslovený zaměstnanec ví, jak přivolat pomoc.",
+          "nazev": "Zaměstnanec zná číslo pro mimořádnou událost",
+          "popis": "Oslovený zaměstnanec uvede správné číslo pro přivolání pomoci.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         }
       ],
       "typicke_zavady": [
         {
           "id": "nevyvesena",
-          "nazev": "Telefonní čísla nejsou vyvěšena",
-          "popis": "Na pracovišti chybí zveřejněný seznam důležitých kontaktů.",
+          "nazev": "Seznam není vyvěšen",
+          "popis": "Na pracovišti chybí zveřejněný seznam důležitých čísel.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "neaktualni",
           "nazev": "Neaktuální kontakty",
-          "popis": "Uvedená telefonní čísla neodpovídají současnému stavu organizace.",
+          "popis": "Uvedená čísla neodpovídají současnému stavu nebo už nefungují.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "necitelne",
-          "nazev": "Nečitelné nebo poškozené seznamy",
-          "popis": "Seznam kontaktů je poškozen, zakrytý nebo jinak nečitelný.",
+          "nazev": "Nečitelný seznam",
+          "popis": "Seznam je poškozený, vybledlý nebo zakrytý.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "chybi_interni",
           "nazev": "Chybí interní kontakty",
-          "popis": "Seznam neobsahuje důležité interní kontakty zaměstnavatele.",
+          "popis": "Seznam neobsahuje kontakty na vedoucí nebo osoby pro první pomoc.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "neznalost",
-          "nazev": "Zaměstnanci nevědí, kam volat",
-          "popis": "Zaměstnanci neznají důležitá telefonní čísla pro mimořádné události.",
+          "nazev": "Zaměstnanec nezná číslo pro pomoc",
+          "popis": "Oslovený zaměstnanec neumí uvést číslo pro mimořádnou událost.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "nevhodne_umisteni",
-          "nazev": "Seznam je umístěn na nevhodném místě",
-          "popis": "Telefonní čísla nejsou na dobře viditelném nebo dostupném místě.",
+          "nazev": "Seznam na nevhodném místě",
+          "popis": "Telefonní čísla nejsou tam, kde je zaměstnanci snadno najdou.",
           "poradi": 60,
           "aktivni": true
         }
@@ -768,36 +768,36 @@
       "doporucene_postupy": [
         {
           "id": "overovani_kontaktu",
-          "nazev": "Pravidelně ověřovat správnost kontaktů",
-          "popis": "Kontrolujte aktuálnost telefonních čísel v intervalech stanovených vnitřním předpisem.",
+          "nazev": "Pravidelně ověřovat kontakty",
+          "popis": "Kontrolujte správnost čísel nejméně jednou ročně.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "aktualizace_zmen",
-          "nazev": "Aktualizovat při organizačních změnách",
-          "popis": "Bez prodlení aktualizujte seznam při změnách personálu, struktury nebo kontaktů.",
+          "nazev": "Aktualizovat po změnách",
+          "popis": "Seznam ihned upravte při změně personálu nebo kontaktů.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "viditelne_umisteni",
-          "nazev": "Umístit seznam na dobře viditelné místo",
-          "popis": "Zajistěte, aby seznam důležitých čísel byl snadno dostupný všem zaměstnancům.",
+          "nazev": "Vyvěsit na viditelném místě",
+          "popis": "Umístěte seznam u vstupu, na nástěnce nebo u lékárničky.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "seznameni_zamestnancu",
-          "nazev": "Seznámit zaměstnance s důležitými kontakty",
-          "popis": "Informujte zaměstnance o umístění seznamu a klíčových telefonních číslech.",
+          "nazev": "Seznámit nové zaměstnance",
+          "popis": "Při nástupu ukažte, kde je seznam a která čísla jsou klíčová.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "overovani_znalosti",
-          "nazev": "Ověřovat znalosti zaměstnanců při prověrkách",
-          "popis": "Namátkově ověřujte, zda zaměstnanci vědí, kam volat při mimořádné události.",
+          "nazev": "Ověřovat znalost při prověrkách",
+          "popis": "Namátkově se ptejte, na jaké číslo volat při úraze nebo havárii.",
           "poradi": 50,
           "aktivni": true
         }
@@ -805,29 +805,29 @@
       "legislativa": [
         {
           "id": "zakon_262_2006",
-          "nazev": "Zákon č. 262/2006 Sb. (zákoník práce)",
-          "popis": "Povinnosti zaměstnavatele v oblasti bezpečnosti a ochrany zdraví při práci.",
+          "nazev": "Zákon č. 262/2006 Sb.",
+          "popis": "Zákoník práce — povinnosti zaměstnavatele v oblasti BOZP.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "K poskytování a zajištění zdravotních služeb v pracovněprávních vztazích.",
+          "popis": "Zajištění zdravotních služeb v pracovněprávních vztazích.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "vnitrni_predpis",
           "nazev": "Vnitřní předpis zaměstnavatele",
-          "popis": "Poskytování první pomoci a řešení mimořádných událostí — kontakty a postupy.",
+          "popis": "Postupy při mimořádných událostech a seznam kontaktů.",
           "poradi": 40,
           "aktivni": true
         }
