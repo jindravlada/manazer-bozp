@@ -10,6 +10,7 @@ from moduly.proverky.constants import (
     COMMISSION_RECORD_LEADER,
     COMMISSION_RECORD_MEMBER,
     COMMISSION_RECORD_UNION,
+    COMMISSION_RECORD_WORKPLACE,
     PLANNED_MONTH_NAMES,
     PLANNED_MONTH_NOT_SET_LABEL,
 )
@@ -42,9 +43,18 @@ def _text(value) -> str:
 
 _COMMISSION_ROLE_LABELS = {
     COMMISSION_RECORD_LEADER: "Vedoucí komise",
-    COMMISSION_RECORD_MEMBER: "Člen komise",
+    COMMISSION_RECORD_WORKPLACE: "Zástupce pracoviště",
     COMMISSION_RECORD_UNION: "Zástupce odborové organizace",
+    COMMISSION_RECORD_MEMBER: "Člen komise",
     COMMISSION_RECORD_INVITED: "Přizvaná osoba",
+}
+
+_COMMISSION_EXPORT_ORDER = {
+    COMMISSION_RECORD_LEADER: 1,
+    COMMISSION_RECORD_WORKPLACE: 2,
+    COMMISSION_RECORD_UNION: 3,
+    COMMISSION_RECORD_MEMBER: 4,
+    COMMISSION_RECORD_INVITED: 5,
 }
 
 
@@ -85,7 +95,14 @@ class InspectionExportContext:
             return []
 
         lines: list[str] = []
-        for member in sorted(members, key=lambda item: (item.display_order, item.id)):
+        for member in sorted(
+            members,
+            key=lambda item: (
+                _COMMISSION_EXPORT_ORDER.get(item.record_type, 99),
+                item.display_order,
+                item.id,
+            ),
+        ):
             role = _COMMISSION_ROLE_LABELS.get(member.record_type, member.record_type)
             parts = [f"• {member.display_name} ({role})"]
             if member.role_text:

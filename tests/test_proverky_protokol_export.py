@@ -41,6 +41,7 @@ with patch.object(Path, "home", return_value=_TMP):
         PROTOCOL_INCOMPLETE_WARNING,
         protokol_proverky_service,
     )
+    from moduly.nastaveni.sluzby.person_service import person_service
     from moduly.nastaveni.sluzby.settings_service import settings_service
 
 
@@ -73,6 +74,8 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
 
     def _create_inspection_with_leader(self, **fields):
         leader_id = self._create_leader()
+        workplace_id = settings_service.save_worker(first_name="Eva", last_name="Králová").id
+        union_id = person_service.create_person(first_name="Lucie", last_name="Horáková").id
         inspection = bozp_inspection_service.create_inspection(**fields)
         bozp_inspection_commission_service.save_members(
             inspection.id,
@@ -82,6 +85,20 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
                     "thp_worker_id": leader_id,
                     "display_name": "Jan Novák",
                     "display_order": 10,
+                    "active": True,
+                },
+                {
+                    "record_type": "zastupce_pracoviste",
+                    "thp_worker_id": workplace_id,
+                    "display_name": "Eva Králová",
+                    "display_order": 15,
+                    "active": True,
+                },
+                {
+                    "record_type": "zastupce_odboru",
+                    "person_id": union_id,
+                    "display_name": "Lucie Horáková",
+                    "display_order": 20,
                     "active": True,
                 },
             ],
@@ -131,7 +148,9 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
 
     def test_commission_in_output(self) -> None:
         leader_id = self._create_leader()
+        workplace_id = settings_service.save_worker(first_name="Eva", last_name="Králová").id
         member_id = settings_service.save_worker(first_name="Petr", last_name="Svoboda").id
+        union_id = person_service.create_person(first_name="Lucie", last_name="Horáková").id
         inspection = bozp_inspection_service.create_inspection()
         bozp_inspection_commission_service.save_members(
             inspection.id,
@@ -144,10 +163,24 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
                     "active": True,
                 },
                 {
+                    "record_type": "zastupce_pracoviste",
+                    "thp_worker_id": workplace_id,
+                    "display_name": "Eva Králová",
+                    "display_order": 15,
+                    "active": True,
+                },
+                {
+                    "record_type": "zastupce_odboru",
+                    "person_id": union_id,
+                    "display_name": "Lucie Horáková",
+                    "display_order": 20,
+                    "active": True,
+                },
+                {
                     "record_type": "clen_komise",
                     "thp_worker_id": member_id,
                     "display_name": "Petr Svoboda",
-                    "display_order": 20,
+                    "display_order": 30,
                     "active": True,
                 },
             ],
@@ -160,6 +193,10 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
 
         self.assertIn("Jan Novák", content)
         self.assertIn("Vedoucí komise", content)
+        self.assertIn("Eva Králová", content)
+        self.assertIn("Zástupce pracoviště", content)
+        self.assertIn("Lucie Horáková", content)
+        self.assertIn("Zástupce odborové organizace", content)
         self.assertIn("Petr Svoboda", content)
         self.assertIn("Člen komise", content)
 

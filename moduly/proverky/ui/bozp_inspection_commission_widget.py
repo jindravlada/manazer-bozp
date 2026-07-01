@@ -16,10 +16,14 @@ from core.widgets.thp_worker_selector import ThpWorkerSelector
 from core.widgets.person_selector import PersonSelector
 from moduly.proverky.constants import (
     COMMISSION_DUPLICATE_PERSON_MESSAGE,
+    COMMISSION_MISSING_LEADER_MESSAGE,
+    COMMISSION_MISSING_UNION_MESSAGE,
+    COMMISSION_MISSING_WORKPLACE_MESSAGE,
     COMMISSION_RECORD_INVITED,
     COMMISSION_RECORD_LEADER,
     COMMISSION_RECORD_MEMBER,
     COMMISSION_RECORD_UNION,
+    COMMISSION_RECORD_WORKPLACE,
 )
 from moduly.proverky.sluzby.bozp_inspection_commission_service import (
     bozp_inspection_commission_service,
@@ -43,9 +47,11 @@ class BozpInspectionCommissionWidget(QWidget):
         fixed_form = QFormLayout(fixed_box)
 
         self.leader_selector = ThpWorkerSelector(include_empty=True)
+        self.workplace_selector = ThpWorkerSelector(include_empty=True)
         self.union_selector = PersonSelector(include_empty=True, allow_add_new=True)
 
         fixed_form.addRow("Vedoucí komise:", self.leader_selector)
+        fixed_form.addRow("Zástupce pracoviště:", self.workplace_selector)
         fixed_form.addRow("Zástupce odborové organizace:", self.union_selector)
         layout.addWidget(fixed_box)
 
@@ -64,7 +70,8 @@ class BozpInspectionCommissionWidget(QWidget):
         layout.addWidget(self.invited_box)
 
         info = QLabel(
-            "Vedoucí komise je povinný. Zástupce odborové organizace a další osoby jsou volitelné."
+            "Vedoucí komise, zástupce pracoviště a zástupce odborové organizace jsou povinní. "
+            "Členové komise a přizvané osoby jsou volitelní."
         )
         info.setWordWrap(True)
         info.setObjectName("MutedText")
@@ -124,6 +131,7 @@ class BozpInspectionCommissionWidget(QWidget):
         self._members = []
         self._invited = []
         self.leader_selector.setCurrentIndex(0)
+        self.workplace_selector.setCurrentIndex(0)
         self.union_selector.setCurrentIndex(0)
 
         if inspection_id is not None:
@@ -133,6 +141,9 @@ class BozpInspectionCommissionWidget(QWidget):
                 if data["record_type"] == COMMISSION_RECORD_LEADER:
                     if data.get("thp_worker_id") is not None:
                         self.leader_selector.set_person_id(data["thp_worker_id"])
+                elif data["record_type"] == COMMISSION_RECORD_WORKPLACE:
+                    if data.get("thp_worker_id") is not None:
+                        self.workplace_selector.set_person_id(data["thp_worker_id"])
                 elif data["record_type"] == COMMISSION_RECORD_UNION:
                     if data.get("person_id") is not None:
                         self.union_selector.set_person_id(data["person_id"])
@@ -147,7 +158,17 @@ class BozpInspectionCommissionWidget(QWidget):
         leader_id = self.leader_selector.current_person_id()
         leader_name = self._leader_display_name()
         if leader_id is None or not leader_name:
-            return False, "Vyberte vedoucího komise z THP pracovníků."
+            return False, COMMISSION_MISSING_LEADER_MESSAGE
+
+        workplace_id = self.workplace_selector.current_person_id()
+        workplace_name = self._workplace_display_name()
+        if workplace_id is None or not workplace_name:
+            return False, COMMISSION_MISSING_WORKPLACE_MESSAGE
+
+        union_id = self.union_selector.current_person_id()
+        union_name = self._union_display_name()
+        if union_id is None or not union_name:
+            return False, COMMISSION_MISSING_UNION_MESSAGE
 
         try:
             bozp_inspection_commission_service.validate_members(self.get_members_for_save())
@@ -171,6 +192,24 @@ class BozpInspectionCommissionWidget(QWidget):
                     "display_name": leader_name,
                     "role_text": None,
                     "display_order": 10,
+                    "active": True,
+                }
+            )
+
+        workplace = self.workplace_selector.current_person()
+        workplace_id = self.workplace_selector.current_person_id()
+        workplace_name = (
+            workplace.display_name if workplace else self.workplace_selector.currentText().strip()
+        )
+        if workplace_id is not None and workplace_name:
+            members.append(
+                {
+                    "record_type": COMMISSION_RECORD_WORKPLACE,
+                    "thp_worker_id": workplace_id,
+                    "person_id": None,
+                    "display_name": workplace_name,
+                    "role_text": None,
+                    "display_order": 15,
                     "active": True,
                 }
             )
@@ -227,6 +266,18 @@ class BozpInspectionCommissionWidget(QWidget):
             return leader.display_name
         return self.leader_selector.currentText().strip()
 
+    def _workplace_display_name(self) -> str:
+        worker = self.workplace_selector.current_person()
+        if worker is not None:
+            return worker.display_name
+        return self.workplace_selector.currentText().strip()
+
+    def _union_display_name(self) -> str:
+        person = self.union_selector.current_person()
+        if person is not None:
+            return person.display_name
+        return self.union_selector.display_text()
+
     def _refresh_tables(self) -> None:
         self._fill_table(self.members_table, self._members)
         self._fill_table(self.invited_table, self._invited)
@@ -255,6 +306,10 @@ class BozpInspectionCommissionWidget(QWidget):
     ) -> bool:
         leader_id = self.leader_selector.current_person_id()
         if leader_id == thp_worker_id:
+            return True
+
+        workplace_id = self.workplace_selector.current_person_id()
+        if workplace_id == thp_worker_id:
             return True
 
         for index, member in enumerate(self._members):

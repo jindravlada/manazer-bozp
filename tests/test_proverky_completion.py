@@ -38,6 +38,7 @@ with patch.object(Path, "home", return_value=_TMP):
         bozp_inspection_commission_service,
     )
     from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
+    from moduly.nastaveni.sluzby.person_service import person_service
     from moduly.nastaveni.sluzby.settings_service import settings_service
 
 
@@ -58,6 +59,8 @@ class ProverkyCompletionTestCase(unittest.TestCase):
 
     def _create_inspection_with_leader(self):
         leader_id = self._create_leader()
+        workplace_id = settings_service.save_worker(first_name="Eva", last_name="Králová").id
+        union_id = person_service.create_person(first_name="Lucie", last_name="Horáková").id
         inspection = bozp_inspection_service.create_inspection()
         bozp_inspection_commission_service.save_members(
             inspection.id,
@@ -67,6 +70,20 @@ class ProverkyCompletionTestCase(unittest.TestCase):
                     "thp_worker_id": leader_id,
                     "display_name": "Jan Novák",
                     "display_order": 10,
+                    "active": True,
+                },
+                {
+                    "record_type": "zastupce_pracoviste",
+                    "thp_worker_id": workplace_id,
+                    "display_name": "Eva Králová",
+                    "display_order": 15,
+                    "active": True,
+                },
+                {
+                    "record_type": "zastupce_odboru",
+                    "person_id": union_id,
+                    "display_name": "Lucie Horáková",
+                    "display_order": 20,
                     "active": True,
                 },
             ],

@@ -74,6 +74,7 @@ YEAR_FILTER_VSE = "Vše"
 TAB_KONTROLOVANE_OBLASTI = "Kontrolované oblasti"
 
 COMMISSION_RECORD_LEADER = "vedouci_komise"
+COMMISSION_RECORD_WORKPLACE = "zastupce_pracoviste"
 COMMISSION_RECORD_UNION = "zastupce_odboru"
 COMMISSION_RECORD_MEMBER = "clen_komise"
 COMMISSION_RECORD_INVITED = "prizvana_osoba"
@@ -81,11 +82,16 @@ COMMISSION_RECORD_INVITED = "prizvana_osoba"
 COMMISSION_RECORD_TYPES = frozenset(
     {
         COMMISSION_RECORD_LEADER,
+        COMMISSION_RECORD_WORKPLACE,
         COMMISSION_RECORD_UNION,
         COMMISSION_RECORD_MEMBER,
         COMMISSION_RECORD_INVITED,
     }
 )
+
+COMMISSION_MISSING_LEADER_MESSAGE = "Vyberte vedoucího komise z THP pracovníků."
+COMMISSION_MISSING_WORKPLACE_MESSAGE = "Vyberte zástupce pracoviště z THP pracovníků."
+COMMISSION_MISSING_UNION_MESSAGE = "Vyberte zástupce odborové organizace ze seznamu osob."
 
 COMMISSION_DEFAULT_ROLE_MEMBER = "Člen komise"
 COMMISSION_DEFAULT_ROLE_INVITED = "Přizvaná osoba"

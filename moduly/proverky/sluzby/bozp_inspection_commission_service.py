@@ -7,6 +7,7 @@ from moduly.proverky.constants import (
     COMMISSION_RECORD_MEMBER,
     COMMISSION_RECORD_TYPES,
     COMMISSION_RECORD_UNION,
+    COMMISSION_RECORD_WORKPLACE,
 )
 from moduly.proverky.modely.bozp_inspection_commission_member import BozpInspectionCommissionMember
 from moduly.proverky.repository.bozp_inspection_commission_repository import (
@@ -53,11 +54,17 @@ class BozpInspectionCommissionService:
         if len(leaders) != 1:
             raise ValueError("Prověrka musí mít právě jednoho vedoucího komise.")
 
+        workplace_reps = [
+            member for member in normalized if member["record_type"] == COMMISSION_RECORD_WORKPLACE
+        ]
+        if len(workplace_reps) != 1:
+            raise ValueError("Prověrka musí mít právě jednoho zástupce pracoviště.")
+
         union_reps = [
             member for member in normalized if member["record_type"] == COMMISSION_RECORD_UNION
         ]
-        if len(union_reps) > 1:
-            raise ValueError("Zástupce odborové organizace může být uveden maximálně jednou.")
+        if len(union_reps) != 1:
+            raise ValueError("Prověrka musí mít právě jednoho zástupce odborové organizace.")
 
         for member in normalized:
             record_type = member["record_type"]
@@ -65,9 +72,15 @@ class BozpInspectionCommissionService:
                 raise ValueError(f"Neznámý typ záznamu komise: {record_type}")
             if not member["display_name"]:
                 raise ValueError("Každý člen komise musí mít vyplněné jméno.")
-            if record_type in {COMMISSION_RECORD_LEADER, COMMISSION_RECORD_MEMBER}:
+            if record_type in {
+                COMMISSION_RECORD_LEADER,
+                COMMISSION_RECORD_WORKPLACE,
+                COMMISSION_RECORD_MEMBER,
+            }:
                 if member.get("thp_worker_id") is None:
-                    raise ValueError("Vedoucí komise a členové komise musí být THP pracovníci.")
+                    raise ValueError(
+                        "Vedoucí komise, zástupce pracoviště a členové komise musí být THP pracovníci."
+                    )
             if record_type in {COMMISSION_RECORD_UNION, COMMISSION_RECORD_INVITED}:
                 if member.get("person_id") is None:
                     raise ValueError("Zástupce odborů a přizvané osoby musí být ze seznamu Osob.")
@@ -80,7 +93,8 @@ class BozpInspectionCommissionService:
         thp_worker_ids = [
             member["thp_worker_id"]
             for member in members
-            if member["record_type"] in {COMMISSION_RECORD_LEADER, COMMISSION_RECORD_MEMBER}
+            if member["record_type"]
+            in {COMMISSION_RECORD_LEADER, COMMISSION_RECORD_WORKPLACE, COMMISSION_RECORD_MEMBER}
             and member.get("thp_worker_id") is not None
         ]
         if len(thp_worker_ids) != len(set(thp_worker_ids)):

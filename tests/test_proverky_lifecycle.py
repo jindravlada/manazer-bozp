@@ -30,6 +30,7 @@ with patch.object(Path, "home", return_value=_TMP):
         bozp_inspection_commission_service,
     )
     from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
+    from moduly.nastaveni.sluzby.person_service import person_service
     from moduly.nastaveni.sluzby.settings_service import settings_service
 
 
@@ -48,9 +49,11 @@ class ProverkyLifecycleTestCase(unittest.TestCase):
         worker = settings_service.save_worker(first_name="Jan", last_name="Novák")
         return worker.id
 
-    def _create_inspection_with_leader(self):
+    def _create_inspection_with_commission(self, **fields):
         leader_id = self._create_leader()
-        inspection = bozp_inspection_service.create_inspection()
+        workplace_id = settings_service.save_worker(first_name="Eva", last_name="Králová").id
+        union_id = person_service.create_person(first_name="Lucie", last_name="Horáková").id
+        inspection = bozp_inspection_service.create_inspection(**fields)
         bozp_inspection_commission_service.save_members(
             inspection.id,
             [
@@ -61,9 +64,26 @@ class ProverkyLifecycleTestCase(unittest.TestCase):
                     "display_order": 10,
                     "active": True,
                 },
+                {
+                    "record_type": "zastupce_pracoviste",
+                    "thp_worker_id": workplace_id,
+                    "display_name": "Eva Králová",
+                    "display_order": 15,
+                    "active": True,
+                },
+                {
+                    "record_type": "zastupce_odboru",
+                    "person_id": union_id,
+                    "display_name": "Lucie Horáková",
+                    "display_order": 20,
+                    "active": True,
+                },
             ],
         )
-        return inspection
+        return bozp_inspection_service.get_by_id(inspection.id)
+
+    def _create_inspection_with_leader(self, **fields):
+        return self._create_inspection_with_commission(**fields)
 
     def test_derive_status_rules(self) -> None:
         self.assertEqual(
@@ -184,7 +204,7 @@ class ProverkyLifecycleTestCase(unittest.TestCase):
     def test_complete_button_sets_finished_at_and_status(self, mock_question) -> None:
         from moduly.proverky.ui.bozp_inspection_dialog import BozpInspectionDialog
 
-        inspection = self._create_inspection_with_leader()
+        inspection = self._create_inspection_with_commission()
         bozp_inspection_service.update_inspection(
             inspection.id,
             started_at=date(2026, 5, 1),
