@@ -66,6 +66,16 @@ class BozpInspectionService:
         workplace = settings_service.get_workplace_by_id(workplace_id)
         return workplace.name if workplace else ""
 
+    def resolve_workplace_id_by_name(self, workplace_name: str) -> int | None:
+        name = str(workplace_name or "").strip()
+        if not name:
+            return None
+
+        for workplace in settings_service.get_workplaces(include_inactive=True):
+            if workplace.name == name:
+                return workplace.id
+        return None
+
     def findings_count(self, inspection_id: int) -> int:
         return len(finding_service.get_for_entity(ENTITY_PROVERKY, inspection_id))
 
@@ -139,6 +149,8 @@ class BozpInspectionService:
         workplace_id = data.get("workplace_id")
         if workplace_id is not None:
             data["workplace_id"] = int(workplace_id)
+        else:
+            data["workplace_id"] = None
 
         data["workplace_name"] = str(data.get("workplace_name") or "").strip()
         data["title"] = str(data.get("title") or "").strip()

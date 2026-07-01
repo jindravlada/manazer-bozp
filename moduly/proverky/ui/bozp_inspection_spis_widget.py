@@ -203,8 +203,8 @@ class BozpInspectionSpisWidget(QWidget):
             self.finished_at_edit.set_date_value(finished_at)
 
         workplace_id = getattr(inspection, "workplace_id", None)
-        if workplace_id:
-            self.workplace_selector.set_workplace_id(workplace_id)
+        workplace_name = getattr(inspection, "workplace_name", None)
+        self.workplace_selector.set_workplace(workplace_id, workplace_name or "")
 
         self._set_saved_history_placeholder()
 

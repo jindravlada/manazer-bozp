@@ -146,12 +146,21 @@ class ProverkyPage(QWidget):
         item = self.table.item(selected[0].row(), 0)
         return int(item.text()) if item else None
 
+    def _prepare_spis_data(self, data: dict) -> dict:
+        payload = dict(data)
+        workplace_id = payload.get("workplace_id")
+        if workplace_id is None:
+            workplace_id = bozp_inspection_service.resolve_workplace_id_by_name(
+                payload.get("workplace_name", "")
+            )
+            payload["workplace_id"] = workplace_id
+        payload["workplace_name"] = bozp_inspection_service.resolve_workplace_name(workplace_id)
+        return payload
+
     def new_inspection(self) -> None:
         dialog = BozpInspectionDialog(self)
         if exec_maximized(dialog):
-            data = dialog.get_data()
-            workplace_name = bozp_inspection_service.resolve_workplace_name(data.pop("workplace_id"))
-            bozp_inspection_service.create_inspection(workplace_name=workplace_name, **data)
+            bozp_inspection_service.create_inspection(**self._prepare_spis_data(dialog.get_data()))
             self.refresh()
 
     def open_selected_inspection(self) -> None:
@@ -171,9 +180,10 @@ class ProverkyPage(QWidget):
 
         dialog = BozpInspectionDialog(self, inspection=inspection)
         if exec_maximized(dialog):
-            data = dialog.get_data()
-            workplace_name = bozp_inspection_service.resolve_workplace_name(data.pop("workplace_id"))
-            bozp_inspection_service.update_inspection(inspection_id, workplace_name=workplace_name, **data)
+            bozp_inspection_service.update_inspection(
+                inspection_id,
+                **self._prepare_spis_data(dialog.get_data()),
+            )
             self.refresh()
 
     def delete_selected_inspection(self) -> None:
