@@ -1,16 +1,11 @@
 from datetime import date
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
     QFrame,
     QHBoxLayout,
-    QHeaderView,
     QLabel,
-    QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
@@ -25,9 +20,6 @@ from moduly.proverky.constants import (
     PLANNED_MONTH_NAMES,
     PLANNED_MONTH_NOT_SET_LABEL,
 )
-from moduly.tymy.sluzby.team_service import INSPECTION_TEAM_TYPE_ID, team_service
-
-_INACTIVE_TEAM_COLOR = QColor("#9ca3af")
 
 
 class BozpInspectionSpisWidget(QWidget):
@@ -74,9 +66,6 @@ class BozpInspectionSpisWidget(QWidget):
 
         self.workplace_selector = WorkplaceSelector()
 
-        self.team_combo = QComboBox()
-        self.team_combo.currentIndexChanged.connect(self._on_team_changed)
-
         left_form.addRow("Číslo prověrky:", self.number_label)
         left_form.addRow("Rok:", self.year_combo)
         left_form.addRow("Plánovaný měsíc:", self.planned_month_combo)
@@ -87,43 +76,10 @@ class BozpInspectionSpisWidget(QWidget):
         left_form.addRow("Typ prověrky:", self.type_combo)
 
         right_form.addRow("Pracoviště:", self.workplace_selector)
-        right_form.addRow("Prověrková komise:", self.team_combo)
 
         columns.addLayout(left_form, 1)
         columns.addLayout(right_form, 1)
         layout.addWidget(card)
-
-        self.team_members_panel = QFrame()
-        self.team_members_panel.setObjectName("ModulePanel")
-        members_layout = QVBoxLayout(self.team_members_panel)
-        members_layout.setContentsMargins(12, 10, 12, 10)
-        members_layout.setSpacing(6)
-
-        members_header = QLabel("Členové komise")
-        members_header.setObjectName("SectionTitle")
-
-        self.team_members_table = QTableWidget()
-        self.team_members_table.setColumnCount(4)
-        self.team_members_table.setHorizontalHeaderLabels(
-            ["Osoba", "Role", "Povinný", "Pořadí"]
-        )
-        self.team_members_table.setSelectionMode(QTableWidget.NoSelection)
-        self.team_members_table.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.team_members_table.setAlternatingRowColors(True)
-        self.team_members_table.verticalHeader().setVisible(False)
-        self.team_members_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
-        self.team_members_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        self.team_members_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        self.team_members_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
-
-        self.team_members_placeholder = QLabel("Vyberte prověrkovou komisi pro zobrazení členů.")
-        self.team_members_placeholder.setObjectName("MutedText")
-        self.team_members_placeholder.setWordWrap(True)
-
-        members_layout.addWidget(members_header)
-        members_layout.addWidget(self.team_members_placeholder)
-        members_layout.addWidget(self.team_members_table)
-        layout.addWidget(self.team_members_panel)
 
         self.history_panel = QFrame()
         self.history_panel.setObjectName("ModulePanel")
@@ -145,74 +101,6 @@ class BozpInspectionSpisWidget(QWidget):
         layout.addStretch()
 
         self._set_defaults()
-
-    def _populate_team_combo(self, include_team_id: int | None = None) -> None:
-        self.team_combo.blockSignals(True)
-        self.team_combo.clear()
-        self.team_combo.addItem("—", None)
-
-        teams = team_service.get_teams_for_selection(
-            team_type_id=INSPECTION_TEAM_TYPE_ID,
-            include_team_id=include_team_id,
-        )
-        for team in teams:
-            label = team.name
-            if not team.active:
-                label = f"{label} (neaktivní)"
-            self.team_combo.addItem(label, team.id)
-
-        self.team_combo.blockSignals(False)
-
-    def _set_team(self, team_id: int | None) -> None:
-        self._populate_team_combo(include_team_id=team_id)
-        if team_id is None:
-            self.team_combo.setCurrentIndex(0)
-            self._refresh_team_members(None)
-            return
-
-        index = self.team_combo.findData(team_id)
-        if index >= 0:
-            self.team_combo.setCurrentIndex(index)
-        else:
-            self.team_combo.setCurrentIndex(0)
-        self._refresh_team_members(team_id)
-
-    def _on_team_changed(self) -> None:
-        team_id = self.team_combo.currentData()
-        self._refresh_team_members(team_id)
-
-    def _refresh_team_members(self, team_id: int | None) -> None:
-        if team_id is None:
-            self.team_members_placeholder.setVisible(True)
-            self.team_members_table.setVisible(False)
-            self.team_members_table.setRowCount(0)
-            return
-
-        detail = team_service.get_team_detail(team_id)
-        if detail is None:
-            self.team_members_placeholder.setText("Vybraný tým nebyl nalezen.")
-            self.team_members_placeholder.setVisible(True)
-            self.team_members_table.setVisible(False)
-            self.team_members_table.setRowCount(0)
-            return
-
-        self.team_members_placeholder.setVisible(False)
-        self.team_members_table.setVisible(True)
-        self.team_members_table.setRowCount(len(detail.members))
-
-        for row, member in enumerate(detail.members):
-            values = [
-                member.person_name,
-                member.role_name,
-                "Ano" if member.mandatory else "Ne",
-                str(member.display_order),
-            ]
-            for column, value in enumerate(values):
-                item = QTableWidgetItem(value)
-                item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-                if not detail.team.active:
-                    item.setForeground(QBrush(_INACTIVE_TEAM_COLOR))
-                self.team_members_table.setItem(row, column, item)
 
     def _populate_year_combo(self) -> None:
         current_year = date.today().year
@@ -236,8 +124,6 @@ class BozpInspectionSpisWidget(QWidget):
         self.type_combo.setCurrentText(DEFAULT_INSPECTION_TYPE)
         self._populate_year_combo()
         self.planned_month_combo.setCurrentIndex(0)
-        self._populate_team_combo()
-        self._refresh_team_members(None)
         self._set_unsaved_history_placeholder()
 
     def _set_unsaved_history_placeholder(self) -> None:
@@ -320,9 +206,6 @@ class BozpInspectionSpisWidget(QWidget):
         workplace_name = getattr(inspection, "workplace_name", None)
         self.workplace_selector.set_workplace(workplace_id, workplace_name or "")
 
-        team_id = getattr(inspection, "team_id", None)
-        self._set_team(team_id)
-
         self._set_saved_history_placeholder()
 
     def get_data(self) -> dict:
@@ -335,5 +218,4 @@ class BozpInspectionSpisWidget(QWidget):
             "status": self.status_combo.currentText(),
             "inspection_type": self.type_combo.currentText(),
             "workplace_id": self.workplace_selector.current_workplace_id(),
-            "team_id": self.team_combo.currentData(),
         }

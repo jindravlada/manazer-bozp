@@ -17,7 +17,6 @@ from moduly.proverky.constants import (
 from moduly.proverky.modely.bozp_inspection import BozpInspection
 from moduly.proverky.repository.bozp_inspection_repository import BozpInspectionRepository
 from moduly.nastaveni.sluzby.settings_service import settings_service
-from moduly.tymy.sluzby.team_service import INSPECTION_TEAM_TYPE_ID, team_service
 
 _OPEN_FINDING_STATUSES = frozenset(
     {
@@ -156,18 +155,6 @@ class BozpInspectionService:
         data["workplace_name"] = str(data.get("workplace_name") or "").strip()
         data["title"] = str(data.get("title") or "").strip()
 
-        team_id = data.get("team_id")
-        if team_id is not None:
-            team_id = int(team_id)
-            team = team_service.get_team(team_id)
-            if team is None:
-                raise ValueError(f"Tým {team_id} neexistuje.")
-            if team.team_type_id != INSPECTION_TEAM_TYPE_ID:
-                raise ValueError("K prověrce lze přiřadit pouze tým typu Prověrková komise.")
-            data["team_id"] = team_id
-        else:
-            data["team_id"] = None
-
         return {
             "year": data.get("year"),
             "planned_month": data.get("planned_month"),
@@ -178,7 +165,6 @@ class BozpInspectionService:
             "inspection_type": inspection_type,
             "workplace_id": data.get("workplace_id"),
             "workplace_name": data["workplace_name"],
-            "team_id": data.get("team_id"),
             "title": data["title"],
         }
 
