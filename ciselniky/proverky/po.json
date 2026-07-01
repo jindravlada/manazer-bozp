@@ -1,5 +1,5 @@
 {
-  "verze": 2,
+  "verze": 3,
   "id": "po",
   "nazev": "Požární ochrana",
   "popis": "Prevence požárů, požární technika, evakuační cesty a organizace PO.",
@@ -514,6 +514,277 @@
           "id": "interni_pozarni_dokumentace",
           "nazev": "Interní požární dokumentace zaměstnavatele",
           "popis": "Rozmístění hydrantů, periodicita kontrol a odpovědnosti.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "unikove_cesty",
+      "nazev": "Únikové cesty",
+      "popis": "Kontrola průchodnosti, označení, technického stavu a bezpečného používání únikových cest určených pro rychlou a bezpečnou evakuaci osob.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "projiti_trasy",
+          "text": "Projděte celou únikovou cestu od začátku až k východu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pruchodnost",
+          "text": "Ověřte, že je cesta trvale průchodná.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni_smeru",
+          "text": "Zkontrolujte označení směru úniku.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "unikove_dvere",
+          "text": "Ověřte funkčnost únikových dveří.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "nouzove_osvetleni",
+          "text": "Zkontrolujte nouzové osvětlení (pokud je instalováno).",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "horlave_materialy",
+          "text": "Ověřte, že na únikové cestě nejsou hořlavé materiály ani překážky.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_zamestnance",
+          "text": "Namátkově se zeptejte zaměstnance, kudy by objekt opustil při požáru.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "pruchodna",
+          "nazev": "Úniková cesta je průchodná",
+          "popis": "Na únikové cestě nejsou překážky bránící bezpečné evakuaci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "bez_skladovani",
+          "nazev": "Úniková cesta není využívána ke skladování",
+          "popis": "Na komunikaci nejsou uloženy materiály, výrobky ani odpady.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni_smeru",
+          "nazev": "Směr úniku je správně označen",
+          "popis": "Bezpečnostní značky jsou čitelné a dobře viditelné.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "dvere_oteviraji",
+          "nazev": "Únikové dveře lze snadno otevřít",
+          "popis": "Dveře nejsou uzamčené ani jinak blokované.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "nouzove_osvetleni",
+          "nazev": "Nouzové osvětlení je funkční",
+          "popis": "Pokud je instalováno, nevykazuje zjevné závady.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "pozarni_uzavery",
+          "nazev": "Požární uzávěry jsou v provozuschopném stavu",
+          "popis": "Nejsou zajištěny v otevřené poloze nepovoleným způsobem.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "bez_horlavych",
+          "nazev": "Na únikové cestě nejsou hořlavé materiály",
+          "popis": "Komunikace není využívána jako sklad.",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vychody_pristupne",
+          "nazev": "Únikové východy jsou volně přístupné",
+          "popis": "Před dveřmi ani za nimi nejsou překážky.",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "evacuacni_znaceni",
+          "nazev": "Evakuační značení je nepoškozené",
+          "popis": "Značky nejsou zakryté ani poškozené.",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_zamestnance",
+          "nazev": "Zaměstnanec ví, kudy objekt opustit",
+          "popis": "Namátkově oslovený zaměstnanec dokáže popsat nebo ukázat nejbližší únikovou cestu.",
+          "poradi": 100,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "material_na_ceste",
+          "nazev": "Materiál uložený na únikové cestě",
+          "popis": "Na únikové komunikaci jsou uloženy materiály nebo překážky.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "uzamcene_dvere",
+          "nazev": "Uzamčené únikové dveře",
+          "popis": "Únikové dveře jsou uzamčené nebo jinak blokované.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "dvere_neoteviraji",
+          "nazev": "Dveře nejdou otevřít",
+          "popis": "Únikové dveře nejsou snadno otevíratelné.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "poskozene_znaceni",
+          "nazev": "Poškozené bezpečnostní značení",
+          "popis": "Evakuační značky jsou poškozené, nečitelné nebo zakryté.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "nefunkcni_osvetleni",
+          "nazev": "Nefunkční nouzové osvětlení",
+          "popis": "Nouzové osvětlení nefunguje nebo vykazuje závady.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "zajistene_pozarni_dvere",
+          "nazev": "Zajištěné požární dveře klínem",
+          "popis": "Požární uzávěry jsou nepovoleně zajištěny v otevřené poloze.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "horlave_materialy",
+          "nazev": "Hořlavé materiály na komunikaci",
+          "popis": "Na únikové cestě jsou uloženy hořlavé materiály.",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "zablokovany_vychod",
+          "nazev": "Zarostlý nebo zablokovaný venkovní únikový prostor",
+          "popis": "Venkovní únikový prostor je zablokovaný nebo neprůchodný.",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "neznalost_trasy",
+          "nazev": "Zaměstnanci neznají únikovou trasu",
+          "popis": "Zaměstnanci neumí popsat nebo ukázat únikovou cestu.",
+          "poradi": 90,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "volne_cesty",
+          "nazev": "Udržovat trvale volné únikové cesty",
+          "popis": "Zajistěte, aby únikové komunikace nebyly blokovány materiálem ani zařízením.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "bez_skladovani",
+          "nazev": "Nevyužívat komunikace ke skladování",
+          "popis": "Únikové cesty nepoužívejte k ukládání materiálů, výrobků ani odpadů.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "kontrola_dveri",
+          "nazev": "Pravidelně kontrolovat otevírání únikových dveří",
+          "popis": "Ověřujte, zda jsou únikové dveře snadno otevíratelné.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "kontrola_znaceni",
+          "nazev": "Kontrolovat bezpečnostní značení",
+          "popis": "Pravidelně kontrolujte stav a viditelnost evakuačního značení.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "kontrola_osvetleni",
+          "nazev": "Provádět pravidelné kontroly nouzového osvětlení",
+          "popis": "Kontrolujte funkčnost nouzového osvětlení v intervalech stanovených dokumentací.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "seznamovani_zamestnancu",
+          "nazev": "Seznamovat zaměstnance s únikovými trasami",
+          "popis": "Informujte zaměstnance o únikových cestách a místech shromažďování.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_133_1985",
+          "nazev": "Zákon č. 133/1985 Sb.",
+          "popis": "O požární ochraně — základní povinnosti v oblasti prevence požárů a evakuace.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vyhlaska_246_2001",
+          "nazev": "Vyhláška č. 246/2001 Sb.",
+          "popis": "Stanovení podmínek požární bezpečnosti a výkonu státního požárního dozoru.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nv_101_2005",
+          "nazev": "Nařízení vlády č. 101/2005 Sb.",
+          "popis": "Podrobnější požadavky na požární techniku, evakuační cesty a nouzové osvětlení.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "csn_iso_3864",
+          "nazev": "ČSN ISO 3864 (bezpečnostní značení)",
+          "popis": "Grafické symboly pro bezpečnostní značení včetně evakuačního značení.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "interni_pozarni_dokumentace",
+          "nazev": "Interní požární dokumentace zaměstnavatele",
+          "popis": "Evakuační plány, únikové trasy a odpovědnosti za jejich udržování.",
           "poradi": 50,
           "aktivni": true
         }
