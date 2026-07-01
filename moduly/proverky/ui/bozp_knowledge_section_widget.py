@@ -24,6 +24,10 @@ from moduly.proverky.constants import (
     CONTROL_POINT_HISTORY_EMPTY,
     CONTROL_POINT_HISTORY_LIMIT,
     CONTROL_POINT_HISTORY_SELECT,
+    CONTROL_POINT_HISTORY_SIMILAR_EMPTY,
+    CONTROL_POINT_HISTORY_SIMILAR_TITLE,
+    CONTROL_POINT_HISTORY_WORKPLACE_NO_WORKPLACE,
+    CONTROL_POINT_HISTORY_WORKPLACE_TITLE,
     FINDING_CREATE_FROM_CONTROL_POINT_LABEL,
     FINDING_CREATED_LABEL,
     FINDING_DIALOG_TITLE,
@@ -79,8 +83,9 @@ class BozpKnowledgeSectionWidget(QWidget):
         self._on_finding_saved = None
         self._selected_control_point_id = ""
         self._control_point_frames: dict[str, _ControlPointFrame] = {}
-        self._history_content_host: QWidget | None = None
         self._history_point_label: QLabel | None = None
+        self._workplace_history_host: QWidget | None = None
+        self._similar_history_host: QWidget | None = None
 
         self._content_host = QWidget()
         self._content_layout = QVBoxLayout(self._content_host)
@@ -174,8 +179,9 @@ class BozpKnowledgeSectionWidget(QWidget):
     def _clear_content(self) -> None:
         self._selected_control_point_id = ""
         self._control_point_frames.clear()
-        self._history_content_host = None
         self._history_point_label = None
+        self._workplace_history_host = None
+        self._similar_history_host = None
         while self._content_layout.count():
             item = self._content_layout.takeAt(0)
             widget = item.widget()
@@ -206,7 +212,7 @@ class BozpKnowledgeSectionWidget(QWidget):
         container = QWidget()
         block_layout = QVBoxLayout(container)
         block_layout.setContentsMargins(0, 0, 0, 0)
-        block_layout.setSpacing(6)
+        block_layout.setSpacing(8)
 
         header = QLabel(title)
         header.setObjectName("SectionTitle")
@@ -217,27 +223,56 @@ class BozpKnowledgeSectionWidget(QWidget):
         self._history_point_label.setWordWrap(True)
         block_layout.addWidget(self._history_point_label)
 
-        self._history_content_host = QWidget()
-        history_layout = QVBoxLayout(self._history_content_host)
-        history_layout.setContentsMargins(0, 0, 0, 0)
-        history_layout.setSpacing(8)
-        history_layout.addWidget(self._build_info_label(CONTROL_POINT_HISTORY_SELECT))
+        block_layout.addWidget(self._build_history_section_block(
+            CONTROL_POINT_HISTORY_WORKPLACE_TITLE,
+            host_attr="_workplace_history_host",
+            initial_text=CONTROL_POINT_HISTORY_SELECT,
+        ))
+        block_layout.addWidget(self._build_history_section_block(
+            CONTROL_POINT_HISTORY_SIMILAR_TITLE,
+            host_attr="_similar_history_host",
+            initial_text=CONTROL_POINT_HISTORY_SIMILAR_EMPTY,
+        ))
+        return container
+
+    def _build_history_section_block(
+        self,
+        title: str,
+        *,
+        host_attr: str,
+        initial_text: str,
+    ) -> QWidget:
+        section = QWidget()
+        section_layout = QVBoxLayout(section)
+        section_layout.setContentsMargins(0, 0, 0, 0)
+        section_layout.setSpacing(6)
+
+        header = QLabel(title)
+        header.setObjectName("InfoText")
+        section_layout.addWidget(header)
+
+        content_host = QWidget()
+        content_layout = QVBoxLayout(content_host)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(8)
+        content_layout.addWidget(self._build_info_label(initial_text))
 
         panel = QFrame()
         panel.setObjectName("ModulePanel")
         panel_layout = QVBoxLayout(panel)
         panel_layout.setContentsMargins(12, 12, 12, 12)
         panel_layout.setSpacing(6)
-        panel_layout.addWidget(self._history_content_host)
+        panel_layout.addWidget(content_host)
 
-        block_layout.addWidget(panel)
-        return container
+        section_layout.addWidget(panel)
+        setattr(self, host_attr, content_host)
+        return section
 
-    def _set_history_content(self, widget: QWidget) -> None:
-        if self._history_content_host is None:
+    def _set_panel_content(self, host: QWidget | None, widget: QWidget) -> None:
+        if host is None:
             return
 
-        layout = self._history_content_host.layout()
+        layout = host.layout()
         while layout.count():
             item = layout.takeAt(0)
             child = item.widget()
@@ -246,7 +281,7 @@ class BozpKnowledgeSectionWidget(QWidget):
         layout.addWidget(widget)
 
     def _refresh_control_point_history(self, context: ProverkyFindingKnowledgeContext | None = None) -> None:
-        if self._history_content_host is None:
+        if self._workplace_history_host is None or self._similar_history_host is None:
             return
 
         if context is None and self._selected_control_point_id:
@@ -262,7 +297,14 @@ class BozpKnowledgeSectionWidget(QWidget):
         if context is None or not context.control_point_id:
             if self._history_point_label is not None:
                 self._history_point_label.setText(CONTROL_POINT_HISTORY_SELECT)
-            self._set_history_content(self._build_info_label(CONTROL_POINT_HISTORY_SELECT))
+            self._set_panel_content(
+                self._workplace_history_host,
+                self._build_info_label(CONTROL_POINT_HISTORY_SELECT),
+            )
+            self._set_panel_content(
+                self._similar_history_host,
+                self._build_info_label(CONTROL_POINT_HISTORY_SIMILAR_EMPTY),
+            )
             return
 
         if self._history_point_label is not None:
@@ -275,7 +317,35 @@ class BozpKnowledgeSectionWidget(QWidget):
             if inspection is not None:
                 workplace_id = inspection.workplace_id
 
-        entries = control_point_history_service.get_history(
+        if workplace_id is None:
+            self._set_panel_content(
+                self._workplace_history_host,
+                self._build_info_label(CONTROL_POINT_HISTORY_WORKPLACE_NO_WORKPLACE),
+            )
+        else:
+            workplace_entries = control_point_history_service.get_workplace_history(
+                area_label=context.area_label,
+                section_label=context.section_label,
+                control_point_id=context.control_point_id,
+                workplace_id=workplace_id,
+                exclude_inspection_id=self._inspection_id,
+                limit=CONTROL_POINT_HISTORY_LIMIT,
+            )
+            if not workplace_entries:
+                self._set_panel_content(
+                    self._workplace_history_host,
+                    self._build_info_label(CONTROL_POINT_HISTORY_EMPTY),
+                )
+            else:
+                self._set_panel_content(
+                    self._workplace_history_host,
+                    self._build_history_entries_list(
+                        workplace_entries,
+                        include_workplace=False,
+                    ),
+                )
+
+        similar_entries = control_point_history_service.get_similar_elsewhere_history(
             area_label=context.area_label,
             section_label=context.section_label,
             control_point_id=context.control_point_id,
@@ -283,18 +353,36 @@ class BozpKnowledgeSectionWidget(QWidget):
             exclude_inspection_id=self._inspection_id,
             limit=CONTROL_POINT_HISTORY_LIMIT,
         )
+        if not similar_entries:
+            self._set_panel_content(
+                self._similar_history_host,
+                self._build_info_label(CONTROL_POINT_HISTORY_SIMILAR_EMPTY),
+            )
+        else:
+            self._set_panel_content(
+                self._similar_history_host,
+                self._build_history_entries_list(
+                    similar_entries,
+                    include_workplace=True,
+                ),
+            )
 
-        if not entries:
-            self._set_history_content(self._build_info_label(CONTROL_POINT_HISTORY_EMPTY))
-            return
-
+    def _build_history_entries_list(
+        self,
+        entries,
+        *,
+        include_workplace: bool,
+    ) -> QWidget:
         list_host = QWidget()
         list_layout = QVBoxLayout(list_host)
         list_layout.setContentsMargins(0, 0, 0, 0)
         list_layout.setSpacing(10)
         for entry in entries:
-            list_layout.addWidget(self._build_history_entry_row(entry))
-        self._set_history_content(list_host)
+            if include_workplace:
+                list_layout.addWidget(self._build_similar_history_entry_row(entry))
+            else:
+                list_layout.addWidget(self._build_history_entry_row(entry))
+        return list_host
 
     def _build_history_entry_row(self, entry) -> QWidget:
         row = QWidget()
@@ -309,6 +397,31 @@ class BozpKnowledgeSectionWidget(QWidget):
 
         inspection_label = entry.inspection_number or str(entry.inspection_id)
         layout.addWidget(self._build_info_label(f"Prověrka: {inspection_label}"))
+
+        if entry.note.strip():
+            layout.addWidget(self._build_info_label(f"Poznámka: {entry.note.strip()}"))
+
+        if entry.finding is not None:
+            finding_text = self._text_preview(entry.finding.description, max_len=80)
+            layout.addWidget(
+                self._build_info_label(
+                    f"Zjištění: {finding_text} ({finding_status_label(entry.finding.status)})"
+                )
+            )
+
+        return row
+
+    def _build_similar_history_entry_row(self, entry) -> QWidget:
+        row = QWidget()
+        layout = QVBoxLayout(row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(2)
+
+        date_text = self._format_history_datetime(entry.recorded_at)
+        workplace_label = entry.workplace_name or "—"
+        header = QLabel(f"• {date_text} — {workplace_label} — {control_result_label(entry.result)}")
+        header.setWordWrap(True)
+        layout.addWidget(header)
 
         if entry.note.strip():
             layout.addWidget(self._build_info_label(f"Poznámka: {entry.note.strip()}"))

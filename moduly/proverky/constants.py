@@ -95,6 +95,10 @@ FINDING_REQUIRES_NONCOMPLIANCE_MESSAGE = "Zjištění lze založit pouze u kontr
 CONTROL_POINT_HISTORY_EMPTY = "Zatím bez historie."
 CONTROL_POINT_HISTORY_SELECT = "Vyberte kontrolní bod vlevo."
 CONTROL_POINT_HISTORY_LIMIT = 5
+CONTROL_POINT_HISTORY_WORKPLACE_TITLE = "Historie tohoto pracoviště"
+CONTROL_POINT_HISTORY_SIMILAR_TITLE = "Podobné záznamy jinde"
+CONTROL_POINT_HISTORY_WORKPLACE_NO_WORKPLACE = "Pro zobrazení historie vyberte pracoviště."
+CONTROL_POINT_HISTORY_SIMILAR_EMPTY = "Bez podobných záznamů na jiných pracovištích."
 
 
 @dataclass(frozen=True)

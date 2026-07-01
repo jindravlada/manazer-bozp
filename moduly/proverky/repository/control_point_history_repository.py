@@ -23,7 +23,9 @@ class ControlPointHistoryRepository:
         section_label: str,
         control_point_id: str,
         workplace_id: int | None = None,
+        exclude_workplace_id: int | None = None,
         exclude_inspection_id: int | None = None,
+        only_with_workplace: bool = False,
         limit: int = 5,
     ) -> list[ControlPointHistoryRecord]:
         with get_session() as session:
@@ -44,6 +46,15 @@ class ControlPointHistoryRepository:
 
             if workplace_id is not None:
                 stmt = stmt.where(BozpInspection.workplace_id == workplace_id)
+
+            if exclude_workplace_id is not None:
+                stmt = stmt.where(
+                    BozpInspection.workplace_id.isnot(None),
+                    BozpInspection.workplace_id != exclude_workplace_id,
+                )
+
+            if only_with_workplace:
+                stmt = stmt.where(BozpInspection.workplace_id.isnot(None))
 
             if exclude_inspection_id is not None:
                 stmt = stmt.where(ControlResult.entity_id != exclude_inspection_id)
