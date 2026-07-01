@@ -12,6 +12,7 @@ from core.widgets.table_utils import configure_table_columns
 from moduly.nastaveni.sluzby.person_service import person_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.nastaveni.ui.person_dialog import PersonDialog
+from moduly.nastaveni.ui.teams_tab import TeamsTabWidget
 from moduly.nastaveni.ui.thp_worker_dialog import ThpWorkerDialog
 from moduly.nastaveni.ui.workplace_dialog import WorkplaceDialog
 
@@ -26,6 +27,7 @@ class NastaveniPage(QWidget):
         self.tabs.addTab(self._workers_tab(), "THP pracovníci")
         self.tabs.addTab(self._persons_tab(), "Osoby")
         self.tabs.addTab(self._workplaces_tab(), "Pracoviště")
+        self.tabs.addTab(self._teams_tab(), "Týmy")
         self.tabs.addTab(self._employer_tab(), "Zaměstnavatel")
 
         layout.addWidget(self.tabs)
@@ -233,6 +235,10 @@ class NastaveniPage(QWidget):
         layout.addWidget(self.workplace_table)
 
         return tab
+
+    def _teams_tab(self):
+        self.teams_tab = TeamsTabWidget()
+        return self.teams_tab
 
     def load_from_ares(self):
         ico = self.employer_ico.text().strip()
@@ -517,6 +523,8 @@ class NastaveniPage(QWidget):
         self.refresh_workers()
         self.refresh_persons()
         self.refresh_workplaces()
+        if hasattr(self, "teams_tab"):
+            self.teams_tab.refresh()
 
     def refresh_workers(self):
         include_inactive = self.worker_filter.currentText() == "Všichni"

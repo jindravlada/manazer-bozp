@@ -155,6 +155,33 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             header.setSectionResizeMode(column, QHeaderView.Fixed)
         header.setSectionResizeMode(7, QHeaderView.Stretch)
 
+    elif profile == "teams":
+        widths = {
+            0: 0,
+            1: 260,
+            2: 180,
+            3: 80,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        header.setSectionResizeMode(1, QHeaderView.Stretch)
+        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+
+    elif profile == "team_members":
+        widths = {
+            0: 0,
+            1: 220,
+            2: 180,
+            3: 80,
+            4: 70,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        header.setSectionResizeMode(1, QHeaderView.Stretch)
+        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+
     elif profile == "controls_year_matrix":
         table.setColumnWidth(0, 230)
         table.setColumnWidth(1, 55)
