@@ -1,6 +1,7 @@
 from datetime import date, datetime
 
 from core.shared.constants import ENTITY_AUDITY
+from core.shared.modely.finding import Finding
 from core.shared.sluzby.finding_service import finding_service
 from moduly.audity.constants import (
     AUDIT_SPIS_STATUSES,
@@ -59,6 +60,41 @@ class AuditService:
         finding_service.delete_for_entity(ENTITY_AUDITY, audit_id)
         audit_commission_service.delete_for_audit(audit_id)
         return self.repository.delete(audit_id)
+
+    def finding_for_control_point(
+        self,
+        audit_id: int,
+        *,
+        process_label: str,
+        criterion_label: str,
+        question_id: str,
+    ) -> Finding | None:
+        if not question_id:
+            return None
+
+        for finding in finding_service.get_for_entity(ENTITY_AUDITY, audit_id):
+            if self._matches_control_point(
+                finding,
+                process_label=process_label,
+                criterion_label=criterion_label,
+                question_id=question_id,
+            ):
+                return finding
+        return None
+
+    @staticmethod
+    def _matches_control_point(
+        finding: Finding,
+        *,
+        process_label: str,
+        criterion_label: str,
+        question_id: str,
+    ) -> bool:
+        return (
+            str(finding.source_control_point_id or "").strip() == question_id
+            and str(finding.source_area_label or "").strip() == process_label.strip()
+            and str(finding.source_section_label or "").strip() == criterion_label.strip()
+        )
 
     @staticmethod
     def derive_status(

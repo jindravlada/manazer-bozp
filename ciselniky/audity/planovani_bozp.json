@@ -1,0 +1,41 @@
+{
+  "verze": 1,
+  "id": "planovani_bozp",
+  "nazev": "Plánování systému BOZP",
+  "popis": "Proces plánování a řízení BOZP v organizaci.",
+  "ucel_procesu": "Zajistit systematické plánování prevence rizik a cílů BOZP.",
+  "poradi": 10,
+  "aktivni": true,
+  "sekce": [
+    {
+      "id": "cile_politika",
+      "nazev": "Cíle a politika BOZP",
+      "popis": "Kontrola existence, schválení a komunikace politiky a cílů BOZP.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "pozadavky_normy": [],
+      "objektivni_dukazy": [],
+      "kontrolni_body": [
+        {
+          "id": "politika_schvalena",
+          "nazev": "Je schválená a dostupná politika BOZP?",
+          "popis": "Politika BOZP je schválena vedením a je dostupná zaměstnancům.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "typicke_neshody": [],
+      "pkz": [],
+      "pozorovani": [],
+      "poznamky_auditora": [],
+      "vazby_procesy": [],
+      "referencni_fotografie": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "historie": []
+    }
+  ]
+}
