@@ -90,55 +90,23 @@ class BozpInspectionCommissionService:
         return normalized
 
     def _validate_unique_persons(self, members: list[dict]) -> None:
-        leader_id = next(
-            (
-                member["thp_worker_id"]
-                for member in members
-                if member["record_type"] == COMMISSION_RECORD_LEADER
-            ),
-            None,
-        )
-        workplace_id = next(
-            (
-                member["thp_worker_id"]
-                for member in members
-                if member["record_type"] == COMMISSION_RECORD_WORKPLACE
-            ),
-            None,
-        )
-        member_thp_ids = [
+        thp_worker_ids = [
             member["thp_worker_id"]
             for member in members
-            if member["record_type"] == COMMISSION_RECORD_MEMBER
+            if member["record_type"]
+            in {COMMISSION_RECORD_LEADER, COMMISSION_RECORD_WORKPLACE, COMMISSION_RECORD_MEMBER}
             and member.get("thp_worker_id") is not None
         ]
-
-        if len(member_thp_ids) != len(set(member_thp_ids)):
+        if len(thp_worker_ids) != len(set(thp_worker_ids)):
             raise ValueError(COMMISSION_DUPLICATE_PERSON_MESSAGE)
 
-        for thp_worker_id in member_thp_ids:
-            if thp_worker_id in {leader_id, workplace_id}:
-                raise ValueError(COMMISSION_DUPLICATE_PERSON_MESSAGE)
-
-        union_id = next(
-            (
-                member["person_id"]
-                for member in members
-                if member["record_type"] == COMMISSION_RECORD_UNION
-            ),
-            None,
-        )
-        invited_person_ids = [
+        person_ids = [
             member["person_id"]
             for member in members
-            if member["record_type"] == COMMISSION_RECORD_INVITED
+            if member["record_type"] in {COMMISSION_RECORD_UNION, COMMISSION_RECORD_INVITED}
             and member.get("person_id") is not None
         ]
-
-        if len(invited_person_ids) != len(set(invited_person_ids)):
-            raise ValueError(COMMISSION_DUPLICATE_PERSON_MESSAGE)
-
-        if union_id is not None and union_id in invited_person_ids:
+        if len(person_ids) != len(set(person_ids)):
             raise ValueError(COMMISSION_DUPLICATE_PERSON_MESSAGE)
 
     def member_to_dict(self, member: BozpInspectionCommissionMember) -> dict:
