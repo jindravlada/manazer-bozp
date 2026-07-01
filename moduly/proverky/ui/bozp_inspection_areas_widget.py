@@ -179,7 +179,10 @@ class BozpInspectionAreasWidget(QWidget):
             return
 
         if self._procedure_dialog is not None and self._procedure_dialog.isVisible():
-            self._procedure_dialog.set_section(section)
+            self._procedure_dialog.set_section(
+                section,
+                section_label=self._current_section_label,
+            )
             self._procedure_dialog.raise_()
             self._procedure_dialog.activateWindow()
             return
@@ -208,7 +211,10 @@ class BozpInspectionAreasWidget(QWidget):
         ):
             section = proverky_knowledge_service.get_section(area_id, section_id)
             if section is not None:
-                self._procedure_dialog.set_section(section)
+                self._procedure_dialog.set_section(
+                    section,
+                    section_label=self._current_section_label,
+                )
 
     def _show_hint(self) -> None:
         self._current_area_id = ""

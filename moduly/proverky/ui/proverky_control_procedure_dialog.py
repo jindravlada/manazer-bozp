@@ -14,6 +14,9 @@ from moduly.proverky.constants import (
 )
 from moduly.proverky.sluzby.proverky_knowledge_service import proverky_knowledge_service
 
+_DIALOG_WIDTH = 700
+_DIALOG_HEIGHT = 600
+
 
 class ProverkyControlProcedureDialog(QDialog):
     """Nemodální okno s doporučeným postupem kontroly."""
@@ -24,13 +27,21 @@ class ProverkyControlProcedureDialog(QDialog):
         self.setWindowTitle(KNOWLEDGE_CONTROL_PROCEDURE_DIALOG_TITLE)
         self.setModal(False)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
-
-        if section_label:
-            self.setWindowTitle(f"{KNOWLEDGE_CONTROL_PROCEDURE_DIALOG_TITLE} – {section_label}")
+        self.resize(_DIALOG_WIDTH, _DIALOG_HEIGHT)
 
         root_layout = QVBoxLayout(self)
         root_layout.setContentsMargins(12, 12, 12, 12)
         root_layout.setSpacing(12)
+
+        self._title_label = QLabel(KNOWLEDGE_CONTROL_PROCEDURE_DIALOG_TITLE)
+        self._title_label.setObjectName("SectionTitle")
+        self._title_label.setWordWrap(True)
+        root_layout.addWidget(self._title_label)
+
+        self._section_title_label = QLabel()
+        self._section_title_label.setObjectName("SectionTitle")
+        self._section_title_label.setWordWrap(True)
+        root_layout.addWidget(self._section_title_label)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -49,13 +60,17 @@ class ProverkyControlProcedureDialog(QDialog):
         buttons.rejected.connect(self.close)
         root_layout.addWidget(buttons)
 
-        self.set_section(section)
+        self.set_section(section, section_label=section_label)
 
-    def showEvent(self, event) -> None:
-        super().showEvent(event)
-        self.showMaximized()
+    def set_section(self, section: dict, *, section_label: str = "") -> None:
+        label = section_label.strip() or str(section.get("nazev") or "").strip()
+        if label:
+            self._section_title_label.setText(label)
+            self._section_title_label.setVisible(True)
+        else:
+            self._section_title_label.clear()
+            self._section_title_label.setVisible(False)
 
-    def set_section(self, section: dict) -> None:
         while self._content_layout.count():
             item = self._content_layout.takeAt(0)
             widget = item.widget()
