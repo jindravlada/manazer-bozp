@@ -1,5 +1,5 @@
 {
-  "verze": 1,
+  "verze": 2,
   "id": "po",
   "nazev": "Požární ochrana",
   "popis": "Prevence požárů, požární technika, evakuační cesty a organizace PO.",
@@ -244,6 +244,277 @@
           "nazev": "Související interní požární dokumentace",
           "popis": "Požární poplachové směrnice, evakuační plány a rozmístění požární techniky.",
           "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "hydranty",
+      "nazev": "Hydranty",
+      "popis": "Kontrola označení, přístupnosti, kompletnosti, technického stavu a provozuschopnosti hydrantových systémů určených pro zásah při požáru.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "vyhledani",
+          "text": "Vyhledejte hydrant podle požární dokumentace nebo značení.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni",
+          "text": "Ověřte, zda je hydrant správně a viditelně označen.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "volny_pristup",
+          "text": "Zkontrolujte volný přístup k hydrantu.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "kompletnost_vybaveni",
+          "text": "Otevřete skříň hydrantu a ověřte kompletnost vybavení.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "technicky_stav",
+          "text": "Zkontrolujte stav hadice, proudnice, ventilu a skříně.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "platnost_kontroly",
+          "text": "Ověřte platnost pravidelné kontroly / revize.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_zamestnance",
+          "text": "Namátkově ověřte, zda zaměstnanec ví, kde je nejbližší hydrant.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "umisteni",
+          "nazev": "Hydrant je umístěn na určeném místě",
+          "popis": "Umístění odpovídá požární dokumentaci nebo značení objektu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni",
+          "nazev": "Hydrant je správně označen",
+          "popis": "Označení je viditelné, čitelné a není zakryté.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pristup",
+          "nazev": "Přístup k hydrantu je volný",
+          "popis": "Hydrantová skříň není zastavěna materiálem ani zařízením.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "skrin",
+          "nazev": "Hydrantová skříň je nepoškozená",
+          "popis": "Skříň lze otevřít a není mechanicky poškozená.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "kompletnost",
+          "nazev": "Vybavení hydrantu je kompletní",
+          "popis": "Ve skříni je hadice, proudnice a další vybavení podle typu hydrantu.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "hadice",
+          "nazev": "Hadice je bez viditelného poškození",
+          "popis": "Hadice není zpuchřelá, potrhaná, znečištěná ani nevhodně uložená.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "proudnice",
+          "nazev": "Proudnice je přítomna a použitelná",
+          "popis": "Proudnice nechybí a není zjevně poškozená.",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "ventil",
+          "nazev": "Ventil je přístupný a nepoškozený",
+          "popis": "Ventil není zablokovaný, poškozený ani zjevně nefunkční.",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "platna_kontrola",
+          "nazev": "Kontrola hydrantu je platná",
+          "popis": "Pravidelná kontrola byla provedena ve stanovené lhůtě a je doložitelná.",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_zamestnance",
+          "nazev": "Zaměstnanec ví, kde je nejbližší hydrant",
+          "popis": "Namátkově oslovený zaměstnanec dokáže ukázat nejbližší hydrant nebo popsat jeho umístění.",
+          "poradi": 100,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "zastaven",
+          "nazev": "Hydrant je zastavěn materiálem",
+          "popis": "Přístup k hydrantu je fyzicky ztížen nebo znemožněn.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_oznaceni",
+          "nazev": "Chybí nebo je zakryté označení",
+          "popis": "Hydrant není viditelně označen nebo je označení zakryté.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "skrin_neotevira",
+          "nazev": "Hydrantová skříň nejde otevřít",
+          "popis": "Skříň je zablokovaná, zamčená nebo mechanicky poškozená.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_proudnice",
+          "nazev": "Chybí proudnice",
+          "popis": "Ve skříni hydrantu chybí proudnice.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_hadice",
+          "nazev": "Chybí hadice nebo je poškozená",
+          "popis": "Hadice chybí, je potrhaná, zpuchřelá nebo jinak nefunkční.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "nevhodne_ulozeni_hadice",
+          "nazev": "Hadice je nevhodně uložená",
+          "popis": "Hadice není správně navinuta nebo uložena ve skříni.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "propadla_kontrola",
+          "nazev": "Propadlá kontrola hydrantu",
+          "popis": "Pravidelná kontrola nebyla provedena ve stanovené lhůtě.",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "poskozena_skrin",
+          "nazev": "Skříň je poškozená nebo znečištěná",
+          "popis": "Hydrantová skříň je mechanicky poškozená nebo znečištěná.",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "neznalost_umisteni",
+          "nazev": "Zaměstnanci nevědí, kde se hydrant nachází",
+          "popis": "Zaměstnanci neznají umístění nejbližšího hydrantu.",
+          "poradi": 90,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "volny_pristup",
+          "nazev": "Udržovat trvale volný přístup k hydrantu",
+          "popis": "Zajistěte, aby hydrant nebyl zastavěn materiálem ani zařízením.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "kontrola_kompletnosti",
+          "nazev": "Kontrolovat kompletnost vybavení při pravidelných prověrkách",
+          "popis": "Ověřujte přítomnost a stav hadice, proudnice a dalšího vybavení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "doplneni_chybejici",
+          "nazev": "Ihned doplňovat chybějící hadice, proudnice a další části",
+          "popis": "Chybějící nebo poškozené součásti hydrantu bez prodlení vyměňte.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "viditelne_oznaceni",
+          "nazev": "Zajistit viditelné a trvalé označení hydrantu",
+          "popis": "Hydrant musí být trvale a dobře viditelně označen podle požadavků PO.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "seznamovani_zamestnancu",
+          "nazev": "Seznamovat zaměstnance s umístěním prostředků požární ochrany",
+          "popis": "Informujte zaměstnance o umístění hydrantů a způsobu jejich použití.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "bez_prekazek",
+          "nazev": "Neumisťovat před hydrant skladovaný materiál ani dočasné překážky",
+          "popis": "Před hydrantem udržujte volný prostor pro okamžitý přístup.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_133_1985",
+          "nazev": "Zákon č. 133/1985 Sb.",
+          "popis": "O požární ochraně — základní povinnosti v oblasti prevence požárů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vyhlaska_246_2001",
+          "nazev": "Vyhláška č. 246/2001 Sb.",
+          "popis": "Stanovení podmínek požární bezpečnosti a výkonu státního požárního dozoru.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "csn_iso_3864",
+          "nazev": "ČSN ISO 3864 (bezpečnostní značení)",
+          "popis": "Grafické symboly pro bezpečnostní značení včetně označení hydrantů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "csn_73_0873",
+          "nazev": "ČSN 73 0873 (požární bezpečnost staveb – zásobování požární vodou)",
+          "popis": "Požadavky na zásobování požární vodou a hydrantové systémy.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "interni_pozarni_dokumentace",
+          "nazev": "Interní požární dokumentace zaměstnavatele",
+          "popis": "Rozmístění hydrantů, periodicita kontrol a odpovědnosti.",
+          "poradi": 50,
           "aktivni": true
         }
       ],
