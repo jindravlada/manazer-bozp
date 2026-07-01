@@ -1,5 +1,5 @@
 {
-  "verze": 9,
+  "verze": 10,
   "oblasti": [
     {
       "id": "bozp",
@@ -52,10 +52,10 @@
     {
       "id": "dokumentace",
       "nazev": "Dokumentace",
-      "popis": "Bezpečnostní dokumentace, posudky, směrnice a provozní předpisy.",
+      "popis": "Právní předpisy, místní předpisy, evidence školení, kontroly a revize, postupy, rizika, dodavatelé a archivace dokumentace.",
       "poradi": 40,
       "aktivni": true,
-      "soubor_znalosti": null
+      "soubor_znalosti": "dokumentace.json"
     },
     {
       "id": "revize",
