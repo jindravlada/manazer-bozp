@@ -28,6 +28,7 @@ from moduly.proverky.constants import (
     CONTROL_POINT_HISTORY_EMPTY,
     CONTROL_POINT_HISTORY_LIMIT,
     CONTROL_POINT_HISTORY_SELECT,
+    CONTROL_POINT_SEVERITY_OPTIONS,
     CONTROL_POINT_SHARED_EXPERIENCES_EMPTY,
     CONTROL_POINT_SHARED_EXPERIENCES_TITLE,
     CONTROL_POINT_HISTORY_WORKPLACE_NO_WORKPLACE,
@@ -78,9 +79,6 @@ class _ReferencePhotoThumbnail(QLabel):
         super().mousePressEvent(event)
 
 
-_LEFT_COLUMN_BLOCKS: tuple[tuple[str, str], ...] = (
-    ("Kontrolní body", "kontrolni_body"),
-)
 
 _RIGHT_COLUMN_BLOCKS: tuple[tuple[str, str], ...] = (
     ("Typické závady", "typicke_zavady"),
@@ -91,6 +89,17 @@ _RIGHT_COLUMN_BLOCKS: tuple[tuple[str, str], ...] = (
 
 _COLUMN_SPLIT_LEFT_STRETCH = 65
 _COLUMN_SPLIT_RIGHT_STRETCH = 35
+
+_SEVERITY_LABELS = dict(CONTROL_POINT_SEVERITY_OPTIONS)
+
+
+class _ControlPointSeverityBadge(QLabel):
+    def __init__(self, severity: str, parent=None):
+        super().__init__(_SEVERITY_LABELS.get(severity, "Střední"), parent)
+        self.setObjectName("ControlPointSeverityBadge")
+        self.setProperty("severity", severity)
+        self.style().unpolish(self)
+        self.style().polish(self)
 
 
 class BozpKnowledgeSectionWidget(QWidget):
@@ -164,28 +173,16 @@ class BozpKnowledgeSectionWidget(QWidget):
 
     def _build_columns(self, section: dict) -> QWidget:
         right_host = self._build_right_column(section)
-        left_host = self._build_column_host(_LEFT_COLUMN_BLOCKS, section)
+        left_scroll = self._build_control_points_scroll_area(section)
 
         splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.setObjectName("KnowledgeSectionSplitter")
         splitter.setChildrenCollapsible(False)
-        splitter.addWidget(wrap_in_scroll_area(left_host))
+        splitter.addWidget(left_scroll)
         splitter.addWidget(wrap_in_scroll_area(right_host))
         splitter.setStretchFactor(0, _COLUMN_SPLIT_LEFT_STRETCH)
         splitter.setStretchFactor(1, _COLUMN_SPLIT_RIGHT_STRETCH)
         return splitter
-
-    def _build_column_host(self, blocks: tuple[tuple[str, str], ...], section: dict) -> QWidget:
-        host = QWidget()
-        layout = QVBoxLayout(host)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(12)
-
-        for title, field in blocks:
-            layout.addWidget(self._build_list_block(title, section, field))
-
-        layout.addStretch()
-        return host
 
     def _build_right_column(self, section: dict) -> QWidget:
         host = QWidget()
@@ -322,9 +319,7 @@ class BozpKnowledgeSectionWidget(QWidget):
         if not items:
             return self._build_block(title, self._build_info_label(KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT))
 
-        if field == "kontrolni_body":
-            content = self._build_control_points_list(items)
-        elif field == "legislativa":
+        if field == "legislativa":
             content = self._build_reference_list(items)
         else:
             content = self._build_knowledge_items_list(items)
@@ -573,48 +568,72 @@ class BozpKnowledgeSectionWidget(QWidget):
             frame.style().polish(frame)
         self._refresh_control_point_history(context)
 
-    def _build_control_points_list(self, items: list[dict]) -> QWidget:
-        container = QWidget()
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(10)
+    def _build_control_points_scroll_area(self, section: dict) -> QScrollArea:
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
-        first_context: ProverkyFindingKnowledgeContext | None = None
-        for item in items:
-            context = self._context_for_control_point(item)
-            if first_context is None:
-                first_context = context
-            layout.addWidget(self._build_control_point_row(item))
+        content = QWidget()
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(0, 0, 8, 0)
+        layout.setSpacing(12)
 
-        if first_context is not None:
-            self._select_control_point(first_context)
+        header = QLabel("Kontrolní body")
+        header.setObjectName("SectionTitle")
+        layout.addWidget(header)
 
-        return container
+        items = proverky_knowledge_service.get_active_items(section.get("kontrolni_body"))
+        if not items:
+            layout.addWidget(self._build_info_label(KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT))
+        else:
+            first_context: ProverkyFindingKnowledgeContext | None = None
+            for item in items:
+                context = self._context_for_control_point(item)
+                if first_context is None:
+                    first_context = context
+                layout.addWidget(self._build_control_point_row(item))
+            if first_context is not None:
+                self._select_control_point(first_context)
+
+        layout.addStretch()
+        scroll.setWidget(content)
+        return scroll
 
     def _build_control_point_row(self, item: dict) -> QWidget:
         context = self._context_for_control_point(item)
         finding = self._finding_for_context(context)
+        severity = proverky_knowledge_service.get_control_point_severity(item)
 
         row_frame = _ControlPointFrame()
-        row_frame.setObjectName("ControlPointRow")
+        row_frame.setObjectName("ControlPointPanel")
+        row_frame.setProperty("severity", severity)
+        row_frame.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         row_frame.clicked.connect(lambda ctx=context: self._select_control_point(ctx))
         self._control_point_frames[context.control_point_id] = row_frame
+        row_frame.style().unpolish(row_frame)
+        row_frame.style().polish(row_frame)
 
         row_layout = QVBoxLayout(row_frame)
-        row_layout.setContentsMargins(8, 6, 8, 6)
-        row_layout.setSpacing(4)
+        row_layout.setContentsMargins(14, 12, 14, 14)
+        row_layout.setSpacing(8)
 
+        header_row = QHBoxLayout()
+        header_row.setContentsMargins(0, 0, 0, 0)
+        header_row.setSpacing(10)
+        header_row.addWidget(_ControlPointSeverityBadge(severity), 0, Qt.AlignmentFlag.AlignTop)
         nazev = context.control_point_label
-        title_label = QLabel(f"• {nazev}")
+        title_label = QLabel(nazev)
+        title_label.setObjectName("ControlPointTitle")
         title_label.setWordWrap(True)
-        row_layout.addWidget(title_label)
+        header_row.addWidget(title_label, 1)
+        row_layout.addLayout(header_row)
 
         popis = str(item.get("popis") or "").strip()
         if popis:
             description = QLabel(popis)
             description.setObjectName("InfoText")
             description.setWordWrap(True)
-            description.setContentsMargins(16, 0, 0, 0)
             row_layout.addWidget(description)
 
         result_selector = ControlResultSelectorWidget()
@@ -687,7 +706,7 @@ class BozpKnowledgeSectionWidget(QWidget):
 
         if allows_finding(result):
             actions = QHBoxLayout()
-            actions.setContentsMargins(16, 4, 0, 0)
+            actions.setContentsMargins(0, 4, 0, 0)
             actions.addWidget(self._build_create_finding_button(control_point))
             actions.addStretch()
             wrapper = QWidget()
@@ -741,7 +760,7 @@ class BozpKnowledgeSectionWidget(QWidget):
 
         container = QWidget()
         container_layout = QVBoxLayout(container)
-        container_layout.setContentsMargins(16, 4, 0, 0)
+        container_layout.setContentsMargins(0, 4, 0, 0)
         container_layout.addWidget(panel)
         return container
 

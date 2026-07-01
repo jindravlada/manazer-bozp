@@ -112,13 +112,87 @@ def apply_app_style(app: QApplication) -> None:
             border-radius: 10px;
         }
 
-        QFrame#ControlPointRow {
-            border-radius: 6px;
+        QFrame#ControlPointPanel {
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+            background-color: #ffffff;
+            margin: 2px 0;
         }
 
-        QFrame#ControlPointRow[selected="true"] {
-            background-color: #f3f4f6;
-            border-left: 3px solid #2563eb;
+        QFrame#ControlPointPanel[severity="kriticka"] {
+            background-color: #fef2f2;
+            border: 1px solid #dc2626;
+        }
+
+        QFrame#ControlPointPanel[severity="vysoka"] {
+            background-color: #fff7ed;
+            border: 1px solid #ea580c;
+        }
+
+        QFrame#ControlPointPanel[severity="stredni"] {
+            background-color: #fffbeb;
+            border: 1px solid #ca8a04;
+        }
+
+        QFrame#ControlPointPanel[severity="nizka"] {
+            background-color: #f0fdf4;
+            border: 1px solid #16a34a;
+        }
+
+        QFrame#ControlPointPanel[selected="true"] {
+            border-width: 2px;
+        }
+
+        QFrame#ControlPointPanel[selected="true"][severity="kriticka"] {
+            border-color: #b91c1c;
+        }
+
+        QFrame#ControlPointPanel[selected="true"][severity="vysoka"] {
+            border-color: #c2410c;
+        }
+
+        QFrame#ControlPointPanel[selected="true"][severity="stredni"] {
+            border-color: #a16207;
+        }
+
+        QFrame#ControlPointPanel[selected="true"][severity="nizka"] {
+            border-color: #15803d;
+        }
+
+        QLabel#ControlPointTitle {
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        QLabel#ControlPointSeverityBadge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        QLabel#ControlPointSeverityBadge[severity="kriticka"] {
+            color: #991b1b;
+            background-color: #fee2e2;
+            border: 1px solid #fecaca;
+        }
+
+        QLabel#ControlPointSeverityBadge[severity="vysoka"] {
+            color: #9a3412;
+            background-color: #ffedd5;
+            border: 1px solid #fed7aa;
+        }
+
+        QLabel#ControlPointSeverityBadge[severity="stredni"] {
+            color: #92400e;
+            background-color: #fef3c7;
+            border: 1px solid #fde68a;
+        }
+
+        QLabel#ControlPointSeverityBadge[severity="nizka"] {
+            color: #166534;
+            background-color: #dcfce7;
+            border: 1px solid #bbf7d0;
         }
 
         QLabel#ControlResultPhotoThumbnail {
