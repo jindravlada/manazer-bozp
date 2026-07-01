@@ -12,6 +12,8 @@ from moduly.tymy.team_detail import TeamDetail
 
 _UNSET = object()
 
+INSPECTION_TEAM_TYPE_ID = "proverkova_komise"
+
 
 class TeamService:
     def __init__(self) -> None:
@@ -23,6 +25,26 @@ class TeamService:
 
     def get_active_teams(self) -> list[Team]:
         return self.team_repository.get_active()
+
+    def get_teams_for_selection(
+        self,
+        *,
+        team_type_id: str,
+        include_team_id: int | None = None,
+    ) -> list[Team]:
+        teams = [
+            team
+            for team in self.get_active_teams()
+            if team.team_type_id == team_type_id
+        ]
+        if include_team_id is None:
+            return teams
+
+        current = self.get_team(include_team_id)
+        if current is None or current.id in {team.id for team in teams}:
+            return teams
+
+        return [current, *teams]
 
     def get_team(self, team_id: int) -> Team | None:
         return self.team_repository.get_by_id(team_id)

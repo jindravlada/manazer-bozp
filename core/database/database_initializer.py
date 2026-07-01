@@ -36,6 +36,7 @@ def initialize_database() -> None:
     _ensure_mu_investigation_columns()
     _ensure_finding_columns()
     _ensure_control_result_columns()
+    _ensure_bozp_inspection_columns()
     _normalize_task_status_values()
     _normalize_internal_audit_status_values()
     _normalize_accident_legacy_values()
@@ -207,6 +208,12 @@ def _ensure_control_result_columns() -> None:
         _add_column("control_results", "shared_experience BOOLEAN DEFAULT 0 NOT NULL")
     if "photo_path" not in columns:
         _add_column("control_results", "photo_path VARCHAR(500) DEFAULT ''")
+
+
+def _ensure_bozp_inspection_columns() -> None:
+    columns = _table_columns("bozp_inspections")
+    if "team_id" not in columns:
+        _add_column("bozp_inspections", "team_id INTEGER")
 
 
 def _normalize_internal_audit_status_values() -> None:

@@ -26,6 +26,7 @@ class BozpInspection(Base):
 
     workplace_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     workplace_name: Mapped[str] = mapped_column(String(150), default="")
+    team_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     title: Mapped[str] = mapped_column(String(250), default="")
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
