@@ -1,58 +1,58 @@
 {
-  "verze": 1,
+  "verze": 2,
   "id": "rizikova_pracoviste",
   "nazev": "Rizikové práce a pracoviště",
-  "popis": "Práce ve výškách, nad volnou hloubkou, uzavřené prostory, horké práce, výkopy, pád předmětů, osamocená práce a povolení k rizikovým pracím.",
+  "popis": "Práce ve výškách, nad hloubkou, v uzavřených prostorech, horké práce, výkopy, pád předmětů, osamocená práce a povolení.",
   "poradi": 80,
   "aktivni": true,
   "sekce": [
     {
       "id": "prace_ve_vyskach",
       "nazev": "Práce ve výškách",
-      "popis": "Kontrola ochrany proti pádu, zábradlí, kotvících bodů, OOPP a přístupových zařízení při pracích ve výškách.",
+      "popis": "Prověrka ochrany proti pádu, zábradlí, jištění a přístupových zařízení.",
       "poradi": 10,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte místa a činnosti s prací ve výškách v kontrolované oblasti.",
+          "text": "Projděte místa, kde hrozí pád z výšky nad 1,5 m.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "ochrana_proti_padu",
-          "text": "Zkontrolujte ochranu proti pádu osob.",
+          "text": "Zkontrolujte zábradlí, sítě, lany nebo osobní jištění.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "zabradli",
-          "text": "Ověřte stav a použití zábradlí a ochranných hran.",
+          "text": "Hledejte poškození, chybějící madla nebo podlahy.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "kotvici_body",
-          "text": "Posuďte kotvící body a jejich nosnost.",
+          "text": "Ověřte kotvicí body pro osobní ochranné prostředky proti pádu.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "oopp",
-          "text": "Zkontrolujte používání OOPP pro práci ve výšce.",
+          "text": "Sledujte používání postroje, helmy a dalšího vybavení.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "pristupova_zarizeni",
-          "text": "Ověřte stav a použití přístupových zařízení.",
+          "text": "Zkontrolujte žebříky, plošiny a lešení.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda práce ve výšce není prováděna bez odpovídající ochrany proti pádu.",
+          "text": "Pozorujte, zda pracovník ve výšce používá ochranu proti pádu.",
           "poradi": 70,
           "aktivni": true
         }
@@ -61,7 +61,7 @@
         {
           "id": "ochrana_proti_padu",
           "nazev": "Ochrana proti pádu je zajištěna",
-          "popis": "Práce ve výšce probíhá s odpovídající ochranou proti pádu.",
+          "popis": "Práce ve výšce probíhá se zábradlím, sítí nebo osobním jištěním.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -69,15 +69,15 @@
         {
           "id": "zabradli",
           "nazev": "Zábradlí je v pořádku",
-          "popis": "Zábradlí a ochranné hrany jsou v technicky vyhovujícím stavu.",
+          "popis": "Zábradlí má madlo, područí a soklíkovou lištu, není poškozené.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "kotvici_body",
           "nazev": "Kotvící body jsou vhodné",
-          "popis": "Kotvící body jsou pevné a vhodné pro zachycení.",
+          "popis": "Kotvicí body jsou pevné a určené pro zachycení pádu.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -85,23 +85,23 @@
         {
           "id": "oopp",
           "nazev": "OOPP jsou používány",
-          "popis": "Pracovníci používají předepsané OOPP pro práci ve výšce.",
+          "popis": "Pracovníci ve výšce mají postroj, helmu a další předepsané OOPP.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "pristupova_zarizeni",
           "nazev": "Přístupová zařízení jsou způsobilá",
-          "popis": "Přístupová zařízení jsou v dobrém stavu a správně používána.",
+          "popis": "Žebříky a lešení nejsou poškozené ani nestabilní.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Práce ve výšce s ochranou proti pádu",
-          "popis": "Práce ve výšce není prováděna bez odpovídající ochrany proti pádu.",
+          "nazev": "Práce ve výšce je jištěná",
+          "popis": "Při pozorování pracovník ve výšce nepohybuje bez ochrany proti pádu.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -110,43 +110,43 @@
       "typicke_zavady": [
         {
           "id": "prace_bez_ochrany",
-          "nazev": "Práce bez ochrany proti pádu",
-          "popis": "Práce ve výšce probíhá bez odpovídající ochrany.",
+          "nazev": "Práce na střeše bez jištění",
+          "popis": "Pracovník se pohybuje po střeše bez postroje a bez zábradlí.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "poskozene_zabradli",
-          "nazev": "Poškozené zábradlí",
-          "popis": "Zábradlí nebo ochranné hrany jsou poškozené.",
+          "nazev": "Chybějící zábradlí",
+          "popis": "Na okraji střechy nebo plošiny chybí madlo nebo soklíková lišta.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "nevhodne_kotveni",
-          "nazev": "Nevhodné kotvení",
-          "popis": "Kotvící body nejsou vhodné nebo nejsou použity.",
+          "nazev": "Kotvení lana k nevhodnému bodu",
+          "popis": "Postroj je připojen k potrubí nebo madlu, které nejsou kotvicím bodem.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nepouzivane_oopp",
-          "nazev": "Nepoužívání OOPP",
-          "popis": "Pracovníci nepoužívají OOPP pro práci ve výšce.",
+          "nazev": "Postroj nenošený",
+          "popis": "Pracovník ve výšce nemá zapnutý postroj nebo není připojen.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "poskozene_zebriky",
-          "nazev": "Poškozená přístupová zařízení",
-          "popis": "Přístupová zařízení jsou poškozená nebo nestabilní.",
+          "nazev": "Poškozený žebřík",
+          "popis": "Žebřík má prasklou příčku nebo uvolněné nohy.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "bez_skoleni",
-          "nazev": "Bez proškolení",
-          "popis": "Pracovníci nejsou proškoleni pro práci ve výšce.",
+          "nazev": "Neproškolený pracovník ve výšce",
+          "popis": "Pracovník v lešení nemá školení pro práci ve výšce.",
           "poradi": 60,
           "aktivni": true
         }
@@ -154,36 +154,36 @@
       "doporucene_postupy": [
         {
           "id": "posouzeni_rizik",
-          "nazev": "Provádět posouzení rizik",
-          "popis": "Před prací ve výšce posuďte rizika a zvolte vhodnou ochranu.",
+          "nazev": "Posoudit práci ve výšce předem",
+          "popis": "Před zahájením určete způsob ochrany proti pádu a kotvicí body.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "kontrola_zarizeni",
-          "nazev": "Kontrolovat zařízení",
-          "popis": "Pravidelně kontrolujte zábradlí, kotvící body a přístupová zařízení.",
+          "nazev": "Kontrolovat lešení a žebříky",
+          "popis": "Před použitím ověřte stabilitu lešení a stav žebříku.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "oopp",
-          "nazev": "Zajistit OOPP",
-          "popis": "Poskytujte a kontrolujte používání vhodných OOPP.",
+          "nazev": "Zkontrolovat postroje a lana",
+          "popis": "Pravidelně kontrolujte stav OOPP proti pádu a záznamy o revizích.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "skoleni",
-          "nazev": "Proškolit pracovníky",
-          "popis": "Proškolte pracovníky v bezpečné práci ve výšce.",
+          "nazev": "Proškolit práci ve výšce",
+          "popis": "Seznamte pracovníky s použitím postroje a pohybem po lešení.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "povoleni_k_praci",
-          "nazev": "Vyžadovat povolení k práci",
-          "popis": "U rizikových prací ve výšce vyžadujte povolení k práci.",
+          "nazev": "Vyžadovat povolení u rizikových prací",
+          "popis": "U nestandardní práce ve výšce vydávejte povolení k práci.",
           "poradi": 50,
           "aktivni": true
         }
@@ -192,28 +192,28 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Podrobnosti k zajištění bezpečnosti při práci.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro rizikové práce a pracoviště.",
+          "popis": "Pravidla pro rizikové práce a povolení k práci.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nv_362_2005",
           "nazev": "Nařízení vlády č. 362/2005 Sb.",
-          "popis": "Podmínky pro zajištění bezpečnosti a ochrany zdraví při práci ve výškách.",
+          "popis": "Práce ve výškách a ochrana proti pádu.",
           "poradi": 40,
           "aktivni": true
         }
@@ -223,50 +223,50 @@
     {
       "id": "prace_nad_volnou_hloubkou",
       "nazev": "Práce nad volnou hloubkou",
-      "popis": "Kontrola zabezpečení otvorů, zakrytí, zábran a označení při pracích nad volnou hloubkou.",
+      "popis": "Prověrka zabezpečení otvorů, zakrytí, zábran a označení nebezpečných míst.",
       "poradi": 20,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte otvory a místa s nebezpečím pádu do hloubky v kontrolované oblasti.",
+          "text": "Projděte místa s otvory, šachtami nebo propadlinami.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "zabezpeceni_otvoru",
-          "text": "Zkontrolujte zabezpečení otvorů proti pádu osob.",
+          "text": "Zkontrolujte, zda každý otvor brání pádu osob.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "zakryti",
-          "text": "Ověřte zakrytí otvorů pevnými materiály.",
+          "text": "Ověřte pevnost a upevnění zakrytí otvorů.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "zabrany",
-          "text": "Posuďte stav a použití zábran kolem otvorů.",
+          "text": "Posuďte zábrany kolem otvorů bez pevného zakrytí.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "oznaceni",
-          "text": "Zkontrolujte označení nebezpečných míst.",
+          "text": "Hledejte výstražné značení u nebezpečných míst.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "pravidelna_kontrola",
-          "text": "Ověřte pravidelnou kontrolu zabezpečení otvorů.",
+          "text": "Zkontrolujte záznamy kontrol zabezpečení otvorů.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda volné otvory jsou zabezpečeny proti pádu osob.",
+          "text": "Hledejte volné otvory bez zábrany nebo zakrytí.",
           "poradi": 70,
           "aktivni": true
         }
@@ -275,15 +275,15 @@
         {
           "id": "zabezpeceni_otvoru",
           "nazev": "Otvory jsou zabezpečeny",
-          "popis": "Otvory jsou zabezpečeny proti pádu osob.",
+          "popis": "Každý otvor má zábranu nebo pevné zakrytí proti pádu.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "kriticka"
         },
         {
           "id": "zakryti",
-          "nazev": "Otvory jsou zakryty",
-          "popis": "Otvory jsou pevně zakryty nebo chráněny.",
+          "nazev": "Otvory jsou pevně zakryty",
+          "popis": "Zakrytí je upevněné a unese váhu osoby.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -291,7 +291,7 @@
         {
           "id": "zabrany",
           "nazev": "Zábrany jsou instalovány",
-          "popis": "Kolem otvorů jsou instalovány zábrany.",
+          "popis": "U otevřených hran jsou zábrany s madellem a soklíkem.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -299,7 +299,7 @@
         {
           "id": "oznaceni",
           "nazev": "Nebezpečná místa jsou označena",
-          "popis": "Místa s nebezpečím pádu jsou viditelně označena.",
+          "popis": "Místa s nebezpečím pádu mají výstražné značení.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -307,15 +307,15 @@
         {
           "id": "pravidelna_kontrola",
           "nazev": "Zabezpečení je kontrolováno",
-          "popis": "Zabezpečení otvorů je pravidelně kontrolováno.",
+          "popis": "Kontroly otvorů jsou zaznamenány v evidenci.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Otvory zabezpečeny proti pádu",
-          "popis": "Volné otvory jsou zabezpečeny proti pádu osob.",
+          "nazev": "Volné otvory jsou zabezpečeny",
+          "popis": "Při obchůzce nenajdete otevřený otvor bez ochrany.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -324,43 +324,43 @@
       "typicke_zavady": [
         {
           "id": "nezabezpecene_otvory",
-          "nazev": "Nezabezpečené otvory",
-          "popis": "Otvory nejsou zabezpečeny proti pádu.",
+          "nazev": "Otevřený otvor v podlaze",
+          "popis": "V podlaze je díra bez zábrany nebo zakrytí.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nestabilni_zakryti",
           "nazev": "Nestabilní zakrytí",
-          "popis": "Zakrytí otvorů není pevné nebo stabilní.",
+          "popis": "Přes otvor leží deska bez upevnění.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "chybi_zabrany",
-          "nazev": "Chybí zábrany",
-          "popis": "Kolem otvorů chybí zábrany.",
+          "nazev": "Chybí zábrana u okraje",
+          "popis": "U otvoru v rohu haly chybí zábradlí.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "neoznaceno",
-          "nazev": "Neoznačená nebezpečná místa",
-          "popis": "Místa s nebezpečím pádu nejsou označena.",
+          "nazev": "Neoznačené nebezpečí",
+          "popis": "U šachty chybí značka „Nebezpečí – pád do hloubky“.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "odstranene_zabezpeceni",
-          "nazev": "Odstraněné zabezpečení",
-          "popis": "Zabezpečení otvorů bylo odstraněno bez náhrady.",
+          "nazev": "Odstraněná ochrana otvoru",
+          "popis": "Zábrana byla sundána kvůli práci a nebyla vrácena.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "bez_kontroly",
-          "nazev": "Bez kontroly zabezpečení",
-          "popis": "Zabezpečení otvorů není pravidelně kontrolováno.",
+          "nazev": "Nekontrolované otvory",
+          "popis": "Po demontáži zakrytí nikdo nezkontroloval zabezpečení.",
           "poradi": 60,
           "aktivni": true
         }
@@ -368,36 +368,36 @@
       "doporucene_postupy": [
         {
           "id": "zabezpecovat",
-          "nazev": "Bezodkladně zabezpečovat otvory",
-          "popis": "Každý otvor zabezpečte proti pádu osob.",
+          "nazev": "Zabezpečit otvor ihned po vzniku",
+          "popis": "Po vyříznutí otvoru okamžitě instalujte zábranu nebo pevné zakrytí.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "oznacovat",
-          "nazev": "Označovat nebezpečná místa",
-          "popis": "Viditelně označte místa s nebezpečím pádu.",
+          "nazev": "Označit nebezpečná místa",
+          "popis": "U šachet a propadlin vyvěste výstražné značení.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "kontrolovat",
-          "nazev": "Pravidelně kontrolovat",
-          "popis": "Pravidelně kontrolujte stav zabezpečení otvorů.",
+          "nazev": "Kontrolovat otvory při obchůzkách",
+          "popis": "Po každé směně ověřte, zda zakrytí a zábrany nebyly odstraněny.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "zakryti",
-          "nazev": "Používat pevné zakrytí",
-          "popis": "Otvory zakrývejte pevnými materiály s dostatečnou nosností.",
+          "nazev": "Pevně upevnit zakrytí",
+          "popis": "Desku přes otvor přišroubujte nebo zajistěte proti posunu.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "skoleni",
-          "nazev": "Proškolit pracovníky",
-          "popis": "Seznamte pracovníky s nebezpečím pádu do hloubky.",
+          "nazev": "Zakázat práci u nezabezpečeného otvoru",
+          "popis": "Seznamte pracovníky, že otvor musí být zabezpečen před prací v okolí.",
           "poradi": 50,
           "aktivni": true
         }
@@ -406,28 +406,28 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Podrobnosti k zajištění bezpečnosti při práci.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro rizikové práce a pracoviště.",
+          "popis": "Pravidla pro rizikové práce a povolení k práci.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nv_362_2005",
           "nazev": "Nařízení vlády č. 362/2005 Sb.",
-          "popis": "Požadavky na zabezpečení pracovišť s nebezpečím pádu.",
+          "popis": "Zabezpečení pracovišť s nebezpečím pádu.",
           "poradi": 40,
           "aktivni": true
         }
@@ -437,50 +437,50 @@
     {
       "id": "uzavrene_prostory",
       "nazev": "Uzavřené prostory",
-      "popis": "Kontrola povolení vstupu, měření atmosféry, jištění osob, komunikace a záchranných prostředků.",
+      "popis": "Prověrka povolení vstupu, měření ovzduší, jištění a záchranných prostředků.",
       "poradi": 30,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte uzavřené prostory v kontrolované oblasti.",
+          "text": "Určete nádrže, šachty, sila a jiné uzavřené prostory.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "povoleni_vstupu",
-          "text": "Zkontrolujte systém povolení vstupu do uzavřených prostor.",
+          "text": "Zkontrolujte, zda vstup probíhá na základě povolení.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "mereni_atmosfery",
-          "text": "Ověřte měření atmosféry před a během vstupu.",
+          "text": "Ověřte měření před vstupem a během prací.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "jisteni_osob",
-          "text": "Posuďte jištění osob pracujících v uzavřených prostorech.",
+          "text": "Posuďte jištění pracovníka lanem nebo stojanem.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "komunikace",
-          "text": "Zkontrolujte komunikaci mezi pracovníky uvnitř a dohlížející osobou.",
+          "text": "Ověřte spojení s dohlížející osobou mimo prostor.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "zachranne_prostredky",
-          "text": "Ověřte dostupnost záchranných prostředků.",
+          "text": "Zkontrolujte vybavení pro záchranný zásah.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda do uzavřených prostor nevstupují osoby bez stanovených opatření.",
+          "text": "Sledujte, zda někdo nevstupuje bez měření a dohledu.",
           "poradi": 70,
           "aktivni": true
         }
@@ -489,7 +489,7 @@
         {
           "id": "povoleni_vstupu",
           "nazev": "Vstup je povolen",
-          "popis": "Vstup do uzavřených prostor probíhá na základě povolení.",
+          "popis": "Vstup do uzavřeného prostoru probíhá jen s platným povolením.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -497,7 +497,7 @@
         {
           "id": "mereni_atmosfery",
           "nazev": "Atmosféra je měřena",
-          "popis": "Atmosféra je měřena před a během prací.",
+          "popis": "Před vstupem a během prací se měří kyslík a nebezpečné plyny.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -505,7 +505,7 @@
         {
           "id": "jisteni_osob",
           "nazev": "Osoby jsou jištěny",
-          "popis": "Pracovníci v uzavřených prostorech jsou jištěni.",
+          "popis": "Pracovník v prostoru je jištěn lanem nebo je u vstupu stojan.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -513,7 +513,7 @@
         {
           "id": "komunikace",
           "nazev": "Komunikace je zajištěna",
-          "popis": "Komunikace s dohlížející osobou funguje.",
+          "popis": "Dohlížející osoba udržuje spojení s pracovníkem uvnitř.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -521,15 +521,15 @@
         {
           "id": "zachranne_prostredky",
           "nazev": "Záchranné prostředky jsou k dispozici",
-          "popis": "Záchranné prostředky jsou připraveny.",
+          "popis": "U vstupu je připraveno vybavení pro vytažení nebo ventilaci.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Vstup pouze se stanovenými opatřeními",
-          "popis": "Do uzavřených prostor nevstupují osoby bez stanovených opatření.",
+          "nazev": "Vstup jen se stanovenými opatřeními",
+          "popis": "Při obchůzce nenajdete vstup bez měření, dohledu a povolení.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -539,42 +539,42 @@
         {
           "id": "vstup_bez_povoleni",
           "nazev": "Vstup bez povolení",
-          "popis": "Osoby vstupují do uzavřených prostor bez povolení.",
+          "popis": "Pracovník vstoupil do nádrže bez vydaného povolení k práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "bez_mereni",
-          "nazev": "Bez měření atmosféry",
-          "popis": "Atmosféra není měřena před vstupem.",
+          "nazev": "Vstup bez měření ovzduší",
+          "popis": "Do kanalizace se vstupuje bez měření kyslíku a plynů.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "bez_jisteni",
-          "nazev": "Bez jištění osob",
-          "popis": "Pracovníci nejsou jištěni v uzavřených prostorech.",
+          "nazev": "Práce bez jištění",
+          "popis": "Pracovník v nádrži nemá jištěcí lano ani stojan u vstupu.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "slaba_komunikace",
-          "nazev": "Slabá komunikace",
-          "popis": "Komunikace s dohlížející osobou nefunguje.",
+          "nazev": "Bez spojení s dohlížitelem",
+          "popis": "Dohlížející osoba opustila místo u vstupu.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "chybi_zachrana",
-          "nazev": "Chybí záchranné prostředky",
-          "popis": "Záchranné prostředky nejsou k dispozici.",
+          "nazev": "Chybí záchranné vybavení",
+          "popis": "U vstupu do sila není trojnožka ani vytahovací zařízení.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "bez_dohledu",
-          "nazev": "Bez dohledu",
-          "popis": "Práce v uzavřeném prostoru probíhá bez dohledu.",
+          "nazev": "Práce bez dohledu",
+          "popis": "V uzavřeném prostoru pracuje osamocený pracovník bez dohlížitele.",
           "poradi": 60,
           "aktivni": true
         }
@@ -582,36 +582,36 @@
       "doporucene_postupy": [
         {
           "id": "povoleni",
-          "nazev": "Vyžadovat povolení k vstupu",
-          "popis": "Vstup do uzavřených prostor pouze na základě povolení.",
+          "nazev": "Vydat povolení před každým vstupem",
+          "popis": "Povolení musí obsahovat měření, dohled a záchranné prostředky.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "merit_atmosferu",
-          "nazev": "Měřit atmosféru",
-          "popis": "Vždy měřte atmosféru před vstupem a průběžně během prací.",
+          "nazev": "Měřit ovzduší před vstupem",
+          "popis": "Použijte detektor kyslíku a hořlavých plynů před každým vstupem.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "jistit_osoby",
-          "nazev": "Jištit pracovníky",
-          "popis": "Zajistěte jištění osob v uzavřených prostorech.",
+          "nazev": "Jištit pracovníka lanem",
+          "popis": "Při práci v nádrži připojte pracovníka k lanu vedenému k dohlížiteli.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "dohled",
-          "nazev": "Zajistit dohled",
-          "popis": "Vždy určete dohlížející osobu mimo uzavřený prostor.",
+          "nazev": "Určit dohlížející osobu u vstupu",
+          "popis": "Dohlížitel nesmí opustit místo u vstupu po celou dobu prací.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "zachranne_prostredky",
-          "nazev": "Připravit záchranné prostředky",
-          "popis": "Mějte připraveny záchranné prostředky pro zásah.",
+          "nazev": "Připravit záchranné vybavení u vstupu",
+          "popis": "U vstupu mějte trojnožku, lanový systém nebo ventilátor.",
           "poradi": 50,
           "aktivni": true
         }
@@ -620,28 +620,28 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Podrobnosti k zajištění bezpečnosti při práci.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro rizikové práce a pracoviště.",
+          "popis": "Pravidla pro rizikové práce a povolení k práci.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nv_378_2001",
           "nazev": "Nařízení vlády č. 378/2001 Sb.",
-          "popis": "Požadavky na práce v uzavřených prostorech a povolení k práci.",
+          "popis": "Práce v uzavřených prostorech.",
           "poradi": 40,
           "aktivni": true
         }
@@ -651,50 +651,50 @@
     {
       "id": "horke_prace",
       "nazev": "Horké práce",
-      "popis": "Kontrola povolení, požárního dohledu, odstranění hořlavin a hasicích prostředků při horkých pracích.",
+      "popis": "Prověrka povolení, požárního dohledu, odstranění hořlavin a hasicích prostředků.",
       "poradi": 40,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte místa a činnosti s horkými pracemi v kontrolované oblasti.",
+          "text": "Projděte místa svařování, řezání a jiných horkých prací.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "povoleni",
-          "text": "Zkontrolujte povolení k horkým pracím.",
+          "text": "Ověřte platné povolení k horkým pracím.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "pozarni_dohled",
-          "text": "Ověřte zajištění požárního dohledu.",
+          "text": "Zkontrolujte přítomnost osoby pro požární dohled.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "odstraneni_horlavin",
-          "text": "Posuďte odstranění hořlavých materiálů z okolí.",
+          "text": "Hledejte hořlaviny v okolí místa svaru.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "hasicí_prostredky",
-          "text": "Zkontrolujte dostupnost hasicích prostředků.",
+          "text": "Ověřte hasicí přístroj nebo jiný prostředek u místa prací.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "kontrola_po_praci",
-          "text": "Ověřte kontrolu místa po ukončení horkých prací.",
+          "text": "Posuďte hlídku po ukončení horkých prací.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda při horkých pracích jsou přijata požadovaná požární opatření.",
+          "text": "Sledujte, zda svařování probíhá s dohledem a bez hořlavin v okolí.",
           "poradi": 70,
           "aktivni": true
         }
@@ -703,7 +703,7 @@
         {
           "id": "povoleni",
           "nazev": "Povolení k práci existuje",
-          "popis": "Horké práce probíhají na základě povolení.",
+          "popis": "Horké práce probíhají na základě platného povolení.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -711,7 +711,7 @@
         {
           "id": "pozarni_dohled",
           "nazev": "Požární dohled je zajištěn",
-          "popis": "Požární dohled je zajištěn po celou dobu prací.",
+          "popis": "Po celou dobu prací je přítomna osoba pro požární dohled.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -719,7 +719,7 @@
         {
           "id": "odstraneni_horlavin",
           "nazev": "Hořlaviny jsou odstraněny",
-          "popis": "Hořlavé materiály jsou odstraněny z okolí.",
+          "popis": "V okruhu 11 m od místa svaru nejsou hořlavé materiály.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -727,7 +727,7 @@
         {
           "id": "hasicí_prostredky",
           "nazev": "Hasicí prostředky jsou k dispozici",
-          "popis": "Hasicí prostředky jsou dostupné u místa prací.",
+          "popis": "U místa prací je funkční hasicí přístroj nebo jiný prostředek.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -735,15 +735,15 @@
         {
           "id": "kontrola_po_praci",
           "nazev": "Kontrola po práci probíhá",
-          "popis": "Po ukončení prací probíhá kontrola místa.",
+          "popis": "Po ukončení prací probíhá hlídka místa po stanovenou dobu.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Požární opatření při horkých pracích",
-          "popis": "Při horkých pracích jsou přijata požadovaná požární opatření.",
+          "nazev": "Požární opatření jsou dodržena",
+          "popis": "Při pozorování svařování probíhá s dohledem a bez hořlavin v dosahu.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -752,43 +752,43 @@
       "typicke_zavady": [
         {
           "id": "prace_bez_povoleni",
-          "nazev": "Práce bez povolení",
-          "popis": "Horké práce probíhají bez povolení.",
+          "nazev": "Svařování bez povolení",
+          "popis": "Pracovník svařuje bez vydaného povolení k horkým pracím.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "bez_dohledu",
-          "nazev": "Bez požárního dohledu",
-          "popis": "Požární dohled není zajištěn.",
+          "nazev": "Svařování bez požárního dozoru",
+          "popis": "U místa svaru chybí osoba pro požární dohled.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "horlaviny_v_okoli",
-          "nazev": "Hořlaviny v okolí",
-          "popis": "V okolí prací jsou hořlavé materiály.",
+          "nazev": "Hořlaviny u místa svaru",
+          "popis": "Vedle svařování leží dřevo, folie nebo textilie.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "chybi_hp",
-          "nazev": "Chybí hasicí prostředky",
-          "popis": "Hasicí prostředky nejsou u místa prací.",
+          "nazev": "Chybí hasicí přístroj",
+          "popis": "U místa horkých prací není hasicí přístroj.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "bez_kontroly_po",
-          "nazev": "Bez kontroly po práci",
-          "popis": "Po ukončení prací neprobíhá kontrola místa.",
+          "nazev": "Bez hlídky po svařování",
+          "popis": "Po ukončení prací nikdo nekontroluje místo po dobu 60 minut.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "nevhodne_podminky",
-          "nazev": "Nevhodné podmínky",
-          "popis": "Horké práce probíhají za nevhodných podmínek.",
+          "nazev": "Svařování ve větraném prostoru bez opatření",
+          "popis": "Horké práce probíhají v blízkosti hořlavých par bez odvětrání.",
           "poradi": 60,
           "aktivni": true
         }
@@ -796,36 +796,36 @@
       "doporucene_postupy": [
         {
           "id": "povoleni",
-          "nazev": "Vyžadovat povolení",
-          "popis": "Horké práce provádějte pouze na základě povolení k práci.",
+          "nazev": "Vydat povolení před každými horkými pracemi",
+          "popis": "Povolení musí obsahovat dohled, odstranění hořlavin a hlídku po práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "pozarni_dohled",
-          "nazev": "Zajistit požární dohled",
-          "popis": "Vždy určete osobu pro požární dohled.",
+          "nazev": "Určit osobu pro požární dohled",
+          "popis": "Dohled musí být přítomen po celou dobu svařování nebo řezání.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "odstranit_horlaviny",
-          "nazev": "Odstranit hořlaviny",
-          "popis": "Před zahájením odstraňte hořlavé materiály z okolí.",
+          "nazev": "Odstranit hořlaviny z okolí",
+          "popis": "Před zapálením svařovacího hořáku odstraňte nebo zakryjte hořlaviny.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "hasicí_prostredky",
-          "nazev": "Připravit hasicí prostředky",
-          "popis": "Mějte hasicí prostředky dostupné u místa prací.",
+          "nazev": "Připravit hasicí přístroj u místa prací",
+          "popis": "Umístěte hasicí přístroj do dosahu do 10 m od místa svaru.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "kontrola_po",
-          "nazev": "Kontrolovat po ukončení",
-          "popis": "Po ukončení prací kontrolujte místo po dobu stanovenou povolením.",
+          "nazev": "Hlídat místo po ukončení prací",
+          "popis": "Po svařování nechte dohlížitele kontrolovat místo nejméně 60 minut.",
           "poradi": 50,
           "aktivni": true
         }
@@ -834,28 +834,28 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Podrobnosti k zajištění bezpečnosti při práci.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro rizikové práce a pracoviště.",
+          "popis": "Pravidla pro rizikové práce a povolení k práci.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nv_246_2001",
           "nazev": "Nařízení vlády č. 246/2001 Sb.",
-          "popis": "Požadavky na požární opatření při horkých pracích.",
+          "popis": "Požární opatření při horkých pracích.",
           "poradi": 40,
           "aktivni": true
         }
@@ -865,50 +865,50 @@
     {
       "id": "vykopove_prace",
       "nazev": "Výkopové práce",
-      "popis": "Kontrola pažení, vstupů, označení, zabezpečení výkopu a pohybu osob v okolí výkopu.",
+      "popis": "Prověrka pažení, zabezpečení okrajů výkopu a omezení pohybu osob.",
       "poradi": 50,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte výkopové práce v kontrolované oblasti.",
+          "text": "Projděte otevřené výkopy a místa výkopových prací.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "pazeni",
-          "text": "Zkontrolujte pažení výkopu nebo sklon svahů.",
+          "text": "Zkontrolujte pažení stěn nebo bezpečný sklon svahů.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "vstupy",
-          "text": "Ověřte bezpečné vstupy a východy z výkopu.",
+          "text": "Ověřte bezpečné schody nebo rampy do výkopu.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "oznaceni",
-          "text": "Posuďte označení nebezpečného místa.",
+          "text": "Hledejte výstražné značení u okraje výkopu.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "zabezpeceni_vykopu",
-          "text": "Zkontrolujte celkové zabezpečení výkopu proti pádu.",
+          "text": "Posuďte celkové zabezpečení proti pádu do výkopu.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "pohyb_osob",
-          "text": "Ověřte omezení pohybu osob v okolí výkopu.",
+          "text": "Sledujte pohyb osob v okolí nezabezpečeného okraje.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda výkop je zabezpečen proti pádu osob.",
+          "text": "Hledejte otevřený výkop bez pažení nebo zábrany.",
           "poradi": 70,
           "aktivni": true
         }
@@ -917,7 +917,7 @@
         {
           "id": "pazeni",
           "nazev": "Výkop je pažován",
-          "popis": "Výkop je pažován nebo svahy jsou bezpečně skloněny.",
+          "popis": "Stěny výkopu jsou paženy nebo svah má bezpečný sklon.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -925,7 +925,7 @@
         {
           "id": "vstupy",
           "nazev": "Vstupy jsou bezpečné",
-          "popis": "Vstupy a východy z výkopu jsou bezpečně řešeny.",
+          "popis": "Do výkopu vede bezpečný vstup, ne skok z okraje.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -933,7 +933,7 @@
         {
           "id": "oznaceni",
           "nazev": "Výkop je označen",
-          "popis": "Nebezpečné místo je viditelně označeno.",
+          "popis": "Okraj výkopu má výstražné značení nebo pásku.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -941,7 +941,7 @@
         {
           "id": "zabezpeceni_vykopu",
           "nazev": "Výkop je zabezpečen",
-          "popis": "Výkop je zabezpečen proti pádu osob.",
+          "popis": "Okraj výkopu je chráněn zábranou nebo pažením proti pádu.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -949,15 +949,15 @@
         {
           "id": "pohyb_osob",
           "nazev": "Pohyb osob je omezen",
-          "popis": "Pohyb osob v okolí výkopu je kontrolován.",
+          "popis": "U nezabezpečeného okraje se nepohybují nepovolané osoby.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Výkop zabezpečen proti pádu",
-          "popis": "Výkop je zabezpečen proti pádu osob.",
+          "nazev": "Výkop je zabezpečen proti pádu",
+          "popis": "Při obchůzce nenajdete otevřený výkop bez pažení nebo zábrany.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -966,43 +966,43 @@
       "typicke_zavady": [
         {
           "id": "bez_pazeni",
-          "nazev": "Bez pažení",
-          "popis": "Výkop není pažován ani svahy nejsou bezpečně skloněny.",
+          "nazev": "Otevřený výkop bez pažení",
+          "popis": "Výkop hlubší než 1,5 m nemá pažení ani bezpečný sklon.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nebezpecne_vstupy",
-          "nazev": "Nebezpečné vstupy",
-          "popis": "Vstupy do výkopu nejsou bezpečně řešeny.",
+          "nazev": "Nebezpečný vstup do výkopu",
+          "popis": "Pracovníci slezou po strmém okraji bez schodů.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "neoznaceno",
           "nazev": "Neoznačený výkop",
-          "popis": "Výkop není označen jako nebezpečné místo.",
+          "popis": "U výkopu u chodníku chybí zábrana a značení.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nestabilni_steny",
-          "nazev": "Nestabilní stěny výkopu",
-          "popis": "Stěny výkopu hrozí sesutím.",
+          "nazev": "Hrozící sesutí stěny",
+          "popis": "Stěna výkopu praská nebo se odlamuje.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "volny_pohyb",
-          "nazev": "Volný pohyb osob u výkopu",
-          "popis": "Osoby se volně pohybují u nezabezpečeného výkopu.",
+          "nazev": "Chodci u okraje výkopu",
+          "popis": "Lidé procházejí těsně u nezabezpečeného okraje.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "bez_dohledu",
-          "nazev": "Bez dohledu",
-          "popis": "Výkopové práce probíhají bez dohledu.",
+          "nazev": "Výkop bez dohledu",
+          "popis": "Výkop zůstal otevřený přes noc bez zabezpečení.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1010,36 +1010,36 @@
       "doporucene_postupy": [
         {
           "id": "pazit",
-          "nazev": "Pažit výkopy",
-          "popis": "Výkopy pažte nebo zabezpečte svahy dle hloubky a půdních podmínek.",
+          "nazev": "Pažit výkop podle hloubky",
+          "popis": "U hlubších výkopů instalujte pažení dříve, než pracovníci vstoupí.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "oznacovat",
-          "nazev": "Označovat nebezpečná místa",
-          "popis": "Viditelně označte výkopy a nebezpečná místa.",
+          "nazev": "Ohraničit okraj výkopu",
+          "popis": "Okraj výkopu ohraničte zábranou nebo páskou.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "omezit_pristup",
-          "nazev": "Omezit přístup",
-          "popis": "Omezte pohyb osob v okolí výkopu.",
+          "nazev": "Omezit přístup k okraji",
+          "popis": "Přes noc uzavřete výkop zábranou a značením.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "kontrolovat",
-          "nazev": "Pravidelně kontrolovat",
-          "popis": "Pravidelně kontrolujte stabilitu stěn výkopu.",
+          "nazev": "Kontrolovat stabilitu stěn denně",
+          "popis": "Po dešti a každý den ověřte stav pažení a stěn.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "povoleni",
-          "nazev": "Vyžadovat povolení k práci",
-          "popis": "U hlubokých výkopů vyžadujte povolení k práci.",
+          "nazev": "Vyžadovat povolení u hlubokých výkopů",
+          "popis": "U výkopu nad stanovenou hloubku vydávejte povolení k práci.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1048,28 +1048,28 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Podrobnosti k zajištění bezpečnosti při práci.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro rizikové práce a pracoviště.",
+          "popis": "Pravidla pro rizikové práce a povolení k práci.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nv_378_2001",
           "nazev": "Nařízení vlády č. 378/2001 Sb.",
-          "popis": "Požadavky na zabezpečení výkopových prací.",
+          "popis": "Zabezpečení výkopových prací.",
           "poradi": 40,
           "aktivni": true
         }
@@ -1079,50 +1079,50 @@
     {
       "id": "pad_predmetu",
       "nazev": "Práce s nebezpečím pádu předmětů",
-      "popis": "Kontrola vymezení prostoru, ochranných přístřešků, zabezpečení materiálu a používání přileb.",
+      "popis": "Prověrka vymezení zóny, zabezpečení materiálu a ochrany hlavy.",
       "poradi": 60,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte místa s nebezpečím pádu předmětů v kontrolované oblasti.",
+          "text": "Určete místa, kde hrozí pád nástrojů nebo materiálu z výšky.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "vymezeni_prostoru",
-          "text": "Zkontrolujte vymezení prostoru pod místem práce.",
+          "text": "Zkontrolujte ohraničení prostoru pod prací ve výšce.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "ochranne_pristresky",
-          "text": "Ověřte ochranné přístřešky a kryty.",
+          "text": "Ověřte střešní přístřešky nebo sítě proti pádu.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "zabezpeceni_materialu",
-          "text": "Posuďte zabezpečení materiálu proti pádu.",
+          "text": "Hledejte materiál uložený nad hlavami pracovníků.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "prilby",
-          "text": "Zkontrolujte používání ochranných přileb.",
+          "text": "Sledujte nošení ochranných přileb v rizikové zóně.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "oznaceni_zony",
-          "text": "Ověřte označení zóny nebezpečí pádu předmětů.",
+          "text": "Ověřte značení zóny nebezpečí pádu předmětů.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda pod místem práce se nepohybují nepovolané osoby.",
+          "text": "Sledujte, zda pod prací ve výšce nejsou chodci.",
           "poradi": 70,
           "aktivni": true
         }
@@ -1131,7 +1131,7 @@
         {
           "id": "vymezeni_prostoru",
           "nazev": "Prostor je vymezen",
-          "popis": "Prostor pod místem práce je vymezen.",
+          "popis": "Plocha pod prací ve výšce je ohraničena páskou nebo zábranou.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -1139,7 +1139,7 @@
         {
           "id": "ochranne_pristresky",
           "nazev": "Přístřešky jsou instalovány",
-          "popis": "Ochranné přístřešky jsou na místě.",
+          "popis": "Nad chodníkem je střešní kryt nebo ochranná síť.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -1147,15 +1147,15 @@
         {
           "id": "zabezpeceni_materialu",
           "nazev": "Materiál je zabezpečen",
-          "popis": "Materiál a nástroje jsou zabezpečeny proti pádu.",
+          "popis": "Nástroje a materiál ve výšce jsou zajištěny proti pádu.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "prilby",
           "nazev": "Přilby jsou používány",
-          "popis": "Pracovníci používají ochranné přilby.",
+          "popis": "Pracovníci v rizikové zóně nosí ochranné přilby.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -1163,15 +1163,15 @@
         {
           "id": "oznaceni_zony",
           "nazev": "Zóna je označena",
-          "popis": "Zóna nebezpečí pádu předmětů je označena.",
+          "popis": "Zóna nebezpečí pádu předmětů má výstražné značení.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Pod prací nejsou nepovolané osoby",
-          "popis": "Pod místem práce se nepohybují nepovolané osoby.",
+          "popis": "Při pozorování pod místem práci ve výšce nejsou chodci.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -1180,43 +1180,43 @@
       "typicke_zavady": [
         {
           "id": "nevymezene_prostory",
-          "nazev": "Nevymezené prostory",
-          "popis": "Prostor pod místem práce není vymezen.",
+          "nazev": "Chodník pod lešením",
+          "popis": "Pod lešením procházejí lidé bez ohraničení zóny.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "chybi_pristresky",
-          "nazev": "Chybí ochranné přístřešky",
-          "popis": "Ochranné přístřešky nejsou instalovány.",
+          "nazev": "Chybí ochranná síť",
+          "popis": "Nad vchodem do budovy chybí síť proti pádu předmětů.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "nezabezpeceny_material",
-          "nazev": "Nezabezpečený materiál",
-          "popis": "Materiál může spadnout z výšky.",
+          "nazev": "Materiál uložený nad hlavami",
+          "popis": "Na lešení leží volné trubky nad chodníkem.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nepouzivane_prilby",
-          "nazev": "Nepoužívání přileb",
-          "popis": "Pracovníci nepoužívají ochranné přilby.",
+          "nazev": "Práce bez přilby pod lešením",
+          "popis": "Pracovníci v rizikové zóně nemají nasazenou přilbu.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "osoby_pod_praci",
-          "nazev": "Osoby pod místem práce",
-          "popis": "Pod místem práce se pohybují nepovolané osoby.",
+          "nazev": "Chodci pod svařováním",
+          "popis": "Pod pracovníkem na plošině procházejí kolegové.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "neoznacena_zona",
-          "nazev": "Neoznačená zóna",
-          "popis": "Zóna nebezpečí pádu není označena.",
+          "nazev": "Neoznačená zóna pádu",
+          "popis": "U vstupu pod stavbu chybí značka nebezpečí pádu předmětů.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1224,36 +1224,36 @@
       "doporucene_postupy": [
         {
           "id": "vymezit_prostor",
-          "nazev": "Vymezit nebezpečný prostor",
-          "popis": "Vymezte a označte prostor pod místem práce.",
+          "nazev": "Ohraničit prostor pod prací",
+          "popis": "Pod lešením nebo plošinou vymezte zónu pásky nebo zábranou.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "instalovat_pristresky",
-          "nazev": "Instalovat přístřešky",
-          "popis": "Instalujte ochranné přístřešky tam, kde je to možné.",
+          "nazev": "Instalovat ochrannou síť",
+          "popis": "Nad frekventovaným chodníkem nainstalujte síť proti pádu.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "zabezpecit_material",
-          "nazev": "Zabezpečit materiál",
-          "popis": "Materiál a nástroje zabezpečte proti pádu.",
+          "nazev": "Zajistit materiál ve výšce",
+          "popis": "Nástroje upevněte lanem, materiál uložte za zábradlí.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "kontrolovat_zonu",
-          "nazev": "Kontrolovat vymezenou zónu",
-          "popis": "Průběžně kontrolujte, zda se v zóně nenacházejí osoby.",
+          "nazev": "Kontrolovat zónu před prací ve výšce",
+          "popis": "Před zahájením prací ve výšce ověřte, že pod nimi nikdo neprojde.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "prilby",
-          "nazev": "Vyžadovat ochranné přilby",
-          "popis": "V zóně nebezpečí pádu vyžadujte ochranné přilby.",
+          "nazev": "Vyžadovat přilby v rizikové zóně",
+          "popis": "Vyznačte zónu a vynucujte nošení přileb všech vstupujících.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1262,28 +1262,28 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Podrobnosti k zajištění bezpečnosti při práci.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro rizikové práce a pracoviště.",
+          "popis": "Pravidla pro rizikové práce a povolení k práci.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nv_362_2005",
           "nazev": "Nařízení vlády č. 362/2005 Sb.",
-          "popis": "Požadavky na ochranu před pádem předmětů.",
+          "popis": "Ochrana před pádem předmětů.",
           "poradi": 40,
           "aktivni": true
         }
@@ -1293,50 +1293,50 @@
     {
       "id": "osamocena_prace",
       "nazev": "Osamocená práce",
-      "popis": "Kontrola způsobu kontroly zaměstnanců, spojení, přivolání pomoci a organizace osamocené práce.",
+      "popis": "Prověrka kontroly pracovníků, spojení a možnosti rychlého přivolání pomoci.",
       "poradi": 70,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte místa a činnosti s osamocenou prací v kontrolované oblasti.",
+          "text": "Určete pracovníky a místa, kde pracují osamoceně.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "kontrola_zamestnancu",
-          "text": "Zkontrolujte způsob pravidelné kontroly osamocených zaměstnanců.",
+          "text": "Zkontrolujte intervaly a způsob kontroly osamocených pracovníků.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "spojeni",
-          "text": "Ověřte spojení s osamoceným pracovníkem.",
+          "text": "Ověřte radiotelefon, telefon nebo jiné spojení.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "privolani_pomoci",
-          "text": "Posuďte možnost rychlého přivolání pomoci.",
+          "text": "Posuďte, jak pracovník rychle přivolá pomoc.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "organizace_prace",
-          "text": "Zkontrolujte organizaci a plánování osamocené práce.",
+          "text": "Zkontrolujte plánování a schvalování osamocené práce.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "posouzeni_rizik",
-          "text": "Ověřte posouzení rizik osamocené práce.",
+          "text": "Ověřte posouzení rizik pro konkrétní osamocenou činnost.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda je zajištěna možnost rychlého přivolání pomoci.",
+          "text": "Zeptejte se osamoceného pracovníka, jak přivolá pomoc.",
           "poradi": 70,
           "aktivni": true
         }
@@ -1345,7 +1345,7 @@
         {
           "id": "kontrola_zamestnancu",
           "nazev": "Kontrola zaměstnanců funguje",
-          "popis": "Osamocení pracovníci jsou pravidelně kontrolováni.",
+          "popis": "Osamocený pracovník je kontrolován v stanovených intervalech.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -1353,7 +1353,7 @@
         {
           "id": "spojeni",
           "nazev": "Spojení je zajištěno",
-          "popis": "Spojení s osamoceným pracovníkem funguje.",
+          "popis": "Pracovník má funkční radiotelefon nebo telefon.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -1361,15 +1361,15 @@
         {
           "id": "privolani_pomoci",
           "nazev": "Pomoc lze rychle přivolat",
-          "popis": "Je zajištěna možnost rychlého přivolání pomoci.",
+          "popis": "Pracovník zná a může použít tlačítko nebo telefon pro přivolání pomoci.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "organizace_prace",
           "nazev": "Práce je organizována",
-          "popis": "Osamocená práce je plánována a organizována.",
+          "popis": "Osamocená práce je naplánována a schválena před zahájením.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -1377,60 +1377,60 @@
         {
           "id": "posouzeni_rizik",
           "nazev": "Rizika jsou posouzena",
-          "popis": "Rizika osamocené práce jsou posouzena.",
+          "popis": "Pro osamocenou práci existuje písemné posouzení rizik.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Rychlé přivolání pomoci",
-          "popis": "Je zajištěna možnost rychlého přivolání pomoci.",
+          "nazev": "Pracovník umí přivolat pomoc",
+          "popis": "Oslovený pracovník popíše, jak rychle přivolá pomoc.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         }
       ],
       "typicke_zavady": [
         {
           "id": "bez_kontroly",
-          "nazev": "Bez kontroly pracovníků",
-          "popis": "Osamocení pracovníci nejsou pravidelně kontrolováni.",
+          "nazev": "Pracovník bez pravidelné kontroly",
+          "popis": "Noční hlídač není kontrolován v pravidelných intervalech.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "slabe_spojeni",
-          "nazev": "Slabé spojení",
-          "popis": "Spojení s osamoceným pracovníkem nefunguje spolehlivě.",
+          "nazev": "Nefunkční radiotelefon",
+          "popis": "Pracovník v odlehlém areálu nemá signál na telefonu.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "bez_moznosti_pomoci",
           "nazev": "Bez možnosti přivolat pomoc",
-          "popis": "Pracovník nemůže rychle přivolat pomoc.",
+          "popis": "Pracovník v rozvodně nemá tlačítko ani telefon.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "neplanovana_prace",
           "nazev": "Neplánovaná osamocená práce",
-          "popis": "Osamocená práce není plánována a organizována.",
+          "popis": "Pracovník zůstal sám bez schválení vedoucím.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "bez_posouzeni",
-          "nazev": "Bez posouzení rizik",
-          "popis": "Rizika osamocené práce nejsou posouzena.",
+          "nazev": "Chybí posouzení osamocené práce",
+          "popis": "Osamocená práce v nebezpečném prostředí není posouzena.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "nevhodne_misto",
-          "nazev": "Nevhodné místo pro osamocenou práci",
-          "popis": "Práce probíhá na místě bez možnosti kontaktu.",
+          "nazev": "Osamocená práce v nebezpečí",
+          "popis": "Pracovník pracuje sám v prostoru s rizikem pádu nebo úrazu.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1438,36 +1438,36 @@
       "doporucene_postupy": [
         {
           "id": "planovat",
-          "nazev": "Plánovat osamocenou práci",
-          "popis": "Osamocenou práci plánujte a schvalujte předem.",
+          "nazev": "Schvalovat osamocenou práci předem",
+          "popis": "Osamocenou práci povolte jen po posouzení rizik a určení kontroly.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "kontrolovat",
-          "nazev": "Pravidelně kontrolovat",
-          "popis": "Stanovte intervaly kontroly osamocených pracovníků.",
+          "nazev": "Stanovit intervaly kontroly",
+          "popis": "Určete, jak často dohlížitel kontaktuje osamoceného pracovníka.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "zajistit_spojeni",
-          "nazev": "Zajistit spojení",
-          "popis": "Zajistěte spolehlivé spojení — radiotelefon, telefon apod.",
+          "nazev": "Vybavit pracovníka spolehlivým spojením",
+          "popis": "Zajistěte radiotelefon nebo osobní tlačítko nouze tam, kde je slabý signál.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "postup_pomoci",
-          "nazev": "Stanovit postup přivolání pomoci",
-          "popis": "Sepište postup pro rychlé přivolání pomoci.",
+          "nazev": "Sepsat postup přivolání pomoci",
+          "popis": "Popište, koho a jak pracovník volá v nouzi.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "posoudit_rizika",
-          "nazev": "Posoudit rizika",
-          "popis": "Před osamocenou prací posuďte rizika a přijměte opatření.",
+          "nazev": "Posoudit rizika osamocené práce",
+          "popis": "U každé osamocené činnosti sepište rizika a opatření.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1476,28 +1476,28 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Podrobnosti k zajištění bezpečnosti při práci.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro rizikové práce a pracoviště.",
+          "popis": "Pravidla pro rizikové práce a povolení k práci.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nv_378_2001",
           "nazev": "Nařízení vlády č. 378/2001 Sb.",
-          "popis": "Požadavky na organizaci práce a osamocenou práci.",
+          "popis": "Organizace osamocené práce.",
           "poradi": 40,
           "aktivni": true
         }
@@ -1507,50 +1507,50 @@
     {
       "id": "povoleni_rizikovych_praci",
       "nazev": "Povolení k rizikovým pracím",
-      "popis": "Kontrola systému povolení, schvalování, ukončení prací a archivace povolení k rizikovým pracím.",
+      "popis": "Prověrka systému povolení k práci, schvalování a evidence.",
       "poradi": 80,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte systém povolení k rizikovým pracím v kontrolované oblasti.",
+          "text": "Určete rizikové práce vyžadující povolení v oblasti.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "system_povoleni",
-          "text": "Zkontrolujte existenci a fungování systému povolení k práci.",
+          "text": "Zkontrolujte, zda existuje formulář a postup povolení.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "schvalovani",
-          "text": "Ověřte postup schvalování rizikových prací.",
+          "text": "Ověřte, zda povolení schvaluje oprávněná osoba před zahájením.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "ukonceni_praci",
-          "text": "Posuďte postup ukončení a uzavření povolení k práci.",
+          "text": "Posuďte uzavírání povolení po dokončení prací.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "archivace",
-          "text": "Zkontrolujte archivaci vydaných povolení.",
+          "text": "Zkontrolujte uložení vydaných povolení.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "obsah_povoleni",
-          "text": "Ověřte úplnost obsahu povolení k práci.",
+          "text": "Ověřte úplnost údajů v aktuálním povolení.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda rizikové práce jsou prováděny pouze na základě stanoveného postupu nebo povolení.",
+          "text": "Sledujte, zda probíhající riziková práce má platné povolení.",
           "poradi": 70,
           "aktivni": true
         }
@@ -1559,7 +1559,7 @@
         {
           "id": "system_povoleni",
           "nazev": "Systém povolení existuje",
-          "popis": "Systém povolení k rizikovým pracím je zaveden.",
+          "popis": "Pro rizikové práce je zaveden formulář a postup povolení k práci.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1567,15 +1567,15 @@
         {
           "id": "schvalovani",
           "nazev": "Schvalování probíhá",
-          "popis": "Rizikové práce jsou schvalovány před zahájením.",
+          "popis": "Povolení je vydáno a podepsáno před zahájením rizikové práce.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "ukonceni_praci",
           "nazev": "Ukončení je řízeno",
-          "popis": "Povolení k práci je uzavřeno po ukončení prací.",
+          "popis": "Po dokončení prací je povolení uzavřeno a podepsáno.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1583,7 +1583,7 @@
         {
           "id": "archivace",
           "nazev": "Povolení jsou archivována",
-          "popis": "Vydaná povolení jsou archivována.",
+          "popis": "Vydaná povolení jsou uložena a dohledatelná.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1591,60 +1591,60 @@
         {
           "id": "obsah_povoleni",
           "nazev": "Povolení je úplné",
-          "popis": "Povolení k práci obsahuje všechny požadované údaje.",
+          "popis": "Povolení obsahuje místo, druh práce, opatření a dobu platnosti.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Rizikové práce na základě povolení",
-          "popis": "Rizikové práce jsou prováděny pouze na základě stanoveného postupu nebo povolení.",
+          "nazev": "Riziková práce má povolení",
+          "popis": "Při obchůzce u probíhající rizikové práce najdete platné povolení.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
         {
           "id": "chybi_system",
           "nazev": "Chybí systém povolení",
-          "popis": "Systém povolení k rizikovým pracím není zaveden.",
+          "popis": "Formulář povolení k práci neexistuje nebo ho nikdo nepoužívá.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "prace_bez_povoleni",
-          "nazev": "Práce bez povolení",
-          "popis": "Rizikové práce probíhají bez povolení k práci.",
+          "nazev": "Svařování bez povolení",
+          "popis": "Horké práce probíhají bez vyplněného povolení u místa prací.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "neuzavrene_povoleni",
-          "nazev": "Neuzavřená povolení",
-          "popis": "Povolení k práci nejsou uzavřena po ukončení.",
+          "nazev": "Neuzavřené povolení",
+          "popis": "Povolení z minulého týdne není uzavřeno po ukončení prací.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "neuplne_povoleni",
           "nazev": "Neúplné povolení",
-          "popis": "Povolení neobsahuje všechny požadované údaje.",
+          "popis": "V povolení chybí jméno dohlížitele nebo požadovaná opatření.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "chaoticka_archivace",
-          "nazev": "Chaotická archivace",
-          "popis": "Povolení nejsou systematicky archivována.",
+          "nazev": "Roztroušená povolení",
+          "popis": "Povolení leží u stavby, v kanceláři je nehledatelná.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "neschvalene_prace",
-          "nazev": "Neschválené rizikové práce",
-          "popis": "Rizikové práce probíhají bez schválení.",
+          "nazev": "Nepodepsané povolení",
+          "popis": "Povolení není schváleno odpovědnou osobou před zahájením.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1652,36 +1652,36 @@
       "doporucene_postupy": [
         {
           "id": "zavest_system",
-          "nazev": "Zavést systém povolení",
-          "popis": "Zaveďte systém povolení k práci pro rizikové činnosti.",
+          "nazev": "Zavést formulář povolení k práci",
+          "popis": "Vytiskněte formulář pro horké práce, výšku, uzavřené prostory a výkopy.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "postup_schvalovani",
-          "nazev": "Stanovit postup schvalování",
-          "popis": "Sepište postup schvalování a vydávání povolení.",
+          "nazev": "Určit schvalovatele povolení",
+          "popis": "Jmenujte osoby, které smí povolení vydat a podepsat.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "archivovat",
-          "nazev": "Archivovat povolení",
-          "popis": "Systematicky archivujte vydaná povolení k práci.",
+          "nazev": "Archivovat povolení po uzavření",
+          "popis": "Uzavřená povolení ukládejte do složky s datem a druhem práce.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "skoleni",
-          "nazev": "Proškolit odpovědné osoby",
-          "popis": "Proškolte osoby vydávající a schvalující povolení.",
+          "nazev": "Proškolit vydávající povolení",
+          "popis": "Seznamte vedoucí s obsahem povolení a podmínkami vydání.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "kontrolovat_dodrzovani",
-          "nazev": "Kontrolovat dodržování",
-          "popis": "Pravidelně kontrolujte, zda rizikové práce probíhají na základě povolení.",
+          "nazev": "Kontrolovat povolení při obchůzkách",
+          "popis": "U probíhající rizikové práce vyžadujte předložení platného povolení.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1690,28 +1690,28 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Podrobnosti k zajištění bezpečnosti při práci.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro rizikové práce a pracoviště.",
+          "popis": "Pravidla pro rizikové práce a povolení k práci.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nv_378_2001",
           "nazev": "Nařízení vlády č. 378/2001 Sb.",
-          "popis": "Požadavky na povolení k práci a rizikové činnosti.",
+          "popis": "Povolení k rizikovým pracím.",
           "poradi": 40,
           "aktivni": true
         }
