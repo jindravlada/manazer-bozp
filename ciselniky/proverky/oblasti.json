@@ -1,13 +1,13 @@
 {
-  "verze": 8,
+  "verze": 9,
   "oblasti": [
     {
       "id": "bozp",
       "nazev": "BOZP obecně",
-      "popis": "Obecné požadavky na bezpečnost a ochranu zdraví při práci na pracovišti.",
+      "popis": "Organizace BOZP, dokumentace, školení, úrazy, rizika, kontroly, pracovnělékařské služby a informovanost zaměstnanců.",
       "poradi": 10,
       "aktivni": true,
-      "soubor_znalosti": null
+      "soubor_znalosti": "bozp_obecne.json"
     },
     {
       "id": "po",
