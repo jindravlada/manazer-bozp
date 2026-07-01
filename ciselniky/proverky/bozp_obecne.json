@@ -1,5 +1,5 @@
 {
-  "verze": 1,
+  "verze": 2,
   "id": "bozp",
   "nazev": "BOZP obecně",
   "popis": "Organizace BOZP, dokumentace, školení, úrazy, rizika, kontroly, pracovnělékařské služby a informovanost zaměstnanců.",
@@ -9,38 +9,38 @@
     {
       "id": "organizace_bozp",
       "nazev": "Organizace BOZP",
-      "popis": "Kontrola odpovědností, pověření vedoucích, organizace systému BOZP a rozdělení kompetencí na pracovišti.",
+      "popis": "Prověrka odpovědností, pověření vedoucích, organizace systému BOZP a rozdělení kompetencí na pracovišti.",
       "poradi": 10,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte organizační strukturu BOZP v kontrolované oblasti.",
+          "text": "Určete organizační uspořádání BOZP v kontrolované oblasti.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "odpovednosti",
-          "text": "Zkontrolujte vymezení odpovědností za BOZP na všech úrovních.",
+          "text": "Ověřte písemné vymezení odpovědností za BOZP na všech úrovních.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "povereni_vedoucich",
-          "text": "Ověřte pověření vedoucích zaměstnanců v oblasti BOZP.",
+          "text": "Zkontrolujte pověření vedoucích zaměstnanců v oblasti BOZP.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "organizace_systemu",
-          "text": "Posuďte organizaci systému BOZP a jeho funkčnost.",
+          "text": "Posuďte, zda organizace systému BOZP odpovídá velikosti a rizikům provozu.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "kompetence",
-          "text": "Zkontrolujte rozdělení kompetencí mezi odpovědné osoby.",
+          "text": "Porovnejte rozdělení kompetencí mezi odpovědné osoby se skutečnou praxí.",
           "poradi": 50,
           "aktivni": true
         },
@@ -52,7 +52,7 @@
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Ověřte u vedoucího zaměstnance znalost jeho povinností v oblasti BOZP.",
+          "text": "Zeptejte se vedoucího zaměstnance na jeho povinnosti v oblasti BOZP.",
           "poradi": 70,
           "aktivni": true
         }
@@ -61,7 +61,7 @@
         {
           "id": "odpovednosti",
           "nazev": "Odpovědnosti jsou vymezeny",
-          "popis": "Odpovědnosti za BOZP jsou jasně určeny a známé.",
+          "popis": "Odpovědnosti za BOZP jsou písemně určeny a známé dotčeným osobám.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -69,7 +69,7 @@
         {
           "id": "povereni_vedoucich",
           "nazev": "Vedoucí jsou pověřeni",
-          "popis": "Vedoucí zaměstnanci jsou řádně pověřeni v oblasti BOZP.",
+          "popis": "Vedoucí zaměstnanci jsou formálně pověřeni plněním povinností BOZP.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -77,7 +77,7 @@
         {
           "id": "organizace_systemu",
           "nazev": "Systém BOZP je organizován",
-          "popis": "Organizace systému BOZP odpovídá velikosti a rizikům provozu.",
+          "popis": "Organizace systému BOZP odpovídá velikosti provozu a identifikovaným rizikům.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -85,7 +85,7 @@
         {
           "id": "kompetence",
           "nazev": "Kompetence jsou rozděleny",
-          "popis": "Kompetence v oblasti BOZP jsou jednoznačně rozděleny.",
+          "popis": "Kompetence v oblasti BOZP jsou jednoznačně rozděleny bez překrývání.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -93,7 +93,7 @@
         {
           "id": "dokumentace_organizace",
           "nazev": "Organizace je zdokumentována",
-          "popis": "Organizační uspořádání BOZP je písemně zpracováno.",
+          "popis": "Organizační uspořádání BOZP je písemně zpracováno a odpovídá skutečnosti.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -101,7 +101,7 @@
         {
           "id": "prakticka_kontrola",
           "nazev": "Vedoucí zná své povinnosti",
-          "popis": "Vedoucí zaměstnanec zná své povinnosti v oblasti BOZP.",
+          "popis": "Kontrolovaný vedoucí zaměstnanec popíše své povinnosti v oblasti BOZP.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -110,43 +110,43 @@
       "typicke_zavady": [
         {
           "id": "neurcene_odpovednosti",
-          "nazev": "Neurčené odpovědnosti",
-          "popis": "Odpovědnosti za BOZP nejsou jasně vymezeny.",
+          "nazev": "BOZP bez určené odpovědnosti",
+          "popis": "Ve směrnici chybí jmenovitá odpovědnost vedoucího provozu za BOZP na pracovišti.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nepovereni_vedouci",
-          "nazev": "Nepověření vedoucí",
-          "popis": "Vedoucí zaměstnanci nejsou pověřeni plněním povinností BOZP.",
+          "nazev": "Vedoucí bez pověření",
+          "popis": "Mistr vede směnu, ale nemá písemné pověření k plnění povinností BOZP.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "chaoticka_organizace",
-          "nazev": "Chaotická organizace BOZP",
-          "popis": "Chybí přehled o tom, kdo za co v BOZP odpovídá.",
+          "nazev": "Nejasné kompetence",
+          "popis": "Technik BOZP i vedoucí skladu řeší stejné záležitosti bez vymezení pravomocí.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "prekryv_kompetenci",
           "nazev": "Překryv kompetencí",
-          "popis": "Kompetence více osob se překrývají nebo nejsou vymezeny.",
+          "popis": "Dva vedoucí si navzájem předávají BOZP agendu bez určení odpovědného.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "zastarala_organizace",
-          "nazev": "Zastaralá organizace",
-          "popis": "Organizační uspořádání BOZP neodpovídá skutečnosti.",
+          "nazev": "Organizace po reorganizaci",
+          "popis": "Po sloučení provozů stále platí schéma s již neexistujícími pracovišti.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "neznalost_povinnosti",
-          "nazev": "Neznalost povinností vedoucích",
-          "popis": "Vedoucí neznají své povinnosti v oblasti BOZP.",
+          "nazev": "Vedoucí nezná povinnosti",
+          "popis": "Vedoucí zaměstnanec neví, jaké BOZP povinnosti má vůči podřízeným.",
           "poradi": 60,
           "aktivni": true
         }
@@ -154,36 +154,36 @@
       "doporucene_postupy": [
         {
           "id": "vymezit_odpovednosti",
-          "nazev": "Jasně vymezit odpovědnosti",
-          "popis": "Písemně určete odpovědnosti za BOZP na všech úrovních.",
+          "nazev": "Vymezit odpovědnosti v organizačním řádu",
+          "popis": "Písemně určete odpovědnosti za BOZP pro každou úroveň řízení.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "poverit_vedouci",
-          "nazev": "Pověřit vedoucí zaměstnance",
-          "popis": "Formálně pověřte vedoucí plněním povinností BOZP.",
+          "nazev": "Pověřit vedoucí písemným pokynem",
+          "popis": "Vydávejte pověření vedoucím s uvedením rozsahu jejich povinností BOZP.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "aktualizovat_organizaci",
-          "nazev": "Pravidelně aktualizovat organizaci",
-          "popis": "Udržujte organizační uspořádání BOZP v souladu se skutečností.",
+          "nazev": "Aktualizovat po změně struktury",
+          "popis": "Po reorganizaci nebo změně pracovišť ihned upravte organizaci BOZP.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "skoleni_vedoucich",
-          "nazev": "Proškolit vedoucí",
-          "popis": "Zajistěte školení vedoucích v jejich povinnostech BOZP.",
+          "nazev": "Proškolit vedoucí v povinnostech",
+          "popis": "Zajistěte školení vedoucích zaměstnanců v jejich BOZP povinnostech.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "prehled_kompetenci",
-          "nazev": "Vytvořit přehled kompetencí",
-          "popis": "Sepište a vyvěste přehled odpovědných osob a jejich kompetencí.",
+          "nazev": "Vyvěsit přehled odpovědných osob",
+          "popis": "Na pracovišti uveďte jména a kompetence osob odpovědných za BOZP.",
           "poradi": 50,
           "aktivni": true
         }
@@ -192,21 +192,21 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Požadavky BOZP na pracovišti.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Organizační a provozní pravidla BOZP na pracovišti.",
+          "popis": "Organizace, dokumentace a provádění BOZP.",
           "poradi": 30,
           "aktivni": true
         },
@@ -223,50 +223,50 @@
     {
       "id": "dokumentace_bozp",
       "nazev": "Dokumentace BOZP",
-      "popis": "Kontrola směrnic, místních předpisů, aktuálnosti, dostupnosti a přehlednosti dokumentace BOZP.",
+      "popis": "Prověrka směrnic, místních předpisů, aktuálnosti, dostupnosti a přehlednosti dokumentace BOZP.",
       "poradi": 20,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte dokumentaci BOZP používanou v kontrolované oblasti.",
+          "text": "Určete dokumentaci BOZP používanou v kontrolované oblasti.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "smernice",
-          "text": "Zkontrolujte existenci a úplnost směrnic BOZP.",
+          "text": "Ověřte existenci a úplnost směrnic BOZP.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "mistni_predpisy",
-          "text": "Ověřte místní předpisy a provozní pokyny.",
+          "text": "Zkontrolujte místní předpisy a provozní pokyny pro pracoviště.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "aktualnost",
-          "text": "Posuďte aktuálnost dokumentace vůči skutečnému provozu.",
+          "text": "Porovnejte dokumentaci s aktuálním stavem provozu a technologie.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "dostupnost",
-          "text": "Zkontrolujte dostupnost dokumentace pro zaměstnance a vedoucí.",
+          "text": "Posuďte dostupnost dokumentace pro zaměstnance a vedoucí.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "prehlednost",
-          "text": "Ověřte přehlednost a srozumitelnost dokumentace.",
+          "text": "Zkontrolujte srozumitelnost a přehledné uspořádání dokumentace.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Ověřte u vedoucího zaměstnance znalost místa uložení dokumentace BOZP.",
+          "text": "Zeptejte se vedoucího, kde je uložena dokumentace BOZP pro pracoviště.",
           "poradi": 70,
           "aktivni": true
         }
@@ -275,7 +275,7 @@
         {
           "id": "smernice",
           "nazev": "Směrnice BOZP existují",
-          "popis": "Jsou k dispozici požadované směrnice BOZP.",
+          "popis": "Požadované směrnice BOZP jsou vydány a k dispozici.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -283,7 +283,7 @@
         {
           "id": "mistni_predpisy",
           "nazev": "Místní předpisy jsou k dispozici",
-          "popis": "Místní předpisy a pokyny jsou zpracovány a dostupné.",
+          "popis": "Místní předpisy a pokyny jsou zpracovány pro kontrolovaná pracoviště.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -291,7 +291,7 @@
         {
           "id": "aktualnost",
           "nazev": "Dokumentace je aktuální",
-          "popis": "Dokumentace odpovídá aktuálnímu stavu provozu.",
+          "popis": "Dokumentace odpovídá aktuálnímu provozu a platným předpisům.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -299,7 +299,7 @@
         {
           "id": "dostupnost",
           "nazev": "Dokumentace je dostupná",
-          "popis": "Zaměstnanci a vedoucí mají přístup k dokumentaci BOZP.",
+          "popis": "Zaměstnanci a vedoucí mají přístup k potřebné dokumentaci BOZP.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -315,52 +315,52 @@
         {
           "id": "prakticka_kontrola",
           "nazev": "Vedoucí zná umístění dokumentace",
-          "popis": "Vedoucí zaměstnanec ví, kde je dokumentace BOZP uložena.",
+          "popis": "Kontrolovaný vedoucí bez prodlení uvede místo uložení dokumentace BOZP.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
         {
           "id": "chybi_smernice",
-          "nazev": "Chybějící směrnice",
-          "popis": "Některé požadované směrnice BOZP chybí.",
+          "nazev": "Chybí směrnice pro rizikovou práci",
+          "popis": "Práce ve výškách probíhají bez vydané směrnice BOZP.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "zastarala_dokumentace",
-          "nazev": "Zastaralá dokumentace",
-          "popis": "Dokumentace nebyla aktualizována po změnách provozu.",
+          "nazev": "Dokumentace po změně linky",
+          "popis": "Po přestavbě pracoviště nebyly aktualizovány místní předpisy.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "nedostupna",
-          "nazev": "Nedostupná dokumentace",
-          "popis": "Dokumentace není zaměstnancům nebo vedoucím dostupná.",
+          "nazev": "Dokumentace jen v kanceláři",
+          "popis": "Operátor u stroje nemá přístup k provozním pokynům BOZP.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nejasna",
-          "nazev": "Nejasná dokumentace",
-          "popis": "Dokumentace je nepřehledná nebo obtížně srozumitelná.",
+          "nazev": "Nepřehledná dokumentace",
+          "popis": "Ve složce BOZP jsou smíchané staré a nové verze bez označení platnosti.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "chybi_mistni_predpisy",
-          "nazev": "Chybí místní předpisy",
-          "popis": "Nejsou zpracovány místní předpisy pro pracoviště.",
+          "nazev": "Chybí místní předpisy pro halu",
+          "popis": "Ve výrobní hale nejsou sepsána pravidla pro pohyb VZV a chodce.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "neurceno_umisteni",
-          "nazev": "Neurčeno umístění",
-          "popis": "Není jasné, kde je dokumentace BOZP uložena.",
+          "nazev": "Neurčeno místo uložení",
+          "popis": "Nikdo na pracovišti přesně neví, kde je aktuální dokumentace BOZP.",
           "poradi": 60,
           "aktivni": true
         }
@@ -368,36 +368,36 @@
       "doporucene_postupy": [
         {
           "id": "pravidelna_aktualizace",
-          "nazev": "Pravidelně aktualizovat dokumentaci",
-          "popis": "Aktualizujte dokumentaci při každé změně provozu nebo předpisů.",
+          "nazev": "Aktualizovat po každé změně provozu",
+          "popis": "Po změně technologie, procesu nebo předpisů revidujte dokumentaci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "centralni_uloziste",
-          "nazev": "Určit místo uložení",
-          "popis": "Stanovte a označte místo pro uložení dokumentace BOZP.",
+          "nazev": "Určit a označit místo uložení",
+          "popis": "Stanovte jedno místo pro aktuální dokumentaci a uveďte ho na pracovišti.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "prehled_dokumentu",
-          "nazev": "Vést seznam dokumentů",
-          "popis": "Udržujte aktuální seznam platné dokumentace BOZP.",
+          "nazev": "Vést seznam platné dokumentace",
+          "popis": "Udržujte rejstřík dokumentů s datem vydání a odpovědnou osobou.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "zpristupnit",
-          "nazev": "Zajistit dostupnost",
-          "popis": "Zajistěte, aby dokumentace byla dostupná všem dotčeným osobám.",
+          "nazev": "Zpřístupnit dokumentaci na pracovišti",
+          "popis": "Aktuální verze ať jsou na nástěnce, ve sdílené složce nebo v tabletu u místa.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "revize_dokumentace",
-          "nazev": "Provádět revize dokumentů",
-          "popis": "Pravidelně revidujte platnost a úplnost dokumentace.",
+          "nazev": "Ročně revidovat úplnost dokumentace",
+          "popis": "Porovnejte seznam dokumentů s požadavky pro kontrolovanou oblast.",
           "poradi": 50,
           "aktivni": true
         }
@@ -406,21 +406,21 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Požadavky BOZP na pracovišti.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Organizační a provozní pravidla BOZP na pracovišti.",
+          "popis": "Organizace, dokumentace a provádění BOZP.",
           "poradi": 30,
           "aktivni": true
         },
@@ -437,50 +437,50 @@
     {
       "id": "skoleni_zamestnancu",
       "nazev": "Školení zaměstnanců",
-      "popis": "Kontrola vstupního a opakovaného školení, školení vedoucích a vedení záznamů o proškolení.",
+      "popis": "Prověrka vstupního a opakovaného školení, školení vedoucích a vedení záznamů o proškolení.",
       "poradi": 30,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte zaměstnance a činnosti vyžadující školení BOZP.",
+          "text": "Určete zaměstnance a činnosti vyžadující školení BOZP v oblasti.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "vstupni_skoleni",
-          "text": "Zkontrolujte absolvování vstupního školení BOZP.",
+          "text": "Ověřte absolvování vstupního školení BOZP u nových zaměstnanců.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "opakovana_skoleni",
-          "text": "Ověřte plnění termínů opakovaných školení.",
+          "text": "Zkontrolujte termíny opakovaných školení u zaměstnanců v provozu.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "skoleni_vedoucich",
-          "text": "Posuďte školení vedoucích zaměstnanců.",
+          "text": "Posuďte absolvování školení vedoucích zaměstnanců.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "zaznamy",
-          "text": "Zkontrolujte vedení záznamů o proškolení.",
+          "text": "Porovnejte evidenci proškolení s aktuálním personálem.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "obsah_skoleni",
-          "text": "Ověřte obsah a přiměřenost školení vzhledem k rizikům.",
+          "text": "Ověřte, zda obsah školení odpovídá rizikům vykonávané práce.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Namátkově ověřte, zda zaměstnanec ví, jak postupovat při mimořádné události.",
+          "text": "Namátkově ověřte znalost postupu při mimořádné události.",
           "poradi": 70,
           "aktivni": true
         }
@@ -489,7 +489,7 @@
         {
           "id": "vstupni_skoleni",
           "nazev": "Vstupní školení absolvováno",
-          "popis": "Všichni noví zaměstnanci absolvovali vstupní školení.",
+          "popis": "Všichni noví zaměstnanci absolvovali vstupní školení před započetím práce.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -497,7 +497,7 @@
         {
           "id": "opakovana_skoleni",
           "nazev": "Opakovaná školení jsou aktuální",
-          "popis": "Opakovaná školení probíhají v požadovaných intervalech.",
+          "popis": "Opakovaná školení proběhla v požadovaných intervalech.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -505,7 +505,7 @@
         {
           "id": "skoleni_vedoucich",
           "nazev": "Vedoucí jsou proškoleni",
-          "popis": "Vedoucí zaměstnanci absolvovali školení BOZP.",
+          "popis": "Vedoucí zaměstnanci absolvovali školení BOZP v požadovaném rozsahu.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -513,7 +513,7 @@
         {
           "id": "zaznamy",
           "nazev": "Záznamy o školení existují",
-          "popis": "Evidence proškolení je vedena a aktuální.",
+          "popis": "Evidence proškolení je vedena a odpovídá aktuálnímu personálu.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -521,7 +521,7 @@
         {
           "id": "obsah_skoleni",
           "nazev": "Obsah školení odpovídá rizikům",
-          "popis": "Školení pokrývá rizika spojená s prací.",
+          "popis": "Školení pokrývá rizika spojená s prací v kontrolované oblasti.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -529,7 +529,7 @@
         {
           "id": "prakticka_kontrola",
           "nazev": "Znalost postupu při mimořádné události",
-          "popis": "Namátkově oslovený zaměstnanec ví, jak postupovat při mimořádné události.",
+          "popis": "Namátkově oslovený zaměstnanec popíše postup při mimořádné události.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -538,43 +538,43 @@
       "typicke_zavady": [
         {
           "id": "neabsolvovane_vstupni",
-          "nazev": "Neabsolvované vstupní školení",
-          "popis": "Někteří zaměstnanci neabsolvovali vstupní školení.",
+          "nazev": "Nový zaměstnanec bez vstupního školení",
+          "popis": "Zaměstnanec pracuje v provozu týden, ale nemá záznam o vstupním BOZP.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "propadla_opakovana",
-          "nazev": "Propadlá opakovaná školení",
-          "popis": "Opakovaná školení neproběhla v termínu.",
+          "nazev": "Propadlé periodické školení",
+          "popis": "Operátor stroje nemá aktuální opakované školení BOZP.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "neproskoleni_vedouci",
-          "nazev": "Neproškolení vedoucí",
-          "popis": "Vedoucí neabsolvovali požadovaná školení.",
+          "nazev": "Vedoucí bez školení BOZP",
+          "popis": "Mistr směny neabsolvoval školení vedoucích zaměstnanců.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "chybi_zaznamy",
-          "nazev": "Chybějící záznamy",
-          "popis": "Evidence proškolení není vedena nebo je neúplná.",
+          "nazev": "Chybí podpis o proškolení",
+          "popis": "Po školení není v evidenci podpis nebo potvrzení zaměstnance.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "formalni_skoleni",
-          "nazev": "Formální školení bez obsahu",
-          "popis": "Školení neodpovídá skutečným rizikům práce.",
+          "nazev": "Obecné školení bez rizik práce",
+          "popis": "Školení neobsahuje rizika specifická pro práci v kontrolované oblasti.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "neznalost_postupu",
-          "nazev": "Neznalost postupu při události",
-          "popis": "Zaměstnanci neznají postup při mimořádné události.",
+          "nazev": "Neznalost evakuačního postupu",
+          "popis": "Zaměstnanec neví, kam se hlásit a komu oznámit mimořádnou událost.",
           "poradi": 60,
           "aktivni": true
         }
@@ -582,36 +582,36 @@
       "doporucene_postupy": [
         {
           "id": "plan_skoleni",
-          "nazev": "Vytvořit plán školení",
-          "popis": "Zpracujte plán vstupních a opakovaných školení BOZP.",
+          "nazev": "Zpracovat plán školení BOZP",
+          "popis": "V plánu uveďte typy školení, intervaly a odpovědné osoby.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "evidence_skoleni",
-          "nazev": "Vést evidenci proškolení",
-          "popis": "Evidence školení včetně termínů a účastníků.",
+          "nazev": "Vést evidenci s termíny",
+          "popis": "Ke každému zaměstnanci zaznamenejte datum školení a příští termín.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "skoleni_vedoucich",
-          "nazev": "Zajistit školení vedoucích",
-          "popis": "Pravidelně proškolujte vedoucí v povinnostech BOZP.",
+          "nazev": "Pravidelně proškolovat vedoucí",
+          "popis": "Vedoucí proškolujte v povinnostech BOZP v intervalu dle směrnice.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "overovani_znalosti",
-          "nazev": "Ověřovat znalosti",
-          "popis": "Namátkově ověřujte znalosti zaměstnanců.",
+          "nazev": "Namátkově ověřovat znalosti",
+          "popis": "Při prověrce se ptejte na postupy a rizika spojená s prací.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "aktualizace_obsahu",
-          "nazev": "Aktualizovat obsah školení",
-          "popis": "Upravujte obsah školení podle změn rizik a provozu.",
+          "nazev": "Upravit obsah po změně rizik",
+          "popis": "Po změně provozu nebo technologie aktualizujte materiály školení.",
           "poradi": 50,
           "aktivni": true
         }
@@ -620,21 +620,21 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Požadavky BOZP na pracovišti.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Organizační a provozní pravidla BOZP na pracovišti.",
+          "popis": "Organizace, dokumentace a provádění BOZP.",
           "poradi": 30,
           "aktivni": true
         },
@@ -651,50 +651,50 @@
     {
       "id": "pracovni_urazy_mimo",
       "nazev": "Pracovní úrazy a mimořádné události",
-      "popis": "Kontrola evidence úrazů, šetření, nápravných opatření a hlášení pracovních úrazů a mimořádných událostí.",
+      "popis": "Prověrka evidence úrazů, šetření, nápravných opatření a hlášení pracovních úrazů a mimořádných událostí.",
       "poradi": 40,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte postupy a evidence týkající se pracovních úrazů v kontrolované oblasti.",
+          "text": "Určete postupy a evidence týkající se pracovních úrazů v oblasti.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "evidence_urazu",
-          "text": "Zkontrolujte evidenci pracovních úrazů a mimořádných událostí.",
+          "text": "Ověřte vedení evidence pracovních úrazů a mimořádných událostí.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "setreni",
-          "text": "Ověřte provádění šetření úrazů a událostí.",
+          "text": "Zkontrolujte provádění šetření příčin úrazů a událostí.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "napravna_opatreni",
-          "text": "Posuďte zavádění a plnění nápravných opatření.",
+          "text": "Posuďte zavádění a plnění nápravných opatření z úrazů.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "hlaseni",
-          "text": "Zkontrolujte hlášení úrazů příslušným orgánům.",
+          "text": "Ověřte včasné hlášení úrazů příslušným orgánům.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "postupy",
-          "text": "Ověřte existenci a znalost postupů při úrazu.",
+          "text": "Zkontrolujte existenci a dostupnost postupů při pracovním úrazu.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Ověřte u vedoucího zaměstnance znalost postupu při pracovním úrazu.",
+          "text": "Zeptejte se vedoucího na postup při pracovním úrazu na pracovišti.",
           "poradi": 70,
           "aktivni": true
         }
@@ -703,7 +703,7 @@
         {
           "id": "evidence_urazu",
           "nazev": "Evidence úrazů je vedena",
-          "popis": "Pracovní úrazy a mimořádné události jsou evidovány.",
+          "popis": "Pracovní úrazy a mimořádné události jsou systematicky evidovány.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -711,7 +711,7 @@
         {
           "id": "setreni",
           "nazev": "Úrazy jsou šetřeny",
-          "popis": "Při úrazech a událostech probíhá šetření příčin.",
+          "popis": "Při úrazech a událostech probíhá šetření příčin a okolností.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -719,7 +719,7 @@
         {
           "id": "napravna_opatreni",
           "nazev": "Nápravná opatření jsou plněna",
-          "popis": "Z úrazů vyplývající opatření jsou zaváděna.",
+          "popis": "Opatření zjištěná při šetření jsou zaváděna v určených termínech.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -727,7 +727,7 @@
         {
           "id": "hlaseni",
           "nazev": "Hlášení probíhá včas",
-          "popis": "Úrazy jsou hlášeny v požadovaných lhůtách.",
+          "popis": "Úrazy jsou hlášeny v zákonných lhůtách příslušným orgánům.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -735,7 +735,7 @@
         {
           "id": "postupy",
           "nazev": "Postupy existují",
-          "popis": "Jsou k dispozici postupy pro řešení pracovních úrazů.",
+          "popis": "Písemný postup pro řešení pracovního úrazu je k dispozici.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -743,7 +743,7 @@
         {
           "id": "prakticka_kontrola",
           "nazev": "Vedoucí zná postup při úrazu",
-          "popis": "Vedoucí zaměstnanec zná postup při pracovním úrazu.",
+          "popis": "Kontrolovaný vedoucí popíše první kroky při pracovním úrazu.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -752,43 +752,43 @@
       "typicke_zavady": [
         {
           "id": "neevidovane_urazy",
-          "nazev": "Neevidované úrazy",
-          "popis": "Některé pracovní úrazy nejsou evidovány.",
+          "nazev": "Úraz bez zápisu v evidenci",
+          "popis": "Zaměstnanec byl ošetřen na pracovišti, ale úraz nebyl zapsán.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "bez_setreni",
-          "nazev": "Bez šetření příčin",
-          "popis": "Úrazy nejsou řádně šetřeny.",
+          "nazev": "Úraz bez šetření příčin",
+          "popis": "Po nehodě nebylo provedeno šetření a nebyla určena opatření.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "neplnena_opatreni",
-          "nazev": "Neplněná nápravná opatření",
-          "popis": "Opatření z úrazů nejsou realizována.",
+          "nazev": "Opatření z úrazu neprovedeno",
+          "popis": "Po úrazu bylo navrženo zabezpečení stroje, ale dosud není zavedeno.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "pozdni_hlaseni",
-          "nazev": "Pozdní hlášení",
-          "popis": "Úrazy nejsou hlášeny včas.",
+          "nazev": "Pozdní hlášení úrazu",
+          "popis": "Závažný úraz nebyl nahlášen v požadované lhůtě.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "chybi_postup",
-          "nazev": "Chybí postup při úrazu",
-          "popis": "Neexistuje písemný postup pro řešení pracovního úrazu.",
+          "nazev": "Chybí postup pro první pomoc",
+          "popis": "Na pracovišti není vyvěšen postup při pracovním úrazu.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "neznalost_vedouciho",
-          "nazev": "Neznalost postupu vedoucího",
-          "popis": "Vedoucí neznají postup při pracovním úrazu.",
+          "nazev": "Vedoucí nezná hlášení úrazu",
+          "popis": "Mistr neví, komu a v jaké lhůtě hlásit pracovní úraz.",
           "poradi": 60,
           "aktivni": true
         }
@@ -796,36 +796,36 @@
       "doporucene_postupy": [
         {
           "id": "evidence",
-          "nazev": "Vést evidenci úrazů",
-          "popis": "Evidence všech pracovních úrazů a mimořádných událostí.",
+          "nazev": "Vést knihu úrazů a událostí",
+          "popis": "Každý úraz a mimořádnou událost zaznamenejte s datem a popisem.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "setreni",
-          "nazev": "Provádět šetření",
-          "popis": "Vždy provádějte šetření příčin úrazů a událostí.",
+          "nazev": "Provádět šetření u každého úrazu",
+          "popis": "U každého úrazu určete příčinu a navrhněte opatření k prevenci.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "naprava",
-          "nazev": "Plnit nápravná opatření",
-          "popis": "Sledujte plnění opatření zjištěných při šetření.",
+          "nazev": "Sledovat plnění opatření z úrazů",
+          "popis": "Opatření z šetření zapište do plánu s termínem a odpovědným.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "skoleni_postupu",
           "nazev": "Proškolit postup při úrazu",
-          "popis": "Seznamte vedoucí a zaměstnance s postupem při úrazu.",
+          "popis": "Vedoucí a zaměstnance seznamte s postupem první pomoci a hlášením.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "analyza_trendu",
-          "nazev": "Analyzovat trendy úrazovosti",
-          "popis": "Pravidelně vyhodnocujte úrazovost a přijímejte opatření.",
+          "nazev": "Vyhodnocovat úrazovost čtvrtletně",
+          "popis": "Sledujte opakující se příčiny a přijímejte systematická opatření.",
           "poradi": 50,
           "aktivni": true
         }
@@ -834,21 +834,21 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Požadavky BOZP na pracovišti.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Organizační a provozní pravidla BOZP na pracovišti.",
+          "popis": "Organizace, dokumentace a provádění BOZP.",
           "poradi": 30,
           "aktivni": true
         },
@@ -865,50 +865,50 @@
     {
       "id": "rizika_hodnoceni",
       "nazev": "Rizika a hodnocení rizik",
-      "popis": "Kontrola zpracování rizik, aktualizace, seznámení zaměstnanců a návaznosti na OOPP.",
+      "popis": "Prověrka zpracování rizik, aktualizace, seznámení zaměstnanců a návaznosti na OOPP.",
       "poradi": 50,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte činnosti a pracoviště vyžadující hodnocení rizik.",
+          "text": "Určete pracoviště a činnosti vyžadující hodnocení rizik.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "zpracovani_rizik",
-          "text": "Zkontrolujte zpracování hodnocení rizik pro pracoviště a činnosti.",
+          "text": "Ověřte zpracování hodnocení rizik pro dotčená pracoviště.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "aktualizace",
-          "text": "Ověřte aktuálnost hodnocení rizik.",
+          "text": "Porovnejte hodnocení rizik s aktuálním stavem provozu.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "seznameni",
-          "text": "Posuďte seznámení zaměstnanců s riziky.",
+          "text": "Posuďte seznámení zaměstnanců s riziky jejich práce.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "navaznost_oopp",
-          "text": "Zkontrolujte návaznost hodnocení rizik na přidělování OOPP.",
+          "text": "Zkontrolujte soulad hodnocení rizik s přidělenými OOPP.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "opatreni",
-          "text": "Ověřte zavádění opatření z hodnocení rizik.",
+          "text": "Ověřte zavádění opatření navržených z hodnocení rizik.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Namátkově ověřte, zda zaměstnanec zná hlavní rizika své práce.",
+          "text": "Namátkově ověřte znalost hlavních rizik u zaměstnance.",
           "poradi": 70,
           "aktivni": true
         }
@@ -917,23 +917,23 @@
         {
           "id": "zpracovani_rizik",
           "nazev": "Rizika jsou hodnocena",
-          "popis": "Hodnocení rizik je zpracováno pro dotčená pracoviště.",
+          "popis": "Hodnocení rizik je zpracováno pro pracoviště a činnosti v oblasti.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "aktualizace",
           "nazev": "Hodnocení je aktuální",
-          "popis": "Hodnocení rizik odpovídá aktuálnímu stavu.",
+          "popis": "Hodnocení rizik odpovídá aktuálnímu provozu a technologii.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "seznameni",
           "nazev": "Zaměstnanci jsou seznámeni",
-          "popis": "Zaměstnanci byli seznámeni s riziky své práce.",
+          "popis": "Zaměstnanci byli seznámeni s riziky své práce a opatřeními.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -941,7 +941,7 @@
         {
           "id": "navaznost_oopp",
           "nazev": "Návaznost na OOPP",
-          "popis": "Z rizik vyplývající OOPP jsou určeny a přiděleny.",
+          "popis": "Přidělené OOPP odpovídají rizikům uvedeným v hodnocení.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -949,15 +949,15 @@
         {
           "id": "opatreni",
           "nazev": "Opatření jsou zaváděna",
-          "popis": "Z hodnocení rizik vyplývající opatření jsou realizována.",
+          "popis": "Opatření z hodnocení rizik jsou realizována nebo mají stanovený termín.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Znalost hlavních rizik",
-          "popis": "Zaměstnanci znají hlavní rizika své práce.",
+          "popis": "Namátkově oslovený zaměstnanec uvede hlavní rizika své práce.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -966,43 +966,43 @@
       "typicke_zavady": [
         {
           "id": "chybi_hodnoceni",
-          "nazev": "Chybí hodnocení rizik",
-          "popis": "Hodnocení rizik není zpracováno nebo je neúplné.",
+          "nazev": "Chybí hodnocení pro nové pracoviště",
+          "popis": "Po zřízení nového stanoviště nebylo doplněno hodnocení rizik.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "zastarale",
-          "nazev": "Zastaralé hodnocení",
-          "popis": "Hodnocení rizik nebylo aktualizováno po změnách.",
+          "nazev": "Hodnocení po přestavbě linky",
+          "popis": "Po změně layoutu nebylo aktualizováno hodnocení rizik.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "neinformovani",
-          "nazev": "Neinformovaní zaměstnanci",
-          "popis": "Zaměstnanci nebyli seznámeni s riziky.",
+          "nazev": "Chybí podpis o seznámení",
+          "popis": "Zaměstnanec pracuje u stroje, ale nemá potvrzení o seznámení s riziky.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nesoulad_oopp",
-          "nazev": "Nesoulad s OOPP",
-          "popis": "OOPP neodpovídají hodnoceným rizikům.",
+          "nazev": "OOPP neodpovídá riziku",
+          "popis": "U rizika hluku chybí přidělené chrániče sluchu.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "neplnena_opatreni",
-          "nazev": "Neplněná opatření",
-          "popis": "Opatření z hodnocení rizik nejsou zaváděna.",
+          "nazev": "Ochranný kryt dosud chybí",
+          "popis": "Opatření z hodnocení rizik není po termínu stále provedeno.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "neznalost_rizik",
-          "nazev": "Neznalost rizik",
-          "popis": "Zaměstnanci neznají hlavní rizika své práce.",
+          "nazev": "Operátor nezná rizika práce",
+          "popis": "Zaměstnanec neumí popsat hlavní nebezpečí své činnosti.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1010,36 +1010,36 @@
       "doporucene_postupy": [
         {
           "id": "pravidelna_aktualizace",
-          "nazev": "Pravidelně aktualizovat rizika",
-          "popis": "Aktualizujte hodnocení rizik při změnách provozu.",
+          "nazev": "Aktualizovat rizika po každé změně",
+          "popis": "Po změně provozu, technologie nebo organizace práce revidujte hodnocení.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "seznamovat",
-          "nazev": "Seznamovat zaměstnance",
-          "popis": "Pravidelně seznamujte zaměstnance s riziky a opatřeními.",
+          "nazev": "Seznamovat a nechat podepsat",
+          "popis": "Po každé aktualizaci proveďte seznámení se seznamem podpisů.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "propojit_oopp",
-          "nazev": "Propojit s OOPP",
-          "popis": "Zajistěte návaznost mezi riziky a přidělováním OOPP.",
+          "nazev": "Propojit tabulku rizik s OOPP",
+          "popis": "Ke každému riziku uveďte požadované OOPP a odpovědného za přidělení.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "realizovat_opatreni",
-          "nazev": "Realizovat opatření",
-          "popis": "Sledujte plnění opatření z hodnocení rizik.",
+          "nazev": "Zapsat opatření do plánu",
+          "popis": "Ke každému opatření určete termín, odpovědného a stav plnění.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "revize_rizik",
-          "nazev": "Provádět revize",
-          "popis": "Pravidelně revidujte platnost hodnocení rizik.",
+          "nazev": "Ročně porovnat s provozem",
+          "popis": "Jednou ročně ověřte na místě soulad hodnocení se skutečností.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1048,21 +1048,21 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Požadavky BOZP na pracovišti.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Organizační a provozní pravidla BOZP na pracovišti.",
+          "popis": "Organizace, dokumentace a provádění BOZP.",
           "poradi": 30,
           "aktivni": true
         },
@@ -1079,26 +1079,26 @@
     {
       "id": "kontroly_audity_naprava",
       "nazev": "Kontroly, audity a nápravná opatření",
-      "popis": "Kontrola pravidelnosti kontrol, plnění opatření, evidence závad a dodržování termínů.",
+      "popis": "Prověrka pravidelnosti kontrol, plnění opatření, evidence závad a dodržování termínů.",
       "poradi": 60,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte kontrolní a auditní aktivity v oblasti BOZP.",
+          "text": "Určete kontrolní a auditní aktivity BOZP v kontrolované oblasti.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "pravidelnost",
-          "text": "Zkontrolujte pravidelnost provádění kontrol a auditů BOZP.",
+          "text": "Ověřte plnění plánu pravidelných kontrol a auditů BOZP.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "plneni_opatreni",
-          "text": "Ověřte plnění nápravných opatření z kontrol a auditů.",
+          "text": "Zkontrolujte stav nápravných opatření z předchozích kontrol.",
           "poradi": 30,
           "aktivni": true
         },
@@ -1110,19 +1110,19 @@
         },
         {
           "id": "terminy",
-          "text": "Zkontrolujte dodržování termínů odstranění závad.",
+          "text": "Porovnejte termíny odstranění závad se skutečným stavem.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "sledovani",
-          "text": "Ověřte sledování stavu otevřených zjištění.",
+          "text": "Ověřte sledování otevřených zjištění a určení odpovědných.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda dříve zjištěné závady jsou odstraněny nebo je doložen jejich stav.",
+          "text": "Na místě ověřte, zda dříve zjištěné závady jsou odstraněny nebo doloženy.",
           "poradi": 70,
           "aktivni": true
         }
@@ -1131,7 +1131,7 @@
         {
           "id": "pravidelnost",
           "nazev": "Kontroly probíhají pravidelně",
-          "popis": "Kontroly a audity BOZP jsou prováděny v plánovaných intervalech.",
+          "popis": "Kontroly a audity BOZP jsou prováděny dle schváleného plánu.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1139,7 +1139,7 @@
         {
           "id": "plneni_opatreni",
           "nazev": "Opatření jsou plněna",
-          "popis": "Nápravná opatření jsou realizována.",
+          "popis": "Nápravná opatření z kontrol jsou realizována v určených termínech.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -1147,7 +1147,7 @@
         {
           "id": "evidence_zavad",
           "nazev": "Evidence závad existuje",
-          "popis": "Zjištěné závady jsou evidovány.",
+          "popis": "Zjištěné závady jsou evidovány s popisem, termínem a odpovědností.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1155,7 +1155,7 @@
         {
           "id": "terminy",
           "nazev": "Termíny jsou dodržovány",
-          "popis": "Závady jsou odstraňovány v stanovených termínech.",
+          "popis": "Závady jsou odstraňovány ve stanovených termínech nebo je doložen důvod prodlení.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1163,7 +1163,7 @@
         {
           "id": "sledovani",
           "nazev": "Stav zjištění je sledován",
-          "popis": "Otevřená zjištění mají určený stav a odpovědnost.",
+          "popis": "Otevřená zjištění mají určený stav, odpovědného a termín.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1171,7 +1171,7 @@
         {
           "id": "prakticka_kontrola",
           "nazev": "Závady jsou vyřešeny nebo doloženy",
-          "popis": "Dříve zjištěné závady jsou odstraněny nebo je doložen jejich stav.",
+          "popis": "Dříve zjištěné závady jsou na místě odstraněny nebo je doložen jejich stav.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -1180,43 +1180,43 @@
       "typicke_zavady": [
         {
           "id": "neprovadene_kontroly",
-          "nazev": "Neprováděné kontroly",
-          "popis": "Plánované kontroly neprobíhají.",
+          "nazev": "Plán kontrol neplněn",
+          "popis": "Čtvrtletní kontrola pracoviště v plánu chybí, ač provoz běží.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "neplnena_opatreni",
-          "nazev": "Neplněná opatření",
-          "popis": "Nápravná opatření zůstávají neplněna.",
+          "nazev": "Opatření otevřené roky",
+          "popis": "Závada z minulé kontroly stále není odstraněna bez doloženého důvodu.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "bez_evidence",
-          "nazev": "Chybí evidence závad",
-          "popis": "Závady nejsou systematicky evidovány.",
+          "nazev": "Závady jen v e-mailu",
+          "popis": "Zjištění z kontrol nejsou vedena v evidenci se stavem a termínem.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "prekrocene_terminy",
-          "nazev": "Překročené termíny",
-          "popis": "Termíny odstranění závad nejsou dodržovány.",
+          "nazev": "Termín nápravy překročen",
+          "popis": "Opatření mělo být splněno před měsícem, stav se neaktualizuje.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "opakovane_zavady",
-          "nazev": "Opakující se závady",
-          "popis": "Stejné závady se opakovaně zjišťují.",
+          "nazev": "Stejná závada opakovaně",
+          "popis": "Chybějící kryt stroje se objevuje v každé kontrole bez trvalé nápravy.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "bez_navrhu",
-          "nazev": "Bez návrhu opatření",
-          "popis": "Ke zjištěným závadám nejsou navrhnuta opatření.",
+          "nazev": "Závada bez návrhu opatření",
+          "popis": "V protokolu je závada, ale chybí určení odpovědného a termínu.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1224,36 +1224,36 @@
       "doporucene_postupy": [
         {
           "id": "plan_kontrol",
-          "nazev": "Plánovat kontroly",
-          "popis": "Zpracujte plán pravidelných kontrol a auditů BOZP.",
+          "nazev": "Schválit roční plán kontrol",
+          "popis": "V plánu uveďte oblast, periodicitu, odpovědného a formu záznamu.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "evidence",
-          "nazev": "Vést evidenci závad",
-          "popis": "Evidence zjištěných závad včetně termínů a odpovědností.",
+          "nazev": "Vést evidenci závad s termíny",
+          "popis": "Ke každé závadě zapište popis, odpovědného, termín a stav plnění.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "sledovat_plneni",
-          "nazev": "Sledovat plnění opatření",
-          "popis": "Pravidelně kontrolujte stav nápravných opatření.",
+          "nazev": "Kontrolovat otevřená opatření měsíčně",
+          "popis": "Pravidelně projděte neuzavřená zjištění a aktualizujte stav.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "prioritizovat",
-          "nazev": "Prioritizovat závady",
-          "popis": "Stanovte priority a termíny pro odstranění závad.",
+          "nazev": "Prioritizovat závady podle rizika",
+          "popis": "Závady s vysokým rizikem řešte přednostně s kratším termínem.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "vyhodnocovat",
-          "nazev": "Vyhodnocovat kontroly",
-          "popis": "Pravidelně vyhodnocujte výsledky kontrol a auditů.",
+          "nazev": "Vyhodnocovat opakující se závady",
+          "popis": "Analyzujte opakovaná zjištění a přijměte systematická opatření.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1262,29 +1262,22 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Požadavky BOZP na pracovišti.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Organizační a provozní pravidla BOZP na pracovišti.",
+          "popis": "Organizace, dokumentace a provádění BOZP.",
           "poradi": 30,
-          "aktivni": true
-        },
-        {
-          "id": "interni_audit",
-          "nazev": "Interní směrnice pro kontroly",
-          "popis": "Pravidla pro provádění kontrol, auditů a nápravných opatření.",
-          "poradi": 40,
           "aktivni": true
         }
       ],
@@ -1293,50 +1286,50 @@
     {
       "id": "pracovnelekarske_sluzby",
       "nazev": "Pracovnělékařské služby",
-      "popis": "Kontrola vstupních, periodických a mimořádných prohlídek a evidence pracovnělékařských služeb.",
+      "popis": "Prověrka vstupních, periodických a mimořádných prohlídek a evidence pracovnělékařských služeb.",
       "poradi": 70,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte zaměstnance a rizika vyžadující pracovnělékařské služby.",
+          "text": "Určete zaměstnance a rizika vyžadující pracovnělékařské služby.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "vstupni_prohlidky",
-          "text": "Zkontrolujte absolvování vstupních prohlídek.",
+          "text": "Ověřte absolvování vstupních prohlídek před zařazením k práci.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "periodicke_prohlidky",
-          "text": "Ověřte plnění termínů periodických prohlídek.",
+          "text": "Zkontrolujte termíny periodických prohlídek u zaměstnanců v provozu.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "mimoradne_prohlidky",
-          "text": "Posuďte provádění mimořádných prohlídek.",
+          "text": "Posuďte provádění mimořádných prohlídek při změně rizik.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "evidence",
-          "text": "Zkontrolujte evidenci pracovnělékařských služeb.",
+          "text": "Porovnejte evidenci PLS s aktuálním personálem a pracovišti.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "posouzeni_zpusobilosti",
-          "text": "Ověřte posouzení zdravotní způsobilosti k práci.",
+          "text": "Ověřte posouzení zdravotní způsobilosti před zařazením k rizikové práci.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda zaměstnanci mají platné pracovnělékařské prohlídky.",
+          "text": "U vybraného zaměstnance ověřte platnost pracovnělékařské prohlídky.",
           "poradi": 70,
           "aktivni": true
         }
@@ -1345,7 +1338,7 @@
         {
           "id": "vstupni_prohlidky",
           "nazev": "Vstupní prohlídky absolvovány",
-          "popis": "Noví zaměstnanci absolvovali vstupní prohlídku.",
+          "popis": "Noví zaměstnanci absolvovali vstupní prohlídku před započetím práce.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -1353,7 +1346,7 @@
         {
           "id": "periodicke_prohlidky",
           "nazev": "Periodické prohlídky jsou aktuální",
-          "popis": "Periodické prohlídky probíhají v požadovaných intervalech.",
+          "popis": "Periodické prohlídky proběhly v požadovaných intervalech.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -1361,7 +1354,7 @@
         {
           "id": "mimoradne_prohlidky",
           "nazev": "Mimořádné prohlídky jsou zajištěny",
-          "popis": "Mimořádné prohlídky probíhají dle potřeby.",
+          "popis": "Mimořádné prohlídky probíhají při změně rizik nebo zdravotního stavu.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -1369,7 +1362,7 @@
         {
           "id": "evidence",
           "nazev": "Evidence je vedena",
-          "popis": "Pracovnělékařské služby jsou evidovány.",
+          "popis": "Pracovnělékařské služby jsou evidovány včetně termínů a výsledků.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1377,7 +1370,7 @@
         {
           "id": "posouzeni_zpusobilosti",
           "nazev": "Způsobilost je posouzena",
-          "popis": "Zdravotní způsobilost je posuzována před zařazením k práci.",
+          "popis": "Zdravotní způsobilost je posouzena před zařazením k rizikové práci.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -1385,7 +1378,7 @@
         {
           "id": "prakticka_kontrola",
           "nazev": "Platné pracovnělékařské prohlídky",
-          "popis": "Zaměstnanci mají platné pracovnělékařské prohlídky.",
+          "popis": "Kontrolovaný zaměstnanec má platnou prohlídku odpovídající rizikům práce.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -1394,43 +1387,43 @@
       "typicke_zavady": [
         {
           "id": "chybi_vstupni",
-          "nazev": "Chybějící vstupní prohlídky",
-          "popis": "Někteří zaměstnanci neabsolvovali vstupní prohlídku.",
+          "nazev": "Práce bez vstupní prohlídky",
+          "popis": "Zaměstnanec pracuje u hlučného stroje bez dokladu o vstupní prohlídce.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "propadle_periodicke",
-          "nazev": "Propadlé periodické prohlídky",
-          "popis": "Periodické prohlídky neproběhly v termínu.",
+          "nazev": "Propadlá periodická prohlídka",
+          "popis": "Operátor s rizikem chemických látek nemá aktuální periodickou prohlídku.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "bez_mimoradnych",
-          "nazev": "Chybí mimořádné prohlídky",
-          "popis": "Mimořádné prohlídky nebyly provedeny při změně rizik.",
+          "nazev": "Změna práce bez prohlídky",
+          "popis": "Po převedení na rizikovou práci nebyla provedena mimořádná prohlídka.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "neuplna_evidence",
-          "nazev": "Neúplná evidence",
-          "popis": "Evidence pracovnělékařských služeb není vedena.",
+          "nazev": "Evidence neodpovídá personálu",
+          "popis": "Nový zaměstnanec chybí v seznamu prohlídek PLS.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "prace_bez_posouzeni",
-          "nazev": "Práce bez posouzení",
-          "popis": "Zaměstnanec vykonává práci bez posouzení způsobilosti.",
+          "nazev": "Práce ve výškách bez posouzení",
+          "popis": "Zaměstnanec vykonává práce ve výškách bez posouzení způsobilosti.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "nesoulad_rizik",
-          "nazev": "Nesoulad s riziky",
-          "popis": "Rozsah prohlídek neodpovídá rizikům práce.",
+          "nazev": "Rozsah prohlídky neodpovídá",
+          "popis": "U práce s karcinogeny chybí prohlídka v požadovaném rozsahu.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1438,36 +1431,36 @@
       "doporucene_postupy": [
         {
           "id": "plan_prohlidek",
-          "nazev": "Plánovat prohlídky",
-          "popis": "Zpracujte plán vstupních a periodických prohlídek.",
+          "nazev": "Zpracovat plán prohlídek PLS",
+          "popis": "Ke každému pracovišti určete typ, interval a kategorii prohlídek.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "evidence_pls",
-          "nazev": "Vést evidenci PLS",
-          "popis": "Evidence prohlídek a posouzení zdravotní způsobilosti.",
+          "nazev": "Vést evidenci s termíny",
+          "popis": "Ke každému zaměstnanci zaznamenejte datum prohlídky a příští termín.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "sledovat_terminy",
-          "nazev": "Sledovat termíny",
-          "popis": "Pravidelně kontrolujte platnost prohlídek.",
+          "nazev": "Hlídat termíny 60 dní předem",
+          "popis": "Měsíčně projděte zaměstnance s prohlídkou končící do dvou měsíců.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "mimoradne",
-          "nazev": "Zajišťovat mimořádné prohlídky",
-          "popis": "Zajistěte mimořádné prohlídky při změně rizik nebo zdravotního stavu.",
+          "nazev": "Objednat mimořádnou prohlídku včas",
+          "popis": "Při změně rizik nebo zdravotního stavu ihned domluvte prohlídku.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "spoluprace_pls",
-          "nazev": "Spolupracovat s PLS",
-          "popis": "Udržujte pravidelnou spolupráci s poskytovatelem pracovnělékařských služeb.",
+          "nazev": "Koordinovat s poskytovatelem PLS",
+          "popis": "Pravidelně předávejte PLS aktuální přehled rizik a pracovišť.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1476,21 +1469,21 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Požadavky BOZP na pracovišti.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Organizační a provozní pravidla BOZP na pracovišti.",
+          "popis": "Organizace, dokumentace a provádění BOZP.",
           "poradi": 30,
           "aktivni": true
         },
@@ -1507,50 +1500,50 @@
     {
       "id": "informovanost_zamestnancu",
       "nazev": "Informovanost zaměstnanců",
-      "popis": "Kontrola dostupnosti informací, bezpečnostních pokynů, kontaktů a oznámení pro zaměstnance.",
+      "popis": "Prověrka dostupnosti informací, bezpečnostních pokynů, kontaktů a oznámení pro zaměstnance.",
       "poradi": 80,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte způsoby informování zaměstnanců v oblasti BOZP.",
+          "text": "Určete způsoby informování zaměstnanců o BOZP v kontrolované oblasti.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "dostupnost_informaci",
-          "text": "Zkontrolujte dostupnost informací o BOZP pro zaměstnance.",
+          "text": "Ověřte dostupnost informací o BOZP pro zaměstnance na pracovišti.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "bezpecnostni_pokyny",
-          "text": "Ověřte srozumitelnost a dostupnost bezpečnostních pokynů.",
+          "text": "Zkontrolujte srozumitelnost a dostupnost bezpečnostních pokynů.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "kontakty",
-          "text": "Posuďte dostupnost kontaktů na odpovědné osoby.",
+          "text": "Posuďte viditelnost kontaktů na odpovědné osoby BOZP.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "oznameni",
-          "text": "Zkontrolujte způsob sdělování oznámení a bezpečnostních informací.",
+          "text": "Ověřte způsob sdělování důležitých bezpečnostních informací.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "vyvesky",
-          "text": "Ověřte aktuálnost informačních tabulí a vývěsek.",
+          "text": "Zkontrolujte aktuálnost informačních tabulí a vývěsek.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Namátkově ověřte, zda zaměstnanec ví, na koho se obrátit při zjištění nebezpečné situace.",
+          "text": "Namátkově ověřte, zda zaměstnanec zná kontakt při nebezpečné situaci.",
           "poradi": 70,
           "aktivni": true
         }
@@ -1559,7 +1552,7 @@
         {
           "id": "dostupnost_informaci",
           "nazev": "Informace jsou dostupné",
-          "popis": "Zaměstnanci mají přístup k informacím o BOZP.",
+          "popis": "Zaměstnanci mají přístup k informacím o BOZP na pracovišti.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1567,7 +1560,7 @@
         {
           "id": "bezpecnostni_pokyny",
           "nazev": "Pokyny jsou k dispozici",
-          "popis": "Bezpečnostní pokyny jsou srozumitelné a dostupné.",
+          "popis": "Bezpečnostní pokyny jsou srozumitelné a dostupné tam, kde se práce provádí.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -1575,7 +1568,7 @@
         {
           "id": "kontakty",
           "nazev": "Kontakty jsou uvedeny",
-          "popis": "Kontakty na odpovědné osoby jsou známé a dostupné.",
+          "popis": "Kontakty na odpovědné osoby BOZP jsou vyvěšeny a aktuální.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1583,7 +1576,7 @@
         {
           "id": "oznameni",
           "nazev": "Oznámení probíhají",
-          "popis": "Důležité informace BOZP jsou zaměstnancům sdělovány.",
+          "popis": "Důležité informace BOZP jsou zaměstnancům pravidelně sdělovány.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1591,7 +1584,7 @@
         {
           "id": "vyvesky",
           "nazev": "Vývěsky jsou aktuální",
-          "popis": "Informační tabule a vývěsky jsou aktuální.",
+          "popis": "Informační tabule a vývěsky obsahují aktuální údaje.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "nizka"
@@ -1599,7 +1592,7 @@
         {
           "id": "prakticka_kontrola",
           "nazev": "Znalost kontaktu při nebezpečí",
-          "popis": "Zaměstnanci vědí, na koho se obrátit při zjištění nebezpečné situace.",
+          "popis": "Namátkově oslovený zaměstnanec uvede, na koho se obrátit při nebezpečí.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -1608,43 +1601,43 @@
       "typicke_zavady": [
         {
           "id": "nedostupne_informace",
-          "nazev": "Nedostupné informace",
-          "popis": "Zaměstnanci nemají přístup k informacím BOZP.",
+          "nazev": "Pokyny jen v kanceláři",
+          "popis": "Bezpečnostní informace nejsou dostupné u místa výkonu práce.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nejasne_pokyny",
-          "nazev": "Nejasné pokyny",
-          "popis": "Bezpečnostní pokyny jsou nejasné nebo zastaralé.",
+          "nazev": "Zastaralé evakuační pokyny",
+          "popis": "Na vývěsce jsou evakuační trasy pro původní uspořádání budovy.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "chybi_kontakty",
-          "nazev": "Chybí kontakty",
-          "popis": "Nejsou uvedeny kontakty na odpovědné osoby.",
+          "nazev": "Chybí jméno technika BOZP",
+          "popis": "Na nástěnce není uveden kontakt na osobu pro hlášení nebezpečí.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "bez_oznameni",
-          "nazev": "Bez pravidelných oznámení",
-          "popis": "Důležité informace nejsou zaměstnancům sdělovány.",
+          "nazev": "Změna postupu bez informování",
+          "popis": "Po změně evakuačního plánu zaměstnanci nebyli informováni.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "zastarale_vyvesky",
-          "nazev": "Zastaralé vývěsky",
-          "popis": "Informační tabule nejsou aktualizovány.",
+          "nazev": "Vývěska s odchodem kolegy",
+          "popis": "Kontakt na odpovědnou osobu uvádí zaměstnance, který už nepracuje.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "neznalost_kontaktu",
-          "nazev": "Neznalost kontaktu",
-          "popis": "Zaměstnanci nevědí, na koho se obrátit při nebezpečí.",
+          "nazev": "Neznalost kontaktu při nebezpečí",
+          "popis": "Zaměstnanec neví, komu hlásit nebezpečnou situaci na pracovišti.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1652,36 +1645,36 @@
       "doporucene_postupy": [
         {
           "id": "informacni_tabule",
-          "nazev": "Udržovat informační tabule",
-          "popis": "Pravidelně aktualizujte vývěsky a informační tabule BOZP.",
+          "nazev": "Udržovat informační tabuli BOZP",
+          "popis": "Pravidelně aktualizujte vývěsky s pokyny, kontakty a evakuačním plánem.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "kontakty",
-          "nazev": "Zveřejnit kontakty",
-          "popis": "Viditelně uveďte kontakty na odpovědné osoby BOZP.",
+          "nazev": "Vyvěsit aktuální kontakty",
+          "popis": "Na viditelném místě uveďte jména a telefony odpovědných osob BOZP.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "pravidelne_informovani",
-          "nazev": "Pravidelně informovat",
-          "popis": "Pravidelně informujte zaměstnance o aktuálních rizicích a opatřeních.",
+          "nazev": "Informovat při každé změně",
+          "popis": "Po změně rizik nebo postupů sdělte informaci a nechte potvrdit převzetí.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "srozumitelne_pokyny",
-          "nazev": "Připravit srozumitelné pokyny",
-          "popis": "Zajistěte, aby bezpečnostní pokyny byly srozumitelné pro všechny.",
+          "nazev": "Psát pokyny srozumitelně",
+          "popis": "Používejte jasný jazyk a konkrétní kroky pro pracovníky na místě.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "kanaly_komunikace",
-          "nazev": "Využívat více kanálů",
-          "popis": "Kombinujte vývěsky, školení a další formy informování.",
+          "nazev": "Kombinovat vývěsky a školení",
+          "popis": "Důležité informace opakujte na nástěnce i při provozních poradách.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1690,21 +1683,21 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Požadavky BOZP na pracovišti.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Organizační a provozní pravidla BOZP na pracovišti.",
+          "popis": "Organizace, dokumentace a provádění BOZP.",
           "poradi": 30,
           "aktivni": true
         },
