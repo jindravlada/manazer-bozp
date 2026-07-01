@@ -285,6 +285,34 @@ class AudityProcessesTestCase(unittest.TestCase):
             "Politika BOZP chybí.",
         )
 
+    def test_finding_dialog_includes_audit_finding_type_labels(self) -> None:
+        from core.shared.constants import (
+            FINDING_TYPE_NESHODA,
+            FINDING_TYPE_POZOROVANI,
+            FINDING_TYPE_PRILEZITOST,
+            VALID_FINDING_TYPES,
+        )
+        from core.shared.finding_display import FINDING_TYPE_LABELS, finding_type_label
+        from core.widgets.finding_dialog import FindingDialog
+        from moduly.audity.constants import AUDIT_FINDING_TYPE_LABELS
+
+        for finding_type in VALID_FINDING_TYPES:
+            self.assertIn(finding_type, FINDING_TYPE_LABELS)
+
+        for finding_type, label in AUDIT_FINDING_TYPE_LABELS.items():
+            self.assertEqual(FINDING_TYPE_LABELS[finding_type], label)
+            self.assertEqual(finding_type_label(finding_type), label)
+
+        dialog = FindingDialog(title="Zjištění auditu")
+        combo_labels = {
+            dialog.type_combo.itemText(index)
+            for index in range(dialog.type_combo.count())
+        }
+        self.assertIn("Neshoda", combo_labels)
+        self.assertEqual(finding_type_label(FINDING_TYPE_NESHODA), "Neshoda")
+        self.assertEqual(FINDING_TYPE_LABELS[FINDING_TYPE_PRILEZITOST], "PKZ")
+        self.assertEqual(FINDING_TYPE_LABELS[FINDING_TYPE_POZOROVANI], "Pozorování")
+
 
 if __name__ == "__main__":
     unittest.main()
