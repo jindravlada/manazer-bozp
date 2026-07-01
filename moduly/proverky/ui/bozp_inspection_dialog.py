@@ -11,6 +11,7 @@ from moduly.proverky.ui.bozp_inspection_areas_widget import BozpInspectionAreasW
 from moduly.proverky.ui.bozp_inspection_commission_widget import BozpInspectionCommissionWidget
 from moduly.proverky.ui.bozp_inspection_findings_widget import BozpInspectionFindingsWidget
 from moduly.proverky.ui.bozp_inspection_spis_widget import BozpInspectionSpisWidget
+from moduly.proverky.ui.bozp_inspection_tasks_widget import BozpInspectionTasksWidget
 
 
 class BozpInspectionDialog(QDialog):
@@ -35,7 +36,8 @@ class BozpInspectionDialog(QDialog):
         self.tabs.addTab(self.areas_widget, TAB_KONTROLOVANE_OBLASTI)
         self.findings_widget = BozpInspectionFindingsWidget()
         self.tabs.addTab(self.findings_widget, "Zjištění")
-        self.tabs.addTab(self._placeholder_tab("Úkoly"), "Úkoly")
+        self.tasks_widget = BozpInspectionTasksWidget()
+        self.tabs.addTab(self.tasks_widget, "Úkoly")
         self.tabs.addTab(self._placeholder_tab("Přílohy"), "Přílohy")
         self.tabs.addTab(self._placeholder_tab("Závěr"), "Závěr")
         layout.addWidget(self.tabs)
@@ -48,15 +50,18 @@ class BozpInspectionDialog(QDialog):
         inspection_id = inspection.id if inspection is not None else None
         self.set_inspection_id(inspection_id)
         self.areas_widget.set_on_finding_saved(self._on_finding_changed)
+        self.findings_widget.set_on_task_changed(self.tasks_widget.refresh)
         self.spis_widget.load_inspection(inspection)
         self.commission_widget.set_inspection_context(inspection_id)
 
     def set_inspection_id(self, inspection_id: int | None) -> None:
         self.areas_widget.set_inspection_id(inspection_id)
         self.findings_widget.set_inspection_id(inspection_id)
+        self.tasks_widget.set_inspection_id(inspection_id)
 
     def _on_finding_changed(self) -> None:
         self.findings_widget.refresh()
+        self.tasks_widget.refresh()
         self.areas_widget.refresh_findings_display()
 
     def accept(self) -> None:

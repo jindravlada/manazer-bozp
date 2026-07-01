@@ -20,6 +20,8 @@ from moduly.proverky.sluzby.bozp_inspection_commission_service import (
     bozp_inspection_commission_service,
 )
 from moduly.nastaveni.sluzby.settings_service import settings_service
+from moduly.ukoly.modely.task import Task
+from moduly.ukoly.sluzby.task_service import task_service
 
 _OPEN_FINDING_STATUSES = frozenset(
     {
@@ -82,6 +84,24 @@ class BozpInspectionService:
 
     def findings_count(self, inspection_id: int) -> int:
         return len(finding_service.get_for_entity(ENTITY_PROVERKY, inspection_id))
+
+    def get_tasks_for_inspection(self, inspection_id: int) -> list[Task]:
+        tasks: list[Task] = []
+        seen_task_ids: set[int] = set()
+
+        for finding in finding_service.get_for_entity(ENTITY_PROVERKY, inspection_id):
+            task_id = finding.task_id
+            if task_id is None or task_id in seen_task_ids:
+                continue
+
+            task = task_service.get_task_by_id(task_id)
+            if task is None:
+                continue
+
+            tasks.append(task)
+            seen_task_ids.add(task_id)
+
+        return sorted(tasks, key=lambda item: (item.due_date or date.max, item.id))
 
     def finding_for_control_point(
         self,

@@ -32,6 +32,7 @@ class BozpInspectionFindingsWidget(QWidget):
         super().__init__(parent)
 
         self.inspection_id: int | None = None
+        self._on_task_changed = None
 
         layout = QVBoxLayout(self)
 
@@ -112,6 +113,9 @@ class BozpInspectionFindingsWidget(QWidget):
         self.refresh()
         self._update_state()
 
+    def set_on_task_changed(self, callback) -> None:
+        self._on_task_changed = callback
+
     def refresh(self) -> None:
         findings = []
         summary = {"total": 0}
@@ -155,6 +159,8 @@ class BozpInspectionFindingsWidget(QWidget):
 
     def _after_task_action(self) -> None:
         self.refresh()
+        if self._on_task_changed is not None:
+            self._on_task_changed()
 
     def _update_state(self) -> None:
         enabled = self.inspection_id is not None
