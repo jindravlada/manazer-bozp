@@ -45,6 +45,8 @@ from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     is_row_relevant,
     is_serious_or_fatal_accident,
     has_pn_over_3_days,
+    obligation_default_deadline,
+    obligation_notification_date,
     requires_accident_record,
     requires_police_obligation,
     row_status,
@@ -2675,42 +2677,22 @@ class SetreniDialog(QDialog):
         return date_value.replace(year=year, month=month, day=1)
 
     def _admin_notification_date(self):
-        saved_value = self._zajisteni_saved_data.get("oznameni_datum", "")
-        if saved_value:
-            try:
-                return datetime.fromisoformat(str(saved_value)).date()
-            except Exception:
-                pass
         if hasattr(self, "oznameni_datum"):
             value = self._date_value(self.oznameni_datum)
             if value:
                 return value
-        if self.accident is not None and getattr(self.accident, "accident_date", None):
-            return self.accident.accident_date
-        return None
+        return obligation_notification_date(self.accident, self._zajisteni_saved_data)
 
     def _admin_default_deadline(self, row):
-        date_value = self._admin_notification_date()
-        if not date_value:
-            return None
-
-        name = row.get("nazev", "") if isinstance(row, dict) else str(row)
-        section = row.get("section", "") if isinstance(row, dict) else ""
-        agenda = row.get("agenda", "") if isinstance(row, dict) else ""
-
-        if "Kooperativa" in name or "Zákonná pojišťovna" in name:
-            return None
-
-        if section == SECTION_OHLASENI or agenda == "ohlaseni":
-            return self._add_workdays(date_value, 1)
-
-        if section in {SECTION_ZAZNAM, SECTION_ODESLANI, SECTION_PREDANI}:
-            return self._add_workdays(date_value, 15)
-
-        if "Vyhotovení Záznamu" in name or "Záznam o pracovním úrazu" in name:
-            return self._add_workdays(date_value, 15)
-
-        return None
+        if not isinstance(row, dict):
+            row = {"nazev": str(row)}
+        return obligation_default_deadline(
+            self._admin_notification_date(),
+            obligation_key=row.get("key", ""),
+            section=row.get("section", ""),
+            label=row.get("nazev", ""),
+            agenda=row.get("agenda", ""),
+        )
 
     def _admin_row_relevant(self, row):
         return is_row_relevant(self.accident, row)

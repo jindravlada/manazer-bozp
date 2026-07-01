@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 from typing import Any, Protocol
 
 
@@ -314,6 +314,100 @@ def collect_obligation_rows_from_saved_data(data: dict[str, Any] | None) -> list
     rows.extend(data.get("admin_ohlaseni") or [])
     rows.extend(data.get("admin_zaslani") or [])
     return rows
+
+
+def add_workdays(start_date: date, days: int) -> date:
+    result = start_date
+    added = 0
+    while added < days:
+        result = result + timedelta(days=1)
+        if result.weekday() < 5:
+            added += 1
+    return result
+
+
+def obligation_notification_date(
+    accident: AccidentLike | None,
+    saved_data: dict[str, Any] | None = None,
+) -> date | None:
+    if saved_data:
+        parsed = parse_saved_date(saved_data.get("oznameni_datum"))
+        if parsed is not None:
+            return parsed
+    if accident is not None:
+        accident_date = getattr(accident, "accident_date", None)
+        if accident_date is not None:
+            return accident_date
+    return None
+
+
+def obligation_default_deadline(
+    notification_date: date | None,
+    *,
+    obligation_key: str = "",
+    section: str = "",
+    label: str = "",
+    agenda: str = "",
+) -> date | None:
+    if notification_date is None:
+        return None
+
+    if "Kooperativa" in label or "Zákonná pojišťovna" in label:
+        return None
+
+    if section == SECTION_OHLASENI or agenda == "ohlaseni":
+        return add_workdays(notification_date, 1)
+
+    if section in {SECTION_ZAZNAM, SECTION_ODESLANI, SECTION_PREDANI}:
+        return add_workdays(notification_date, 15)
+
+    if "Vyhotovení Záznamu" in label or "Záznam o pracovním úrazu" in label:
+        return add_workdays(notification_date, 15)
+
+    return None
+
+
+def obligation_rows_for_summary(
+    accident: AccidentLike | None,
+    saved_data: dict[str, Any] | None,
+    *,
+    union_organization_active: bool | None = None,
+) -> list[dict[str, Any]]:
+    saved_data = saved_data or {}
+    rows_by_key: dict[str, dict[str, Any]] = {}
+    for row in collect_obligation_rows_from_saved_data(saved_data):
+        key = obligation_key_from_row(row)
+        if key:
+            rows_by_key[key] = row
+
+    notification_date = obligation_notification_date(accident, saved_data)
+    result: list[dict[str, Any]] = []
+
+    for obligation in applicable_obligations(
+        accident,
+        union_organization_active=union_organization_active,
+    ):
+        row = dict(rows_by_key.get(obligation.key, {}))
+        row.setdefault("key", obligation.key)
+        row.setdefault("nazev", obligation.label)
+        row.setdefault("section", obligation.section)
+
+        if row_is_done(row):
+            result.append(row)
+            continue
+
+        deadline = obligation_default_deadline(
+            notification_date,
+            obligation_key=obligation.key,
+            section=obligation.section,
+            label=obligation.label,
+        )
+        if deadline is not None:
+            row["lhuta"] = deadline.isoformat()
+
+        result.append(row)
+
+    return result
 
 
 def parse_saved_date(value: Any) -> date | None:

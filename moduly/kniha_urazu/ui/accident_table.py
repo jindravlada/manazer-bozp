@@ -9,7 +9,7 @@ from core.database.session import get_session
 from core.theme.status_colors import STATUS_DONE_BG, STATUS_MISSING_BG, STATUS_WARNING_BG
 from moduly.kniha_urazu.modely.investigation import AccidentInvestigation
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
-    collect_obligation_rows_from_saved_data,
+    obligation_rows_for_summary,
     obligations_summary_state,
 )
 from moduly.ukoly.sluzby.task_service import task_service
@@ -70,7 +70,7 @@ class AccidentTable(QTableWidget):
 
         for row, accident in enumerate(accidents):
             investigation = investigations_by_accident.get(accident.id)
-            obligation_rows = self._obligation_rows(investigation)
+            obligation_rows = self._obligation_rows(investigation, accident)
             zou_color = self._zou_color(accident, obligation_rows, today)
 
             values = [
@@ -112,7 +112,7 @@ class AccidentTable(QTableWidget):
 
         for accident in accidents:
             investigation = investigations_by_accident.get(accident.id)
-            obligation_rows = self._obligation_rows(investigation)
+            obligation_rows = self._obligation_rows(investigation, accident)
             zou_state = self._zou_summary_state(accident, obligation_rows, today)
             if zou_state == "done":
                 zou_done += 1
@@ -152,14 +152,15 @@ class AccidentTable(QTableWidget):
                 tasks_by_accident.setdefault(task.source_record_id, []).append(task)
         return tasks_by_accident
 
-    def _obligation_rows(self, investigation):
+    def _obligation_rows(self, investigation, accident):
         if investigation is None or not investigation.zajisteni_dukazu_json:
-            return []
-        try:
-            data = json.loads(investigation.zajisteni_dukazu_json or "{}")
-        except Exception:
-            return []
-        return collect_obligation_rows_from_saved_data(data)
+            data = {}
+        else:
+            try:
+                data = json.loads(investigation.zajisteni_dukazu_json or "{}")
+            except Exception:
+                data = {}
+        return obligation_rows_for_summary(accident, data)
 
     def _zou_summary_state(self, accident, obligation_rows, today):
         return obligations_summary_state(accident, obligation_rows, today)

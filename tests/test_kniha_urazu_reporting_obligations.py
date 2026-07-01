@@ -43,6 +43,7 @@ with patch.object(Path, "home", return_value=_TMP):
         is_obligation_relevant,
         is_row_relevant,
         obligations_summary_state,
+        obligation_rows_for_summary,
         row_is_done,
         row_status,
     )
@@ -54,6 +55,7 @@ class AccidentStub:
     podezreni_trestny_cin: str = "NE"
     dpn_od: date | None = None
     dpn_do: date | None = None
+    accident_date: date | None = None
 
 
 class KnihaUrazuReportingObligationsTestCase(unittest.TestCase):
@@ -330,6 +332,78 @@ class KnihaUrazuReportingObligationsTestCase(unittest.TestCase):
             obligations_summary_state(accident, rows, date(2026, 1, 15)),
             "waiting",
         )
+
+    def test_obligation_rows_for_summary_matches_detail_overdue_state(self) -> None:
+        accident = AccidentStub(
+            druh_urazu="závažný pracovní úraz (hospitalizace více než 5 po sobě jdoucích dnů)",
+            accident_date=date(2026, 3, 23),
+        )
+        saved_data = {
+            "admin_ohlaseni": [
+                {
+                    "nazev": "Odborová organizace – ohlášení pracovního úrazu",
+                    "datum": "2026-06-27",
+                    "lhuta": "2026-06-29",
+                },
+                {
+                    "nazev": "OIP / OBÚ – ohlášení závažného nebo smrtelného pracovního úrazu",
+                    "datum": "2026-06-27",
+                    "lhuta": "2026-06-29",
+                },
+                {
+                    "nazev": "Policie ČR – ohlášení smrtelného pracovního úrazu / podezření na trestný čin",
+                    "datum": "2026-06-27",
+                    "lhuta": "2026-06-29",
+                },
+                {
+                    "nazev": "EZOP – ohlášení pracovního úrazu",
+                    "datum": "2026-06-27",
+                    "lhuta": "2026-06-29",
+                },
+            ],
+            "admin_zaslani": [
+                {
+                    "nazev": "Záznam o pracovním úrazu – Portál SÚIP",
+                    "lhuta": "2026-07-17",
+                },
+                {
+                    "nazev": "Kooperativa",
+                    "lhuta": "",
+                },
+            ],
+        }
+        rows = obligation_rows_for_summary(accident, saved_data)
+        today = date(2026, 7, 1)
+
+        self.assertEqual(obligations_summary_state(accident, rows, today), "overdue")
+        self.assertIn(OBLIGATION_OIP_OBU_ZASLANI, {row["key"] for row in rows})
+        self.assertEqual(
+            row_status(
+                next(row for row in rows if row["key"] == OBLIGATION_VYHOTOVENI_ZAZNAMU),
+                today,
+            ),
+            "overdue",
+        )
+
+    def test_obligation_rows_for_summary_keeps_done_rows(self) -> None:
+        accident = AccidentStub(
+            druh_urazu="závažný pracovní úraz (hospitalizace více než 5 po sobě jdoucích dnů)",
+            accident_date=date(2026, 3, 23),
+        )
+        saved_data = {
+            "admin_ohlaseni": [
+                {
+                    "key": OBLIGATION_OO_OHLASENI,
+                    "nazev": "Odborová organizace – ohlášení pracovního úrazu",
+                    "datum": "2026-06-27",
+                    "lhuta": "2026-06-29",
+                },
+            ],
+        }
+        rows = obligation_rows_for_summary(accident, saved_data)
+        done_row = next(row for row in rows if row["key"] == OBLIGATION_OO_OHLASENI)
+
+        self.assertEqual(row_status(done_row, date(2026, 7, 1)), "done")
 
 
 class SetreniDialogExecTestCase(unittest.TestCase):
