@@ -63,42 +63,48 @@
           "nazev": "Předpisy jsou dostupné",
           "popis": "Potřebné právní a ostatní předpisy jsou k dispozici.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "aktualnost",
           "nazev": "Předpisy jsou aktuální",
           "popis": "Používané verze předpisů odpovídají platné legislativě.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "navaznost",
           "nazev": "Návaznost na provoz",
           "popis": "Předpisy pokrývají rizika a činnosti v provozu.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "odpovednost",
           "nazev": "Odpovědnost je určena",
           "popis": "Je určena osoba odpovědná za aktualizaci předpisů.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prehled",
           "nazev": "Přehled předpisů existuje",
           "popis": "Je veden přehled používaných právních předpisů.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Předpisy pro činnosti jsou k dispozici",
           "popis": "Na pracovišti jsou k dispozici předpisy potřebné pro vykonávané činnosti.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -271,42 +277,48 @@
           "nazev": "Místní předpisy existují",
           "popis": "Místní bezpečnostní předpisy jsou zpracovány.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "aktualnost",
           "nazev": "Předpisy jsou aktuální",
           "popis": "Místní předpisy odpovídají aktuálnímu provozu.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "seznameni",
           "nazev": "Zaměstnanci jsou seznámeni",
           "popis": "Zaměstnanci byli seznámeni s místními předpisy.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "soulad",
           "nazev": "Soulad se skutečností",
           "popis": "Předpisy odpovídají skutečnému stavu pracoviště.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "dostupnost",
           "nazev": "Předpisy jsou dostupné",
           "popis": "Místní předpisy jsou zaměstnancům dostupné.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Předpisy odpovídají provozu",
           "popis": "Místní bezpečnostní předpisy odpovídají skutečnému provozu.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -479,42 +491,48 @@
           "nazev": "Záznamy školení existují",
           "popis": "Evidence absolvovaných školení je vedena.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "periodicka_skoleni",
           "nazev": "Periodická školení jsou aktuální",
           "popis": "Periodická školení probíhají v požadovaných intervalech.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "podpisy",
           "nazev": "Podpisy jsou doloženy",
           "popis": "Proškolení je potvrzeno podpisy nebo záznamy.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "aktualnost",
           "nazev": "Evidence je aktuální",
           "popis": "Evidence odpovídá aktuálnímu stavu zaměstnanců.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "uplnost",
           "nazev": "Evidence je úplná",
           "popis": "Evidence pokrývá všechny dotčené zaměstnance.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Evidence odpovídá stavu",
           "popis": "Evidence školení odpovídá skutečnému stavu zaměstnanců.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -687,42 +705,48 @@
           "nazev": "Dokumentace je úplná",
           "popis": "Dokumentace kontrol a revizí je kompletní.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "terminy",
           "nazev": "Termíny jsou dodržovány",
           "popis": "Kontroly a revize probíhají v požadovaných intervalech.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "odstraneni_zavad",
           "nazev": "Závady jsou dokumentovány",
           "popis": "Odstranění zjištěných závad je doloženo.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "archivace",
           "nazev": "Archivace je zajištěna",
           "popis": "Protokoly a záznamy jsou archivovány.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "dohledatelnost",
           "nazev": "Dokumentace je dohledatelná",
           "popis": "Dokumentaci lze snadno dohledat ke zařízení.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Dokumentace ke zařízením existuje",
           "popis": "Ke kontrolovaným zařízením lze dohledat příslušnou dokumentaci.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -895,42 +919,48 @@
           "nazev": "Postupy jsou dostupné",
           "popis": "Pracovní postupy jsou zaměstnancům k dispozici.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "aktualnost",
           "nazev": "Postupy jsou aktuální",
           "popis": "Postupy odpovídají aktuálnímu provozu a technologii.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pouzivani",
           "nazev": "Postupy se používají",
           "popis": "Zaměstnanci pracovní postupy dodržují.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "srozumitelnost",
           "nazev": "Postupy jsou srozumitelné",
           "popis": "Postupy jsou psány srozumitelně a přehledně.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "uplnost",
           "nazev": "Postupy jsou úplné",
           "popis": "Existují postupy pro všechny rizikové činnosti.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Postupy pro činnost jsou k dispozici",
           "popis": "Zaměstnanci mají k dispozici pracovní postupy pro svou činnost.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1103,42 +1133,48 @@
           "nazev": "Hodnocení rizik je aktuální",
           "popis": "Hodnocení rizik odpovídá aktuálnímu stavu.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prijata_opatreni",
           "nazev": "Opatření jsou evidována",
           "popis": "Přijatá opatření jsou zdokumentována.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "navaznost",
           "nazev": "Návaznost na provoz",
           "popis": "Dokumentace odpovídá skutečnému provozu.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "nova_rizika",
           "nazev": "Nová rizika jsou promítnuta",
           "popis": "Nově vzniklá rizika jsou zahrnuta v dokumentaci.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "sledovani",
           "nazev": "Plnění je sledováno",
           "popis": "Plnění opatření je průběžně sledováno.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Nová rizika jsou v dokumentaci",
           "popis": "Nově vzniklá rizika jsou promítnuta do dokumentace.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1311,42 +1347,48 @@
           "nazev": "Externisté jsou proškoleni",
           "popis": "Externí osoby absolvovaly požadovaná školení.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "predani_informaci",
           "nazev": "Informace jsou předány",
           "popis": "Externistům byly předány informace o rizicích a pravidlech.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "opravneni",
           "nazev": "Oprávnění jsou doložena",
           "popis": "Externí osoby mají potřebná oprávnění.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "doklady",
           "nazev": "Doklady jsou kompletní",
           "popis": "Potřebné doklady a potvrzení jsou k dispozici.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "evidence",
           "nazev": "Evidence je vedena",
           "popis": "Externí osoby a dodavatelé jsou evidováni.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Externisté splňují požadavky",
           "popis": "Externí osoby mají splněny požadavky před vstupem na pracoviště.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1519,42 +1561,48 @@
           "nazev": "Archivace je zajištěna",
           "popis": "Dokumentace je archivována systematickým způsobem.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "dohledatelnost",
           "nazev": "Dokumenty jsou dohledatelné",
           "popis": "Požadované dokumenty lze snadno dohledat.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "ochrana",
           "nazev": "Dokumentace je chráněna",
           "popis": "Dokumentace je chráněna před poškozením a ztrátou.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "odpovednost",
           "nazev": "Odpovědnost je určena",
           "popis": "Je určena osoba odpovědná za správu dokumentace.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prehled",
           "nazev": "Přehled archivu existuje",
           "popis": "Je veden přehled archivované dokumentace.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Dokument lze dohledat",
           "popis": "Požadovaný dokument lze v přiměřené době dohledat.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [

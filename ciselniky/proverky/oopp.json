@@ -63,42 +63,48 @@
           "nazev": "Vyhodnocení rizik je aktuální",
           "popis": "Rizika pracovních míst jsou vyhodnocena a zohledněna při určení OOPP.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "seznam_oopp",
           "nazev": "Seznam OOPP je zpracován",
           "popis": "Existuje přehled OOPP podle profesí, pracovišť nebo pracovních činností.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prideleni_profese",
           "nazev": "Přidělení odpovídá profesím a činnostem",
           "popis": "Zaměstnanci mají přiděleny OOPP odpovídající jejich pracovním úkolům.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prevzeti_dokumentovano",
           "nazev": "Převzetí OOPP je doloženo",
           "popis": "Převzetí OOPP zaměstnanci je prokazatelně zdokumentováno.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "dostupnost",
           "nazev": "OOPP jsou dostupné",
           "popis": "Požadované OOPP jsou zaměstnancům včas k dispozici.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "znalost_zamestnance",
           "nazev": "Zaměstnanec zná své přidělené OOPP",
           "popis": "Namátkově oslovený zaměstnanec ví, jaké OOPP má přidělené.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -271,42 +277,48 @@
           "nazev": "OOPP jsou používány správně",
           "popis": "Zaměstnanec používá OOPP v souladu s návodem a určením.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "spravne_nasazeni",
           "nazev": "OOPP jsou správně nasazeny",
           "popis": "OOPP jsou správně nasazeny, utaženy nebo seřízeny.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "po_celou_dobu",
           "nazev": "OOPP jsou používány po celou dobu práce",
           "popis": "OOPP nejsou během rizikové činnosti odloženy nebo vynechány.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "kombinace",
           "nazev": "Kombinace OOPP je správná",
           "popis": "Používaná kombinace OOPP odpovídá požadavkům dané činnosti.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "vhodny_typ",
           "nazev": "Používán je vhodný typ OOPP",
           "popis": "Zaměstnanec používá OOPP odpovídající identifikovanému riziku.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "znalost_zamestnance",
           "nazev": "Zaměstnanec zná důvod používání OOPP",
           "popis": "Namátkově oslovený zaměstnanec ví, proč používá přidělené OOPP.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -479,42 +491,48 @@
           "nazev": "OOPP nejsou poškozené",
           "popis": "OOPP nevykazují viditelné poškození snižující ochranu.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pripustne_opotrebeni",
           "nazev": "Opotřebení je v přípustné míře",
           "popis": "OOPP nejsou nadměrně opotřebené ani znehodnocené.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "cistota",
           "nazev": "OOPP jsou čisté a použitelné",
           "popis": "OOPP jsou udržovány v čistotě vhodné pro použití.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "skladovani",
           "nazev": "Skladování OOPP je vhodné",
           "popis": "OOPP jsou skladovány v podmínkách doporučených výrobcem.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "vymena",
           "nazev": "Výměna OOPP probíhá včas",
           "popis": "Poškozené nebo prošlé OOPP jsou včas vyměněny.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "znalost_vymeny",
           "nazev": "Zaměstnanec ví, kdy požádat o výměnu",
           "popis": "Zaměstnanec zná kritéria pro výměnu OOPP.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -687,56 +705,64 @@
           "nazev": "Zachycovací postroje jsou v pořádku",
           "popis": "Pokud se používají, jsou v provozuschopném stavu a revize jsou aktuální.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "respiratory",
           "nazev": "Respirátory jsou v pořádku",
           "popis": "Pokud se používají, filtry a těsnost jsou v pořádku.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "dychaci_pristroje",
           "nazev": "Izolační dýchací přístroje jsou v pořádku",
           "popis": "Pokud se používají, kontroly a plnění odpovídají požadavkům.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "chemicke_oopp",
           "nazev": "Chemické OOPP jsou v pořádku",
           "popis": "Pokud se používají, odpovídají charakteru nebezpečných látek.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "svarecske_oopp",
           "nazev": "Svářečské OOPP jsou v pořádku",
           "popis": "Pokud se používají, odpovídají požadavkům svářecích prací.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "protiporezove",
           "nazev": "Protipořezové OOPP jsou v pořádku",
           "popis": "Pokud se používají, nejsou poškozené a odpovídají riziku.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "revize_kontroly",
           "nazev": "Revize a kontroly speciálních OOPP jsou aktuální",
           "popis": "Předepsané kontroly a revize jsou provedeny včas.",
           "poradi": 70,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "proskoleni_uzivatele",
           "nazev": "Uživatelé speciálních OOPP jsou proškoleni",
           "popis": "Zaměstnanci používající speciální OOPP absolvovali potřebné školení.",
           "poradi": 80,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -909,42 +935,48 @@
           "nazev": "Seznam OOPP je zpracován a aktuální",
           "popis": "Existuje aktuální seznam OOPP podle pracovních míst a činností.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "smernice",
           "nazev": "Směrnice k OOPP jsou zpracovány",
           "popis": "Interní předpisy upravující OOPP jsou platné a dostupné.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "evidence_vydeje",
           "nazev": "Evidence výdeje je vedena",
           "popis": "Výdej OOPP je prokazatelně zdokumentován.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "podpisy",
           "nazev": "Podpisy o převzetí jsou doloženy",
           "popis": "Převzetí OOPP zaměstnanci je potvrzeno podpisem nebo jiným záznamem.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "evidence_vymen",
           "nazev": "Evidence výměn je vedena",
           "popis": "Výměny a vyřazení OOPP jsou zaznamenány.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "znalost_vedouciho",
           "nazev": "Vedoucí zaměstnanec zná umístění evidence",
           "popis": "Vedoucí zaměstnanec ví, kde je evidence OOPP vedena.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1117,42 +1149,48 @@
           "nazev": "Školení k OOPP proběhlo",
           "popis": "Zaměstnanci absolvovali potřebné školení k používání OOPP.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "evidence_skoleni",
           "nazev": "Evidence školení je vedena",
           "popis": "Lze doložit termíny, účastníky a obsah školení.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "znalost_pouziti",
           "nazev": "Zaměstnanec zná správné používání",
           "popis": "Zaměstnanec umí správně nasadit a používat své OOPP.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "znalost_udrzby",
           "nazev": "Zaměstnanec zná údržbu OOPP",
           "popis": "Zaměstnanec zná základní pravidla údržby a výměny OOPP.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "znalost_omezeni",
           "nazev": "Zaměstnanec zná omezení použití",
           "popis": "Zaměstnanec zná limity a omezení použití svých OOPP.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_znalost",
           "nazev": "Zaměstnanec dokáže vysvětlit používání OOPP",
           "popis": "Namátkově oslovený zaměstnanec dokáže vysvětlit správné používání svých OOPP.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [

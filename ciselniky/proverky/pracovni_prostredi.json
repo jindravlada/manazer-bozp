@@ -63,42 +63,48 @@
           "nazev": "Podlahy jsou v dobrém technickém stavu",
           "popis": "Podlahy nevykazují výrazné nerovnosti, výtluky ani poškození ohrožující bezpečnost.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "kluzkost",
           "nazev": "Podlahy nejsou kluzké",
           "popis": "Povrch podlah nevyvolává zvýšené riziko uklouznutí nebo pádu.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prekazky",
           "nazev": "Komunikace jsou bez překážek",
           "popis": "Průchody nejsou zablokovány materiálem, zařízením ani jinými překážkami.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pruchodnost",
           "nazev": "Komunikace jsou průchodné",
           "popis": "Šířka a volný prostor komunikací umožňuje bezpečný pohyb osob.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "oznaceni",
           "nazev": "Komunikace jsou řádně označeny",
           "popis": "Směry, únikové cesty a nebezpečná místa jsou viditelně označeny.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_prochazka",
           "nazev": "Komunikace jsou bezpečně průchozí pro zaměstnance",
           "popis": "Namátkově projít hlavní komunikaci stejně jako zaměstnanec.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -271,42 +277,48 @@
           "nazev": "Pracoviště je udržováno v pořádku",
           "popis": "Pracovní plochy a okolí nejsou zbytečně znečištěny ani neuspořádány.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "skladovani",
           "nazev": "Materiál je řádně skladován",
           "popis": "Materiál a nástroje jsou uloženy na určených místech a nepřekážejí.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "odpad",
           "nazev": "Odpad je řádně likvidován",
           "popis": "Odpad je tříděn a odstraňován v souladu s provozními pravidly.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "unikove_prostory",
           "nazev": "Únikové prostory jsou volné",
           "popis": "Únikové cesty a nouzové východy nejsou zastavěny materiálem.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "cistota",
           "nazev": "Pracoviště je udržováno v čistotě",
           "popis": "Pracoviště nevykazuje dlouhodobé znečištění nebo nehygienické stavy.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Vybrané pracoviště odpovídá zásadám pořádku",
           "popis": "Namátkově vybrané pracoviště odpovídá zásadám pořádku.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -479,42 +491,48 @@
           "nazev": "Osvětlení je funkční",
           "popis": "Svítidla jsou provozuschopná a osvětlují pracovní plochy.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "poskozena_svitidla",
           "nazev": "Svítidla nejsou poškozená",
           "popis": "Poškozená nebo nefunkční svítidla jsou včas opravena nebo vyměněna.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "dostatecnost",
           "nazev": "Osvětlení je dostatečné",
           "popis": "Intenzita osvětlení odpovídá charakteru vykonávané práce.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "oslneni",
           "nazev": "Oslnění není problematické",
           "popis": "Pracovní plochy nejsou nadměrně oslňovány přímým nebo odraženým světlem.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "nouzove_osvetleni",
           "nazev": "Nouzové osvětlení je k dispozici",
           "popis": "Nouzové osvětlení je orientačně v pořádku a označeno.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Zaměstnanec nepotřebuje vlastní osvětlení",
           "popis": "Zaměstnanec nepoužívá vlastní osvětlení kvůli nedostatečnému osvětlení.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -687,42 +705,48 @@
           "nazev": "Větrání je zajištěno",
           "popis": "Pracoviště je větráno přirozeně nebo nuceně v potřebné míře.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "odsavani",
           "nazev": "Odsávání je funkční",
           "popis": "Místní odsávání u rizikových prací funguje a je používáno.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "vzduchotechnika",
           "nazev": "Vzduchotechnika je v provozu",
           "popis": "Vzduchotechnická zařízení jsou funkční a udržovaná.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prasnost",
           "nazev": "Prašnost není problematická",
           "popis": "Na pracovišti nejsou zjevné projevy nadměrné prašnosti.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "zapach",
           "nazev": "Zápach není problematický",
           "popis": "Ovzduší nevykazuje nepříjemný nebo neobvyklý zápach.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Větrání odpovídá potřebám pracoviště",
           "popis": "Na pracovišti nejsou zjevné známky nedostatečného větrání.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -895,42 +919,48 @@
           "nazev": "Teplota je přijatelná",
           "popis": "Teplota v pracovních prostorách nevyvolává zjevné nepohodlí.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "vlhkost",
           "nazev": "Vlhkost není problematická",
           "popis": "Vlhkost ovzduší nevyvolává zjevné nepohodlí nebo riziko.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pruvan",
           "nazev": "Průvan není problematický",
           "popis": "Zaměstnanci nejsou vystaveni nepříjemnému průvanu.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "salave_teplo",
           "nazev": "Sálavé teplo je zvládnutelné",
           "popis": "U prací se sálavým teplem jsou zajištěna ochranná opatření.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "chlad",
           "nazev": "Chlad není problematický",
           "popis": "Pracoviště s chladnými podmínkami mají zajištěna ochranná opatření.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Mikroklima nezpůsobuje zjevné problémy",
           "popis": "Zaměstnanci nemají zjevné problémy způsobené mikroklimatem.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1103,42 +1133,48 @@
           "nazev": "Toalety jsou funkční a čisté",
           "popis": "Toalety jsou v provozuschopném stavu a udržovány v čistotě.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "umyvárny",
           "nazev": "Umývárny jsou funkční",
           "popis": "Umývárny jsou v provozu s dostupnou teplou vodou.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "hygienicke_prostredky",
           "nazev": "Hygienické prostředky jsou k dispozici",
           "popis": "Mýdlo, ručníky nebo sušiče jsou dostupné pro zaměstnance.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "cistota",
           "nazev": "Sociální zařízení jsou udržována v čistotě",
           "popis": "Prostory jsou pravidelně uklízeny a nevykazují zanedbaný stav.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "funkcnost",
           "nazev": "Zařízení sociálních prostor je funkční",
           "popis": "Baterie, splachování a osvětlení sociálních zařízení fungují.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Kapacita odpovídá počtu zaměstnanců",
           "popis": "Sociální zařízení odpovídají počtu zaměstnanců.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1311,42 +1347,48 @@
           "nazev": "Šatní skříňky jsou k dispozici",
           "popis": "Zaměstnanci mají k dispozici šatní skříňky pro odložení oděvu.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "oddeleni_odevu",
           "nazev": "Civilní a pracovní oděv je oddělen",
           "popis": "Tam, kde je to požadováno, jsou civilní a pracovní oděvy odděleny.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "cistota",
           "nazev": "Šatny jsou udržovány v čistotě",
           "popis": "Prostory šaten a zázemí jsou v přijatelném stavu čistoty.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "odpocinkove_prostory",
           "nazev": "Odpočinkové prostory jsou v pořádku",
           "popis": "Odpočinkové prostory jsou využitelné a udržované.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "dostupnost",
           "nazev": "Zázemí je dostupné během směny",
           "popis": "Šatny a zázemí jsou dostupné po celou dobu pracovní směny.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Zázemí umožňuje důstojné převlékání",
           "popis": "Zázemí umožňuje zaměstnancům důstojné převlékání.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1519,42 +1561,48 @@
           "nazev": "Pitná voda je dostupná",
           "popis": "Zaměstnanci mají k dispozici pitnou vodu na pracovišti.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "oznaceni",
           "nazev": "Místa čerpání jsou označena",
           "popis": "Místa pro čerpání pitné vody jsou viditelně označena.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "cistota",
           "nazev": "Zařízení pro pitnou vodu je čisté",
           "popis": "Výdejní místa pitné vody jsou udržována v čistotě.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "dostupnost_behem_smeny",
           "nazev": "Pitná voda je dostupná během směny",
           "popis": "Pitná voda je k dispozici po celou dobu pracovní směny.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "horka_prace",
           "nazev": "Pitný režim u horkých prací je zajištěn",
           "popis": "U prací v horkém prostředí je pitný režim adekvátně zajištěn.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Zaměstnanec zná místo čerpání pitné vody",
           "popis": "Namátkově oslovený zaměstnanec ví, kde může čerpat pitnou vodu.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [

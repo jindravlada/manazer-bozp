@@ -63,63 +63,72 @@
           "nazev": "Hasicí přístroj je umístěn na určeném místě",
           "popis": "Umístění odpovídá požární dokumentaci.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "oznaceni",
           "nazev": "Hasicí přístroj je správně označen",
           "popis": "Označení je dobře viditelné a není zakryté.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pristup",
           "nazev": "Přístup k hasicímu přístroji je volný",
           "popis": "Přístroj není zastavěn ani zakryt materiálem.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "spravny_druh",
           "nazev": "Je použit správný druh hasicího přístroje",
           "popis": "Typ odpovídá charakteru chráněného prostoru.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "bez_poskozeni",
           "nazev": "Hasicí přístroj je bez viditelného poškození",
           "popis": "Není deformovaný ani mechanicky poškozený.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "platna_kontrola",
           "nazev": "Kontrola hasicího přístroje je platná",
           "popis": "Kontrola byla provedena v předepsané lhůtě.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "plomba_pojistka",
           "nazev": "Plomba a pojistka jsou neporušené",
           "popis": "Nedošlo k neoprávněnému použití.",
           "poradi": 70,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "tlakomer",
           "nazev": "Tlakoměr ukazuje provozní tlak",
           "popis": "Pouze u přístrojů vybavených tlakoměrem.",
           "poradi": 80,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "znalost_zamestnance",
           "nazev": "Zaměstnanec ví, kde je nejbližší hasicí přístroj",
           "popis": "Namátkově oslovený zaměstnanec dokáže ukázat nejbližší hasicí přístroj.",
           "poradi": 90,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -306,70 +315,80 @@
           "nazev": "Hydrant je umístěn na určeném místě",
           "popis": "Umístění odpovídá požární dokumentaci nebo značení objektu.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "oznaceni",
           "nazev": "Hydrant je správně označen",
           "popis": "Označení je viditelné, čitelné a není zakryté.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pristup",
           "nazev": "Přístup k hydrantu je volný",
           "popis": "Hydrantová skříň není zastavěna materiálem ani zařízením.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "skrin",
           "nazev": "Hydrantová skříň je nepoškozená",
           "popis": "Skříň lze otevřít a není mechanicky poškozená.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "kompletnost",
           "nazev": "Vybavení hydrantu je kompletní",
           "popis": "Ve skříni je hadice, proudnice a další vybavení podle typu hydrantu.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "hadice",
           "nazev": "Hadice je bez viditelného poškození",
           "popis": "Hadice není zpuchřelá, potrhaná, znečištěná ani nevhodně uložená.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "proudnice",
           "nazev": "Proudnice je přítomna a použitelná",
           "popis": "Proudnice nechybí a není zjevně poškozená.",
           "poradi": 70,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "ventil",
           "nazev": "Ventil je přístupný a nepoškozený",
           "popis": "Ventil není zablokovaný, poškozený ani zjevně nefunkční.",
           "poradi": 80,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "platna_kontrola",
           "nazev": "Kontrola hydrantu je platná",
           "popis": "Pravidelná kontrola byla provedena ve stanovené lhůtě a je doložitelná.",
           "poradi": 90,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "znalost_zamestnance",
           "nazev": "Zaměstnanec ví, kde je nejbližší hydrant",
           "popis": "Namátkově oslovený zaměstnanec dokáže ukázat nejbližší hydrant nebo popsat jeho umístění.",
           "poradi": 100,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -577,70 +596,80 @@
           "nazev": "Úniková cesta je průchodná",
           "popis": "Na únikové cestě nejsou překážky bránící bezpečné evakuaci.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "bez_skladovani",
           "nazev": "Úniková cesta není využívána ke skladování",
           "popis": "Na komunikaci nejsou uloženy materiály, výrobky ani odpady.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "oznaceni_smeru",
           "nazev": "Směr úniku je správně označen",
           "popis": "Bezpečnostní značky jsou čitelné a dobře viditelné.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "dvere_oteviraji",
           "nazev": "Únikové dveře lze snadno otevřít",
           "popis": "Dveře nejsou uzamčené ani jinak blokované.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "nouzove_osvetleni",
           "nazev": "Nouzové osvětlení je funkční",
           "popis": "Pokud je instalováno, nevykazuje zjevné závady.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pozarni_uzavery",
           "nazev": "Požární uzávěry jsou v provozuschopném stavu",
           "popis": "Nejsou zajištěny v otevřené poloze nepovoleným způsobem.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "bez_horlavych",
           "nazev": "Na únikové cestě nejsou hořlavé materiály",
           "popis": "Komunikace není využívána jako sklad.",
           "poradi": 70,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "vychody_pristupne",
           "nazev": "Únikové východy jsou volně přístupné",
           "popis": "Před dveřmi ani za nimi nejsou překážky.",
           "poradi": 80,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "evacuacni_znaceni",
           "nazev": "Evakuační značení je nepoškozené",
           "popis": "Značky nejsou zakryté ani poškozené.",
           "poradi": 90,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "znalost_zamestnance",
           "nazev": "Zaměstnanec ví, kudy objekt opustit",
           "popis": "Namátkově oslovený zaměstnanec dokáže popsat nebo ukázat nejbližší únikovou cestu.",
           "poradi": 100,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -848,63 +877,72 @@
           "nazev": "Požární dveře jsou správně označeny",
           "popis": "Označení je čitelné a odpovídá požadavkům výrobce.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "bez_poskozeni",
           "nazev": "Požární dveře nejsou mechanicky poškozeny",
           "popis": "Křídlo, zárubeň ani kování nevykazují zjevné poškození.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "samozavirac",
           "nazev": "Samozavírač funguje správně",
           "popis": "Po otevření se dveře samy zcela dovřou.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "bez_zajisteni",
           "nazev": "Dveře nejsou zajištěny v otevřené poloze",
           "popis": "Nejsou použity klíny, PET lahve, odpadkové koše ani jiné předměty.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "tesneni",
           "nazev": "Požární těsnění je nepoškozené",
           "popis": "Těsnění je úplné, bez deformací a nevypadává.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "elektromagnet",
           "nazev": "Elektromagnetické přidržení funguje správně",
           "popis": "Pouze tam, kde je instalováno.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "bez_neodbornych_zasahu",
           "nazev": "Požární uzávěr není upraven neodborným zásahem",
           "popis": "Nejsou dodatečně vrtány otvory ani jiné zásahy snižující požární odolnost.",
           "poradi": 70,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pruchod",
           "nazev": "Průchod dveřmi není blokován",
           "popis": "Dveře lze bezpečně používat.",
           "poradi": 80,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "znalost_zamestnance",
           "nazev": "Zaměstnanci vědí, že požární dveře nesmí být trvale otevřené",
           "popis": "Namátkově oslovený zaměstnanec zná význam požárních dveří.",
           "poradi": 90,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1112,70 +1150,80 @@
           "nazev": "Bezpečnostní značení je úplné",
           "popis": "Na pracovišti jsou umístěna všechna požadovaná bezpečnostní značení.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pozarni_uplne",
           "nazev": "Požární značení je úplné",
           "popis": "Na pracovišti jsou umístěna všechna požadovaná požární značení.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "viditelne",
           "nazev": "Značky jsou dobře viditelné",
           "popis": "Značení je umístěno tak, aby bylo snadno zaznamenatelné z běžných pracovních míst.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "bez_poskozeni",
           "nazev": "Značky nejsou poškozené",
           "popis": "Značení není mechanicky poškozené, vybledlé ani nečitelné.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "soulad_se_stavem",
           "nazev": "Značení odpovídá skutečnému stavu",
           "popis": "Umístěné značky odpovídají aktuálnímu provozu a rizikům na pracovišti.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "nezakryte",
           "nazev": "Značky nejsou zakryté",
           "popis": "Značení není zakryté materiálem, zařízením ani nábytkem.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "hasici_pristroje",
           "nazev": "Jsou označeny hasicí přístroje",
           "popis": "Hasicí přístroje jsou viditelně označeny podle požadavků PO.",
           "poradi": 70,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "hydranty",
           "nazev": "Jsou označeny hydranty",
           "popis": "Hydranty jsou viditelně označeny podle požadavků PO.",
           "poradi": 80,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "unikove_cesty",
           "nazev": "Jsou označeny únikové cesty",
           "popis": "Směr úniku a únikové východy jsou správně označeny.",
           "poradi": 90,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "znalost_zamestnance",
           "nazev": "Zaměstnanec rozumí významu značení",
           "popis": "Namátkově oslovený zaměstnanec zná význam relevantního značení.",
           "poradi": 100,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1362,63 +1410,72 @@
           "nazev": "Požární dokumentace je zpracována",
           "popis": "Rozsah dokumentace odpovídá charakteru provozu a požadavkům právních předpisů.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "aktualni",
           "nazev": "Dokumentace je aktuální",
           "popis": "Obsah odpovídá současnému stavu objektu a provozu.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pozarni_rad",
           "nazev": "Požární řád je zpracován",
           "popis": "Pokud je pro pracoviště požadován.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "poplachove_smernice",
           "nazev": "Požární poplachové směrnice jsou zpracovány",
           "popis": "Pokud jsou požadovány.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "evacuacni_plan",
           "nazev": "Evakuační plán odpovídá skutečnosti",
           "popis": "Pokud je zpracován, odpovídá aktuálnímu stavu objektu.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "zaznamy_prohlidek",
           "nazev": "Jsou vedeny záznamy o preventivních požárních prohlídkách",
           "popis": "Záznamy jsou úplné a aktuální.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "zaznamy_skoleni",
           "nazev": "Jsou vedeny záznamy o školení PO",
           "popis": "Lze doložit proškolení zaměstnanců.",
           "poradi": 70,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "dostupnost",
           "nazev": "Dokumentace je dostupná",
           "popis": "Oprávněné osoby vědí, kde je dokumentace uložena.",
           "poradi": 80,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "znalost_vedouciho",
           "nazev": "Vedoucí zaměstnanec ví, kde je dokumentace uložena",
           "popis": "Namátkově oslovený vedoucí zaměstnanec dokáže dokumentaci bez prodlení předložit.",
           "poradi": 90,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1605,70 +1662,80 @@
           "nazev": "Elektrická požární signalizace (EPS) je provozuschopná",
           "popis": "Pokud je instalována, nevykazuje zjevné poruchy a kontroly jsou aktuální.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "shz",
           "nazev": "Stabilní hasicí zařízení (SHZ) je provozuschopné",
           "popis": "Pokud je instalováno, je v provozuschopném stavu a kontroly jsou aktuální.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "zokt",
           "nazev": "Zařízení pro odvod kouře a tepla (ZOKT) je provozuschopné",
           "popis": "Pokud je instalováno, nevykazuje zjevné poruchy a kontroly jsou aktuální.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pozarni_klapky",
           "nazev": "Požární klapky jsou přístupné a kontrolované",
           "popis": "Požární klapky jsou dostupné pro kontrolu a nejsou zajištěny v nepovolené poloze.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "kourove_klapky",
           "nazev": "Kouřové klapky jsou přístupné a kontrolované",
           "popis": "Kouřové klapky jsou dostupné pro kontrolu a nevykazují zjevné závady.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pozarni_vrata",
           "nazev": "Požární vrata nebo rolety jsou provozuschopné",
           "popis": "Požární vrata a rolety jsou funkční a nejsou trvale blokována.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "suchovody",
           "nazev": "Suchovody jsou označené a kontrolované",
           "popis": "Suchovody jsou viditelně označeny a pravidelně kontrolovány.",
           "poradi": 70,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pozarni_prostupy",
           "nazev": "Požární prostupy nevykazují zjevné porušení",
           "popis": "Požární prostupy nejsou poškozené ani neodborně upravené.",
           "poradi": 80,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pozarni_ucpavky",
           "nazev": "Požární ucpávky nejsou poškozené",
           "popis": "Požární ucpávky jsou neporušené a odpovídají požadavkům.",
           "poradi": 90,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "predepsane_kontroly",
           "nazev": "Provádějí se předepsané kontroly všech instalovaných PBZ",
           "popis": "Kontroly a revize jsou prováděny ve stanovených lhůtách a jsou doložitelné.",
           "poradi": 100,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [

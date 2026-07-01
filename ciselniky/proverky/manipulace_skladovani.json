@@ -63,42 +63,48 @@
           "nazev": "Dodržovány limity hmotnosti",
           "popis": "Hmotnost břemen odpovídá stanoveným limitům a pravidlům.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "ergonomie",
           "nazev": "Ergonomie práce je zajištěna",
           "popis": "Pracovní polohy a způsob manipulace nejsou zjevně nevhodné.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pomucky",
           "nazev": "Používají se manipulační pomůcky",
           "popis": "K dispozici a využívány jsou vhodné pomůcky pro snížení zátěže.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "cetnost",
           "nazev": "Četnost manipulace je přiměřená",
           "popis": "Ruční manipulace není nadměrně častá nebo dlouhotrvající.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pracovni_polohy",
           "nazev": "Pracovní polohy jsou vhodné",
           "popis": "Zaměstnanci nepracují dlouhodobě v nepřiměřených polohách.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Manipulace neohrožuje zdraví",
           "popis": "Zaměstnanec nemanipuluje s břemeny způsobem, který zjevně ohrožuje jeho zdraví.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -271,42 +277,48 @@
           "nazev": "Regály jsou v dobrém stavu",
           "popis": "Regálové systémy jsou v technicky vyhovujícím stavu bez zjevného poškození.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "kotveni",
           "nazev": "Regály jsou řádně ukotveny",
           "popis": "Kotvení odpovídá požadavkům výrobce nebo projektu.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "oznaceni_nosnosti",
           "nazev": "Nosnost je označena",
           "popis": "Nosnost regálů a polic je viditelně a srozumitelně označena.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pretezovani",
           "nazev": "Regály nejsou přetěžovány",
           "popis": "Ukládaný materiál nepřekračuje deklarovanou nosnost.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pravidelne_kontroly",
           "nazev": "Prováděny pravidelné kontroly",
           "popis": "Regály jsou pravidelně kontrolovány a záznamy jsou vedeny.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Regál bez zjevného poškození",
           "popis": "Regál nevykazuje zjevné deformace ani poškození.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -479,42 +491,48 @@
           "nazev": "Skladování je stabilní",
           "popis": "Materiál a stohy jsou stabilně uloženy.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "vyska_stohu",
           "nazev": "Výška stohů je přiměřená",
           "popis": "Výška stohů odpovídá druhu materiálu a bezpečnostním pravidlům.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "oddeleni",
           "nazev": "Materiály jsou odděleny",
           "popis": "Různé druhy materiálů jsou skladovány odděleně dle potřeby.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "bezpecne_ukladani",
           "nazev": "Materiál je bezpečně uložen",
           "popis": "Ukládání neohrožuje zaměstnance ani okolí.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pristupnost",
           "nazev": "Materiál je přístupný",
           "popis": "Skladovaný materiál lze bezpečně vyjmout a manipulovat s ním.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Materiál nemůže spadnout",
           "popis": "Materiál nemůže samovolně spadnout nebo se sesunout.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -687,42 +705,48 @@
           "nazev": "Palety jsou v dobrém stavu",
           "popis": "Palety nevykazují poškození ohrožující bezpečnost.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "stav_obalu",
           "nazev": "Obaly jsou vhodné",
           "popis": "Obaly jsou nepoškozené a vhodné pro daný materiál.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "stabilita_nakladu",
           "nazev": "Náklad je stabilní",
           "popis": "Náklad na paletách je stabilně uložen a zajištěn.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "spravne_ulozeni",
           "nazev": "Jednotky jsou správně uloženy",
           "popis": "Palety a manipulační jednotky jsou uloženy bezpečným způsobem.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "kontrola_jednotek",
           "nazev": "Stav jednotek je kontrolován",
           "popis": "Stav palet, obalů a manipulačních jednotek je pravidelně kontrolován.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Poškozené palety se nepoužívají",
           "popis": "Poškozené palety nejsou používány.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -895,42 +919,48 @@
           "nazev": "Komunikace mají dostatečnou šířku",
           "popis": "Šířka komunikací umožňuje bezpečný pohyb.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pruchodnost",
           "nazev": "Komunikace jsou průchodné",
           "popis": "Manipulační komunikace nejsou zablokovány.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "oznaceni",
           "nazev": "Komunikace jsou označeny",
           "popis": "Směry a zóny jsou viditelně označeny.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "oddeleni_pesich",
           "nazev": "Pěší trasy jsou odděleny",
           "popis": "Pěší pohyb je oddělen od manipulační techniky.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "cistota",
           "nazev": "Komunikace jsou udržované",
           "popis": "Povrch komunikací je v bezpečném stavu.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Komunikace jsou volné",
           "popis": "Komunikace jsou trvale volné.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1103,42 +1133,48 @@
           "nazev": "VZV jsou technicky způsobilé",
           "popis": "Vysokozdvižné vozíky jsou v provozuschopném stavu.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "rucni_voziky",
           "nazev": "Ruční vozíky jsou způsobilé",
           "popis": "Ruční vozíky nevykazují poškození ohrožující bezpečnost.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "elektricke_voziky",
           "nazev": "Elektrické vozíky jsou způsobilé",
           "popis": "Elektrická manipulační technika je v pořádku.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "technicky_stav",
           "nazev": "Technický stav je vyhovující",
           "popis": "Manipulační technika nevykazuje závady bránící bezpečnému provozu.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "denni_kontroly",
           "nazev": "Denní kontroly se provádějí",
           "popis": "Obsluha provádí denní kontroly před použitím.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Používá se způsobilá technika",
           "popis": "Obsluha používá pouze technicky způsobilou manipulační techniku.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1311,42 +1347,48 @@
           "nazev": "Pracoviště je bezpečné",
           "popis": "Místo nakládky splňuje požadavky na bezpečnost.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "zajisteni_vozidel",
           "nazev": "Vozidla jsou zajištěna",
           "popis": "Vozidla jsou zabrzděna a zajištěna proti pohybu.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "stabilita_nakladu",
           "nazev": "Náklad je stabilní",
           "popis": "Náklad je bezpečně uložen a zajištěn proti posunu.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "organizace_prace",
           "nazev": "Práce je organizována",
           "popis": "Nakládka probíhá koordinovaně a bezpečně.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "komunikace",
           "nazev": "Komunikace je zajištěna",
           "popis": "Účastníci nakládky spolu efektivně komunikují a koordinují činnosti.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Bez rizika samovolného pohybu",
           "popis": "Při nakládce nehrozí samovolný pohyb vozidla ani nákladu.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1519,42 +1561,48 @@
           "nazev": "Zaměstnanci jsou proškoleni",
           "popis": "Zaměstnanci absolvovali školení v oblasti manipulace a skladování.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "opravneni_obsluh",
           "nazev": "Obsluha má oprávnění",
           "popis": "Obsluha manipulační techniky má platná oprávnění.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pracovni_postupy",
           "nazev": "Pracovní postupy existují",
           "popis": "Jsou k dispozici a dodržovány bezpečné pracovní postupy.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "mistni_pravidla",
           "nazev": "Místní pravidla jsou známa",
           "popis": "Zaměstnanci znají a dodržují místní pravidla.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "evidence",
           "nazev": "Evidence školení je vedena",
           "popis": "Evidence proškolení, oprávnění a ověření znalostí je aktuální.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Znalost zásad bezpečné manipulace",
           "popis": "Namátkově oslovený zaměstnanec zná zásady bezpečné manipulace.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [

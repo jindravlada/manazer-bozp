@@ -63,42 +63,48 @@
           "nazev": "Odpovědnosti jsou vymezeny",
           "popis": "Odpovědnosti za BOZP jsou jasně určeny a známé.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "povereni_vedoucich",
           "nazev": "Vedoucí jsou pověřeni",
           "popis": "Vedoucí zaměstnanci jsou řádně pověřeni v oblasti BOZP.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "organizace_systemu",
           "nazev": "Systém BOZP je organizován",
           "popis": "Organizace systému BOZP odpovídá velikosti a rizikům provozu.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "kompetence",
           "nazev": "Kompetence jsou rozděleny",
           "popis": "Kompetence v oblasti BOZP jsou jednoznačně rozděleny.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "dokumentace_organizace",
           "nazev": "Organizace je zdokumentována",
           "popis": "Organizační uspořádání BOZP je písemně zpracováno.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Vedoucí zná své povinnosti",
           "popis": "Vedoucí zaměstnanec zná své povinnosti v oblasti BOZP.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -271,42 +277,48 @@
           "nazev": "Směrnice BOZP existují",
           "popis": "Jsou k dispozici požadované směrnice BOZP.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "mistni_predpisy",
           "nazev": "Místní předpisy jsou k dispozici",
           "popis": "Místní předpisy a pokyny jsou zpracovány a dostupné.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "aktualnost",
           "nazev": "Dokumentace je aktuální",
           "popis": "Dokumentace odpovídá aktuálnímu stavu provozu.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "dostupnost",
           "nazev": "Dokumentace je dostupná",
           "popis": "Zaměstnanci a vedoucí mají přístup k dokumentaci BOZP.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prehlednost",
           "nazev": "Dokumentace je přehledná",
           "popis": "Dokumentace je srozumitelná a přehledně uspořádaná.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Vedoucí zná umístění dokumentace",
           "popis": "Vedoucí zaměstnanec ví, kde je dokumentace BOZP uložena.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -479,42 +491,48 @@
           "nazev": "Vstupní školení absolvováno",
           "popis": "Všichni noví zaměstnanci absolvovali vstupní školení.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "opakovana_skoleni",
           "nazev": "Opakovaná školení jsou aktuální",
           "popis": "Opakovaná školení probíhají v požadovaných intervalech.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "skoleni_vedoucich",
           "nazev": "Vedoucí jsou proškoleni",
           "popis": "Vedoucí zaměstnanci absolvovali školení BOZP.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "zaznamy",
           "nazev": "Záznamy o školení existují",
           "popis": "Evidence proškolení je vedena a aktuální.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "obsah_skoleni",
           "nazev": "Obsah školení odpovídá rizikům",
           "popis": "Školení pokrývá rizika spojená s prací.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Znalost postupu při mimořádné události",
           "popis": "Namátkově oslovený zaměstnanec ví, jak postupovat při mimořádné události.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -687,42 +705,48 @@
           "nazev": "Evidence úrazů je vedena",
           "popis": "Pracovní úrazy a mimořádné události jsou evidovány.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "setreni",
           "nazev": "Úrazy jsou šetřeny",
           "popis": "Při úrazech a událostech probíhá šetření příčin.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "napravna_opatreni",
           "nazev": "Nápravná opatření jsou plněna",
           "popis": "Z úrazů vyplývající opatření jsou zaváděna.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "hlaseni",
           "nazev": "Hlášení probíhá včas",
           "popis": "Úrazy jsou hlášeny v požadovaných lhůtách.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "postupy",
           "nazev": "Postupy existují",
           "popis": "Jsou k dispozici postupy pro řešení pracovních úrazů.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Vedoucí zná postup při úrazu",
           "popis": "Vedoucí zaměstnanec zná postup při pracovním úrazu.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -895,42 +919,48 @@
           "nazev": "Rizika jsou hodnocena",
           "popis": "Hodnocení rizik je zpracováno pro dotčená pracoviště.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "aktualizace",
           "nazev": "Hodnocení je aktuální",
           "popis": "Hodnocení rizik odpovídá aktuálnímu stavu.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "seznameni",
           "nazev": "Zaměstnanci jsou seznámeni",
           "popis": "Zaměstnanci byli seznámeni s riziky své práce.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "navaznost_oopp",
           "nazev": "Návaznost na OOPP",
           "popis": "Z rizik vyplývající OOPP jsou určeny a přiděleny.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "opatreni",
           "nazev": "Opatření jsou zaváděna",
           "popis": "Z hodnocení rizik vyplývající opatření jsou realizována.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Znalost hlavních rizik",
           "popis": "Zaměstnanci znají hlavní rizika své práce.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1103,42 +1133,48 @@
           "nazev": "Kontroly probíhají pravidelně",
           "popis": "Kontroly a audity BOZP jsou prováděny v plánovaných intervalech.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "plneni_opatreni",
           "nazev": "Opatření jsou plněna",
           "popis": "Nápravná opatření jsou realizována.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "evidence_zavad",
           "nazev": "Evidence závad existuje",
           "popis": "Zjištěné závady jsou evidovány.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "terminy",
           "nazev": "Termíny jsou dodržovány",
           "popis": "Závady jsou odstraňovány v stanovených termínech.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "sledovani",
           "nazev": "Stav zjištění je sledován",
           "popis": "Otevřená zjištění mají určený stav a odpovědnost.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Závady jsou vyřešeny nebo doloženy",
           "popis": "Dříve zjištěné závady jsou odstraněny nebo je doložen jejich stav.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1311,42 +1347,48 @@
           "nazev": "Vstupní prohlídky absolvovány",
           "popis": "Noví zaměstnanci absolvovali vstupní prohlídku.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "periodicke_prohlidky",
           "nazev": "Periodické prohlídky jsou aktuální",
           "popis": "Periodické prohlídky probíhají v požadovaných intervalech.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "mimoradne_prohlidky",
           "nazev": "Mimořádné prohlídky jsou zajištěny",
           "popis": "Mimořádné prohlídky probíhají dle potřeby.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "evidence",
           "nazev": "Evidence je vedena",
           "popis": "Pracovnělékařské služby jsou evidovány.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "posouzeni_zpusobilosti",
           "nazev": "Způsobilost je posouzena",
           "popis": "Zdravotní způsobilost je posuzována před zařazením k práci.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Platné pracovnělékařské prohlídky",
           "popis": "Zaměstnanci mají platné pracovnělékařské prohlídky.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1519,42 +1561,48 @@
           "nazev": "Informace jsou dostupné",
           "popis": "Zaměstnanci mají přístup k informacím o BOZP.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "bezpecnostni_pokyny",
           "nazev": "Pokyny jsou k dispozici",
           "popis": "Bezpečnostní pokyny jsou srozumitelné a dostupné.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "kontakty",
           "nazev": "Kontakty jsou uvedeny",
           "popis": "Kontakty na odpovědné osoby jsou známé a dostupné.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "oznameni",
           "nazev": "Oznámení probíhají",
           "popis": "Důležité informace BOZP jsou zaměstnancům sdělovány.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "vyvesky",
           "nazev": "Vývěsky jsou aktuální",
           "popis": "Informační tabule a vývěsky jsou aktuální.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Znalost kontaktu při nebezpečí",
           "popis": "Zaměstnanci vědí, na koho se obrátit při zjištění nebezpečné situace.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [

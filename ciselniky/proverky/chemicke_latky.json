@@ -63,42 +63,48 @@
           "nazev": "Seznam chemických látek existuje",
           "popis": "Je veden úplný seznam chemických látek a směsí používaných na pracovišti.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "uplnost",
           "nazev": "Evidence je úplná",
           "popis": "Evidence obsahuje všechny požadované identifikační a bezpečnostní údaje.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "aktualnost",
           "nazev": "Evidence je aktuální",
           "popis": "Evidence je průběžně aktualizována při změnách sortimentu nebo dodavatelů.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "soulad_stav",
           "nazev": "Evidence odpovídá skutečnosti",
           "popis": "Evidence odpovídá skutečně používaným chemickým látkám a směsím.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "neevidovane_latky",
           "nazev": "Nejsou používány neevidované látky",
           "popis": "Na pracovišti nejsou používány chemické látky mimo evidenci.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Používané látky jsou v evidenci",
           "popis": "Na pracovišti nejsou používány chemické látky mimo evidenci.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -271,42 +277,48 @@
           "nazev": "Bezpečnostní listy jsou dostupné",
           "popis": "Pro všechny používané chemické látky a směsi jsou k dispozici bezpečnostní listy.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "aktualnost",
           "nazev": "Bezpečnostní listy jsou aktuální",
           "popis": "Bezpečnostní listy odpovídají aktuálním verzím od dodavatelů.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "cesky_jazyk",
           "nazev": "Listy jsou v českém jazyce",
           "popis": "Bezpečnostní listy jsou k dispozici v českém jazyce.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pristup_zamestnancu",
           "nazev": "Zaměstnanci mají přístup k listům",
           "popis": "Zaměstnanci mají zajištěn přístup k bezpečnostním listům při práci.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "umisteni_bl",
           "nazev": "Místo uložení je určeno",
           "popis": "Místo uložení bezpečnostních listů je určeno a označeno.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Vedoucí zná umístění listů",
           "popis": "Vedoucí zaměstnanec ví, kde jsou bezpečnostní listy uloženy.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -479,42 +491,48 @@
           "nazev": "CLP etikety jsou v pořádku",
           "popis": "Originální nádoby mají správné a úplné CLP etikety.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "ghs_piktogramy",
           "nazev": "GHS piktogramy jsou správné",
           "popis": "GHS piktogramy odpovídají klasifikaci látky nebo směsi.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prelite_nadoby",
           "nazev": "Přelité nádoby jsou označeny",
           "popis": "Přelité nebo přelévané nádoby mají srozumitelné označení obsahu.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "citelnost",
           "nazev": "Označení je čitelné",
           "popis": "Etikety a označení jsou čitelné a nepoškozené.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "soulad_bl",
           "nazev": "Označení odpovídá BL",
           "popis": "Označení nádob odpovídá údajům v bezpečnostním listu.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Všechny nádoby jsou označeny",
           "popis": "Žádná nádoba není používána bez označení.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -687,42 +705,48 @@
           "nazev": "Látky jsou skladovány odděleně",
           "popis": "Nekompatibilní chemické látky jsou skladovány odděleně.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "kompatibilita",
           "nazev": "Kompatibilita je dodržována",
           "popis": "Skladování respektuje pravidla chemické kompatibility.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "zachytne_vany",
           "nazev": "Záchytné vany jsou k dispozici",
           "popis": "Skladovací místa jsou vybavena záchytnými vanami nebo prostory.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "vetrani",
           "nazev": "Větrání je zajištěno",
           "popis": "Skladovací prostory mají adekvátní větrání.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "zabezpeceni",
           "nazev": "Sklad je zabezpečen",
           "popis": "Sklad chemických látek je zabezpečen proti neoprávněnému přístupu.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Neslučitelné látky nejsou spolu",
           "popis": "Vzájemně neslučitelné chemické látky nejsou skladovány společně.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -895,42 +919,48 @@
           "nazev": "OOPP jsou k dispozici a používány",
           "popis": "Při manipulaci jsou k dispozici a používány předepsané OOPP.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pracovni_postupy",
           "nazev": "Pracovní postupy jsou dodržovány",
           "popis": "Manipulace probíhá podle stanovených bezpečných pracovních postupů.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "davkovani",
           "nazev": "Dávkování je správné",
           "popis": "Chemické látky jsou dávkovány a měřeny bezpečným způsobem.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prelevani",
           "nazev": "Přelévání je bezpečné",
           "popis": "Přelévání a přenos látek probíhá s použitím vhodných pomůcek.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "uniky",
           "nazev": "Postupy při únicích jsou známy",
           "popis": "Jsou stanoveny a známé postupy pro případ úniku při manipulaci.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "OOPP jsou používány při manipulaci",
           "popis": "Při manipulaci jsou používány předepsané OOPP.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1103,42 +1133,48 @@
           "nazev": "Sorpční prostředky jsou k dispozici",
           "popis": "Sorpční prostředky odpovídající rizikům jsou dostupné a v použitelném stavu.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "neutralizacni_prostredky",
           "nazev": "Neutralizační prostředky jsou k dispozici",
           "popis": "Vhodné neutralizační prostředky jsou k dispozici pro používané látky.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "havarijni_postupy",
           "nazev": "Havarijní postupy existují",
           "popis": "Havarijní postupy pro únik chemických látek jsou vypracovány a dostupné.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "vybaveni",
           "nazev": "Havarijní vybavení je v pořádku",
           "popis": "Havarijní vybavení je kompletní, funkční a na určeném místě.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "skoleni_havarie",
           "nazev": "Zaměstnanci jsou proškoleni",
           "popis": "Zaměstnanci znají havarijní postupy a umístění vybavení.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Zaměstnanci znají postup při úniku",
           "popis": "Zaměstnanci vědí, jak postupovat při úniku chemické látky.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1311,42 +1347,48 @@
           "nazev": "Nebezpečný odpad je označen",
           "popis": "Nádoby s nebezpečným odpadem jsou řádně označeny.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "trideni",
           "nazev": "Odpad je správně tříděn",
           "popis": "Nebezpečný odpad je tříděn podle druhu a nebezpečných vlastností.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "uzavreni_nadobi",
           "nazev": "Nádoby jsou uzavřeny",
           "popis": "Nádoby s nebezpečným odpadem jsou uzavřeny a těsné.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "evidence_odpadu",
           "nazev": "Evidence odpadu je vedena",
           "popis": "Nebezpečný odpad je evidován v souladu s požadavky.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "obaly_latky",
           "nazev": "Obaly jsou likvidovány správně",
           "popis": "Obaly po chemických látkách jsou nakládány jako nebezpečný odpad.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Odpad není smíšený s běžným",
           "popis": "Nebezpečný odpad není ukládán společně s běžným odpadem.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1519,42 +1561,48 @@
           "nazev": "Zaměstnanci jsou proškoleni",
           "popis": "Všichni zaměstnanci pracující s chemickými látkami jsou proškoleni.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "znalost_rizik",
           "nazev": "Rizika jsou známa",
           "popis": "Zaměstnanci znají rizika chemických látek, se kterými pracují.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prvni_pomoc",
           "nazev": "První pomoc je známa",
           "popis": "Zaměstnanci znají postupy první pomoci při expozici chemickým látkám.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "oopp_skoleni",
           "nazev": "OOPP jsou známy a používány",
           "popis": "Zaměstnanci znají a používají předepsané OOPP.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "dokumentace_skoleni",
           "nazev": "Školení jsou dokumentována",
           "popis": "Provedená školení jsou zaznamenána v dokumentaci.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Zaměstnanec zná rizika látky",
           "popis": "Namátkově oslovený zaměstnanec ví hlavní rizika chemické látky, se kterou pracuje.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [

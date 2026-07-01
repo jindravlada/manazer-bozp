@@ -63,42 +63,48 @@
           "nazev": "Lékárnička je na určeném místě",
           "popis": "Zkontrolujte, zda je lékárnička umístěna na místě určeném zaměstnavatelem a odpovídá schválenému plánu první pomoci.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "oznaceni",
           "nazev": "Lékárnička je řádně označena",
           "popis": "Ověřte viditelné označení lékárničky symbolem první pomoci a případným textem podle vnitřních předpisů.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pristupnost",
           "nazev": "Lékárnička je volně přístupná",
           "popis": "Zkontrolujte, zda není přístup k lékárničce blokován nábytkem, materiálem nebo uzamčením.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "obsah",
           "nazev": "Obsah odpovídá požadavkům",
           "popis": "Porovnejte skutečný obsah lékárničky s požadovaným seznamem prostředků první pomoci.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "expirace",
           "nazev": "Prostředky nejsou prošlé",
           "popis": "Zkontrolujte data expirace obvazů, desinfekce a dalších prostředků s omezenou trvanlivostí.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "evidence_kontrol",
           "nazev": "Evidence kontrol je vedena",
           "popis": "Ověřte, zda existuje záznam o pravidelných kontrolách lékárničky včetně data a odpovědné osoby.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -243,42 +249,48 @@
           "nazev": "Oční sprcha je umístěna na určeném místě",
           "popis": "Zařízení se nachází na stanoveném místě podle dokumentace pracoviště.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "oznaceni",
           "nazev": "Oční sprcha je správně označena",
           "popis": "Označení je dobře viditelné a odpovídá bezpečnostním předpisům.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "pristup",
           "nazev": "Přístup k zařízení je volný",
           "popis": "Přístup není blokován materiálem ani zařízením.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "funkcnost",
           "nazev": "Zařízení je funkční",
           "popis": "Mechanismus spuštění pracuje správně.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "voda",
           "nazev": "Výplachová voda je použitelná",
           "popis": "Voda je čistá nebo jsou použity platné sterilní výplachové lahve.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "evidence",
           "nazev": "Provádějí se pravidelné kontroly",
           "popis": "Existuje evidence kontrol a jejich výsledků.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -451,42 +463,48 @@
           "nazev": "Jsou určeny osoby poskytující první pomoc",
           "popis": "Zaměstnavatel určil osoby odpovědné za poskytování první pomoci.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "platna_skoleni",
           "nazev": "Školení jsou platná",
           "popis": "Určené osoby absolvovaly školení v požadovaném rozsahu a ve stanovených intervalech.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "dostatecny_pocet",
           "nazev": "Počet školených osob je dostatečný",
           "popis": "Počet odpovídá velikosti pracoviště, počtu zaměstnanců a charakteru rizik.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "dostupnost",
           "nazev": "Školené osoby jsou dostupné",
           "popis": "Na každé směně je dostupná alespoň jedna určená osoba, pokud to charakter provozu vyžaduje.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "zverejneny_seznam",
           "nazev": "Seznam školených osob je zveřejněn",
           "popis": "Zaměstnanci vědí, kdo poskytuje první pomoc.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "evidence_skoleni",
           "nazev": "Evidence školení je vedena",
           "popis": "Jsou doloženy termíny školení, účastníci i případná opakovací školení.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -659,42 +677,48 @@
           "nazev": "Telefonní čísla jsou vyvěšena",
           "popis": "Na pracovišti jsou na vhodném místě zveřejněna důležitá telefonní čísla.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "aktualni",
           "nazev": "Telefonní čísla jsou aktuální",
           "popis": "Kontakty odpovídají současnému stavu organizace.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "citelna",
           "nazev": "Telefonní čísla jsou dobře čitelná",
           "popis": "Nejsou poškozena ani zakryta.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "cisla_izs",
           "nazev": "Jsou uvedena čísla složek IZS",
           "popis": "Minimálně 112, 150, 155 a 158.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "interni_kontakty",
           "nazev": "Jsou uvedeny interní kontakty",
           "popis": "Vedoucí zaměstnanci, první pomoc, ostraha nebo další osoby dle místních podmínek.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "znalost_zamestnancu",
           "nazev": "Zaměstnanci vědí, kam volat při mimořádné události",
           "popis": "Namátkově oslovený zaměstnanec ví, jak přivolat pomoc.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [

@@ -63,42 +63,48 @@
           "nazev": "Tlaková zařízení jsou kontrolována",
           "popis": "Tlaková zařízení mají platné kontroly a revize.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "plynova_zarizeni",
           "nazev": "Plynová zařízení jsou kontrolována",
           "popis": "Plynová zařízení splňují požadavky na kontroly.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "elektricka_vtz",
           "nazev": "Elektrická VTZ jsou kontrolována",
           "popis": "Elektrická VTZ mají platné revize nebo kontroly.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "zdvihaci_zarizeni",
           "nazev": "Zdvihací zařízení jsou kontrolována",
           "popis": "Zdvihací zařízení mají platné revize.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "provozni_dokumentace",
           "nazev": "Provozní dokumentace existuje",
           "popis": "Provozní dokumentace VTZ je úplná a aktuální.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "VTZ bez kontrol nejsou provozována",
           "popis": "Na pracovišti nejsou provozována VTZ bez předepsaných kontrol.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -271,42 +277,48 @@
           "nazev": "Revize jsou platné",
           "popis": "Elektrická zařízení mají platné revize.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "kontroly",
           "nazev": "Kontroly jsou aktuální",
           "popis": "Spotřebiče mají aktuální pravidelné kontroly.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "oznaceni",
           "nazev": "Zařízení jsou označena",
           "popis": "Zařízení jsou označena podle výsledku revize nebo kontroly.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "evidence",
           "nazev": "Evidence je vedena",
           "popis": "Elektrická zařízení a spotřebiče jsou evidovány.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "odstraneni_zavad",
           "nazev": "Závady jsou odstraněny",
           "popis": "Závady z revizí a kontrol jsou řešeny.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Platná revize nebo kontrola",
           "popis": "Kontrolované zařízení má platnou revizi nebo kontrolu.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -479,42 +491,48 @@
           "nazev": "Hasicí přístroje jsou kontrolovány",
           "popis": "Hasicí přístroje mají platné kontroly.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "hydranty",
           "nazev": "Hydranty jsou kontrolovány",
           "popis": "Hydranty mají platné kontroly.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "eps",
           "nazev": "EPS je kontrolována",
           "popis": "Evakuační a požární signalizace má platné kontroly.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "shz",
           "nazev": "SHZ je kontrolována",
           "popis": "Stabilní hasicí zařízení má platné kontroly.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "ostatni_pbz",
           "nazev": "Ostatní PBZ jsou kontrolována",
           "popis": "Ostatní PBZ mají platné kontroly.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "PBZ mají platné kontroly",
           "popis": "Všechna instalovaná PBZ mají platné kontroly.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -687,42 +705,48 @@
           "nazev": "Žebříky jsou kontrolovány",
           "popis": "Žebříky jsou pravidelně kontrolovány a označeny.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "schudky",
           "nazev": "Schůdky jsou kontrolovány",
           "popis": "Schůdky jsou v dobrém stavu a kontrolovány.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "rucni_naradi",
           "nazev": "Ruční nářadí je kontrolováno",
           "popis": "Ruční nářadí je pravidelně kontrolováno.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "stroje",
           "nazev": "Stroje jsou kontrolovány",
           "popis": "Stroje mají pravidelné kontroly dle požadavků.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "ostatni_prostredky",
           "nazev": "Ostatní prostředky jsou kontrolovány",
           "popis": "Ostatní pracovní prostředky jsou pravidelně kontrolovány.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Pravidelné kontroly prostředků",
           "popis": "Pracovní prostředky jsou pravidelně kontrolovány.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -895,42 +919,48 @@
           "nazev": "Řetězy jsou v dobrém stavu",
           "popis": "Řetězové vázací prostředky jsou kontrolovány a označeny.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "lana",
           "nazev": "Lana jsou v dobrém stavu",
           "popis": "Lana jsou pravidelně kontrolována.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "popruhy",
           "nazev": "Popruhy jsou v dobrém stavu",
           "popis": "Popruhy nevykazují poškození.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "haky",
           "nazev": "Háky jsou v dobrém stavu",
           "popis": "Háky a spojovací prvky jsou kontrolovány.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "zavesna_zarizeni",
           "nazev": "Závěsná zařízení jsou kontrolována",
           "popis": "Závěsná zařízení mají platné kontroly.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Poškozené prostředky se nepoužívají",
           "popis": "Poškozené vázací prostředky nejsou používány.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1103,42 +1133,48 @@
           "nazev": "Termíny jsou dodržovány",
           "popis": "Revize a kontroly probíhají v stanovených lhůtách.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "plan_kontrol",
           "nazev": "Plán kontrol existuje",
           "popis": "Je zpracován a plněn plán revizí a kontrol.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prehled_revizi",
           "nazev": "Přehled revizí existuje",
           "popis": "Je veden přehled revizí a kontrol.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "odpovedne_osoby",
           "nazev": "Odpovědné osoby jsou určeny",
           "popis": "Jsou určeny osoby odpovědné za revize a kontroly.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "upozorneni",
           "nazev": "Upozornění funguje",
           "popis": "Blížící se termíny jsou včas signalizovány.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Lhůty nejsou překročeny",
           "popis": "Nejsou překročeny stanovené lhůty kontrol.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1311,42 +1347,48 @@
           "nazev": "Závady jsou evidovány",
           "popis": "Závady z revizí a kontrol jsou evidovány.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "terminy_odstraneni",
           "nazev": "Termíny jsou stanoveny",
           "popis": "Pro závady jsou určeny termíny odstranění.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "odpovedne_osoby",
           "nazev": "Odpovědné osoby jsou určeny",
           "popis": "Je určena osoba odpovědná za odstranění závady.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "overeni",
           "nazev": "Odstranění je ověřeno",
           "popis": "Odstranění závad je doloženo a ověřeno.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prioritizace",
           "nazev": "Závady jsou prioritizovány",
           "popis": "Závady jsou řešeny podle závažnosti.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Závady jsou řešeny v termínu",
           "popis": "Závady z revizí jsou řešeny v přiměřených termínech.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1519,42 +1561,48 @@
           "nazev": "Evidence je úplná",
           "popis": "Evidence revizí a kontrol je kompletní.",
           "poradi": 10,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "archivace",
           "nazev": "Protokoly jsou archivovány",
           "popis": "Protokoly a záznamy jsou systematicky archivovány.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "dohledatelnost",
           "nazev": "Historie je dohledatelná",
           "popis": "Historii revizí lze dohledat ke každému zařízení.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "aktualnost",
           "nazev": "Evidence je aktuální",
           "popis": "Evidence odpovídá skutečnému stavu revizí.",
           "poradi": 40,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "propojeni",
           "nazev": "Evidence je propojena se zařízeními",
           "popis": "Každé zařízení má propojenou historii revizí.",
           "poradi": 50,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Historie revizí je dohledatelná",
           "popis": "Ke každému zařízení lze dohledat historii revizí a kontrol.",
           "poradi": 60,
-          "aktivni": true
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
