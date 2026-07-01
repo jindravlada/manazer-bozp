@@ -1,5 +1,5 @@
 {
-  "verze": 12,
+  "verze": 13,
   "oblasti": [
     {
       "id": "bozp",
@@ -83,11 +83,11 @@
     },
     {
       "id": "rizikova_pracoviste",
-      "nazev": "Riziková pracoviště",
-      "popis": "Práce ve výškách, v hloubce, s nebezpečnými látkami a další zvýšená rizika.",
+      "nazev": "Rizikové práce a pracoviště",
+      "popis": "Práce ve výškách, nad volnou hloubkou, uzavřené prostory, horké práce, výkopy, pád předmětů, osamocená práce a povolení k rizikovým pracím.",
       "poradi": 80,
       "aktivni": true,
-      "soubor_znalosti": null
+      "soubor_znalosti": "rizikova_pracoviste.json"
     },
     {
       "id": "chemie",
