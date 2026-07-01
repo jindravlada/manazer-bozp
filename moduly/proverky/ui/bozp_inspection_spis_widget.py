@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
     QFrame,
-    QHBoxLayout,
+    QGroupBox,
     QLabel,
     QVBoxLayout,
     QWidget,
@@ -36,15 +36,6 @@ class BozpInspectionSpisWidget(QWidget):
         self.number_header.setObjectName("SectionTitle")
         layout.addWidget(self.number_header)
 
-        card = QFrame()
-        card.setObjectName("ModulePanel")
-        columns = QHBoxLayout(card)
-        columns.setContentsMargins(12, 12, 12, 12)
-        columns.setSpacing(24)
-
-        left_form = QFormLayout()
-        right_form = QFormLayout()
-
         self.number_label = QLabel("—")
         self.number_label.setObjectName("InfoText")
 
@@ -54,9 +45,26 @@ class BozpInspectionSpisWidget(QWidget):
         self.planned_month_combo = QComboBox()
         self._populate_planned_month_combo()
 
+        self.workplace_selector = WorkplaceSelector()
+
+        basic_group = QGroupBox("Základní údaje")
+        basic_form = QFormLayout(basic_group)
+        basic_form.addRow("Číslo prověrky:", self.number_label)
+        basic_form.addRow("Rok:", self.year_combo)
+        basic_form.addRow("Plánovaný měsíc:", self.planned_month_combo)
+        basic_form.addRow("Pracoviště:", self.workplace_selector)
+        layout.addWidget(basic_group)
+
         self.inspection_date_edit = NullableDateEdit()
         self.started_at_edit = NullableDateEdit()
         self.finished_at_edit = NullableDateEdit()
+
+        terms_group = QGroupBox("Termíny")
+        terms_form = QFormLayout(terms_group)
+        terms_form.addRow("Datum prověrky:", self.inspection_date_edit)
+        terms_form.addRow("Zahájení:", self.started_at_edit)
+        terms_form.addRow("Ukončení:", self.finished_at_edit)
+        layout.addWidget(terms_group)
 
         self.status_combo = QComboBox()
         self.status_combo.addItems(INSPECTION_SPIS_STATUSES)
@@ -64,22 +72,11 @@ class BozpInspectionSpisWidget(QWidget):
         self.type_combo = QComboBox()
         self.type_combo.addItems(INSPECTION_TYPES)
 
-        self.workplace_selector = WorkplaceSelector()
-
-        left_form.addRow("Číslo prověrky:", self.number_label)
-        left_form.addRow("Rok:", self.year_combo)
-        left_form.addRow("Plánovaný měsíc:", self.planned_month_combo)
-        left_form.addRow("Datum prověrky:", self.inspection_date_edit)
-        left_form.addRow("Zahájení:", self.started_at_edit)
-        left_form.addRow("Ukončení:", self.finished_at_edit)
-        left_form.addRow("Stav:", self.status_combo)
-        left_form.addRow("Typ prověrky:", self.type_combo)
-
-        right_form.addRow("Pracoviště:", self.workplace_selector)
-
-        columns.addLayout(left_form, 1)
-        columns.addLayout(right_form, 1)
-        layout.addWidget(card)
+        status_group = QGroupBox("Stav a typ")
+        status_form = QFormLayout(status_group)
+        status_form.addRow("Stav:", self.status_combo)
+        status_form.addRow("Typ prověrky:", self.type_combo)
+        layout.addWidget(status_group)
 
         self.history_panel = QFrame()
         self.history_panel.setObjectName("ModulePanel")
