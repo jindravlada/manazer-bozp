@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 from core.widgets.thp_worker_selector import ThpWorkerSelector
 from core.widgets.person_selector import PersonSelector
 from moduly.proverky.constants import (
+    COMMISSION_DUPLICATE_PERSON_MESSAGE,
     COMMISSION_RECORD_INVITED,
     COMMISSION_RECORD_LEADER,
     COMMISSION_RECORD_MEMBER,
@@ -246,6 +247,45 @@ class BozpInspectionCommissionWidget(QWidget):
             return None
         return selected[0].row()
 
+    def _thp_worker_already_in_commission(
+        self,
+        thp_worker_id: int,
+        *,
+        exclude_member_row: int | None = None,
+    ) -> bool:
+        leader_id = self.leader_selector.current_person_id()
+        if leader_id == thp_worker_id:
+            return True
+
+        for index, member in enumerate(self._members):
+            if exclude_member_row is not None and index == exclude_member_row:
+                continue
+            if member.get("thp_worker_id") == thp_worker_id:
+                return True
+
+        return False
+
+    def _person_already_in_commission(
+        self,
+        person_id: int,
+        *,
+        exclude_invited_row: int | None = None,
+    ) -> bool:
+        union_id = self.union_selector.current_person_id()
+        if union_id == person_id:
+            return True
+
+        for index, invited in enumerate(self._invited):
+            if exclude_invited_row is not None and index == exclude_invited_row:
+                continue
+            if invited.get("person_id") == person_id:
+                return True
+
+        return False
+
+    def _show_duplicate_person_message(self) -> None:
+        QMessageBox.information(self, "Komise", COMMISSION_DUPLICATE_PERSON_MESSAGE)
+
     def add_member(self) -> None:
         dialog = BozpInspectionCommissionEntryDialog(self, entry_type="member")
         if not dialog.exec():
@@ -253,6 +293,9 @@ class BozpInspectionCommissionWidget(QWidget):
         data = dialog.get_data()
         if not data["thp_worker_id"] or not data["display_name"]:
             QMessageBox.information(self, "Komise", "Vyberte THP pracovníka.")
+            return
+        if self._thp_worker_already_in_commission(data["thp_worker_id"]):
+            self._show_duplicate_person_message()
             return
         self._members.append(data)
         self._refresh_tables()
@@ -272,6 +315,12 @@ class BozpInspectionCommissionWidget(QWidget):
         data = dialog.get_data()
         if not data["thp_worker_id"] or not data["display_name"]:
             QMessageBox.information(self, "Komise", "Vyberte THP pracovníka.")
+            return
+        if self._thp_worker_already_in_commission(
+            data["thp_worker_id"],
+            exclude_member_row=row,
+        ):
+            self._show_duplicate_person_message()
             return
         self._members[row] = data
         self._refresh_tables()
@@ -293,6 +342,9 @@ class BozpInspectionCommissionWidget(QWidget):
         if not data["person_id"] or not data["display_name"]:
             QMessageBox.information(self, "Komise", "Vyberte osobu ze seznamu.")
             return
+        if self._person_already_in_commission(data["person_id"]):
+            self._show_duplicate_person_message()
+            return
         self._invited.append(data)
         self._refresh_tables()
 
@@ -311,6 +363,9 @@ class BozpInspectionCommissionWidget(QWidget):
         data = dialog.get_data()
         if not data["person_id"] or not data["display_name"]:
             QMessageBox.information(self, "Komise", "Vyberte osobu ze seznamu.")
+            return
+        if self._person_already_in_commission(data["person_id"], exclude_invited_row=row):
+            self._show_duplicate_person_message()
             return
         self._invited[row] = data
         self._refresh_tables()

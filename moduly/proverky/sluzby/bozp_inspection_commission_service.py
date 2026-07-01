@@ -1,6 +1,7 @@
 from moduly.nastaveni.sluzby.person_service import person_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.proverky.constants import (
+    COMMISSION_DUPLICATE_PERSON_MESSAGE,
     COMMISSION_RECORD_INVITED,
     COMMISSION_RECORD_LEADER,
     COMMISSION_RECORD_MEMBER,
@@ -71,7 +72,28 @@ class BozpInspectionCommissionService:
                 if member.get("person_id") is None:
                     raise ValueError("Zástupce odborů a přizvané osoby musí být ze seznamu Osob.")
 
+        self._validate_unique_persons(normalized)
+
         return normalized
+
+    def _validate_unique_persons(self, members: list[dict]) -> None:
+        thp_worker_ids = [
+            member["thp_worker_id"]
+            for member in members
+            if member["record_type"] in {COMMISSION_RECORD_LEADER, COMMISSION_RECORD_MEMBER}
+            and member.get("thp_worker_id") is not None
+        ]
+        if len(thp_worker_ids) != len(set(thp_worker_ids)):
+            raise ValueError(COMMISSION_DUPLICATE_PERSON_MESSAGE)
+
+        person_ids = [
+            member["person_id"]
+            for member in members
+            if member["record_type"] in {COMMISSION_RECORD_UNION, COMMISSION_RECORD_INVITED}
+            and member.get("person_id") is not None
+        ]
+        if len(person_ids) != len(set(person_ids)):
+            raise ValueError(COMMISSION_DUPLICATE_PERSON_MESSAGE)
 
     def member_to_dict(self, member: BozpInspectionCommissionMember) -> dict:
         return {
