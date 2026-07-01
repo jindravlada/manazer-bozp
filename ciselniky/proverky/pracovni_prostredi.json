@@ -1,58 +1,58 @@
 {
-  "verze": 1,
+  "verze": 2,
   "id": "pracovni_prostredi",
   "nazev": "Pracovní prostředí",
-  "popis": "Komunikace, pořádek, osvětlení, větrání, mikroklima, sociální zařízení, zázemí a pitný režim na pracovišti.",
+  "popis": "Komunikace, pořádek, osvětlení, větrání, mikroklima, sociální zařízení, zázemí a pitný režim.",
   "poradi": 35,
   "aktivni": true,
   "sekce": [
     {
       "id": "komunikace_podlahy",
       "nazev": "Komunikace a podlahy",
-      "popis": "Kontrola stavu podlah, průchodnosti, překážek a označení komunikací.",
+      "popis": "Prověrka stavu podlah, průchodnosti a označení komunikací.",
       "poradi": 10,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace_komunikaci",
-          "text": "Zjistěte hlavní pracovní a únikové komunikace na kontrolovaném pracovišti.",
+          "text": "Projděte hlavní pracovní a únikové komunikace.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "stav_podlah",
-          "text": "Zkontrolujte stav podlah — nerovnosti, výtluky, poškození a kluzkost.",
+          "text": "Zkontrolujte podlahy — nerovnosti, výtluky, poškození a kluzkost.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "prekazky",
-          "text": "Ověřte, zda komunikace nejsou zablokovány překážkami nebo materiálem.",
+          "text": "Ověřte, že komunikace nejsou zablokované.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "pruchodnost",
-          "text": "Zkontrolujte průchodnost komunikací včetně šířky a volného prostoru.",
+          "text": "Zkontrolujte šířku a volný prostor v průchodech.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "oznaceni",
-          "text": "Ověřte označení komunikací, směrů a případných nebezpečných míst.",
+          "text": "Ověřte označení směrů a nebezpečných míst.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "porovnani_dokumentace",
-          "text": "Porovnejte skutečný stav s požadavky dokumentace BOZP a požární ochrany.",
+          "text": "Porovnejte stav s požadavky dokumentace BOZP.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_prochazka",
-          "text": "Namátkově projít hlavní komunikaci stejně jako zaměstnanec.",
+          "text": "Projděte hlavní trasu stejně jako zaměstnanec.",
           "poradi": 70,
           "aktivni": true
         }
@@ -60,48 +60,48 @@
       "kontrolni_body": [
         {
           "id": "stav_podlah",
-          "nazev": "Podlahy jsou v dobrém technickém stavu",
-          "popis": "Podlahy nevykazují výrazné nerovnosti, výtluky ani poškození ohrožující bezpečnost.",
+          "nazev": "Podlahy jsou v dobrém stavu",
+          "popis": "Podlahy nemají výtluky, uvolněné díly ani výrazné nerovnosti.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "kluzkost",
           "nazev": "Podlahy nejsou kluzké",
-          "popis": "Povrch podlah nevyvolává zvýšené riziko uklouznutí nebo pádu.",
+          "popis": "Povrch není kluzký od vody, mastnoty nebo nevhodné údržby.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "prekazky",
           "nazev": "Komunikace jsou bez překážek",
-          "popis": "Průchody nejsou zablokovány materiálem, zařízením ani jinými překážkami.",
+          "popis": "V průchodech není materiál, zařízení ani jiné překážky.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "pruchodnost",
           "nazev": "Komunikace jsou průchodné",
-          "popis": "Šířka a volný prostor komunikací umožňuje bezpečný pohyb osob.",
+          "popis": "Šířka a volný prostor umožňují bezpečný pohyb a evakuaci.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "oznaceni",
-          "nazev": "Komunikace jsou řádně označeny",
-          "popis": "Směry, únikové cesty a nebezpečná místa jsou viditelně označeny.",
+          "nazev": "Komunikace jsou označeny",
+          "popis": "Směry a nebezpečná místa jsou viditelně označeny.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "prakticka_prochazka",
-          "nazev": "Komunikace jsou bezpečně průchozí pro zaměstnance",
-          "popis": "Namátkově projít hlavní komunikaci stejně jako zaměstnanec.",
+          "nazev": "Komunikace jsou bezpečně průchodné",
+          "popis": "Hlavní trasu lze projít bez obcházení překážek.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -111,42 +111,42 @@
         {
           "id": "poskozene_podlahy",
           "nazev": "Poškozené podlahy",
-          "popis": "Podlahy mají výtluky, praskliny nebo uvolněné díly.",
+          "popis": "Výtluky, praskliny nebo uvolněné rohože v průchodech.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "kluzke_povrchy",
-          "nazev": "Kluzké povrchy",
-          "popis": "Podlahy jsou kluzké kvůli mastnotě, vody nebo nevhodné údržbě.",
+          "nazev": "Kluzký povrch",
+          "popis": "Olej, voda nebo prach na podlaze v místě chůze.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "zablokovane_komunikace",
           "nazev": "Zablokované komunikace",
-          "popis": "Průchody jsou zastavěny materiálem nebo zařízením.",
+          "popis": "Palety, krabice nebo vozíky stojí v průchodech.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "neoznacene_cesty",
-          "nazev": "Neoznačené únikové cesty",
-          "popis": "Únikové nebo pracovní komunikace nejsou viditelně označeny.",
+          "nazev": "Chybí označení",
+          "popis": "Únikové nebo pracovní trasy nejsou viditelně označeny.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "nerovnosti",
           "nazev": "Nebezpečné nerovnosti",
-          "popis": "Výrazné nerovnosti podlahy představují riziko zakopnutí.",
+          "popis": "Výrazný schod nebo propad podlahy v místě chůze.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "uzka_komunikace",
-          "nazev": "Nedostatečná šířka komunikace",
-          "popis": "Komunikace neumožňuje bezpečný pohyb osob nebo evakuaci.",
+          "nazev": "Úzká komunikace",
+          "popis": "Průchod neumožňuje bezpečný pohyb dvou osob nebo evakuaci.",
           "poradi": 60,
           "aktivni": true
         }
@@ -154,36 +154,36 @@
       "doporucene_postupy": [
         {
           "id": "pravidelna_kontrola",
-          "nazev": "Pravidelně kontrolovat stav podlah",
-          "popis": "Provádějte pravidelné obchůzky a zaznamenávejte zjištěné závady podlah.",
+          "nazev": "Kontrolovat podlahy při obchůzkách",
+          "popis": "Při prověrkách projděte hlavní trasy a zaznamenejte závady podlah.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "udrzba_povrchu",
-          "nazev": "Udržovat podlahy v bezpečném stavu",
-          "popis": "Bezodkladně opravujte poškození a odstraňujte kluzké nebo nebezpečné povrchy.",
+          "nazev": "Opravit poškozené podlahy",
+          "popis": "Výtluky a kluzké povrchy opravte nebo označte do doby opravy.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "volne_komunikace",
-          "nazev": "Udržovat komunikace volné",
-          "popis": "Zajistěte, aby průchody nebyly zastavěny materiálem ani zařízením.",
+          "nazev": "Udržovat volné průchody",
+          "popis": "Materiál a vozíky neukládejte do průchodů.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "oznaceni_cest",
-          "nazev": "Důsledně označovat komunikace",
-          "popis": "Udržujte viditelné označení únikových cest a směrů pohybu.",
+          "nazev": "Udržovat označení tras",
+          "popis": "Značky směrů a nebezpečných míst udržujte viditelné.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "prochazka_zamestnancem",
-          "nazev": "Kontrolovat komunikace z pohledu zaměstnance",
-          "popis": "Při prověrkách projděte hlavní trasy stejně, jak je využívají zaměstnanci.",
+          "nazev": "Projít trasu jako zaměstnanec",
+          "popis": "Při kontrole jděte stejnou cestou, jakou chodí zaměstnanci.",
           "poradi": 50,
           "aktivni": true
         }
@@ -192,7 +192,7 @@
         {
           "id": "nv_375_2017",
           "nazev": "Nařízení vlády č. 375/2017 Sb.",
-          "popis": "Podmínky pracovního prostředí pracovních míst — požadavky na pracoviště a komunikace.",
+          "popis": "Podmínky pracovního prostředí — komunikace a podlahy.",
           "poradi": 10,
           "aktivni": true
         },
@@ -201,19 +201,19 @@
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
           "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví — požadavky na pracoviště a průchody.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": false
         },
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro udržování pořádku, průchodnosti a stavu komunikací.",
+          "popis": "Průchodnost, stav podlah a pořádek na komunikacích.",
           "poradi": 40,
           "aktivni": true
         }
@@ -223,50 +223,50 @@
     {
       "id": "poradek_pracoviste",
       "nazev": "Pořádek na pracovišti",
-      "popis": "Kontrola pořádku, skladování materiálu, úklidu a volnosti únikových prostor.",
+      "popis": "Prověrka pořádku, skladování materiálu a volnosti únikových prostor.",
       "poradi": 20,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "vyber_pracoviste",
-          "text": "Namátkově vyberte pracoviště nebo pracovní zónu k prohlídce.",
+          "text": "Vyberte pracoviště k prohlídce.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "celkovy_poradek",
-          "text": "Zhodnoťte celkový pořádek a čistotu pracoviště.",
+          "text": "Zhodnoťte celkový pořádek a čistotu.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "skladovani",
-          "text": "Zkontrolujte skladování materiálu, nástrojů a výrobků.",
+          "text": "Zkontrolujte skladování materiálu a nástrojů.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "odpad",
-          "text": "Ověřte nakládání s odpadem a stav odpadních nádob.",
+          "text": "Ověřte třídění odpadu a stav nádob.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "unikove_prostory",
-          "text": "Zkontrolujte volnost únikových prostor a průchodů.",
+          "text": "Zkontrolujte volnost únikových cest.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "odpovednost",
-          "text": "Ověřte, zda jsou určeny odpovědné osoby za udržování pořádku.",
+          "text": "Ověřte určené osoby za udržování pořádku.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Namátkově vybrané pracoviště odpovídá zásadám pořádku.",
+          "text": "Posuďte, zda vybrané pracoviště odpovídá zásadám pořádku.",
           "poradi": 70,
           "aktivni": true
         }
@@ -274,8 +274,8 @@
       "kontrolni_body": [
         {
           "id": "poradek",
-          "nazev": "Pracoviště je udržováno v pořádku",
-          "popis": "Pracovní plochy a okolí nejsou zbytečně znečištěny ani neuspořádány.",
+          "nazev": "Pracoviště je v pořádku",
+          "popis": "Pracovní plochy nejsou zbytečně zahlcené materiálem.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -283,15 +283,15 @@
         {
           "id": "skladovani",
           "nazev": "Materiál je řádně skladován",
-          "popis": "Materiál a nástroje jsou uloženy na určených místech a nepřekážejí.",
+          "popis": "Materiál a nástroje jsou na určených místech, ne v průchodech.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "odpad",
           "nazev": "Odpad je řádně likvidován",
-          "popis": "Odpad je tříděn a odstraňován v souladu s provozními pravidly.",
+          "popis": "Odpad je v nádobách a pravidelně odvážen.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -299,7 +299,7 @@
         {
           "id": "unikove_prostory",
           "nazev": "Únikové prostory jsou volné",
-          "popis": "Únikové cesty a nouzové východy nejsou zastavěny materiálem.",
+          "popis": "Únikové cesty nejsou zastavěné materiálem ani zařízením.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -307,15 +307,15 @@
         {
           "id": "cistota",
           "nazev": "Pracoviště je udržováno v čistotě",
-          "popis": "Pracoviště nevykazuje dlouhodobé znečištění nebo nehygienické stavy.",
+          "popis": "Pracoviště není dlouhodobě znečištěné prachem nebo mastnotou.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Vybrané pracoviště odpovídá zásadám pořádku",
-          "popis": "Namátkově vybrané pracoviště odpovídá zásadám pořádku.",
+          "nazev": "Pracoviště odpovídá zásadám pořádku",
+          "popis": "Na vybraném pracovišti není nepořádek bránící bezpečné práci.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -325,42 +325,42 @@
         {
           "id": "neporadek",
           "nazev": "Nepořádek na pracovišti",
-          "popis": "Pracovní plochy jsou zahlceny materiálem nebo nepořádně.",
+          "popis": "Stoly, podlahy nebo regály jsou zahlcené materiálem.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nesystematicke_skladovani",
-          "nazev": "Nesystematické skladování",
-          "popis": "Materiál je skladován mimo určená místa nebo v průchodech.",
+          "nazev": "Materiál mimo určená místa",
+          "popis": "Palety nebo krabice stojí v průchodech nebo u strojů.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "nahromadeny_odpad",
           "nazev": "Nahromaděný odpad",
-          "popis": "Odpad není pravidelně odstraňován z pracoviště.",
+          "popis": "Přeplněné koše nebo odpad ležící u pracoviště.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "zastavene_unikove_cesty",
           "nazev": "Zastavené únikové cesty",
-          "popis": "Únikové prostory jsou zablokovány materiálem nebo zařízením.",
+          "popis": "Únikový východ nebo cesta je zablokovaná materiálem.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "znecistene_prostory",
-          "nazev": "Znečištěné pracovní prostory",
-          "popis": "Pracoviště je dlouhodobě znečištěno prachem, mastnotou nebo jinými nečistotami.",
+          "nazev": "Znečištěné prostory",
+          "popis": "Hustý prach, mastnota nebo skvrny na podlaze a zařízení.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "chybi_odpovednost",
           "nazev": "Neurčena odpovědnost za pořádek",
-          "popis": "Není jasně určeno, kdo odpovídá za udržování pořádku na pracovišti.",
+          "popis": "Není jasné, kdo má udržovat pořádek na daném pracovišti.",
           "poradi": 60,
           "aktivni": true
         }
@@ -368,36 +368,36 @@
       "doporucene_postupy": [
         {
           "id": "pravidelny_uklid",
-          "nazev": "Zavést pravidelný úklid pracovišť",
-          "popis": "Stanovte frekvenci úklidu a odpovědné osoby pro jednotlivá pracoviště.",
+          "nazev": "Stanovit pravidelný úklid",
+          "popis": "Určete frekvenci úklidu a odpovědnou osobu pro každé pracoviště.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "určena_mista_skladovani",
-          "nazev": "Určit místa pro skladování materiálu",
-          "popis": "Vyznačte a dodržujte určená místa pro skladování materiálu a nástrojů.",
+          "nazev": "Vyznačit místa pro skladování",
+          "popis": "Materiál ukládejte jen na určená místa mimo průchody.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "kontrola_unikovych_cest",
-          "nazev": "Pravidelně kontrolovat únikové cesty",
-          "popis": "Ověřujte, že únikové prostory zůstávají trvale volné.",
+          "nazev": "Kontrolovat únikové cesty",
+          "popis": "Při každé obchůzce ověřte, že únikové trasy jsou volné.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "třídění_odpadu",
-          "nazev": "Zajistit řádné třídění a odstraňování odpadu",
-          "popis": "Udržujte dostatečný počet odpadních nádob a pravidelný svoz odpadu.",
+          "nazev": "Pravidelně vyvážet odpad",
+          "popis": "Udržujte dostatek nádob a pravidelný svoz odpadu.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "namatkove_kontroly",
-          "nazev": "Provádět namátkové kontroly pořádku",
-          "popis": "Při prověrkách pravidelně kontrolujte stav pořádku na vybraných pracovištích.",
+          "nazev": "Kontrolovat pořádek při prověrkách",
+          "popis": "Namátkově vyberte pracoviště a posuďte stav pořádku.",
           "poradi": 50,
           "aktivni": true
         }
@@ -406,7 +406,7 @@
         {
           "id": "nv_375_2017",
           "nazev": "Nařízení vlády č. 375/2017 Sb.",
-          "popis": "Podmínky pracovního prostředí — požadavky na pořádek a organizaci pracoviště.",
+          "popis": "Podmínky pracovního prostředí — pořádek a organizace pracoviště.",
           "poradi": 10,
           "aktivni": true
         },
@@ -415,19 +415,19 @@
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
           "popis": "Podrobnosti k zajištění BOZP — organizace pracoviště a bezpečnost provozu.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": false
         },
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Povinnosti zaměstnavatele v oblasti bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro udržování pořádku, skladování a úklid pracovišť.",
+          "popis": "Pořádek, skladování a úklid pracovišť.",
           "poradi": 40,
           "aktivni": true
         }
@@ -437,20 +437,20 @@
     {
       "id": "osvetleni_pracoviste",
       "nazev": "Osvětlení pracoviště",
-      "popis": "Kontrola funkčnosti, dostatečnosti a kvality osvětlení pracoviště včetně nouzového osvětlení.",
+      "popis": "Prověrka funkčnosti, dostatečnosti a nouzového osvětlení.",
       "poradi": 30,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace_pracoviste",
-          "text": "Identifikujte pracoviště a pracovní činnosti s požadavky na osvětlení.",
+          "text": "Identifikujte pracoviště s požadavky na osvětlení.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "funkcnost",
-          "text": "Zkontrolujte funkčnost osvětlení a stav svítidel.",
+          "text": "Zkontrolujte funkčnost svítidel.",
           "poradi": 20,
           "aktivni": true
         },
@@ -462,25 +462,25 @@
         },
         {
           "id": "dostatecnost",
-          "text": "Zhodnoťte dostatečnost osvětlení pro vykonávanou práci.",
+          "text": "Posuďte, zda je osvětlení dostatečné pro vykonávanou práci.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "oslneni",
-          "text": "Zkontrolujte riziko oslnění a stínění pracovních ploch.",
+          "text": "Zkontrolujte riziko oslnění pracovních ploch.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "nouzove_osvetleni",
-          "text": "Orientačně ověřte stav nouzového osvětlení.",
+          "text": "Ověřte stav nouzového osvětlení.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Ověřte, zda zaměstnanec nepoužívá vlastní osvětlení kvůli nedostatečnému osvětlení.",
+          "text": "Ověřte, zda zaměstnanec nepoužívá vlastní lampu.",
           "poradi": 70,
           "aktivni": true
         }
@@ -489,15 +489,15 @@
         {
           "id": "funkcnost",
           "nazev": "Osvětlení je funkční",
-          "popis": "Svítidla jsou provozuschopná a osvětlují pracovní plochy.",
+          "popis": "Svítidla svítí a osvětlují pracovní plochy.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "poskozena_svitidla",
           "nazev": "Svítidla nejsou poškozená",
-          "popis": "Poškozená nebo nefunkční svítidla jsou včas opravena nebo vyměněna.",
+          "popis": "Poškozená nebo nefunkční svítidla jsou opravená nebo vyměněná.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -505,7 +505,7 @@
         {
           "id": "dostatecnost",
           "nazev": "Osvětlení je dostatečné",
-          "popis": "Intenzita osvětlení odpovídá charakteru vykonávané práce.",
+          "popis": "Intenzita osvětlení odpovídá charakteru práce.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -513,15 +513,15 @@
         {
           "id": "oslneni",
           "nazev": "Oslnění není problematické",
-          "popis": "Pracovní plochy nejsou nadměrně oslňovány přímým nebo odraženým světlem.",
+          "popis": "Pracovní plochy nejsou nadměrně oslňované.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "nouzove_osvetleni",
-          "nazev": "Nouzové osvětlení je k dispozici",
-          "popis": "Nouzové osvětlení je orientačně v pořádku a označeno.",
+          "nazev": "Nouzové osvětlení je v pořádku",
+          "popis": "Nouzové osvětlení funguje nebo není poškozené.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -529,7 +529,7 @@
         {
           "id": "prakticka_kontrola",
           "nazev": "Zaměstnanec nepotřebuje vlastní osvětlení",
-          "popis": "Zaměstnanec nepoužívá vlastní osvětlení kvůli nedostatečnému osvětlení.",
+          "popis": "Zaměstnanec nepoužívá vlastní lampu kvůli tmě na pracovišti.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -539,42 +539,42 @@
         {
           "id": "nefunkcni_svitidla",
           "nazev": "Nefunkční svítidla",
-          "popis": "Jedno nebo více svítidel nefunguje a nebylo opraveno.",
+          "popis": "Vypálené žárovky nebo nefunkční svítidla nad pracovištěm.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nedostatecne_osvetleni",
           "nazev": "Nedostatečné osvětlení",
-          "popis": "Intenzita osvětlení neodpovídá požadavkům pro danou práci.",
+          "popis": "Zaměstnanec pracuje v tmě nebo stínu bez dostatečného světla.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "oslneni",
           "nazev": "Oslnění pracovní plochy",
-          "popis": "Zaměstnanci jsou nadměrně oslňováni při výkonu práce.",
+          "popis": "Přímé slunce nebo reflektor oslňuje při práci.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "poskozena_svitidla",
           "nazev": "Poškozená svítidla",
-          "popis": "Svítidla jsou mechanicky poškozená nebo nebezpečně upevněna.",
+          "popis": "Rozbitý kryt, visící svítidlo nebo poškozené vedení.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "vlastni_osvetleni",
-          "nazev": "Používání vlastního osvětlení",
-          "popis": "Zaměstnanci používají vlastní lampy kvůli nedostatečnému osvětlení.",
+          "nazev": "Vlastní lampa na pracovišti",
+          "popis": "Zaměstnanec si přinesl lampu kvůli nedostatečnému osvětlení.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "porucha_nouzoveho",
-          "nazev": "Porucha nouzového osvětlení",
-          "popis": "Nouzové osvětlení nefunguje nebo není pravidelně kontrolováno.",
+          "nazev": "Nefunkční nouzové osvětlení",
+          "popis": "Nouzové svítidlo nesvítí nebo není pravidelně kontrolováno.",
           "poradi": 60,
           "aktivni": true
         }
@@ -582,36 +582,36 @@
       "doporucene_postupy": [
         {
           "id": "pravidelna_kontrola",
-          "nazev": "Pravidelně kontrolovat stav osvětlení",
-          "popis": "Provádějte pravidelné kontroly funkčnosti a dostatečnosti osvětlení.",
+          "nazev": "Kontrolovat osvětlení při obchůzkách",
+          "popis": "Při prověrkách ověřujte funkčnost svítidel nad pracovišti.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "opravy_vcas",
-          "nazev": "Bezodkladně opravovat nefunkční svítidla",
-          "popis": "Poškozená nebo nefunkční svítidla vyměňujte nebo opravujte bez prodlení.",
+          "nazev": "Vyměnit nefunkční svítidla",
+          "popis": "Vypálené nebo poškozené svítidla vyměňte bez odkladu.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "mereni_osvetleni",
-          "nazev": "Měřit intenzitu osvětlení u náročných prací",
-          "popis": "U prací s vysokými nároky na vidění ověřujte intenzitu osvětlení měřením.",
+          "nazev": "Měřit osvětlení u náročných prací",
+          "popis": "U jemné montáže nebo kontroly kvality změřte intenzitu osvětlení.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "kontrola_nouzoveho",
-          "nazev": "Kontrolovat nouzové osvětlení",
-          "popis": "Provádějte pravidelné kontroly nouzového osvětlení dle požadavků.",
+          "nazev": "Testovat nouzové osvětlení",
+          "popis": "Nouzové osvětlení kontrolujte podle intervalu z dokumentace.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "reklamace_zamestnancu",
-          "nazev": "Reagovat na podněty zaměstnanců",
-          "popis": "Řešte stížnosti na nedostatečné osvětlení a oslnění pracovních ploch.",
+          "nazev": "Řešit stížnosti na osvětlení",
+          "popis": "Podněty na tmu nebo oslnění vyřešte úpravou osvětlení.",
           "poradi": 50,
           "aktivni": true
         }
@@ -620,7 +620,7 @@
         {
           "id": "nv_375_2017",
           "nazev": "Nařízení vlády č. 375/2017 Sb.",
-          "popis": "Podmínky pracovního prostředí — požadavky na osvětlení pracovních míst.",
+          "popis": "Podmínky pracovního prostředí — osvětlení pracovních míst.",
           "poradi": 10,
           "aktivni": true
         },
@@ -629,19 +629,19 @@
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
           "popis": "Podrobnosti k zajištění BOZP — technické požadavky na pracoviště.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": false
         },
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Povinnosti zaměstnavatele v oblasti pracovního prostředí.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro kontrolu, údržbu a hlášení závad osvětlení.",
+          "popis": "Kontrola, údržba a hlášení závad osvětlení.",
           "poradi": 40,
           "aktivni": true
         }
@@ -651,20 +651,20 @@
     {
       "id": "vetrani_kvalita_ovzdusi",
       "nazev": "Větrání a kvalita ovzduší",
-      "popis": "Kontrola větrání, odsávání, kvality ovzduší a funkčnosti vzduchotechniky na pracovišti.",
+      "popis": "Prověrka větrání, odsávání a kvality ovzduší na pracovišti.",
       "poradi": 40,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace_rizik",
-          "text": "Zjistěte zdroje prašnosti, zápachu nebo jiných znečištění ovzduší.",
+          "text": "Zjistěte zdroje prašnosti, zápachu nebo jiného znečištění.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "vetrani",
-          "text": "Zkontrolujte přirozené nebo nucené větrání pracoviště.",
+          "text": "Zkontrolujte přirozené nebo nucené větrání.",
           "poradi": 20,
           "aktivni": true
         },
@@ -676,25 +676,25 @@
         },
         {
           "id": "vzduchotechnika",
-          "text": "Zkontrolujte stav a provoz vzduchotechnických zařízení.",
+          "text": "Zkontrolujte stav vzduchotechnických zařízení.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "prasnost_zapach",
-          "text": "Posuďte přítomnost prašnosti, zápachu nebo stuffy ovzduší.",
+          "text": "Posuďte prašnost, zápach nebo dusno v prostoru.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "dokumentace",
-          "text": "Ověřte existenci měření nebo posouzení kvality ovzduší tam, kde je požadováno.",
+          "text": "Ověřte měření nebo posouzení ovzduší, pokud je požadováno.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda na pracovišti nejsou zjevné známky nedostatečného větrání.",
+          "text": "Posuďte, zda prostor není zjevně špatně větraný.",
           "poradi": 70,
           "aktivni": true
         }
@@ -703,7 +703,7 @@
         {
           "id": "vetrani",
           "nazev": "Větrání je zajištěno",
-          "popis": "Pracoviště je větráno přirozeně nebo nuceně v potřebné míře.",
+          "popis": "Pracoviště je větráno přirozeně nebo nuceně.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -711,10 +711,10 @@
         {
           "id": "odsavani",
           "nazev": "Odsávání je funkční",
-          "popis": "Místní odsávání u rizikových prací funguje a je používáno.",
+          "popis": "Místní odsávání u rizikových prací funguje a je zapnuté.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "vzduchotechnika",
@@ -727,7 +727,7 @@
         {
           "id": "prasnost",
           "nazev": "Prašnost není problematická",
-          "popis": "Na pracovišti nejsou zjevné projevy nadměrné prašnosti.",
+          "popis": "Na pracovišti není viditelná nadměrná prašnost.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -735,7 +735,7 @@
         {
           "id": "zapach",
           "nazev": "Zápach není problematický",
-          "popis": "Ovzduší nevykazuje nepříjemný nebo neobvyklý zápach.",
+          "popis": "V ovzduší není cítit nepříjemný nebo neobvyklý zápach.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -743,7 +743,7 @@
         {
           "id": "prakticka_kontrola",
           "nazev": "Větrání odpovídá potřebám pracoviště",
-          "popis": "Na pracovišti nejsou zjevné známky nedostatečného větrání.",
+          "popis": "Prostor není dusivý a ovzduší působí svěže.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -753,42 +753,42 @@
         {
           "id": "nedostatecne_vetrani",
           "nazev": "Nedostatečné větrání",
-          "popis": "Pracoviště není dostatečně větráno a ovzduší působí dusivě.",
+          "popis": "V uzavřeném prostoru je dusno nebo stuffy ovzduší.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nefunkcni_odsavani",
           "nazev": "Nefunkční odsávání",
-          "popis": "Místní odsávání nefunguje nebo není používáno.",
+          "popis": "Odsávací hubice nefunguje nebo zaměstnanec odsávání nepoužívá.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "porucha_vzduchotechniky",
           "nazev": "Porucha vzduchotechniky",
-          "popis": "Vzduchotechnická zařízení jsou mimo provoz nebo neudržovaná.",
+          "popis": "Ventilace nefunguje, filtry jsou zanesené nebo zařízení je vypnuté.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nadmerna_prasnost",
           "nazev": "Nadměrná prašnost",
-          "popis": "Na pracovišti je patrná nadměrná prašnost.",
+          "popis": "Viditelný prach ve vzduchu nebo na površích během směny.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "neprijemny_zapach",
           "nazev": "Nepříjemný zápach",
-          "popis": "V ovzduší pracoviště je cítit nepříjemný nebo neobvyklý zápach.",
+          "popis": "Zápach chemikálií, výfukových plynů nebo plísně v prostoru.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "chybi_mereni",
-          "nazev": "Chybí měření kvality ovzduší",
-          "popis": "U rizikových prací není provedeno požadované měření ovzduší.",
+          "nazev": "Chybí měření ovzduší",
+          "popis": "U rizikových prací nebylo provedeno požadované měření.",
           "poradi": 60,
           "aktivni": true
         }
@@ -796,36 +796,36 @@
       "doporucene_postupy": [
         {
           "id": "pravidelna_udrzba",
-          "nazev": "Pravidelně udržovat vzduchotechniku",
-          "popis": "Provádějte pravidelnou údržbu a kontrolu vzduchotechnických zařízení.",
+          "nazev": "Udržovat vzduchotechniku",
+          "popis": "Pravidelně čistěte filtry a kontrolujte funkci ventilace.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "pouzivani_odsavani",
-          "nazev": "Zajistit používání odsávání",
-          "popis": "Kontrolujte, zda zaměstnanci používají místní odsávání u rizikových prací.",
+          "nazev": "Kontrolovat používání odsávání",
+          "popis": "U svařování a broušení ověřte, že odsávání běží.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "vetrani_prostor",
-          "nazev": "Zajistit pravidelné větrání prostor",
-          "popis": "Udržujte přirozené nebo nucené větrání v provozuschopném stavu.",
+          "nazev": "Větrat prostory",
+          "popis": "Udržujte otevíratelná okna a větrací mříže v provozu.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "mereni_ovzdusi",
-          "nazev": "Provádět měření kvality ovzduší",
-          "popis": "U prací s rizikem znečištění ovzduší provádějte požadovaná měření.",
+          "nazev": "Provádět měření ovzduší",
+          "popis": "U prací s chemikáliemi nebo prašností nechte měřit ovzduší.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "reklamace_zamestnancu",
-          "nazev": "Reagovat na podněty ohledně kvality ovzduší",
-          "popis": "Řešte stížnosti zaměstnanců na dusno, zápach nebo prašnost.",
+          "nazev": "Řešit stížnosti na ovzduší",
+          "popis": "Podněty na dusno, zápach nebo prach vyřešte úpravou větrání.",
           "poradi": 50,
           "aktivni": true
         }
@@ -834,7 +834,7 @@
         {
           "id": "nv_375_2017",
           "nazev": "Nařízení vlády č. 375/2017 Sb.",
-          "popis": "Podmínky pracovního prostředí — požadavky na větrání a kvalitu ovzduší.",
+          "popis": "Podmínky pracovního prostředí — větrání a kvalita ovzduší.",
           "poradi": 10,
           "aktivni": true
         },
@@ -843,19 +843,19 @@
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
           "popis": "Podrobnosti k zajištění BOZP — odsávání a technická zařízení.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": false
         },
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Povinnosti zaměstnavatele v oblasti pracovního prostředí a rizikových faktorů.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro větrání, odsávání a kontrolu kvality ovzduší.",
+          "popis": "Větrání, odsávání a kontrola kvality ovzduší.",
           "poradi": 40,
           "aktivni": true
         }
@@ -865,14 +865,14 @@
     {
       "id": "mikroklimaticke_podminky",
       "nazev": "Mikroklimatické podmínky",
-      "popis": "Kontrola teploty, vlhkosti, průvanu a dalších mikroklimatických faktorů na pracovišti.",
+      "popis": "Prověrka teploty, vlhkosti, průvanu a tepelného komfortu.",
       "poradi": 50,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace_pracoviste",
-          "text": "Identifikujte pracoviště s nároky na mikroklimatické podmínky.",
+          "text": "Identifikujte pracoviště s nároky na mikroklima.",
           "poradi": 10,
           "aktivni": true
         },
@@ -884,31 +884,31 @@
         },
         {
           "id": "vlhkost",
-          "text": "Zkontrolujte vlhkost ovzduší tam, kde je relevantní.",
+          "text": "Zkontrolujte vlhkost ovzduší, pokud je relevantní.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "pruvan",
-          "text": "Ověřte přítomnost průvanu nebo nepříjemného proudění vzduchu.",
+          "text": "Ověřte přítomnost nepříjemného průvanu.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "salave_teplo",
-          "text": "Posuďte riziko sálavého tepla nebo chladu u specifických prací.",
+          "text": "Posuďte sálavé teplo nebo chlad u specifických prací.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "podnety_zamestnancu",
-          "text": "Vyslechněte podněty zaměstnanců ohledně tepelného komfortu.",
+          "text": "Vyslechněte podněty ohledně tepelného komfortu.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda zaměstnanci nemají zjevné problémy způsobené mikroklimatem.",
+          "text": "Posuďte, zda mikroklima nezpůsobuje zjevné problémy.",
           "poradi": 70,
           "aktivni": true
         }
@@ -917,15 +917,15 @@
         {
           "id": "teplota",
           "nazev": "Teplota je přijatelná",
-          "popis": "Teplota v pracovních prostorách nevyvolává zjevné nepohodlí.",
+          "popis": "Teplota nevyvolává zjevné nepohodlí při práci.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "vlhkost",
           "nazev": "Vlhkost není problematická",
-          "popis": "Vlhkost ovzduší nevyvolává zjevné nepohodlí nebo riziko.",
+          "popis": "Vlhkost nezpůsobuje nepohodlí ani viditelnou kondenzaci.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -933,7 +933,7 @@
         {
           "id": "pruvan",
           "nazev": "Průvan není problematický",
-          "popis": "Zaměstnanci nejsou vystaveni nepříjemnému průvanu.",
+          "popis": "Zaměstnanci nejsou vystaveni nepříjemnému proudění vzduchu.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -944,20 +944,20 @@
           "popis": "U prací se sálavým teplem jsou zajištěna ochranná opatření.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "chlad",
           "nazev": "Chlad není problematický",
-          "popis": "Pracoviště s chladnými podmínkami mají zajištěna ochranná opatření.",
+          "popis": "V chladných prostorech jsou zajištěna ochranná opatření.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Mikroklima nezpůsobuje zjevné problémy",
-          "popis": "Zaměstnanci nemají zjevné problémy způsobené mikroklimatem.",
+          "popis": "Zaměstnanci nemají zjevné potíže způsobené teplotou nebo průvanem.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -966,43 +966,43 @@
       "typicke_zavady": [
         {
           "id": "nizka_teplota",
-          "nazev": "Nízká teplota",
-          "popis": "Pracoviště je trvale příliš chladné bez ochranných opatření.",
+          "nazev": "Příliš chladno",
+          "popis": "V nevyhřívaném prostoru je trvale chladno bez ochranných oděvů.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "vysoka_teplota",
-          "nazev": "Vysoká teplota",
-          "popis": "Pracoviště je trvale příliš teplé bez ochranných opatření.",
+          "nazev": "Příliš horko",
+          "popis": "V hale nebo u pece je trvale horko bez přestávek nebo pití.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "pruvan",
           "nazev": "Nepříjemný průvan",
-          "popis": "Zaměstnanci jsou vystaveni nepříjemnému proudění vzduchu.",
+          "popis": "Průvan od ventilace nebo otevřených dveří na pracoviště.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "salave_teplo",
           "nazev": "Nevyřešené sálavé teplo",
-          "popis": "U prací se sálavým teplem chybí ochranná opatření.",
+          "popis": "U pece nebo svařování chybí stínění nebo přestávky.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "vysoka_vlhkost",
           "nazev": "Nevhodná vlhkost",
-          "popis": "Vlhkost ovzduší je nadměrná nebo nedostatečná.",
+          "popis": "Kondenzace na stěnách nebo trvale vlhký vzduch.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "stiznosti_zamestnancu",
-          "nazev": "Neřešené stížnosti zaměstnanců",
-          "popis": "Zaměstnanci opakovaně hlásí nepohodlí způsobené mikroklimatem.",
+          "nazev": "Neřešené stížnosti",
+          "popis": "Zaměstnanci opakovaně hlásí horko, chlad nebo průvan.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1010,36 +1010,36 @@
       "doporucene_postupy": [
         {
           "id": "monitorovani",
-          "nazev": "Monitorovat mikroklimatické podmínky",
-          "popis": "U náročných pracovišť pravidelně sledujte teplotu a vlhkost.",
+          "nazev": "Sledovat teplotu u náročných prací",
+          "popis": "V horkém nebo chladném prostředí pravidelně kontrolujte teplotu.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "opatreni_proti_chladu",
-          "nazev": "Zajistit opatření proti chladu",
-          "popis": "U chladných pracovišť poskytněte vhodné ochranné pracovní oděvy nebo vytápění.",
+          "nazev": "Opatřit proti chladu",
+          "popis": "V chladných prostorech zajistěte vytápění nebo teplé oděvy.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "opatreni_proti_teplu",
-          "nazev": "Zajistit opatření proti teplu",
-          "popis": "U horkých pracovišť zaveďte přestávky, pitný režim a stínění.",
+          "nazev": "Opatřit proti horku",
+          "popis": "V horkém prostředí zajistěte přestávky, pití a větrání.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "reseni_proudeni",
-          "nazev": "Eliminovat nepříjemný průvan",
-          "popis": "Upravte rozmístění pracovišť nebo vzduchotechniku tak, aby nevznikal průvan.",
+          "nazev": "Upravit proudění vzduchu",
+          "popis": "Přesměrujte ventilaci, aby nefoukal přímo na pracoviště.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "reklamace_zamestnancu",
-          "nazev": "Reagovat na podněty zaměstnanců",
-          "popis": "Řešte stížnosti na teplotu, vlhkost nebo průvan bez prodlení.",
+          "nazev": "Řešit stížnosti na mikroklima",
+          "popis": "Podněty na teplotu nebo průvan vyřešte úpravou provozu nebo techniky.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1048,7 +1048,7 @@
         {
           "id": "nv_375_2017",
           "nazev": "Nařízení vlády č. 375/2017 Sb.",
-          "popis": "Podmínky pracovního prostředí — mikroklimatické podmínky a jejich hodnocení.",
+          "popis": "Podmínky pracovního prostředí — mikroklimatické podmínky.",
           "poradi": 10,
           "aktivni": true
         },
@@ -1057,19 +1057,19 @@
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
           "popis": "Podrobnosti k zajištění BOZP — ochranná opatření proti chladu a teplu.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": false
         },
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Povinnosti zaměstnavatele v oblasti pracovního prostředí a mikroklimatu.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro zajištění přijatelných mikroklimatických podmínek.",
+          "popis": "Přijatelné mikroklimatické podmínky na pracovišti.",
           "poradi": 40,
           "aktivni": true
         }
@@ -1079,20 +1079,20 @@
     {
       "id": "socialni_zarizeni",
       "nazev": "Sociální zařízení",
-      "popis": "Kontrola toalet, umýváren, hygienických prostředků a celkového stavu sociálních zařízení.",
+      "popis": "Prověrka toalet, umýváren, hygienických prostředků a čistoty.",
       "poradi": 60,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace_zarizeni",
-          "text": "Zjistěte umístění a počet sociálních zařízení na pracovišti.",
+          "text": "Zjistěte umístění a počet sociálních zařízení.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "pocet_zamestnancu",
-          "text": "Porovnejte kapacitu sociálních zařízení s počtem zaměstnanců.",
+          "text": "Porovnejte kapacitu s počtem zaměstnanců.",
           "poradi": 20,
           "aktivni": true
         },
@@ -1104,25 +1104,25 @@
         },
         {
           "id": "umyvárny",
-          "text": "Ověřte stav umýváren a dostupnost teplé vody.",
+          "text": "Ověřte umývárny a dostupnost teplé vody.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "hygienicke_prostredky",
-          "text": "Zkontrolujte dostupnost hygienických prostředků a ručníků.",
+          "text": "Zkontrolujte mýdlo, ručníky a toaletní papír.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "cistota",
-          "text": "Posuďte čistotu a celkový stav sociálních zařízení.",
+          "text": "Posuďte čistotu sociálních zařízení.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda sociální zařízení odpovídají počtu zaměstnanců.",
+          "text": "Posuďte, zda kapacita odpovídá počtu zaměstnanců.",
           "poradi": 70,
           "aktivni": true
         }
@@ -1131,15 +1131,15 @@
         {
           "id": "toalety",
           "nazev": "Toalety jsou funkční a čisté",
-          "popis": "Toalety jsou v provozuschopném stavu a udržovány v čistotě.",
+          "popis": "Toalety jsou v provozu a udržované v čistotě.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "umyvárny",
           "nazev": "Umývárny jsou funkční",
-          "popis": "Umývárny jsou v provozu s dostupnou teplou vodou.",
+          "popis": "Umývárny mají teplou vodu a fungující baterie.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1147,31 +1147,31 @@
         {
           "id": "hygienicke_prostredky",
           "nazev": "Hygienické prostředky jsou k dispozici",
-          "popis": "Mýdlo, ručníky nebo sušiče jsou dostupné pro zaměstnance.",
+          "popis": "Mýdlo, ručníky nebo sušič a toaletní papír jsou k dispozici.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "cistota",
-          "nazev": "Sociální zařízení jsou udržována v čistotě",
-          "popis": "Prostory jsou pravidelně uklízeny a nevykazují zanedbaný stav.",
+          "nazev": "Sociální zařízení jsou čistá",
+          "popis": "Prostory jsou pravidelně uklízeny.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "funkcnost",
-          "nazev": "Zařízení sociálních prostor je funkční",
-          "popis": "Baterie, splachování a osvětlení sociálních zařízení fungují.",
+          "nazev": "Zařízení sociálních prostor funguje",
+          "popis": "Splachování, baterie a osvětlení fungují.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Kapacita odpovídá počtu zaměstnanců",
-          "popis": "Sociální zařízení odpovídají počtu zaměstnanců.",
+          "popis": "Počet zařízení odpovídá počtu zaměstnanců na pracovišti.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1181,42 +1181,42 @@
         {
           "id": "nedostatecna_kapacita",
           "nazev": "Nedostatečná kapacita",
-          "popis": "Počet sociálních zařízení neodpovídá počtu zaměstnanců.",
+          "popis": "Málo toalet nebo umýváren vzhledem k počtu zaměstnanců.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "neciste_toalety",
           "nazev": "Nečisté toalety",
-          "popis": "Toalety nejsou pravidelně uklízeny nebo jsou v nehygienickém stavu.",
+          "popis": "Toalety nejsou uklizené nebo jsou v nehygienickém stavu.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "chybi_hygienicke_prostredky",
           "nazev": "Chybí hygienické prostředky",
-          "popis": "Mýdlo, ručníky nebo toaletní papír nejsou k dispozici.",
+          "popis": "Došlo mýdlo, toaletní papír nebo ručníky.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "porucha_vody",
-          "nazev": "Porucha teplé vody",
-          "popis": "V umývárnách není dostupná teplá voda.",
+          "nazev": "Nefunguje teplá voda",
+          "popis": "V umývárnách neteče teplá voda.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "nefunkcni_zarizeni",
           "nazev": "Nefunkční zařízení",
-          "popis": "Splachování, baterie nebo osvětlení nefungují.",
+          "popis": "Nefunguje splachování, baterie nebo osvětlení.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "nedostupna_zarizeni",
-          "nazev": "Nedostupná sociální zařízení",
-          "popis": "Sociální zařízení jsou uzamčena nebo nedostupná během směny.",
+          "nazev": "Nedostupná zařízení",
+          "popis": "Sociální zařízení jsou uzamčená nebo nedostupná ve směně.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1224,36 +1224,36 @@
       "doporucene_postupy": [
         {
           "id": "pravidelny_uklid",
-          "nazev": "Zajistit pravidelný úklid sociálních zařízení",
-          "popis": "Stanovte frekvenci úklidu a odpovědnost za udržování čistoty.",
+          "nazev": "Stanovit pravidelný úklid",
+          "popis": "Určete frekvenci úklidu a odpovědnou osobu.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "doplneni_prostredku",
-          "nazev": "Pravidelně doplňovat hygienické prostředky",
-          "popis": "Kontrolujte a doplňujte mýdlo, ručníky a toaletní papír.",
+          "nazev": "Doplňovat hygienické prostředky",
+          "popis": "Pravidelně kontrolujte a doplňujte mýdlo, papír a ručníky.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "opravy_vcas",
-          "nazev": "Bezodkladně opravovat poruchy",
-          "popis": "Poruchy splachování, baterií a osvětlení řešte bez prodlení.",
+          "nazev": "Opravit poruchy bez odkladu",
+          "popis": "Nefunkční splachování nebo baterie nechte opravit.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "kontrola_kapacity",
-          "nazev": "Kontrolovat kapacitu vůči počtu zaměstnanců",
-          "popis": "Při změně počtu zaměstnanců ověřte dostatečnost sociálních zařízení.",
+          "nazev": "Kontrolovat kapacitu",
+          "popis": "Po navýšení počtu zaměstnanců ověřte dostatek sociálních zařízení.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "dostupnost_behem_smeny",
-          "nazev": "Zajistit dostupnost během směny",
-          "popis": "Sociální zařízení musí být dostupná po celou dobu pracovní směny.",
+          "nazev": "Zajistit dostupnost ve směně",
+          "popis": "Sociální zařízení musí být otevřená po celou pracovní směnu.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1262,7 +1262,7 @@
         {
           "id": "nv_375_2017",
           "nazev": "Nařízení vlády č. 375/2017 Sb.",
-          "popis": "Podmínky pracovního prostředí — požadavky na sociální zařízení.",
+          "popis": "Podmínky pracovního prostředí — sociální zařízení.",
           "poradi": 10,
           "aktivni": true
         },
@@ -1271,19 +1271,19 @@
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
           "popis": "Podrobnosti k zajištění BOZP — sociální a hygienické zařízení.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": false
         },
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Povinnosti zaměstnavatele v oblasti pracovního prostředí a zázemí.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro údržbu, úklid a dostupnost sociálních zařízení.",
+          "popis": "Údržba, úklid a dostupnost sociálních zařízení.",
           "poradi": 40,
           "aktivni": true
         }
@@ -1293,14 +1293,14 @@
     {
       "id": "satny_zazemi",
       "nazev": "Šatny a zázemí zaměstnanců",
-      "popis": "Kontrola šaten, skříněk, oddělení oděvů a odpočinkových prostor pro zaměstnance.",
+      "popis": "Prověrka šaten, skříněk, oddělení oděvů a odpočinkových prostor.",
       "poradi": 70,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace_zazemi",
-          "text": "Zjistěte dostupnost šaten a zázemí pro zaměstnance.",
+          "text": "Zjistěte dostupnost šaten a zázemí.",
           "poradi": 10,
           "aktivni": true
         },
@@ -1312,13 +1312,13 @@
         },
         {
           "id": "oddeleni_odevu",
-          "text": "Ověřte oddělení civilního a pracovního oděvu tam, kde je požadováno.",
+          "text": "Ověřte oddělení civilního a pracovního oděvu.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "cistota",
-          "text": "Posuďte čistotu a pořádek v šatnách a zázemí.",
+          "text": "Posuďte čistotu a pořádek v šatnách.",
           "poradi": 40,
           "aktivni": true
         },
@@ -1330,13 +1330,13 @@
         },
         {
           "id": "dostupnost",
-          "text": "Ověřte dostupnost zázemí během pracovní směny.",
+          "text": "Ověřte dostupnost zázemí během směny.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda zázemí umožňuje zaměstnancům důstojné převlékání.",
+          "text": "Posuďte, zda zázemí umožňuje důstojné převlékání.",
           "poradi": 70,
           "aktivni": true
         }
@@ -1345,7 +1345,7 @@
         {
           "id": "satni_skrinky",
           "nazev": "Šatní skříňky jsou k dispozici",
-          "popis": "Zaměstnanci mají k dispozici šatní skříňky pro odložení oděvu.",
+          "popis": "Zaměstnanec má skříňku pro odložení oděvu.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1353,15 +1353,15 @@
         {
           "id": "oddeleni_odevu",
           "nazev": "Civilní a pracovní oděv je oddělen",
-          "popis": "Tam, kde je to požadováno, jsou civilní a pracovní oděvy odděleny.",
+          "popis": "Tam, kde je to požadováno, jsou oděvy uloženy odděleně.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "cistota",
           "nazev": "Šatny jsou udržovány v čistotě",
-          "popis": "Prostory šaten a zázemí jsou v přijatelném stavu čistoty.",
+          "popis": "Prostory šaten jsou v přijatelném stavu čistoty.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1369,7 +1369,7 @@
         {
           "id": "odpocinkove_prostory",
           "nazev": "Odpočinkové prostory jsou v pořádku",
-          "popis": "Odpočinkové prostory jsou využitelné a udržované.",
+          "popis": "Odpočinkové prostory jsou čisté a využitelné.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1377,7 +1377,7 @@
         {
           "id": "dostupnost",
           "nazev": "Zázemí je dostupné během směny",
-          "popis": "Šatny a zázemí jsou dostupné po celou dobu pracovní směny.",
+          "popis": "Šatny jsou dostupné po celou pracovní směnu.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1385,7 +1385,7 @@
         {
           "id": "prakticka_kontrola",
           "nazev": "Zázemí umožňuje důstojné převlékání",
-          "popis": "Zázemí umožňuje zaměstnancům důstojné převlékání.",
+          "popis": "V šatnách je dostatek místa a soukromí pro převlékání.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "nizka"
@@ -1395,42 +1395,42 @@
         {
           "id": "chybi_satny",
           "nazev": "Chybí šatny",
-          "popis": "Zaměstnanci nemají k dispozici šatny tam, kde jsou požadovány.",
+          "popis": "Zaměstnanci nemají šatny tam, kde je převlékání nutné.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nedostatek_skrinek",
-          "nazev": "Nedostatek šatních skříněk",
-          "popis": "Počet skříněk neodpovídá počtu zaměstnanců.",
+          "nazev": "Nedostatek skříněk",
+          "popis": "Zaměstnanci nemají vlastní skříňku nebo sdílí přeplněnou.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "neodděleny_odevy",
           "nazev": "Neoddělené oděvy",
-          "popis": "Civilní a pracovní oděv není oddělen tam, kde je to požadováno.",
+          "popis": "Civilní a pracovní oděv leží ve stejné skříňce u rizikové práce.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "neciste_satny",
           "nazev": "Nečisté šatny",
-          "popis": "Šatny nejsou pravidelně uklízeny nebo jsou v nevyhovujícím stavu.",
+          "popis": "Šatny nejsou uklízeny nebo jsou znečištěné.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "nevyhovujici_odpocinek",
           "nazev": "Nevyhovující odpočinkové prostory",
-          "popis": "Odpočinkové prostory jsou zanedbané nebo nevyhovující.",
+          "popis": "Odpočinková místnost je zanedbaná, špinavá nebo obsazená materiálem.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "nedostupne_zazemi",
           "nazev": "Nedostupné zázemí",
-          "popis": "Šatny nebo zázemí nejsou dostupné během pracovní směny.",
+          "popis": "Šatny jsou uzamčené nebo nedostupné během směny.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1438,36 +1438,36 @@
       "doporucene_postupy": [
         {
           "id": "zajistit_satny",
-          "nazev": "Zajistit šatny tam, kde jsou požadovány",
-          "popis": "U prací vyžadujících převlékání zříďte a udržujte vhodné šatny.",
+          "nazev": "Zřídit šatny u rizikových prací",
+          "popis": "U prací s převlékáním zajistěte vhodné šatny.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "dostatek_skrinek",
-          "nazev": "Zajistit dostatečný počet skříněk",
-          "popis": "Počet šatních skříněk odpovídá počtu zaměstnanců.",
+          "nazev": "Doplnit skříňky",
+          "popis": "Počet skříněk upravte podle počtu zaměstnanců.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "oddeleni_odevu",
-          "nazev": "Zajistit oddělení oděvů",
-          "popis": "U rizikových prací oddělte civilní a pracovní oděv.",
+          "nazev": "Oddělit civilní a pracovní oděv",
+          "popis": "U rizikových prací zajistěte oddělené skříňky nebo zóny.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "pravidelny_uklid",
-          "nazev": "Pravidelně uklízet šatny a zázemí",
-          "popis": "Stanovte frekvenci úklidu a odpovědnost za udržování pořádku.",
+          "nazev": "Pravidelně uklízet šatny",
+          "popis": "Stanovte frekvenci úklidu šaten a zázemí.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "udrzba_odpocinku",
           "nazev": "Udržovat odpočinkové prostory",
-          "popis": "Zajistěte využitelnost a čistotu odpočinkových prostor.",
+          "popis": "Odpočinkovou místnost udržujte čistou a vybavenou.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1476,7 +1476,7 @@
         {
           "id": "nv_375_2017",
           "nazev": "Nařízení vlády č. 375/2017 Sb.",
-          "popis": "Podmínky pracovního prostředí — požadavky na zázemí zaměstnanců.",
+          "popis": "Podmínky pracovního prostředí — zázemí zaměstnanců.",
           "poradi": 10,
           "aktivni": true
         },
@@ -1485,19 +1485,19 @@
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
           "popis": "Podrobnosti k zajištění BOZP — šatny a odpočinkové prostory.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": false
         },
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Povinnosti zaměstnavatele v oblasti zázemí a pracovního prostředí.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro využívání šaten, skříněk a odpočinkových prostor.",
+          "popis": "Využívání šaten, skříněk a odpočinkových prostor.",
           "poradi": 40,
           "aktivni": true
         }
@@ -1507,50 +1507,50 @@
     {
       "id": "pitny_rezim",
       "nazev": "Pitný režim",
-      "popis": "Kontrola dostupnosti pitné vody, označení míst čerpání a podmínek pitného režimu během směny.",
+      "popis": "Prověrka dostupnosti pitné vody a podmínek pitného režimu.",
       "poradi": 80,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace_mist",
-          "text": "Zjistěte místa pro čerpání pitné vody na pracovišti.",
+          "text": "Zjistěte místa pro čerpání pitné vody.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "dostupnost",
-          "text": "Zkontrolujte dostupnost pitné vody pro všechny zaměstnance.",
+          "text": "Zkontrolujte dostupnost pitné vody pro zaměstnance.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "oznaceni",
-          "text": "Ověřte označení míst pro čerpání pitné vody.",
+          "text": "Ověřte označení míst pro čerpání vody.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "cistota",
-          "text": "Posuďte čistotu a stav zařízení pro pitnou vodu.",
+          "text": "Posuďte čistotu výdejních míst.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "dostupnost_behem_smeny",
-          "text": "Ověřte dostupnost pitné vody během celé pracovní směny.",
+          "text": "Ověřte dostupnost vody po celou směnu.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "horka_prace",
-          "text": "U prací v horkém prostředí ověřte zvýšené požadavky na pitný režim.",
+          "text": "U prací v horku ověřte zvýšený pitný režim.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Namátkově oslovený zaměstnanec ví, kde může čerpat pitnou vodu.",
+          "text": "Zeptejte se zaměstnance, kde čerpá pitnou vodu.",
           "poradi": 70,
           "aktivni": true
         }
@@ -1559,15 +1559,15 @@
         {
           "id": "dostupnost",
           "nazev": "Pitná voda je dostupná",
-          "popis": "Zaměstnanci mají k dispozici pitnou vodu na pracovišti.",
+          "popis": "Zaměstnanci mají na pracovišti pitnou vodu.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "oznaceni",
           "nazev": "Místa čerpání jsou označena",
-          "popis": "Místa pro čerpání pitné vody jsou viditelně označena.",
+          "popis": "Výdejní místa pitné vody jsou viditelně označena.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "nizka"
@@ -1575,7 +1575,7 @@
         {
           "id": "cistota",
           "nazev": "Zařízení pro pitnou vodu je čisté",
-          "popis": "Výdejní místa pitné vody jsou udržována v čistotě.",
+          "popis": "Výdejní místa jsou udržovaná v čistotě.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1583,23 +1583,23 @@
         {
           "id": "dostupnost_behem_smeny",
           "nazev": "Pitná voda je dostupná během směny",
-          "popis": "Pitná voda je k dispozici po celou dobu pracovní směny.",
+          "popis": "Voda je k dispozici po celou pracovní směnu.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "horka_prace",
           "nazev": "Pitný režim u horkých prací je zajištěn",
-          "popis": "U prací v horkém prostředí je pitný režim adekvátně zajištěn.",
+          "popis": "U prací v horku je k dispozici dostatek vody a přestávky.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Zaměstnanec zná místo čerpání pitné vody",
-          "popis": "Namátkově oslovený zaměstnanec ví, kde může čerpat pitnou vodu.",
+          "nazev": "Zaměstnanec zná místo čerpání vody",
+          "popis": "Oslovený zaměstnanec ukáže nejbližší místo s pitnou vodou.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1609,42 +1609,42 @@
         {
           "id": "chybi_pitna_voda",
           "nazev": "Chybí pitná voda",
-          "popis": "Na pracovišti není zajištěna dostupnost pitné vody.",
+          "popis": "Na pracovišti není výdej pitné vody ani náhradní zdroj.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "neoznacena_mista",
           "nazev": "Neoznačená místa čerpání",
-          "popis": "Místa pro čerpání pitné vody nejsou viditelně označena.",
+          "popis": "Výdej vody není označen a zaměstnanci ho hledají.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "neciste_zarizeni",
-          "nazev": "Nečisté zařízení pro pitnou vodu",
-          "popis": "Výdejní místa pitné vody jsou znečištěna nebo neudržována.",
+          "nazev": "Nečisté výdejní místo",
+          "popis": "Výdej vody, fontána nebo konvice jsou špinavé.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nedostupna_behem_smeny",
-          "nazev": "Nedostupná voda během směny",
-          "popis": "Pitná voda není k dispozici po celou dobu pracovní směny.",
+          "nazev": "Voda nedostupná ve směně",
+          "popis": "Výdej vody je uzamčen nebo mimo dosah během směny.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "nedostatecny_rezim_horko",
-          "nazev": "Nedostatečný pitný režim u horkých prací",
-          "popis": "U prací v horkém prostředí není pitný režim adekvátně zajištěn.",
+          "nazev": "Nedostatečný pitný režim v horku",
+          "popis": "U prací v horku chybí dostatek vody nebo přestávky na pití.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "neznalost_mista",
           "nazev": "Zaměstnanec nezná místo čerpání",
-          "popis": "Zaměstnanec neví, kde může čerpat pitnou vodu.",
+          "popis": "Oslovený zaměstnanec neumí ukázat výdej pitné vody.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1652,36 +1652,36 @@
       "doporucene_postupy": [
         {
           "id": "zajistit_pitnou_vodu",
-          "nazev": "Zajistit dostupnost pitné vody",
-          "popis": "Udržujte funkční a dostupná místa pro čerpání pitné vody.",
+          "nazev": "Udržovat výdej pitné vody",
+          "popis": "Fontány, konvice nebo kohoutky udržujte funkční a dostupné.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "oznaceni_mist",
-          "nazev": "Označit místa pro čerpání pitné vody",
-          "popis": "Viditelně označte všechna místa pro čerpání pitné vody.",
+          "nazev": "Označit výdej pitné vody",
+          "popis": "Místa s pitnou vodou viditelně označte.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "udrzba_cistoty",
           "nazev": "Udržovat čistotu výdejních míst",
-          "popis": "Pravidelně kontrolujte a uklízejte zařízení pro pitnou vodu.",
+          "popis": "Výdejní místa pravidelně čistěte a dezinfikujte.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "pitny_rezim_horko",
-          "nazev": "Zvýšit pitný režim u horkých prací",
-          "popis": "U prací v horkém prostředí zajistěte adekvátní pitný režim a přestávky.",
+          "nazev": "Zvýšit pitný režim v horku",
+          "popis": "V horkém prostředí zajistěte dostatek vody a přestávky.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "seznamovani_zamestnancu",
-          "nazev": "Seznamovat zaměstnance s místy čerpání",
-          "popis": "Informujte zaměstnance o umístění míst pro čerpání pitné vody.",
+          "nazev": "Ukázat výdej novým zaměstnancům",
+          "popis": "Při nástupu ukažte, kde je pitná voda.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1690,7 +1690,7 @@
         {
           "id": "nv_375_2017",
           "nazev": "Nařízení vlády č. 375/2017 Sb.",
-          "popis": "Podmínky pracovního prostředí — požadavky na pitný režim.",
+          "popis": "Podmínky pracovního prostředí — pitný režim.",
           "poradi": 10,
           "aktivni": true
         },
@@ -1699,19 +1699,19 @@
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
           "popis": "Podrobnosti k zajištění BOZP — zajištění pitné vody na pracovišti.",
           "poradi": 20,
-          "aktivni": true
+          "aktivni": false
         },
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Povinnosti zaměstnavatele v oblasti pracovního prostředí a pitného režimu.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro zajištění pitného režimu a dostupnosti pitné vody.",
+          "popis": "Pitný režim a dostupnost pitné vody.",
           "poradi": 40,
           "aktivni": true
         }
