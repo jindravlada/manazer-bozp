@@ -18,6 +18,7 @@ from core.shared.finding_display import finding_status_label
 from core.shared.sluzby.control_result_service import ControlPointContext, control_result_service
 from core.shared.sluzby.finding_service import finding_service
 from core.widgets.control_result_selector import ControlResultSelectorWidget
+from core.widgets.control_result_photo_widget import ControlResultPhotoWidget
 from core.widgets.dialog_utils import wrap_in_scroll_area
 from core.widgets.finding_dialog import FindingDialog
 from moduly.proverky.constants import (
@@ -502,6 +503,15 @@ class BozpKnowledgeSectionWidget(QWidget):
             must_be_saved_message=INSPECTION_MUST_BE_SAVED_MESSAGE,
         )
         row_layout.addWidget(result_selector)
+
+        photo_widget = ControlResultPhotoWidget()
+        photo_widget.configure(
+            entity_type=ENTITY_PROVERKY,
+            entity_id=self._inspection_id,
+            context=self._control_point_context(context),
+            must_be_saved_message=INSPECTION_MUST_BE_SAVED_MESSAGE,
+        )
+        row_layout.addWidget(photo_widget)
 
         finding_host = QWidget()
         finding_layout = QVBoxLayout(finding_host)

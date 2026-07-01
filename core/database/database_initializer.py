@@ -203,6 +203,8 @@ def _ensure_control_result_columns() -> None:
     columns = _table_columns("control_results")
     if "shared_experience" not in columns:
         _add_column("control_results", "shared_experience BOOLEAN DEFAULT 0 NOT NULL")
+    if "photo_path" not in columns:
+        _add_column("control_results", "photo_path VARCHAR(500) DEFAULT ''")
 
 
 def _normalize_internal_audit_status_values() -> None:

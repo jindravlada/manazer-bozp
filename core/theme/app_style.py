@@ -114,4 +114,10 @@ def apply_app_style(app: QApplication) -> None:
             background-color: #f3f4f6;
             border-left: 3px solid #2563eb;
         }
+
+        QLabel#ControlResultPhotoThumbnail {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+        }
     """)
