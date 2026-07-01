@@ -1,58 +1,58 @@
 {
-  "verze": 1,
+  "verze": 2,
   "id": "doprava",
   "nazev": "Manipulace a skladování",
-  "popis": "Ruční manipulace s břemeny, regály, skladování materiálu, palety, komunikace, manipulační technika, nakládka a školení.",
+  "popis": "Ruční manipulace, regály, skladování, palety, komunikace, technika, nakládka a školení.",
   "poradi": 60,
   "aktivni": true,
   "sekce": [
     {
       "id": "rucni_manipulace_bremeny",
       "nazev": "Ruční manipulace s břemeny",
-      "popis": "Kontrola hmotnosti břemen, ergonomie práce, používání pomůcek, četnosti manipulace a pracovních poloh při ručním přenosu.",
+      "popis": "Prověrka hmotnosti břemen, ergonomie, pomůcek a pracovních poloh.",
       "poradi": 10,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte pracoviště a činnosti s ruční manipulací břemen.",
+          "text": "Projděte místa, kde se břemena ručně zvedají, nosí nebo posouvají.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "hmotnost_bremen",
-          "text": "Zkontrolujte dodržování limitů hmotnosti břemen a pravidel pro párovou manipulaci.",
+          "text": "Ověřte, zda hmotnost odpovídá limitům a pravidlům pro dvojici.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "ergonomie",
-          "text": "Posuďte ergonomii práce — pracovní polohy, dosah, otáčení trupu a opakované pohyby.",
+          "text": "Sledujte sklánění, otáčení trupu a dosah při manipulaci.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "pomucky",
-          "text": "Ověřte dostupnost a používání vhodných manipulačních pomůcek.",
+          "text": "Zkontrolujte dostupnost a používání vozíků, pásů a jiných pomůcek.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "cetnost",
-          "text": "Zkontrolujte četnost a délku trvání ruční manipulace.",
+          "text": "Posuďte, jak často a jak dlouho trvá ruční manipulace.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "pracovni_polohy",
-          "text": "Posuďte, zda pracovní polohy nejsou dlouhodobě nepřiměřené.",
+          "text": "Hledejte práci v kliku, nad rameny nebo s nataženými pažemi.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda zaměstnanec nemanipuluje s břemeny způsobem, který zjevně ohrožuje jeho zdraví.",
+          "text": "Pozorujte, zda pracovník zvedá břemeno bezpečnou technikou.",
           "poradi": 70,
           "aktivni": true
         }
@@ -61,15 +61,15 @@
         {
           "id": "hmotnost_bremen",
           "nazev": "Dodržovány limity hmotnosti",
-          "popis": "Hmotnost břemen odpovídá stanoveným limitům a pravidlům.",
+          "popis": "Břemena nepřekračují stanovené limity pro jednotlivce ani dvojici.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "vysoka"
         },
         {
           "id": "ergonomie",
-          "nazev": "Ergonomie práce je zajištěna",
-          "popis": "Pracovní polohy a způsob manipulace nejsou zjevně nevhodné.",
+          "nazev": "Manipulace je ergonomická",
+          "popis": "Pracovníci nezvedají břemena s výrazným sklonem nebo otáčením trupu.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -77,7 +77,7 @@
         {
           "id": "pomucky",
           "nazev": "Používají se manipulační pomůcky",
-          "popis": "K dispozici a využívány jsou vhodné pomůcky pro snížení zátěže.",
+          "popis": "Tam, kde je to vhodné, pracovníci používají vozíky nebo jiné pomůcky.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -85,7 +85,7 @@
         {
           "id": "cetnost",
           "nazev": "Četnost manipulace je přiměřená",
-          "popis": "Ruční manipulace není nadměrně častá nebo dlouhotrvající.",
+          "popis": "Ruční manipulace není nepřetržitá bez střídání úkolů.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -93,15 +93,15 @@
         {
           "id": "pracovni_polohy",
           "nazev": "Pracovní polohy jsou vhodné",
-          "popis": "Zaměstnanci nepracují dlouhodobě v nepřiměřených polohách.",
+          "popis": "Práce není dlouhodobě v kliku, nad hlavou nebo v natažené poloze.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Manipulace neohrožuje zdraví",
-          "popis": "Zaměstnanec nemanipuluje s břemeny způsobem, který zjevně ohrožuje jeho zdraví.",
+          "nazev": "Zvedání je bezpečné",
+          "popis": "Při pozorování pracovník zvedá břemeno z výšky kolen s rovnými zády.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -110,43 +110,43 @@
       "typicke_zavady": [
         {
           "id": "prekrocena_hmotnost",
-          "nazev": "Překročená hmotnost břemen",
-          "popis": "Zaměstnanci manipulují s břemeny nad stanovené limity.",
+          "nazev": "Překročená hmotnost břemene",
+          "popis": "Pracovník sám zvedá krabici nebo pytel nad 25 kg.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "neergonomicke_polohy",
-          "nazev": "Neergonomické pracovní polohy",
-          "popis": "Časté sklánění, otáčení trupu nebo práce v nepohodlných polohách.",
+          "nazev": "Neergonomické polohy",
+          "popis": "Časté zvedání ze země nebo práce s nataženýma rukama nad hlavou.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "nepouzivane_pomucky",
-          "nazev": "Nepoužívání pomůcek",
-          "popis": "Manipulační pomůcky nejsou k dispozici nebo se nepoužívají.",
+          "nazev": "Nepoužívané pomůcky",
+          "popis": "Vozík stojí opodál, ale břemeno se nese v rukou.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nadmerna_cetnost",
-          "nazev": "Nadměrná četnost manipulace",
-          "popis": "Ruční manipulace je příliš častá bez střídání nebo přestávek.",
+          "nazev": "Nadměrná četnost",
+          "popis": "Pracovník ručně manipuluje celou směnu bez střídání.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "chybi_skoleni",
           "nazev": "Chybějící školení",
-          "popis": "Zaměstnanci nejsou proškoleni v bezpečné ruční manipulaci.",
+          "popis": "Nový pracovník zvedá břemena bez školení bezpečné techniky.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "chybi_posouzeni",
           "nazev": "Chybí posouzení rizik",
-          "popis": "Nebylo provedeno posouzení rizik ruční manipulace s břemeny.",
+          "popis": "Pro opakovanou ruční manipulaci nebylo sepsáno posouzení.",
           "poradi": 60,
           "aktivni": true
         }
@@ -154,36 +154,36 @@
       "doporucene_postupy": [
         {
           "id": "posouzeni_rizik",
-          "nazev": "Provádět posouzení rizik",
-          "popis": "Posuzujte rizika ruční manipulace a zavádějte organizační a technická opatření.",
+          "nazev": "Posoudit rizika ruční manipulace",
+          "popis": "Sepište posouzení pro nejtěžší a nejčastější manipulace.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "pomucky",
-          "nazev": "Zajistit manipulační pomůcky",
-          "popis": "Poskytujte vhodné pomůcky pro snížení fyzické zátěže.",
+          "nazev": "Doplnit manipulační pomůcky",
+          "popis": "Pořiďte vozíky nebo zvedací pomůcky tam, kde se břemena často přenášejí.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "skoleni",
-          "nazev": "Proškolit zaměstnance",
-          "popis": "Proškolte zaměstnance v bezpečných technikách zvedání a nošení.",
+          "nazev": "Předvést techniku zvedání",
+          "popis": "Při školení prakticky ukážte správné zvedání z výšky kolen.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "strizdat_praci",
-          "nazev": "Střídat práci",
-          "popis": "Omezte četnost ruční manipulace střídáním úkolů a přestávkami.",
+          "nazev": "Střídat úkoly se zvedáním",
+          "popis": "Ruční manipulaci střídejte s lehčí prací nebo přestávkami.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "organizace_prace",
-          "nazev": "Organizovat práci ergonomicky",
-          "popis": "Uspořádejte pracoviště tak, aby se minimalizovalo zbytečné nošení a otáčení.",
+          "nazev": "Uložit materiál do výšky pasu",
+          "popis": "Přesuňte často používané břemeno blíže k pracovní ploše.",
           "poradi": 50,
           "aktivni": true
         }
@@ -192,28 +192,28 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Podrobnosti k zajištění bezpečnosti při práci.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Místní pravidla pro bezpečnou manipulaci a skladování na pracovišti.",
+          "popis": "Pravidla manipulace a skladování na pracovišti.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nv_378_2001",
           "nazev": "Nařízení vlády č. 378/2001 Sb.",
-          "popis": "Hygienické limity rizikových faktorů pracovního prostředí — limity pro ruční manipulaci s břemeny.",
+          "popis": "Hygienické limity pro ruční manipulaci s břemeny.",
           "poradi": 40,
           "aktivni": true
         }
@@ -223,50 +223,50 @@
     {
       "id": "regaly_regalove_systemy",
       "nazev": "Regály a regálové systémy",
-      "popis": "Kontrola technického stavu regálů, poškození, kotvení, označení nosnosti, přetěžování a pravidelných kontrol regálových systémů.",
+      "popis": "Prověrka stavu regálů, kotvení, nosnosti a přetížení.",
       "poradi": 20,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte regálové systémy v kontrolované oblasti.",
+          "text": "Projděte regálové systémy v kontrolované oblasti.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "technicky_stav",
-          "text": "Zkontrolujte technický stav regálů včetně viditelného poškození — deformace, praskliny, korozi nebo uvolněné spoje.",
+          "text": "Hledejte prohnutí, praskliny, korozi a uvolněné spoje.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "kotveni",
-          "text": "Ověřte kotvení regálů k podlaze nebo stěně podle požadavků.",
+          "text": "Zkontrolujte kotvení sloupů k podlaze nebo stěně.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "oznaceni_nosnosti",
-          "text": "Zkontrolujte označení nosnosti regálů a jednotlivých polic.",
+          "text": "Ověřte tabulky nosnosti u regálu a polic.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "pretezovani",
-          "text": "Posuďte, zda regály nejsou přetěžovány nebo přeplněny.",
+          "text": "Posuďte, zda materiál nepřekračuje nosnost polic.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "pravidelne_kontroly",
-          "text": "Ověřte evidenci pravidelných kontrol regálových systémů.",
+          "text": "Zkontrolujte záznamy o pravidelných kontrolách regálů.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda regál nevykazuje zjevné deformace ani poškození.",
+          "text": "Hledejte viditelné vychýlení nebo poškození nosníků.",
           "poradi": 70,
           "aktivni": true
         }
@@ -275,15 +275,15 @@
         {
           "id": "technicky_stav",
           "nazev": "Regály jsou v dobrém stavu",
-          "popis": "Regálové systémy jsou v technicky vyhovujícím stavu bez zjevného poškození.",
+          "popis": "Sloupky a traverzy nejsou prohnuté, prasklé ani výrazně korodované.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "kotveni",
           "nazev": "Regály jsou řádně ukotveny",
-          "popis": "Kotvení odpovídá požadavkům výrobce nebo projektu.",
+          "popis": "Kotvy jsou na místě a dotažené podle požadavků výrobce.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -291,7 +291,7 @@
         {
           "id": "oznaceni_nosnosti",
           "nazev": "Nosnost je označena",
-          "popis": "Nosnost regálů a polic je viditelně a srozumitelně označena.",
+          "popis": "U regálu je viditelně uvedena nosnost polic nebo pole.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -299,7 +299,7 @@
         {
           "id": "pretezovani",
           "nazev": "Regály nejsou přetěžovány",
-          "popis": "Ukládaný materiál nepřekračuje deklarovanou nosnost.",
+          "popis": "Materiál na policích nepřekračuje deklarovanou nosnost.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -307,15 +307,15 @@
         {
           "id": "pravidelne_kontroly",
           "nazev": "Prováděny pravidelné kontroly",
-          "popis": "Regály jsou pravidelně kontrolovány a záznamy jsou vedeny.",
+          "popis": "Kontroly regálů jsou zaznamenány v evidenci.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Regál bez zjevného poškození",
-          "popis": "Regál nevykazuje zjevné deformace ani poškození.",
+          "nazev": "Regál bez viditelného poškození",
+          "popis": "Při obchůzce nenajdete vychýlený sloupek nebo prasklý nosník.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -324,43 +324,43 @@
       "typicke_zavady": [
         {
           "id": "deformace",
-          "nazev": "Deformace regálu",
-          "popis": "Regál vykazuje prohnutí, vychýlení nebo jiné deformace.",
+          "nazev": "Prohnutý regál",
+          "popis": "Sloupek nebo traverza je viditelně prohnutá pod zátěží.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "poskozene_profily",
-          "nazev": "Poškozené konstrukční prvky",
-          "popis": "Poškozené sloupky, traverzy nebo spojovací prvky.",
+          "nazev": "Poškozený nosník",
+          "popis": "Traverza má promáčklinu od nárazu vozíkem.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "neukotveny",
-          "nazev": "Neukotvené regály",
-          "popis": "Regály nejsou ukotveny podle požadavků.",
+          "nazev": "Neukotvený regál",
+          "popis": "Regálový sloupek není připevněn k podlaze.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "chybi_oznaceni",
           "nazev": "Chybí označení nosnosti",
-          "popis": "Nosnost regálů není viditelně označena.",
+          "popis": "U regálu není tabulka s povolenou nosností polic.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "pretezovani",
-          "nazev": "Přetěžování regálů",
-          "popis": "Materiál překračuje povolenou nosnost polic nebo regálu.",
+          "nazev": "Přetížený regál",
+          "popis": "Na police leží těžké bedny nad deklarovanou nosností.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "bez_kontrol",
-          "nazev": "Chybí pravidelné kontroly",
-          "popis": "Regály nejsou pravidelně kontrolovány.",
+          "nazev": "Chybí kontrola regálů",
+          "popis": "Regály nebyly kontrolovány déle než rok.",
           "poradi": 60,
           "aktivni": true
         }
@@ -368,36 +368,36 @@
       "doporucene_postupy": [
         {
           "id": "pravidelne_kontroly",
-          "nazev": "Provádět pravidelné kontroly",
-          "popis": "Zaveďte periodické kontroly regálů a zaznamenávejte zjištěné závady.",
+          "nazev": "Kontrolovat regály každý rok",
+          "popis": "Zaznamenávejte stav regálů a zjištěné závady do protokolu.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "oznaceni",
-          "nazev": "Označit nosnost",
-          "popis": "Viditelně označte nosnost regálů a jednotlivých polic.",
+          "nazev": "Doplnit tabulky nosnosti",
+          "popis": "Na každý regál nalepte nebo pověste údaj o nosnosti polic.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "opravy",
-          "nazev": "Bezodkladně opravovat poškození",
-          "popis": "Poškozené regály odstraňte z provozu a opravte nebo vyměňte.",
+          "nazev": "Vyřadit poškozený regál",
+          "popis": "Poškozené pole vyprázdněte a opravte nebo vyměňte dříve, než ho znovu naložíte.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "kotveni",
-          "nazev": "Kontrolovat kotvení",
-          "popis": "Pravidelně ověřujte stav kotvení regálů.",
+          "nazev": "Dotáhnout uvolněné kotvy",
+          "popis": "Při kontrole zkontrolujte a dotažte kotvení sloupů.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "skladovaci_pravidla",
-          "nazev": "Stanovit pravidla ukládání",
-          "popis": "Určete pravidla pro rovnoměrné zatížení a bezpečné ukládání na regály.",
+          "nazev": "Vyvěsit pravidla ukládání",
+          "popis": "Určete, co smí na nejvyšší police a jak rovnoměrně zatěžovat pole.",
           "poradi": 50,
           "aktivni": true
         }
@@ -406,28 +406,28 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Podrobnosti k zajištění bezpečnosti při práci.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Místní pravidla pro bezpečnou manipulaci a skladování na pracovišti.",
+          "popis": "Pravidla manipulace a skladování na pracovišti.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "csn_269101",
           "nazev": "ČSN 26 9101",
-          "popis": "Regálové systémy — požadavky na konstrukci, montáž a provoz regálů.",
+          "popis": "Regálové systémy — montáž, kotvení a provoz.",
           "poradi": 40,
           "aktivni": true
         }
@@ -437,50 +437,50 @@
     {
       "id": "skladovani_materialu",
       "nazev": "Skladování materiálu",
-      "popis": "Kontrola stability skladování, výšky stohů, oddělení materiálů, bezpečného ukládání a přístupnosti skladovaného materiálu.",
+      "popis": "Prověrka stability stohů, výšky ukládání a volnosti komunikací.",
       "poradi": 30,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte místa skladování materiálu v kontrolované oblasti.",
+          "text": "Projděte místa skladování materiálu v kontrolované oblasti.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "stabilita",
-          "text": "Zkontrolujte stabilitu skladovaného materiálu a stohů.",
+          "text": "Posuďte, zda stohy a materiál stojí stabilně.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "vyska_stohu",
-          "text": "Posuďte výšku stohů vzhledem k typu materiálu a podmínkám.",
+          "text": "Změřte nebo odhadněte výšku stohů vůči pravidlům.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "oddeleni",
-          "text": "Ověřte oddělení různých druhů materiálů podle požadavků.",
+          "text": "Ověřte oddělení různých druhů materiálu.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "bezpecne_ukladani",
-          "text": "Zkontrolujte, zda je materiál ukládán bezpečným způsobem.",
+          "text": "Zkontrolujte, zda ukládání neohrožuje okolí.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "pristupnost",
-          "text": "Posuďte přístupnost materiálu pro bezpečnou manipulaci.",
+          "text": "Posuďte, zda lze materiál bezpečně vyjmout.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda materiál nemůže samovolně spadnout nebo se sesunout.",
+          "text": "Hledejte nakloněné stohy nebo materiál hrozící sesuvem.",
           "poradi": 70,
           "aktivni": true
         }
@@ -489,15 +489,15 @@
         {
           "id": "stabilita",
           "nazev": "Skladování je stabilní",
-          "popis": "Materiál a stohy jsou stabilně uloženy.",
+          "popis": "Stohy nejsou nakloněné a materiál nestojí na hraně.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "vyska_stohu",
           "nazev": "Výška stohů je přiměřená",
-          "popis": "Výška stohů odpovídá druhu materiálu a bezpečnostním pravidlům.",
+          "popis": "Výška stohů nepřekračuje stanovené nebo rozumné limity.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -505,15 +505,15 @@
         {
           "id": "oddeleni",
           "nazev": "Materiály jsou odděleny",
-          "popis": "Různé druhy materiálů jsou skladovány odděleně dle potřeby.",
+          "popis": "Různé druhy materiálu jsou skladovány odděleně podle potřeby.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "bezpecne_ukladani",
           "nazev": "Materiál je bezpečně uložen",
-          "popis": "Ukládání neohrožuje zaměstnance ani okolí.",
+          "popis": "Uložený materiál neohrožuje pracovníky ani průchod.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -521,7 +521,7 @@
         {
           "id": "pristupnost",
           "nazev": "Materiál je přístupný",
-          "popis": "Skladovaný materiál lze bezpečně vyjmout a manipulovat s ním.",
+          "popis": "Materiál lze vyjmout bez nebezpečného sahání nad hlavu.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -529,7 +529,7 @@
         {
           "id": "prakticka_kontrola",
           "nazev": "Materiál nemůže spadnout",
-          "popis": "Materiál nemůže samovolně spadnout nebo se sesunout.",
+          "popis": "Při obchůzce nenajdete stoh nebo kus hrozící sesuvem.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -538,43 +538,43 @@
       "typicke_zavady": [
         {
           "id": "nestabilni_stohy",
-          "nazev": "Nestabilní stohy",
-          "popis": "Stohy materiálu jsou nakloněné nebo nestabilní.",
+          "nazev": "Nestabilní stoh",
+          "popis": "Stoh krabic je nakloněný a může spadnout při doteku.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "prekrocena_vyska",
-          "nazev": "Překročená výška stohů",
-          "popis": "Stohy jsou uloženy výše, než je bezpečné.",
+          "nazev": "Příliš vysoký stoh",
+          "popis": "Stoh kartonů přesahuje bezpečnou výšku pro ruční vyjmutí.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "nespravne_oddeleni",
-          "nazev": "Nevhodné skladování různých materiálů",
-          "popis": "Materiály jsou skladovány společně navzdory požadavkům na oddělení.",
+          "nazev": "Smíšené materiály",
+          "popis": "V jednom stohu jsou různé druhy materiálu bez oddělení.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "sesuv_materialu",
-          "nazev": "Riziko sesuvu materiálu",
-          "popis": "Materiál může samovolně spadnout nebo se sesunout.",
+          "nazev": "Materiál na hraně",
+          "popis": "Deska nebo svazek přesahuje přes okraj regálu.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "blokuje_komunikace",
-          "nazev": "Materiál v komunikacích",
-          "popis": "Materiál je skladován v průchodech nebo na nevhodných místech.",
+          "nazev": "Materiál v komunikaci",
+          "popis": "Palety nebo bedny stojí uprostřed průchodu.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "chybi_pravidla",
           "nazev": "Chybí pravidla skladování",
-          "popis": "Nejsou stanovena pravidla pro bezpečné ukládání materiálu.",
+          "popis": "Nikde není uvedena maximální výška stohů.",
           "poradi": 60,
           "aktivni": true
         }
@@ -582,36 +582,36 @@
       "doporucene_postupy": [
         {
           "id": "pravidla_skladovani",
-          "nazev": "Stanovit pravidla skladování",
-          "popis": "Určete maximální výšku stohů a způsob ukládání pro jednotlivé materiály.",
+          "nazev": "Stanovit výšku stohů",
+          "popis": "Určete maximální výšku pro každý typ materiálu a vyvěste ji ve skladu.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "stabilizace",
-          "nazev": "Zajistit stabilitu stohů",
-          "popis": "Používejte vhodné podložky, ohrady nebo fixační prostředky.",
+          "nazev": "Zajistit nestabilní stohy",
+          "popis": "Použijte ohradu, pásku nebo přeuspořádejte nakloněný stoh.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "oznaceni_zony",
-          "nazev": "Označit skladovací zóny",
-          "popis": "Vyznačte určená místa pro skladování materiálu.",
+          "nazev": "Vyznačit skladovací zóny",
+          "popis": "Označte místa, kam smí materiál ukládat.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "pravidelna_kontrola",
-          "nazev": "Pravidelně kontrolovat stohy",
-          "popis": "Provádějte obchůzky a kontrolujte stabilitu skladovaného materiálu.",
+          "nazev": "Kontrolovat stohy při obchůzkách",
+          "popis": "Při prověrce hledejte nakloněné nebo převislé kusy.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "skoleni",
-          "nazev": "Proškolit zaměstnance",
-          "popis": "Seznamte zaměstnance s pravidly bezpečného skladování.",
+          "nazev": "Vysvětlit pravidla ukládání",
+          "popis": "Seznamte pracovníky s limity výšky a stability stohů.",
           "poradi": 50,
           "aktivni": true
         }
@@ -620,28 +620,28 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Podrobnosti k zajištění bezpečnosti při práci.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Místní pravidla pro bezpečnou manipulaci a skladování na pracovišti.",
+          "popis": "Pravidla manipulace a skladování na pracovišti.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nv_375_2017",
           "nazev": "Nařízení vlády č. 375/2017 Sb.",
-          "popis": "Podmínky pracovního prostředí pracovních míst — požadavky na skladování a pořádek.",
+          "popis": "Pořádek a bezpečnost na pracovišti.",
           "poradi": 40,
           "aktivni": true
         }
@@ -651,50 +651,50 @@
     {
       "id": "palety_obaly_manipulacni_jednotky",
       "nazev": "Palety, obaly a manipulační jednotky",
-      "popis": "Kontrola poškození palet, stavu obalů, stability nákladu a správného uložení manipulačních jednotek.",
+      "popis": "Prověrka stavu palet, obalů, stability nákladu a uložení jednotek.",
       "poradi": 40,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte palety, obaly a manipulační jednotky v kontrolované oblasti.",
+          "text": "Projděte palety, obaly a manipulační jednotky v oblasti.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "poskozeni_palet",
-          "text": "Zkontrolujte stav palet — praskliny, ulomené desky, chybějící prvky.",
+          "text": "Hledejte prasklé, ulomené nebo chybějící desky palet.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "stav_obalu",
-          "text": "Posuďte stav obalů a jejich vhodnost pro přepravu a skladování.",
+          "text": "Zkontrolujte, zda obaly chrání obsah a nejsou protržené.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "stabilita_nakladu",
-          "text": "Ověřte stabilitu a zajištění nákladu na paletách.",
+          "text": "Posuďte zajištění nákladu na paletách.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "spravne_ulozeni",
-          "text": "Zkontrolujte správné uložení palet a manipulačních jednotek.",
+          "text": "Ověřte skladování prázdných a plných palet.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "kontrola_jednotek",
-          "text": "Ověřte pravidelnou kontrolu stavu palet, obalů a manipulačních jednotek.",
+          "text": "Zkontrolujte evidenci pravidelných kontrol palet.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda poškozené palety nejsou používány.",
+          "text": "Hledejte poškozené palety stále v provozu.",
           "poradi": 70,
           "aktivni": true
         }
@@ -703,15 +703,15 @@
         {
           "id": "poskozeni_palet",
           "nazev": "Palety jsou v dobrém stavu",
-          "popis": "Palety nevykazují poškození ohrožující bezpečnost.",
+          "popis": "Palety nemají prasklé desky, ulomené kostice ani výrazné poškození.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "stav_obalu",
           "nazev": "Obaly jsou vhodné",
-          "popis": "Obaly jsou nepoškozené a vhodné pro daný materiál.",
+          "popis": "Obaly nejsou protržené tak, aby hrozil únik nebo pád obsahu.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -719,15 +719,15 @@
         {
           "id": "stabilita_nakladu",
           "nazev": "Náklad je stabilní",
-          "popis": "Náklad na paletách je stabilně uložen a zajištěn.",
+          "popis": "Náklad na paletě je rovnoměrně uložen a nehrozí sesunutí.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "spravne_ulozeni",
           "nazev": "Jednotky jsou správně uloženy",
-          "popis": "Palety a manipulační jednotky jsou uloženy bezpečným způsobem.",
+          "popis": "Palety stojí stabilně, prázdné jsou složené bez převrácení.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -735,60 +735,60 @@
         {
           "id": "kontrola_jednotek",
           "nazev": "Stav jednotek je kontrolován",
-          "popis": "Stav palet, obalů a manipulačních jednotek je pravidelně kontrolován.",
+          "popis": "Kontroly stavu palet jsou zaznamenány.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Poškozené palety se nepoužívají",
-          "popis": "Poškozené palety nejsou používány.",
+          "popis": "Při obchůzce nenajdete prasklou nebo ulomenou paletu v provozu.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         }
       ],
       "typicke_zavady": [
         {
           "id": "poskozene_palety",
-          "nazev": "Poškozené palety v provozu",
-          "popis": "Používají se prasklé, ulomené nebo jinak poškozené palety.",
+          "nazev": "Prasklá paleta v provozu",
+          "popis": "Paleta s ulomenou deskou nese náklad nebo se s ní manipuluje.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "poskozene_obaly",
-          "nazev": "Poškozené obaly",
-          "popis": "Obaly neplní svou ochrannou funkci.",
+          "nazev": "Protržený obal",
+          "popis": "Kartón nebo fólie neudrží obsah při zvednutí.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "nestabilni_naklad",
-          "nazev": "Nestabilní náklad",
-          "popis": "Náklad na paletě není stabilně uložen nebo zajištěn.",
+          "nazev": "Nestabilní náklad na paletě",
+          "popis": "Krabice jsou nakloněné nebo nejsou fixované.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "preteceni",
           "nazev": "Převis nákladu",
-          "popis": "Náklad přesahuje hranice palety nebo manipulační jednotky.",
+          "popis": "Náklad přesahuje okraj palety a může spadnout při přesunu.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "nevhodne_skladovani_palet",
-          "nazev": "Nevhodné skladování palet",
-          "popis": "Palety jsou skladovány nestabilně nebo v nevhodných polohách.",
+          "nazev": "Nestabilní sklad palet",
+          "popis": "Prázdné palety jsou naskládány nakloněně nebo vysoko bez zajištění.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "chybi_kontrola",
-          "nazev": "Chybí kontrola stavu palet",
-          "popis": "Stav palet není pravidelně kontrolován.",
+          "nazev": "Nekontrolované palety",
+          "popis": "Poškozené palety se nevyřazují ze skladu.",
           "poradi": 60,
           "aktivni": true
         }
@@ -796,36 +796,36 @@
       "doporucene_postupy": [
         {
           "id": "vyloucit_poskozene",
-          "nazev": "Vyloučit poškozené palety",
-          "popis": "Poškozené palety okamžitě vyřaďte z provozu a opravte nebo zlikvidujte.",
+          "nazev": "Vyřadit poškozenou paletu",
+          "popis": "Prasklou paletu okamžitě přesuňte do opravny nebo na likvidaci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "zajisteni_nakladu",
-          "nazev": "Zajistit náklad",
-          "popis": "Stabilně ukládejte a fixujte náklad na paletách.",
+          "nazev": "Fixovat náklad na paletě",
+          "popis": "Používejte folii, pásku nebo ohradu pro nestabilní náklad.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "pravidelna_kontrola",
-          "nazev": "Kontrolovat stav palet",
-          "popis": "Pravidelně kontrolujte technický stav palet a obalů.",
+          "nazev": "Kontrolovat palety při obchůzkách",
+          "popis": "Poškozené palety označte a ihned vyřaďte z provozu.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "skladovani_palet",
-          "nazev": "Stanovit pravidla pro palety",
-          "popis": "Určete pravidla pro skladování prázdných a plných palet.",
+          "nazev": "Skladovat prázdné palety stabilně",
+          "popis": "Prázdné palety skládejte nízko a rovně, ne do vysokých nestabilních stohů.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "skoleni",
-          "nazev": "Proškolit manipulaci s paletami",
-          "popis": "Seznamte zaměstnance s pravidly pro práci s paletami a obaly.",
+          "nazev": "Vysvětlit kontrolu palet",
+          "popis": "Seznamte pracovníky, že poškozenou paletu nesmí použít.",
           "poradi": 50,
           "aktivni": true
         }
@@ -834,28 +834,28 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Podrobnosti k zajištění bezpečnosti při práci.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Místní pravidla pro bezpečnou manipulaci a skladování na pracovišti.",
+          "popis": "Pravidla manipulace a skladování na pracovišti.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "csn_269102",
           "nazev": "ČSN 26 9102",
-          "popis": "Manipulační jednotky — požadavky na palety a jejich používání.",
+          "popis": "Palety a manipulační jednotky.",
           "poradi": 40,
           "aktivni": true
         }
@@ -865,50 +865,50 @@
     {
       "id": "manipulacni_komunikace",
       "nazev": "Manipulační komunikace",
-      "popis": "Kontrola šířky komunikací, průchodnosti, označení, oddělení pěších tras a čistoty manipulačních komunikací.",
+      "popis": "Prověrka průchodnosti, šířky, oddělení pěších tras a volnosti komunikací.",
       "poradi": 50,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte manipulační komunikace v kontrolované oblasti.",
+          "text": "Projděte manipulační komunikace v kontrolované oblasti.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "sirka",
-          "text": "Zkontrolujte šířku komunikací pro bezpečný pohyb osob a techniky.",
+          "text": "Změřte nebo odhadněte šířku pro pohyb techniky a osob.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "pruchodnost",
-          "text": "Posuďte průchodnost — volný prostor bez překážek.",
+          "text": "Hledejte překážky — materiál, palety, zařízení.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "oznaceni",
-          "text": "Ověřte označení komunikací, směrů a nebezpečných míst.",
+          "text": "Ověřte značení tras a nebezpečných míst.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "oddeleni_pesich",
-          "text": "Zkontrolujte oddělení pěších tras od manipulační techniky.",
+          "text": "Posuďte oddělení pěších tras od vozíků a VZV.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "cistota",
-          "text": "Posuďte čistotu a stav povrchu komunikací.",
+          "text": "Zkontrolujte stav povrchu — díry, kluzkost, nepořádek.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda komunikace jsou trvale volné.",
+          "text": "Ověřte, zda průchod lze projít bez obcházení překážek.",
           "poradi": 70,
           "aktivni": true
         }
@@ -917,7 +917,7 @@
         {
           "id": "sirka",
           "nazev": "Komunikace mají dostatečnou šířku",
-          "popis": "Šířka komunikací umožňuje bezpečný pohyb.",
+          "popis": "Šířka umožňuje bezpečný průjezd techniky i průchod osob.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -925,15 +925,15 @@
         {
           "id": "pruchodnost",
           "nazev": "Komunikace jsou průchodné",
-          "popis": "Manipulační komunikace nejsou zablokovány.",
+          "popis": "V průchodu není trvale uložený materiál ani zařízení.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "oznaceni",
           "nazev": "Komunikace jsou označeny",
-          "popis": "Směry a zóny jsou viditelně označeny.",
+          "popis": "Trasy nebo zóny jsou viditelně vyznačeny.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -941,7 +941,7 @@
         {
           "id": "oddeleni_pesich",
           "nazev": "Pěší trasy jsou odděleny",
-          "popis": "Pěší pohyb je oddělen od manipulační techniky.",
+          "popis": "Pěší pohyb je oddělen od jízdy VZV nebo vozíků.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -949,15 +949,15 @@
         {
           "id": "cistota",
           "nazev": "Komunikace jsou udržované",
-          "popis": "Povrch komunikací je v bezpečném stavu.",
+          "popis": "Povrch není kluzký, poškozený ani znečištěný tak, aby hrozil pád.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
           "nazev": "Komunikace jsou volné",
-          "popis": "Komunikace jsou trvale volné.",
+          "popis": "Při obchůzce projdete komunikací bez obcházení palet nebo materiálu.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -966,43 +966,43 @@
       "typicke_zavady": [
         {
           "id": "zablokovane",
-          "nazev": "Zablokované komunikace",
-          "popis": "Komunikace jsou zastaveny materiálem nebo zařízením.",
+          "nazev": "Zúžená komunikace",
+          "popis": "Palety nebo regály zasahují do průchodu.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nedostatecna_sirka",
-          "nazev": "Nedostatečná šířka",
-          "popis": "Komunikace neumožňují bezpečný souběžný pohyb.",
+          "nazev": "Úzká komunikace",
+          "popis": "VZV a chodec se na chodbě nemohou bezpečně minout.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "neoznacene",
-          "nazev": "Neoznačené trasy",
-          "popis": "Manipulační komunikace nejsou viditelně označeny.",
+          "nazev": "Neoznačená trasa",
+          "popis": "Pěší a technická trasa nejsou vyznačeny.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "smichany_pohyb",
-          "nazev": "Smíšený pohyb osob a techniky",
-          "popis": "Pěší trasy nejsou odděleny od manipulační techniky.",
+          "nazev": "Smíšený pohyb",
+          "popis": "Chodci a VZV používají stejnou trasu bez oddělení.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "kluzke_povrchy",
-          "nazev": "Kluzké nebo poškozené povrchy",
-          "popis": "Povrch komunikací zvyšuje riziko úrazu.",
+          "nazev": "Kluzký povrch",
+          "popis": "Na komunikaci je olej, voda nebo sypký materiál.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "skladovani_v_komunikaci",
-          "nazev": "Skladování v komunikacích",
-          "popis": "Materiál je trvale skladován v manipulačních komunikacích.",
+          "nazev": "Materiál v průchodu",
+          "popis": "Bedny nebo palety stojí trvale uprostřed chodby.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1010,36 +1010,36 @@
       "doporucene_postupy": [
         {
           "id": "udrzovat_volne",
-          "nazev": "Udržovat komunikace volné",
-          "popis": "Zajistěte trvalou průchodnost manipulačních komunikací.",
+          "nazev": "Uvolnit zablokované průchody",
+          "popis": "Přesuňte materiál z komunikace na určené skladovací místo.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "oznaceni",
-          "nazev": "Označit trasy a zóny",
-          "popis": "Viditelně označte manipulační komunikace a pěší trasy.",
+          "nazev": "Vyznačit trasy",
+          "popis": "Nakreslete nebo vyznačte pěší a technické trasy na podlaze.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "oddeleni",
-          "nazev": "Oddělit pěší a techniku",
-          "popis": "Vymezte a oddělte trasy pro pěší od manipulační techniky.",
+          "nazev": "Oddělit pěší od techniky",
+          "popis": "Zvažte zábrany nebo samostatné chodníky tam, kde je provoz VZV.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "pravidelny_uklid",
-          "nazev": "Pravidelně udržovat povrchy",
-          "popis": "Udržujte komunikace v čistotě a bezpečném technickém stavu.",
+          "nazev": "Uklízet rozlité látky",
+          "popis": "Rozlitý olej nebo sypký materiál na komunikaci ihned odstraňte.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "kontrola",
-          "nazev": "Pravidelně kontrolovat průchodnost",
-          "popis": "Provádějte obchůzky a odstraňujte překážky v komunikacích.",
+          "nazev": "Kontrolovat průchodnost denně",
+          "popis": "Při obchůzce odstraňte překážky v manipulačních komunikacích.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1048,28 +1048,28 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Podrobnosti k zajištění bezpečnosti při práci.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Místní pravidla pro bezpečnou manipulaci a skladování na pracovišti.",
+          "popis": "Pravidla manipulace a skladování na pracovišti.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nv_375_2017",
           "nazev": "Nařízení vlády č. 375/2017 Sb.",
-          "popis": "Podmínky pracovního prostředí — požadavky na pracoviště a komunikace.",
+          "popis": "Požadavky na pracoviště a komunikace.",
           "poradi": 40,
           "aktivni": true
         }
@@ -1079,50 +1079,50 @@
     {
       "id": "manipulacni_technika",
       "nazev": "Manipulační technika",
-      "popis": "Kontrola VZV, ručních vozíků, elektrických vozíků, technického stavu a denních kontrol manipulační techniky.",
+      "popis": "Prověrka stavu VZV, vozíků, denních kontrol a oprávnění obsluhy.",
       "poradi": 60,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte manipulační techniku používanou v kontrolované oblasti.",
+          "text": "Projděte manipulační techniku v kontrolované oblasti.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "vzv",
-          "text": "Zkontrolujte stav a dokumentaci vysokozdvižných vozíků (VZV).",
+          "text": "Zkontrolujte stav VZV, vidlic, brzd a dokumentaci.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "rucni_voziky",
-          "text": "Posuďte technický stav ručních vozíků a paletových vozíků.",
+          "text": "Hledejte poškození kol, vidlic a rámů ručních vozíků.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "elektricke_voziky",
-          "text": "Zkontrolujte elektrické vozíky a jejich vybavení.",
+          "text": "Ověřte stav elektrických vozíků a baterií.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "technicky_stav",
-          "text": "Ověřte celkový technický stav manipulační techniky.",
+          "text": "Posuďte celkovou technickou způsobilost techniky.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "denni_kontroly",
-          "text": "Posuďte provádění denních kontrol před zahájením práce.",
+          "text": "Zkontrolujte záznamy denních kontrol před jízdou.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda obsluha používá pouze technicky způsobilou manipulační techniku.",
+          "text": "Sledujte, zda VZV není odstaven se zdviženými vidlicemi.",
           "poradi": 70,
           "aktivni": true
         }
@@ -1131,15 +1131,15 @@
         {
           "id": "vzv",
           "nazev": "VZV jsou technicky způsobilé",
-          "popis": "Vysokozdvižné vozíky jsou v provozuschopném stavu.",
+          "popis": "VZV nemají viditelné vady brzd, vidlic ani ochrany obsluhy.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "rucni_voziky",
           "nazev": "Ruční vozíky jsou způsobilé",
-          "popis": "Ruční vozíky nevykazují poškození ohrožující bezpečnost.",
+          "popis": "Kola, vidlice a rám ručních vozíků nejsou poškozené.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -1147,7 +1147,7 @@
         {
           "id": "elektricke_voziky",
           "nazev": "Elektrické vozíky jsou způsobilé",
-          "popis": "Elektrická manipulační technika je v pořádku.",
+          "popis": "Elektrická technika nemá poškozené kabely ani nefunkční brzdy.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -1155,68 +1155,68 @@
         {
           "id": "technicky_stav",
           "nazev": "Technický stav je vyhovující",
-          "popis": "Manipulační technika nevykazuje závady bránící bezpečnému provozu.",
+          "popis": "Porouchaná technika je vyřazena z provozu.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "denni_kontroly",
           "nazev": "Denní kontroly se provádějí",
-          "popis": "Obsluha provádí denní kontroly před použitím.",
+          "popis": "Obsluha vyplňuje kontrolu před zahájením směny.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Používá se způsobilá technika",
-          "popis": "Obsluha používá pouze technicky způsobilou manipulační techniku.",
+          "nazev": "Technika se používá bezpečně",
+          "popis": "VZV není odstaven se zdviženými vidlicemi ani s viditelnou poruchou.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         }
       ],
       "typicke_zavady": [
         {
           "id": "porucha_vzv",
           "nazev": "Porouchané VZV v provozu",
-          "popis": "Vysokozdvižné vozíky s vadami jsou používány.",
+          "popis": "Vozík jede s nefunkční brzdou nebo poškozenými vidlicemi.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "poskozene_voziky",
-          "nazev": "Poškozené ruční vozíky",
-          "popis": "Ruční vozíky mají poškozené kola, vidlice nebo rám.",
+          "nazev": "Poškozený ruční vozík",
+          "popis": "Vidlice jsou prohnuté nebo kolo chybí.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "bez_revize",
-          "nazev": "Chybí revize nebo kontrola",
-          "popis": "Manipulační technika nemá platnou revizi nebo kontrolu.",
+          "nazev": "Propadlá revize VZV",
+          "popis": "Vozík nemá platnou periodickou kontrolu.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "bez_denni_kontroly",
-          "nazev": "Neprovádějí se denní kontroly",
-          "popis": "Obsluha neprovádí kontrolu před zahájením práce.",
+          "nazev": "Chybí denní kontrola",
+          "popis": "Obsluha nastupuje na VZV bez kontroly před jízdou.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "neopravnena_obsluha",
-          "nazev": "Neoprávněná obsluha",
-          "popis": "Techniku obsluhují osoby bez potřebného oprávnění.",
+          "nazev": "Neoprávněná obsluha VZV",
+          "popis": "Vozík řídí pracovník bez průkazu obsluhy.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "chybi_evidence",
           "nazev": "Chybí evidence techniky",
-          "popis": "Manipulační technika není evidována a kontrolována.",
+          "popis": "Revize a kontroly VZV nejsou vedeny v evidenci.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1224,36 +1224,36 @@
       "doporucene_postupy": [
         {
           "id": "denni_kontroly",
-          "nazev": "Provádět denní kontroly",
-          "popis": "Zaveďte denní kontrolu manipulační techniky před použitím.",
+          "nazev": "Zavést checklist před jízdou",
+          "popis": "Obsluha před směnou zkontroluje brzdy, vidlice a světla a zaznamená to.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "udrzba",
-          "nazev": "Plánovat údržbu a revize",
-          "popis": "Dodržujte termíny revizí a pravidelné údržby.",
+          "nazev": "Dodržovat termíny revizí",
+          "popis": "VZV nechte kontrolovat v intervalech podle vyhlášky.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "skoleni_obsluhy",
-          "nazev": "Proškolit a oprávnit obsluhu",
-          "popis": "Zajistěte proškolení a oprávnění pro obsluhu VZV a techniky.",
+          "nazev": "Ověřit platnost průkazů",
+          "popis": "Kontrolujte, zda obsluha VZV má platné oprávnění.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "vyloucit_poruchy",
-          "nazev": "Vyřadit poruchou techniku",
-          "popis": "Porouchanou techniku okamžitě vyřaďte z provozu.",
+          "nazev": "Vyřadit porouchané vozíky",
+          "popis": "VZV s vadnou brzdou nebo vidlicemi okamžitě odstavte.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "evidence",
           "nazev": "Vést evidenci techniky",
-          "popis": "Evidence manipulační techniky včetně revizí a kontrol.",
+          "popis": "Zaznamenávejte revize, opravy a denní kontroly u každého vozíku.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1262,28 +1262,28 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Podrobnosti k zajištění bezpečnosti při práci.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Místní pravidla pro bezpečnou manipulaci a skladování na pracovišti.",
+          "popis": "Pravidla manipulace a skladování na pracovišti.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "vyhlaska_416_2003",
           "nazev": "Vyhláška č. 416/2003 Sb.",
-          "popis": "Požadavky na bezpečný provoz a používání vysokozdvižných vozíků.",
+          "popis": "Bezpečný provoz vysokozdvižných vozíků.",
           "poradi": 40,
           "aktivni": true
         }
@@ -1293,50 +1293,50 @@
     {
       "id": "nakladka_vykladka",
       "nazev": "Nakládka a vykládka",
-      "popis": "Kontrola bezpečnosti pracoviště, zajištění vozidel, stability nákladu a organizace práce při nakládce a vykládce.",
+      "popis": "Prověrka zajištění vozidel, stability nákladu a organizace nakládky.",
       "poradi": 70,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte místa a činnosti nakládky a vykládky v kontrolované oblasti.",
+          "text": "Projděte místa nakládky a vykládky v kontrolované oblasti.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "bezpecnost_pracoviste",
-          "text": "Zkontrolujte bezpečnost pracoviště — volný prostor, osvětlení, povrch.",
+          "text": "Zkontrolujte osvětlení, povrch a volný prostor.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "zajisteni_vozidel",
-          "text": "Ověřte zajištění vozidel proti samovolnému pohybu.",
+          "text": "Ověřte zabrzdění a zajištění vozidel klínem.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "stabilita_nakladu",
-          "text": "Posuďte stabilitu a zajištění nákladu při nakládce a vykládce.",
+          "text": "Posuďte uložení a fixaci nákladu při manipulaci.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "organizace_prace",
-          "text": "Zkontrolujte organizaci práce a koordinaci účastníků.",
+          "text": "Sledujte koordinaci mezi obsluhou, řidiči a pracovníky.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "komunikace",
-          "text": "Ověřte komunikaci a koordinaci mezi obsluhou, řidiči a dalšími osobami.",
+          "text": "Ověřte domluvu signály mezi účastníky nakládky.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda při nakládce nehrozí samovolný pohyb vozidla ani nákladu.",
+          "text": "Sledujte, zda vozidlo zůstává zajištěné po celou dobu nakládky.",
           "poradi": 70,
           "aktivni": true
         }
@@ -1345,7 +1345,7 @@
         {
           "id": "bezpecnost_pracoviste",
           "nazev": "Pracoviště je bezpečné",
-          "popis": "Místo nakládky splňuje požadavky na bezpečnost.",
+          "popis": "Místo nakládky je osvětlené a bez překážek.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -1353,23 +1353,23 @@
         {
           "id": "zajisteni_vozidel",
           "nazev": "Vozidla jsou zajištěna",
-          "popis": "Vozidla jsou zabrzděna a zajištěna proti pohybu.",
+          "popis": "Nákladní vozidlo je zabrzděné a zajištěné klínem proti pojedu.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "stabilita_nakladu",
           "nazev": "Náklad je stabilní",
-          "popis": "Náklad je bezpečně uložen a zajištěn proti posunu.",
+          "popis": "Náklad při nakládce nehrozí sesunutím na pracovníky.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "organizace_prace",
           "nazev": "Práce je organizována",
-          "popis": "Nakládka probíhá koordinovaně a bezpečně.",
+          "popis": "Nakládka probíhá s určenou odpovědnou osobou.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -1377,7 +1377,7 @@
         {
           "id": "komunikace",
           "nazev": "Komunikace je zajištěna",
-          "popis": "Účastníci nakládky spolu efektivně komunikují a koordinují činnosti.",
+          "popis": "Obsluha a řidič se domluví signály před zahájením.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -1385,7 +1385,7 @@
         {
           "id": "prakticka_kontrola",
           "nazev": "Bez rizika samovolného pohybu",
-          "popis": "Při nakládce nehrozí samovolný pohyb vozidla ani nákladu.",
+          "popis": "Při pozorování vozidlo i náklad zůstávají stabilní.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -1394,43 +1394,43 @@
       "typicke_zavady": [
         {
           "id": "nezajistena_vozidla",
-          "nazev": "Nezajištěná vozidla",
-          "popis": "Vozidla nejsou zabrzděna nebo zajištěna klínem.",
+          "nazev": "Nezajištěné vozidlo",
+          "popis": "Kamion stojí na mírném sklonu bez klínu pod koly.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nestabilni_naklad",
-          "nazev": "Nestabilní náklad",
-          "popis": "Náklad může při manipulaci spadnout nebo se posunout.",
+          "nazev": "Nestabilní náklad při vykládce",
+          "popis": "Paleta se naklání, když ji vysunují z vozidla.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "chaos_na_pracisti",
-          "nazev": "Neorganizovaná práce",
-          "popis": "Chybí koordinace mezi obsluhou a řidiči.",
+          "nazev": "Neorganizovaná nakládka",
+          "popis": "VZV a chodci se míjejí bez domluvy u otevřeného nákladového prostoru.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nebezpecne_prostredi",
-          "nazev": "Nebezpečné pracoviště",
-          "popis": "Nakládka probíhá v nevhodných podmínkách — špatné osvětlení, kluzký povrch.",
+          "nazev": "Tmavé nebo kluzké místo",
+          "popis": "Nakládka probíhá bez osvětlení nebo na namrzlém rampě.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "prekrocena_nosnost",
-          "nazev": "Přetížení vozidla",
-          "popis": "Náklad překračuje povolenou nosnost vozidla.",
+          "nazev": "Přetížené vozidlo",
+          "popis": "Náklad překračuje povolenou nosnost vozidla nebo náprav.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "chybi_postup",
-          "nazev": "Chybí pracovní postup",
-          "popis": "Neexistuje bezpečný postup pro nakládku a vykládku.",
+          "nazev": "Chybí postup nakládky",
+          "popis": "Neexistuje psaný postup pro zajištění vozidla a nákladu.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1438,36 +1438,36 @@
       "doporucene_postupy": [
         {
           "id": "pracovni_postup",
-          "nazev": "Stanovit pracovní postup",
-          "popis": "Sepište a dodržujte bezpečný postup nakládky a vykládky.",
+          "nazev": "Sepsat postup nakládky",
+          "popis": "Popište krok za krokem zajištění vozidla, nakládku a fixaci nákladu.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "zajisteni_vozidel",
-          "nazev": "Zajišťovat vozidla",
-          "popis": "Vždy zajistěte vozidla proti samovolnému pohybu.",
+          "nazev": "Vždy použít zarážky pod kola",
+          "popis": "Před vstupem do nákladového prostoru zabrzděte a zajistěte vozidlo.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "fixace_nakladu",
-          "nazev": "Fixovat náklad",
-          "popis": "Náklad řádně uložte a zafixujte před přepravou.",
+          "nazev": "Fixovat náklad před odjezdem",
+          "popis": "Použijte pásy nebo ohrady, aby náklad neujel při brzdění.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "koordinace",
-          "nazev": "Koordinovat práci",
-          "popis": "Určete odpovědnou osobu pro koordinaci nakládky.",
+          "nazev": "Určit vedoucího nakládky",
+          "popis": "Jedna osoba koordinuje pohyb VZV a chodců u vozidla.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "skoleni",
-          "nazev": "Proškolit zaměstnance",
-          "popis": "Proškolte zaměstnance v bezpečných postupech nakládky a vykládky.",
+          "nazev": "Proškolit pracovníky u rampy",
+          "popis": "Seznamte pracovníky se signály a pravidly u nakládacího místa.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1476,28 +1476,28 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Podrobnosti k zajištění bezpečnosti při práci.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Místní pravidla pro bezpečnou manipulaci a skladování na pracovišti.",
+          "popis": "Pravidla manipulace a skladování na pracovišti.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nv_378_2001",
           "nazev": "Nařízení vlády č. 378/2001 Sb.",
-          "popis": "Hygienické limity — požadavky na bezpečnost při manipulaci a přepravě břemen.",
+          "popis": "Limity pro ruční manipulaci při nakládce a vykládce.",
           "poradi": 40,
           "aktivni": true
         }
@@ -1507,50 +1507,50 @@
     {
       "id": "skoleni_organizace_prace",
       "nazev": "Školení a organizace práce",
-      "popis": "Kontrola proškolení zaměstnanců, oprávnění obsluh, pracovních postupů a místních pravidel pro manipulaci a skladování.",
+      "popis": "Prověrka proškolení, oprávnění obsluhy, postupů a evidence.",
       "poradi": 80,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte zaměstnance a činnosti v oblasti manipulace a skladování.",
+          "text": "Určete pracovníky v manipulaci, skladování a obsluze techniky.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "proskoleni",
-          "text": "Zkontrolujte proškolení zaměstnanců v oblasti manipulace a skladování.",
+          "text": "Zkontrolujte platná školení v oblasti manipulace a skladování.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "opravneni_obsluh",
-          "text": "Ověřte platnost oprávnění obsluh manipulační techniky.",
+          "text": "Ověřte platnost průkazů obsluhy VZV a techniky.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "pracovni_postupy",
-          "text": "Posuďte existenci a dodržování pracovních postupů.",
+          "text": "Posuďte, zda existují a jsou dodržovány postupy.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "mistni_pravidla",
-          "text": "Zkontrolujte znalost a dodržování místních pravidel.",
+          "text": "Ověřte znalost místních pravidel skladu.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "evidence",
-          "text": "Zkontrolujte evidenci školení, oprávnění a ověřování znalostí.",
+          "text": "Zkontrolujte evidenci školení a oprávnění.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Namátkově ověřte, zda oslovený zaměstnanec zná zásady bezpečné manipulace.",
+          "text": "Zeptejte se pracovníka na základní pravidla bezpečné manipulace.",
           "poradi": 70,
           "aktivni": true
         }
@@ -1559,23 +1559,23 @@
         {
           "id": "proskoleni",
           "nazev": "Zaměstnanci jsou proškoleni",
-          "popis": "Zaměstnanci absolvovali školení v oblasti manipulace a skladování.",
+          "popis": "Pracovníci mají platné vstupní nebo periodické školení.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "opravneni_obsluh",
           "nazev": "Obsluha má oprávnění",
-          "popis": "Obsluha manipulační techniky má platná oprávnění.",
+          "popis": "Obsluha VZV má platný průkaz v evidenci.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "pracovni_postupy",
           "nazev": "Pracovní postupy existují",
-          "popis": "Jsou k dispozici a dodržovány bezpečné pracovní postupy.",
+          "popis": "Pro hlavní manipulační činnosti jsou sepsané postupy.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1583,23 +1583,23 @@
         {
           "id": "mistni_pravidla",
           "nazev": "Místní pravidla jsou známa",
-          "popis": "Zaměstnanci znají a dodržují místní pravidla.",
+          "popis": "Pracovníci znají pravidla skladu a nakládacího místa.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "evidence",
           "nazev": "Evidence školení je vedena",
-          "popis": "Evidence proškolení, oprávnění a ověření znalostí je aktuální.",
+          "popis": "Prezenční listiny a průkazy jsou aktuální.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Znalost zásad bezpečné manipulace",
-          "popis": "Namátkově oslovený zaměstnanec zná zásady bezpečné manipulace.",
+          "nazev": "Pracovník zná zásady manipulace",
+          "popis": "Oslovený pracovník popíše základní pravidla bezpečné manipulace.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -1608,43 +1608,43 @@
       "typicke_zavady": [
         {
           "id": "neproskoleni",
-          "nazev": "Neproškolení zaměstnanci",
-          "popis": "Zaměstnanci neabsolvovali potřebná školení.",
+          "nazev": "Neproškolený pracovník",
+          "popis": "Nový skladník pracuje bez vstupního školení.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "propadle_opravneni",
-          "nazev": "Propadlé oprávnění obsluhy",
-          "popis": "Oprávnění pro obsluhu manipulační techniky není platné.",
+          "nazev": "Propadlý průkaz VZV",
+          "popis": "Obsluha jezdí na vozíku s prošlým oprávněním.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "chybi_postupy",
           "nazev": "Chybí pracovní postupy",
-          "popis": "Neexistují písemné postupy pro manipulaci a skladování.",
+          "popis": "Není sepsán postup pro nakládku nebo skladování.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nedodrzovani_pravidel",
-          "nazev": "Nedodržování pravidel",
-          "popis": "Zaměstnanci nedodržují stanovená pravidla.",
+          "nazev": "Porušování pravidel skladu",
+          "popis": "Pracovníci ukládají materiál do průchodů navzdory zákazu.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "bez_overeni",
-          "nazev": "Chybí ověření znalostí",
-          "popis": "Znalosti zaměstnanců nejsou pravidelně ověřovány.",
+          "nazev": "Neověřené znalosti",
+          "popis": "Po školení se znalosti pracovníků nekontrolují.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "chaoticka_organizace",
-          "nazev": "Neorganizovaná práce",
-          "popis": "Chybí jasné vymezení odpovědností a organizace práce.",
+          "nazev": "Nejasné odpovědnosti",
+          "popis": "Nikdo nekoordinuje nakládku ani nevede evidenci školení.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1652,36 +1652,36 @@
       "doporucene_postupy": [
         {
           "id": "pravidelna_skoleni",
-          "nazev": "Provádět pravidelná školení",
-          "popis": "Zajistěte vstupní i pravidelná školení v manipulaci a skladování.",
+          "nazev": "Plánovat periodická školení",
+          "popis": "Sledujte termíny obnovy školení u každého pracovníka.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "overovani_znalosti",
-          "nazev": "Ověřovat znalosti",
-          "popis": "Pravidelně ověřujte znalosti zaměstnanců namátkovými dotazy.",
+          "nazev": "Ověřovat znalosti při obchůzkách",
+          "popis": "Krátce se ptejte na pravidla skladování a obsluhy techniky.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "postupy",
-          "nazev": "Vytvořit pracovní postupy",
-          "popis": "Sepište srozumitelné postupy pro hlavní manipulační činnosti.",
+          "nazev": "Sepsat postupy pro sklad",
+          "popis": "Popište nakládku, ukládání na regál a práci s paletami.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "mistni_pravidla",
-          "nazev": "Stanovit místní pravidla",
-          "popis": "Určete a vyvěste místní pravidla pro manipulaci a skladování.",
+          "nazev": "Vyvěsit pravidla skladu",
+          "popis": "Umístěte stručná pravidla u vchodu do skladu.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "evidence_skoleni",
-          "nazev": "Vést evidenci školení",
-          "popis": "Evidence proškolení a oprávnění obsluh manipulační techniky.",
+          "nazev": "Archivovat průkazy a listiny",
+          "popis": "Uchovávejte kopie průkazů VZV a prezenční listiny školení.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1690,28 +1690,28 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Podrobnosti k zajištění bezpečnosti při práci.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Místní pravidla pro bezpečnou manipulaci a skladování na pracovišti.",
+          "popis": "Pravidla manipulace a skladování na pracovišti.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nv_378_2001",
           "nazev": "Nařízení vlády č. 378/2001 Sb.",
-          "popis": "Požadavky na školení a informování zaměstnanců o rizicích při práci.",
+          "popis": "Školení a informování o rizicích při práci.",
           "poradi": 40,
           "aktivni": true
         }
