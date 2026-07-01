@@ -1,5 +1,5 @@
 {
-  "verze": 5,
+  "verze": 6,
   "id": "po",
   "nazev": "Požární ochrana",
   "popis": "Prevence požárů, požární technika, evakuační cesty a organizace PO.",
@@ -1299,6 +1299,249 @@
           "id": "interni_dokumentace",
           "nazev": "Interní dokumentace zaměstnavatele",
           "popis": "Rozmístění značení, periodicita kontrol a odpovědnosti.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "pozarni_dokumentace",
+      "nazev": "Požární dokumentace",
+      "popis": "Kontrola existence, aktuálnosti, dostupnosti a vedení požární dokumentace zaměstnavatele v souladu s požadavky právních předpisů.",
+      "poradi": 60,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "rozsah_dokumentace",
+          "text": "Zjistěte, jaká požární dokumentace je pro objekt požadována.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "existence",
+          "text": "Ověřte, že požadované dokumenty existují.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "aktualnost",
+          "text": "Zkontrolujte jejich aktuálnost.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "soulad_se_stavem",
+          "text": "Ověřte, zda odpovídají skutečnému stavu pracoviště.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "dostupnost",
+          "text": "Zkontrolujte dostupnost dokumentace oprávněným osobám.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "zaznamy",
+          "text": "Ověřte, zda jsou vedeny záznamy o kontrolách a školeních.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_vedouciho",
+          "text": "Namátkově se zeptejte vedoucího zaměstnance, kde je požární dokumentace uložena.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "zpracovana",
+          "nazev": "Požární dokumentace je zpracována",
+          "popis": "Rozsah dokumentace odpovídá charakteru provozu a požadavkům právních předpisů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "aktualni",
+          "nazev": "Dokumentace je aktuální",
+          "popis": "Obsah odpovídá současnému stavu objektu a provozu.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pozarni_rad",
+          "nazev": "Požární řád je zpracován",
+          "popis": "Pokud je pro pracoviště požadován.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "poplachove_smernice",
+          "nazev": "Požární poplachové směrnice jsou zpracovány",
+          "popis": "Pokud jsou požadovány.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "evacuacni_plan",
+          "nazev": "Evakuační plán odpovídá skutečnosti",
+          "popis": "Pokud je zpracován, odpovídá aktuálnímu stavu objektu.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "zaznamy_prohlidek",
+          "nazev": "Jsou vedeny záznamy o preventivních požárních prohlídkách",
+          "popis": "Záznamy jsou úplné a aktuální.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "zaznamy_skoleni",
+          "nazev": "Jsou vedeny záznamy o školení PO",
+          "popis": "Lze doložit proškolení zaměstnanců.",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "dostupnost",
+          "nazev": "Dokumentace je dostupná",
+          "popis": "Oprávněné osoby vědí, kde je dokumentace uložena.",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_vedouciho",
+          "nazev": "Vedoucí zaměstnanec ví, kde je dokumentace uložena",
+          "popis": "Namátkově oslovený vedoucí zaměstnanec dokáže dokumentaci bez prodlení předložit.",
+          "poradi": 90,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "chybi_dokumentace",
+          "nazev": "Chybějící požární dokumentace",
+          "popis": "Požadovaná požární dokumentace neexistuje nebo není kompletní.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "neaktualizovana",
+          "nazev": "Dokumentace není aktualizována",
+          "popis": "Obsah dokumentace neodpovídá současnému stavu objektu nebo provozu.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "neodpovida_stavu",
+          "nazev": "Dokumentace neodpovídá skutečnému stavu",
+          "popis": "Popis v dokumentaci neodpovídá skutečnému stavu pracoviště.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_zaznamy_prohlidek",
+          "nazev": "Chybí záznamy o preventivních požárních prohlídkách",
+          "popis": "Nejsou vedeny nebo chybí záznamy o pravidelných prohlídkách.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_zaznamy_skoleni",
+          "nazev": "Chybí záznamy o školení",
+          "popis": "Nejsou doloženy záznamy o školení zaměstnanců v oblasti PO.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "neznalost_umisteni",
+          "nazev": "Zaměstnanci nevědí, kde je dokumentace uložena",
+          "popis": "Oprávněné osoby neznají umístění požární dokumentace.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "evacuacni_plan_neodpovida",
+          "nazev": "Evakuační plán neodpovídá skutečnosti",
+          "popis": "Evakuační plán neodpovídá aktuální dispozici objektu.",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "po_zmenach_neupravena",
+          "nazev": "Po změnách provozu nebyla dokumentace upravena",
+          "popis": "Po významných změnách provozu nebyla dokumentace aktualizována.",
+          "poradi": 80,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "revize_dokumentace",
+          "nazev": "Pravidelně provádět revizi dokumentace",
+          "popis": "Kontrolujte aktuálnost požární dokumentace v intervalech stanovených předpisy.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "aktualizace_zmen",
+          "nazev": "Aktualizovat dokumentaci při každé významné změně provozu",
+          "popis": "Po změnách dispozice, technologie nebo personálu aktualizujte dokumentaci.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "dostupne_umisteni",
+          "nazev": "Uchovávat dokumentaci na známém a dostupném místě",
+          "popis": "Zajistěte, aby oprávněné osoby věděly, kde je dokumentace uložena.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "kontrola_zaznamu",
+          "nazev": "Pravidelně kontrolovat vedení záznamů",
+          "popis": "Ověřujte úplnost záznamů o prohlídkách, kontrolách a školeních PO.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "seznameni_vedoucich",
+          "nazev": "Seznamovat vedoucí zaměstnance s umístěním dokumentace",
+          "popis": "Informujte vedoucí zaměstnance o umístění a obsahu požární dokumentace.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_133_1985",
+          "nazev": "Zákon č. 133/1985 Sb.",
+          "popis": "O požární ochraně — povinnosti v oblasti požární dokumentace.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vyhlaska_246_2001",
+          "nazev": "Vyhláška č. 246/2001 Sb.",
+          "popis": "Stanovení podmínek požární bezpečnosti a výkonu státního požárního dozoru.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "technicke_normy",
+          "nazev": "Příslušné technické normy podle charakteru objektu",
+          "popis": "ČSN a další normy upravující požadavky na požární dokumentaci.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_dokumentace",
+          "nazev": "Interní požární dokumentace zaměstnavatele",
+          "popis": "Požární řád, evakuační plány, záznamy o kontrolách a školeních.",
           "poradi": 40,
           "aktivni": true
         }
