@@ -3,6 +3,7 @@
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QButtonGroup,
+    QCheckBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -16,9 +17,12 @@ from core.shared.constants import CONTROL_RESULT_NEKONTROLOVANO
 from core.shared.control_result_display import CONTROL_RESULT_OPTIONS
 from core.shared.sluzby.control_result_service import ControlPointContext, control_result_service
 
+SHARED_EXPERIENCE_LABEL = "Sdílet jako zkušenost"
+
 
 class ControlResultSelectorWidget(QWidget):
     result_changed = Signal(str)
+    data_saved = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -56,6 +60,10 @@ class ControlResultSelectorWidget(QWidget):
         note_row.addWidget(self._note_edit)
         layout.addLayout(note_row)
 
+        self._shared_experience_check = QCheckBox(SHARED_EXPERIENCE_LABEL)
+        self._shared_experience_check.toggled.connect(self._on_shared_experience_toggled)
+        layout.addWidget(self._shared_experience_check)
+
         self._set_result_ui(CONTROL_RESULT_NEKONTROLOVANO)
 
     def configure(
@@ -81,14 +89,13 @@ class ControlResultSelectorWidget(QWidget):
     def _reload_from_storage(self) -> None:
         self._loading = True
         note_blocked = self._note_edit.blockSignals(True)
+        shared_blocked = self._shared_experience_check.blockSignals(True)
         try:
             if self._entity_id is None or self._context is None:
                 self._set_result_ui(CONTROL_RESULT_NEKONTROLOVANO)
                 self._note_edit.clear()
-                self.setEnabled(True)
-                for radio in self._radios.values():
-                    radio.setEnabled(self._entity_id is not None)
-                self._note_edit.setEnabled(self._entity_id is not None)
+                self._shared_experience_check.setChecked(False)
+                self._set_enabled(False)
                 return
 
             row = control_result_service.get_for_control_point(
@@ -99,17 +106,24 @@ class ControlResultSelectorWidget(QWidget):
             if row is None:
                 self._set_result_ui(CONTROL_RESULT_NEKONTROLOVANO)
                 self._note_edit.clear()
+                self._shared_experience_check.setChecked(False)
             else:
                 self._set_result_ui(row.result)
                 self._note_edit.setText(row.note or "")
+                self._shared_experience_check.setChecked(bool(row.shared_experience))
 
-            self.setEnabled(True)
-            for radio in self._radios.values():
-                radio.setEnabled(True)
-            self._note_edit.setEnabled(True)
+            self._set_enabled(True)
         finally:
             self._note_edit.blockSignals(note_blocked)
+            self._shared_experience_check.blockSignals(shared_blocked)
             self._loading = False
+
+    def _set_enabled(self, enabled: bool) -> None:
+        self.setEnabled(True)
+        for radio in self._radios.values():
+            radio.setEnabled(enabled)
+        self._note_edit.setEnabled(enabled)
+        self._shared_experience_check.setEnabled(enabled)
 
     def _set_result_ui(self, result: str) -> None:
         radio = self._radios.get(result)
@@ -122,6 +136,22 @@ class ControlResultSelectorWidget(QWidget):
         finally:
             for item, previous in blocked.items():
                 item.blockSignals(previous)
+
+    def _save_current_state(self, *, emit_result_changed: bool = False) -> None:
+        if self._entity_id is None or self._context is None:
+            return
+
+        control_result_service.set_result(
+            self._entity_type,
+            self._entity_id,
+            self._context,
+            result=self.current_result(),
+            note=self._note_edit.text(),
+            shared_experience=self._shared_experience_check.isChecked(),
+        )
+        if emit_result_changed:
+            self.result_changed.emit(self.current_result())
+        self.data_saved.emit()
 
     def _on_radio_toggled(self, value: str, checked: bool) -> None:
         if not checked or self._loading:
@@ -140,23 +170,16 @@ class ControlResultSelectorWidget(QWidget):
         if previous == value:
             return
 
-        control_result_service.set_result(
-            self._entity_type,
-            self._entity_id,
-            self._context,
-            result=value,
-            note=self._note_edit.text(),
-        )
-        self.result_changed.emit(value)
+        self._save_current_state(emit_result_changed=True)
 
     def _on_note_finished(self) -> None:
         if self._loading or self._entity_id is None or self._context is None:
             return
 
-        control_result_service.set_result(
-            self._entity_type,
-            self._entity_id,
-            self._context,
-            result=self.current_result(),
-            note=self._note_edit.text(),
-        )
+        self._save_current_state()
+
+    def _on_shared_experience_toggled(self, _checked: bool) -> None:
+        if self._loading or self._entity_id is None or self._context is None:
+            return
+
+        self._save_current_state()

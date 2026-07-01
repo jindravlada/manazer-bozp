@@ -66,6 +66,7 @@ class ControlResultService:
         result: str,
         note: str = "",
         recorded_by_name: str = "",
+        shared_experience: bool | None = None,
     ) -> ControlResult:
         self._validate_entity(entity_type, entity_id)
         if result not in VALID_CONTROL_RESULTS:
@@ -86,6 +87,7 @@ class ControlResultService:
                 source_control_point_label=context.control_point_label.strip(),
                 result=result,
                 note=note.strip(),
+                shared_experience=bool(shared_experience) if shared_experience is not None else False,
                 recorded_by_name=recorded_by_name.strip(),
                 recorded_at=now,
             )
@@ -93,6 +95,8 @@ class ControlResultService:
             control_result = existing
             control_result.result = result
             control_result.note = note.strip()
+            if shared_experience is not None:
+                control_result.shared_experience = shared_experience
             control_result.recorded_by_name = recorded_by_name.strip() or control_result.recorded_by_name
             control_result.recorded_at = now
 

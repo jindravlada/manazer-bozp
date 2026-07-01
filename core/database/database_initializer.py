@@ -33,6 +33,7 @@ def initialize_database() -> None:
     _ensure_person_columns()
     _ensure_mu_investigation_columns()
     _ensure_finding_columns()
+    _ensure_control_result_columns()
     _normalize_task_status_values()
     _normalize_internal_audit_status_values()
     _normalize_accident_legacy_values()
@@ -196,6 +197,12 @@ def _ensure_finding_columns() -> None:
     for column_name, column_sql in additions.items():
         if column_name not in columns:
             _add_column("findings", column_sql)
+
+
+def _ensure_control_result_columns() -> None:
+    columns = _table_columns("control_results")
+    if "shared_experience" not in columns:
+        _add_column("control_results", "shared_experience BOOLEAN DEFAULT 0 NOT NULL")
 
 
 def _normalize_internal_audit_status_values() -> None:

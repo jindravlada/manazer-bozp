@@ -49,6 +49,31 @@ class ControlPointHistoryService:
             control_point_id=control_point_id,
         )
 
+    def get_shared_experiences(
+        self,
+        *,
+        area_label: str,
+        section_label: str,
+        control_point_id: str,
+        exclude_inspection_id: int | None = None,
+        limit: int = 5,
+    ) -> list[ControlPointHistoryEntry]:
+        if not control_point_id:
+            return []
+
+        return self._to_entries(
+            self.repository.get_shared_experiences(
+                area_label=area_label,
+                section_label=section_label,
+                control_point_id=control_point_id,
+                exclude_inspection_id=exclude_inspection_id,
+                limit=limit,
+            ),
+            area_label=area_label,
+            section_label=section_label,
+            control_point_id=control_point_id,
+        )
+
     def get_similar_elsewhere_history(
         self,
         *,

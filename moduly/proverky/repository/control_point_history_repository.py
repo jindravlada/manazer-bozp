@@ -69,3 +69,43 @@ class ControlPointHistoryRepository:
                 ControlPointHistoryRecord(control_result=control_result, inspection=inspection)
                 for control_result, inspection in rows
             ]
+
+    def get_shared_experiences(
+        self,
+        *,
+        area_label: str,
+        section_label: str,
+        control_point_id: str,
+        exclude_inspection_id: int | None = None,
+        limit: int = 5,
+    ) -> list[ControlPointHistoryRecord]:
+        with get_session() as session:
+            stmt = (
+                select(ControlResult, BozpInspection)
+                .join(
+                    BozpInspection,
+                    ControlResult.entity_id == BozpInspection.id,
+                )
+                .where(
+                    ControlResult.entity_type == ENTITY_PROVERKY,
+                    ControlResult.source_area_label == area_label.strip(),
+                    ControlResult.source_section_label == section_label.strip(),
+                    ControlResult.source_control_point_id == control_point_id.strip(),
+                    ControlResult.result != CONTROL_RESULT_NEKONTROLOVANO,
+                    ControlResult.shared_experience.is_(True),
+                )
+            )
+
+            if exclude_inspection_id is not None:
+                stmt = stmt.where(ControlResult.entity_id != exclude_inspection_id)
+
+            stmt = stmt.order_by(
+                ControlResult.recorded_at.desc(),
+                ControlResult.id.desc(),
+            ).limit(limit)
+
+            rows = session.execute(stmt).all()
+            return [
+                ControlPointHistoryRecord(control_result=control_result, inspection=inspection)
+                for control_result, inspection in rows
+            ]

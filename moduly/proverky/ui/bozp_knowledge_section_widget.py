@@ -24,8 +24,8 @@ from moduly.proverky.constants import (
     CONTROL_POINT_HISTORY_EMPTY,
     CONTROL_POINT_HISTORY_LIMIT,
     CONTROL_POINT_HISTORY_SELECT,
-    CONTROL_POINT_HISTORY_SIMILAR_EMPTY,
-    CONTROL_POINT_HISTORY_SIMILAR_TITLE,
+    CONTROL_POINT_SHARED_EXPERIENCES_EMPTY,
+    CONTROL_POINT_SHARED_EXPERIENCES_TITLE,
     CONTROL_POINT_HISTORY_WORKPLACE_NO_WORKPLACE,
     CONTROL_POINT_HISTORY_WORKPLACE_TITLE,
     FINDING_CREATE_FROM_CONTROL_POINT_LABEL,
@@ -85,7 +85,7 @@ class BozpKnowledgeSectionWidget(QWidget):
         self._control_point_frames: dict[str, _ControlPointFrame] = {}
         self._history_point_label: QLabel | None = None
         self._workplace_history_host: QWidget | None = None
-        self._similar_history_host: QWidget | None = None
+        self._shared_experiences_host: QWidget | None = None
 
         self._content_host = QWidget()
         self._content_layout = QVBoxLayout(self._content_host)
@@ -181,7 +181,7 @@ class BozpKnowledgeSectionWidget(QWidget):
         self._control_point_frames.clear()
         self._history_point_label = None
         self._workplace_history_host = None
-        self._similar_history_host = None
+        self._shared_experiences_host = None
         while self._content_layout.count():
             item = self._content_layout.takeAt(0)
             widget = item.widget()
@@ -229,9 +229,9 @@ class BozpKnowledgeSectionWidget(QWidget):
             initial_text=CONTROL_POINT_HISTORY_SELECT,
         ))
         block_layout.addWidget(self._build_history_section_block(
-            CONTROL_POINT_HISTORY_SIMILAR_TITLE,
-            host_attr="_similar_history_host",
-            initial_text=CONTROL_POINT_HISTORY_SIMILAR_EMPTY,
+            CONTROL_POINT_SHARED_EXPERIENCES_TITLE,
+            host_attr="_shared_experiences_host",
+            initial_text=CONTROL_POINT_SHARED_EXPERIENCES_EMPTY,
         ))
         return container
 
@@ -281,7 +281,7 @@ class BozpKnowledgeSectionWidget(QWidget):
         layout.addWidget(widget)
 
     def _refresh_control_point_history(self, context: ProverkyFindingKnowledgeContext | None = None) -> None:
-        if self._workplace_history_host is None or self._similar_history_host is None:
+        if self._workplace_history_host is None or self._shared_experiences_host is None:
             return
 
         if context is None and self._selected_control_point_id:
@@ -302,8 +302,8 @@ class BozpKnowledgeSectionWidget(QWidget):
                 self._build_info_label(CONTROL_POINT_HISTORY_SELECT),
             )
             self._set_panel_content(
-                self._similar_history_host,
-                self._build_info_label(CONTROL_POINT_HISTORY_SIMILAR_EMPTY),
+                self._shared_experiences_host,
+                self._build_info_label(CONTROL_POINT_SHARED_EXPERIENCES_EMPTY),
             )
             return
 
@@ -345,24 +345,23 @@ class BozpKnowledgeSectionWidget(QWidget):
                     ),
                 )
 
-        similar_entries = control_point_history_service.get_similar_elsewhere_history(
+        shared_entries = control_point_history_service.get_shared_experiences(
             area_label=context.area_label,
             section_label=context.section_label,
             control_point_id=context.control_point_id,
-            workplace_id=workplace_id,
             exclude_inspection_id=self._inspection_id,
             limit=CONTROL_POINT_HISTORY_LIMIT,
         )
-        if not similar_entries:
+        if not shared_entries:
             self._set_panel_content(
-                self._similar_history_host,
-                self._build_info_label(CONTROL_POINT_HISTORY_SIMILAR_EMPTY),
+                self._shared_experiences_host,
+                self._build_info_label(CONTROL_POINT_SHARED_EXPERIENCES_EMPTY),
             )
         else:
             self._set_panel_content(
-                self._similar_history_host,
+                self._shared_experiences_host,
                 self._build_history_entries_list(
-                    similar_entries,
+                    shared_entries,
                     include_workplace=True,
                 ),
             )
@@ -526,6 +525,9 @@ class BozpKnowledgeSectionWidget(QWidget):
                 ctx,
                 result,
             )
+        )
+        result_selector.data_saved.connect(
+            lambda ctx=context: self._refresh_control_point_history(ctx)
         )
 
         return row_frame

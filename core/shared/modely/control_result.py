@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database.base import Base
@@ -45,6 +45,7 @@ class ControlResult(Base):
         nullable=False,
     )
     note: Mapped[str] = mapped_column(Text, default="")
+    shared_experience: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     recorded_by_name: Mapped[str] = mapped_column(String(150), default="")
     recorded_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
