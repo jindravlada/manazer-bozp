@@ -203,6 +203,49 @@ class ProverkyCommissionTestCase(unittest.TestCase):
             bozp_inspection_commission_service.save_members(inspection.id, members)
         self.assertEqual(str(context.exception), COMMISSION_DUPLICATE_PERSON_MESSAGE)
 
+    def test_allows_leader_as_workplace_rep(self) -> None:
+        leader_id = self._create_worker("Jan", "Novák")
+        union_id = self._create_person("Lucie", "Horáková")
+        inspection = bozp_inspection_service.create_inspection()
+
+        bozp_inspection_commission_service.save_members(
+            inspection.id,
+            [
+                {
+                    "record_type": COMMISSION_RECORD_LEADER,
+                    "thp_worker_id": leader_id,
+                    "display_name": "Jan Novák",
+                    "display_order": 10,
+                    "active": True,
+                },
+                {
+                    "record_type": COMMISSION_RECORD_WORKPLACE,
+                    "thp_worker_id": leader_id,
+                    "display_name": "Jan Novák",
+                    "display_order": 15,
+                    "active": True,
+                },
+                {
+                    "record_type": COMMISSION_RECORD_UNION,
+                    "person_id": union_id,
+                    "display_name": "Lucie Horáková",
+                    "display_order": 20,
+                    "active": True,
+                },
+            ],
+        )
+
+        loaded = bozp_inspection_commission_service.get_for_inspection(inspection.id)
+        self.assertEqual(len(loaded), 3)
+        self.assertEqual(
+            sum(1 for item in loaded if item.record_type == COMMISSION_RECORD_LEADER),
+            1,
+        )
+        self.assertEqual(
+            sum(1 for item in loaded if item.record_type == COMMISSION_RECORD_WORKPLACE),
+            1,
+        )
+
     def test_rejects_leader_as_member(self) -> None:
         leader_id = self._create_worker("Jan", "Novák")
         workplace_id = self._create_worker("Eva", "Králová")
@@ -448,6 +491,52 @@ class ProverkyCommissionTestCase(unittest.TestCase):
                 ],
             )
         self.assertIn("odborové organizace", str(context.exception).lower())
+
+
+    def test_protocol_shows_leader_and_workplace_when_same_person(self) -> None:
+        import zipfile
+
+        from moduly.proverky.sluzby.protokol_proverky_service import protokol_proverky_service
+
+        leader_id = self._create_worker("Jan", "Novák")
+        union_id = self._create_person("Lucie", "Horáková")
+        inspection = bozp_inspection_service.create_inspection()
+        bozp_inspection_commission_service.save_members(
+            inspection.id,
+            [
+                {
+                    "record_type": COMMISSION_RECORD_LEADER,
+                    "thp_worker_id": leader_id,
+                    "display_name": "Jan Novák",
+                    "display_order": 10,
+                    "active": True,
+                },
+                {
+                    "record_type": COMMISSION_RECORD_WORKPLACE,
+                    "thp_worker_id": leader_id,
+                    "display_name": "Jan Novák",
+                    "display_order": 15,
+                    "active": True,
+                },
+                {
+                    "record_type": COMMISSION_RECORD_UNION,
+                    "person_id": union_id,
+                    "display_name": "Lucie Horáková",
+                    "display_order": 20,
+                    "active": True,
+                },
+            ],
+        )
+        loaded = bozp_inspection_service.get_by_id(inspection.id)
+        assert loaded is not None
+
+        path = protokol_proverky_service.generate_for_inspection(loaded)
+        with zipfile.ZipFile(path, "r") as zin:
+            content = zin.read("content.xml").decode("utf-8")
+
+        self.assertEqual(content.count("Jan Novák"), 2)
+        self.assertIn("Vedoucí komise", content)
+        self.assertIn("Zástupce pracoviště", content)
 
 
 if __name__ == "__main__":
