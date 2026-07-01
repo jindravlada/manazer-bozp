@@ -15,7 +15,8 @@ from moduly.proverky.constants import (
 from moduly.proverky.sluzby.proverky_knowledge_service import proverky_knowledge_service
 
 _DIALOG_WIDTH = 700
-_DIALOG_HEIGHT = 600
+_DIALOG_HEIGHT = 450
+_SECTION_TO_CONTENT_SPACING = 12
 
 
 class ProverkyControlProcedureDialog(QDialog):
@@ -33,15 +34,11 @@ class ProverkyControlProcedureDialog(QDialog):
         root_layout.setContentsMargins(12, 12, 12, 12)
         root_layout.setSpacing(12)
 
-        self._title_label = QLabel(KNOWLEDGE_CONTROL_PROCEDURE_DIALOG_TITLE)
-        self._title_label.setObjectName("SectionTitle")
-        self._title_label.setWordWrap(True)
-        root_layout.addWidget(self._title_label)
-
         self._section_title_label = QLabel()
         self._section_title_label.setObjectName("SectionTitle")
         self._section_title_label.setWordWrap(True)
         root_layout.addWidget(self._section_title_label)
+        root_layout.addSpacing(_SECTION_TO_CONTENT_SPACING)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
