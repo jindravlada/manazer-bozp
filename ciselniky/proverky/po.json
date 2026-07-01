@@ -1,5 +1,5 @@
 {
-  "verze": 3,
+  "verze": 4,
   "id": "po",
   "nazev": "Požární ochrana",
   "popis": "Prevence požárů, požární technika, evakuační cesty a organizace PO.",
@@ -785,6 +785,270 @@
           "id": "interni_pozarni_dokumentace",
           "nazev": "Interní požární dokumentace zaměstnavatele",
           "popis": "Evakuační plány, únikové trasy a odpovědnosti za jejich udržování.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "pozarni_dvere_uzavery",
+      "nazev": "Požární dveře a požární uzávěry",
+      "popis": "Kontrola technického stavu, správného používání, provozuschopnosti a funkce požárních dveří a dalších požárních uzávěrů určených k omezení šíření požáru a kouře.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "vyhledani",
+          "text": "Vyhledejte všechny požární dveře a uzávěry na pracovišti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni",
+          "text": "Ověřte jejich označení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "technicky_stav",
+          "text": "Zkontrolujte technický stav dveří a zárubní.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "samozaviraci_funkce",
+          "text": "Vyzkoušejte samozavírací funkci.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "otevrena_poloha",
+          "text": "Ověřte, že dveře nejsou zajištěny v otevřené poloze.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "tesneni_kovani",
+          "text": "Zkontrolujte těsnění, kování a případné elektromagnetické držáky.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_zamestnance",
+          "text": "Namátkově ověřte, zda zaměstnanci vědí, že požární dveře nesmí být trvale otevřené.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "oznaceni",
+          "nazev": "Požární dveře jsou správně označeny",
+          "popis": "Označení je čitelné a odpovídá požadavkům výrobce.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "bez_poskozeni",
+          "nazev": "Požární dveře nejsou mechanicky poškozeny",
+          "popis": "Křídlo, zárubeň ani kování nevykazují zjevné poškození.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "samozavirac",
+          "nazev": "Samozavírač funguje správně",
+          "popis": "Po otevření se dveře samy zcela dovřou.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "bez_zajisteni",
+          "nazev": "Dveře nejsou zajištěny v otevřené poloze",
+          "popis": "Nejsou použity klíny, PET lahve, odpadkové koše ani jiné předměty.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "tesneni",
+          "nazev": "Požární těsnění je nepoškozené",
+          "popis": "Těsnění je úplné, bez deformací a nevypadává.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "elektromagnet",
+          "nazev": "Elektromagnetické přidržení funguje správně",
+          "popis": "Pouze tam, kde je instalováno.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "bez_neodbornych_zasahu",
+          "nazev": "Požární uzávěr není upraven neodborným zásahem",
+          "popis": "Nejsou dodatečně vrtány otvory ani jiné zásahy snižující požární odolnost.",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "pruchod",
+          "nazev": "Průchod dveřmi není blokován",
+          "popis": "Dveře lze bezpečně používat.",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_zamestnance",
+          "nazev": "Zaměstnanci vědí, že požární dveře nesmí být trvale otevřené",
+          "popis": "Namátkově oslovený zaměstnanec zná význam požárních dveří.",
+          "poradi": 90,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "podlozene_klinem",
+          "nazev": "Dveře podložené klínem",
+          "popis": "Požární dveře jsou zajištěny v otevřené poloze klínem.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "podlozene_pet_lahvi",
+          "nazev": "Dveře podložené PET lahví",
+          "popis": "Požární dveře jsou zajištěny v otevřené poloze PET lahví.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "podlozene_kosem",
+          "nazev": "Dveře podložené odpadkovým košem",
+          "popis": "Požární dveře jsou zajištěny v otevřené poloze odpadkovým košem.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nefunkcni_samozavirac",
+          "nazev": "Nefunkční samozavírač",
+          "popis": "Samozavírač nefunguje nebo dveře nedovírají.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "poskozene_tesneni",
+          "nazev": "Poškozené požární těsnění",
+          "popis": "Těsnění je poškozené, deformované nebo chybí.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_oznaceni",
+          "nazev": "Chybí označení",
+          "popis": "Požární dveře nejsou viditelně označeny.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "neodborne_zasahy",
+          "nazev": "Neodborné zásahy do dveří",
+          "popis": "Do požárních dveří byly provedeny neodborné úpravy snižující požární odolnost.",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "nefunkcni_elektromagnet",
+          "nazev": "Elektromagnet nefunguje",
+          "popis": "Elektromagnetické přidržení nefunguje správně.",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "nedoviraji",
+          "nazev": "Dveře nedovírají",
+          "popis": "Požární dveře se po otevření nedovírají zcela.",
+          "poradi": 90,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "nezajistovat_otevrene",
+          "nazev": "Nikdy nezajišťovat požární dveře v otevřené poloze",
+          "popis": "Požární dveře nesmí být trvale drženy otevřené klínem ani jiným předmětem.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "kontrola_samozaviracu",
+          "nazev": "Pravidelně kontrolovat samozavírače",
+          "popis": "Ověřujte funkčnost samozavíračů v intervalech stanovených požární dokumentací.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vymena_tesneni",
+          "nazev": "Poškozené těsnění ihned vyměnit",
+          "popis": "Poškozené požární těsnění bez prodlení vyměňte.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "kontrola_elektromagnetu",
+          "nazev": "Kontrolovat funkci elektromagnetických držáků",
+          "popis": "Pravidelně testujte funkčnost elektromagnetického přidržení tam, kde je instalováno.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "seznamovani_zamestnancu",
+          "nazev": "Seznamovat zaměstnance s významem požárních uzávěrů",
+          "popis": "Informujte zaměstnance o účelu požárních dveří a zákazu jejich trvalého otevírání.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "bezodkladna_naprava",
+          "nazev": "Každou závadu řešit bezodkladně",
+          "popis": "Zjištěné nedostatky u požárních uzávěrů okamžitě odstraňte.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_133_1985",
+          "nazev": "Zákon č. 133/1985 Sb.",
+          "popis": "O požární ochraně — základní povinnosti v oblasti prevence požárů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vyhlaska_246_2001",
+          "nazev": "Vyhláška č. 246/2001 Sb.",
+          "popis": "Stanovení podmínek požární bezpečnosti a výkonu státního požárního dozoru.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "csn_73_0810",
+          "nazev": "ČSN 73 0810",
+          "popis": "Požární bezpečnost staveb — požární uzávěry.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "csn_73_0802",
+          "nazev": "ČSN 73 0802",
+          "popis": "Požární bezpečnost staveb — požadavky na stavební konstrukce.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "pozarni_dokumentace",
+          "nazev": "Požární dokumentace zaměstnavatele",
+          "popis": "Rozmístění požárních uzávěrů, periodicita kontrol a odpovědnosti.",
           "poradi": 50,
           "aktivni": true
         }
