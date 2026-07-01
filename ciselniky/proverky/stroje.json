@@ -1,58 +1,58 @@
 {
-  "verze": 1,
+  "verze": 2,
   "id": "stroje",
   "nazev": "Stroje a technická zařízení",
-  "popis": "Bezpečnost strojů — ochranná zařízení, ovládání, technický stav, údržba, obsluha a evidence.",
+  "popis": "Bezpečnost strojů — kryty, ovládání, technický stav, údržba, obsluha a evidence.",
   "poradi": 45,
   "aktivni": true,
   "sekce": [
     {
       "id": "ochranne_zarizeni_kryty",
       "nazev": "Ochranná zařízení a kryty",
-      "popis": "Kontrola pevných a pohyblivých krytů, blokování, ochrany proti kontaktu a stavu ochranných zařízení.",
+      "popis": "Prověrka pevných a pohyblivých krytů, blokování a ochrany proti kontaktu.",
       "poradi": 10,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace_stroju",
-          "text": "Identifikujte stroje a nebezpečná místa vyžadující ochranná zařízení.",
+          "text": "Identifikujte stroje a nebezpečná místa vyžadující kryty.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "pevne_kryty",
-          "text": "Zkontrolujte stav a upevnění pevných ochranných krytů.",
+          "text": "Zkontrolujte upevnění a stav pevných krytů.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "pohyblive_kryty",
-          "text": "Ověřte funkčnost pohyblivých krytů a jejich blokování.",
+          "text": "Ověřte funkci pohyblivých krytů a blokování.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "ochrana_kontaktu",
-          "text": "Posuďte ochranu proti kontaktu s nebezpečnými pohyblivými částmi.",
+          "text": "Posuďte ochranu proti kontaktu s pohyblivými částmi.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "demontovane_kryty",
-          "text": "Zkontrolujte, zda nejsou ochranné kryty demontovány nebo obcházeny.",
+          "text": "Ověřte, že kryty nejsou demontované nebo obcházené.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "porovnani_dokumentace",
-          "text": "Porovnejte skutečný stav s požadavky dokumentace a návodu výrobce.",
+          "text": "Porovnejte stav s návodem výrobce.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Namátkově ověřit, že ochranné kryty nejsou obcházeny.",
+          "text": "Ověřte, že kryty nejsou obcházeny drátem nebo páskou.",
           "poradi": 70,
           "aktivni": true
         }
@@ -61,7 +61,7 @@
         {
           "id": "pevne_kryty",
           "nazev": "Pevné kryty jsou v pořádku",
-          "popis": "Pevné ochranné kryty jsou řádně upevněny a nejsou poškozené.",
+          "popis": "Pevné kryty jsou upevněné a nejsou poškozené.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -69,7 +69,7 @@
         {
           "id": "pohyblive_kryty",
           "nazev": "Pohyblivé kryty jsou funkční",
-          "popis": "Pohyblivé kryty správně fungují a nejsou mechanicky poškozené.",
+          "popis": "Pohyblivé kryty správně fungují a nejsou poškozené.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -77,7 +77,7 @@
         {
           "id": "blokovani",
           "nazev": "Blokování krytů je funkční",
-          "popis": "Otevření krytu spouští blokování nebo zastavení nebezpečných pohybů.",
+          "popis": "Otevření krytu zastaví nebo zablokuje nebezpečné pohyby.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -85,7 +85,7 @@
         {
           "id": "ochrana_kontaktu",
           "nazev": "Ochrana proti kontaktu je zajištěna",
-          "popis": "Nebezpečné pohyblivé části jsou chráněny proti neúmyslnému kontaktu.",
+          "popis": "Pohyblivé a ostré části nejsou přístupné za provozu.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -93,15 +93,15 @@
         {
           "id": "demontovane_kryty",
           "nazev": "Kryty nejsou demontovány",
-          "popis": "Ochranné kryty nejsou trvale demontovány nebo nahrazeny nevhodnými úpravami.",
+          "popis": "Ochranné kryty nejsou trvale demontované ani nahrazené nevhodnými úpravami.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "kriticka"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Ochranné kryty nejsou obcházeny",
-          "popis": "Namátkově ověřit, že ochranné kryty nejsou obcházeny.",
+          "nazev": "Kryty nejsou obcházeny",
+          "popis": "Blokování není zajištěno drátem, páskou nebo jiným obcházením.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -110,43 +110,43 @@
       "typicke_zavady": [
         {
           "id": "demontovane_kryty",
-          "nazev": "Demontované ochranné kryty",
-          "popis": "Ochranné kryty jsou trvale demontovány kvůli pohodlí obsluhy.",
+          "nazev": "Demontované kryty",
+          "popis": "Ochranný kryt je sejmutý kvůli pohodlí obsluhy.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "porucha_blokovani",
-          "nazev": "Porucha blokování krytů",
-          "popis": "Blokování pohyblivých krytů nefunguje nebo je obcházeno.",
+          "nazev": "Obcházené blokování",
+          "popis": "Blokovací spínač je zajištěn drátem nebo nefunguje.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "poskozene_kryty",
-          "nazev": "Poškozené ochranné kryty",
-          "popis": "Kryty jsou mechanicky poškozené, uvolněné nebo neúplné.",
+          "nazev": "Poškozené kryty",
+          "popis": "Kryt je prohnutý, uvolněný nebo chybí část ochrany.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nechrane_casti",
-          "nazev": "Nechráněné nebezpečné části",
-          "popis": "Pohyblivé nebo ostré části nejsou dostatečně chráněny.",
+          "nazev": "Nechráněné pohyblivé části",
+          "popis": "Vřeteno, řemenice nebo ozubené kolo jsou přístupné za provozu.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "obchazeni_ochrany",
-          "nazev": "Obcházení ochranných zařízení",
-          "popis": "Obsluha obchází ochranná zařízení drátem, páskou nebo jiným způsobem.",
+          "nazev": "Obcházení ochrany",
+          "popis": "Obsluha obchází kryt nebo blokování pro rychlejší práci.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "chybi_kryty",
-          "nazev": "Chybějící ochranné kryty",
-          "popis": "Po opravě nebo úpravě stroje chybí původní ochranné kryty.",
+          "nazev": "Chybí kryty po opravě",
+          "popis": "Po úpravě stroje nebyly vráceny původní ochranné kryty.",
           "poradi": 60,
           "aktivni": true
         }
@@ -154,36 +154,36 @@
       "doporucene_postupy": [
         {
           "id": "pravidelna_kontrola",
-          "nazev": "Pravidelně kontrolovat ochranná zařízení",
-          "popis": "Provádějte pravidelné kontroly stavu krytů a blokování u všech strojů.",
+          "nazev": "Kontrolovat kryty při obchůzkách",
+          "popis": "Při prověrkách ověřujte stav krytů a funkci blokování.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "zakaz_demontaze",
-          "nazev": "Zakázat demontáž ochranných krytů",
-          "popis": "Stanovte a vynucujte pravidlo, že ochranné kryty nesmí být demontovány za provozu.",
+          "nazev": "Zakázat jízdu bez krytů",
+          "popis": "Stroj nesmí běžet s demontovaným nebo obcházeným krytem.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "opravy_vcas",
-          "nazev": "Bezodkladně opravovat poškozené kryty",
-          "popis": "Poškozené nebo nefunkční ochranné zařízení opravujte před dalším provozem.",
+          "nazev": "Opravit poškozené kryty",
+          "popis": "Poškozené kryty nebo blokování opravte před dalším provozem.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "skoleni_obsluhy",
-          "nazev": "Školit obsluhu o významu ochranných zařízení",
-          "popis": "Seznamte obsluhu s účelem krytů a riziky jejich obcházení.",
+          "nazev": "Vysvětlit riziko obcházení krytů",
+          "popis": "Seznamte obsluhu s důsledky demontáže ochranných zařízení.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "namatkove_kontroly",
-          "nazev": "Provádět namátkové kontroly obcházení",
-          "popis": "Při prověrkách kontrolujte, zda nejsou ochranná zařízení obcházena.",
+          "nazev": "Hledat obcházení blokování",
+          "popis": "Kontrolujte, zda u krytů není drát, páska nebo jiné obcházení.",
           "poradi": 50,
           "aktivni": true
         }
@@ -192,14 +192,14 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví — požadavky na bezpečné stroje a zařízení.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_378_2001",
           "nazev": "Nařízení vlády č. 378/2001 Sb.",
-          "popis": "Blíže určené požadavky pro zajištění bezpečnosti a ochrany zdraví — ochranná zařízení strojů.",
+          "popis": "Požadavky na bezpečné stroje a ochranná zařízení.",
           "poradi": 20,
           "aktivni": true
         },
@@ -208,12 +208,12 @@
           "nazev": "Nařízení vlády č. 390/2021 Sb.",
           "popis": "Požadavky na bezpečnost strojů a technických zařízení — ochranné kryty a blokování.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": false
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro kontrolu, údržbu a zákaz demontáže ochranných krytů a zařízení.",
+          "popis": "Kontrola krytů, zákaz demontáže a obcházení ochrany.",
           "poradi": 40,
           "aktivni": true
         }
@@ -223,50 +223,50 @@
     {
       "id": "ovladaci_prvky_nouzove_zastaveni",
       "nazev": "Ovládací prvky a nouzové zastavení",
-      "popis": "Kontrola hlavního vypínače, tlačítek START/STOP, nouzového zastavení, označení a přístupnosti ovládání.",
+      "popis": "Prověrka ovládání, hlavního vypínače a nouzového zastavení.",
       "poradi": 20,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace_ovladani",
-          "text": "Identifikujte ovládací prvky a místa nouzového zastavení u kontrolovaných strojů.",
+          "text": "Identifikujte ovládací prvky a místa nouzového zastavení.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "hlavni_vypinac",
-          "text": "Zkontrolujte funkčnost a umístění hlavního vypínače.",
+          "text": "Zkontrolujte hlavní vypínač — dostupnost a funkci.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "start_stop",
-          "text": "Ověřte tlačítka START/STOP a jejich správné označení.",
+          "text": "Ověřte tlačítka START/STOP a jejich označení.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nouzove_zastaveni",
-          "text": "Zkontrolujte dostupnost a funkčnost nouzového zastavení.",
+          "text": "Otestujte nouzové zastavení podle možnosti provozu.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "oznaceni",
-          "text": "Posuďte označení ovládacích prvků a výstražných prvků.",
+          "text": "Posuďte označení ovládacích prvků.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "pristupnost",
-          "text": "Ověřte přístupnost ovládání z pracovní polohy obsluhy.",
+          "text": "Ověřte dostupnost ovládání z pracovní polohy.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Ověřte, zda nouzové zastavení je snadno dosažitelné a zaměstnanec ví, kde se nachází.",
+          "text": "Zeptejte se obsluhy, kde je nouzové zastavení.",
           "poradi": 70,
           "aktivni": true
         }
@@ -275,18 +275,18 @@
         {
           "id": "hlavni_vypinac",
           "nazev": "Hlavní vypínač je funkční",
-          "popis": "Hlavní vypínač stroje je snadno dostupný a spolehlivě odstaví stroj.",
+          "popis": "Hlavní vypínač je snadno dostupný a spolehlivě odstaví stroj.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "start_stop",
           "nazev": "Tlačítka START/STOP jsou v pořádku",
-          "popis": "Ovládací tlačítka jsou funkční, označená a umístěna na vhodném místě.",
+          "popis": "Tlačítka fungují, jsou označená a na vhodném místě.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "nouzove_zastaveni",
@@ -298,8 +298,8 @@
         },
         {
           "id": "oznaceni",
-          "nazev": "Ovládání je řádně označeno",
-          "popis": "Ovládací prvky a nouzové zastavení jsou viditelně a srozumitelně označeny.",
+          "nazev": "Ovládání je označeno",
+          "popis": "Ovládací prvky a nouzové zastavení jsou viditelně označeny.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -307,15 +307,15 @@
         {
           "id": "pristupnost",
           "nazev": "Ovládání je snadno dostupné",
-          "popis": "Ovládací prvky jsou dostupné z pracovní polohy bez nebezpečných pohybů.",
+          "popis": "Ovládání je dosažitelné z pracovní polohy bez nebezpečných pohybů.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Nouzové zastavení je známé a dosažitelné",
-          "popis": "Nouzové zastavení je snadno dosažitelné a zaměstnanec ví, kde se nachází.",
+          "nazev": "Obsluha zná nouzové zastavení",
+          "popis": "Oslovená obsluha ukáže nebo popíše nouzové zastavení.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "kriticka"
@@ -325,42 +325,42 @@
         {
           "id": "nefunkcni_nouzove",
           "nazev": "Nefunkční nouzové zastavení",
-          "popis": "Nouzové zastavení nefunguje nebo nezastaví stroj spolehlivě.",
+          "popis": "Nouzové tlačítko nezastaví stroj nebo není aretováno.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nedostupne_ovladani",
           "nazev": "Nedostupné ovládání",
-          "popis": "Ovládací prvky nejsou snadno dosažitelné z pracovní polohy.",
+          "popis": "START/STOP nebo nouzové tlačítko není dosažitelné z pracoviště.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "neoznacene_tlacitko",
-          "nazev": "Neoznačené ovládací prvky",
-          "popis": "Tlačítka START/STOP nebo nouzové zastavení nejsou srozumitelně označena.",
+          "nazev": "Neoznačené ovládání",
+          "popis": "Tlačítka START/STOP nebo nouzové zastavení nejsou rozpoznatelná.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "porucha_hlavniho_vypinace",
           "nazev": "Porucha hlavního vypínače",
-          "popis": "Hlavní vypínač neodstaví stroj nebo je obtížně dostupný.",
+          "popis": "Hlavní vypínač neodstaví stroj nebo je schovaný za materiálem.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "neznalost_nouzoveho",
-          "nazev": "Neznalost umístění nouzového zastavení",
-          "popis": "Obsluha nezná umístění nebo způsob použití nouzového zastavení.",
+          "nazev": "Obsluha nezná nouzové zastavení",
+          "popis": "Oslovená obsluha neumí ukázat nouzové tlačítko.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "prekryte_ovladani",
-          "nazev": "Překryté nebo zablokované ovládání",
-          "popis": "Ovládací prvky jsou zakryty materiálem nebo jinak znepřístupněny.",
+          "nazev": "Zablokované ovládání",
+          "popis": "Ovládací prvky jsou zakryté materiálem nebo krabicemi.",
           "poradi": 60,
           "aktivni": true
         }
@@ -368,36 +368,36 @@
       "doporucene_postupy": [
         {
           "id": "pravidelna_kontrola",
-          "nazev": "Pravidelně kontrolovat ovládací prvky",
-          "popis": "Provádějte pravidelné kontroly funkčnosti ovládání a nouzového zastavení.",
+          "nazev": "Kontrolovat ovládání při obchůzkách",
+          "popis": "Ověřujte funkci a dostupnost ovládacích prvků.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "test_nouzoveho",
-          "nazev": "Pravidelně testovat nouzové zastavení",
-          "popis": "Ověřujte funkčnost nouzového zastavení dle plánu údržby a kontrol.",
+          "nazev": "Testovat nouzové zastavení",
+          "popis": "Nouzové zastavení testujte podle plánu údržby.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "oznaceni_ovladani",
-          "nazev": "Udržovat označení ovládacích prvků",
-          "popis": "Zajistěte trvalou viditelnost a srozumitelnost označení ovládání.",
+          "nazev": "Obnovit poškozené označení",
+          "popis": "Nečitelné popisky u ovládání vyměňte nebo doplněte.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "skoleni_nouzoveho",
-          "nazev": "Školit obsluhu k nouzovému zastavení",
-          "popis": "Seznamte každou obsluhu s umístěním a použitím nouzového zastavení.",
+          "nazev": "Ukázat nouzové zastavení obsluze",
+          "popis": "Při zaškolení ukažte umístění a použití nouzového tlačítka.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "volny_pristup",
           "nazev": "Udržovat volný přístup k ovládání",
-          "popis": "Zajistěte, aby ovládací prvky nebyly zakryty ani zablokovány.",
+          "popis": "Před ovládacím panelem neukládejte materiál.",
           "poradi": 50,
           "aktivni": true
         }
@@ -406,14 +406,14 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Povinnosti zaměstnavatele v oblasti bezpečné obsluhy strojů a technických zařízení.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_378_2001",
           "nazev": "Nařízení vlády č. 378/2001 Sb.",
-          "popis": "Požadavky na ovládání strojů, hlavní vypínač a nouzové zastavení.",
+          "popis": "Požadavky na ovládání strojů a nouzové zastavení.",
           "poradi": 20,
           "aktivni": true
         },
@@ -422,12 +422,12 @@
           "nazev": "Nařízení vlády č. 390/2021 Sb.",
           "popis": "Požadavky na bezpečné ovládání a nouzové zastavovací zařízení strojů.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": false
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro kontrolu ovládacích prvků, označení a školení k nouzovému zastavení.",
+          "popis": "Kontrola ovládání a školení k nouzovému zastavení.",
           "poradi": 40,
           "aktivni": true
         }
@@ -437,50 +437,50 @@
     {
       "id": "technicky_stav_stroju",
       "nazev": "Technický stav strojů",
-      "popis": "Kontrola mechanického poškození, netěsností, vibrací, hlučnosti, chybějících částí a celkového stavu strojů.",
+      "popis": "Prověrka mechanického stavu, netěsností a celkové provozuschopnosti strojů.",
       "poradi": 30,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace_stroju",
-          "text": "Identifikujte stroje k prohlídce a jejich provozní stav.",
+          "text": "Vyberte stroje k vizuální prohlídce.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "mechanicke_poskozeni",
-          "text": "Zkontrolujte mechanické poškození rámu, krytů a pohyblivých částí.",
+          "text": "Zkontrolujte poškození rámu, krytů a pohyblivých částí.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "netesnosti",
-          "text": "Ověřte netěsnosti kapalin, plynů nebo dalších médií.",
+          "text": "Ověřte netěsnosti kapalin, plynů nebo médií.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "vibrace_hlucnost",
-          "text": "Posuďte nadměrné vibrace a hlučnost stroje.",
+          "text": "Posuďte nadměrné vibrace a neobvyklou hlučnost.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "chybejici_casti",
-          "text": "Zkontrolujte chybějící nebo uvolněné součásti stroje.",
+          "text": "Zkontrolujte chybějící nebo uvolněné součásti.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "celkovy_stav",
-          "text": "Zhodnoťte celkový technický stav stroje vzhledem k bezpečnosti.",
+          "text": "Zhodnoťte celkový stav stroje z hlediska bezpečnosti.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda stroj nevykazuje zjevné závady ohrožující bezpečnost.",
+          "text": "Posuďte, zda stroj nemá zjevné závady ohrožující bezpečnost.",
           "poradi": 70,
           "aktivni": true
         }
@@ -489,23 +489,23 @@
         {
           "id": "mechanicke_poskozeni",
           "nazev": "Stroj není mechanicky poškozen",
-          "popis": "Rám, kryty a pohyblivé části nevykazují poškození ohrožující bezpečnost.",
+          "popis": "Rám, kryty a pohyblivé části nemají poškození ohrožující bezpečnost.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "netesnosti",
           "nazev": "Netěsnosti nejsou problematické",
-          "popis": "Stroj nevykazuje netěsnosti kapalin nebo plynů ohrožující bezpečnost.",
+          "popis": "Stroj neteče kapalinou nebo plynem ohrožujícím bezpečnost.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "vibrace",
           "nazev": "Vibrace nejsou nadměrné",
-          "popis": "Stroj nevykazuje nadměrné vibrace naznačující technickou závadu.",
+          "popis": "Stroj nevibruje nadměrně naznačující závadu.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -513,7 +513,7 @@
         {
           "id": "hlucnost",
           "nazev": "Hlučnost není neobvyklá",
-          "popis": "Hlučnost stroje neodpovídá závadě nebo nebezpečnému stavu.",
+          "popis": "Stroj nevydává neobvyklé zvuky signalizující poruchu.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -528,53 +528,53 @@
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Stroj nevykazuje zjevné bezpečnostní závady",
-          "popis": "Stroj nevykazuje zjevné závady ohrožující bezpečnost.",
+          "nazev": "Stroj nemá zjevné bezpečnostní závady",
+          "popis": "Při prohlídce nejsou viditelné závady bránící bezpečnému provozu.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         }
       ],
       "typicke_zavady": [
         {
           "id": "mechanicke_poskozeni",
-          "nazev": "Mechanické poškození stroje",
-          "popis": "Stroj má viditelné poškození rámu, krytů nebo pohyblivých částí.",
+          "nazev": "Mechanické poškození",
+          "popis": "Prasklý rám, uvolněný šroub nebo poškozená ochrana.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "netesnosti",
-          "nazev": "Netěsnosti kapalin nebo plynů",
-          "popis": "Ze stroje unikají kapaliny nebo plyny ohrožující bezpečnost.",
+          "nazev": "Netěsnosti",
+          "popis": "Únik oleje, hydrauliky, chladiva nebo plynu ze stroje.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "nadmerne_vibrace",
           "nazev": "Nadměrné vibrace",
-          "popis": "Stroj vibruje nadměrně, což naznačuje technickou závadu.",
+          "popis": "Stroj výrazně vibruje nebo „skáče“ při chodu.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "neobvykla_hlucnost",
           "nazev": "Neobvyklá hlučnost",
-          "popis": "Stroj produkuje neobvyklé zvuky signalizující poruchu.",
+          "popis": "Skřípání, bouchání nebo jiný nezvyklý zvuk při provozu.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "chybejici_casti",
           "nazev": "Chybějící součásti",
-          "popis": "Ze stroje chybí důležité součásti nebo jsou uvolněné.",
+          "popis": "Chybí šroub, kryt, pojistka nebo jiná důležitá část.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "provoz_se_zavadou",
           "nazev": "Provoz se známou závadou",
-          "popis": "Stroj je provozován i přes známou technickou závadu.",
+          "popis": "Stroj běží i přes hlášenou nebo viditelnou závadu.",
           "poradi": 60,
           "aktivni": true
         }
@@ -582,36 +582,36 @@
       "doporucene_postupy": [
         {
           "id": "pravidelna_prohlidka",
-          "nazev": "Pravidelně prohlížet technický stav strojů",
-          "popis": "Provádějte pravidelné vizuální kontroly stavu strojů před a během provozu.",
+          "nazev": "Prohlížet stroje před provozem",
+          "popis": "Obsluha nebo technik vizuálně zkontroluje stroj před zapnutím.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "evidence_zavad",
-          "nazev": "Evidovat zjištěné technické závady",
-          "popis": "Zaznamenávejte a sledujte technické závady a termíny jejich odstranění.",
+          "nazev": "Zapisovat technické závady",
+          "popis": "Každou závadu zaznamenejte s termínem opravy.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "odstaveni_nebezpecnych",
-          "nazev": "Odstavovat nebezpečně závadné stroje",
-          "popis": "Stroje se závadou ohrožující bezpečnost bezodkladně odstavte z provozu.",
+          "nazev": "Odstavit nebezpečně závadný stroj",
+          "popis": "Stroj s závadou ohrožující bezpečnost ihned odstavte a označte.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "hlaseni_zavad",
-          "nazev": "Zavést hlášení technických závad",
-          "popis": "Umožněte obsluze snadno nahlásit technické závady a neobvyklé projevy.",
+          "nazev": "Zjednodušit hlášení závad",
+          "popis": "Obsluha musí snadno nahlásit závadu vedoucímu nebo údržbě.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "plan_udrzby",
-          "nazev": "Dodržovat plán preventivní údržby",
-          "popis": "Provádějte plánovanou údržbu pro udržení technického stavu strojů.",
+          "nazev": "Dodržovat plán údržby",
+          "popis": "Preventivní údržbu provádějte v plánovaných intervalech.",
           "poradi": 50,
           "aktivni": true
         }
@@ -620,7 +620,7 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Povinnosti zaměstnavatele zajistit bezpečný technický stav pracovních prostředků.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
@@ -636,12 +636,12 @@
           "nazev": "Nařízení vlády č. 390/2021 Sb.",
           "popis": "Požadavky na bezpečnost strojů — technický stav a provozuschopnost.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": false
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro kontrolu technického stavu, hlášení závad a odstavení strojů.",
+          "popis": "Kontrola stavu strojů, hlášení závad a odstavení.",
           "poradi": 40,
           "aktivni": true
         }
@@ -651,50 +651,50 @@
     {
       "id": "udrzba_opravy",
       "nazev": "Údržba a opravy",
-      "popis": "Kontrola plánu údržby, provádění oprav, odstraňování závad a odstavení nebezpečných strojů.",
+      "popis": "Prověrka plánu údržby, oprav, odstraňování závad a odstavení strojů.",
       "poradi": 40,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace_stroju",
-          "text": "Identifikujte stroje s požadavky na pravidelnou údržbu a opravy.",
+          "text": "Vyberte stroje s požadavky na údržbu a opravy.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "plan_udrzby",
-          "text": "Ověřte existenci a dodržování plánu údržby strojů.",
+          "text": "Ověřte plán údržby a jeho dodržování.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "provadeni_oprav",
-          "text": "Zkontrolujte, zda jsou opravy prováděny kvalifikovanými osobami.",
+          "text": "Zkontrolujte, zda opravy provádějí kvalifikované osoby.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "odstranovani_zavad",
-          "text": "Posuďte postup odstraňování zjištěných závad.",
+          "text": "Posuďte, zda jsou závady včas řešeny.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "odstaveni_stroju",
-          "text": "Ověřte postupy odstavení nebezpečně závadných strojů.",
+          "text": "Ověřte postup odstavení nebezpečně závadných strojů.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "dokumentace_oprav",
-          "text": "Zkontrolujte evidenci provedených oprav a údržby.",
+          "text": "Zkontrolujte evidenci oprav a údržby.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda zjištěné závady jsou evidovány a řešeny.",
+          "text": "Porovnejte otevřené závady se stavem stroje.",
           "poradi": 70,
           "aktivni": true
         }
@@ -703,7 +703,7 @@
         {
           "id": "plan_udrzby",
           "nazev": "Plán údržby existuje a je dodržován",
-          "popis": "Pro stroje je stanoven plán údržby a je v praxi dodržován.",
+          "popis": "Pro stroje je plán údržby a probíhá v intervalech.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -711,7 +711,7 @@
         {
           "id": "provadeni_oprav",
           "nazev": "Opravy jsou prováděny řádně",
-          "popis": "Opravy provádějí kvalifikované osoby v souladu s požadavky.",
+          "popis": "Opravy provádějí kvalifikované osoby podle požadavků.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -719,31 +719,31 @@
         {
           "id": "odstranovani_zavad",
           "nazev": "Závady jsou odstraňovány",
-          "popis": "Zjištěné závady jsou včas řešeny a nejsou dlouhodobě ignorovány.",
+          "popis": "Zjištěné závady nejsou dlouhodobě ignorovány.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "odstaveni_stroju",
           "nazev": "Nebezpečné stroje jsou odstavovány",
-          "popis": "Stroje se závadou ohrožující bezpečnost jsou včas odstaveny z provozu.",
+          "popis": "Stroj se závadou ohrožující bezpečnost je včas odstaven.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "dokumentace_oprav",
           "nazev": "Opravy jsou evidovány",
-          "popis": "Provedené opravy a údržba jsou zaznamenány v dokumentaci.",
+          "popis": "Provedené opravy a údržba jsou zaznamenány.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Závady jsou evidovány a řešeny",
-          "popis": "Zjištěné závady jsou evidovány a řešeny.",
+          "nazev": "Otevřené závady jsou řešeny",
+          "popis": "Závady z evidence odpovídají stavu na stroji a jsou řešeny.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -753,42 +753,42 @@
         {
           "id": "chybi_plan",
           "nazev": "Chybí plán údržby",
-          "popis": "Pro stroje není stanoven plán pravidelné údržby.",
+          "popis": "Pro stroj není stanoven interval údržby.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nedodrzovani_planu",
-          "nazev": "Nedodržování plánu údržby",
-          "popis": "Plánovaná údržba není prováděna v stanovených termínech.",
+          "nazev": "Nedodržovaná údržba",
+          "popis": "Plánovaná údržba se opakovaně odkládá.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "neevidovane_zavady",
           "nazev": "Neevidované závady",
-          "popis": "Zjištěné závady nejsou zaznamenány ani sledovány.",
+          "popis": "Známá závada není zapsaná ani sledovaná.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "provoz_se_zavadou",
-          "nazev": "Provoz se závadou bez opravy",
-          "popis": "Stroj je provozován i přes neřešenou závadu.",
+          "nazev": "Provoz se závadou",
+          "popis": "Stroj běží i přes neopravenou závadu.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "neodborne_opravy",
           "nazev": "Neodborné opravy",
-          "popis": "Opravy provádějí osoby bez potřebné kvalifikace.",
+          "popis": "Opravu provedla osoba bez potřebné kvalifikace.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "chybi_zaznamy",
           "nazev": "Chybí záznamy o opravách",
-          "popis": "Provedené opravy a údržba nejsou dokumentovány.",
+          "popis": "Provedená oprava není zapsaná v dokumentaci.",
           "poradi": 60,
           "aktivni": true
         }
@@ -796,36 +796,36 @@
       "doporucene_postupy": [
         {
           "id": "plan_udrzby",
-          "nazev": "Vytvořit a dodržovat plán údržby",
-          "popis": "Stanovte plán preventivní údržby pro všechny provozované stroje.",
+          "nazev": "Vytvořit plán údržby",
+          "popis": "Pro každý stroj stanovte interval preventivní údržby.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "evidence_zavad",
-          "nazev": "Evidovat a sledovat závady",
-          "popis": "Zavádějte systém evidence závad s termíny a odpovědnými osobami.",
+          "nazev": "Evidentovat závady s termínem",
+          "popis": "Každé závadě přiřaďte odpovědnou osobu a termín opravy.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "odstaveni_stroju",
-          "nazev": "Odstavovat nebezpečně závadné stroje",
-          "popis": "Stanovte postup pro okamžité odstavení strojů ohrožujících bezpečnost.",
+          "nazev": "Odstavit stroj při nebezpečné závadě",
+          "popis": "Nebezpečný stroj vypněte, označte a nepouštějte do provozu.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "kvalifikovane_opravy",
-          "nazev": "Zajistit kvalifikované opravy",
-          "popis": "Opravy provádějí pouze kvalifikované nebo autorizované osoby.",
+          "nazev": "Svěřit opravy kvalifikovaným osobám",
+          "popis": "Složité opravy nechte provést údržbě nebo servisu.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "dokumentace",
-          "nazev": "Vést dokumentaci oprav a údržby",
-          "popis": "Zaznamenávejte všechny provedené opravy, údržbu a revize.",
+          "nazev": "Zapisovat každou opravu",
+          "popis": "Po opravě uveďte datum, rozsah a jméno opraváře.",
           "poradi": 50,
           "aktivni": true
         }
@@ -834,14 +834,14 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Povinnosti zaměstnavatele zajistit údržbu a bezpečný stav pracovních prostředků.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_378_2001",
           "nazev": "Nařízení vlády č. 378/2001 Sb.",
-          "popis": "Požadavky na údržbu, opravy a kontrolu technického stavu strojů.",
+          "popis": "Požadavky na údržbu, opravy a kontrolu strojů.",
           "poradi": 20,
           "aktivni": true
         },
@@ -850,12 +850,12 @@
           "nazev": "Nařízení vlády č. 390/2021 Sb.",
           "popis": "Požadavky na bezpečnost strojů — údržba, opravy a odstavení ze provozu.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": false
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro plánování údržby, hlášení závad, opravy a odstavení strojů.",
+          "popis": "Plánování údržby, hlášení závad a odstavení strojů.",
           "poradi": 40,
           "aktivni": true
         }
@@ -865,50 +865,50 @@
     {
       "id": "navody_oznaceni_vystrahy",
       "nazev": "Návody, označení a výstrahy",
-      "popis": "Kontrola výrobních štítků, bezpečnostních piktogramů, návodů k obsluze a označení ovládání.",
+      "popis": "Prověrka štítků, piktogramů, návodů a označení ovládání.",
       "poradi": 50,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace_stroju",
-          "text": "Identifikujte stroje a požadovanou provozní dokumentaci.",
+          "text": "Vyberte stroje a požadovanou dokumentaci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "vyrobni_stitky",
-          "text": "Zkontrolujte přítomnost a čitelnost výrobních štítků.",
+          "text": "Zkontrolujte výrobní štítky.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "piktogramy",
-          "text": "Ověřte bezpečnostní piktogramy a výstražné značky u strojů.",
+          "text": "Ověřte bezpečnostní piktogramy a výstrahy.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "navody",
-          "text": "Zkontrolujte dostupnost návodů k obsluze a údržbě.",
+          "text": "Zkontrolujte dostupnost návodů k obsluze.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "oznaceni_ovladani",
-          "text": "Posuďte označení ovládacích prvků a bezpečnostních informací.",
+          "text": "Posuďte označení ovládacích prvků.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "dostupnost_informaci",
-          "text": "Ověřte, zda obsluha má přístup k potřebným informacím.",
+          "text": "Ověřte přístup obsluhy k informacím.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda obsluha má k dispozici potřebné informace.",
+          "text": "Zeptejte se obsluhy, kde najde návod ke stroji.",
           "poradi": 70,
           "aktivni": true
         }
@@ -917,7 +917,7 @@
         {
           "id": "vyrobni_stitky",
           "nazev": "Výrobní štítky jsou přítomny",
-          "popis": "Stroje mají čitelné výrobní štítky s identifikačními údaji.",
+          "popis": "Stroj má čitelný výrobní štítek s identifikačními údaji.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -925,23 +925,23 @@
         {
           "id": "piktogramy",
           "nazev": "Bezpečnostní piktogramy jsou viditelné",
-          "popis": "Bezpečnostní piktogramy a výstražné značky jsou na stroji umístěny a čitelné.",
+          "popis": "Výstražné piktogramy na stroji jsou čitelné a na místě.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "navody",
           "nazev": "Návody k obsluze jsou k dispozici",
-          "popis": "Návody k obsluze a údržbě jsou dostupné v aktuální verzi.",
+          "popis": "Návod k obsluze je dostupný u stroje nebo v dokumentaci.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "oznaceni_ovladani",
           "nazev": "Ovládání je srozumitelně označeno",
-          "popis": "Ovládací prvky a bezpečnostní informace jsou srozumitelně označeny.",
+          "popis": "Ovládací prvky mají čitelné popisky nebo symboly.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -949,15 +949,15 @@
         {
           "id": "dostupnost_informaci",
           "nazev": "Informace jsou dostupné obsluze",
-          "popis": "Obsluha má přístup k potřebným informacím o bezpečném provozu.",
+          "popis": "Obsluha ví, kde najde návod a bezpečnostní informace.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Obsluha má potřebné informace",
-          "popis": "Obsluha má k dispozici potřebné informace.",
+          "nazev": "Obsluha zná, kde je návod",
+          "popis": "Oslovená obsluha ukáže nebo popíše, kde je návod ke stroji.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -967,42 +967,42 @@
         {
           "id": "chybi_navod",
           "nazev": "Chybí návod k obsluze",
-          "popis": "Návod k obsluze stroje není k dispozici nebo je zastaralý.",
+          "popis": "Návod není u stroje ani v dostupné dokumentaci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "neceitelne_piktogramy",
           "nazev": "Nečitelné piktogramy",
-          "popis": "Bezpečnostní piktogramy jsou poškozené, nečitelné nebo chybí.",
+          "popis": "Výstražný piktogram je vybledlý, poškozený nebo odlepený.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "chybi_stitek",
           "nazev": "Chybějící výrobní štítek",
-          "popis": "Výrobní štítek stroje chybí nebo není čitelný.",
+          "popis": "Výrobní štítek chybí nebo není čitelný.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "neoznacene_ovladani",
           "nazev": "Neoznačené ovládání",
-          "popis": "Ovládací prvky nejsou srozumitelně označeny.",
+          "popis": "Tlačítka nebo páčky nemají popisky START/STOP.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "nedostupne_informace",
-          "nazev": "Nedostupné informace pro obsluhu",
-          "popis": "Obsluha nemá přístup k potřebným informacím o bezpečném provozu.",
+          "nazev": "Obsluha nezná, kde je návod",
+          "popis": "Obsluha neví, kde najde návod nebo bezpečnostní list.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "odstranene_vystrahy",
-          "nazev": "Odstraněné výstražné značky",
-          "popis": "Výstražné značky nebo piktogramy byly ze stroje odstraněny.",
+          "nazev": "Odstraněné výstrahy",
+          "popis": "Výstražný štítek nebo piktogram byl ze stroje odstraněn.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1010,36 +1010,36 @@
       "doporucene_postupy": [
         {
           "id": "udrzba_oznaceni",
-          "nazev": "Udržovat označení a piktogramy",
-          "popis": "Pravidelně kontrolujte a obnovujte poškozené štítky a piktogramy.",
+          "nazev": "Obnovit poškozené štítky",
+          "popis": "Vybledlé nebo odlepené piktogramy vyměňte.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "dostupnost_navodu",
-          "nazev": "Zajistit dostupnost návodů",
-          "popis": "Uchovávejte návody k obsluze na dostupném místě u stroje nebo v dokumentaci.",
+          "nazev": "Uložit návod u stroje",
+          "popis": "Návod dejte do pouzdra u stroje nebo do přehledné složky.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "aktualizace_dokumentace",
-          "nazev": "Aktualizovat provozní dokumentaci",
-          "popis": "Po úpravách stroje aktualizujte návody a bezpečnostní informace.",
+          "nazev": "Aktualizovat návod po úpravě",
+          "popis": "Po změně stroje doplňte nebo upravte návod a výstrahy.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "skoleni_informace",
-          "nazev": "Seznamovat obsluhu s informacemi",
-          "popis": "Při zaškolení seznamte obsluhu s návody a výstražnými informacemi.",
+          "nazev": "Ukázat návod při zaškolení",
+          "popis": "Při zaškolení ukažte, kde obsluha najde návod a výstrahy.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "kontrola_stitku",
           "nazev": "Kontrolovat výrobní štítky",
-          "popis": "Ověřujte přítomnost a čitelnost výrobních štítků u všech strojů.",
+          "popis": "Při prověrkách ověřte čitelnost identifikačního štítku.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1048,14 +1048,14 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Povinnosti zaměstnavatele zajistit informace pro bezpečnou práci se stroji.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_378_2001",
           "nazev": "Nařízení vlády č. 378/2001 Sb.",
-          "popis": "Požadavky na označení strojů, návody a bezpečnostní informace.",
+          "popis": "Požadavky na označení strojů a bezpečnostní informace.",
           "poradi": 20,
           "aktivni": true
         },
@@ -1064,12 +1064,12 @@
           "nazev": "Nařízení vlády č. 390/2021 Sb.",
           "popis": "Požadavky na bezpečnost strojů — výstražné značky, piktogramy a návody.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": false
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro vedení návodů, označení strojů a dostupnost informací pro obsluhu.",
+          "popis": "Vedení návodů a označení strojů.",
           "poradi": 40,
           "aktivni": true
         }
@@ -1079,7 +1079,7 @@
     {
       "id": "pracovni_prostor_stroje",
       "nazev": "Pracovní prostor stroje",
-      "popis": "Kontrola dostatečného prostoru, pořádku, osvětlení, přístupu a manipulace s materiálem u stroje.",
+      "popis": "Prověrka prostoru, pořádku, osvětlení a přístupu u stroje.",
       "poradi": 60,
       "aktivni": true,
       "sekce": [],
@@ -1092,37 +1092,37 @@
         },
         {
           "id": "dostatek_prostoru",
-          "text": "Zkontrolujte dostatečný prostor pro bezpečnou práci u stroje.",
+          "text": "Zkontrolujte dostatek místa pro bezpečnou práci.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "poradek",
-          "text": "Posuďte pořádek a skladování materiálu v okolí stroje.",
+          "text": "Posuďte pořádek a skladování materiálu u stroje.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "osvetleni",
-          "text": "Ověřte dostatečné osvětlení pracovního prostoru u stroje.",
+          "text": "Ověřte osvětlení pracovního prostoru.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "pristup",
-          "text": "Zkontrolujte přístup k ovládání a nebezpečným místům stroje.",
+          "text": "Zkontrolujte přístup k ovládání a nebezpečným místům.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "manipulace_material",
-          "text": "Posuďte podmínky pro manipulaci s materiálem u stroje.",
+          "text": "Posuďte manipulaci s materiálem u stroje.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda práce u stroje nevyžaduje nebezpečné pohyby nebo polohy.",
+          "text": "Posuďte, zda práce nevyžaduje nebezpečné polohy.",
           "poradi": 70,
           "aktivni": true
         }
@@ -1131,15 +1131,15 @@
         {
           "id": "dostatek_prostoru",
           "nazev": "Pracovní prostor je dostatečný",
-          "popis": "U stroje je dostatek místa pro bezpečný výkon práce.",
+          "popis": "U stroje je dost místa pro bezpečný výkon práce.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "poradek",
-          "nazev": "Prostor u stroje je udržován v pořádku",
-          "popis": "Okolí stroje není zbytečně zahlceno materiálem nebo překážkami.",
+          "nazev": "Prostor u stroje je v pořádku",
+          "popis": "Okolí stroje není zahlceno materiálem nebo odpadem.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1147,31 +1147,31 @@
         {
           "id": "osvetleni",
           "nazev": "Osvětlení u stroje je dostatečné",
-          "popis": "Pracovní prostor u stroje je dostatečně osvětlen pro vykonávanou práci.",
+          "popis": "Pracoviště u stroje je dostatečně osvětlené.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pristup",
           "nazev": "Přístup k stroji je bezpečný",
-          "popis": "Přístup k ovládání a nebezpečným místům není ztížen překážkami.",
+          "popis": "Přístup k ovládání není ztížen překážkami.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "manipulace_material",
           "nazev": "Manipulace s materiálem je bezpečná",
-          "popis": "Podmínky pro manipulaci s materiálem u stroje neohrožují bezpečnost.",
+          "popis": "Manipulace u stroje nevyžaduje nebezpečné pohyby do rizikové zóny.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Práce u stroje nevyžaduje nebezpečné polohy",
-          "popis": "Práce u stroje nevyžaduje nebezpečné pohyby nebo polohy.",
+          "nazev": "Práce nevyžaduje nebezpečné polohy",
+          "popis": "Obsluha nemusí sahat nebo couvat do nebezpečné zóny stroje.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -1180,43 +1180,43 @@
       "typicke_zavady": [
         {
           "id": "nedostatecny_prostor",
-          "nazev": "Nedostatečný pracovní prostor",
-          "popis": "U stroje chybí dostatek místa pro bezpečný výkon práce.",
+          "nazev": "Stísněný prostor u stroje",
+          "popis": "U stroje není místo pro bezpečnou manipulaci nebo únik.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "neporadek",
           "nazev": "Nepořádek u stroje",
-          "popis": "Okolí stroje je zahlceno materiálem nebo odpadem.",
+          "popis": "Offcuts, obaly nebo nářadí leží přímo u pracoviště.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "nedostatecne_osvetleni",
-          "nazev": "Nedostatečné osvětlení",
-          "popis": "Pracovní prostor u stroje není dostatečně osvětlen.",
+          "nazev": "Tma u stroje",
+          "popis": "Pracoviště u stroje není dostatečně osvětlené.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "zablokovany_pristup",
           "nazev": "Zablokovaný přístup",
-          "popis": "Přístup k ovládání nebo nebezpečným místům je ztížen.",
+          "popis": "K ovládání nebo nouzovému tlačítku nejde dojít.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "nebezpecna_manipulace",
-          "nazev": "Nebezpečná manipulace s materiálem",
-          "popis": "Manipulace s materiálem u stroje vyžaduje nebezpečné pohyby.",
+          "nazev": "Nebezpečná manipulace",
+          "popis": "Obsluha musí sahat do běžícího stroje nebo pod zdvih.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "prekazky_u_stroje",
           "nazev": "Překážky u stroje",
-          "popis": "U stroje jsou překážky bránící bezpečné práci nebo úniku.",
+          "popis": "Palety nebo regály brání úniku nebo přístupu k ovládání.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1224,36 +1224,36 @@
       "doporucene_postupy": [
         {
           "id": "udrzba_prostoru",
-          "nazev": "Udržovat pořádek u strojů",
-          "popis": "Stanovte pravidla pro pořádek a skladování materiálu v okolí strojů.",
+          "nazev": "Udržovat pořádek u stroje",
+          "popis": "Po směně odstraňte odpad a materiál z pracovní zóny.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "dostatecny_prostor",
-          "nazev": "Zajistit dostatečný pracovní prostor",
-          "popis": "Umístěte stroje tak, aby byl zajištěn dostatečný prostor pro bezpečnou práci.",
+          "nazev": "Zajistit dostatek místa",
+          "popis": "U nového uspořádání ponechte bezpečný odstup od nebezpečných částí.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "osvetleni",
-          "nazev": "Zajistit dostatečné osvětlení",
-          "popis": "Ověřte a udržujte dostatečné osvětlení pracovních prostor u strojů.",
+          "nazev": "Doplnit osvětlení u stroje",
+          "popis": "Při stížnostech na tmu přidejte nebo opravte svítidla.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "volny_pristup",
-          "nazev": "Udržovat volný přístup k stroji",
-          "popis": "Zajistěte volný přístup k ovládání a nebezpečným místům stroje.",
+          "nazev": "Uvolnit přístup k ovládání",
+          "popis": "Před ovládacím panelem neukládejte materiál.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "bezpecna_manipulace",
-          "nazev": "Zorganizovat bezpečnou manipulaci",
-          "popis": "Upravte uspořádání pracoviště pro bezpečnou manipulaci s materiálem.",
+          "nazev": "Upravit manipulaci s materiálem",
+          "popis": "Použijte stůl, vozík nebo zdvih pro bezpečné podávání do stroje.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1262,14 +1262,14 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Povinnosti zaměstnavatele zajistit bezpečné pracovní prostory u strojů.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_378_2001",
           "nazev": "Nařízení vlády č. 378/2001 Sb.",
-          "popis": "Požadavky na pracovní prostory, přístup a organizaci práce u strojů.",
+          "popis": "Požadavky na pracovní prostory a organizaci práce u strojů.",
           "poradi": 20,
           "aktivni": true
         },
@@ -1278,12 +1278,12 @@
           "nazev": "Nařízení vlády č. 390/2021 Sb.",
           "popis": "Požadavky na bezpečnost strojů — pracovní prostory a ergonomie.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": false
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro pořádek, uspořádání a bezpečnost pracovních prostor u strojů.",
+          "popis": "Pořádek a uspořádání pracovních prostor u strojů.",
           "poradi": 40,
           "aktivni": true
         }
@@ -1293,50 +1293,50 @@
     {
       "id": "obsluha_stroju",
       "nazev": "Obsluha strojů",
-      "popis": "Kontrola oprávnění, školení, používání OOPP a dodržování pracovních postupů při obsluze strojů.",
+      "popis": "Prověrka oprávnění, školení, OOPP a dodržování postupů při obsluze.",
       "poradi": 70,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace_obsluhy",
-          "text": "Identifikujte obsluhu kontrolovaných strojů a požadovaná oprávnění.",
+          "text": "Identifikujte obsluhu a požadovaná oprávnění.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "opravneni",
-          "text": "Ověřte oprávnění obsluhy k provozu daných strojů.",
+          "text": "Ověřte oprávnění k provozu daného stroje.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "skoleni",
-          "text": "Zkontrolujte absolvování školení a instruktáže obsluhy.",
+          "text": "Zkontrolujte absolvování školení nebo instruktáže.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "oopp",
-          "text": "Posuďte používání předepsaných OOPP při obsluze.",
+          "text": "Posuďte používání předepsaných OOPP.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "pracovni_postupy",
-          "text": "Ověřte dodržování bezpečných pracovních postupů.",
+          "text": "Ověřte dodržování bezpečných postupů.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "odstaveni_stroje",
-          "text": "Zkontrolujte znalost postupu bezpečného odstavení stroje.",
+          "text": "Ověřte znalost postupu odstavení.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Namátkově oslovená obsluha ví, jak bezpečně stroj odstavit.",
+          "text": "Zeptejte se obsluhy, jak stroj bezpečně odstaví.",
           "poradi": 70,
           "aktivni": true
         }
@@ -1345,47 +1345,47 @@
         {
           "id": "opravneni",
           "nazev": "Obsluha je oprávněna k provozu",
-          "popis": "Obsluha má potřebná oprávnění k provozu daného stroje.",
+          "popis": "Obsluha má oprávnění nebo pověření k provozu stroje.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "skoleni",
           "nazev": "Obsluha je proškolená",
-          "popis": "Obsluha absolvovala požadované školení a instruktáž.",
+          "popis": "Obsluha absolvovala školení nebo instruktáž ke stroji.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "oopp",
           "nazev": "OOPP jsou používány",
-          "popis": "Obsluha používá předepsané osobní ochranné pracovní prostředky.",
+          "popis": "Obsluha používá předepsané OOPP při práci se strojem.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "pracovni_postupy",
           "nazev": "Pracovní postupy jsou dodržovány",
-          "popis": "Obsluha dodržuje stanovené bezpečné pracovní postupy.",
+          "popis": "Obsluha pracuje podle stanovených bezpečných postupů.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "odstaveni_stroje",
           "nazev": "Obsluha zná postup odstavení",
-          "popis": "Obsluha zná postup bezpečného odstavení stroje.",
+          "popis": "Obsluha popíše postup bezpečného odstavení stroje.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Obsluha umí stroj bezpečně odstavit",
-          "popis": "Namátkově oslovená obsluha ví, jak bezpečně stroj odstavit.",
+          "nazev": "Obsluha umí stroj odstavit",
+          "popis": "Oslovená obsluha ukáže hlavní vypínač nebo postup odstavení.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -1395,42 +1395,42 @@
         {
           "id": "neopravnena_obsluha",
           "nazev": "Neoprávněná obsluha",
-          "popis": "Stroj obsluhuje osoba bez potřebného oprávnění nebo školení.",
+          "popis": "Stroj obsluhuje osoba bez školení nebo pověření.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "neproskoleni",
           "nazev": "Neproškolená obsluha",
-          "popis": "Obsluha neabsolvovala požadované školení nebo instruktáž.",
+          "popis": "Obsluha neabsolvovala zaškolení ke konkrétnímu stroji.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "neuzivane_oopp",
-          "nazev": "Neužívané OOPP",
-          "popis": "Obsluha nepoužívá předepsané osobní ochranné prostředky.",
+          "nazev": "Nepoužívané OOPP",
+          "popis": "Obsluha pracuje u stroje bez rukavic, brýlí nebo jiných OOPP.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "porusovani_postupu",
-          "nazev": "Porušování pracovních postupů",
-          "popis": "Obsluha nedodržuje stanovené bezpečné pracovní postupy.",
+          "nazev": "Porušování postupů",
+          "popis": "Obsluha čistí stroj za běhu nebo obchází bezpečný postup.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "neznalost_odstaveni",
-          "nazev": "Neznalost odstavení stroje",
-          "popis": "Obsluha nezná postup bezpečného odstavení stroje.",
+          "nazev": "Neznalost odstavení",
+          "popis": "Obsluha neumí popsat, jak stroj bezpečně vypnout.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "zastarale_skoleni",
           "nazev": "Zastaralé školení",
-          "popis": "Školení obsluhy není aktualizováno po změně stroje nebo postupu.",
+          "popis": "Po změně stroje nebylo provedeno nové zaškolení.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1438,36 +1438,36 @@
       "doporucene_postupy": [
         {
           "id": "skoleni_obsluhy",
-          "nazev": "Pravidelně školit obsluhu",
-          "popis": "Provádějte vstupní i pravidelná školení obsluhy strojů.",
+          "nazev": "Zaškolit před prvním provozem",
+          "popis": "Novou obsluhu nechte zaškolit a pověřit před prací se strojem.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "opravneni",
-          "nazev": "Kontrolovat oprávnění obsluhy",
-          "popis": "Vedejte evidenci oprávnění a ověřujte ji při prověrkách.",
+          "nazev": "Vést evidenci oprávnění",
+          "popis": "Zaznamenejte, kdo je pověřen k provozu kterého stroje.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "kontrola_oopp",
-          "nazev": "Kontrolovat používání OOPP",
-          "popis": "Při prověrkách ověřujte, zda obsluha používá předepsané OOPP.",
+          "nazev": "Kontrolovat OOPP u stroje",
+          "popis": "Při obchůzce ověřte nasazení předepsaných OOPP.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "pracovni_postupy",
-          "nazev": "Stanovit a dodržovat pracovní postupy",
-          "popis": "Vytvořte srozumitelné bezpečné pracovní postupy a seznamte s nimi obsluhu.",
+          "nazev": "Sepsat bezpečný pracovní postup",
+          "popis": "Postup napište srozumitelně a seznamte s ním obsluhu.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "namatkove_dotazovani",
-          "nazev": "Namátkově ověřovat znalosti obsluhy",
-          "popis": "Při prověrkách oslovujte obsluhu a ověřujte praktické znalosti.",
+          "nazev": "Ptát se obsluhy při prověrce",
+          "popis": "Namátkově ověřte znalost odstavení a bezpečného postupu.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1476,14 +1476,14 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Povinnosti zaměstnavatele v oblasti školení a bezpečné obsluhy strojů.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_378_2001",
           "nazev": "Nařízení vlády č. 378/2001 Sb.",
-          "popis": "Požadavky na obsluhu strojů, školení a pracovní postupy.",
+          "popis": "Požadavky na obsluhu strojů a školení.",
           "poradi": 20,
           "aktivni": true
         },
@@ -1492,12 +1492,12 @@
           "nazev": "Nařízení vlády č. 390/2021 Sb.",
           "popis": "Požadavky na bezpečnost strojů — kvalifikace a školení obsluhy.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": false
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro oprávnění, školení obsluhy a dodržování pracovních postupů.",
+          "popis": "Oprávnění, školení obsluhy a pracovní postupy.",
           "poradi": 40,
           "aktivni": true
         }
@@ -1507,38 +1507,38 @@
     {
       "id": "evidence_kontroly_revize",
       "nazev": "Evidence, kontroly a revize",
-      "popis": "Kontrola provozní dokumentace, pravidelných kontrol, revizí a záznamů oprav strojů.",
+      "popis": "Prověrka dokumentace, pravidelných kontrol a revizí strojů.",
       "poradi": 80,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace_stroju",
-          "text": "Identifikujte stroje a požadovanou provozní dokumentaci.",
+          "text": "Vyberte stroje a požadovanou dokumentaci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "provozni_dokumentace",
-          "text": "Zkontrolujte existenci a úplnost provozní dokumentace strojů.",
+          "text": "Ověřte provozní dokumentaci strojů.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "pravidelne_kontroly",
-          "text": "Ověřte provádění pravidelných kontrol technického stavu.",
+          "text": "Zkontrolujte provedení pravidelných kontrol.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "revize",
-          "text": "Zkontrolujte platnost a provedení požadovaných revizí.",
+          "text": "Ověřte platnost požadovaných revizí.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "zaznamy_oprav",
-          "text": "Posuďte vedení záznamů o opravách a údržbě.",
+          "text": "Posuďte evidenci oprav a údržby.",
           "poradi": 50,
           "aktivni": true
         },
@@ -1550,7 +1550,7 @@
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda dokumentace stroje odpovídá skutečnému stavu.",
+          "text": "Ověřte, zda propadlá revize nebrání bezpečnému provozu.",
           "poradi": 70,
           "aktivni": true
         }
@@ -1559,31 +1559,31 @@
         {
           "id": "provozni_dokumentace",
           "nazev": "Provozní dokumentace existuje",
-          "popis": "Pro stroje je vedena úplná a aktuální provozní dokumentace.",
+          "popis": "Pro stroj je vedena aktuální provozní dokumentace.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pravidelne_kontroly",
           "nazev": "Pravidelné kontroly jsou prováděny",
-          "popis": "Plánované kontroly technického stavu jsou prováděny a zaznamenávány.",
+          "popis": "Plánované kontroly probíhají a jsou zaznamenány.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "revize",
           "nazev": "Revize jsou platné",
-          "popis": "Požadované revize jsou provedeny v platných termínech.",
+          "popis": "Požadované revize proběhly v předepsané lhůtě.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "zaznamy_oprav",
           "nazev": "Záznamy oprav jsou vedeny",
-          "popis": "Provedené opravy a údržba jsou řádně zaznamenány.",
+          "popis": "Opravy a údržba jsou zaznamenány v dokumentaci.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1591,60 +1591,60 @@
         {
           "id": "porovnani_stavu",
           "nazev": "Dokumentace odpovídá stavu stroje",
-          "popis": "Provozní dokumentace odpovídá skutečnému technickému stavu.",
+          "popis": "Záznamy odpovídají skutečným úpravám a stavu stroje.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Dokumentace odpovídá skutečnosti",
-          "popis": "Dokumentace stroje odpovídá skutečnému stavu.",
+          "nazev": "Propadlá revize neumožňuje provoz",
+          "popis": "Stroj s propadlou povinnou revizí není v provozu.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         }
       ],
       "typicke_zavady": [
         {
           "id": "chybi_dokumentace",
           "nazev": "Chybí provozní dokumentace",
-          "popis": "Pro stroj není k dispozici požadovaná provozní dokumentace.",
+          "popis": "U stroje chybí návod, protokoly nebo evidence.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "neprovedene_kontroly",
-          "nazev": "Neprovedené pravidelné kontroly",
-          "popis": "Plánované kontroly technického stavu nejsou prováděny.",
+          "nazev": "Neprovedené kontroly",
+          "popis": "Plánovaná kontrola technického stavu neproběhla.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "propadla_revize",
           "nazev": "Propadlá revize",
-          "popis": "Požadovaná revize není provedena nebo je po termínu platnosti.",
+          "popis": "Revize je po termínu a stroj stále běží.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "chybi_zaznamy",
           "nazev": "Chybí záznamy oprav",
-          "popis": "Provedené opravy a údržba nejsou zaznamenány.",
+          "popis": "Provedená oprava není v evidenci.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "neaktualni_dokumentace",
           "nazev": "Neaktuální dokumentace",
-          "popis": "Dokumentace neodpovídá skutečnému stavu nebo úpravám stroje.",
+          "popis": "Dokumentace neobsahuje poslední úpravu nebo opravu stroje.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "neevidovane_stroje",
-          "nazev": "Neevidované stroje",
-          "popis": "Některé provozované stroje nejsou zahrnuty v evidenci.",
+          "nazev": "Neevidovaný stroj",
+          "popis": "Provozovaný stroj není v seznamu strojů nebo revizí.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1652,36 +1652,36 @@
       "doporucene_postupy": [
         {
           "id": "evidence_stroju",
-          "nazev": "Vést evidenci všech strojů",
-          "popis": "Zaveďte a udržujte úplnou evidenci provozovaných strojů.",
+          "nazev": "Vést seznam všech strojů",
+          "popis": "Každý provozovaný stroj zapište do evidence s odpovědností.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "plan_kontrol",
-          "nazev": "Plánovat pravidelné kontroly a revize",
-          "popis": "Stanovte harmonogram kontrol a revizí s odpovědnými osobami.",
+          "nazev": "Plánovat kontroly a revize",
+          "popis": "Harmonogram revizí sledujte s předstihem.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "aktualizace_dokumentace",
-          "nazev": "Aktualizovat dokumentaci po změnách",
-          "popis": "Po opravách a úpravách stroje aktualizujte provozní dokumentaci.",
+          "nazev": "Aktualizovat dokumentaci po opravě",
+          "popis": "Po úpravě stroje doplňte záznam a protokol.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "zaznamy",
-          "nazev": "Vést záznamy o opravách a kontrolách",
-          "popis": "Zaznamenávejte všechny kontroly, revize a provedené opravy.",
+          "nazev": "Zapisovat každou kontrolu",
+          "popis": "Po kontrole uveďte datum, výsledek a jméno kontrolora.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "porovnani_stavu",
-          "nazev": "Porovnávat dokumentaci se skutečností",
-          "popis": "Při prověrkách ověřujte soulad dokumentace se skutečným stavem stroje.",
+          "nazev": "Porovnávat dokumentaci s realitou",
+          "popis": "Při prověrce ověřte, zda revize a opravy odpovídají stroji.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1690,14 +1690,14 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Povinnosti zaměstnavatele vést dokumentaci a provádět kontroly pracovních prostředků.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_378_2001",
           "nazev": "Nařízení vlády č. 378/2001 Sb.",
-          "popis": "Požadavky na evidenci, kontroly a revize technických zařízení.",
+          "popis": "Požadavky na evidenci, kontroly a revize strojů.",
           "poradi": 20,
           "aktivni": true
         },
@@ -1706,12 +1706,12 @@
           "nazev": "Nařízení vlády č. 390/2021 Sb.",
           "popis": "Požadavky na bezpečnost strojů — dokumentace, kontroly a revize.",
           "poradi": 30,
-          "aktivni": true
+          "aktivni": false
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro evidenci strojů, vedení dokumentace a plánování kontrol a revizí.",
+          "popis": "Evidence strojů, dokumentace a plánování revizí.",
           "poradi": 40,
           "aktivni": true
         }
