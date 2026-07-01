@@ -64,7 +64,7 @@
           "popis": "Zkontrolujte, zda je lékárnička umístěna na místě určeném zaměstnavatelem a odpovídá schválenému plánu první pomoci.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "oznaceni",
@@ -72,7 +72,7 @@
           "popis": "Ověřte viditelné označení lékárničky symbolem první pomoci a případným textem podle vnitřních předpisů.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pristupnost",
@@ -80,7 +80,7 @@
           "popis": "Zkontrolujte, zda není přístup k lékárničce blokován nábytkem, materiálem nebo uzamčením.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "obsah",
@@ -88,7 +88,7 @@
           "popis": "Porovnejte skutečný obsah lékárničky s požadovaným seznamem prostředků první pomoci.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "expirace",
@@ -96,7 +96,7 @@
           "popis": "Zkontrolujte data expirace obvazů, desinfekce a dalších prostředků s omezenou trvanlivostí.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "evidence_kontrol",
@@ -250,7 +250,7 @@
           "popis": "Zařízení se nachází na stanoveném místě podle dokumentace pracoviště.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "oznaceni",
@@ -258,7 +258,7 @@
           "popis": "Označení je dobře viditelné a odpovídá bezpečnostním předpisům.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pristup",
@@ -266,7 +266,7 @@
           "popis": "Přístup není blokován materiálem ani zařízením.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "funkcnost",
@@ -274,7 +274,7 @@
           "popis": "Mechanismus spuštění pracuje správně.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "voda",
@@ -282,7 +282,7 @@
           "popis": "Voda je čistá nebo jsou použity platné sterilní výplachové lahve.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "evidence",
@@ -464,7 +464,7 @@
           "popis": "Zaměstnavatel určil osoby odpovědné za poskytování první pomoci.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "platna_skoleni",
@@ -472,7 +472,7 @@
           "popis": "Určené osoby absolvovaly školení v požadovaném rozsahu a ve stanovených intervalech.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "dostatecny_pocet",
@@ -480,7 +480,7 @@
           "popis": "Počet odpovídá velikosti pracoviště, počtu zaměstnanců a charakteru rizik.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "dostupnost",
@@ -488,7 +488,7 @@
           "popis": "Na každé směně je dostupná alespoň jedna určená osoba, pokud to charakter provozu vyžaduje.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "zverejneny_seznam",
@@ -496,7 +496,7 @@
           "popis": "Zaměstnanci vědí, kdo poskytuje první pomoc.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "evidence_skoleni",
@@ -504,7 +504,7 @@
           "popis": "Jsou doloženy termíny školení, účastníci i případná opakovací školení.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -694,7 +694,7 @@
           "popis": "Nejsou poškozena ani zakryta.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "nizka"
         },
         {
           "id": "cisla_izs",
@@ -718,7 +718,7 @@
           "popis": "Namátkově oslovený zaměstnanec ví, jak přivolat pomoc.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [

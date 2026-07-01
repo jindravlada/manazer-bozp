@@ -64,7 +64,7 @@
           "popis": "Hmotnost břemen odpovídá stanoveným limitům a pravidlům.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "ergonomie",
@@ -72,7 +72,7 @@
           "popis": "Pracovní polohy a způsob manipulace nejsou zjevně nevhodné.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pomucky",
@@ -80,7 +80,7 @@
           "popis": "K dispozici a využívány jsou vhodné pomůcky pro snížení zátěže.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "cetnost",
@@ -88,7 +88,7 @@
           "popis": "Ruční manipulace není nadměrně častá nebo dlouhotrvající.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pracovni_polohy",
@@ -96,7 +96,7 @@
           "popis": "Zaměstnanci nepracují dlouhodobě v nepřiměřených polohách.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -104,7 +104,7 @@
           "popis": "Zaměstnanec nemanipuluje s břemeny způsobem, který zjevně ohrožuje jeho zdraví.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -278,7 +278,7 @@
           "popis": "Regálové systémy jsou v technicky vyhovujícím stavu bez zjevného poškození.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "kotveni",
@@ -286,7 +286,7 @@
           "popis": "Kotvení odpovídá požadavkům výrobce nebo projektu.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "oznaceni_nosnosti",
@@ -294,7 +294,7 @@
           "popis": "Nosnost regálů a polic je viditelně a srozumitelně označena.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pretezovani",
@@ -302,7 +302,7 @@
           "popis": "Ukládaný materiál nepřekračuje deklarovanou nosnost.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "pravidelne_kontroly",
@@ -310,7 +310,7 @@
           "popis": "Regály jsou pravidelně kontrolovány a záznamy jsou vedeny.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -318,7 +318,7 @@
           "popis": "Regál nevykazuje zjevné deformace ani poškození.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         }
       ],
       "typicke_zavady": [
@@ -492,7 +492,7 @@
           "popis": "Materiál a stohy jsou stabilně uloženy.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "vyska_stohu",
@@ -500,7 +500,7 @@
           "popis": "Výška stohů odpovídá druhu materiálu a bezpečnostním pravidlům.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "oddeleni",
@@ -508,7 +508,7 @@
           "popis": "Různé druhy materiálů jsou skladovány odděleně dle potřeby.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "bezpecne_ukladani",
@@ -516,7 +516,7 @@
           "popis": "Ukládání neohrožuje zaměstnance ani okolí.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pristupnost",
@@ -524,7 +524,7 @@
           "popis": "Skladovaný materiál lze bezpečně vyjmout a manipulovat s ním.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -532,7 +532,7 @@
           "popis": "Materiál nemůže samovolně spadnout nebo se sesunout.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         }
       ],
       "typicke_zavady": [
@@ -706,7 +706,7 @@
           "popis": "Palety nevykazují poškození ohrožující bezpečnost.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "stav_obalu",
@@ -714,7 +714,7 @@
           "popis": "Obaly jsou nepoškozené a vhodné pro daný materiál.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "stabilita_nakladu",
@@ -722,7 +722,7 @@
           "popis": "Náklad na paletách je stabilně uložen a zajištěn.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "spravne_ulozeni",
@@ -730,7 +730,7 @@
           "popis": "Palety a manipulační jednotky jsou uloženy bezpečným způsobem.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "kontrola_jednotek",
@@ -738,7 +738,7 @@
           "popis": "Stav palet, obalů a manipulačních jednotek je pravidelně kontrolován.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -746,7 +746,7 @@
           "popis": "Poškozené palety nejsou používány.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -920,7 +920,7 @@
           "popis": "Šířka komunikací umožňuje bezpečný pohyb.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pruchodnost",
@@ -928,7 +928,7 @@
           "popis": "Manipulační komunikace nejsou zablokovány.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "oznaceni",
@@ -944,7 +944,7 @@
           "popis": "Pěší pohyb je oddělen od manipulační techniky.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "cistota",
@@ -960,7 +960,7 @@
           "popis": "Komunikace jsou trvale volné.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         }
       ],
       "typicke_zavady": [
@@ -1134,7 +1134,7 @@
           "popis": "Vysokozdvižné vozíky jsou v provozuschopném stavu.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "rucni_voziky",
@@ -1142,7 +1142,7 @@
           "popis": "Ruční vozíky nevykazují poškození ohrožující bezpečnost.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "elektricke_voziky",
@@ -1150,7 +1150,7 @@
           "popis": "Elektrická manipulační technika je v pořádku.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "technicky_stav",
@@ -1158,7 +1158,7 @@
           "popis": "Manipulační technika nevykazuje závady bránící bezpečnému provozu.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "denni_kontroly",
@@ -1166,7 +1166,7 @@
           "popis": "Obsluha provádí denní kontroly před použitím.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -1174,7 +1174,7 @@
           "popis": "Obsluha používá pouze technicky způsobilou manipulační techniku.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -1348,7 +1348,7 @@
           "popis": "Místo nakládky splňuje požadavky na bezpečnost.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "zajisteni_vozidel",
@@ -1356,7 +1356,7 @@
           "popis": "Vozidla jsou zabrzděna a zajištěna proti pohybu.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "stabilita_nakladu",
@@ -1364,7 +1364,7 @@
           "popis": "Náklad je bezpečně uložen a zajištěn proti posunu.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "organizace_prace",
@@ -1372,7 +1372,7 @@
           "popis": "Nakládka probíhá koordinovaně a bezpečně.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "komunikace",
@@ -1380,7 +1380,7 @@
           "popis": "Účastníci nakládky spolu efektivně komunikují a koordinují činnosti.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -1388,7 +1388,7 @@
           "popis": "Při nakládce nehrozí samovolný pohyb vozidla ani nákladu.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -1562,7 +1562,7 @@
           "popis": "Zaměstnanci absolvovali školení v oblasti manipulace a skladování.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "opravneni_obsluh",
@@ -1570,7 +1570,7 @@
           "popis": "Obsluha manipulační techniky má platná oprávnění.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pracovni_postupy",
@@ -1578,7 +1578,7 @@
           "popis": "Jsou k dispozici a dodržovány bezpečné pracovní postupy.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "mistni_pravidla",
@@ -1586,7 +1586,7 @@
           "popis": "Zaměstnanci znají a dodržují místní pravidla.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "evidence",
@@ -1602,7 +1602,7 @@
           "popis": "Namátkově oslovený zaměstnanec zná zásady bezpečné manipulace.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [

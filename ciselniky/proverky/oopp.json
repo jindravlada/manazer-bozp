@@ -64,7 +64,7 @@
           "popis": "Rizika pracovních míst jsou vyhodnocena a zohledněna při určení OOPP.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "seznam_oopp",
@@ -72,7 +72,7 @@
           "popis": "Existuje přehled OOPP podle profesí, pracovišť nebo pracovních činností.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prideleni_profese",
@@ -80,7 +80,7 @@
           "popis": "Zaměstnanci mají přiděleny OOPP odpovídající jejich pracovním úkolům.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prevzeti_dokumentovano",
@@ -96,7 +96,7 @@
           "popis": "Požadované OOPP jsou zaměstnancům včas k dispozici.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "znalost_zamestnance",
@@ -104,7 +104,7 @@
           "popis": "Namátkově oslovený zaměstnanec ví, jaké OOPP má přidělené.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -278,7 +278,7 @@
           "popis": "Zaměstnanec používá OOPP v souladu s návodem a určením.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "spravne_nasazeni",
@@ -286,7 +286,7 @@
           "popis": "OOPP jsou správně nasazeny, utaženy nebo seřízeny.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "po_celou_dobu",
@@ -294,7 +294,7 @@
           "popis": "OOPP nejsou během rizikové činnosti odloženy nebo vynechány.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "kombinace",
@@ -302,7 +302,7 @@
           "popis": "Používaná kombinace OOPP odpovídá požadavkům dané činnosti.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "vhodny_typ",
@@ -310,7 +310,7 @@
           "popis": "Zaměstnanec používá OOPP odpovídající identifikovanému riziku.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "znalost_zamestnance",
@@ -318,7 +318,7 @@
           "popis": "Namátkově oslovený zaměstnanec ví, proč používá přidělené OOPP.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -492,7 +492,7 @@
           "popis": "OOPP nevykazují viditelné poškození snižující ochranu.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pripustne_opotrebeni",
@@ -500,7 +500,7 @@
           "popis": "OOPP nejsou nadměrně opotřebené ani znehodnocené.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "cistota",
@@ -524,7 +524,7 @@
           "popis": "Poškozené nebo prošlé OOPP jsou včas vyměněny.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "znalost_vymeny",
@@ -532,7 +532,7 @@
           "popis": "Zaměstnanec zná kritéria pro výměnu OOPP.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -706,7 +706,7 @@
           "popis": "Pokud se používají, jsou v provozuschopném stavu a revize jsou aktuální.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "respiratory",
@@ -714,7 +714,7 @@
           "popis": "Pokud se používají, filtry a těsnost jsou v pořádku.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "dychaci_pristroje",
@@ -722,7 +722,7 @@
           "popis": "Pokud se používají, kontroly a plnění odpovídají požadavkům.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "chemicke_oopp",
@@ -730,7 +730,7 @@
           "popis": "Pokud se používají, odpovídají charakteru nebezpečných látek.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "svarecske_oopp",
@@ -738,7 +738,7 @@
           "popis": "Pokud se používají, odpovídají požadavkům svářecích prací.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "protiporezove",
@@ -746,7 +746,7 @@
           "popis": "Pokud se používají, nejsou poškozené a odpovídají riziku.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "revize_kontroly",
@@ -754,7 +754,7 @@
           "popis": "Předepsané kontroly a revize jsou provedeny včas.",
           "poradi": 70,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "proskoleni_uzivatele",
@@ -762,7 +762,7 @@
           "popis": "Zaměstnanci používající speciální OOPP absolvovali potřebné školení.",
           "poradi": 80,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -976,7 +976,7 @@
           "popis": "Vedoucí zaměstnanec ví, kde je evidence OOPP vedena.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -1150,7 +1150,7 @@
           "popis": "Zaměstnanci absolvovali potřebné školení k používání OOPP.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "evidence_skoleni",
@@ -1166,7 +1166,7 @@
           "popis": "Zaměstnanec umí správně nasadit a používat své OOPP.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "znalost_udrzby",
@@ -1174,7 +1174,7 @@
           "popis": "Zaměstnanec zná základní pravidla údržby a výměny OOPP.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "znalost_omezeni",
@@ -1182,7 +1182,7 @@
           "popis": "Zaměstnanec zná limity a omezení použití svých OOPP.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_znalost",
@@ -1190,7 +1190,7 @@
           "popis": "Namátkově oslovený zaměstnanec dokáže vysvětlit správné používání svých OOPP.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [

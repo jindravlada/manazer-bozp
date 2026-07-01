@@ -64,7 +64,7 @@
           "popis": "Podlahy nevykazují výrazné nerovnosti, výtluky ani poškození ohrožující bezpečnost.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "kluzkost",
@@ -72,7 +72,7 @@
           "popis": "Povrch podlah nevyvolává zvýšené riziko uklouznutí nebo pádu.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prekazky",
@@ -80,7 +80,7 @@
           "popis": "Průchody nejsou zablokovány materiálem, zařízením ani jinými překážkami.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pruchodnost",
@@ -88,7 +88,7 @@
           "popis": "Šířka a volný prostor komunikací umožňuje bezpečný pohyb osob.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "oznaceni",
@@ -104,7 +104,7 @@
           "popis": "Namátkově projít hlavní komunikaci stejně jako zaměstnanec.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -302,7 +302,7 @@
           "popis": "Únikové cesty a nouzové východy nejsou zastavěny materiálem.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "cistota",
@@ -492,7 +492,7 @@
           "popis": "Svítidla jsou provozuschopná a osvětlují pracovní plochy.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "poskozena_svitidla",
@@ -500,7 +500,7 @@
           "popis": "Poškozená nebo nefunkční svítidla jsou včas opravena nebo vyměněna.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "dostatecnost",
@@ -508,7 +508,7 @@
           "popis": "Intenzita osvětlení odpovídá charakteru vykonávané práce.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "oslneni",
@@ -524,7 +524,7 @@
           "popis": "Nouzové osvětlení je orientačně v pořádku a označeno.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -532,7 +532,7 @@
           "popis": "Zaměstnanec nepoužívá vlastní osvětlení kvůli nedostatečnému osvětlení.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -706,7 +706,7 @@
           "popis": "Pracoviště je větráno přirozeně nebo nuceně v potřebné míře.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "odsavani",
@@ -714,7 +714,7 @@
           "popis": "Místní odsávání u rizikových prací funguje a je používáno.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "vzduchotechnika",
@@ -722,7 +722,7 @@
           "popis": "Vzduchotechnická zařízení jsou funkční a udržovaná.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prasnost",
@@ -730,7 +730,7 @@
           "popis": "Na pracovišti nejsou zjevné projevy nadměrné prašnosti.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "zapach",
@@ -738,7 +738,7 @@
           "popis": "Ovzduší nevykazuje nepříjemný nebo neobvyklý zápach.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -746,7 +746,7 @@
           "popis": "Na pracovišti nejsou zjevné známky nedostatečného větrání.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -1174,7 +1174,7 @@
           "popis": "Sociální zařízení odpovídají počtu zaměstnanců.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -1388,7 +1388,7 @@
           "popis": "Zázemí umožňuje zaměstnancům důstojné převlékání.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "nizka"
         }
       ],
       "typicke_zavady": [
@@ -1570,7 +1570,7 @@
           "popis": "Místa pro čerpání pitné vody jsou viditelně označena.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "nizka"
         },
         {
           "id": "cistota",

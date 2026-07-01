@@ -104,7 +104,7 @@
           "popis": "Na pracovišti jsou k dispozici předpisy potřebné pro vykonávané činnosti.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -318,7 +318,7 @@
           "popis": "Místní bezpečnostní předpisy odpovídají skutečnému provozu.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -492,7 +492,7 @@
           "popis": "Evidence absolvovaných školení je vedena.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "periodicka_skoleni",
@@ -500,7 +500,7 @@
           "popis": "Periodická školení probíhají v požadovaných intervalech.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "podpisy",
@@ -516,7 +516,7 @@
           "popis": "Evidence odpovídá aktuálnímu stavu zaměstnanců.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "uplnost",
@@ -524,7 +524,7 @@
           "popis": "Evidence pokrývá všechny dotčené zaměstnance.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -532,7 +532,7 @@
           "popis": "Evidence školení odpovídá skutečnému stavu zaměstnanců.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -706,7 +706,7 @@
           "popis": "Dokumentace kontrol a revizí je kompletní.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "terminy",
@@ -714,7 +714,7 @@
           "popis": "Kontroly a revize probíhají v požadovaných intervalech.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "odstraneni_zavad",
@@ -722,7 +722,7 @@
           "popis": "Odstranění zjištěných závad je doloženo.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "archivace",
@@ -746,7 +746,7 @@
           "popis": "Ke kontrolovaným zařízením lze dohledat příslušnou dokumentaci.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -920,7 +920,7 @@
           "popis": "Pracovní postupy jsou zaměstnancům k dispozici.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "aktualnost",
@@ -928,7 +928,7 @@
           "popis": "Postupy odpovídají aktuálnímu provozu a technologii.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pouzivani",
@@ -936,7 +936,7 @@
           "popis": "Zaměstnanci pracovní postupy dodržují.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "srozumitelnost",
@@ -944,7 +944,7 @@
           "popis": "Postupy jsou psány srozumitelně a přehledně.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "uplnost",
@@ -952,7 +952,7 @@
           "popis": "Existují postupy pro všechny rizikové činnosti.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -960,7 +960,7 @@
           "popis": "Zaměstnanci mají k dispozici pracovní postupy pro svou činnost.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -1134,7 +1134,7 @@
           "popis": "Hodnocení rizik odpovídá aktuálnímu stavu.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prijata_opatreni",
@@ -1142,7 +1142,7 @@
           "popis": "Přijatá opatření jsou zdokumentována.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "navaznost",
@@ -1150,7 +1150,7 @@
           "popis": "Dokumentace odpovídá skutečnému provozu.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "nova_rizika",
@@ -1158,7 +1158,7 @@
           "popis": "Nově vzniklá rizika jsou zahrnuta v dokumentaci.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "sledovani",
@@ -1166,7 +1166,7 @@
           "popis": "Plnění opatření je průběžně sledováno.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -1174,7 +1174,7 @@
           "popis": "Nově vzniklá rizika jsou promítnuta do dokumentace.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -1388,7 +1388,7 @@
           "popis": "Externí osoby mají splněny požadavky před vstupem na pracoviště.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -1594,7 +1594,7 @@
           "popis": "Je veden přehled archivované dokumentace.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "nizka"
         },
         {
           "id": "prakticka_kontrola",
@@ -1602,7 +1602,7 @@
           "popis": "Požadovaný dokument lze v přiměřené době dohledat.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "nizka"
         }
       ],
       "typicke_zavady": [

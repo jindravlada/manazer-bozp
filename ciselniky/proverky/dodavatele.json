@@ -64,7 +64,7 @@
           "popis": "Dodavatel má potřebnou odbornou způsobilost.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "opravneni",
@@ -72,7 +72,7 @@
           "popis": "Dodavatel má platná oprávnění pro danou činnost.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pojisteni",
@@ -80,7 +80,7 @@
           "popis": "Pojištění odpovědnosti je v požadovaném rozsahu.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "kvalifikace_pracovniku",
@@ -88,7 +88,7 @@
           "popis": "Pracovníci dodavatele mají potřebnou kvalifikaci.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "hodnoceni_dodavatele",
@@ -96,7 +96,7 @@
           "popis": "Dodavatel splňuje požadavky pro prováděnou činnost.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -104,7 +104,7 @@
           "popis": "Dodavatel splňuje požadavky pro prováděnou činnost.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -318,7 +318,7 @@
           "popis": "Dodavatel převzal pracoviště prokazatelným způsobem.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -492,7 +492,7 @@
           "popis": "Pracovníci dodavatele byli seznámeni s místními riziky.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "unikove_cesty",
@@ -500,7 +500,7 @@
           "popis": "Pracovníci znají únikové cesty.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prvni_pomoc",
@@ -508,7 +508,7 @@
           "popis": "Pracovníci znají vybavení a postup první pomoci.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pozarni_ochrana",
@@ -516,7 +516,7 @@
           "popis": "Pracovníci znají požární opatření na pracovišti.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "dokumentace_seznameni",
@@ -524,7 +524,7 @@
           "popis": "Seznámení je prokazatelně doloženo.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -532,7 +532,7 @@
           "popis": "Pracovníci dodavatele znají hlavní rizika pracoviště.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -706,7 +706,7 @@
           "popis": "Souběžné činnosti jsou identifikovány.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "koordinace",
@@ -714,7 +714,7 @@
           "popis": "Práce různých stran jsou koordinovány.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "komunikace",
@@ -722,7 +722,7 @@
           "popis": "Mezi odpovědnými osobami probíhá komunikace.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "odpovedne_osoby",
@@ -730,7 +730,7 @@
           "popis": "Jsou určeny osoby odpovědné za koordinaci.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "plan_praci",
@@ -738,7 +738,7 @@
           "popis": "Existuje plán souběžných prací.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -746,7 +746,7 @@
           "popis": "Současně prováděné práce se vzájemně neohrožují.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -920,7 +920,7 @@
           "popis": "Pracovníci dodavatele používají předepsané OOPP.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pracovni_postupy",
@@ -928,7 +928,7 @@
           "popis": "Dodavatel dodržuje stanovené pracovní postupy.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "poradek",
@@ -944,7 +944,7 @@
           "popis": "Nebezpečné zóny jsou ohraničeny a zabezpečeny.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "dodrzeni_pravidel",
@@ -952,7 +952,7 @@
           "popis": "Dodavatel dodržuje pravidla BOZP objednatele.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -960,7 +960,7 @@
           "popis": "Dodavatel dodržuje pravidla BOZP stanovená objednatelem.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -1174,7 +1174,7 @@
           "popis": "Požadovaná dokumentace je k dispozici.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -1348,7 +1348,7 @@
           "popis": "Práce ve výškách mají stanovená bezpečnostní opatření.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "svarovani",
@@ -1356,7 +1356,7 @@
           "popis": "Svařování probíhá s odpovídajícími opatřeními.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "uzavrene_prostory",
@@ -1364,7 +1364,7 @@
           "popis": "Vstup do uzavřených prostor je zabezpečen.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "vykopove_prace",
@@ -1372,7 +1372,7 @@
           "popis": "Výkopové práce mají stanovená opatření.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "jine_rizikove",
@@ -1380,7 +1380,7 @@
           "popis": "Ostatní rizikové činnosti mají odpovídající opatření.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -1388,7 +1388,7 @@
           "popis": "Pro rizikové práce jsou stanovena odpovídající bezpečnostní opatření.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         }
       ],
       "typicke_zavady": [
@@ -1602,7 +1602,7 @@
           "popis": "Po ukončení prací bylo pracoviště předáno v bezpečném stavu.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [

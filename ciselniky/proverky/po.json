@@ -80,7 +80,7 @@
           "popis": "Přístroj není zastavěn ani zakryt materiálem.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "spravny_druh",
@@ -88,7 +88,7 @@
           "popis": "Typ odpovídá charakteru chráněného prostoru.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "bez_poskozeni",
@@ -96,7 +96,7 @@
           "popis": "Není deformovaný ani mechanicky poškozený.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "platna_kontrola",
@@ -104,7 +104,7 @@
           "popis": "Kontrola byla provedena v předepsané lhůtě.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "plomba_pojistka",
@@ -112,7 +112,7 @@
           "popis": "Nedošlo k neoprávněnému použití.",
           "poradi": 70,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "tlakomer",
@@ -120,7 +120,7 @@
           "popis": "Pouze u přístrojů vybavených tlakoměrem.",
           "poradi": 80,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "znalost_zamestnance",
@@ -128,7 +128,7 @@
           "popis": "Namátkově oslovený zaměstnanec dokáže ukázat nejbližší hasicí přístroj.",
           "poradi": 90,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -332,7 +332,7 @@
           "popis": "Hydrantová skříň není zastavěna materiálem ani zařízením.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "skrin",
@@ -340,7 +340,7 @@
           "popis": "Skříň lze otevřít a není mechanicky poškozená.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "kompletnost",
@@ -348,7 +348,7 @@
           "popis": "Ve skříni je hadice, proudnice a další vybavení podle typu hydrantu.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "hadice",
@@ -356,7 +356,7 @@
           "popis": "Hadice není zpuchřelá, potrhaná, znečištěná ani nevhodně uložená.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "proudnice",
@@ -364,7 +364,7 @@
           "popis": "Proudnice nechybí a není zjevně poškozená.",
           "poradi": 70,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "ventil",
@@ -372,7 +372,7 @@
           "popis": "Ventil není zablokovaný, poškozený ani zjevně nefunkční.",
           "poradi": 80,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "platna_kontrola",
@@ -380,7 +380,7 @@
           "popis": "Pravidelná kontrola byla provedena ve stanovené lhůtě a je doložitelná.",
           "poradi": 90,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "znalost_zamestnance",
@@ -388,7 +388,7 @@
           "popis": "Namátkově oslovený zaměstnanec dokáže ukázat nejbližší hydrant nebo popsat jeho umístění.",
           "poradi": 100,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -597,7 +597,7 @@
           "popis": "Na únikové cestě nejsou překážky bránící bezpečné evakuaci.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "bez_skladovani",
@@ -605,7 +605,7 @@
           "popis": "Na komunikaci nejsou uloženy materiály, výrobky ani odpady.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "oznaceni_smeru",
@@ -613,7 +613,7 @@
           "popis": "Bezpečnostní značky jsou čitelné a dobře viditelné.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "dvere_oteviraji",
@@ -621,7 +621,7 @@
           "popis": "Dveře nejsou uzamčené ani jinak blokované.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "nouzove_osvetleni",
@@ -629,7 +629,7 @@
           "popis": "Pokud je instalováno, nevykazuje zjevné závady.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pozarni_uzavery",
@@ -637,7 +637,7 @@
           "popis": "Nejsou zajištěny v otevřené poloze nepovoleným způsobem.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "bez_horlavych",
@@ -645,7 +645,7 @@
           "popis": "Komunikace není využívána jako sklad.",
           "poradi": 70,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "vychody_pristupne",
@@ -653,7 +653,7 @@
           "popis": "Před dveřmi ani za nimi nejsou překážky.",
           "poradi": 80,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "evacuacni_znaceni",
@@ -669,7 +669,7 @@
           "popis": "Namátkově oslovený zaměstnanec dokáže popsat nebo ukázat nejbližší únikovou cestu.",
           "poradi": 100,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -886,7 +886,7 @@
           "popis": "Křídlo, zárubeň ani kování nevykazují zjevné poškození.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "samozavirac",
@@ -894,7 +894,7 @@
           "popis": "Po otevření se dveře samy zcela dovřou.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "bez_zajisteni",
@@ -902,7 +902,7 @@
           "popis": "Nejsou použity klíny, PET lahve, odpadkové koše ani jiné předměty.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "tesneni",
@@ -910,7 +910,7 @@
           "popis": "Těsnění je úplné, bez deformací a nevypadává.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "elektromagnet",
@@ -918,7 +918,7 @@
           "popis": "Pouze tam, kde je instalováno.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "bez_neodbornych_zasahu",
@@ -926,7 +926,7 @@
           "popis": "Nejsou dodatečně vrtány otvory ani jiné zásahy snižující požární odolnost.",
           "poradi": 70,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pruchod",
@@ -934,7 +934,7 @@
           "popis": "Dveře lze bezpečně používat.",
           "poradi": 80,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "znalost_zamestnance",
@@ -942,7 +942,7 @@
           "popis": "Namátkově oslovený zaměstnanec zná význam požárních dveří.",
           "poradi": 90,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -1151,7 +1151,7 @@
           "popis": "Na pracovišti jsou umístěna všechna požadovaná bezpečnostní značení.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pozarni_uplne",
@@ -1159,7 +1159,7 @@
           "popis": "Na pracovišti jsou umístěna všechna požadovaná požární značení.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "viditelne",
@@ -1167,7 +1167,7 @@
           "popis": "Značení je umístěno tak, aby bylo snadno zaznamenatelné z běžných pracovních míst.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "bez_poskozeni",
@@ -1183,7 +1183,7 @@
           "popis": "Umístěné značky odpovídají aktuálnímu provozu a rizikům na pracovišti.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "nezakryte",
@@ -1191,7 +1191,7 @@
           "popis": "Značení není zakryté materiálem, zařízením ani nábytkem.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "hasici_pristroje",
@@ -1199,7 +1199,7 @@
           "popis": "Hasicí přístroje jsou viditelně označeny podle požadavků PO.",
           "poradi": 70,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "hydranty",
@@ -1207,7 +1207,7 @@
           "popis": "Hydranty jsou viditelně označeny podle požadavků PO.",
           "poradi": 80,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "unikove_cesty",
@@ -1215,7 +1215,7 @@
           "popis": "Směr úniku a únikové východy jsou správně označeny.",
           "poradi": 90,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "znalost_zamestnance",
@@ -1223,7 +1223,7 @@
           "popis": "Namátkově oslovený zaměstnanec zná význam relevantního značení.",
           "poradi": 100,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -1663,7 +1663,7 @@
           "popis": "Pokud je instalována, nevykazuje zjevné poruchy a kontroly jsou aktuální.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "shz",
@@ -1671,7 +1671,7 @@
           "popis": "Pokud je instalováno, je v provozuschopném stavu a kontroly jsou aktuální.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "zokt",
@@ -1679,7 +1679,7 @@
           "popis": "Pokud je instalováno, nevykazuje zjevné poruchy a kontroly jsou aktuální.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pozarni_klapky",
@@ -1687,7 +1687,7 @@
           "popis": "Požární klapky jsou dostupné pro kontrolu a nejsou zajištěny v nepovolené poloze.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "kourove_klapky",
@@ -1695,7 +1695,7 @@
           "popis": "Kouřové klapky jsou dostupné pro kontrolu a nevykazují zjevné závady.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pozarni_vrata",
@@ -1703,7 +1703,7 @@
           "popis": "Požární vrata a rolety jsou funkční a nejsou trvale blokována.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "suchovody",
@@ -1711,7 +1711,7 @@
           "popis": "Suchovody jsou viditelně označeny a pravidelně kontrolovány.",
           "poradi": 70,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pozarni_prostupy",
@@ -1719,7 +1719,7 @@
           "popis": "Požární prostupy nejsou poškozené ani neodborně upravené.",
           "poradi": 80,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pozarni_ucpavky",
@@ -1727,7 +1727,7 @@
           "popis": "Požární ucpávky jsou neporušené a odpovídají požadavkům.",
           "poradi": 90,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "predepsane_kontroly",

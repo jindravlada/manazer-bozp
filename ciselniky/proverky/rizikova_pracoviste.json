@@ -64,7 +64,7 @@
           "popis": "Práce ve výšce probíhá s odpovídající ochranou proti pádu.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "zabradli",
@@ -72,7 +72,7 @@
           "popis": "Zábradlí a ochranné hrany jsou v technicky vyhovujícím stavu.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "kotvici_body",
@@ -80,7 +80,7 @@
           "popis": "Kotvící body jsou pevné a vhodné pro zachycení.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "oopp",
@@ -88,7 +88,7 @@
           "popis": "Pracovníci používají předepsané OOPP pro práci ve výšce.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pristupova_zarizeni",
@@ -96,7 +96,7 @@
           "popis": "Přístupová zařízení jsou v dobrém stavu a správně používána.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -104,7 +104,7 @@
           "popis": "Práce ve výšce není prováděna bez odpovídající ochrany proti pádu.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         }
       ],
       "typicke_zavady": [
@@ -278,7 +278,7 @@
           "popis": "Otvory jsou zabezpečeny proti pádu osob.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "zakryti",
@@ -286,7 +286,7 @@
           "popis": "Otvory jsou pevně zakryty nebo chráněny.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "zabrany",
@@ -294,7 +294,7 @@
           "popis": "Kolem otvorů jsou instalovány zábrany.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "oznaceni",
@@ -302,7 +302,7 @@
           "popis": "Místa s nebezpečím pádu jsou viditelně označena.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pravidelna_kontrola",
@@ -310,7 +310,7 @@
           "popis": "Zabezpečení otvorů je pravidelně kontrolováno.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -318,7 +318,7 @@
           "popis": "Volné otvory jsou zabezpečeny proti pádu osob.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         }
       ],
       "typicke_zavady": [
@@ -492,7 +492,7 @@
           "popis": "Vstup do uzavřených prostor probíhá na základě povolení.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "mereni_atmosfery",
@@ -500,7 +500,7 @@
           "popis": "Atmosféra je měřena před a během prací.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "jisteni_osob",
@@ -508,7 +508,7 @@
           "popis": "Pracovníci v uzavřených prostorech jsou jištěni.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "komunikace",
@@ -516,7 +516,7 @@
           "popis": "Komunikace s dohlížející osobou funguje.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "zachranne_prostredky",
@@ -524,7 +524,7 @@
           "popis": "Záchranné prostředky jsou připraveny.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -532,7 +532,7 @@
           "popis": "Do uzavřených prostor nevstupují osoby bez stanovených opatření.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         }
       ],
       "typicke_zavady": [
@@ -706,7 +706,7 @@
           "popis": "Horké práce probíhají na základě povolení.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pozarni_dohled",
@@ -714,7 +714,7 @@
           "popis": "Požární dohled je zajištěn po celou dobu prací.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "odstraneni_horlavin",
@@ -722,7 +722,7 @@
           "popis": "Hořlavé materiály jsou odstraněny z okolí.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "hasicí_prostredky",
@@ -730,7 +730,7 @@
           "popis": "Hasicí prostředky jsou dostupné u místa prací.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "kontrola_po_praci",
@@ -738,7 +738,7 @@
           "popis": "Po ukončení prací probíhá kontrola místa.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -746,7 +746,7 @@
           "popis": "Při horkých pracích jsou přijata požadovaná požární opatření.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -920,7 +920,7 @@
           "popis": "Výkop je pažován nebo svahy jsou bezpečně skloněny.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "vstupy",
@@ -928,7 +928,7 @@
           "popis": "Vstupy a východy z výkopu jsou bezpečně řešeny.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "oznaceni",
@@ -936,7 +936,7 @@
           "popis": "Nebezpečné místo je viditelně označeno.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "zabezpeceni_vykopu",
@@ -944,7 +944,7 @@
           "popis": "Výkop je zabezpečen proti pádu osob.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         },
         {
           "id": "pohyb_osob",
@@ -952,7 +952,7 @@
           "popis": "Pohyb osob v okolí výkopu je kontrolován.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -960,7 +960,7 @@
           "popis": "Výkop je zabezpečen proti pádu osob.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         }
       ],
       "typicke_zavady": [
@@ -1134,7 +1134,7 @@
           "popis": "Prostor pod místem práce je vymezen.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "ochranne_pristresky",
@@ -1142,7 +1142,7 @@
           "popis": "Ochranné přístřešky jsou na místě.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "zabezpeceni_materialu",
@@ -1150,7 +1150,7 @@
           "popis": "Materiál a nástroje jsou zabezpečeny proti pádu.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prilby",
@@ -1158,7 +1158,7 @@
           "popis": "Pracovníci používají ochranné přilby.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "oznaceni_zony",
@@ -1166,7 +1166,7 @@
           "popis": "Zóna nebezpečí pádu předmětů je označena.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -1174,7 +1174,7 @@
           "popis": "Pod místem práce se nepohybují nepovolané osoby.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "kriticka"
         }
       ],
       "typicke_zavady": [
@@ -1348,7 +1348,7 @@
           "popis": "Osamocení pracovníci jsou pravidelně kontrolováni.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "spojeni",
@@ -1356,7 +1356,7 @@
           "popis": "Spojení s osamoceným pracovníkem funguje.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "privolani_pomoci",
@@ -1364,7 +1364,7 @@
           "popis": "Je zajištěna možnost rychlého přivolání pomoci.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "organizace_prace",
@@ -1372,7 +1372,7 @@
           "popis": "Osamocená práce je plánována a organizována.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "posouzeni_rizik",
@@ -1380,7 +1380,7 @@
           "popis": "Rizika osamocené práce jsou posouzena.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -1388,7 +1388,7 @@
           "popis": "Je zajištěna možnost rychlého přivolání pomoci.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -1562,7 +1562,7 @@
           "popis": "Systém povolení k rizikovým pracím je zaveden.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "schvalovani",
@@ -1570,7 +1570,7 @@
           "popis": "Rizikové práce jsou schvalovány před zahájením.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "ukonceni_praci",
@@ -1578,7 +1578,7 @@
           "popis": "Povolení k práci je uzavřeno po ukončení prací.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "archivace",
@@ -1594,7 +1594,7 @@
           "popis": "Povolení k práci obsahuje všechny požadované údaje.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -1602,7 +1602,7 @@
           "popis": "Rizikové práce jsou prováděny pouze na základě stanoveného postupu nebo povolení.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
