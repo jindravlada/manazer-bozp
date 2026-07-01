@@ -20,6 +20,9 @@ def initialize_database() -> None:
     from moduly.kniha_urazu.modely.investigation import AccidentInvestigation  # noqa: F401
     from moduly.vysetrovani_mu.modely.mu_investigation import MuInvestigation  # noqa: F401
     from moduly.proverky.modely.bozp_inspection import BozpInspection  # noqa: F401
+    from moduly.proverky.modely.bozp_inspection_commission_member import (  # noqa: F401
+        BozpInspectionCommissionMember,
+    )
     from core.shared.modely.control_result import ControlResult  # noqa: F401
 
     create_database()
@@ -34,6 +37,7 @@ def initialize_database() -> None:
     _ensure_mu_investigation_columns()
     _ensure_finding_columns()
     _ensure_control_result_columns()
+    _ensure_bozp_inspection_commission_table()
     _normalize_task_status_values()
     _normalize_internal_audit_status_values()
     _normalize_accident_legacy_values()
@@ -205,6 +209,19 @@ def _ensure_control_result_columns() -> None:
         _add_column("control_results", "shared_experience BOOLEAN DEFAULT 0 NOT NULL")
     if "photo_path" not in columns:
         _add_column("control_results", "photo_path VARCHAR(500) DEFAULT ''")
+
+
+def _ensure_bozp_inspection_commission_table() -> None:
+    columns = _table_columns("bozp_inspection_commission_members")
+    if columns and "record_type" not in columns:
+        with engine.connect() as connection:
+            connection.execute(text("DROP TABLE bozp_inspection_commission_members"))
+            connection.commit()
+        from moduly.proverky.modely.bozp_inspection_commission_member import (
+            BozpInspectionCommissionMember,
+        )
+
+        BozpInspectionCommissionMember.__table__.create(bind=engine, checkfirst=True)
 
 
 def _normalize_internal_audit_status_values() -> None:

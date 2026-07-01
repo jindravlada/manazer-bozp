@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import (
     QDialog,
+    QMessageBox,
     QTabWidget,
     QVBoxLayout,
 )
@@ -7,6 +8,7 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.proverky.constants import TAB_KONTROLOVANE_OBLASTI
 from moduly.proverky.ui.bozp_inspection_areas_widget import BozpInspectionAreasWidget
+from moduly.proverky.ui.bozp_inspection_commission_widget import BozpInspectionCommissionWidget
 from moduly.proverky.ui.bozp_inspection_findings_widget import BozpInspectionFindingsWidget
 from moduly.proverky.ui.bozp_inspection_spis_widget import BozpInspectionSpisWidget
 
@@ -26,8 +28,9 @@ class BozpInspectionDialog(QDialog):
 
         self.tabs = QTabWidget()
         self.spis_widget = BozpInspectionSpisWidget()
+        self.commission_widget = BozpInspectionCommissionWidget()
         self.tabs.addTab(self.spis_widget, "Spis")
-        self.tabs.addTab(self._placeholder_tab("Komise"), "Komise")
+        self.tabs.addTab(self.commission_widget, "Komise")
         self.areas_widget = BozpInspectionAreasWidget()
         self.tabs.addTab(self.areas_widget, TAB_KONTROLOVANE_OBLASTI)
         self.findings_widget = BozpInspectionFindingsWidget()
@@ -46,6 +49,7 @@ class BozpInspectionDialog(QDialog):
         self.set_inspection_id(inspection_id)
         self.areas_widget.set_on_finding_saved(self._on_finding_changed)
         self.spis_widget.load_inspection(inspection)
+        self.commission_widget.set_inspection_context(inspection_id)
 
     def set_inspection_id(self, inspection_id: int | None) -> None:
         self.areas_widget.set_inspection_id(inspection_id)
@@ -55,9 +59,18 @@ class BozpInspectionDialog(QDialog):
         self.findings_widget.refresh()
         self.areas_widget.refresh_findings_display()
 
+    def accept(self) -> None:
+        valid, message = self.commission_widget.validate()
+        if not valid:
+            QMessageBox.warning(self, "Komise", message)
+            self.tabs.setCurrentWidget(self.commission_widget)
+            return
+        super().accept()
+
     def get_data(self) -> dict:
         data = self.spis_widget.get_data()
         data["title"] = ""
+        data["commission_members"] = self.commission_widget.get_members_for_save()
         return data
 
     def _placeholder_tab(self, title: str):

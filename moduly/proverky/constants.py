@@ -68,6 +68,20 @@ YEAR_FILTER_VSE = "Vše"
 
 TAB_KONTROLOVANE_OBLASTI = "Kontrolované oblasti"
 
+COMMISSION_RECORD_LEADER = "vedouci_komise"
+COMMISSION_RECORD_UNION = "zastupce_odboru"
+COMMISSION_RECORD_MEMBER = "clen_komise"
+COMMISSION_RECORD_INVITED = "prizvana_osoba"
+
+COMMISSION_RECORD_TYPES = frozenset(
+    {
+        COMMISSION_RECORD_LEADER,
+        COMMISSION_RECORD_UNION,
+        COMMISSION_RECORD_MEMBER,
+        COMMISSION_RECORD_INVITED,
+    }
+)
+
 TAB_LABELS = (
     "Spis",
     "Komise",
