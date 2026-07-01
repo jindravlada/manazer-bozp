@@ -15,6 +15,8 @@ EDITABLE_CATALOGS: tuple[EditableCatalog, ...] = (
     EditableCatalog("modulove/vysetrovani_mu/ishikawa_faktory.json"),
     EditableCatalog("proverky/oblasti.json"),
     EditableCatalog("proverky/prvni_pomoc.json"),
+    EditableCatalog("tymy/typy_tymu.json"),
+    EditableCatalog("tymy/role_v_tymu.json"),
 )
 
 

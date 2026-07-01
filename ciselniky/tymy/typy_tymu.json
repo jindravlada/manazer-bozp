@@ -1,0 +1,33 @@
+{
+  "verze": 1,
+  "typy": [
+    {
+      "id": "proverkova_komise",
+      "nazev": "Prověrková komise",
+      "popis": "Tým pro provádění prověrek BOZP.",
+      "poradi": 10,
+      "aktivni": true
+    },
+    {
+      "id": "audit",
+      "nazev": "Audit",
+      "popis": "Tým pro interní nebo externí audit.",
+      "poradi": 20,
+      "aktivni": true
+    },
+    {
+      "id": "vysetrovaci_tym",
+      "nazev": "Vyšetřovací tým",
+      "popis": "Tým pro šetření pracovních úrazů a mimořádných událostí.",
+      "poradi": 30,
+      "aktivni": true
+    },
+    {
+      "id": "havarijni_tym",
+      "nazev": "Havarijní tým",
+      "popis": "Tým pro řešení havarijních a mimořádných situací.",
+      "poradi": 40,
+      "aktivni": true
+    }
+  ]
+}
