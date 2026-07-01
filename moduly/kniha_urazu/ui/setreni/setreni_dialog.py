@@ -33,7 +33,7 @@ from PySide6.QtWidgets import (
 )
 
 
-from core.widgets.dialog_utils import create_save_cancel_box, exec_maximized
+from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.kniha_urazu.ui.setreni.accident_findings_widget import AccidentFindingsWidget
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     SECTION_ODESLANI,
@@ -102,7 +102,8 @@ class SetreniDialog(QDialog):
         super().accept()
 
     def exec(self):
-        return exec_maximized(self)
+        self.showMaximized()
+        return super().exec()
 
     def _save_administrativa(self) -> None:
         if self.accident is None:

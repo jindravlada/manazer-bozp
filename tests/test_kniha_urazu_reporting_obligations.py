@@ -332,5 +332,32 @@ class KnihaUrazuReportingObligationsTestCase(unittest.TestCase):
         )
 
 
+class SetreniDialogExecTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        from PySide6.QtWidgets import QApplication, QDialog
+
+        cls._app = QApplication.instance() or QApplication([])
+        cls._dialog = QDialog
+
+    def test_exec_uses_super_without_recursion(self) -> None:
+        from PySide6.QtWidgets import QDialog
+
+        from moduly.kniha_urazu.modely.accident import Accident
+        from moduly.kniha_urazu.ui.setreni.setreni_dialog import SetreniDialog
+
+        accident = Accident(number="2026-001")
+        accident.id = 1
+
+        with patch.object(QDialog, "exec", return_value=QDialog.Accepted) as mock_exec:
+            with patch.object(QDialog, "showMaximized") as mock_maximized:
+                dialog = SetreniDialog(accident=accident)
+                result = dialog.exec()
+
+        self.assertEqual(result, QDialog.Accepted)
+        mock_maximized.assert_called_once()
+        mock_exec.assert_called_once()
+
+
 if __name__ == "__main__":
     unittest.main()
