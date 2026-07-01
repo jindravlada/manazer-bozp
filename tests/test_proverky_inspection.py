@@ -67,24 +67,22 @@ class ProverkyInspectionTestCase(unittest.TestCase):
 
         self.assertEqual(
             section_titles,
-            {"Základní údaje", "Termíny", "Stav a typ"},
+            {"Základní údaje", "Termíny", "Typ prověrky"},
         )
         self.assertFalse(hasattr(widget, "number_header"))
 
     def test_spis_widget_load_and_get_data(self) -> None:
-        from moduly.proverky.constants import DEFAULT_INSPECTION_SPIS_STATUS, DEFAULT_INSPECTION_TYPE
+        from moduly.proverky.constants import DEFAULT_INSPECTION_TYPE
         from moduly.proverky.ui.bozp_inspection_spis_widget import BozpInspectionSpisWidget
 
         workplace = settings_service.save_workplace(name="Hala A")
         inspection = SimpleNamespace(
             number="2026/001",
-            status=DEFAULT_INSPECTION_SPIS_STATUS,
             inspection_type=DEFAULT_INSPECTION_TYPE,
             year=2026,
             planned_month=3,
             inspection_date=date(2026, 3, 15),
             started_at=date(2026, 3, 10),
-            finished_at=date(2026, 3, 20),
             workplace_id=workplace.id,
             workplace_name=workplace.name,
         )
@@ -97,10 +95,10 @@ class ProverkyInspectionTestCase(unittest.TestCase):
         self.assertEqual(data["planned_month"], 3)
         self.assertEqual(data["inspection_date"], date(2026, 3, 15))
         self.assertEqual(data["started_at"], date(2026, 3, 10))
-        self.assertEqual(data["finished_at"], date(2026, 3, 20))
-        self.assertEqual(data["status"], DEFAULT_INSPECTION_SPIS_STATUS)
         self.assertEqual(data["inspection_type"], DEFAULT_INSPECTION_TYPE)
         self.assertEqual(data["workplace_id"], workplace.id)
+        self.assertNotIn("status", data)
+        self.assertNotIn("finished_at", data)
 
     def test_spis_fields_save_and_reload(self) -> None:
         workplace = settings_service.save_workplace(name="Sklad B")

@@ -13,9 +13,7 @@ from PySide6.QtWidgets import (
 from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.workplace_selector import WorkplaceSelector
 from moduly.proverky.constants import (
-    DEFAULT_INSPECTION_SPIS_STATUS,
     DEFAULT_INSPECTION_TYPE,
-    INSPECTION_SPIS_STATUSES,
     INSPECTION_TYPES,
     PLANNED_MONTH_NAMES,
     PLANNED_MONTH_NOT_SET_LABEL,
@@ -53,26 +51,20 @@ class BozpInspectionSpisWidget(QWidget):
 
         self.inspection_date_edit = NullableDateEdit()
         self.started_at_edit = NullableDateEdit()
-        self.finished_at_edit = NullableDateEdit()
 
         terms_group = QGroupBox("Termíny")
         terms_form = QFormLayout(terms_group)
         terms_form.addRow("Datum prověrky:", self.inspection_date_edit)
         terms_form.addRow("Zahájení:", self.started_at_edit)
-        terms_form.addRow("Ukončení:", self.finished_at_edit)
         layout.addWidget(terms_group)
-
-        self.status_combo = QComboBox()
-        self.status_combo.addItems(INSPECTION_SPIS_STATUSES)
 
         self.type_combo = QComboBox()
         self.type_combo.addItems(INSPECTION_TYPES)
 
-        status_group = QGroupBox("Stav a typ")
-        status_form = QFormLayout(status_group)
-        status_form.addRow("Stav:", self.status_combo)
-        status_form.addRow("Typ prověrky:", self.type_combo)
-        layout.addWidget(status_group)
+        type_group = QGroupBox("Typ prověrky")
+        type_form = QFormLayout(type_group)
+        type_form.addRow("Typ:", self.type_combo)
+        layout.addWidget(type_group)
 
         self.history_panel = QFrame()
         self.history_panel.setObjectName("ModulePanel")
@@ -113,7 +105,6 @@ class BozpInspectionSpisWidget(QWidget):
         self.planned_month_combo.setCurrentIndex(0)
 
     def _set_defaults(self) -> None:
-        self.status_combo.setCurrentText(DEFAULT_INSPECTION_SPIS_STATUS)
         self.type_combo.setCurrentText(DEFAULT_INSPECTION_TYPE)
         self._populate_year_combo()
         self.planned_month_combo.setCurrentIndex(0)
@@ -161,12 +152,6 @@ class BozpInspectionSpisWidget(QWidget):
 
         self.set_number(getattr(inspection, "number", None))
 
-        status = getattr(inspection, "status", None)
-        if status:
-            index = self.status_combo.findText(status)
-            if index >= 0:
-                self.status_combo.setCurrentIndex(index)
-
         inspection_type = getattr(inspection, "inspection_type", None)
         if inspection_type:
             index = self.type_combo.findText(inspection_type)
@@ -190,10 +175,6 @@ class BozpInspectionSpisWidget(QWidget):
         if started_at is not None:
             self.started_at_edit.set_date_value(started_at)
 
-        finished_at = getattr(inspection, "finished_at", None)
-        if finished_at is not None:
-            self.finished_at_edit.set_date_value(finished_at)
-
         workplace_id = getattr(inspection, "workplace_id", None)
         workplace_name = getattr(inspection, "workplace_name", None)
         self.workplace_selector.set_workplace(workplace_id, workplace_name or "")
@@ -206,8 +187,6 @@ class BozpInspectionSpisWidget(QWidget):
             "planned_month": self.planned_month_combo.currentData(),
             "inspection_date": self.inspection_date_edit.get_date(),
             "started_at": self.started_at_edit.get_date(),
-            "finished_at": self.finished_at_edit.get_date(),
-            "status": self.status_combo.currentText(),
             "inspection_type": self.type_combo.currentText(),
             "workplace_id": self.workplace_selector.current_workplace_id(),
         }

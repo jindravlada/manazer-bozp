@@ -127,6 +127,17 @@ class BozpInspectionService:
         ]
         return CompletionBlockers(open_findings=open_findings, active_tasks=active_tasks)
 
+    def get_conclusion_summary(self, inspection_id: int) -> dict[str, int]:
+        findings = finding_service.get_for_entity(ENTITY_PROVERKY, inspection_id)
+        blockers = self.get_completion_blockers(inspection_id)
+        tasks = self.get_tasks_for_inspection(inspection_id)
+        return {
+            "findings_total": len(findings),
+            "findings_open": len(blockers.open_findings),
+            "tasks_total": len(tasks),
+            "tasks_active": len(blockers.active_tasks),
+        }
+
     def finding_for_control_point(
         self,
         inspection_id: int,

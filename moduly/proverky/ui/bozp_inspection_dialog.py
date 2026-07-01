@@ -1,5 +1,3 @@
-from datetime import date
-
 from PySide6.QtWidgets import (
     QDialog,
     QMessageBox,
@@ -8,14 +6,14 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
-from moduly.proverky.constants import (
-    INSPECTION_COMPLETION_CONFIRM_MESSAGE,
-    INSPECTION_STATUS_DOKONCENO,
-    TAB_KONTROLOVANE_OBLASTI,
+from moduly.proverky.constants import TAB_KONTROLOVANE_OBLASTI
+from moduly.proverky.sluzby.bozp_inspection_commission_service import (
+    bozp_inspection_commission_service,
 )
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 from moduly.proverky.ui.bozp_inspection_areas_widget import BozpInspectionAreasWidget
 from moduly.proverky.ui.bozp_inspection_commission_widget import BozpInspectionCommissionWidget
+from moduly.proverky.ui.bozp_inspection_conclusion_widget import BozpInspectionConclusionWidget
 from moduly.proverky.ui.bozp_inspection_findings_widget import BozpInspectionFindingsWidget
 from moduly.proverky.ui.bozp_inspection_spis_widget import BozpInspectionSpisWidget
 from moduly.proverky.ui.bozp_inspection_tasks_widget import BozpInspectionTasksWidget
@@ -46,7 +44,8 @@ class BozpInspectionDialog(QDialog):
         self.tasks_widget = BozpInspectionTasksWidget()
         self.tabs.addTab(self.tasks_widget, "Úkoly")
         self.tabs.addTab(self._placeholder_tab("Přílohy"), "Přílohy")
-        self.tabs.addTab(self._placeholder_tab("Závěr"), "Závěr")
+        self.conclusion_widget = BozpInspectionConclusionWidget()
+        self.tabs.addTab(self.conclusion_widget, "Závěr")
         layout.addWidget(self.tabs)
 
         buttons = create_save_cancel_box(self)
@@ -57,8 +56,10 @@ class BozpInspectionDialog(QDialog):
         inspection_id = inspection.id if inspection is not None else None
         self.set_inspection_id(inspection_id)
         self.areas_widget.set_on_finding_saved(self._on_finding_changed)
-        self.findings_widget.set_on_task_changed(self.tasks_widget.refresh)
+        self.findings_widget.set_on_task_changed(self._on_related_data_changed)
+        self.conclusion_widget.set_complete_handler(self._complete_inspection)
         self.spis_widget.load_inspection(inspection)
+        self.conclusion_widget.load_inspection(inspection)
         self.commission_widget.set_inspection_context(inspection_id)
 
     def set_inspection_id(self, inspection_id: int | None) -> None:
@@ -67,9 +68,13 @@ class BozpInspectionDialog(QDialog):
         self.tasks_widget.set_inspection_id(inspection_id)
 
     def _on_finding_changed(self) -> None:
+        self._on_related_data_changed()
+        self.areas_widget.refresh_findings_display()
+
+    def _on_related_data_changed(self) -> None:
         self.findings_widget.refresh()
         self.tasks_widget.refresh()
-        self.areas_widget.refresh_findings_display()
+        self.conclusion_widget.refresh()
 
     def accept(self) -> None:
         valid, message = self.commission_widget.validate()
@@ -77,35 +82,55 @@ class BozpInspectionDialog(QDialog):
             QMessageBox.warning(self, "Komise", message)
             self.tabs.setCurrentWidget(self.commission_widget)
             return
-
-        spis_data = self.spis_widget.get_data()
-        inspection_id = self.inspection.id if self.inspection is not None else None
-        if (
-            inspection_id is not None
-            and spis_data.get("status") == INSPECTION_STATUS_DOKONCENO
-        ):
-            blockers = bozp_inspection_service.get_completion_blockers(inspection_id)
-            if blockers.has_blockers():
-                answer = QMessageBox.question(
-                    self,
-                    "Dokončení prověrky",
-                    INSPECTION_COMPLETION_CONFIRM_MESSAGE,
-                    QMessageBox.Yes | QMessageBox.No,
-                    QMessageBox.No,
-                )
-                if answer != QMessageBox.Yes:
-                    return
-
-                if spis_data.get("finished_at") is None:
-                    self.spis_widget.finished_at_edit.set_date_value(date.today())
-
         super().accept()
 
     def get_data(self) -> dict:
         data = self.spis_widget.get_data()
+        data.update(self.conclusion_widget.get_data())
         data["title"] = ""
         data["commission_members"] = self.commission_widget.get_members_for_save()
         return data
+
+    def _prepare_save_payload(self, data: dict) -> dict:
+        payload = {key: value for key, value in data.items() if key != "commission_members"}
+
+        workplace_id = payload.get("workplace_id")
+        if workplace_id is None:
+            workplace_id = bozp_inspection_service.resolve_workplace_id_by_name(
+                payload.get("workplace_name", "")
+            )
+            payload["workplace_id"] = workplace_id
+        payload["workplace_name"] = bozp_inspection_service.resolve_workplace_name(workplace_id)
+        payload["title"] = ""
+        return payload
+
+    def _complete_inspection(self, *, status: str, finished_at) -> bool:
+        if self.inspection is None:
+            return False
+
+        valid, message = self.commission_widget.validate()
+        if not valid:
+            QMessageBox.warning(self, "Komise", message)
+            self.tabs.setCurrentWidget(self.commission_widget)
+            return False
+
+        data = self.get_data()
+        data["status"] = status
+        data["finished_at"] = finished_at
+        payload = self._prepare_save_payload(data)
+
+        updated = bozp_inspection_service.update_inspection(self.inspection.id, **payload)
+        if updated is None:
+            return False
+
+        bozp_inspection_commission_service.save_members(
+            self.inspection.id,
+            data.get("commission_members", []),
+        )
+
+        self.inspection = updated
+        self.conclusion_widget.load_inspection(self.inspection)
+        return True
 
     def _placeholder_tab(self, title: str):
         from PySide6.QtWidgets import QLabel, QWidget
