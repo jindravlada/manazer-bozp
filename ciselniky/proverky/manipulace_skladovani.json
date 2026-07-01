@@ -960,7 +960,7 @@
           "popis": "Komunikace jsou trvale volné.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         }
       ],
       "typicke_zavady": [
@@ -1388,7 +1388,7 @@
           "popis": "Při nakládce nehrozí samovolný pohyb vozidla ani nákladu.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         }
       ],
       "typicke_zavady": [

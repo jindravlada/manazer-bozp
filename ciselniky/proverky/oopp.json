@@ -294,7 +294,7 @@
           "popis": "OOPP nejsou během rizikové činnosti odloženy nebo vynechány.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "kombinace",
@@ -706,7 +706,7 @@
           "popis": "Pokud se používají, jsou v provozuschopném stavu a revize jsou aktuální.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "respiratory",
@@ -722,7 +722,7 @@
           "popis": "Pokud se používají, kontroly a plnění odpovídají požadavkům.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "chemicke_oopp",

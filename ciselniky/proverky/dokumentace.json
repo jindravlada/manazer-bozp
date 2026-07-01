@@ -104,7 +104,7 @@
           "popis": "Na pracovišti jsou k dispozici předpisy potřebné pro vykonávané činnosti.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -318,7 +318,7 @@
           "popis": "Místní bezpečnostní předpisy odpovídají skutečnému provozu.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -532,7 +532,7 @@
           "popis": "Evidence školení odpovídá skutečnému stavu zaměstnanců.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -746,7 +746,7 @@
           "popis": "Ke kontrolovaným zařízením lze dohledat příslušnou dokumentaci.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1174,7 +1174,7 @@
           "popis": "Nově vzniklá rizika jsou promítnuta do dokumentace.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -1388,7 +1388,7 @@
           "popis": "Externí osoby mají splněny požadavky před vstupem na pracoviště.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [

@@ -746,7 +746,7 @@
           "popis": "Při horkých pracích jsou přijata požadovaná požární opatření.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         }
       ],
       "typicke_zavady": [
@@ -1602,7 +1602,7 @@
           "popis": "Rizikové práce jsou prováděny pouze na základě stanoveného postupu nebo povolení.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [

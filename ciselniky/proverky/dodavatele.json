@@ -500,7 +500,7 @@
           "popis": "Pracovníci znají únikové cesty.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "prvni_pomoc",
@@ -746,7 +746,7 @@
           "popis": "Současně prováděné práce se vzájemně neohrožují.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         }
       ],
       "typicke_zavady": [
@@ -960,7 +960,7 @@
           "popis": "Dodavatel dodržuje pravidla BOZP stanovená objednatelem.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         }
       ],
       "typicke_zavady": [

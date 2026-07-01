@@ -278,7 +278,7 @@
           "popis": "Elektrická zařízení mají platné revize.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "kontroly",
@@ -1174,7 +1174,7 @@
           "popis": "Nejsou překročeny stanovené lhůty kontrol.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         }
       ],
       "typicke_zavady": [

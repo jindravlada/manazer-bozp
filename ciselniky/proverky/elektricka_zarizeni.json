@@ -278,7 +278,7 @@
           "popis": "Zásuvky a kryty nevykazují viditelné poškození ohrožující bezpečnost.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "uvolneni",
@@ -492,7 +492,7 @@
           "popis": "Spotřebič nevykazuje mechanické poškození ohrožující bezpečnost.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "privodni_snury",
@@ -532,7 +532,7 @@
           "popis": "Spotřebič nevykazuje zjevné závady.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         }
       ],
       "typicke_zavady": [
@@ -1134,7 +1134,7 @@
           "popis": "Požadované revize elektrických zařízení jsou provedeny v platných termínech.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "evidence",

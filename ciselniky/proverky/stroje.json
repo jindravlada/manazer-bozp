@@ -64,7 +64,7 @@
           "popis": "Pevné ochranné kryty jsou řádně upevněny a nejsou poškozené.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "pohyblive_kryty",
@@ -72,7 +72,7 @@
           "popis": "Pohyblivé kryty správně fungují a nejsou mechanicky poškozené.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "blokovani",
@@ -88,7 +88,7 @@
           "popis": "Nebezpečné pohyblivé části jsou chráněny proti neúmyslnému kontaktu.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "demontovane_kryty",
@@ -524,7 +524,7 @@
           "popis": "Stroj nemá chybějící nebo uvolněné součásti ovlivňující bezpečnost.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "prakticka_kontrola",

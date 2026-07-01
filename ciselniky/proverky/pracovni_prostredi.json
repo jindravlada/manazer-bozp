@@ -524,7 +524,7 @@
           "popis": "Nouzové osvětlení je orientačně v pořádku a označeno.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "prakticka_kontrola",
@@ -1174,7 +1174,7 @@
           "popis": "Sociální zařízení odpovídají počtu zaměstnanců.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [

@@ -80,7 +80,7 @@
           "popis": "Zkontrolujte, zda není přístup k lékárničce blokován nábytkem, materiálem nebo uzamčením.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "obsah",
@@ -266,7 +266,7 @@
           "popis": "Přístup není blokován materiálem ani zařízením.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "funkcnost",

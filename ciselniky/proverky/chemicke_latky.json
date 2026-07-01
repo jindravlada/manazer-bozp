@@ -64,7 +64,7 @@
           "popis": "Je veden úplný seznam chemických látek a směsí používaných na pracovišti.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "uplnost",
@@ -532,7 +532,7 @@
           "popis": "Žádná nádoba není používána bez označení.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         }
       ],
       "typicke_zavady": [

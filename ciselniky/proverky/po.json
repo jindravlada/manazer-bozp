@@ -104,7 +104,7 @@
           "popis": "Kontrola byla provedena v předepsané lhůtě.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "plomba_pojistka",
@@ -112,7 +112,7 @@
           "popis": "Nedošlo k neoprávněnému použití.",
           "poradi": 70,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "tlakomer",
@@ -120,7 +120,7 @@
           "popis": "Pouze u přístrojů vybavených tlakoměrem.",
           "poradi": 80,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "znalost_zamestnance",
@@ -629,7 +629,7 @@
           "popis": "Pokud je instalováno, nevykazuje zjevné závady.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "pozarni_uzavery",
@@ -637,7 +637,7 @@
           "popis": "Nejsou zajištěny v otevřené poloze nepovoleným způsobem.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "kriticka"
         },
         {
           "id": "bez_horlavych",
@@ -1475,7 +1475,7 @@
           "popis": "Namátkově oslovený vedoucí zaměstnanec dokáže dokumentaci bez prodlení předložit.",
           "poradi": 90,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [

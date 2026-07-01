@@ -318,7 +318,7 @@
           "popis": "Vedoucí zaměstnanec ví, kde je dokumentace BOZP uložena.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [
@@ -920,7 +920,7 @@
           "popis": "Hodnocení rizik je zpracováno pro dotčená pracoviště.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "aktualizace",
@@ -928,7 +928,7 @@
           "popis": "Hodnocení rizik odpovídá aktuálnímu stavu.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "seznameni",
@@ -952,7 +952,7 @@
           "popis": "Z hodnocení rizik vyplývající opatření jsou realizována.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -1578,7 +1578,7 @@
           "popis": "Kontakty na odpovědné osoby jsou známé a dostupné.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "oznameni",
