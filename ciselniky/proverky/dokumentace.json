@@ -1,58 +1,58 @@
 {
-  "verze": 1,
+  "verze": 2,
   "id": "dokumentace",
   "nazev": "Dokumentace",
-  "popis": "Právní předpisy, místní předpisy, evidence školení, kontroly a revize, postupy, rizika, dodavatelé a archivace dokumentace.",
+  "popis": "Právní a místní předpisy, evidence školení, dokumentace kontrol a revizí, postupy, rizika, dodavatelé a archivace.",
   "poradi": 40,
   "aktivni": true,
   "sekce": [
     {
       "id": "pravni_predpisy",
       "nazev": "Právní a ostatní předpisy",
-      "popis": "Kontrola dostupnosti, aktuálnosti, návaznosti na provoz a odpovědnosti za aktualizaci právních a ostatních předpisů.",
+      "popis": "Prověrka dostupnosti, aktuálnosti a přehledu právních předpisů pro provoz.",
       "poradi": 10,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte právní a ostatní předpisy vztahující se k činnostem v kontrolované oblasti.",
+          "text": "Určete předpisy vztahující se k činnostem v kontrolované oblasti.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "dostupnost",
-          "text": "Zkontrolujte dostupnost potřebných právních a ostatních předpisů.",
+          "text": "Ověřte, zda jsou potřebné předpisy dostupné odpovědným osobám.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "aktualnost",
-          "text": "Ověřte aktuálnost verzí předpisů a novelizací.",
+          "text": "Zkontrolujte, zda používané verze odpovídají platné legislativě.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "navaznost",
-          "text": "Posuďte návaznost předpisů na vykonávané činnosti a provoz.",
+          "text": "Posuďte, zda přehled pokrývá skutečné činnosti v provozu.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "odpovednost",
-          "text": "Zkontrolujte určení odpovědnosti za aktualizaci předpisů.",
+          "text": "Ověřte určení osoby za sledování novelizací.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "prehled",
-          "text": "Ověřte vedení přehledu používaných předpisů.",
+          "text": "Zkontrolujte seznam používaných právních předpisů.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda na pracovišti jsou k dispozici předpisy potřebné pro vykonávané činnosti.",
+          "text": "U rizikové činnosti ověřte, zda lze dohledat příslušný předpis.",
           "poradi": 70,
           "aktivni": true
         }
@@ -61,7 +61,7 @@
         {
           "id": "dostupnost",
           "nazev": "Předpisy jsou dostupné",
-          "popis": "Potřebné právní a ostatní předpisy jsou k dispozici.",
+          "popis": "Potřebné předpisy jsou k dispozici vedoucím a odpovědným osobám.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -69,23 +69,23 @@
         {
           "id": "aktualnost",
           "nazev": "Předpisy jsou aktuální",
-          "popis": "Používané verze předpisů odpovídají platné legislativě.",
+          "popis": "Používané verze odpovídají platné legislativě.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "navaznost",
-          "nazev": "Návaznost na provoz",
-          "popis": "Předpisy pokrývají rizika a činnosti v provozu.",
+          "nazev": "Předpisy pokrývají provoz",
+          "popis": "Přehled předpisů odpovídá činnostem v kontrolované oblasti.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "odpovednost",
-          "nazev": "Odpovědnost je určena",
-          "popis": "Je určena osoba odpovědná za aktualizaci předpisů.",
+          "nazev": "Odpovědnost za aktualizaci je určena",
+          "popis": "Je určena osoba za sledování novelizací předpisů.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -93,15 +93,15 @@
         {
           "id": "prehled",
           "nazev": "Přehled předpisů existuje",
-          "popis": "Je veden přehled používaných právních předpisů.",
+          "popis": "Je veden seznam používaných právních a ostatních předpisů.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Předpisy pro činnosti jsou k dispozici",
-          "popis": "Na pracovišti jsou k dispozici předpisy potřebné pro vykonávané činnosti.",
+          "nazev": "Předpis pro činnost lze dohledat",
+          "popis": "U kontrolované činnosti lze najít příslušný právní předpis.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -110,43 +110,43 @@
       "typicke_zavady": [
         {
           "id": "nedostupne",
-          "nazev": "Nedostupné předpisy",
-          "popis": "Potřebné předpisy nejsou k dispozici na pracovišti.",
+          "nazev": "Předpisy jen u technika BOZP",
+          "popis": "NV 361/2007 není dostupné vedoucímu provozu, který řeší BOZP na místě.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "zastarale",
-          "nazev": "Zastaralé verze",
-          "popis": "Používají se zastaralé verze právních předpisů.",
+          "nazev": "Tisk zrušeného nařízení",
+          "popis": "Na nástěnce visí verze NV 378/2001 před novelou.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "neuplny_prehled",
-          "nazev": "Neúplný přehled",
-          "popis": "Přehled používaných předpisů chybí nebo je neúplný.",
+          "nazev": "Chybí předpis pro chemii",
+          "popis": "Seznam předpisů neobsahuje vyhlášku pro práci s chemickými látkami.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "bez_odpovednosti",
-          "nazev": "Neurčená odpovědnost",
-          "popis": "Není určena osoba za aktualizaci předpisů.",
+          "nazev": "Nikdo nesleduje novelizace",
+          "popis": "Po změně předpisu se přehled dlouho neaktualizuje.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "nesoulad_provoz",
-          "nazev": "Nesoulad s provozem",
-          "popis": "Předpisy nepokrývají skutečné činnosti v provozu.",
+          "nazev": "Předpisy neodpovídají činnosti",
+          "popis": "V provozu jsou práce ve výškách, ale chybí související předpisy v přehledu.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "bez_aktualizace",
-          "nazev": "Bez pravidelné aktualizace",
-          "popis": "Předpisy nejsou pravidelně kontrolovány a aktualizovány.",
+          "nazev": "Přehled neaktualizován roky",
+          "popis": "Seznam předpisů nebyl revidován po změně technologie.",
           "poradi": 60,
           "aktivni": true
         }
@@ -154,36 +154,36 @@
       "doporucene_postupy": [
         {
           "id": "prehled_predpisu",
-          "nazev": "Vést přehled předpisů",
-          "popis": "Udržujte aktuální seznam právních a ostatních předpisů.",
+          "nazev": "Vést seznam předpisů podle činností",
+          "popis": "Ke každému pracovišti nebo procesu přiřaďte relevantní předpisy.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "pravidelna_aktualizace",
-          "nazev": "Pravidelně aktualizovat",
-          "popis": "Sledujte novelizace a aktualizujte dokumentaci předpisů.",
+          "nazev": "Kontrolovat novelizace čtvrtletně",
+          "popis": "Projděte sbírku zákonů a doplňte změny do seznamu.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "zpristupnit",
-          "nazev": "Zajistit dostupnost",
-          "popis": "Zajistěte dostupnost předpisů pro vedoucí a odpovědné osoby.",
+          "nazev": "Uložit předpisy na sdíleném úložišti",
+          "popis": "Zajistěte online přístup pro vedoucí pracovníky a technika BOZP.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "odpovedna_osoba",
-          "nazev": "Určit odpovědnou osobu",
-          "popis": "Stanovte odpovědnost za sledování a aktualizaci předpisů.",
+          "nazev": "Pověřit aktualizaci předpisů",
+          "popis": "Určete konkrétní osobu za kontrolu novelizací a doplnění seznamu.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "navazovat_na_provoz",
-          "nazev": "Propojit s provozem",
-          "popis": "Pravidelně ověřujte, zda předpisy pokrývají aktuální činnosti.",
+          "nazev": "Doplnit předpisy po změně provozu",
+          "popis": "Po zavedení nové technologie nebo procesu aktualizujte přehled.",
           "poradi": 50,
           "aktivni": true
         }
@@ -192,29 +192,22 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Požadavky na dokumentaci BOZP.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro vedení, aktualizaci a správu dokumentace BOZP.",
+          "popis": "Vedení, aktualizace a správa dokumentace BOZP.",
           "poradi": 30,
-          "aktivni": true
-        },
-        {
-          "id": "zakon_262_2006",
-          "nazev": "Zákon č. 262/2006 Sb., zákoník práce",
-          "popis": "Základní pracovněprávní povinnosti v oblasti BOZP a dokumentace.",
-          "poradi": 40,
           "aktivni": true
         }
       ],
@@ -223,50 +216,50 @@
     {
       "id": "mistni_bezpecnostni_predpisy",
       "nazev": "Místní bezpečnostní předpisy",
-      "popis": "Kontrola existence, aktuálnosti, seznámení zaměstnanců a souladu místních bezpečnostních předpisů se skutečným provozem.",
+      "popis": "Prověrka místních předpisů, seznámení zaměstnanců a souladu s provozem.",
       "poradi": 20,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte místní bezpečnostní předpisy platné pro kontrolovanou oblast.",
+          "text": "Určete místní bezpečnostní předpisy platné pro kontrolovanou oblast.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "existence",
-          "text": "Zkontrolujte existenci místních bezpečnostních předpisů.",
+          "text": "Ověřte, zda jsou pro pracoviště sepsány místní předpisy.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "aktualnost",
-          "text": "Ověřte aktuálnost místních předpisů vůči provozu.",
+          "text": "Zkontrolujte, zda předpisy odpovídají aktuálnímu provozu.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "seznameni",
-          "text": "Posuďte seznámení zaměstnanců s místními předpisy.",
+          "text": "Posuďte seznámení zaměstnanců a podpisy.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "soulad",
-          "text": "Zkontrolujte soulad předpisů se skutečným stavem provozu.",
+          "text": "Porovnejte předpisy se skutečným stavem pracoviště.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "dostupnost",
-          "text": "Ověřte dostupnost místních předpisů pro zaměstnance.",
+          "text": "Ověřte dostupnost předpisů pro zaměstnance na místě.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda místní bezpečnostní předpisy odpovídají skutečnému provozu.",
+          "text": "Zeptejte se zaměstnance na pravidla z místních předpisů pro jeho práci.",
           "poradi": 70,
           "aktivni": true
         }
@@ -275,92 +268,92 @@
         {
           "id": "existence",
           "nazev": "Místní předpisy existují",
-          "popis": "Místní bezpečnostní předpisy jsou zpracovány.",
+          "popis": "Pro pracoviště jsou sepsány místní bezpečnostní předpisy.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "aktualnost",
           "nazev": "Předpisy jsou aktuální",
-          "popis": "Místní předpisy odpovídají aktuálnímu provozu.",
+          "popis": "Místní předpisy odpovídají aktuálnímu provozu a technologii.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "seznameni",
           "nazev": "Zaměstnanci jsou seznámeni",
-          "popis": "Zaměstnanci byli seznámeni s místními předpisy.",
+          "popis": "Zaměstnanci byli seznámeni s místními předpisy a je to doloženo.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "soulad",
-          "nazev": "Soulad se skutečností",
-          "popis": "Předpisy odpovídají skutečnému stavu pracoviště.",
+          "nazev": "Předpisy odpovídají provozu",
+          "popis": "Pravidla v předpisech odpovídají skutečnému stavu pracoviště.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "dostupnost",
-          "nazev": "Předpisy jsou dostupné",
-          "popis": "Místní předpisy jsou zaměstnancům dostupné.",
+          "nazev": "Předpisy jsou dostupné na místě",
+          "popis": "Místní předpisy jsou k dispozici na pracovišti nebo v systému.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Předpisy odpovídají provozu",
-          "popis": "Místní bezpečnostní předpisy odpovídají skutečnému provozu.",
+          "nazev": "Zaměstnanec zná pravidla pro svou práci",
+          "popis": "Kontrolovaný zaměstnanec zná relevantní pravidla z místních předpisů.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
         {
           "id": "chybi_predpisy",
-          "nazev": "Chybí místní předpisy",
-          "popis": "Místní bezpečnostní předpisy nejsou zpracovány.",
+          "nazev": "Chybí místní předpisy pro halu",
+          "popis": "Ve výrobní hale nejsou sepsána pravidla pro pohyb VZV a chodce.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "zastarale",
-          "nazev": "Zastaralé předpisy",
-          "popis": "Předpisy nebyly aktualizovány po změnách provozu.",
+          "nazev": "Předpisy po změně linky",
+          "popis": "Po přestavbě linky stále platí pravidla pro původní uspořádání.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "neinformovani",
-          "nazev": "Neinformovaní zaměstnanci",
-          "popis": "Zaměstnanci nebyli seznámeni s místními předpisy.",
+          "nazev": "Chybí podpis o seznámení",
+          "popis": "Nový zaměstnanec pracuje, ale nemá potvrzení o seznámení s místními předpisy.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nesoulad",
-          "nazev": "Nesoulad se skutečností",
-          "popis": "Předpisy neodpovídají skutečnému provozu.",
+          "nazev": "Předpis neodpovídá provozu",
+          "popis": "Předpis zakazuje jízdu VZV v uličce, kde se VZV běžně pohybuje.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "nedostupne",
-          "nazev": "Nedostupné předpisy",
-          "popis": "Místní předpisy nejsou zaměstnancům dostupné.",
+          "nazev": "Předpisy jen v kanceláři",
+          "popis": "Na pracovišti není k dispozici aktuální verze místních předpisů.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "duplicita",
-          "nazev": "Duplicitní nebo protichůdné předpisy",
-          "popis": "Existují protichůdné nebo duplicitní místní předpisy.",
+          "nazev": "Dvě různé verze stejného předpisu",
+          "popis": "V provozu kolují stará a nová verze místního předpisu.",
           "poradi": 60,
           "aktivni": true
         }
@@ -368,36 +361,36 @@
       "doporucene_postupy": [
         {
           "id": "zpracovat",
-          "nazev": "Zpracovat místní předpisy",
-          "popis": "Sepište místní bezpečnostní předpisy pro každé pracoviště.",
+          "nazev": "Sepsat místní předpisy pro pracoviště",
+          "popis": "Vymezte pravidla pohybu, práce, OOPP a zákazů pro konkrétní místo.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "aktualizovat",
-          "nazev": "Pravidelně aktualizovat",
-          "popis": "Aktualizujte předpisy při změnách provozu nebo technologie.",
+          "nazev": "Upravit předpisy po změně provozu",
+          "popis": "Po přestavbě nebo novém zařízení ihned revidujte místní předpisy.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "seznamovat",
-          "nazev": "Seznamovat zaměstnance",
-          "popis": "Pravidelně seznamujte zaměstnance s místními předpisy.",
+          "nazev": "Seznámit a nechat podepsat",
+          "popis": "Po každé aktualizaci proveďte seznámení se seznamem podpisů.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "revidovat",
-          "nazev": "Provádět revize",
-          "popis": "Pravidelně revidujte soulad předpisů se skutečností.",
+          "nazev": "Ročně porovnat s provozem",
+          "popis": "Jednou ročně ověřte, zda pravidla odpovídají skutečnosti.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "zpristupnit",
-          "nazev": "Zajistit dostupnost",
-          "popis": "Umožněte snadný přístup k místním předpisům.",
+          "nazev": "Vyvěsit nebo zpřístupnit online",
+          "popis": "Aktuální verzi dejte na nástěnku a do sdíleného úložiště.",
           "poradi": 50,
           "aktivni": true
         }
@@ -406,28 +399,28 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Požadavky na dokumentaci BOZP.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro vedení, aktualizaci a správu dokumentace BOZP.",
+          "popis": "Vedení, aktualizace a správa dokumentace BOZP.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nv_378_2001",
           "nazev": "Nařízení vlády č. 378/2001 Sb.",
-          "popis": "Požadavky na dokumentaci a místní předpisy BOZP.",
+          "popis": "Místní bezpečnostní předpisy a dokumentace BOZP.",
           "poradi": 40,
           "aktivni": true
         }
@@ -437,50 +430,50 @@
     {
       "id": "evidence_zamestnancu_skoleni",
       "nazev": "Evidence zaměstnanců a školení",
-      "popis": "Kontrola záznamů školení, periodických školení, podpisů a aktuálnosti evidence zaměstnanců.",
+      "popis": "Prověrka evidence školení, periodických termínů a podpisů zaměstnanců.",
       "poradi": 30,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte evidenci zaměstnanců a školení v kontrolované oblasti.",
+          "text": "Určete způsob evidence zaměstnanců a školení v oblasti.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "zaznamy_skoleni",
-          "text": "Zkontrolujte záznamy o absolvovaných školeních BOZP.",
+          "text": "Ověřte záznamy o vstupním a dalším školení BOZP.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "periodicka_skoleni",
-          "text": "Ověřte plnění termínů periodických školení.",
+          "text": "Zkontrolujte termíny periodických školení u zaměstnanců v provozu.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "podpisy",
-          "text": "Posuďte podpisy a potvrzení o proškolení.",
+          "text": "Posuďte podpisy nebo potvrzení o proškolení.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "aktualnost",
-          "text": "Zkontrolujte aktuálnost evidence vůči stavu zaměstnanců.",
+          "text": "Porovnejte evidenci s aktuálním personálem.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "uplnost",
-          "text": "Ověřte úplnost evidence pro všechny dotčené zaměstnance.",
+          "text": "Ověřte, zda evidence pokrývá všechny dotčené zaměstnance.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda evidence školení odpovídá skutečnému stavu zaměstnanců.",
+          "text": "U vybraného zaměstnance ověřte záznam o posledním školení.",
           "poradi": 70,
           "aktivni": true
         }
@@ -488,8 +481,8 @@
       "kontrolni_body": [
         {
           "id": "zaznamy_skoleni",
-          "nazev": "Záznamy školení existují",
-          "popis": "Evidence absolvovaných školení je vedena.",
+          "nazev": "Záznamy o školení existují",
+          "popis": "U zaměstnanců jsou zapsána absolvovaná školení BOZP.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -497,23 +490,23 @@
         {
           "id": "periodicka_skoleni",
           "nazev": "Periodická školení jsou aktuální",
-          "popis": "Periodická školení probíhají v požadovaných intervalech.",
+          "popis": "Periodická školení proběhla v požadovaných intervalech.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "podpisy",
-          "nazev": "Podpisy jsou doloženy",
-          "popis": "Proškolení je potvrzeno podpisy nebo záznamy.",
+          "nazev": "Proškolení je doloženo",
+          "popis": "Školení je potvrzeno podpisem nebo záznamem v evidenci.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "aktualnost",
-          "nazev": "Evidence je aktuální",
-          "popis": "Evidence odpovídá aktuálnímu stavu zaměstnanců.",
+          "nazev": "Evidence odpovídá personálu",
+          "popis": "Evidence obsahuje aktuální zaměstnance v kontrolované oblasti.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -521,60 +514,60 @@
         {
           "id": "uplnost",
           "nazev": "Evidence je úplná",
-          "popis": "Evidence pokrývá všechny dotčené zaměstnance.",
+          "popis": "Všichni dotčení zaměstnanci jsou v evidenci školení.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Evidence odpovídá stavu",
-          "popis": "Evidence školení odpovídá skutečnému stavu zaměstnanců.",
+          "nazev": "Zaměstnanec má platné školení",
+          "popis": "Kontrolovaný zaměstnanec má aktuální záznam o požadovaném školení.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
         {
           "id": "chybi_zaznamy",
-          "nazev": "Chybějící záznamy",
-          "popis": "Záznamy o školeních chybí nebo jsou neúplné.",
+          "nazev": "Chybí záznam o vstupním školení",
+          "popis": "Zaměstnanec pracuje v provozu, ale v evidenci chybí vstupní BOZP.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "propadla_skoleni",
-          "nazev": "Propadlá periodická školení",
-          "popis": "Periodická školení neproběhla v termínu.",
+          "nazev": "Propadlé periodické školení",
+          "popis": "Operátor stroje nemá aktuální periodické školení BOZP.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "chybi_podpisy",
-          "nazev": "Chybějící podpisy",
-          "popis": "Proškolení není doloženo podpisy.",
+          "nazev": "Chybí podpis o seznámení",
+          "popis": "Po školení není v evidenci podpis zaměstnance.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "zastarala_evidence",
-          "nazev": "Zastaralá evidence",
-          "popis": "Evidence nebyla aktualizována po změnách personálu.",
+          "nazev": "Evidence po odchodech neaktualizována",
+          "popis": "V seznamu zůstávají zaměstnanci, kteří už nepracují v oblasti.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "neuplna",
-          "nazev": "Neúplná evidence",
-          "popis": "Někteří zaměstnanci v evidenci chybí.",
+          "nazev": "Nový zaměstnanec chybí v evidenci",
+          "popis": "Zaměstnanec nastoupil před měsícem, ale není v seznamu školení.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "nesoulad_stav",
-          "nazev": "Nesoulad se skutečností",
-          "popis": "Evidence neodpovídá skutečnému stavu proškolení.",
+          "nazev": "Evidence neodpovídá provozu",
+          "popis": "Zaměstnanec dělá práce ve výškách, ale nemá záznam o školení pro tyto práce.",
           "poradi": 60,
           "aktivni": true
         }
@@ -582,36 +575,36 @@
       "doporucene_postupy": [
         {
           "id": "evidence",
-          "nazev": "Vést evidenci školení",
-          "popis": "Systematicky evidujte všechna školení BOZP.",
+          "nazev": "Vést evidenci školení podle pracoviště",
+          "popis": "Ke každému zaměstnanci zaznamenejte typ školení, datum a příští termín.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "sledovat_terminy",
-          "nazev": "Sledovat termíny",
-          "popis": "Pravidelně kontrolujte termíny periodických školení.",
+          "nazev": "Hlídat termíny periodických školení",
+          "popis": "Měsíčně projděte zaměstnance se školením končícím do 60 dnů.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "aktualizovat",
-          "nazev": "Aktualizovat při změnách",
-          "popis": "Aktualizujte evidenci při nástupu, odchodu nebo změně práce.",
+          "nazev": "Aktualizovat po nástupu a změně práce",
+          "popis": "Po nástupu nebo změně pracovní náplně doplňte požadovaná školení.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "potvrzovat",
-          "nazev": "Potvrzovat proškolení",
-          "popis": "Zajistěte podpisy nebo jiné potvrzení o proškolení.",
+          "nazev": "Po školení nechat podepsat prezenční listinu",
+          "popis": "Po každém školení nechte zaměstnance podepsat prezenční listinu.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "kontrolovat",
-          "nazev": "Pravidelně kontrolovat",
-          "popis": "Pravidelně porovnávejte evidenci se skutečným stavem.",
+          "nazev": "Porovnávat evidenci s provozem",
+          "popis": "Při prověrce ověřte u zaměstnance na místě záznam v evidenci.",
           "poradi": 50,
           "aktivni": true
         }
@@ -620,28 +613,28 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Požadavky na dokumentaci BOZP.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro vedení, aktualizaci a správu dokumentace BOZP.",
+          "popis": "Vedení, aktualizace a správa dokumentace BOZP.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nv_378_2001",
           "nazev": "Nařízení vlády č. 378/2001 Sb.",
-          "popis": "Požadavky na školení a evidenci proškolení zaměstnanců.",
+          "popis": "Školení zaměstnanců a evidence proškolení.",
           "poradi": 40,
           "aktivni": true
         }
@@ -651,50 +644,50 @@
     {
       "id": "dokumentace_kontrol_revizi",
       "nazev": "Dokumentace kontrol a revizí",
-      "popis": "Kontrola úplnosti, termínů, odstranění závad a archivace dokumentace kontrol a revizí technických zařízení.",
+      "popis": "Prověrka úplnosti, termínů a archivace dokumentace kontrol a revizí.",
       "poradi": 40,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte zařízení a oblasti vyžadující kontroly a revize v kontrolované oblasti.",
+          "text": "Určete zařízení v oblasti vyžadující kontroly nebo revize.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "uplnost",
-          "text": "Zkontrolujte úplnost dokumentace kontrol a revizí.",
+          "text": "Porovnejte evidenci s provozovanými zařízeními.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "terminy",
-          "text": "Ověřte dodržování termínů kontrol a revizí.",
+          "text": "Zkontrolujte termíny posledních a příštích kontrol.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "odstraneni_zavad",
-          "text": "Posuďte dokumentaci odstranění zjištěných závad.",
+          "text": "Ověřte záznamy o odstranění závad z revizí.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "archivace",
-          "text": "Zkontrolujte archivaci protokolů a záznamů.",
+          "text": "Posuďte uložení protokolů a revizních zpráv.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "dohledatelnost",
-          "text": "Ověřte dohledatelnost dokumentace ke konkrétním zařízením.",
+          "text": "Vyhledejte dokumentaci u vybraného zařízení.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda ke kontrolovaným zařízením lze dohledat příslušnou dokumentaci.",
+          "text": "U náhodně vybraného zařízení dohledejte poslední protokol.",
           "poradi": 70,
           "aktivni": true
         }
@@ -702,32 +695,32 @@
       "kontrolni_body": [
         {
           "id": "uplnost",
-          "nazev": "Dokumentace je úplná",
-          "popis": "Dokumentace kontrol a revizí je kompletní.",
+          "nazev": "Dokumentace kontrol je úplná",
+          "popis": "Evidence obsahuje všechna zařízení vyžadující revizi nebo kontrolu.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "terminy",
-          "nazev": "Termíny jsou dodržovány",
-          "popis": "Kontroly a revize probíhají v požadovaných intervalech.",
+          "nazev": "Termíny jsou v evidenci",
+          "popis": "U zařízení jsou zapsány termíny poslední a příští kontroly.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "odstraneni_zavad",
-          "nazev": "Závady jsou dokumentovány",
-          "popis": "Odstranění zjištěných závad je doloženo.",
+          "nazev": "Odstranění závad je doloženo",
+          "popis": "U závad z revizí existuje záznam o odstranění nebo vyřazení.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "archivace",
-          "nazev": "Archivace je zajištěna",
-          "popis": "Protokoly a záznamy jsou archivovány.",
+          "nazev": "Protokoly jsou archivovány",
+          "popis": "Revizní zprávy a protokoly kontrol jsou systematicky uloženy.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -735,15 +728,15 @@
         {
           "id": "dohledatelnost",
           "nazev": "Dokumentace je dohledatelná",
-          "popis": "Dokumentaci lze snadno dohledat ke zařízení.",
+          "popis": "Ke každému zařízení lze najít historii revizí a kontrol.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Dokumentace ke zařízením existuje",
-          "popis": "Ke kontrolovaným zařízením lze dohledat příslušnou dokumentaci.",
+          "nazev": "Protokol ke zařízení lze najít",
+          "popis": "U kontrolovaného zařízení lze bez prodlení dohledat poslední protokol.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -752,43 +745,43 @@
       "typicke_zavady": [
         {
           "id": "chybi_dokumentace",
-          "nazev": "Chybějící dokumentace",
-          "popis": "Dokumentace kontrol nebo revizí chybí.",
+          "nazev": "Chybí protokol z revize",
+          "popis": "U spotřebiče chybí poslední zpráva z pravidelné kontroly.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "propadle_terminy",
-          "nazev": "Propadlé termíny",
-          "popis": "Kontroly nebo revize neproběhly v termínu.",
+          "nazev": "Termín v evidenci neaktualizován",
+          "popis": "Revize proběhla, ale v seznamu zůstal starý termín.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "bez_dokumentace_zavad",
-          "nazev": "Bez dokumentace závad",
-          "popis": "Odstranění závad není doloženo.",
+          "nazev": "Závada z revize bez záznamu nápravy",
+          "popis": "Revizní zpráva uvádí závadu, ale není doloženo odstranění.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "chaoticka_archivace",
-          "nazev": "Chaotická archivace",
-          "popis": "Protokoly nejsou systematicky archivovány.",
+          "nazev": "Protokoly v jednom šanonu",
+          "popis": "Revizní zprávy různých zařízení jsou hromadně bez řazení.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "nedohledatelna",
-          "nazev": "Nedohledatelná dokumentace",
-          "popis": "Dokumentaci ke zařízení nelze snadno najít.",
+          "nazev": "Protokol se nenašel při prověrce",
+          "popis": "U zařízení na místě nelze dohledat poslední revizní zprávu.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "neuplna",
-          "nazev": "Neúplná dokumentace",
-          "popis": "Dokumentace neobsahuje všechny požadované údaje.",
+          "nazev": "Nové zařízení chybí v evidenci",
+          "popis": "Nový spotřebič není zapsán v seznamu kontrol.",
           "poradi": 60,
           "aktivni": true
         }
@@ -796,36 +789,36 @@
       "doporucene_postupy": [
         {
           "id": "evidence_terminu",
-          "nazev": "Vést evidenci termínů",
-          "popis": "Evidence termínů kontrol a revizí pro všechna zařízení.",
+          "nazev": "Vést seznam zařízení s termíny",
+          "popis": "Ke každému zařízení zaznamenejte datum poslední a příští kontroly.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "archivovat",
-          "nazev": "Systematicky archivovat",
-          "popis": "Archivujte protokoly a záznamy přehledným způsobem.",
+          "nazev": "Ukládat protokoly podle zařízení",
+          "popis": "Každé zařízení mějte ve složce nebo záznamu s chronologií revizí.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "dokumentovat_zavady",
-          "nazev": "Dokumentovat závady",
-          "popis": "Vždy dokumentujte zjištěné závady a jejich odstranění.",
+          "nazev": "Zapisovat závady z revizí",
+          "popis": "Po obdržení protokolu založte záznam se závadou a termínem nápravy.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "sledovat_terminy",
-          "nazev": "Sledovat termíny",
-          "popis": "Pravidelně kontrolujte blížící se termíny revizí.",
+          "nazev": "Aktualizovat evidenci po revizi",
+          "popis": "Do 5 pracovních dnů po kontrole doplňte datum a uložte protokol.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "propojit_se_zarizenim",
-          "nazev": "Propojit se zařízením",
-          "popis": "Každé zařízení mějte propojeno s příslušnou dokumentací.",
+          "nazev": "Označit zařízení v evidenci",
+          "popis": "Používejte stejné označení zařízení v provozu i v dokumentaci.",
           "poradi": 50,
           "aktivni": true
         }
@@ -834,28 +827,21 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
-          "aktivni": true
-        },
-        {
-          "id": "nv_361_2007",
-          "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
-          "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro vedení, aktualizaci a správu dokumentace BOZP.",
+          "popis": "Vedení, aktualizace a správa dokumentace BOZP.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "zakon_250_2021",
           "nazev": "Zákon č. 250/2021 Sb.",
-          "popis": "Požadavky na bezpečnost provozu vyhrazených technických zařízení a revize.",
+          "popis": "Dokumentace revizí vyhrazených technických zařízení.",
           "poradi": 40,
           "aktivni": true
         }
@@ -865,50 +851,50 @@
     {
       "id": "pracovni_postupy_navody",
       "nazev": "Pracovní postupy a návody",
-      "popis": "Kontrola dostupnosti, aktuálnosti, používání a srozumitelnosti pracovních postupů a návodů.",
+      "popis": "Prověrka dostupnosti, aktuálnosti a používání pracovních postupů a návodů.",
       "poradi": 50,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte činnosti vyžadující pracovní postupy a návody v kontrolované oblasti.",
+          "text": "Určete rizikové činnosti vyžadující pracovní postupy nebo návody.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "dostupnost",
-          "text": "Zkontrolujte dostupnost pracovních postupů a návodů.",
+          "text": "Ověřte dostupnost postupů a návodů na pracovišti.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "aktualnost",
-          "text": "Ověřte aktuálnost postupů vůči skutečnému provozu.",
+          "text": "Porovnejte postupy s aktuálním provozem a technologií.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "pouzivani",
-          "text": "Posuďte, zda zaměstnanci postupy skutečně používají.",
+          "text": "Posuďte, zda zaměstnanci postupy při práci používají.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "srozumitelnost",
-          "text": "Zkontrolujte srozumitelnost a přehlednost postupů.",
+          "text": "Zkontrolujte srozumitelnost postupů pro cílové pracovníky.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "uplnost",
-          "text": "Ověřte úplnost postupů pro rizikové činnosti.",
+          "text": "Ověřte, zda existují postupy pro všechny rizikové činnosti.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda zaměstnanci mají k dispozici pracovní postupy pro svou činnost.",
+          "text": "U kontrolované činnosti ověřte dostupný a aktuální postup.",
           "poradi": 70,
           "aktivni": true
         }
@@ -916,8 +902,8 @@
       "kontrolni_body": [
         {
           "id": "dostupnost",
-          "nazev": "Postupy jsou dostupné",
-          "popis": "Pracovní postupy jsou zaměstnancům k dispozici.",
+          "nazev": "Postupy jsou dostupné na místě",
+          "popis": "Pracovní postupy a návody jsou k dispozici tam, kde se práce provádí.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -925,15 +911,15 @@
         {
           "id": "aktualnost",
           "nazev": "Postupy jsou aktuální",
-          "popis": "Postupy odpovídají aktuálnímu provozu a technologii.",
+          "popis": "Postupy odpovídají aktuální technologii a uspořádání pracoviště.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "pouzivani",
-          "nazev": "Postupy se používají",
-          "popis": "Zaměstnanci pracovní postupy dodržují.",
+          "nazev": "Postupy se dodržují",
+          "popis": "Zaměstnanci při práci postupují podle platného postupu.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -941,23 +927,23 @@
         {
           "id": "srozumitelnost",
           "nazev": "Postupy jsou srozumitelné",
-          "popis": "Postupy jsou psány srozumitelně a přehledně.",
+          "popis": "Postupy jsou psány srozumitelně pro pracovníky vykonávající činnost.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "nizka"
         },
         {
           "id": "uplnost",
-          "nazev": "Postupy jsou úplné",
-          "popis": "Existují postupy pro všechny rizikové činnosti.",
+          "nazev": "Postupy pro rizikové činnosti existují",
+          "popis": "Pro rizikové činnosti v oblasti jsou sepsány pracovní postupy.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Postupy pro činnost jsou k dispozici",
-          "popis": "Zaměstnanci mají k dispozici pracovní postupy pro svou činnost.",
+          "nazev": "Platný postup pro činnost je k dispozici",
+          "popis": "U kontrolované činnosti lze najít aktuální pracovní postup nebo návod.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "vysoka"
@@ -966,43 +952,43 @@
       "typicke_zavady": [
         {
           "id": "chybi_postupy",
-          "nazev": "Chybějící postupy",
-          "popis": "Pro některé činnosti chybí pracovní postupy.",
+          "nazev": "Chybí postup pro práce ve výškách",
+          "popis": "Montáž na střeše probíhá bez písemného bezpečného pracovního postupu.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "zastarale",
-          "nazev": "Zastaralé postupy",
-          "popis": "Postupy nebyly aktualizovány po změnách.",
+          "nazev": "Zastaralý postup po změně linky",
+          "popis": "Postup obsahuje kroky pro původní uspořádání stanoviště.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "nedostupne",
-          "nazev": "Nedostupné postupy",
-          "popis": "Postupy nejsou zaměstnancům dostupné.",
+          "nazev": "Návod jen v kanceláři technika",
+          "popis": "Operátor u stroje nemá k dispozici návod k obsluze.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nepouzivane",
-          "nazev": "Nepoužívané postupy",
-          "popis": "Zaměstnanci postupy nedodržují.",
+          "nazev": "Práce jinak než v postupu",
+          "popis": "Zaměstnanci zkracují kroky a neřídí se psaným postupem.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "nesrozumitelne",
-          "nazev": "Nesrozumitelné postupy",
-          "popis": "Postupy jsou nejasné nebo obtížně pochopitelné.",
+          "nazev": "Postup psaný odborným žargonem",
+          "popis": "Postup není srozumitelný běžným operátorům.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "neuplne",
-          "nazev": "Neúplné postupy",
-          "popis": "Postupy neobsahují všechny bezpečnostní kroky.",
+          "nazev": "Postup neobsahuje OOPP",
+          "popis": "Bezpečný pracovní postup neuvádí požadované OOPP pro činnost.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1010,36 +996,36 @@
       "doporucene_postupy": [
         {
           "id": "zpracovat",
-          "nazev": "Zpracovat pracovní postupy",
-          "popis": "Sepište postupy pro rizikové a běžné činnosti.",
+          "nazev": "Sepsat postupy pro rizikové práce",
+          "popis": "Vytvořte bezpečné pracovní postupy pro nejrizikovější činnosti v oblasti.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "aktualizovat",
-          "nazev": "Pravidelně aktualizovat",
-          "popis": "Aktualizujte postupy při změnách technologie nebo provozu.",
+          "nazev": "Upravit postup po změně",
+          "popis": "Po změně technologie nebo zařízení ihned revidujte postup.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "zpristupnit",
-          "nazev": "Zajistit dostupnost",
-          "popis": "Zajistěte snadný přístup k postupům na pracovišti.",
+          "nazev": "Umístit postup u pracoviště",
+          "popis": "Aktuální verzi vyvěste u stroje nebo uložte do tabletu na místě.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "proskolit",
-          "nazev": "Proškolit zaměstnance",
-          "popis": "Seznamte zaměstnance s pracovními postupy.",
+          "nazev": "Seznámit s novým postupem",
+          "popis": "Po vydání postupu proveďte seznámení a nechte podepsat.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "revidovat",
-          "nazev": "Revidovat postupy",
-          "popis": "Pravidelně revidujte platnost a srozumitelnost postupů.",
+          "nazev": "Ročně ověřit soulad s provozem",
+          "popis": "Porovnejte postupy se skutečným způsobem práce na místě.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1048,28 +1034,28 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Požadavky na dokumentaci BOZP.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro vedení, aktualizaci a správu dokumentace BOZP.",
+          "popis": "Vedení, aktualizace a správa dokumentace BOZP.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nv_378_2001",
           "nazev": "Nařízení vlády č. 378/2001 Sb.",
-          "popis": "Požadavky na pracovní postupy a bezpečné pracovní postupy.",
+          "popis": "Bezpečné pracovní postupy a návody.",
           "poradi": 40,
           "aktivni": true
         }
@@ -1079,38 +1065,38 @@
     {
       "id": "evidence_rizik_opatreni",
       "nazev": "Evidence rizik a opatření",
-      "popis": "Kontrola aktuálnosti hodnocení rizik, přijatých opatření a návaznosti na skutečný provoz.",
+      "popis": "Prověrka aktuálnosti hodnocení rizik, evidence opatření a jejich plnění.",
       "poradi": 60,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte dokumentaci hodnocení rizik a opatření v kontrolované oblasti.",
+          "text": "Určete dokumentaci hodnocení rizik pro kontrolovanou oblast.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "aktualnost_rizik",
-          "text": "Zkontrolujte aktuálnost hodnocení rizik.",
+          "text": "Ověřte, zda hodnocení odpovídá aktuálnímu provozu.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "prijata_opatreni",
-          "text": "Ověřte evidenci přijatých opatření z hodnocení rizik.",
+          "text": "Zkontrolujte záznamy o opatřeních z hodnocení rizik.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "navaznost",
-          "text": "Posuďte návaznost dokumentace na skutečný provoz.",
+          "text": "Porovnejte dokumentaci se skutečným stavem pracoviště.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "nova_rizika",
-          "text": "Zkontrolujte promítnutí nově vzniklých rizik do dokumentace.",
+          "text": "Posuďte promítnutí nových rizik po změnách v provozu.",
           "poradi": 50,
           "aktivni": true
         },
@@ -1122,7 +1108,7 @@
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda nově vzniklá rizika jsou promítnuta do dokumentace.",
+          "text": "Ověřte na místě, zda přijatá opatření jsou skutečně zavedena.",
           "poradi": 70,
           "aktivni": true
         }
@@ -1131,7 +1117,7 @@
         {
           "id": "aktualnost_rizik",
           "nazev": "Hodnocení rizik je aktuální",
-          "popis": "Hodnocení rizik odpovídá aktuálnímu stavu.",
+          "popis": "Hodnocení rizik odpovídá aktuálnímu stavu pracoviště a technologie.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1139,15 +1125,15 @@
         {
           "id": "prijata_opatreni",
           "nazev": "Opatření jsou evidována",
-          "popis": "Přijatá opatření jsou zdokumentována.",
+          "popis": "Opatření z hodnocení rizik jsou zapsána s termínem a odpovědností.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "navaznost",
-          "nazev": "Návaznost na provoz",
-          "popis": "Dokumentace odpovídá skutečnému provozu.",
+          "nazev": "Dokumentace odpovídá provozu",
+          "popis": "Popis rizik v dokumentaci odpovídá skutečnosti na pracovišti.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1155,68 +1141,68 @@
         {
           "id": "nova_rizika",
           "nazev": "Nová rizika jsou promítnuta",
-          "popis": "Nově vzniklá rizika jsou zahrnuta v dokumentaci.",
+          "popis": "Rizika z nových činností nebo zařízení jsou v hodnocení zahrnuta.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "sledovani",
-          "nazev": "Plnění je sledováno",
-          "popis": "Plnění opatření je průběžně sledováno.",
+          "nazev": "Plnění opatření je sledováno",
+          "popis": "Stav plnění opatření je průběžně kontrolován a zapisován.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Nová rizika jsou v dokumentaci",
-          "popis": "Nově vzniklá rizika jsou promítnuta do dokumentace.",
+          "nazev": "Opatření jsou zavedena v provozu",
+          "popis": "Opatření z hodnocení rizik jsou na místě skutečně provedena.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
         {
           "id": "zastarale_riziko",
-          "nazev": "Zastaralé hodnocení rizik",
-          "popis": "Hodnocení rizik nebylo aktualizováno.",
+          "nazev": "Hodnocení po přestavbě linky",
+          "popis": "Po změně layoutu nebylo aktualizováno hodnocení rizik.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "neevidovana_opatreni",
-          "nazev": "Neevidovaná opatření",
-          "popis": "Opatření z rizik nejsou zdokumentována.",
+          "nazev": "Opatření jen v tabulce rizik",
+          "popis": "Opatření není zapsáno v plánu s termínem a odpovědnou osobou.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "nesoulad_provoz",
-          "nazev": "Nesoulad s provozem",
-          "popis": "Dokumentace neodpovídá skutečnému provozu.",
+          "nazev": "Riziko v dokumentaci neexistuje",
+          "popis": "Na místě je riziko pádu, které není v hodnocení.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "chybi_nova_rizika",
-          "nazev": "Chybí nová rizika",
-          "popis": "Nově vzniklá rizika nejsou promítnuta do dokumentace.",
+          "nazev": "Nový stroj bez posouzení",
+          "popis": "Po instalaci nového stroje nebylo doplněno hodnocení rizik.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "neplnena_opatreni",
-          "nazev": "Neplněná opatření",
-          "popis": "Opatření z hodnocení rizik nejsou plněna.",
+          "nazev": "Ochranný kryt dosud chybí",
+          "popis": "Opatření z hodnocení rizik není po termínu stále provedeno.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "bez_sledovani",
-          "nazev": "Bez sledování plnění",
-          "popis": "Plnění opatření není sledováno.",
+          "nazev": "Plnění opatření se nekontroluje",
+          "popis": "Nikdo nesleduje, zda jsou opatření z hodnocení rizik splněna.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1224,36 +1210,36 @@
       "doporucene_postupy": [
         {
           "id": "aktualizovat",
-          "nazev": "Pravidelně aktualizovat rizika",
-          "popis": "Aktualizujte hodnocení rizik při změnách provozu.",
+          "nazev": "Aktualizovat rizika po každé změně",
+          "popis": "Po změně provozu, technologie nebo organizace práce revidujte hodnocení.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "evidovat_opatreni",
-          "nazev": "Evidovat opatření",
-          "popis": "Zdokumentujte všechna přijatá opatření z hodnocení rizik.",
+          "nazev": "Zapsat opatření do plánu",
+          "popis": "Ke každému opatření určete termín, odpovědného a stav plnění.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "sledovat_plneni",
-          "nazev": "Sledovat plnění",
-          "popis": "Pravidelně kontrolujte stav plnění opatření.",
+          "nazev": "Kontrolovat plnění měsíčně",
+          "popis": "Pravidelně ověřujte stav otevřených opatření z hodnocení rizik.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "promitnout_zmeny",
-          "nazev": "Promítat změny",
-          "popis": "Při změnách provozu okamžitě aktualizujte dokumentaci rizik.",
+          "nazev": "Posoudit rizika před spuštěním změny",
+          "popis": "Před uvedením nového procesu doplňte hodnocení rizik.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "revidovat",
-          "nazev": "Provádět revize",
-          "popis": "Pravidelně revidujte platnost hodnocení rizik.",
+          "nazev": "Ročně porovnat s provozem",
+          "popis": "Jednou ročně projděte pracoviště a ověřte soulad s dokumentací rizik.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1262,28 +1248,28 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Požadavky na dokumentaci BOZP.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro vedení, aktualizaci a správu dokumentace BOZP.",
+          "popis": "Vedení, aktualizace a správa dokumentace BOZP.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "nv_378_2001",
           "nazev": "Nařízení vlády č. 378/2001 Sb.",
-          "popis": "Požadavky na identifikaci rizik, opatření a jejich dokumentaci.",
+          "popis": "Identifikace rizik a dokumentace opatření.",
           "poradi": 40,
           "aktivni": true
         }
@@ -1293,50 +1279,50 @@
     {
       "id": "dokumentace_dodavatelu",
       "nazev": "Dokumentace dodavatelů a externích osob",
-      "popis": "Kontrola školení externistů, předání informací, oprávnění a potřebných dokladů dodavatelů a externích osob.",
+      "popis": "Prověrka dokladů, seznámení a evidence dodavatelů a externích osob.",
       "poradi": 70,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte dodavatele a externí osoby pracující v kontrolované oblasti.",
+          "text": "Určete dodavatele a externí osoby pracující v kontrolované oblasti.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "skoleni_externistu",
-          "text": "Zkontrolujte dokumentaci školení externích osob.",
+          "text": "Ověřte záznamy o školení nebo seznámení externistů.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "predani_informaci",
-          "text": "Ověřte předání informací o rizicích a pravidlech BOZP.",
+          "text": "Zkontrolujte předání informací o rizicích a pravidlech.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "opravneni",
-          "text": "Posuďte oprávnění externích osob k vykonávaným činnostem.",
+          "text": "Posuďte doklady o oprávnění k vykonávané činnosti.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "doklady",
-          "text": "Zkontrolujte potřebné doklady a potvrzení.",
+          "text": "Ověřte další požadované doklady a potvrzení.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "evidence",
-          "text": "Ověřte evidenci externích osob a dodavatelů.",
+          "text": "Zkontrolujte evidenci dodavatelů a externích osob.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda externí osoby mají splněny požadavky před vstupem na pracoviště.",
+          "text": "U externisty na místě ověřte doklady před nebo během práce.",
           "poradi": 70,
           "aktivni": true
         }
@@ -1345,92 +1331,92 @@
         {
           "id": "skoleni_externistu",
           "nazev": "Externisté jsou proškoleni",
-          "popis": "Externí osoby absolvovaly požadovaná školení.",
+          "popis": "Externí osoby mají záznam o požadovaném seznámení nebo školení.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "predani_informaci",
-          "nazev": "Informace jsou předány",
-          "popis": "Externistům byly předány informace o rizicích a pravidlech.",
+          "nazev": "Informace o rizicích jsou předány",
+          "popis": "Externistům byly předány informace o rizicích a pravidlech na místě.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "opravneni",
           "nazev": "Oprávnění jsou doložena",
-          "popis": "Externí osoby mají potřebná oprávnění.",
+          "popis": "Externí osoby mají platná oprávnění pro vykonávanou činnost.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         },
         {
           "id": "doklady",
           "nazev": "Doklady jsou kompletní",
-          "popis": "Potřebné doklady a potvrzení jsou k dispozici.",
+          "popis": "Pojištění a další požadované doklady jsou k dispozici.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "evidence",
-          "nazev": "Evidence je vedena",
-          "popis": "Externí osoby a dodavatelé jsou evidováni.",
+          "nazev": "Evidence dodavatelů je vedena",
+          "popis": "Dodavatelé a externí osoby jsou zapsáni v evidenci.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Externisté splňují požadavky",
-          "popis": "Externí osoby mají splněny požadavky před vstupem na pracoviště.",
+          "nazev": "Externista splňuje požadavky",
+          "popis": "Kontrolovaná externí osoba má doklady odpovídající své práci.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
         {
           "id": "neproskoleni",
-          "nazev": "Neproškolení externisté",
-          "popis": "Externí osoby neabsolvovaly požadovaná školení.",
+          "nazev": "Dodavatel bez seznámení s riziky",
+          "popis": "Montér pracuje v areálu bez záznamu o seznámení s místními pravidly.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "bez_informaci",
-          "nazev": "Bez předání informací",
-          "popis": "Externistům nebyly předány informace o BOZP.",
+          "nazev": "Externista nezná evakuační trasy",
+          "popis": "Dodavateli nebyly předány informace o místních rizicích a postupech.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "chybi_opravneni",
-          "nazev": "Chybějící oprávnění",
-          "popis": "Externí osoby nemají potřebná oprávnění.",
+          "nazev": "Elektrikář bez platného oprávnění",
+          "popis": "Externí pracovník nemá doklad o kvalifikaci pro danou práci.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "chybi_doklady",
-          "nazev": "Chybějící doklady",
-          "popis": "Potřebné doklady nejsou k dispozici.",
+          "nazev": "Chybí potvrzení o pojištění",
+          "popis": "Dodavatel nepředložil platné potvrzení o pojištění odpovědnosti.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "bez_evidence",
-          "nazev": "Bez evidence",
-          "popis": "Externí osoby nejsou evidovány.",
+          "nazev": "Dodavatel není v seznamu",
+          "popis": "Firma pracuje opakovaně v areálu, ale není v evidenci dodavatelů.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "vstup_bez_kontroly",
-          "nazev": "Vstup bez kontroly",
-          "popis": "Externisté vstupují na pracoviště bez ověření požadavků.",
+          "nazev": "Vstup bez kontroly dokladů",
+          "popis": "Externista prošel do provozu bez ověření školení a oprávnění.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1438,36 +1424,36 @@
       "doporucene_postupy": [
         {
           "id": "kontrola_vstupu",
-          "nazev": "Kontrolovat vstup externistů",
-          "popis": "Ověřujte splnění požadavků před vstupem na pracoviště.",
+          "nazev": "Kontrolovat doklady před vstupem",
+          "popis": "Před zahájením prací ověřte seznámení, oprávnění a pojištění.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "evidence",
-          "nazev": "Vést evidenci",
-          "popis": "Evidence dodavatelů, externích osob a jejich dokladů.",
+          "nazev": "Vést seznam schválených dodavatelů",
+          "popis": "Evidence firem s kontakty, doklady a termíny platnosti.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "predavat_informace",
-          "nazev": "Předávat informace",
-          "popis": "Vždy předávejte externistům informace o rizicích a pravidlech.",
+          "nazev": "Předat písemné informace o rizicích",
+          "popis": "Externistům předejte pravidla areálu a nechte potvrdit převzetí.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "skoleni",
-          "nazev": "Zajistit školení",
-          "popis": "Zajistěte školení externích osob dle rizik jejich práce.",
+          "nazev": "Seznámit s místními pravidly",
+          "popis": "Před první prací proveďte instruktáž a zapište do seznamu seznámených.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "smluvni_povinnosti",
-          "nazev": "Smluvně vymáhat povinnosti",
-          "popis": "Ve smlouvách s dodavateli vymáhejte plnění povinností BOZP.",
+          "nazev": "Uvést BOZP ve smlouvě",
+          "popis": "Ve smlouvě s dodavatelem vymáhejte předkládání dokladů a dodržování pravidel.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1476,29 +1462,22 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Dokumentace a požadavky při práci dodavatelů.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro vedení, aktualizaci a správu dokumentace BOZP.",
+          "popis": "Vedení, aktualizace a správa dokumentace BOZP.",
           "poradi": 30,
-          "aktivni": true
-        },
-        {
-          "id": "zakon_262_2006",
-          "nazev": "Zákon č. 262/2006 Sb., zákoník práce",
-          "popis": "Povinnosti zaměstnavatele při práci dodavatelů a externích osob.",
-          "poradi": 40,
           "aktivni": true
         }
       ],
@@ -1507,50 +1486,50 @@
     {
       "id": "archivace_sprava",
       "nazev": "Archivace a správa dokumentace",
-      "popis": "Kontrola způsobu archivace, dohledatelnosti, ochrany dokumentace a odpovědnosti za správu dokumentace.",
+      "popis": "Prověrka archivace, dohledatelnosti a odpovědnosti za správu dokumentace BOZP.",
       "poradi": 80,
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [
         {
           "id": "identifikace",
-          "text": "Identifikujte systém archivace a správy dokumentace BOZP.",
+          "text": "Zjistěte, jak organizace archivuje a spravuje dokumentaci BOZP.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "archivace",
-          "text": "Zkontrolujte způsob archivace dokumentace BOZP.",
+          "text": "Ověřte způsob ukládání a třídění dokumentů.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "dohledatelnost",
-          "text": "Ověřte dohledatelnost požadovaných dokumentů.",
+          "text": "Vyhledejte vybraný dokument z posledního roku.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "ochrana",
-          "text": "Posuďte ochranu dokumentace před poškozením, ztrátou nebo neoprávněným přístupem.",
+          "text": "Posuďte ochranu dokumentace před ztrátou a neoprávněnou změnou.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "odpovednost",
-          "text": "Zkontrolujte určení odpovědnosti za správu dokumentace.",
+          "text": "Ověřte určení osoby odpovědné za správu dokumentace.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "prehled",
-          "text": "Ověřte vedení přehledu archivované dokumentace.",
+          "text": "Zkontrolujte seznam nebo rejstřík archivované dokumentace.",
           "poradi": 60,
           "aktivni": true
         },
         {
           "id": "prakticka_kontrola",
-          "text": "Posuďte, zda požadovaný dokument lze v přiměřené době dohledat.",
+          "text": "Požádejte o konkrétní dokument a sledujte, jak rychle ho dohledají.",
           "poradi": 70,
           "aktivni": true
         }
@@ -1558,8 +1537,8 @@
       "kontrolni_body": [
         {
           "id": "archivace",
-          "nazev": "Archivace je zajištěna",
-          "popis": "Dokumentace je archivována systematickým způsobem.",
+          "nazev": "Dokumentace je archivována",
+          "popis": "Dokumenty BOZP jsou ukládány systematicky podle druhu a data.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1567,7 +1546,7 @@
         {
           "id": "dohledatelnost",
           "nazev": "Dokumenty jsou dohledatelné",
-          "popis": "Požadované dokumenty lze snadno dohledat.",
+          "popis": "Požadované dokumenty lze najít bez zbytečného hledání.",
           "poradi": 20,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1575,15 +1554,15 @@
         {
           "id": "ochrana",
           "nazev": "Dokumentace je chráněna",
-          "popis": "Dokumentace je chráněna před poškozením a ztrátou.",
+          "popis": "Dokumenty jsou chráněny před ztrátou, poškozením a neoprávněnou úpravou.",
           "poradi": 30,
           "aktivni": true,
           "zavaznost": "stredni"
         },
         {
           "id": "odpovednost",
-          "nazev": "Odpovědnost je určena",
-          "popis": "Je určena osoba odpovědná za správu dokumentace.",
+          "nazev": "Odpovědnost za správu je určena",
+          "popis": "Je určena osoba odpovědná za archivaci a správu dokumentace.",
           "poradi": 40,
           "aktivni": true,
           "zavaznost": "stredni"
@@ -1591,15 +1570,15 @@
         {
           "id": "prehled",
           "nazev": "Přehled archivu existuje",
-          "popis": "Je veden přehled archivované dokumentace.",
+          "popis": "Je veden seznam nebo rejstřík archivované dokumentace BOZP.",
           "poradi": 50,
           "aktivni": true,
           "zavaznost": "nizka"
         },
         {
           "id": "prakticka_kontrola",
-          "nazev": "Dokument lze dohledat",
-          "popis": "Požadovaný dokument lze v přiměřené době dohledat.",
+          "nazev": "Dokument lze dohledat v přiměřené době",
+          "popis": "Požadovaný dokument lze během prověrky dohledat bez dlouhého hledání.",
           "poradi": 60,
           "aktivni": true,
           "zavaznost": "nizka"
@@ -1608,43 +1587,43 @@
       "typicke_zavady": [
         {
           "id": "chaoticka_archivace",
-          "nazev": "Chaotická archivace",
-          "popis": "Dokumentace není archivována systematicky.",
+          "nazev": "Dokumenty v různých šanonech",
+          "popis": "Revizní zprávy, školení a směrnice jsou uloženy bez jednotného řádu.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nedohledatelna",
-          "nazev": "Nedohledatelná dokumentace",
-          "popis": "Požadované dokumenty nelze včas najít.",
+          "nazev": "Protokol se hledal přes půl hodiny",
+          "popis": "Při prověrce nikdo rychle nenašel požadovaný dokument.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "nechráněna",
-          "nazev": "Nechráněná dokumentace",
-          "popis": "Dokumentace není chráněna před poškozením nebo ztrátou.",
+          "nazev": "Dokumentace na společném disku bez práv",
+          "popis": "Kdokoli může smazat nebo přepsat soubory s dokumentací BOZP.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "bez_odpovednosti",
-          "nazev": "Neurčená odpovědnost",
-          "popis": "Není určena osoba za správu dokumentace.",
+          "nazev": "Nikdo nespravuje archiv",
+          "popis": "Není určeno, kdo dokumentaci ukládá a aktualizuje.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "chybi_prehled",
-          "nazev": "Chybí přehled archivu",
-          "popis": "Není veden přehled archivovaných dokumentů.",
+          "nazev": "Chybí rejstřík dokumentů",
+          "popis": "Neexistuje seznam toho, co organizace v oblasti BOZP archivuje.",
           "poradi": 50,
           "aktivni": true
         },
         {
           "id": "duplicity",
-          "nazev": "Duplicitní nebo chybějící dokumenty",
-          "popis": "Existují duplicity nebo chybí požadované dokumenty.",
+          "nazev": "Dvě verze stejné směrnice",
+          "popis": "V archivu kolují stará a nová verze stejného dokumentu bez označení platnosti.",
           "poradi": 60,
           "aktivni": true
         }
@@ -1652,36 +1631,36 @@
       "doporucene_postupy": [
         {
           "id": "system_archivace",
-          "nazev": "Zavést systém archivace",
-          "popis": "Stanovte pravidla pro archivaci a skladování dokumentace.",
+          "nazev": "Stanovit pravidla archivace",
+          "popis": "Určete strukturu složek, pojmenování souborů a dobu uchovávání.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "prehled_dokumentu",
-          "nazev": "Vést přehled dokumentů",
-          "popis": "Udržujte aktuální seznam archivované dokumentace.",
+          "nazev": "Vést rejstřík dokumentů",
+          "popis": "Seznam dokumentů doplňujte při každém novém vydání nebo protokolu.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "ochranit",
-          "nazev": "Chránit dokumentaci",
-          "popis": "Zajistěte fyzickou i elektronickou ochranu dokumentů.",
+          "nazev": "Omezit práva k dokumentům",
+          "popis": "Nastavte zálohování a oprávnění tak, aby dokumenty nemohl smazat kdokoli.",
           "poradi": 30,
           "aktivni": true
         },
         {
           "id": "odpovedna_osoba",
-          "nazev": "Určit odpovědnou osobu",
-          "popis": "Stanovte odpovědnost za správu a archivaci dokumentace.",
+          "nazev": "Pověřit správce dokumentace",
+          "popis": "Určete osobu za pořádek v archivu a aktualizaci rejstříku.",
           "poradi": 40,
           "aktivni": true
         },
         {
           "id": "pravidelna_revize",
-          "nazev": "Pravidelně revidovat archiv",
-          "popis": "Pravidelně kontrolujte úplnost a dohledatelnost archivu.",
+          "nazev": "Čtvrtletně kontrolovat archiv",
+          "popis": "Pravidelně odstraňte duplicity a doplňte chybějící dokumenty.",
           "poradi": 50,
           "aktivni": true
         }
@@ -1690,29 +1669,22 @@
         {
           "id": "zakon_309_2006",
           "nazev": "Zákon č. 309/2006 Sb.",
-          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Další podmínky bezpečnosti a ochrany zdraví při práci.",
           "poradi": 10,
           "aktivni": true
         },
         {
           "id": "nv_361_2007",
           "nazev": "Nařízení vlády č. 361/2007 Sb.",
-          "popis": "Podrobnosti k zajištění bezpečnosti a ochrany zdraví při práci.",
+          "popis": "Požadavky na dokumentaci BOZP.",
           "poradi": 20,
           "aktivni": true
         },
         {
           "id": "interni_smernice",
           "nazev": "Interní směrnice zaměstnavatele",
-          "popis": "Pravidla pro vedení, aktualizaci a správu dokumentace BOZP.",
+          "popis": "Vedení, aktualizace a správa dokumentace BOZP.",
           "poradi": 30,
-          "aktivni": true
-        },
-        {
-          "id": "zakon_499_2004",
-          "nazev": "Zákon č. 499/2004 Sb.",
-          "popis": "Archivační a spisová služba — požadavky na uchovávání a správu dokumentů.",
-          "poradi": 40,
           "aktivni": true
         }
       ],
