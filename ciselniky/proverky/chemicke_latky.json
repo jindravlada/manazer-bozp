@@ -1,0 +1,1678 @@
+{
+  "verze": 1,
+  "id": "chemie",
+  "nazev": "Chemické látky a směsi",
+  "popis": "Evidence, bezpečnostní listy, označování, skladování, manipulace, havarijní připravenost a školení v oblasti chemických látek.",
+  "poradi": 90,
+  "aktivni": true,
+  "sekce": [
+    {
+      "id": "evidence_chemickych_latek",
+      "nazev": "Evidence chemických látek a směsí",
+      "popis": "Kontrola seznamu, úplnosti, aktuálnosti evidence a souladu se skutečně používanými chemickými látkami a směsmi na pracovišti.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace_latky",
+          "text": "Identifikujte chemické látky a směsi používané v kontrolované oblasti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "seznam",
+          "text": "Zkontrolujte existenci a úplnost seznamu chemických látek a směsí.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "uplnost",
+          "text": "Ověřte, zda evidence obsahuje všechny požadované údaje o látkách.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "aktualnost",
+          "text": "Posuďte aktuálnost evidence vůči skutečnému provozu.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "soulad_stav",
+          "text": "Porovnejte evidenci se skutečným stavem na pracovišti.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "neevidovane_latky",
+          "text": "Ověřte, zda nejsou používány látky mimo evidenci.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda na pracovišti nejsou používány chemické látky mimo evidenci.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "seznam",
+          "nazev": "Seznam chemických látek existuje",
+          "popis": "Je veden úplný seznam chemických látek a směsí používaných na pracovišti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "uplnost",
+          "nazev": "Evidence je úplná",
+          "popis": "Evidence obsahuje všechny požadované identifikační a bezpečnostní údaje.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "aktualnost",
+          "nazev": "Evidence je aktuální",
+          "popis": "Evidence je průběžně aktualizována při změnách sortimentu nebo dodavatelů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "soulad_stav",
+          "nazev": "Evidence odpovídá skutečnosti",
+          "popis": "Evidence odpovídá skutečně používaným chemickým látkám a směsím.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "neevidovane_latky",
+          "nazev": "Nejsou používány neevidované látky",
+          "popis": "Na pracovišti nejsou používány chemické látky mimo evidenci.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Používané látky jsou v evidenci",
+          "popis": "Na pracovišti nejsou používány chemické látky mimo evidenci.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "chybi_seznam",
+          "nazev": "Chybí seznam chemických látek",
+          "popis": "Seznam chemických látek a směsí není veden nebo je neúplný.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "neuplna_evidence",
+          "nazev": "Neúplná evidence",
+          "popis": "Evidence neobsahuje požadované údaje o látkách a směsích.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "zastarala_evidence",
+          "nazev": "Zastaralá evidence",
+          "popis": "Evidence nebyla aktualizována po změně sortimentu nebo dodavatele.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesoulad_stav",
+          "nazev": "Nesoulad evidence se skutečností",
+          "popis": "V provozu jsou látky, které v evidenci chybí, nebo naopak.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "neevidovane_latky",
+          "nazev": "Používání neevidovaných látek",
+          "popis": "Zaměstnanci používají chemické látky, které nejsou v evidenci.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_odpovednost",
+          "nazev": "Neurčená odpovědnost za evidenci",
+          "popis": "Není jasně určena osoba odpovědná za vedení a aktualizaci evidence.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "pravidelna_aktualizace",
+          "nazev": "Pravidelně aktualizovat evidenci",
+          "popis": "Aktualizujte evidenci při každé změně sortimentu, dodavatele nebo použití látky.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "inventura_latky",
+          "nazev": "Provádět inventury chemických látek",
+          "popis": "Pravidelně porovnávejte evidenci se skutečným stavem na pracovišti.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "odpovedna_osoba",
+          "nazev": "Určit odpovědnou osobu",
+          "popis": "Stanovte odpovědnou osobu za vedení a aktualizaci evidence chemických látek.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "schvalovani_novych",
+          "nazev": "Schvalovat nové chemické látky",
+          "popis": "Zaveďte postup schvalování před zavedením nové chemické látky do provozu.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "propojeni_bl",
+          "nazev": "Propojit evidenci s bezpečnostními listy",
+          "popis": "Zajistěte, aby každá evidovaná látka měla odpovídající bezpečnostní list.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_258_2000",
+          "nazev": "Zákon č. 258/2000 Sb.",
+          "popis": "O ochraně veřejného zdraví — požadavky na nakládání s chemickými látkami a chemickými směsmi.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "narizeni_clp_1272_2008",
+          "nazev": "Nařízení (ES) č. 1272/2008 (CLP)",
+          "popis": "Klasifikace, označování a balení látek a směsí — harmonizované požadavky na označení a bezpečnostní listy.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "reach_1907_2006",
+          "nazev": "Nařízení (ES) č. 1907/2006 (REACH)",
+          "popis": "Registrace, hodnocení, povolování a omezování chemických látek — povinnosti dodavatelů a uživatelů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro vedení, aktualizaci a kontrolu evidence chemických látek a směsí na pracovišti.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "bezpecnostni_listy",
+      "nazev": "Bezpečnostní listy",
+      "popis": "Kontrola dostupnosti, aktuálnosti, jazykové verze a přístupu zaměstnanců k bezpečnostním listům chemických látek a směsí.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace_bl",
+          "text": "Identifikujte chemické látky a směsi vyžadující bezpečnostní list.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "dostupnost",
+          "text": "Zkontrolujte dostupnost bezpečnostních listů pro všechny látky.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "aktualnost",
+          "text": "Ověřte aktuálnost verzí bezpečnostních listů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "cesky_jazyk",
+          "text": "Posuďte, zda jsou k dispozici bezpečnostní listy v českém jazyce.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "pristup_zamestnancu",
+          "text": "Zkontrolujte přístup zaměstnanců k bezpečnostním listům.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "umisteni_bl",
+          "text": "Ověřte místo uložení a označení složky s bezpečnostními listy.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Ověřte u vedoucího zaměstnance znalost místa uložení bezpečnostních listů.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "dostupnost",
+          "nazev": "Bezpečnostní listy jsou dostupné",
+          "popis": "Pro všechny používané chemické látky a směsi jsou k dispozici bezpečnostní listy.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "aktualnost",
+          "nazev": "Bezpečnostní listy jsou aktuální",
+          "popis": "Bezpečnostní listy odpovídají aktuálním verzím od dodavatelů.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "cesky_jazyk",
+          "nazev": "Listy jsou v českém jazyce",
+          "popis": "Bezpečnostní listy jsou k dispozici v českém jazyce.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "pristup_zamestnancu",
+          "nazev": "Zaměstnanci mají přístup k listům",
+          "popis": "Zaměstnanci mají zajištěn přístup k bezpečnostním listům při práci.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "umisteni_bl",
+          "nazev": "Místo uložení je určeno",
+          "popis": "Místo uložení bezpečnostních listů je určeno a označeno.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Vedoucí zná umístění listů",
+          "popis": "Vedoucí zaměstnanec ví, kde jsou bezpečnostní listy uloženy.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "chybi_bl",
+          "nazev": "Chybějící bezpečnostní listy",
+          "popis": "Pro některé používané látky chybí bezpečnostní list.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zastaraly_bl",
+          "nazev": "Zastaralé bezpečnostní listy",
+          "popis": "Bezpečnostní listy nejsou aktualizovány podle verzí dodavatele.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "cizi_jazyk",
+          "nazev": "Listy pouze v cizím jazyce",
+          "popis": "Bezpečnostní listy nejsou k dispozici v českém jazyce.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nedostupne_bl",
+          "nazev": "Nedostupné bezpečnostní listy",
+          "popis": "Zaměstnanci nemají přístup k bezpečnostním listům v době potřeby.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "neurcene_umisteni",
+          "nazev": "Neurčené místo uložení",
+          "popis": "Není jasně určeno ani označeno místo uložení bezpečnostních listů.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "neinformovani_vedouci",
+          "nazev": "Vedoucí nezná umístění listů",
+          "popis": "Vedoucí zaměstnanec nezná místo uložení bezpečnostních listů.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "pravidelna_kontrola_bl",
+          "nazev": "Pravidelně kontrolovat bezpečnostní listy",
+          "popis": "Ověřujte úplnost a aktuálnost bezpečnostních listů při každé dodávce.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "centralni_uloziste",
+          "nazev": "Zřídit centrální úložiště listů",
+          "popis": "Uchovávejte bezpečnostní listy na jednom dostupném a označeném místě.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "aktualizace_od_dodavatele",
+          "nazev": "Aktualizovat listy od dodavatele",
+          "popis": "Při obdržení nové verze bezpečnostního listu neprodleně nahraďte starou verzi.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "informovani_zamestnancu",
+          "nazev": "Informovat zaměstnance o umístění",
+          "popis": "Seznamte zaměstnance a vedoucí s místem uložení bezpečnostních listů.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "elektronicka_kopie",
+          "nazev": "Zajistit elektronickou kopii",
+          "popis": "Uchovávejte elektronické kopie bezpečnostních listů pro rychlý přístup.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_258_2000",
+          "nazev": "Zákon č. 258/2000 Sb.",
+          "popis": "O ochraně veřejného zdraví — požadavky na nakládání s chemickými látkami a chemickými směsmi.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "narizeni_clp_1272_2008",
+          "nazev": "Nařízení (ES) č. 1272/2008 (CLP)",
+          "popis": "Klasifikace, označování a balení látek a směsí — harmonizované požadavky na označení a bezpečnostní listy.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "reach_1907_2006",
+          "nazev": "Nařízení (ES) č. 1907/2006 (REACH)",
+          "popis": "Registrace, hodnocení, povolování a omezování chemických látek — povinnosti dodavatelů a uživatelů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro pořizování, uchovávání, aktualizaci a zpřístupnění bezpečnostních listů chemických látek.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "oznacovani_chemickych_latek",
+      "nazev": "Označování chemických látek",
+      "popis": "Kontrola CLP etiket, GHS piktogramů, označení přelitých nádob a čitelnosti označení chemických látek a směsí.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace_nadobi",
+          "text": "Identifikujte nádoby s chemickými látkami a směsmi v kontrolované oblasti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "clp_etikety",
+          "text": "Zkontrolujte správnost a úplnost CLP etiket na originálních nádobách.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "ghs_piktogramy",
+          "text": "Ověřte přítomnost a správnost GHS piktogramů nebezpečnosti.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "prelite_nadoby",
+          "text": "Posuďte označení přelitých nebo přelévaných nádob.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "citelnost",
+          "text": "Zkontrolujte čitelnost a trvanlivost označení.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "soulad_bl",
+          "text": "Porovnejte označení s údaji v bezpečnostním listu.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda žádná nádoba není používána bez označení.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "clp_etikety",
+          "nazev": "CLP etikety jsou v pořádku",
+          "popis": "Originální nádoby mají správné a úplné CLP etikety.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "ghs_piktogramy",
+          "nazev": "GHS piktogramy jsou správné",
+          "popis": "GHS piktogramy odpovídají klasifikaci látky nebo směsi.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "prelite_nadoby",
+          "nazev": "Přelité nádoby jsou označeny",
+          "popis": "Přelité nebo přelévané nádoby mají srozumitelné označení obsahu.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "citelnost",
+          "nazev": "Označení je čitelné",
+          "popis": "Etikety a označení jsou čitelné a nepoškozené.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "soulad_bl",
+          "nazev": "Označení odpovídá BL",
+          "popis": "Označení nádob odpovídá údajům v bezpečnostním listu.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Všechny nádoby jsou označeny",
+          "popis": "Žádná nádoba není používána bez označení.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "chybi_etiketa",
+          "nazev": "Chybějící nebo neúplná etiketa",
+          "popis": "Nádoba postrádá CLP etiketu nebo etiketa neobsahuje požadované údaje.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "spatne_piktogramy",
+          "nazev": "Chybné GHS piktogramy",
+          "popis": "GHS piktogramy chybí nebo neodpovídají klasifikaci látky.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "neoznacene_prelite",
+          "nazev": "Neoznačené přelité nádoby",
+          "popis": "Přelité nádoby nejsou označeny názvem látky a nebezpečím.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "necitelne_oznaceni",
+          "nazev": "Nečitelné označení",
+          "popis": "Etikety jsou poškozené, smazané nebo nečitelné.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "nesoulad_bl",
+          "nazev": "Nesoulad označení s BL",
+          "popis": "Označení nádoby neodpovídá bezpečnostnímu listu.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "nepouzivane_nadoby",
+          "nazev": "Používání neoznačených nádob",
+          "popis": "Nádoby bez označení jsou používány v provozu.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "kontrola_pri_prijeti",
+          "nazev": "Kontrolovat označení při příjmu",
+          "popis": "Ověřujte správnost CLP etiket při každé dodávce chemické látky.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pravidla_prelivani",
+          "nazev": "Stanovit pravidla pro přelévání",
+          "popis": "Zaveďte povinnost označovat všechny přelité nádoby podle CLP.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "tisk_stitku",
+          "nazev": "Zajistit tisk štítků",
+          "popis": "Mějte k dispozici prostředky pro tisk náhradních štítků a označení.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "skoleni_oznacovani",
+          "nazev": "Školit k správnému označování",
+          "popis": "Seznamte zaměstnance s požadavky na označování chemických látek.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "pravidelna_kontrola_nadobi",
+          "nazev": "Pravidelně kontrolovat nádoby",
+          "popis": "Při prověrkách kontrolujte stav označení všech nádob s chemickými látkami.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_258_2000",
+          "nazev": "Zákon č. 258/2000 Sb.",
+          "popis": "O ochraně veřejného zdraví — požadavky na nakládání s chemickými látkami a chemickými směsmi.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "narizeni_clp_1272_2008",
+          "nazev": "Nařízení (ES) č. 1272/2008 (CLP)",
+          "popis": "Klasifikace, označování a balení látek a směsí — harmonizované požadavky na označení a bezpečnostní listy.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "reach_1907_2006",
+          "nazev": "Nařízení (ES) č. 1907/2006 (REACH)",
+          "popis": "Registrace, hodnocení, povolování a omezování chemických látek — povinnosti dodavatelů a uživatelů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro označování originálních i přelitých nádob s chemickými látkami a směsmi podle CLP.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "skladovani_chemickych_latek",
+      "nazev": "Skladování chemických látek",
+      "popis": "Kontrola odděleného skladování, kompatibility látek, záchytných van, větrání a zabezpečení skladů chemických látek.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace_skladu",
+          "text": "Identifikujte místa skladování chemických látek v kontrolované oblasti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "oddelene_skladovani",
+          "text": "Zkontrolujte oddělené skladování nekompatibilních látek.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "kompatibilita",
+          "text": "Ověřte dodržování pravidel chemické kompatibility.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "zachytne_vany",
+          "text": "Posuďte vybavení záchytnými vanami nebo záchytnými prostorem.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vetrani",
+          "text": "Zkontrolujte větrání skladovacích prostor.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "zabezpeceni",
+          "text": "Ověřte zabezpečení skladu proti neoprávněnému přístupu.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda vzájemně neslučitelné chemické látky nejsou skladovány společně.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "oddelene_skladovani",
+          "nazev": "Látky jsou skladovány odděleně",
+          "popis": "Nekompatibilní chemické látky jsou skladovány odděleně.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "kompatibilita",
+          "nazev": "Kompatibilita je dodržována",
+          "popis": "Skladování respektuje pravidla chemické kompatibility.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "zachytne_vany",
+          "nazev": "Záchytné vany jsou k dispozici",
+          "popis": "Skladovací místa jsou vybavena záchytnými vanami nebo prostory.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vetrani",
+          "nazev": "Větrání je zajištěno",
+          "popis": "Skladovací prostory mají adekvátní větrání.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "zabezpeceni",
+          "nazev": "Sklad je zabezpečen",
+          "popis": "Sklad chemických látek je zabezpečen proti neoprávněnému přístupu.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Neslučitelné látky nejsou spolu",
+          "popis": "Vzájemně neslučitelné chemické látky nejsou skladovány společně.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "spolecne_skladovani",
+          "nazev": "Společné skladování neslučitelných látek",
+          "popis": "Nekompatibilní chemické látky jsou skladovány vedle sebe.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "porusena_kompatibilita",
+          "nazev": "Porušení pravidel kompatibility",
+          "popis": "Skladování nerespektuje tabulku chemické kompatibility.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_zachytna_vana",
+          "nazev": "Chybí záchytné vany",
+          "popis": "Nádoby nejsou umístěny v záchytných vanách nebo prostorech.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nedostatecne_vetrani",
+          "nazev": "Nedostatečné větrání skladu",
+          "popis": "Skladovací prostory nemají adekvátní větrání.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "nezabezpeceny_sklad",
+          "nazev": "Nezabezpečený sklad",
+          "popis": "Sklad chemických látek není chráněn proti neoprávněnému přístupu.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prekrocena_kapacita",
+          "nazev": "Překročená skladovací kapacita",
+          "popis": "Skladovací prostory jsou přeplněny nebo překročena povolená kapacita.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "tabulka_kompatibility",
+          "nazev": "Vytvořit tabulku kompatibility",
+          "popis": "Vypracujte a vyvěste tabulku chemické kompatibility pro skladování.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni_skladu",
+          "nazev": "Označit skladovací prostory",
+          "popis": "Označte skladovací zóny podle druhu látek a nebezpečí.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "kontrola_van",
+          "nazev": "Kontrolovat záchytné vany",
+          "popis": "Pravidelně ověřujte stav a účinnost záchytných van.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "udrzba_vetrani",
+          "nazev": "Udržovat větrání skladu",
+          "popis": "Zajistěte funkční větrání a pravidelnou kontrolu ventilačních systémů.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "omezeni_pristupu",
+          "nazev": "Omezit přístup do skladu",
+          "popis": "Povolte vstup do skladu chemických látek pouze oprávněným osobám.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_258_2000",
+          "nazev": "Zákon č. 258/2000 Sb.",
+          "popis": "O ochraně veřejného zdraví — požadavky na nakládání s chemickými látkami a chemickými směsmi.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "narizeni_clp_1272_2008",
+          "nazev": "Nařízení (ES) č. 1272/2008 (CLP)",
+          "popis": "Klasifikace, označování a balení látek a směsí — harmonizované požadavky na označení a bezpečnostní listy.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "reach_1907_2006",
+          "nazev": "Nařízení (ES) č. 1907/2006 (REACH)",
+          "popis": "Registrace, hodnocení, povolování a omezování chemických látek — povinnosti dodavatelů a uživatelů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro bezpečné skladování chemických látek včetně kompatibility, větrání a zabezpečení skladů.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "manipulace_chemickymi_latkami",
+      "nazev": "Manipulace s chemickými látkami",
+      "popis": "Kontrola používání OOPP, pracovních postupů, dávkování, přelévání a postupů při únicích při manipulaci s chemickými látkami.",
+      "poradi": 50,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace_manipulace",
+          "text": "Identifikujte místa a činnosti manipulace s chemickými látkami.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "oopp",
+          "text": "Zkontrolujte dostupnost a používání předepsaných OOPP.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pracovni_postupy",
+          "text": "Ověřte existenci a dodržování bezpečných pracovních postupů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "davkovani",
+          "text": "Posuďte správnost dávkování a měření chemických látek.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "prelevani",
+          "text": "Zkontrolujte bezpečné postupy při přelévání a přenosu látek.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "uniky",
+          "text": "Ověřte postupy a vybavení pro případ úniku při manipulaci.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda při manipulaci jsou používány předepsané OOPP.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "oopp",
+          "nazev": "OOPP jsou k dispozici a používány",
+          "popis": "Při manipulaci jsou k dispozici a používány předepsané OOPP.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pracovni_postupy",
+          "nazev": "Pracovní postupy jsou dodržovány",
+          "popis": "Manipulace probíhá podle stanovených bezpečných pracovních postupů.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "davkovani",
+          "nazev": "Dávkování je správné",
+          "popis": "Chemické látky jsou dávkovány a měřeny bezpečným způsobem.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "prelevani",
+          "nazev": "Přelévání je bezpečné",
+          "popis": "Přelévání a přenos látek probíhá s použitím vhodných pomůcek.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "uniky",
+          "nazev": "Postupy při únicích jsou známy",
+          "popis": "Jsou stanoveny a známé postupy pro případ úniku při manipulaci.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "OOPP jsou používány při manipulaci",
+          "popis": "Při manipulaci jsou používány předepsané OOPP.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "neuzivane_oopp",
+          "nazev": "Neužívané OOPP",
+          "popis": "Zaměstnanci nepoužívají předepsané OOPP při manipulaci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_postupy",
+          "nazev": "Chybí pracovní postupy",
+          "popis": "Pro manipulaci s chemickými látkami nejsou stanoveny bezpečné postupy.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nespravne_davkovani",
+          "nazev": "Nesprávné dávkování",
+          "popis": "Chemické látky jsou dávkovány bez měřicích pomůcek nebo v nevhodných nádobách.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nebezpecne_prelevani",
+          "nazev": "Nebezpečné přelévání",
+          "popis": "Přelévání probíhá bez vhodných pomůcek nebo mimo záchytný prostor.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "neznalost_uniku",
+          "nazev": "Neznalost postupů při úniku",
+          "popis": "Zaměstnanci neznají postup při úniku chemické látky při manipulaci.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "chytani_rukou",
+          "nazev": "Manipulace holýma rukama",
+          "popis": "Chemické látky jsou manipulovány bez ochranných rukavic nebo pomůcek.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "stanoveni_oopp",
+          "nazev": "Stanovit požadované OOPP",
+          "popis": "Určete OOPP pro každou manipulaci s chemickou látkou podle bezpečnostního listu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "bezpecne_postupy",
+          "nazev": "Vypracovat bezpečné postupy",
+          "popis": "Sepište bezpečné pracovní postupy pro běžné manipulace s chemickými látkami.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "skoleni_manipulace",
+          "nazev": "Školit k bezpečné manipulaci",
+          "popis": "Proškolte zaměstnance v bezpečných postupech manipulace a používání OOPP.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "kontrola_oopp",
+          "nazev": "Kontrolovat používání OOPP",
+          "popis": "Při prověrkách ověřujte dodržování používání OOPP.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vhodne_pomucky",
+          "nazev": "Zajistit vhodné pomůcky",
+          "popis": "Zajistěte dávkovací, měřicí a přelévací pomůcky pro bezpečnou manipulaci.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_258_2000",
+          "nazev": "Zákon č. 258/2000 Sb.",
+          "popis": "O ochraně veřejného zdraví — požadavky na nakládání s chemickými látkami a chemickými směsmi.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "narizeni_clp_1272_2008",
+          "nazev": "Nařízení (ES) č. 1272/2008 (CLP)",
+          "popis": "Klasifikace, označování a balení látek a směsí — harmonizované požadavky na označení a bezpečnostní listy.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "reach_1907_2006",
+          "nazev": "Nařízení (ES) č. 1907/2006 (REACH)",
+          "popis": "Registrace, hodnocení, povolování a omezování chemických látek — povinnosti dodavatelů a uživatelů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro bezpečnou manipulaci s chemickými látkami včetně OOPP, pracovních postupů a řešení úniků.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "havarijni_pripravenost",
+      "nazev": "Havarijní připravenost",
+      "popis": "Kontrola sorpčních a neutralizačních prostředků, havarijních postupů a vybavení pro případ úniku chemických látek.",
+      "poradi": 60,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace_rizik",
+          "text": "Identifikujte rizika úniku chemických látek v kontrolované oblasti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "sorpni_prostredky",
+          "text": "Zkontrolujte dostupnost a stav sorpčních prostředků.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "neutralizacni_prostredky",
+          "text": "Ověřte dostupnost vhodných neutralizačních prostředků.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "havarijni_postupy",
+          "text": "Posuďte existenci a dostupnost havarijních postupů.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vybaveni",
+          "text": "Zkontrolujte havarijní vybavení a jeho umístění.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "skoleni_havarie",
+          "text": "Ověřte proškolení zaměstnanců v havarijních postupech.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Ověřte u zaměstnanců znalost postupu při úniku chemické látky.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "sorpni_prostredky",
+          "nazev": "Sorpční prostředky jsou k dispozici",
+          "popis": "Sorpční prostředky odpovídající rizikům jsou dostupné a v použitelném stavu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "neutralizacni_prostredky",
+          "nazev": "Neutralizační prostředky jsou k dispozici",
+          "popis": "Vhodné neutralizační prostředky jsou k dispozici pro používané látky.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "havarijni_postupy",
+          "nazev": "Havarijní postupy existují",
+          "popis": "Havarijní postupy pro únik chemických látek jsou vypracovány a dostupné.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vybaveni",
+          "nazev": "Havarijní vybavení je v pořádku",
+          "popis": "Havarijní vybavení je kompletní, funkční a na určeném místě.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "skoleni_havarie",
+          "nazev": "Zaměstnanci jsou proškoleni",
+          "popis": "Zaměstnanci znají havarijní postupy a umístění vybavení.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Zaměstnanci znají postup při úniku",
+          "popis": "Zaměstnanci vědí, jak postupovat při úniku chemické látky.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "chybi_sorpce",
+          "nazev": "Chybí sorpční prostředky",
+          "popis": "Sorpční prostředky chybí nebo neodpovídají rizikům na pracovišti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_neutralizace",
+          "nazev": "Chybí neutralizační prostředky",
+          "popis": "Neutralizační prostředky pro používané látky nejsou k dispozici.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_havarijni_postup",
+          "nazev": "Chybí havarijní postupy",
+          "popis": "Havarijní postupy pro únik chemických látek nejsou vypracovány.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "neuplne_vybaveni",
+          "nazev": "Neúplné havarijní vybavení",
+          "popis": "Havarijní vybavení chybí, je poškozené nebo na neznámém místě.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "neproskoleni",
+          "nazev": "Neproškolení zaměstnanci",
+          "popis": "Zaměstnanci neznají havarijní postupy ani umístění vybavení.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "propadle_sorpce",
+          "nazev": "Prošlé sorpční prostředky",
+          "popis": "Sorpční nebo neutralizační prostředky jsou prošlé nebo nefunkční.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "plan_havarie",
+          "nazev": "Vypracovat havarijní plán",
+          "popis": "Sepište havarijní plán pro únik chemických látek včetně kontaktů a postupů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vybaveni_soupravy",
+          "nazev": "Zajistit havarijní soupravy",
+          "popis": "Umístěte havarijní soupravy se sorpčními a neutralizačními prostředky na přístupná místa.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pravidelna_kontrola_vybaveni",
+          "nazev": "Kontrolovat havarijní vybavení",
+          "popis": "Pravidelně kontrolujte stav a platnost havarijního vybavení.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "cviceni_uniku",
+          "nazev": "Provádět cvičení úniku",
+          "popis": "Organizujte cvičení havarijních postupů pro únik chemických látek.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni_mist",
+          "nazev": "Označit místa havarijního vybavení",
+          "popis": "Označte místa uložení havarijního vybavení a evakuační trasy.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_258_2000",
+          "nazev": "Zákon č. 258/2000 Sb.",
+          "popis": "O ochraně veřejného zdraví — požadavky na nakládání s chemickými látkami a chemickými směsmi.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "narizeni_clp_1272_2008",
+          "nazev": "Nařízení (ES) č. 1272/2008 (CLP)",
+          "popis": "Klasifikace, označování a balení látek a směsí — harmonizované požadavky na označení a bezpečnostní listy.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "reach_1907_2006",
+          "nazev": "Nařízení (ES) č. 1907/2006 (REACH)",
+          "popis": "Registrace, hodnocení, povolování a omezování chemických látek — povinnosti dodavatelů a uživatelů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro havarijní připravenost, vybavení a postupy při úniku chemických látek na pracovišti.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "nebezpecny_odpad_obaly",
+      "nazev": "Nebezpečný odpad a obaly",
+      "popis": "Kontrola označení, třídění, uzavření nádob a evidence nebezpečného odpadu a obalů po chemických látkách.",
+      "poradi": 70,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace_odpadu",
+          "text": "Identifikujte místa vzniku a dočasného skladování nebezpečného odpadu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni_odpadu",
+          "text": "Zkontrolujte označení nádob s nebezpečným odpadem.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "trideni",
+          "text": "Ověřte správné třídění nebezpečného odpadu podle druhu.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "uzavreni_nadobi",
+          "text": "Posuďte uzavření a těsnost nádob s nebezpečným odpadem.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_odpadu",
+          "text": "Zkontrolujte vedení evidence nebezpečného odpadu.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "obaly_latky",
+          "text": "Ověřte nakládání s obaly po chemických látkách.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda nebezpečný odpad není ukládán společně s běžným odpadem.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "oznaceni_odpadu",
+          "nazev": "Nebezpečný odpad je označen",
+          "popis": "Nádoby s nebezpečným odpadem jsou řádně označeny.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "trideni",
+          "nazev": "Odpad je správně tříděn",
+          "popis": "Nebezpečný odpad je tříděn podle druhu a nebezpečných vlastností.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "uzavreni_nadobi",
+          "nazev": "Nádoby jsou uzavřeny",
+          "popis": "Nádoby s nebezpečným odpadem jsou uzavřeny a těsné.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_odpadu",
+          "nazev": "Evidence odpadu je vedena",
+          "popis": "Nebezpečný odpad je evidován v souladu s požadavky.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "obaly_latky",
+          "nazev": "Obaly jsou likvidovány správně",
+          "popis": "Obaly po chemických látkách jsou nakládány jako nebezpečný odpad.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Odpad není smíšený s běžným",
+          "popis": "Nebezpečný odpad není ukládán společně s běžným odpadem.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "neoznaceny_odpad",
+          "nazev": "Neoznačený nebezpečný odpad",
+          "popis": "Nádoby s nebezpečným odpadem nejsou označeny.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "spatne_trideni",
+          "nazev": "Nesprávné třídění odpadu",
+          "popis": "Nebezpečný odpad je smíšen s jinými druhy nebo s běžným odpadem.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "otevrene_nadoby",
+          "nazev": "Otevřené nádoby s odpadem",
+          "popis": "Nádoby s nebezpečným odpadem nejsou uzavřeny.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_evidence_odpadu",
+          "nazev": "Chybí evidence odpadu",
+          "popis": "Nebezpečný odpad není evidován podle požadavků.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "nespravne_obaly",
+          "nazev": "Nesprávná likvidace obalů",
+          "popis": "Obaly po chemických látkách jsou vyhazovány do běžného odpadu.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "preplnene_nadoby",
+          "nazev": "Přeplněné nádoby s odpadem",
+          "popis": "Nádoby s nebezpečným odpadem jsou přeplněny nebo přetékají.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "oznacene_nadoby",
+          "nazev": "Zajistit označené nádoby",
+          "popis": "Používejte označené nádoby pro každý druh nebezpečného odpadu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "trideni_odpadu",
+          "nazev": "Zavést třídění odpadu",
+          "popis": "Stanovte pravidla třídění nebezpečného odpadu a obalů po chemických látkách.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_odpadu",
+          "nazev": "Vést evidenci odpadu",
+          "popis": "Evidence nebezpečného odpadu vedejte v souladu s platnou legislativou.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "skoleni_odpad",
+          "nazev": "Školit k nakládání s odpadem",
+          "popis": "Seznamte zaměstnance s pravidly pro třídění a ukládání nebezpečného odpadu.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "pravidelny_odvoz",
+          "nazev": "Zajistit pravidelný odvoz",
+          "popis": "Zajistěte včasný odvoz nebezpečného odpadu oprávněným subjektem.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_258_2000",
+          "nazev": "Zákon č. 258/2000 Sb.",
+          "popis": "O ochraně veřejného zdraví — požadavky na nakládání s chemickými látkami a chemickými směsmi.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "narizeni_clp_1272_2008",
+          "nazev": "Nařízení (ES) č. 1272/2008 (CLP)",
+          "popis": "Klasifikace, označování a balení látek a směsí — harmonizované požadavky na označení a bezpečnostní listy.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "reach_1907_2006",
+          "nazev": "Nařízení (ES) č. 1907/2006 (REACH)",
+          "popis": "Registrace, hodnocení, povolování a omezování chemických látek — povinnosti dodavatelů a uživatelů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro třídění, označování, evidenci a likvidaci nebezpečného odpadu a obalů po chemických látkách.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "skoleni_zamestnancu",
+      "nazev": "Školení zaměstnanců",
+      "popis": "Kontrola proškolení zaměstnanců, znalosti rizik, první pomoci a používání OOPP při práci s chemickými látkami.",
+      "poradi": 80,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace_pracovniku",
+          "text": "Identifikujte zaměstnance pracující s chemickými látkami.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "proskoleni",
+          "text": "Zkontrolujte proškolení zaměstnanců v oblasti chemických látek.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_rizik",
+          "text": "Ověřte znalost rizik používaných chemických látek.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "prvni_pomoc",
+          "text": "Posuďte znalost první pomoci při expozici chemickým látkám.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "oopp_skoleni",
+          "text": "Zkontrolujte znalost a používání OOPP.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "dokumentace_skoleni",
+          "text": "Ověřte dokumentaci provedených školení.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Namátkově ověřte znalost hlavních rizik chemické látky u osloveného zaměstnance.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "proskoleni",
+          "nazev": "Zaměstnanci jsou proškoleni",
+          "popis": "Všichni zaměstnanci pracující s chemickými látkami jsou proškoleni.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_rizik",
+          "nazev": "Rizika jsou známa",
+          "popis": "Zaměstnanci znají rizika chemických látek, se kterými pracují.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "prvni_pomoc",
+          "nazev": "První pomoc je známa",
+          "popis": "Zaměstnanci znají postupy první pomoci při expozici chemickým látkám.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "oopp_skoleni",
+          "nazev": "OOPP jsou známy a používány",
+          "popis": "Zaměstnanci znají a používají předepsané OOPP.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "dokumentace_skoleni",
+          "nazev": "Školení jsou dokumentována",
+          "popis": "Provedená školení jsou zaznamenána v dokumentaci.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Zaměstnanec zná rizika látky",
+          "popis": "Namátkově oslovený zaměstnanec ví hlavní rizika chemické látky, se kterou pracuje.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "neproskoleni_zamestnanci",
+          "nazev": "Neproškolení zaměstnanci",
+          "popis": "Někteří zaměstnanci pracující s chemickými látkami nejsou proškoleni.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "neznalost_rizik",
+          "nazev": "Neznalost rizik látek",
+          "popis": "Zaměstnanci neznají rizika chemických látek, se kterými pracují.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "neznalost_pp",
+          "nazev": "Neznalost první pomoci",
+          "popis": "Zaměstnanci neznají postupy první pomoci při expozici chemickým látkám.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "neznalost_oopp",
+          "nazev": "Neznalost OOPP",
+          "popis": "Zaměstnanci neznají nebo nepoužívají předepsané OOPP.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_dokumentace",
+          "nazev": "Chybí dokumentace školení",
+          "popis": "Provedená školení nejsou zaznamenána.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "propadle_skoleni",
+          "nazev": "Propadlé školení",
+          "popis": "Periodická školení nejsou obnovována v požadovaných intervalech.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "plan_skoleni",
+          "nazev": "Plánovat školení zaměstnanců",
+          "popis": "Stanovte harmonogram vstupních a periodických školení pro práci s chemickými látkami.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "obsah_skoleni",
+          "nazev": "Zajistit obsah školení",
+          "popis": "Školení musí zahrnovat rizika, OOPP, první pomoc a havarijní postupy.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_skoleni",
+          "nazev": "Vést evidenci školení",
+          "popis": "Dokumentujte všechna provedená školení včetně účastníků a termínů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "namatkove_overovani",
+          "nazev": "Namátkově ověřovat znalosti",
+          "popis": "Při prověrkách ověřujte znalosti zaměstnanců o rizicích a postupech.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "aktualizace_skoleni",
+          "nazev": "Aktualizovat školení při změnách",
+          "popis": "Obnovte školení při zavedení nové chemické látky nebo změně postupů.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_258_2000",
+          "nazev": "Zákon č. 258/2000 Sb.",
+          "popis": "O ochraně veřejného zdraví — požadavky na nakládání s chemickými látkami a chemickými směsmi.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "narizeni_clp_1272_2008",
+          "nazev": "Nařízení (ES) č. 1272/2008 (CLP)",
+          "popis": "Klasifikace, označování a balení látek a směsí — harmonizované požadavky na označení a bezpečnostní listy.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "reach_1907_2006",
+          "nazev": "Nařízení (ES) č. 1907/2006 (REACH)",
+          "popis": "Registrace, hodnocení, povolování a omezování chemických látek — povinnosti dodavatelů a uživatelů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro školení, proškolení a ověřování znalostí zaměstnanců při práci s chemickými látkami.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    }
+  ],
+  "kontrolni_body": [],
+  "typicke_zavady": [],
+  "doporucene_postupy": [],
+  "doporucena_opatreni": []
+}

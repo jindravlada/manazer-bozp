@@ -1,5 +1,5 @@
 {
-  "verze": 6,
+  "verze": 7,
   "oblasti": [
     {
       "id": "bozp",
@@ -91,11 +91,11 @@
     },
     {
       "id": "chemie",
-      "nazev": "Chemické látky",
-      "popis": "Skladování, označování, manipulace a evidence nebezpečných chemických látek.",
+      "nazev": "Chemické látky a směsi",
+      "popis": "Evidence, bezpečnostní listy, označování, skladování, manipulace, havarijní připravenost a školení v oblasti chemických látek.",
       "poradi": 90,
       "aktivni": true,
-      "soubor_znalosti": null
+      "soubor_znalosti": "chemicke_latky.json"
     },
     {
       "id": "prvni_pomoc",
