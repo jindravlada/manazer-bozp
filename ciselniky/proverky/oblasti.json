@@ -1,5 +1,5 @@
 {
-  "verze": 4,
+  "verze": 5,
   "oblasti": [
     {
       "id": "bozp",
@@ -32,6 +32,14 @@
       "poradi": 35,
       "aktivni": true,
       "soubor_znalosti": "pracovni_prostredi.json"
+    },
+    {
+      "id": "stroje",
+      "nazev": "Stroje a technická zařízení",
+      "popis": "Bezpečnost strojů — ochranná zařízení, ovládání, technický stav, údržba, obsluha a evidence.",
+      "poradi": 45,
+      "aktivni": true,
+      "soubor_znalosti": "stroje.json"
     },
     {
       "id": "dokumentace",
