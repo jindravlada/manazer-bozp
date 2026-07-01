@@ -51,6 +51,28 @@ class BozpInspectionService:
     def get_all(self) -> list[BozpInspection]:
         return self.repository.get_all()
 
+    def get_for_year(self, year: int) -> list[BozpInspection]:
+        inspections = [
+            inspection
+            for inspection in self.get_all()
+            if (
+                inspection.inspection_date is not None
+                and inspection.inspection_date.year == year
+            )
+            or (
+                inspection.inspection_date is None
+                and inspection.year == year
+            )
+        ]
+        return sorted(
+            inspections,
+            key=lambda item: (
+                item.planned_month if item.planned_month is not None else 99,
+                item.inspection_date or date.max,
+                item.id,
+            ),
+        )
+
     def get_by_id(self, inspection_id: int) -> BozpInspection | None:
         return self.repository.get_by_id(inspection_id)
 

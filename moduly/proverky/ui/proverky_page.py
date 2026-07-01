@@ -21,6 +21,7 @@ from moduly.proverky.constants import (
     INSPECTION_STATUS_FILTER_PROBIHAJICI,
     INSPECTION_STATUS_FILTER_VSE,
     KNOWLEDGE_EDITOR_BUTTON_LABEL,
+    ROCNI_ZPRAVA_TOOLTIP,
     YEAR_FILTER_VSE,
 )
 from moduly.proverky.ui.proverky_knowledge_editor_dialog import ProverkyKnowledgeEditorDialog
@@ -61,6 +62,8 @@ class ProverkyPage(QWidget):
         self.delete_btn = QPushButton("Smazat")
         self.plan_btn = QPushButton("Roční plán")
         self.report_btn = QPushButton("Roční zpráva")
+        self.report_btn.setEnabled(False)
+        self.report_btn.setToolTip(ROCNI_ZPRAVA_TOOLTIP)
         self.knowledge_editor_btn = QPushButton(KNOWLEDGE_EDITOR_BUTTON_LABEL)
 
         self.status_filter = QComboBox()
@@ -229,7 +232,10 @@ class ProverkyPage(QWidget):
             self.refresh()
 
     def show_annual_plan(self) -> None:
-        exec_maximized(RocniPlanDialog(self))
+        year_value = self.year_filter.currentData()
+        if year_value == YEAR_FILTER_VSE:
+            year_value = date.today().year
+        exec_maximized(RocniPlanDialog(self, year=year_value))
 
     def open_knowledge_editor(self) -> None:
         ProverkyKnowledgeEditorDialog(self).exec()

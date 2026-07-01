@@ -71,6 +71,8 @@ INSPECTION_STATUS_BY_FILTER = {
 
 YEAR_FILTER_VSE = "Vše"
 
+ROCNI_ZPRAVA_TOOLTIP = "Bude dostupné po dokončení statistik a ročních přehledů."
+
 TAB_KONTROLOVANE_OBLASTI = "Kontrolované oblasti"
 
 COMMISSION_RECORD_LEADER = "vedouci_komise"
