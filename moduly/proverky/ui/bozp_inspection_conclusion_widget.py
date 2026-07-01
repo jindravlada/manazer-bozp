@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.proverky.constants import INSPECTION_COMPLETION_CONFIRM_MESSAGE
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
+from moduly.proverky.sluzby.protokol_proverky_service import protokol_proverky_service
 
 
 class BozpInspectionConclusionWidget(QWidget):
@@ -52,6 +53,10 @@ class BozpInspectionConclusionWidget(QWidget):
         self.complete_btn = QPushButton("Dokončit prověrku")
         self.complete_btn.clicked.connect(self._complete_inspection)
         layout.addWidget(self.complete_btn)
+
+        self.protocol_btn = QPushButton("Protokol prověrky")
+        self.protocol_btn.clicked.connect(self._export_protocol)
+        layout.addWidget(self.protocol_btn)
 
         layout.addStretch()
 
@@ -103,6 +108,25 @@ class BozpInspectionConclusionWidget(QWidget):
     def _update_state(self) -> None:
         enabled = self.inspection is not None and self.inspection.id is not None
         self.info_label.setVisible(not enabled)
+        self.protocol_btn.setEnabled(enabled)
+
+    def _export_protocol(self) -> None:
+        if self.inspection is None or self.inspection.id is None:
+            QMessageBox.information(self, "Protokol prověrky", "Prověrku je nutné nejdříve uložit.")
+            return
+
+        warning = protokol_proverky_service.incomplete_warning(self.inspection)
+        if warning:
+            QMessageBox.warning(self, "Protokol prověrky", warning)
+
+        try:
+            protokol_proverky_service.open_for_inspection(self.inspection)
+        except Exception as exc:
+            QMessageBox.warning(
+                self,
+                "Protokol prověrky",
+                f"Protokol se nepodařilo vygenerovat.\n\n{exc}",
+            )
 
     def _complete_inspection(self) -> None:
         if self.inspection is None or self.inspection.id is None:

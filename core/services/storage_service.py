@@ -88,25 +88,32 @@ class StorageService:
         editable_catalog_service.ensure_all(self.ciselniky_dir)
 
     def bundled_templates_dir(self) -> Path:
-        """Výchozí šablony dodané s aplikací / AppImage."""
+        """Výchozí šablony modulu Kniha úrazů dodané s aplikací / AppImage."""
         return Path(__file__).resolve().parents[2] / "moduly" / "kniha_urazu" / "templates"
+
+    def bundled_template_roots(self) -> list[Path]:
+        project_root = Path(__file__).resolve().parents[2]
+        return [
+            project_root / "moduly" / "kniha_urazu" / "templates",
+            project_root / "moduly" / "proverky" / "templates",
+        ]
 
     def ensure_default_templates(self) -> None:
         """Zkopíruje výchozí šablony do .local, ale nikdy nepřepíše uživatelské úpravy."""
-        source_root = self.bundled_templates_dir()
         target_root = self.templates_dir
-        if not source_root.exists():
-            return
-
-        for source in source_root.rglob("*"):
-            relative = source.relative_to(source_root)
-            target = target_root / relative
-            if source.is_dir():
-                target.mkdir(parents=True, exist_ok=True)
+        for source_root in self.bundled_template_roots():
+            if not source_root.exists():
                 continue
-            target.parent.mkdir(parents=True, exist_ok=True)
-            if not target.exists():
-                shutil.copy2(source, target)
+
+            for source in source_root.rglob("*"):
+                relative = source.relative_to(source_root)
+                target = target_root / relative
+                if source.is_dir():
+                    target.mkdir(parents=True, exist_ok=True)
+                    continue
+                target.parent.mkdir(parents=True, exist_ok=True)
+                if not target.exists():
+                    shutil.copy2(source, target)
 
     def attachment_dir(self, entity_type: str, entity_id: int) -> Path:
         path = self.attachments_dir / entity_type / str(entity_id)
