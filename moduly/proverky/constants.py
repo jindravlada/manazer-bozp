@@ -100,6 +100,10 @@ CONTROL_POINT_SHARED_EXPERIENCES_TITLE = "Sdílené zkušenosti"
 CONTROL_POINT_HISTORY_WORKPLACE_NO_WORKPLACE = "Pro zobrazení historie vyberte pracoviště."
 CONTROL_POINT_SHARED_EXPERIENCES_EMPTY = "Zatím bez sdílených zkušeností."
 
+KNOWLEDGE_EDITOR_BUTTON_LABEL = "Editor znalostí"
+KNOWLEDGE_EDITOR_DEFAULT_AREA_ID = "prvni_pomoc"
+KNOWLEDGE_EDITOR_DEFAULT_SECTION_ID = "lekarnicka"
+
 
 @dataclass(frozen=True)
 class ProverkyFindingKnowledgeContext:

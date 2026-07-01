@@ -1,4 +1,6 @@
 import json
+import re
+import unicodedata
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -18,6 +20,13 @@ _KNOWLEDGE_LIST_FIELDS = (
     "doporucene_postupy",
     "legislativa",
     "historie",
+)
+
+EDITABLE_SECTION_LIST_FIELDS: tuple[tuple[str, str], ...] = (
+    ("Kontrolní body", "kontrolni_body"),
+    ("Typické závady", "typicke_zavady"),
+    ("Doporučené postupy", "doporucene_postupy"),
+    ("Legislativa", "legislativa"),
 )
 
 SECTION_LIST_BLOCKS: tuple[tuple[str, str], ...] = (
@@ -336,6 +345,155 @@ class ProverkyKnowledgeService:
         if not isinstance(payload, dict):
             raise ValueError(f"Neplatný JSON číselník: {path}")
         return payload
+
+    def list_sections(
+        self,
+        area_id: str,
+        *,
+        include_inactive: bool = True,
+    ) -> list[dict]:
+        area = self.get_area_by_id(area_id)
+        if area is None or not area.has_knowledge_file:
+            return []
+
+        knowledge = self.load_area_knowledge(area)
+        if knowledge is None:
+            return []
+
+        return self._collect_sections(knowledge.get("sekce") or [], include_inactive=include_inactive)
+
+    def get_section(self, area_id: str, section_id: str) -> dict | None:
+        area = self.get_area_by_id(area_id)
+        if area is None or not area.has_knowledge_file:
+            return None
+
+        knowledge = self.load_area_knowledge(area)
+        if knowledge is None:
+            return None
+
+        found = self._find_section_in_sections(knowledge.get("sekce") or [], section_id)
+        if found is None:
+            return None
+
+        _parent_list, index = found
+        return deepcopy(_parent_list[index])
+
+    def save_section(self, area_id: str, section_id: str, section_data: dict) -> bool:
+        area = self.get_area_by_id(area_id)
+        if area is None or not area.has_knowledge_file:
+            return False
+
+        knowledge = self.load_area_knowledge(area)
+        if knowledge is None:
+            return False
+
+        found = self._find_section_in_sections(knowledge.get("sekce") or [], section_id)
+        if found is None:
+            return False
+
+        parent_list, index = found
+        existing = parent_list[index]
+        updated = deepcopy(existing)
+        updated.update(section_data)
+        updated["id"] = section_id
+        updated["historie"] = existing.get("historie") or []
+        updated["sekce"] = existing.get("sekce") or []
+        parent_list[index] = updated
+        return self._save_knowledge(area, knowledge)
+
+    def generate_item_id(self, nazev: str, existing_ids: set[str]) -> str:
+        base = self._slugify(nazev) or "polozka"
+        candidate = base
+        counter = 2
+        while candidate in existing_ids:
+            candidate = f"{base}_{counter}"
+            counter += 1
+        return candidate
+
+    @staticmethod
+    def normalize_list_items(items: list[dict]) -> list[dict]:
+        normalized: list[dict] = []
+        for index, raw in enumerate(items):
+            if not isinstance(raw, dict):
+                continue
+            item_id = str(raw.get("id") or "").strip()
+            nazev = str(raw.get("nazev") or "").strip()
+            if not item_id or not nazev:
+                continue
+            normalized.append(
+                {
+                    "id": item_id,
+                    "nazev": nazev,
+                    "popis": str(raw.get("popis") or "").strip(),
+                    "poradi": (index + 1) * 10,
+                    "aktivni": bool(raw.get("aktivni", True)),
+                }
+            )
+        return normalized
+
+    def _save_knowledge(self, area: InspectionAreaDefinition, data: dict) -> bool:
+        if not area.soubor_znalosti:
+            return False
+
+        path = self.proverky_dir / area.soubor_znalosti
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+        except OSError:
+            return False
+        return True
+
+    def _collect_sections(
+        self,
+        sections: list,
+        *,
+        include_inactive: bool,
+    ) -> list[dict]:
+        collected: list[dict] = []
+        for section in sections:
+            if not isinstance(section, dict):
+                continue
+            if not include_inactive and not section.get("aktivni", True):
+                continue
+            collected.append(section)
+            nested = section.get("sekce") or []
+            if nested:
+                collected.extend(self._collect_sections(nested, include_inactive=include_inactive))
+        collected.sort(
+            key=lambda item: (
+                int(item.get("poradi") or 0),
+                str(item.get("nazev") or "").lower(),
+            )
+        )
+        return collected
+
+    def _find_section_in_sections(
+        self,
+        sections: list,
+        section_id: str,
+    ) -> tuple[list, int] | None:
+        for index, section in enumerate(sections):
+            if not isinstance(section, dict):
+                continue
+            if str(section.get("id") or "").strip() == section_id:
+                return sections, index
+            nested = section.get("sekce") or []
+            found = self._find_section_in_sections(nested, section_id)
+            if found is not None:
+                return found
+        return None
+
+    @staticmethod
+    def _slugify(value: str) -> str:
+        normalized = unicodedata.normalize("NFKD", value.strip().lower())
+        ascii_text = "".join(
+            character for character in normalized if not unicodedata.combining(character)
+        )
+        slug = re.sub(r"[^a-z0-9]+", "_", ascii_text).strip("_")
+        return slug
 
 
 proverky_knowledge_service = ProverkyKnowledgeService()

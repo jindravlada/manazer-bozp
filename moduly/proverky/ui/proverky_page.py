@@ -20,8 +20,10 @@ from moduly.proverky.constants import (
     INSPECTION_STATUS_FILTER_PLANOVANE,
     INSPECTION_STATUS_FILTER_PROBIHAJICI,
     INSPECTION_STATUS_FILTER_VSE,
+    KNOWLEDGE_EDITOR_BUTTON_LABEL,
     YEAR_FILTER_VSE,
 )
+from moduly.proverky.ui.proverky_knowledge_editor_dialog import ProverkyKnowledgeEditorDialog
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 from moduly.proverky.ui.bozp_inspection_dialog import BozpInspectionDialog
 from moduly.proverky.ui.bozp_inspection_table import BozpInspectionTable
@@ -56,6 +58,7 @@ class ProverkyPage(QWidget):
         self.delete_btn = QPushButton("Smazat")
         self.plan_btn = QPushButton("Roční plán")
         self.report_btn = QPushButton("Roční zpráva")
+        self.knowledge_editor_btn = QPushButton(KNOWLEDGE_EDITOR_BUTTON_LABEL)
 
         self.status_filter = QComboBox()
         self.status_filter.addItems([
@@ -74,6 +77,7 @@ class ProverkyPage(QWidget):
         toolbar.addWidget(self.delete_btn)
         toolbar.addWidget(self.plan_btn)
         toolbar.addWidget(self.report_btn)
+        toolbar.addWidget(self.knowledge_editor_btn)
         toolbar.addStretch()
         toolbar.addWidget(QLabel("Stav:"))
         toolbar.addWidget(self.status_filter)
@@ -93,6 +97,7 @@ class ProverkyPage(QWidget):
         self.delete_btn.clicked.connect(self.delete_selected_inspection)
         self.plan_btn.clicked.connect(self.show_annual_plan)
         self.report_btn.clicked.connect(self.show_annual_report)
+        self.knowledge_editor_btn.clicked.connect(self.open_knowledge_editor)
         self.table.doubleClicked.connect(self.open_selected_inspection)
         self.status_filter.currentIndexChanged.connect(self.refresh)
         self.year_filter.currentIndexChanged.connect(self.refresh)
@@ -211,6 +216,9 @@ class ProverkyPage(QWidget):
 
     def show_annual_plan(self) -> None:
         exec_maximized(RocniPlanDialog(self))
+
+    def open_knowledge_editor(self) -> None:
+        ProverkyKnowledgeEditorDialog(self).exec()
 
     def show_annual_report(self) -> None:
         exec_maximized(RocniZpravaDialog(self))
