@@ -105,4 +105,13 @@ def apply_app_style(app: QApplication) -> None:
             border: 1px solid #e5e7eb;
             border-radius: 10px;
         }
+
+        QFrame#ControlPointRow {
+            border-radius: 6px;
+        }
+
+        QFrame#ControlPointRow[selected="true"] {
+            background-color: #f3f4f6;
+            border-left: 3px solid #2563eb;
+        }
     """)

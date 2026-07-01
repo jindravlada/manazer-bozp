@@ -1,6 +1,6 @@
 """Pracovní karta znalostního uzlu sekce prověrky."""
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.shared.constants import ENTITY_PROVERKY
-from core.shared.control_result_display import allows_finding
+from core.shared.control_result_display import allows_finding, control_result_label
 from core.shared.finding_display import finding_status_label
 from core.shared.sluzby.control_result_service import ControlPointContext, control_result_service
 from core.shared.sluzby.finding_service import finding_service
@@ -21,6 +21,9 @@ from core.widgets.control_result_selector import ControlResultSelectorWidget
 from core.widgets.dialog_utils import wrap_in_scroll_area
 from core.widgets.finding_dialog import FindingDialog
 from moduly.proverky.constants import (
+    CONTROL_POINT_HISTORY_EMPTY,
+    CONTROL_POINT_HISTORY_LIMIT,
+    CONTROL_POINT_HISTORY_SELECT,
     FINDING_CREATE_FROM_CONTROL_POINT_LABEL,
     FINDING_CREATED_LABEL,
     FINDING_DIALOG_TITLE,
@@ -33,7 +36,17 @@ from moduly.proverky.constants import (
     ProverkyFindingKnowledgeContext,
 )
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
+from moduly.proverky.sluzby.control_point_history_service import control_point_history_service
 from moduly.proverky.sluzby.proverky_knowledge_service import proverky_knowledge_service
+
+
+class _ControlPointFrame(QFrame):
+    clicked = Signal()
+
+    def mousePressEvent(self, event) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.clicked.emit()
+        super().mousePressEvent(event)
 
 
 _LEFT_COLUMN_BLOCKS: tuple[tuple[str, str], ...] = (
@@ -64,6 +77,10 @@ class BozpKnowledgeSectionWidget(QWidget):
         self._current_section: dict | None = None
         self._inspection_id: int | None = None
         self._on_finding_saved = None
+        self._selected_control_point_id = ""
+        self._control_point_frames: dict[str, _ControlPointFrame] = {}
+        self._history_content_host: QWidget | None = None
+        self._history_point_label: QLabel | None = None
 
         self._content_host = QWidget()
         self._content_layout = QVBoxLayout(self._content_host)
@@ -115,8 +132,8 @@ class BozpKnowledgeSectionWidget(QWidget):
         self._content_layout.addWidget(self._build_columns(section), 1)
 
     def _build_columns(self, section: dict) -> QWidget:
+        right_host = self._build_right_column(section)
         left_host = self._build_column_host(_LEFT_COLUMN_BLOCKS, section)
-        right_host = self._build_column_host(_RIGHT_COLUMN_BLOCKS, section)
 
         splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.setObjectName("KnowledgeSectionSplitter")
@@ -139,7 +156,26 @@ class BozpKnowledgeSectionWidget(QWidget):
         layout.addStretch()
         return host
 
+    def _build_right_column(self, section: dict) -> QWidget:
+        host = QWidget()
+        layout = QVBoxLayout(host)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(12)
+
+        for title, field in _RIGHT_COLUMN_BLOCKS:
+            if field == "historie":
+                layout.addWidget(self._build_historie_block(title))
+            else:
+                layout.addWidget(self._build_list_block(title, section, field))
+
+        layout.addStretch()
+        return host
+
     def _clear_content(self) -> None:
+        self._selected_control_point_id = ""
+        self._control_point_frames.clear()
+        self._history_content_host = None
+        self._history_point_label = None
         while self._content_layout.count():
             item = self._content_layout.takeAt(0)
             widget = item.widget()
@@ -153,9 +189,6 @@ class BozpKnowledgeSectionWidget(QWidget):
         return self._build_block("Popis", self._build_info_label(KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT))
 
     def _build_list_block(self, title: str, section: dict, field: str) -> QWidget:
-        if field == "historie":
-            return self._build_historie_block(title, section)
-
         items = proverky_knowledge_service.get_active_items(section.get(field))
         if not items:
             return self._build_block(title, self._build_info_label(KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT))
@@ -169,11 +202,141 @@ class BozpKnowledgeSectionWidget(QWidget):
 
         return self._build_block(title, content)
 
-    def _build_historie_block(self, title: str, section: dict) -> QWidget:
-        items = proverky_knowledge_service.get_active_items(section.get("historie"))
-        if not items:
-            return self._build_block(title, self._build_info_label(KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT))
-        return self._build_block(title, self._build_knowledge_items_list(items))
+    def _build_historie_block(self, title: str) -> QWidget:
+        container = QWidget()
+        block_layout = QVBoxLayout(container)
+        block_layout.setContentsMargins(0, 0, 0, 0)
+        block_layout.setSpacing(6)
+
+        header = QLabel(title)
+        header.setObjectName("SectionTitle")
+        block_layout.addWidget(header)
+
+        self._history_point_label = QLabel(CONTROL_POINT_HISTORY_SELECT)
+        self._history_point_label.setObjectName("InfoText")
+        self._history_point_label.setWordWrap(True)
+        block_layout.addWidget(self._history_point_label)
+
+        self._history_content_host = QWidget()
+        history_layout = QVBoxLayout(self._history_content_host)
+        history_layout.setContentsMargins(0, 0, 0, 0)
+        history_layout.setSpacing(8)
+        history_layout.addWidget(self._build_info_label(CONTROL_POINT_HISTORY_SELECT))
+
+        panel = QFrame()
+        panel.setObjectName("ModulePanel")
+        panel_layout = QVBoxLayout(panel)
+        panel_layout.setContentsMargins(12, 12, 12, 12)
+        panel_layout.setSpacing(6)
+        panel_layout.addWidget(self._history_content_host)
+
+        block_layout.addWidget(panel)
+        return container
+
+    def _set_history_content(self, widget: QWidget) -> None:
+        if self._history_content_host is None:
+            return
+
+        layout = self._history_content_host.layout()
+        while layout.count():
+            item = layout.takeAt(0)
+            child = item.widget()
+            if child is not None:
+                child.deleteLater()
+        layout.addWidget(widget)
+
+    def _refresh_control_point_history(self, context: ProverkyFindingKnowledgeContext | None = None) -> None:
+        if self._history_content_host is None:
+            return
+
+        if context is None and self._selected_control_point_id:
+            context = ProverkyFindingKnowledgeContext(
+                area_id=self._area_id,
+                area_label=self._area_label,
+                section_id=self._section_id,
+                section_label=self._section_label,
+                control_point_id=self._selected_control_point_id,
+                control_point_label="",
+            )
+
+        if context is None or not context.control_point_id:
+            if self._history_point_label is not None:
+                self._history_point_label.setText(CONTROL_POINT_HISTORY_SELECT)
+            self._set_history_content(self._build_info_label(CONTROL_POINT_HISTORY_SELECT))
+            return
+
+        if self._history_point_label is not None:
+            label = context.control_point_label.strip() or context.control_point_id
+            self._history_point_label.setText(label)
+
+        workplace_id = None
+        if self._inspection_id is not None:
+            inspection = bozp_inspection_service.get_by_id(self._inspection_id)
+            if inspection is not None:
+                workplace_id = inspection.workplace_id
+
+        entries = control_point_history_service.get_history(
+            area_label=context.area_label,
+            section_label=context.section_label,
+            control_point_id=context.control_point_id,
+            workplace_id=workplace_id,
+            exclude_inspection_id=self._inspection_id,
+            limit=CONTROL_POINT_HISTORY_LIMIT,
+        )
+
+        if not entries:
+            self._set_history_content(self._build_info_label(CONTROL_POINT_HISTORY_EMPTY))
+            return
+
+        list_host = QWidget()
+        list_layout = QVBoxLayout(list_host)
+        list_layout.setContentsMargins(0, 0, 0, 0)
+        list_layout.setSpacing(10)
+        for entry in entries:
+            list_layout.addWidget(self._build_history_entry_row(entry))
+        self._set_history_content(list_host)
+
+    def _build_history_entry_row(self, entry) -> QWidget:
+        row = QWidget()
+        layout = QVBoxLayout(row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(2)
+
+        date_text = self._format_history_datetime(entry.recorded_at)
+        header = QLabel(f"• {date_text} — {control_result_label(entry.result)}")
+        header.setWordWrap(True)
+        layout.addWidget(header)
+
+        inspection_label = entry.inspection_number or str(entry.inspection_id)
+        layout.addWidget(self._build_info_label(f"Prověrka: {inspection_label}"))
+
+        if entry.note.strip():
+            layout.addWidget(self._build_info_label(f"Poznámka: {entry.note.strip()}"))
+
+        if entry.finding is not None:
+            finding_text = self._text_preview(entry.finding.description, max_len=80)
+            layout.addWidget(
+                self._build_info_label(
+                    f"Zjištění: {finding_text} ({finding_status_label(entry.finding.status)})"
+                )
+            )
+
+        return row
+
+    @staticmethod
+    def _format_history_datetime(value) -> str:
+        if value is None:
+            return "—"
+        return value.strftime("%d.%m.%Y %H:%M")
+
+    def _select_control_point(self, context: ProverkyFindingKnowledgeContext) -> None:
+        self._selected_control_point_id = context.control_point_id
+        for control_point_id, frame in self._control_point_frames.items():
+            selected = control_point_id == context.control_point_id
+            frame.setProperty("selected", selected)
+            frame.style().unpolish(frame)
+            frame.style().polish(frame)
+        self._refresh_control_point_history(context)
 
     def _build_control_points_list(self, items: list[dict]) -> QWidget:
         container = QWidget()
@@ -181,19 +344,30 @@ class BozpKnowledgeSectionWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(10)
 
+        first_context: ProverkyFindingKnowledgeContext | None = None
         for item in items:
+            context = self._context_for_control_point(item)
+            if first_context is None:
+                first_context = context
             layout.addWidget(self._build_control_point_row(item))
+
+        if first_context is not None:
+            self._select_control_point(first_context)
 
         return container
 
     def _build_control_point_row(self, item: dict) -> QWidget:
-        row = QWidget()
-        row_layout = QVBoxLayout(row)
-        row_layout.setContentsMargins(0, 0, 0, 0)
-        row_layout.setSpacing(4)
-
         context = self._context_for_control_point(item)
         finding = self._finding_for_context(context)
+
+        row_frame = _ControlPointFrame()
+        row_frame.setObjectName("ControlPointRow")
+        row_frame.clicked.connect(lambda ctx=context: self._select_control_point(ctx))
+        self._control_point_frames[context.control_point_id] = row_frame
+
+        row_layout = QVBoxLayout(row_frame)
+        row_layout.setContentsMargins(8, 6, 8, 6)
+        row_layout.setSpacing(4)
 
         nazev = context.control_point_label
         title_label = QLabel(f"• {nazev}")
@@ -241,7 +415,7 @@ class BozpKnowledgeSectionWidget(QWidget):
             )
         )
 
-        return row
+        return row_frame
 
     def _populate_finding_section(
         self,
@@ -281,6 +455,7 @@ class BozpKnowledgeSectionWidget(QWidget):
         context: ProverkyFindingKnowledgeContext,
         result: str,
     ) -> None:
+        self._select_control_point(context)
         self._populate_finding_section(
             host,
             layout,
