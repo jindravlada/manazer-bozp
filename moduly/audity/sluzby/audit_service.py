@@ -1,7 +1,14 @@
 from datetime import date, datetime
+from dataclasses import dataclass
 
-from core.shared.constants import ENTITY_AUDITY
+from core.shared.constants import (
+    ENTITY_AUDITY,
+    FINDING_STATUS_OTEVRENE,
+    FINDING_STATUS_V_PROCESU,
+    FINDING_STATUS_VYPORADANO,
+)
 from core.shared.modely.finding import Finding
+from core.shared.sluzby.control_result_service import control_result_service
 from core.shared.sluzby.finding_service import finding_service
 from moduly.audity.constants import (
     AUDIT_SPIS_STATUSES,
@@ -13,9 +20,19 @@ from moduly.audity.constants import (
 )
 from moduly.audity.modely.audit import Audit
 from moduly.audity.repository.audit_repository import AuditRepository
-from core.shared.sluzby.control_result_service import control_result_service
 from moduly.audity.sluzby.audit_commission_service import audit_commission_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
+from moduly.ukoly.modely.task import Task
+from moduly.ukoly.sluzby.task_service import task_service
+
+
+@dataclass(frozen=True)
+class CompletionBlockers:
+    open_findings: list[Finding]
+    active_tasks: list[Task]
+
+    def has_blockers(self) -> bool:
+        return bool(self.open_findings or self.active_tasks)
 
 
 class AuditService:
@@ -101,6 +118,48 @@ class AuditService:
             ):
                 return finding
         return None
+
+    def get_tasks_for_audit(self, audit_id: int) -> list[Task]:
+        tasks: list[Task] = []
+        seen_task_ids: set[int] = set()
+
+        for finding in finding_service.get_for_entity(ENTITY_AUDITY, audit_id):
+            task_id = finding.task_id
+            if task_id is None or task_id in seen_task_ids:
+                continue
+
+            task = task_service.get_task_by_id(task_id)
+            if task is None:
+                continue
+
+            tasks.append(task)
+            seen_task_ids.add(task_id)
+
+        return sorted(tasks, key=lambda item: (item.due_date or date.max, item.id))
+
+    def get_completion_blockers(self, audit_id: int) -> CompletionBlockers:
+        open_findings = [
+            finding
+            for finding in finding_service.get_for_entity(ENTITY_AUDITY, audit_id)
+            if finding.status != FINDING_STATUS_VYPORADANO
+        ]
+        active_tasks = [
+            task
+            for task in self.get_tasks_for_audit(audit_id)
+            if task.computed_status not in {"Ukončeno", "Zrušeno"}
+        ]
+        return CompletionBlockers(open_findings=open_findings, active_tasks=active_tasks)
+
+    def get_conclusion_summary(self, audit_id: int) -> dict[str, int]:
+        findings = finding_service.get_for_entity(ENTITY_AUDITY, audit_id)
+        blockers = self.get_completion_blockers(audit_id)
+        tasks = self.get_tasks_for_audit(audit_id)
+        return {
+            "findings_total": len(findings),
+            "findings_open": len(blockers.open_findings),
+            "tasks_total": len(tasks),
+            "tasks_active": len(blockers.active_tasks),
+        }
 
     def open_finding_for_control_point(
         self,

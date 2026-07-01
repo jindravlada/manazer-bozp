@@ -32,7 +32,7 @@ with patch.object(Path, "home", return_value=_TMP):
         COMMISSION_RECORD_LEADER,
         COMMISSION_RECORD_UNION,
         COMMISSION_RECORD_WORKPLACE,
-        TAB_AUDITOVANE_PROCESY,
+        TAB_LABELS,
     )
     from moduly.audity.sluzby.audit_commission_service import audit_commission_service
     from moduly.audity.sluzby.audit_service import audit_service
@@ -88,10 +88,9 @@ class AudityDialogTestCase(unittest.TestCase):
         dialog = self._open_dialog()
 
         self.assertIsNone(dialog.audit)
-        self.assertEqual(dialog.tabs.count(), 3)
-        self.assertEqual(dialog.tabs.tabText(0), "Spis")
-        self.assertEqual(dialog.tabs.tabText(1), "Komise")
-        self.assertEqual(dialog.tabs.tabText(2), TAB_AUDITOVANE_PROCESY)
+        self.assertEqual(dialog.tabs.count(), 6)
+        for index, label in enumerate(TAB_LABELS):
+            self.assertEqual(dialog.tabs.tabText(index), label)
 
     def test_dialog_opens_maximized(self) -> None:
         from PySide6.QtWidgets import QDialog

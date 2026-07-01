@@ -19,6 +19,11 @@ AUDIT_SPIS_STATUSES = (
 DEFAULT_AUDIT_SPIS_STATUS = AUDIT_STATUS_PLANOVANO
 VALID_AUDIT_STATUSES = frozenset(AUDIT_SPIS_STATUSES)
 
+AUDIT_COMPLETION_CONFIRM_MESSAGE = (
+    "Audit obsahuje otevřená zjištění nebo aktivní úkoly. "
+    "Přesto ho chcete označit jako dokončený?"
+)
+
 AUDIT_TYPE_RADNY = "Řádný"
 AUDIT_TYPE_MIMORADNY = "Mimořádný"
 

@@ -118,8 +118,11 @@ class AudityProcessesTestCase(unittest.TestCase):
         audit = self._create_audit_with_team()
         dialog = AuditDialog(audit=audit)
 
-        self.assertEqual(dialog.tabs.count(), 3)
+        self.assertEqual(dialog.tabs.count(), 6)
         self.assertEqual(dialog.tabs.tabText(2), TAB_AUDITOVANE_PROCESY)
+        self.assertEqual(dialog.tabs.tabText(3), "Zjištění")
+        self.assertEqual(dialog.tabs.tabText(4), "Úkoly")
+        self.assertEqual(dialog.tabs.tabText(5), "Závěr")
 
     def test_tree_shows_seed_process(self) -> None:
         from moduly.audity.ui.audit_knowledge_tree_widget import AuditKnowledgeTreeWidget
@@ -227,6 +230,60 @@ class AudityProcessesTestCase(unittest.TestCase):
         self.assertEqual(finding.source_section_label, "Cíle a politika BOZP")
         self.assertEqual(finding.source_control_point_id, "politika_schvalena")
         self.assertEqual(finding.reference_label, stable_key)
+
+    @patch("moduly.audity.ui.audit_knowledge_criterion_widget.FindingDialog")
+    def test_finding_from_question_appears_on_findings_tab(self, mock_dialog_cls) -> None:
+        audit = self._create_audit_with_team()
+        context = self._question_context()
+        stable_key = audit_knowledge_service.question_stable_key(
+            context.area_id,
+            context.section_id,
+            context.control_point_id,
+        )
+
+        control_result_service.set_result(
+            ENTITY_AUDITY,
+            audit.id,
+            context,
+            result=CONTROL_RESULT_NEVYHOVUJE,
+        )
+
+        mock_dialog = MagicMock()
+        mock_dialog.exec.return_value = True
+        mock_dialog.get_data.return_value = {
+            "finding_type": FINDING_TYPE_NESHODA,
+            "reference_label": stable_key,
+            "description": "Politika BOZP chybí.",
+            "recommended_action": "Schválit politiku.",
+            "responsible_person_id": None,
+            "responsible_person_name": "",
+            "due_date": None,
+            "status": FINDING_STATUS_OTEVRENE,
+            "resolution_note": "",
+        }
+        mock_dialog_cls.return_value = mock_dialog
+
+        from moduly.audity.ui.audit_dialog import AuditDialog
+
+        dialog = AuditDialog(audit=audit)
+        criterion = audit_knowledge_service.get_criterion("planovani_bozp", "cile_politika")
+        assert criterion is not None
+        dialog.processes_widget.knowledge_widget.criterion_widget.set_criterion(
+            criterion,
+            area_id="planovani_bozp",
+            area_label="Plánování systému BOZP",
+            section_label="Cíle a politika BOZP",
+        )
+
+        question = audit_knowledge_service.get_audit_questions(criterion)[0]
+        dialog.processes_widget.knowledge_widget.criterion_widget._create_finding(question)
+
+        dialog.findings_widget.refresh()
+        self.assertEqual(dialog.findings_widget.table.rowCount(), 1)
+        self.assertEqual(
+            dialog.findings_widget.table.item(0, 7).text(),
+            "Politika BOZP chybí.",
+        )
 
 
 if __name__ == "__main__":
