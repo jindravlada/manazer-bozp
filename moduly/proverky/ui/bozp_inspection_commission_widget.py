@@ -71,8 +71,8 @@ class BozpInspectionCommissionWidget(QWidget):
 
     def _create_list_table(self) -> QTableWidget:
         table = QTableWidget()
-        table.setColumnCount(4)
-        table.setHorizontalHeaderLabels(["ID", "Jméno", "Role / pozn.", "Pořadí"])
+        table.setColumnCount(5)
+        table.setHorizontalHeaderLabels(["ID", "Jméno", "Role", "Poznámka", "Pořadí"])
         table.setColumnHidden(0, True)
         table.setSelectionBehavior(QTableWidget.SelectRows)
         table.setSelectionMode(QTableWidget.SingleSelection)
@@ -81,7 +81,8 @@ class BozpInspectionCommissionWidget(QWidget):
         table.verticalHeader().setVisible(False)
         table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
         table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        table.horizontalHeader().setSectionResizeMode(3, QHeaderView.Stretch)
+        table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
         return table
 
     def _build_list_toolbar(self, list_type: str) -> QWidget:
@@ -197,6 +198,7 @@ class BozpInspectionCommissionWidget(QWidget):
                     "person_id": None,
                     "display_name": member.get("display_name", ""),
                     "role_text": member.get("role_text"),
+                    "note_text": member.get("note_text"),
                     "display_order": index * 10,
                     "active": True,
                 }
@@ -210,6 +212,7 @@ class BozpInspectionCommissionWidget(QWidget):
                     "person_id": member.get("person_id"),
                     "display_name": member.get("display_name", ""),
                     "role_text": member.get("role_text"),
+                    "note_text": member.get("note_text"),
                     "display_order": index * 10,
                     "active": True,
                 }
@@ -234,7 +237,8 @@ class BozpInspectionCommissionWidget(QWidget):
             table.setItem(row, 0, QTableWidgetItem(str(row)))
             table.setItem(row, 1, QTableWidgetItem(item.get("display_name") or "—"))
             table.setItem(row, 2, QTableWidgetItem(item.get("role_text") or ""))
-            table.setItem(row, 3, QTableWidgetItem(str((row + 1) * 10)))
+            table.setItem(row, 3, QTableWidgetItem(item.get("note_text") or ""))
+            table.setItem(row, 4, QTableWidgetItem(str((row + 1) * 10)))
 
     def _selected_row(self, table: QTableWidget) -> int | None:
         selected = table.selectionModel().selectedRows()

@@ -217,6 +217,12 @@ def _ensure_bozp_inspection_commission_table() -> None:
         with engine.connect() as connection:
             connection.execute(text("DROP TABLE bozp_inspection_commission_members"))
             connection.commit()
+        columns = set()
+
+    if columns and "note_text" not in columns:
+        _add_column("bozp_inspection_commission_members", "note_text VARCHAR(250)")
+
+    if not columns:
         from moduly.proverky.modely.bozp_inspection_commission_member import (
             BozpInspectionCommissionMember,
         )

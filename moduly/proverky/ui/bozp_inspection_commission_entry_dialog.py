@@ -8,6 +8,10 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import create_save_cancel_box
 from core.widgets.person_selector import PersonSelector
 from core.widgets.thp_worker_selector import ThpWorkerSelector
+from moduly.proverky.constants import (
+    COMMISSION_DEFAULT_ROLE_INVITED,
+    COMMISSION_DEFAULT_ROLE_MEMBER,
+)
 
 
 class BozpInspectionCommissionEntryDialog(QDialog):
@@ -26,7 +30,7 @@ class BozpInspectionCommissionEntryDialog(QDialog):
             "invited": "Přizvaná osoba",
         }
         self.setWindowTitle(titles.get(entry_type, "Osoba komise"))
-        self.resize(520, 220)
+        self.resize(520, 260)
 
         layout = QVBoxLayout(self)
         form = QFormLayout()
@@ -34,14 +38,17 @@ class BozpInspectionCommissionEntryDialog(QDialog):
         self.thp_selector = ThpWorkerSelector(include_empty=True)
         self.person_selector = PersonSelector(include_inactive=False, allow_add_new=True)
         self.role_edit = QLineEdit()
-        self.role_edit.setPlaceholderText("Volitelná role nebo poznámka")
+        self.note_edit = QLineEdit()
 
         if entry_type == "member":
             form.addRow("THP pracovník:", self.thp_selector)
+            self.role_edit.setText(COMMISSION_DEFAULT_ROLE_MEMBER)
         else:
             form.addRow("Osoba:", self.person_selector)
+            self.role_edit.setText(COMMISSION_DEFAULT_ROLE_INVITED)
 
-        form.addRow("Role / poznámka:", self.role_edit)
+        form.addRow("Role:", self.role_edit)
+        form.addRow("Poznámka:", self.note_edit)
         layout.addLayout(form)
 
         buttons = create_save_cancel_box(self)
@@ -59,9 +66,12 @@ class BozpInspectionCommissionEntryDialog(QDialog):
                 self.person_selector.set_person_id(entry["person_id"])
             if entry.get("role_text"):
                 self.role_edit.setText(entry["role_text"])
+            if entry.get("note_text"):
+                self.note_edit.setText(entry["note_text"])
 
     def get_data(self) -> dict:
         role_text = self.role_edit.text().strip() or None
+        note_text = self.note_edit.text().strip() or None
 
         if self.entry_type == "member":
             worker = self.thp_selector.current_person()
@@ -72,6 +82,7 @@ class BozpInspectionCommissionEntryDialog(QDialog):
                 "person_id": None,
                 "display_name": display_name,
                 "role_text": role_text,
+                "note_text": note_text,
             }
 
         person = self.person_selector.current_person()
@@ -82,4 +93,5 @@ class BozpInspectionCommissionEntryDialog(QDialog):
             "person_id": person_id,
             "display_name": display_name,
             "role_text": role_text,
+            "note_text": note_text,
         }

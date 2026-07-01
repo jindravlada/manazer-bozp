@@ -36,6 +36,7 @@ class BozpInspectionCommissionService:
                 person_id=member_data.get("person_id"),
                 display_name=member_data["display_name"],
                 role_text=member_data.get("role_text"),
+                note_text=member_data.get("note_text"),
                 display_order=int(member_data.get("display_order") or 0),
                 active=bool(member_data.get("active", True)),
             )
@@ -80,6 +81,7 @@ class BozpInspectionCommissionService:
             "person_id": member.person_id,
             "display_name": member.display_name,
             "role_text": member.role_text,
+            "note_text": member.note_text,
             "display_order": member.display_order,
             "active": member.active,
         }
@@ -87,6 +89,7 @@ class BozpInspectionCommissionService:
     def _normalize_member(self, member: dict) -> dict:
         record_type = str(member.get("record_type") or "").strip()
         role_text = member.get("role_text")
+        note_text = member.get("note_text")
         return {
             "record_type": record_type,
             "thp_worker_id": member.get("thp_worker_id"),
@@ -97,6 +100,7 @@ class BozpInspectionCommissionService:
                 display_name=str(member.get("display_name") or "").strip(),
             ),
             "role_text": str(role_text).strip() if role_text else None,
+            "note_text": str(note_text).strip() if note_text else None,
             "display_order": member.get("display_order"),
             "active": bool(member.get("active", True)),
         }

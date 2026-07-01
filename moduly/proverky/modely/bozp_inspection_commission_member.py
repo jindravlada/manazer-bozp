@@ -17,6 +17,7 @@ class BozpInspectionCommissionMember(Base):
     person_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     display_name: Mapped[str] = mapped_column(String(200), default="")
     role_text: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    note_text: Mapped[str | None] = mapped_column(String(250), nullable=True)
 
     display_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

@@ -82,6 +82,9 @@ COMMISSION_RECORD_TYPES = frozenset(
     }
 )
 
+COMMISSION_DEFAULT_ROLE_MEMBER = "Člen komise"
+COMMISSION_DEFAULT_ROLE_INVITED = "Přizvaná osoba"
+
 TAB_LABELS = (
     "Spis",
     "Komise",
