@@ -38,7 +38,6 @@ from moduly.proverky.constants import (
     FINDING_SOURCE_LABEL,
     INSPECTION_MUST_BE_SAVED_MESSAGE,
     KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT,
-    KNOWLEDGE_POSTUP_KONTROLY_TITLE,
     ProverkyFindingKnowledgeContext,
 )
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
@@ -136,7 +135,6 @@ class BozpKnowledgeSectionWidget(QWidget):
             self._section_label = str(section.get("nazev") or "").strip()
 
         self._content_layout.addWidget(self._build_popis_block(section))
-        self._content_layout.addWidget(self._build_postup_kontroly_block(section))
         self._content_layout.addWidget(self._build_columns(section), 1)
 
     def _build_columns(self, section: dict) -> QWidget:
@@ -196,32 +194,6 @@ class BozpKnowledgeSectionWidget(QWidget):
         if popis:
             return self._build_block("Popis", self._build_info_label(popis))
         return self._build_block("Popis", self._build_info_label(KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT))
-
-    def _build_postup_kontroly_block(self, section: dict) -> QWidget:
-        items = proverky_knowledge_service.get_active_items(section.get("postup_kontroly"))
-        if not items:
-            return self._build_block(
-                KNOWLEDGE_POSTUP_KONTROLY_TITLE,
-                self._build_info_label(KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT),
-            )
-        return self._build_block(
-            KNOWLEDGE_POSTUP_KONTROLY_TITLE,
-            self._build_numbered_procedure_list(items),
-        )
-
-    def _build_numbered_procedure_list(self, items: list[dict]) -> QWidget:
-        container = QWidget()
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
-
-        for index, item in enumerate(items, start=1):
-            text = str(item.get("text") or "—").strip() or "—"
-            label = QLabel(f"{index}. {text}")
-            label.setWordWrap(True)
-            layout.addWidget(label)
-
-        return container
 
     def _build_list_block(self, title: str, section: dict, field: str) -> QWidget:
         items = proverky_knowledge_service.get_active_items(section.get(field))
