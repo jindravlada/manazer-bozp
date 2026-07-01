@@ -48,6 +48,41 @@ class BozpKnowledgeTreeWidget(QTreeWidget):
         self.clearSelection()
         self.section_selected.emit(None)
 
+    def select_node(self, area_id: str, section_id: str | None = None) -> bool:
+        for index in range(self.topLevelItemCount()):
+            area_item = self.topLevelItem(index)
+            node = self.node_for_item(area_item)
+            if node is None or node.area_id != area_id:
+                continue
+
+            if not section_id:
+                self.setCurrentItem(area_item)
+                return True
+
+            section_item = self._find_section_item(area_item, section_id)
+            if section_item is not None:
+                self.setCurrentItem(section_item)
+                return True
+
+        return False
+
+    def _find_section_item(
+        self,
+        parent_item: QTreeWidgetItem,
+        section_id: str,
+    ) -> QTreeWidgetItem | None:
+        for index in range(parent_item.childCount()):
+            child_item = parent_item.child(index)
+            node = self.node_for_item(child_item)
+            if node is not None and node.node_id == section_id:
+                return child_item
+
+            nested = self._find_section_item(child_item, section_id)
+            if nested is not None:
+                return nested
+
+        return None
+
     def node_for_item(self, item: QTreeWidgetItem | None) -> KnowledgeTreeNode | None:
         if item is None:
             return None

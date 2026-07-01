@@ -1,19 +1,28 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QDialog,
     QFrame,
+    QHBoxLayout,
     QLabel,
+    QMessageBox,
+    QPushButton,
     QSplitter,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
 
-from moduly.proverky.constants import AREA_NOT_IMPLEMENTED_TEXT
+from moduly.proverky.constants import AREA_NOT_IMPLEMENTED_TEXT, KNOWLEDGE_EDIT_FROM_CARD_LABEL
 from moduly.proverky.sluzby.proverky_knowledge_service import (
     KnowledgeTreeNode,
     proverky_knowledge_service,
 )
 from moduly.proverky.ui.bozp_area_knowledge_widget import BozpAreaKnowledgeWidget
 from moduly.proverky.ui.bozp_knowledge_tree_widget import BozpKnowledgeTreeWidget
+from moduly.proverky.ui.proverky_knowledge_editor_dialog import ProverkyKnowledgeEditorDialog
+from moduly.proverky.ui.proverky_knowledge_section_edit_dialog import (
+    ProverkyKnowledgeSectionEditDialog,
+)
 
 
 class BozpInspectionAreasWidget(QWidget):
@@ -41,9 +50,21 @@ class BozpInspectionAreasWidget(QWidget):
         detail_layout.setContentsMargins(12, 12, 12, 12)
         detail_layout.setSpacing(8)
 
+        self._current_area_id = ""
+        self._current_section_id = ""
+
+        header_row = QHBoxLayout()
+        header_row.setContentsMargins(0, 0, 0, 0)
+
         self.area_title_label = QLabel()
         self.area_title_label.setObjectName("SectionTitle")
         self.area_title_label.setWordWrap(True)
+
+        self.edit_knowledge_btn = QPushButton(KNOWLEDGE_EDIT_FROM_CARD_LABEL)
+        self.edit_knowledge_btn.clicked.connect(self._open_knowledge_editor_from_card)
+
+        header_row.addWidget(self.area_title_label, 1)
+        header_row.addWidget(self.edit_knowledge_btn, 0, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
 
         self.area_description_label = QLabel()
         self.area_description_label.setObjectName("InfoText")
@@ -55,7 +76,7 @@ class BozpInspectionAreasWidget(QWidget):
         self.knowledge_widget = BozpAreaKnowledgeWidget()
         self.content_stack.addWidget(self.knowledge_widget)
 
-        detail_layout.addWidget(self.area_title_label)
+        detail_layout.addLayout(header_row)
         detail_layout.addWidget(self.area_description_label)
         detail_layout.addSpacing(4)
         detail_layout.addWidget(self.content_stack, 1)
@@ -106,7 +127,34 @@ class BozpInspectionAreasWidget(QWidget):
         layout.addStretch()
         return page
 
+    def _open_knowledge_editor_from_card(self) -> None:
+        if self._current_area_id and self._current_section_id:
+            try:
+                dialog = ProverkyKnowledgeSectionEditDialog(
+                    self,
+                    area_id=self._current_area_id,
+                    section_id=self._current_section_id,
+                )
+            except ValueError as exc:
+                QMessageBox.warning(self, KNOWLEDGE_EDIT_FROM_CARD_LABEL, str(exc))
+                return
+
+            if dialog.exec() == QDialog.DialogCode.Accepted:
+                self._refresh_after_knowledge_edit()
+            return
+
+        ProverkyKnowledgeEditorDialog(self).exec()
+
+    def _refresh_after_knowledge_edit(self) -> None:
+        area_id = self._current_area_id
+        section_id = self._current_section_id
+        self.knowledge_tree.reload_tree()
+        if area_id and section_id:
+            self.knowledge_tree.select_node(area_id, section_id)
+
     def _show_hint(self) -> None:
+        self._current_area_id = ""
+        self._current_section_id = ""
         self.area_title_label.setText("Kontrolované oblasti")
         self.area_description_label.setText("Vyberte sekci ve stromu znalostí vlevo.")
         self.area_description_label.setVisible(True)
@@ -114,6 +162,9 @@ class BozpInspectionAreasWidget(QWidget):
         self.content_stack.setCurrentIndex(self._PAGE_HINT)
 
     def _on_area_selected(self, node: KnowledgeTreeNode) -> None:
+        self._current_area_id = node.area_id
+        self._current_section_id = ""
+
         area_def = proverky_knowledge_service.get_area_by_id(node.area_id)
 
         self.area_title_label.setText(node.area_label)
@@ -138,6 +189,9 @@ class BozpInspectionAreasWidget(QWidget):
         if section is None:
             self._show_hint()
             return
+
+        self._current_area_id = node.area_id
+        self._current_section_id = node.node_id
 
         self.area_title_label.setText(node.area_label)
         section_label = str(section.get("nazev") or "").strip()
