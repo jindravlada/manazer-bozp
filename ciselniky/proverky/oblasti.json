@@ -1,5 +1,5 @@
 {
-  "verze": 10,
+  "verze": 11,
   "oblasti": [
     {
       "id": "bozp",
@@ -60,10 +60,10 @@
     {
       "id": "revize",
       "nazev": "Revize a kontroly",
-      "popis": "Platnost revizí, pravidelné kontroly technických zařízení a záznamy o nich.",
+      "popis": "Vyhrazená technická zařízení, elektrická zařízení, PBZ, pracovní prostředky, vázací prostředky, lhůty, odstraňování závad a evidence revizí.",
       "poradi": 50,
       "aktivni": true,
-      "soubor_znalosti": null
+      "soubor_znalosti": "revize_kontroly.json"
     },
     {
       "id": "doprava",

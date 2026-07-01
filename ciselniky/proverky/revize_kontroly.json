@@ -1,0 +1,1678 @@
+{
+  "verze": 1,
+  "id": "revize",
+  "nazev": "Revize a kontroly",
+  "popis": "Vyhrazená technická zařízení, elektrická zařízení, PBZ, pracovní prostředky, vázací prostředky, lhůty, odstraňování závad a evidence revizí.",
+  "poradi": 50,
+  "aktivni": true,
+  "sekce": [
+    {
+      "id": "vyhrazena_technicka_zarizeni",
+      "nazev": "Vyhrazená technická zařízení",
+      "popis": "Kontrola tlakových, plynových, elektrických a zdvihacích zařízení a provozní dokumentace vyhrazených technických zařízení.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace",
+          "text": "Identifikujte vyhrazená technická zařízení v kontrolované oblasti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "tlakova_zarizeni",
+          "text": "Zkontrolujte tlaková zařízení — revize, kontroly a provozní dokumentace.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "plynova_zarizeni",
+          "text": "Ověřte plynová zařízení a plnění požadavků na kontroly.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "elektricka_vtz",
+          "text": "Posuďte elektrická zařízení zařazená mezi VTZ.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "zdvihaci_zarizeni",
+          "text": "Zkontrolujte zdvihací zařízení a jejich revize.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "provozni_dokumentace",
+          "text": "Ověřte úplnost provozní dokumentace VTZ.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda na pracovišti nejsou provozována VTZ bez předepsaných kontrol.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "tlakova_zarizeni",
+          "nazev": "Tlaková zařízení jsou kontrolována",
+          "popis": "Tlaková zařízení mají platné kontroly a revize.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "plynova_zarizeni",
+          "nazev": "Plynová zařízení jsou kontrolována",
+          "popis": "Plynová zařízení splňují požadavky na kontroly.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "elektricka_vtz",
+          "nazev": "Elektrická VTZ jsou kontrolována",
+          "popis": "Elektrická VTZ mají platné revize nebo kontroly.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "zdvihaci_zarizeni",
+          "nazev": "Zdvihací zařízení jsou kontrolována",
+          "popis": "Zdvihací zařízení mají platné revize.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "provozni_dokumentace",
+          "nazev": "Provozní dokumentace existuje",
+          "popis": "Provozní dokumentace VTZ je úplná a aktuální.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "VTZ bez kontrol nejsou provozována",
+          "popis": "Na pracovišti nejsou provozována VTZ bez předepsaných kontrol.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "bez_revize_tlak",
+          "nazev": "Tlaková zařízení bez revize",
+          "popis": "Tlaková zařízení jsou provozována bez platné revize.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "bez_kontroly_plyn",
+          "nazev": "Plynová zařízení bez kontroly",
+          "popis": "Plynová zařízení nemají platné kontroly.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "provoz_bez_dokumentace",
+          "nazev": "Provoz bez dokumentace",
+          "popis": "VTZ jsou provozována bez provozní dokumentace.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "propadle_revize",
+          "nazev": "Propadlé revize VTZ",
+          "popis": "Revize nebo kontroly VTZ neproběhly v termínu.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "neevidovana_vtz",
+          "nazev": "Neevidovaná VTZ",
+          "popis": "Některá VTZ nejsou evidována.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "provoz_se_zavadou",
+          "nazev": "Provoz se závadou",
+          "popis": "VTZ se závadou jsou provozována bez odstranění.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "evidence_vtz",
+          "nazev": "Vést evidenci VTZ",
+          "popis": "Evidence všech vyhrazených technických zařízení včetně termínů kontrol.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "sledovat_terminy",
+          "nazev": "Sledovat termíny",
+          "popis": "Pravidelně kontrolujte blížící se termíny revizí a kontrol.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "provozni_dokumentace",
+          "nazev": "Zajistit provozní dokumentaci",
+          "popis": "Udržujte úplnou provozní dokumentaci pro každé VTZ.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vyloucit_nevyhovujici",
+          "nazev": "Vyřadit nevyhovující zařízení",
+          "popis": "Zařízení bez platné revize okamžitě vyřaďte z provozu.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "opravnene_osoby",
+          "nazev": "Pověřit oprávněné osoby",
+          "popis": "Zajistěte revize a kontroly pouze oprávněnými osobami.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zakon_250_2021",
+          "nazev": "Zákon č. 250/2021 Sb.",
+          "popis": "Požadavky na bezpečnost provozu vyhrazených technických zařízení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro provádění revizí, kontrol a evidence.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vyhlaska_415_2003",
+          "nazev": "Vyhláška č. 415/2003 Sb.",
+          "popis": "Požadavky na bezpečný provoz tlakových zařízení a kontrol.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "elektricka_zarizeni_spotrebice",
+      "nazev": "Elektrická zařízení a spotřebiče",
+      "popis": "Kontrola revizí, pravidelných kontrol, označení, evidence a odstranění závad u elektrických zařízení a spotřebičů.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace",
+          "text": "Identifikujte elektrická zařízení a spotřebiče v kontrolované oblasti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "revize",
+          "text": "Zkontrolujte platnost revizí elektrických zařízení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "kontroly",
+          "text": "Ověřte provedení pravidelných kontrol spotřebičů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni",
+          "text": "Posuďte označení zařízení podle výsledku revize nebo kontroly.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "evidence",
+          "text": "Zkontrolujte evidenci elektrických zařízení a spotřebičů.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "odstraneni_zavad",
+          "text": "Ověřte odstranění závad zjištěných při revizích a kontrolách.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda kontrolované zařízení má platnou revizi nebo kontrolu.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "revize",
+          "nazev": "Revize jsou platné",
+          "popis": "Elektrická zařízení mají platné revize.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "kontroly",
+          "nazev": "Kontroly jsou aktuální",
+          "popis": "Spotřebiče mají aktuální pravidelné kontroly.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni",
+          "nazev": "Zařízení jsou označena",
+          "popis": "Zařízení jsou označena podle výsledku revize nebo kontroly.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "evidence",
+          "nazev": "Evidence je vedena",
+          "popis": "Elektrická zařízení a spotřebiče jsou evidovány.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "odstraneni_zavad",
+          "nazev": "Závady jsou odstraněny",
+          "popis": "Závady z revizí a kontrol jsou řešeny.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Platná revize nebo kontrola",
+          "popis": "Kontrolované zařízení má platnou revizi nebo kontrolu.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "propadla_revize",
+          "nazev": "Propadlá revize",
+          "popis": "Elektrické zařízení nemá platnou revizi.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "propadla_kontrola",
+          "nazev": "Propadlá kontrola spotřebiče",
+          "popis": "Spotřebič nemá aktuální kontrolu.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "neoznacene",
+          "nazev": "Neoznačené zařízení",
+          "popis": "Zařízení není označeno podle výsledku revize.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "neevidovane",
+          "nazev": "Neevidované zařízení",
+          "popis": "Zařízení není v evidenci.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "neodstranene_zavady",
+          "nazev": "Neodstraněné závady",
+          "popis": "Závady z revize nejsou odstraněny.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "provoz_se_stitkem",
+          "nazev": "Provoz se závadným štítkem",
+          "popis": "Zařízení se závadou je stále používáno.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "plan_revizi",
+          "nazev": "Plánovat revize a kontroly",
+          "popis": "Zpracujte plán revizí a pravidelných kontrol spotřebičů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_ee",
+          "nazev": "Vést evidenci EE",
+          "popis": "Evidence všech elektrických zařízení včetně termínů.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "oznacovat",
+          "nazev": "Označovat zařízení",
+          "popis": "Označujte zařízení podle výsledku revize nebo kontroly.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "resit_zavady",
+          "nazev": "Bezodkladně řešit závady",
+          "popis": "Závady z revizí řešte v stanovených termínech.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vyrazen_nevyhovujici",
+          "nazev": "Vyřazovat nevyhovující spotřebiče",
+          "popis": "Spotřebiče se závadou okamžitě vyřaďte z provozu.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zakon_250_2021",
+          "nazev": "Zákon č. 250/2021 Sb.",
+          "popis": "Požadavky na bezpečnost provozu vyhrazených technických zařízení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro provádění revizí, kontrol a evidence.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vyhlaska_190_2022",
+          "nazev": "Vyhláška č. 190/2022 Sb.",
+          "popis": "Požadavky na revize a kontroly elektrických zařízení a spotřebičů.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "pozarne_bezpecnostni_zarizeni",
+      "nazev": "Požárně bezpečnostní zařízení",
+      "popis": "Kontrola hasicích přístrojů, hydrantů, EPS, SHZ a ostatního požárně bezpečnostního zařízení.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace",
+          "text": "Identifikujte požárně bezpečnostní zařízení v kontrolované oblasti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "hasicí_pristroje",
+          "text": "Zkontrolujte hasicí přístroje — stav, umístění a platnost kontrol.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "hydranty",
+          "text": "Ověřte hydranty a jejich kontroly.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "eps",
+          "text": "Posuďte evakuační a požární signalizaci (EPS).",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "shz",
+          "text": "Zkontrolujte stabilní hasicí zařízení (SHZ).",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "ostatni_pbz",
+          "text": "Ověřte ostatní požárně bezpečnostní zařízení a jejich kontroly.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda všechna instalovaná PBZ mají platné kontroly.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "hasicí_pristroje",
+          "nazev": "Hasicí přístroje jsou kontrolovány",
+          "popis": "Hasicí přístroje mají platné kontroly.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "hydranty",
+          "nazev": "Hydranty jsou kontrolovány",
+          "popis": "Hydranty mají platné kontroly.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "eps",
+          "nazev": "EPS je kontrolována",
+          "popis": "Evakuační a požární signalizace má platné kontroly.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "shz",
+          "nazev": "SHZ je kontrolována",
+          "popis": "Stabilní hasicí zařízení má platné kontroly.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "ostatni_pbz",
+          "nazev": "Ostatní PBZ jsou kontrolována",
+          "popis": "Ostatní PBZ mají platné kontroly.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "PBZ mají platné kontroly",
+          "popis": "Všechna instalovaná PBZ mají platné kontroly.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "propadle_hp",
+          "nazev": "Propadlé kontroly hasicích přístrojů",
+          "popis": "Hasicí přístroje nemají platnou kontrolu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "neprovozni_hydrant",
+          "nazev": "Neprovozuschopný hydrant",
+          "popis": "Hydrant není v provozuschopném stavu.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "eps_nekontrolovana",
+          "nazev": "Nekontrolovaná EPS",
+          "popis": "EPS nemá platnou kontrolu.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "shz_nekontrolovana",
+          "nazev": "Nekontrolovaná SHZ",
+          "popis": "SHZ nemá platnou kontrolu.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_evidence_pbz",
+          "nazev": "Chybí evidence PBZ",
+          "popis": "Požárně bezpečnostní zařízení nejsou evidována.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "zavada_bez_reseni",
+          "nazev": "Závada PBZ bez řešení",
+          "popis": "Zjištěná závada PBZ není odstraněna.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "plan_kontrol_pbz",
+          "nazev": "Plánovat kontroly PBZ",
+          "popis": "Zpracujte plán pravidelných kontrol všech PBZ.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_pbz",
+          "nazev": "Vést evidenci PBZ",
+          "popis": "Evidence všech PBZ včetně termínů kontrol.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "sledovat_terminy",
+          "nazev": "Sledovat termíny",
+          "popis": "Pravidelně kontrolujte blížící se termíny kontrol PBZ.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "resit_zavady",
+          "nazev": "Řešit závady PBZ",
+          "popis": "Závady z kontrol PBZ řešte v stanovených termínech.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "opravnene_osoby",
+          "nazev": "Pověřit oprávněné osoby",
+          "popis": "Kontroly PBZ provádějte pouze oprávněné osoby.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zakon_250_2021",
+          "nazev": "Zákon č. 250/2021 Sb.",
+          "popis": "Požadavky na bezpečnost provozu vyhrazených technických zařízení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro provádění revizí, kontrol a evidence.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nv_246_2001",
+          "nazev": "Nařízení vlády č. 246/2001 Sb.",
+          "popis": "Požadavky na kontrolu a údržbu požárně bezpečnostních zařízení.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "pracovni_prostredky",
+      "nazev": "Pracovní prostředky a technická zařízení",
+      "popis": "Kontrola žebříků, schůdků, ručního nářadí, strojů a ostatních pracovních prostředků.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace",
+          "text": "Identifikujte pracovní prostředky a technická zařízení v kontrolované oblasti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zebriky",
+          "text": "Zkontrolujte žebříky — stav, označení a pravidelné kontroly.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "schudky",
+          "text": "Ověřte stav a kontroly schůdků a pojízdných plošin.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rucni_naradi",
+          "text": "Posuďte stav ručního nářadí a jeho vhodnost k použití.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "stroje",
+          "text": "Zkontrolujte pravidelné kontroly strojů a technických zařízení.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "ostatni_prostredky",
+          "text": "Ověřte stav ostatních pracovních prostředků.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda pracovní prostředky jsou pravidelně kontrolovány.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "zebriky",
+          "nazev": "Žebříky jsou kontrolovány",
+          "popis": "Žebříky jsou pravidelně kontrolovány a označeny.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "schudky",
+          "nazev": "Schůdky jsou kontrolovány",
+          "popis": "Schůdky jsou v dobrém stavu a kontrolovány.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rucni_naradi",
+          "nazev": "Ruční nářadí je kontrolováno",
+          "popis": "Ruční nářadí je pravidelně kontrolováno.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "stroje",
+          "nazev": "Stroje jsou kontrolovány",
+          "popis": "Stroje mají pravidelné kontroly dle požadavků.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "ostatni_prostredky",
+          "nazev": "Ostatní prostředky jsou kontrolovány",
+          "popis": "Ostatní pracovní prostředky jsou pravidelně kontrolovány.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Pravidelné kontroly prostředků",
+          "popis": "Pracovní prostředky jsou pravidelně kontrolovány.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "poskozene_zebriky",
+          "nazev": "Poškozené žebříky",
+          "popis": "Používají se poškozené nebo neoznačené žebříky.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poskozene_schudky",
+          "nazev": "Poškozené schůdky",
+          "popis": "Schůdky vykazují poškození ohrožující bezpečnost.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "poskozene_naradi",
+          "nazev": "Poškozené ruční nářadí",
+          "popis": "Používá se poškozené ruční nářadí.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "bez_kontrol_stroju",
+          "nazev": "Bez kontrol strojů",
+          "popis": "Stroje nejsou pravidelně kontrolovány.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_evidence",
+          "nazev": "Chybí evidence kontrol",
+          "popis": "Kontroly pracovních prostředků nejsou evidovány.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "provoz_poskozeneho",
+          "nazev": "Provoz poškozeného prostředku",
+          "popis": "Poškozený prostředek je stále používán.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "plan_kontrol",
+          "nazev": "Plánovat kontroly prostředků",
+          "popis": "Zpracujte plán pravidelných kontrol pracovních prostředků.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "evidence",
+          "nazev": "Vést evidenci kontrol",
+          "popis": "Evidence kontrol žebříků, nářadí a strojů.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vyloucit_poskozene",
+          "nazev": "Vyřazovat poškozené prostředky",
+          "popis": "Poškozené prostředky okamžitě vyřaďte z provozu.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "oznacovat",
+          "nazev": "Označovat výsledek kontroly",
+          "popis": "Označujte prostředky podle výsledku kontroly.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "pravidelna_kontrola",
+          "nazev": "Provádět pravidelné kontroly",
+          "popis": "Dodržujte stanovené intervaly kontrol.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zakon_250_2021",
+          "nazev": "Zákon č. 250/2021 Sb.",
+          "popis": "Požadavky na bezpečnost provozu vyhrazených technických zařízení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro provádění revizí, kontrol a evidence.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nv_361_2007",
+          "nazev": "Nařízení vlády č. 361/2007 Sb.",
+          "popis": "Požadavky na kontrolu pracovních prostředků a technických zařízení.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "vazici_prostredky_zdvihaci",
+      "nazev": "Vázací prostředky a zdvihací zařízení",
+      "popis": "Kontrola řetězů, lan, popruhů, háků a závěsných zařízení.",
+      "poradi": 50,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace",
+          "text": "Identifikujte vázací prostředky a závěsná zařízení v kontrolované oblasti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "retezy",
+          "text": "Zkontrolujte stav a označení řetězových vázacích prostředků.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "lana",
+          "text": "Ověřte stav lan a jejich pravidelné kontroly.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "popruhy",
+          "text": "Posuďte stav popruhových vázacích prostředků.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "haky",
+          "text": "Zkontrolujte háky a spojovací prvky.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "zavesna_zarizeni",
+          "text": "Ověřte stav a kontroly závěsných zařízení.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda poškozené vázací prostředky nejsou používány.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "retezy",
+          "nazev": "Řetězy jsou v dobrém stavu",
+          "popis": "Řetězové vázací prostředky jsou kontrolovány a označeny.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "lana",
+          "nazev": "Lana jsou v dobrém stavu",
+          "popis": "Lana jsou pravidelně kontrolována.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "popruhy",
+          "nazev": "Popruhy jsou v dobrém stavu",
+          "popis": "Popruhy nevykazují poškození.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "haky",
+          "nazev": "Háky jsou v dobrém stavu",
+          "popis": "Háky a spojovací prvky jsou kontrolovány.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "zavesna_zarizeni",
+          "nazev": "Závěsná zařízení jsou kontrolována",
+          "popis": "Závěsná zařízení mají platné kontroly.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Poškozené prostředky se nepoužívají",
+          "popis": "Poškozené vázací prostředky nejsou používány.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "poskozene_retezy",
+          "nazev": "Poškozené řetězy",
+          "popis": "Používají se poškozené nebo neoznačené řetězy.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poskozena_lana",
+          "nazev": "Poškozená lana",
+          "popis": "Lana vykazují poškození nebo opotřebení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "poskozene_popruhy",
+          "nazev": "Poškozené popruhy",
+          "popis": "Popruhy jsou poškozené nebo opotřebené.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "poskozene_haky",
+          "nazev": "Poškozené háky",
+          "popis": "Háky vykazují poškození nebo deformace.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "bez_kontrol",
+          "nazev": "Bez pravidelných kontrol",
+          "popis": "Vázací prostředky nejsou pravidelně kontrolovány.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prekrocena_nosnost",
+          "nazev": "Překročení nosnosti",
+          "popis": "Vázací prostředky jsou používány nad deklarovanou nosnost.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "pravidelna_kontrola",
+          "nazev": "Provádět pravidelné kontroly",
+          "popis": "Kontrolujte vázací prostředky v stanovených intervalech.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "evidence",
+          "nazev": "Vést evidenci prostředků",
+          "popis": "Evidence vázacích prostředků včetně termínů kontrol.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vyloucit_poskozene",
+          "nazev": "Vyřazovat poškozené prostředky",
+          "popis": "Poškozené prostředky okamžitě vyřaďte z provozu.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "oznacovat",
+          "nazev": "Označovat nosnost a stav",
+          "popis": "Označujte nosnost a výsledek kontroly.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "skoleni",
+          "nazev": "Proškolit manipulaci",
+          "popis": "Proškolte zaměstnance v bezpečném používání vázacích prostředků.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zakon_250_2021",
+          "nazev": "Zákon č. 250/2021 Sb.",
+          "popis": "Požadavky na bezpečnost provozu vyhrazených technických zařízení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro provádění revizí, kontrol a evidence.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "csn_269101",
+          "nazev": "ČSN 26 9101",
+          "popis": "Požadavky na kontrolu vázacích prostředků a zdvihací techniky.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "lhuty_revizi_kontrol",
+      "nazev": "Lhůty revizí a kontrol",
+      "popis": "Kontrola termínů, plánu kontrol, přehledu revizí a odpovědných osob.",
+      "poradi": 60,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace",
+          "text": "Identifikujte revize a kontroly vyžadované v kontrolované oblasti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "terminy",
+          "text": "Zkontrolujte dodržování termínů revizí a kontrol.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "plan_kontrol",
+          "text": "Ověřte existenci a plnění plánu kontrol.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "prehled_revizi",
+          "text": "Posuďte přehled revizí a kontrol pro všechna zařízení.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "odpovedne_osoby",
+          "text": "Zkontrolujte určení odpovědných osob za revize a kontroly.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "upozorneni",
+          "text": "Ověřte systém upozornění na blížící se termíny.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda nejsou překročeny stanovené lhůty kontrol.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "terminy",
+          "nazev": "Termíny jsou dodržovány",
+          "popis": "Revize a kontroly probíhají v stanovených lhůtách.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "plan_kontrol",
+          "nazev": "Plán kontrol existuje",
+          "popis": "Je zpracován a plněn plán revizí a kontrol.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "prehled_revizi",
+          "nazev": "Přehled revizí existuje",
+          "popis": "Je veden přehled revizí a kontrol.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "odpovedne_osoby",
+          "nazev": "Odpovědné osoby jsou určeny",
+          "popis": "Jsou určeny osoby odpovědné za revize a kontroly.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "upozorneni",
+          "nazev": "Upozornění funguje",
+          "popis": "Blížící se termíny jsou včas signalizovány.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Lhůty nejsou překročeny",
+          "popis": "Nejsou překročeny stanovené lhůty kontrol.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "prekrocene_lhuty",
+          "nazev": "Překročené lhůty",
+          "popis": "Termíny revizí nebo kontrol jsou překročeny.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_plan",
+          "nazev": "Chybí plán kontrol",
+          "popis": "Plán revizí a kontrol neexistuje.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "neuplny_prehled",
+          "nazev": "Neúplný přehled",
+          "popis": "Přehled revizí neobsahuje všechna zařízení.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "bez_odpovednosti",
+          "nazev": "Neurčená odpovědnost",
+          "popis": "Nejsou určeny odpovědné osoby.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "bez_upozorneni",
+          "nazev": "Bez upozornění na termíny",
+          "popis": "Blížící se termíny nejsou včas signalizovány.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "chaoticka_evidence",
+          "nazev": "Chaotická evidence termínů",
+          "popis": "Termíny revizí nejsou systematicky sledovány.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "plan",
+          "nazev": "Zpracovat plán revizí",
+          "popis": "Vytvořte plán revizí a kontrol pro všechna zařízení.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "prehled",
+          "nazev": "Vést přehled termínů",
+          "popis": "Udržujte aktuální přehled všech termínů revizí.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "sledovat",
+          "nazev": "Sledovat blížící se termíny",
+          "popis": "Pravidelně kontrolujte blížící se termíny.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "odpovedne_osoby",
+          "nazev": "Určit odpovědné osoby",
+          "popis": "Stanovte odpovědnost za plnění plánu revizí.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "upozornovani",
+          "nazev": "Zavést upozornění",
+          "popis": "Nastavte systém upozornění na blížící se termíny.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zakon_250_2021",
+          "nazev": "Zákon č. 250/2021 Sb.",
+          "popis": "Požadavky na bezpečnost provozu vyhrazených technických zařízení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro provádění revizí, kontrol a evidence.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nv_378_2001",
+          "nazev": "Nařízení vlády č. 378/2001 Sb.",
+          "popis": "Požadavky na plánování a provádění kontrol a revizí.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "odstranovani_zavad",
+      "nazev": "Odstraňování zjištěných závad",
+      "popis": "Kontrola evidence závad, termínů odstranění, odpovědných osob a ověření odstranění závad z revizí.",
+      "poradi": 70,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace",
+          "text": "Identifikujte závady zjištěné při revizích a kontrolách v kontrolované oblasti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_zavad",
+          "text": "Zkontrolujte evidenci zjištěných závad z revizí a kontrol.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "terminy_odstraneni",
+          "text": "Ověřte stanovené termíny odstranění závad.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "odpovedne_osoby",
+          "text": "Posuďte určení odpovědných osob za odstranění závad.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "overeni",
+          "text": "Zkontrolujte ověření odstranění závad.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prioritizace",
+          "text": "Ověřte prioritizaci závad podle závažnosti.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda závady z revizí jsou řešeny v přiměřených termínech.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "evidence_zavad",
+          "nazev": "Závady jsou evidovány",
+          "popis": "Závady z revizí a kontrol jsou evidovány.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "terminy_odstraneni",
+          "nazev": "Termíny jsou stanoveny",
+          "popis": "Pro závady jsou určeny termíny odstranění.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "odpovedne_osoby",
+          "nazev": "Odpovědné osoby jsou určeny",
+          "popis": "Je určena osoba odpovědná za odstranění závady.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "overeni",
+          "nazev": "Odstranění je ověřeno",
+          "popis": "Odstranění závad je doloženo a ověřeno.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "prioritizace",
+          "nazev": "Závady jsou prioritizovány",
+          "popis": "Závady jsou řešeny podle závažnosti.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Závady jsou řešeny v termínu",
+          "popis": "Závady z revizí jsou řešeny v přiměřených termínech.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "neevidovane_zavady",
+          "nazev": "Neevidované závady",
+          "popis": "Závady z revizí nejsou evidovány.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "prekrocene_terminy",
+          "nazev": "Překročené termíny",
+          "popis": "Termíny odstranění závad nejsou dodržovány.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "bez_odpovednosti",
+          "nazev": "Neurčená odpovědnost",
+          "popis": "Není určena osoba za odstranění závady.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "bez_overeni",
+          "nazev": "Bez ověření odstranění",
+          "popis": "Odstranění závad není doloženo.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "opakovane_zavady",
+          "nazev": "Opakující se závady",
+          "popis": "Stejné závady se opakovaně zjišťují.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "provoz_se_zavadou",
+          "nazev": "Provoz se závadou",
+          "popis": "Zařízení se závadou je stále provozováno.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "evidence",
+          "nazev": "Vést evidenci závad",
+          "popis": "Systematicky evidujte všechny závady z revizí a kontrol.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "stanovit_terminy",
+          "nazev": "Stanovit termíny",
+          "popis": "Určete realistické termíny odstranění pro každou závadu.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "sledovat_plneni",
+          "nazev": "Sledovat plnění",
+          "popis": "Pravidelně kontrolujte stav odstranění závad.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "overovat",
+          "nazev": "Ověřovat odstranění",
+          "popis": "Po odstranění závady vždy ověřte výsledek.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "prioritizovat",
+          "nazev": "Prioritizovat závady",
+          "popis": "Nejdříve řešte závady ohrožující bezpečnost.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zakon_250_2021",
+          "nazev": "Zákon č. 250/2021 Sb.",
+          "popis": "Požadavky na bezpečnost provozu vyhrazených technických zařízení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro provádění revizí, kontrol a evidence.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nv_361_2007",
+          "nazev": "Nařízení vlády č. 361/2007 Sb.",
+          "popis": "Požadavky na odstraňování závad zjištěných při kontrolách.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "evidence_revizi_kontrol",
+      "nazev": "Evidence revizí a kontrol",
+      "popis": "Kontrola úplnosti evidence, archivace, dohledatelnosti a aktuálnosti záznamů o revizích a kontrolách.",
+      "poradi": 80,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace",
+          "text": "Identifikujte systém evidence revizí a kontrol v kontrolované oblasti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "uplnost",
+          "text": "Zkontrolujte úplnost evidence revizí a kontrol.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "archivace",
+          "text": "Ověřte archivaci protokolů a záznamů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "dohledatelnost",
+          "text": "Posuďte dohledatelnost historie revizí ke konkrétním zařízením.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "aktualnost",
+          "text": "Zkontrolujte aktuálnost evidence vůči skutečnému stavu.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "propojeni",
+          "text": "Ověřte propojení evidence se seznamem zařízení.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda ke každému zařízení lze dohledat historii revizí a kontrol.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "uplnost",
+          "nazev": "Evidence je úplná",
+          "popis": "Evidence revizí a kontrol je kompletní.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "archivace",
+          "nazev": "Protokoly jsou archivovány",
+          "popis": "Protokoly a záznamy jsou systematicky archivovány.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "dohledatelnost",
+          "nazev": "Historie je dohledatelná",
+          "popis": "Historii revizí lze dohledat ke každému zařízení.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "aktualnost",
+          "nazev": "Evidence je aktuální",
+          "popis": "Evidence odpovídá skutečnému stavu revizí.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "propojeni",
+          "nazev": "Evidence je propojena se zařízeními",
+          "popis": "Každé zařízení má propojenou historii revizí.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Historie revizí je dohledatelná",
+          "popis": "Ke každému zařízení lze dohledat historii revizí a kontrol.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "neuplna_evidence",
+          "nazev": "Neúplná evidence",
+          "popis": "Evidence revizí neobsahuje všechna zařízení.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "chaoticka_archivace",
+          "nazev": "Chaotická archivace",
+          "popis": "Protokoly nejsou systematicky archivovány.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nedohledatelna",
+          "nazev": "Nedohledatelná historie",
+          "popis": "Historii revizí ke zařízení nelze snadno najít.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "zastarala",
+          "nazev": "Zastaralá evidence",
+          "popis": "Evidence nebyla aktualizována po posledních revizích.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_protokoly",
+          "nazev": "Chybějící protokoly",
+          "popis": "Protokoly z revizí chybí nebo jsou neúplné.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "nesoulad_se_zarizenim",
+          "nazev": "Nesoulad se zařízením",
+          "popis": "Evidence neodpovídá skutečně provozovaným zařízením.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "system_evidence",
+          "nazev": "Zavést systém evidence",
+          "popis": "Stanovte jednotný systém evidence revizí a kontrol.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "archivovat",
+          "nazev": "Systematicky archivovat",
+          "popis": "Archivujte protokoly přehledným a dohledatelným způsobem.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "propojit_se_zarizenim",
+          "nazev": "Propojit se zařízeními",
+          "popis": "Každé zařízení propojte s historií revizí.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "aktualizovat",
+          "nazev": "Průběžně aktualizovat",
+          "popis": "Aktualizujte evidenci po každé revizi nebo kontrole.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "pravidelna_kontrola",
+          "nazev": "Pravidelně kontrolovat úplnost",
+          "popis": "Pravidelně ověřujte úplnost a aktuálnost evidence.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zakon_250_2021",
+          "nazev": "Zákon č. 250/2021 Sb.",
+          "popis": "Požadavky na bezpečnost provozu vyhrazených technických zařízení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro provádění revizí, kontrol a evidence.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "zakon_499_2004",
+          "nazev": "Zákon č. 499/2004 Sb.",
+          "popis": "Požadavky na archivaci a uchovávání protokolů z revizí a kontrol.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    }
+  ],
+  "kontrolni_body": [],
+  "typicke_zavady": [],
+  "doporucene_postupy": [],
+  "doporucena_opatreni": []
+}
