@@ -1,5 +1,5 @@
 {
-  "verze": 7,
+  "verze": 8,
   "oblasti": [
     {
       "id": "bozp",
@@ -67,11 +67,11 @@
     },
     {
       "id": "doprava",
-      "nazev": "Doprava a manipulace",
-      "popis": "Vnitřní doprava, skladování, zdvihací zařízení a manipulace s břemeny.",
+      "nazev": "Manipulace a skladování",
+      "popis": "Ruční manipulace s břemeny, regály, skladování materiálu, palety, komunikace, manipulační technika, nakládka a školení.",
       "poradi": 60,
       "aktivni": true,
-      "soubor_znalosti": null
+      "soubor_znalosti": "manipulace_skladovani.json"
     },
     {
       "id": "dodavatele",
