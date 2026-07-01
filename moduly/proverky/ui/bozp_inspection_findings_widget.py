@@ -23,6 +23,7 @@ from core.shared.finding_display import (
 from core.shared.sluzby.finding_service import finding_service
 from core.widgets.finding_dialog import FindingDialog
 from core.widgets.finding_summary_panel import FindingSummaryPanel
+from core.widgets.finding_task_actions import FindingTaskActions
 from moduly.proverky.constants import FINDING_DIALOG_TITLE
 
 
@@ -44,6 +45,12 @@ class BozpInspectionFindingsWidget(QWidget):
         self.delete_btn = QPushButton("Smazat")
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.delete_btn)
+        self.task_actions = FindingTaskActions(
+            self,
+            self._selected_finding_id,
+            self._after_task_action,
+        )
+        toolbar.addWidget(self.task_actions.button)
         toolbar.addStretch()
 
         self.table = QTableWidget()
@@ -95,8 +102,10 @@ class BozpInspectionFindingsWidget(QWidget):
         self.edit_btn.clicked.connect(self.edit_finding)
         self.delete_btn.clicked.connect(self.delete_finding)
         self.table.doubleClicked.connect(self.edit_finding)
+        self.table.itemSelectionChanged.connect(self.task_actions.update_state)
 
         self._update_state()
+        self.task_actions.update_state()
 
     def set_inspection_id(self, inspection_id: int | None) -> None:
         self.inspection_id = inspection_id
@@ -141,6 +150,11 @@ class BozpInspectionFindingsWidget(QWidget):
                     item.setBackground(QBrush(QColor(finding_status_background(finding.status))))
                     item.setForeground(QBrush(QColor(finding_status_text_color(finding.status))))
                 self.table.setItem(row, column, item)
+
+        self.task_actions.update_state()
+
+    def _after_task_action(self) -> None:
+        self.refresh()
 
     def _update_state(self) -> None:
         enabled = self.inspection_id is not None
