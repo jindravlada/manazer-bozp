@@ -1,5 +1,5 @@
 {
-  "verze": 4,
+  "verze": 5,
   "id": "po",
   "nazev": "Požární ochrana",
   "popis": "Prevence požárů, požární technika, evakuační cesty a organizace PO.",
@@ -1050,6 +1050,256 @@
           "nazev": "Požární dokumentace zaměstnavatele",
           "popis": "Rozmístění požárních uzávěrů, periodicita kontrol a odpovědnosti.",
           "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "bezpecnostni_pozarni_znaceni",
+      "nazev": "Bezpečnostní a požární značení",
+      "popis": "Kontrola bezpečnostního a požárního značení na pracovišti, jeho úplnosti, čitelnosti, správného umístění a souladu se skutečným stavem provozu.",
+      "poradi": 50,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "projiti_pracoviste",
+          "text": "Projděte celé pracoviště.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vyhledani_znaceni",
+          "text": "Vyhledejte všechno bezpečnostní a požární značení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "citelnost",
+          "text": "Ověřte jeho čitelnost.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "umisteni",
+          "text": "Ověřte správné umístění.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "zakryti",
+          "text": "Zkontrolujte, že značení není zakryté.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "soulad_se_stavem",
+          "text": "Porovnejte značení se skutečným stavem.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_zamestnance",
+          "text": "Namátkově ověřte, že zaměstnanec význam značení zná.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "bezpecnostni_uplne",
+          "nazev": "Bezpečnostní značení je úplné",
+          "popis": "Na pracovišti jsou umístěna všechna požadovaná bezpečnostní značení.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozarni_uplne",
+          "nazev": "Požární značení je úplné",
+          "popis": "Na pracovišti jsou umístěna všechna požadovaná požární značení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "viditelne",
+          "nazev": "Značky jsou dobře viditelné",
+          "popis": "Značení je umístěno tak, aby bylo snadno zaznamenatelné z běžných pracovních míst.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "bez_poskozeni",
+          "nazev": "Značky nejsou poškozené",
+          "popis": "Značení není mechanicky poškozené, vybledlé ani nečitelné.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "soulad_se_stavem",
+          "nazev": "Značení odpovídá skutečnému stavu",
+          "popis": "Umístěné značky odpovídají aktuálnímu provozu a rizikům na pracovišti.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "nezakryte",
+          "nazev": "Značky nejsou zakryté",
+          "popis": "Značení není zakryté materiálem, zařízením ani nábytkem.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "hasici_pristroje",
+          "nazev": "Jsou označeny hasicí přístroje",
+          "popis": "Hasicí přístroje jsou viditelně označeny podle požadavků PO.",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "hydranty",
+          "nazev": "Jsou označeny hydranty",
+          "popis": "Hydranty jsou viditelně označeny podle požadavků PO.",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "unikove_cesty",
+          "nazev": "Jsou označeny únikové cesty",
+          "popis": "Směr úniku a únikové východy jsou správně označeny.",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_zamestnance",
+          "nazev": "Zaměstnanec rozumí významu značení",
+          "popis": "Namátkově oslovený zaměstnanec zná význam relevantního značení.",
+          "poradi": 100,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "chybi_znacka",
+          "nazev": "Chybí značka",
+          "popis": "Na pracovišti chybí požadované bezpečnostní nebo požární značení.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zakryta_znacka",
+          "nazev": "Zakrytá značka",
+          "popis": "Značení je zakryté materiálem, zařízením nebo nábytkem.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vybledla_znacka",
+          "nazev": "Vybledlá značka",
+          "popis": "Značení je vybledlé a špatně čitelné.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "poskozena_znacka",
+          "nazev": "Poškozená značka",
+          "popis": "Značení je mechanicky poškozené nebo neúplné.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "neodpovida_skutecnosti",
+          "nazev": "Značka neodpovídá skutečnosti",
+          "popis": "Umístěné značení neodpovídá aktuálnímu stavu provozu nebo rizikům.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "chybne_umisteni",
+          "nazev": "Chybné umístění",
+          "popis": "Značení není umístěno na správném místě podle požadavků.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "po_rekonstrukci",
+          "nazev": "Značení po rekonstrukci nebylo aktualizováno",
+          "popis": "Po změnách dispozice pracoviště nebylo značení aktualizováno.",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "neznalost_vyznamu",
+          "nazev": "Zaměstnanci význam značení neznají",
+          "popis": "Zaměstnanci neumí vysvětlit význam bezpečnostního nebo požárního značení.",
+          "poradi": 80,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "pravidelna_kontrola",
+          "nazev": "Pravidelně kontrolovat stav značení",
+          "popis": "Kontrolujte bezpečnostní a požární značení v intervalech stanovených dokumentací.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vymena_poskozene",
+          "nazev": "Poškozené značky ihned vyměnit",
+          "popis": "Poškozené nebo nečitelné značky bez prodlení vyměňte.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "aktualizace_zmen",
+          "nazev": "Aktualizovat značení po změnách provozu",
+          "popis": "Po změnách dispozice nebo provozu aktualizujte značení podle skutečného stavu.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nezakryvat",
+          "nazev": "Nezakrývat bezpečnostní značky",
+          "popis": "Zajistěte trvalou viditelnost všech bezpečnostních a požárních značek.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "seznamovani_zamestnancu",
+          "nazev": "Seznamovat zaměstnance s významem značení",
+          "popis": "Informujte zaměstnance o významu bezpečnostního a požárního značení na pracovišti.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_133_1985",
+          "nazev": "Zákon č. 133/1985 Sb.",
+          "popis": "O požární ochraně — základní povinnosti v oblasti prevence požárů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nv_375_2017",
+          "nazev": "Nařízení vlády č. 375/2017 Sb.",
+          "popis": "Požadavky na pracovní prostředí včetně bezpečnostního značení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "csn_iso_3864",
+          "nazev": "ČSN ISO 3864",
+          "popis": "Grafické symboly pro bezpečnostní značení.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_dokumentace",
+          "nazev": "Interní dokumentace zaměstnavatele",
+          "popis": "Rozmístění značení, periodicita kontrol a odpovědnosti.",
+          "poradi": 40,
           "aktivni": true
         }
       ],
