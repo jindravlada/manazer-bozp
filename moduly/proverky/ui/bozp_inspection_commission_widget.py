@@ -77,6 +77,29 @@ class BozpInspectionCommissionWidget(QWidget):
         info.setObjectName("MutedText")
         layout.addWidget(info)
 
+        self._committed_leader_id: int | None = None
+        self._committed_workplace_id: int | None = None
+        self._committed_union_id: int | None = None
+
+        self.leader_selector.currentIndexChanged.connect(self._on_leader_selector_changed)
+        self.workplace_selector.currentIndexChanged.connect(self._on_workplace_selector_changed)
+        self.union_selector.currentIndexChanged.connect(self._on_union_selector_changed)
+
+    @staticmethod
+    def _selected_thp_id(selector: ThpWorkerSelector) -> int | None:
+        data = selector.currentData()
+        return data if isinstance(data, int) else None
+
+    @staticmethod
+    def _selected_person_id(selector: PersonSelector) -> int | None:
+        data = selector.currentData()
+        return data if isinstance(data, int) else None
+
+    def _sync_committed_selector_state(self) -> None:
+        self._committed_leader_id = self._selected_thp_id(self.leader_selector)
+        self._committed_workplace_id = self._selected_thp_id(self.workplace_selector)
+        self._committed_union_id = self._selected_person_id(self.union_selector)
+
     def _create_list_table(self) -> QTableWidget:
         table = QTableWidget()
         table.setColumnCount(5)
@@ -134,6 +157,9 @@ class BozpInspectionCommissionWidget(QWidget):
         self.workplace_selector.setCurrentIndex(0)
         self.union_selector.setCurrentIndex(0)
 
+        for selector in (self.leader_selector, self.workplace_selector, self.union_selector):
+            selector.blockSignals(True)
+
         if inspection_id is not None:
             records = bozp_inspection_commission_service.get_for_inspection(inspection_id)
             for record in records:
@@ -152,6 +178,10 @@ class BozpInspectionCommissionWidget(QWidget):
                 elif data["record_type"] == COMMISSION_RECORD_INVITED:
                     self._invited.append(data)
 
+        for selector in (self.leader_selector, self.workplace_selector, self.union_selector):
+            selector.blockSignals(False)
+
+        self._sync_committed_selector_state()
         self._refresh_tables()
 
     def validate(self) -> tuple[bool, str]:
@@ -298,18 +328,17 @@ class BozpInspectionCommissionWidget(QWidget):
             return None
         return selected[0].row()
 
-    def _thp_worker_already_in_commission(
+    def _thp_used_in_commission(
         self,
         thp_worker_id: int,
         *,
+        ignore_leader: bool = False,
+        ignore_workplace: bool = False,
         exclude_member_row: int | None = None,
     ) -> bool:
-        leader_id = self.leader_selector.current_person_id()
-        if leader_id == thp_worker_id:
+        if not ignore_leader and self._selected_thp_id(self.leader_selector) == thp_worker_id:
             return True
-
-        workplace_id = self.workplace_selector.current_person_id()
-        if workplace_id == thp_worker_id:
+        if not ignore_workplace and self._selected_thp_id(self.workplace_selector) == thp_worker_id:
             return True
 
         for index, member in enumerate(self._members):
@@ -320,14 +349,14 @@ class BozpInspectionCommissionWidget(QWidget):
 
         return False
 
-    def _person_already_in_commission(
+    def _person_used_in_commission(
         self,
         person_id: int,
         *,
+        ignore_union: bool = False,
         exclude_invited_row: int | None = None,
     ) -> bool:
-        union_id = self.union_selector.current_person_id()
-        if union_id == person_id:
+        if not ignore_union and self._selected_person_id(self.union_selector) == person_id:
             return True
 
         for index, invited in enumerate(self._invited):
@@ -337,6 +366,87 @@ class BozpInspectionCommissionWidget(QWidget):
                 return True
 
         return False
+
+    def _restore_thp_selector(self, selector: ThpWorkerSelector, person_id: int | None) -> None:
+        selector.blockSignals(True)
+        try:
+            if person_id is None:
+                if selector.include_empty:
+                    selector.setCurrentIndex(0)
+                else:
+                    selector.setCurrentText("")
+            else:
+                selector.set_person_id(person_id)
+        finally:
+            selector.blockSignals(False)
+
+    def _restore_person_selector(self, selector: PersonSelector, person_id: int | None) -> None:
+        selector.blockSignals(True)
+        try:
+            selector.set_person_id(person_id)
+        finally:
+            selector.blockSignals(False)
+
+    def _on_leader_selector_changed(self, _index: int = -1) -> None:
+        new_id = self._selected_thp_id(self.leader_selector)
+        if new_id is None:
+            self._committed_leader_id = None
+            return
+        if new_id == self._committed_leader_id:
+            return
+        if self._thp_used_in_commission(new_id, ignore_leader=True):
+            self._show_duplicate_person_message()
+            self._restore_thp_selector(self.leader_selector, self._committed_leader_id)
+            return
+        self._committed_leader_id = new_id
+
+    def _on_workplace_selector_changed(self, _index: int = -1) -> None:
+        new_id = self._selected_thp_id(self.workplace_selector)
+        if new_id is None:
+            self._committed_workplace_id = None
+            return
+        if new_id == self._committed_workplace_id:
+            return
+        if self._thp_used_in_commission(new_id, ignore_workplace=True):
+            self._show_duplicate_person_message()
+            self._restore_thp_selector(self.workplace_selector, self._committed_workplace_id)
+            return
+        self._committed_workplace_id = new_id
+
+    def _on_union_selector_changed(self, _index: int = -1) -> None:
+        new_id = self._selected_person_id(self.union_selector)
+        if new_id is None:
+            self._committed_union_id = None
+            return
+        if new_id == self._committed_union_id:
+            return
+        if self._person_used_in_commission(new_id, ignore_union=True):
+            self._show_duplicate_person_message()
+            self._restore_person_selector(self.union_selector, self._committed_union_id)
+            return
+        self._committed_union_id = new_id
+
+    def _thp_worker_already_in_commission(
+        self,
+        thp_worker_id: int,
+        *,
+        exclude_member_row: int | None = None,
+    ) -> bool:
+        return self._thp_used_in_commission(
+            thp_worker_id,
+            exclude_member_row=exclude_member_row,
+        )
+
+    def _person_already_in_commission(
+        self,
+        person_id: int,
+        *,
+        exclude_invited_row: int | None = None,
+    ) -> bool:
+        return self._person_used_in_commission(
+            person_id,
+            exclude_invited_row=exclude_invited_row,
+        )
 
     def _show_duplicate_person_message(self) -> None:
         QMessageBox.information(self, "Komise", COMMISSION_DUPLICATE_PERSON_MESSAGE)
