@@ -1,5 +1,5 @@
 {
-  "verze": 2,
+  "verze": 3,
   "oblasti": [
     {
       "id": "bozp",
@@ -19,11 +19,11 @@
     },
     {
       "id": "oopp",
-      "nazev": "OOPP",
-      "popis": "Osobní ochranné pracovní prostředky — dostupnost, používání a evidence.",
+      "nazev": "Osobní ochranné pracovní prostředky (OOPP)",
+      "popis": "Přidělování, používání, údržba, evidence a školení v oblasti osobních ochranných pracovních prostředků.",
       "poradi": 30,
       "aktivni": true,
-      "soubor_znalosti": null
+      "soubor_znalosti": "oopp.json"
     },
     {
       "id": "dokumentace",

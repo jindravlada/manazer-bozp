@@ -1,0 +1,1276 @@
+{
+  "verze": 1,
+  "id": "oopp",
+  "nazev": "Osobní ochranné pracovní prostředky (OOPP)",
+  "popis": "Přidělování, používání, údržba, evidence a školení v oblasti osobních ochranných pracovních prostředků.",
+  "poradi": 30,
+  "aktivni": true,
+  "sekce": [
+    {
+      "id": "pridelovani_oopp",
+      "nazev": "Přidělování OOPP",
+      "popis": "Kontrola systému přidělování OOPP podle rizik, profesí a pracovních činností.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "vyhodnoceni_rizik",
+          "text": "Zjistěte aktuální vyhodnocení rizik pro pracovní místa a činnosti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "seznam_oopp",
+          "text": "Ověřte seznam požadovaných OOPP podle profesí a pracovních činností.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "soulad_s_riziky",
+          "text": "Zkontrolujte, zda přidělení OOPP odpovídá identifikovaným rizikům.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "prevzeti",
+          "text": "Ověřte dokumentaci o převzetí OOPP zaměstnanci.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "dostupnost",
+          "text": "Zkontrolujte dostupnost OOPP pro zaměstnance.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "porovnani_skutecnosti",
+          "text": "Porovnejte skutečně přidělené OOPP se schváleným seznamem.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_zamestnance",
+          "text": "Namátkově oslovený zaměstnanec ví, jaké OOPP má přidělené.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "vyhodnoceni_rizik",
+          "nazev": "Vyhodnocení rizik je aktuální",
+          "popis": "Rizika pracovních míst jsou vyhodnocena a zohledněna při určení OOPP.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "seznam_oopp",
+          "nazev": "Seznam OOPP je zpracován",
+          "popis": "Existuje přehled OOPP podle profesí, pracovišť nebo pracovních činností.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "prideleni_profese",
+          "nazev": "Přidělení odpovídá profesím a činnostem",
+          "popis": "Zaměstnanci mají přiděleny OOPP odpovídající jejich pracovním úkolům.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "prevzeti_dokumentovano",
+          "nazev": "Převzetí OOPP je doloženo",
+          "popis": "Převzetí OOPP zaměstnanci je prokazatelně zdokumentováno.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "dostupnost",
+          "nazev": "OOPP jsou dostupné",
+          "popis": "Požadované OOPP jsou zaměstnancům včas k dispozici.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_zamestnance",
+          "nazev": "Zaměstnanec zná své přidělené OOPP",
+          "popis": "Namátkově oslovený zaměstnanec ví, jaké OOPP má přidělené.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "chybi_seznam",
+          "nazev": "Chybí seznam OOPP",
+          "popis": "Neexistuje přehled požadovaných OOPP podle pracovních míst nebo činností.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "neodpovida_rizikum",
+          "nazev": "Přidělení neodpovídá rizikům",
+          "popis": "Přidělené OOPP neodpovídají vyhodnoceným rizikům.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_prevzeti",
+          "nazev": "Chybí doložení převzetí",
+          "popis": "Převzetí OOPP zaměstnanci není zdokumentováno.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nedostupne_oopp",
+          "nazev": "OOPP nejsou dostupné",
+          "popis": "Požadované OOPP nejsou zaměstnancům včas k dispozici.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "zastarale_riziko",
+          "nazev": "Zastaralé vyhodnocení rizik",
+          "popis": "Vyhodnocení rizik nebylo aktualizováno po změně provozu.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "neznalost_prideleni",
+          "nazev": "Zaměstnanec nezná přidělené OOPP",
+          "popis": "Zaměstnanec neví, jaké OOPP má pro svou práci přidělené.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "aktualizace_rizik",
+          "nazev": "Pravidelně aktualizovat vyhodnocení rizik",
+          "popis": "Po změnách provozu nebo technologie aktualizujte rizika a seznam OOPP.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "seznam_podle_profesi",
+          "nazev": "Vést přehledný seznam OOPP podle profesí",
+          "popis": "Udržujte aktuální seznam OOPP pro jednotlivé pracovní činnosti.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "dokumentace_prevzeti",
+          "nazev": "Dokumentovat převzetí OOPP",
+          "popis": "Po každém výdeji OOPP zaznamenejte převzetí zaměstnancem.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "dostupnost_zasoby",
+          "nazev": "Zajistit dostupnost zásob OOPP",
+          "popis": "Udržujte dostatečné zásoby běžně používaných OOPP.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "seznamovani",
+          "nazev": "Seznamovat zaměstnance s přidělenými OOPP",
+          "popis": "Informujte zaměstnance o tom, jaké OOPP mají pro svou práci přidělené.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nv_390_2021",
+          "nazev": "Nařízení vlády č. 390/2021 Sb.",
+          "popis": "Podmínky ochranných pracovních prostředků a ochranných pracovních pomůcek.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nv_378_2001",
+          "nazev": "Nařízení vlády č. 378/2001 Sb.",
+          "popis": "Blízké předpisy v přiměřené vzdálenosti pro určení OOPP.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Systém přidělování, evidence a kontroly OOPP.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "pouzivani_oopp",
+      "nazev": "Používání OOPP",
+      "popis": "Kontrola skutečného používání OOPP — správné nasazení, používání po celou dobu práce a vhodná kombinace více OOPP.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "pozorovani_prace",
+          "text": "Pozorujte zaměstnance při výkonu rizikové pracovní činnosti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "spravne_pouziti",
+          "text": "Ověřte správné používání přidělených OOPP.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "spravne_nasazeni",
+          "text": "Zkontrolujte správné nasazení a seřízení OOPP.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "po_celou_dobu",
+          "text": "Ověřte, zda jsou OOPP používány po celou dobu práce s rizikem.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "kombinace",
+          "text": "Zkontrolujte správnou kombinaci více OOPP, pokud je požadována.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "poruseni",
+          "text": "Zaznamenejte případná porušení pravidel používání.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_zamestnance",
+          "text": "Namátkově oslovený zaměstnanec ví, proč používá přidělené OOPP.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "spravne_pouziti",
+          "nazev": "OOPP jsou používány správně",
+          "popis": "Zaměstnanec používá OOPP v souladu s návodem a určením.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "spravne_nasazeni",
+          "nazev": "OOPP jsou správně nasazeny",
+          "popis": "OOPP jsou správně nasazeny, utaženy nebo seřízeny.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "po_celou_dobu",
+          "nazev": "OOPP jsou používány po celou dobu práce",
+          "popis": "OOPP nejsou během rizikové činnosti odloženy nebo vynechány.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "kombinace",
+          "nazev": "Kombinace OOPP je správná",
+          "popis": "Používaná kombinace OOPP odpovídá požadavkům dané činnosti.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vhodny_typ",
+          "nazev": "Používán je vhodný typ OOPP",
+          "popis": "Zaměstnanec používá OOPP odpovídající identifikovanému riziku.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_zamestnance",
+          "nazev": "Zaměstnanec zná důvod používání OOPP",
+          "popis": "Namátkově oslovený zaměstnanec ví, proč používá přidělené OOPP.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "nepouzivani",
+          "nazev": "OOPP se nepoužívají",
+          "popis": "Zaměstnanec nevyužívá přidělené OOPP při rizikové činnosti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nespravne_nasazeni",
+          "nazev": "Nesprávné nasazení OOPP",
+          "popis": "OOPP jsou nasazeny nesprávně nebo nejsou utaženy.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "castecne_pouziti",
+          "nazev": "OOPP používány pouze částečně",
+          "popis": "Zaměstnanec používá jen některé z požadovaných OOPP.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nespravna_kombinace",
+          "nazev": "Nesprávná kombinace OOPP",
+          "popis": "Kombinace OOPP neodpovídá požadavkům dané činnosti.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "nevhodny_typ",
+          "nazev": "Používán nevhodný typ OOPP",
+          "popis": "Zaměstnanec používá OOPP neodpovídající riziku.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "neznalost_duvodu",
+          "nazev": "Zaměstnanec nezná důvod používání",
+          "popis": "Zaměstnanec neví, proč má OOPP používat.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "dohled",
+          "nazev": "Provádět pravidelný dohled nad používáním",
+          "popis": "Kontrolujte skutečné používání OOPP při prověrkách a běžném dohledu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "naprava_poruseni",
+          "nazev": "Bezodkladně řešit porušení pravidel",
+          "popis": "Při zjištění ne používání OOPP okamžitě zajistěte nápravu.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "prakticke_skoleni",
+          "nazev": "Prakticky školit správné nasazení",
+          "popis": "Ukažte zaměstnancům správné nasazení a seřízení OOPP.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "priklad_vedoucich",
+          "nazev": "Vedoucí pracovníci dávají příklad",
+          "popis": "Vedoucí zaměstnanci dodržují pravidla používání OOPP.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "kombinace_oopp",
+          "nazev": "Vysvětlovat správnou kombinaci OOPP",
+          "popis": "Informujte zaměstnance o nutnosti kombinovat více OOPP u složitějších rizik.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Povinnost používat OOPP podle posouzení rizik.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nv_390_2021",
+          "nazev": "Nařízení vlády č. 390/2021 Sb.",
+          "popis": "Požadavky na používání ochranných pracovních prostředků.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nv_378_2001",
+          "nazev": "Nařízení vlády č. 378/2001 Sb.",
+          "popis": "Blízké předpisy pro určení a používání OOPP.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla používání OOPP na pracovišti.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "stav_udrzba_oopp",
+      "nazev": "Stav a údržba OOPP",
+      "popis": "Kontrola technického stavu, opotřebení, čistoty, skladování, výměny a životnosti OOPP.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "vizualni_kontrola",
+          "text": "Proveďte vizuální kontrolu stavu OOPP u zaměstnanců nebo ve skladu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poskozeni_opotrebeni",
+          "text": "Zkontrolujte poškození a míru opotřebení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "cistota",
+          "text": "Ověřte čistotu a vhodnost OOPP k použití.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "skladovani",
+          "text": "Zkontrolujte podmínky skladování OOPP.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vymena_zivotnost",
+          "text": "Ověřte plánování výměny a dodržování životnosti OOPP.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_vymen",
+          "text": "Zkontrolujte evidenci výměn a vyřazení OOPP.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_zamestnance",
+          "text": "Zaměstnanec ví, kdy požádat o výměnu OOPP.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "bez_poskozeni",
+          "nazev": "OOPP nejsou poškozené",
+          "popis": "OOPP nevykazují viditelné poškození snižující ochranu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pripustne_opotrebeni",
+          "nazev": "Opotřebení je v přípustné míře",
+          "popis": "OOPP nejsou nadměrně opotřebené ani znehodnocené.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "cistota",
+          "nazev": "OOPP jsou čisté a použitelné",
+          "popis": "OOPP jsou udržovány v čistotě vhodné pro použití.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "skladovani",
+          "nazev": "Skladování OOPP je vhodné",
+          "popis": "OOPP jsou skladovány v podmínkách doporučených výrobcem.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vymena",
+          "nazev": "Výměna OOPP probíhá včas",
+          "popis": "Poškozené nebo prošlé OOPP jsou včas vyměněny.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_vymeny",
+          "nazev": "Zaměstnanec ví, kdy požádat o výměnu",
+          "popis": "Zaměstnanec zná kritéria pro výměnu OOPP.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "poskozene",
+          "nazev": "Poškozené OOPP",
+          "popis": "OOPP jsou mechanicky poškozené nebo znehodnocené.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nadmere_opotrebeni",
+          "nazev": "Nadměrné opotřebení",
+          "popis": "OOPP jsou opotřebené nad přípustnou míru.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "neciste",
+          "nazev": "Nečisté OOPP",
+          "popis": "OOPP jsou znečištěné a nevhodné k použití.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nevhodne_skladovani",
+          "nazev": "Nevhodné skladování",
+          "popis": "OOPP jsou skladovány v nevhodných podmínkách.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "pozdni_vymena",
+          "nazev": "Pozdní výměna OOPP",
+          "popis": "Poškozené OOPP nejsou včas vyměněny.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prekrocena_zivotnost",
+          "nazev": "Překročena životnost OOPP",
+          "popis": "OOPP jsou používány po uplynutí životnosti.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "pravidelna_kontrola",
+          "nazev": "Pravidelně kontrolovat stav OOPP",
+          "popis": "Provádějte pravidelné kontroly stavu OOPP u zaměstnanců i ve skladu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "okamzita_vymena",
+          "nazev": "Ihned vyměnit poškozené OOPP",
+          "popis": "Poškozené nebo opotřebené OOPP bez prodlení vyměňte.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "cisteni_udrzba",
+          "nazev": "Udržovat OOPP v čistotě",
+          "popis": "Zajistěte pravidelné čištění a údržbu podle návodu výrobce.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vhodne_skladovani",
+          "nazev": "Skladovat OOPP ve vhodných podmínkách",
+          "popis": "Dodržujte podmínky skladování doporučené výrobcem.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "informovani_o_vymene",
+          "nazev": "Informovat zaměstnance o kritériích výměny",
+          "popis": "Seznamte zaměstnance s pravidly pro výměnu OOPP.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Povinnosti zaměstnavatele v oblasti údržby OOPP.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nv_390_2021",
+          "nazev": "Nařízení vlády č. 390/2021 Sb.",
+          "popis": "Požadavky na údržbu a kontrolu OOPP.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "navod_vyrobce",
+          "nazev": "Návod výrobce OOPP",
+          "popis": "Podmínky údržby, skladování a životnosti konkrétních OOPP.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla údržby, výměny a vyřazení OOPP.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "specialni_oopp",
+      "nazev": "Speciální OOPP",
+      "popis": "Kontrola speciálních OOPP tam, kde se používají — zachycovací postroje, respirátory, izolační dýchací přístroje, chemické, svářečské a protipořezové OOPP.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace",
+          "text": "Zjistěte, jaká speciální OOPP jsou na pracovišti používána.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "existence_stav",
+          "text": "Ověřte existenci a technický stav speciálních OOPP.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "certifikace",
+          "text": "Zkontrolujte platnost certifikace a revizí u speciálních OOPP.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "spravne_pouziti",
+          "text": "Ověřte správné používání a seřízení speciálních OOPP.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "skladovani",
+          "text": "Zkontrolujte skladování a dostupnost speciálních OOPP.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "kontroly_revize",
+          "text": "Ověřte provedení předepsaných kontrol a revizí.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "skoleni",
+          "text": "Ověřte, že uživatelé speciálních OOPP jsou proškoleni.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "zachycovaci_postroje",
+          "nazev": "Zachycovací postroje jsou v pořádku",
+          "popis": "Pokud se používají, jsou v provozuschopném stavu a revize jsou aktuální.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "respiratory",
+          "nazev": "Respirátory jsou v pořádku",
+          "popis": "Pokud se používají, filtry a těsnost jsou v pořádku.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "dychaci_pristroje",
+          "nazev": "Izolační dýchací přístroje jsou v pořádku",
+          "popis": "Pokud se používají, kontroly a plnění odpovídají požadavkům.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "chemicke_oopp",
+          "nazev": "Chemické OOPP jsou v pořádku",
+          "popis": "Pokud se používají, odpovídají charakteru nebezpečných látek.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "svarecske_oopp",
+          "nazev": "Svářečské OOPP jsou v pořádku",
+          "popis": "Pokud se používají, odpovídají požadavkům svářecích prací.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "protiporezove",
+          "nazev": "Protipořezové OOPP jsou v pořádku",
+          "popis": "Pokud se používají, nejsou poškozené a odpovídají riziku.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "revize_kontroly",
+          "nazev": "Revize a kontroly speciálních OOPP jsou aktuální",
+          "popis": "Předepsané kontroly a revize jsou provedeny včas.",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "proskoleni_uzivatele",
+          "nazev": "Uživatelé speciálních OOPP jsou proškoleni",
+          "popis": "Zaměstnanci používající speciální OOPP absolvovali potřebné školení.",
+          "poradi": 80,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "propadla_revize",
+          "nazev": "Propadlá revize speciálních OOPP",
+          "popis": "Kontrola nebo revize speciálních OOPP nebyla provedena včas.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poskozene_postroje",
+          "nazev": "Poškozené zachycovací postroje",
+          "popis": "Postroje vykazují poškození nebo opotřebení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "prosly_filtry",
+          "nazev": "Prošlé filtry respirátorů",
+          "popis": "Filtry respirátorů jsou po době použití nebo expiraci.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nevhodne_chemicke",
+          "nazev": "Nevhodné chemické OOPP",
+          "popis": "Chemické OOPP neodpovídají charakteru nebezpečných látek.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "neproskoleni",
+          "nazev": "Neproškolení uživatelé",
+          "popis": "Zaměstnanci používají speciální OOPP bez potřebného školení.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_kontrola",
+          "nazev": "Chybí pravidelná kontrola",
+          "popis": "Speciální OOPP nejsou pravidelně kontrolovány.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "revize_vcas",
+          "nazev": "Dodržovat lhůty revizí a kontrol",
+          "popis": "Provádějte revize speciálních OOPP v předepsaných intervalech.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "skoleni_specialni",
+          "nazev": "Školit uživatele speciálních OOPP",
+          "popis": "Zajistěte odborné školení pro každý typ speciálních OOPP.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_revizi",
+          "nazev": "Vést evidenci revizí a kontrol",
+          "popis": "Dokumentujte všechny kontroly a revize speciálních OOPP.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vyrazeni",
+          "nazev": "Včas vyřazovat nevyhovující OOPP",
+          "popis": "Poškozené nebo prošlé speciální OOPP okamžitě vyřaďte z provozu.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "kontrola_pred_pouzitim",
+          "nazev": "Kontrolovat OOPP před každým použitím",
+          "popis": "Uživatelé speciálních OOPP provádějí kontrolu před použitím.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Požadavky na speciální OOPP a práce se zvýšeným rizikem.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nv_390_2021",
+          "nazev": "Nařízení vlády č. 390/2021 Sb.",
+          "popis": "Požadavky na speciální ochranné pracovní prostředky.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "csn_specialni",
+          "nazev": "Příslušné ČSN podle typu OOPP",
+          "popis": "Technické normy pro zachycovací systémy, respirátory a další speciální OOPP.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro používání a kontrolu speciálních OOPP.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "evidence_dokumentace_oopp",
+      "nazev": "Evidence a dokumentace OOPP",
+      "popis": "Kontrola evidence OOPP — seznamy, směrnice, výdej, podpisy zaměstnanců a záznamy o výměnách.",
+      "poradi": 50,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "seznam_oopp",
+          "text": "Ověřte existenci a aktuálnost seznamu OOPP.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "smernice",
+          "text": "Zkontrolujte platnost směrnic a interních předpisů k OOPP.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vydej",
+          "text": "Ověřte vedení evidence výdeje OOPP.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "podpisy",
+          "text": "Zkontrolujte podpisy zaměstnanců o převzetí OOPP.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vymeny",
+          "text": "Ověřte evidenci výměn a vyřazení OOPP.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "dostupnost",
+          "text": "Zkontrolujte dostupnost dokumentace pro oprávněné osoby.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_vedouciho",
+          "text": "Vedoucí zaměstnanec ví, kde je evidence OOPP vedena.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "seznam",
+          "nazev": "Seznam OOPP je zpracován a aktuální",
+          "popis": "Existuje aktuální seznam OOPP podle pracovních míst a činností.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "smernice",
+          "nazev": "Směrnice k OOPP jsou zpracovány",
+          "popis": "Interní předpisy upravující OOPP jsou platné a dostupné.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_vydeje",
+          "nazev": "Evidence výdeje je vedena",
+          "popis": "Výdej OOPP je prokazatelně zdokumentován.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "podpisy",
+          "nazev": "Podpisy o převzetí jsou doloženy",
+          "popis": "Převzetí OOPP zaměstnanci je potvrzeno podpisem nebo jiným záznamem.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_vymen",
+          "nazev": "Evidence výměn je vedena",
+          "popis": "Výměny a vyřazení OOPP jsou zaznamenány.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_vedouciho",
+          "nazev": "Vedoucí zaměstnanec zná umístění evidence",
+          "popis": "Vedoucí zaměstnanec ví, kde je evidence OOPP vedena.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "chybi_evidence",
+          "nazev": "Chybí evidence OOPP",
+          "popis": "Evidence výdeje nebo výměn OOPP není vedena.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "neaktualni_seznam",
+          "nazev": "Neaktuální seznam OOPP",
+          "popis": "Seznam OOPP neodpovídá současnému stavu provozu.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_podpisy",
+          "nazev": "Chybí podpisy o převzetí",
+          "popis": "Převzetí OOPP není doloženo podpisem zaměstnance.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_smernice",
+          "nazev": "Chybí směrnice k OOPP",
+          "popis": "Interní předpisy upravující OOPP neexistují nebo nejsou aktuální.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "nevedena_vymena",
+          "nazev": "Nevedené záznamy o výměnách",
+          "popis": "Výměny OOPP nejsou zaznamenány v evidenci.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "neznalost_umisteni",
+          "nazev": "Vedoucí nezná umístění evidence",
+          "popis": "Vedoucí zaměstnanec neví, kde je evidence OOPP vedena.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "pravidelna_aktualizace",
+          "nazev": "Pravidelně aktualizovat evidenci",
+          "popis": "Po každém výdeji, výměně nebo změně provozu aktualizujte evidenci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "jednotny_system",
+          "nazev": "Vést evidenci v jednotném systému",
+          "popis": "Používejte přehledný a jednotný způsob evidence OOPP.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "dokladovani_prevzeti",
+          "nazev": "Důsledně dokladovat převzetí",
+          "popis": "Vždy zajistěte podpis nebo jiný záznam o převzetí OOPP.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "archivace",
+          "nazev": "Archivovat záznamy o výměnách",
+          "popis": "Uchovávejte záznamy o výměnách a vyřazení OOPP po stanovenou dobu.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "seznameni_vedoucich",
+          "nazev": "Seznamovat vedoucí s evidencí",
+          "popis": "Informujte vedoucí zaměstnance o umístění a vedení evidence OOPP.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Povinnost vést dokumentaci k OOPP.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nv_390_2021",
+          "nazev": "Nařízení vlády č. 390/2021 Sb.",
+          "popis": "Požadavky na dokumentaci a evidenci OOPP.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "zakon_262_2006",
+          "nazev": "Zákon č. 262/2006 Sb. (zákoník práce)",
+          "popis": "Povinnosti zaměstnavatele v oblasti BOZP a evidence.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Systém evidence a dokumentace OOPP.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "skoleni_znalosti",
+      "nazev": "Školení a znalosti zaměstnanců",
+      "popis": "Kontrola školení zaměstnanců v oblasti OOPP — znalosti správného používání, údržby a omezení použití.",
+      "poradi": 60,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "plan_skoleni",
+          "text": "Zjistěte, jaká školení k OOPP jsou pro pracoviště požadována.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_skoleni",
+          "text": "Ověřte evidenci absolvovaných školení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "znalosti_pouziti",
+          "text": "Namátkově ověřte znalosti správného používání OOPP.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "znalosti_udrzby",
+          "text": "Ověřte znalosti údržby a výměny OOPP.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "omezeni",
+          "text": "Zkontrolujte, zda zaměstnanci znají omezení použití OOPP.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "nove_zamestnance",
+          "text": "Ověřte proškolení nových zaměstnanců před prací s OOPP.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_znalost",
+          "text": "Namátkově oslovený zaměstnanec dokáže vysvětlit správné používání svých OOPP.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "skoleni_probehlo",
+          "nazev": "Školení k OOPP proběhlo",
+          "popis": "Zaměstnanci absolvovali potřebné školení k používání OOPP.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_skoleni",
+          "nazev": "Evidence školení je vedena",
+          "popis": "Lze doložit termíny, účastníky a obsah školení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_pouziti",
+          "nazev": "Zaměstnanec zná správné používání",
+          "popis": "Zaměstnanec umí správně nasadit a používat své OOPP.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_udrzby",
+          "nazev": "Zaměstnanec zná údržbu OOPP",
+          "popis": "Zaměstnanec zná základní pravidla údržby a výměny OOPP.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_omezeni",
+          "nazev": "Zaměstnanec zná omezení použití",
+          "popis": "Zaměstnanec zná limity a omezení použití svých OOPP.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_znalost",
+          "nazev": "Zaměstnanec dokáže vysvětlit používání OOPP",
+          "popis": "Namátkově oslovený zaměstnanec dokáže vysvětlit správné používání svých OOPP.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "chybi_skoleni",
+          "nazev": "Chybí školení k OOPP",
+          "popis": "Zaměstnanec neabsolvoval potřebné školení k používání OOPP.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_evidence",
+          "nazev": "Chybí evidence školení",
+          "popis": "Nejsou doloženy záznamy o školení OOPP.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "propadle_skoleni",
+          "nazev": "Propadlé opakované školení",
+          "popis": "Opakované školení nebylo provedeno v předepsané lhůtě.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "neznalost_pouziti",
+          "nazev": "Neznalost správného používání",
+          "popis": "Zaměstnanec neumí správně používat přidělené OOPP.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "neznalost_udrzby",
+          "nazev": "Neznalost údržby OOPP",
+          "popis": "Zaměstnanec nezná pravidla údržby a výměny OOPP.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "nove_bez_skoleni",
+          "nazev": "Nový zaměstnanec bez školení",
+          "popis": "Nový zaměstnanec pracuje s OOPP bez předchozího proškolení.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "skoleni_pri_nastupu",
+          "nazev": "Školit zaměstnance při nástupu",
+          "popis": "Zajistěte školení OOPP před zahájením práce s rizikem.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "opakovane_skoleni",
+          "nazev": "Provádět opakovaná školení",
+          "popis": "Opakujte školení v intervalech stanovených vnitřním předpisem.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "prakticke_ukazky",
+          "nazev": "Zahrnout praktické ukázky",
+          "popis": "Školení zahrnuje praktickou ukázku nasazení a používání OOPP.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_skoleni",
+          "nazev": "Vést evidenci školení",
+          "popis": "Po každém školení zaznamenejte účastníky, termín a obsah.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "overovani_znalosti",
+          "nazev": "Pravidelně ověřovat znalosti",
+          "popis": "Při prověrkách namátkově ověřujte znalosti zaměstnanců.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Povinnost školení zaměstnanců v oblasti BOZP včetně OOPP.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nv_390_2021",
+          "nazev": "Nařízení vlády č. 390/2021 Sb.",
+          "popis": "Požadavky na informování a školení k používání OOPP.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "zakon_262_2006",
+          "nazev": "Zákon č. 262/2006 Sb. (zákoník práce)",
+          "popis": "Povinnost proškolení zaměstnanců.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Plán školení BOZP a OOPP, periodicita a evidence.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    }
+  ],
+  "kontrolni_body": [],
+  "typicke_zavady": [],
+  "doporucene_postupy": [],
+  "doporucena_opatreni": []
+}
