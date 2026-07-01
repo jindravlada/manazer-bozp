@@ -1,0 +1,1678 @@
+{
+  "verze": 1,
+  "id": "dodavatele",
+  "nazev": "Dodavatelé a externí osoby",
+  "popis": "Výběr dodavatelů, předání pracoviště, seznámení s riziky, koordinace, kontrola BOZP, dokumentace, rizikové práce a ukončení prací.",
+  "poradi": 70,
+  "aktivni": true,
+  "sekce": [
+    {
+      "id": "vyber_zpusobilost_dodavatelu",
+      "nazev": "Výběr a způsobilost dodavatelů",
+      "popis": "Kontrola odborné způsobilosti, oprávnění, pojištění a kvalifikace pracovníků dodavatelů.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace",
+          "text": "Identifikujte dodavatele a externí osoby pracující v kontrolované oblasti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "odborna_zpusobilost",
+          "text": "Zkontrolujte odbornou způsobilost dodavatele pro prováděnou činnost.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "opravneni",
+          "text": "Ověřte platnost oprávnění a certifikací dodavatele.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "pojisteni",
+          "text": "Posuďte pojištění odpovědnosti za škodu.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "kvalifikace_pracovniku",
+          "text": "Zkontrolujte kvalifikaci pracovníků dodavatele.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "hodnoceni_dodavatele",
+          "text": "Ověřte hodnocení a reference dodavatele v oblasti BOZP.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda dodavatel splňuje požadavky pro prováděnou činnost.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "odborna_zpusobilost",
+          "nazev": "Dodavatel je odborně způsobilý",
+          "popis": "Dodavatel má potřebnou odbornou způsobilost.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "opravneni",
+          "nazev": "Oprávnění jsou platná",
+          "popis": "Dodavatel má platná oprávnění pro danou činnost.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pojisteni",
+          "nazev": "Pojištění je doloženo",
+          "popis": "Pojištění odpovědnosti je v požadovaném rozsahu.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "kvalifikace_pracovniku",
+          "nazev": "Pracovníci jsou kvalifikovaní",
+          "popis": "Pracovníci dodavatele mají potřebnou kvalifikaci.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "hodnoceni_dodavatele",
+          "nazev": "Dodavatel je způsobilý",
+          "popis": "Dodavatel splňuje požadavky pro prováděnou činnost.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Dodavatel splňuje požadavky",
+          "popis": "Dodavatel splňuje požadavky pro prováděnou činnost.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "nezpusobily_dodavatel",
+          "nazev": "Nezpůsobilý dodavatel",
+          "popis": "Dodavatel nesplňuje požadavky odborné způsobilosti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "propadle_opravneni",
+          "nazev": "Propadlé oprávnění",
+          "popis": "Oprávnění dodavatele není platné.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_pojisteni",
+          "nazev": "Chybí pojištění",
+          "popis": "Pojištění odpovědnosti není doloženo.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nekvalifikovani_pracovnici",
+          "nazev": "Nekvalifikovaní pracovníci",
+          "popis": "Pracovníci dodavatele nemají potřebnou kvalifikaci.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "bez_overeni",
+          "nazev": "Bez ověření způsobilosti",
+          "popis": "Způsobilost dodavatele nebyla ověřena před zahájením prací.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "nevhodny_vyber",
+          "nazev": "Nevhodný výběr dodavatele",
+          "popis": "Dodavatel nebyl vybrán s ohledem na rizika činnosti.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "kriteria_vyberu",
+          "nazev": "Stanovit kritéria výběru",
+          "popis": "Definujte požadavky na způsobilost dodavatelů v oblasti BOZP.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "overovat_doklady",
+          "nazev": "Ověřovat doklady",
+          "popis": "Před zahájením prací ověřte všechny požadované doklady.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "hodnotit_dodavatele",
+          "nazev": "Hodnotit dodavatele",
+          "popis": "Pravidelně hodnoťte plnění požadavků BOZP dodavateli.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "smluvni_povinnosti",
+          "nazev": "Smluvně vymáhat povinnosti",
+          "popis": "Ve smlouvách vymáhejte plnění povinností BOZP.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_dodavatelu",
+          "nazev": "Vést evidenci dodavatelů",
+          "popis": "Evidence schválených dodavatelů a jejich dokladů.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zakon_262_2006",
+          "nazev": "Zákon č. 262/2006 Sb., zákoník práce",
+          "popis": "Povinnosti zaměstnavatele při práci dodavatelů a externích osob.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro výběr, koordinaci a kontrolu dodavatelů na pracovišti.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nv_361_2007",
+          "nazev": "Nařízení vlády č. 361/2007 Sb.",
+          "popis": "Požadavky na zajištění BOZP při práci dodavatelů.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "predavani_pracoviste",
+      "nazev": "Předávání pracoviště",
+      "popis": "Kontrola předání pracoviště, vymezení prostoru, předání informací a stanovení odpovědností.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace",
+          "text": "Identifikujte postupy předávání pracoviště dodavatelům v kontrolované oblasti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "predani",
+          "text": "Zkontrolujte formální předání pracoviště dodavateli.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vymezeni_prostoru",
+          "text": "Ověřte vymezení prostoru pro práci dodavatele.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "predani_informaci",
+          "text": "Posuďte předání informací o stavu pracoviště.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "odpovednosti",
+          "text": "Zkontrolujte stanovení odpovědností stran.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "protokol",
+          "text": "Ověřte existenci protokolu nebo záznamu o předání.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda dodavatel převzal pracoviště prokazatelným způsobem.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "predani",
+          "nazev": "Pracoviště bylo předáno",
+          "popis": "Pracoviště bylo formálně předáno dodavateli.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vymezeni_prostoru",
+          "nazev": "Prostor je vymezen",
+          "popis": "Prostor pro práci dodavatele je jasně vymezen.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "predani_informaci",
+          "nazev": "Informace byly předány",
+          "popis": "Dodavatel obdržel potřebné informace o pracovišti.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "odpovednosti",
+          "nazev": "Odpovědnosti jsou stanoveny",
+          "popis": "Odpovědnosti objednatele a dodavatele jsou určeny.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "protokol",
+          "nazev": "Předání je doloženo",
+          "popis": "Předání pracoviště je prokazatelně doloženo.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Předání pracoviště je doloženo",
+          "popis": "Dodavatel převzal pracoviště prokazatelným způsobem.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "bez_predani",
+          "nazev": "Bez formálního předání",
+          "popis": "Pracoviště nebylo formálně předáno dodavateli.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nevyjasneny_prostor",
+          "nazev": "Nevyjasněný prostor",
+          "popis": "Prostor pro práci dodavatele není vymezen.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "bez_informaci",
+          "nazev": "Bez předání informací",
+          "popis": "Dodavatel neobdržel informace o stavu pracoviště.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "neurcene_odpovednosti",
+          "nazev": "Neurčené odpovědnosti",
+          "popis": "Odpovědnosti stran nejsou jasně stanoveny.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_protokol",
+          "nazev": "Chybí protokol předání",
+          "popis": "Předání pracoviště není doloženo.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "predani_nekompletni",
+          "nazev": "Neúplné předání",
+          "popis": "Předání pracoviště neobsahuje všechny požadované údaje.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "postup_predani",
+          "nazev": "Stanovit postup předání",
+          "popis": "Sepište postup předávání pracoviště dodavatelům.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "protokol",
+          "nazev": "Používat protokol",
+          "popis": "Vždy sepište protokol o předání pracoviště.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vymezit_prostor",
+          "nazev": "Vymezit pracovní prostor",
+          "popis": "Jasně vymezte prostor a rozsah prací dodavatele.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "predat_informace",
+          "nazev": "Předat informace",
+          "popis": "Předejte dodavateli všechny relevantní informace o pracovišti.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "urcit_odpovednosti",
+          "nazev": "Určit odpovědnosti",
+          "popis": "Před zahájením prací určete odpovědnosti stran.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zakon_262_2006",
+          "nazev": "Zákon č. 262/2006 Sb., zákoník práce",
+          "popis": "Povinnosti zaměstnavatele při práci dodavatelů a externích osob.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro výběr, koordinaci a kontrolu dodavatelů na pracovišti.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nv_378_2001",
+          "nazev": "Nařízení vlády č. 378/2001 Sb.",
+          "popis": "Požadavky na koordinaci a předání pracoviště.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "seznameni_s_riziky",
+      "nazev": "Seznámení s riziky",
+      "popis": "Kontrola seznámení s místními riziky, únikovými cestami, první pomocí a požární ochranou.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace",
+          "text": "Identifikujte postupy seznámení dodavatelů s riziky pracoviště.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "mistni_rizika",
+          "text": "Zkontrolujte seznámení s místními riziky pracoviště.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "unikove_cesty",
+          "text": "Ověřte seznámení s únikovými cestami.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "prvni_pomoc",
+          "text": "Posuďte seznámení s první pomocí a vybavením.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "pozarni_ochrana",
+          "text": "Zkontrolujte seznámení s požární ochranou.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "dokumentace_seznameni",
+          "text": "Ověřte doložení seznámení pracovníků dodavatele.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Namátkově ověřte, zda pracovníci dodavatele znají hlavní rizika pracoviště.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "mistni_rizika",
+          "nazev": "Seznámení s riziky",
+          "popis": "Pracovníci dodavatele byli seznámeni s místními riziky.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "unikove_cesty",
+          "nazev": "Známost únikových cest",
+          "popis": "Pracovníci znají únikové cesty.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "prvni_pomoc",
+          "nazev": "Známost první pomoci",
+          "popis": "Pracovníci znají vybavení a postup první pomoci.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "pozarni_ochrana",
+          "nazev": "Známost požární ochrany",
+          "popis": "Pracovníci znají požární opatření na pracovišti.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "dokumentace_seznameni",
+          "nazev": "Seznámení je doloženo",
+          "popis": "Seznámení je prokazatelně doloženo.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Znalost hlavních rizik",
+          "popis": "Pracovníci dodavatele znají hlavní rizika pracoviště.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "neinformovani",
+          "nazev": "Neinformovaní pracovníci",
+          "popis": "Pracovníci dodavatele nebyli seznámeni s riziky.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "neznaji_cesty",
+          "nazev": "Neznalost únikových cest",
+          "popis": "Pracovníci neznají únikové cesty.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "neznaji_pp",
+          "nazev": "Neznalost první pomoci",
+          "popis": "Pracovníci neznají vybavení první pomoci.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "neznaji_po",
+          "nazev": "Neznalost požární ochrany",
+          "popis": "Pracovníci neznají požární opatření.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_doklad",
+          "nazev": "Chybí doložení seznámení",
+          "popis": "Seznámení není prokazatelně doloženo.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "formalni_seznameni",
+          "nazev": "Formální seznámení bez obsahu",
+          "popis": "Seznámení neobsahuje konkrétní rizika pracoviště.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "seznamovat",
+          "nazev": "Seznamovat před zahájením",
+          "popis": "Vždy seznamte pracovníky dodavatele před vstupem na pracoviště.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "dokumentovat",
+          "nazev": "Dokumentovat seznámení",
+          "popis": "Doložte seznámení podpisy nebo záznamem.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "mistni_rizika",
+          "nazev": "Předat místní rizika",
+          "popis": "Předejte konkrétní informace o rizicích pracoviště.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "unikove_cesty",
+          "nazev": "Ukázat únikové cesty",
+          "popis": "Seznamte pracovníky s únikovými cestami a shromažďovacími místy.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "overovat_znalosti",
+          "nazev": "Ověřovat znalosti",
+          "popis": "Namátkově ověřujte znalosti pracovníků dodavatele.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zakon_262_2006",
+          "nazev": "Zákon č. 262/2006 Sb., zákoník práce",
+          "popis": "Povinnosti zaměstnavatele při práci dodavatelů a externích osob.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro výběr, koordinaci a kontrolu dodavatelů na pracovišti.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nv_378_2001",
+          "nazev": "Nařízení vlády č. 378/2001 Sb.",
+          "popis": "Požadavky na informování o rizicích a bezpečnostních opatřeních.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "koordinace_cinnosti",
+      "nazev": "Koordinace činností",
+      "popis": "Kontrola souběhu více firem, koordinace prací, komunikace a určení odpovědných osob.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace",
+          "text": "Identifikujte souběžné činnosti dodavatelů a zaměstnanců v kontrolované oblasti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "soubeh_firem",
+          "text": "Zkontrolujte souběh prací více dodavatelů nebo zaměstnanců.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "koordinace",
+          "text": "Ověřte koordinaci prací mezi stranami.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "komunikace",
+          "text": "Posuďte komunikaci mezi odpovědnými osobami.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "odpovedne_osoby",
+          "text": "Zkontrolujte určení odpovědných osob za koordinaci.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "plan_praci",
+          "text": "Ověřte plán souběžných prací a časové rozvržení.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda současně prováděné práce se vzájemně neohrožují.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "soubeh_firem",
+          "nazev": "Souběh je zmapován",
+          "popis": "Souběžné činnosti jsou identifikovány.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "koordinace",
+          "nazev": "Práce jsou koordinovány",
+          "popis": "Práce různých stran jsou koordinovány.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "komunikace",
+          "nazev": "Komunikace funguje",
+          "popis": "Mezi odpovědnými osobami probíhá komunikace.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "odpovedne_osoby",
+          "nazev": "Odpovědné osoby jsou určeny",
+          "popis": "Jsou určeny osoby odpovědné za koordinaci.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "plan_praci",
+          "nazev": "Plán prací existuje",
+          "popis": "Existuje plán souběžných prací.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Práce se neohrožují",
+          "popis": "Současně prováděné práce se vzájemně neohrožují.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "nekoordinovane_prace",
+          "nazev": "Nekoordinované práce",
+          "popis": "Souběžné práce nejsou koordinovány.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "kolize_cinnosti",
+          "nazev": "Kolize činností",
+          "popis": "Práce různých stran se vzájemně ohrožují.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "slaba_komunikace",
+          "nazev": "Slabá komunikace",
+          "popis": "Chybí komunikace mezi odpovědnými osobami.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "bez_odpovednosti",
+          "nazev": "Neurčená odpovědnost",
+          "popis": "Není určena osoba za koordinaci.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_plan",
+          "nazev": "Chybí plán prací",
+          "popis": "Neexistuje plán souběžných prací.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prekryv_prostoru",
+          "nazev": "Překryv pracovních prostorů",
+          "popis": "Různé strany pracují ve stejném prostoru bez koordinace.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "koordinator",
+          "nazev": "Určit koordinátora",
+          "popis": "Stanovte odpovědnou osobu za koordinaci prací dodavatelů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "planovat",
+          "nazev": "Plánovat souběžné práce",
+          "popis": "Plánujte souběh prací a minimalizujte kolize.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "komunikovat",
+          "nazev": "Zajistit komunikaci",
+          "popis": "Udržujte pravidelnou komunikaci mezi stranami.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "schuzky",
+          "nazev": "Pořádat koordinační schůzky",
+          "popis": "Při souběhu více dodavatelů pořádejte koordinační schůzky.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "monitorovat",
+          "nazev": "Monitorovat souběh",
+          "popis": "Průběžně sledujte, zda se práce neohrožují.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zakon_262_2006",
+          "nazev": "Zákon č. 262/2006 Sb., zákoník práce",
+          "popis": "Povinnosti zaměstnavatele při práci dodavatelů a externích osob.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro výběr, koordinaci a kontrolu dodavatelů na pracovišti.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nv_361_2007",
+          "nazev": "Nařízení vlády č. 361/2007 Sb.",
+          "popis": "Požadavky na koordinaci bezpečnosti při souběhu prací.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "kontrola_dodrzovani_bozp",
+      "nazev": "Kontrola dodržování BOZP",
+      "popis": "Kontrola používání OOPP, pracovních postupů, pořádku a zabezpečení pracoviště dodavateli.",
+      "poradi": 50,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace",
+          "text": "Identifikujte činnosti dodavatelů v kontrolované oblasti a požadavky BOZP.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "oopp",
+          "text": "Zkontrolujte používání OOPP pracovníky dodavatele.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pracovni_postupy",
+          "text": "Ověřte dodržování pracovních postupů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "poradek",
+          "text": "Posuďte pořádek a úklid pracoviště dodavatele.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "zabezpeceni",
+          "text": "Zkontrolujte zabezpečení pracoviště a ohraničení nebezpečných zón.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "dodrzeni_pravidel",
+          "text": "Ověřte dodržování místních pravidel BOZP.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda dodavatel dodržuje pravidla BOZP stanovená objednatelem.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "oopp",
+          "nazev": "OOPP jsou používány",
+          "popis": "Pracovníci dodavatele používají předepsané OOPP.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pracovni_postupy",
+          "nazev": "Postupy jsou dodržovány",
+          "popis": "Dodavatel dodržuje stanovené pracovní postupy.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "poradek",
+          "nazev": "Pořádek je udržován",
+          "popis": "Pracoviště dodavatele je udržováno v pořádku.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "zabezpeceni",
+          "nazev": "Pracoviště je zabezpečeno",
+          "popis": "Nebezpečné zóny jsou ohraničeny a zabezpečeny.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "dodrzeni_pravidel",
+          "nazev": "Pravidla BOZP jsou dodržována",
+          "popis": "Dodavatel dodržuje pravidla BOZP objednatele.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Dodržování pravidel BOZP",
+          "popis": "Dodavatel dodržuje pravidla BOZP stanovená objednatelem.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "nepouzivane_oopp",
+          "nazev": "Nepoužívání OOPP",
+          "popis": "Pracovníci dodavatele nepoužívají předepsané OOPP.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "porusovani_postupu",
+          "nazev": "Porušování postupů",
+          "popis": "Dodavatel nedodržuje pracovní postupy.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "neporadek",
+          "nazev": "Nepořádek na pracovišti",
+          "popis": "Pracoviště dodavatele není udržováno v pořádku.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nezabezpecene_zony",
+          "nazev": "Nezabezpečené zóny",
+          "popis": "Nebezpečné zóny nejsou ohraničeny.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "porusovani_pravidel",
+          "nazev": "Porušování pravidel",
+          "popis": "Dodavatel nedodržuje místní pravidla BOZP.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "bez_kontroly",
+          "nazev": "Bez kontroly dodržování",
+          "popis": "Dodržování BOZP dodavatelem není kontrolováno.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "pravidelna_kontrola",
+          "nazev": "Pravidelně kontrolovat",
+          "popis": "Provádějte pravidelné kontroly dodržování BOZP dodavatelem.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "seznam_pravidel",
+          "nazev": "Předat pravidla",
+          "popis": "Předejte dodavateli jasná pravidla BOZP.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "kontrolovat_oopp",
+          "nazev": "Kontrolovat OOPP",
+          "popis": "Kontrolujte používání OOPP pracovníky dodavatele.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "reagovat_na_poruseni",
+          "nazev": "Reagovat na porušení",
+          "popis": "Bezodkladně reagujte na porušení pravidel BOZP.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "hodnotit_plneni",
+          "nazev": "Hodnotit plnění",
+          "popis": "Pravidelně hodnoťte plnění požadavků BOZP dodavatelem.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zakon_262_2006",
+          "nazev": "Zákon č. 262/2006 Sb., zákoník práce",
+          "popis": "Povinnosti zaměstnavatele při práci dodavatelů a externích osob.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro výběr, koordinaci a kontrolu dodavatelů na pracovišti.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nv_378_2001",
+          "nazev": "Nařízení vlády č. 378/2001 Sb.",
+          "popis": "Požadavky na kontrolu dodržování BOZP na pracovišti.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "dokumentace_dodavatelu",
+      "nazev": "Dokumentace dodavatelů",
+      "popis": "Kontrola školení, oprávnění, povolení k práci a potřebných dokladů dodavatelů.",
+      "poradi": 60,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace",
+          "text": "Identifikujte požadovanou dokumentaci dodavatelů v kontrolované oblasti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "skoleni",
+          "text": "Zkontrolujte doklady o školení pracovníků dodavatele.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "opravneni",
+          "text": "Ověřte oprávnění k vykonávaným činnostem.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "povoleni",
+          "text": "Posuďte povolení k práci na pracovišti objednatele.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "doklady",
+          "text": "Zkontrolujte další požadované doklady a potvrzení.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "aktualnost",
+          "text": "Ověřte aktuálnost a platnost dokumentace.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda požadovaná dokumentace je k dispozici.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "skoleni",
+          "nazev": "Školení je doloženo",
+          "popis": "Doklady o školení pracovníků jsou k dispozici.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "opravneni",
+          "nazev": "Oprávnění jsou doložena",
+          "popis": "Oprávnění k činnostem jsou platná a doložená.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "povoleni",
+          "nazev": "Povolení k práci existuje",
+          "popis": "Pracovníci mají povolení k práci na pracovišti.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "doklady",
+          "nazev": "Doklady jsou kompletní",
+          "popis": "Všechny požadované doklady jsou k dispozici.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "aktualnost",
+          "nazev": "Dokumentace je aktuální",
+          "popis": "Dokumentace odpovídá aktuálnímu stavu.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Dokumentace je k dispozici",
+          "popis": "Požadovaná dokumentace je k dispozici.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "chybi_skoleni",
+          "nazev": "Chybí doklady o školení",
+          "popis": "Školení pracovníků dodavatele není doloženo.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_opravneni",
+          "nazev": "Chybějící oprávnění",
+          "popis": "Oprávnění k činnostem chybí nebo není platné.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "bez_povoleni",
+          "nazev": "Bez povolení k práci",
+          "popis": "Pracovníci nemají povolení vstupu na pracoviště.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "neuplne_doklady",
+          "nazev": "Neúplné doklady",
+          "popis": "Požadovaná dokumentace není kompletní.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "zastarala",
+          "nazev": "Zastaralá dokumentace",
+          "popis": "Dokumentace nebyla aktualizována.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vstup_bez_kontroly",
+          "nazev": "Vstup bez kontroly dokladů",
+          "popis": "Pracovníci vstupují bez ověření dokladů.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "seznam_dokladu",
+          "nazev": "Stanovit seznam dokladů",
+          "popis": "Určete požadovanou dokumentaci pro každého dodavatele.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "kontrola_vstupu",
+          "nazev": "Kontrolovat při vstupu",
+          "popis": "Ověřujte doklady před vstupem na pracoviště.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "evidence",
+          "nazev": "Vést evidenci",
+          "popis": "Evidence dokumentace dodavatelů a externích osob.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "sledovat_platnost",
+          "nazev": "Sledovat platnost",
+          "popis": "Pravidelně kontrolujte platnost dokladů.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "aktualizovat",
+          "nazev": "Aktualizovat dokumentaci",
+          "popis": "Aktualizujte dokumentaci při změnách.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zakon_262_2006",
+          "nazev": "Zákon č. 262/2006 Sb., zákoník práce",
+          "popis": "Povinnosti zaměstnavatele při práci dodavatelů a externích osob.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro výběr, koordinaci a kontrolu dodavatelů na pracovišti.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nv_378_2001",
+          "nazev": "Nařízení vlády č. 378/2001 Sb.",
+          "popis": "Požadavky na dokumentaci a proškolení externích osob.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "prace_se_zvysenym_rizikem",
+      "nazev": "Práce se zvýšeným rizikem",
+      "popis": "Kontrola prací ve výškách, svařování, vstupu do uzavřených prostor, výkopových prací a dalších rizikových činností dodavatelů.",
+      "poradi": 70,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace",
+          "text": "Identifikujte rizikové činnosti dodavatelů v kontrolované oblasti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "prace_ve_vysce",
+          "text": "Zkontrolujte opatření pro práce ve výškách.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "svarovani",
+          "text": "Ověřte bezpečnostní opatření při svařování.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "uzavrene_prostory",
+          "text": "Posuďte opatření pro vstup do uzavřených prostor.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vykopove_prace",
+          "text": "Zkontrolujte opatření při výkopových pracích.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "jine_rizikove",
+          "text": "Ověřte opatření pro ostatní rizikové činnosti.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda pro rizikové práce jsou stanovena odpovídající bezpečnostní opatření.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "prace_ve_vysce",
+          "nazev": "Opatření pro práce ve výšce",
+          "popis": "Práce ve výškách mají stanovená bezpečnostní opatření.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "svarovani",
+          "nazev": "Opatření při svařování",
+          "popis": "Svařování probíhá s odpovídajícími opatřeními.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "uzavrene_prostory",
+          "nazev": "Opatření pro uzavřené prostory",
+          "popis": "Vstup do uzavřených prostor je zabezpečen.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vykopove_prace",
+          "nazev": "Opatření při výkopech",
+          "popis": "Výkopové práce mají stanovená opatření.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "jine_rizikove",
+          "nazev": "Opatření pro ostatní rizika",
+          "popis": "Ostatní rizikové činnosti mají odpovídající opatření.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Opatření pro rizikové práce",
+          "popis": "Pro rizikové práce jsou stanovena odpovídající bezpečnostní opatření.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "prace_bez_povoleni",
+          "nazev": "Práce bez povolení",
+          "popis": "Riziková práce probíhá bez povolení k práci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_opatreni_vyska",
+          "nazev": "Chybí opatření pro výšku",
+          "popis": "Práce ve výškách bez odpovídajících opatření.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nebezpecne_svarovani",
+          "nazev": "Nebezpečné svařování",
+          "popis": "Svařování bez požárních opatření.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vstup_bez_kontroly",
+          "nazev": "Vstup bez kontroly",
+          "popis": "Vstup do uzavřených prostor bez posouzení rizik.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "neohraniceny_vykop",
+          "nazev": "Neohraničený výkop",
+          "popis": "Výkop není ohraničen a zabezpečen.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "bez_posouzeni",
+          "nazev": "Bez posouzení rizik",
+          "popis": "Riziková práce nebyla posouzena před zahájením.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "povoleni_k_praci",
+          "nazev": "Vyžadovat povolení k práci",
+          "popis": "Pro rizikové činnosti vyžadujte povolení k práci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "posouzeni_rizik",
+          "nazev": "Provádět posouzení rizik",
+          "popis": "Před zahájením posuďte rizika rizikových prací.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "dohled",
+          "nazev": "Zajistit dohled",
+          "popis": "U rizikových prací zajistěte dohled odpovědné osoby.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "kontrolovat_opatreni",
+          "nazev": "Kontrolovat opatření",
+          "popis": "Průběžně kontrolujte plnění bezpečnostních opatření.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "skoleni",
+          "nazev": "Proškolit pracovníky",
+          "popis": "Zajistěte proškolení pro rizikové činnosti.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zakon_262_2006",
+          "nazev": "Zákon č. 262/2006 Sb., zákoník práce",
+          "popis": "Povinnosti zaměstnavatele při práci dodavatelů a externích osob.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro výběr, koordinaci a kontrolu dodavatelů na pracovišti.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nv_378_2001",
+          "nazev": "Nařízení vlády č. 378/2001 Sb.",
+          "popis": "Požadavky na práce se zvýšeným rizikem a povolení k práci.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "ukonceni_praci_predani",
+      "nazev": "Ukončení prací a předání pracoviště",
+      "popis": "Kontrola úklidu, odstranění dočasných zařízení, předání pracoviště a odstranění závad po ukončení prací dodavatele.",
+      "poradi": 80,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace",
+          "text": "Identifikujte postupy ukončení prací a předání pracoviště od dodavatelů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "uklid",
+          "text": "Zkontrolujte úklid pracoviště po ukončení prací.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "docasna_zarizeni",
+          "text": "Ověřte odstranění dočasných zařízení a instalací.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "predani_zpet",
+          "text": "Posuďte předání pracoviště zpět objednateli.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "odstraneni_zavad",
+          "text": "Zkontrolujte odstranění závad zjištěných při pracích.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "protokol_ukonceni",
+          "text": "Ověřte protokol nebo záznam o ukončení prací.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda po ukončení prací bylo pracoviště předáno v bezpečném stavu.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "uklid",
+          "nazev": "Pracoviště je uklizeno",
+          "popis": "Po ukončení prací je pracoviště uklizeno.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "docasna_zarizeni",
+          "nazev": "Dočasná zařízení odstraněna",
+          "popis": "Dočasná zařízení byla odstraněna.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "predani_zpet",
+          "nazev": "Pracoviště předáno",
+          "popis": "Pracoviště bylo formálně předáno objednateli.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "odstraneni_zavad",
+          "nazev": "Závady odstraněny",
+          "popis": "Závady z prací dodavatele jsou odstraněny.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "protokol_ukonceni",
+          "nazev": "Ukončení je doloženo",
+          "popis": "Ukončení prací je prokazatelně doloženo.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Pracoviště předáno bezpečně",
+          "popis": "Po ukončení prací bylo pracoviště předáno v bezpečném stavu.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "neuklizeno",
+          "nazev": "Neuklizené pracoviště",
+          "popis": "Pracoviště nebylo uklizeno po ukončení prací.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zbyla_zarizeni",
+          "nazev": "Zbylá dočasná zařízení",
+          "popis": "Dočasná zařízení nebyla odstraněna.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "bez_predani_zpet",
+          "nazev": "Bez předání pracoviště",
+          "popis": "Pracoviště nebylo formálně předáno objednateli.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "neodstranene_zavady",
+          "nazev": "Neodstraněné závady",
+          "popis": "Závady z prací dodavatele nejsou odstraněny.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "nebezpecny_stav",
+          "nazev": "Nebezpečný stav pracoviště",
+          "popis": "Pracoviště zůstalo v nebezpečném stavu.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_protokol",
+          "nazev": "Chybí protokol ukončení",
+          "popis": "Ukončení prací není doloženo.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "postup_ukonceni",
+          "nazev": "Stanovit postup ukončení",
+          "popis": "Sepište postup ukončení prací a předání pracoviště.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "kontrola_stavu",
+          "nazev": "Kontrolovat stav pracoviště",
+          "popis": "Před převzetím zkontrolujte stav pracoviště.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "protokol",
+          "nazev": "Používat protokol",
+          "popis": "Sepište protokol o ukončení prací a předání pracoviště.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vyzadovat_uklid",
+          "nazev": "Vyžadovat úklid",
+          "popis": "Vyžadujte úklid a odstranění dočasných zařízení.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "resit_zavady",
+          "nazev": "Řešit závady",
+          "popis": "Závady z prací dodavatele řešte před finálním převzetím.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zakon_262_2006",
+          "nazev": "Zákon č. 262/2006 Sb., zákoník práce",
+          "popis": "Povinnosti zaměstnavatele při práci dodavatelů a externích osob.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro výběr, koordinaci a kontrolu dodavatelů na pracovišti.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nv_361_2007",
+          "nazev": "Nařízení vlády č. 361/2007 Sb.",
+          "popis": "Požadavky na ukončení prací a předání pracoviště v bezpečném stavu.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    }
+  ],
+  "kontrolni_body": [],
+  "typicke_zavady": [],
+  "doporucene_postupy": [],
+  "doporucena_opatreni": []
+}

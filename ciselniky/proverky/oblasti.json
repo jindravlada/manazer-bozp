@@ -1,5 +1,5 @@
 {
-  "verze": 11,
+  "verze": 12,
   "oblasti": [
     {
       "id": "bozp",
@@ -75,11 +75,11 @@
     },
     {
       "id": "dodavatele",
-      "nazev": "Dodavatelé",
-      "popis": "Práce dodavatelů na pracovišti, koordinace BOZP a plnění povinností.",
+      "nazev": "Dodavatelé a externí osoby",
+      "popis": "Výběr dodavatelů, předání pracoviště, seznámení s riziky, koordinace, kontrola BOZP, dokumentace, rizikové práce a ukončení prací.",
       "poradi": 70,
       "aktivni": true,
-      "soubor_znalosti": null
+      "soubor_znalosti": "dodavatele.json"
     },
     {
       "id": "rizikova_pracoviste",
