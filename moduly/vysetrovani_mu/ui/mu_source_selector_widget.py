@@ -205,12 +205,12 @@ class MuSourceSelectorWidget(QWidget):
         self.accident_combo.blockSignals(False)
 
     def _populate_audits(self) -> None:
-        from moduly.audity.sluzby.internal_audit_service import internal_audit_service
+        from moduly.audity.sluzby.audit_service import audit_service
 
         self.audit_combo.blockSignals(True)
         self.audit_combo.clear()
         self.audit_combo.addItem("— vyberte záznam —", None)
-        for audit in internal_audit_service.get_all():
+        for audit in audit_service.get_all():
             number = audit.number or f"ID {audit.id}"
             title = (audit.title or "").strip()
             label = f"Audit IMS {number}"
@@ -244,9 +244,9 @@ class MuSourceSelectorWidget(QWidget):
         return f"Událost č. {accident.number}"
 
     def _audit_label(self, audit_id: int) -> str:
-        from moduly.audity.sluzby.internal_audit_service import internal_audit_service
+        from moduly.audity.sluzby.audit_service import audit_service
 
-        audit = internal_audit_service.get_by_id(audit_id)
+        audit = audit_service.get_by_id(audit_id)
         if audit is None or not audit.number:
             return ""
         return f"Audit IMS {audit.number}"

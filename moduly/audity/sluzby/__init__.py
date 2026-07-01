@@ -1,3 +1,3 @@
-from moduly.audity.sluzby.internal_audit_service import internal_audit_service
+from moduly.audity.sluzby.audit_service import audit_service
 
-__all__ = ["internal_audit_service"]
+__all__ = ["audit_service"]

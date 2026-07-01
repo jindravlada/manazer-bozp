@@ -105,9 +105,9 @@ def _context_from_audit(source_id: int | None) -> MuSourceContext:
     if not isinstance(source_id, int) or source_id <= 0:
         return MuSourceContext()
 
-    from moduly.audity.sluzby.internal_audit_service import internal_audit_service
+    from moduly.audity.sluzby.audit_service import audit_service
 
-    audit = internal_audit_service.get_by_id(source_id)
+    audit = audit_service.get_by_id(source_id)
     if audit is None:
         return MuSourceContext()
 
@@ -116,16 +116,14 @@ def _context_from_audit(source_id: int | None) -> MuSourceContext:
         f"<b>Číslo auditu:</b> {audit.number or ''}<br>"
         f"<b>Název:</b> {audit.title or ''}<br>"
         f"<b>Datum auditu:</b> {audit_date}<br>"
-        f"<b>Pracoviště:</b> {audit.workplace or ''}<br>"
+        f"<b>Auditovaný provoz:</b> {audit.workplace_name or ''}<br>"
         f"<b>Stav:</b> {audit.status or ''}"
     )
-    if (audit.summary or "").strip():
-        source_record_html = f"{source_record_html}<br><b>Shrnutí:</b> {audit.summary.strip()}"
 
     return MuSourceContext(
         event_number=audit.number or "",
         source_record_html=source_record_html,
-        default_oznameni_popis=(audit.summary or "").strip(),
+        default_oznameni_popis=(audit.title or "").strip(),
     )
 
 

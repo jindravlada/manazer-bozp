@@ -6,8 +6,8 @@ from core.database.session import create_database, engine
 def initialize_database() -> None:
     from core.models.attachment import Attachment  # noqa: F401
     from core.shared.modely.finding import Finding  # noqa: F401
-    from moduly.audity.modely.internal_audit import InternalAudit  # noqa: F401
-    from moduly.audity.modely.audit_participant import AuditParticipant  # noqa: F401
+    from moduly.audity.modely.audit import Audit  # noqa: F401
+    from moduly.audity.modely.audit_commission_member import AuditCommissionMember  # noqa: F401
     from moduly.ukoly.modely.task import Task  # noqa: F401
     from moduly.kontroly.modely.control import Control  # noqa: F401
     from moduly.kontroly.modely.thp_monthly_control import ThpMonthlyControl  # noqa: F401
@@ -31,15 +31,13 @@ def initialize_database() -> None:
     _ensure_accident_columns()
     _ensure_investigation_columns()
     _ensure_control_columns()
-    _ensure_internal_audit_columns()
-    _ensure_audit_participant_columns()
     _ensure_person_columns()
     _ensure_mu_investigation_columns()
     _ensure_finding_columns()
     _ensure_control_result_columns()
+    _ensure_audit_commission_table()
     _ensure_bozp_inspection_commission_table()
     _normalize_task_status_values()
-    _normalize_internal_audit_status_values()
     _normalize_accident_legacy_values()
 
 
@@ -130,20 +128,21 @@ def _ensure_control_columns() -> None:
         _add_column("controls", "sd_reference VARCHAR(200) DEFAULT ''")
 
 
-def _ensure_internal_audit_columns() -> None:
-    columns = _table_columns("internal_audits")
-    if "summary" not in columns:
-        _add_column("internal_audits", "summary TEXT DEFAULT ''")
-    if "planned_year" not in columns:
-        _add_column("internal_audits", "planned_year INTEGER")
-    if "planned_month" not in columns:
-        _add_column("internal_audits", "planned_month INTEGER")
+def _ensure_audit_commission_table() -> None:
+    columns = _table_columns("audit_commission_members")
+    if columns and "record_type" not in columns:
+        with engine.connect() as connection:
+            connection.execute(text("DROP TABLE audit_commission_members"))
+            connection.commit()
+        columns = set()
 
+    if columns and "note_text" not in columns:
+        _add_column("audit_commission_members", "note_text VARCHAR(250)")
 
-def _ensure_audit_participant_columns() -> None:
-    columns = _table_columns("audit_participants")
-    if "person_id" not in columns:
-        _add_column("audit_participants", "person_id INTEGER")
+    if not columns:
+        from moduly.audity.modely.audit_commission_member import AuditCommissionMember
+
+        AuditCommissionMember.__table__.create(bind=engine, checkfirst=True)
 
 
 def _ensure_person_columns() -> None:
@@ -228,17 +227,6 @@ def _ensure_bozp_inspection_commission_table() -> None:
         )
 
         BozpInspectionCommissionMember.__table__.create(bind=engine, checkfirst=True)
-
-
-def _normalize_internal_audit_status_values() -> None:
-    columns = _table_columns("internal_audits")
-    if "status" not in columns:
-        return
-    with engine.connect() as connection:
-        connection.execute(
-            text("UPDATE internal_audits SET status = 'Plánovaný' WHERE status = 'Koncept'")
-        )
-        connection.commit()
 
 
 def _normalize_task_status_values() -> None:

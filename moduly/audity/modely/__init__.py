@@ -1,4 +1,4 @@
-from moduly.audity.modely.audit_participant import AuditParticipant
-from moduly.audity.modely.internal_audit import InternalAudit
+from moduly.audity.modely.audit import Audit
+from moduly.audity.modely.audit_commission_member import AuditCommissionMember
 
-__all__ = ["AuditParticipant", "InternalAudit"]
+__all__ = ["Audit", "AuditCommissionMember"]

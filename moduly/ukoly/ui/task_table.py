@@ -202,9 +202,9 @@ class TaskTable(QTableWidget):
         return "—"
 
     def _audit_record_label(self, entity_id: int) -> str:
-        from moduly.audity.sluzby.internal_audit_service import internal_audit_service
+        from moduly.audity.sluzby.audit_service import audit_service
 
-        audit = internal_audit_service.get_by_id(entity_id)
+        audit = audit_service.get_by_id(entity_id)
         if audit is not None and audit.number:
             return audit.number
         return "—"

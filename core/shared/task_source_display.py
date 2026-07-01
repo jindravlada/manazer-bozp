@@ -82,9 +82,9 @@ def _finding_entity_source_label(entity_type: str, entity_id: int) -> str:
 
 def _entity_record_detail(entity_type: str, entity_id: int) -> str:
     if entity_type == ENTITY_AUDITY:
-        from moduly.audity.sluzby.internal_audit_service import internal_audit_service
+        from moduly.audity.sluzby.audit_service import audit_service
 
-        audit = internal_audit_service.get_by_id(entity_id)
+        audit = audit_service.get_by_id(entity_id)
         if audit is not None and audit.number:
             return audit.number
     elif entity_type == ENTITY_ACCIDENT:
