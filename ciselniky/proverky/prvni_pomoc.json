@@ -1,5 +1,5 @@
 {
-  "verze": 5,
+  "verze": 6,
   "id": "prvni_pomoc",
   "nazev": "První pomoc",
   "popis": "Lékárničky, vyškolení osoby pro první pomoc a vybavení pro ošetření.",
@@ -605,14 +605,209 @@
     {
       "id": "telefonni_cisla",
       "nazev": "Telefonní čísla",
-      "popis": "Viditelně uvedená tísňová a informační telefonní čísla pro první pomoc.",
+      "popis": "Kontrola dostupnosti, aktuálnosti a znalosti důležitých telefonních čísel pro mimořádné události, první pomoc a interní postupy zaměstnavatele.",
       "poradi": 40,
       "aktivni": true,
       "sekce": [],
-      "kontrolni_body": [],
-      "typicke_zavady": [],
-      "doporucene_postupy": [],
-      "legislativa": [],
+      "postup_kontroly": [
+        {
+          "id": "vyveseni",
+          "text": "Zkontrolujte, zda jsou na pracovišti vyvěšena důležitá telefonní čísla.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "citelnost",
+          "text": "Ověřte jejich čitelnost a dostupnost.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "aktualnost",
+          "text": "Zkontrolujte aktuálnost uvedených kontaktů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "cisla_izs",
+          "text": "Ověřte, že jsou uvedena čísla složek IZS.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "interni_kontakty",
+          "text": "Ověřte, že jsou uvedeny interní kontakty zaměstnavatele.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "namatkova_otazka",
+          "text": "Namátkově se zeptejte zaměstnance, na jaké číslo by volal při pracovním úrazu.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "mimo_pracovni_dobu",
+          "text": "Ověřte, že zaměstnanci vědí, jak přivolat pomoc mimo běžnou pracovní dobu.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "vyvesena",
+          "nazev": "Telefonní čísla jsou vyvěšena",
+          "popis": "Na pracovišti jsou na vhodném místě zveřejněna důležitá telefonní čísla.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "aktualni",
+          "nazev": "Telefonní čísla jsou aktuální",
+          "popis": "Kontakty odpovídají současnému stavu organizace.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "citelna",
+          "nazev": "Telefonní čísla jsou dobře čitelná",
+          "popis": "Nejsou poškozena ani zakryta.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "cisla_izs",
+          "nazev": "Jsou uvedena čísla složek IZS",
+          "popis": "Minimálně 112, 150, 155 a 158.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "interni_kontakty",
+          "nazev": "Jsou uvedeny interní kontakty",
+          "popis": "Vedoucí zaměstnanci, první pomoc, ostraha nebo další osoby dle místních podmínek.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_zamestnancu",
+          "nazev": "Zaměstnanci vědí, kam volat při mimořádné události",
+          "popis": "Namátkově oslovený zaměstnanec ví, jak přivolat pomoc.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "nevyvesena",
+          "nazev": "Telefonní čísla nejsou vyvěšena",
+          "popis": "Na pracovišti chybí zveřejněný seznam důležitých kontaktů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "neaktualni",
+          "nazev": "Neaktuální kontakty",
+          "popis": "Uvedená telefonní čísla neodpovídají současnému stavu organizace.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "necitelne",
+          "nazev": "Nečitelné nebo poškozené seznamy",
+          "popis": "Seznam kontaktů je poškozen, zakrytý nebo jinak nečitelný.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_interni",
+          "nazev": "Chybí interní kontakty",
+          "popis": "Seznam neobsahuje důležité interní kontakty zaměstnavatele.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "neznalost",
+          "nazev": "Zaměstnanci nevědí, kam volat",
+          "popis": "Zaměstnanci neznají důležitá telefonní čísla pro mimořádné události.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "nevhodne_umisteni",
+          "nazev": "Seznam je umístěn na nevhodném místě",
+          "popis": "Telefonní čísla nejsou na dobře viditelném nebo dostupném místě.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "overovani_kontaktu",
+          "nazev": "Pravidelně ověřovat správnost kontaktů",
+          "popis": "Kontrolujte aktuálnost telefonních čísel v intervalech stanovených vnitřním předpisem.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "aktualizace_zmen",
+          "nazev": "Aktualizovat při organizačních změnách",
+          "popis": "Bez prodlení aktualizujte seznam při změnách personálu, struktury nebo kontaktů.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "viditelne_umisteni",
+          "nazev": "Umístit seznam na dobře viditelné místo",
+          "popis": "Zajistěte, aby seznam důležitých čísel byl snadno dostupný všem zaměstnancům.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "seznameni_zamestnancu",
+          "nazev": "Seznámit zaměstnance s důležitými kontakty",
+          "popis": "Informujte zaměstnance o umístění seznamu a klíčových telefonních číslech.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "overovani_znalosti",
+          "nazev": "Ověřovat znalosti zaměstnanců při prověrkách",
+          "popis": "Namátkově ověřujte, zda zaměstnanci vědí, kam volat při mimořádné události.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_262_2006",
+          "nazev": "Zákon č. 262/2006 Sb. (zákoník práce)",
+          "popis": "Povinnosti zaměstnavatele v oblasti bezpečnosti a ochrany zdraví při práci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nv_361_2007",
+          "nazev": "Nařízení vlády č. 361/2007 Sb.",
+          "popis": "K poskytování a zajištění zdravotních služeb v pracovněprávních vztazích.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vnitrni_predpis",
+          "nazev": "Vnitřní předpis zaměstnavatele",
+          "popis": "Poskytování první pomoci a řešení mimořádných událostí — kontakty a postupy.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
       "historie": []
     }
   ],
