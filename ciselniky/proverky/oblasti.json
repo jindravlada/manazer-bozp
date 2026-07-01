@@ -1,5 +1,5 @@
 {
-  "verze": 3,
+  "verze": 4,
   "oblasti": [
     {
       "id": "bozp",
@@ -24,6 +24,14 @@
       "poradi": 30,
       "aktivni": true,
       "soubor_znalosti": "oopp.json"
+    },
+    {
+      "id": "pracovni_prostredi",
+      "nazev": "Pracovní prostředí",
+      "popis": "Komunikace, pořádek, osvětlení, větrání, mikroklima, sociální zařízení, zázemí a pitný režim na pracovišti.",
+      "poradi": 35,
+      "aktivni": true,
+      "soubor_znalosti": "pracovni_prostredi.json"
     },
     {
       "id": "dokumentace",
