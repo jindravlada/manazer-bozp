@@ -4,6 +4,7 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QDialog,
     QFileDialog,
     QFormLayout,
@@ -21,7 +22,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
-from moduly.proverky.constants import REFERENCE_PHOTO_FILTER
+from moduly.proverky.constants import CONTROL_POINT_SEVERITY_OPTIONS, REFERENCE_PHOTO_FILTER
 from moduly.proverky.sluzby.proverky_knowledge_service import (
     EDITABLE_SECTION_LIST_FIELDS,
     EDITABLE_SECTION_PROCEDURE_FIELDS,
@@ -38,7 +39,61 @@ from moduly.proverky.ui.proverky_knowledge_procedure_step_dialog import (
 )
 
 _LIST_MIN_HEIGHT = 140
+_CONTROL_POINTS_LIST_MIN_HEIGHT = 220
 _SECTION_SPACING = 20
+
+
+class _ControlPointListRow(QWidget):
+    """Řádek kontrolního bodu v editoru se jmenovkou a editovatelnou závažností."""
+
+    def __init__(self, item: dict, *, on_severity_changed, parent=None):
+        super().__init__(parent)
+        self._on_severity_changed = on_severity_changed
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setSpacing(10)
+
+        self._label = QLabel()
+        self._label.setWordWrap(True)
+
+        self._severity_combo = QComboBox()
+        self._severity_combo.setFixedWidth(128)
+        for value, label in CONTROL_POINT_SEVERITY_OPTIONS:
+            self._severity_combo.addItem(label, value)
+
+        self._severity_combo.currentIndexChanged.connect(self._emit_severity_changed)
+        layout.addWidget(self._label, 1)
+        layout.addWidget(self._severity_combo, 0, Qt.AlignmentFlag.AlignTop)
+
+        self.set_item(item, block_signals=True)
+
+    def set_item(self, item: dict, *, block_signals: bool = False) -> None:
+        if block_signals:
+            self._severity_combo.blockSignals(True)
+
+        self._label.setText(_format_control_point_label(item))
+        severity = proverky_knowledge_service.normalize_control_point_severity(item.get("zavaznost"))
+        index = self._severity_combo.findData(severity)
+        if index >= 0:
+            self._severity_combo.setCurrentIndex(index)
+
+        if block_signals:
+            self._severity_combo.blockSignals(False)
+
+    def current_severity(self) -> str:
+        return proverky_knowledge_service.normalize_control_point_severity(
+            self._severity_combo.currentData()
+        )
+
+    def _emit_severity_changed(self) -> None:
+        self._on_severity_changed(self.current_severity())
+
+
+def _format_control_point_label(item: dict) -> str:
+    prefix = "[neaktivní] " if not item.get("aktivni", True) else ""
+    nazev = str(item.get("nazev") or "—")
+    return f"{prefix}{nazev}"
 
 
 class _CollapsibleSection(QWidget):
@@ -186,7 +241,12 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
     ) -> QListWidget:
         section = _CollapsibleSection(title, expanded=True)
         list_widget = QListWidget()
-        list_widget.setMinimumHeight(_LIST_MIN_HEIGHT)
+        min_height = (
+            _CONTROL_POINTS_LIST_MIN_HEIGHT
+            if field_name == "kontrolni_body"
+            else _LIST_MIN_HEIGHT
+        )
+        list_widget.setMinimumHeight(min_height)
         section.content_layout().addWidget(list_widget)
         section.content_layout().addLayout(self._list_toolbar(list_widget))
         self._lists_by_field[field_name] = list_widget
@@ -299,7 +359,10 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         for raw in items:
             if not isinstance(raw, dict):
                 continue
-            self._add_list_row(list_widget, deepcopy(raw))
+            if self._field_by_list.get(list_widget) == "kontrolni_body":
+                self._add_control_point_row(list_widget, deepcopy(raw))
+            else:
+                self._add_list_row(list_widget, deepcopy(raw))
         self._refresh_section_count(list_widget)
 
     @staticmethod
@@ -312,6 +375,72 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         row = QListWidgetItem(self._format_item_label(item))
         row.setData(Qt.ItemDataRole.UserRole, item)
         list_widget.addItem(row)
+
+    def _add_control_point_row(self, list_widget: QListWidget, item: dict) -> None:
+        normalized = deepcopy(item)
+        normalized["zavaznost"] = proverky_knowledge_service.normalize_control_point_severity(
+            normalized.get("zavaznost")
+        )
+
+        row = QListWidgetItem()
+        row.setData(Qt.ItemDataRole.UserRole, normalized)
+        row.setFlags(row.flags() | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
+
+        row_widget = _ControlPointListRow(
+            normalized,
+            on_severity_changed=lambda severity, r=row, lw=list_widget: self._on_control_point_severity_changed(
+                lw,
+                r,
+                severity,
+            ),
+        )
+        row.setSizeHint(row_widget.sizeHint())
+        list_widget.addItem(row)
+        list_widget.setItemWidget(row, row_widget)
+
+    def _on_control_point_severity_changed(
+        self,
+        list_widget: QListWidget,
+        row_item: QListWidgetItem,
+        severity: str,
+    ) -> None:
+        data = row_item.data(Qt.ItemDataRole.UserRole)
+        if not isinstance(data, dict):
+            return
+
+        updated = deepcopy(data)
+        updated["zavaznost"] = proverky_knowledge_service.normalize_control_point_severity(severity)
+        row_item.setData(Qt.ItemDataRole.UserRole, updated)
+        if not self._persist_section_changes():
+            QMessageBox.warning(
+                self,
+                self.windowTitle(),
+                "Závažnost se nepodařilo uložit.",
+            )
+
+    def _refresh_control_point_row(self, list_widget: QListWidget, row: int) -> None:
+        row_item = list_widget.item(row)
+        if row_item is None:
+            return
+
+        data = row_item.data(Qt.ItemDataRole.UserRole)
+        row_widget = list_widget.itemWidget(row_item)
+        if isinstance(data, dict) and isinstance(row_widget, _ControlPointListRow):
+            row_widget.set_item(data, block_signals=True)
+
+    def _persist_section_changes(self) -> bool:
+        payload = self._build_section_payload()
+        if payload is None:
+            return False
+
+        saved = proverky_knowledge_service.save_section(
+            self._area_id,
+            self._section_id,
+            payload,
+        )
+        if saved:
+            self._section = payload
+        return saved
 
     def _refresh_section_count(self, list_widget: QListWidget) -> None:
         section = self._sections_by_list.get(list_widget)
@@ -471,7 +600,10 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
                 self._existing_ids(list_widget),
             )
 
-        self._add_list_row(list_widget, data)
+        if self._field_by_list.get(list_widget) == "kontrolni_body":
+            self._add_control_point_row(list_widget, data)
+        else:
+            self._add_list_row(list_widget, data)
         list_widget.setCurrentRow(list_widget.count() - 1)
         self._refresh_section_count(list_widget)
 
@@ -529,8 +661,11 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
                 self._existing_ids(list_widget, exclude_row=row),
             )
 
-        list_widget.item(row).setText(self._format_item_label(data))
         list_widget.item(row).setData(Qt.ItemDataRole.UserRole, data)
+        if self._field_by_list.get(list_widget) == "kontrolni_body":
+            self._refresh_control_point_row(list_widget, row)
+        else:
+            list_widget.item(row).setText(self._format_item_label(data))
 
     def _remove_item(self, list_widget: QListWidget) -> None:
         row = self._selected_row(list_widget)
@@ -581,13 +716,15 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
 
         updated = deepcopy(data)
         updated["aktivni"] = not bool(updated.get("aktivni", True))
+        item.setData(Qt.ItemDataRole.UserRole, updated)
         if list_widget in self._procedure_lists:
             item.setText(self._format_procedure_label(updated))
         elif list_widget in self._reference_lists:
             item.setText(self._format_reference_label(updated))
+        elif self._field_by_list.get(list_widget) == "kontrolni_body":
+            self._refresh_control_point_row(list_widget, row)
         else:
             item.setText(self._format_item_label(updated))
-        item.setData(Qt.ItemDataRole.UserRole, updated)
 
     def _collect_reference_photos(self, list_widget: QListWidget) -> list[dict]:
         items: list[dict] = []
@@ -640,22 +777,16 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         return payload
 
     def _accept(self) -> None:
-        payload = self._build_section_payload()
-        if payload is None:
-            QMessageBox.warning(self, self.windowTitle(), "Název sekce je povinný.")
-            return
-
-        saved = proverky_knowledge_service.save_section(
-            self._area_id,
-            self._section_id,
-            payload,
-        )
-        if not saved:
-            QMessageBox.warning(
-                self,
-                self.windowTitle(),
-                "Změny se nepodařilo uložit.",
-            )
+        if not self._persist_section_changes():
+            payload = self._build_section_payload()
+            if payload is None:
+                QMessageBox.warning(self, self.windowTitle(), "Název sekce je povinný.")
+            else:
+                QMessageBox.warning(
+                    self,
+                    self.windowTitle(),
+                    "Změny se nepodařilo uložit.",
+                )
             return
 
         self.accept()
