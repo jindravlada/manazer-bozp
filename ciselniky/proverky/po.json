@@ -1,0 +1,257 @@
+{
+  "verze": 1,
+  "id": "po",
+  "nazev": "Požární ochrana",
+  "popis": "Prevence požárů, požární technika, evakuační cesty a organizace PO.",
+  "poradi": 20,
+  "aktivni": true,
+  "sekce": [
+    {
+      "id": "hasici_pristroje",
+      "nazev": "Hasicí přístroje",
+      "popis": "Kontrola rozmístění, přístupnosti, označení, technického stavu a provozuschopnosti hasicích přístrojů v souladu s požadavky požární ochrany.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "rozmisteni",
+          "text": "Zjistěte rozmístění hasicích přístrojů podle požární dokumentace.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni",
+          "text": "Ověřte správné označení hasicího přístroje.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "volny_pristup",
+          "text": "Zkontrolujte volný přístup.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "typ_pristroje",
+          "text": "Ověřte vhodnost typu hasicího přístroje pro chráněný prostor.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "technicky_stav",
+          "text": "Zkontrolujte technický stav hasicího přístroje.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "platnost_kontroly",
+          "text": "Ověřte platnost pravidelné kontroly.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "plomba_pojistka_tlakomer",
+          "text": "Zkontrolujte plombu, pojistku a případně tlakoměr.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "umisteni",
+          "nazev": "Hasicí přístroj je umístěn na určeném místě",
+          "popis": "Umístění odpovídá požární dokumentaci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni",
+          "nazev": "Hasicí přístroj je správně označen",
+          "popis": "Označení je dobře viditelné a není zakryté.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pristup",
+          "nazev": "Přístup k hasicímu přístroji je volný",
+          "popis": "Přístroj není zastavěn ani zakryt materiálem.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "spravny_druh",
+          "nazev": "Je použit správný druh hasicího přístroje",
+          "popis": "Typ odpovídá charakteru chráněného prostoru.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "bez_poskozeni",
+          "nazev": "Hasicí přístroj je bez viditelného poškození",
+          "popis": "Není deformovaný ani mechanicky poškozený.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "platna_kontrola",
+          "nazev": "Kontrola hasicího přístroje je platná",
+          "popis": "Kontrola byla provedena v předepsané lhůtě.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "plomba_pojistka",
+          "nazev": "Plomba a pojistka jsou neporušené",
+          "popis": "Nedošlo k neoprávněnému použití.",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "tlakomer",
+          "nazev": "Tlakoměr ukazuje provozní tlak",
+          "popis": "Pouze u přístrojů vybavených tlakoměrem.",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_zamestnance",
+          "nazev": "Zaměstnanec ví, kde je nejbližší hasicí přístroj",
+          "popis": "Namátkově oslovený zaměstnanec dokáže ukázat nejbližší hasicí přístroj.",
+          "poradi": 90,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "chybi_pristroj",
+          "nazev": "Chybí hasicí přístroj",
+          "popis": "Na určeném místě není hasicí přístroj k dispozici.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zastaven",
+          "nazev": "Přístroj je zastavěn",
+          "popis": "Přístup k hasicímu přístroji je fyzicky ztížen nebo znemožněn.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_oznaceni",
+          "nazev": "Chybí označení",
+          "popis": "Hasicí přístroj není viditelně označen podle požadavků PO.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "propadla_kontrola",
+          "nazev": "Propadlá kontrola",
+          "popis": "Pravidelná kontrola hasicího přístroje nebyla provedena v předepsané lhůtě.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_plomba",
+          "nazev": "Chybí plomba",
+          "popis": "Plomba nebo pojistka jsou porušené nebo chybí.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "poskozeny",
+          "nazev": "Poškozený hasicí přístroj",
+          "popis": "Přístroj je mechanicky poškozen nebo deformovaný.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "nevhodny_druh",
+          "nazev": "Nevhodný druh hasicího přístroje",
+          "popis": "Typ hasicího přístroje neodpovídá charakteru chráněného prostoru.",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "neznalost_umisteni",
+          "nazev": "Zaměstnanci nevědí, kde se hasicí přístroj nachází",
+          "popis": "Zaměstnanci neznají umístění nejbližšího hasicího přístroje.",
+          "poradi": 80,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "volny_pristup",
+          "nazev": "Udržovat trvale volný přístup",
+          "popis": "Zajistěte, aby hasicí přístroje nebyly zastavěny ani zakryty materiálem.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pravidelne_kontroly",
+          "nazev": "Provádět pravidelné kontroly",
+          "popis": "Kontrolujte hasicí přístroje v intervalech stanovených požární dokumentací.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nahrazeni_poskozene",
+          "nazev": "Ihned nahrazovat poškozené přístroje",
+          "popis": "Poškozené nebo nefunkční hasicí přístroje bez prodlení vyměňte.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "kontrola_rozmisteni",
+          "nazev": "Kontrolovat správnost rozmístění při změnách pracoviště",
+          "popis": "Po změnách dispozice pracoviště ověřte, zda rozmístění odpovídá požární dokumentaci.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "seznamovani_zamestnancu",
+          "nazev": "Pravidelně seznamovat zaměstnance s umístěním hasicích přístrojů",
+          "popis": "Informujte zaměstnance o umístění hasicích přístrojů a způsobu jejich použití.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_133_1985",
+          "nazev": "Zákon č. 133/1985 Sb.",
+          "popis": "O požární ochraně — základní povinnosti v oblasti prevence požárů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vyhlaska_246_2001",
+          "nazev": "Vyhláška č. 246/2001 Sb.",
+          "popis": "Stanovení podmínek požární bezpečnosti a výkonu státního požárního dozoru.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "csn_iso_3864",
+          "nazev": "ČSN ISO 3864 (bezpečnostní značení)",
+          "popis": "Grafické symboly pro bezpečnostní značení včetně označení hasicích přístrojů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_pozarni_dokumentace",
+          "nazev": "Související interní požární dokumentace",
+          "popis": "Požární poplachové směrnice, evakuační plány a rozmístění požární techniky.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    }
+  ],
+  "kontrolni_body": [],
+  "typicke_zavady": [],
+  "doporucene_postupy": [],
+  "doporucena_opatreni": []
+}

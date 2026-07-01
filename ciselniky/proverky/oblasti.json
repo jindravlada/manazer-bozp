@@ -1,5 +1,5 @@
 {
-  "verze": 1,
+  "verze": 2,
   "oblasti": [
     {
       "id": "bozp",
@@ -15,7 +15,7 @@
       "popis": "Prevence požárů, požární technika, evakuační cesty a organizace PO.",
       "poradi": 20,
       "aktivni": true,
-      "soubor_znalosti": null
+      "soubor_znalosti": "po.json"
     },
     {
       "id": "oopp",
