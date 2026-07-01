@@ -49,7 +49,6 @@ from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_servi
 from moduly.proverky.sluzby.control_point_history_service import control_point_history_service
 from moduly.proverky.sluzby.proverky_knowledge_service import proverky_knowledge_service
 from moduly.proverky.sluzby.proverky_reference_photo_service import proverky_reference_photo_service
-from moduly.proverky.ui.proverky_reference_photo_assets import reference_photo_placeholder_path
 
 
 class _ControlPointFrame(QFrame):
@@ -228,22 +227,34 @@ class BozpKnowledgeSectionWidget(QWidget):
         return self._build_block(KNOWLEDGE_REFERENCE_PHOTOS_TITLE, content)
 
     def _build_reference_photo_placeholder(self) -> QWidget:
-        thumbnail = _ReferencePhotoThumbnail()
-        pixmap = QPixmap(str(reference_photo_placeholder_path()))
-        if not pixmap.isNull():
-            thumbnail.setPixmap(
-                pixmap.scaled(
-                    thumbnail.size(),
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation,
-                )
-            )
-        else:
-            thumbnail.setText("UNDER\nCONSTRUCTION")
+        panel = QFrame()
+        panel.setObjectName("ModulePanel")
+        panel.setFixedSize(REFERENCE_PHOTO_THUMBNAIL_SIZE, REFERENCE_PHOTO_THUMBNAIL_SIZE)
+
+        layout = QVBoxLayout(panel)
+        layout.setContentsMargins(8, 10, 8, 10)
+        layout.setSpacing(2)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        icon = QLabel("📷")
+        icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        title = QLabel("Referenční fotografie")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setWordWrap(True)
+
+        note = QLabel("budou doplněny.")
+        note.setObjectName("InfoText")
+        note.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        note.setWordWrap(True)
+
+        layout.addWidget(icon)
+        layout.addWidget(title)
+        layout.addWidget(note)
 
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)
-        row.addWidget(thumbnail)
+        row.addWidget(panel)
         row.addStretch()
 
         host = QWidget()
