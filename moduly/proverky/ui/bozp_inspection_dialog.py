@@ -104,7 +104,7 @@ class BozpInspectionDialog(QDialog):
         payload["title"] = ""
         return payload
 
-    def _complete_inspection(self, *, status: str, finished_at) -> bool:
+    def _complete_inspection(self, *, finished_at) -> bool:
         if self.inspection is None:
             return False
 
@@ -115,7 +115,6 @@ class BozpInspectionDialog(QDialog):
             return False
 
         data = self.get_data()
-        data["status"] = status
         data["finished_at"] = finished_at
         payload = self._prepare_save_payload(data)
 

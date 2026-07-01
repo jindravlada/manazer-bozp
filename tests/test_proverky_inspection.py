@@ -108,7 +108,6 @@ class ProverkyInspectionTestCase(unittest.TestCase):
             inspection_date=date(2026, 5, 12),
             started_at=date(2026, 5, 10),
             finished_at=date(2026, 5, 14),
-            status="Probíhá",
             inspection_type="Mimořádná",
             workplace_id=workplace.id,
             workplace_name=workplace.name,
@@ -122,7 +121,7 @@ class ProverkyInspectionTestCase(unittest.TestCase):
         self.assertEqual(loaded.inspection_date, date(2026, 5, 12))
         self.assertEqual(loaded.started_at, date(2026, 5, 10))
         self.assertEqual(loaded.finished_at, date(2026, 5, 14))
-        self.assertEqual(loaded.status, "Probíhá")
+        self.assertEqual(loaded.status, "Dokončeno")
         self.assertEqual(loaded.inspection_type, "Mimořádná")
         self.assertEqual(loaded.workplace_id, workplace.id)
         self.assertEqual(loaded.workplace_name, workplace.name)

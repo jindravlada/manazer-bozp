@@ -11,10 +11,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.nullable_date_edit import NullableDateEdit
-from moduly.proverky.constants import (
-    INSPECTION_COMPLETION_CONFIRM_MESSAGE,
-    INSPECTION_STATUS_DOKONCENO,
-)
+from moduly.proverky.constants import INSPECTION_COMPLETION_CONFIRM_MESSAGE
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 
 
@@ -86,26 +83,22 @@ class BozpInspectionConclusionWidget(QWidget):
         self.tasks_total_label.setText(str(summary["tasks_total"]))
         self.tasks_active_label.setText(str(summary["tasks_active"]))
 
-        status = getattr(self.inspection, "status", None) or "—"
+        started_at = getattr(self.inspection, "started_at", None)
+        finished_at = getattr(self.inspection, "finished_at", None)
+        status = bozp_inspection_service.derive_status(started_at, finished_at)
         self.status_label.setText(status)
 
-        finished_at = getattr(self.inspection, "finished_at", None)
         if finished_at is not None:
             self.finished_at_edit.set_date_value(finished_at)
         else:
             self.finished_at_edit.clear_date()
 
-        is_completed = status == INSPECTION_STATUS_DOKONCENO
-        self.complete_btn.setEnabled(not is_completed)
-        self.finished_at_edit.setEnabled(not is_completed)
+        self.complete_btn.setEnabled(finished_at is None)
 
     def get_data(self) -> dict:
-        result: dict = {
+        return {
             "finished_at": self.finished_at_edit.get_date(),
         }
-        if self.inspection is not None and getattr(self.inspection, "status", None):
-            result["status"] = self.inspection.status
-        return result
 
     def _update_state(self) -> None:
         enabled = self.inspection is not None and self.inspection.id is not None
@@ -137,9 +130,6 @@ class BozpInspectionConclusionWidget(QWidget):
         if self._on_complete is None:
             return
 
-        saved = self._on_complete(
-            status=INSPECTION_STATUS_DOKONCENO,
-            finished_at=finished_at,
-        )
+        saved = self._on_complete(finished_at=finished_at)
         if saved:
             self.refresh()

@@ -11,9 +11,11 @@ from core.shared.modely.finding import Finding
 from core.shared.sluzby.finding_service import finding_service
 from core.shared.sluzby.control_result_service import control_result_service
 from moduly.proverky.constants import (
-    DEFAULT_INSPECTION_SPIS_STATUS,
     DEFAULT_INSPECTION_TYPE,
     INSPECTION_SPIS_STATUSES,
+    INSPECTION_STATUS_DOKONCENO,
+    INSPECTION_STATUS_PLANOVANO,
+    INSPECTION_STATUS_PROBIHA,
     INSPECTION_TYPES,
 )
 from moduly.proverky.modely.bozp_inspection import BozpInspection
@@ -64,7 +66,19 @@ class BozpInspectionService:
         if inspection is None:
             return None
 
-        data = self._validated_fields(fields)
+        merged = {
+            "year": inspection.year,
+            "planned_month": inspection.planned_month,
+            "inspection_date": inspection.inspection_date,
+            "started_at": inspection.started_at,
+            "finished_at": inspection.finished_at,
+            "inspection_type": inspection.inspection_type,
+            "workplace_id": inspection.workplace_id,
+            "workplace_name": inspection.workplace_name,
+            "title": inspection.title,
+        }
+        merged.update(fields)
+        data = self._validated_fields(merged)
         for key, value in data.items():
             setattr(inspection, key, value)
         inspection.updated_at = datetime.now()
@@ -191,12 +205,19 @@ class BozpInspectionService:
             and str(finding.source_section_label or "").strip() == section_label.strip()
         )
 
+    @staticmethod
+    def derive_status(
+        started_at: date | None,
+        finished_at: date | None,
+    ) -> str:
+        if finished_at is not None:
+            return INSPECTION_STATUS_DOKONCENO
+        if started_at is not None:
+            return INSPECTION_STATUS_PROBIHA
+        return INSPECTION_STATUS_PLANOVANO
+
     def _validated_fields(self, fields: dict) -> dict:
         data = dict(fields)
-
-        status = data.get("status", DEFAULT_INSPECTION_SPIS_STATUS)
-        if status not in INSPECTION_SPIS_STATUSES:
-            raise ValueError(f"Neplatný stav prověrky: {status}")
 
         inspection_type = data.get("inspection_type", DEFAULT_INSPECTION_TYPE)
         if inspection_type not in INSPECTION_TYPES:
@@ -214,12 +235,18 @@ class BozpInspectionService:
         data["workplace_name"] = str(data.get("workplace_name") or "").strip()
         data["title"] = str(data.get("title") or "").strip()
 
+        started_at = data.get("started_at")
+        finished_at = data.get("finished_at")
+        status = self.derive_status(started_at, finished_at)
+        if status not in INSPECTION_SPIS_STATUSES:
+            raise ValueError(f"Neplatný stav prověrky: {status}")
+
         return {
             "year": data.get("year"),
             "planned_month": data.get("planned_month"),
             "inspection_date": data.get("inspection_date"),
-            "started_at": data.get("started_at"),
-            "finished_at": data.get("finished_at"),
+            "started_at": started_at,
+            "finished_at": finished_at,
             "status": status,
             "inspection_type": inspection_type,
             "workplace_id": data.get("workplace_id"),
