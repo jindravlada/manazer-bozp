@@ -1,9 +1,11 @@
 from datetime import date, datetime
+from dataclasses import dataclass
 
 from core.shared.constants import (
     ENTITY_PROVERKY,
     FINDING_STATUS_OTEVRENE,
     FINDING_STATUS_V_PROCESU,
+    FINDING_STATUS_VYPORADANO,
 )
 from core.shared.modely.finding import Finding
 from core.shared.sluzby.finding_service import finding_service
@@ -29,6 +31,15 @@ _OPEN_FINDING_STATUSES = frozenset(
         FINDING_STATUS_V_PROCESU,
     }
 )
+
+
+@dataclass(frozen=True)
+class CompletionBlockers:
+    open_findings: list[Finding]
+    active_tasks: list[Task]
+
+    def has_blockers(self) -> bool:
+        return bool(self.open_findings or self.active_tasks)
 
 
 class BozpInspectionService:
@@ -102,6 +113,19 @@ class BozpInspectionService:
             seen_task_ids.add(task_id)
 
         return sorted(tasks, key=lambda item: (item.due_date or date.max, item.id))
+
+    def get_completion_blockers(self, inspection_id: int) -> CompletionBlockers:
+        open_findings = [
+            finding
+            for finding in finding_service.get_for_entity(ENTITY_PROVERKY, inspection_id)
+            if finding.status != FINDING_STATUS_VYPORADANO
+        ]
+        active_tasks = [
+            task
+            for task in self.get_tasks_for_inspection(inspection_id)
+            if task.computed_status not in {"Ukončeno", "Zrušeno"}
+        ]
+        return CompletionBlockers(open_findings=open_findings, active_tasks=active_tasks)
 
     def finding_for_control_point(
         self,

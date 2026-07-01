@@ -1,3 +1,5 @@
+from datetime import date
+
 from PySide6.QtWidgets import (
     QDialog,
     QMessageBox,
@@ -6,7 +8,12 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
-from moduly.proverky.constants import TAB_KONTROLOVANE_OBLASTI
+from moduly.proverky.constants import (
+    INSPECTION_COMPLETION_CONFIRM_MESSAGE,
+    INSPECTION_STATUS_DOKONCENO,
+    TAB_KONTROLOVANE_OBLASTI,
+)
+from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 from moduly.proverky.ui.bozp_inspection_areas_widget import BozpInspectionAreasWidget
 from moduly.proverky.ui.bozp_inspection_commission_widget import BozpInspectionCommissionWidget
 from moduly.proverky.ui.bozp_inspection_findings_widget import BozpInspectionFindingsWidget
@@ -70,6 +77,28 @@ class BozpInspectionDialog(QDialog):
             QMessageBox.warning(self, "Komise", message)
             self.tabs.setCurrentWidget(self.commission_widget)
             return
+
+        spis_data = self.spis_widget.get_data()
+        inspection_id = self.inspection.id if self.inspection is not None else None
+        if (
+            inspection_id is not None
+            and spis_data.get("status") == INSPECTION_STATUS_DOKONCENO
+        ):
+            blockers = bozp_inspection_service.get_completion_blockers(inspection_id)
+            if blockers.has_blockers():
+                answer = QMessageBox.question(
+                    self,
+                    "Dokončení prověrky",
+                    INSPECTION_COMPLETION_CONFIRM_MESSAGE,
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No,
+                )
+                if answer != QMessageBox.Yes:
+                    return
+
+                if spis_data.get("finished_at") is None:
+                    self.spis_widget.finished_at_edit.set_date_value(date.today())
+
         super().accept()
 
     def get_data(self) -> dict:

@@ -18,6 +18,11 @@ INSPECTION_SPIS_STATUSES = (
 
 DEFAULT_INSPECTION_SPIS_STATUS = INSPECTION_STATUS_PLANOVANO
 
+INSPECTION_COMPLETION_CONFIRM_MESSAGE = (
+    "Prověrka obsahuje otevřená zjištění nebo aktivní úkoly. "
+    "Přesto ji chcete označit jako dokončenou?"
+)
+
 INSPECTION_TYPE_RADNA = "Řádná"
 INSPECTION_TYPE_MIMORADNA = "Mimořádná"
 
