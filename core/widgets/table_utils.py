@@ -137,6 +137,23 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             header.setSectionResizeMode(column, QHeaderView.Fixed)
         header.setSectionResizeMode(5, QHeaderView.Stretch)
 
+    elif profile == "audity":
+        widths = {
+            0: 0,    # ID
+            1: 90,   # Číslo auditu
+            2: 55,   # Rok
+            3: 110,  # Plánovaný měsíc
+            4: 180,  # Auditovaný provoz
+            5: 105,  # Datum auditu
+            6: 110,  # Stav
+            7: 90,   # Typ auditu
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        for column in (1, 2, 3, 4, 5, 6, 7):
+            header.setSectionResizeMode(column, QHeaderView.Fixed)
+
     elif profile == "bozp_inspections":
         widths = {
             0: 0,    # ID
