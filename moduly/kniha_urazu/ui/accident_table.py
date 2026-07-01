@@ -6,10 +6,11 @@ from PySide6.QtWidgets import QHeaderView, QTableWidget, QTableWidgetItem
 from sqlalchemy import select
 
 from core.database.session import get_session
+from core.theme.status_colors import STATUS_DONE_BG, STATUS_MISSING_BG, STATUS_WARNING_BG
 from moduly.kniha_urazu.modely.investigation import AccidentInvestigation
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
-    is_row_relevant,
-    requires_accident_record,
+    collect_obligation_rows_from_saved_data,
+    obligations_summary_state,
 )
 from moduly.ukoly.sluzby.task_service import task_service
 
@@ -63,13 +64,14 @@ class AccidentTable(QTableWidget):
     def load_accidents(self, accidents):
         accident_ids = [accident.id for accident in accidents]
         investigations_by_accident = self._load_investigations(accident_ids)
+        today = date.today()
 
         self.setRowCount(len(accidents))
 
         for row, accident in enumerate(accidents):
             investigation = investigations_by_accident.get(accident.id)
-            admin_zaslani = self._admin_zaslani_rows(investigation)
-            zou_color = self._zou_color(accident, admin_zaslani)
+            obligation_rows = self._obligation_rows(investigation)
+            zou_color = self._zou_color(accident, obligation_rows, today)
 
             values = [
                 "",
@@ -110,8 +112,8 @@ class AccidentTable(QTableWidget):
 
         for accident in accidents:
             investigation = investigations_by_accident.get(accident.id)
-            admin_zaslani = self._admin_zaslani_rows(investigation)
-            zou_state = self._zou_summary_state(accident, admin_zaslani, today)
+            obligation_rows = self._obligation_rows(investigation)
+            zou_state = self._zou_summary_state(accident, obligation_rows, today)
             if zou_state == "done":
                 zou_done += 1
             elif zou_state == "overdue":
@@ -150,70 +152,32 @@ class AccidentTable(QTableWidget):
                 tasks_by_accident.setdefault(task.source_record_id, []).append(task)
         return tasks_by_accident
 
-    def _admin_zaslani_rows(self, investigation):
+    def _obligation_rows(self, investigation):
         if investigation is None or not investigation.zajisteni_dukazu_json:
             return []
         try:
             data = json.loads(investigation.zajisteni_dukazu_json or "{}")
         except Exception:
             return []
-        return data.get("admin_zaslani") or []
+        return collect_obligation_rows_from_saved_data(data)
 
-    def _requires_accident_record(self, accident):
-        return requires_accident_record(accident)
-
-    def _admin_zaslani_row_relevant(self, accident, row):
-        return is_row_relevant(accident, row)
-
-    def _admin_row_done(self, row):
-        if row.get("predano"):
-            return True
-        if row.get("kompletni"):
-            return True
-        if row.get("datum"):
-            return True
-        return False
-
-    def _parse_json_date(self, value):
-        if not value:
-            return None
-        try:
-            return date.fromisoformat(str(value)[:10])
-        except Exception:
-            return None
-
-    def _admin_row_overdue(self, row, today):
-        if self._admin_row_done(row):
-            return False
-        deadline = self._parse_json_date(row.get("lhuta"))
-        return deadline is not None and deadline < today
-
-    def _zou_summary_state(self, accident, admin_zaslani, today):
-        if not self._requires_accident_record(accident):
-            return None
-        relevant = [row for row in admin_zaslani if self._admin_zaslani_row_relevant(accident, row)]
-        if not relevant:
-            return "waiting"
-        if all(self._admin_row_done(row) for row in relevant):
-            return "done"
-        if any(self._admin_row_overdue(row, today) for row in relevant):
-            return "overdue"
-        return "waiting"
+    def _zou_summary_state(self, accident, obligation_rows, today):
+        return obligations_summary_state(accident, obligation_rows, today)
 
     def _has_incomplete_opatreni(self, tasks):
         if not tasks:
             return False
         return any(task.computed_status != "Ukončeno" for task in tasks)
 
-    def _zou_color(self, accident, admin_zaslani):
-        if not self._requires_accident_record(accident):
+    def _zou_color(self, accident, obligation_rows, today):
+        state = obligations_summary_state(accident, obligation_rows, today)
+        if state is None:
             return None
-        relevant = [row for row in admin_zaslani if self._admin_zaslani_row_relevant(accident, row)]
-        if not relevant:
-            return QColor(_INJURY_COLOR_SERIOUS)
-        if all(self._admin_row_done(row) for row in relevant):
-            return QColor(_INJURY_COLOR_UP_TO_3_DAYS)
-        return QColor(_INJURY_COLOR_SERIOUS)
+        if state == "done":
+            return QColor(STATUS_DONE_BG)
+        if state == "overdue":
+            return QColor(STATUS_MISSING_BG)
+        return QColor(STATUS_WARNING_BG)
 
     def _op_color(self, tasks):
         if not tasks:

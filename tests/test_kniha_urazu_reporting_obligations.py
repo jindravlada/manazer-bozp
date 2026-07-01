@@ -27,17 +27,23 @@ with patch.object(Path, "home", return_value=_TMP):
         OBLIGATION_OIP_OBU_OHLASENI,
         OBLIGATION_OIP_OBU_ZASLANI,
         OBLIGATION_OO_OHLASENI,
+        OBLIGATION_OO_PREDANI,
         OBLIGATION_POLICIE_OHLASENI,
         OBLIGATION_POLICIE_ZASLANI,
+        OBLIGATION_RODINA_PREDANI,
         OBLIGATION_VYHOTOVENI_ZAZNAMU,
+        OBLIGATION_ZAMESTNANEC_PREDANI,
         OBLIGATION_ZP_OHLASENI,
         OBLIGATION_ZP_ZASLANI,
         SECTION_ODESLANI,
-        OBLIGATION_LABELS,
         SECTION_OHLASENI,
+        SECTION_PREDANI,
         SECTION_ZAZNAM,
         applicable_obligations,
         is_obligation_relevant,
+        is_row_relevant,
+        obligations_summary_state,
+        row_is_done,
     )
 
 
@@ -61,13 +67,7 @@ class KnihaUrazuReportingObligationsTestCase(unittest.TestCase):
 
     def test_no_pn_shows_only_union_notification(self) -> None:
         accident = AccidentStub(druh_urazu="")
-        keys = self._keys(accident)
-        self.assertEqual(keys, {OBLIGATION_OO_OHLASENI})
-
-    def test_no_pn_without_union_shows_nothing(self) -> None:
-        accident = AccidentStub(druh_urazu="")
-        keys = self._keys(accident, union_active=False)
-        self.assertEqual(keys, set())
+        self.assertEqual(self._keys(accident), {OBLIGATION_OO_OHLASENI})
 
     def test_pn_two_days_shows_only_union(self) -> None:
         accident = AccidentStub(
@@ -80,21 +80,29 @@ class KnihaUrazuReportingObligationsTestCase(unittest.TestCase):
         self.assertFalse(is_obligation_relevant(accident, OBLIGATION_VYHOTOVENI_ZAZNAMU))
         self.assertFalse(is_obligation_relevant(accident, OBLIGATION_EZOP))
 
-    def test_pn_ten_days_shows_record_sections(self) -> None:
+    def test_pn_ten_days_shows_record_matrix_without_oip_ohlaseni(self) -> None:
         accident = AccidentStub(
             druh_urazu="pracovní úraz s pracovní neschopností delší než 3 kalendářní dny",
             dpn_od=date(2026, 1, 1),
             dpn_do=date(2026, 1, 10),
         )
         keys = self._keys(accident)
-        self.assertIn(OBLIGATION_OO_OHLASENI, keys)
-        self.assertIn(OBLIGATION_EZOP, keys)
-        self.assertIn(OBLIGATION_VYHOTOVENI_ZAZNAMU, keys)
-        self.assertIn(OBLIGATION_ZP_ZASLANI, keys)
+        self.assertEqual(
+            keys,
+            {
+                OBLIGATION_OO_OHLASENI,
+                OBLIGATION_VYHOTOVENI_ZAZNAMU,
+                OBLIGATION_OIP_OBU_ZASLANI,
+                OBLIGATION_ZP_ZASLANI,
+                OBLIGATION_EZOP,
+                OBLIGATION_ZAMESTNANEC_PREDANI,
+                OBLIGATION_OO_PREDANI,
+            },
+        )
         self.assertNotIn(OBLIGATION_OIP_OBU_OHLASENI, keys)
         self.assertNotIn(OBLIGATION_POLICIE_OHLASENI, keys)
 
-    def test_serious_accident_adds_oip_obu_only_in_ohlaseni(self) -> None:
+    def test_serious_accident_with_short_pn_shows_record_and_oip_ohlaseni(self) -> None:
         accident = AccidentStub(
             druh_urazu="závažný pracovní úraz (hospitalizace více než 5 po sobě jdoucích dnů)",
             dpn_od=date(2026, 1, 1),
@@ -103,33 +111,52 @@ class KnihaUrazuReportingObligationsTestCase(unittest.TestCase):
         keys = self._keys(accident)
         self.assertEqual(
             keys,
-            {OBLIGATION_OO_OHLASENI, OBLIGATION_OIP_OBU_OHLASENI},
+            {
+                OBLIGATION_OO_OHLASENI,
+                OBLIGATION_OIP_OBU_OHLASENI,
+                OBLIGATION_VYHOTOVENI_ZAZNAMU,
+                OBLIGATION_OIP_OBU_ZASLANI,
+                OBLIGATION_ZP_ZASLANI,
+                OBLIGATION_EZOP,
+                OBLIGATION_ZAMESTNANEC_PREDANI,
+                OBLIGATION_OO_PREDANI,
+            },
         )
 
-    def test_fatal_accident_shows_full_obligations(self) -> None:
+    def test_fatal_accident_shows_full_matrix(self) -> None:
         accident = AccidentStub(druh_urazu="smrtelný")
         keys = self._keys(accident)
-        self.assertIn(OBLIGATION_OO_OHLASENI, keys)
-        self.assertIn(OBLIGATION_OIP_OBU_OHLASENI, keys)
-        self.assertIn(OBLIGATION_POLICIE_OHLASENI, keys)
-        self.assertIn(OBLIGATION_ZP_OHLASENI, keys)
-        self.assertIn(OBLIGATION_EZOP, keys)
-        self.assertIn(OBLIGATION_VYHOTOVENI_ZAZNAMU, keys)
-        self.assertIn(OBLIGATION_OIP_OBU_ZASLANI, keys)
-        self.assertIn(OBLIGATION_ZP_ZASLANI, keys)
-        self.assertIn(OBLIGATION_POLICIE_ZASLANI, keys)
+        self.assertEqual(
+            keys,
+            {
+                OBLIGATION_OO_OHLASENI,
+                OBLIGATION_OIP_OBU_OHLASENI,
+                OBLIGATION_POLICIE_OHLASENI,
+                OBLIGATION_ZP_OHLASENI,
+                OBLIGATION_VYHOTOVENI_ZAZNAMU,
+                OBLIGATION_OIP_OBU_ZASLANI,
+                OBLIGATION_POLICIE_ZASLANI,
+                OBLIGATION_ZP_ZASLANI,
+                OBLIGATION_EZOP,
+                OBLIGATION_OO_PREDANI,
+                OBLIGATION_RODINA_PREDANI,
+            },
+        )
+        self.assertNotIn(OBLIGATION_ZAMESTNANEC_PREDANI, keys)
 
-    def test_criminal_suspicion_adds_police_only(self) -> None:
+    def test_criminal_suspicion_adds_police_ohlaseni_only_for_short_pn(self) -> None:
         accident = AccidentStub(
             druh_urazu="pracovní úraz s pracovní neschopností nepřesahující 3 kalendářní dny",
             podezreni_trestny_cin="ANO",
             dpn_od=date(2026, 1, 1),
             dpn_do=date(2026, 1, 2),
         )
-        keys = self._keys(accident)
-        self.assertEqual(keys, {OBLIGATION_OO_OHLASENI, OBLIGATION_POLICIE_OHLASENI})
+        self.assertEqual(
+            self._keys(accident),
+            {OBLIGATION_OO_OHLASENI, OBLIGATION_POLICIE_OHLASENI},
+        )
 
-    def test_criminal_suspicion_with_pn_over_3_adds_police_to_sending(self) -> None:
+    def test_criminal_suspicion_with_pn_over_3_adds_police_to_record_section(self) -> None:
         accident = AccidentStub(
             druh_urazu="pracovní úraz s pracovní neschopností delší než 3 kalendářní dny",
             podezreni_trestny_cin="ANO",
@@ -139,6 +166,23 @@ class KnihaUrazuReportingObligationsTestCase(unittest.TestCase):
         keys = self._keys(accident)
         self.assertIn(OBLIGATION_POLICIE_OHLASENI, keys)
         self.assertIn(OBLIGATION_POLICIE_ZASLANI, keys)
+
+    def test_oip_obu_zaslani_has_deadline_support_via_row(self) -> None:
+        accident = AccidentStub(
+            druh_urazu="pracovní úraz s pracovní neschopností delší než 3 kalendářní dny",
+            dpn_od=date(2026, 1, 1),
+            dpn_do=date(2026, 1, 10),
+        )
+        row = {
+            "key": OBLIGATION_OIP_OBU_ZASLANI,
+            "nazev": "OIP / OBÚ – zaslání záznamu o pracovním úrazu",
+            "lhuta": "2026-02-01",
+        }
+        self.assertTrue(is_row_relevant(accident, row))
+        self.assertFalse(row_is_done(row))
+
+        done_row = {**row, "datum": "2026-01-20"}
+        self.assertTrue(row_is_done(done_row))
 
     def test_legacy_row_names_are_recognized(self) -> None:
         accident = AccidentStub(
@@ -146,29 +190,82 @@ class KnihaUrazuReportingObligationsTestCase(unittest.TestCase):
             dpn_od=date(2026, 1, 1),
             dpn_do=date(2026, 1, 10),
         )
-        legacy_row = {"nazev": "Záznam o pracovním úrazu – Portál SÚIP"}
-        from moduly.kniha_urazu.sluzby.accident_reporting_obligations import is_row_relevant
-
-        self.assertTrue(is_row_relevant(accident, legacy_row))
+        self.assertTrue(
+            is_row_relevant(accident, {"nazev": "Záznam o pracovním úrazu – Portál SÚIP"})
+        )
+        self.assertTrue(
+            is_row_relevant(
+                accident,
+                {"nazev": "Postižený zaměstnanec – předání podepsaného záznamu o pracovním úrazu"},
+            )
+        )
 
     def test_kooperativa_is_never_relevant(self) -> None:
         accident = AccidentStub(druh_urazu="smrtelný")
-        from moduly.kniha_urazu.sluzby.accident_reporting_obligations import is_row_relevant
-
         self.assertFalse(is_row_relevant(accident, {"nazev": "Kooperativa"}))
 
     def test_sections_are_assigned_correctly(self) -> None:
         accident = AccidentStub(druh_urazu="smrtelný")
-        by_section = {}
+        by_section: dict[str, list[str]] = {}
         for item in applicable_obligations(accident):
             by_section.setdefault(item.section, []).append(item.key)
 
         self.assertIn(OBLIGATION_OO_OHLASENI, by_section[SECTION_OHLASENI])
         self.assertIn(OBLIGATION_VYHOTOVENI_ZAZNAMU, by_section[SECTION_ZAZNAM])
-        self.assertIn(OBLIGATION_ZP_ZASLANI, by_section[SECTION_ODESLANI])
+        self.assertIn(OBLIGATION_OIP_OBU_ZASLANI, by_section[SECTION_ODESLANI])
+        self.assertIn(OBLIGATION_RODINA_PREDANI, by_section[SECTION_PREDANI])
 
-    def test_all_definitions_have_labels(self) -> None:
-        self.assertEqual(len(OBLIGATION_LABELS), 9)
+    def test_zou_summary_without_record_only_tracks_ohlaseni(self) -> None:
+        accident = AccidentStub(druh_urazu="")
+        rows = [
+            {
+                "key": OBLIGATION_OO_OHLASENI,
+                "nazev": "Odborová organizace – ohlášení pracovního úrazu",
+                "lhuta": "2026-02-01",
+            }
+        ]
+        today = date(2026, 1, 15)
+        self.assertEqual(obligations_summary_state(accident, rows, today), "waiting")
+
+        done_rows = [{**rows[0], "datum": "2026-01-10"}]
+        self.assertEqual(obligations_summary_state(accident, done_rows, today), "done")
+
+    def test_zou_summary_marks_overdue_when_deadline_passed(self) -> None:
+        accident = AccidentStub(druh_urazu="")
+        rows = [
+            {
+                "key": OBLIGATION_OO_OHLASENI,
+                "nazev": "Odborová organizace – ohlášení pracovního úrazu",
+                "lhuta": "2026-01-01",
+            }
+        ]
+        self.assertEqual(
+            obligations_summary_state(accident, rows, date(2026, 1, 15)),
+            "overdue",
+        )
+
+    def test_zou_summary_aggregates_all_sections(self) -> None:
+        accident = AccidentStub(
+            druh_urazu="pracovní úraz s pracovní neschopností delší než 3 kalendářní dny",
+            dpn_od=date(2026, 1, 1),
+            dpn_do=date(2026, 1, 10),
+        )
+        rows = [
+            {
+                "key": OBLIGATION_OO_OHLASENI,
+                "nazev": "Odborová organizace – ohlášení pracovního úrazu",
+                "datum": "2026-01-05",
+            },
+            {
+                "key": OBLIGATION_VYHOTOVENI_ZAZNAMU,
+                "nazev": "Vyhotovení Záznamu o pracovním úrazu",
+                "lhuta": "2026-02-01",
+            },
+        ]
+        self.assertEqual(
+            obligations_summary_state(accident, rows, date(2026, 1, 15)),
+            "waiting",
+        )
 
 
 if __name__ == "__main__":

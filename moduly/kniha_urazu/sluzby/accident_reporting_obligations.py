@@ -16,34 +16,53 @@ OBLIGATION_OO_OHLASENI = "oo_ohlaseni"
 OBLIGATION_OIP_OBU_OHLASENI = "oip_obu_ohlaseni"
 OBLIGATION_POLICIE_OHLASENI = "policie_ohlaseni"
 OBLIGATION_ZP_OHLASENI = "zp_ohlaseni"
-OBLIGATION_EZOP = "ezop"
 OBLIGATION_VYHOTOVENI_ZAZNAMU = "vyhotoveni_zaznamu"
 OBLIGATION_OIP_OBU_ZASLANI = "oip_obu_zaslani"
-OBLIGATION_ZP_ZASLANI = "zp_zaslani"
 OBLIGATION_POLICIE_ZASLANI = "policie_zaslani"
+OBLIGATION_ZP_ZASLANI = "zp_zaslani"
+OBLIGATION_EZOP = "ezop"
+OBLIGATION_ZAMESTNANEC_PREDANI = "zamestnanec_predani"
+OBLIGATION_OO_PREDANI = "oo_predani"
+OBLIGATION_RODINA_PREDANI = "rodina_predani"
 
 SECTION_OHLASENI = "ohlaseni"
 SECTION_ZAZNAM = "zaznam"
 SECTION_ODESLANI = "odeslani"
+SECTION_PREDANI = "predani"
+
+CATEGORY_NO_PN = "no_pn"
+CATEGORY_PN_UP_TO_3 = "pn_up_to_3"
+CATEGORY_PN_OVER_3 = "pn_over_3"
+CATEGORY_SERIOUS = "serious"
+CATEGORY_FATAL = "fatal"
 
 OBLIGATION_LABELS: dict[str, str] = {
     OBLIGATION_OO_OHLASENI: "Odborová organizace – ohlášení pracovního úrazu",
     OBLIGATION_OIP_OBU_OHLASENI: "OIP / OBÚ – ohlášení závažného nebo smrtelného pracovního úrazu",
     OBLIGATION_POLICIE_OHLASENI: "Policie ČR – ohlášení smrtelného pracovního úrazu / podezření na trestný čin",
     OBLIGATION_ZP_OHLASENI: "Zdravotní pojišťovna postiženého – ohlášení smrtelného pracovního úrazu",
-    OBLIGATION_EZOP: "EZOP – ohlášení pracovního úrazu",
     OBLIGATION_VYHOTOVENI_ZAZNAMU: "Vyhotovení Záznamu o pracovním úrazu",
     OBLIGATION_OIP_OBU_ZASLANI: "OIP / OBÚ – zaslání záznamu o pracovním úrazu",
-    OBLIGATION_ZP_ZASLANI: "Zdravotní pojišťovna postiženého – zaslání záznamu o pracovním úrazu",
     OBLIGATION_POLICIE_ZASLANI: "Policie ČR – zaslání záznamu o pracovním úrazu",
+    OBLIGATION_ZP_ZASLANI: "Zdravotní pojišťovna postiženého – zaslání záznamu o pracovním úrazu",
+    OBLIGATION_EZOP: "EZOP – ohlášení pracovního úrazu",
+    OBLIGATION_ZAMESTNANEC_PREDANI: "Postižený zaměstnanec – předání podepsaného záznamu o pracovním úrazu",
+    OBLIGATION_OO_PREDANI: "Odborová organizace – předání podepsaného záznamu o pracovním úrazu",
+    OBLIGATION_RODINA_PREDANI: "Rodinní příslušníci – předání záznamu o pracovním úrazu",
 }
 
 LEGACY_LABEL_ALIASES: dict[str, str] = {
     "Záznam o pracovním úrazu – Portál SÚIP": OBLIGATION_VYHOTOVENI_ZAZNAMU,
-    "Postižený zaměstnanec – předání podepsaného záznamu o pracovním úrazu": "",
-    "Odborová organizace – předání podepsaného záznamu o pracovním úrazu": "",
+    "Postižený zaměstnanec – předání podepsaného záznamu o pracovním úrazu": OBLIGATION_ZAMESTNANEC_PREDANI,
+    "Odborová organizace – předání podepsaného záznamu o pracovním úrazu": OBLIGATION_OO_PREDANI,
     "Kooperativa": "",
 }
+
+_RECORD_MATRIX_CATEGORIES = frozenset({
+    CATEGORY_PN_OVER_3,
+    CATEGORY_SERIOUS,
+    CATEGORY_FATAL,
+})
 
 
 @dataclass(frozen=True)
@@ -108,8 +127,20 @@ def has_pn_over_3_days(accident: AccidentLike | None) -> bool:
     return days is not None and days > 3
 
 
+def accident_category(accident: AccidentLike | None) -> str:
+    if is_fatal_accident(accident):
+        return CATEGORY_FATAL
+    if is_serious_accident(accident):
+        return CATEGORY_SERIOUS
+    if has_pn_over_3_days(accident):
+        return CATEGORY_PN_OVER_3
+    if has_pn(accident):
+        return CATEGORY_PN_UP_TO_3
+    return CATEGORY_NO_PN
+
+
 def requires_accident_record(accident: AccidentLike | None) -> bool:
-    return is_fatal_accident(accident) or has_pn_over_3_days(accident)
+    return accident_category(accident) in _RECORD_MATRIX_CATEGORIES
 
 
 def employer_union_organization_active() -> bool:
@@ -154,6 +185,12 @@ def obligation_key_from_row(row: dict[str, Any]) -> str:
         return OBLIGATION_ZP_ZASLANI
     if "Policie ČR" in nazev and "zaslání" in nazev:
         return OBLIGATION_POLICIE_ZASLANI
+    if "Postižený zaměstnanec" in nazev and "předání" in nazev:
+        return OBLIGATION_ZAMESTNANEC_PREDANI
+    if "Odborová organizace" in nazev and "předání" in nazev:
+        return OBLIGATION_OO_PREDANI
+    if "Rodinní příslušníci" in nazev:
+        return OBLIGATION_RODINA_PREDANI
     return ""
 
 
@@ -166,6 +203,7 @@ def is_obligation_relevant(
     if not obligation_key:
         return False
 
+    category = accident_category(accident)
     union_active = (
         employer_union_organization_active()
         if union_organization_active is None
@@ -176,31 +214,33 @@ def is_obligation_relevant(
         return union_active
 
     if obligation_key == OBLIGATION_OIP_OBU_OHLASENI:
-        return is_serious_or_fatal_accident(accident)
+        return category in {CATEGORY_SERIOUS, CATEGORY_FATAL}
 
     if obligation_key == OBLIGATION_POLICIE_OHLASENI:
         return requires_police_obligation(accident)
 
     if obligation_key == OBLIGATION_ZP_OHLASENI:
-        return is_fatal_accident(accident)
+        return category == CATEGORY_FATAL
 
-    if obligation_key == OBLIGATION_EZOP:
-        return requires_accident_record(accident)
-
-    if obligation_key == OBLIGATION_VYHOTOVENI_ZAZNAMU:
-        return requires_accident_record(accident)
-
-    if not requires_accident_record(accident):
-        return False
-
-    if obligation_key == OBLIGATION_OIP_OBU_ZASLANI:
-        return is_serious_or_fatal_accident(accident)
-
-    if obligation_key == OBLIGATION_ZP_ZASLANI:
-        return True
+    if obligation_key in {
+        OBLIGATION_VYHOTOVENI_ZAZNAMU,
+        OBLIGATION_OIP_OBU_ZASLANI,
+        OBLIGATION_ZP_ZASLANI,
+        OBLIGATION_EZOP,
+    }:
+        return category in _RECORD_MATRIX_CATEGORIES
 
     if obligation_key == OBLIGATION_POLICIE_ZASLANI:
-        return requires_police_obligation(accident)
+        return category in _RECORD_MATRIX_CATEGORIES and requires_police_obligation(accident)
+
+    if obligation_key == OBLIGATION_ZAMESTNANEC_PREDANI:
+        return category in {CATEGORY_PN_OVER_3, CATEGORY_SERIOUS}
+
+    if obligation_key == OBLIGATION_OO_PREDANI:
+        return category in _RECORD_MATRIX_CATEGORIES and union_active
+
+    if obligation_key == OBLIGATION_RODINA_PREDANI:
+        return category == CATEGORY_FATAL
 
     return False
 
@@ -218,6 +258,25 @@ def is_row_relevant(
     )
 
 
+def _section_for_key(key: str) -> str:
+    if key == OBLIGATION_VYHOTOVENI_ZAZNAMU:
+        return SECTION_ZAZNAM
+    if key in {
+        OBLIGATION_OIP_OBU_ZASLANI,
+        OBLIGATION_POLICIE_ZASLANI,
+        OBLIGATION_ZP_ZASLANI,
+        OBLIGATION_EZOP,
+    }:
+        return SECTION_ODESLANI
+    if key in {
+        OBLIGATION_ZAMESTNANEC_PREDANI,
+        OBLIGATION_OO_PREDANI,
+        OBLIGATION_RODINA_PREDANI,
+    }:
+        return SECTION_PREDANI
+    return SECTION_OHLASENI
+
+
 def applicable_obligations(
     accident: AccidentLike | None,
     *,
@@ -231,32 +290,78 @@ def applicable_obligations(
             union_organization_active=union_organization_active,
         ):
             continue
-        if key == OBLIGATION_VYHOTOVENI_ZAZNAMU:
-            section = SECTION_ZAZNAM
-        elif key in {
-            OBLIGATION_OIP_OBU_ZASLANI,
-            OBLIGATION_ZP_ZASLANI,
-            OBLIGATION_POLICIE_ZASLANI,
-        }:
-            section = SECTION_ODESLANI
-        else:
-            section = SECTION_OHLASENI
-        items.append(ReportingObligation(key=key, section=section, label=label))
+        items.append(
+            ReportingObligation(
+                key=key,
+                section=_section_for_key(key),
+                label=label,
+            )
+        )
     return items
 
 
 def all_obligation_definitions() -> list[ReportingObligation]:
-    items: list[ReportingObligation] = []
-    for key, label in OBLIGATION_LABELS.items():
-        if key == OBLIGATION_VYHOTOVENI_ZAZNAMU:
-            section = SECTION_ZAZNAM
-        elif key in {
-            OBLIGATION_OIP_OBU_ZASLANI,
-            OBLIGATION_ZP_ZASLANI,
-            OBLIGATION_POLICIE_ZASLANI,
-        }:
-            section = SECTION_ODESLANI
-        else:
-            section = SECTION_OHLASENI
-        items.append(ReportingObligation(key=key, section=section, label=label))
-    return items
+    return [
+        ReportingObligation(key=key, section=_section_for_key(key), label=label)
+        for key, label in OBLIGATION_LABELS.items()
+    ]
+
+
+def collect_obligation_rows_from_saved_data(data: dict[str, Any] | None) -> list[dict[str, Any]]:
+    if not data:
+        return []
+    rows: list[dict[str, Any]] = []
+    rows.extend(data.get("admin_ohlaseni") or [])
+    rows.extend(data.get("admin_zaslani") or [])
+    return rows
+
+
+def parse_saved_date(value: Any) -> date | None:
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(str(value)[:10])
+    except Exception:
+        return None
+
+
+def row_is_done(row: dict[str, Any]) -> bool:
+    if row.get("predano"):
+        return True
+    if row.get("kompletni"):
+        return True
+    if row.get("datum"):
+        return True
+    return False
+
+
+def row_is_overdue(row: dict[str, Any], today: date) -> bool:
+    if row_is_done(row):
+        return False
+    deadline = parse_saved_date(row.get("lhuta"))
+    return deadline is not None and deadline < today
+
+
+def obligations_summary_state(
+    accident: AccidentLike | None,
+    rows: list[dict[str, Any]],
+    today: date,
+    *,
+    union_organization_active: bool | None = None,
+) -> str | None:
+    relevant = [
+        row
+        for row in rows
+        if is_row_relevant(
+            accident,
+            row,
+            union_organization_active=union_organization_active,
+        )
+    ]
+    if not relevant:
+        return None
+    if all(row_is_done(row) for row in relevant):
+        return "done"
+    if any(row_is_overdue(row, today) for row in relevant):
+        return "overdue"
+    return "waiting"
