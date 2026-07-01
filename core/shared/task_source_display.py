@@ -68,7 +68,7 @@ def task_source_label(task) -> str:
 
 def _finding_entity_source_label(entity_type: str, entity_id: int) -> str:
     labels = {
-        ENTITY_AUDITY: "Audit IMS",
+        ENTITY_AUDITY: "Audit systému řízení",
         ENTITY_ACCIDENT: "Administrace úrazu",
         ENTITY_MU_INVESTIGATION: "Vyšetřování MU",
         ENTITY_PROVERKY: "Prověrka BOZP",
@@ -110,7 +110,7 @@ def _legacy_source_label(source: str) -> str:
         "kniha_urazu": "Kniha úrazů",
         "kniha_urazu_opatreni": "Kniha úrazů – opatření",
         "audit": "Audit",
-        "audity": "Audit IMS",
+        "audity": "Audit systému řízení",
         "proverka": "Prověrka",
         "proverky": "Prověrka BOZP",
         "kontrola": "Kontrola",

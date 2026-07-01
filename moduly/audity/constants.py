@@ -1,10 +1,10 @@
-"""Metadata a konstanty modulu Audity ISO 45001."""
+"""Metadata a konstanty modulu Audity systémů řízení."""
 
 from dataclasses import dataclass
 
 MODULE_KEY = "audity"
-MODULE_NAME = "Audity ISO 45001"
-MODULE_DESCRIPTION = "Evidence interních auditů systému řízení BOZP."
+MODULE_NAME = "Audity systémů řízení"
+MODULE_DESCRIPTION = "Evidence interních auditů systémů řízení (BOZP, kvalita a další)."
 
 AUDIT_STATUS_PLANOVANO = "Plánováno"
 AUDIT_STATUS_PROBIHA = "Probíhá"
@@ -79,6 +79,18 @@ COMMISSION_RECORD_TYPES = frozenset(
     }
 )
 
+COMMISSION_REQUIRES_LEADER_MESSAGE = "Audit musí mít právě jednoho vedoucího auditora."
+COMMISSION_REQUIRES_WORKPLACE_MESSAGE = "Audit musí mít právě jednoho zástupce auditovaného provozu."
+COMMISSION_REQUIRES_UNION_MESSAGE = "Audit musí mít právě jednoho zástupce odborové organizace."
+COMMISSION_UNKNOWN_RECORD_TYPE_MESSAGE = "Neznámý typ záznamu auditního týmu: {record_type}"
+COMMISSION_MEMBER_NAME_REQUIRED_MESSAGE = "Každý člen auditního týmu musí mít vyplněné jméno."
+COMMISSION_THP_ROLE_REQUIRED_MESSAGE = (
+    "Vedoucí auditor, zástupce auditovaného provozu a auditoři musí být THP pracovníci."
+)
+COMMISSION_PERSON_ROLE_REQUIRED_MESSAGE = (
+    "Zástupce odborové organizace a přizvané osoby musí být ze seznamu osob."
+)
+
 COMMISSION_MISSING_LEADER_MESSAGE = "Vyberte vedoucího auditora z THP pracovníků."
 COMMISSION_MISSING_WORKPLACE_MESSAGE = "Vyberte zástupce auditovaného provozu z THP pracovníků."
 COMMISSION_MISSING_UNION_MESSAGE = "Vyberte zástupce odborové organizace ze seznamu osob."
@@ -106,7 +118,7 @@ PROCESS_PANEL_LEFT_WIDTH = 260
 PROCESS_NOT_IMPLEMENTED_TEXT = "Tento auditovaný proces zatím není implementován."
 PROCESS_PART_NOT_IMPLEMENTED_TEXT = "Tato část bude doplněna."
 
-FINDING_SOURCE_LABEL = "Audit ISO 45001"
+FINDING_SOURCE_LABEL = "Audit systému řízení"
 FINDING_DIALOG_TITLE = "Zjištění auditu"
 FINDING_CREATE_FROM_CONTROL_POINT_LABEL = "➕ Založit zjištění"
 FINDING_OPEN_EXISTING_LABEL = "Otevřít zjištění"

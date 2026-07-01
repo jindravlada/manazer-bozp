@@ -213,7 +213,7 @@ class MuSourceSelectorWidget(QWidget):
         for audit in audit_service.get_all():
             number = audit.number or f"ID {audit.id}"
             title = (audit.title or "").strip()
-            label = f"Audit IMS {number}"
+            label = f"Audit {number}"
             if title:
                 label = f"{label} — {title}"
             self.audit_combo.addItem(label, audit.id)
@@ -249,7 +249,7 @@ class MuSourceSelectorWidget(QWidget):
         audit = audit_service.get_by_id(audit_id)
         if audit is None or not audit.number:
             return ""
-        return f"Audit IMS {audit.number}"
+        return f"Audit {audit.number}"
 
     def _control_label(self, control_id: int) -> str:
         from moduly.kontroly.sluzby.control_service import control_service

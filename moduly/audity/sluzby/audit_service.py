@@ -11,14 +11,13 @@ from moduly.audity.constants import (
     DEFAULT_AUDIT_TYPE,
 )
 from moduly.audity.modely.audit import Audit
-from moduly.audity.repository.audit_commission_repository import AuditCommissionRepository
 from moduly.audity.repository.audit_repository import AuditRepository
+from moduly.audity.sluzby.audit_commission_service import audit_commission_service
 
 
 class AuditService:
     def __init__(self):
         self.repository = AuditRepository()
-        self.commission_repository = AuditCommissionRepository()
 
     def get_all(self) -> list[Audit]:
         return self.repository.get_all()
@@ -58,7 +57,7 @@ class AuditService:
 
     def delete_audit(self, audit_id: int) -> bool:
         finding_service.delete_for_entity(ENTITY_AUDITY, audit_id)
-        self.commission_repository.delete_for_audit(audit_id)
+        audit_commission_service.delete_for_audit(audit_id)
         return self.repository.delete(audit_id)
 
     @staticmethod
