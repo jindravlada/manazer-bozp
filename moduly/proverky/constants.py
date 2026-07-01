@@ -84,7 +84,7 @@ COMMISSION_RECORD_TYPES = frozenset(
 
 COMMISSION_DEFAULT_ROLE_MEMBER = "Člen komise"
 COMMISSION_DEFAULT_ROLE_INVITED = "Přizvaná osoba"
-COMMISSION_DUPLICATE_PERSON_MESSAGE = "Tato osoba je již členem komise."
+COMMISSION_DUPLICATE_PERSON_MESSAGE = "Tato osoba je již v komisi zařazena."
 
 TAB_LABELS = (
     "Spis",
