@@ -64,7 +64,7 @@
           "popis": "Elektrické rozvaděče jsou uzavřeny a zajištěny proti neoprávněnému přístupu.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "oznaceni",
@@ -516,7 +516,7 @@
           "popis": "Spotřebič má čitelné označení a potřebné bezpečnostní informace.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "pouzivani",
@@ -1166,7 +1166,7 @@
           "popis": "Revizní zprávy odpovídají skutečnému stavu zařízení.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",

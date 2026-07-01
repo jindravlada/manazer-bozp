@@ -96,7 +96,7 @@
           "popis": "Provozní dokumentace VTZ je úplná a aktuální.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
@@ -294,7 +294,7 @@
           "popis": "Zařízení jsou označena podle výsledku revize nebo kontroly.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "evidence",
@@ -302,7 +302,7 @@
           "popis": "Elektrická zařízení a spotřebiče jsou evidovány.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "odstraneni_zavad",
@@ -1134,7 +1134,7 @@
           "popis": "Revize a kontroly probíhají v stanovených lhůtách.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "plan_kontrol",
@@ -1142,7 +1142,7 @@
           "popis": "Je zpracován a plněn plán revizí a kontrol.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "prehled_revizi",
@@ -1150,7 +1150,7 @@
           "popis": "Je veden přehled revizí a kontrol.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "odpovedne_osoby",
@@ -1158,7 +1158,7 @@
           "popis": "Jsou určeny osoby odpovědné za revize a kontroly.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "upozorneni",

@@ -80,7 +80,7 @@
           "popis": "Pojištění odpovědnosti je v požadovaném rozsahu.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "kvalifikace_pracovniku",
@@ -88,7 +88,7 @@
           "popis": "Pracovníci dodavatele mají potřebnou kvalifikaci.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "hodnoceni_dodavatele",
@@ -96,7 +96,7 @@
           "popis": "Dodavatel splňuje požadavky pro prováděnou činnost.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
@@ -524,7 +524,7 @@
           "popis": "Seznámení je prokazatelně doloženo.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
@@ -738,7 +738,7 @@
           "popis": "Existuje plán souběžných prací.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",

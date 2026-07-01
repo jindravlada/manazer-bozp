@@ -960,7 +960,7 @@
           "popis": "Komunikace jsou trvale volné.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -1562,7 +1562,7 @@
           "popis": "Zaměstnanci absolvovali školení v oblasti manipulace a skladování.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "opravneni_obsluh",
@@ -1570,7 +1570,7 @@
           "popis": "Obsluha manipulační techniky má platná oprávnění.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "pracovni_postupy",
@@ -1578,7 +1578,7 @@
           "popis": "Jsou k dispozici a dodržovány bezpečné pracovní postupy.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "mistni_pravidla",
@@ -1586,7 +1586,7 @@
           "popis": "Zaměstnanci znají a dodržují místní pravidla.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "evidence",

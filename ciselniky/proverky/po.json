@@ -80,7 +80,7 @@
           "popis": "Přístroj není zastavěn ani zakryt materiálem.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "vysoka"
         },
         {
           "id": "spravny_druh",
@@ -332,7 +332,7 @@
           "popis": "Hydrantová skříň není zastavěna materiálem ani zařízením.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "vysoka"
         },
         {
           "id": "skrin",
@@ -1151,7 +1151,7 @@
           "popis": "Na pracovišti jsou umístěna všechna požadovaná bezpečnostní značení.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "pozarni_uplne",
@@ -1159,7 +1159,7 @@
           "popis": "Na pracovišti jsou umístěna všechna požadovaná požární značení.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "viditelne",
@@ -1167,7 +1167,7 @@
           "popis": "Značení je umístěno tak, aby bylo snadno zaznamenatelné z běžných pracovních míst.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "bez_poskozeni",
@@ -1183,7 +1183,7 @@
           "popis": "Umístěné značky odpovídají aktuálnímu provozu a rizikům na pracovišti.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "nezakryte",
@@ -1475,7 +1475,7 @@
           "popis": "Namátkově oslovený vedoucí zaměstnanec dokáže dokumentaci bez prodlení předložit.",
           "poradi": 90,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [

@@ -920,7 +920,7 @@
           "popis": "Hodnocení rizik je zpracováno pro dotčená pracoviště.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "aktualizace",
@@ -928,7 +928,7 @@
           "popis": "Hodnocení rizik odpovídá aktuálnímu stavu.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "seznameni",
@@ -952,7 +952,7 @@
           "popis": "Z hodnocení rizik vyplývající opatření jsou realizována.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",

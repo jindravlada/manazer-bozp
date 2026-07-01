@@ -294,7 +294,7 @@
           "popis": "OOPP nejsou během rizikové činnosti odloženy nebo vynechány.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "vysoka"
         },
         {
           "id": "kombinace",

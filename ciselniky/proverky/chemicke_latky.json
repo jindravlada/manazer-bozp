@@ -72,7 +72,7 @@
           "popis": "Evidence obsahuje všechny požadované identifikační a bezpečnostní údaje.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "aktualnost",
@@ -80,7 +80,7 @@
           "popis": "Evidence je průběžně aktualizována při změnách sortimentu nebo dodavatelů.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "soulad_stav",
@@ -88,7 +88,7 @@
           "popis": "Evidence odpovídá skutečně používaným chemickým látkám a směsím.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "neevidovane_latky",
@@ -96,7 +96,7 @@
           "popis": "Na pracovišti nejsou používány chemické látky mimo evidenci.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "vysoka"
         },
         {
           "id": "prakticka_kontrola",
@@ -104,7 +104,7 @@
           "popis": "Na pracovišti nejsou používány chemické látky mimo evidenci.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -532,7 +532,7 @@
           "popis": "Žádná nádoba není používána bez označení.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "vysoka"
         }
       ],
       "typicke_zavady": [
@@ -1372,7 +1372,7 @@
           "popis": "Nebezpečný odpad je evidován v souladu s požadavky.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "obaly_latky",

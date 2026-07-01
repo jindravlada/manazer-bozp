@@ -64,7 +64,7 @@
           "popis": "Zkontrolujte, zda je lékárnička umístěna na místě určeném zaměstnavatelem a odpovídá schválenému plánu první pomoci.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "oznaceni",
@@ -72,7 +72,7 @@
           "popis": "Ověřte viditelné označení lékárničky symbolem první pomoci a případným textem podle vnitřních předpisů.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "pristupnost",
@@ -80,7 +80,7 @@
           "popis": "Zkontrolujte, zda není přístup k lékárničce blokován nábytkem, materiálem nebo uzamčením.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "vysoka"
         },
         {
           "id": "obsah",
@@ -250,7 +250,7 @@
           "popis": "Zařízení se nachází na stanoveném místě podle dokumentace pracoviště.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "oznaceni",
@@ -258,7 +258,7 @@
           "popis": "Označení je dobře viditelné a odpovídá bezpečnostním předpisům.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "pristup",
@@ -266,7 +266,7 @@
           "popis": "Přístup není blokován materiálem ani zařízením.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "vysoka"
         },
         {
           "id": "funkcnost",
@@ -496,7 +496,7 @@
           "popis": "Zaměstnanci vědí, kdo poskytuje první pomoc.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "evidence_skoleni",
@@ -504,7 +504,7 @@
           "popis": "Jsou doloženy termíny školení, účastníci i případná opakovací školení.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         }
       ],
       "typicke_zavady": [

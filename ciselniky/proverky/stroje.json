@@ -302,7 +302,7 @@
           "popis": "Ovládací prvky a nouzové zastavení jsou viditelně a srozumitelně označeny.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "pristupnost",
@@ -1142,7 +1142,7 @@
           "popis": "Okolí stroje není zbytečně zahlceno materiálem nebo překážkami.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "osvetleni",
@@ -1150,7 +1150,7 @@
           "popis": "Pracovní prostor u stroje je dostatečně osvětlen pro vykonávanou práci.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "pristup",
@@ -1570,7 +1570,7 @@
           "popis": "Plánované kontroly technického stavu jsou prováděny a zaznamenávány.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "revize",
@@ -1578,7 +1578,7 @@
           "popis": "Požadované revize jsou provedeny v platných termínech.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "zaznamy_oprav",
@@ -1586,7 +1586,7 @@
           "popis": "Provedené opravy a údržba jsou řádně zaznamenány.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "porovnani_stavu",
@@ -1594,7 +1594,7 @@
           "popis": "Provozní dokumentace odpovídá skutečnému technickému stavu.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",

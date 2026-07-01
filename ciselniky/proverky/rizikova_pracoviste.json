@@ -302,7 +302,7 @@
           "popis": "Místa s nebezpečím pádu jsou viditelně označena.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "pravidelna_kontrola",
@@ -936,7 +936,7 @@
           "popis": "Nebezpečné místo je viditelně označeno.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "zabezpeceni_vykopu",
@@ -1562,7 +1562,7 @@
           "popis": "Systém povolení k rizikovým pracím je zaveden.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "schvalovani",
@@ -1570,7 +1570,7 @@
           "popis": "Rizikové práce jsou schvalovány před zahájením.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "ukonceni_praci",
@@ -1578,7 +1578,7 @@
           "popis": "Povolení k práci je uzavřeno po ukončení prací.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "archivace",
@@ -1594,7 +1594,7 @@
           "popis": "Povolení k práci obsahuje všechny požadované údaje.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "stredni"
         },
         {
           "id": "prakticka_kontrola",
