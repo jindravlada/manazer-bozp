@@ -69,6 +69,7 @@ class ProverkyInspectionTestCase(unittest.TestCase):
             section_titles,
             {"Základní údaje", "Termíny", "Stav a typ"},
         )
+        self.assertFalse(hasattr(widget, "number_header"))
 
     def test_spis_widget_load_and_get_data(self) -> None:
         from moduly.proverky.constants import DEFAULT_INSPECTION_SPIS_STATUS, DEFAULT_INSPECTION_TYPE

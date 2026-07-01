@@ -32,10 +32,6 @@ class BozpInspectionSpisWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(10)
 
-        self.number_header = QLabel("Číslo: —")
-        self.number_header.setObjectName("SectionTitle")
-        layout.addWidget(self.number_header)
-
         self.number_label = QLabel("—")
         self.number_label.setObjectName("InfoText")
 
@@ -158,7 +154,6 @@ class BozpInspectionSpisWidget(QWidget):
     def set_number(self, number: str | None) -> None:
         display = (number or "").strip() or "—"
         self.number_label.setText(display)
-        self.number_header.setText(f"Číslo: {display}")
 
     def load_inspection(self, inspection) -> None:
         if inspection is None:
