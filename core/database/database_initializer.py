@@ -20,9 +20,6 @@ def initialize_database() -> None:
     from moduly.kniha_urazu.modely.investigation import AccidentInvestigation  # noqa: F401
     from moduly.vysetrovani_mu.modely.mu_investigation import MuInvestigation  # noqa: F401
     from moduly.proverky.modely.bozp_inspection import BozpInspection  # noqa: F401
-    from moduly.proverky.modely.bozp_inspection_commission_member import (  # noqa: F401
-        BozpInspectionCommissionMember,
-    )
     from moduly.tymy.modely.team import Team  # noqa: F401
     from moduly.tymy.modely.team_member import TeamMember  # noqa: F401
     from core.shared.modely.control_result import ControlResult  # noqa: F401

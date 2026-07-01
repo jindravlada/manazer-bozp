@@ -16,9 +16,6 @@ from moduly.proverky.constants import (
 )
 from moduly.proverky.modely.bozp_inspection import BozpInspection
 from moduly.proverky.repository.bozp_inspection_repository import BozpInspectionRepository
-from moduly.proverky.sluzby.bozp_inspection_commission_service import (
-    bozp_inspection_commission_service,
-)
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.tymy.sluzby.team_service import INSPECTION_TEAM_TYPE_ID, team_service
 
@@ -61,7 +58,6 @@ class BozpInspectionService:
     def delete_inspection(self, inspection_id: int) -> bool:
         finding_service.delete_for_entity(ENTITY_PROVERKY, inspection_id)
         control_result_service.delete_for_entity(ENTITY_PROVERKY, inspection_id)
-        bozp_inspection_commission_service.delete_for_inspection(inspection_id)
         return self.repository.delete(inspection_id)
 
     def resolve_workplace_name(self, workplace_id: int | None) -> str:
