@@ -1,5 +1,5 @@
 {
-  "verze": 4,
+  "verze": 5,
   "id": "prvni_pomoc",
   "nazev": "První pomoc",
   "popis": "Lékárničky, vyškolení osoby pro první pomoc a vybavení pro ošetření.",
@@ -397,14 +397,209 @@
     {
       "id": "skolene_osoby",
       "nazev": "Školené osoby",
-      "popis": "Evidence a dostupnost osob vyškolených k poskytnutí první pomoci.",
+      "popis": "Kontrola zajištění dostatečného počtu zaměstnanců proškolených v poskytování první pomoci, jejich aktuální způsobilosti a informovanosti ostatních zaměstnanců o tom, kdo první pomoc poskytuje.",
       "poradi": 30,
       "aktivni": true,
       "sekce": [],
-      "kontrolni_body": [],
-      "typicke_zavady": [],
-      "doporucene_postupy": [],
-      "legislativa": [],
+      "postup_kontroly": [
+        {
+          "id": "urceni_osob",
+          "text": "Zjistěte, kteří zaměstnanci jsou určeni k poskytování první pomoci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "overeni_proskoleni",
+          "text": "Ověřte jejich aktuální proškolení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "dostupnost_smeny",
+          "text": "Zkontrolujte dostupnost těchto osob během pracovních směn.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "informovanost",
+          "text": "Ověřte, zda zaměstnanci vědí, na koho se mohou obrátit.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "zverejneni_seznamu",
+          "text": "Zkontrolujte způsob zveřejnění seznamu školených osob.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "aktualizace_zmen",
+          "text": "Ověřte, zda jsou změny pravidelně aktualizovány.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "pocet_rizikovost",
+          "text": "Posuďte, zda počet školených osob odpovídá velikosti a rizikovosti pracoviště.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "urcene_osoby",
+          "nazev": "Jsou určeny osoby poskytující první pomoc",
+          "popis": "Zaměstnavatel určil osoby odpovědné za poskytování první pomoci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "platna_skoleni",
+          "nazev": "Školení jsou platná",
+          "popis": "Určené osoby absolvovaly školení v požadovaném rozsahu a ve stanovených intervalech.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "dostatecny_pocet",
+          "nazev": "Počet školených osob je dostatečný",
+          "popis": "Počet odpovídá velikosti pracoviště, počtu zaměstnanců a charakteru rizik.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "dostupnost",
+          "nazev": "Školené osoby jsou dostupné",
+          "popis": "Na každé směně je dostupná alespoň jedna určená osoba, pokud to charakter provozu vyžaduje.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "zverejneny_seznam",
+          "nazev": "Seznam školených osob je zveřejněn",
+          "popis": "Zaměstnanci vědí, kdo poskytuje první pomoc.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_skoleni",
+          "nazev": "Evidence školení je vedena",
+          "popis": "Jsou doloženy termíny školení, účastníci i případná opakovací školení.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "chybi_urcene_osoby",
+          "nazev": "Chybí určené osoby",
+          "popis": "Zaměstnavatel neurčil osoby odpovědné za poskytování první pomoci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "odchod_zamestnancu",
+          "nazev": "Proškolení zaměstnanci již ve firmě nepracují",
+          "popis": "Seznam určených osob neodpovídá aktuálnímu stavu zaměstnanců.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "propadla_skoleni",
+          "nazev": "Propadlá školení",
+          "popis": "Určené osoby nemají platné školení první pomoci.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nedostatecny_pocet",
+          "nazev": "Nedostatečný počet školených osob",
+          "popis": "Počet proškolených zaměstnanců neodpovídá velikosti a rizikovosti pracoviště.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "neinformovanost",
+          "nazev": "Zaměstnanci nevědí, kdo první pomoc poskytuje",
+          "popis": "Chybí zveřejnění seznamu nebo informace nejsou zaměstnancům dostupné.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_evidence",
+          "nazev": "Chybí evidence školení",
+          "popis": "Nejsou doloženy termíny školení, účastníci ani opakovací školení.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "obnoveni_skoleni",
+          "nazev": "Pravidelně obnovovat školení",
+          "popis": "Zajistěte opakovací školení v intervalech stanovených vnitřním předpisem a legislativou.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "aktualizace_seznamu",
+          "nazev": "Aktualizovat seznam určených osob",
+          "popis": "Po každé změně personálu nebo školení aktualizujte seznam odpovědných osob.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "zverejneni_seznamu",
+          "nazev": "Seznam zveřejnit na viditelném místě",
+          "popis": "Umístěte seznam školených osob tak, aby byl všem zaměstnancům snadno dostupný.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "prizpusobeni_poctu",
+          "nazev": "Přizpůsobit počet školených osob rizikovosti provozu",
+          "popis": "Vyhodnocujte počet proškolených zaměstnanců podle velikosti pracoviště a charakteru rizik.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "kontrola_dostupnosti",
+          "nazev": "Pravidelně kontrolovat dostupnost během směn",
+          "popis": "Ověřujte, zda je na každé směně dostupná alespoň jedna určená osoba.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_262_2006",
+          "nazev": "Zákon č. 262/2006 Sb. (zákoník práce)",
+          "popis": "Povinnosti zaměstnavatele v oblasti bezpečnosti a ochrany zdraví při práci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví při práci.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nv_361_2007",
+          "nazev": "Nařízení vlády č. 361/2007 Sb.",
+          "popis": "K poskytování a zajištění zdravotních služeb v pracovněprávních vztazích.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_dokumentace",
+          "nazev": "Interní dokumentace zaměstnavatele",
+          "popis": "Organizace poskytování první pomoci — určení osob, periodicita školení a evidence.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
       "historie": []
     },
     {
