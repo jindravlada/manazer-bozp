@@ -1,5 +1,5 @@
 {
-  "verze": 3,
+  "verze": 4,
   "id": "prvni_pomoc",
   "nazev": "První pomoc",
   "popis": "Lékárničky, vyškolení osoby pro první pomoc a vybavení pro ošetření.",
@@ -189,14 +189,209 @@
     {
       "id": "ocni_sprcha",
       "nazev": "Oční sprcha",
-      "popis": "Dostupnost, funkčnost a označení očních sprch a výlevů.",
+      "popis": "Kontrola dostupnosti, označení, technického stavu a funkčnosti zařízení pro výplach očí při zasažení nebezpečnými látkami.",
       "poradi": 20,
       "aktivni": true,
       "sekce": [],
-      "kontrolni_body": [],
-      "typicke_zavady": [],
-      "doporucene_postupy": [],
-      "legislativa": [],
+      "postup_kontroly": [
+        {
+          "id": "umisteni",
+          "text": "Ověřte, zda je oční sprcha umístěna na určeném místě.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni_viditelnost",
+          "text": "Zkontrolujte její označení a snadnou viditelnost.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pristup",
+          "text": "Ověřte volný přístup bez překážek.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "technicky_stav",
+          "text": "Zkontrolujte technický stav zařízení.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "funkcni_zkouska",
+          "text": "Proveďte funkční zkoušku podle typu zařízení.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "cistota_vody",
+          "text": "Ověřte čistotu vody nebo expiraci výplachových lahví.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_kontrol",
+          "text": "Zkontrolujte evidenci pravidelných kontrol.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "umisteni",
+          "nazev": "Oční sprcha je umístěna na určeném místě",
+          "popis": "Zařízení se nachází na stanoveném místě podle dokumentace pracoviště.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni",
+          "nazev": "Oční sprcha je správně označena",
+          "popis": "Označení je dobře viditelné a odpovídá bezpečnostním předpisům.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pristup",
+          "nazev": "Přístup k zařízení je volný",
+          "popis": "Přístup není blokován materiálem ani zařízením.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "funkcnost",
+          "nazev": "Zařízení je funkční",
+          "popis": "Mechanismus spuštění pracuje správně.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "voda",
+          "nazev": "Výplachová voda je použitelná",
+          "popis": "Voda je čistá nebo jsou použity platné sterilní výplachové lahve.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "evidence",
+          "nazev": "Provádějí se pravidelné kontroly",
+          "popis": "Existuje evidence kontrol a jejich výsledků.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "chybi_oznaceni",
+          "nazev": "Chybí označení",
+          "popis": "Zařízení není viditelně označeno nebo chybí bezpečnostní symbol.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zablokovany_pristup",
+          "nazev": "Zablokovaný přístup",
+          "popis": "Přístup k oční sprše je fyzicky ztížen nebo znemožněn.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nefunkcni",
+          "nazev": "Zařízení je nefunkční",
+          "popis": "Mechanismus spuštění nebo výplach nefunguje správně.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "znecistena_voda",
+          "nazev": "Znečištěná voda",
+          "popis": "Výplachová voda není čistá nebo je znečištěná.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "prosle_lahve",
+          "nazev": "Prošlé výplachové lahve",
+          "popis": "Sterilní výplachové lahve jsou po datu expirace.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_evidence",
+          "nazev": "Chybí evidence kontrol",
+          "popis": "Neexistuje záznam o pravidelných kontrolách zařízení.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "funkcni_zkousky",
+          "nazev": "Pravidelně provádět funkční zkoušky",
+          "popis": "Testujte funkčnost zařízení v intervalech stanovených vnitřním předpisem.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "volny_pristup",
+          "nazev": "Udržovat volný přístup",
+          "popis": "Zajistěte trvale volný a bezpečný přístup k oční sprše.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vymena_lahvi",
+          "nazev": "Včas měnit sterilní výplachové lahve",
+          "popis": "Prošlé lahve okamžitě vyřaďte a nahraďte novými s platnou expirací.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_kontrol",
+          "nazev": "Evidovat všechny provedené kontroly",
+          "popis": "Po každé kontrole zaznamenejte datum, výsledek a odpovědnou osobu.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "odstraneni_zavad",
+          "nazev": "Okamžitě odstranit zjištěné závady",
+          "popis": "Zjištěné nedostatky bez prodlení odstraňte nebo zajistěte nápravná opatření.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "nv_361_2007",
+          "nazev": "Nařízení vlády č. 361/2007 Sb.",
+          "popis": "K poskytování a zajištění zdravotních služeb a podmínkám jejich poskytování v pracovněprávních vztazích.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nv_375_2017",
+          "nazev": "Nařízení vlády č. 375/2017 Sb.",
+          "popis": "Pokud je relevantní podle typu pracoviště — požadavky na pracovní prostředí.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "havarijni_plan",
+          "nazev": "Interní havarijní plán",
+          "popis": "Umístění, odpovědnosti a postupy při zasažení nebezpečnými látkami.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "pokyny_vyrobce",
+          "nazev": "Pokyny výrobce zařízení",
+          "popis": "Návod k obsluze, údržbě a periodickým kontrolám oční sprchy.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
       "historie": []
     },
     {
