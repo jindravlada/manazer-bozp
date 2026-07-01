@@ -1,5 +1,5 @@
 {
-  "verze": 2,
+  "verze": 3,
   "id": "prvni_pomoc",
   "nazev": "První pomoc",
   "popis": "Lékárničky, vyškolení osoby pro první pomoc a vybavení pro ošetření.",
@@ -13,6 +13,50 @@
       "poradi": 10,
       "aktivni": true,
       "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "umisteni_oznaceni",
+          "text": "Ověřte umístění lékárničky a viditelné označení symbolem první pomoci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pristup",
+          "text": "Zkontrolujte, zda je k lékárničce volný a bezpečný přístup.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "obsah",
+          "text": "Otevřete lékárničku a porovnejte skutečný obsah s požadovaným seznamem prostředků.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "expirace",
+          "text": "Prověřte data expirace obvazů, desinfekce a dalších prostředků s omezenou trvanlivostí.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "evidence",
+          "text": "Zaznamenejte výsledek kontroly v evidenci včetně data a odpovědné osoby.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "doplneni",
+          "text": "Doplňte chybějící prostředky nebo vyměňte prošlé položky.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "informovani",
+          "text": "Informujte odpovědnou osobu o zjištěných nedostatcích a domluvte nápravu.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
       "kontrolni_body": [
         {
           "id": "umisteni",

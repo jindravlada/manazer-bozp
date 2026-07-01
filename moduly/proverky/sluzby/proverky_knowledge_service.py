@@ -15,11 +15,16 @@ KNOWLEDGE_NODE_AREA = "area"
 KNOWLEDGE_NODE_SECTION = "section"
 
 _KNOWLEDGE_LIST_FIELDS = (
+    "postup_kontroly",
     "kontrolni_body",
     "typicke_zavady",
     "doporucene_postupy",
     "legislativa",
     "historie",
+)
+
+EDITABLE_SECTION_PROCEDURE_FIELDS: tuple[tuple[str, str], ...] = (
+    ("Postup kontroly", "postup_kontroly"),
 )
 
 EDITABLE_SECTION_LIST_FIELDS: tuple[tuple[str, str], ...] = (
@@ -425,6 +430,26 @@ class ProverkyKnowledgeService:
                     "id": item_id,
                     "nazev": nazev,
                     "popis": str(raw.get("popis") or "").strip(),
+                    "poradi": (index + 1) * 10,
+                    "aktivni": bool(raw.get("aktivni", True)),
+                }
+            )
+        return normalized
+
+    @staticmethod
+    def normalize_procedure_steps(items: list[dict]) -> list[dict]:
+        normalized: list[dict] = []
+        for index, raw in enumerate(items):
+            if not isinstance(raw, dict):
+                continue
+            item_id = str(raw.get("id") or "").strip()
+            text = str(raw.get("text") or "").strip()
+            if not item_id or not text:
+                continue
+            normalized.append(
+                {
+                    "id": item_id,
+                    "text": text,
                     "poradi": (index + 1) * 10,
                     "aktivni": bool(raw.get("aktivni", True)),
                 }

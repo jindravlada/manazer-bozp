@@ -21,9 +21,13 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.proverky.sluzby.proverky_knowledge_service import (
     EDITABLE_SECTION_LIST_FIELDS,
+    EDITABLE_SECTION_PROCEDURE_FIELDS,
     proverky_knowledge_service,
 )
 from moduly.proverky.ui.proverky_knowledge_list_item_dialog import ProverkyKnowledgeListItemDialog
+from moduly.proverky.ui.proverky_knowledge_procedure_step_dialog import (
+    ProverkyKnowledgeProcedureStepDialog,
+)
 
 _LIST_MIN_HEIGHT = 140
 _SECTION_SPACING = 20
@@ -91,6 +95,7 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         self._area_id = area_id
         self._section_id = section_id
         self._lists_by_field: dict[str, QListWidget] = {}
+        self._procedure_lists: set[QListWidget] = set()
         self._sections_by_list: dict[QListWidget, _CollapsibleSection] = {}
 
         section = proverky_knowledge_service.get_section(area_id, section_id)
@@ -137,6 +142,11 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         header_form.addRow("Popis:", self._popis_edit)
         header_form.addRow("", self._aktivni_check)
         scroll_layout.addLayout(header_form)
+
+        for title, field_name in EDITABLE_SECTION_PROCEDURE_FIELDS:
+            list_widget = self._create_list_section(scroll_layout, title, field_name)
+            self._procedure_lists.add(list_widget)
+            self._populate_procedure_list(list_widget, section.get(field_name) or [])
 
         for title, field_name in EDITABLE_SECTION_LIST_FIELDS:
             list_widget = self._create_list_section(scroll_layout, title, field_name)
@@ -192,6 +202,25 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         toolbar.addStretch()
         return toolbar
 
+    def _populate_procedure_list(self, list_widget: QListWidget, items: list) -> None:
+        list_widget.clear()
+        for raw in items:
+            if not isinstance(raw, dict):
+                continue
+            self._add_procedure_row(list_widget, deepcopy(raw))
+        self._refresh_section_count(list_widget)
+
+    @staticmethod
+    def _format_procedure_label(item: dict) -> str:
+        prefix = "[neaktivní] " if not item.get("aktivni", True) else ""
+        text = str(item.get("text") or "—")
+        return f"{prefix}{text}"
+
+    def _add_procedure_row(self, list_widget: QListWidget, item: dict) -> None:
+        row = QListWidgetItem(self._format_procedure_label(item))
+        row.setData(Qt.ItemDataRole.UserRole, item)
+        list_widget.addItem(row)
+
     def _populate_list(self, list_widget: QListWidget, items: list) -> None:
         list_widget.clear()
         for raw in items:
@@ -233,6 +262,30 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         return list_widget.currentRow()
 
     def _add_item(self, list_widget: QListWidget) -> None:
+        if list_widget in self._procedure_lists:
+            dialog = ProverkyKnowledgeProcedureStepDialog(
+                self,
+                title="Přidat krok postupu",
+                existing_ids=self._existing_ids(list_widget),
+            )
+            if dialog.exec() != QDialog.DialogCode.Accepted:
+                return
+
+            data = dialog.get_data()
+            if data is None:
+                return
+
+            if not data["id"]:
+                data["id"] = proverky_knowledge_service.generate_item_id(
+                    data["text"],
+                    self._existing_ids(list_widget),
+                )
+
+            self._add_procedure_row(list_widget, data)
+            list_widget.setCurrentRow(list_widget.count() - 1)
+            self._refresh_section_count(list_widget)
+            return
+
         dialog = ProverkyKnowledgeListItemDialog(
             self,
             title="Přidat položku",
@@ -263,6 +316,30 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
 
         current = list_widget.item(row).data(Qt.ItemDataRole.UserRole)
         if not isinstance(current, dict):
+            return
+
+        if list_widget in self._procedure_lists:
+            dialog = ProverkyKnowledgeProcedureStepDialog(
+                self,
+                title="Upravit krok postupu",
+                item=current,
+                existing_ids=self._existing_ids(list_widget, exclude_row=row),
+            )
+            if dialog.exec() != QDialog.DialogCode.Accepted:
+                return
+
+            data = dialog.get_data()
+            if data is None:
+                return
+
+            if not data["id"]:
+                data["id"] = proverky_knowledge_service.generate_item_id(
+                    data["text"],
+                    self._existing_ids(list_widget, exclude_row=row),
+                )
+
+            list_widget.item(row).setText(self._format_procedure_label(data))
+            list_widget.item(row).setData(Qt.ItemDataRole.UserRole, data)
             return
 
         dialog = ProverkyKnowledgeListItemDialog(
@@ -336,8 +413,19 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
 
         updated = deepcopy(data)
         updated["aktivni"] = not bool(updated.get("aktivni", True))
-        item.setText(self._format_item_label(updated))
+        if list_widget in self._procedure_lists:
+            item.setText(self._format_procedure_label(updated))
+        else:
+            item.setText(self._format_item_label(updated))
         item.setData(Qt.ItemDataRole.UserRole, updated)
+
+    def _collect_procedure_steps(self, list_widget: QListWidget) -> list[dict]:
+        items: list[dict] = []
+        for row in range(list_widget.count()):
+            data = list_widget.item(row).data(Qt.ItemDataRole.UserRole)
+            if isinstance(data, dict):
+                items.append(deepcopy(data))
+        return proverky_knowledge_service.normalize_procedure_steps(items)
 
     def _collect_list_items(self, list_widget: QListWidget) -> list[dict]:
         items: list[dict] = []
@@ -356,6 +444,10 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         payload["nazev"] = nazev
         payload["popis"] = self._popis_edit.toPlainText().strip()
         payload["aktivni"] = self._aktivni_check.isChecked()
+
+        for _title, field_name in EDITABLE_SECTION_PROCEDURE_FIELDS:
+            list_widget = self._lists_by_field[field_name]
+            payload[field_name] = self._collect_procedure_steps(list_widget)
 
         for _title, field_name in EDITABLE_SECTION_LIST_FIELDS:
             list_widget = self._lists_by_field[field_name]
