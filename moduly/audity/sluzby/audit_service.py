@@ -14,6 +14,7 @@ from moduly.audity.constants import (
 from moduly.audity.modely.audit import Audit
 from moduly.audity.repository.audit_repository import AuditRepository
 from moduly.audity.sluzby.audit_commission_service import audit_commission_service
+from moduly.nastaveni.sluzby.settings_service import settings_service
 
 
 class AuditService:
@@ -60,6 +61,23 @@ class AuditService:
         finding_service.delete_for_entity(ENTITY_AUDITY, audit_id)
         audit_commission_service.delete_for_audit(audit_id)
         return self.repository.delete(audit_id)
+
+    def resolve_workplace_name(self, workplace_id: int | None) -> str:
+        if not workplace_id:
+            return ""
+
+        workplace = settings_service.get_workplace_by_id(workplace_id)
+        return workplace.name if workplace else ""
+
+    def resolve_workplace_id_by_name(self, workplace_name: str) -> int | None:
+        name = str(workplace_name or "").strip()
+        if not name:
+            return None
+
+        for workplace in settings_service.get_workplaces(include_inactive=True):
+            if workplace.name == name:
+                return workplace.id
+        return None
 
     def finding_for_control_point(
         self,
