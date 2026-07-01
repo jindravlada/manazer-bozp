@@ -41,6 +41,8 @@ from moduly.audity.constants import (
     FINDING_REQUIRES_NONCOMPLIANCE_MESSAGE,
     FINDING_SOURCE_LABEL,
     AUDIT_MUST_BE_SAVED_MESSAGE,
+    AUDIT_FINDING_TYPE_NESHODA,
+    AUDIT_FINDING_TYPES,
     AUDIT_RESULT_HEADER_LABEL,
     AUDIT_RESULT_NOTE_LABEL,
     KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT,
@@ -860,6 +862,8 @@ class AuditKnowledgeCriterionWidget(QWidget):
         dialog = FindingDialog(
             self,
             title=FINDING_DIALOG_TITLE,
+            allowed_finding_types=AUDIT_FINDING_TYPES,
+            default_finding_type=AUDIT_FINDING_TYPE_NESHODA,
             knowledge_source={
                 "source_label": FINDING_SOURCE_LABEL,
                 "area_label": context.area_label,

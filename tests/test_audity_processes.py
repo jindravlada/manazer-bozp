@@ -290,11 +290,16 @@ class AudityProcessesTestCase(unittest.TestCase):
             FINDING_TYPE_NESHODA,
             FINDING_TYPE_POZOROVANI,
             FINDING_TYPE_PRILEZITOST,
+            FINDING_TYPE_ZJISTENI,
             VALID_FINDING_TYPES,
         )
         from core.shared.finding_display import FINDING_TYPE_LABELS, finding_type_label
         from core.widgets.finding_dialog import FindingDialog
-        from moduly.audity.constants import AUDIT_FINDING_TYPE_LABELS
+        from moduly.audity.constants import (
+            AUDIT_FINDING_TYPE_NESHODA,
+            AUDIT_FINDING_TYPE_LABELS,
+            AUDIT_FINDING_TYPES,
+        )
 
         for finding_type in VALID_FINDING_TYPES:
             self.assertIn(finding_type, FINDING_TYPE_LABELS)
@@ -303,15 +308,23 @@ class AudityProcessesTestCase(unittest.TestCase):
             self.assertEqual(FINDING_TYPE_LABELS[finding_type], label)
             self.assertEqual(finding_type_label(finding_type), label)
 
-        dialog = FindingDialog(title="Zjištění auditu")
+        dialog = FindingDialog(
+            title="Zjištění auditu",
+            allowed_finding_types=AUDIT_FINDING_TYPES,
+            default_finding_type=AUDIT_FINDING_TYPE_NESHODA,
+        )
         combo_labels = {
             dialog.type_combo.itemText(index)
             for index in range(dialog.type_combo.count())
         }
-        self.assertIn("Neshoda", combo_labels)
+        self.assertEqual(combo_labels, {"Neshoda", "PKZ", "Pozorování"})
+        self.assertNotIn("Zjištění", combo_labels)
+        self.assertEqual(dialog.type_combo.currentData(), FINDING_TYPE_NESHODA)
+        self.assertEqual(dialog.type_combo.currentText(), "Neshoda")
         self.assertEqual(finding_type_label(FINDING_TYPE_NESHODA), "Neshoda")
         self.assertEqual(FINDING_TYPE_LABELS[FINDING_TYPE_PRILEZITOST], "PKZ")
         self.assertEqual(FINDING_TYPE_LABELS[FINDING_TYPE_POZOROVANI], "Pozorování")
+        self.assertNotEqual(FINDING_TYPE_ZJISTENI, dialog.type_combo.currentData())
 
 
 if __name__ == "__main__":
