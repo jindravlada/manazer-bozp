@@ -35,6 +35,18 @@ from PySide6.QtWidgets import (
 
 from core.widgets.dialog_utils import create_save_cancel_box, exec_maximized
 from moduly.kniha_urazu.ui.setreni.accident_findings_widget import AccidentFindingsWidget
+from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
+    SECTION_ODESLANI,
+    SECTION_OHLASENI,
+    SECTION_ZAZNAM,
+    all_obligation_definitions,
+    is_fatal_accident,
+    is_row_relevant,
+    is_serious_or_fatal_accident,
+    has_pn_over_3_days,
+    requires_accident_record,
+    requires_police_obligation,
+)
 from moduly.kniha_urazu.sluzby.investigation_service import investigation_service
 from core.services.attachment_service import attachment_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
@@ -75,8 +87,8 @@ class SetreniDialog(QDialog):
         mu_row.addStretch()
         layout.addLayout(mu_row)
 
-        self._init_administrativa_widgets()
-        layout.addWidget(self._tab_administrativa(), 1)
+        self._init_ohlasovaci_povinnosti_widgets()
+        layout.addWidget(self._tab_ohlasovaci_povinnosti(), 1)
 
         buttons = create_save_cancel_box(self)
         buttons.accepted.connect(self.accept)
@@ -115,8 +127,11 @@ class SetreniDialog(QDialog):
             "admin_ukonceni": self._date_to_json(self.admin_ukonceni),
             "admin_pripad_uzavren": self._radio_choice_value(self.admin_pripad_uzavren),
             "admin_ohlaseni": self._admin_rows_data(self.admin_ohlaseni_rows),
-            "admin_zaslani": self._admin_rows_data(self.admin_zaslani_rows),
+            "admin_zaslani": self._admin_rows_data(self._admin_all_zaslani_rows()),
         }
+
+    def _admin_all_zaslani_rows(self):
+        return list(getattr(self, "admin_zaznam_rows", [])) + list(getattr(self, "admin_odeslani_rows", []))
 
     def _date_value(self, widget):
         if hasattr(widget, "get_date"):
@@ -635,8 +650,11 @@ class SetreniDialog(QDialog):
             "admin_ukonceni": self._date_to_json(self.admin_ukonceni),
             "admin_pripad_uzavren": self._radio_choice_value(self.admin_pripad_uzavren),
             "admin_ohlaseni": self._admin_rows_data(self.admin_ohlaseni_rows),
-            "admin_zaslani": self._admin_rows_data(self.admin_zaslani_rows),
+            "admin_zaslani": self._admin_rows_data(self._admin_all_zaslani_rows()),
         }
+
+    def _admin_all_zaslani_rows(self):
+        return list(getattr(self, "admin_zaznam_rows", [])) + list(getattr(self, "admin_odeslani_rows", []))
 
     def _refresh_svedci_rows(self):
         if self.dukazy_svedci_form is None:
@@ -2613,37 +2631,19 @@ class SetreniDialog(QDialog):
         return (getattr(self.accident, "druh_urazu", "") or "").lower()
 
     def _is_serious_or_fatal_accident(self):
-        text = self._accident_kind_text()
-        return "závaž" in text or "zavaz" in text or "smrt" in text
+        return is_serious_or_fatal_accident(self.accident)
 
     def _is_fatal_accident(self):
-        return "smrt" in self._accident_kind_text()
-
-    def _has_work_incapacity(self):
-        if self.accident is None:
-            return False
-        for attr in ["dpn_od", "pracovni_neschopnost_od", "doba_pracovni_neschopnosti_od", "absence_from", "pn_od"]:
-            if getattr(self.accident, attr, None):
-                return True
-        text = self._accident_kind_text()
-        return "neschop" in text or "závaž" in text or "zavaz" in text or "smrt" in text
+        return is_fatal_accident(self.accident)
 
     def _has_pn_over_3_days(self):
-        text = self._accident_kind_text()
-        if "delší než 3" in text or "delsi nez 3" in text or "nad 3" in text:
-            return True
-        if self.accident is not None:
-            dpn_od = getattr(self.accident, "dpn_od", None)
-            dpn_do = getattr(self.accident, "dpn_do", None)
-            if dpn_od and dpn_do:
-                try:
-                    return (dpn_do - dpn_od).days + 1 > 3
-                except Exception:
-                    pass
-        return False
+        return has_pn_over_3_days(self.accident)
 
     def _requires_accident_record(self):
-        return self._has_work_incapacity() or self._is_serious_or_fatal_accident()
+        return requires_accident_record(self.accident)
+
+    def _requires_police_obligation(self):
+        return requires_police_obligation(self.accident)
 
     def _add_workdays(self, start_date, days):
         if not start_date:
@@ -2693,40 +2693,13 @@ class SetreniDialog(QDialog):
 
         # NV 322/2025 Sb. – lhůtu pro záznam počítáme od data,
         # kdy se zaměstnavatel o úrazu dozvěděl.
-        if "Záznam o pracovním úrazu" in name or "záznamu o pracovním úrazu" in name:
+        if "Vyhotovení Záznamu" in name or "Záznam o pracovním úrazu" in name:
             return self._add_workdays(date_value, 15)
 
         return None
 
     def _admin_row_relevant(self, row):
-        name = row.get("nazev", "")
-        agenda = row.get("agenda", "")
-
-        if agenda == "ohlaseni":
-            # Ohlášení úrazu: vždy jen odbory, ostatní pouze pokud se týkají.
-            if "Odborová organizace" in name:
-                return True
-            if "OIP / OBÚ" in name or "Oblastní inspektorát práce" in name or "Obvodní báňský úřad" in name:
-                return self._is_serious_or_fatal_accident()
-            if "Policie ČR" in name:
-                return self._is_fatal_accident()
-            if "EZOP" in name:
-                return self._has_pn_over_3_days() or self._is_serious_or_fatal_accident()
-            return False
-
-        if agenda == "zaznam":
-            # Záznam o pracovním úrazu zobrazujeme jen tam, kde vzniká povinnost záznam vyhotovit/rozeslat.
-            if not self._requires_accident_record():
-                return False
-            if "OIP / OBÚ" in name or "Oblastní inspektorát práce" in name or "Obvodní báňský úřad" in name:
-                return self._is_serious_or_fatal_accident()
-            if "Policie ČR" in name:
-                return self._is_fatal_accident()
-            if "Zdravotní pojišťovna" in name:
-                return self._has_work_incapacity() or self._is_serious_or_fatal_accident()
-            return True
-
-        return True
+        return is_row_relevant(self.accident, row)
 
     def _refresh_admin_setreni_funkce(self):
         if not hasattr(self, "admin_setreni_jmeno") or not hasattr(self, "admin_setreni_funkce"):
@@ -2754,8 +2727,10 @@ class SetreniDialog(QDialog):
         data = []
         for row in rows:
             data.append({
+                "key": row.get("key", ""),
                 "nazev": row.get("nazev", ""),
                 "agenda": row.get("agenda", ""),
+                "section": row.get("section", ""),
                 "predano": row["predano"].isChecked(),
                 "kompletni": row.get("kompletni").isChecked() if row.get("kompletni") is not None else False,
                 "lhuta": self._date_to_json(row["lhuta"]) if row.get("lhuta") is not None else "",
@@ -2791,14 +2766,19 @@ class SetreniDialog(QDialog):
                 if deadline:
                     self._set_date_widget(row["lhuta"], deadline)
 
-        # Záznam o úrazu – lhůty se počítají z data oznámení.
-        for row in getattr(self, "admin_zaslani_rows", []):
+        for row in getattr(self, "admin_zaznam_rows", []):
             if row.get("lhuta") is not None:
                 deadline = self._admin_default_deadline(row.get("nazev", ""), row.get("agenda", ""))
                 if deadline:
                     self._set_date_widget(row["lhuta"], deadline)
 
-    def _init_administrativa_widgets(self):
+        for row in getattr(self, "admin_odeslani_rows", []):
+            if row.get("lhuta") is not None:
+                deadline = self._admin_default_deadline(row.get("nazev", ""), row.get("agenda", ""))
+                if deadline:
+                    self._set_date_widget(row["lhuta"], deadline)
+
+    def _init_ohlasovaci_povinnosti_widgets(self):
         from core.widgets.thp_worker_selector import ThpWorkerSelector
         saved = self._zajisteni_saved_data
 
@@ -2824,38 +2804,47 @@ class SetreniDialog(QDialog):
         self.admin_pripad_uzavren = self._radio_choice(["ANO", "NE"])
         self._set_radio_choice(self.admin_pripad_uzavren, saved.get("admin_pripad_uzavren", "NE"))
 
-        def saved_row(rows, name):
+        def saved_row(rows, *, key="", name=""):
             for item in rows or []:
-                if item.get("nazev") == name:
+                if key and item.get("key") == key:
+                    return item
+                if name and item.get("nazev") == name:
                     return item
             return {}
 
-        self.admin_ohlaseni_rows = []
-        for name in [
-            "Odborová organizace – ohlášení pracovního úrazu",
-            "OIP / OBÚ – ohlášení závažného nebo smrtelného pracovního úrazu",
-            "Policie ČR – ohlášení smrtelného pracovního úrazu / podezření na trestný čin",
-            "EZOP – ohlášení pracovního úrazu",
-        ]:
-            self.admin_ohlaseni_rows.append(self._make_admin_row(name, saved_row(saved.get("admin_ohlaseni"), name), agenda="ohlaseni"))
+        saved_ohlaseni = saved.get("admin_ohlaseni") or []
+        saved_zaslani = saved.get("admin_zaslani") or []
 
-        self.admin_zaslani_rows = []
-        for name in [
-            "Záznam o pracovním úrazu – Portál SÚIP",
-            "Postižený zaměstnanec – předání podepsaného záznamu o pracovním úrazu",
-            "Odborová organizace – předání podepsaného záznamu o pracovním úrazu",
-            "Zdravotní pojišťovna postiženého – zaslání záznamu o pracovním úrazu",
-            "Kooperativa",
-            "Policie ČR – zaslání záznamu o pracovním úrazu",
-        ]:
-            self.admin_zaslani_rows.append(self._make_admin_row(name, saved_row(saved.get("admin_zaslani"), name), agenda="zaznam"))
+        self.admin_ohlaseni_rows = []
+        self.admin_zaznam_rows = []
+        self.admin_odeslani_rows = []
+
+        for definition in all_obligation_definitions():
+            saved_data = saved_row(
+                saved_ohlaseni + saved_zaslani,
+                key=definition.key,
+                name=definition.label,
+            )
+            row = self._make_admin_row(
+                definition.label,
+                saved_data,
+                agenda="ohlaseni" if definition.section == SECTION_OHLASENI else "zaznam",
+                section=definition.section,
+                key=definition.key,
+            )
+            if definition.section == SECTION_OHLASENI:
+                self.admin_ohlaseni_rows.append(row)
+            elif definition.section == SECTION_ZAZNAM:
+                self.admin_zaznam_rows.append(row)
+            else:
+                self.admin_odeslani_rows.append(row)
 
         self._connect_admin_auto_dates()
 
-    def _make_admin_row(self, nazev, data=None, agenda=""):
+    def _make_admin_row(self, nazev, data=None, agenda="", section="", key=""):
         data = data or {}
 
-        if "Portál SÚIP" in nazev or "OIP / OBÚ" in nazev:
+        if "Portál SÚIP" in nazev or "Vyhotovení Záznamu" in nazev or "OIP / OBÚ" in nazev:
             zpusoby = ["Portál SÚIP", "Datová schránka", "Jiný způsob"]
             default_zpusob = "Portál SÚIP"
         elif "Odborová organizace" in nazev or "Postižený zaměstnanec" in nazev:
@@ -2866,8 +2855,10 @@ class SetreniDialog(QDialog):
             default_zpusob = "Datová schránka"
 
         row = {
+            "key": key or data.get("key", ""),
             "nazev": nazev,
             "agenda": agenda,
+            "section": section or data.get("section", ""),
             "predano": QCheckBox(),
             "kompletni": None,
             "lhuta": self._new_date_edit(),
@@ -3064,7 +3055,7 @@ class SetreniDialog(QDialog):
         layout.addStretch()
         return w
 
-    def _tab_administrativa(self):
+    def _tab_ohlasovaci_povinnosti(self):
         w = QWidget()
         outer = QVBoxLayout(w)
         outer.setContentsMargins(0, 0, 0, 0)
@@ -3074,6 +3065,10 @@ class SetreniDialog(QDialog):
         layout = QVBoxLayout(content)
         layout.setContentsMargins(10, 10, 10, 10)
 
+        heading = QLabel("Ohlašovací povinnosti")
+        heading.setObjectName("SectionHeading")
+        layout.addWidget(heading)
+
         form = QFormLayout()
         form.addRow("Šetření provedl – jméno:", self.admin_setreni_jmeno)
         form.addRow("Šetření provedl – funkce:", self.admin_setreni_funkce)
@@ -3081,38 +3076,44 @@ class SetreniDialog(QDialog):
         form.addRow("Důvod pozdějšího zahájení:", self.admin_duvod_pozde)
         layout.addLayout(form)
 
-        ohlaseni = QGroupBox("Ohlášení pracovního úrazu")
-        ohlaseni_layout = QHBoxLayout(ohlaseni)
-        left = QVBoxLayout()
-        right = QVBoxLayout()
-        info = QLabel("Povinnosti se odvozují z druhu úrazu a dalších údajů z karty úrazu. Druh úrazu se zde záměrně znovu nezadává, aby nevznikla duplicita.")
+        info = QLabel(
+            "Zobrazují se pouze povinnosti, které podle zadaných údajů z karty úrazu skutečně vznikají. "
+            "Druh úrazu se zde záměrně znovu nezadává."
+        )
         info.setWordWrap(True)
-        left.addWidget(info)
-        visible_ohlaseni_rows = [row for row in self.admin_ohlaseni_rows if self._admin_row_relevant(row)]
-        for i, row in enumerate(visible_ohlaseni_rows):
-            (left if i < 2 else right).addWidget(self._admin_row_group(row, "ohlášení"))
-        left.addStretch()
-        right.addStretch()
-        ohlaseni_layout.addLayout(left)
-        ohlaseni_layout.addLayout(right)
-        layout.addWidget(ohlaseni)
+        layout.addWidget(info)
 
-        zaslani = QGroupBox("Záznam o pracovním úrazu / rozeslání")
-        zaslani_layout = QVBoxLayout(zaslani)
-        visible_zaslani_rows = [row for row in self.admin_zaslani_rows if self._admin_row_relevant(row)]
-        if visible_zaslani_rows:
-            for row in visible_zaslani_rows:
-                mode = "předání" if "předání" in row["nazev"] else "odeslání"
-                if "Portál SÚIP" in row["nazev"] and "Záznam o pracovním úrazu" in row["nazev"]:
-                    mode = "uložení"
-                elif "vyhotovení" in row["nazev"]:
-                    mode = "vyhotovení"
-                zaslani_layout.addWidget(self._admin_row_group(row, mode))
-        else:
-            info_zaznam = QLabel("Podle dosud zadaných údajů zatím nevznikla povinnost vyhotovit záznam o pracovním úrazu.")
-            info_zaznam.setWordWrap(True)
-            zaslani_layout.addWidget(info_zaznam)
-        layout.addWidget(zaslani)
+        visible_ohlaseni_rows = [row for row in self.admin_ohlaseni_rows if self._admin_row_relevant(row)]
+        if visible_ohlaseni_rows:
+            ohlaseni = QGroupBox("OHLÁŠENÍ")
+            ohlaseni_layout = QHBoxLayout(ohlaseni)
+            left = QVBoxLayout()
+            right = QVBoxLayout()
+            for index, row in enumerate(visible_ohlaseni_rows):
+                (left if index < (len(visible_ohlaseni_rows) + 1) // 2 else right).addWidget(
+                    self._admin_row_group(row, "ohlášení")
+                )
+            left.addStretch()
+            right.addStretch()
+            ohlaseni_layout.addLayout(left)
+            ohlaseni_layout.addLayout(right)
+            layout.addWidget(ohlaseni)
+
+        visible_zaznam_rows = [row for row in self.admin_zaznam_rows if self._admin_row_relevant(row)]
+        if visible_zaznam_rows:
+            zaznam = QGroupBox("ZÁZNAM O ÚRAZU")
+            zaznam_layout = QVBoxLayout(zaznam)
+            for row in visible_zaznam_rows:
+                zaznam_layout.addWidget(self._admin_row_group(row, "vyhotovení"))
+            layout.addWidget(zaznam)
+
+        visible_odeslani_rows = [row for row in self.admin_odeslani_rows if self._admin_row_relevant(row)]
+        if visible_odeslani_rows:
+            odeslani = QGroupBox("ODESLÁNÍ ZÁZNAMU")
+            odeslani_layout = QVBoxLayout(odeslani)
+            for row in visible_odeslani_rows:
+                odeslani_layout.addWidget(self._admin_row_group(row, "odeslání"))
+            layout.addWidget(odeslani)
 
         end_form = QFormLayout()
         end_form.addRow("Datum ukončení šetření:", self.admin_ukonceni)

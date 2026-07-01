@@ -7,6 +7,10 @@ from sqlalchemy import select
 
 from core.database.session import get_session
 from moduly.kniha_urazu.modely.investigation import AccidentInvestigation
+from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
+    is_row_relevant,
+    requires_accident_record,
+)
 from moduly.ukoly.sluzby.task_service import task_service
 
 _OPATRENI_SOURCE = "kniha_urazu_opatreni"
@@ -155,37 +159,11 @@ class AccidentTable(QTableWidget):
             return []
         return data.get("admin_zaslani") or []
 
-    def _accident_kind_text(self, accident):
-        return (getattr(accident, "druh_urazu", "") or "").lower()
-
-    def _is_serious_or_fatal_accident(self, accident):
-        text = self._accident_kind_text(accident)
-        return "závaž" in text or "zavaz" in text or "smrt" in text
-
-    def _is_fatal_accident(self, accident):
-        return "smrt" in self._accident_kind_text(accident)
-
-    def _has_work_incapacity(self, accident):
-        for attr in ["dpn_od", "pracovni_neschopnost_od", "doba_pracovni_neschopnosti_od", "absence_from", "pn_od"]:
-            if getattr(accident, attr, None):
-                return True
-        text = self._accident_kind_text(accident)
-        return "neschop" in text or "závaž" in text or "zavaz" in text or "smrt" in text
-
     def _requires_accident_record(self, accident):
-        return self._has_work_incapacity(accident) or self._is_serious_or_fatal_accident(accident)
+        return requires_accident_record(accident)
 
     def _admin_zaslani_row_relevant(self, accident, row):
-        name = row.get("nazev", "")
-        if not self._requires_accident_record(accident):
-            return False
-        if "OIP / OBÚ" in name or "Oblastní inspektorát práce" in name or "Obvodní báňský úřad" in name:
-            return self._is_serious_or_fatal_accident(accident)
-        if "Policie ČR" in name:
-            return self._is_fatal_accident(accident)
-        if "Zdravotní pojišťovna" in name:
-            return self._has_work_incapacity(accident) or self._is_serious_or_fatal_accident(accident)
-        return True
+        return is_row_relevant(accident, row)
 
     def _admin_row_done(self, row):
         if row.get("predano"):
