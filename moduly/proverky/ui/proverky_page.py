@@ -24,6 +24,9 @@ from moduly.proverky.constants import (
     YEAR_FILTER_VSE,
 )
 from moduly.proverky.ui.proverky_knowledge_editor_dialog import ProverkyKnowledgeEditorDialog
+from moduly.proverky.sluzby.bozp_inspection_commission_service import (
+    bozp_inspection_commission_service,
+)
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 from moduly.proverky.ui.bozp_inspection_dialog import BozpInspectionDialog
 from moduly.proverky.ui.bozp_inspection_table import BozpInspectionTable
@@ -153,6 +156,8 @@ class ProverkyPage(QWidget):
 
     def _prepare_spis_data(self, data: dict) -> dict:
         payload = dict(data)
+        payload.pop("commission_members", None)
+
         workplace_id = payload.get("workplace_id")
         if workplace_id is None:
             workplace_id = bozp_inspection_service.resolve_workplace_id_by_name(
@@ -162,10 +167,18 @@ class ProverkyPage(QWidget):
         payload["workplace_name"] = bozp_inspection_service.resolve_workplace_name(workplace_id)
         return payload
 
+    def _save_commission_members(self, inspection_id: int, data: dict) -> None:
+        members = data.get("commission_members")
+        if members is None:
+            return
+        bozp_inspection_commission_service.save_members(inspection_id, members)
+
     def new_inspection(self) -> None:
         dialog = BozpInspectionDialog(self)
         if exec_maximized(dialog):
-            bozp_inspection_service.create_inspection(**self._prepare_spis_data(dialog.get_data()))
+            data = dialog.get_data()
+            inspection = bozp_inspection_service.create_inspection(**self._prepare_spis_data(data))
+            self._save_commission_members(inspection.id, data)
             self.refresh()
 
     def open_selected_inspection(self) -> None:
@@ -185,10 +198,12 @@ class ProverkyPage(QWidget):
 
         dialog = BozpInspectionDialog(self, inspection=inspection)
         if exec_maximized(dialog):
+            data = dialog.get_data()
             bozp_inspection_service.update_inspection(
                 inspection_id,
-                **self._prepare_spis_data(dialog.get_data()),
+                **self._prepare_spis_data(data),
             )
+            self._save_commission_members(inspection_id, data)
             self.refresh()
 
     def delete_selected_inspection(self) -> None:
