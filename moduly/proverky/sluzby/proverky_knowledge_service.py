@@ -79,8 +79,91 @@ class ProverkyKnowledgeService:
     """Načítání znalostní báze oblastí prověrek z editovatelných JSON číselníků."""
 
     def ensure_catalogs(self) -> None:
-        editable_catalog_service.ensure_catalog(self.ciselniky_dir, _OBLASTI_FILE)
+        user_path = editable_catalog_service.ensure_catalog(self.ciselniky_dir, _OBLASTI_FILE)
+        self._upgrade_areas_catalog_from_seed(user_path)
         self._ensure_knowledge_files_from_areas_catalog()
+
+    def _upgrade_areas_catalog_from_seed(self, user_path: Path) -> None:
+        if not user_path.is_file():
+            return
+
+        bundled_path = editable_catalog_service.bundled_path(_OBLASTI_FILE)
+        if not bundled_path.is_file():
+            return
+
+        user_data = self._load_json(user_path)
+        seed_data = self._load_json(bundled_path)
+        if not self._merge_areas_catalog_from_seed(user_data, seed_data):
+            return
+
+        user_path.write_text(
+            json.dumps(user_data, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
+    def _merge_areas_catalog_from_seed(self, user: dict, seed: dict) -> bool:
+        changed = False
+
+        user_areas = user.setdefault("oblasti", [])
+        if not isinstance(user_areas, list):
+            user_areas = []
+            user["oblasti"] = user_areas
+            changed = True
+
+        user_by_id = self._areas_by_id(user_areas)
+        for seed_area in seed.get("oblasti") or []:
+            if not isinstance(seed_area, dict):
+                continue
+
+            area_id = str(seed_area.get("id") or "").strip()
+            if not area_id:
+                continue
+
+            user_area = user_by_id.get(area_id)
+            if user_area is None:
+                user_areas.append(deepcopy(seed_area))
+                user_by_id[area_id] = user_areas[-1]
+                changed = True
+                continue
+
+            if self._merge_area_fields_from_seed(user_area, seed_area):
+                changed = True
+
+        seed_verze = int(seed.get("verze") or 0)
+        user_verze = int(user.get("verze") or 0)
+        if changed and seed_verze > user_verze:
+            user["verze"] = seed_verze
+
+        return changed
+
+    def _merge_area_fields_from_seed(self, user_area: dict, seed_area: dict) -> bool:
+        changed = False
+
+        if self._text_field_is_empty(user_area.get("popis")):
+            seed_popis = str(seed_area.get("popis") or "").strip()
+            if seed_popis:
+                user_area["popis"] = seed_popis
+                changed = True
+
+        user_soubor = user_area.get("soubor_znalosti")
+        if user_soubor is None or not str(user_soubor).strip():
+            seed_soubor = seed_area.get("soubor_znalosti")
+            if seed_soubor and str(seed_soubor).strip():
+                user_area["soubor_znalosti"] = seed_soubor
+                changed = True
+
+        return changed
+
+    @staticmethod
+    def _areas_by_id(areas: list | None) -> dict[str, dict]:
+        result: dict[str, dict] = {}
+        for area in areas or []:
+            if not isinstance(area, dict):
+                continue
+            area_id = str(area.get("id") or "").strip()
+            if area_id:
+                result[area_id] = area
+        return result
 
     def _ensure_knowledge_files_from_areas_catalog(self) -> None:
         path = self.proverky_dir / "oblasti.json"
