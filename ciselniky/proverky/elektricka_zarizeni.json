@@ -1,0 +1,1678 @@
+{
+  "verze": 1,
+  "id": "elektricka_zarizeni",
+  "nazev": "Elektrická zařízení",
+  "popis": "Bezpečnost elektrických rozvaděčů, rozvodů, spotřebičů, revizí, prací na EE a dokumentace.",
+  "poradi": 47,
+  "aktivni": true,
+  "sekce": [
+    {
+      "id": "elektricke_rozvadece",
+      "nazev": "Elektrické rozvaděče",
+      "popis": "Kontrola uzavření, označení, přístupnosti, mechanického stavu, krytů a výstražných tabulek u elektrických rozvaděčů.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace_rozvadece",
+          "text": "Identifikujte elektrické rozvaděče v kontrolované oblasti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "uzavreni",
+          "text": "Zkontrolujte uzavření a zajištění rozvaděčů proti neoprávněnému přístupu.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni",
+          "text": "Ověřte označení rozvaděčů a identifikaci obvodů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "pristupnost",
+          "text": "Posuďte přístupnost rozvaděčů pro obsluhu a údržbu.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "mechanicke_poskozeni",
+          "text": "Zkontrolujte mechanické poškození skříně, dveří a krytů.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vystrazne_tabulky",
+          "text": "Ověřte přítomnost a čitelnost výstražných tabulek.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda před rozvaděčem je zachován bezpečný manipulační prostor.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "uzavreni",
+          "nazev": "Rozvaděče jsou řádně uzavřeny",
+          "popis": "Elektrické rozvaděče jsou uzavřeny a zajištěny proti neoprávněnému přístupu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni",
+          "nazev": "Rozvaděče jsou řádně označeny",
+          "popis": "Rozvaděče mají srozumitelné označení a identifikaci obvodů.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pristupnost",
+          "nazev": "Rozvaděče jsou přístupné",
+          "popis": "K rozvaděčům je zajištěn bezpečný přístup pro obsluhu a údržbu.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "mechanicke_poskozeni",
+          "nazev": "Rozvaděče nejsou mechanicky poškozeny",
+          "popis": "Skříň, dveře a kryty rozvaděčů nevykazují poškození ohrožující bezpečnost.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vystrazne_tabulky",
+          "nazev": "Výstražné tabulky jsou v pořádku",
+          "popis": "Výstražné tabulky jsou umístěny, čitelné a odpovídají charakteru zařízení.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Manipulační prostor je zachován",
+          "popis": "Před rozvaděčem je zachován bezpečný manipulační prostor.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "neuzavrene_rozvadece",
+          "nazev": "Neuzavřené rozvaděče",
+          "popis": "Rozvaděče jsou trvale otevřené nebo nejsou zajištěny proti přístupu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "neoznacene_rozvadece",
+          "nazev": "Neoznačené rozvaděče",
+          "popis": "Rozvaděče nebo obvody nejsou srozumitelně označeny.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "zablokovany_pristup",
+          "nazev": "Zablokovaný přístup k rozvaděči",
+          "popis": "Přístup k rozvaděči je ztížen překážkami nebo skladovaným materiálem.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "poskozene_kryty",
+          "nazev": "Poškozené kryty rozvaděče",
+          "popis": "Skříň, dveře nebo kryty rozvaděče jsou mechanicky poškozené.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_vystrahy",
+          "nazev": "Chybějící výstražné tabulky",
+          "popis": "Výstražné tabulky chybí, jsou nečitelné nebo neodpovídají zařízení.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "nedostatecny_prostor",
+          "nazev": "Nedostatečný manipulační prostor",
+          "popis": "Před rozvaděčem chybí bezpečný prostor pro manipulaci a údržbu.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "pravidelna_kontrola",
+          "nazev": "Pravidelně kontrolovat rozvaděče",
+          "popis": "Provádějte pravidelné vizuální kontroly stavu a uzavření rozvaděčů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni_rozvadece",
+          "nazev": "Udržovat označení rozvaděčů",
+          "popis": "Zajistěte trvalou čitelnost označení rozvaděčů a obvodů.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "volny_pristup",
+          "nazev": "Udržovat volný přístup",
+          "popis": "Zajistěte volný manipulační prostor před rozvaděči.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "opravy_vcas",
+          "nazev": "Bezodkladně opravovat poškození",
+          "popis": "Poškozené kryty a dveře rozvaděčů opravujte před dalším provozem.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "zamezeni_pristupu",
+          "nazev": "Omezit přístup k rozvaděčům",
+          "popis": "Zajistěte, aby k rozvaděčům neměly přístup neoprávněné osoby.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví — požadavky na bezpečnost práce s elektrickými zařízeními.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nv_378_2001",
+          "nazev": "Nařízení vlády č. 378/2001 Sb.",
+          "popis": "Blíže určené požadavky pro zajištění bezpečnosti a ochrany zdraví — práce s elektrickými zařízeními a rozvody.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "csn_33_1600",
+          "nazev": "ČSN 33 1600",
+          "popis": "Elektrotechnické předpisy — bezpečnost elektrických zařízení, rozvodů a spotřebičů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro bezpečný provoz, kontrolu a dokumentaci elektrických zařízení na pracovišti.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "zasuvky_pevne_rozvody",
+      "nazev": "Zásuvky a pevné elektrické rozvody",
+      "popis": "Kontrola stavu zásuvek, uvolnění, krytí, mechanického poškození a provizorních oprav pevných elektrických rozvodů.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace_rozvodu",
+          "text": "Identifikujte zásuvky a pevné elektrické rozvody v kontrolované oblasti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poskozeni_zasuvek",
+          "text": "Zkontrolujte mechanické poškození zásuvek a krytů.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "uvolneni",
+          "text": "Ověřte upevnění zásuvek a rozvodných prvků.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "kryti",
+          "text": "Posuďte krytí zásuvek a ochranu proti kontaktu.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "mechanicke_poskozeni",
+          "text": "Zkontrolujte mechanické poškození rozvodných kanálů a kabelů.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "provizorni_opravy",
+          "text": "Ověřte, zda nejsou používány provizorní nebo neodborné opravy.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda nejsou používány poškozené zásuvky.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "poskozeni_zasuvek",
+          "nazev": "Zásuvky nejsou poškozené",
+          "popis": "Zásuvky a kryty nevykazují viditelné poškození ohrožující bezpečnost.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "uvolneni",
+          "nazev": "Zásuvky jsou řádně upevněny",
+          "popis": "Zásuvky a rozvodné prvky nejsou uvolněné.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "kryti",
+          "nazev": "Krytí zásuvek je v pořádku",
+          "popis": "Zásuvky mají funkční krytí a ochranu proti neúmyslnému kontaktu.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "mechanicke_poskozeni",
+          "nazev": "Rozvody nejsou mechanicky poškozeny",
+          "popis": "Pevné rozvody a rozvodné prvky nevykazují poškození.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "provizorni_opravy",
+          "nazev": "Provizorní opravy nejsou používány",
+          "popis": "Rozvody nejsou opravovány provizorním nebo neodborným způsobem.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Poškozené zásuvky nejsou používány",
+          "popis": "Nejsou používány poškozené zásuvky.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "poskozene_zasuvky",
+          "nazev": "Poškozené zásuvky",
+          "popis": "Zásuvky mají prasklé kryty, uvolněné části nebo jiné viditelné poškození.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "uvolene_zasuvky",
+          "nazev": "Uvolněné zásuvky",
+          "popis": "Zásuvky nejsou pevně upevněny ve zdi nebo instalační krabici.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "chybejici_kryt",
+          "nazev": "Chybějící kryt zásuvky",
+          "popis": "Kryt zásuvky chybí nebo nefunguje správně.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "poskozene_rozvody",
+          "nazev": "Poškozené pevné rozvody",
+          "popis": "Rozvodné kanály, lišty nebo kabely jsou mechanicky poškozené.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "provizorni_opravy",
+          "nazev": "Provizorní opravy rozvodů",
+          "popis": "Rozvody jsou opravovány provizorně drátem, izolační páskou nebo jinak neodborně.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "pouziti_poskozene",
+          "nazev": "Používání poškozených zásuvek",
+          "popis": "Poškozené zásuvky jsou nadále používány v provozu.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "pravidelna_kontrola",
+          "nazev": "Pravidelně kontrolovat zásuvky a rozvody",
+          "popis": "Provádějte pravidelné vizuální kontroly stavu zásuvek a pevných rozvodů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "odstraneni_poskozene",
+          "nazev": "Odstraňovat poškozené zásuvky z provozu",
+          "popis": "Poškozené zásuvky bezodkladně odstavte a nechte opravit.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "odborne_opravy",
+          "nazev": "Zajistit odborné opravy",
+          "popis": "Opravy rozvodů provádějí pouze kvalifikované osoby.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "kontrola_uvolneni",
+          "nazev": "Kontrolovat upevnění prvků",
+          "popis": "Pravidelně ověřujte upevnění zásuvek a rozvodných prvků.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_zavad",
+          "nazev": "Evidovat zjištěné závady",
+          "popis": "Zaznamenávejte zjištěné závady a termíny jejich odstranění.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví — požadavky na bezpečnost práce s elektrickými zařízeními.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nv_378_2001",
+          "nazev": "Nařízení vlády č. 378/2001 Sb.",
+          "popis": "Blíže určené požadavky pro zajištění bezpečnosti a ochrany zdraví — práce s elektrickými zařízeními a rozvody.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "csn_33_1600",
+          "nazev": "ČSN 33 1600",
+          "popis": "Elektrotechnické předpisy — bezpečnost elektrických zařízení, rozvodů a spotřebičů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro bezpečný provoz, kontrolu a dokumentaci elektrických zařízení na pracovišti.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "prenosne_spotrebice",
+      "nazev": "Přenosné elektrické spotřebiče",
+      "popis": "Kontrola mechanického stavu, přívodních šňůr, zástrček, označení a způsobu používání přenosných spotřebičů.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace_spotrebicu",
+          "text": "Identifikujte přenosné elektrické spotřebiče v kontrolované oblasti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "mechanicke_poskozeni",
+          "text": "Zkontrolujte mechanické poškození spotřebičů.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "privodni_snury",
+          "text": "Ověřte stav přívodních šňůr a jejich upevnění.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "zastrcky",
+          "text": "Posuďte stav zástrček a konektorů.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni",
+          "text": "Zkontrolujte označení spotřebičů a bezpečnostní informace.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "pouzivani",
+          "text": "Ověřte způsob používání spotřebičů v provozu.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda spotřebič nevykazuje zjevné závady.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "mechanicke_poskozeni",
+          "nazev": "Spotřebič není mechanicky poškozen",
+          "popis": "Spotřebič nevykazuje mechanické poškození ohrožující bezpečnost.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "privodni_snury",
+          "nazev": "Přívodní šňůry jsou v pořádku",
+          "popis": "Přívodní šňůry nejsou poškozené, přetěžené ani provizorně opravené.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "zastrcky",
+          "nazev": "Zástrčky jsou v pořádku",
+          "popis": "Zástrčky nejsou poškozené, uvolněné ani neodborně upravené.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni",
+          "nazev": "Spotřebič je řádně označen",
+          "popis": "Spotřebič má čitelné označení a potřebné bezpečnostní informace.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "pouzivani",
+          "nazev": "Spotřebič je používán správně",
+          "popis": "Spotřebič je používán v souladu s určením a bezpečnými postupy.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Spotřebič nevykazuje zjevné závady",
+          "popis": "Spotřebič nevykazuje zjevné závady.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "poskozena_snura",
+          "nazev": "Poškozená přívodní šňůra",
+          "popis": "Přívodní šňůra je poškozená, prořezaná nebo provizorně opravená.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poskozena_zastrcka",
+          "nazev": "Poškozená zástrčka",
+          "popis": "Zástrčka je prasklá, uvolněná nebo neodborně upravená.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "mechanicke_poskozeni",
+          "nazev": "Mechanické poškození spotřebiče",
+          "popis": "Spotřebič má viditelné poškození skříně nebo krytů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "neoznaceny_spotrebic",
+          "nazev": "Neoznačený spotřebič",
+          "popis": "Spotřebič postrádá označení nebo bezpečnostní informace.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "nespravne_pouzivani",
+          "nazev": "Nesprávné používání spotřebiče",
+          "popis": "Spotřebič je používán v rozporu s určením nebo bezpečnými postupy.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "provoz_se_zavadou",
+          "nazev": "Provoz se známou závadou",
+          "popis": "Spotřebič se známou závadou je nadále používán.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "pravidelna_kontrola",
+          "nazev": "Pravidelně kontrolovat spotřebiče",
+          "popis": "Provádějte pravidelné vizuální kontroly stavu přenosných spotřebičů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "odstaveni_poskozene",
+          "nazev": "Odstavovat poškozené spotřebiče",
+          "popis": "Spotřebiče se závadou bezodkladně odstavte z provozu.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_spotrebicu",
+          "nazev": "Vést evidenci spotřebičů",
+          "popis": "Evidujte přenosné spotřebiče a výsledky jejich kontrol.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "skoleni_pouzivani",
+          "nazev": "Školit k bezpečnému používání",
+          "popis": "Seznamte zaměstnance s bezpečným používáním spotřebičů.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "kontrola_snur",
+          "nazev": "Kontrolovat stav přívodních šňůr",
+          "popis": "Pravidelně ověřujte stav přívodních šňůr a zástrček.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví — požadavky na bezpečnost práce s elektrickými zařízeními.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nv_378_2001",
+          "nazev": "Nařízení vlády č. 378/2001 Sb.",
+          "popis": "Blíže určené požadavky pro zajištění bezpečnosti a ochrany zdraví — práce s elektrickými zařízeními a rozvody.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "csn_33_1600",
+          "nazev": "ČSN 33 1600",
+          "popis": "Elektrotechnické předpisy — bezpečnost elektrických zařízení, rozvodů a spotřebičů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro bezpečný provoz, kontrolu a dokumentaci elektrických zařízení na pracovišti.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "prodluzovaci_privody_rozdvojky",
+      "nazev": "Prodlužovací přívody a rozdvojky",
+      "popis": "Kontrola přetěžování, poškození, navinutých kabelů, provizorních oprav a správného používání prodlužovacích přívodů a rozdvojek.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace_privodu",
+          "text": "Identifikujte prodlužovací přívody a rozdvojky v kontrolované oblasti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pretezovani",
+          "text": "Zkontrolujte, zda nejsou přívody přetěžovány.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "poskozeni",
+          "text": "Ověřte mechanické poškození kabelů, zástrček a rozdvojek.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "navinute_kabely",
+          "text": "Posuďte, zda nejsou kabely navinuté nebo stočené za provozu.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "provizorni_opravy",
+          "text": "Zkontrolujte, zda nejsou používány provizorní opravy.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "spravne_pouzivani",
+          "text": "Ověřte správné používání a umístění přívodů.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda prodlužovací přívody nejsou používány jako trvalá instalace.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "pretezovani",
+          "nazev": "Přívody nejsou přetěžovány",
+          "popis": "Prodlužovací přívody a rozdvojky nejsou přetěžovány nad povolený proud.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poskozeni",
+          "nazev": "Přívody nejsou poškozené",
+          "popis": "Kabely, zástrčky a rozdvojky nevykazují poškození ohrožující bezpečnost.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "navinute_kabely",
+          "nazev": "Kabely nejsou navinuté za provozu",
+          "popis": "Kabely nejsou za provozu navinuté nebo stočené způsobem zvyšujícím riziko.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "provizorni_opravy",
+          "nazev": "Provizorní opravy nejsou používány",
+          "popis": "Přívody nejsou opravovány provizorním nebo neodborným způsobem.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "spravne_pouzivani",
+          "nazev": "Přívody jsou používány správně",
+          "popis": "Prodlužovací přívody a rozdvojky jsou používány v souladu s určením.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Přívody nejsou trvalá instalace",
+          "popis": "Prodlužovací přívody nejsou používány jako trvalá instalace.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "pretezovani",
+          "nazev": "Přetěžování prodlužovacích přívodů",
+          "popis": "Přívody jsou přetěžovány připojením příliš mnoha spotřebičů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poskozeny_kabel",
+          "nazev": "Poškozený kabel nebo zástrčka",
+          "popis": "Kabel, zástrčka nebo rozdvojka jsou mechanicky poškozené.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "navinuty_kabel",
+          "nazev": "Navinutý kabel za provozu",
+          "popis": "Kabely jsou za provozu navinuté, což zvyšuje riziko přehřátí.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "provizorni_oprava",
+          "nazev": "Provizorní oprava přívodu",
+          "popis": "Přívod je provizorně opraven izolační páskou nebo jinak neodborně.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "trvala_instalace",
+          "nazev": "Přívod jako trvalá instalace",
+          "popis": "Prodlužovací přívod je trvale nainstalován místo pevného rozvodu.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "nespravna_rozdvojka",
+          "nazev": "Nesprávně použitá rozdvojka",
+          "popis": "Rozdvojka je používána v rozporu s určením nebo bez ochrany.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "pravidelna_kontrola",
+          "nazev": "Pravidelně kontrolovat přívody a rozdvojky",
+          "popis": "Provádějte pravidelné kontroly stavu prodlužovacích přívodů a rozdvojek.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zakaz_trvale_instalace",
+          "nazev": "Zakázat trvalé použití prodlužovacích přívodů",
+          "popis": "Stanovte pravidlo, že prodlužovací přívody nesmí nahrazovat pevné rozvody.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "odstaveni_poskozene",
+          "nazev": "Odstavovat poškozené přívody",
+          "popis": "Poškozené přívody a rozdvojky bezodkladně odstavte z provozu.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "skoleni_pouzivani",
+          "nazev": "Školit k bezpečnému používání",
+          "popis": "Seznamte zaměstnance s pravidly pro používání prodlužovacích přívodů.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_privodu",
+          "nazev": "Evidovat přívody a rozdvojky",
+          "popis": "Vedejte evidenci prodlužovacích přívodů a výsledků kontrol.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví — požadavky na bezpečnost práce s elektrickými zařízeními.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nv_378_2001",
+          "nazev": "Nařízení vlády č. 378/2001 Sb.",
+          "popis": "Blíže určené požadavky pro zajištění bezpečnosti a ochrany zdraví — práce s elektrickými zařízeními a rozvody.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "csn_33_1600",
+          "nazev": "ČSN 33 1600",
+          "popis": "Elektrotechnické předpisy — bezpečnost elektrických zařízení, rozvodů a spotřebičů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro bezpečný provoz, kontrolu a dokumentaci elektrických zařízení na pracovišti.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "elektricka_zarizeni_v_provozu",
+      "nazev": "Elektrická zařízení v provozu",
+      "popis": "Kontrola správného používání, přístupnosti, čistoty, větrání a neodborných zásahů u elektrických zařízení v provozu.",
+      "poradi": 50,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace_zarizeni",
+          "text": "Identifikujte elektrická zařízení v provozu v kontrolované oblasti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "spravne_pouzivani",
+          "text": "Zkontrolujte, zda jsou zařízení používána správným způsobem.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pristupnost",
+          "text": "Ověřte přístupnost zařízení pro obsluhu a údržbu.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "cistota",
+          "text": "Posuďte čistotu zařízení a okolí.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vetraci_otvory",
+          "text": "Zkontrolujte, zda nejsou zakryty větrací otvory.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "neodborne_zasahy",
+          "text": "Ověřte, zda nejsou prováděny neodborné zásahy.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda zaměstnanci zařízení používají bezpečným způsobem.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "spravne_pouzivani",
+          "nazev": "Zařízení jsou používána správně",
+          "popis": "Elektrická zařízení jsou používána v souladu s určením a bezpečnými postupy.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pristupnost",
+          "nazev": "Zařízení jsou přístupná",
+          "popis": "K zařízením je zajištěn bezpečný přístup pro obsluhu a údržbu.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "cistota",
+          "nazev": "Zařízení jsou udržována v čistotě",
+          "popis": "Zařízení a okolí nejsou znečištěny prachem nebo materiálem ohrožujícím provoz.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vetraci_otvory",
+          "nazev": "Větrací otvory nejsou zakryty",
+          "popis": "Větrací otvory zařízení nejsou zakryty a umožňují potřebné chlazení.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "neodborne_zasahy",
+          "nazev": "Neodborné zásahy nejsou prováděny",
+          "popis": "Do zařízení nezasahují neoprávněné nebo neodborné osoby.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Zaměstnanci používají zařízení bezpečně",
+          "popis": "Zaměstnanci zařízení používají bezpečným způsobem.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "nespravne_pouzivani",
+          "nazev": "Nesprávné používání zařízení",
+          "popis": "Zařízení je používáno v rozporu s určením nebo bezpečnými postupy.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "zablokovany_pristup",
+          "nazev": "Zablokovaný přístup k zařízení",
+          "popis": "Přístup k zařízení je ztížen překážkami nebo skladovaným materiálem.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "zaneseni_prahem",
+          "nazev": "Zanesení zařízení prachem",
+          "popis": "Zařízení je zaneseno prachem nebo nečistotami ohrožujícími provoz.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "zakryte_vetrani",
+          "nazev": "Zakryté větrací otvory",
+          "popis": "Větrací otvory zařízení jsou zakryty materiálem nebo překážkami.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "neodborny_zasah",
+          "nazev": "Neodborný zásah do zařízení",
+          "popis": "Do zařízení zasahuje neoprávněná nebo neodborná osoba.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "provoz_se_zavadou",
+          "nazev": "Provoz se známou závadou",
+          "popis": "Zařízení se známou závadou je nadále provozováno.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "pravidelna_kontrola",
+          "nazev": "Pravidelně kontrolovat zařízení v provozu",
+          "popis": "Provádějte pravidelné kontroly stavu a způsobu používání zařízení.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "udrzba_cistoty",
+          "nazev": "Udržovat čistotu zařízení",
+          "popis": "Zajistěte pravidelné čištění zařízení a volné větrací otvory.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "skoleni_obsluhy",
+          "nazev": "Školit obsluhu k bezpečnému používání",
+          "popis": "Seznamte zaměstnance s bezpečnými postupy obsluhy zařízení.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "zamezeni_zasahu",
+          "nazev": "Zamezit neodborným zásahům",
+          "popis": "Stanovte pravidla, kdo smí do zařízení zasahovat.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "namatkove_kontroly",
+          "nazev": "Provádět namátkové kontroly",
+          "popis": "Při prověrkách ověřujte způsob používání zařízení zaměstnanci.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví — požadavky na bezpečnost práce s elektrickými zařízeními.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nv_378_2001",
+          "nazev": "Nařízení vlády č. 378/2001 Sb.",
+          "popis": "Blíže určené požadavky pro zajištění bezpečnosti a ochrany zdraví — práce s elektrickými zařízeními a rozvody.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "csn_33_1600",
+          "nazev": "ČSN 33 1600",
+          "popis": "Elektrotechnické předpisy — bezpečnost elektrických zařízení, rozvodů a spotřebičů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro bezpečný provoz, kontrolu a dokumentaci elektrických zařízení na pracovišti.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "revize_kontroly",
+      "nazev": "Revize a kontroly elektrických zařízení",
+      "popis": "Kontrola platnosti revizí, evidence, odstranění závad a dodržování termínů u elektrických zařízení.",
+      "poradi": 60,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace_zarizeni",
+          "text": "Identifikujte elektrická zařízení podléhající revizím a kontrolám.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "platnost_revizi",
+          "text": "Zkontrolujte platnost revizí a termíny dalších prohlídek.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "evidence",
+          "text": "Ověřte evidenci revizí a kontrol.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "odstraneni_zavad",
+          "text": "Posuďte stav odstranění závad z revizních zpráv.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "terminy",
+          "text": "Zkontrolujte dodržování termínů revizí a kontrol.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "porovnani_stavu",
+          "text": "Porovnejte revizní zprávy se skutečným stavem zařízení.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda revize odpovídají skutečně provozovaným zařízením.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "platnost_revizi",
+          "nazev": "Revize jsou platné",
+          "popis": "Požadované revize elektrických zařízení jsou provedeny v platných termínech.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "evidence",
+          "nazev": "Revize jsou evidovány",
+          "popis": "Revize a kontroly jsou řádně zaznamenány v evidenci.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "odstraneni_zavad",
+          "nazev": "Závady z revizí jsou odstraňovány",
+          "popis": "Závady uvedené v revizních zprávách jsou včas řešeny.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "terminy",
+          "nazev": "Termíny revizí jsou dodržovány",
+          "popis": "Plánované termíny revizí a kontrol jsou dodržovány.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "porovnani_stavu",
+          "nazev": "Revizní zprávy odpovídají stavu",
+          "popis": "Revizní zprávy odpovídají skutečnému stavu zařízení.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Revize odpovídají provozovaným zařízením",
+          "popis": "Revize odpovídají skutečně provozovaným zařízením.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "propadla_revize",
+          "nazev": "Propadlá revize",
+          "popis": "Požadovaná revize není provedena nebo je po termínu platnosti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_evidence",
+          "nazev": "Chybí evidence revizí",
+          "popis": "Revize a kontroly nejsou řádně evidovány.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "neodstranene_zavady",
+          "nazev": "Neodstraněné závady z revize",
+          "popis": "Závady uvedené v revizní zprávě nejsou odstraněny.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nedodrzene_terminy",
+          "nazev": "Nedodržené termíny revizí",
+          "popis": "Plánované termíny revizí nejsou dodržovány.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "neaktualni_revize",
+          "nazev": "Neaktuální revizní zpráva",
+          "popis": "Revizní zpráva neodpovídá skutečnému stavu zařízení.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "neevidovana_zarizeni",
+          "nazev": "Neevidovaná zařízení",
+          "popis": "Některá provozovaná zařízení nejsou zahrnuta v evidenci revizí.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "plan_revizi",
+          "nazev": "Plánovat revize a kontroly",
+          "popis": "Stanovte harmonogram revizí s odpovědnými osobami a termíny.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_revizi",
+          "nazev": "Vést evidenci revizí",
+          "popis": "Zaveďte a udržujte evidenci revizí a kontrol elektrických zařízení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "odstranovani_zavad",
+          "nazev": "Odstraňovat závady z revizí",
+          "popis": "Závady z revizních zpráv řešte v stanovených termínech.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "sledovani_terminu",
+          "nazev": "Sledovat termíny revizí",
+          "popis": "Pravidelně kontrolujte blížící se termíny revizí a kontrol.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "porovnani_stavu",
+          "nazev": "Porovnávat revize se skutečností",
+          "popis": "Při prověrkách ověřujte soulad revizních zpráv se stavem zařízení.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví — požadavky na bezpečnost práce s elektrickými zařízeními.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nv_378_2001",
+          "nazev": "Nařízení vlády č. 378/2001 Sb.",
+          "popis": "Blíže určené požadavky pro zajištění bezpečnosti a ochrany zdraví — práce s elektrickými zařízeními a rozvody.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "csn_33_1600",
+          "nazev": "ČSN 33 1600",
+          "popis": "Elektrotechnické předpisy — revize elektrických zařízení, periodicita a obsah revizních prohlídek.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro bezpečný provoz, kontrolu a dokumentaci elektrických zařízení na pracovišti.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "prace_na_elektrickych_zarizenich",
+      "nazev": "Práce na elektrických zařízeních",
+      "popis": "Kontrola oprávnění osob, odpojení napětí, označení pracoviště, OOPP a zajištění proti zapnutí při pracích na EE.",
+      "poradi": 70,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace_praci",
+          "text": "Identifikujte místa a druhy prací na elektrických zařízeních.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "opravneni_osob",
+          "text": "Ověřte oprávnění a kvalifikaci osob provádějících práce.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "odpojeni_napeti",
+          "text": "Zkontrolujte postupy odpojení napětí před prací.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni_pracoviste",
+          "text": "Posuďte označení pracoviště a varování.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "oopp",
+          "text": "Ověřte používání předepsaných OOPP při pracích.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "zajisteni_proti_zapnuti",
+          "text": "Zkontrolujte zajištění proti neúmyslnému zapnutí.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda práce provádějí pouze osoby s příslušnou kvalifikací.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "opravneni_osob",
+          "nazev": "Osoby jsou oprávněny k pracím",
+          "popis": "Práce provádějí osoby s příslušnou kvalifikací a oprávněním.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "odpojeni_napeti",
+          "nazev": "Napětí je odpojováno před prací",
+          "popis": "Před prací na zařízení je spolehlivě odpojeno napětí.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni_pracoviste",
+          "nazev": "Pracoviště je označeno",
+          "popis": "Pracoviště je řádně označeno a varováno před nebezpečím.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "oopp",
+          "nazev": "OOPP jsou používány",
+          "popis": "Při pracích jsou používány předepsané osobní ochranné pracovní prostředky.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "zajisteni_proti_zapnuti",
+          "nazev": "Zařízení je zajištěno proti zapnutí",
+          "popis": "Zařízení je zajištěno proti neúmyslnému nebo neoprávněnému zapnutí.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Práce provádějí kvalifikované osoby",
+          "popis": "Práce provádějí pouze osoby s příslušnou kvalifikací.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "neopravnena_osoba",
+          "nazev": "Neoprávněná osoba provádí práce",
+          "popis": "Práce na EE provádí osoba bez potřebné kvalifikace nebo oprávnění.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "neodpojene_napeti",
+          "nazev": "Práce bez odpojení napětí",
+          "popis": "Práce jsou prováděny bez spolehlivého odpojení napětí.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "neoznacene_pracoviste",
+          "nazev": "Neoznačené pracoviště",
+          "popis": "Pracoviště není označeno ani varováno před nebezpečím.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "neuzivane_oopp",
+          "nazev": "Neužívané OOPP",
+          "popis": "Při pracích nejsou používány předepsané OOPP.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_zajisteni",
+          "nazev": "Chybí zajištění proti zapnutí",
+          "popis": "Zařízení není zajištěno proti neúmyslnému zapnutí.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prace_za_provozu",
+          "nazev": "Práce za provozu bez ochrany",
+          "popis": "Práce jsou prováděny za provozu bez adekvátních ochranných opatření.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "overovani_kvalifikace",
+          "nazev": "Ověřovat kvalifikaci pracovníků",
+          "popis": "Před pracemi ověřujte oprávnění a kvalifikaci provádějících osob.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "postup_odpojeni",
+          "nazev": "Dodržovat postup odpojení napětí",
+          "popis": "Stanovte a vynucujte postup spolehlivého odpojení napětí.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni_pracoviste",
+          "nazev": "Označovat pracoviště",
+          "popis": "Zajistěte označení a varování pracoviště před zahájením prací.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "kontrola_oopp",
+          "nazev": "Kontrolovat používání OOPP",
+          "popis": "Při prověrkách ověřujte používání předepsaných OOPP.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "zajisteni_zapnuti",
+          "nazev": "Zajišťovat proti neúmyslnému zapnutí",
+          "popis": "Používejte zámky, cedule a další prostředky zajištění proti zapnutí.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví — požadavky na bezpečnost práce s elektrickými zařízeními.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nv_378_2001",
+          "nazev": "Nařízení vlády č. 378/2001 Sb.",
+          "popis": "Blíže určené požadavky pro zajištění bezpečnosti a ochrany zdraví — práce s elektrickými zařízeními a rozvody.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "csn_33_1600",
+          "nazev": "ČSN 33 1600",
+          "popis": "Elektrotechnické předpisy — bezpečnost elektrických zařízení, rozvodů a spotřebičů.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro bezpečný provoz, kontrolu a dokumentaci elektrických zařízení na pracovišti.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "dokumentace_elektrickych_zarizeni",
+      "nazev": "Dokumentace elektrických zařízení",
+      "popis": "Kontrola schémat, revizních zpráv, návodů, místních provozních předpisů a dokumentace změn u elektrických zařízení.",
+      "poradi": 80,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "identifikace_dokumentace",
+          "text": "Identifikujte požadovanou dokumentaci elektrických zařízení.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "schemata",
+          "text": "Zkontrolujte dostupnost a aktuálnost schémat rozvodů.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "revizni_zpravy",
+          "text": "Ověřte revizní zprávy a záznamy o kontrolách.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "navody",
+          "text": "Posuďte dostupnost návodů k obsluze a údržbě.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "provozni_predpisy",
+          "text": "Zkontrolujte místní provozní předpisy pro EE.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "dokumentace_zmen",
+          "text": "Ověřte dokumentaci provedených změn a úprav.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "text": "Posuďte, zda dokumentace odpovídá skutečnému stavu zařízení.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "schemata",
+          "nazev": "Schémata jsou k dispozici",
+          "popis": "Schémata elektrických rozvodů jsou dostupná a aktuální.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "revizni_zpravy",
+          "nazev": "Revizní zprávy jsou vedeny",
+          "popis": "Revizní zprávy a záznamy kontrol jsou k dispozici a úplné.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "navody",
+          "nazev": "Návody jsou k dispozici",
+          "popis": "Návody k obsluze a údržbě zařízení jsou dostupné.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "provozni_predpisy",
+          "nazev": "Provozní předpisy existují",
+          "popis": "Místní provozní předpisy pro elektrická zařízení jsou stanoveny.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "dokumentace_zmen",
+          "nazev": "Změny jsou dokumentovány",
+          "popis": "Provedené změny a úpravy zařízení jsou zaznamenány.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "prakticka_kontrola",
+          "nazev": "Dokumentace odpovídá stavu zařízení",
+          "popis": "Dokumentace odpovídá skutečnému stavu zařízení.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "chybi_schemata",
+          "nazev": "Chybí schémata rozvodů",
+          "popis": "Schémata elektrických rozvodů nejsou k dispozici nebo jsou zastaralá.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_revizni_zpravy",
+          "nazev": "Chybí revizní zprávy",
+          "popis": "Revizní zprávy nejsou k dispozici nebo nejsou úplné.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_navody",
+          "nazev": "Chybí návody k zařízení",
+          "popis": "Návody k obsluze nebo údržbě zařízení chybí.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_predpisy",
+          "nazev": "Chybí provozní předpisy",
+          "popis": "Místní provozní předpisy pro EE nejsou stanoveny.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "nedokumentovane_zmeny",
+          "nazev": "Nedokumentované změny",
+          "popis": "Provedené změny zařízení nejsou zaznamenány.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "neaktualni_dokumentace",
+          "nazev": "Neaktuální dokumentace",
+          "popis": "Dokumentace neodpovídá skutečnému stavu zařízení.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "udrzba_dokumentace",
+          "nazev": "Udržovat aktuální dokumentaci",
+          "popis": "Pravidelně aktualizujte dokumentaci po změnách zařízení.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "dostupnost_dokumentu",
+          "nazev": "Zajistit dostupnost dokumentů",
+          "popis": "Uchovávejte dokumentaci na dostupném místě pro obsluhu a údržbu.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "aktualizace_schemat",
+          "nazev": "Aktualizovat schémata po změnách",
+          "popis": "Po úpravách rozvodů aktualizujte schémata.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "evidence_revizi",
+          "nazev": "Vést evidenci revizních zpráv",
+          "popis": "Archivujte a evidujte všechny revizní zprávy a záznamy kontrol.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "porovnani_stavu",
+          "nazev": "Porovnávat dokumentaci se skutečností",
+          "popis": "Při prověrkách ověřujte soulad dokumentace se stavem zařízení.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_309_2006",
+          "nazev": "Zákon č. 309/2006 Sb.",
+          "popis": "Zajištění dalších podmínek bezpečnosti a ochrany zdraví — požadavky na bezpečnost práce s elektrickými zařízeními.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nv_378_2001",
+          "nazev": "Nařízení vlády č. 378/2001 Sb.",
+          "popis": "Blíže určené požadavky pro zajištění bezpečnosti a ochrany zdraví — práce s elektrickými zařízeními a rozvody.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "csn_33_1600",
+          "nazev": "ČSN 33 1600",
+          "popis": "Elektrotechnické předpisy — revize elektrických zařízení, periodicita a obsah revizních prohlídek.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "interni_smernice",
+          "nazev": "Interní směrnice zaměstnavatele",
+          "popis": "Pravidla pro bezpečný provoz, kontrolu a dokumentaci elektrických zařízení na pracovišti.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    }
+  ],
+  "kontrolni_body": [],
+  "typicke_zavady": [],
+  "doporucene_postupy": [],
+  "doporucena_opatreni": []
+}

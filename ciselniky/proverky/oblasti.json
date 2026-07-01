@@ -1,5 +1,5 @@
 {
-  "verze": 5,
+  "verze": 6,
   "oblasti": [
     {
       "id": "bozp",
@@ -40,6 +40,14 @@
       "poradi": 45,
       "aktivni": true,
       "soubor_znalosti": "stroje.json"
+    },
+    {
+      "id": "elektricka_zarizeni",
+      "nazev": "Elektrická zařízení",
+      "popis": "Bezpečnost elektrických rozvaděčů, rozvodů, spotřebičů, revizí, prací na EE a dokumentace.",
+      "poradi": 47,
+      "aktivni": true,
+      "soubor_znalosti": "elektricka_zarizeni.json"
     },
     {
       "id": "dokumentace",
