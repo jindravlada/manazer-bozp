@@ -117,6 +117,13 @@ TAB_LABELS = (
 PROCESS_PANEL_LEFT_WIDTH = 260
 PROCESS_NOT_IMPLEMENTED_TEXT = "Tento auditovaný proces zatím není implementován."
 PROCESS_PART_NOT_IMPLEMENTED_TEXT = "Tato část bude doplněna."
+KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT = PROCESS_PART_NOT_IMPLEMENTED_TEXT
+KNOWLEDGE_REFERENCE_PHOTOS_TITLE = "📷 Referenční fotografie"
+REFERENCE_PHOTO_THUMBNAIL_SIZE = 120
+REFERENCE_PHOTO_PLACEHOLDER_WIDTH = 220
+REFERENCE_PHOTO_PLACEHOLDER_ICON_SIZE_PX = 40
+AUDIT_RESULT_HEADER_LABEL = "Výsledek auditu"
+AUDIT_RESULT_NOTE_LABEL = "Poznámka auditora:"
 
 FINDING_SOURCE_LABEL = "Audit systému řízení"
 FINDING_DIALOG_TITLE = "Zjištění auditu"
@@ -179,3 +186,4 @@ class AuditFindingKnowledgeContext:
     section_label: str
     control_point_id: str
     control_point_label: str
+    question_stable_key: str = ""

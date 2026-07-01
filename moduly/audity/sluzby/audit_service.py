@@ -13,6 +13,7 @@ from moduly.audity.constants import (
 )
 from moduly.audity.modely.audit import Audit
 from moduly.audity.repository.audit_repository import AuditRepository
+from core.shared.sluzby.control_result_service import control_result_service
 from moduly.audity.sluzby.audit_commission_service import audit_commission_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
 
@@ -59,6 +60,7 @@ class AuditService:
 
     def delete_audit(self, audit_id: int) -> bool:
         finding_service.delete_for_entity(ENTITY_AUDITY, audit_id)
+        control_result_service.delete_for_entity(ENTITY_AUDITY, audit_id)
         audit_commission_service.delete_for_audit(audit_id)
         return self.repository.delete(audit_id)
 
@@ -99,6 +101,28 @@ class AuditService:
             ):
                 return finding
         return None
+
+    def open_finding_for_control_point(
+        self,
+        audit_id: int,
+        *,
+        process_label: str,
+        criterion_label: str,
+        question_id: str,
+    ) -> Finding | None:
+        finding = self.finding_for_control_point(
+            audit_id,
+            process_label=process_label,
+            criterion_label=criterion_label,
+            question_id=question_id,
+        )
+        if finding is None:
+            return None
+        from core.shared.constants import FINDING_STATUS_OTEVRENE, FINDING_STATUS_V_PROCESU
+
+        if finding.status not in (FINDING_STATUS_OTEVRENE, FINDING_STATUS_V_PROCESU):
+            return None
+        return finding
 
     @staticmethod
     def _matches_control_point(

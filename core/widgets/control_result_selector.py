@@ -40,6 +40,7 @@ class ControlResultSelectorWidget(QWidget):
         header = QLabel("Výsledek kontroly")
         header.setObjectName("InfoText")
         layout.addWidget(header)
+        self._result_header = header
 
         self._button_group = QButtonGroup(self)
         self._radios: dict[str, QRadioButton] = {}
@@ -54,6 +55,7 @@ class ControlResultSelectorWidget(QWidget):
         note_row = QHBoxLayout()
         note_row.setContentsMargins(0, 0, 0, 0)
         note_row.addWidget(QLabel("Poznámka:"))
+        self._note_label = note_row.itemAt(0).widget()
         self._note_edit = QLineEdit()
         self._note_edit.setPlaceholderText("nepovinná")
         self._note_edit.editingFinished.connect(self._on_note_finished)
@@ -73,11 +75,15 @@ class ControlResultSelectorWidget(QWidget):
         entity_id: int | None,
         context: ControlPointContext,
         must_be_saved_message: str,
+        result_header: str = "Výsledek kontroly",
+        note_label: str = "Poznámka:",
     ) -> None:
         self._entity_type = entity_type
         self._entity_id = entity_id
         self._context = context
         self._must_be_saved_message = must_be_saved_message
+        self._result_header.setText(result_header)
+        self._note_label.setText(note_label)
         self._reload_from_storage()
 
     def current_result(self) -> str:

@@ -6,15 +6,16 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
-from moduly.audity.constants import FINDING_SOURCE_LABEL
+from moduly.audity.constants import FINDING_SOURCE_LABEL, TAB_AUDITOVANE_PROCESY
 from moduly.audity.sluzby.audit_commission_service import audit_commission_service
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.audity.ui.audit_commission_widget import AuditCommissionWidget
+from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
 from moduly.audity.ui.audit_spis_widget import AuditSpisWidget
 
 
 class AuditDialog(QDialog):
-    """Dialog auditu systému řízení — Spis a auditní tým."""
+    """Dialog auditu systému řízení."""
 
     def __init__(self, parent=None, audit=None):
         super().__init__(parent)
@@ -29,8 +30,10 @@ class AuditDialog(QDialog):
         self.tabs = QTabWidget()
         self.spis_widget = AuditSpisWidget()
         self.commission_widget = AuditCommissionWidget()
+        self.processes_widget = AuditProcessesWidget()
         self.tabs.addTab(self.spis_widget, "Spis")
         self.tabs.addTab(self.commission_widget, "Komise")
+        self.tabs.addTab(self.processes_widget, TAB_AUDITOVANE_PROCESY)
         layout.addWidget(self.tabs)
 
         buttons = create_save_cancel_box(self)
@@ -39,6 +42,7 @@ class AuditDialog(QDialog):
         layout.addWidget(buttons)
 
         audit_id = audit.id if audit is not None else None
+        self.processes_widget.set_audit_id(audit_id)
         self.commission_widget.set_audit_context(audit_id)
         self.spis_widget.load_audit(audit)
 
