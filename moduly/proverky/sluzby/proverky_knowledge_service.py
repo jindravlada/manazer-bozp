@@ -7,6 +7,22 @@ from pathlib import Path
 
 from core.services.editable_catalog_service import editable_catalog_service
 from core.services.storage_service import storage_service
+from moduly.proverky.constants import (
+    CONTROL_POINT_SEVERITY_DEFAULT,
+    CONTROL_POINT_SEVERITY_KRITICKA,
+    CONTROL_POINT_SEVERITY_NIZKA,
+    CONTROL_POINT_SEVERITY_STREDNI,
+    CONTROL_POINT_SEVERITY_VYSOKA,
+)
+
+_VALID_CONTROL_POINT_SEVERITIES = frozenset(
+    {
+        CONTROL_POINT_SEVERITY_KRITICKA,
+        CONTROL_POINT_SEVERITY_VYSOKA,
+        CONTROL_POINT_SEVERITY_STREDNI,
+        CONTROL_POINT_SEVERITY_NIZKA,
+    }
+)
 
 _CATALOG_DIR = "proverky"
 _OBLASTI_FILE = f"{_CATALOG_DIR}/oblasti.json"
@@ -528,6 +544,41 @@ class ProverkyKnowledgeService:
             candidate = f"{base}_{counter}"
             counter += 1
         return candidate
+
+    @staticmethod
+    def normalize_control_point_severity(value) -> str:
+        normalized = str(value or "").strip().lower()
+        if normalized in _VALID_CONTROL_POINT_SEVERITIES:
+            return normalized
+        return CONTROL_POINT_SEVERITY_DEFAULT
+
+    @classmethod
+    def get_control_point_severity(cls, item: dict | None) -> str:
+        if not isinstance(item, dict):
+            return CONTROL_POINT_SEVERITY_DEFAULT
+        return cls.normalize_control_point_severity(item.get("zavaznost"))
+
+    @classmethod
+    def normalize_kontrolni_body(cls, items: list[dict]) -> list[dict]:
+        normalized: list[dict] = []
+        for index, raw in enumerate(items):
+            if not isinstance(raw, dict):
+                continue
+            item_id = str(raw.get("id") or "").strip()
+            nazev = str(raw.get("nazev") or "").strip()
+            if not item_id or not nazev:
+                continue
+            normalized.append(
+                {
+                    "id": item_id,
+                    "nazev": nazev,
+                    "popis": str(raw.get("popis") or "").strip(),
+                    "poradi": (index + 1) * 10,
+                    "aktivni": bool(raw.get("aktivni", True)),
+                    "zavaznost": cls.normalize_control_point_severity(raw.get("zavaznost")),
+                }
+            )
+        return normalized
 
     @staticmethod
     def normalize_list_items(items: list[dict]) -> list[dict]:

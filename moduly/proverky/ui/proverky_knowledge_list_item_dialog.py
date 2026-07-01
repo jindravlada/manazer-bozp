@@ -1,8 +1,8 @@
 from PySide6.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QDialog,
     QFormLayout,
-    QHBoxLayout,
     QLineEdit,
     QMessageBox,
     QTextEdit,
@@ -10,6 +10,8 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
+from moduly.proverky.constants import CONTROL_POINT_SEVERITY_OPTIONS
+from moduly.proverky.sluzby.proverky_knowledge_service import proverky_knowledge_service
 
 
 class ProverkyKnowledgeListItemDialog(QDialog):
@@ -22,6 +24,7 @@ class ProverkyKnowledgeListItemDialog(QDialog):
         title: str,
         item: dict | None = None,
         existing_ids: set[str] | None = None,
+        include_zavaznost: bool = False,
     ):
         super().__init__(parent)
 
@@ -52,9 +55,23 @@ class ProverkyKnowledgeListItemDialog(QDialog):
         self._aktivni_check = QCheckBox("Aktivní")
         self._aktivni_check.setChecked(bool((item or {}).get("aktivni", True)))
 
+        self._zavaznost_combo: QComboBox | None = None
+        if include_zavaznost:
+            self._zavaznost_combo = QComboBox()
+            for value, label in CONTROL_POINT_SEVERITY_OPTIONS:
+                self._zavaznost_combo.addItem(label, value)
+            current = proverky_knowledge_service.normalize_control_point_severity(
+                (item or {}).get("zavaznost")
+            )
+            index = self._zavaznost_combo.findData(current)
+            if index >= 0:
+                self._zavaznost_combo.setCurrentIndex(index)
+
         form.addRow("Identifikátor:", self._id_edit)
         form.addRow("Název:", self._nazev_edit)
         form.addRow("Popis:", self._popis_edit)
+        if self._zavaznost_combo is not None:
+            form.addRow("Závažnost:", self._zavaznost_combo)
         form.addRow("", self._aktivni_check)
         layout.addLayout(form)
 
@@ -70,12 +87,17 @@ class ProverkyKnowledgeListItemDialog(QDialog):
 
         item_id = self._id_edit.text().strip() or self._original_id
 
-        return {
+        data = {
             "id": item_id,
             "nazev": nazev,
             "popis": self._popis_edit.toPlainText().strip(),
             "aktivni": self._aktivni_check.isChecked(),
         }
+        if self._zavaznost_combo is not None:
+            data["zavaznost"] = proverky_knowledge_service.normalize_control_point_severity(
+                self._zavaznost_combo.currentData()
+            )
+        return data
 
     def _accept(self) -> None:
         data = self.get_data()

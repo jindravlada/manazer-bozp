@@ -103,6 +103,7 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         self._area_id = area_id
         self._section_id = section_id
         self._lists_by_field: dict[str, QListWidget] = {}
+        self._field_by_list: dict[QListWidget, str] = {}
         self._procedure_lists: set[QListWidget] = set()
         self._reference_lists: set[QListWidget] = set()
         self._sections_by_list: dict[QListWidget, _CollapsibleSection] = {}
@@ -189,6 +190,7 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         section.content_layout().addWidget(list_widget)
         section.content_layout().addLayout(self._list_toolbar(list_widget))
         self._lists_by_field[field_name] = list_widget
+        self._field_by_list[list_widget] = field_name
         self._sections_by_list[list_widget] = section
         parent_layout.addWidget(section)
         return list_widget
@@ -454,6 +456,7 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
             self,
             title="Přidat položku",
             existing_ids=self._existing_ids(list_widget),
+            include_zavaznost=self._field_by_list.get(list_widget) == "kontrolni_body",
         )
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
@@ -511,6 +514,7 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
             title="Upravit položku",
             item=current,
             existing_ids=self._existing_ids(list_widget, exclude_row=row),
+            include_zavaznost=self._field_by_list.get(list_widget) == "kontrolni_body",
         )
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
@@ -601,12 +605,14 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
                 items.append(deepcopy(data))
         return proverky_knowledge_service.normalize_procedure_steps(items)
 
-    def _collect_list_items(self, list_widget: QListWidget) -> list[dict]:
+    def _collect_list_items(self, list_widget: QListWidget, field_name: str) -> list[dict]:
         items: list[dict] = []
         for row in range(list_widget.count()):
             data = list_widget.item(row).data(Qt.ItemDataRole.UserRole)
             if isinstance(data, dict):
                 items.append(deepcopy(data))
+        if field_name == "kontrolni_body":
+            return proverky_knowledge_service.normalize_kontrolni_body(items)
         return proverky_knowledge_service.normalize_list_items(items)
 
     def _build_section_payload(self) -> dict | None:
@@ -629,7 +635,7 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
 
         for _title, field_name in EDITABLE_SECTION_LIST_FIELDS:
             list_widget = self._lists_by_field[field_name]
-            payload[field_name] = self._collect_list_items(list_widget)
+            payload[field_name] = self._collect_list_items(list_widget, field_name)
 
         return payload
 
