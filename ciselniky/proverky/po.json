@@ -1,5 +1,5 @@
 {
-  "verze": 6,
+  "verze": 7,
   "id": "po",
   "nazev": "Požární ochrana",
   "popis": "Prevence požárů, požární technika, evakuační cesty a organizace PO.",
@@ -1542,6 +1542,256 @@
           "id": "interni_dokumentace",
           "nazev": "Interní požární dokumentace zaměstnavatele",
           "popis": "Požární řád, evakuační plány, záznamy o kontrolách a školeních.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "historie": []
+    },
+    {
+      "id": "ostatni_pbz",
+      "nazev": "Ostatní požárně bezpečnostní zařízení (PBZ)",
+      "popis": "Kontrola ostatních požárně bezpečnostních zařízení, která se mohou v objektu nacházet podle jeho charakteru a požární dokumentace. Jedná se zejména o zařízení, která nejsou řešena samostatnými metodickými kartami.",
+      "poradi": 70,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [
+        {
+          "id": "rozsah_pbz",
+          "text": "Zjistěte z požární dokumentace, jaká PBZ jsou v objektu instalována.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "existence",
+          "text": "Ověřte jejich fyzickou existenci.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pristupnost",
+          "text": "Zkontrolujte přístupnost zařízení.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "technicky_stav",
+          "text": "Ověřte viditelný technický stav.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "oznaceni",
+          "text": "Zkontrolujte označení zařízení.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "kontroly_revize",
+          "text": "Ověřte provádění pravidelných kontrol a revizí.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "znalost_odpovednych",
+          "text": "Namátkově ověřte, že odpovědné osoby znají účel zařízení.",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "kontrolni_body": [
+        {
+          "id": "eps",
+          "nazev": "Elektrická požární signalizace (EPS) je provozuschopná",
+          "popis": "Pokud je instalována, nevykazuje zjevné poruchy a kontroly jsou aktuální.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "shz",
+          "nazev": "Stabilní hasicí zařízení (SHZ) je provozuschopné",
+          "popis": "Pokud je instalováno, je v provozuschopném stavu a kontroly jsou aktuální.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "zokt",
+          "nazev": "Zařízení pro odvod kouře a tepla (ZOKT) je provozuschopné",
+          "popis": "Pokud je instalováno, nevykazuje zjevné poruchy a kontroly jsou aktuální.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "pozarni_klapky",
+          "nazev": "Požární klapky jsou přístupné a kontrolované",
+          "popis": "Požární klapky jsou dostupné pro kontrolu a nejsou zajištěny v nepovolené poloze.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "kourove_klapky",
+          "nazev": "Kouřové klapky jsou přístupné a kontrolované",
+          "popis": "Kouřové klapky jsou dostupné pro kontrolu a nevykazují zjevné závady.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "pozarni_vrata",
+          "nazev": "Požární vrata nebo rolety jsou provozuschopné",
+          "popis": "Požární vrata a rolety jsou funkční a nejsou trvale blokována.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "suchovody",
+          "nazev": "Suchovody jsou označené a kontrolované",
+          "popis": "Suchovody jsou viditelně označeny a pravidelně kontrolovány.",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "pozarni_prostupy",
+          "nazev": "Požární prostupy nevykazují zjevné porušení",
+          "popis": "Požární prostupy nejsou poškozené ani neodborně upravené.",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "pozarni_ucpavky",
+          "nazev": "Požární ucpávky nejsou poškozené",
+          "popis": "Požární ucpávky jsou neporušené a odpovídají požadavkům.",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "predepsane_kontroly",
+          "nazev": "Provádějí se předepsané kontroly všech instalovaných PBZ",
+          "popis": "Kontroly a revize jsou prováděny ve stanovených lhůtách a jsou doložitelné.",
+          "poradi": 100,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [
+        {
+          "id": "mimo_provoz",
+          "nazev": "Zařízení je mimo provoz",
+          "popis": "PBZ není v provozuschopném stavu nebo je trvale vypnuto.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_kontroly",
+          "nazev": "Chybí pravidelné kontroly",
+          "popis": "Předepsané kontroly nebo revize PBZ nejsou prováděny včas.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nepristupne",
+          "nazev": "Zařízení je nepřístupné",
+          "popis": "Přístup k PBZ je fyzicky ztížen nebo znemožněn.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "chybi_oznaceni",
+          "nazev": "Chybí označení",
+          "popis": "PBZ není viditelně označeno podle požadavků.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "poskozene_prostupy",
+          "nazev": "Poškozené požární prostupy",
+          "popis": "Požární prostupy jsou poškozené nebo neodborně upravené.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "nefunkcni_eps",
+          "nazev": "Nefunkční EPS",
+          "popis": "Elektrická požární signalizace nefunguje nebo vykazuje poruchy.",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "neprovedene_zkousky",
+          "nazev": "Neprovedené zkoušky PBZ",
+          "popis": "Předepsané zkoušky nebo revize PBZ nebyly provedeny.",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "neznalost_obsluhy",
+          "nazev": "Neznalost obsluhy",
+          "popis": "Odpovědné osoby neznají účel nebo obsluhu PBZ.",
+          "poradi": 80,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [
+        {
+          "id": "lhuty_kontrol",
+          "nazev": "Dodržovat předepsané lhůty kontrol",
+          "popis": "Provádějte kontroly a revize PBZ v intervalech stanovených dokumentací a předpisy.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "volny_pristup",
+          "nazev": "Neomezovat přístup k PBZ",
+          "popis": "Zajistěte trvale volný přístup ke všem instalovaným PBZ.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "dokumentace_kontrol",
+          "nazev": "Vést dokumentaci o kontrolách",
+          "popis": "Po každé kontrole nebo revizi vedete záznam o výsledku a termínu.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "po_stavebnich_upravach",
+          "nazev": "Po každé stavební úpravě ověřit stav PBZ",
+          "popis": "Po stavebních úpravách ověřte, zda PBZ nebyla poškozena nebo neodborně upravena.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "skoleni_odpovednych",
+          "nazev": "Pravidelně školit odpovědné osoby",
+          "popis": "Seznamujte odpovědné osoby s účelem, obsluhou a kontrolou PBZ.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "legislativa": [
+        {
+          "id": "zakon_133_1985",
+          "nazev": "Zákon č. 133/1985 Sb.",
+          "popis": "O požární ochraně — povinnosti v oblasti PBZ.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vyhlaska_246_2001",
+          "nazev": "Vyhláška č. 246/2001 Sb.",
+          "popis": "Stanovení podmínek požární bezpečnosti a výkonu státního požárního dozoru.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "csn_pbz",
+          "nazev": "Příslušné ČSN podle konkrétního PBZ",
+          "popis": "Technické normy upravující jednotlivé typy požárně bezpečnostních zařízení.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "pozarni_dokumentace_stavby",
+          "nazev": "Požární dokumentace stavby",
+          "popis": "Rozmístění PBZ, periodicita kontrol a odpovědnosti.",
           "poradi": 40,
           "aktivni": true
         }
