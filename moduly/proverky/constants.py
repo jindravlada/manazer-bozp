@@ -105,6 +105,9 @@ KNOWLEDGE_EDIT_FROM_CARD_LABEL = "✏ Upravit znalosti"
 KNOWLEDGE_POSTUP_KONTROLY_TITLE = "Postup kontroly"
 KNOWLEDGE_CONTROL_PROCEDURE_BUTTON_LABEL = "📋 Doporučený postup kontroly"
 KNOWLEDGE_CONTROL_PROCEDURE_DIALOG_TITLE = "📋 Doporučený postup kontroly"
+KNOWLEDGE_REFERENCE_PHOTOS_TITLE = "📷 Referenční fotografie"
+REFERENCE_PHOTO_THUMBNAIL_SIZE = 120
+REFERENCE_PHOTO_FILTER = "Obrázky (*.jpg *.jpeg *.png *.webp *.heic *.heif);;Všechny soubory (*.*)"
 KNOWLEDGE_EDITOR_DEFAULT_AREA_ID = "prvni_pomoc"
 KNOWLEDGE_EDITOR_DEFAULT_SECTION_ID = "lekarnicka"
 

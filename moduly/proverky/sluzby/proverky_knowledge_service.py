@@ -16,6 +16,7 @@ KNOWLEDGE_NODE_SECTION = "section"
 
 _KNOWLEDGE_LIST_FIELDS = (
     "postup_kontroly",
+    "referencni_fotografie",
     "kontrolni_body",
     "typicke_zavady",
     "doporucene_postupy",
@@ -25,6 +26,10 @@ _KNOWLEDGE_LIST_FIELDS = (
 
 EDITABLE_SECTION_PROCEDURE_FIELDS: tuple[tuple[str, str], ...] = (
     ("Postup kontroly", "postup_kontroly"),
+)
+
+EDITABLE_SECTION_REFERENCE_FIELDS: tuple[tuple[str, str], ...] = (
+    ("📷 Referenční fotografie", "referencni_fotografie"),
 )
 
 EDITABLE_SECTION_LIST_FIELDS: tuple[tuple[str, str], ...] = (
@@ -240,6 +245,32 @@ class ProverkyKnowledgeService:
         )
         return active
 
+    def get_general_reference_photos(self, section: dict) -> list[dict]:
+        photos: list[dict] = []
+        for raw in section.get("referencni_fotografie") or []:
+            if not isinstance(raw, dict):
+                continue
+            if not raw.get("aktivni", True):
+                continue
+
+            control_point_id = raw.get("control_point_id")
+            if control_point_id is not None and str(control_point_id).strip():
+                continue
+
+            soubor = str(raw.get("soubor") or "").strip()
+            if not soubor:
+                continue
+
+            photos.append(raw)
+
+        photos.sort(
+            key=lambda item: (
+                int(item.get("poradi") or 0),
+                str(item.get("nazev") or "").lower(),
+            )
+        )
+        return photos
+
     def _upgrade_knowledge_file_from_seed(self, user_path: Path, relative_path: str) -> None:
         if not user_path.is_file():
             return
@@ -450,6 +481,37 @@ class ProverkyKnowledgeService:
                 {
                     "id": item_id,
                     "text": text,
+                    "poradi": (index + 1) * 10,
+                    "aktivni": bool(raw.get("aktivni", True)),
+                }
+            )
+        return normalized
+
+    @staticmethod
+    def normalize_reference_photos(items: list[dict]) -> list[dict]:
+        normalized: list[dict] = []
+        for index, raw in enumerate(items):
+            if not isinstance(raw, dict):
+                continue
+            item_id = str(raw.get("id") or "").strip()
+            nazev = str(raw.get("nazev") or "").strip()
+            soubor = str(raw.get("soubor") or "").strip()
+            if not item_id or not nazev or not soubor:
+                continue
+
+            control_point_id = raw.get("control_point_id")
+            if control_point_id is None or not str(control_point_id).strip():
+                control_point_value = None
+            else:
+                control_point_value = str(control_point_id).strip()
+
+            normalized.append(
+                {
+                    "id": item_id,
+                    "nazev": nazev,
+                    "popis": str(raw.get("popis") or "").strip(),
+                    "soubor": soubor,
+                    "control_point_id": control_point_value,
                     "poradi": (index + 1) * 10,
                     "aktivni": bool(raw.get("aktivni", True)),
                 }

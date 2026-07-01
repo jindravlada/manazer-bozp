@@ -1,12 +1,14 @@
 """Pracovní karta znalostního uzlu sekce prověrky."""
 
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
     QMessageBox,
     QPushButton,
+    QScrollArea,
     QSplitter,
     QVBoxLayout,
     QWidget,
@@ -21,6 +23,7 @@ from core.widgets.control_result_selector import ControlResultSelectorWidget
 from core.widgets.control_result_photo_widget import ControlResultPhotoWidget
 from core.widgets.dialog_utils import wrap_in_scroll_area
 from core.widgets.finding_dialog import FindingDialog
+from core.widgets.image_viewer_dialog import ImageViewerDialog
 from moduly.proverky.constants import (
     CONTROL_POINT_HISTORY_EMPTY,
     CONTROL_POINT_HISTORY_LIMIT,
@@ -38,15 +41,35 @@ from moduly.proverky.constants import (
     FINDING_SOURCE_LABEL,
     INSPECTION_MUST_BE_SAVED_MESSAGE,
     KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT,
+    KNOWLEDGE_REFERENCE_PHOTOS_TITLE,
+    REFERENCE_PHOTO_THUMBNAIL_SIZE,
     ProverkyFindingKnowledgeContext,
 )
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 from moduly.proverky.sluzby.control_point_history_service import control_point_history_service
 from moduly.proverky.sluzby.proverky_knowledge_service import proverky_knowledge_service
+from moduly.proverky.sluzby.proverky_reference_photo_service import proverky_reference_photo_service
+from moduly.proverky.ui.proverky_reference_photo_assets import reference_photo_placeholder_path
 
 
 class _ControlPointFrame(QFrame):
     clicked = Signal()
+
+    def mousePressEvent(self, event) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.clicked.emit()
+        super().mousePressEvent(event)
+
+
+class _ReferencePhotoThumbnail(QLabel):
+    clicked = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setObjectName("ControlResultPhotoThumbnail")
+        self.setFixedSize(REFERENCE_PHOTO_THUMBNAIL_SIZE, REFERENCE_PHOTO_THUMBNAIL_SIZE)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setScaledContents(False)
 
     def mousePressEvent(self, event) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
@@ -135,6 +158,7 @@ class BozpKnowledgeSectionWidget(QWidget):
             self._section_label = str(section.get("nazev") or "").strip()
 
         self._content_layout.addWidget(self._build_popis_block(section))
+        self._content_layout.addWidget(self._build_referencni_fotografie_block(section))
         self._content_layout.addWidget(self._build_columns(section), 1)
 
     def _build_columns(self, section: dict) -> QWidget:
@@ -194,6 +218,91 @@ class BozpKnowledgeSectionWidget(QWidget):
         if popis:
             return self._build_block("Popis", self._build_info_label(popis))
         return self._build_block("Popis", self._build_info_label(KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT))
+
+    def _build_referencni_fotografie_block(self, section: dict) -> QWidget:
+        photos = proverky_knowledge_service.get_general_reference_photos(section)
+        if photos:
+            content = self._build_reference_photo_gallery(photos)
+        else:
+            content = self._build_reference_photo_placeholder()
+        return self._build_block(KNOWLEDGE_REFERENCE_PHOTOS_TITLE, content)
+
+    def _build_reference_photo_placeholder(self) -> QWidget:
+        thumbnail = _ReferencePhotoThumbnail()
+        pixmap = QPixmap(str(reference_photo_placeholder_path()))
+        if not pixmap.isNull():
+            thumbnail.setPixmap(
+                pixmap.scaled(
+                    thumbnail.size(),
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
+            )
+        else:
+            thumbnail.setText("UNDER\nCONSTRUCTION")
+
+        row = QHBoxLayout()
+        row.setContentsMargins(0, 0, 0, 0)
+        row.addWidget(thumbnail)
+        row.addStretch()
+
+        host = QWidget()
+        host.setLayout(row)
+        return host
+
+    def _build_reference_photo_gallery(self, photos: list[dict]) -> QWidget:
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+        host = QWidget()
+        row = QHBoxLayout(host)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(8)
+
+        for photo in photos:
+            relative_path = str(photo.get("soubor") or "")
+            absolute_path = proverky_reference_photo_service.absolute_photo_path(relative_path)
+            thumbnail = _ReferencePhotoThumbnail()
+            thumbnail.setCursor(Qt.CursorShape.PointingHandCursor)
+
+            if absolute_path.is_file():
+                pixmap = QPixmap(str(absolute_path))
+                if not pixmap.isNull():
+                    thumbnail.setPixmap(
+                        pixmap.scaled(
+                            thumbnail.size(),
+                            Qt.AspectRatioMode.KeepAspectRatio,
+                            Qt.TransformationMode.SmoothTransformation,
+                        )
+                    )
+                else:
+                    thumbnail.setText("Náhled\nnedostupný")
+            else:
+                thumbnail.setText("Soubor\nchybí")
+
+            thumbnail.clicked.connect(
+                lambda checked=False, path=absolute_path: self._view_reference_photo(path)
+            )
+            row.addWidget(thumbnail)
+
+        row.addStretch()
+        scroll.setWidget(host)
+        scroll.setFixedHeight(REFERENCE_PHOTO_THUMBNAIL_SIZE + 12)
+        return scroll
+
+    def _view_reference_photo(self, image_path) -> None:
+        if not image_path.is_file():
+            QMessageBox.information(
+                self,
+                KNOWLEDGE_REFERENCE_PHOTOS_TITLE,
+                "Fotografii se nepodařilo načíst.",
+            )
+            return
+
+        dialog = ImageViewerDialog(image_path, title=KNOWLEDGE_REFERENCE_PHOTOS_TITLE, parent=self)
+        dialog.exec()
 
     def _build_list_block(self, title: str, section: dict, field: str) -> QWidget:
         items = proverky_knowledge_service.get_active_items(section.get(field))
