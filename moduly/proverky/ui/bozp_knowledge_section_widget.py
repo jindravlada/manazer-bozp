@@ -42,6 +42,8 @@ from moduly.proverky.constants import (
     INSPECTION_MUST_BE_SAVED_MESSAGE,
     KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT,
     KNOWLEDGE_REFERENCE_PHOTOS_TITLE,
+    REFERENCE_PHOTO_PLACEHOLDER_ICON_SIZE_PX,
+    REFERENCE_PHOTO_PLACEHOLDER_WIDTH,
     REFERENCE_PHOTO_THUMBNAIL_SIZE,
     ProverkyFindingKnowledgeContext,
 )
@@ -228,29 +230,29 @@ class BozpKnowledgeSectionWidget(QWidget):
 
     def _build_reference_photo_placeholder(self) -> QWidget:
         panel = QFrame()
-        panel.setObjectName("ModulePanel")
-        panel.setFixedSize(REFERENCE_PHOTO_THUMBNAIL_SIZE, REFERENCE_PHOTO_THUMBNAIL_SIZE)
+        panel.setObjectName("ReferencePhotoPlaceholder")
+        panel.setFixedSize(REFERENCE_PHOTO_PLACEHOLDER_WIDTH, REFERENCE_PHOTO_THUMBNAIL_SIZE)
 
         layout = QVBoxLayout(panel)
-        layout.setContentsMargins(8, 10, 8, 10)
-        layout.setSpacing(2)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.setContentsMargins(12, 10, 12, 10)
+        layout.setSpacing(4)
 
         icon = QLabel("📷")
         icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        icon.setStyleSheet(
+            f"font-size: {REFERENCE_PHOTO_PLACEHOLDER_ICON_SIZE_PX}px;"
+            " border: none; background: transparent; padding: 0;"
+        )
 
-        title = QLabel("Referenční fotografie")
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setWordWrap(True)
+        text = QLabel("Referenční fotografie<br>budou doplněny.")
+        text.setObjectName("InfoText")
+        text.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        text.setWordWrap(False)
 
-        note = QLabel("budou doplněny.")
-        note.setObjectName("InfoText")
-        note.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        note.setWordWrap(True)
-
+        layout.addStretch(1)
         layout.addWidget(icon)
-        layout.addWidget(title)
-        layout.addWidget(note)
+        layout.addWidget(text)
+        layout.addStretch(1)
 
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)

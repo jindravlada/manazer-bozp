@@ -106,6 +106,12 @@ def apply_app_style(app: QApplication) -> None:
             border-radius: 10px;
         }
 
+        QFrame#ReferencePhotoPlaceholder {
+            background-color: #f9fafb;
+            border: 1px dashed #d1d5db;
+            border-radius: 10px;
+        }
+
         QFrame#ControlPointRow {
             border-radius: 6px;
         }
