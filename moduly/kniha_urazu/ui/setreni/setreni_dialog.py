@@ -47,6 +47,7 @@ from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     has_pn_over_3_days,
     requires_accident_record,
     requires_police_obligation,
+    row_status,
 )
 from moduly.kniha_urazu.sluzby.investigation_service import investigation_service
 from core.services.attachment_service import attachment_service
@@ -2931,22 +2932,28 @@ class SetreniDialog(QDialog):
         except Exception:
             return None
 
+    def _admin_row_state_dict(self, row):
+        sent_date = self._admin_date_value(row.get("datum"))
+        deadline = self._admin_date_value(row.get("lhuta"))
+        return {
+            "key": row.get("key", ""),
+            "predano": row["predano"].isChecked(),
+            "kompletni": row["kompletni"].isChecked() if row.get("kompletni") is not None else False,
+            "datum": sent_date.isoformat() if sent_date else "",
+            "lhuta": deadline.isoformat() if deadline else "",
+        }
+
     def _admin_status_label(self, row):
         label = QLabel()
         label.setMinimumHeight(26)
         label.setAlignment(Qt.AlignCenter)
 
         def refresh():
-            sent_date = self._admin_date_value(row.get("datum"))
-            deadline = self._admin_date_value(row.get("lhuta"))
-            done = row["predano"].isChecked() or sent_date is not None
-            if row.get("kompletni") is not None:
-                done = done or row["kompletni"].isChecked()
-
-            if done:
+            state = row_status(self._admin_row_state_dict(row), datetime.now().date())
+            if state == "done":
                 label.setText("✔ Odesláno / předáno")
                 label.setStyleSheet("font-weight: bold; color: #0b5d1e; background: #d9f0dd; border: 1px solid #91c79c; border-radius: 3px;")
-            elif deadline is not None and datetime.now().date() > deadline:
+            elif state == "overdue":
                 label.setText("Po termínu")
                 label.setStyleSheet("font-weight: bold; color: #842029; background: #f8d7da; border: 1px solid #d39a9f; border-radius: 3px;")
             else:

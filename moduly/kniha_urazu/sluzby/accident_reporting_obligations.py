@@ -317,6 +317,8 @@ def collect_obligation_rows_from_saved_data(data: dict[str, Any] | None) -> list
 
 
 def parse_saved_date(value: Any) -> date | None:
+    if isinstance(value, date):
+        return value
     if not value:
         return None
     try:
@@ -335,11 +337,17 @@ def row_is_done(row: dict[str, Any]) -> bool:
     return False
 
 
-def row_is_overdue(row: dict[str, Any], today: date) -> bool:
+def row_status(row: dict[str, Any], today: date) -> str:
     if row_is_done(row):
-        return False
+        return "done"
     deadline = parse_saved_date(row.get("lhuta"))
-    return deadline is not None and deadline < today
+    if deadline is not None and deadline < today:
+        return "overdue"
+    return "waiting"
+
+
+def row_is_overdue(row: dict[str, Any], today: date) -> bool:
+    return row_status(row, today) == "overdue"
 
 
 def obligations_summary_state(
@@ -349,19 +357,26 @@ def obligations_summary_state(
     *,
     union_organization_active: bool | None = None,
 ) -> str | None:
-    relevant = [
-        row
-        for row in rows
-        if is_row_relevant(
-            accident,
-            row,
-            union_organization_active=union_organization_active,
-        )
-    ]
-    if not relevant:
+    applicable = applicable_obligations(
+        accident,
+        union_organization_active=union_organization_active,
+    )
+    if not applicable:
         return None
-    if all(row_is_done(row) for row in relevant):
-        return "done"
-    if any(row_is_overdue(row, today) for row in relevant):
+
+    rows_by_key: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        key = obligation_key_from_row(row)
+        if key:
+            rows_by_key[key] = row
+
+    statuses = [
+        row_status(rows_by_key.get(obligation.key, {"key": obligation.key}), today)
+        for obligation in applicable
+    ]
+
+    if "overdue" in statuses:
         return "overdue"
-    return "waiting"
+    if "waiting" in statuses:
+        return "waiting"
+    return "done"

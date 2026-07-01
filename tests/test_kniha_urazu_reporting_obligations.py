@@ -44,6 +44,7 @@ with patch.object(Path, "home", return_value=_TMP):
         is_row_relevant,
         obligations_summary_state,
         row_is_done,
+        row_status,
     )
 
 
@@ -183,6 +184,69 @@ class KnihaUrazuReportingObligationsTestCase(unittest.TestCase):
 
         done_row = {**row, "datum": "2026-01-20"}
         self.assertTrue(row_is_done(done_row))
+
+    def test_row_status_matches_detail_priority(self) -> None:
+        today = date(2026, 1, 15)
+        self.assertEqual(row_status({"lhuta": "2026-01-01"}, today), "overdue")
+        self.assertEqual(row_status({"lhuta": "2026-02-01"}, today), "waiting")
+        self.assertEqual(row_status({"datum": "2026-01-10"}, today), "done")
+
+    def test_zou_summary_without_saved_rows_is_waiting(self) -> None:
+        accident = AccidentStub(druh_urazu="")
+        self.assertEqual(
+            obligations_summary_state(accident, [], date(2026, 1, 15)),
+            "waiting",
+        )
+
+    def test_zou_summary_missing_obligations_count_as_waiting(self) -> None:
+        accident = AccidentStub(
+            druh_urazu="pracovní úraz s pracovní neschopností delší než 3 kalendářní dny",
+            dpn_od=date(2026, 1, 1),
+            dpn_do=date(2026, 1, 10),
+        )
+        rows = [
+            {
+                "key": OBLIGATION_OO_OHLASENI,
+                "datum": "2026-01-05",
+            },
+        ]
+        self.assertEqual(
+            obligations_summary_state(accident, rows, date(2026, 1, 15)),
+            "waiting",
+        )
+
+    def test_zou_summary_one_overdue_makes_red(self) -> None:
+        accident = AccidentStub(
+            druh_urazu="pracovní úraz s pracovní neschopností delší než 3 kalendářní dny",
+            dpn_od=date(2026, 1, 1),
+            dpn_do=date(2026, 1, 10),
+        )
+        rows = [
+            {
+                "key": OBLIGATION_OO_OHLASENI,
+                "datum": "2026-01-05",
+            },
+            {
+                "key": OBLIGATION_VYHOTOVENI_ZAZNAMU,
+                "lhuta": "2026-01-01",
+            },
+        ]
+        self.assertEqual(
+            obligations_summary_state(accident, rows, date(2026, 1, 15)),
+            "overdue",
+        )
+
+    def test_toolbar_button_label(self) -> None:
+        from PySide6.QtWidgets import QApplication
+
+        app = QApplication.instance() or QApplication([])
+        self.assertIsNotNone(app)
+
+        from moduly.kniha_urazu.ui.kniha_urazu_page import KnihaUrazuPage
+
+        page = KnihaUrazuPage()
+        self.assertEqual(page.investigation_btn.text(), "Ohlašovací povinnosti")
+        self.assertNotIn("Administrace úrazu", page.investigation_btn.text())
 
     def test_legacy_row_names_are_recognized(self) -> None:
         accident = AccidentStub(
