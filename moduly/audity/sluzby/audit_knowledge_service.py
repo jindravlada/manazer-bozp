@@ -461,6 +461,9 @@ class AuditKnowledgeService:
             ):
                 changed = True
 
+            if self._merge_auditni_tvrzeni_from_seed(user_section, seed_section):
+                changed = True
+
             if self._text_field_is_empty(user_section.get("popis")):
                 seed_popis = str(seed_section.get("popis") or "").strip()
                 if seed_popis:
@@ -494,6 +497,24 @@ class AuditKnowledgeService:
             user["verze"] = seed_verze
 
         return changed
+
+    def _merge_auditni_tvrzeni_from_seed(
+        self,
+        user_section: dict,
+        seed_section: dict,
+    ) -> bool:
+        seed_items = seed_section.get("auditni_tvrzeni") or []
+        if not seed_items:
+            return False
+
+        user_items = user_section.get("auditni_tvrzeni") or []
+        if user_items:
+            return False
+
+        user_section["auditni_tvrzeni"] = deepcopy(seed_items)
+        if user_section.get("navodne_otazky"):
+            user_section["navodne_otazky"] = []
+        return True
 
     def _merge_control_point_severity_from_seed(
         self,

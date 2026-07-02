@@ -78,6 +78,46 @@ class AudityKnowledgeTestCase(unittest.TestCase):
             "urazy_mimo_udalosti/evidence_hlaseni_urazu/vsechny_urazy_evidovany",
         )
 
+    def test_migrates_auditni_tvrzeni_from_seed_for_legacy_user_catalog(self) -> None:
+        from core.services.editable_catalog_service import editable_catalog_service
+
+        bundled_path = editable_catalog_service.bundled_path("audity/urazy_mimo_udalosti.json")
+        seed_data = audit_knowledge_service._load_json(bundled_path)
+        user_data = audit_knowledge_service._load_json(bundled_path)
+
+        section = next(
+            item
+            for item in user_data.get("sekce") or []
+            if item.get("id") == "evidence_hlaseni_urazu"
+        )
+        section.pop("auditni_tvrzeni", None)
+        section["navodne_otazky"] = [
+            {
+                "id": "evidence_klasifikace_ohlasovani",
+                "nazev": "Jak organizace zajišťuje, že jsou všechny pracovní úrazy řádně evidovány, správně klasifikovány a jsou splněny všechny zákonné ohlašovací povinnosti?",
+                "popis": "Organizace má zavedený a uplatňovaný postup pro hlášení, evidenci, klasifikaci a plnění ohlašovacích povinností u pracovních úrazů.",
+                "poradi": 10,
+                "aktivni": True,
+                "zavaznost": "vysoka",
+            }
+        ]
+
+        self.assertTrue(
+            audit_knowledge_service._merge_knowledge_from_seed(user_data, seed_data)
+        )
+
+        migrated_section = next(
+            item
+            for item in user_data.get("sekce") or []
+            if item.get("id") == "evidence_hlaseni_urazu"
+        )
+        self.assertEqual(len(migrated_section.get("auditni_tvrzeni") or []), 5)
+        self.assertEqual(migrated_section.get("navodne_otazky"), [])
+
+        questions = audit_knowledge_service.get_audit_questions(migrated_section)
+        self.assertEqual(len(questions), 5)
+        self.assertEqual(questions[0]["id"], "vsechny_urazy_evidovany")
+
     def test_auditni_tvrzeni_fallback_to_navodne_otazky(self) -> None:
         criterion = {
             "navodne_otazky": [
