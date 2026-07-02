@@ -32,6 +32,7 @@ with patch.object(Path, "home", return_value=_TMP):
         AUDIT_PROGRAM_STATUS_OVERVIEW_REFRESHED,
         AUDIT_PROGRAM_STATUS_PROCESSES_DISTRIBUTED,
         AUDIT_PROGRAM_STATUS_PROGRAM_CREATED,
+        AUDIT_PROGRAM_STATUS_VISIT_CREATED,
         AUDIT_PROGRAM_STATUS_VISITS_GENERATED,
         AUDIT_PROGRAM_WINDOW_TITLE,
         AUDIT_STANDARD_ISO_45001,
@@ -39,7 +40,13 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
     from moduly.audity.sluzby.audit_program_service import audit_program_service
+    from moduly.audity.ui.audit_program_plan_tree_widget import (
+        NODE_PROCESS,
+        NODE_VISIT,
+        NODE_WORKPLACE,
+    )
     from moduly.audity.ui.audit_program_manager_dialog import AuditProgramManagerDialog
+
     from moduly.nastaveni.sluzby.settings_service import settings_service
 
 
@@ -138,7 +145,11 @@ class AuditProgramManagerDialogTestCase(unittest.TestCase):
             dialog._status_label.text(),
             AUDIT_PROGRAM_STATUS_PROCESSES_DISTRIBUTED,
         )
-        self.assertGreater(int(dialog._overview_table.item(0, 2).text()), 0)
+        self.assertEqual(dialog._plan_tree.topLevelItemCount(), 1)
+        workplace_item = dialog._plan_tree.topLevelItem(0)
+        self.assertGreater(workplace_item.childCount(), 0)
+        visit_item = workplace_item.child(0)
+        self.assertGreater(visit_item.childCount(), 0)
 
     def test_refresh_overview(self) -> None:
         program = audit_program_service.create_program(
@@ -160,13 +171,111 @@ class AuditProgramManagerDialogTestCase(unittest.TestCase):
         QApplication.processEvents()
 
         self.assertEqual(dialog._status_label.text(), AUDIT_PROGRAM_STATUS_OVERVIEW_REFRESHED)
-        self.assertGreaterEqual(dialog._overview_table.rowCount(), 1)
+        self.assertGreaterEqual(dialog._plan_tree.topLevelItemCount(), 1)
         self.assertEqual(dialog._completion_value.text(), "0 %")
         workplace_names = {
-            dialog._overview_table.item(row, 0).text()
-            for row in range(dialog._overview_table.rowCount())
+            dialog._plan_tree.topLevelItem(row).text(0)
+            for row in range(dialog._plan_tree.topLevelItemCount())
         }
         self.assertIn(self._workplace.name, workplace_names)
+
+    def test_create_visit_from_tree(self) -> None:
+        program = audit_program_service.create_program(
+            name="Program auditů 2026–2029",
+            date_from=date(2026, 4, 1),
+            date_to=date(2029, 3, 31),
+        )
+        audit_program_service.add_workplace(
+            program.id,
+            workplace_id=self._workplace.id,
+            workplace_name=self._workplace.name,
+            audit_interval_months=6,
+        )
+
+        dialog = self._create_dialog()
+        dialog._reload_program_list(select_program_id=program.id)
+        workplace_item = dialog._plan_tree.topLevelItem(0)
+        dialog._plan_tree.setCurrentItem(workplace_item)
+
+        with patch(
+            "moduly.audity.ui.audit_program_manager_dialog.AuditProgramVisitDialog"
+        ) as mock_dialog_cls:
+            mock_dialog = mock_dialog_cls.return_value
+            mock_dialog.exec.return_value = QDialog.DialogCode.Accepted
+            mock_dialog.visit_payload.return_value = {
+                "planned_month": 5,
+                "planned_year": 2026,
+                "planned_date": date(2026, 5, 12),
+                "note": "Ruční plán",
+            }
+            dialog._create_visit_for_selection()
+
+        QApplication.processEvents()
+        self.assertEqual(dialog._status_label.text(), AUDIT_PROGRAM_STATUS_VISIT_CREATED)
+        self.assertEqual(dialog._plan_tree.topLevelItem(0).childCount(), 1)
+        self.assertIn("Květen 2026", dialog._plan_tree.topLevelItem(0).child(0).text(0))
+
+    def test_plan_tree_action_states(self) -> None:
+        from moduly.audity.ui.audit_program_plan_tree_widget import AuditProgramPlanTreeWidget
+
+        program = audit_program_service.create_program(
+            name="Program auditů 2026–2029",
+            date_from=date(2026, 4, 1),
+            date_to=date(2029, 3, 31),
+        )
+        audit_program_service.add_workplace(
+            program.id,
+            workplace_id=self._workplace.id,
+            workplace_name=self._workplace.name,
+            audit_interval_months=6,
+        )
+        visit = audit_program_service.add_visit(
+            program.id,
+            workplace_id=self._workplace.id,
+            planned_year=2026,
+            planned_month=4,
+        )
+        audit_program_service.add_visit_process(
+            visit.id,
+            process_id="dokumentace",
+            process_name="Dokumentace",
+        )
+
+        dialog = self._create_dialog()
+        dialog._reload_program_list(select_program_id=program.id)
+
+        workplace_item = dialog._plan_tree.topLevelItem(0)
+        visit_item = workplace_item.child(0)
+        process_item = visit_item.child(0)
+
+        dialog._plan_tree.setCurrentItem(workplace_item)
+        QApplication.processEvents()
+        self.assertTrue(dialog._add_visit_btn.isEnabled())
+        self.assertFalse(dialog._edit_visit_btn.isEnabled())
+        self.assertFalse(dialog._move_process_btn.isEnabled())
+
+        dialog._plan_tree.setCurrentItem(visit_item)
+        QApplication.processEvents()
+        self.assertFalse(dialog._add_visit_btn.isEnabled())
+        self.assertTrue(dialog._edit_visit_btn.isEnabled())
+        self.assertFalse(dialog._move_process_btn.isEnabled())
+
+        dialog._plan_tree.setCurrentItem(process_item)
+        QApplication.processEvents()
+        self.assertFalse(dialog._add_visit_btn.isEnabled())
+        self.assertTrue(dialog._move_process_btn.isEnabled())
+        self.assertEqual(
+            AuditProgramPlanTreeWidget.node_type(process_item),
+            NODE_PROCESS,
+        )
+        self.assertEqual(
+            AuditProgramPlanTreeWidget.node_type(visit_item),
+            NODE_VISIT,
+        )
+        self.assertEqual(
+            AuditProgramPlanTreeWidget.node_type(workplace_item),
+            NODE_WORKPLACE,
+        )
 
 
 class AudityPageProgramButtonTestCase(unittest.TestCase):

@@ -30,6 +30,7 @@ class AuditProgram(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     approved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    manual_planning: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
 
 class AuditProgramWorkplace(Base):

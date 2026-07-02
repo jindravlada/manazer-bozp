@@ -95,6 +95,27 @@ class AuditProgramRepository:
             )
             return list(session.scalars(stmt))
 
+    def get_visit_process(self, visit_process_id: int) -> AuditProgramVisitProcess | None:
+        with get_session() as session:
+            return session.get(AuditProgramVisitProcess, visit_process_id)
+
+    def update_visit(self, visit: AuditProgramVisit) -> AuditProgramVisit:
+        with get_session() as session:
+            visit = session.merge(visit)
+            session.commit()
+            session.refresh(visit)
+            return visit
+
+    def update_visit_process(
+        self,
+        visit_process: AuditProgramVisitProcess,
+    ) -> AuditProgramVisitProcess:
+        with get_session() as session:
+            visit_process = session.merge(visit_process)
+            session.commit()
+            session.refresh(visit_process)
+            return visit_process
+
     def list_program_visit_processes(self, program_id: int) -> list[AuditProgramVisitProcess]:
         with get_session() as session:
             stmt = (

@@ -244,6 +244,31 @@ AUDIT_PROGRAM_STATUS_PROCESSES_DISTRIBUTED = "✓ Procesy rozděleny."
 AUDIT_PROGRAM_STATUS_OVERVIEW_REFRESHED = "✓ Přehled přepočten."
 AUDIT_PROGRAM_STATUS_PROGRAM_CREATED = "✓ Program vytvořen."
 AUDIT_PROGRAM_STATUS_PROGRAM_UPDATED = "✓ Program upraven."
+AUDIT_PROGRAM_STATUS_PROCESS_MOVED = "✓ Proces přesunut."
+AUDIT_PROGRAM_STATUS_VISIT_CREATED = "✓ Návštěva vytvořena."
+AUDIT_PROGRAM_STATUS_VISIT_UPDATED = "✓ Návštěva upravena."
+AUDIT_PROGRAM_STATUS_VISIT_SKIPPED = "✓ Návštěva zrušena."
+
+AUDIT_PROGRAM_MANUAL_GENERATE_BLOCKED = (
+    "Program byl ručně upraven. Automatické generování návštěv je vypnuto."
+)
+AUDIT_PROGRAM_MANUAL_DISTRIBUTE_BLOCKED = (
+    "Program byl ručně upraven. Automatické rozdělení procesů je vypnuto."
+)
+
+AUDIT_PROGRAM_ADD_VISIT_BUTTON = "+ Nová návštěva"
+AUDIT_PROGRAM_MOVE_PROCESS_BUTTON = "Přesunout..."
+AUDIT_PROGRAM_EDIT_VISIT_BUTTON = "Upravit návštěvu"
+AUDIT_PROGRAM_SKIP_VISIT_BUTTON = "Zrušit návštěvu"
+AUDIT_PROGRAM_NEW_VISIT_DIALOG_TITLE = "Nová návštěva"
+AUDIT_PROGRAM_EDIT_VISIT_DIALOG_TITLE = "Upravit návštěvu"
+AUDIT_PROGRAM_MOVE_PROCESS_DIALOG_TITLE = "Přesunout řídicí proces"
+AUDIT_PROGRAM_VISIT_SKIPPED_SUFFIX = "(Zrušeno)"
+
+MONTH_NAMES_CAPITALIZED = tuple(
+    name.capitalize()
+    for name in PLANNED_MONTH_NAMES
+)
 
 AUDIT_PROGRAM_STATUS_LABELS = {
     AUDIT_PROGRAM_STATUS_DRAFT: "Příprava",

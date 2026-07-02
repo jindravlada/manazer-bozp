@@ -43,6 +43,7 @@ def initialize_database() -> None:
     _ensure_control_result_columns()
     _ensure_audit_commission_table()
     _ensure_bozp_inspection_commission_table()
+    _ensure_audit_program_columns()
     _normalize_task_status_values()
     _normalize_accident_legacy_values()
 
@@ -233,6 +234,12 @@ def _ensure_bozp_inspection_commission_table() -> None:
         )
 
         BozpInspectionCommissionMember.__table__.create(bind=engine, checkfirst=True)
+
+
+def _ensure_audit_program_columns() -> None:
+    columns = _table_columns("audit_programs")
+    if columns and "manual_planning" not in columns:
+        _add_column("audit_programs", "manual_planning BOOLEAN DEFAULT 0 NOT NULL")
 
 
 def _normalize_task_status_values() -> None:

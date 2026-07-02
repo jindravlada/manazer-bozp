@@ -4,9 +4,12 @@ from dataclasses import dataclass
 from datetime import date, datetime
 
 from moduly.audity.constants import (
+    AUDIT_PROGRAM_MANUAL_DISTRIBUTE_BLOCKED,
+    AUDIT_PROGRAM_MANUAL_GENERATE_BLOCKED,
     AUDIT_PROGRAM_STATUSES,
     AUDIT_PROGRAM_VISIT_PROCESS_STATUS_COMPLETED,
     AUDIT_PROGRAM_VISIT_PROCESS_STATUSES,
+    AUDIT_PROGRAM_VISIT_STATUS_SKIPPED,
     AUDIT_PROGRAM_VISIT_STATUSES,
     DEFAULT_AUDIT_PROGRAM_STANDARDS,
     DEFAULT_AUDIT_PROGRAM_STATUS,
@@ -97,6 +100,7 @@ class AuditProgramService:
             "created_at": program.created_at,
             "approved_at": program.approved_at,
             "closed_at": program.closed_at,
+            "manual_planning": program.manual_planning,
         }
         merged.update(fields)
         data = self._validated_program_fields(merged)
@@ -155,6 +159,120 @@ class AuditProgramService:
         visit_process = AuditProgramVisitProcess(visit_id=visit_id, **data)
         return self.repository.add_visit_process(visit_process)
 
+    def create_manual_visit(
+        self,
+        program_id: int,
+        *,
+        workplace_id: int | None,
+        planned_year: int,
+        planned_month: int,
+        planned_date: date | None = None,
+        note: str = "",
+    ) -> AuditProgramVisit:
+        visit = self.add_visit(
+            program_id,
+            workplace_id=workplace_id,
+            planned_year=planned_year,
+            planned_month=planned_month,
+            planned_date=planned_date,
+            note=note,
+        )
+        self._mark_manual_planning(program_id)
+        return visit
+
+    def update_visit_plan(
+        self,
+        visit_id: int,
+        *,
+        planned_year: int,
+        planned_month: int,
+        planned_date: date | None = None,
+        note: str | None = None,
+    ) -> AuditProgramVisit:
+        visit = self.repository.get_visit(visit_id)
+        if visit is None:
+            raise ValueError(f"Návštěva {visit_id} neexistuje.")
+        if visit.status == AUDIT_PROGRAM_VISIT_STATUS_SKIPPED:
+            raise ValueError("Zrušenou návštěvu nelze upravovat.")
+
+        visit.planned_year = planned_year
+        visit.planned_month = planned_month
+        visit.planned_date = planned_date
+        if note is not None:
+            visit.note = note.strip()
+        saved = self.repository.update_visit(visit)
+        self._mark_manual_planning(visit.program_id)
+        return saved
+
+    def skip_visit(self, visit_id: int) -> AuditProgramVisit:
+        visit = self.repository.get_visit(visit_id)
+        if visit is None:
+            raise ValueError(f"Návštěva {visit_id} neexistuje.")
+
+        visit.status = AUDIT_PROGRAM_VISIT_STATUS_SKIPPED
+        saved = self.repository.update_visit(visit)
+        self._mark_manual_planning(visit.program_id)
+        return saved
+
+    def move_visit_process(
+        self,
+        visit_process_id: int,
+        target_visit_id: int,
+    ) -> AuditProgramVisitProcess:
+        visit_process = self.repository.get_visit_process(visit_process_id)
+        if visit_process is None:
+            raise ValueError(f"Plánovaný proces {visit_process_id} neexistuje.")
+
+        source_visit = self.repository.get_visit(visit_process.visit_id)
+        target_visit = self.repository.get_visit(target_visit_id)
+        if source_visit is None or target_visit is None:
+            raise ValueError("Návštěva neexistuje.")
+        if source_visit.program_id != target_visit.program_id:
+            raise ValueError("Návštěvy musí patřit do stejného programu.")
+        if source_visit.workplace_id != target_visit.workplace_id:
+            raise ValueError("Proces lze přesunout pouze mezi návštěvami stejného pracoviště.")
+        if target_visit.status == AUDIT_PROGRAM_VISIT_STATUS_SKIPPED:
+            raise ValueError("Proces nelze přesunout do zrušené návštěvy.")
+
+        for existing in self.repository.list_visit_processes(target_visit_id):
+            if (
+                existing.id != visit_process_id
+                and existing.process_id == visit_process.process_id
+            ):
+                raise ValueError("Řídicí proces je v cílové návštěvě už naplánován.")
+
+        visit_process.visit_id = target_visit_id
+        saved = self.repository.update_visit_process(visit_process)
+        self._mark_manual_planning(source_visit.program_id)
+        return saved
+
+    def list_workplace_visits(
+        self,
+        program_id: int,
+        workplace_id: int | None,
+        *,
+        include_skipped: bool = True,
+    ) -> list[AuditProgramVisit]:
+        visits = [
+            visit
+            for visit in self.repository.list_visits(program_id)
+            if visit.workplace_id == workplace_id
+        ]
+        if not include_skipped:
+            visits = [
+                visit
+                for visit in visits
+                if visit.status != AUDIT_PROGRAM_VISIT_STATUS_SKIPPED
+            ]
+        visits.sort(
+            key=lambda item: (
+                item.planned_year or 0,
+                item.planned_month or 0,
+                item.id,
+            )
+        )
+        return visits
+
     def get_program_overview(self, program_id: int) -> AuditProgramOverview | None:
         program = self.repository.get_program(program_id)
         if program is None:
@@ -173,6 +291,8 @@ class AuditProgramService:
             raise ValueError(f"Program auditů {program_id} neexistuje.")
         if program.date_from is None or program.date_to is None:
             raise ValueError("Program auditů musí mít vyplněné období od/do.")
+        if program.manual_planning:
+            raise ValueError(AUDIT_PROGRAM_MANUAL_GENERATE_BLOCKED)
 
         existing_keys = self._existing_visit_keys(program_id)
         created: list[AuditProgramVisit] = []
@@ -213,6 +333,8 @@ class AuditProgramService:
         program = self.repository.get_program(program_id)
         if program is None:
             raise ValueError(f"Program auditů {program_id} neexistuje.")
+        if program.manual_planning:
+            raise ValueError(AUDIT_PROGRAM_MANUAL_DISTRIBUTE_BLOCKED)
 
         processes = self._processes_for_program(program)
         visits = self.repository.list_visits(program_id)
@@ -274,7 +396,11 @@ class AuditProgramService:
             return None
 
         workplaces = [item for item in self.repository.list_workplaces(program_id) if item.active]
-        visits = self.repository.list_visits(program_id)
+        visits = [
+            visit
+            for visit in self.repository.list_visits(program_id)
+            if visit.status != AUDIT_PROGRAM_VISIT_STATUS_SKIPPED
+        ]
         visit_processes = self.repository.list_program_visit_processes(program_id)
         active_processes = self._processes_for_program(program)
         active_process_ids = {process.id for process in active_processes}
@@ -445,6 +571,13 @@ class AuditProgramService:
                     matched.append(standard)
         return matched or list(program_standards)
 
+    def _mark_manual_planning(self, program_id: int) -> None:
+        program = self.repository.get_program(program_id)
+        if program is None or program.manual_planning:
+            return
+        program.manual_planning = True
+        self.repository.update_program(program)
+
     @staticmethod
     def parse_standards(standards_json: str) -> list[str]:
         try:
@@ -493,6 +626,7 @@ class AuditProgramService:
             "created_at": fields.get("created_at") or datetime.now(),
             "approved_at": fields.get("approved_at"),
             "closed_at": fields.get("closed_at"),
+            "manual_planning": bool(fields.get("manual_planning", False)),
         }
 
     def _validated_workplace_fields(self, fields: dict) -> dict:

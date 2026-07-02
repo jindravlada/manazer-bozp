@@ -1,8 +1,5 @@
 """Dialog pro správu programů auditů."""
 
-from __future__ import annotations
-
-from collections import defaultdict
 from datetime import date
 
 from PySide6.QtCore import Qt
@@ -14,11 +11,10 @@ from PySide6.QtWidgets import (
     QLabel,
     QListWidget,
     QListWidgetItem,
+    QMenu,
     QMessageBox,
     QPushButton,
     QSplitter,
-    QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
@@ -27,21 +23,27 @@ from core.widgets.dialog_utils import configure_close_push_button
 from moduly.audity.constants import (
     AUDIT_PROGRAM_ADD_BUTTON,
     AUDIT_PROGRAM_BUTTON_LABEL,
+    AUDIT_PROGRAM_ADD_VISIT_BUTTON,
     AUDIT_PROGRAM_CENTER_PANEL_TITLE,
     AUDIT_PROGRAM_DISTRIBUTE_PROCESSES_BUTTON,
+    AUDIT_PROGRAM_EDIT_VISIT_BUTTON,
     AUDIT_PROGRAM_GENERATE_VISITS_BUTTON,
     AUDIT_PROGRAM_LEFT_PANEL_TITLE,
-    AUDIT_PROGRAM_OVERVIEW_COLUMNS,
+    AUDIT_PROGRAM_MOVE_PROCESS_BUTTON,
     AUDIT_PROGRAM_REFRESH_OVERVIEW_BUTTON,
     AUDIT_PROGRAM_RIGHT_PANEL_TITLE,
+    AUDIT_PROGRAM_SKIP_VISIT_BUTTON,
     AUDIT_PROGRAM_STATUS_LABELS,
     AUDIT_PROGRAM_STATUS_OVERVIEW_REFRESHED,
     AUDIT_PROGRAM_STATUS_PROCESSES_DISTRIBUTED,
+    AUDIT_PROGRAM_STATUS_PROCESS_MOVED,
     AUDIT_PROGRAM_STATUS_PROGRAM_CREATED,
     AUDIT_PROGRAM_STATUS_PROGRAM_UPDATED,
     AUDIT_PROGRAM_STATUS_VISITS_GENERATED,
+    AUDIT_PROGRAM_STATUS_VISIT_CREATED,
+    AUDIT_PROGRAM_STATUS_VISIT_SKIPPED,
+    AUDIT_PROGRAM_STATUS_VISIT_UPDATED,
     AUDIT_PROGRAM_WINDOW_TITLE,
-    AUDIT_PROGRAM_VISIT_PROCESS_STATUS_COMPLETED,
     PROCESS_PANEL_LEFT_WIDTH,
 )
 from moduly.audity.modely.audit_program import AuditProgram
@@ -51,6 +53,17 @@ from moduly.audity.sluzby.audit_program_service import (
     audit_program_service,
 )
 from moduly.audity.ui.audit_program_create_dialog import AuditProgramCreateDialog
+from moduly.audity.ui.audit_program_move_process_dialog import (
+    AuditProgramMoveProcessDialog,
+    load_target_visits,
+)
+from moduly.audity.ui.audit_program_plan_tree_widget import (
+    NODE_PROCESS,
+    NODE_VISIT,
+    NODE_WORKPLACE,
+    AuditProgramPlanTreeWidget,
+)
+from moduly.audity.ui.audit_program_visit_dialog import AuditProgramVisitDialog
 
 
 class AuditProgramManagerDialog(QDialog):
@@ -188,13 +201,28 @@ class AuditProgramManagerDialog(QDialog):
         title.setObjectName("SectionTitle")
         layout.addWidget(title)
 
-        self._overview_table = QTableWidget(0, len(AUDIT_PROGRAM_OVERVIEW_COLUMNS))
-        self._overview_table.setHorizontalHeaderLabels(list(AUDIT_PROGRAM_OVERVIEW_COLUMNS))
-        self._overview_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self._overview_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self._overview_table.setAlternatingRowColors(True)
-        self._overview_table.verticalHeader().setVisible(False)
-        layout.addWidget(self._overview_table, 1)
+        tree_toolbar = QHBoxLayout()
+        self._add_visit_btn = QPushButton(AUDIT_PROGRAM_ADD_VISIT_BUTTON)
+        self._edit_visit_btn = QPushButton(AUDIT_PROGRAM_EDIT_VISIT_BUTTON)
+        self._skip_visit_btn = QPushButton(AUDIT_PROGRAM_SKIP_VISIT_BUTTON)
+        self._move_process_btn = QPushButton(AUDIT_PROGRAM_MOVE_PROCESS_BUTTON)
+        self._add_visit_btn.clicked.connect(self._create_visit_for_selection)
+        self._edit_visit_btn.clicked.connect(self._edit_selected_visit)
+        self._skip_visit_btn.clicked.connect(self._skip_selected_visit)
+        self._move_process_btn.clicked.connect(self._move_selected_process)
+        tree_toolbar.addWidget(self._add_visit_btn)
+        tree_toolbar.addWidget(self._edit_visit_btn)
+        tree_toolbar.addWidget(self._skip_visit_btn)
+        tree_toolbar.addWidget(self._move_process_btn)
+        tree_toolbar.addStretch()
+        layout.addLayout(tree_toolbar)
+
+        self._plan_tree = AuditProgramPlanTreeWidget()
+        self._plan_tree.customContextMenuRequested.connect(self._show_plan_context_menu)
+        self._plan_tree.itemSelectionChanged.connect(self._update_plan_actions)
+        layout.addWidget(self._plan_tree, 1)
+
+        self._set_plan_actions_enabled(False)
         return panel
 
     def _build_footer(self) -> QHBoxLayout:
@@ -334,7 +362,169 @@ class AuditProgramManagerDialog(QDialog):
         self._detail_form.setVisible(True)
         self._set_action_buttons_enabled(True)
         self._fill_detail_panel(overview, coverage)
-        self._fill_overview_table(overview, coverage)
+        self._plan_tree.populate(overview)
+        self._update_plan_actions()
+
+    def _update_plan_actions(self) -> None:
+        if self._selected_program_id is None:
+            self._set_plan_actions_enabled(False)
+            return
+
+        item = self._plan_tree.currentItem()
+        node_type = AuditProgramPlanTreeWidget.node_type(item)
+        self._add_visit_btn.setEnabled(node_type == NODE_WORKPLACE)
+        self._edit_visit_btn.setEnabled(node_type == NODE_VISIT)
+        self._skip_visit_btn.setEnabled(node_type == NODE_VISIT)
+        self._move_process_btn.setEnabled(node_type == NODE_PROCESS)
+
+    def _set_plan_actions_enabled(self, enabled: bool) -> None:
+        self._add_visit_btn.setEnabled(enabled)
+        self._edit_visit_btn.setEnabled(enabled)
+        self._skip_visit_btn.setEnabled(enabled)
+        self._move_process_btn.setEnabled(enabled)
+
+    def _show_plan_context_menu(self, position) -> None:
+        item = self._plan_tree.itemAt(position)
+        if item is None:
+            return
+
+        self._plan_tree.setCurrentItem(item)
+        node_type = AuditProgramPlanTreeWidget.node_type(item)
+        menu = QMenu(self)
+
+        if node_type == NODE_WORKPLACE:
+            menu.addAction(AUDIT_PROGRAM_ADD_VISIT_BUTTON, self._create_visit_for_selection)
+        elif node_type == NODE_VISIT:
+            menu.addAction(AUDIT_PROGRAM_EDIT_VISIT_BUTTON, self._edit_selected_visit)
+            menu.addAction(AUDIT_PROGRAM_SKIP_VISIT_BUTTON, self._skip_selected_visit)
+        elif node_type == NODE_PROCESS:
+            menu.addAction(AUDIT_PROGRAM_MOVE_PROCESS_BUTTON, self._move_selected_process)
+
+        if not menu.isEmpty():
+            menu.exec(self._plan_tree.viewport().mapToGlobal(position))
+
+    def _selected_tree_item(self):
+        return self._plan_tree.currentItem()
+
+    def _create_visit_for_selection(self) -> None:
+        program_id = self._selected_program_id
+        item = self._selected_tree_item()
+        if program_id is None or item is None:
+            return
+
+        workplace_id = AuditProgramPlanTreeWidget.workplace_id(item)
+        if AuditProgramPlanTreeWidget.node_type(item) != NODE_WORKPLACE:
+            return
+
+        dialog = AuditProgramVisitDialog(self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        try:
+            audit_program_service.create_manual_visit(
+                program_id,
+                workplace_id=workplace_id,
+                **dialog.visit_payload(),
+            )
+        except ValueError as error:
+            QMessageBox.warning(self, self.windowTitle(), str(error))
+            return
+
+        self._set_status(AUDIT_PROGRAM_STATUS_VISIT_CREATED)
+        self._refresh_selected_program_views()
+
+    def _edit_selected_visit(self) -> None:
+        item = self._selected_tree_item()
+        visit_id = AuditProgramPlanTreeWidget.node_id(item)
+        if visit_id is None or AuditProgramPlanTreeWidget.node_type(item) != NODE_VISIT:
+            return
+
+        visit = audit_program_service.repository.get_visit(visit_id)
+        if visit is None:
+            self._refresh_selected_program_views()
+            return
+
+        dialog = AuditProgramVisitDialog(self, visit=visit)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        try:
+            audit_program_service.update_visit_plan(visit_id, **dialog.visit_payload())
+        except ValueError as error:
+            QMessageBox.warning(self, self.windowTitle(), str(error))
+            return
+
+        self._set_status(AUDIT_PROGRAM_STATUS_VISIT_UPDATED)
+        self._refresh_selected_program_views()
+
+    def _skip_selected_visit(self) -> None:
+        item = self._selected_tree_item()
+        visit_id = AuditProgramPlanTreeWidget.node_id(item)
+        if visit_id is None or AuditProgramPlanTreeWidget.node_type(item) != NODE_VISIT:
+            return
+
+        try:
+            audit_program_service.skip_visit(visit_id)
+        except ValueError as error:
+            QMessageBox.warning(self, self.windowTitle(), str(error))
+            return
+
+        self._set_status(AUDIT_PROGRAM_STATUS_VISIT_SKIPPED)
+        self._refresh_selected_program_views()
+
+    def _move_selected_process(self) -> None:
+        program_id = self._selected_program_id
+        item = self._selected_tree_item()
+        process_id = AuditProgramPlanTreeWidget.node_id(item)
+        if (
+            program_id is None
+            or process_id is None
+            or AuditProgramPlanTreeWidget.node_type(item) != NODE_PROCESS
+        ):
+            return
+
+        visit_process = audit_program_service.repository.get_visit_process(process_id)
+        if visit_process is None:
+            self._refresh_selected_program_views()
+            return
+
+        source_visit = audit_program_service.repository.get_visit(visit_process.visit_id)
+        if source_visit is None:
+            return
+
+        target_visits = load_target_visits(
+            program_id,
+            workplace_id=source_visit.workplace_id,
+            current_visit_id=source_visit.id,
+        )
+        if not target_visits:
+            QMessageBox.information(
+                self,
+                self.windowTitle(),
+                "Pro tento proces není k dispozici jiná aktivní návštěva.",
+            )
+            return
+
+        dialog = AuditProgramMoveProcessDialog(
+            self,
+            visit_process=visit_process,
+            visits=target_visits,
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        target_visit_id = dialog.target_visit_id()
+        if target_visit_id is None:
+            return
+
+        try:
+            audit_program_service.move_visit_process(process_id, target_visit_id)
+        except ValueError as error:
+            QMessageBox.warning(self, self.windowTitle(), str(error))
+            return
+
+        self._set_status(AUDIT_PROGRAM_STATUS_PROCESS_MOVED)
+        self._refresh_selected_program_views()
 
     def _fill_detail_panel(
         self,
@@ -353,76 +543,12 @@ class AuditProgramManagerDialog(QDialog):
         self._visit_count_value.setText(str(coverage.visit_count))
         self._completion_value.setText(f"{coverage.completion_percent:.0f} %")
 
-    def _fill_overview_table(
-        self,
-        overview: AuditProgramOverview,
-        coverage: AuditProgramCoverage,
-    ) -> None:
-        rows = self._workplace_rows(overview, coverage)
-        self._overview_table.setRowCount(len(rows))
-        for row_index, row in enumerate(rows):
-            for column_index, value in enumerate(row):
-                self._overview_table.setItem(
-                    row_index,
-                    column_index,
-                    QTableWidgetItem(str(value)),
-                )
-        self._overview_table.resizeColumnsToContents()
-
-    def _workplace_rows(
-        self,
-        overview: AuditProgramOverview,
-        coverage: AuditProgramCoverage,
-    ) -> list[tuple[str, int, int, int, str]]:
-        visits_by_workplace: dict[int | None, list] = defaultdict(list)
-        for visit in overview.visits:
-            visits_by_workplace[visit.workplace_id].append(visit)
-
-        visit_ids_by_workplace = {
-            workplace_id: {visit.id for visit in visits}
-            for workplace_id, visits in visits_by_workplace.items()
-        }
-
-        processes_by_workplace: dict[int | None, list] = defaultdict(list)
-        for visit_process in overview.visit_processes:
-            for workplace_id, visit_ids in visit_ids_by_workplace.items():
-                if visit_process.visit_id in visit_ids:
-                    processes_by_workplace[workplace_id].append(visit_process)
-                    break
-
-        rows: list[tuple[str, int, int, int, str]] = []
-        for workplace_coverage in coverage.missing_by_workplace:
-            workplace_id = workplace_coverage.workplace_id
-            visit_count = len(visits_by_workplace.get(workplace_id, []))
-            processes = processes_by_workplace.get(workplace_id, [])
-            process_count = len(processes)
-            completed_count = sum(
-                1
-                for item in processes
-                if item.status == AUDIT_PROGRAM_VISIT_PROCESS_STATUS_COMPLETED
-            )
-            percent = (
-                f"{round(completed_count / process_count * 100):.0f}"
-                if process_count
-                else "0"
-            )
-            workplace_name = workplace_coverage.workplace_name or "—"
-            rows.append(
-                (
-                    workplace_name,
-                    visit_count,
-                    process_count,
-                    completed_count,
-                    percent,
-                )
-            )
-        return rows
-
     def _show_empty_state(self) -> None:
         self._hint_label.setVisible(True)
         self._detail_form.setVisible(False)
         self._set_action_buttons_enabled(False)
-        self._overview_table.setRowCount(0)
+        self._plan_tree.clear()
+        self._set_plan_actions_enabled(False)
         self._clear_detail_values()
 
     def _clear_detail_values(self) -> None:
