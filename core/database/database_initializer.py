@@ -43,7 +43,9 @@ def initialize_database() -> None:
     _ensure_control_result_columns()
     _ensure_audit_commission_table()
     _ensure_bozp_inspection_commission_table()
+    _ensure_workplace_audit_columns()
     _ensure_audit_program_columns()
+    _ensure_audit_program_workplace_columns()
     _ensure_audit_program_link_columns()
     _normalize_task_status_values()
     _normalize_accident_legacy_values()
@@ -237,10 +239,32 @@ def _ensure_bozp_inspection_commission_table() -> None:
         BozpInspectionCommissionMember.__table__.create(bind=engine, checkfirst=True)
 
 
+def _ensure_workplace_audit_columns() -> None:
+    columns = _table_columns("workplaces")
+    if not columns:
+        return
+    additions = {
+        "audit_enabled": "audit_enabled BOOLEAN DEFAULT 1 NOT NULL",
+        "audit_interval_months": "audit_interval_months INTEGER DEFAULT 6 NOT NULL",
+        "preferred_months_json": "preferred_months_json TEXT DEFAULT '[3,4,5,9,10,11]' NOT NULL",
+    }
+    for column_name, column_sql in additions.items():
+        if column_name not in columns:
+            _add_column("workplaces", column_sql)
+
+
 def _ensure_audit_program_columns() -> None:
     columns = _table_columns("audit_programs")
     if columns and "manual_planning" not in columns:
         _add_column("audit_programs", "manual_planning BOOLEAN DEFAULT 0 NOT NULL")
+
+
+def _ensure_audit_program_workplace_columns() -> None:
+    columns = _table_columns("audit_program_workplaces")
+    if not columns:
+        return
+    if "preferred_months_json" not in columns:
+        _add_column("audit_program_workplaces", "preferred_months_json TEXT DEFAULT '[]' NOT NULL")
 
 
 def _ensure_audit_program_link_columns() -> None:

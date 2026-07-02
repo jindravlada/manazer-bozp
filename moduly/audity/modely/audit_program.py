@@ -41,6 +41,7 @@ class AuditProgramWorkplace(Base):
     workplace_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     workplace_name: Mapped[str] = mapped_column(String(150), default="")
     audit_interval_months: Mapped[int] = mapped_column(Integer, default=12)
+    preferred_months_json: Mapped[str] = mapped_column(Text, default="[]")
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     note: Mapped[str] = mapped_column(Text, default="")
 

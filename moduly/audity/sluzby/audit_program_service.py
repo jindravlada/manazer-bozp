@@ -1,4 +1,3 @@
-import calendar
 import json
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -31,6 +30,18 @@ from moduly.audity.repository.audit_program_repository import AuditProgramReposi
 from moduly.audity.sluzby.audit_knowledge_service import (
     AuditProcessDefinition,
     audit_knowledge_service,
+)
+from moduly.audity.sluzby.audit_program_planning_config_service import (
+    WorkplacePlanningConfig,
+    audit_program_planning_config_service,
+)
+from moduly.nastaveni.constants.workplace_audit_constants import (
+    DEFAULT_WORKPLACE_AUDIT_INTERVAL_MONTHS,
+)
+from moduly.nastaveni.sluzby.workplace_audit_planning import (
+    iter_visit_month_anchors,
+    parse_preferred_months_json,
+    plan_visit_months,
 )
 
 
@@ -137,13 +148,16 @@ class AuditProgramService:
         }
         created = 0
         for workplace in settings_service.get_workplaces():
+            if not workplace.audit_enabled:
+                continue
             if workplace.id in existing_ids:
                 continue
             self.add_workplace(
                 program_id,
                 workplace_id=workplace.id,
                 workplace_name=workplace.name,
-                audit_interval_months=12,
+                audit_interval_months=workplace.audit_interval_months,
+                preferred_months_json=workplace.preferred_months_json,
                 active=True,
             )
             created += 1
@@ -387,10 +401,14 @@ class AuditProgramService:
             if not workplace.active:
                 continue
 
-            for planned_year, planned_month in self._iter_visit_months(
+            planning = self._resolve_workplace_planning_config(workplace)
+            if planning is None or not planning.audit_enabled:
+                continue
+
+            for planned_year, planned_month in self._plan_workplace_visits(
                 program.date_from,
                 program.date_to,
-                workplace.audit_interval_months,
+                planning,
             ):
                 key = (workplace.workplace_id, planned_year, planned_month)
                 if key in existing_keys:
@@ -536,37 +554,64 @@ class AuditProgramService:
             missing_by_workplace=tuple(missing_by_workplace),
         )
 
+    def detect_planning_config_changes(self, program_id: int):
+        workplaces = self.repository.list_workplaces(program_id)
+        return audit_program_planning_config_service.detect_program_planning_changes(
+            workplaces
+        )
+
+    @staticmethod
+    def _plan_workplace_visits(
+        date_from: date,
+        date_to: date,
+        planning: WorkplacePlanningConfig,
+    ) -> list[tuple[int, int]]:
+        if planning.preferred_months:
+            return plan_visit_months(
+                date_from,
+                date_to,
+                planning.audit_interval_months,
+                planning.preferred_months,
+            )
+        return iter_visit_month_anchors(
+            date_from,
+            date_to,
+            planning.audit_interval_months,
+        )
+
+    def _resolve_workplace_planning_config(
+        self,
+        program_workplace: AuditProgramWorkplace,
+    ) -> WorkplacePlanningConfig | None:
+        current = audit_program_planning_config_service.get_current_config(
+            program_workplace.workplace_id
+        )
+        if current is not None:
+            return current
+
+        if program_workplace.workplace_id is None:
+            return None
+
+        return WorkplacePlanningConfig(
+            workplace_id=program_workplace.workplace_id,
+            workplace_name=program_workplace.workplace_name.strip(),
+            audit_enabled=True,
+            audit_interval_months=int(
+                program_workplace.audit_interval_months
+                or DEFAULT_WORKPLACE_AUDIT_INTERVAL_MONTHS
+            ),
+            preferred_months=parse_preferred_months_json(
+                program_workplace.preferred_months_json
+            ),
+        )
+
     @staticmethod
     def _iter_visit_months(
         date_from: date,
         date_to: date,
         interval_months: int,
     ) -> list[tuple[int, int]]:
-        if interval_months <= 0:
-            raise ValueError("Interval auditu pracoviště musí být kladný.")
-
-        slots: list[tuple[int, int]] = []
-        year = date_from.year
-        month = date_from.month
-
-        while True:
-            first_of_month = date(year, month, 1)
-            if first_of_month > date_to:
-                break
-
-            last_day = calendar.monthrange(year, month)[1]
-            last_of_month = date(year, month, last_day)
-            if last_of_month >= date_from:
-                slots.append((year, month))
-
-            year, month = AuditProgramService._add_months(year, month, interval_months)
-
-        return slots
-
-    @staticmethod
-    def _add_months(year: int, month: int, months: int) -> tuple[int, int]:
-        total_month_index = year * 12 + (month - 1) + months
-        return total_month_index // 12, total_month_index % 12 + 1
+        return iter_visit_month_anchors(date_from, date_to, interval_months)
 
     def _existing_visit_keys(self, program_id: int) -> set[tuple[int | None, int, int]]:
         keys: set[tuple[int | None, int, int]] = set()
@@ -747,14 +792,23 @@ class AuditProgramService:
         }
 
     def _validated_workplace_fields(self, fields: dict) -> dict:
-        interval = int(fields.get("audit_interval_months") or 12)
+        interval = int(
+            fields.get("audit_interval_months") or DEFAULT_WORKPLACE_AUDIT_INTERVAL_MONTHS
+        )
         if interval <= 0:
             raise ValueError("Interval auditu pracoviště musí být kladný.")
+
+        preferred_months_json = fields.get("preferred_months_json")
+        if preferred_months_json is None:
+            preferred_months_json = "[]"
+        elif not isinstance(preferred_months_json, str):
+            preferred_months_json = str(preferred_months_json)
 
         return {
             "workplace_id": fields.get("workplace_id"),
             "workplace_name": str(fields.get("workplace_name") or "").strip(),
             "audit_interval_months": interval,
+            "preferred_months_json": preferred_months_json,
             "active": bool(fields.get("active", True)),
             "note": str(fields.get("note") or "").strip(),
         }
