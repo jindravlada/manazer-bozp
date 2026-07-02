@@ -1,0 +1,265 @@
+{
+  "verze": 3,
+  "id": "urazy_mimo_udalosti",
+  "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+  "popis": "Proces řízení pracovních úrazů a mimořádných událostí v organizaci.",
+  "ucel_procesu": "Zajistit, aby všechny pracovní úrazy a mimořádné události byly:\n- včas oznámeny,\n- správně vyšetřeny,\n- byly zjištěny jejich skutečné příčiny,\n- byla přijata účinná opatření,\n- organizace se z nich poučila,\n- zabránilo se jejich opakování.",
+  "proc_je_dulezity": "Pracovní úraz ani mimořádná událost nejsou cílem evidence.\n\nJsou informací, že některý z řídicích procesů organizace selhal.\n\nÚčelem procesu není splnit administrativní povinnosti, ale zabránit opakování obdobné události.",
+  "ocekavany_vystup": "Organizace prokazatelně:\n\n- eviduje všechny pracovní úrazy,\n- rozlišuje jejich závažnost,\n- plní ohlašovací povinnosti,\n- provádí objektivní šetření,\n- hledá skutečné příčiny,\n- přijímá nápravná opatření,\n- ověřuje jejich účinnost,\n- využívá zkušenosti při prevenci.",
+  "poradi": 10,
+  "aktivni": true,
+  "vazby_procesy": [],
+  "pozadavky_norem": [],
+  "sekce": [
+    {
+      "id": "evidence_hlaseni_urazu",
+      "nazev": "Evidence a hlášení pracovních úrazů",
+      "popis": "Ověření evidence pracovních úrazů a plnění zákonných ohlašovacích povinností.",
+      "cil_overeni": "Ověřit, že organizace eviduje všechny pracovní úrazy a plní zákonné ohlašovací povinnosti.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "kontrolni_body": [],
+      "navodne_otazky": [
+        {
+          "id": "evidence_klasifikace_ohlasovani",
+          "nazev": "Jak organizace zajišťuje, že jsou všechny pracovní úrazy řádně evidovány, správně klasifikovány a jsou splněny všechny zákonné ohlašovací povinnosti?",
+          "popis": "Organizace má zavedený a uplatňovaný postup pro hlášení, evidenci, klasifikaci a plnění ohlašovacích povinností u pracovních úrazů.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        }
+      ],
+      "objektivni_dukazy": [
+        {
+          "id": "dukaz_kniha_urazu",
+          "nazev": "Kniha úrazů",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "dukaz_zaznamy_urazu",
+          "nazev": "Záznamy o pracovních úrazech",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "dukaz_evidence_ohlasovani",
+          "nazev": "Evidence ohlašovacích povinností",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "dukaz_potvrzeni_odeslani",
+          "nazev": "Potvrzení o odeslání Záznamu o úrazu",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "dukaz_interni_postup",
+          "nazev": "Interní postup pro hlášení pracovních úrazů",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozhovor_vedouci",
+          "nazev": "vedoucí zaměstnanci",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozhovor_technik_bozp",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozhovor_personalist",
+          "nazev": "personalista",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozhovor_zamestnanci",
+          "nazev": "zaměstnanci",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "poz_provoz_postup",
+          "nazev": "zaměstnanci znají postup při úrazu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poz_provoz_vedouci",
+          "nazev": "vedoucí vědí, co mají udělat",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "poz_provoz_formulare",
+          "nazev": "formuláře jsou dostupné",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "poz_provoz_kontakty",
+          "nazev": "kontakty jsou známé",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "neshoda_neevidovane",
+          "nazev": "pracovní úrazy nejsou evidovány",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "neshoda_opozdeni",
+          "nazev": "opožděné ohlášení",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "neshoda_chybi_zaznam",
+          "nazev": "chybějící Záznam o úrazu",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "neshoda_ohlasovaci",
+          "nazev": "nesplněné ohlašovací povinnosti",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "neshoda_neuplna",
+          "nazev": "neúplná evidence",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "neshoda_vedouci_postup",
+          "nazev": "vedoucí neznají postup",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_lhuty",
+          "nazev": "automatické hlídání zákonných lhůt",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_workflow",
+          "nazev": "elektronické workflow",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_upozorneni",
+          "nazev": "automatické upozornění",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_statistika",
+          "nazev": "statistické sledování trendů",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_drobne_nehlasene",
+          "nazev": "drobné úrazy nejsou hlášeny",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poz_rozdilne_postupy",
+          "nazev": "vedoucí používají rozdílné postupy",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "poz_chybi_metodika",
+          "nazev": "chybí jednotná metodika",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_102",
+          "nazev": "ISO 45001: 10.2",
+          "popis": "Informativní reference – reakce na incidenty a nehody.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "iso45001_103",
+          "nazev": "ISO 45001: 10.3",
+          "popis": "Informativní reference – neustálé zlepšování.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "iso45001_74",
+          "nazev": "ISO 45001: 7.4",
+          "popis": "Informativní reference – komunikace.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "iso45001_75",
+          "nazev": "ISO 45001: 7.5",
+          "popis": "Informativní reference – dokumentované informace.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "historie": []
+    }
+  ]
+}

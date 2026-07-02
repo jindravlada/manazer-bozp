@@ -1,14 +1,14 @@
 {
-  "verze": 2,
+  "verze": 3,
   "procesy": [
     {
-      "id": "planovani_bozp",
-      "nazev": "Řízení plánování systému BOZP",
-      "popis": "Proces plánování a řízení BOZP v organizaci.",
-      "ucel_procesu": "Zajistit systematické plánování prevence rizik a cílů BOZP.",
+      "id": "urazy_mimo_udalosti",
+      "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+      "popis": "Proces řízení pracovních úrazů a mimořádných událostí v organizaci.",
+      "ucel_procesu": "Zajistit, aby všechny pracovní úrazy a mimořádné události byly včas oznámeny, správně vyšetřeny, byly zjištěny jejich skutečné příčiny, byla přijata účinná opatření, organizace se z nich poučila a zabránilo se jejich opakování.",
       "poradi": 10,
       "aktivni": true,
-      "soubor_znalosti": "planovani_bozp.json"
+      "soubor_znalosti": "urazy_mimo_udalosti.json"
     }
   ]
 }

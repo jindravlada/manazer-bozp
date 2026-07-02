@@ -96,9 +96,12 @@ class AudityProcessesTestCase(unittest.TestCase):
         return audit
 
     def _question_context(self):
-        process = audit_knowledge_service.get_process_by_id("planovani_bozp")
+        process = audit_knowledge_service.get_process_by_id("urazy_mimo_udalosti")
         assert process is not None
-        criterion = audit_knowledge_service.get_criterion("planovani_bozp", "cile_politika")
+        criterion = audit_knowledge_service.get_criterion(
+            "urazy_mimo_udalosti",
+            "evidence_hlaseni_urazu",
+        )
         assert criterion is not None
         questions = audit_knowledge_service.get_audit_questions(criterion)
         assert questions
@@ -131,7 +134,7 @@ class AudityProcessesTestCase(unittest.TestCase):
         tree.reload_tree()
 
         labels = [tree.topLevelItem(i).text(0) for i in range(tree.topLevelItemCount())]
-        self.assertIn("Řízení plánování systému BOZP", labels)
+        self.assertIn("Řízení pracovních úrazů a mimořádných událostí", labels)
 
     def test_select_criterion_shows_question(self) -> None:
         from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
@@ -139,14 +142,14 @@ class AudityProcessesTestCase(unittest.TestCase):
         audit = self._create_audit_with_team()
         widget = AuditProcessesWidget()
         widget.set_audit_id(audit.id)
-        widget.knowledge_tree.select_node("planovani_bozp", "cile_politika")
+        widget.knowledge_tree.select_node("urazy_mimo_udalosti", "evidence_hlaseni_urazu")
 
-        self.assertEqual(widget._current_process_id, "planovani_bozp")
-        self.assertEqual(widget._current_criterion_id, "cile_politika")
+        self.assertEqual(widget._current_process_id, "urazy_mimo_udalosti")
+        self.assertEqual(widget._current_criterion_id, "evidence_hlaseni_urazu")
         self.assertEqual(widget.content_stack.currentIndex(), widget._PAGE_KNOWLEDGE)
 
         criterion_widget = widget.knowledge_widget.criterion_widget
-        self.assertIn("politika_promitnuti", criterion_widget._control_point_frames)
+        self.assertIn("evidence_klasifikace_ohlasovani", criterion_widget._control_point_frames)
 
     def test_select_process_shows_guide_overview(self) -> None:
         from PySide6.QtWidgets import QLabel
@@ -158,7 +161,7 @@ class AudityProcessesTestCase(unittest.TestCase):
         from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
 
         widget = AuditProcessesWidget()
-        widget.knowledge_tree.select_node("planovani_bozp")
+        widget.knowledge_tree.select_node("urazy_mimo_udalosti")
 
         self.assertEqual(widget.content_stack.currentIndex(), widget._PAGE_OVERVIEW)
         tree_labels = {label.text() for label in widget.tree_panel.findChildren(QLabel)}
@@ -181,7 +184,7 @@ class AudityProcessesTestCase(unittest.TestCase):
         from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
 
         widget = AuditProcessesWidget()
-        widget.knowledge_tree.select_node("planovani_bozp", "cile_politika")
+        widget.knowledge_tree.select_node("urazy_mimo_udalosti", "evidence_hlaseni_urazu")
 
         center_widget = widget.knowledge_widget.criterion_widget
         center_labels = {label.text() for label in center_widget.findChildren(QLabel)}
@@ -189,7 +192,7 @@ class AudityProcessesTestCase(unittest.TestCase):
         self.assertNotIn(GUIDE_LABEL_OBJECTIVE_EVIDENCE, center_labels)
         self.assertNotIn(GUIDE_LABEL_TYPICAL_NONCONFORMITIES, center_labels)
         self.assertIn(
-            "Jak organizace zajišťuje, že politika BOZP a cíle BOZP jsou promítnuty do skutečného řízení práce?",
+            "Jak organizace zajišťuje, že jsou všechny pracovní úrazy řádně evidovány, správně klasifikovány a jsou splněny všechny zákonné ohlašovací povinnosti?",
             center_labels,
         )
 
@@ -245,8 +248,8 @@ class AudityProcessesTestCase(unittest.TestCase):
         mock_dialog.get_data.return_value = {
             "finding_type": FINDING_TYPE_NESHODA,
             "reference_label": stable_key,
-            "description": "Politika BOZP chybí.",
-            "recommended_action": "Schválit politiku.",
+            "description": "Pracovní úrazy nejsou řádně evidovány.",
+            "recommended_action": "Zavést jednotný postup evidence.",
             "responsible_person_id": None,
             "responsible_person_name": "",
             "due_date": None,
@@ -261,13 +264,16 @@ class AudityProcessesTestCase(unittest.TestCase):
         methodology_panel = AuditMethodologyPanelWidget()
         widget = AuditKnowledgeCriterionWidget(methodology_panel=methodology_panel)
         widget.set_audit_id(audit.id)
-        criterion = audit_knowledge_service.get_criterion("planovani_bozp", "cile_politika")
+        criterion = audit_knowledge_service.get_criterion(
+            "urazy_mimo_udalosti",
+            "evidence_hlaseni_urazu",
+        )
         assert criterion is not None
         widget.set_criterion(
             criterion,
-            area_id="planovani_bozp",
-            area_label="Řízení plánování systému BOZP",
-            section_label="Politika, cíle a plánování",
+            area_id="urazy_mimo_udalosti",
+            area_label="Řízení pracovních úrazů a mimořádných událostí",
+            section_label="Evidence a hlášení pracovních úrazů",
         )
 
         question = audit_knowledge_service.get_audit_questions(criterion)[0]
@@ -278,9 +284,12 @@ class AudityProcessesTestCase(unittest.TestCase):
         finding = findings[0]
         self.assertEqual(finding.entity_type, ENTITY_AUDITY)
         self.assertEqual(finding.entity_id, audit.id)
-        self.assertEqual(finding.source_area_label, "Řízení plánování systému BOZP")
-        self.assertEqual(finding.source_section_label, "Politika, cíle a plánování")
-        self.assertEqual(finding.source_control_point_id, "politika_promitnuti")
+        self.assertEqual(
+            finding.source_area_label,
+            "Řízení pracovních úrazů a mimořádných událostí",
+        )
+        self.assertEqual(finding.source_section_label, "Evidence a hlášení pracovních úrazů")
+        self.assertEqual(finding.source_control_point_id, "evidence_klasifikace_ohlasovani")
         self.assertEqual(finding.reference_label, stable_key)
 
     @patch("moduly.audity.ui.audit_knowledge_criterion_widget.FindingDialog")
@@ -305,8 +314,8 @@ class AudityProcessesTestCase(unittest.TestCase):
         mock_dialog.get_data.return_value = {
             "finding_type": FINDING_TYPE_NESHODA,
             "reference_label": stable_key,
-            "description": "Politika BOZP chybí.",
-            "recommended_action": "Schválit politiku.",
+            "description": "Pracovní úrazy nejsou řádně evidovány.",
+            "recommended_action": "Zavést jednotný postup evidence.",
             "responsible_person_id": None,
             "responsible_person_name": "",
             "due_date": None,
@@ -318,13 +327,16 @@ class AudityProcessesTestCase(unittest.TestCase):
         from moduly.audity.ui.audit_dialog import AuditDialog
 
         dialog = AuditDialog(audit=audit)
-        criterion = audit_knowledge_service.get_criterion("planovani_bozp", "cile_politika")
+        criterion = audit_knowledge_service.get_criterion(
+            "urazy_mimo_udalosti",
+            "evidence_hlaseni_urazu",
+        )
         assert criterion is not None
         dialog.processes_widget.knowledge_widget.criterion_widget.set_criterion(
             criterion,
-            area_id="planovani_bozp",
-            area_label="Řízení plánování systému BOZP",
-            section_label="Politika, cíle a plánování",
+            area_id="urazy_mimo_udalosti",
+            area_label="Řízení pracovních úrazů a mimořádných událostí",
+            section_label="Evidence a hlášení pracovních úrazů",
         )
 
         question = audit_knowledge_service.get_audit_questions(criterion)[0]
@@ -334,7 +346,7 @@ class AudityProcessesTestCase(unittest.TestCase):
         self.assertEqual(dialog.findings_widget.table.rowCount(), 1)
         self.assertEqual(
             dialog.findings_widget.table.item(0, 7).text(),
-            "Politika BOZP chybí.",
+            "Pracovní úrazy nejsou řádně evidovány.",
         )
 
     def test_finding_dialog_includes_audit_finding_type_labels(self) -> None:
