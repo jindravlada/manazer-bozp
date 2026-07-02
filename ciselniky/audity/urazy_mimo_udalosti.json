@@ -1,5 +1,5 @@
 {
-  "verze": 4,
+  "verze": 5,
   "id": "urazy_mimo_udalosti",
   "nazev": "Řízení pracovních úrazů a mimořádných událostí",
   "popis": "Proces řízení pracovních úrazů a mimořádných událostí v organizaci.",
@@ -294,6 +294,1771 @@
       "poznamky_auditora": [],
       "referencni_fotografie": [],
       "historie": []
+    },
+    {
+      "id": "vysetrovani_urazu",
+      "nazev": "Vyšetřování pracovních úrazů",
+      "popis": "Ověření objektivního a včasného vyšetřování pracovních úrazů.",
+      "cil_overeni": "Ověřit, že organizace vyšetřuje pracovní úrazy bez zbytečného odkladu, nezaujatě a na základě úplných důkazů.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "vys_zahajeno_bez_odkladu",
+          "text": "Vyšetřování pracovních úrazů je zahájeno bez zbytečného odkladu.",
+          "popis": "Organizace má stanoven lhůtu pro zahájení šetření a prokazatelně ji dodržuje.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vys_dukazy_zajisteny",
+          "text": "Jsou zajištěny všechny dostupné důkazy.",
+          "popis": "Organizace dokumentuje zajištění místa události, fotodokumentace, výpovědí a dalších důkazů.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vys_svedci_objektivne",
+          "text": "Svědci jsou vyslechnuti objektivním způsobem.",
+          "popis": "Výpovědi svědků nejsou opisované a jsou vedeny samostatně od vyjádření poškozeného.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vys_nezaujate",
+          "text": "Vyšetřování je vedeno nezaujatě a bez předem určeného viníka.",
+          "popis": "Šetření směřuje ke zjištění skutečných okolností, nikoli k potvrzení předchozí domněnky.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vys_dokumentace_uplna",
+          "text": "Dokumentace o vyšetřování je úplná a průkazná.",
+          "popis": "Spis pracovního úrazu umožňuje zpětně ověřit průběh a závěry šetření.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_vys_spis",
+          "nazev": "kompletní spis pracovního úrazu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vys_foto",
+          "nazev": "fotodokumentace místa události",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vys_poskozeny",
+          "nazev": "vyjádření poškozeného zaměstnance",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vys_svedci",
+          "nazev": "vyjádření svědků",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vys_ohledani",
+          "nazev": "záznam o ohledání místa",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vys_dukazy",
+          "nazev": "záznam o zajištění důkazů",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vys_komise",
+          "nazev": "zápis z jednání vyšetřovací komise",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_vys_poskozeny",
+          "nazev": "poškozený zaměstnanec",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vys_svedci",
+          "nazev": "svědci události",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vys_vedouci",
+          "nazev": "přímý vedoucí zaměstnanec",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vys_technik",
+          "nazev": "technik BOZP",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vys_komise",
+          "nazev": "člen vyšetřovací komise",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vys_zastupci",
+          "nazev": "zástupce zaměstnanců",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "poz_vys_misto",
+          "nazev": "místo události je zdokumentováno",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poz_vys_dukazy",
+          "nazev": "důkazy jsou uchovány a dohledatelné",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "poz_vys_vypovedi",
+          "nazev": "svědecké výpovědi nejsou opisované",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "poz_vys_jednotny",
+          "nazev": "postup šetření je jednotný",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_vys_odklad",
+          "nazev": "Organizace neprokázala, že vyšetřování bylo zahájeno bez zbytečného odkladu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vys_dukazy",
+          "nazev": "Nebyly zajištěny všechny dostupné důkazy.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vys_objektivita",
+          "nazev": "Svědecké výpovědi byly získány způsobem, který mohl ovlivnit jejich objektivitu.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vys_dokumentace",
+          "nazev": "Dokumentace vyšetřování neumožňuje zpětně ověřit průběh šetření.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_vys_checklist",
+          "nazev": "Zavést jednotný checklist pro vyšetřování pracovních úrazů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_vys_foto",
+          "nazev": "Standardizovat pořizování fotodokumentace.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_vys_spis",
+          "nazev": "Vést elektronický spis pracovního úrazu.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_vys_skoleni",
+          "nazev": "Proškolit vedoucí zaměstnance v prvotních krocích po úrazu.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_vys_nejednotne",
+          "nazev": "postup šetření se liší mezi pracovišti",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poz_vys_chybi_foto",
+          "nazev": "chybí fotodokumentace místa události",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_102_1",
+          "nazev": "ISO 45001: 10.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – reakce na incidenty a nehody."
+        },
+        {
+          "id": "iso45001_75_2",
+          "nazev": "ISO 45001: 7.5",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – dokumentované informace."
+        },
+        {
+          "id": "iso45001_74_3",
+          "nazev": "ISO 45001: 7.4",
+          "poradi": 30,
+          "aktivni": true,
+          "popis": "Informativní reference – komunikace."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "analyza_pricin",
+      "nazev": "Analýza příčin a kořenových příčin",
+      "popis": "Ověření systematické analýzy příčin pracovních úrazů včetně kořenových příčin.",
+      "cil_overeni": "Ověřit, že organizace identifikuje skutečné příčiny událostí a na jejich základě stanovuje opatření.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "ana_bezprostredni",
+          "text": "Bezprostřední příčiny pracovního úrazu jsou správně identifikovány.",
+          "popis": "Organizace popisuje bezprostřední okolnosti a faktory, které vedly k úrazu.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "ana_korenove",
+          "text": "Jsou identifikovány také systémové nebo kořenové příčiny.",
+          "popis": "Analýza nekončí u bezprostřední příčiny, ale hledá opakující se systémová selhání.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "ana_rozliseni",
+          "text": "Organizace rozlišuje příčiny od následků.",
+          "popis": "Závěry analýzy nezaměňují projev události s její příčinou.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "ana_faktory",
+          "text": "Analýza příčin zahrnuje technické, organizační i lidské faktory.",
+          "popis": "Hodnocení pokrývá všechny relevantní kategorie příčin vzniku události.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "ana_opatreni",
+          "text": "Přijatá opatření vycházejí ze zjištěných příčin.",
+          "popis": "Mezi identifikovanými příčinami a navrženými opatřeními existuje prokazatelná návaznost.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "ana_metodika",
+          "text": "Organizace používá jednotnou metodiku analýzy příčin.",
+          "popis": "Pro analýzu příčin existuje stanovený postup nebo metodika.",
+          "poradi": 60,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_ana_vystup",
+          "nazev": "výstup analýzy příčin",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_ana_ishikawa",
+          "nazev": "Ishikawův diagram",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_ana_5why",
+          "nazev": "5 Why analýza",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_ana_foto",
+          "nazev": "fotodokumentace",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "duk_ana_vypovedi",
+          "nazev": "výpovědi svědků",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "duk_ana_rizika",
+          "nazev": "posouzení rizik",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "duk_ana_skoleni",
+          "nazev": "dokumentace školení",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "duk_ana_tech",
+          "nazev": "technická dokumentace zařízení",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "duk_ana_zprava",
+          "nazev": "vyšetřovací zpráva",
+          "poradi": 90,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_ana_vedouci",
+          "nazev": "vedoucí vyšetřování",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_ana_technik",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_ana_nadrizeny",
+          "nazev": "přímý nadřízený zaměstnance",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_ana_zamestnanec",
+          "nazev": "zaměstnanec",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_ana_svedek",
+          "nazev": "svědek",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_ana_udrzba",
+          "nazev": "údržba",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_ana_provoz",
+          "nazev": "vedoucí provozu",
+          "poradi": 70,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "poz_ana_ne_vinik",
+          "nazev": "šetření nekončí označením viníka",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poz_ana_vic_faktoru",
+          "nazev": "analýza obsahuje více faktorů vzniku události",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "poz_ana_dukazy",
+          "nazev": "závěry odpovídají důkazům",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "poz_ana_navaznost",
+          "nazev": "opatření navazují na příčiny",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_ana_priciny",
+          "nazev": "Organizace neprokázala, že byly identifikovány skutečné příčiny pracovního úrazu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_ana_vinik",
+          "nazev": "Analýza byla ukončena určením viníka bez ověření systémových příčin.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_ana_faktory",
+          "nazev": "Nebyly hodnoceny organizační ani technické faktory.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_ana_neodpovida",
+          "nazev": "Přijatá opatření neodpovídají zjištěným příčinám.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_ana_dukazy",
+          "nazev": "Analýza příčin není doložena objektivními důkazy.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_ana_metodika",
+          "nazev": "Zavést jednotnou metodiku analýzy příčin.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_ana_ishikawa",
+          "nazev": "Používat Ishikawův diagram u závažnějších událostí.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_ana_skoleni",
+          "nazev": "Školit vedoucí zaměstnance v analýze kořenových příčin.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_ana_kvalita",
+          "nazev": "Zavést kontrolu kvality vyšetřovacích zpráv.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_ana_sdileni",
+          "nazev": "Sdílet příklady dobře zpracovaných analýz.",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_ana_povrchni",
+          "nazev": "analýza je povrchní a neobsahuje kořenové příčiny",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poz_ana_chybi_metodika",
+          "nazev": "chybí jednotná metodika analýzy",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_102_1",
+          "nazev": "ISO 45001: 10.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – reakce na incidenty a nehody."
+        },
+        {
+          "id": "iso45001_103_2",
+          "nazev": "ISO 45001: 10.3",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – neustálé zlepšování."
+        },
+        {
+          "id": "iso45001_61_3",
+          "nazev": "ISO 45001: 6.1",
+          "poradi": 30,
+          "aktivni": true,
+          "popis": "Informativní reference – rizika a příležitosti."
+        },
+        {
+          "id": "iso45001_75_4",
+          "nazev": "ISO 45001: 7.5",
+          "poradi": 40,
+          "aktivni": true,
+          "popis": "Informativní reference – dokumentované informace."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "napravna_prevence_opatreni",
+      "nazev": "Nápravná a preventivní opatření",
+      "popis": "Ověření stanovování a sledování opatření reagujících na zjištěné příčiny.",
+      "cil_overeni": "Ověřit, že organizace stanovuje konkrétní, odpovědné a termínované opatření vycházející ze zjištěných příčin.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "op_konkretni",
+          "text": "Ke zjištěným příčinám jsou stanovena konkrétní opatření.",
+          "popis": "Každá identifikovaná příčina má odpovídající navržené opatření.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "op_odpovednost",
+          "text": "Opatření mají určenou odpovědnou osobu a termín.",
+          "popis": "Plán opatření obsahuje odpovědnost a termín splnění u každé položky.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "op_priciny",
+          "text": "Opatření řeší příčiny události, nikoli pouze její následky.",
+          "popis": "Opatření směřují ke změně podmínek, které vedly k úrazu.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "op_sledovani",
+          "text": "Realizace opatření je sledována.",
+          "popis": "Organizace prokazatelně monitoruje plnění stanovených opatření.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "op_primerna",
+          "text": "Opatření jsou přiměřená závažnosti a riziku opakování události.",
+          "popis": "Rozsah opatření odpovídá závažnosti úrazu a riziku opakování.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "op_rozliseni",
+          "text": "Organizace rozlišuje nápravná a preventivní opatření.",
+          "popis": "Nápravná opatření reagují na konkrétní událost, preventivní na širší prevenci.",
+          "poradi": 60,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_op_plan",
+          "nazev": "plán nápravných a preventivních opatření",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_op_zapis",
+          "nazev": "zápis z jednání o opatřeních",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_op_ukoly",
+          "nazev": "evidence úkolů a termínů",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_op_schvaleni",
+          "nazev": "schválení opatření vedením",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "duk_op_analyza",
+          "nazev": "vazba opatření na analýzu příčin",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_op_vedouci",
+          "nazev": "vedoucí odpovědný za opatření",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_op_technik",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_op_provoz",
+          "nazev": "vedoucí provozu",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_op_udrzba",
+          "nazev": "odpovědný za údržbu",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "poz_op_terminy",
+          "nazev": "termíny opatření jsou sledovány",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poz_op_odpovednosti",
+          "nazev": "odpovědnosti jsou jasně určeny",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "poz_op_navaznost",
+          "nazev": "opatření navazují na příčiny z analýzy",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_op_nekonkretni",
+          "nazev": "Organizace neprokázala, že ke zjištěným příčinám byla stanovena konkrétní opatření.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_op_chybi_termin",
+          "nazev": "Opatření nemají určenou odpovědnou osobu nebo termín.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_op_nasledky",
+          "nazev": "Opatření řeší pouze následky události, nikoli její příčiny.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_op_nesledovana",
+          "nazev": "Realizace opatření není sledována.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_op_sablona",
+          "nazev": "Zavést jednotnou šablonu plánu opatření.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_op_workflow",
+          "nazev": "Vést elektronické sledování plnění opatření.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_op_review",
+          "nazev": "Pravidelně reviewovat otevřená opatření z úrazů.",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_op_formalni",
+          "nazev": "opatření jsou formulována obecně bez konkrétního obsahu",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_102_1",
+          "nazev": "ISO 45001: 10.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – reakce na incidenty a nehody."
+        },
+        {
+          "id": "iso45001_103_2",
+          "nazev": "ISO 45001: 10.3",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – neustálé zlepšování."
+        },
+        {
+          "id": "iso45001_61_3",
+          "nazev": "ISO 45001: 6.1",
+          "poradi": 30,
+          "aktivni": true,
+          "popis": "Informativní reference – rizika a příležitosti."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "overovani_ucinnosti",
+      "nazev": "Ověřování účinnosti opatření",
+      "popis": "Ověření, zda přijatá opatření skutečně eliminují riziko opakování události.",
+      "cil_overeni": "Ověřit, že organizace prokazatelně ověřuje účinnost opatření a reaguje na neúčinná opatření.",
+      "poradi": 50,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "uc_overovuje",
+          "text": "Účinnost přijatých opatření je ověřována.",
+          "popis": "Organizace má doložené výsledky ověření účinnosti opatření.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "uc_kdo_kdy",
+          "text": "Organizace má stanoveno, kdo a kdy účinnost opatření ověří.",
+          "popis": "Plán ověření obsahuje odpovědnou osobu a termín.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "uc_neni_splneni",
+          "text": "Ověření účinnosti není zaměňováno za pouhé splnění úkolu.",
+          "popis": "Ověření zahrnuje posouzení, zda opatření skutečně eliminovalo riziko.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "uc_dokumentovano",
+          "text": "Výsledek ověření účinnosti je dokumentován.",
+          "popis": "Záznam obsahuje datum, odpovědnou osobu a závěr ověření.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "uc_neucinna",
+          "text": "Neúčinná opatření vedou k novému posouzení příčin nebo k novým opatřením.",
+          "popis": "Při neúčinnosti opatření organizace zahajuje nápravu.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_uc_zaznam",
+          "nazev": "záznamy o ověření účinnosti opatření",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_uc_kontrola",
+          "nazev": "výsledky kontrolních prohlídek po opatření",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_uc_revize",
+          "nazev": "revize rizik po opatření",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_uc_schvaleni",
+          "nazev": "schválení uzavření opatření",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_uc_vedouci",
+          "nazev": "vedoucí odpovědný za ověření",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_uc_technik",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_uc_provoz",
+          "nazev": "vedoucí provozu",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "poz_uc_provedeno",
+          "nazev": "ověření účinnosti je skutečně provedeno v provozu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poz_uc_dokument",
+          "nazev": "výsledek ověření je zdokumentován",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_uc_neoveruje",
+          "nazev": "Organizace neprokázala ověření účinnosti přijatých opatření.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_uc_splneni",
+          "nazev": "Ověření účinnosti je zaměňováno za pouhé splnění úkolu.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_uc_nedokumentovano",
+          "nazev": "Výsledek ověření účinnosti není dokumentován.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_uc_neucinna",
+          "nazev": "Neúčinná opatření nevedou k dalšímu posouzení.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_uc_checklist",
+          "nazev": "Zavést checklist pro ověření účinnosti opatření.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_uc_lhuty",
+          "nazev": "Stanovit povinné termíny ověření podle závažnosti úrazu.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_uc_review",
+          "nazev": "Pravidelně vyhodnocovat neúčinná opatření.",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_uc_chybi",
+          "nazev": "ověření účinnosti chybí u uzavřených opatření",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_102_1",
+          "nazev": "ISO 45001: 10.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – reakce na incidenty a nehody."
+        },
+        {
+          "id": "iso45001_103_2",
+          "nazev": "ISO 45001: 10.3",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – neustálé zlepšování."
+        },
+        {
+          "id": "iso45001_91_3",
+          "nazev": "ISO 45001: 9.1",
+          "poradi": 30,
+          "aktivni": true,
+          "popis": "Informativní reference – monitorování, měření, analýza a hodnocení."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "sdileni_zkusenosti",
+      "nazev": "Sdílení zkušeností a prevence opakování",
+      "popis": "Ověření využití poučení z pracovních úrazů pro prevenci opakování.",
+      "cil_overeni": "Ověřit, že organizace sdílí zkušenosti z úrazů a využívá je v školení, řízení rizik a řízení práce.",
+      "poradi": 60,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "sd_sdileno",
+          "text": "Poučení z pracovních úrazů je sdíleno s relevantními zaměstnanci.",
+          "popis": "Informace z šetření jsou sděleny dotčeným pracovištím a rolím.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "sd_skoleni",
+          "text": "Informace z úrazů jsou využívány při školení.",
+          "popis": "Příklady z praxe jsou zařazeny do BOZP školení.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "sd_rizika",
+          "text": "Zkušenosti z úrazů jsou využívány při aktualizaci rizik.",
+          "popis": "Revize rizik reflektuje zjištění z pracovních úrazů.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "sd_opakovani",
+          "text": "Organizace sleduje opakování obdobných událostí.",
+          "popis": "Existuje evidence a vyhodnocení opakujících se typů úrazů.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "sd_vedouci",
+          "text": "Vedoucí zaměstnanci využívají výsledky šetření při řízení práce.",
+          "popis": "Vedoucí znají poučení z úrazů ve své oblasti odpovědnosti.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_sd_prezentace",
+          "nazev": "prezentace nebo sdělení z úrazů",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_sd_skoleni",
+          "nazev": "podklady pro BOZP školení",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_sd_revize",
+          "nazev": "revize rizik po úrazu",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_sd_bulletin",
+          "nazev": "interní bulletin nebo sdělení",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_sd_vedouci",
+          "nazev": "vedoucí zaměstnanci",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_sd_technik",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_sd_zastupci",
+          "nazev": "zástupci zaměstnanců",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_sd_zamestnanci",
+          "nazev": "zaměstnanci dotčeného pracoviště",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "poz_sd_pouceni",
+          "nazev": "zaměstnanci znají poučení z nedávných úrazů",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poz_sd_sdileni",
+          "nazev": "informace jsou sdíleny mezi směnami a pracovišti",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_sd_nesdileno",
+          "nazev": "Poučení z pracovních úrazů není sdíleno s relevantními zaměstnanci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_sd_skoleni",
+          "nazev": "Informace z úrazů nejsou využívány při školení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_sd_rizika",
+          "nazev": "Zkušenosti z úrazů nejsou promítnuty do řízení rizik.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_sd_opakovani",
+          "nazev": "Organizace nesleduje opakování obdobných událostí.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_sd_bulletin",
+          "nazev": "Zavést pravidelné sdílení poučení z úrazů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_sd_case",
+          "nazev": "Vytvářet anonymizované case studies pro školení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_sd_forum",
+          "nazev": "Pořádat pravidelné BOZP fórum s tématy z úrazů.",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_sd_tajne",
+          "nazev": "informace o úrazech nejsou sdíleny mimo úzký okruh",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_103_1",
+          "nazev": "ISO 45001: 10.3",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – neustálé zlepšování."
+        },
+        {
+          "id": "iso45001_74_2",
+          "nazev": "ISO 45001: 7.4",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – komunikace."
+        },
+        {
+          "id": "iso45001_91_3",
+          "nazev": "ISO 45001: 9.1",
+          "poradi": 30,
+          "aktivni": true,
+          "popis": "Informativní reference – monitorování, měření, analýza a hodnocení."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "statistika_trendy",
+      "nazev": "Statistika a vyhodnocování trendů",
+      "popis": "Ověření systematického vyhodnocování pracovních úrazů a trendů.",
+      "cil_overeni": "Ověřit, že organizace pravidelně vyhodnocuje údaje o úrazech a využívá je pro řízení BOZP.",
+      "poradi": 70,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "st_pravidelne",
+          "text": "Organizace pravidelně vyhodnocuje pracovní úrazy a mimořádné události.",
+          "popis": "Existuje stanovená periodicita vyhodnocení a doložené výstupy.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "st_trendy",
+          "text": "Sledují se trendy, opakující se příčiny a rizikové činnosti.",
+          "popis": "Vyhodnocení obsahuje analýzu trendů a opakujících se příčin.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "st_vedeni",
+          "text": "Vyhodnocení je předkládáno vedení.",
+          "popis": "Vedení organizace je informováno o výsledcích statistik a trendů.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "st_planovani",
+          "text": "Výsledky statistik jsou využívány při plánování BOZP.",
+          "popis": "Plán BOZP reflektuje zjištění ze statistik úrazů.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "st_systemove",
+          "text": "Organizace rozlišuje mezi prostou statistikou a systémovým vyhodnocením.",
+          "popis": "Vyhodnocení obsahuje závěry a doporučení, ne pouze počty.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_st_prehled",
+          "nazev": "statistický přehled pracovních úrazů",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_st_trendy",
+          "nazev": "analýza trendů a opakujících se příčin",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_st_vedeni",
+          "nazev": "zpráva pro vedení",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_st_plan",
+          "nazev": "vazba na plán BOZP",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_st_technik",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_st_vedeni",
+          "nazev": "vedení organizace",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_st_personalist",
+          "nazev": "personalista",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "poz_st_vedeni",
+          "nazev": "vedení zná hlavní trendy úrazů",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poz_st_opatreni",
+          "nazev": "statistiky vedou ke konkrétním opatřením",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_st_nevyhodnocuje",
+          "nazev": "Organizace neprokázala pravidelné vyhodnocování pracovních úrazů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_st_bez_trendu",
+          "nazev": "Nejsou sledovány trendy ani opakující se příčiny.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_st_vedeni",
+          "nazev": "Vyhodnocení není předkládáno vedení.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_st_plan",
+          "nazev": "Výsledky statistik nejsou využívány při plánování BOZP.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_st_dashboard",
+          "nazev": "Zavést dashboard statistik pracovních úrazů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_st_automat",
+          "nazev": "Automatizovat generování čtvrtletních přehledů.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_st_benchmark",
+          "nazev": "Porovnávat trendy mezi pracovišti.",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_st_pouze_pocty",
+          "nazev": "vyhodnocení obsahuje pouze počty bez závěrů",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_91_1",
+          "nazev": "ISO 45001: 9.1",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – monitorování, měření, analýza a hodnocení."
+        },
+        {
+          "id": "iso45001_103_2",
+          "nazev": "ISO 45001: 10.3",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – neustálé zlepšování."
+        },
+        {
+          "id": "iso45001_61_3",
+          "nazev": "ISO 45001: 6.1",
+          "poradi": 30,
+          "aktivni": true,
+          "popis": "Informativní reference – rizika a příležitosti."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "mimoradne_udalosti",
+      "nazev": "Mimořádné události",
+      "popis": "Ověření řízení mimořádných událostí a jejich využití pro prevenci.",
+      "cil_overeni": "Ověřit, že organizace definuje, hlásí, vyšetřuje a využívá mimořádné události obdobně jako pracovní úrazy.",
+      "poradi": 80,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "mu_definovany",
+          "text": "Mimořádné události jsou definovány a rozlišeny od pracovních úrazů.",
+          "popis": "Organizace má jasně stanovenou definici mimořádné události.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "mu_hlaseni",
+          "text": "Organizace má stanoven postup hlášení mimořádných událostí.",
+          "popis": "Zaměstnanci vědí, jak a komu mimořádnou událost nahlásit.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "mu_setreni",
+          "text": "Mimořádné události jsou vyšetřovány obdobně jako pracovní úrazy.",
+          "popis": "Pro mimořádné události existuje obdobný postup šetření a dokumentace.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "mu_opatreni",
+          "text": "Výsledky šetření mimořádných událostí vedou k opatřením.",
+          "popis": "Z mimořádných událostí vycházejí konkrétní nápravná opatření.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "mu_prevence",
+          "text": "Zkušenosti z mimořádných událostí jsou využívány v prevenci.",
+          "popis": "Poučení z mimořádných událostí jsou sdílena a využita v prevenci.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_mu_definice",
+          "nazev": "definice mimořádné události",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_mu_evidence",
+          "nazev": "evidence mimořádných událostí",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_mu_postup",
+          "nazev": "postup hlášení a šetření",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_mu_zpravy",
+          "nazev": "zprávy o šetření mimořádných událostí",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_mu_vedouci",
+          "nazev": "vedoucí zaměstnanci",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_mu_technik",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_mu_zamestnanci",
+          "nazev": "zaměstnanci",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "poz_mu_rozliseni",
+          "nazev": "zaměstnanci rozlišují úraz a mimořádnou událost",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poz_mu_hlaseni",
+          "nazev": "postup hlášení je znám",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_mu_nedefinovano",
+          "nazev": "Mimořádné události nejsou definovány nebo jsou zaměňovány s pracovními úrazy.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_mu_postup",
+          "nazev": "Chybí stanovený postup hlášení mimořádných událostí.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_mu_nesetreni",
+          "nazev": "Mimořádné události nejsou vyšetřovány.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_mu_bez_opatreni",
+          "nazev": "Výsledky šetření mimořádných událostí nevedou k opatřením.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_mu_metodika",
+          "nazev": "Zavést jednotnou metodiku pro mimořádné události.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_mu_skoleni",
+          "nazev": "Proškolit zaměstnance v rozpoznání a hlášení mimořádných událostí.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_mu_evidence",
+          "nazev": "Vést evidenci mimořádných událostí v jednotném systému.",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_mu_neevidovane",
+          "nazev": "mimořádné události nejsou evidovány",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_102_1",
+          "nazev": "ISO 45001: 10.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – reakce na incidenty a nehody."
+        },
+        {
+          "id": "iso45001_103_2",
+          "nazev": "ISO 45001: 10.3",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – neustálé zlepšování."
+        },
+        {
+          "id": "iso45001_61_3",
+          "nazev": "ISO 45001: 6.1",
+          "poradi": 30,
+          "aktivni": true,
+          "popis": "Informativní reference – rizika a příležitosti."
+        },
+        {
+          "id": "iso45001_75_4",
+          "nazev": "ISO 45001: 7.5",
+          "poradi": 40,
+          "aktivni": true,
+          "popis": "Informativní reference – dokumentované informace."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ]
     }
   ]
 }
