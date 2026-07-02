@@ -275,7 +275,7 @@ class AudityKnowledgeEditorDialogProcessTestCase(unittest.TestCase):
         dialog.knowledge_tree.setCurrentItem(first_process)
 
         self.assertEqual(dialog.content_stack.currentIndex(), dialog._PAGE_PROCESS)
-        self.assertTrue(dialog._save_btn.isEnabled())
+        self.assertTrue(dialog._apply_btn.isEnabled())
         self.assertTrue(dialog.process_editor.has_process())
 
 
@@ -287,7 +287,7 @@ class AudityKnowledgeEditorDialogSaveFeedbackTestCase(
         self.assertTrue(dialog.knowledge_tree.select_node(_PROCESS_ID))
 
         dialog.process_editor._nazev_edit.setText("Editor test — potvrzení uložení")
-        dialog._save_current_process()
+        dialog._apply_changes()
 
         self.assertEqual(dialog._status_label.text(), KNOWLEDGE_EDITOR_SAVED_MESSAGE)
 
@@ -300,7 +300,7 @@ class AudityKnowledgeEditorDialogSaveFeedbackTestCase(
         dialog = AudityKnowledgeEditorDialog()
         self.assertTrue(dialog.knowledge_tree.select_node(_PROCESS_ID))
 
-        dialog._save_current_process()
+        dialog._apply_changes()
 
         mock_warning.assert_called_once()
         self.assertFalse(dialog._status_label.isVisible())

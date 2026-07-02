@@ -2,6 +2,7 @@ from copy import deepcopy
 from pathlib import Path
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -21,7 +22,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.widgets.dialog_utils import create_save_cancel_box
+from core.widgets.knowledge_editor_actions import (
+    clear_save_status,
+    confirm_close_with_unsaved_changes,
+    create_knowledge_editor_footer,
+    show_save_status,
+)
 from moduly.proverky.constants import CONTROL_POINT_SEVERITY_OPTIONS, REFERENCE_PHOTO_FILTER
 from moduly.proverky.sluzby.proverky_knowledge_service import (
     EDITABLE_SECTION_LIST_FIELDS,
@@ -168,6 +174,7 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
             raise ValueError(f"Sekce {section_id} v oblasti {area_id} neexistuje.")
 
         self._section = section
+        self._modified = False
         area = proverky_knowledge_service.get_area_by_id(area_id)
         area_label = area.nazev if area else area_id
         section_label = str(section.get("nazev") or section_id)
@@ -224,10 +231,67 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         scroll_layout.addStretch()
         root_layout.addWidget(scroll, stretch=1)
 
-        buttons = create_save_cancel_box(self)
-        buttons.accepted.connect(self._accept)
-        buttons.rejected.connect(self.reject)
-        root_layout.addWidget(buttons)
+        footer, self._apply_btn, self._save_close_btn, self._close_btn, self._status_label = (
+            create_knowledge_editor_footer(
+                on_apply=self._apply_changes,
+                on_save_close=self._save_and_close,
+                on_close=self._request_close,
+            )
+        )
+        root_layout.addLayout(footer)
+
+        self._nazev_edit.textChanged.connect(lambda *_args: self._mark_modified())
+        self._popis_edit.textChanged.connect(lambda *_args: self._mark_modified())
+        self._aktivni_check.toggled.connect(lambda *_args: self._mark_modified())
+
+    def _mark_modified(self) -> None:
+        self._modified = True
+
+    def _mark_saved(self) -> None:
+        self._modified = False
+
+    def _apply_changes(self) -> None:
+        if self._persist_section_changes():
+            self._mark_saved()
+            show_save_status(self._status_label)
+        else:
+            self._show_persist_error()
+
+    def _save_and_close(self) -> None:
+        if self._persist_section_changes():
+            self._mark_saved()
+            self.accept()
+        else:
+            self._show_persist_error()
+
+    def _request_close(self) -> None:
+        if self._confirm_close():
+            super().reject()
+
+    def _confirm_close(self) -> bool:
+        if not self._modified:
+            return True
+
+        decision = confirm_close_with_unsaved_changes(self, title=self.windowTitle())
+        if decision == "cancel":
+            return False
+        if decision == "save":
+            if not self._persist_section_changes():
+                return False
+            self._mark_saved()
+        else:
+            self._mark_saved()
+        return True
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        if self._confirm_close():
+            event.accept()
+        else:
+            event.ignore()
+
+    def reject(self) -> None:
+        if self._confirm_close():
+            super().reject()
 
     def exec(self) -> int:
         self.showMaximized()
@@ -417,6 +481,9 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
                 self.windowTitle(),
                 "Závažnost se nepodařilo uložit.",
             )
+            self._mark_modified()
+            return
+        self._mark_saved()
 
     def _refresh_control_point_row(self, list_widget: QListWidget, row: int) -> None:
         row_item = list_widget.item(row)
@@ -505,6 +572,7 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         self._add_reference_row(list_widget, item)
         list_widget.setCurrentRow(list_widget.count() - 1)
         self._refresh_section_count(list_widget)
+        self._mark_modified()
 
     def _edit_reference_photo(self, list_widget: QListWidget) -> None:
         row = self._selected_row(list_widget)
@@ -532,6 +600,7 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         updated.update(data)
         list_widget.item(row).setText(self._format_reference_label(updated))
         list_widget.item(row).setData(Qt.ItemDataRole.UserRole, updated)
+        self._mark_modified()
 
     def _remove_reference_photo(self, list_widget: QListWidget) -> None:
         row = self._selected_row(list_widget)
@@ -555,6 +624,7 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
 
         list_widget.takeItem(row)
         self._refresh_section_count(list_widget)
+        self._mark_modified()
 
     def _add_item(self, list_widget: QListWidget) -> None:
         if list_widget in self._procedure_lists:
@@ -579,6 +649,7 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
             self._add_procedure_row(list_widget, data)
             list_widget.setCurrentRow(list_widget.count() - 1)
             self._refresh_section_count(list_widget)
+            self._mark_modified()
             return
 
         dialog = ProverkyKnowledgeListItemDialog(
@@ -606,6 +677,7 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
             self._add_list_row(list_widget, data)
         list_widget.setCurrentRow(list_widget.count() - 1)
         self._refresh_section_count(list_widget)
+        self._mark_modified()
 
     def _edit_item(self, list_widget: QListWidget) -> None:
         row = self._selected_row(list_widget)
@@ -639,6 +711,7 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
 
             list_widget.item(row).setText(self._format_procedure_label(data))
             list_widget.item(row).setData(Qt.ItemDataRole.UserRole, data)
+            self._mark_modified()
             return
 
         dialog = ProverkyKnowledgeListItemDialog(
@@ -666,6 +739,7 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
             self._refresh_control_point_row(list_widget, row)
         else:
             list_widget.item(row).setText(self._format_item_label(data))
+        self._mark_modified()
 
     def _remove_item(self, list_widget: QListWidget) -> None:
         row = self._selected_row(list_widget)
@@ -685,6 +759,7 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
 
         list_widget.takeItem(row)
         self._refresh_section_count(list_widget)
+        self._mark_modified()
 
     def _move_item(self, list_widget: QListWidget, direction: int) -> None:
         row = self._selected_row(list_widget)
@@ -698,6 +773,7 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         item = list_widget.takeItem(row)
         list_widget.insertItem(target, item)
         list_widget.setCurrentRow(target)
+        self._mark_modified()
 
     def _toggle_active(self, list_widget: QListWidget) -> None:
         row = self._selected_row(list_widget)
@@ -725,6 +801,7 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
             self._refresh_control_point_row(list_widget, row)
         else:
             item.setText(self._format_item_label(updated))
+        self._mark_modified()
 
     def _collect_reference_photos(self, list_widget: QListWidget) -> list[dict]:
         items: list[dict] = []
@@ -776,17 +853,14 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
 
         return payload
 
-    def _accept(self) -> None:
-        if not self._persist_section_changes():
-            payload = self._build_section_payload()
-            if payload is None:
-                QMessageBox.warning(self, self.windowTitle(), "Název sekce je povinný.")
-            else:
-                QMessageBox.warning(
-                    self,
-                    self.windowTitle(),
-                    "Změny se nepodařilo uložit.",
-                )
-            return
-
-        self.accept()
+    def _show_persist_error(self) -> None:
+        clear_save_status(self._status_label)
+        payload = self._build_section_payload()
+        if payload is None:
+            QMessageBox.warning(self, self.windowTitle(), "Název sekce je povinný.")
+        else:
+            QMessageBox.warning(
+                self,
+                self.windowTitle(),
+                "Změny se nepodařilo uložit.",
+            )

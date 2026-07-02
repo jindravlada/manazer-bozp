@@ -1,6 +1,6 @@
 """Záložka auditních tvrzení v editoru metodiky auditora."""
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
@@ -29,6 +29,9 @@ _COL_AKTIVNI = 5
 
 class AudityKnowledgeAssertionsWidget(QWidget):
     """Seznam auditních tvrzení oblasti ověření s CRUD toolbar."""
+
+    content_modified = Signal()
+    content_saved = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -118,6 +121,7 @@ class AudityKnowledgeAssertionsWidget(QWidget):
             self.clear_section()
             return
         self._reload_from_section(section)
+        self.content_saved.emit()
 
     def _reload_from_section(self, section: dict) -> None:
         raw_items = section.get("auditni_tvrzeni") or []
@@ -177,6 +181,7 @@ class AudityKnowledgeAssertionsWidget(QWidget):
         if dialog.exec() != AudityKnowledgeAssertionDialog.DialogCode.Accepted:
             return
 
+        self.content_modified.emit()
         errors = audit_knowledge_editor_service.save_assertion(
             self._process_id,
             self._section_id,
@@ -203,6 +208,7 @@ class AudityKnowledgeAssertionsWidget(QWidget):
         if dialog.exec() != AudityKnowledgeAssertionDialog.DialogCode.Accepted:
             return
 
+        self.content_modified.emit()
         errors = audit_knowledge_editor_service.save_assertion(
             self._process_id,
             self._section_id,
@@ -221,6 +227,7 @@ class AudityKnowledgeAssertionsWidget(QWidget):
         if not selected.get("aktivni", True):
             return
 
+        self.content_modified.emit()
         errors = audit_knowledge_editor_service.set_assertion_active(
             self._process_id,
             self._section_id,
@@ -239,6 +246,7 @@ class AudityKnowledgeAssertionsWidget(QWidget):
         if selected.get("aktivni", True):
             return
 
+        self.content_modified.emit()
         errors = audit_knowledge_editor_service.set_assertion_active(
             self._process_id,
             self._section_id,

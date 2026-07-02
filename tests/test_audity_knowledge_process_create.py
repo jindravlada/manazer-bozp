@@ -309,7 +309,7 @@ class AudityKnowledgeEditorDialogAddProcessTestCase(_KnowledgeEditorTestBase):
         self.assertTrue(dialog.knowledge_tree.select_node(process_id))
         self.assertEqual(dialog.content_stack.currentIndex(), dialog._PAGE_PROCESS)
         self.assertEqual(dialog.process_editor.process_id, process_id)
-        self.assertTrue(dialog._save_btn.isEnabled())
+        self.assertTrue(dialog._apply_btn.isEnabled())
 
 
 if __name__ == "__main__":

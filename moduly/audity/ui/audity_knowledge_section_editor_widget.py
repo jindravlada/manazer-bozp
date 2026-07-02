@@ -1,5 +1,6 @@
 """Editační formulář oblasti ověření v editoru metodiky auditora."""
 
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QFormLayout,
@@ -31,6 +32,9 @@ from moduly.audity.ui.audity_knowledge_reference_photo_editor_widget import (
 
 class AudityKnowledgeSectionEditorWidget(QWidget):
     """Formulář metadat oblasti ověření a záložky metodických seznamů."""
+
+    content_modified = Signal()
+    content_saved = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -108,6 +112,21 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
         scroll_layout.addWidget(self._tabs, stretch=1)
         scroll.setWidget(scroll_content)
         root.addWidget(scroll, stretch=1)
+
+        for widget in (self._nazev_edit, self._popis_edit, self._cil_overeni_edit):
+            widget.textChanged.connect(lambda *_args: self.content_modified.emit())
+        self._poradi_spin.valueChanged.connect(lambda *_args: self.content_modified.emit())
+        self._aktivni_check.toggled.connect(lambda *_args: self.content_modified.emit())
+
+        child_widgets = [
+            self._assertions_widget,
+            self._postup_widget,
+            self._reference_photo_widget,
+            *self._list_widgets.values(),
+        ]
+        for child in child_widgets:
+            child.content_modified.connect(self.content_modified.emit)
+            child.content_saved.connect(self.content_saved.emit)
 
     @property
     def process_id(self) -> str:

@@ -265,7 +265,7 @@ class AudityKnowledgeEditorDialogSectionTestCase(unittest.TestCase):
         self._select_section(dialog)
 
         self.assertEqual(dialog.content_stack.currentIndex(), dialog._PAGE_SECTION)
-        self.assertTrue(dialog._save_btn.isEnabled())
+        self.assertTrue(dialog._apply_btn.isEnabled())
         self.assertEqual(dialog.section_editor.section_id, _SECTION_ID)
 
 

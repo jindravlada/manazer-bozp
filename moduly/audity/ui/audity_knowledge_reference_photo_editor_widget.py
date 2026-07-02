@@ -1,6 +1,6 @@
 """Editor referenčních fotografií oblasti ověření."""
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
@@ -31,6 +31,9 @@ _COL_AKTIVNI = 5
 
 class AudityKnowledgeReferencePhotoEditorWidget(QWidget):
     """Seznam referenčních fotografií s CRUD toolbar."""
+
+    content_modified = Signal()
+    content_saved = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -117,6 +120,7 @@ class AudityKnowledgeReferencePhotoEditorWidget(QWidget):
             self.clear_section()
             return
         self._reload_from_section(section)
+        self.content_saved.emit()
 
     def _reload_from_section(self, section: dict) -> None:
         raw_items = section.get(_FIELD_NAME) or []
@@ -172,6 +176,7 @@ class AudityKnowledgeReferencePhotoEditorWidget(QWidget):
         if dialog.exec() != AudityKnowledgeReferencePhotoDialog.DialogCode.Accepted:
             return
 
+        self.content_modified.emit()
         errors = audit_knowledge_editor_service.save_section_list_item(
             self._process_id,
             self._section_id,
@@ -196,6 +201,7 @@ class AudityKnowledgeReferencePhotoEditorWidget(QWidget):
         if dialog.exec() != AudityKnowledgeReferencePhotoDialog.DialogCode.Accepted:
             return
 
+        self.content_modified.emit()
         errors = audit_knowledge_editor_service.save_section_list_item(
             self._process_id,
             self._section_id,
@@ -212,6 +218,7 @@ class AudityKnowledgeReferencePhotoEditorWidget(QWidget):
         selected = self._selected_item()
         if selected is None or not selected.get("aktivni", True):
             return
+        self.content_modified.emit()
         errors = audit_knowledge_editor_service.set_section_list_item_active(
             self._process_id,
             self._section_id,
@@ -228,6 +235,7 @@ class AudityKnowledgeReferencePhotoEditorWidget(QWidget):
         selected = self._selected_item()
         if selected is None or selected.get("aktivni", True):
             return
+        self.content_modified.emit()
         errors = audit_knowledge_editor_service.set_section_list_item_active(
             self._process_id,
             self._section_id,

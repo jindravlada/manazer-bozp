@@ -1,6 +1,7 @@
 """Editační formulář metadat řídicího procesu v editoru metodiky auditora."""
 
 from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QFormLayout,
@@ -26,6 +27,7 @@ class AudityKnowledgeProcessEditorWidget(QWidget):
     """Formulář metadat vybraného řídicího procesu."""
 
     add_section_requested = Signal()
+    content_modified = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -78,6 +80,17 @@ class AudityKnowledgeProcessEditorWidget(QWidget):
 
         scroll.setWidget(scroll_content)
         root.addWidget(scroll, stretch=1)
+
+        for widget in (
+            self._nazev_edit,
+            self._popis_edit,
+            self._ucel_edit,
+            self._proc_je_dulezity_edit,
+            self._ocekavany_vystup_edit,
+        ):
+            widget.textChanged.connect(lambda *_args: self.content_modified.emit())
+        self._poradi_spin.valueChanged.connect(lambda *_args: self.content_modified.emit())
+        self._aktivni_check.toggled.connect(lambda *_args: self.content_modified.emit())
 
     @property
     def process_id(self) -> str:

@@ -1,8 +1,8 @@
 """Dialog editoru metodiky auditora."""
 
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QDialog,
-    QDialogButtonBox,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -14,10 +14,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.widgets.dialog_utils import configure_close_button, configure_save_cancel_buttons
+from core.widgets.knowledge_editor_actions import (
+    clear_save_status,
+    confirm_close_with_unsaved_changes,
+    create_knowledge_editor_footer,
+    show_save_status,
+)
 from moduly.audity.constants import (
     KNOWLEDGE_EDITOR_ADD_PROCESS_BUTTON,
-    KNOWLEDGE_EDITOR_SAVED_MESSAGE,
     KNOWLEDGE_EDITOR_SELECT_PROCESS_HINT,
     KNOWLEDGE_EDITOR_USER_COPY_HINT,
     KNOWLEDGE_EDITOR_WINDOW_TITLE,
@@ -53,6 +57,7 @@ class AudityKnowledgeEditorDialog(QDialog):
 
         self._current_process_id = ""
         self._current_section_id = ""
+        self._modified = False
 
         audit_knowledge_editor_service.ensure_user_catalogs()
 
@@ -104,8 +109,11 @@ class AudityKnowledgeEditorDialog(QDialog):
         self.content_stack.addWidget(self._build_hint_page())
         self.process_editor = AudityKnowledgeProcessEditorWidget()
         self.process_editor.add_section_requested.connect(self._add_section)
+        self.process_editor.content_modified.connect(self._mark_modified)
         self.content_stack.addWidget(self.process_editor)
         self.section_editor = AudityKnowledgeSectionEditorWidget()
+        self.section_editor.content_modified.connect(self._mark_modified)
+        self.section_editor.content_saved.connect(self._mark_saved)
         self.content_stack.addWidget(self.section_editor)
 
         center_layout.addWidget(self.center_title_label)
@@ -120,24 +128,82 @@ class AudityKnowledgeEditorDialog(QDialog):
 
         root.addWidget(main_splitter, 1)
 
-        self._status_label = QLabel()
-        self._status_label.setObjectName("InfoText")
-        self._status_label.setVisible(False)
-        root.addWidget(self._status_label)
-
-        self._button_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Close
+        footer, self._apply_btn, self._save_close_btn, self._close_btn, self._status_label = (
+            create_knowledge_editor_footer(
+                on_apply=self._apply_changes,
+                on_save_close=self._save_and_close,
+                on_close=self._request_close,
+                apply_enabled=False,
+            )
         )
-        configure_save_cancel_buttons(self._button_box)
-        configure_close_button(self._button_box)
-        self._save_btn = self._button_box.button(QDialogButtonBox.StandardButton.Save)
-        self._save_btn.setEnabled(False)
-        self._save_btn.clicked.connect(self._save_current)
-        self._button_box.rejected.connect(self.reject)
-        root.addWidget(self._button_box)
+        root.addLayout(footer)
 
         self.knowledge_tree.reload_tree(include_inactive=True)
         self._show_hint()
+
+    def _can_save_current(self) -> bool:
+        index = self.content_stack.currentIndex()
+        if index == self._PAGE_PROCESS:
+            return self.process_editor.has_process()
+        if index == self._PAGE_SECTION:
+            return self.section_editor.has_section()
+        return False
+
+    def _update_action_buttons(self) -> None:
+        enabled = self._can_save_current()
+        self._apply_btn.setEnabled(enabled)
+        self._save_close_btn.setEnabled(enabled)
+
+    def _mark_modified(self) -> None:
+        self._modified = True
+
+    def _mark_saved(self) -> None:
+        self._modified = False
+
+    def _apply_changes(self) -> None:
+        if self._save_current():
+            self._mark_saved()
+            show_save_status(self._status_label)
+
+    def _save_and_close(self) -> None:
+        if not self._can_save_current():
+            self._modified = False
+            self.accept()
+            return
+        if self._save_current():
+            self._mark_saved()
+            self.accept()
+
+    def _request_close(self) -> None:
+        if self._confirm_close():
+            super().reject()
+
+    def _confirm_close(self) -> bool:
+        if not self._modified:
+            return True
+
+        decision = confirm_close_with_unsaved_changes(self, title=self.windowTitle())
+        if decision == "cancel":
+            return False
+        if decision == "save":
+            if not self._can_save_current():
+                return False
+            if not self._save_current():
+                return False
+            self._mark_saved()
+        else:
+            self._mark_saved()
+        return True
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        if self._confirm_close():
+            event.accept()
+        else:
+            event.ignore()
+
+    def reject(self) -> None:
+        if self._confirm_close():
+            super().reject()
 
     def _build_hint_page(self) -> QWidget:
         page = QWidget()
@@ -152,18 +218,14 @@ class AudityKnowledgeEditorDialog(QDialog):
         return page
 
     def _clear_save_status(self) -> None:
-        self._status_label.clear()
-        self._status_label.setVisible(False)
-
-    def _show_save_success(self) -> None:
-        self._status_label.setText(KNOWLEDGE_EDITOR_SAVED_MESSAGE)
-        self._status_label.setVisible(True)
+        clear_save_status(self._status_label)
 
     def _show_hint(self) -> None:
         self._clear_save_status()
+        self._mark_saved()
         self._current_process_id = ""
         self._current_section_id = ""
-        self._save_btn.setEnabled(False)
+        self._update_action_buttons()
         self.process_editor.clear_process()
         self.section_editor.clear_section()
         self.center_title_label.setText(self.windowTitle())
@@ -184,7 +246,7 @@ class AudityKnowledgeEditorDialog(QDialog):
             ensure=False,
         )
         if metadata is None:
-            self._save_btn.setEnabled(False)
+            self._update_action_buttons()
             self.process_editor.clear_process()
             self.center_title_label.setText(node.process_label)
             self.center_description_label.setText(
@@ -198,10 +260,11 @@ class AudityKnowledgeEditorDialog(QDialog):
             process_id=node.process_id,
             metadata=metadata,
         )
-        self._save_btn.setEnabled(True)
+        self._mark_saved()
         self.center_title_label.setText(str(metadata.get("nazev") or node.process_label))
         self.center_description_label.setVisible(False)
         self.content_stack.setCurrentIndex(self._PAGE_PROCESS)
+        self._update_action_buttons()
 
     def _on_criterion_selected(self, node: KnowledgeTreeNode | None) -> None:
         if node is None:
@@ -221,9 +284,6 @@ class AudityKnowledgeEditorDialog(QDialog):
         process_def = audit_knowledge_service.get_process_by_id(node.process_id, ensure=False)
         process_label = process_def.nazev if process_def else node.process_label
 
-        self.center_title_label.setText(f"{process_label} → {section_label}")
-        self.center_description_label.setVisible(False)
-
         fresh_section = audit_knowledge_service.get_criterion(
             node.process_id,
             node.node_id,
@@ -237,19 +297,22 @@ class AudityKnowledgeEditorDialog(QDialog):
             section_id=node.node_id,
             section=fresh_section,
         )
-        self._save_btn.setEnabled(True)
+        self._mark_saved()
+        self.center_title_label.setText(f"{process_label} → {section_label}")
+        self.center_description_label.setVisible(False)
         self.content_stack.setCurrentIndex(self._PAGE_SECTION)
+        self._update_action_buttons()
 
-    def _save_current(self) -> list[str]:
+    def _save_current(self) -> bool:
         if self.content_stack.currentIndex() == self._PAGE_PROCESS:
             return self._save_current_process()
         if self.content_stack.currentIndex() == self._PAGE_SECTION:
             return self._save_current_section()
-        return []
+        return False
 
-    def _save_current_process(self) -> list[str]:
+    def _save_current_process(self) -> bool:
         if not self.process_editor.has_process():
-            return []
+            return False
 
         process_id = self.process_editor.process_id
         errors = audit_knowledge_editor_service.save_process_metadata(
@@ -263,27 +326,26 @@ class AudityKnowledgeEditorDialog(QDialog):
                 self.windowTitle(),
                 "\n".join(errors),
             )
-            return errors
+            return False
 
         self.knowledge_tree.reload_tree(include_inactive=True, ensure=False)
         self.knowledge_tree.blockSignals(True)
         try:
             if not self.knowledge_tree.select_node(process_id):
                 self._show_hint()
-                return []
+                return False
 
             refreshed = audit_knowledge_service.get_process_metadata(process_id, ensure=False)
             if refreshed is None:
                 self._show_hint()
-                return []
+                return False
 
             self.process_editor.load_process(process_id=process_id, metadata=refreshed)
             self.center_title_label.setText(str(refreshed.get("nazev") or process_id))
         finally:
             self.knowledge_tree.blockSignals(False)
 
-        self._show_save_success()
-        return []
+        return True
 
     def _add_section(self) -> None:
         if not self.process_editor.has_process():
@@ -346,9 +408,9 @@ class AudityKnowledgeEditorDialog(QDialog):
             )
             return
 
-    def _save_current_section(self) -> list[str]:
+    def _save_current_section(self) -> bool:
         if not self.section_editor.has_section():
-            return []
+            return False
 
         process_id = self.section_editor.process_id
         section_id = self.section_editor.section_id
@@ -364,14 +426,14 @@ class AudityKnowledgeEditorDialog(QDialog):
                 self.windowTitle(),
                 "\n".join(errors),
             )
-            return errors
+            return False
 
         self.knowledge_tree.reload_tree(include_inactive=True, ensure=False)
         self.knowledge_tree.blockSignals(True)
         try:
             if not self.knowledge_tree.select_node(process_id, section_id):
                 self._show_hint()
-                return []
+                return False
 
             refreshed = audit_knowledge_service.get_criterion(
                 process_id,
@@ -380,7 +442,7 @@ class AudityKnowledgeEditorDialog(QDialog):
             )
             if refreshed is None:
                 self._show_hint()
-                return []
+                return False
 
             self.section_editor.load_section(
                 process_id=process_id,
@@ -395,8 +457,7 @@ class AudityKnowledgeEditorDialog(QDialog):
         finally:
             self.knowledge_tree.blockSignals(False)
 
-        self._show_save_success()
-        return []
+        return True
 
     def _add_process(self) -> None:
         existing_ids = audit_knowledge_editor_service.collect_process_ids()
