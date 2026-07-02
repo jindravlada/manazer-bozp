@@ -32,6 +32,7 @@ with patch.object(Path, "home", return_value=_TMP):
         COMMISSION_RECORD_LEADER,
         COMMISSION_RECORD_UNION,
         COMMISSION_RECORD_WORKPLACE,
+        AUDIT_PROGRAM_BUTTON_LABEL,
         DEFAULT_AUDIT_STATUS_FILTER,
         KNOWLEDGE_EDITOR_BUTTON_LABEL,
         KNOWLEDGE_EDITOR_WINDOW_TITLE,
@@ -113,6 +114,7 @@ class AudityPageTestCase(unittest.TestCase):
         self.assertTrue(page.refresh_btn.isEnabled())
         self.assertTrue(page.knowledge_editor_btn.isEnabled())
         self.assertEqual(page.knowledge_editor_btn.text(), KNOWLEDGE_EDITOR_BUTTON_LABEL)
+        self.assertEqual(page.program_btn.text(), AUDIT_PROGRAM_BUTTON_LABEL)
         self.assertFalse(hasattr(page, "plan_btn"))
         self.assertFalse(hasattr(page, "report_btn"))
 
@@ -128,6 +130,17 @@ class AudityPageTestCase(unittest.TestCase):
         self.assertIsInstance(dialog, AudityKnowledgeEditorDialog)
         self.assertEqual(dialog.windowTitle(), KNOWLEDGE_EDITOR_WINDOW_TITLE)
         self.assertGreaterEqual(dialog.knowledge_tree.topLevelItemCount(), 1)
+
+    @patch("moduly.audity.ui.audity_page.exec_maximized")
+    def test_open_program_manager_opens_dialog(self, mock_exec) -> None:
+        from moduly.audity.ui.audit_program_manager_dialog import AuditProgramManagerDialog
+
+        page = self._create_page()
+        page.open_program_manager()
+
+        mock_exec.assert_called_once()
+        dialog = mock_exec.call_args.args[0]
+        self.assertIsInstance(dialog, AuditProgramManagerDialog)
 
     def test_table_columns(self) -> None:
         page = self._create_page()

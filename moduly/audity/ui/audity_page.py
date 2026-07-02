@@ -11,7 +11,6 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import exec_maximized
-from core.widgets.dialog_utils import exec_maximized
 from core.widgets.table_utils import configure_table_columns
 from moduly.audity.constants import (
     AUDIT_STATUS_BY_FILTER,
@@ -19,6 +18,7 @@ from moduly.audity.constants import (
     AUDIT_STATUS_FILTER_PLANOVANE,
     AUDIT_STATUS_FILTER_PROBIHAJICI,
     AUDIT_STATUS_FILTER_VSE,
+    AUDIT_PROGRAM_BUTTON_LABEL,
     DEFAULT_AUDIT_STATUS_FILTER,
     KNOWLEDGE_EDITOR_BUTTON_LABEL,
     MODULE_NAME,
@@ -26,6 +26,7 @@ from moduly.audity.constants import (
 )
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.audity.ui.audit_dialog import AuditDialog
+from moduly.audity.ui.audit_program_manager_dialog import AuditProgramManagerDialog
 from moduly.audity.ui.audity_knowledge_editor_dialog import AudityKnowledgeEditorDialog
 from moduly.audity.ui.audit_table import AuditTable
 
@@ -41,6 +42,7 @@ class AudityPage(QWidget):
         toolbar = QHBoxLayout()
 
         self.new_btn = QPushButton("Nový audit")
+        self.program_btn = QPushButton(AUDIT_PROGRAM_BUTTON_LABEL)
         self.edit_btn = QPushButton("Upravit")
         self.delete_btn = QPushButton("Smazat")
         self.refresh_btn = QPushButton("Obnovit")
@@ -59,6 +61,7 @@ class AudityPage(QWidget):
         self._populate_year_filter()
 
         toolbar.addWidget(self.new_btn)
+        toolbar.addWidget(self.program_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.delete_btn)
         toolbar.addWidget(self.refresh_btn)
@@ -76,6 +79,7 @@ class AudityPage(QWidget):
         layout.addWidget(self.table)
 
         self.new_btn.clicked.connect(self.new_audit)
+        self.program_btn.clicked.connect(self.open_program_manager)
         self.edit_btn.clicked.connect(self.open_selected_audit)
         self.delete_btn.clicked.connect(self.delete_selected_audit)
         self.refresh_btn.clicked.connect(self.refresh)
@@ -166,6 +170,9 @@ class AudityPage(QWidget):
 
     def open_knowledge_editor(self) -> None:
         exec_maximized(AudityKnowledgeEditorDialog(self))
+
+    def open_program_manager(self) -> None:
+        exec_maximized(AuditProgramManagerDialog(self))
 
     def delete_selected_audit(self) -> None:
         audit_id = self._selected_audit_id()

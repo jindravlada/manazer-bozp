@@ -80,6 +80,56 @@ class AuditProgramService:
     def list_programs(self) -> list[AuditProgram]:
         return self.repository.list_programs()
 
+    def update_program(self, program_id: int, **fields) -> AuditProgram:
+        program = self.repository.get_program(program_id)
+        if program is None:
+            raise ValueError(f"Program auditů {program_id} neexistuje.")
+
+        merged = {
+            "number": program.number,
+            "name": program.name,
+            "date_from": program.date_from,
+            "date_to": program.date_to,
+            "status": program.status,
+            "standards": program.standards_json,
+            "description": program.description,
+            "note": program.note,
+            "created_at": program.created_at,
+            "approved_at": program.approved_at,
+            "closed_at": program.closed_at,
+        }
+        merged.update(fields)
+        data = self._validated_program_fields(merged)
+        for key, value in data.items():
+            if key == "created_at":
+                continue
+            setattr(program, key, value)
+        return self.repository.update_program(program)
+
+    def sync_workplaces_from_settings(self, program_id: int) -> int:
+        if self.repository.get_program(program_id) is None:
+            raise ValueError(f"Program auditů {program_id} neexistuje.")
+
+        from moduly.nastaveni.sluzby.settings_service import settings_service
+
+        existing_ids = {
+            workplace.workplace_id
+            for workplace in self.repository.list_workplaces(program_id)
+        }
+        created = 0
+        for workplace in settings_service.get_workplaces():
+            if workplace.id in existing_ids:
+                continue
+            self.add_workplace(
+                program_id,
+                workplace_id=workplace.id,
+                workplace_name=workplace.name,
+                audit_interval_months=12,
+                active=True,
+            )
+            created += 1
+        return created
+
     def add_workplace(self, program_id: int, **fields) -> AuditProgramWorkplace:
         if self.repository.get_program(program_id) is None:
             raise ValueError(f"Program auditů {program_id} neexistuje.")
