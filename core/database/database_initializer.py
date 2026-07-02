@@ -8,6 +8,12 @@ def initialize_database() -> None:
     from core.shared.modely.finding import Finding  # noqa: F401
     from moduly.audity.modely.audit import Audit  # noqa: F401
     from moduly.audity.modely.audit_commission_member import AuditCommissionMember  # noqa: F401
+    from moduly.audity.modely.audit_program import (  # noqa: F401
+        AuditProgram,
+        AuditProgramVisit,
+        AuditProgramVisitProcess,
+        AuditProgramWorkplace,
+    )
     from moduly.ukoly.modely.task import Task  # noqa: F401
     from moduly.kontroly.modely.control import Control  # noqa: F401
     from moduly.kontroly.modely.thp_monthly_control import ThpMonthlyControl  # noqa: F401
