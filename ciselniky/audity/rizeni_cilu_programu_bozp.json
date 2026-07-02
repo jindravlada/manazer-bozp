@@ -1,0 +1,1540 @@
+{
+  "verze": 1,
+  "id": "rizeni_cilu_programu_bozp",
+  "nazev": "Řízení cílů a programů BOZP",
+  "popis": "Proces stanovení, plánování, sledování a vyhodnocování cílů a programů BOZP.",
+  "ucel_procesu": "Zajistit, aby organizace:\n- stanovovala měřitelné cíle BOZP,\n- plánovala programy pro jejich dosažení,\n- určovala odpovědnosti,\n- vyhodnocovala plnění,\n- aktualizovala cíle.",
+  "proc_je_dulezity": "Cíle BOZP nejsou slogan na plakátu.\n\nAuditor ověřuje, zda cíle vycházejí z rizik a požadavků, zda mají odpovědnost a termín a zda se skutečně vyhodnocují.\n\nTypická neshoda: cíle existují, ale nikdo neví, zda jsou splněny.",
+  "ocekavany_vystup": "Organizace prokazatelně:\n\n- má stanovené cíle BOZP,\n- plánuje programy pro jejich dosažení,\n- určuje odpovědnosti,\n- vyhodnocuje plnění,\n- aktualizuje cíle podle výsledků.",
+  "poradi": 130,
+  "aktivni": true,
+  "vazby_procesy": [
+    {
+      "id": "vazba_urazy",
+      "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+      "poradi": 10,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_rizika",
+      "nazev": "Řízení rizik",
+      "poradi": 20,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_kompetence",
+      "nazev": "Řízení kompetencí",
+      "poradi": 30,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dokumentace",
+      "nazev": "Řízení dokumentovaných informací",
+      "poradi": 40,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_zmeny",
+      "nazev": "Řízení změn",
+      "poradi": 50,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_napravna",
+      "nazev": "Řízení nápravných opatření",
+      "poradi": 60,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dodavatele",
+      "nazev": "Řízení dodavatelů",
+      "poradi": 70,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_provoz",
+      "nazev": "Řízení provozu",
+      "poradi": 80,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_mu",
+      "nazev": "Připravenost na mimořádné události",
+      "poradi": 90,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_komunikace",
+      "nazev": "Interní komunikace",
+      "poradi": 100,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_prezkoumani",
+      "nazev": "Přezkoumání vedením",
+      "poradi": 110,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_legislativa",
+      "nazev": "Řízení právních a jiných požadavků",
+      "poradi": 120,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_cile",
+      "nazev": "Řízení cílů a programů BOZP",
+      "poradi": 130,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_monitoring",
+      "nazev": "Monitorování a měření",
+      "poradi": 140,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_audity",
+      "nazev": "Interní audity",
+      "poradi": 150,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_neshody",
+      "nazev": "Řízení neshod",
+      "poradi": 160,
+      "aktivni": true
+    }
+  ],
+  "pozadavky_norem": [
+    {
+      "id": "iso45001_62_cil_10",
+      "nazev": "ISO 45001: 6.2",
+      "poradi": 10,
+      "aktivni": true,
+      "popis": "Informativní reference – cíle BOZP."
+    },
+    {
+      "id": "iso45001_91_cil_20",
+      "nazev": "ISO 45001: 9.1",
+      "poradi": 20,
+      "aktivni": true,
+      "popis": "Informativní reference – monitorování a měření."
+    }
+  ],
+  "sekce": [
+    {
+      "id": "stanoveni_cilu",
+      "nazev": "Stanovení cílů",
+      "popis": "Ověření stanovení cílů BOZP.",
+      "cil_overeni": "Ověřit, že cíle BOZP jsou stanoveny, měřitelné a v souladu s politikou.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "stanoveni_cilu_stanoveny",
+          "text": "Cíle BOZP jsou stanoveny.",
+          "popis": "Organizace má definované cíle.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "stanoveni_cilu_meritelne",
+          "text": "Cíle BOZP jsou měřitelné.",
+          "popis": "Lze posoudit plnění.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "stanoveni_cilu_politika",
+          "text": "Cíle jsou v souladu s politikou BOZP.",
+          "popis": "Cíle podporují závazek organizace.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "stanoveni_cilu_rizika",
+          "text": "Cíle vycházejí z posouzení rizik a požadavků.",
+          "popis": "Cíle nejsou náhodné.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "stanoveni_cilu_schvalene",
+          "text": "Cíle BOZP jsou schváleny vedením.",
+          "popis": "Cíle mají autoritu.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_stanoveni_cilu_0",
+          "nazev": "cíle BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_stanoveni_cilu_1",
+          "nazev": "politika BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_stanoveni_cilu_2",
+          "nazev": "posouzení rizik",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_stanoveni_cilu_3",
+          "nazev": "záznam schválení vedením",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_stanoveni_cilu_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_stanoveni_cilu_1",
+          "nazev": "vedoucí BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_stanoveni_cilu_2",
+          "nazev": "vedení",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_stanoveni_cilu_3",
+          "nazev": "vedoucí provozu",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_stanoveni_cilu_0",
+          "nazev": "cíle jsou konkrétní a měřitelné",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_stanoveni_cilu_1",
+          "nazev": "cíle odpovídají rizikům",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_stanoveni_cilu_0",
+          "nazev": "Cíle BOZP nejsou stanoveny.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_stanoveni_cilu_1",
+          "nazev": "Cíle BOZP nejsou měřitelné.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_stanoveni_cilu_2",
+          "nazev": "Cíle nevycházejí z posouzení rizik a požadavků.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_stanoveni_cilu_3",
+          "nazev": "Cíle BOZP nejsou schváleny vedením.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_stanoveni_cilu_0",
+          "nazev": "Formulovat cíle dle SMART.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_stanoveni_cilu_1",
+          "nazev": "Odvozovat cíle z top rizik a právních požadavků.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_stanoveni_cilu_0",
+          "nazev": "cíle jsou obecné bez ukazatele",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_62_cil_10",
+          "nazev": "ISO 45001: 6.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – cíle BOZP."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "planovani_programu",
+      "nazev": "Plánování programů",
+      "popis": "Ověření plánování programů pro dosažení cílů.",
+      "cil_overeni": "Ověřit, že pro cíle BOZP existují programy s opatřeními, zdroji a termíny.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "planovani_programu_programy",
+          "text": "Pro cíle BOZP existují programy opatření.",
+          "popis": "Organizace ví, jak cíle dosáhnout.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "planovani_programu_opatreni",
+          "text": "Programy obsahují konkrétní opatření.",
+          "popis": "Opatření nejsou obecná.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "planovani_programu_zdroje",
+          "text": "Pro programy jsou alokovány zdroje.",
+          "popis": "Cíle mají podporu vedení.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "planovani_programu_terminy",
+          "text": "Programy mají stanovené termíny.",
+          "popis": "Plnění je sledovatelné v čase.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "planovani_programu_propojeni",
+          "text": "Programy jsou propojeny s cíli BOZP.",
+          "popis": "Každý cíl má program.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_planovani_programu_0",
+          "nazev": "programy BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_planovani_programu_1",
+          "nazev": "akční plány",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_planovani_programu_2",
+          "nazev": "rozpočty BOZP",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_planovani_programu_3",
+          "nazev": "harmonogramy opatření",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_planovani_programu_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_planovani_programu_1",
+          "nazev": "vedoucí BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_planovani_programu_2",
+          "nazev": "ekonom",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_planovani_programu_3",
+          "nazev": "vedoucí provozu",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_planovani_programu_0",
+          "nazev": "program obsahuje konkrétní kroky",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_planovani_programu_1",
+          "nazev": "termíny jsou realistické",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_planovani_programu_0",
+          "nazev": "Pro cíle BOZP neexistují programy opatření.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_planovani_programu_1",
+          "nazev": "Programy neobsahují konkrétní opatření.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_planovani_programu_2",
+          "nazev": "Pro programy nejsou alokovány zdroje.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_planovani_programu_3",
+          "nazev": "Programy nemají stanovené termíny.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_planovani_programu_0",
+          "nazev": "Vytvořit roční program BOZP navázaný na cíle.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_planovani_programu_1",
+          "nazev": "Alokovat rozpočet pro každý klíčový cíl.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_planovani_programu_0",
+          "nazev": "program je seznam obecných aktivit",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_62_cil_10",
+          "nazev": "ISO 45001: 6.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – cíle BOZP."
+        },
+        {
+          "id": "iso45001_81_cil_20",
+          "nazev": "ISO 45001: 8.1",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – provozní plánování."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "odpovednosti_cilu",
+      "nazev": "Odpovědnosti",
+      "popis": "Ověření určení odpovědností za cíle a programy.",
+      "cil_overeni": "Ověřit, že za cíle a programy BOZP jsou určeny odpovědné osoby.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "odpovednosti_cilu_urceny",
+          "text": "Za každý cíl BOZP je určena odpovědná osoba.",
+          "popis": "Je jasné, kdo plní.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "odpovednosti_cilu_programy_odp",
+          "text": "Za opatření v programech jsou určeny odpovědnosti.",
+          "popis": "Opatření mají vlastníka.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "odpovednosti_cilu_komunikovany",
+          "text": "Odpovědnosti jsou komunikovány dotčeným osobám.",
+          "popis": "Odpovědní vědí o svém úkolu.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "odpovednosti_cilu_zastupitelnost",
+          "text": "Zastupitelnost odpovědných osob je zajištěna.",
+          "popis": "Cíle nejsou závislé na jedné osobě.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "odpovednosti_cilu_sledovani",
+          "text": "Odpovědné osoby sledují plnění svých cílů.",
+          "popis": "Plnění není pouze úkol technika BOZP.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_odpovednosti_cilu_0",
+          "nazev": "matice odpovědností cílů",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_odpovednosti_cilu_1",
+          "nazev": "akční plány s vlastníky",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_odpovednosti_cilu_2",
+          "nazev": "pokyny vedení",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_odpovednosti_cilu_3",
+          "nazev": "záznamy komunikace",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_odpovednosti_cilu_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_odpovednosti_cilu_1",
+          "nazev": "vedoucí BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_odpovednosti_cilu_2",
+          "nazev": "odpovědné osoby za cíle",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_odpovednosti_cilu_3",
+          "nazev": "vedení",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_odpovednosti_cilu_0",
+          "nazev": "odpovědné osoby znají své cíle",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_odpovednosti_cilu_1",
+          "nazev": "plnění je sledováno",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_odpovednosti_cilu_0",
+          "nazev": "Za cíle BOZP nejsou určeny odpovědné osoby.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_odpovednosti_cilu_1",
+          "nazev": "Opatření v programech nemají určené odpovědnosti.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_odpovednosti_cilu_2",
+          "nazev": "Odpovědnosti nejsou komunikovány dotčeným osobám.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_odpovednosti_cilu_3",
+          "nazev": "Odpovědné osoby nesledují plnění cílů.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_odpovednosti_cilu_0",
+          "nazev": "Publikovat matici odpovědností pro všechny cíle.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_odpovednosti_cilu_1",
+          "nazev": "Měsíční review plnění cílů s odpovědnými osobami.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_odpovednosti_cilu_0",
+          "nazev": "odpovědnost je pouze formálně u technika BOZP",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_53_cil_10",
+          "nazev": "ISO 45001: 5.3",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – role a odpovědnosti."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "vyhodnoceni_plneni_cilu",
+      "nazev": "Vyhodnocení plnění",
+      "popis": "Ověření vyhodnocování plnění cílů BOZP.",
+      "cil_overeni": "Ověřit, že plnění cílů je pravidelně vyhodnocováno.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "vyhodnoceni_plneni_cilu_pravidelne",
+          "text": "Plnění cílů BOZP je pravidelně vyhodnocováno.",
+          "popis": "Organizace sleduje stav.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_plneni_cilu_data",
+          "text": "Vyhodnocení vychází z měřitelných dat.",
+          "popis": "Plnění je podloženo důkazy.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_plneni_cilu_zaznam",
+          "text": "Výsledky vyhodnocení jsou zaznamenány.",
+          "popis": "Existuje historie plnění.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_plneni_cilu_odchylky",
+          "text": "Odchylky od cílů vedou k opatřením.",
+          "popis": "Organizace reaguje na nesplnění.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_plneni_cilu_vedeni",
+          "text": "Plnění cílů je projednáno s vedením.",
+          "popis": "Vedení zná stav cílů.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_vyhodnoceni_plneni_cilu_0",
+          "nazev": "přehled plnění cílů",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyhodnoceni_plneni_cilu_1",
+          "nazev": "měsíční/quarterly reporty",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyhodnoceni_plneni_cilu_2",
+          "nazev": "záznamy z review",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyhodnoceni_plneni_cilu_3",
+          "nazev": "opatření po odchylkách",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_vyhodnoceni_plneni_cilu_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyhodnoceni_plneni_cilu_1",
+          "nazev": "vedoucí BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyhodnoceni_plneni_cilu_2",
+          "nazev": "odpovědné osoby",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyhodnoceni_plneni_cilu_3",
+          "nazev": "vedení",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_vyhodnoceni_plneni_cilu_0",
+          "nazev": "data o plnění odpovídají realitě",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_vyhodnoceni_plneni_cilu_1",
+          "nazev": "odchylky jsou řešeny",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_vyhodnoceni_plneni_cilu_0",
+          "nazev": "Plnění cílů BOZP není pravidelně vyhodnocováno.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyhodnoceni_plneni_cilu_1",
+          "nazev": "Vyhodnocení ne vychází z měřitelných dat.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyhodnoceni_plneni_cilu_2",
+          "nazev": "Odchylky od cílů nevedou k opatřením.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyhodnoceni_plneni_cilu_3",
+          "nazev": "Plnění cílů není projednáno s vedením.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_vyhodnoceni_plneni_cilu_0",
+          "nazev": "Zavést čtvrtletní review plnění cílů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_vyhodnoceni_plneni_cilu_1",
+          "nazev": "Vizualizovat plnění cílů pro vedení.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_vyhodnoceni_plneni_cilu_0",
+          "nazev": "plnění se hodnotí až na konci roku",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_91_cil_10",
+          "nazev": "ISO 45001: 9.1",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – monitorování a měření."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "aktualizace_cilu",
+      "nazev": "Aktualizace cílů",
+      "popis": "Ověření revize a aktualizace cílů BOZP.",
+      "cil_overeni": "Ověřit, že cíle BOZP jsou revidovány a aktualizovány podle výsledků.",
+      "poradi": 50,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "aktualizace_cilu_revidovany",
+          "text": "Cíle BOZP jsou pravidelně revidovány.",
+          "popis": "Cíle nejsou statické.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "aktualizace_cilu_vysledky",
+          "text": "Revize vychází z výsledků plnění a změn.",
+          "popis": "Nové cíle reflektují realitu.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "aktualizace_cilu_schvaleni",
+          "text": "Aktualizované cíle jsou schváleny vedením.",
+          "popis": "Změna cílů má autoritu.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "aktualizace_cilu_komunikace",
+          "text": "Aktualizované cíle jsou komunikovány organizaci.",
+          "popis": "Zaměstnanci znají priority.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "aktualizace_cilu_archiv",
+          "text": "Historie cílů je uchovávána.",
+          "popis": "Organizace vidí vývoj.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_aktualizace_cilu_0",
+          "nazev": "revize cílů BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_aktualizace_cilu_1",
+          "nazev": "záznamy schválení",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_aktualizace_cilu_2",
+          "nazev": "historie cílů",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_aktualizace_cilu_3",
+          "nazev": "komunikace priorit",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_aktualizace_cilu_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_aktualizace_cilu_1",
+          "nazev": "vedoucí BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_aktualizace_cilu_2",
+          "nazev": "vedení",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_aktualizace_cilu_0",
+          "nazev": "cíle reflektují aktuální rizika",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_aktualizace_cilu_1",
+          "nazev": "revize probíhá minimálně ročně",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_aktualizace_cilu_0",
+          "nazev": "Cíle BOZP nejsou pravidelně revidovány.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_aktualizace_cilu_1",
+          "nazev": "Revize cílů ne vychází z výsledků plnění.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_aktualizace_cilu_2",
+          "nazev": "Aktualizované cíle nejsou schváleny vedením.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_aktualizace_cilu_3",
+          "nazev": "Aktualizované cíle nejsou komunikovány organizaci.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_aktualizace_cilu_0",
+          "nazev": "Revidovat cíle při každém přezkoumání vedením.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_aktualizace_cilu_1",
+          "nazev": "Archivovat cíle pro sledování trendů.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_aktualizace_cilu_0",
+          "nazev": "cíle jsou stejné roky bez změny",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_62_cil_10",
+          "nazev": "ISO 45001: 6.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – cíle BOZP."
+        },
+        {
+          "id": "iso45001_93_cil_20",
+          "nazev": "ISO 45001: 9.3",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – analýza a hodnocení."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        }
+      ]
+    }
+  ]
+}

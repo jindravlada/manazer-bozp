@@ -1,5 +1,5 @@
 {
-  "verze": 6,
+  "verze": 7,
   "procesy": [
     {
       "id": "urazy_mimo_udalosti",
@@ -99,6 +99,51 @@
       "poradi": 110,
       "aktivni": true,
       "soubor_znalosti": "prezkoumani_vedenim.json"
+    },
+    {
+      "id": "rizeni_pravnich_pozadavku",
+      "nazev": "Řízení právních a jiných požadavků",
+      "popis": "Proces identifikace, vyhodnocení a plnění právních a jiných požadavků BOZP.",
+      "ucel_procesu": "Zajistit, aby organizace identifikovala právní a jiné požadavky, hodnotila soulad, aktualizovala přehled, promítala požadavky do praxe a vyhodnocovala plnění.",
+      "poradi": 120,
+      "aktivni": true,
+      "soubor_znalosti": "rizeni_pravnich_pozadavku.json"
+    },
+    {
+      "id": "rizeni_cilu_programu_bozp",
+      "nazev": "Řízení cílů a programů BOZP",
+      "popis": "Proces stanovení, plánování, sledování a vyhodnocování cílů a programů BOZP.",
+      "ucel_procesu": "Zajistit, aby organizace stanovovala měřitelné cíle BOZP, plánovala programy, určovala odpovědnosti, vyhodnocovala plnění a aktualizovala cíle.",
+      "poradi": 130,
+      "aktivni": true,
+      "soubor_znalosti": "rizeni_cilu_programu_bozp.json"
+    },
+    {
+      "id": "monitorovani_a_mereni",
+      "nazev": "Monitorování a měření",
+      "popis": "Proces monitorování, měření a vyhodnocování výkonnosti BOZP.",
+      "ucel_procesu": "Zajistit definici ukazatelů, systematické měření, vyhodnocování dat, sledování trendů a využití výsledků pro rozhodování.",
+      "poradi": 140,
+      "aktivni": true,
+      "soubor_znalosti": "monitorovani_a_mereni.json"
+    },
+    {
+      "id": "interni_audity",
+      "nazev": "Interní audity",
+      "popis": "Proces plánování, provádění a následných opatření interních auditů BOZP.",
+      "ucel_procesu": "Zajistit plánování auditů podle rizik, kompetenci auditorů, nezávislé provádění, kvalitní zprávy a plnění následných opatření.",
+      "poradi": 150,
+      "aktivni": true,
+      "soubor_znalosti": "interni_audity.json"
+    },
+    {
+      "id": "rizeni_neshod",
+      "nazev": "Řízení neshod",
+      "popis": "Proces evidence, klasifikace, řešení a uzavírání neshod BOZP.",
+      "ucel_procesu": "Zajistit systematickou evidenci neshod, klasifikaci, řešení s analýzou příčin, uzavírání po ověření a analýzu opakovaných neshod.",
+      "poradi": 160,
+      "aktivni": true,
+      "soubor_znalosti": "rizeni_neshod.json"
     }
   ]
 }

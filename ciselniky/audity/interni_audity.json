@@ -1,0 +1,1540 @@
+{
+  "verze": 1,
+  "id": "interni_audity",
+  "nazev": "Interní audity",
+  "popis": "Proces plánování, provádění a následných opatření interních auditů BOZP.",
+  "ucel_procesu": "Zajistit, aby organizace:\n- plánovala interní audity BOZP,\n- připravovala auditory,\n- prováděla audity nezávisle,\n- vydávala zprávy z auditů,\n- realizovala následná opatření.",
+  "proc_je_dulezity": "Interní audit není kontrola kvůli razítku.\n\nAuditor ověřuje nezávislost, kompetenci auditorů, kvalitu zpráv a zejména plnění následných opatření.\n\nTypická neshoda: audit proběhne, zpráva existuje, ale opatření nejsou splněna.",
+  "ocekavany_vystup": "Organizace prokazatelně:\n\n- plánuje audity podle rizik,\n- má kompetentní auditory,\n- provádí audity nezávisle,\n- vydává kvalitní zprávy,\n- plní následná opatření.",
+  "poradi": 150,
+  "aktivni": true,
+  "vazby_procesy": [
+    {
+      "id": "vazba_urazy",
+      "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+      "poradi": 10,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_rizika",
+      "nazev": "Řízení rizik",
+      "poradi": 20,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_kompetence",
+      "nazev": "Řízení kompetencí",
+      "poradi": 30,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dokumentace",
+      "nazev": "Řízení dokumentovaných informací",
+      "poradi": 40,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_zmeny",
+      "nazev": "Řízení změn",
+      "poradi": 50,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_napravna",
+      "nazev": "Řízení nápravných opatření",
+      "poradi": 60,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dodavatele",
+      "nazev": "Řízení dodavatelů",
+      "poradi": 70,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_provoz",
+      "nazev": "Řízení provozu",
+      "poradi": 80,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_mu",
+      "nazev": "Připravenost na mimořádné události",
+      "poradi": 90,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_komunikace",
+      "nazev": "Interní komunikace",
+      "poradi": 100,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_prezkoumani",
+      "nazev": "Přezkoumání vedením",
+      "poradi": 110,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_legislativa",
+      "nazev": "Řízení právních a jiných požadavků",
+      "poradi": 120,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_cile",
+      "nazev": "Řízení cílů a programů BOZP",
+      "poradi": 130,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_monitoring",
+      "nazev": "Monitorování a měření",
+      "poradi": 140,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_audity",
+      "nazev": "Interní audity",
+      "poradi": 150,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_neshody",
+      "nazev": "Řízení neshod",
+      "poradi": 160,
+      "aktivni": true
+    }
+  ],
+  "pozadavky_norem": [
+    {
+      "id": "iso45001_92_aud_10",
+      "nazev": "ISO 45001: 9.2",
+      "poradi": 10,
+      "aktivni": true,
+      "popis": "Informativní reference – interní audit."
+    },
+    {
+      "id": "iso45001_922_aud_20",
+      "nazev": "ISO 45001: 9.2.2",
+      "poradi": 20,
+      "aktivni": true,
+      "popis": "Informativní reference – program interních auditů."
+    }
+  ],
+  "sekce": [
+    {
+      "id": "planovani_auditu",
+      "nazev": "Plánování auditů",
+      "popis": "Ověření plánování programu interních auditů.",
+      "cil_overeni": "Ověřit, že interní audity BOZP jsou plánovány na základě rizik a požadavků.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "planovani_auditu_program",
+          "text": "Existuje program interních auditů BOZP.",
+          "popis": "Audity jsou plánované.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "planovani_auditu_rizika",
+          "text": "Program auditů vychází z rizik a výsledků předchozích auditů.",
+          "popis": "Plán není náhodný.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "planovani_auditu_rozsah",
+          "text": "Rozsah auditů je definován.",
+          "popis": "Je jasné, co se audituje.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "planovani_auditu_frekvence",
+          "text": "Frekvence auditů odpovídá riziku oblastí.",
+          "popis": "Rizikové oblasti jsou auditovány častěji.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "planovani_auditu_schvaleni",
+          "text": "Program auditů je schválen.",
+          "popis": "Plán má autoritu.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_planovani_auditu_0",
+          "nazev": "program interních auditů",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_planovani_auditu_1",
+          "nazev": "plán auditů",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_planovani_auditu_2",
+          "nazev": "posouzení rizik pro audit",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_planovani_auditu_3",
+          "nazev": "schválení programu",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_planovani_auditu_0",
+          "nazev": "vedoucí auditor",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_planovani_auditu_1",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_planovani_auditu_2",
+          "nazev": "vedoucí BOZP",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_planovani_auditu_3",
+          "nazev": "vedení",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_planovani_auditu_0",
+          "nazev": "program pokrývá klíčové procesy",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_planovani_auditu_1",
+          "nazev": "frekvence odpovídá riziku",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_planovani_auditu_0",
+          "nazev": "Program interních auditů BOZP neexistuje.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_planovani_auditu_1",
+          "nazev": "Program auditů ne vychází z rizik organizace.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_planovani_auditu_2",
+          "nazev": "Rozsah auditů není definován.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_planovani_auditu_3",
+          "nazev": "Frekvence auditů neodpovídá riziku oblastí.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_planovani_auditu_0",
+          "nazev": "Odvodit program auditů z registru rizik.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_planovani_auditu_1",
+          "nazev": "Revidovat program po každém přezkoumání vedením.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_planovani_auditu_0",
+          "nazev": "audit probíhá ad hoc bez plánu",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_922_aud_10",
+          "nazev": "ISO 45001: 9.2.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – program interních auditů."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "priprava_auditoru",
+      "nazev": "Příprava auditorů",
+      "popis": "Ověření kompetence a nezávislosti auditorů.",
+      "cil_overeni": "Ověřit, že auditoři jsou kompetentní a nezávislí na auditované oblasti.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "priprava_auditoru_kompetence",
+          "text": "Interní auditoři mají prokázanou kompetenci.",
+          "popis": "Auditoři umí audit provést.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "priprava_auditoru_skoleni",
+          "text": "Auditoři jsou proškoleni v metodice interního auditu.",
+          "popis": "Existuje jednotný přístup.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "priprava_auditoru_nezavislost",
+          "text": "Nezávislost auditorů je zajištěna.",
+          "popis": "Auditor neauditoval vlastní práci.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "priprava_auditoru_kriteria",
+          "text": "Auditoři znají auditní kritéria a metodiku.",
+          "popis": "Audit je konzistentní.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "priprava_auditoru_aktualizace",
+          "text": "Kompetence auditorů jsou udržovány.",
+          "popis": "Auditoři se vzdělávají.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_priprava_auditoru_0",
+          "nazev": "evidence kompetencí auditorů",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_priprava_auditoru_1",
+          "nazev": "osvědčení auditorů",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_priprava_auditoru_2",
+          "nazev": "záznamy školení",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_priprava_auditoru_3",
+          "nazev": "prohlášení o nezávislosti",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_priprava_auditoru_0",
+          "nazev": "vedoucí auditor",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_priprava_auditoru_1",
+          "nazev": "interní auditor",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_priprava_auditoru_2",
+          "nazev": "technik BOZP",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_priprava_auditoru_3",
+          "nazev": "vedoucí BOZP",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_priprava_auditoru_0",
+          "nazev": "auditor zná metodiku",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_priprava_auditoru_1",
+          "nazev": "nezávislost je prokazatelná",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_priprava_auditoru_0",
+          "nazev": "Interní auditoři nemají prokázanou kompetenci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_priprava_auditoru_1",
+          "nazev": "Nezávislost auditorů není zajištěna.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_priprava_auditoru_2",
+          "nazev": "Auditoři nejsou proškoleni v metodice interního auditu.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_priprava_auditoru_3",
+          "nazev": "Kompetence auditorů nejsou udržovány.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_priprava_auditoru_0",
+          "nazev": "Zavést minimální kvalifikaci interního auditora.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_priprava_auditoru_1",
+          "nazev": "Povinné prohlášení o nezávislosti před každým auditem.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_priprava_auditoru_0",
+          "nazev": "auditor auditoval vlastní oblast",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_72_aud_10",
+          "nazev": "ISO 45001: 7.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – kompetence."
+        },
+        {
+          "id": "iso45001_92_aud_20",
+          "nazev": "ISO 45001: 9.2",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – interní audit."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "provadeni_auditu",
+      "nazev": "Provádění auditů",
+      "popis": "Ověření provádění interních auditů podle plánu.",
+      "cil_overeni": "Ověřit, že audity jsou prováděny podle plánu a metodiky.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "provadeni_auditu_dle_planu",
+          "text": "Interní audity jsou prováděny podle plánu.",
+          "popis": "Plán není ignorován.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "provadeni_auditu_metodika",
+          "text": "Audity jsou prováděny podle metodiky.",
+          "popis": "Postup je konzistentní.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "provadeni_auditu_dokumentace",
+          "text": "Průběh auditu je dokumentován.",
+          "popis": "Existují záznamy z auditu.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "provadeni_auditu_zajisteni",
+          "text": "Audit zahrnuje ověření na místě a rozhovory.",
+          "popis": "Audit není pouze revize dokumentů.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "provadeni_auditu_casove",
+          "text": "Audity jsou prováděny ve stanovených termínech.",
+          "popis": "Plán je dodržován.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_provadeni_auditu_0",
+          "nazev": "záznamy z auditů",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_provadeni_auditu_1",
+          "nazev": "checklisty auditora",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_provadeni_auditu_2",
+          "nazev": "auditní plány",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_provadeni_auditu_3",
+          "nazev": "prezenční listiny",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_provadeni_auditu_0",
+          "nazev": "vedoucí auditor",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_provadeni_auditu_1",
+          "nazev": "interní auditor",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_provadeni_auditu_2",
+          "nazev": "auditovaný vedoucí",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_provadeni_auditu_0",
+          "nazev": "audit probíhá v provozu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_provadeni_auditu_1",
+          "nazev": "dokumentace odpovídá průběhu",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_provadeni_auditu_0",
+          "nazev": "Interní audity nejsou prováděny podle plánu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_provadeni_auditu_1",
+          "nazev": "Audity nejsou prováděny podle metodiky.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_provadeni_auditu_2",
+          "nazev": "Průběh auditu není dokumentován.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_provadeni_auditu_3",
+          "nazev": "Audit nezahrnuje ověření v provozu.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_provadeni_auditu_0",
+          "nazev": "Standardizovat checklist pro každý typ auditu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_provadeni_auditu_1",
+          "nazev": "Sledovat plnění plánu auditů měsíčně.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_provadeni_auditu_0",
+          "nazev": "audit je pouze kontrola papírů",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_92_aud_10",
+          "nazev": "ISO 45001: 9.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – interní audit."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "zpravy_z_auditu",
+      "nazev": "Zprávy z auditů",
+      "popis": "Ověření kvality a distribuce zpráv z auditů.",
+      "cil_overeni": "Ověřit, že zprávy z auditů jsou úplné, srozumitelné a doručené.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "zpravy_z_auditu_vydavany",
+          "text": "Zprávy z interních auditů jsou vydávány.",
+          "popis": "Audit má písemný výstup.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "zpravy_z_auditu_obsah",
+          "text": "Zprávy obsahují zjištění, hodnocení a doporučení.",
+          "popis": "Zpráva je použitelná.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "zpravy_z_auditu_termin",
+          "text": "Zprávy jsou vydávány ve stanovených lhůtách.",
+          "popis": "Výstup není zpožděn.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "zpravy_z_auditu_distribuce",
+          "text": "Zprávy jsou doručeny odpovědným osobám.",
+          "popis": "Vedení a auditovaní znají výsledky.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "zpravy_z_auditu_klasifikace",
+          "text": "Zjištění jsou klasifikována podle závažnosti.",
+          "popis": "Prioritizace je jasná.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_zpravy_z_auditu_0",
+          "nazev": "zprávy z auditů",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_zpravy_z_auditu_1",
+          "nazev": "záznamy o distribuci",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_zpravy_z_auditu_2",
+          "nazev": "klasifikace zjištění",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_zpravy_z_auditu_3",
+          "nazev": "termíny vydání",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_zpravy_z_auditu_0",
+          "nazev": "vedoucí auditor",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_zpravy_z_auditu_1",
+          "nazev": "interní auditor",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_zpravy_z_auditu_2",
+          "nazev": "vedoucí BOZP",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_zpravy_z_auditu_3",
+          "nazev": "vedení",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_zpravy_z_auditu_0",
+          "nazev": "zpráva obsahuje konkrétní zjištění",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_zpravy_z_auditu_1",
+          "nazev": "zpráva je doručena včas",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_zpravy_z_auditu_0",
+          "nazev": "Zprávy z interních auditů nejsou vydávány.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_zpravy_z_auditu_1",
+          "nazev": "Zprávy neobsahují zjištění a doporučení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_zpravy_z_auditu_2",
+          "nazev": "Zprávy nejsou doručeny odpovědným osobám.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_zpravy_z_auditu_3",
+          "nazev": "Zjištění nejsou klasifikována podle závažnosti.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_zpravy_z_auditu_0",
+          "nazev": "Standardizovat šablonu zprávy z auditu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_zpravy_z_auditu_1",
+          "nazev": "Definovat maximální lhůtu pro vydání zprávy.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_zpravy_z_auditu_0",
+          "nazev": "zpráva je obecná bez konkrétních zjištění",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_92_aud_10",
+          "nazev": "ISO 45001: 9.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – interní audit."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "nasledna_opatreni",
+      "nazev": "Následná opatření",
+      "popis": "Ověření plnění následných opatření z auditů.",
+      "cil_overeni": "Ověřit, že zjištění z auditů vedou k opatřením a jejich plnění je sledováno.",
+      "poradi": 50,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "nasledna_opatreni_stanovena",
+          "text": "Z zjištění auditů jsou stanovena následná opatření.",
+          "popis": "Audit vede ke změně.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "nasledna_opatreni_terminy",
+          "text": "Opatření mají odpovědnost a termín.",
+          "popis": "Plnění je sledovatelné.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "nasledna_opatreni_sledovana",
+          "text": "Plnění následných opatření je sledováno.",
+          "popis": "Opatření nezůstávají otevřená.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "nasledna_opatreni_overeni",
+          "text": "Účinnost opatření je ověřena.",
+          "popis": "Organizace potvrzuje nápravu.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "nasledna_opatreni_opakovani",
+          "text": "Opakovaná zjištění spouští systémové opatření.",
+          "popis": "Organizace se učí z auditů.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_nasledna_opatreni_0",
+          "nazev": "akční plány z auditů",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_nasledna_opatreni_1",
+          "nazev": "evidence plnění opatření",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_nasledna_opatreni_2",
+          "nazev": "záznamy ověření",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_nasledna_opatreni_3",
+          "nazev": "statistika opakovaných zjištění",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_nasledna_opatreni_0",
+          "nazev": "vedoucí auditor",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_nasledna_opatreni_1",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_nasledna_opatreni_2",
+          "nazev": "odpovědné osoby",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_nasledna_opatreni_3",
+          "nazev": "vedoucí BOZP",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_nasledna_opatreni_0",
+          "nazev": "opatření mají termín a vlastníka",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_nasledna_opatreni_1",
+          "nazev": "plnění je kontrolováno",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_nasledna_opatreni_0",
+          "nazev": "Z zjištění auditů nejsou stanovena následná opatření.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_nasledna_opatreni_1",
+          "nazev": "Plnění následných opatření není sledováno.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_nasledna_opatreni_2",
+          "nazev": "Účinnost opatření z auditů není ověřena.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_nasledna_opatreni_3",
+          "nazev": "Opakovaná zjištění nespouští systémové opatření.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_nasledna_opatreni_0",
+          "nazev": "Měsíční review otevřených opatření z auditů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_nasledna_opatreni_1",
+          "nazev": "Sledovat opakovaná zjištění jako indikátor systémového problému.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_nasledna_opatreni_0",
+          "nazev": "opatření z auditů zůstávají otevřená roky",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_102_aud_10",
+          "nazev": "ISO 45001: 10.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – neshody a nápravná opatření."
+        },
+        {
+          "id": "iso45001_103_aud_20",
+          "nazev": "ISO 45001: 10.3",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – neustálé zlepšování."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        }
+      ]
+    }
+  ]
+}

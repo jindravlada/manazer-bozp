@@ -1,0 +1,1539 @@
+{
+  "verze": 1,
+  "id": "rizeni_neshod",
+  "nazev": "Řízení neshod",
+  "popis": "Proces evidence, klasifikace, řešení a uzavírání neshod BOZP.",
+  "ucel_procesu": "Zajistit, aby organizace:\n- evidovala všechny neshody BOZP,\n- klasifikovala neshody podle závažnosti,\n- systematicky řešila neshody,\n- uzavírala neshody po ověření,\n- analyzovala opakované neshody.",
+  "proc_je_dulezity": "Řízení neshod není evidence problémů do tabulky.\n\nAuditor ověřuje, zda organizace neshody skutečně řeší, zda je klasifikuje a zda se učí z opakování.\n\nTypická neshoda: neshody se hromadí, ale nejsou uzavírány nebo se uzavírají bez nápravy.",
+  "ocekavany_vystup": "Organizace prokazatelně:\n\n- eviduje neshody,\n- klasifikuje je,\n- řeší systematicky,\n- uzavírá po ověření,\n- analyzuje opakování.",
+  "poradi": 160,
+  "aktivni": true,
+  "vazby_procesy": [
+    {
+      "id": "vazba_urazy",
+      "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+      "poradi": 10,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_rizika",
+      "nazev": "Řízení rizik",
+      "poradi": 20,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_kompetence",
+      "nazev": "Řízení kompetencí",
+      "poradi": 30,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dokumentace",
+      "nazev": "Řízení dokumentovaných informací",
+      "poradi": 40,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_zmeny",
+      "nazev": "Řízení změn",
+      "poradi": 50,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_napravna",
+      "nazev": "Řízení nápravných opatření",
+      "poradi": 60,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dodavatele",
+      "nazev": "Řízení dodavatelů",
+      "poradi": 70,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_provoz",
+      "nazev": "Řízení provozu",
+      "poradi": 80,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_mu",
+      "nazev": "Připravenost na mimořádné události",
+      "poradi": 90,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_komunikace",
+      "nazev": "Interní komunikace",
+      "poradi": 100,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_prezkoumani",
+      "nazev": "Přezkoumání vedením",
+      "poradi": 110,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_legislativa",
+      "nazev": "Řízení právních a jiných požadavků",
+      "poradi": 120,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_cile",
+      "nazev": "Řízení cílů a programů BOZP",
+      "poradi": 130,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_monitoring",
+      "nazev": "Monitorování a měření",
+      "poradi": 140,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_audity",
+      "nazev": "Interní audity",
+      "poradi": 150,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_neshody",
+      "nazev": "Řízení neshod",
+      "poradi": 160,
+      "aktivni": true
+    }
+  ],
+  "pozadavky_norem": [
+    {
+      "id": "iso45001_102_nesh_10",
+      "nazev": "ISO 45001: 10.2",
+      "poradi": 10,
+      "aktivni": true,
+      "popis": "Informativní reference – neshody a nápravná opatření."
+    },
+    {
+      "id": "iso45001_103_nesh_20",
+      "nazev": "ISO 45001: 10.3",
+      "poradi": 20,
+      "aktivni": true,
+      "popis": "Informativní reference – neustálé zlepšování."
+    }
+  ],
+  "sekce": [
+    {
+      "id": "evidence_neshod",
+      "nazev": "Evidence neshod",
+      "popis": "Ověření evidence všech neshod BOZP.",
+      "cil_overeni": "Ověřit, že neshody BOZP jsou systematicky evidovány.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "evidence_neshod_evidovany",
+          "text": "Neshody BOZP jsou evidovány.",
+          "popis": "Organizace vede přehled neshod.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "evidence_neshod_ucelna",
+          "text": "Evidence neshod je úplná a obsahuje klíčové údaje.",
+          "popis": "Záznam umožňuje dohledání.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "evidence_neshod_vsechny",
+          "text": "Všechny relevantní neshody jsou zachyceny.",
+          "popis": "Organizace neignoruje zjištění.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "evidence_neshod_dohledatelne",
+          "text": "Neshody jsou dohledatelné podle zdroje a stavu.",
+          "popis": "Auditor může rychle najít záznam.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "evidence_neshod_casove",
+          "text": "Neshody jsou evidovány včas po zjištění.",
+          "popis": "Evidence není zpožděná.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_evidence_neshod_0",
+          "nazev": "evidence neshod",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_evidence_neshod_1",
+          "nazev": "registr neshod",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_evidence_neshod_2",
+          "nazev": "záznamy z kontrol",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_evidence_neshod_3",
+          "nazev": "záznamy z auditů",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_evidence_neshod_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_evidence_neshod_1",
+          "nazev": "vedoucí BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_evidence_neshod_2",
+          "nazev": "interní auditor",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_evidence_neshod_3",
+          "nazev": "vedoucí provozu",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_evidence_neshod_0",
+          "nazev": "evidence odpovídá skutečnosti",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_evidence_neshod_1",
+          "nazev": "neshody jsou dohledatelné",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_evidence_neshod_0",
+          "nazev": "Neshody BOZP nejsou systematicky evidovány.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_evidence_neshod_1",
+          "nazev": "Evidence neshod neobsahuje klíčové údaje.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_evidence_neshod_2",
+          "nazev": "Relevantní neshody nejsou zachyceny v evidenci.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_evidence_neshod_3",
+          "nazev": "Neshody nejsou evidovány včas po zjištění.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_evidence_neshod_0",
+          "nazev": "Zavést jednotný formulář pro evidenci neshod.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_evidence_neshod_1",
+          "nazev": "Propojit evidenci s audity, kontrolami a provozem.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_evidence_neshod_0",
+          "nazev": "neshody se řeší ústně bez evidence",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_102_nesh_10",
+          "nazev": "ISO 45001: 10.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – neshody a nápravná opatření."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "klasifikace_neshod",
+      "nazev": "Klasifikace neshod",
+      "popis": "Ověření klasifikace neshod podle závažnosti a typu.",
+      "cil_overeni": "Ověřit, že neshody jsou klasifikovány konzistentně.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "klasifikace_neshod_klasifikovany",
+          "text": "Neshody jsou klasifikovány podle závažnosti.",
+          "popis": "Prioritizace je jasná.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "klasifikace_neshod_kriteria",
+          "text": "Kritéria klasifikace jsou definována.",
+          "popis": "Klasifikace je konzistentní.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "klasifikace_neshod_typ",
+          "text": "Neshody jsou obvykle klasifikovány i podle typu zdroje.",
+          "popis": "Organizace rozlišuje původ.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "klasifikace_neshod_eskalace",
+          "text": "Závažné neshody jsou eskalovány.",
+          "popis": "Vedení je informováno.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "klasifikace_neshod_konzistence",
+          "text": "Klasifikace je aplikována konzistentně.",
+          "popis": "Stejná neshoda = stejná klasifikace.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_klasifikace_neshod_0",
+          "nazev": "kritéria klasifikace neshod",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_klasifikace_neshod_1",
+          "nazev": "evidence neshod s klasifikací",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_klasifikace_neshod_2",
+          "nazev": "záznamy eskalace",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_klasifikace_neshod_3",
+          "nazev": "metodika klasifikace",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_klasifikace_neshod_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_klasifikace_neshod_1",
+          "nazev": "vedoucí BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_klasifikace_neshod_2",
+          "nazev": "interní auditor",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_klasifikace_neshod_3",
+          "nazev": "vedení",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_klasifikace_neshod_0",
+          "nazev": "klasifikace odpovídá kritériím",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_klasifikace_neshod_1",
+          "nazev": "závažné neshody jsou eskalovány",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_klasifikace_neshod_0",
+          "nazev": "Neshody nejsou klasifikovány podle závažnosti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_klasifikace_neshod_1",
+          "nazev": "Kritéria klasifikace neshod nejsou definována.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_klasifikace_neshod_2",
+          "nazev": "Závažné neshody nejsou eskalovány vedení.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_klasifikace_neshod_3",
+          "nazev": "Klasifikace neshod není aplikována konzistentně.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_klasifikace_neshod_0",
+          "nazev": "Publikovat kritéria klasifikace pro všechny zdroje neshod.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_klasifikace_neshod_1",
+          "nazev": "Automatická eskalace kritických neshod vedení.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_klasifikace_neshod_0",
+          "nazev": "stejná neshoda má různou klasifikaci",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_102_nesh_10",
+          "nazev": "ISO 45001: 10.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – neshody a nápravná opatření."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "reseni_neshod",
+      "nazev": "Řešení neshod",
+      "popis": "Ověření systematického řešení neshod.",
+      "cil_overeni": "Ověřit, že neshody jsou řešeny s analýzou příčin a stanovením opatření.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "reseni_neshod_reseny",
+          "text": "Neshody jsou systematicky řešeny.",
+          "popis": "Organizace ne nechává neshody otevřené.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "reseni_neshod_priciny",
+          "text": "Při řešení neshod jsou analyzovány příčiny.",
+          "popis": "Organizace hledá kořen problému.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "reseni_neshod_opatreni",
+          "text": "Pro neshody jsou stanovená nápravná opatření.",
+          "popis": "Opatření jsou konkrétní.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "reseni_neshod_terminy",
+          "text": "Opatření mají odpovědnost a termín.",
+          "popis": "Plnění je sledovatelné.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "reseni_neshod_sledovani",
+          "text": "Plnění opatření je průběžně sledováno.",
+          "popis": "Prodlení je řešeno.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_reseni_neshod_0",
+          "nazev": "záznamy analýzy příčin",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_reseni_neshod_1",
+          "nazev": "akční plány",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_reseni_neshod_2",
+          "nazev": "evidence plnění opatření",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_reseni_neshod_3",
+          "nazev": "záznamy eskalace prodlení",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_reseni_neshod_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_reseni_neshod_1",
+          "nazev": "vedoucí BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_reseni_neshod_2",
+          "nazev": "odpovědné osoby",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_reseni_neshod_3",
+          "nazev": "vedoucí provozu",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_reseni_neshod_0",
+          "nazev": "opatření mají termín",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_reseni_neshod_1",
+          "nazev": "příčiny jsou analyzovány",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_reseni_neshod_0",
+          "nazev": "Neshody nejsou systematicky řešeny.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_reseni_neshod_1",
+          "nazev": "Při řešení neshod nejsou analyzovány příčiny.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_reseni_neshod_2",
+          "nazev": "Pro neshody nejsou stanovená nápravná opatření.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_reseni_neshod_3",
+          "nazev": "Plnění opatření není průběžně sledováno.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_reseni_neshod_0",
+          "nazev": "Povinná analýza příčin u opakujících se neshod.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_reseni_neshod_1",
+          "nazev": "Týdenní review otevřených neshod.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_reseni_neshod_0",
+          "nazev": "neshody se řeší ad hoc bez analýzy",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_102_nesh_10",
+          "nazev": "ISO 45001: 10.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – neshody a nápravná opatření."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "uzavirani_neshod",
+      "nazev": "Uzavírání neshod",
+      "popis": "Ověření uzavírání neshod po ověření nápravy.",
+      "cil_overeni": "Ověřit, že neshody jsou uzavírány až po ověření účinnosti opatření.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "uzavirani_neshod_po_overeni",
+          "text": "Neshody jsou uzavírány až po ověření účinnosti opatření.",
+          "popis": "Uzavření není předčasné.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "uzavirani_neshod_dokumentovano",
+          "text": "Uzavření neshody je dokumentováno.",
+          "popis": "Existuje záznam o ověření.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "uzavirani_neshod_opravneni",
+          "text": "Uzavření neshody je oprávněnou osobou.",
+          "popis": "Uzavření má autoritu.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "uzavirani_neshod_neucinna",
+          "text": "Neúčinná opatření vedou k novým opatřením.",
+          "popis": "Organizace reaguje na selhání.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "uzavirani_neshod_lhuta",
+          "text": "Neshody nejsou otevřené déle než přiměřeně.",
+          "popis": "Organizace sleduje stáří neshod.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_uzavirani_neshod_0",
+          "nazev": "záznamy uzavření neshod",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_uzavirani_neshod_1",
+          "nazev": "dokumentace ověření účinnosti",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_uzavirani_neshod_2",
+          "nazev": "statistika stáří neshod",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_uzavirani_neshod_3",
+          "nazev": "oprávnění k uzavření",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_uzavirani_neshod_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_uzavirani_neshod_1",
+          "nazev": "vedoucí BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_uzavirani_neshod_2",
+          "nazev": "odpovědné osoby",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_uzavirani_neshod_3",
+          "nazev": "interní auditor",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_uzavirani_neshod_0",
+          "nazev": "neshoda není uzavřena bez ověření",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_uzavirani_neshod_1",
+          "nazev": "stáří otevřených neshod je sledováno",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_uzavirani_neshod_0",
+          "nazev": "Neshody jsou uzavírány bez ověření účinnosti opatření.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_uzavirani_neshod_1",
+          "nazev": "Uzavření neshody není dokumentováno.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_uzavirani_neshod_2",
+          "nazev": "Neúčinná opatření nevedou k novým opatřením.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_uzavirani_neshod_3",
+          "nazev": "Neshody zůstávají otevřené nepřiměřeně dlouho.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_uzavirani_neshod_0",
+          "nazev": "Povinné ověření v provozu před uzavřením neshody.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_uzavirani_neshod_1",
+          "nazev": "Měsíční report stáří otevřených neshod.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_uzavirani_neshod_0",
+          "nazev": "neshody uzavřeny bez důkazu nápravy",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_102_nesh_10",
+          "nazev": "ISO 45001: 10.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – neshody a nápravná opatření."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "analyza_opakovanych",
+      "nazev": "Analýza opakovaných neshod",
+      "popis": "Ověření analýzy opakujících se neshod.",
+      "cil_overeni": "Ověřit, že organizace analyzuje opakované neshody a přijímá systémová opatření.",
+      "poradi": 50,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "analyza_opakovanych_identifikovany",
+          "text": "Opakované neshody jsou identifikovány.",
+          "popis": "Organizace sleduje opakování.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "analyza_opakovanych_analyzovany",
+          "text": "Opakované neshody jsou analyzovány.",
+          "popis": "Organizace hledá systémovou příčinu.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "analyza_opakovanych_systemova",
+          "text": "Z analýzy vyplynou systémová opatření.",
+          "popis": "Opatření nejsou pouze lokální.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "analyza_opakovanych_trendy",
+          "text": "Trendy neshod jsou vyhodnocovány.",
+          "popis": "Organizace vidí vývoj.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "analyza_opakovanych_uceni",
+          "text": "Poznatky z opakovaných neshod jsou sdíleny.",
+          "popis": "Organizace se učí.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_analyza_opakovanych_0",
+          "nazev": "statistika opakovaných neshod",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_analyza_opakovanych_1",
+          "nazev": "analýzy trendů",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_analyza_opakovanych_2",
+          "nazev": "systémová opatření",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_analyza_opakovanych_3",
+          "nazev": "sdílení poučení",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_analyza_opakovanych_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_analyza_opakovanych_1",
+          "nazev": "vedoucí BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_analyza_opakovanych_2",
+          "nazev": "vedení",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_analyza_opakovanych_3",
+          "nazev": "interní auditor",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_analyza_opakovanych_0",
+          "nazev": "opakované neshody vedou k systémovým opatřením",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_analyza_opakovanych_1",
+          "nazev": "trendy jsou viditelné",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_analyza_opakovanych_0",
+          "nazev": "Opakované neshody nejsou identifikovány.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_analyza_opakovanych_1",
+          "nazev": "Opakované neshody nejsou analyzovány.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_analyza_opakovanych_2",
+          "nazev": "Z analýzy nevyplývají systémová opatření.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_analyza_opakovanych_3",
+          "nazev": "Trendy neshod nejsou vyhodnocovány.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_analyza_opakovanych_0",
+          "nazev": "Měsíční analýza top opakujících se neshod.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_analyza_opakovanych_1",
+          "nazev": "Prezentovat trendy neshod vedení.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_analyza_opakovanych_0",
+          "nazev": "stejná neshoda se opakuje bez systémové reakce",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_103_nesh_10",
+          "nazev": "ISO 45001: 10.3",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – neustálé zlepšování."
+        },
+        {
+          "id": "iso45001_91_nesh_20",
+          "nazev": "ISO 45001: 9.1",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – monitorování a měření."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        }
+      ]
+    }
+  ]
+}

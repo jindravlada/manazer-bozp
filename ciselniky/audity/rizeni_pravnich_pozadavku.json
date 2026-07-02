@@ -1,0 +1,1546 @@
+{
+  "verze": 1,
+  "id": "rizeni_pravnich_pozadavku",
+  "nazev": "Řízení právních a jiných požadavků",
+  "popis": "Proces identifikace, vyhodnocení a plnění právních a jiných požadavků BOZP.",
+  "ucel_procesu": "Zajistit, aby organizace:\n- identifikovala právní a jiné požadavky BOZP,\n- hodnotila soulad s požadavky,\n- aktualizovala přehled legislativy,\n- přenášela požadavky do praxe,\n- vyhodnocovala plnění.",
+  "proc_je_dulezity": "Právní požadavky nejsou seznam paragrafů v šanonu.\n\nAuditor ověřuje, zda organizace ví, co musí plnit, zda to promítá do provozu a zda sleduje změny.\n\nTypická neshoda: přehled existuje, ale nikdo ho neaktualizuje a provoz s ním nesouvisí.",
+  "ocekavany_vystup": "Organizace prokazatelně:\n\n- zná relevantní právní požadavky,\n- hodnotí soulad,\n- udržuje aktuální přehled,\n- promítá požadavky do praxe,\n- vyhodnocuje plnění.",
+  "poradi": 120,
+  "aktivni": true,
+  "vazby_procesy": [
+    {
+      "id": "vazba_urazy",
+      "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+      "poradi": 10,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_rizika",
+      "nazev": "Řízení rizik",
+      "poradi": 20,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_kompetence",
+      "nazev": "Řízení kompetencí",
+      "poradi": 30,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dokumentace",
+      "nazev": "Řízení dokumentovaných informací",
+      "poradi": 40,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_zmeny",
+      "nazev": "Řízení změn",
+      "poradi": 50,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_napravna",
+      "nazev": "Řízení nápravných opatření",
+      "poradi": 60,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dodavatele",
+      "nazev": "Řízení dodavatelů",
+      "poradi": 70,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_provoz",
+      "nazev": "Řízení provozu",
+      "poradi": 80,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_mu",
+      "nazev": "Připravenost na mimořádné události",
+      "poradi": 90,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_komunikace",
+      "nazev": "Interní komunikace",
+      "poradi": 100,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_prezkoumani",
+      "nazev": "Přezkoumání vedením",
+      "poradi": 110,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_legislativa",
+      "nazev": "Řízení právních a jiných požadavků",
+      "poradi": 120,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_cile",
+      "nazev": "Řízení cílů a programů BOZP",
+      "poradi": 130,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_monitoring",
+      "nazev": "Monitorování a měření",
+      "poradi": 140,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_audity",
+      "nazev": "Interní audity",
+      "poradi": 150,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_neshody",
+      "nazev": "Řízení neshod",
+      "poradi": 160,
+      "aktivni": true
+    }
+  ],
+  "pozadavky_norem": [
+    {
+      "id": "iso45001_613_leg_10",
+      "nazev": "ISO 45001: 6.1.3",
+      "poradi": 10,
+      "aktivni": true,
+      "popis": "Informativní reference – dodržování požadavků."
+    },
+    {
+      "id": "iso45001_912_leg_20",
+      "nazev": "ISO 45001: 9.1.2",
+      "poradi": 20,
+      "aktivni": true,
+      "popis": "Informativní reference – hodnocení dodržování."
+    }
+  ],
+  "sekce": [
+    {
+      "id": "identifikace_pravnich_pozadavku",
+      "nazev": "Identifikace právních požadavků",
+      "popis": "Ověření identifikace relevantních právních a jiných požadavků.",
+      "cil_overeni": "Ověřit, že organizace identifikovala právní a jiné požadavky vztahující se k BOZP.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "identifikace_pravnich_pozadavku_identifikovane",
+          "text": "Právní a jiné požadavky BOZP jsou identifikovány.",
+          "popis": "Organizace zná, co musí plnit.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "identifikace_pravnich_pozadavku_rozsah",
+          "text": "Identifikace pokrývá činnosti a pracoviště organizace.",
+          "popis": "Přehled odpovídá skutečnému rozsahu.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "identifikace_pravnich_pozadavku_odpovednost",
+          "text": "Je určena odpovědnost za identifikaci požadavků.",
+          "popis": "Existuje vlastník přehledu.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "identifikace_pravnich_pozadavku_jine",
+          "text": "Jsou zahrnuty i jiné než právní požadavky (smlouvy, normy, požadavky zákazníka).",
+          "popis": "Organizace neomezuje se pouze na zákony.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "identifikace_pravnich_pozadavku_dokumentovano",
+          "text": "Identifikované požadavky jsou dokumentovány.",
+          "popis": "Existuje přehled požadavků.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_identifikace_pravnich_pozadavku_0",
+          "nazev": "přehled právních požadavků",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_identifikace_pravnich_pozadavku_1",
+          "nazev": "registr jiných požadavků",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_identifikace_pravnich_pozadavku_2",
+          "nazev": "posouzení rozsahu činností",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_identifikace_pravnich_pozadavku_3",
+          "nazev": "smlouvy se zákazníky",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_identifikace_pravnich_pozadavku_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_identifikace_pravnich_pozadavku_1",
+          "nazev": "právník",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_identifikace_pravnich_pozadavku_2",
+          "nazev": "vedoucí BOZP",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_identifikace_pravnich_pozadavku_3",
+          "nazev": "vedoucí provozu",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_identifikace_pravnich_pozadavku_0",
+          "nazev": "přehled odpovídá skutečnému provozu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_identifikace_pravnich_pozadavku_1",
+          "nazev": "požadavky jsou dohledatelné",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_identifikace_pravnich_pozadavku_0",
+          "nazev": "Organizace neprokázala identifikaci právních požadavků BOZP.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_identifikace_pravnich_pozadavku_1",
+          "nazev": "Přehled požadavků nepokrývá všechny činnosti organizace.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_identifikace_pravnich_pozadavku_2",
+          "nazev": "Jiné než právní požadavky nejsou zahrnuty do přehledu.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_identifikace_pravnich_pozadavku_3",
+          "nazev": "Identifikované požadavky nejsou dokumentovány.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_identifikace_pravnich_pozadavku_0",
+          "nazev": "Zrevidovat přehled požadavků po každé významné změně činnosti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_identifikace_pravnich_pozadavku_1",
+          "nazev": "Zahrnout smluvní a zákaznické požadavky do registru.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_identifikace_pravnich_pozadavku_0",
+          "nazev": "přehled existuje obecně bez vazby na pracoviště",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_613_leg_10",
+          "nazev": "ISO 45001: 6.1.3",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – dodržování požadavků."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "hodnoceni_souladu",
+      "nazev": "Hodnocení souladu",
+      "popis": "Ověření hodnocení souladu s právními požadavky.",
+      "cil_overeni": "Ověřit, že organizace systematicky hodnotí soulad s identifikovanými požadavky.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "hodnoceni_souladu_provadene",
+          "text": "Hodnocení souladu s požadavky je prováděno.",
+          "popis": "Organizace ne spoléhá pouze na externí kontroly.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "hodnoceni_souladu_periodicke",
+          "text": "Hodnocení souladu probíhá v definovaných intervalech.",
+          "popis": "Kontrola není jednorázová.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "hodnoceni_souladu_metody",
+          "text": "Pro hodnocení souladu jsou použity vhodné metody.",
+          "popis": "Kontroly, audity, revize.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "hodnoceni_souladu_zaznam",
+          "text": "Výsledky hodnocení souladu jsou zaznamenány.",
+          "popis": "Existuje evidence zjištění.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "hodnoceni_souladu_odchylky",
+          "text": "Zjištěné odchylky jsou evidovány a řešeny.",
+          "popis": "Neshoda vede k opatření.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_hodnoceni_souladu_0",
+          "nazev": "záznamy hodnocení souladu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_hodnoceni_souladu_1",
+          "nazev": "kontrolní listy",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_hodnoceni_souladu_2",
+          "nazev": "evidence odchylek",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_hodnoceni_souladu_3",
+          "nazev": "závěry interních kontrol",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_hodnoceni_souladu_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_hodnoceni_souladu_1",
+          "nazev": "vedoucí BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_hodnoceni_souladu_2",
+          "nazev": "vedoucí provozu",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_hodnoceni_souladu_3",
+          "nazev": "interní auditor",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_hodnoceni_souladu_0",
+          "nazev": "hodnocení probíhá v provozu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_hodnoceni_souladu_1",
+          "nazev": "odchylky vedou k opatřením",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_hodnoceni_souladu_0",
+          "nazev": "Organizace neprokázala hodnocení souladu s právními požadavky.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_hodnoceni_souladu_1",
+          "nazev": "Hodnocení souladu neprobíhá v definovaných intervalech.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_hodnoceni_souladu_2",
+          "nazev": "Zjištěné odchylky nejsou evidovány a řešeny.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_hodnoceni_souladu_3",
+          "nazev": "Výsledky hodnocení souladu nejsou zaznamenány.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_hodnoceni_souladu_0",
+          "nazev": "Zavést roční kontrolu souladu pro klíčové oblasti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_hodnoceni_souladu_1",
+          "nazev": "Propojit hodnocení souladu s plánem interních auditů.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_hodnoceni_souladu_0",
+          "nazev": "soulad se předpokládá bez ověření",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_912_leg_10",
+          "nazev": "ISO 45001: 9.1.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – hodnocení dodržování."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "aktualizace_legislativy",
+      "nazev": "Aktualizace legislativy",
+      "popis": "Ověření sledování a aktualizace změn legislativy.",
+      "cil_overeni": "Ověřit, že organizace sleduje změny legislativy a aktualizuje přehled požadavků.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "aktualizace_legislativy_sledovani",
+          "text": "Změny legislativy BOZP jsou sledovány.",
+          "popis": "Organizace ví o nových požadavcích.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "aktualizace_legislativy_aktualizace",
+          "text": "Přehled požadavků je aktualizován po změně legislativy.",
+          "popis": "Staré požadavky nejsou používány.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "aktualizace_legislativy_posouzeni",
+          "text": "Dopad změny legislativy je posouzen.",
+          "popis": "Organizace ví, co musí změnit.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "aktualizace_legislativy_komunikace",
+          "text": "Změny legislativy jsou komunikovány dotčeným osobám.",
+          "popis": "Provoz ví o nových povinnostech.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "aktualizace_legislativy_zdroje",
+          "text": "Zdroje pro sledování legislativy jsou definovány.",
+          "popis": "Je jasné, kdo a jak sleduje změny.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_aktualizace_legislativy_0",
+          "nazev": "přehled legislativy",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_aktualizace_legislativy_1",
+          "nazev": "záznamy aktualizací",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_aktualizace_legislativy_2",
+          "nazev": "posouzení dopadu změn",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_aktualizace_legislativy_3",
+          "nazev": "bulletiny BOZP",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_aktualizace_legislativy_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_aktualizace_legislativy_1",
+          "nazev": "právník",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_aktualizace_legislativy_2",
+          "nazev": "vedoucí BOZP",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_aktualizace_legislativy_3",
+          "nazev": "vedoucí provozu",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_aktualizace_legislativy_0",
+          "nazev": "přehled je aktuální",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_aktualizace_legislativy_1",
+          "nazev": "změny jsou komunikovány",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_aktualizace_legislativy_0",
+          "nazev": "Organizace nesleduje změny legislativy BOZP.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_aktualizace_legislativy_1",
+          "nazev": "Přehled požadavků není aktualizován po změně legislativy.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_aktualizace_legislativy_2",
+          "nazev": "Dopad změny legislativy není posouzen.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_aktualizace_legislativy_3",
+          "nazev": "Změny legislativy nejsou komunikovány dotčeným pracovníkům.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_aktualizace_legislativy_0",
+          "nazev": "Předplatit odborný bulletin a evidovat dopad každé změny.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_aktualizace_legislativy_1",
+          "nazev": "Revize přehledu požadavků minimálně jednou ročně.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_aktualizace_legislativy_0",
+          "nazev": "přehled obsahuje zrušené předpisy",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_613_leg_10",
+          "nazev": "ISO 45001: 6.1.3",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – dodržování požadavků."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "prenos_do_praxe",
+      "nazev": "Přenos požadavků do praxe",
+      "popis": "Ověření promítnutí požadavků do provozních pravidel.",
+      "cil_overeni": "Ověřit, že právní požadavky jsou promítnuty do praxe organizace.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "prenos_do_praxe_promitnuto",
+          "text": "Právní požadavky jsou promítnuty do interních předpisů a postupů.",
+          "popis": "Provoz má konkrétní pravidla.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "prenos_do_praxe_provoz",
+          "text": "Požadavky jsou uplatňovány v provozu.",
+          "popis": "Pravidla nejsou pouze v dokumentaci.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "prenos_do_praxe_odpovednosti",
+          "text": "Odpovědnosti za plnění požadavků jsou určeny.",
+          "popis": "Je jasné, kdo plní.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "prenos_do_praxe_skoleni",
+          "text": "Pracovníci jsou proškoleni v relevantních požadavcích.",
+          "popis": "Znalost se promítá do chování.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "prenos_do_praxe_kontrola",
+          "text": "Plnění požadavků je kontrolováno.",
+          "popis": "Organizace ověřuje dodržování.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_prenos_do_praxe_0",
+          "nazev": "interní směrnice BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_prenos_do_praxe_1",
+          "nazev": "pracovní instrukce",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_prenos_do_praxe_2",
+          "nazev": "záznamy školení",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_prenos_do_praxe_3",
+          "nazev": "kontrolní listy",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_prenos_do_praxe_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_prenos_do_praxe_1",
+          "nazev": "vedoucí provozu",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_prenos_do_praxe_2",
+          "nazev": "mistr",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_prenos_do_praxe_3",
+          "nazev": "zaměstnanci",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_prenos_do_praxe_0",
+          "nazev": "provoz odpovídá požadavkům",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_prenos_do_praxe_1",
+          "nazev": "pracovníci znají povinnosti",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_prenos_do_praxe_0",
+          "nazev": "Právní požadavky nejsou promítnuty do interních předpisů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_prenos_do_praxe_1",
+          "nazev": "Požadavky nejsou uplatňovány v provozu.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_prenos_do_praxe_2",
+          "nazev": "Odpovědnosti za plnění požadavků nejsou určeny.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_prenos_do_praxe_3",
+          "nazev": "Plnění požadavků není kontrolováno.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_prenos_do_praxe_0",
+          "nazev": "Mapovat každý klíčový požadavek na konkrétní postup.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_prenos_do_praxe_1",
+          "nazev": "Kontrolovat plnění požadavků v provozních kontrolách.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_prenos_do_praxe_0",
+          "nazev": "směrnice existuje, ale provoz ji nezná",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_613_leg_10",
+          "nazev": "ISO 45001: 6.1.3",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – dodržování požadavků."
+        },
+        {
+          "id": "iso45001_81_leg_20",
+          "nazev": "ISO 45001: 8.1",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – provozní plánování."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "vyhodnoceni_plneni",
+      "nazev": "Vyhodnocování plnění",
+      "popis": "Ověření vyhodnocování plnění právních požadavků.",
+      "cil_overeni": "Ověřit, že organizace vyhodnocuje plnění požadavků a zlepšuje soulad.",
+      "poradi": 50,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "vyhodnoceni_plneni_vyhodnocuje",
+          "text": "Plnění právních požadavků je vyhodnocováno.",
+          "popis": "Organizace sleduje stav souladu.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_plneni_vedeni",
+          "text": "Výsledky vyhodnocování jsou předkládány vedení.",
+          "popis": "Vedení zná stav plnění.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_plneni_opatreni",
+          "text": "Z vyhodnocení vyplynou opatření pro zlepšení souladu.",
+          "popis": "Poučení vede ke změně.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_plneni_trendy",
+          "text": "Organizace sleduje trendy plnění požadavků.",
+          "popis": "Opakující se problémy jsou viditelné.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "vyhodnoceni_plneni_prezkum",
+          "text": "Plnění je projednáno v rámci přezkoumání vedením.",
+          "popis": "BOZP není izolovaná agenda.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_vyhodnoceni_plneni_0",
+          "nazev": "zprávy o plnění požadavků",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyhodnoceni_plneni_1",
+          "nazev": "souhrn pro vedení",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyhodnoceni_plneni_2",
+          "nazev": "opatření po hodnocení",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyhodnoceni_plneni_3",
+          "nazev": "trendové přehledy",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_vyhodnoceni_plneni_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyhodnoceni_plneni_1",
+          "nazev": "vedoucí BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyhodnoceni_plneni_2",
+          "nazev": "vedení",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyhodnoceni_plneni_3",
+          "nazev": "interní auditor",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_vyhodnoceni_plneni_0",
+          "nazev": "vedení zná stav souladu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_vyhodnoceni_plneni_1",
+          "nazev": "opatření jsou realizována",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_vyhodnoceni_plneni_0",
+          "nazev": "Plnění právních požadavků není vyhodnocováno.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyhodnoceni_plneni_1",
+          "nazev": "Výsledky vyhodnocování nejsou předkládány vedení.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyhodnoceni_plneni_2",
+          "nazev": "Z vyhodnocení nevyplývají opatření pro zlepšení souladu.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyhodnoceni_plneni_3",
+          "nazev": "Plnění požadavků není projednáno v rámci přezkoumání vedením.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_vyhodnoceni_plneni_0",
+          "nazev": "Roční souhrn souladu pro vedení.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_vyhodnoceni_plneni_1",
+          "nazev": "Sledovat opakující se odchylky jako systémový problém.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_vyhodnoceni_plneni_0",
+          "nazev": "vyhodnocení je formální bez následných kroků",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_93_leg_10",
+          "nazev": "ISO 45001: 9.3",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – analýza a hodnocení."
+        },
+        {
+          "id": "iso45001_912_leg_20",
+          "nazev": "ISO 45001: 9.1.2",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – hodnocení dodržování."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        }
+      ]
+    }
+  ]
+}
