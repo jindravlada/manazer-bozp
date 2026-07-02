@@ -41,8 +41,10 @@ def _import_services() -> None:
     global validate_all_catalogs
     global AudityKnowledgeEditorDialog
     global AudityKnowledgeProcessEditorWidget
+    global KNOWLEDGE_EDITOR_SAVED_MESSAGE
 
     from core.services.editable_catalog_service import editable_catalog_service
+    from moduly.audity.constants import KNOWLEDGE_EDITOR_SAVED_MESSAGE
     from moduly.audity.sluzby.audit_knowledge_editor_service import (
         audit_knowledge_editor_service,
     )
@@ -275,6 +277,33 @@ class AudityKnowledgeEditorDialogProcessTestCase(unittest.TestCase):
         self.assertEqual(dialog.content_stack.currentIndex(), dialog._PAGE_PROCESS)
         self.assertTrue(dialog._save_btn.isEnabled())
         self.assertTrue(dialog.process_editor.has_process())
+
+
+class AudityKnowledgeEditorDialogSaveFeedbackTestCase(
+    AudityKnowledgeProcessEditorServiceTestCase
+):
+    def test_save_success_shows_status_label(self) -> None:
+        dialog = AudityKnowledgeEditorDialog()
+        self.assertTrue(dialog.knowledge_tree.select_node(_PROCESS_ID))
+
+        dialog.process_editor._nazev_edit.setText("Editor test — potvrzení uložení")
+        dialog._save_current_process()
+
+        self.assertEqual(dialog._status_label.text(), KNOWLEDGE_EDITOR_SAVED_MESSAGE)
+
+    @patch("moduly.audity.ui.audity_knowledge_editor_dialog.QMessageBox.warning")
+    @patch(
+        "moduly.audity.ui.audity_knowledge_editor_dialog.audit_knowledge_editor_service.save_process_metadata",
+        return_value=["Editor test — simulovaná chyba uložení."],
+    )
+    def test_save_error_shows_message(self, _mock_save, mock_warning) -> None:
+        dialog = AudityKnowledgeEditorDialog()
+        self.assertTrue(dialog.knowledge_tree.select_node(_PROCESS_ID))
+
+        dialog._save_current_process()
+
+        mock_warning.assert_called_once()
+        self.assertFalse(dialog._status_label.isVisible())
 
 
 if __name__ == "__main__":

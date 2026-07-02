@@ -34,6 +34,7 @@ with patch.object(Path, "home", return_value=_TMP):
         COMMISSION_RECORD_LEADER,
         COMMISSION_RECORD_UNION,
         COMMISSION_RECORD_WORKPLACE,
+        KNOWLEDGE_EDITOR_BUTTON_LABEL,
         TAB_AUDITOVANE_PROCESY,
     )
     from moduly.audity.sluzby.audit_commission_service import audit_commission_service
@@ -417,6 +418,62 @@ class AudityProcessesTestCase(unittest.TestCase):
         self.assertEqual(FINDING_TYPE_LABELS[FINDING_TYPE_PRILEZITOST], "PKZ")
         self.assertEqual(FINDING_TYPE_LABELS[FINDING_TYPE_POZOROVANI], "Pozorování")
         self.assertNotEqual(FINDING_TYPE_ZJISTENI, dialog.type_combo.currentData())
+
+    def test_processes_tab_has_knowledge_editor_button(self) -> None:
+        from moduly.audity.ui.audit_dialog import AuditDialog
+        from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
+
+        audit = self._create_audit_with_team()
+        dialog = AuditDialog(audit=audit)
+
+        widget = dialog.processes_widget
+        self.assertIsInstance(widget, AuditProcessesWidget)
+        self.assertEqual(widget.edit_knowledge_btn.text(), KNOWLEDGE_EDITOR_BUTTON_LABEL)
+
+    @patch("moduly.audity.ui.audit_processes_widget.exec_maximized", return_value=0)
+    def test_knowledge_editor_button_opens_dialog(self, mock_exec) -> None:
+        from moduly.audity.ui.audity_knowledge_editor_dialog import AudityKnowledgeEditorDialog
+        from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
+
+        widget = AuditProcessesWidget()
+        widget.edit_knowledge_btn.click()
+
+        mock_exec.assert_called_once()
+        dialog = mock_exec.call_args.args[0]
+        self.assertIsInstance(dialog, AudityKnowledgeEditorDialog)
+
+    @patch("moduly.audity.ui.audit_processes_widget.exec_maximized", return_value=0)
+    def test_knowledge_editor_refresh_preserves_control_results(self, mock_exec) -> None:
+        from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
+
+        audit = self._create_audit_with_team()
+        context = self._question_context()
+        control_result_service.set_result(
+            ENTITY_AUDITY,
+            audit.id,
+            context,
+            result=CONTROL_RESULT_VYHOVUJE,
+            note="Zachovat po editoru",
+        )
+
+        widget = AuditProcessesWidget()
+        widget.set_audit_id(audit.id)
+        widget.knowledge_tree.select_node("urazy_mimo_udalosti", "evidence_hlaseni_urazu")
+        widget._open_knowledge_editor()
+
+        mock_exec.assert_called_once()
+        self.assertEqual(
+            control_result_service.current_result(ENTITY_AUDITY, audit.id, context),
+            CONTROL_RESULT_VYHOVUJE,
+        )
+        reloaded = control_result_service.get_for_control_point(
+            ENTITY_AUDITY,
+            audit.id,
+            context,
+        )
+        assert reloaded is not None
+        self.assertEqual(reloaded.note, "Zachovat po editoru")
+        self.assertEqual(widget._current_criterion_id, "evidence_hlaseni_urazu")
 
 
 if __name__ == "__main__":

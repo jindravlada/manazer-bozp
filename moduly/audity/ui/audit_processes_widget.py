@@ -1,7 +1,9 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QPushButton,
     QSizePolicy,
     QSplitter,
     QStackedWidget,
@@ -9,7 +11,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.widgets.dialog_utils import exec_maximized
 from moduly.audity.constants import (
+    KNOWLEDGE_EDITOR_BUTTON_LABEL,
     METHODOLOGY_PANEL_STRETCH,
     PROCESS_NOT_IMPLEMENTED_TEXT,
     PROCESS_PANEL_LEFT_WIDTH,
@@ -24,6 +28,7 @@ from moduly.audity.ui.audit_process_knowledge_widget import (
     AuditProcessKnowledgeWidget,
     AuditProcessOverviewWidget,
 )
+from moduly.audity.ui.audity_knowledge_editor_dialog import AudityKnowledgeEditorDialog
 
 
 class AuditProcessesWidget(QWidget):
@@ -69,9 +74,22 @@ class AuditProcessesWidget(QWidget):
         self._current_criterion_id = ""
         self._current_criterion_label = ""
 
+        header_row = QHBoxLayout()
+        header_row.setContentsMargins(0, 0, 0, 0)
+
         self.center_title_label = QLabel()
         self.center_title_label.setObjectName("SectionTitle")
         self.center_title_label.setWordWrap(True)
+
+        self.edit_knowledge_btn = QPushButton(KNOWLEDGE_EDITOR_BUTTON_LABEL)
+        self.edit_knowledge_btn.clicked.connect(self._open_knowledge_editor)
+
+        header_row.addWidget(self.center_title_label, 1)
+        header_row.addWidget(
+            self.edit_knowledge_btn,
+            0,
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop,
+        )
 
         self.center_description_label = QLabel()
         self.center_description_label.setObjectName("InfoText")
@@ -91,7 +109,7 @@ class AuditProcessesWidget(QWidget):
         self.knowledge_widget = AuditProcessKnowledgeWidget(self.methodology_panel)
         self.content_stack.addWidget(self.knowledge_widget)
 
-        center_layout.addWidget(self.center_title_label)
+        center_layout.addLayout(header_row)
         center_layout.addWidget(self.center_description_label)
         center_layout.addSpacing(4)
         center_layout.addWidget(self.content_stack, 1)
@@ -120,6 +138,22 @@ class AuditProcessesWidget(QWidget):
 
     def refresh_findings_display(self) -> None:
         self.knowledge_widget.refresh_findings_display()
+
+    def _open_knowledge_editor(self) -> None:
+        exec_maximized(AudityKnowledgeEditorDialog(self))
+        self._refresh_after_knowledge_edit()
+
+    def _refresh_after_knowledge_edit(self) -> None:
+        process_id = self._current_process_id
+        criterion_id = self._current_criterion_id
+        self.knowledge_tree.reload_tree()
+        if process_id and criterion_id:
+            self.knowledge_tree.select_node(process_id, criterion_id)
+        elif process_id:
+            self.knowledge_tree.select_node(process_id)
+        else:
+            self._show_hint()
+        self.refresh_findings_display()
 
     def reload_processes(self) -> None:
         self.knowledge_tree.reload_tree()

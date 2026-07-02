@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import configure_close_button, configure_save_cancel_buttons
 from moduly.audity.constants import (
     KNOWLEDGE_EDITOR_ADD_PROCESS_BUTTON,
+    KNOWLEDGE_EDITOR_SAVED_MESSAGE,
     KNOWLEDGE_EDITOR_SELECT_PROCESS_HINT,
     KNOWLEDGE_EDITOR_USER_COPY_HINT,
     KNOWLEDGE_EDITOR_WINDOW_TITLE,
@@ -119,6 +120,11 @@ class AudityKnowledgeEditorDialog(QDialog):
 
         root.addWidget(main_splitter, 1)
 
+        self._status_label = QLabel()
+        self._status_label.setObjectName("InfoText")
+        self._status_label.setVisible(False)
+        root.addWidget(self._status_label)
+
         self._button_box = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Close
         )
@@ -145,7 +151,16 @@ class AudityKnowledgeEditorDialog(QDialog):
         layout.addStretch()
         return page
 
+    def _clear_save_status(self) -> None:
+        self._status_label.clear()
+        self._status_label.setVisible(False)
+
+    def _show_save_success(self) -> None:
+        self._status_label.setText(KNOWLEDGE_EDITOR_SAVED_MESSAGE)
+        self._status_label.setVisible(True)
+
     def _show_hint(self) -> None:
+        self._clear_save_status()
         self._current_process_id = ""
         self._current_section_id = ""
         self._save_btn.setEnabled(False)
@@ -159,6 +174,7 @@ class AudityKnowledgeEditorDialog(QDialog):
         self.content_stack.setCurrentIndex(self._PAGE_HINT)
 
     def _on_process_selected(self, node: KnowledgeTreeNode) -> None:
+        self._clear_save_status()
         self._current_process_id = node.process_id
         self._current_section_id = ""
         self.section_editor.clear_section()
@@ -191,6 +207,7 @@ class AudityKnowledgeEditorDialog(QDialog):
         if node is None:
             return
 
+        self._clear_save_status()
         criterion = node.section
         if criterion is None:
             self._show_hint()
@@ -240,6 +257,7 @@ class AudityKnowledgeEditorDialog(QDialog):
             self.process_editor.process_metadata(),
         )
         if errors:
+            self._clear_save_status()
             QMessageBox.warning(
                 self,
                 self.windowTitle(),
@@ -248,17 +266,23 @@ class AudityKnowledgeEditorDialog(QDialog):
             return errors
 
         self.knowledge_tree.reload_tree(include_inactive=True, ensure=False)
-        if not self.knowledge_tree.select_node(process_id):
-            self._show_hint()
-            return []
+        self.knowledge_tree.blockSignals(True)
+        try:
+            if not self.knowledge_tree.select_node(process_id):
+                self._show_hint()
+                return []
 
-        refreshed = audit_knowledge_service.get_process_metadata(process_id, ensure=False)
-        if refreshed is None:
-            self._show_hint()
-            return []
+            refreshed = audit_knowledge_service.get_process_metadata(process_id, ensure=False)
+            if refreshed is None:
+                self._show_hint()
+                return []
 
-        self.process_editor.load_process(process_id=process_id, metadata=refreshed)
-        self.center_title_label.setText(str(refreshed.get("nazev") or process_id))
+            self.process_editor.load_process(process_id=process_id, metadata=refreshed)
+            self.center_title_label.setText(str(refreshed.get("nazev") or process_id))
+        finally:
+            self.knowledge_tree.blockSignals(False)
+
+        self._show_save_success()
         return []
 
     def _add_section(self) -> None:
@@ -334,6 +358,7 @@ class AudityKnowledgeEditorDialog(QDialog):
             self.section_editor.section_metadata(),
         )
         if errors:
+            self._clear_save_status()
             QMessageBox.warning(
                 self,
                 self.windowTitle(),
@@ -342,29 +367,35 @@ class AudityKnowledgeEditorDialog(QDialog):
             return errors
 
         self.knowledge_tree.reload_tree(include_inactive=True, ensure=False)
-        if not self.knowledge_tree.select_node(process_id, section_id):
-            self._show_hint()
-            return []
+        self.knowledge_tree.blockSignals(True)
+        try:
+            if not self.knowledge_tree.select_node(process_id, section_id):
+                self._show_hint()
+                return []
 
-        refreshed = audit_knowledge_service.get_criterion(
-            process_id,
-            section_id,
-            ensure=False,
-        )
-        if refreshed is None:
-            self._show_hint()
-            return []
+            refreshed = audit_knowledge_service.get_criterion(
+                process_id,
+                section_id,
+                ensure=False,
+            )
+            if refreshed is None:
+                self._show_hint()
+                return []
 
-        self.section_editor.load_section(
-            process_id=process_id,
-            section_id=section_id,
-            section=refreshed,
-        )
-        process_def = audit_knowledge_service.get_process_by_id(process_id, ensure=False)
-        process_label = process_def.nazev if process_def else process_id
-        self.center_title_label.setText(
-            f"{process_label} → {str(refreshed.get('nazev') or section_id).strip()}"
-        )
+            self.section_editor.load_section(
+                process_id=process_id,
+                section_id=section_id,
+                section=refreshed,
+            )
+            process_def = audit_knowledge_service.get_process_by_id(process_id, ensure=False)
+            process_label = process_def.nazev if process_def else process_id
+            self.center_title_label.setText(
+                f"{process_label} → {str(refreshed.get('nazev') or section_id).strip()}"
+            )
+        finally:
+            self.knowledge_tree.blockSignals(False)
+
+        self._show_save_success()
         return []
 
     def _add_process(self) -> None:
