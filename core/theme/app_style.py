@@ -280,6 +280,18 @@ def apply_app_style(app: QApplication) -> None:
             border-radius: 5px;
         }
 
+        QFrame#ProgramDetailCard {
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+
+        QFrame#ProgramDetailCardSeparator {
+            background-color: #e5e7eb;
+            border: none;
+            max-height: 1px;
+        }
+
         QLabel#ControlResultPhotoThumbnail {
             background-color: #f9fafb;
             border: 1px solid #e5e7eb;

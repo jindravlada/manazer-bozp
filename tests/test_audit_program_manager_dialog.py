@@ -138,7 +138,7 @@ class AuditProgramManagerDialogTestCase(unittest.TestCase):
             dialog._generate_visits_btn.click()
         QApplication.processEvents()
         self.assertEqual(dialog._status_label.text(), AUDIT_PROGRAM_STATUS_VISITS_GENERATED)
-        self.assertEqual(dialog._visit_count_value.text(), "0 / 6")
+        self.assertIn("0 / 6", dialog._visits_stat_label.text())
 
         dialog._distribute_processes_btn.click()
         QApplication.processEvents()
@@ -173,7 +173,7 @@ class AuditProgramManagerDialogTestCase(unittest.TestCase):
 
         self.assertEqual(dialog._status_label.text(), AUDIT_PROGRAM_STATUS_OVERVIEW_REFRESHED)
         self.assertGreaterEqual(dialog._plan_tree.topLevelItemCount(), 1)
-        self.assertEqual(dialog._completion_value.text(), "0 %")
+        self.assertIn("0 %", dialog._completion_stat_label.text())
         workplace_names = {
             dialog._plan_tree.topLevelItem(row).text(0)
             for row in range(dialog._plan_tree.topLevelItemCount())

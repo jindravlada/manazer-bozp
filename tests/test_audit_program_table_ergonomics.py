@@ -31,6 +31,8 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.audity.ui.audit_program_planned_visits_widget import (
         AuditProgramPlannedVisitsWidget,
+        _COLUMN_AUDIT,
+        _COLUMN_AUDIT_MIN_WIDTH,
     )
     from moduly.audity.ui.audit_table import AuditTable
 
@@ -160,8 +162,43 @@ class PlannedVisitsTableErgonomicsTestCase(unittest.TestCase):
         )
         self.assertEqual(
             header.sectionResizeMode(4),
-            QHeaderView.ResizeMode.ResizeToContents,
+            QHeaderView.ResizeMode.Interactive,
         )
+
+    def test_audit_column_fits_short_audit_number(self) -> None:
+        program = audit_program_service.create_program(
+            name="Program auditů 2026–2029",
+            date_from=date(2026, 4, 1),
+            date_to=date(2029, 3, 31),
+            standards=list(DEFAULT_AUDIT_PROGRAM_STANDARDS),
+        )
+        audit_program_service.add_workplace(
+            program.id,
+            workplace_id=10,
+            workplace_name="Provoz A",
+            audit_interval_months=6,
+        )
+        visit = audit_program_service.add_visit(
+            program.id,
+            workplace_id=10,
+            planned_year=2026,
+            planned_month=10,
+        )
+        audit_program_service.create_audit_from_visit(visit.id)
+
+        widget = AuditProgramPlannedVisitsWidget()
+        widget.load_program(program.id)
+
+        self.assertGreaterEqual(
+            widget._table.columnWidth(_COLUMN_AUDIT),
+            _COLUMN_AUDIT_MIN_WIDTH,
+        )
+        item = widget._table.item(0, _COLUMN_AUDIT)
+        assert item is not None
+        self.assertNotEqual(item.text(), "—")
+        self.assertIn("/2026", item.text())
+        item.setText("10/2026")
+        self.assertEqual(item.text(), "10/2026")
 
     def test_planned_processes_cell_has_short_text_and_tooltip(self) -> None:
         program = self._create_program_with_processes(

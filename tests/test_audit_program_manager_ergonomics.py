@@ -85,10 +85,44 @@ class AuditProgramManagerErgonomicsTestCase(unittest.TestCase):
             dialog._program_status_badge.property("programStatus"),
             AUDIT_PROGRAM_STATUS_DRAFT,
         )
+        self.assertIn("ISO 45001", dialog._standards_value.text())
+        self.assertIn("\n", dialog._standards_value.text())
+        self.assertIn("Pracoviště:", dialog._workplaces_stat_label.text())
+        self.assertIn("Návštěvy:", dialog._visits_stat_label.text())
+        self.assertIn("Plnění:", dialog._completion_stat_label.text())
         self.assertEqual(
             dialog._distribute_processes_btn.text(),
             AUDIT_PROGRAM_DISTRIBUTE_PROCESSES_BUTTON,
         )
+
+    def test_program_detail_is_info_card_aligned_to_top(self) -> None:
+        program = audit_program_service.create_program(
+            name="Karta programu",
+            date_from=date(2026, 4, 1),
+            date_to=date(2029, 3, 31),
+        )
+
+        dialog = self._create_dialog()
+        dialog._reload_program_list(select_program_id=program.id)
+        QApplication.processEvents()
+
+        self.assertEqual(dialog._detail_card.objectName(), "ProgramDetailCard")
+        panel_layout = dialog._detail_card.parentWidget().layout()
+        self.assertIsNotNone(panel_layout)
+        self.assertEqual(
+            panel_layout.alignment(),
+            Qt.AlignmentFlag.AlignTop,
+        )
+
+        card_layout = dialog._detail_card.layout()
+        self.assertIsNotNone(card_layout)
+        self.assertEqual(
+            card_layout.alignment(),
+            Qt.AlignmentFlag.AlignTop,
+        )
+        first_item = card_layout.itemAt(0)
+        assert first_item is not None
+        self.assertIs(first_item.widget(), dialog._program_title_label)
 
     def test_program_detail_panel_has_no_trailing_stretch(self) -> None:
         program = audit_program_service.create_program(
@@ -101,11 +135,17 @@ class AuditProgramManagerErgonomicsTestCase(unittest.TestCase):
         dialog._reload_program_list(select_program_id=program.id)
         QApplication.processEvents()
 
-        center_layout = dialog._detail_form.parentWidget().layout()
+        center_layout = dialog._detail_card.parentWidget().layout()
         self.assertIsNotNone(center_layout)
         last_item = center_layout.itemAt(center_layout.count() - 1)
         assert last_item is not None
-        self.assertIs(last_item.widget(), dialog._detail_form)
+        self.assertIs(last_item.widget(), dialog._detail_card)
+
+        card_layout = dialog._detail_card.layout()
+        assert card_layout is not None
+        card_last_item = card_layout.itemAt(card_layout.count() - 1)
+        assert card_last_item is not None
+        self.assertIsNotNone(card_last_item.layout())
 
     def test_distribute_processes_button_label_helper_is_prepared(self) -> None:
         self.assertEqual(
@@ -136,9 +176,8 @@ class AuditProgramManagerErgonomicsTestCase(unittest.TestCase):
         ]
         self.assertTrue(vertical_splitters)
         main_splitter = vertical_splitters[0]
-        sizes = main_splitter.sizes()
-        self.assertEqual(len(sizes), 2)
-        self.assertGreater(sizes[1], sizes[0])
+        self.assertEqual(main_splitter.count(), 2)
+        self.assertIs(main_splitter.widget(1), dialog._dashboard_widget)
 
     def test_planned_visits_term_column_shows_date_or_month(self) -> None:
         self.assertEqual(

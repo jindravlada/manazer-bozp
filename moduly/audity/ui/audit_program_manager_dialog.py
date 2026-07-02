@@ -26,6 +26,8 @@ from moduly.audity.constants import (
     AUDIT_PROGRAM_BUTTON_LABEL,
     AUDIT_PROGRAM_ADD_VISIT_BUTTON,
     AUDIT_PROGRAM_CENTER_PANEL_TITLE,
+    AUDIT_PROGRAM_DETAIL_ACTIONS_LABEL,
+    AUDIT_PROGRAM_DETAIL_STANDARDS_LABEL,
     audit_program_distribute_processes_button_label,
     AUDIT_PROGRAM_EDIT_VISIT_BUTTON,
     AUDIT_PROGRAM_GENERATE_VISITS_BUTTON,
@@ -168,59 +170,71 @@ class AuditProgramManagerDialog(QDialog):
         layout = QVBoxLayout(panel)
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(6)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         title = QLabel(AUDIT_PROGRAM_CENTER_PANEL_TITLE)
         title.setObjectName("SectionTitle")
-        layout.addWidget(title)
+        layout.addWidget(title, 0, Qt.AlignmentFlag.AlignTop)
 
         self._hint_label = QLabel("Vyberte program auditů vlevo nebo vytvořte nový.")
         self._hint_label.setObjectName("InfoText")
         self._hint_label.setWordWrap(True)
-        layout.addWidget(self._hint_label)
+        layout.addWidget(self._hint_label, 0, Qt.AlignmentFlag.AlignTop)
 
-        self._detail_form = QWidget()
-        detail_layout = QVBoxLayout(self._detail_form)
-        detail_layout.setContentsMargins(0, 0, 0, 0)
-        detail_layout.setSpacing(4)
+        self._detail_card = QFrame()
+        self._detail_card.setObjectName("ProgramDetailCard")
+        card_layout = QVBoxLayout(self._detail_card)
+        card_layout.setContentsMargins(12, 12, 12, 12)
+        card_layout.setSpacing(6)
+        card_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self._program_title_label = QLabel()
         self._program_title_label.setObjectName("ProgramDetailTitle")
         self._program_title_label.setWordWrap(True)
-        detail_layout.addWidget(self._program_title_label)
-
-        self._program_period_label = QLabel()
-        self._program_period_label.setObjectName("MutedText")
-        detail_layout.addWidget(self._program_period_label)
+        card_layout.addWidget(self._program_title_label)
 
         self._program_status_badge = QLabel()
         self._program_status_badge.setObjectName("ProgramStatusBadge")
-        detail_layout.addWidget(self._program_status_badge, 0, Qt.AlignmentFlag.AlignLeft)
+        card_layout.addWidget(self._program_status_badge, 0, Qt.AlignmentFlag.AlignLeft)
 
-        stats = QGridLayout()
-        stats.setHorizontalSpacing(10)
-        stats.setVerticalSpacing(2)
-        stats.setContentsMargins(0, 0, 0, 0)
+        self._program_period_label = QLabel()
+        self._program_period_label.setObjectName("MutedText")
+        card_layout.addWidget(self._program_period_label)
+
+        card_layout.addWidget(self._card_separator())
+
+        standards_label = QLabel(AUDIT_PROGRAM_DETAIL_STANDARDS_LABEL)
+        standards_label.setObjectName("MutedText")
+        card_layout.addWidget(standards_label)
+
         self._standards_value = QLabel()
+        self._standards_value.setObjectName("InfoText")
         self._standards_value.setWordWrap(True)
-        self._workplace_count_value = QLabel()
-        self._visit_count_value = QLabel()
-        self._completion_value = QLabel()
+        card_layout.addWidget(self._standards_value)
 
-        stats.addWidget(self._compact_stat_label("Normy:"), 0, 0)
-        stats.addWidget(self._standards_value, 0, 1)
-        stats.addWidget(self._compact_stat_label("Pracoviště:"), 1, 0)
-        stats.addWidget(self._workplace_count_value, 1, 1)
-        stats.addWidget(self._compact_stat_label("Návštěvy:"), 0, 2)
-        stats.addWidget(self._visit_count_value, 0, 3)
-        stats.addWidget(self._compact_stat_label("Plnění:"), 1, 2)
-        stats.addWidget(self._completion_value, 1, 3)
-        stats.setColumnStretch(1, 1)
-        stats.setColumnStretch(3, 1)
-        detail_layout.addLayout(stats)
+        card_layout.addWidget(self._card_separator())
 
-        actions = QHBoxLayout()
+        self._workplaces_stat_label = QLabel()
+        self._workplaces_stat_label.setObjectName("InfoText")
+        card_layout.addWidget(self._workplaces_stat_label)
+
+        self._visits_stat_label = QLabel()
+        self._visits_stat_label.setObjectName("InfoText")
+        card_layout.addWidget(self._visits_stat_label)
+
+        self._completion_stat_label = QLabel()
+        self._completion_stat_label.setObjectName("InfoText")
+        card_layout.addWidget(self._completion_stat_label)
+
+        card_layout.addWidget(self._card_separator())
+
+        actions_title = QLabel(AUDIT_PROGRAM_DETAIL_ACTIONS_LABEL)
+        actions_title.setObjectName("MutedText")
+        card_layout.addWidget(actions_title)
+
+        actions = QVBoxLayout()
         actions.setSpacing(6)
-        actions.setContentsMargins(0, 2, 0, 0)
+        actions.setContentsMargins(0, 0, 0, 0)
         self._generate_visits_btn = QPushButton(AUDIT_PROGRAM_GENERATE_VISITS_BUTTON)
         self._distribute_processes_btn = QPushButton(
             audit_program_distribute_processes_button_label(False)
@@ -232,10 +246,10 @@ class AuditProgramManagerDialog(QDialog):
         actions.addWidget(self._generate_visits_btn)
         actions.addWidget(self._distribute_processes_btn)
         actions.addWidget(self._refresh_overview_btn)
-        detail_layout.addLayout(actions)
+        card_layout.addLayout(actions)
 
-        self._detail_form.setVisible(False)
-        layout.addWidget(self._detail_form)
+        self._detail_card.setVisible(False)
+        layout.addWidget(self._detail_card, 0, Qt.AlignmentFlag.AlignTop)
 
         self._set_action_buttons_enabled(False)
         panel.setMinimumWidth(280)
@@ -243,10 +257,12 @@ class AuditProgramManagerDialog(QDialog):
         return panel
 
     @staticmethod
-    def _compact_stat_label(text: str) -> QLabel:
-        label = QLabel(text)
-        label.setObjectName("MutedText")
-        return label
+    def _card_separator() -> QFrame:
+        line = QFrame()
+        line.setObjectName("ProgramDetailCardSeparator")
+        line.setFrameShape(QFrame.Shape.HLine)
+        line.setFixedHeight(1)
+        return line
 
     def _build_right_panel(self) -> QFrame:
         panel = QFrame()
@@ -433,7 +449,7 @@ class AuditProgramManagerDialog(QDialog):
             return
 
         self._hint_label.setVisible(False)
-        self._detail_form.setVisible(True)
+        self._detail_card.setVisible(True)
         self._set_action_buttons_enabled(True)
         self._fill_detail_panel(overview, coverage)
         self._plan_tree.populate(overview)
@@ -712,12 +728,14 @@ class AuditProgramManagerDialog(QDialog):
         )
         self._set_program_status_badge(program.status)
         standards = audit_program_service.parse_standards(program.standards_json)
-        self._standards_value.setText(", ".join(standards) if standards else "—")
-        self._workplace_count_value.setText(str(coverage.workplace_count))
-        self._visit_count_value.setText(
-            f"{coverage.completed_visit_count} / {coverage.visit_count}"
+        self._standards_value.setText("\n".join(standards) if standards else "—")
+        self._workplaces_stat_label.setText(f"Pracoviště: {coverage.workplace_count}")
+        self._visits_stat_label.setText(
+            f"Návštěvy: {coverage.completed_visit_count} / {coverage.visit_count}"
         )
-        self._completion_value.setText(f"{coverage.completion_percent:.0f} %")
+        self._completion_stat_label.setText(
+            f"Plnění: {coverage.completion_percent:.0f} %"
+        )
         self._apply_distribute_processes_button_label(overview)
 
     def _apply_distribute_processes_button_label(
@@ -741,7 +759,7 @@ class AuditProgramManagerDialog(QDialog):
 
     def _show_empty_state(self) -> None:
         self._hint_label.setVisible(True)
-        self._detail_form.setVisible(False)
+        self._detail_card.setVisible(False)
         self._set_action_buttons_enabled(False)
         self._plan_tree.clear()
         self._planned_visits_widget.load_program(None)
@@ -755,9 +773,9 @@ class AuditProgramManagerDialog(QDialog):
             self._program_period_label,
             self._program_status_badge,
             self._standards_value,
-            self._workplace_count_value,
-            self._visit_count_value,
-            self._completion_value,
+            self._workplaces_stat_label,
+            self._visits_stat_label,
+            self._completion_stat_label,
         ):
             label.setText("")
         self._program_status_badge.setProperty("programStatus", "")

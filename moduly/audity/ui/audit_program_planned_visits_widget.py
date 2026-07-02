@@ -27,6 +27,7 @@ _COLUMN_WORKPLACE = 1
 _COLUMN_PROCESSES = 2
 _COLUMN_STATUS = 3
 _COLUMN_AUDIT = 4
+_COLUMN_AUDIT_MIN_WIDTH = 80
 
 
 class AuditProgramPlannedVisitsWidget(QFrame):
@@ -59,9 +60,10 @@ class AuditProgramPlannedVisitsWidget(QFrame):
         header.setSectionResizeMode(_COLUMN_WORKPLACE, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(_COLUMN_PROCESSES, QHeaderView.ResizeMode.Interactive)
         header.setSectionResizeMode(_COLUMN_STATUS, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(_COLUMN_AUDIT, QHeaderView.ResizeMode.ResizeToContents)
-        self._table.setColumnWidth(_COLUMN_PROCESSES, 260)
+        header.setSectionResizeMode(_COLUMN_AUDIT, QHeaderView.ResizeMode.Interactive)
+        self._table.setColumnWidth(_COLUMN_PROCESSES, 240)
         self._table.setColumnWidth(_COLUMN_WORKPLACE, 200)
+        self._table.setColumnWidth(_COLUMN_AUDIT, _COLUMN_AUDIT_MIN_WIDTH)
         layout.addWidget(self._table, 1)
 
     def load_program(self, program_id: int | None) -> None:
