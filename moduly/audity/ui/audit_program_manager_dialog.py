@@ -26,7 +26,7 @@ from moduly.audity.constants import (
     AUDIT_PROGRAM_BUTTON_LABEL,
     AUDIT_PROGRAM_ADD_VISIT_BUTTON,
     AUDIT_PROGRAM_CENTER_PANEL_TITLE,
-    AUDIT_PROGRAM_DISTRIBUTE_PROCESSES_BUTTON,
+    audit_program_distribute_processes_button_label,
     AUDIT_PROGRAM_EDIT_VISIT_BUTTON,
     AUDIT_PROGRAM_GENERATE_VISITS_BUTTON,
     AUDIT_PROGRAM_LEFT_PANEL_TITLE,
@@ -166,8 +166,8 @@ class AuditProgramManagerDialog(QDialog):
         panel = QFrame()
         panel.setObjectName("ModulePanel")
         layout = QVBoxLayout(panel)
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(8)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(6)
 
         title = QLabel(AUDIT_PROGRAM_CENTER_PANEL_TITLE)
         title.setObjectName("SectionTitle")
@@ -181,7 +181,7 @@ class AuditProgramManagerDialog(QDialog):
         self._detail_form = QWidget()
         detail_layout = QVBoxLayout(self._detail_form)
         detail_layout.setContentsMargins(0, 0, 0, 0)
-        detail_layout.setSpacing(6)
+        detail_layout.setSpacing(4)
 
         self._program_title_label = QLabel()
         self._program_title_label.setObjectName("ProgramDetailTitle")
@@ -197,8 +197,9 @@ class AuditProgramManagerDialog(QDialog):
         detail_layout.addWidget(self._program_status_badge, 0, Qt.AlignmentFlag.AlignLeft)
 
         stats = QGridLayout()
-        stats.setHorizontalSpacing(12)
-        stats.setVerticalSpacing(4)
+        stats.setHorizontalSpacing(10)
+        stats.setVerticalSpacing(2)
+        stats.setContentsMargins(0, 0, 0, 0)
         self._standards_value = QLabel()
         self._standards_value.setWordWrap(True)
         self._workplace_count_value = QLabel()
@@ -219,8 +220,11 @@ class AuditProgramManagerDialog(QDialog):
 
         actions = QHBoxLayout()
         actions.setSpacing(6)
+        actions.setContentsMargins(0, 2, 0, 0)
         self._generate_visits_btn = QPushButton(AUDIT_PROGRAM_GENERATE_VISITS_BUTTON)
-        self._distribute_processes_btn = QPushButton(AUDIT_PROGRAM_DISTRIBUTE_PROCESSES_BUTTON)
+        self._distribute_processes_btn = QPushButton(
+            audit_program_distribute_processes_button_label(False)
+        )
         self._refresh_overview_btn = QPushButton(AUDIT_PROGRAM_REFRESH_OVERVIEW_BUTTON)
         self._generate_visits_btn.clicked.connect(self._generate_visits)
         self._distribute_processes_btn.clicked.connect(self._distribute_processes)
@@ -228,12 +232,10 @@ class AuditProgramManagerDialog(QDialog):
         actions.addWidget(self._generate_visits_btn)
         actions.addWidget(self._distribute_processes_btn)
         actions.addWidget(self._refresh_overview_btn)
-        actions.addStretch()
         detail_layout.addLayout(actions)
 
         self._detail_form.setVisible(False)
         layout.addWidget(self._detail_form)
-        layout.addStretch(1)
 
         self._set_action_buttons_enabled(False)
         panel.setMinimumWidth(280)
@@ -716,6 +718,16 @@ class AuditProgramManagerDialog(QDialog):
             f"{coverage.completed_visit_count} / {coverage.visit_count}"
         )
         self._completion_value.setText(f"{coverage.completion_percent:.0f} %")
+        self._apply_distribute_processes_button_label(overview)
+
+    def _apply_distribute_processes_button_label(
+        self,
+        overview: AuditProgramOverview,
+    ) -> None:
+        has_processes = bool(overview.visit_processes)
+        self._distribute_processes_btn.setText(
+            audit_program_distribute_processes_button_label(has_processes)
+        )
 
     def _set_program_status_badge(self, status: str) -> None:
         icon = AUDIT_PROGRAM_STATUS_BADGE_ICONS.get(status, "")

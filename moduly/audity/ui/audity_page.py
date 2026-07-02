@@ -81,8 +81,7 @@ class AudityPage(QWidget):
         layout.addLayout(toolbar)
 
         self._program_manager_banner = AuditProgramManagerBannerWidget()
-        self._program_manager_banner.open_manager_requested.connect(self.open_program_manager)
-        layout.addWidget(self._program_manager_banner)
+        layout.addWidget(self._program_manager_banner, 0)
 
         layout.addWidget(self.table)
 

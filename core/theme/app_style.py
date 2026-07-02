@@ -237,9 +237,42 @@ def apply_app_style(app: QApplication) -> None:
             border-radius: 10px;
         }
 
+        QFrame#AuditProgramManagerBannerSeparator {
+            background-color: #e5e7eb;
+            border: none;
+            max-width: 1px;
+        }
+
         QLabel#AuditProgramManagerBannerTitle {
             font-size: 15px;
             font-weight: bold;
+        }
+
+        QLabel#AuditProgramManagerBannerProgramName {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        QLabel#AuditProgramManagerBannerSectionTitle {
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        QLabel#AuditProgramManagerBannerHighlight {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        QProgressBar#AuditProgramManagerBannerProgress {
+            background-color: #e5e7eb;
+            border: none;
+            border-radius: 5px;
+        }
+
+        QProgressBar#AuditProgramManagerBannerProgress::chunk {
+            background-color: #60a5fa;
+            border-radius: 5px;
         }
 
         QLabel#ControlResultPhotoThumbnail {

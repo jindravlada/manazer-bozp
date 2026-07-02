@@ -235,7 +235,10 @@ DEFAULT_AUDIT_PROGRAM_STANDARDS = AUDIT_PROGRAM_STANDARDS_V1
 AUDIT_PROGRAM_BUTTON_LABEL = "Manažer auditů"
 AUDIT_PROGRAM_WINDOW_TITLE = "Program auditů"
 AUDIT_PROGRAM_MANAGER_BANNER_TITLE = "Manažer auditů"
-AUDIT_PROGRAM_MANAGER_OPEN_BUTTON = "Otevřít Manažer auditů"
+AUDIT_PROGRAM_MANAGER_BANNER_ACTIVE_PROGRAM = "Aktivní program"
+AUDIT_PROGRAM_MANAGER_BANNER_NEAREST_VISIT = "Nejbližší návštěva"
+AUDIT_PROGRAM_MANAGER_BANNER_OPEN_FINDINGS = "Otevřená zjištění"
+AUDIT_PROGRAM_MANAGER_BANNER_OPEN_TASKS = "Otevřené úkoly"
 AUDIT_PROGRAM_MANAGER_NO_PROGRAM_TEXT = "Zatím není založen žádný program auditů."
 AUDIT_PROGRAM_ADD_BUTTON = "+ Nový program"
 AUDIT_PROGRAM_LEFT_PANEL_TITLE = "Programy auditů"
@@ -243,7 +246,16 @@ AUDIT_PROGRAM_CENTER_PANEL_TITLE = "Detail programu"
 AUDIT_PROGRAM_RIGHT_PANEL_TITLE = "Přehled programu"
 AUDIT_PROGRAM_GENERATE_VISITS_BUTTON = "Generovat návštěvy"
 AUDIT_PROGRAM_DISTRIBUTE_PROCESSES_BUTTON = "Rozdělit procesy"
+AUDIT_PROGRAM_SUPPLEMENT_PROCESSES_BUTTON = "Doplnit nové procesy"
+AUDIT_PROGRAM_USE_SUPPLEMENT_PROCESSES_LABEL = False
 AUDIT_PROGRAM_REFRESH_OVERVIEW_BUTTON = "Přepočítat přehled"
+
+
+def audit_program_distribute_processes_button_label(has_existing_processes: bool) -> str:
+    """Popisek tlačítka rozdělení procesů — připraveno pro budoucí přepnutí."""
+    if AUDIT_PROGRAM_USE_SUPPLEMENT_PROCESSES_LABEL and has_existing_processes:
+        return AUDIT_PROGRAM_SUPPLEMENT_PROCESSES_BUTTON
+    return AUDIT_PROGRAM_DISTRIBUTE_PROCESSES_BUTTON
 AUDIT_PROGRAM_CREATE_DIALOG_TITLE = "Nový program auditů"
 AUDIT_PROGRAM_EDIT_DIALOG_TITLE = "Upravit program auditů"
 AUDIT_PROGRAM_STATUS_VISITS_GENERATED = "✓ Návštěvy vygenerovány."

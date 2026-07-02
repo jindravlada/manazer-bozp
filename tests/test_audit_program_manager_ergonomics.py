@@ -25,10 +25,12 @@ with patch.object(Path, "home", return_value=_TMP):
     initialize_database()
 
     from moduly.audity.constants import (
+        AUDIT_PROGRAM_DISTRIBUTE_PROCESSES_BUTTON,
         AUDIT_PROGRAM_PLANNED_VISITS_COLUMN_TERM,
         AUDIT_PROGRAM_STATUS_DRAFT,
         AUDIT_PROGRAM_STATUS_LABELS,
         DEFAULT_AUDIT_PROGRAM_STANDARDS,
+        audit_program_distribute_processes_button_label,
     )
     from moduly.audity.sluzby.audit_program_service import audit_program_service
     from moduly.audity.sluzby.audit_program_visit_formatting import format_planned_term
@@ -82,6 +84,37 @@ class AuditProgramManagerErgonomicsTestCase(unittest.TestCase):
         self.assertEqual(
             dialog._program_status_badge.property("programStatus"),
             AUDIT_PROGRAM_STATUS_DRAFT,
+        )
+        self.assertEqual(
+            dialog._distribute_processes_btn.text(),
+            AUDIT_PROGRAM_DISTRIBUTE_PROCESSES_BUTTON,
+        )
+
+    def test_program_detail_panel_has_no_trailing_stretch(self) -> None:
+        program = audit_program_service.create_program(
+            name="Kompaktní program",
+            date_from=date(2026, 4, 1),
+            date_to=date(2029, 3, 31),
+        )
+
+        dialog = self._create_dialog()
+        dialog._reload_program_list(select_program_id=program.id)
+        QApplication.processEvents()
+
+        center_layout = dialog._detail_form.parentWidget().layout()
+        self.assertIsNotNone(center_layout)
+        last_item = center_layout.itemAt(center_layout.count() - 1)
+        assert last_item is not None
+        self.assertIs(last_item.widget(), dialog._detail_form)
+
+    def test_distribute_processes_button_label_helper_is_prepared(self) -> None:
+        self.assertEqual(
+            audit_program_distribute_processes_button_label(False),
+            AUDIT_PROGRAM_DISTRIBUTE_PROCESSES_BUTTON,
+        )
+        self.assertEqual(
+            audit_program_distribute_processes_button_label(True),
+            AUDIT_PROGRAM_DISTRIBUTE_PROCESSES_BUTTON,
         )
 
     def test_dashboard_summary_uses_two_columns(self) -> None:

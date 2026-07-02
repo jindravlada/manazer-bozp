@@ -5,7 +5,7 @@ from datetime import date
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication, QDialog
+from PySide6.QtWidgets import QApplication, QPushButton, QSizePolicy
 
 _TMP = Path(tempfile.mkdtemp())
 
@@ -25,13 +25,14 @@ with patch.object(Path, "home", return_value=_TMP):
 
     from moduly.audity.constants import (
         AUDIT_PROGRAM_BUTTON_LABEL,
+        AUDIT_PROGRAM_MANAGER_BANNER_ACTIVE_PROGRAM,
+        AUDIT_PROGRAM_MANAGER_BANNER_NEAREST_VISIT,
+        AUDIT_PROGRAM_MANAGER_BANNER_OPEN_FINDINGS,
+        AUDIT_PROGRAM_MANAGER_BANNER_OPEN_TASKS,
         AUDIT_PROGRAM_MANAGER_BANNER_TITLE,
         AUDIT_PROGRAM_MANAGER_NO_PROGRAM_TEXT,
-        AUDIT_PROGRAM_MANAGER_OPEN_BUTTON,
         AUDIT_PROGRAM_STATUS_APPROVED,
-        AUDIT_PROGRAM_STATUS_DRAFT,
         AUDIT_PROGRAM_STATUS_RUNNING,
-        AUDIT_PROGRAM_WINDOW_TITLE,
         DEFAULT_AUDIT_PROGRAM_STANDARDS,
     )
     from moduly.audity.sluzby.audit_program_service import (
@@ -39,7 +40,9 @@ with patch.object(Path, "home", return_value=_TMP):
         audit_program_service,
     )
     from moduly.audity.ui.audit_program_manager_banner_widget import (
+        AuditProgramManagerBannerView,
         AuditProgramManagerBannerWidget,
+        load_audit_program_manager_banner_view,
     )
     from moduly.audity.ui.audit_program_manager_dialog import AuditProgramManagerDialog
     from moduly.audity.ui.audity_page import AudityPage
@@ -137,40 +140,42 @@ class AudityPageManagerBannerTestCase(unittest.TestCase):
 
     def test_banner_is_visible_on_page(self) -> None:
         page = self._create_page()
-        self.assertTrue(hasattr(page, "_program_manager_banner"))
-        self.assertIsInstance(page._program_manager_banner, AuditProgramManagerBannerWidget)
+        banner = page._program_manager_banner
+        self.assertIsInstance(banner, AuditProgramManagerBannerWidget)
         self.assertEqual(
-            page._program_manager_banner._title_label.text(),
-            AUDIT_PROGRAM_MANAGER_BANNER_TITLE,
+            banner._visit_title_label.text(),
+            f"📅 {AUDIT_PROGRAM_MANAGER_BANNER_NEAREST_VISIT}",
         )
+
+    def test_banner_uses_full_width(self) -> None:
+        widget = AuditProgramManagerBannerWidget()
+        policy = widget.sizePolicy()
+        self.assertEqual(policy.horizontalPolicy(), QSizePolicy.Policy.Expanding)
+
+    def test_banner_has_no_open_button(self) -> None:
+        widget = AuditProgramManagerBannerWidget()
+        self.assertEqual(widget.findChildren(QPushButton), [])
 
     def test_banner_shows_no_program_state(self) -> None:
         widget = AuditProgramManagerBannerWidget()
-        empty_info = AuditProgramBannerInfo(
-            has_program=False,
-            program_id=None,
-            program_name="",
-            period_label="",
-            completion_percent=None,
-            nearest_visit_term=None,
-            nearest_visit_workplace=None,
+        widget.load_view(
+            AuditProgramManagerBannerView(
+                has_program=False,
+                program_name="",
+                completion_percent=None,
+                nearest_visit_term=None,
+                nearest_visit_workplace=None,
+                open_findings_count=None,
+                open_tasks_count=None,
+            )
         )
-        with patch.object(
-            audit_program_service,
-            "get_banner_info",
-            return_value=empty_info,
-        ):
-            widget.refresh()
         self.assertIn(
             AUDIT_PROGRAM_MANAGER_NO_PROGRAM_TEXT,
-            widget._detail_label.text(),
+            widget._empty_label.text(),
         )
-        self.assertEqual(
-            widget._open_btn.text(),
-            AUDIT_PROGRAM_MANAGER_OPEN_BUTTON,
-        )
+        self.assertEqual(widget._program_name_label.text(), "")
 
-    def test_banner_shows_active_program(self) -> None:
+    def test_banner_shows_mini_dashboard_layout(self) -> None:
         program = audit_program_service.create_program(
             name="Program auditů 2026–2029",
             date_from=date(2026, 4, 1),
@@ -194,23 +199,53 @@ class AudityPageManagerBannerTestCase(unittest.TestCase):
         widget = AuditProgramManagerBannerWidget()
         widget.refresh()
 
-        text = widget._detail_label.text()
-        self.assertIn("Program auditů 2026–2029", text)
-        self.assertIn("Období:", text)
-        self.assertIn("Plnění:", text)
-        self.assertIn("Nejbližší návštěva:", text)
-        self.assertIn("12. 8. 2026", text)
-        self.assertIn("Provoz Gamma", text)
+        self.assertEqual(
+            widget._program_name_label.text(),
+            "Program auditů 2026–2029",
+        )
+        self.assertEqual(widget._visit_term_label.text(), "12. 8. 2026")
+        self.assertEqual(widget._visit_workplace_label.text(), "Provoz Gamma")
+        self.assertIn(AUDIT_PROGRAM_MANAGER_BANNER_OPEN_FINDINGS, widget._findings_label.text())
+        self.assertIn(AUDIT_PROGRAM_MANAGER_BANNER_OPEN_TASKS, widget._tasks_label.text())
 
-    @patch("moduly.audity.ui.audity_page.exec_maximized")
-    def test_banner_button_opens_manager(self, mock_exec) -> None:
-        page = self._create_page()
-        page._program_manager_banner._open_btn.click()
+    def test_load_view_shows_section_labels(self) -> None:
+        widget = AuditProgramManagerBannerWidget()
+        widget.load_view(
+            AuditProgramManagerBannerView(
+                has_program=True,
+                program_name="ZX-ZF 2026–2029",
+                completion_percent=41.0,
+                nearest_visit_term="15. 9. 2026",
+                nearest_visit_workplace="Provoz A",
+                open_findings_count=12,
+                open_tasks_count=7,
+            )
+        )
 
-        mock_exec.assert_called_once()
-        dialog = mock_exec.call_args.args[0]
-        self.assertIsInstance(dialog, AuditProgramManagerDialog)
-        self.assertEqual(dialog.windowTitle(), AUDIT_PROGRAM_WINDOW_TITLE)
+        self.assertEqual(widget._program_name_label.text(), "ZX-ZF 2026–2029")
+        self.assertEqual(widget._completion_percent_label.text(), "41 %")
+        self.assertEqual(widget._completion_bar.value(), 41)
+        self.assertEqual(widget._visit_term_label.text(), "15. 9. 2026")
+        self.assertEqual(widget._visit_workplace_label.text(), "Provoz A")
+        self.assertIn("12", widget._findings_label.text())
+        self.assertIn("7", widget._tasks_label.text())
+
+    def test_load_audit_program_manager_banner_view_without_program(self) -> None:
+        with patch.object(
+            audit_program_service,
+            "get_banner_info",
+            return_value=AuditProgramBannerInfo(
+                has_program=False,
+                program_id=None,
+                program_name="",
+                period_label="",
+                completion_percent=None,
+                nearest_visit_term=None,
+                nearest_visit_workplace=None,
+            ),
+        ):
+            view = load_audit_program_manager_banner_view()
+        self.assertFalse(view.has_program)
 
 
 if __name__ == "__main__":
