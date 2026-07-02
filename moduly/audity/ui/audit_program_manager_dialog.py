@@ -61,6 +61,7 @@ from moduly.audity.sluzby.audit_program_service import (
 )
 from moduly.audity.ui.audit_dialog import AuditDialog
 from moduly.audity.ui.audit_program_create_dialog import AuditProgramCreateDialog
+from moduly.audity.ui.audit_program_dashboard_widget import AuditProgramDashboardWidget
 from moduly.audity.ui.audit_program_move_process_dialog import (
     AuditProgramMoveProcessDialog,
     load_target_visits,
@@ -89,7 +90,9 @@ class AuditProgramManagerDialog(QDialog):
         root.setContentsMargins(12, 12, 12, 12)
         root.setSpacing(8)
 
-        splitter = QSplitter()
+        main_splitter = QSplitter(Qt.Orientation.Vertical)
+
+        plan_splitter = QSplitter()
 
         self._program_list = QListWidget()
         self._program_list.currentItemChanged.connect(self._on_program_selected)
@@ -98,15 +101,23 @@ class AuditProgramManagerDialog(QDialog):
         center_panel = self._build_center_panel()
         right_panel = self._build_right_panel()
 
-        splitter.addWidget(left_panel)
-        splitter.addWidget(center_panel)
-        splitter.addWidget(right_panel)
-        splitter.setStretchFactor(0, 0)
-        splitter.setStretchFactor(1, 1)
-        splitter.setStretchFactor(2, 1)
-        splitter.setSizes([PROCESS_PANEL_LEFT_WIDTH, 520, 520])
+        plan_splitter.addWidget(left_panel)
+        plan_splitter.addWidget(center_panel)
+        plan_splitter.addWidget(right_panel)
+        plan_splitter.setStretchFactor(0, 0)
+        plan_splitter.setStretchFactor(1, 1)
+        plan_splitter.setStretchFactor(2, 1)
+        plan_splitter.setSizes([PROCESS_PANEL_LEFT_WIDTH, 520, 520])
 
-        root.addWidget(splitter, 1)
+        self._dashboard_widget = AuditProgramDashboardWidget()
+
+        main_splitter.addWidget(plan_splitter)
+        main_splitter.addWidget(self._dashboard_widget)
+        main_splitter.setStretchFactor(0, 3)
+        main_splitter.setStretchFactor(1, 2)
+        main_splitter.setSizes([520, 320])
+
+        root.addWidget(main_splitter, 1)
         root.addLayout(self._build_footer())
 
         self._reload_program_list()
@@ -379,6 +390,7 @@ class AuditProgramManagerDialog(QDialog):
         self._fill_detail_panel(overview, coverage)
         self._plan_tree.populate(overview)
         self._update_plan_actions()
+        self._dashboard_widget.load_program(program_id)
 
     def _update_plan_actions(self) -> None:
         if self._selected_program_id is None:
@@ -664,6 +676,7 @@ class AuditProgramManagerDialog(QDialog):
         self._set_action_buttons_enabled(False)
         self._plan_tree.clear()
         self._set_plan_actions_enabled(False)
+        self._dashboard_widget.load_program(None)
         self._clear_detail_values()
 
     def _clear_detail_values(self) -> None:

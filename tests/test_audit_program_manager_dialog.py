@@ -34,6 +34,7 @@ with patch.object(Path, "home", return_value=_TMP):
         AUDIT_PROGRAM_STATUS_PROGRAM_CREATED,
         AUDIT_PROGRAM_STATUS_VISIT_CREATED,
         AUDIT_PROGRAM_STATUS_VISITS_GENERATED,
+        AUDIT_PROGRAM_DASHBOARD_TAB_FINDINGS,
         AUDIT_PROGRAM_WINDOW_TITLE,
         AUDIT_STANDARD_ISO_45001,
         AUDIT_STANDARD_ISO_9001,
@@ -334,6 +335,23 @@ class AuditProgramManagerDialogTestCase(unittest.TestCase):
         self.assertFalse(dialog._start_audit_btn.isEnabled())
         self.assertTrue(dialog._open_audit_btn.isEnabled())
         self.assertIn("▶", visit_item.text(0))
+
+    def test_manager_has_dashboard_tabs(self) -> None:
+        program = audit_program_service.create_program(
+            name="Program auditů 2026–2029",
+            date_from=date(2026, 4, 1),
+            date_to=date(2029, 3, 31),
+        )
+
+        dialog = self._create_dialog()
+        dialog._reload_program_list(select_program_id=program.id)
+        QApplication.processEvents()
+
+        self.assertEqual(
+            dialog._dashboard_widget._tabs.tabText(0),
+            AUDIT_PROGRAM_DASHBOARD_TAB_FINDINGS,
+        )
+        self.assertTrue(dialog._dashboard_widget.isEnabled())
 
 
 class AudityPageProgramButtonTestCase(unittest.TestCase):

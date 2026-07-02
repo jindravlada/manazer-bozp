@@ -35,6 +35,19 @@ class AuditRepository:
             )
             return list(session.scalars(stmt))
 
+    def list_for_program(self, program_id: int) -> list[Audit]:
+        with get_session() as session:
+            stmt = (
+                select(Audit)
+                .where(Audit.program_id == program_id)
+                .order_by(
+                    Audit.audit_date.desc(),
+                    Audit.finished_at.desc(),
+                    Audit.id.desc(),
+                )
+            )
+            return list(session.scalars(stmt))
+
     def add(self, audit: Audit) -> Audit:
         with get_session() as session:
             session.add(audit)
