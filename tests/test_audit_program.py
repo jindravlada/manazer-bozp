@@ -176,5 +176,146 @@ class AuditProgramServiceTestCase(unittest.TestCase):
         self.assertIsNone(audit_program_service.get_program(999_999))
 
 
+class AuditProgramGenerationTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        from PySide6.QtWidgets import QApplication
+
+        cls._app = QApplication.instance() or QApplication([])
+
+        import core.services.editable_catalog_service as editable_catalog_module
+
+        importlib.reload(editable_catalog_module)
+        from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
+
+        audit_knowledge_service.ensure_catalogs()
+        cls._active_process_count = len(audit_knowledge_service.get_processes())
+
+    def _create_program_with_workplace(
+        self,
+        *,
+        workplace_id: int = 10,
+        interval: int = 6,
+        active: bool = True,
+        name: str = "Provoz Gamma",
+    ):
+        program = audit_program_service.create_program(
+            name="Interní audity 2026–2029",
+            date_from=date(2026, 4, 1),
+            date_to=date(2029, 3, 31),
+            standards=list(DEFAULT_AUDIT_PROGRAM_STANDARDS),
+        )
+        audit_program_service.add_workplace(
+            program.id,
+            workplace_id=workplace_id,
+            workplace_name=name,
+            audit_interval_months=interval,
+            active=active,
+        )
+        return program
+
+    def test_generate_visits_six_month_cycle(self) -> None:
+        program = self._create_program_with_workplace(interval=6)
+
+        result = audit_program_service.generate_visits(program.id)
+
+        self.assertEqual(len(result.created_visits), 6)
+        self.assertEqual(
+            [(visit.planned_year, visit.planned_month) for visit in result.created_visits],
+            [(2026, 4), (2026, 10), (2027, 4), (2027, 10), (2028, 4), (2028, 10)],
+        )
+
+    def test_generate_visits_is_idempotent(self) -> None:
+        program = self._create_program_with_workplace(interval=6)
+
+        first = audit_program_service.generate_visits(program.id)
+        second = audit_program_service.generate_visits(program.id)
+
+        self.assertEqual(len(first.created_visits), 6)
+        self.assertEqual(len(second.created_visits), 0)
+        self.assertEqual(second.skipped_existing, 6)
+        overview = audit_program_service.get_program_overview(program.id)
+        assert overview is not None
+        self.assertEqual(len(overview.visits), 6)
+
+    def test_generate_visits_ignores_inactive_workplace(self) -> None:
+        program = self._create_program_with_workplace(interval=6)
+        audit_program_service.add_workplace(
+            program.id,
+            workplace_id=20,
+            workplace_name="Neaktivní sklad",
+            audit_interval_months=6,
+            active=False,
+        )
+
+        result = audit_program_service.generate_visits(program.id)
+
+        self.assertEqual(len(result.created_visits), 6)
+        workplace_ids = {visit.workplace_id for visit in result.created_visits}
+        self.assertEqual(workplace_ids, {10})
+
+    def test_distribute_processes_covers_all_active_processes(self) -> None:
+        program = self._create_program_with_workplace(interval=6)
+        audit_program_service.generate_visits(program.id)
+
+        distribution = audit_program_service.distribute_processes(program.id)
+        coverage = audit_program_service.get_program_coverage(program.id)
+
+        assert coverage is not None
+        self.assertEqual(len(distribution.created_processes), self._active_process_count)
+        self.assertEqual(coverage.planned_process_count, self._active_process_count)
+        self.assertEqual(coverage.missing_by_workplace[0].missing_process_ids, ())
+
+    def test_distribute_processes_is_idempotent(self) -> None:
+        program = self._create_program_with_workplace(interval=6)
+        audit_program_service.generate_visits(program.id)
+
+        first = audit_program_service.distribute_processes(program.id)
+        second = audit_program_service.distribute_processes(program.id)
+
+        self.assertGreater(len(first.created_processes), 0)
+        self.assertEqual(len(second.created_processes), 0)
+        self.assertEqual(second.skipped_existing, len(first.created_processes))
+
+    def test_distribute_processes_does_not_overwrite_manual_plan(self) -> None:
+        program = self._create_program_with_workplace(interval=6)
+        audit_program_service.generate_visits(program.id)
+        audit_program_service.distribute_processes(program.id)
+
+        overview = audit_program_service.get_program_overview(program.id)
+        assert overview is not None
+        visit = overview.visits[0]
+        manual = audit_program_service.add_visit_process(
+            visit.id,
+            process_id="manual_only_process",
+            process_name="Ručně plánovaný proces",
+            note="manual-plan",
+        )
+
+        second = audit_program_service.distribute_processes(program.id)
+        refreshed = audit_program_service.get_program_overview(program.id)
+        assert refreshed is not None
+
+        stored_manual = next(
+            item for item in refreshed.visit_processes if item.id == manual.id
+        )
+        self.assertEqual(stored_manual.note, "manual-plan")
+        self.assertEqual(len(second.created_processes), 0)
+
+    def test_get_program_coverage_counts(self) -> None:
+        program = self._create_program_with_workplace(interval=6)
+        audit_program_service.generate_visits(program.id)
+        audit_program_service.distribute_processes(program.id)
+
+        coverage = audit_program_service.get_program_coverage(program.id)
+
+        assert coverage is not None
+        self.assertEqual(coverage.workplace_count, 1)
+        self.assertEqual(coverage.visit_count, 6)
+        self.assertEqual(coverage.planned_process_count, self._active_process_count)
+        self.assertEqual(coverage.completed_process_count, 0)
+        self.assertEqual(coverage.completion_percent, 0.0)
+
+
 if __name__ == "__main__":
     unittest.main()
