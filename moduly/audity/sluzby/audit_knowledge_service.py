@@ -436,6 +436,36 @@ class AuditKnowledgeService:
 
         return self._load_json(path)
 
+    @staticmethod
+    def collect_section_ids(sections: list) -> set[str]:
+        collected: set[str] = set()
+        for section in sections or []:
+            if not isinstance(section, dict):
+                continue
+            section_id = str(section.get("id") or "").strip()
+            if section_id:
+                collected.add(section_id)
+            collected.update(
+                AuditKnowledgeService.collect_section_ids(section.get("sekce") or [])
+            )
+        return collected
+
+    @staticmethod
+    def get_next_section_poradi(knowledge: dict) -> int:
+        sections = knowledge.get("sekce") or []
+        if not isinstance(sections, list) or not sections:
+            return 10
+
+        max_poradi = 0
+        for section in sections:
+            if not isinstance(section, dict):
+                continue
+            try:
+                max_poradi = max(max_poradi, int(section.get("poradi") or 0))
+            except (TypeError, ValueError):
+                continue
+        return max_poradi + 10 if max_poradi else 10
+
     def get_process_metadata(
         self,
         process_id: str,

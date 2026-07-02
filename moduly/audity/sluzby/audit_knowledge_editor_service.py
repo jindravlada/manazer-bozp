@@ -23,6 +23,28 @@ from moduly.audity.sluzby.audit_knowledge_validator import (
     validate_procesy_registry_data,
 )
 
+_NEW_SECTION_EMPTY_LIST_FIELDS: tuple[str, ...] = (
+    "sekce",
+    "postup_kontroly",
+    "kontrolni_body",
+    "navodne_otazky",
+    "objektivni_dukazy",
+    "doporucene_rozhovory",
+    "pozorovani_v_provozu",
+    "typicke_neshody",
+    "typicke_zavady",
+    "pkz",
+    "pozorovani",
+    "vazby_procesy",
+    "pozadavky_normy",
+    "poznamky_auditora",
+    "referencni_fotografie",
+    "doporucene_postupy",
+    "legislativa",
+    "historie",
+    "auditni_tvrzeni",
+)
+
 _CATALOG_DIR = "audity"
 _BACKUP_SUBDIR = "backups"
 _MAX_BACKUPS_PER_FILE = 10
@@ -303,6 +325,99 @@ class AuditKnowledgeEditorService:
         parent_list[index] = updated
 
         return self.save_user_json(relative_path, data)
+
+    @staticmethod
+    def build_new_section(
+        *,
+        section_id: str,
+        nazev: str,
+        popis: str,
+        cil_overeni: str,
+        poradi: int,
+        aktivni: bool,
+    ) -> dict:
+        section = {
+            "id": section_id,
+            "nazev": nazev,
+            "popis": popis,
+            "cil_overeni": cil_overeni,
+            "poradi": poradi,
+            "aktivni": aktivni,
+        }
+        for field in _NEW_SECTION_EMPTY_LIST_FIELDS:
+            section[field] = []
+        return section
+
+    def suggest_next_section_poradi(self, process_id: str) -> int:
+        self.ensure_user_catalogs()
+        process = audit_knowledge_service.get_process_by_id(process_id)
+        if process is None or not process.soubor_znalosti:
+            return 10
+
+        knowledge = audit_knowledge_service.load_process_knowledge(process, ensure=False)
+        if knowledge is None:
+            return 10
+
+        return audit_knowledge_service.get_next_section_poradi(knowledge)
+
+    def create_section(
+        self,
+        process_id: str,
+        payload: dict,
+    ) -> tuple[str | None, list[str]]:
+        self.ensure_user_catalogs()
+
+        process = audit_knowledge_service.get_process_by_id(process_id)
+        if process is None or not process.soubor_znalosti:
+            return None, [f"Proces '{process_id}' nebyl nalezen."]
+
+        nazev = str(payload.get("nazev") or "").strip()
+        if not nazev:
+            return None, ["Název oblasti ověření musí být vyplněn."]
+
+        try:
+            poradi = int(payload.get("poradi"))
+        except (TypeError, ValueError):
+            return None, ["Pořadí musí být celé číslo."]
+
+        relative_path = f"{_CATALOG_DIR}/{process.soubor_znalosti}"
+        path = self.resolve_user_path(relative_path)
+        data, error = self.load_json_safe(path)
+        if error or data is None:
+            return None, [error or f"Soubor {process.soubor_znalosti} nelze načíst."]
+
+        sections = data.get("sekce")
+        if sections is None:
+            sections = []
+        if not isinstance(sections, list):
+            return None, ["Pole 'sekce' musí být seznam."]
+
+        before_sections = deepcopy(sections)
+        existing_ids = audit_knowledge_service.collect_section_ids(sections)
+
+        section_id = str(payload.get("id") or "").strip()
+        if not section_id:
+            section_id = audit_knowledge_service.generate_item_id(nazev, existing_ids)
+        if section_id in existing_ids:
+            return None, [f"Identifikátor '{section_id}' již existuje."]
+
+        new_section = self.build_new_section(
+            section_id=section_id,
+            nazev=nazev,
+            popis=str(payload.get("popis") or "").strip(),
+            cil_overeni=str(payload.get("cil_overeni") or "").strip(),
+            poradi=poradi,
+            aktivni=bool(payload.get("aktivni", True)),
+        )
+        sections.append(new_section)
+        data["sekce"] = sections
+
+        errors = self.save_user_json(relative_path, data)
+        if errors:
+            data["sekce"] = before_sections
+            return None, errors
+
+        return section_id, []
 
     def _save_user_json_files(
         self,

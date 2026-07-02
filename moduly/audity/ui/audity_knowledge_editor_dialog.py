@@ -26,6 +26,7 @@ from moduly.audity.ui.audit_knowledge_tree_widget import AuditKnowledgeTreeWidge
 from moduly.audity.ui.audity_knowledge_process_editor_widget import (
     AudityKnowledgeProcessEditorWidget,
 )
+from moduly.audity.ui.audity_knowledge_section_dialog import AudityKnowledgeSectionDialog
 from moduly.audity.ui.audity_knowledge_section_editor_widget import (
     AudityKnowledgeSectionEditorWidget,
 )
@@ -87,6 +88,7 @@ class AudityKnowledgeEditorDialog(QDialog):
         self.content_stack = QStackedWidget()
         self.content_stack.addWidget(self._build_hint_page())
         self.process_editor = AudityKnowledgeProcessEditorWidget()
+        self.process_editor.add_section_requested.connect(self._add_section)
         self.content_stack.addWidget(self.process_editor)
         self.section_editor = AudityKnowledgeSectionEditorWidget()
         self.content_stack.addWidget(self.section_editor)
@@ -244,6 +246,67 @@ class AudityKnowledgeEditorDialog(QDialog):
         self.process_editor.load_process(process_id=process_id, metadata=refreshed)
         self.center_title_label.setText(str(refreshed.get("nazev") or process_id))
         return []
+
+    def _add_section(self) -> None:
+        if not self.process_editor.has_process():
+            return
+
+        process_id = self.process_editor.process_id
+        process = audit_knowledge_service.get_process_by_id(process_id, ensure=False)
+        if process is None or not process.soubor_znalosti:
+            QMessageBox.warning(
+                self,
+                self.windowTitle(),
+                f"Proces '{process_id}' nemá soubor znalostí.",
+            )
+            return
+
+        knowledge = audit_knowledge_service.load_process_knowledge(process, ensure=False)
+        if knowledge is None:
+            QMessageBox.warning(
+                self,
+                self.windowTitle(),
+                f"Soubor znalostí procesu '{process_id}' nelze načíst.",
+            )
+            return
+
+        existing_ids = audit_knowledge_service.collect_section_ids(
+            knowledge.get("sekce") or []
+        )
+        default_poradi = audit_knowledge_editor_service.suggest_next_section_poradi(
+            process_id
+        )
+
+        dialog = AudityKnowledgeSectionDialog(
+            existing_ids=existing_ids,
+            default_poradi=default_poradi,
+            parent=self,
+        )
+        if dialog.exec() != AudityKnowledgeSectionDialog.DialogCode.Accepted:
+            return
+
+        section_id, errors = audit_knowledge_editor_service.create_section(
+            process_id,
+            dialog.section_payload(),
+        )
+        if errors:
+            QMessageBox.warning(
+                self,
+                self.windowTitle(),
+                "\n".join(errors),
+            )
+            return
+        if not section_id:
+            return
+
+        self.knowledge_tree.reload_tree(include_inactive=True, ensure=False)
+        if not self.knowledge_tree.select_node(process_id, section_id):
+            QMessageBox.warning(
+                self,
+                self.windowTitle(),
+                f"Oblast '{section_id}' byla vytvořena, ale ve stromu se nepodařilo obnovit výběr.",
+            )
+            return
 
     def _save_current_section(self) -> list[str]:
         if not self.section_editor.has_section():

@@ -1,10 +1,13 @@
 """Editační formulář metadat řídicího procesu v editoru metodiky auditora."""
 
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QFormLayout,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
+    QPushButton,
     QScrollArea,
     QSpinBox,
     QTextEdit,
@@ -22,6 +25,8 @@ from moduly.audity.constants import (
 class AudityKnowledgeProcessEditorWidget(QWidget):
     """Formulář metadat vybraného řídicího procesu."""
 
+    add_section_requested = Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -30,6 +35,14 @@ class AudityKnowledgeProcessEditorWidget(QWidget):
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(12)
+
+        toolbar = QHBoxLayout()
+        self._add_section_btn = QPushButton("+ Přidat oblast ověření")
+        self._add_section_btn.clicked.connect(self.add_section_requested.emit)
+        self._add_section_btn.setEnabled(False)
+        toolbar.addWidget(self._add_section_btn)
+        toolbar.addStretch()
+        root.addLayout(toolbar)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -76,6 +89,7 @@ class AudityKnowledgeProcessEditorWidget(QWidget):
     def load_process(self, *, process_id: str, metadata: dict) -> None:
         self._process_id = process_id
         self._id_label.setText(process_id)
+        self._add_section_btn.setEnabled(True)
         self._nazev_edit.setText(str(metadata.get("nazev") or ""))
         self._popis_edit.setPlainText(str(metadata.get("popis") or ""))
         self._ucel_edit.setPlainText(str(metadata.get("ucel_procesu") or ""))
@@ -87,6 +101,7 @@ class AudityKnowledgeProcessEditorWidget(QWidget):
     def clear_process(self) -> None:
         self._process_id = ""
         self._id_label.clear()
+        self._add_section_btn.setEnabled(False)
         self._nazev_edit.clear()
         self._popis_edit.clear()
         self._ucel_edit.clear()
