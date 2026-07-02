@@ -5,8 +5,8 @@ from datetime import date
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,
-    QFormLayout,
     QFrame,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QListWidget,
@@ -40,6 +40,7 @@ from moduly.audity.constants import (
     AUDIT_PROGRAM_START_AUDIT_BUTTON,
     AUDIT_PROGRAM_STATUS_AUDIT_COMPLETED,
     AUDIT_PROGRAM_STATUS_AUDIT_CREATED,
+    AUDIT_PROGRAM_STATUS_BADGE_ICONS,
     AUDIT_PROGRAM_STATUS_LABELS,
     AUDIT_PROGRAM_STATUS_OVERVIEW_REFRESHED,
     AUDIT_PROGRAM_STATUS_PROCESSES_DISTRIBUTED,
@@ -111,17 +112,17 @@ class AuditProgramManagerDialog(QDialog):
         plan_splitter.addWidget(center_panel)
         plan_splitter.addWidget(right_panel)
         plan_splitter.setStretchFactor(0, 0)
-        plan_splitter.setStretchFactor(1, 1)
-        plan_splitter.setStretchFactor(2, 1)
-        plan_splitter.setSizes([PROCESS_PANEL_LEFT_WIDTH, 520, 520])
+        plan_splitter.setStretchFactor(1, 0)
+        plan_splitter.setStretchFactor(2, 2)
+        plan_splitter.setSizes([PROCESS_PANEL_LEFT_WIDTH, 300, 640])
 
         self._dashboard_widget = AuditProgramDashboardWidget()
 
         main_splitter.addWidget(plan_splitter)
         main_splitter.addWidget(self._dashboard_widget)
-        main_splitter.setStretchFactor(0, 3)
-        main_splitter.setStretchFactor(1, 2)
-        main_splitter.setSizes([520, 320])
+        main_splitter.setStretchFactor(0, 2)
+        main_splitter.setStretchFactor(1, 3)
+        main_splitter.setSizes([380, 520])
 
         root.addWidget(main_splitter, 1)
         root.addLayout(self._build_footer())
@@ -132,16 +133,19 @@ class AuditProgramManagerDialog(QDialog):
         self.showMaximized()
         return super().exec()
 
-    def _build_left_panel(self) -> QWidget:
-        panel = QWidget()
+    def _build_left_panel(self) -> QFrame:
+        panel = QFrame()
+        panel.setObjectName("ModulePanel")
         layout = QVBoxLayout(panel)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(8)
 
         title = QLabel(AUDIT_PROGRAM_LEFT_PANEL_TITLE)
         title.setObjectName("SectionTitle")
         layout.addWidget(title)
 
-        toolbar = QHBoxLayout()
+        toolbar = QVBoxLayout()
+        toolbar.setSpacing(6)
         self._new_program_btn = QPushButton(AUDIT_PROGRAM_ADD_BUTTON)
         self._edit_program_btn = QPushButton("Upravit")
         self._refresh_programs_btn = QPushButton("Obnovit")
@@ -151,7 +155,6 @@ class AuditProgramManagerDialog(QDialog):
         toolbar.addWidget(self._new_program_btn)
         toolbar.addWidget(self._edit_program_btn)
         toolbar.addWidget(self._refresh_programs_btn)
-        toolbar.addStretch()
         layout.addLayout(toolbar)
         layout.addWidget(self._program_list, 1)
 
@@ -164,7 +167,7 @@ class AuditProgramManagerDialog(QDialog):
         panel.setObjectName("ModulePanel")
         layout = QVBoxLayout(panel)
         layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(10)
+        layout.setSpacing(8)
 
         title = QLabel(AUDIT_PROGRAM_CENTER_PANEL_TITLE)
         title.setObjectName("SectionTitle")
@@ -176,29 +179,46 @@ class AuditProgramManagerDialog(QDialog):
         layout.addWidget(self._hint_label)
 
         self._detail_form = QWidget()
-        form = QFormLayout(self._detail_form)
-        form.setSpacing(8)
+        detail_layout = QVBoxLayout(self._detail_form)
+        detail_layout.setContentsMargins(0, 0, 0, 0)
+        detail_layout.setSpacing(6)
 
-        self._name_value = QLabel()
-        self._period_value = QLabel()
-        self._status_value = QLabel()
+        self._program_title_label = QLabel()
+        self._program_title_label.setObjectName("ProgramDetailTitle")
+        self._program_title_label.setWordWrap(True)
+        detail_layout.addWidget(self._program_title_label)
+
+        self._program_period_label = QLabel()
+        self._program_period_label.setObjectName("MutedText")
+        detail_layout.addWidget(self._program_period_label)
+
+        self._program_status_badge = QLabel()
+        self._program_status_badge.setObjectName("ProgramStatusBadge")
+        detail_layout.addWidget(self._program_status_badge, 0, Qt.AlignmentFlag.AlignLeft)
+
+        stats = QGridLayout()
+        stats.setHorizontalSpacing(12)
+        stats.setVerticalSpacing(4)
         self._standards_value = QLabel()
         self._standards_value.setWordWrap(True)
         self._workplace_count_value = QLabel()
         self._visit_count_value = QLabel()
         self._completion_value = QLabel()
 
-        form.addRow("Název:", self._name_value)
-        form.addRow("Období:", self._period_value)
-        form.addRow("Stav:", self._status_value)
-        form.addRow("Normy:", self._standards_value)
-        form.addRow("Počet pracovišť:", self._workplace_count_value)
-        form.addRow("Počet návštěv:", self._visit_count_value)
-        form.addRow("Plnění:", self._completion_value)
-        self._detail_form.setVisible(False)
-        layout.addWidget(self._detail_form)
+        stats.addWidget(self._compact_stat_label("Normy:"), 0, 0)
+        stats.addWidget(self._standards_value, 0, 1)
+        stats.addWidget(self._compact_stat_label("Pracoviště:"), 1, 0)
+        stats.addWidget(self._workplace_count_value, 1, 1)
+        stats.addWidget(self._compact_stat_label("Návštěvy:"), 0, 2)
+        stats.addWidget(self._visit_count_value, 0, 3)
+        stats.addWidget(self._compact_stat_label("Plnění:"), 1, 2)
+        stats.addWidget(self._completion_value, 1, 3)
+        stats.setColumnStretch(1, 1)
+        stats.setColumnStretch(3, 1)
+        detail_layout.addLayout(stats)
 
         actions = QHBoxLayout()
+        actions.setSpacing(6)
         self._generate_visits_btn = QPushButton(AUDIT_PROGRAM_GENERATE_VISITS_BUTTON)
         self._distribute_processes_btn = QPushButton(AUDIT_PROGRAM_DISTRIBUTE_PROCESSES_BUTTON)
         self._refresh_overview_btn = QPushButton(AUDIT_PROGRAM_REFRESH_OVERVIEW_BUTTON)
@@ -209,11 +229,22 @@ class AuditProgramManagerDialog(QDialog):
         actions.addWidget(self._distribute_processes_btn)
         actions.addWidget(self._refresh_overview_btn)
         actions.addStretch()
-        layout.addLayout(actions)
+        detail_layout.addLayout(actions)
+
+        self._detail_form.setVisible(False)
+        layout.addWidget(self._detail_form)
+        layout.addStretch(1)
 
         self._set_action_buttons_enabled(False)
-        layout.addStretch()
+        panel.setMinimumWidth(280)
+        panel.setMaximumWidth(360)
         return panel
+
+    @staticmethod
+    def _compact_stat_label(text: str) -> QLabel:
+        label = QLabel(text)
+        label.setObjectName("MutedText")
+        return label
 
     def _build_right_panel(self) -> QFrame:
         panel = QFrame()
@@ -673,11 +704,11 @@ class AuditProgramManagerDialog(QDialog):
         coverage: AuditProgramCoverage,
     ) -> None:
         program = overview.program
-        self._name_value.setText(program.name or "—")
-        self._period_value.setText(self._format_period(program.date_from, program.date_to))
-        self._status_value.setText(
-            AUDIT_PROGRAM_STATUS_LABELS.get(program.status, program.status)
+        self._program_title_label.setText(program.name or "—")
+        self._program_period_label.setText(
+            self._format_period(program.date_from, program.date_to)
         )
+        self._set_program_status_badge(program.status)
         standards = audit_program_service.parse_standards(program.standards_json)
         self._standards_value.setText(", ".join(standards) if standards else "—")
         self._workplace_count_value.setText(str(coverage.workplace_count))
@@ -685,6 +716,16 @@ class AuditProgramManagerDialog(QDialog):
             f"{coverage.completed_visit_count} / {coverage.visit_count}"
         )
         self._completion_value.setText(f"{coverage.completion_percent:.0f} %")
+
+    def _set_program_status_badge(self, status: str) -> None:
+        icon = AUDIT_PROGRAM_STATUS_BADGE_ICONS.get(status, "")
+        label_text = AUDIT_PROGRAM_STATUS_LABELS.get(status, status)
+        self._program_status_badge.setText(
+            f"{icon} {label_text}".strip() if icon else label_text
+        )
+        self._program_status_badge.setProperty("programStatus", status)
+        self._program_status_badge.style().unpolish(self._program_status_badge)
+        self._program_status_badge.style().polish(self._program_status_badge)
 
     def _show_empty_state(self) -> None:
         self._hint_label.setVisible(True)
@@ -698,15 +739,16 @@ class AuditProgramManagerDialog(QDialog):
 
     def _clear_detail_values(self) -> None:
         for label in (
-            self._name_value,
-            self._period_value,
-            self._status_value,
+            self._program_title_label,
+            self._program_period_label,
+            self._program_status_badge,
             self._standards_value,
             self._workplace_count_value,
             self._visit_count_value,
             self._completion_value,
         ):
             label.setText("")
+        self._program_status_badge.setProperty("programStatus", "")
 
     def _set_action_buttons_enabled(self, enabled: bool) -> None:
         self._edit_program_btn.setEnabled(enabled)

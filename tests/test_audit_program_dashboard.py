@@ -245,7 +245,8 @@ class AuditProgramDashboardWidgetTestCase(unittest.TestCase):
         widget = AuditProgramDashboardWidget()
         widget.load_program(program.id)
 
-        self.assertIn("Celkem zjištění: 1", widget._summary_label.text())
+        self.assertIn("Celkem: 1", widget._findings_summary_label.text())
+        self.assertIn("Otevřených: 1", widget._findings_summary_label.text())
         self.assertEqual(widget._findings_table.rowCount(), 1)
         self.assertEqual(
             widget._findings_table.item(0, 5).text(),

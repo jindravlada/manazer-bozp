@@ -63,5 +63,27 @@ def format_month_name(month: int | None) -> str:
     return PLANNED_MONTH_NAMES[int(month) - 1]
 
 
-def format_visit_month_column(visit: AuditProgramVisit) -> str:
-    return format_month_name(visit.planned_month)
+def format_planned_term(
+    *,
+    planned_date: date | None,
+    planned_year: int | None,
+    planned_month: int | None,
+) -> str:
+    if planned_date is not None:
+        return format_czech_date(planned_date)
+
+    month = planned_month or 0
+    year = planned_year or 0
+    if 1 <= month <= 12:
+        return f"{MONTH_NAMES_CAPITALIZED[month - 1]} {year}"
+    if year:
+        return f"{month}/{year}"
+    return PLANNED_MONTH_NOT_SET_LABEL
+
+
+def format_visit_term(visit: AuditProgramVisit) -> str:
+    return format_planned_term(
+        planned_date=visit.planned_date,
+        planned_year=visit.planned_year,
+        planned_month=visit.planned_month,
+    )

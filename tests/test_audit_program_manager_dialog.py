@@ -96,7 +96,7 @@ class AuditProgramManagerDialogTestCase(unittest.TestCase):
 
         self.assertGreaterEqual(dialog._program_list.count(), 1)
         self.assertEqual(dialog._status_label.text(), AUDIT_PROGRAM_STATUS_PROGRAM_CREATED)
-        self.assertEqual(dialog._name_value.text(), "Program auditů 2026–2029")
+        self.assertEqual(dialog._program_title_label.text(), "Program auditů 2026–2029")
 
     def test_load_program_list(self) -> None:
         program = audit_program_service.create_program(

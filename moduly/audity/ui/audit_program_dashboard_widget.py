@@ -51,12 +51,34 @@ class AuditProgramDashboardWidget(QFrame):
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(8)
+        layout.setSpacing(6)
 
-        self._summary_label = QLabel()
-        self._summary_label.setObjectName("InfoText")
-        self._summary_label.setWordWrap(True)
-        layout.addWidget(self._summary_label)
+        self._summary_panel = QWidget()
+        summary_layout = QHBoxLayout(self._summary_panel)
+        summary_layout.setContentsMargins(0, 0, 0, 0)
+        summary_layout.setSpacing(24)
+
+        findings_column = QVBoxLayout()
+        findings_column.setSpacing(2)
+        findings_title = QLabel("ZJIŠTĚNÍ")
+        findings_title.setObjectName("SectionTitle")
+        self._findings_summary_label = QLabel()
+        self._findings_summary_label.setObjectName("InfoText")
+        findings_column.addWidget(findings_title)
+        findings_column.addWidget(self._findings_summary_label)
+
+        tasks_column = QVBoxLayout()
+        tasks_column.setSpacing(2)
+        tasks_title = QLabel("ÚKOLY")
+        tasks_title.setObjectName("SectionTitle")
+        self._tasks_summary_label = QLabel()
+        self._tasks_summary_label.setObjectName("InfoText")
+        tasks_column.addWidget(tasks_title)
+        tasks_column.addWidget(self._tasks_summary_label)
+
+        summary_layout.addLayout(findings_column, 1)
+        summary_layout.addLayout(tasks_column, 1)
+        layout.addWidget(self._summary_panel)
 
         self._tabs = QTabWidget()
         self._findings_tab = self._build_findings_tab()
@@ -172,20 +194,20 @@ class AuditProgramDashboardWidget(QFrame):
 
     def _set_enabled(self, enabled: bool) -> None:
         self._tabs.setEnabled(enabled)
-        self._summary_label.setEnabled(enabled)
+        self._summary_panel.setEnabled(enabled)
 
     def _fill_summary(self) -> None:
         summary = self._summary
-        self._summary_label.setText(
-            "──────────────────────────\n"
-            f"Celkem zjištění: {summary.findings_total}\n"
+        self._findings_summary_label.setText(
+            f"Celkem: {summary.findings_total}\n"
             f"Otevřených: {summary.findings_open}\n"
             f"Po termínu: {summary.findings_overdue}\n"
-            f"Kritických: {summary.findings_critical}\n"
-            f"Celkem úkolů: {summary.tasks_total}\n"
+            f"Kritických: {summary.findings_critical}"
+        )
+        self._tasks_summary_label.setText(
+            f"Celkem: {summary.tasks_total}\n"
             f"Otevřených: {summary.tasks_open}\n"
-            f"Po termínu: {summary.tasks_overdue}\n"
-            "──────────────────────────"
+            f"Po termínu: {summary.tasks_overdue}"
         )
 
     def _apply_finding_filters(self) -> None:

@@ -154,12 +154,13 @@ class AuditProgramPlannedDateTestCase(unittest.TestCase):
         widget.load_program(program.id)
 
         self.assertEqual(widget._table.rowCount(), 1)
+        self.assertEqual(widget._table.columnCount(), 5)
+        self.assertEqual(widget._table.horizontalHeaderItem(0).text(), "Termín")
         self.assertEqual(widget._table.item(0, 0).text(), "15. 4. 2026")
-        self.assertEqual(widget._table.item(0, 1).text(), "duben")
-        self.assertEqual(widget._table.item(0, 2).text(), "Provoz A")
-        self.assertIn("Řízení rizik", widget._table.item(0, 3).text())
-        self.assertEqual(widget._table.item(0, 4).text(), "Plánováno")
-        self.assertEqual(widget._table.item(0, 5).text(), "—")
+        self.assertEqual(widget._table.item(0, 1).text(), "Provoz A")
+        self.assertIn("Řízení rizik", widget._table.item(0, 2).text())
+        self.assertEqual(widget._table.item(0, 3).text(), "Plánováno")
+        self.assertEqual(widget._table.item(0, 4).text(), "—")
 
     def test_main_audit_list_excludes_unstarted_program_visits(self) -> None:
         program, visit = self._create_program_with_visit()

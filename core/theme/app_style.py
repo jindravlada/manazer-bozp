@@ -195,6 +195,42 @@ def apply_app_style(app: QApplication) -> None:
             border: 1px solid #bbf7d0;
         }
 
+        QLabel#ProgramStatusBadge {
+            font-size: 13px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+
+        QLabel#ProgramStatusBadge[programStatus="draft"] {
+            background-color: #fef9c3;
+            color: #854d0e;
+            border: 1px solid #fde047;
+        }
+
+        QLabel#ProgramStatusBadge[programStatus="approved"] {
+            background-color: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+
+        QLabel#ProgramStatusBadge[programStatus="running"] {
+            background-color: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+
+        QLabel#ProgramStatusBadge[programStatus="closed"] {
+            background-color: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        QLabel#ProgramDetailTitle {
+            font-size: 17px;
+            font-weight: bold;
+        }
+
         QLabel#ControlResultPhotoThumbnail {
             background-color: #f9fafb;
             border: 1px solid #e5e7eb;

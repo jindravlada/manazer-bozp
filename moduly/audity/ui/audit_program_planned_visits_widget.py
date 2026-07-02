@@ -11,14 +11,19 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from moduly.audity.constants import AUDIT_PROGRAM_VISIT_STATUS_LABELS
-from moduly.audity.sluzby.audit_program_service import audit_program_service
-from moduly.audity.sluzby.audit_program_visit_formatting import (
-    format_czech_date,
-    format_month_name,
+from moduly.audity.constants import (
+    AUDIT_PROGRAM_PLANNED_VISITS_COLUMN_TERM,
+    AUDIT_PROGRAM_VISIT_STATUS_LABELS,
 )
+from moduly.audity.sluzby.audit_program_service import audit_program_service
+from moduly.audity.sluzby.audit_program_visit_formatting import format_planned_term
 
 _SORT_ROLE = Qt.ItemDataRole.UserRole + 1
+_COLUMN_TERM = 0
+_COLUMN_WORKPLACE = 1
+_COLUMN_PROCESSES = 2
+_COLUMN_STATUS = 3
+_COLUMN_AUDIT = 4
 
 
 class AuditProgramPlannedVisitsWidget(QFrame):
@@ -30,11 +35,10 @@ class AuditProgramPlannedVisitsWidget(QFrame):
         layout.setContentsMargins(0, 0, 0, 0)
 
         self._table = QTableWidget()
-        self._table.setColumnCount(6)
+        self._table.setColumnCount(5)
         self._table.setHorizontalHeaderLabels(
             [
-                "Datum",
-                "Měsíc",
+                AUDIT_PROGRAM_PLANNED_VISITS_COLUMN_TERM,
                 "Pracoviště",
                 "Plánované procesy",
                 "Stav",
@@ -42,14 +46,17 @@ class AuditProgramPlannedVisitsWidget(QFrame):
             ]
         )
         self._table.setAlternatingRowColors(True)
-        self._table.setSelectionBehavior(QTableWidget.SelectRows)
-        self._table.setSelectionMode(QTableWidget.SingleSelection)
-        self._table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self._table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self._table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self._table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self._table.verticalHeader().setVisible(False)
-        self._table.horizontalHeader().setSectionResizeMode(
-            3,
-            QHeaderView.ResizeMode.Stretch,
-        )
+        header = self._table.horizontalHeader()
+        header.setSectionResizeMode(_COLUMN_TERM, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(_COLUMN_WORKPLACE, QHeaderView.ResizeMode.Interactive)
+        header.setSectionResizeMode(_COLUMN_PROCESSES, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(_COLUMN_STATUS, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(_COLUMN_AUDIT, QHeaderView.ResizeMode.ResizeToContents)
+        self._table.setColumnWidth(_COLUMN_WORKPLACE, 180)
         layout.addWidget(self._table, 1)
 
     def load_program(self, program_id: int | None) -> None:
@@ -62,8 +69,11 @@ class AuditProgramPlannedVisitsWidget(QFrame):
 
         for row_index, row in enumerate(rows):
             values = [
-                format_czech_date(row.planned_date),
-                format_month_name(row.planned_month),
+                format_planned_term(
+                    planned_date=row.planned_date,
+                    planned_year=row.planned_year,
+                    planned_month=row.planned_month,
+                ),
                 row.workplace_name or "—",
                 ", ".join(row.process_names) if row.process_names else "—",
                 AUDIT_PROGRAM_VISIT_STATUS_LABELS.get(row.status, row.status),
@@ -73,19 +83,19 @@ class AuditProgramPlannedVisitsWidget(QFrame):
 
             for column_index, value in enumerate(values):
                 item = QTableWidgetItem(value)
-                if column_index == 0:
+                if column_index == _COLUMN_TERM:
                     item.setData(_SORT_ROLE, sort_key)
                     item.setData(Qt.ItemDataRole.UserRole, row.visit_id)
                 self._table.setItem(row_index, column_index, item)
 
-        self._table.sortItems(0, Qt.SortOrder.AscendingOrder)
+        self._table.sortItems(_COLUMN_TERM, Qt.SortOrder.AscendingOrder)
 
     def selected_visit_id(self) -> int | None:
         selected = self._table.selectionModel().selectedRows()
         if not selected:
             return None
         row = selected[0].row()
-        item = self._table.item(row, 0)
+        item = self._table.item(row, _COLUMN_TERM)
         if item is None:
             return None
         visit_id = item.data(Qt.ItemDataRole.UserRole)
@@ -97,7 +107,7 @@ class AuditProgramPlannedVisitsWidget(QFrame):
             return
 
         for row in range(self._table.rowCount()):
-            item = self._table.item(row, 0)
+            item = self._table.item(row, _COLUMN_TERM)
             if item is None:
                 continue
             if item.data(Qt.ItemDataRole.UserRole) == visit_id:
