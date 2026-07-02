@@ -87,3 +87,32 @@ def format_visit_term(visit: AuditProgramVisit) -> str:
         planned_year=visit.planned_year,
         planned_month=visit.planned_month,
     )
+
+
+def _planned_process_count_label(count: int) -> str:
+    if count == 1:
+        return "1 proces"
+    if 2 <= count <= 4:
+        return f"{count} procesy"
+    return f"{count} procesů"
+
+
+def format_planned_processes_cell(
+    process_names: tuple[str, ...] | list[str],
+    *,
+    preview_count: int = 3,
+) -> tuple[str, str]:
+    """Vrátí zkrácený text buňky a tooltip s celým seznamem procesů."""
+    names = tuple(name.strip() for name in process_names if str(name).strip())
+    if not names:
+        return "—", ""
+
+    tooltip = "\n".join(names)
+    count_label = _planned_process_count_label(len(names))
+    if len(names) == 1:
+        return f"{count_label}: {names[0]}", tooltip
+
+    preview = ", ".join(names[:preview_count])
+    if len(names) <= preview_count:
+        return f"{count_label}: {preview}", tooltip
+    return f"{count_label}: {preview}...", tooltip

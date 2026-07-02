@@ -143,6 +143,8 @@ class AudityPageTestCase(unittest.TestCase):
         self.assertIsInstance(dialog, AuditProgramManagerDialog)
 
     def test_table_columns(self) -> None:
+        from PySide6.QtWidgets import QHeaderView
+
         page = self._create_page()
 
         self.assertEqual(
@@ -160,6 +162,11 @@ class AudityPageTestCase(unittest.TestCase):
                 "Stav",
                 "Typ auditu",
             ],
+        )
+        header = page.table.horizontalHeader()
+        self.assertEqual(
+            header.sectionResizeMode(4),
+            QHeaderView.ResizeMode.Stretch,
         )
 
     def test_status_filter_defaults_to_probihajici(self) -> None:

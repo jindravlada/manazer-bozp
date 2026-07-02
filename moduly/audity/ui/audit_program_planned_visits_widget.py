@@ -16,7 +16,10 @@ from moduly.audity.constants import (
     AUDIT_PROGRAM_VISIT_STATUS_LABELS,
 )
 from moduly.audity.sluzby.audit_program_service import audit_program_service
-from moduly.audity.sluzby.audit_program_visit_formatting import format_planned_term
+from moduly.audity.sluzby.audit_program_visit_formatting import (
+    format_planned_processes_cell,
+    format_planned_term,
+)
 
 _SORT_ROLE = Qt.ItemDataRole.UserRole + 1
 _COLUMN_TERM = 0
@@ -51,12 +54,14 @@ class AuditProgramPlannedVisitsWidget(QFrame):
         self._table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self._table.verticalHeader().setVisible(False)
         header = self._table.horizontalHeader()
+        header.setStretchLastSection(False)
         header.setSectionResizeMode(_COLUMN_TERM, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(_COLUMN_WORKPLACE, QHeaderView.ResizeMode.Interactive)
-        header.setSectionResizeMode(_COLUMN_PROCESSES, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(_COLUMN_WORKPLACE, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(_COLUMN_PROCESSES, QHeaderView.ResizeMode.Interactive)
         header.setSectionResizeMode(_COLUMN_STATUS, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(_COLUMN_AUDIT, QHeaderView.ResizeMode.ResizeToContents)
-        self._table.setColumnWidth(_COLUMN_WORKPLACE, 180)
+        self._table.setColumnWidth(_COLUMN_PROCESSES, 260)
+        self._table.setColumnWidth(_COLUMN_WORKPLACE, 200)
         layout.addWidget(self._table, 1)
 
     def load_program(self, program_id: int | None) -> None:
@@ -68,6 +73,7 @@ class AuditProgramPlannedVisitsWidget(QFrame):
         self._table.setRowCount(len(rows))
 
         for row_index, row in enumerate(rows):
+            processes_text, processes_tooltip = format_planned_processes_cell(row.process_names)
             values = [
                 format_planned_term(
                     planned_date=row.planned_date,
@@ -75,7 +81,7 @@ class AuditProgramPlannedVisitsWidget(QFrame):
                     planned_month=row.planned_month,
                 ),
                 row.workplace_name or "—",
-                ", ".join(row.process_names) if row.process_names else "—",
+                processes_text,
                 AUDIT_PROGRAM_VISIT_STATUS_LABELS.get(row.status, row.status),
                 row.audit_number or "—",
             ]
@@ -86,6 +92,8 @@ class AuditProgramPlannedVisitsWidget(QFrame):
                 if column_index == _COLUMN_TERM:
                     item.setData(_SORT_ROLE, sort_key)
                     item.setData(Qt.ItemDataRole.UserRole, row.visit_id)
+                if column_index == _COLUMN_PROCESSES and processes_tooltip:
+                    item.setToolTip(processes_tooltip)
                 self._table.setItem(row_index, column_index, item)
 
         self._table.sortItems(_COLUMN_TERM, Qt.SortOrder.AscendingOrder)

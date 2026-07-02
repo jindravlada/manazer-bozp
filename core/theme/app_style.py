@@ -232,8 +232,13 @@ def apply_app_style(app: QApplication) -> None:
         }
 
         QFrame#AuditProgramManagerBanner {
-            background-color: #f9fafb;
+            background-color: qlineargradient(
+                x1:0, y1:0, x2:0, y2:1,
+                stop:0 #ffffff,
+                stop:1 #f3f4f6
+            );
             border: 1px solid #e5e7eb;
+            border-left: 4px solid #60a5fa;
             border-radius: 10px;
         }
 
