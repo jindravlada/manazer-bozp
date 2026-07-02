@@ -33,6 +33,8 @@ with patch.object(Path, "home", return_value=_TMP):
         COMMISSION_RECORD_UNION,
         COMMISSION_RECORD_WORKPLACE,
         DEFAULT_AUDIT_STATUS_FILTER,
+        KNOWLEDGE_EDITOR_BUTTON_LABEL,
+        KNOWLEDGE_EDITOR_WINDOW_TITLE,
         MODULE_NAME,
         YEAR_FILTER_VSE,
     )
@@ -102,16 +104,30 @@ class AudityPageTestCase(unittest.TestCase):
         self.assertEqual(module.name, MODULE_NAME)
         self.assertTrue(module.enabled)
 
-    def test_toolbar_has_core_actions_only(self) -> None:
+    def test_toolbar_has_core_actions(self) -> None:
         page = self._create_page()
 
         self.assertTrue(page.new_btn.isEnabled())
         self.assertTrue(page.edit_btn.isEnabled())
         self.assertTrue(page.delete_btn.isEnabled())
         self.assertTrue(page.refresh_btn.isEnabled())
+        self.assertTrue(page.knowledge_editor_btn.isEnabled())
+        self.assertEqual(page.knowledge_editor_btn.text(), KNOWLEDGE_EDITOR_BUTTON_LABEL)
         self.assertFalse(hasattr(page, "plan_btn"))
         self.assertFalse(hasattr(page, "report_btn"))
-        self.assertFalse(hasattr(page, "knowledge_editor_btn"))
+
+    @patch("moduly.audity.ui.audity_page.exec_maximized")
+    def test_open_knowledge_editor_opens_dialog(self, mock_exec) -> None:
+        from moduly.audity.ui.audity_knowledge_editor_dialog import AudityKnowledgeEditorDialog
+
+        page = self._create_page()
+        page.open_knowledge_editor()
+
+        mock_exec.assert_called_once()
+        dialog = mock_exec.call_args.args[0]
+        self.assertIsInstance(dialog, AudityKnowledgeEditorDialog)
+        self.assertEqual(dialog.windowTitle(), KNOWLEDGE_EDITOR_WINDOW_TITLE)
+        self.assertGreaterEqual(dialog.knowledge_tree.topLevelItemCount(), 1)
 
     def test_table_columns(self) -> None:
         page = self._create_page()

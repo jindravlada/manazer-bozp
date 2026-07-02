@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import exec_maximized
+from core.widgets.dialog_utils import exec_maximized
 from core.widgets.table_utils import configure_table_columns
 from moduly.audity.constants import (
     AUDIT_STATUS_BY_FILTER,
@@ -19,11 +20,13 @@ from moduly.audity.constants import (
     AUDIT_STATUS_FILTER_PROBIHAJICI,
     AUDIT_STATUS_FILTER_VSE,
     DEFAULT_AUDIT_STATUS_FILTER,
+    KNOWLEDGE_EDITOR_BUTTON_LABEL,
     MODULE_NAME,
     YEAR_FILTER_VSE,
 )
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.audity.ui.audit_dialog import AuditDialog
+from moduly.audity.ui.audity_knowledge_editor_dialog import AudityKnowledgeEditorDialog
 from moduly.audity.ui.audit_table import AuditTable
 
 
@@ -41,6 +44,7 @@ class AudityPage(QWidget):
         self.edit_btn = QPushButton("Upravit")
         self.delete_btn = QPushButton("Smazat")
         self.refresh_btn = QPushButton("Obnovit")
+        self.knowledge_editor_btn = QPushButton(KNOWLEDGE_EDITOR_BUTTON_LABEL)
 
         self.status_filter = QComboBox()
         self.status_filter.addItems([
@@ -58,6 +62,7 @@ class AudityPage(QWidget):
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.delete_btn)
         toolbar.addWidget(self.refresh_btn)
+        toolbar.addWidget(self.knowledge_editor_btn)
         toolbar.addStretch()
         toolbar.addWidget(QLabel("Stav:"))
         toolbar.addWidget(self.status_filter)
@@ -74,6 +79,7 @@ class AudityPage(QWidget):
         self.edit_btn.clicked.connect(self.open_selected_audit)
         self.delete_btn.clicked.connect(self.delete_selected_audit)
         self.refresh_btn.clicked.connect(self.refresh)
+        self.knowledge_editor_btn.clicked.connect(self.open_knowledge_editor)
         self.table.doubleClicked.connect(self.open_selected_audit)
         self.status_filter.currentIndexChanged.connect(self.refresh)
         self.year_filter.currentIndexChanged.connect(self.refresh)
@@ -157,6 +163,9 @@ class AudityPage(QWidget):
             )
             dialog.save_commission_members(audit_id, data)
             self.refresh()
+
+    def open_knowledge_editor(self) -> None:
+        exec_maximized(AudityKnowledgeEditorDialog(self))
 
     def delete_selected_audit(self) -> None:
         audit_id = self._selected_audit_id()

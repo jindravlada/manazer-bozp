@@ -181,6 +181,22 @@ PROCESS_TERM_PROCESS = "Řídicí proces"
 PROCESS_TERM_CRITERION = "Oblast ověření"
 PROCESS_TERM_QUESTION = "Auditní tvrzení"
 
+KNOWLEDGE_EDITOR_BUTTON_LABEL = "Editor metodiky"
+KNOWLEDGE_EDITOR_WINDOW_TITLE = "Editor metodiky auditora"
+KNOWLEDGE_EDITOR_USER_COPY_HINT = (
+    "Upravujete uživatelskou kopii metodiky v "
+    "~/.local/share/manazer-bozp/ciselniky/audity/."
+)
+KNOWLEDGE_EDITOR_EDIT_PLACEHOLDER = (
+    "Editace metodiky bude doplněna v další verzi."
+)
+KNOWLEDGE_EDITOR_SELECT_PROCESS_HINT = (
+    "Vyberte řídicí proces nebo oblast ověření ve stromu vlevo."
+)
+KNOWLEDGE_EDITOR_ASSERTIONS_PLACEHOLDER = (
+    "Auditní tvrzení budou editovatelná v další verzi."
+)
+
 CONTROL_POINT_HISTORY_EMPTY = "Zatím bez historie."
 CONTROL_POINT_HISTORY_SELECT = "Vyberte auditní tvrzení vlevo."
 CONTROL_POINT_HISTORY_LIMIT = 5
