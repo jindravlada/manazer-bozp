@@ -4,8 +4,10 @@ from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QFrame,
+    QHBoxLayout,
     QLabel,
     QMessageBox,
+    QPushButton,
     QSplitter,
     QStackedWidget,
     QVBoxLayout,
@@ -14,6 +16,7 @@ from PySide6.QtWidgets import (
 
 from core.widgets.dialog_utils import configure_close_button, configure_save_cancel_buttons
 from moduly.audity.constants import (
+    KNOWLEDGE_EDITOR_ADD_PROCESS_BUTTON,
     KNOWLEDGE_EDITOR_SELECT_PROCESS_HINT,
     KNOWLEDGE_EDITOR_USER_COPY_HINT,
     KNOWLEDGE_EDITOR_WINDOW_TITLE,
@@ -23,6 +26,9 @@ from moduly.audity.constants import (
 from moduly.audity.sluzby.audit_knowledge_editor_service import audit_knowledge_editor_service
 from moduly.audity.sluzby.audit_knowledge_service import KnowledgeTreeNode, audit_knowledge_service
 from moduly.audity.ui.audit_knowledge_tree_widget import AuditKnowledgeTreeWidget
+from moduly.audity.ui.audity_knowledge_process_create_dialog import (
+    AudityKnowledgeProcessCreateDialog,
+)
 from moduly.audity.ui.audity_knowledge_process_editor_widget import (
     AudityKnowledgeProcessEditorWidget,
 )
@@ -67,6 +73,14 @@ class AudityKnowledgeEditorDialog(QDialog):
         tree_panel = QWidget()
         tree_layout = QVBoxLayout(tree_panel)
         tree_layout.setContentsMargins(0, 0, 0, 0)
+
+        tree_toolbar = QHBoxLayout()
+        self._add_process_btn = QPushButton(KNOWLEDGE_EDITOR_ADD_PROCESS_BUTTON)
+        self._add_process_btn.clicked.connect(self._add_process)
+        tree_toolbar.addWidget(self._add_process_btn)
+        tree_toolbar.addStretch()
+        tree_layout.addLayout(tree_toolbar)
+
         tree_layout.addWidget(self.knowledge_tree, 1)
         tree_panel.setMinimumWidth(PROCESS_PANEL_LEFT_WIDTH)
         tree_panel.setMaximumWidth(PROCESS_PANEL_LEFT_WIDTH)
@@ -352,3 +366,37 @@ class AudityKnowledgeEditorDialog(QDialog):
             f"{process_label} → {str(refreshed.get('nazev') or section_id).strip()}"
         )
         return []
+
+    def _add_process(self) -> None:
+        existing_ids = audit_knowledge_editor_service.collect_process_ids()
+        default_poradi = audit_knowledge_editor_service.suggest_next_process_poradi()
+
+        dialog = AudityKnowledgeProcessCreateDialog(
+            existing_ids=existing_ids,
+            default_poradi=default_poradi,
+            parent=self,
+        )
+        if dialog.exec() != AudityKnowledgeProcessCreateDialog.DialogCode.Accepted:
+            return
+
+        process_id, errors = audit_knowledge_editor_service.create_process(
+            dialog.process_payload(),
+        )
+        if errors:
+            QMessageBox.warning(
+                self,
+                self.windowTitle(),
+                "\n".join(errors),
+            )
+            return
+        if not process_id:
+            return
+
+        self.knowledge_tree.reload_tree(include_inactive=True, ensure=False)
+        if not self.knowledge_tree.select_node(process_id):
+            QMessageBox.warning(
+                self,
+                self.windowTitle(),
+                f"Proces '{process_id}' byl vytvořen, ale ve stromu se nepodařilo obnovit výběr.",
+            )
+            return

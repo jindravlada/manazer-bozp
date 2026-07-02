@@ -441,15 +441,24 @@ class AuditKnowledgeEditorService:
                 self.backup_file(path)
 
         written: list[tuple[str, Path]] = []
+        created_paths: list[Path] = []
         try:
             for relative_path, path, data in resolved:
+                existed_before = path.is_file()
                 self.atomic_write_json(path, data)
+                if not existed_before:
+                    created_paths.append(path)
                 written.append((relative_path, path))
         except OSError as exc:
             for _relative_path, path in written:
                 backup = self._latest_backup(path.name)
                 if backup is not None:
                     shutil.copy2(backup, path)
+            for path in created_paths:
+                try:
+                    path.unlink()
+                except OSError:
+                    pass
             return [f"Zápis metadat procesu selhal ({exc})"]
 
         post_errors: list[str] = []
@@ -461,6 +470,11 @@ class AuditKnowledgeEditorService:
                 backup = self._latest_backup(path.name)
                 if backup is not None:
                     shutil.copy2(backup, path)
+                elif path in created_paths:
+                    try:
+                        path.unlink()
+                    except OSError:
+                        pass
             return post_errors + [
                 "Uložená metadata procesu neprošla validací, obnovena záloha."
             ]
@@ -537,6 +551,151 @@ class AuditKnowledgeEditorService:
                 (knowledge_relative, knowledge_data),
             )
         )
+
+    def collect_process_ids(self) -> set[str]:
+        self.ensure_user_catalogs()
+        procesy_path = self.user_audity_dir() / PROCESY_BASENAME
+        data, error = self.load_json_safe(procesy_path)
+        if error or data is None:
+            return set()
+
+        collected: set[str] = set()
+        for raw in data.get("procesy") or []:
+            if not isinstance(raw, dict):
+                continue
+            process_id = str(raw.get("id") or "").strip()
+            if process_id:
+                collected.add(process_id)
+        return collected
+
+    def suggest_next_process_poradi(self) -> int:
+        self.ensure_user_catalogs()
+        procesy_path = self.user_audity_dir() / PROCESY_BASENAME
+        data, error = self.load_json_safe(procesy_path)
+        if error or data is None:
+            return 10
+
+        processes = data.get("procesy") or []
+        if not isinstance(processes, list) or not processes:
+            return 10
+
+        max_poradi = 0
+        for raw in processes:
+            if not isinstance(raw, dict):
+                continue
+            try:
+                max_poradi = max(max_poradi, int(raw.get("poradi") or 0))
+            except (TypeError, ValueError):
+                continue
+        return max_poradi + 10 if max_poradi else 10
+
+    @staticmethod
+    def build_new_process_knowledge(
+        *,
+        process_id: str,
+        nazev: str,
+        popis: str,
+        ucel_procesu: str,
+        proc_je_dulezity: str,
+        ocekavany_vystup: str,
+        poradi: int,
+        aktivni: bool,
+    ) -> dict:
+        return {
+            "verze": 1,
+            "id": process_id,
+            "nazev": nazev,
+            "popis": popis,
+            "ucel_procesu": ucel_procesu,
+            "proc_je_dulezity": proc_je_dulezity,
+            "ocekavany_vystup": ocekavany_vystup,
+            "poradi": poradi,
+            "aktivni": aktivni,
+            "vazby_procesy": [],
+            "pozadavky_norem": [],
+            "sekce": [],
+            "zavaznost_seed_sync": 1,
+        }
+
+    def create_process(self, payload: dict) -> tuple[str | None, list[str]]:
+        self.ensure_user_catalogs()
+
+        nazev = str(payload.get("nazev") or "").strip()
+        if not nazev:
+            return None, ["Název procesu musí být vyplněn."]
+
+        try:
+            poradi = int(payload.get("poradi"))
+        except (TypeError, ValueError):
+            return None, ["Pořadí musí být celé číslo."]
+
+        popis = str(payload.get("popis") or "").strip()
+        ucel_procesu = str(payload.get("ucel_procesu") or "").strip()
+        proc_je_dulezity = str(payload.get("proc_je_dulezity") or "").strip()
+        ocekavany_vystup = str(payload.get("ocekavany_vystup") or "").strip()
+        aktivni = bool(payload.get("aktivni", True))
+
+        procesy_relative = f"{_CATALOG_DIR}/{PROCESY_BASENAME}"
+        procesy_path = self.resolve_user_path(procesy_relative)
+        procesy_data, procesy_error = self.load_json_safe(procesy_path)
+        if procesy_error or procesy_data is None:
+            return None, [procesy_error or "procesy.json nelze načíst."]
+
+        processes = procesy_data.get("procesy")
+        if processes is None:
+            processes = []
+        if not isinstance(processes, list):
+            return None, ["Pole 'procesy' musí být seznam."]
+
+        before_processes = deepcopy(processes)
+        existing_ids = self.collect_process_ids()
+
+        process_id = str(payload.get("id") or "").strip()
+        if not process_id:
+            process_id = audit_knowledge_service.generate_item_id(nazev, existing_ids)
+        if process_id in existing_ids:
+            return None, [f"Identifikátor '{process_id}' již existuje."]
+
+        knowledge_filename = f"{process_id}.json"
+        knowledge_relative = f"{_CATALOG_DIR}/{knowledge_filename}"
+        knowledge_path = self.resolve_user_path(knowledge_relative)
+        if knowledge_path.is_file():
+            return None, [f"Soubor '{knowledge_filename}' již existuje."]
+
+        registry_entry = {
+            "id": process_id,
+            "nazev": nazev,
+            "popis": popis,
+            "ucel_procesu": ucel_procesu,
+            "poradi": poradi,
+            "aktivni": aktivni,
+            "soubor_znalosti": knowledge_filename,
+        }
+        knowledge_data = self.build_new_process_knowledge(
+            process_id=process_id,
+            nazev=nazev,
+            popis=popis,
+            ucel_procesu=ucel_procesu,
+            proc_je_dulezity=proc_je_dulezity,
+            ocekavany_vystup=ocekavany_vystup,
+            poradi=poradi,
+            aktivni=aktivni,
+        )
+
+        processes.append(registry_entry)
+        procesy_data["procesy"] = processes
+
+        errors = self._save_user_json_files(
+            (
+                (procesy_relative, procesy_data),
+                (knowledge_relative, knowledge_data),
+            )
+        )
+        if errors:
+            procesy_data["procesy"] = before_processes
+            return None, errors
+
+        return process_id, []
 
     def _resolve_section_context(
         self,
