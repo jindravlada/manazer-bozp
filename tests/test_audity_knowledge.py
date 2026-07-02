@@ -118,6 +118,108 @@ class AudityKnowledgeTestCase(unittest.TestCase):
         self.assertEqual(len(questions), 5)
         self.assertEqual(questions[0]["id"], "vsechny_urazy_evidovany")
 
+    def test_merge_adds_new_sections_from_seed(self) -> None:
+        from core.services.editable_catalog_service import editable_catalog_service
+
+        bundled_path = editable_catalog_service.bundled_path("audity/urazy_mimo_udalosti.json")
+        seed_data = audit_knowledge_service._load_json(bundled_path)
+        user_data = audit_knowledge_service._load_json(bundled_path)
+
+        user_data["verze"] = 4
+        user_data["sekce"] = [
+            section
+            for section in user_data.get("sekce") or []
+            if section.get("id") == "evidence_hlaseni_urazu"
+        ]
+
+        self.assertTrue(
+            audit_knowledge_service._merge_knowledge_from_seed(user_data, seed_data)
+        )
+
+        section_ids = {section.get("id") for section in user_data.get("sekce") or []}
+        self.assertIn("evidence_hlaseni_urazu", section_ids)
+        self.assertIn("vysetrovani_urazu", section_ids)
+        self.assertIn("mimoradne_udalosti", section_ids)
+        self.assertEqual(len(user_data["sekce"]), len(seed_data["sekce"]))
+        self.assertEqual(user_data["verze"], seed_data["verze"])
+
+    def test_merge_adds_new_list_items_without_overwriting_user_edits(self) -> None:
+        seed_section = {
+            "id": "evidence_hlaseni_urazu",
+            "auditni_tvrzeni": [
+                {
+                    "id": "vsechny_urazy_evidovany",
+                    "text": "Seed text",
+                    "popis": "Seed popis",
+                    "poradi": 10,
+                    "aktivni": True,
+                    "zavaznost": "vysoka",
+                },
+                {
+                    "id": "nova_tvrzeni",
+                    "text": "Nové tvrzení ze seed dat.",
+                    "popis": "Popis nového tvrzení.",
+                    "poradi": 60,
+                    "aktivni": True,
+                    "zavaznost": "stredni",
+                },
+            ],
+            "objektivni_dukazy": [
+                {
+                    "id": "dukaz_kniha_urazu",
+                    "nazev": "Seed kniha",
+                    "poradi": 10,
+                    "aktivni": True,
+                },
+                {
+                    "id": "dukaz_novy",
+                    "nazev": "Nový důkaz",
+                    "poradi": 60,
+                    "aktivni": True,
+                },
+            ],
+        }
+        user_section = {
+            "id": "evidence_hlaseni_urazu",
+            "auditni_tvrzeni": [
+                {
+                    "id": "vsechny_urazy_evidovany",
+                    "text": "Uživatelsky upravený text.",
+                    "popis": "Uživatelský popis.",
+                    "poradi": 10,
+                    "aktivni": True,
+                    "zavaznost": "vysoka",
+                }
+            ],
+            "objektivni_dukazy": [
+                {
+                    "id": "dukaz_kniha_urazu",
+                    "nazev": "Uživatelská kniha úrazů",
+                    "poradi": 10,
+                    "aktivni": True,
+                }
+            ],
+        }
+
+        self.assertTrue(
+            audit_knowledge_service._merge_section_fields_from_seed(
+                user_section,
+                seed_section,
+                full_severity_sync=False,
+            )
+        )
+
+        assertions = {item["id"]: item for item in user_section["auditni_tvrzeni"]}
+        self.assertEqual(
+            assertions["vsechny_urazy_evidovany"]["text"],
+            "Uživatelsky upravený text.",
+        )
+        self.assertIn("nova_tvrzeni", assertions)
+
+        dukazy = {item["id"]: item for item in user_section["objektivni_dukazy"]}
+        self.assertEqual(dukazy["dukaz_kniha_urazu"]["nazev"], "Uživatelská kniha úrazů")
+        self.assertIn("dukaz_novy", dukazy)
+
     def test_auditni_tvrzeni_fallback_to_navodne_otazky(self) -> None:
         criterion = {
             "navodne_otazky": [

@@ -60,7 +60,9 @@ _KNOWLEDGE_TEXT_FIELDS = (
     "cil_overeni",
 )
 
-_MERGE_SKIP_LIST_FIELDS = frozenset({"kontrolni_body", "auditni_tvrzeni", "navodne_otazky"})
+_MERGE_ADDITIVE_LIST_FIELDS = frozenset(_KNOWLEDGE_LIST_FIELDS)
+
+_SECTION_TEXT_FIELDS = ("popis", "cil_overeni")
 
 EDITABLE_SECTION_PROCEDURE_FIELDS: tuple[tuple[str, str], ...] = (
     ("Postup auditu", "postup_kontroly"),
@@ -433,42 +435,16 @@ class AuditKnowledgeService:
 
     def _merge_knowledge_from_seed(self, user: dict, seed: dict) -> bool:
         changed = False
-
-        user_sections = self._sections_by_id(user.get("sekce"))
-        seed_sections = self._sections_by_id(seed.get("sekce"))
         full_severity_sync = int(user.get(_ZAVAZNOST_SEED_SYNC_KEY) or 0) < _ZAVAZNOST_SEED_SYNC_VERSION
 
-        for section_id, seed_section in seed_sections.items():
-            user_section = user_sections.get(section_id)
-            if user_section is None:
-                continue
-
-            for field in _KNOWLEDGE_LIST_FIELDS:
-                if field in _MERGE_SKIP_LIST_FIELDS:
-                    continue
-                if not self._list_field_is_empty(user_section.get(field)):
-                    continue
-                seed_values = seed_section.get(field) or []
-                if not seed_values:
-                    continue
-                user_section[field] = deepcopy(seed_values)
-                changed = True
-
-            if self._merge_control_point_severity_from_seed(
-                user_section,
-                seed_section,
-                full_sync=full_severity_sync,
-            ):
-                changed = True
-
-            if self._merge_auditni_tvrzeni_from_seed(user_section, seed_section):
-                changed = True
-
-            if self._text_field_is_empty(user_section.get("popis")):
-                seed_popis = str(seed_section.get("popis") or "").strip()
-                if seed_popis:
-                    user_section["popis"] = seed_popis
-                    changed = True
+        merged_sections, sections_changed = self._merge_sections_list_from_seed(
+            user.get("sekce"),
+            seed.get("sekce"),
+            full_severity_sync=full_severity_sync,
+        )
+        if sections_changed:
+            user["sekce"] = merged_sections
+            changed = True
 
         if full_severity_sync:
             user[_ZAVAZNOST_SEED_SYNC_KEY] = _ZAVAZNOST_SEED_SYNC_VERSION
@@ -483,13 +459,13 @@ class AuditKnowledgeService:
                 changed = True
 
         for field in ("vazby_procesy", "pozadavky_norem"):
-            if not self._list_field_is_empty(user.get(field)):
-                continue
-            seed_values = seed.get(field) or []
-            if not seed_values:
-                continue
-            user[field] = deepcopy(seed_values)
-            changed = True
+            merged_items, field_changed = self._merge_additive_list_from_seed(
+                user.get(field),
+                seed.get(field),
+            )
+            if field_changed:
+                user[field] = merged_items
+                changed = True
 
         seed_verze = int(seed.get("verze") or 0)
         user_verze = int(user.get("verze") or 0)
@@ -497,6 +473,130 @@ class AuditKnowledgeService:
             user["verze"] = seed_verze
 
         return changed
+
+    def _merge_sections_list_from_seed(
+        self,
+        user_sections: list | None,
+        seed_sections: list | None,
+        *,
+        full_severity_sync: bool,
+    ) -> tuple[list, bool]:
+        user_list = list(user_sections or []) if isinstance(user_sections, list) else []
+        seed_list = [
+            section
+            for section in (seed_sections or [])
+            if isinstance(section, dict)
+        ]
+        if not seed_list:
+            return user_list, False
+
+        user_by_id = self._sections_by_id(user_list)
+        changed = False
+
+        for seed_section in seed_list:
+            section_id = str(seed_section.get("id") or "").strip()
+            if not section_id:
+                continue
+
+            user_section = user_by_id.get(section_id)
+            if user_section is None:
+                user_list.append(deepcopy(seed_section))
+                user_by_id[section_id] = user_list[-1]
+                changed = True
+                continue
+
+            if self._merge_section_fields_from_seed(
+                user_section,
+                seed_section,
+                full_severity_sync=full_severity_sync,
+            ):
+                changed = True
+
+        user_list.sort(
+            key=lambda item: (
+                int(item.get("poradi") or 0),
+                str(item.get("nazev") or "").lower(),
+            )
+        )
+        return user_list, changed
+
+    def _merge_section_fields_from_seed(
+        self,
+        user_section: dict,
+        seed_section: dict,
+        *,
+        full_severity_sync: bool,
+    ) -> bool:
+        changed = False
+
+        if self._merge_auditni_tvrzeni_from_seed(user_section, seed_section):
+            changed = True
+
+        for field in _MERGE_ADDITIVE_LIST_FIELDS:
+            merged_items, field_changed = self._merge_additive_list_from_seed(
+                user_section.get(field),
+                seed_section.get(field),
+            )
+            if field_changed:
+                user_section[field] = merged_items
+                changed = True
+
+        for field in ("kontrolni_body", "auditni_tvrzeni"):
+            if self._merge_control_point_severity_from_seed(
+                user_section,
+                seed_section,
+                field=field,
+                full_sync=full_severity_sync,
+            ):
+                changed = True
+
+        nested_sections, nested_changed = self._merge_sections_list_from_seed(
+            user_section.get("sekce"),
+            seed_section.get("sekce"),
+            full_severity_sync=full_severity_sync,
+        )
+        if nested_changed:
+            user_section["sekce"] = nested_sections
+            changed = True
+
+        for field in _SECTION_TEXT_FIELDS:
+            if not self._text_field_is_empty(user_section.get(field)):
+                continue
+            seed_value = str(seed_section.get(field) or "").strip()
+            if seed_value:
+                user_section[field] = seed_value
+                changed = True
+
+        return changed
+
+    @staticmethod
+    def _merge_additive_list_from_seed(
+        user_items: list | None,
+        seed_items: list | None,
+    ) -> tuple[list, bool]:
+        seed_list = [
+            item for item in (seed_items or []) if isinstance(item, dict)
+        ]
+        if not seed_list:
+            return list(user_items or []) if isinstance(user_items, list) else [], False
+
+        user_list = list(user_items or []) if isinstance(user_items, list) else []
+        user_by_id: dict[str, dict] = {}
+        for item in user_list:
+            item_id = str(item.get("id") or "").strip()
+            if item_id:
+                user_by_id[item_id] = item
+
+        changed = False
+        for seed_item in seed_list:
+            item_id = str(seed_item.get("id") or "").strip()
+            if not item_id or item_id in user_by_id:
+                continue
+            user_list.append(deepcopy(seed_item))
+            user_by_id[item_id] = user_list[-1]
+            changed = True
+
+        return user_list, changed
 
     def _merge_auditni_tvrzeni_from_seed(
         self,
@@ -521,10 +621,11 @@ class AuditKnowledgeService:
         user_section: dict,
         seed_section: dict,
         *,
+        field: str = "kontrolni_body",
         full_sync: bool,
     ) -> bool:
-        user_items = user_section.get("kontrolni_body") or []
-        seed_items = seed_section.get("kontrolni_body") or []
+        user_items = user_section.get(field) or []
+        seed_items = seed_section.get(field) or []
         if not user_items or not seed_items:
             return False
 
