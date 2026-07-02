@@ -18,7 +18,10 @@ with patch.object(Path, "home", return_value=_TMP):
     storage_module.storage_service.ensure_structure()
 
     from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
-    from tools.validate_audity_knowledge import validate_all_catalogs
+    from moduly.audity.sluzby.audit_knowledge_validator import (
+        default_audity_dir,
+        validate_all_catalogs,
+    )
 
 
 class AudityKnowledgeCatalogTestCase(unittest.TestCase):
@@ -29,7 +32,7 @@ class AudityKnowledgeCatalogTestCase(unittest.TestCase):
         cls._app = QApplication.instance() or QApplication([])
 
     def test_all_catalog_json_files_are_valid(self) -> None:
-        errors = validate_all_catalogs()
+        errors = validate_all_catalogs(default_audity_dir())
         self.assertEqual(errors, [])
 
     def test_each_registered_process_loads_independently(self) -> None:

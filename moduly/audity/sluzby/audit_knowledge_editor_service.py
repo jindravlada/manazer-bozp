@@ -1,0 +1,255 @@
+"""Infrastruktura pro editaci znalostní databáze auditů (pouze uživatelská kopie JSON)."""
+
+from __future__ import annotations
+
+import json
+import shutil
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+
+from core.services.editable_catalog_service import editable_catalog_service
+from core.services.storage_service import storage_service
+from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
+from moduly.audity.sluzby.audit_knowledge_validator import (
+    PROCESY_BASENAME,
+    load_json_file,
+    validate_all_catalogs,
+    validate_knowledge_data,
+    validate_knowledge_file,
+)
+
+_CATALOG_DIR = "audity"
+_BACKUP_SUBDIR = "backups"
+_MAX_BACKUPS_PER_FILE = 10
+
+
+@dataclass(frozen=True)
+class LoadedKnowledgeFile:
+    relative_path: str
+    data: dict
+
+
+@dataclass(frozen=True)
+class LoadAllResult:
+    files: tuple[LoadedKnowledgeFile, ...]
+    errors: tuple[str, ...]
+
+
+class AuditKnowledgeEditorService:
+    """Ukládání a validace metodiky auditora — výhradně uživatelská kopie."""
+
+    def user_ciselniky_dir(self) -> Path:
+        return storage_service.ciselniky_dir
+
+    def user_audity_dir(self) -> Path:
+        return self.user_ciselniky_dir() / _CATALOG_DIR
+
+    def bundled_audity_dir(self) -> Path:
+        return editable_catalog_service.bundled_dir() / _CATALOG_DIR
+
+    def ensure_user_catalogs(self) -> None:
+        editable_catalog_service.ensure_all(self.user_ciselniky_dir())
+        audit_knowledge_service.ensure_catalogs()
+
+    def resolve_user_path(self, relative_path: str) -> Path:
+        normalized = relative_path.strip().replace("\\", "/")
+        if normalized.startswith(f"{_CATALOG_DIR}/"):
+            normalized = normalized[len(f"{_CATALOG_DIR}/") :]
+        return self.user_audity_dir() / normalized
+
+    def assert_user_writable_path(self, path: Path) -> None:
+        resolved = path.resolve()
+        user_audity = self.user_audity_dir().resolve()
+        bundled_audity = self.bundled_audity_dir().resolve()
+
+        try:
+            resolved.relative_to(user_audity)
+        except ValueError as exc:
+            raise PermissionError(
+                f"Zapisovat lze pouze do uživatelské kopie: {user_audity}"
+            ) from exc
+
+        try:
+            resolved.relative_to(bundled_audity)
+            raise PermissionError(
+                "Bundled seed v repozitáři nelze upravovat z editoru."
+            )
+        except ValueError:
+            pass
+
+    def load_json_safe(self, path: Path) -> tuple[dict | None, str | None]:
+        if not path.is_file():
+            return None, f"Soubor neexistuje: {path.name}"
+        try:
+            return load_json_file(path), None
+        except (OSError, json.JSONDecodeError, ValueError) as exc:
+            return None, f"{path.name}: {exc}"
+
+    def load_all_knowledge_files(self) -> LoadAllResult:
+        self.ensure_user_catalogs()
+
+        procesy_path = self.user_audity_dir() / PROCESY_BASENAME
+        registry, error = self.load_json_safe(procesy_path)
+        if error or registry is None:
+            return LoadAllResult((), (error or "procesy.json: prázdný obsah",))
+
+        loaded: list[LoadedKnowledgeFile] = []
+        errors: list[str] = []
+
+        processes = registry.get("procesy") or []
+        if not isinstance(processes, list):
+            return LoadAllResult((), ("procesy.json: pole 'procesy' musí být seznam",))
+
+        seen: set[str] = set()
+        for index, raw in enumerate(processes):
+            if not isinstance(raw, dict):
+                errors.append(f"procesy.json[{index}]: proces není objekt")
+                continue
+
+            soubor = str(raw.get("soubor_znalosti") or "").strip()
+            if not soubor:
+                process_id = str(raw.get("id") or index).strip()
+                errors.append(f"procesy.json: proces '{process_id}' nemá soubor_znalosti")
+                continue
+            if soubor in seen:
+                continue
+            seen.add(soubor)
+
+            relative_path = f"{_CATALOG_DIR}/{soubor}"
+            path = self.user_audity_dir() / soubor
+            data, load_error = self.load_json_safe(path)
+            if load_error:
+                errors.append(load_error)
+                continue
+            assert data is not None
+            loaded.append(LoadedKnowledgeFile(relative_path=relative_path, data=data))
+
+        return LoadAllResult(tuple(loaded), tuple(errors))
+
+    def validate_user_catalogs(self) -> list[str]:
+        self.ensure_user_catalogs()
+        return validate_all_catalogs(self.user_audity_dir())
+
+    def validate_user_file(self, relative_path: str, data: dict | None = None) -> list[str]:
+        path = self.resolve_user_path(relative_path)
+        if data is None:
+            return validate_knowledge_file(path)
+        return validate_knowledge_data(data, source_name=path.name)
+
+    @staticmethod
+    def validate_no_list_items_removed(
+        before: list,
+        after: list,
+        *,
+        path: str,
+    ) -> list[str]:
+        """V1: položky se nesmí mazat, pouze deaktivovat (aktivni=false)."""
+        before_ids = {
+            str(item.get("id") or "").strip()
+            for item in before
+            if isinstance(item, dict) and str(item.get("id") or "").strip()
+        }
+        after_ids = {
+            str(item.get("id") or "").strip()
+            for item in after
+            if isinstance(item, dict) and str(item.get("id") or "").strip()
+        }
+        removed = sorted(before_ids - after_ids)
+        if removed:
+            return [
+                f"{path}: odstranění položek není povoleno ({', '.join(removed)})"
+            ]
+        return []
+
+    def backup_dir(self) -> Path:
+        return self.user_audity_dir() / _BACKUP_SUBDIR
+
+    def backup_file(self, path: Path) -> Path | None:
+        if not path.is_file():
+            return None
+
+        self.assert_user_writable_path(path)
+        backup_root = self.backup_dir()
+        backup_root.mkdir(parents=True, exist_ok=True)
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_name = f"{path.name}.{timestamp}.bak"
+        backup_path = backup_root / backup_name
+        shutil.copy2(path, backup_path)
+        self._prune_backups(path.name)
+        return backup_path
+
+    def _prune_backups(self, source_filename: str) -> None:
+        backup_root = self.backup_dir()
+        if not backup_root.is_dir():
+            return
+
+        pattern = f"{source_filename}.*.bak"
+        backups = sorted(
+            backup_root.glob(pattern),
+            key=lambda item: item.stat().st_mtime,
+            reverse=True,
+        )
+        for stale in backups[_MAX_BACKUPS_PER_FILE:]:
+            try:
+                stale.unlink()
+            except OSError:
+                pass
+
+    def atomic_write_json(self, path: Path, data: dict) -> None:
+        self.assert_user_writable_path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        tmp_path = path.with_name(f"{path.name}.tmp")
+        payload = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
+        tmp_path.write_text(payload, encoding="utf-8")
+        tmp_path.replace(path)
+
+    def save_user_json(
+        self,
+        relative_path: str,
+        data: dict,
+        *,
+        skip_validation: bool = False,
+    ) -> list[str]:
+        path = self.resolve_user_path(relative_path)
+        self.assert_user_writable_path(path)
+
+        if not skip_validation:
+            errors = self.validate_user_file(relative_path, data)
+            if errors:
+                return errors
+
+        if path.is_file():
+            self.backup_file(path)
+
+        try:
+            self.atomic_write_json(path, data)
+        except OSError as exc:
+            return [f"{path.name}: zápis selhal ({exc})"]
+
+        post_errors = self.validate_user_file(relative_path)
+        if post_errors:
+            backup = self._latest_backup(path.name)
+            if backup is not None:
+                shutil.copy2(backup, path)
+            return post_errors + [
+                f"{path.name}: uložený soubor neprošel validací, obnovena záloha"
+            ]
+
+        return []
+
+    def _latest_backup(self, source_filename: str) -> Path | None:
+        backup_root = self.backup_dir()
+        if not backup_root.is_dir():
+            return None
+        backups = sorted(
+            backup_root.glob(f"{source_filename}.*.bak"),
+            key=lambda item: item.stat().st_mtime,
+            reverse=True,
+        )
+        return backups[0] if backups else None
+
+
+audit_knowledge_editor_service = AuditKnowledgeEditorService()

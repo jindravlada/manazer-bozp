@@ -72,14 +72,19 @@ EDITABLE_SECTION_REFERENCE_FIELDS: tuple[tuple[str, str], ...] = (
     ("📷 Referenční fotografie", "referencni_fotografie"),
 )
 
+EDITABLE_SECTION_ASSERTION_FIELDS: tuple[tuple[str, str], ...] = (
+    ("Auditní tvrzení", "auditni_tvrzeni"),
+)
+
 EDITABLE_SECTION_LIST_FIELDS: tuple[tuple[str, str], ...] = (
-    ("Auditní otázky", "kontrolni_body"),
+    ("Objektivní důkazy", "objektivni_dukazy"),
+    ("Doporučené rozhovory", "doporucene_rozhovory"),
+    ("Pozorování v provozu", "pozorovani_v_provozu"),
     ("Typické neshody", "typicke_neshody"),
     ("Typické závady", "typicke_zavady"),
     ("Doporučené postupy", "doporucene_postupy"),
     ("Legislativa", "legislativa"),
-    ("Požadavky normy", "pozadavky_normy"),
-    ("Objektivní důkazy", "objektivni_dukazy"),
+    ("Požadavky norem", "pozadavky_normy"),
     ("PKZ", "pkz"),
     ("Pozorování", "pozorovani"),
     ("Poznámky auditora", "poznamky_auditora"),
@@ -87,13 +92,15 @@ EDITABLE_SECTION_LIST_FIELDS: tuple[tuple[str, str], ...] = (
 )
 
 SECTION_LIST_BLOCKS: tuple[tuple[str, str], ...] = (
-    ("Auditní otázky", "kontrolni_body"),
+    ("Auditní tvrzení", "auditni_tvrzeni"),
+    ("Objektivní důkazy", "objektivni_dukazy"),
+    ("Doporučené rozhovory", "doporucene_rozhovory"),
+    ("Pozorování v provozu", "pozorovani_v_provozu"),
     ("Typické neshody", "typicke_neshody"),
     ("Typické závady", "typicke_zavady"),
     ("Doporučené postupy", "doporucene_postupy"),
     ("Legislativa", "legislativa"),
-    ("Požadavky normy", "pozadavky_normy"),
-    ("Objektivní důkazy", "objektivni_dukazy"),
+    ("Požadavky norem", "pozadavky_normy"),
     ("PKZ", "pkz"),
     ("Pozorování", "pozorovani"),
     ("Poznámky auditora", "poznamky_auditora"),

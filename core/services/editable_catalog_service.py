@@ -1,3 +1,4 @@
+import json
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
@@ -10,14 +11,49 @@ class EditableCatalog:
     relative_path: str
 
 
-# Registr editovatelných číselníků – pro nový číselník stačí přidat položku zde.
-EDITABLE_CATALOGS: tuple[EditableCatalog, ...] = (
+_BASE_EDITABLE_CATALOGS: tuple[EditableCatalog, ...] = (
     EditableCatalog("modulove/vysetrovani_mu/ishikawa_faktory.json"),
     EditableCatalog("proverky/oblasti.json"),
     EditableCatalog("proverky/prvni_pomoc.json"),
     EditableCatalog("audity/procesy.json"),
-    EditableCatalog("audity/urazy_mimo_udalosti.json"),
 )
+
+
+def _load_audity_knowledge_catalogs(project_root: Path) -> tuple[EditableCatalog, ...]:
+    procesy_path = project_root / "ciselniky" / "audity" / "procesy.json"
+    if not procesy_path.is_file():
+        return ()
+
+    try:
+        with procesy_path.open(encoding="utf-8") as handle:
+            payload = json.load(handle)
+    except (OSError, json.JSONDecodeError):
+        return ()
+
+    catalogs: list[EditableCatalog] = []
+    seen = {catalog.relative_path for catalog in _BASE_EDITABLE_CATALOGS}
+    for raw in payload.get("procesy") or []:
+        if not isinstance(raw, dict):
+            continue
+        soubor = str(raw.get("soubor_znalosti") or "").strip()
+        if not soubor:
+            continue
+        relative_path = f"audity/{soubor}"
+        if relative_path in seen:
+            continue
+        catalogs.append(EditableCatalog(relative_path))
+        seen.add(relative_path)
+
+    return tuple(catalogs)
+
+
+def _build_editable_catalogs() -> tuple[EditableCatalog, ...]:
+    project_root = Path(__file__).resolve().parents[2]
+    return _BASE_EDITABLE_CATALOGS + _load_audity_knowledge_catalogs(project_root)
+
+
+# Registr editovatelných číselníků – pro nový číselník stačí přidat položku zde.
+EDITABLE_CATALOGS: tuple[EditableCatalog, ...] = _build_editable_catalogs()
 
 
 class EditableCatalogService:
