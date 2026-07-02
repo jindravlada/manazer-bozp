@@ -211,6 +211,21 @@ KNOWLEDGE_EDITOR_SECTION_TABS = (
     "Normy",
 )
 
+KNOWLEDGE_EDITOR_SECTION_LIST_TABS: tuple[tuple[str, str], ...] = (
+    ("Objektivní důkazy", "objektivni_dukazy"),
+    ("Rozhovory", "doporucene_rozhovory"),
+    ("Pozorování v provozu", "pozorovani_v_provozu"),
+    ("Typické neshody", "typicke_neshody"),
+    ("PKZ", "pkz"),
+    ("Pozorování", "pozorovani"),
+    ("Vazby", "vazby_procesy"),
+    ("Normy", "pozadavky_normy"),
+)
+
+KNOWLEDGE_EDITOR_SECTION_LIST_FIELDS = frozenset(
+    field_name for _title, field_name in KNOWLEDGE_EDITOR_SECTION_LIST_TABS
+)
+
 CONTROL_POINT_HISTORY_EMPTY = "Zatím bez historie."
 CONTROL_POINT_HISTORY_SELECT = "Vyberte auditní tvrzení vlevo."
 CONTROL_POINT_HISTORY_LIMIT = 5

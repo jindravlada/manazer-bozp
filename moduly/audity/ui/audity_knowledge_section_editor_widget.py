@@ -14,14 +14,15 @@ from PySide6.QtWidgets import (
 )
 
 from moduly.audity.constants import (
+    KNOWLEDGE_EDITOR_SECTION_LIST_TABS,
     KNOWLEDGE_EDITOR_SECTION_TABS,
-    KNOWLEDGE_EDITOR_TAB_PLACEHOLDER,
 )
 from moduly.audity.ui.audity_knowledge_assertions_widget import AudityKnowledgeAssertionsWidget
+from moduly.audity.ui.audity_knowledge_list_editor_widget import AudityKnowledgeListEditorWidget
 
 
 class AudityKnowledgeSectionEditorWidget(QWidget):
-    """Formulář metadat oblasti ověření a záložky metodických seznamů (zatím read-only)."""
+    """Formulář metadat oblasti ověření a záložky metodických seznamů."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -66,18 +67,20 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
 
         self._tabs = QTabWidget()
         self._assertions_widget = AudityKnowledgeAssertionsWidget()
+        self._list_widgets: dict[str, AudityKnowledgeListEditorWidget] = {}
+
+        list_tab_titles = {title: field_name for title, field_name in KNOWLEDGE_EDITOR_SECTION_LIST_TABS}
         for index, title in enumerate(KNOWLEDGE_EDITOR_SECTION_TABS):
             if index == 0:
                 self._tabs.addTab(self._assertions_widget, title)
                 continue
-            tab = QWidget()
-            tab_layout = QVBoxLayout(tab)
-            placeholder = QLabel(KNOWLEDGE_EDITOR_TAB_PLACEHOLDER)
-            placeholder.setObjectName("InfoText")
-            placeholder.setWordWrap(True)
-            tab_layout.addWidget(placeholder)
-            tab_layout.addStretch()
-            self._tabs.addTab(tab, title)
+
+            field_name = list_tab_titles.get(title)
+            if field_name is None:
+                continue
+            list_widget = AudityKnowledgeListEditorWidget(field_name)
+            self._list_widgets[field_name] = list_widget
+            self._tabs.addTab(list_widget, title)
 
         scroll_layout.addWidget(self._tabs, stretch=1)
         scroll.setWidget(scroll_content)
@@ -115,6 +118,12 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
             section_id=section_id,
             section=section,
         )
+        for list_widget in self._list_widgets.values():
+            list_widget.load_section(
+                process_id=process_id,
+                section_id=section_id,
+                section=section,
+            )
 
     def clear_section(self) -> None:
         self._process_id = ""
@@ -126,6 +135,8 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
         self._poradi_spin.setValue(0)
         self._aktivni_check.setChecked(True)
         self._assertions_widget.clear_section()
+        for list_widget in self._list_widgets.values():
+            list_widget.clear_section()
 
     def section_metadata(self) -> dict:
         return {

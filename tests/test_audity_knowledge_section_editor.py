@@ -214,21 +214,17 @@ class AudityKnowledgeSectionEditorWidgetTestCase(unittest.TestCase):
         cls._app = QApplication.instance() or QApplication([])
 
     def test_section_editor_has_metadata_fields_and_read_only_tabs(self) -> None:
+        from moduly.audity.constants import KNOWLEDGE_EDITOR_SECTION_LIST_TABS
+
         widget = AudityKnowledgeSectionEditorWidget()
 
-        self.assertEqual(widget._tabs.count(), len(KNOWLEDGE_EDITOR_SECTION_TABS))
+        self.assertEqual(
+            widget._tabs.count(),
+            1 + len(KNOWLEDGE_EDITOR_SECTION_LIST_TABS),
+        )
         self.assertEqual(widget._tabs.tabText(0), "Auditní tvrzení")
         self.assertIs(widget._tabs.widget(0), widget._assertions_widget)
-
-        for index, title in enumerate(KNOWLEDGE_EDITOR_SECTION_TABS):
-            if index == 0:
-                continue
-            self.assertEqual(widget._tabs.tabText(index), title)
-            tab = widget._tabs.widget(index)
-            label = tab.findChild(QLabel)
-            self.assertIsNotNone(label)
-            assert label is not None
-            self.assertIn(KNOWLEDGE_EDITOR_TAB_PLACEHOLDER, label.text())
+        self.assertEqual(len(widget._list_widgets), len(KNOWLEDGE_EDITOR_SECTION_LIST_TABS))
 
 
 class AudityKnowledgeEditorDialogSectionTestCase(unittest.TestCase):

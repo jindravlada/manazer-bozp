@@ -958,12 +958,17 @@ class AuditKnowledgeService:
             nazev = str(raw.get("nazev") or "").strip()
             if not item_id or not nazev:
                 continue
+            poradi = raw.get("poradi")
+            try:
+                poradi_value = int(poradi) if poradi is not None else (index + 1) * 10
+            except (TypeError, ValueError):
+                poradi_value = (index + 1) * 10
             normalized.append(
                 {
                     "id": item_id,
                     "nazev": nazev,
                     "popis": str(raw.get("popis") or "").strip(),
-                    "poradi": (index + 1) * 10,
+                    "poradi": poradi_value,
                     "aktivni": bool(raw.get("aktivni", True)),
                 }
             )

@@ -11,6 +11,7 @@ from pathlib import Path
 
 from core.services.editable_catalog_service import editable_catalog_service
 from core.services.storage_service import storage_service
+from moduly.audity.constants import KNOWLEDGE_EDITOR_SECTION_LIST_FIELDS
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 from moduly.audity.sluzby.audit_knowledge_validator import (
     PROCESY_BASENAME,
@@ -489,6 +490,175 @@ class AuditKnowledgeEditorService:
             section=section,
             before_assertions=before_assertions,
             after_assertions=after_assertions,
+        )
+
+    @staticmethod
+    def _validate_list_item_payload(payload: dict, *, require_id: bool) -> tuple[dict | None, list[str]]:
+        item_id = str(payload.get("id") or "").strip()
+        if require_id and not item_id:
+            return None, ["Chybí identifikátor položky."]
+
+        text = str(payload.get("nazev") or payload.get("text") or "").strip()
+        if not text:
+            return None, ["Text položky musí být vyplněn."]
+
+        try:
+            poradi = int(payload.get("poradi"))
+        except (TypeError, ValueError):
+            return None, ["Pořadí musí být celé číslo."]
+
+        normalized = {
+            "nazev": text,
+            "poradi": poradi,
+            "aktivni": bool(payload.get("aktivni", True)),
+        }
+        popis = str(payload.get("popis") or "").strip()
+        if popis:
+            normalized["popis"] = popis
+        if item_id:
+            normalized["id"] = item_id
+        return normalized, []
+
+    def _save_section_list(
+        self,
+        *,
+        relative_path: str,
+        data: dict,
+        section: dict,
+        field_name: str,
+        before_items: list,
+        after_items: list,
+    ) -> list[str]:
+        removal_errors = self.validate_no_list_items_removed(
+            before_items,
+            after_items,
+            path=f"{section.get('id')}.{field_name}",
+        )
+        if removal_errors:
+            return removal_errors
+
+        section[field_name] = after_items
+        return self.save_user_json(relative_path, data)
+
+    def save_section_list_item(
+        self,
+        process_id: str,
+        section_id: str,
+        field_name: str,
+        payload: dict,
+        *,
+        item_id: str | None = None,
+    ) -> list[str]:
+        if field_name not in KNOWLEDGE_EDITOR_SECTION_LIST_FIELDS:
+            return [f"Pole '{field_name}' nelze editovat v tomto editoru."]
+
+        context, errors = self._resolve_section_context(process_id, section_id)
+        if errors:
+            return errors
+        assert context is not None
+
+        relative_path, data, _parent_list, _index, section = context
+        before_items = deepcopy(section.get(field_name) or [])
+        after_items = deepcopy(before_items)
+        existing_ids = {
+            str(item.get("id") or "").strip()
+            for item in after_items
+            if isinstance(item, dict) and str(item.get("id") or "").strip()
+        }
+
+        normalized, validation_errors = self._validate_list_item_payload(
+            {**payload, "id": item_id or payload.get("id")},
+            require_id=item_id is not None,
+        )
+        if validation_errors:
+            return validation_errors
+        assert normalized is not None
+
+        if item_id:
+            target_id = item_id.strip()
+            if not target_id:
+                return ["Chybí identifikátor položky."]
+            if target_id not in existing_ids:
+                return [f"Položka '{target_id}' nebyla nalezena."]
+
+            updated = False
+            for index, item in enumerate(after_items):
+                if not isinstance(item, dict):
+                    continue
+                if str(item.get("id") or "").strip() != target_id:
+                    continue
+                merged = deepcopy(item)
+                merged.update(normalized)
+                merged["id"] = target_id
+                after_items[index] = merged
+                updated = True
+                break
+            if not updated:
+                return [f"Položka '{target_id}' nebyla nalezena."]
+        else:
+            new_id = audit_knowledge_service.generate_item_id(
+                normalized["nazev"],
+                existing_ids,
+            )
+            if new_id in existing_ids:
+                return [f"Identifikátor '{new_id}' již existuje."]
+            after_items.append({**normalized, "id": new_id})
+
+        return self._save_section_list(
+            relative_path=relative_path,
+            data=data,
+            section=section,
+            field_name=field_name,
+            before_items=before_items,
+            after_items=after_items,
+        )
+
+    def set_section_list_item_active(
+        self,
+        process_id: str,
+        section_id: str,
+        field_name: str,
+        item_id: str,
+        *,
+        aktivni: bool,
+    ) -> list[str]:
+        if field_name not in KNOWLEDGE_EDITOR_SECTION_LIST_FIELDS:
+            return [f"Pole '{field_name}' nelze editovat v tomto editoru."]
+
+        context, errors = self._resolve_section_context(process_id, section_id)
+        if errors:
+            return errors
+        assert context is not None
+
+        relative_path, data, _parent_list, _index, section = context
+        before_items = deepcopy(section.get(field_name) or [])
+        after_items = deepcopy(before_items)
+        target_id = item_id.strip()
+        if not target_id:
+            return ["Chybí identifikátor položky."]
+
+        updated = False
+        for index, item in enumerate(after_items):
+            if not isinstance(item, dict):
+                continue
+            if str(item.get("id") or "").strip() != target_id:
+                continue
+            updated_item = deepcopy(item)
+            updated_item["aktivni"] = aktivni
+            after_items[index] = updated_item
+            updated = True
+            break
+
+        if not updated:
+            return [f"Položka '{target_id}' nebyla nalezena."]
+
+        return self._save_section_list(
+            relative_path=relative_path,
+            data=data,
+            section=section,
+            field_name=field_name,
+            before_items=before_items,
+            after_items=after_items,
         )
 
 

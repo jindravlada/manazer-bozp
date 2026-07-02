@@ -298,8 +298,6 @@ class AudityKnowledgeAssertionsWidgetTestCase(_KnowledgeEditorTestBase):
 
 class AudityKnowledgeSectionEditorAssertionsTabTestCase(_KnowledgeEditorTestBase):
     def test_section_editor_first_tab_is_assertions(self) -> None:
-        from PySide6.QtWidgets import QLabel
-
         widget = AudityKnowledgeSectionEditorWidget()
         section = self._section_from_file()
         widget.load_section(
@@ -310,12 +308,10 @@ class AudityKnowledgeSectionEditorAssertionsTabTestCase(_KnowledgeEditorTestBase
 
         self.assertEqual(widget._tabs.tabText(0), "Auditní tvrzení")
         self.assertIs(widget._tabs.widget(0), widget._assertions_widget)
-
-        placeholder_tab = widget._tabs.widget(1)
-        label = placeholder_tab.findChild(QLabel)
-        self.assertIsNotNone(label)
-        assert label is not None
-        self.assertIn(KNOWLEDGE_EDITOR_TAB_PLACEHOLDER, label.text())
+        self.assertIs(
+            widget._tabs.widget(1),
+            widget._list_widgets["objektivni_dukazy"],
+        )
 
 
 if __name__ == "__main__":
