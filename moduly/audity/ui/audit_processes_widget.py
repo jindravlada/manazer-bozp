@@ -73,6 +73,7 @@ class AuditProcessesWidget(QWidget):
         self._current_process_knowledge: dict | None = None
         self._current_criterion_id = ""
         self._current_criterion_label = ""
+        self._planned_process_ids: set[str] | None = None
 
         header_row = QHBoxLayout()
         header_row.setContentsMargins(0, 0, 0, 0)
@@ -133,6 +134,13 @@ class AuditProcessesWidget(QWidget):
     def set_audit_id(self, audit_id: int | None) -> None:
         self.knowledge_widget.set_audit_id(audit_id)
 
+    def set_planned_process_ids(self, process_ids: tuple[str, ...] | list[str]) -> None:
+        self._planned_process_ids = set(process_ids) if process_ids else None
+        self.reload_processes()
+        if self._planned_process_ids:
+            first_process_id = next(iter(sorted(self._planned_process_ids)))
+            self.knowledge_tree.select_node(first_process_id)
+
     def set_on_finding_saved(self, callback) -> None:
         self.knowledge_widget.set_on_finding_saved(callback)
 
@@ -146,7 +154,7 @@ class AuditProcessesWidget(QWidget):
     def _refresh_after_knowledge_edit(self) -> None:
         process_id = self._current_process_id
         criterion_id = self._current_criterion_id
-        self.knowledge_tree.reload_tree()
+        self.knowledge_tree.reload_tree(process_ids=self._planned_process_ids)
         if process_id and criterion_id:
             self.knowledge_tree.select_node(process_id, criterion_id)
         elif process_id:
@@ -156,7 +164,7 @@ class AuditProcessesWidget(QWidget):
         self.refresh_findings_display()
 
     def reload_processes(self) -> None:
-        self.knowledge_tree.reload_tree()
+        self.knowledge_tree.reload_tree(process_ids=self._planned_process_ids)
         self._show_hint()
 
     def _build_hint_page(self) -> QWidget:

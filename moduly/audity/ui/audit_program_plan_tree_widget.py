@@ -10,6 +10,7 @@ from PySide6.QtWidgets import QTreeWidget, QTreeWidgetItem
 
 from moduly.audity.constants import (
     AUDIT_PROGRAM_VISIT_PROCESS_STATUS_COMPLETED,
+    AUDIT_PROGRAM_VISIT_STATUS_COMPLETED,
     AUDIT_PROGRAM_VISIT_STATUS_SKIPPED,
     AUDIT_PROGRAM_VISIT_SKIPPED_SUFFIX,
     MONTH_NAMES_CAPITALIZED,
@@ -73,6 +74,8 @@ class AuditProgramPlanTreeWidget(QTreeWidget):
                 )
                 if visit.status == AUDIT_PROGRAM_VISIT_STATUS_SKIPPED:
                     self._style_skipped_item(visit_item)
+                elif visit.status == AUDIT_PROGRAM_VISIT_STATUS_COMPLETED:
+                    self._style_completed_item(visit_item)
                 workplace_item.addChild(visit_item)
 
                 visit_processes = processes_by_visit.get(visit.id, [])
@@ -147,6 +150,10 @@ class AuditProgramPlanTreeWidget(QTreeWidget):
             label = f"{month}/{year}"
         if visit.status == AUDIT_PROGRAM_VISIT_STATUS_SKIPPED:
             label = f"{label} {AUDIT_PROGRAM_VISIT_SKIPPED_SUFFIX}"
+        elif visit.status == AUDIT_PROGRAM_VISIT_STATUS_COMPLETED:
+            label = f"✓ {label}"
+        elif visit.audit_id is not None:
+            label = f"▶ {label}"
         return label
 
     @staticmethod
@@ -175,3 +182,7 @@ class AuditProgramPlanTreeWidget(QTreeWidget):
         font.setStrikeOut(True)
         item.setFont(0, font)
         item.setForeground(0, QBrush(QColor("#777777")))
+
+    @staticmethod
+    def _style_completed_item(item: QTreeWidgetItem) -> None:
+        item.setForeground(0, QBrush(QColor("#2e7d32")))

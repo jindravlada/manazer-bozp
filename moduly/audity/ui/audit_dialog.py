@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.audity.constants import FINDING_SOURCE_LABEL, TAB_AUDITOVANE_PROCESY, TAB_LABELS
 from moduly.audity.sluzby.audit_commission_service import audit_commission_service
+from moduly.audity.sluzby.audit_program_service import AuditVisitContext
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.audity.ui.audit_commission_widget import AuditCommissionWidget
 from moduly.audity.ui.audit_conclusion_widget import AuditConclusionWidget
@@ -20,10 +21,11 @@ from moduly.audity.ui.audit_tasks_widget import AuditTasksWidget
 class AuditDialog(QDialog):
     """Dialog auditu systému řízení."""
 
-    def __init__(self, parent=None, audit=None):
+    def __init__(self, parent=None, audit=None, *, visit_context: AuditVisitContext | None = None):
         super().__init__(parent)
 
         self.audit = audit
+        self._visit_context = visit_context
 
         self.setWindowTitle(FINDING_SOURCE_LABEL)
         self.resize(860, 720)
@@ -52,6 +54,8 @@ class AuditDialog(QDialog):
 
         audit_id = audit.id if audit is not None else None
         self.set_audit_id(audit_id)
+        if visit_context is not None:
+            self.processes_widget.set_planned_process_ids(visit_context.planned_process_ids)
         self.processes_widget.set_on_finding_saved(self._on_finding_changed)
         self.findings_widget.set_on_task_changed(self._on_related_data_changed)
         self.conclusion_widget.set_complete_handler(self._complete_audit)

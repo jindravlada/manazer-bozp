@@ -28,6 +28,9 @@ class Audit(Base):
     workplace_name: Mapped[str] = mapped_column(String(150), default="")
     title: Mapped[str] = mapped_column(String(250), default="")
 
+    program_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    program_visit_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,

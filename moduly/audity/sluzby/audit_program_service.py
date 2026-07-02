@@ -7,15 +7,20 @@ from moduly.audity.constants import (
     AUDIT_PROGRAM_MANUAL_DISTRIBUTE_BLOCKED,
     AUDIT_PROGRAM_MANUAL_GENERATE_BLOCKED,
     AUDIT_PROGRAM_STATUSES,
+    AUDIT_PROGRAM_VISIT_HAS_AUDIT,
     AUDIT_PROGRAM_VISIT_PROCESS_STATUS_COMPLETED,
+    AUDIT_PROGRAM_VISIT_PROCESS_STATUS_PLANNED,
     AUDIT_PROGRAM_VISIT_PROCESS_STATUSES,
+    AUDIT_PROGRAM_VISIT_STATUS_COMPLETED,
     AUDIT_PROGRAM_VISIT_STATUS_SKIPPED,
     AUDIT_PROGRAM_VISIT_STATUSES,
     DEFAULT_AUDIT_PROGRAM_STANDARDS,
     DEFAULT_AUDIT_PROGRAM_STATUS,
     DEFAULT_AUDIT_PROGRAM_VISIT_PROCESS_STATUS,
     DEFAULT_AUDIT_PROGRAM_VISIT_STATUS,
+    MONTH_NAMES_CAPITALIZED,
 )
+from moduly.audity.modely.audit import Audit
 from moduly.audity.modely.audit_program import (
     AuditProgram,
     AuditProgramVisit,
@@ -27,6 +32,15 @@ from moduly.audity.sluzby.audit_knowledge_service import (
     AuditProcessDefinition,
     audit_knowledge_service,
 )
+
+
+@dataclass(frozen=True)
+class AuditVisitContext:
+    program_id: int
+    visit_id: int
+    program_name: str
+    planned_process_ids: tuple[str, ...]
+    standards: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -48,6 +62,7 @@ class AuditProgramWorkplaceCoverage:
 class AuditProgramCoverage:
     workplace_count: int
     visit_count: int
+    completed_visit_count: int
     planned_process_count: int
     completed_process_count: int
     completion_percent: float
@@ -273,6 +288,76 @@ class AuditProgramService:
         )
         return visits
 
+    def get_visit_by_audit_id(self, audit_id: int) -> AuditProgramVisit | None:
+        return self.repository.get_visit_by_audit_id(audit_id)
+
+    def get_visit_audit_context(self, visit_id: int) -> AuditVisitContext | None:
+        visit = self.repository.get_visit(visit_id)
+        if visit is None:
+            return None
+
+        program = self.repository.get_program(visit.program_id)
+        if program is None:
+            return None
+
+        planned_processes = self.repository.list_visit_processes(visit_id)
+        return AuditVisitContext(
+            program_id=program.id,
+            visit_id=visit.id,
+            program_name=program.name.strip(),
+            planned_process_ids=tuple(item.process_id for item in planned_processes),
+            standards=tuple(self.parse_standards(program.standards_json)),
+        )
+
+    def create_audit_from_visit(self, visit_id: int) -> Audit:
+        visit = self.repository.get_visit(visit_id)
+        if visit is None:
+            raise ValueError(f"Návštěva {visit_id} neexistuje.")
+        if visit.status == AUDIT_PROGRAM_VISIT_STATUS_SKIPPED:
+            raise ValueError("Zrušenou návštěvu nelze auditovat.")
+        if visit.audit_id is not None:
+            raise ValueError(AUDIT_PROGRAM_VISIT_HAS_AUDIT)
+
+        program = self.repository.get_program(visit.program_id)
+        if program is None:
+            raise ValueError(f"Program auditů {visit.program_id} neexistuje.")
+
+        from moduly.audity.sluzby.audit_service import audit_service
+
+        workplace_name = self._resolve_workplace_name(visit)
+        audit = audit_service.create_audit(
+            workplace_id=visit.workplace_id,
+            workplace_name=workplace_name,
+            year=visit.planned_year or date.today().year,
+            planned_month=visit.planned_month,
+            audit_date=visit.planned_date,
+            started_at=date.today(),
+            title=self._build_audit_title(program, visit, workplace_name),
+            program_id=program.id,
+            program_visit_id=visit.id,
+        )
+
+        visit.audit_id = audit.id
+        self.repository.update_visit(visit)
+        return audit
+
+    def sync_on_audit_completed(self, audit_id: int, *, finished_at: date) -> None:
+        visit = self.repository.get_visit_by_audit_id(audit_id)
+        if visit is None:
+            return
+
+        visit.status = AUDIT_PROGRAM_VISIT_STATUS_COMPLETED
+        self.repository.update_visit(visit)
+
+        completed_at = datetime.combine(finished_at, datetime.min.time())
+        for visit_process in self.repository.list_visit_processes(visit.id):
+            if visit_process.status != AUDIT_PROGRAM_VISIT_PROCESS_STATUS_PLANNED:
+                continue
+            visit_process.status = AUDIT_PROGRAM_VISIT_PROCESS_STATUS_COMPLETED
+            visit_process.audit_id = audit_id
+            visit_process.completed_at = completed_at
+            self.repository.update_visit_process(visit_process)
+
     def get_program_overview(self, program_id: int) -> AuditProgramOverview | None:
         program = self.repository.get_program(program_id)
         if program is None:
@@ -401,6 +486,9 @@ class AuditProgramService:
             for visit in self.repository.list_visits(program_id)
             if visit.status != AUDIT_PROGRAM_VISIT_STATUS_SKIPPED
         ]
+        completed_visit_count = sum(
+            1 for visit in visits if visit.status == AUDIT_PROGRAM_VISIT_STATUS_COMPLETED
+        )
         visit_processes = self.repository.list_program_visit_processes(program_id)
         active_processes = self._processes_for_program(program)
         active_process_ids = {process.id for process in active_processes}
@@ -441,6 +529,7 @@ class AuditProgramService:
         return AuditProgramCoverage(
             workplace_count=len(workplaces),
             visit_count=len(visits),
+            completed_visit_count=completed_visit_count,
             planned_process_count=planned_count,
             completed_process_count=completed_count,
             completion_percent=completion_percent,
@@ -577,6 +666,34 @@ class AuditProgramService:
             return
         program.manual_planning = True
         self.repository.update_program(program)
+
+    @staticmethod
+    def _resolve_workplace_name(visit: AuditProgramVisit) -> str:
+        from moduly.audity.sluzby.audit_service import audit_service
+
+        name = audit_service.resolve_workplace_name(visit.workplace_id)
+        if name:
+            return name
+        return ""
+
+    @staticmethod
+    def _build_audit_title(
+        program: AuditProgram,
+        visit: AuditProgramVisit,
+        workplace_name: str,
+    ) -> str:
+        month = visit.planned_month or 0
+        year = visit.planned_year or 0
+        if 1 <= month <= 12:
+            period = f"{MONTH_NAMES_CAPITALIZED[month - 1]} {year}"
+        else:
+            period = f"{month}/{year}"
+
+        program_label = program.name.strip() or program.number.strip()
+        workplace_label = workplace_name.strip() or "—"
+        if program_label:
+            return f"{program_label} — {workplace_label} ({period})"
+        return f"{workplace_label} ({period})"
 
     @staticmethod
     def parse_standards(standards_json: str) -> list[str]:

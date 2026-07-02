@@ -32,8 +32,15 @@ class AuditKnowledgeTreeWidget(QTreeWidget):
         self.setExpandsOnDoubleClick(True)
         self.currentItemChanged.connect(self._on_current_item_changed)
 
-    def reload_tree(self, *, include_inactive: bool = False, ensure: bool = True) -> None:
+    def reload_tree(
+        self,
+        *,
+        include_inactive: bool = False,
+        ensure: bool = True,
+        process_ids: set[str] | None = None,
+    ) -> None:
         self._include_inactive = include_inactive
+        self._process_filter = process_ids
         self._roots = audit_knowledge_service.get_knowledge_tree(
             include_inactive=include_inactive,
             ensure=ensure,
@@ -43,6 +50,8 @@ class AuditKnowledgeTreeWidget(QTreeWidget):
         self._nodes_by_item.clear()
 
         for root in self._roots:
+            if process_ids and root.process_id not in process_ids:
+                continue
             process_item = self._create_item(root)
             self.addTopLevelItem(process_item)
             self._append_children(process_item, root.children)

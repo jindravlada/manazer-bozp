@@ -76,6 +76,11 @@ class AuditProgramRepository:
         with get_session() as session:
             return session.get(AuditProgramVisit, visit_id)
 
+    def get_visit_by_audit_id(self, audit_id: int) -> AuditProgramVisit | None:
+        with get_session() as session:
+            stmt = select(AuditProgramVisit).where(AuditProgramVisit.audit_id == audit_id)
+            return session.scalars(stmt).first()
+
     def add_visit_process(
         self,
         visit_process: AuditProgramVisitProcess,

@@ -248,6 +248,13 @@ AUDIT_PROGRAM_STATUS_PROCESS_MOVED = "✓ Proces přesunut."
 AUDIT_PROGRAM_STATUS_VISIT_CREATED = "✓ Návštěva vytvořena."
 AUDIT_PROGRAM_STATUS_VISIT_UPDATED = "✓ Návštěva upravena."
 AUDIT_PROGRAM_STATUS_VISIT_SKIPPED = "✓ Návštěva zrušena."
+AUDIT_PROGRAM_STATUS_AUDIT_CREATED = "✓ Audit založen."
+AUDIT_PROGRAM_STATUS_AUDIT_COMPLETED = "✓ Audit dokončen."
+
+AUDIT_PROGRAM_START_AUDIT_BUTTON = "Zahájit audit..."
+AUDIT_PROGRAM_OPEN_AUDIT_BUTTON = "Otevřít audit"
+AUDIT_PROGRAM_VISIT_HAS_AUDIT = "Návštěva už má vytvořený audit."
+AUDIT_PROGRAM_VISIT_NO_AUDIT = "Návštěva nemá vytvořený audit."
 
 AUDIT_PROGRAM_MANUAL_GENERATE_BLOCKED = (
     "Program byl ručně upraven. Automatické generování návštěv je vypnuto."

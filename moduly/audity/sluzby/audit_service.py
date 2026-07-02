@@ -57,6 +57,8 @@ class AuditService:
         if audit is None:
             return None
 
+        was_finished = audit.finished_at is not None
+
         merged = {
             "year": audit.year,
             "planned_month": audit.planned_month,
@@ -67,13 +69,25 @@ class AuditService:
             "workplace_id": audit.workplace_id,
             "workplace_name": audit.workplace_name,
             "title": audit.title,
+            "program_id": audit.program_id,
+            "program_visit_id": audit.program_visit_id,
         }
         merged.update(fields)
         data = self._validated_fields(merged)
         for key, value in data.items():
             setattr(audit, key, value)
         audit.updated_at = datetime.now()
-        return self.repository.update(audit)
+        updated = self.repository.update(audit)
+
+        if not was_finished and updated.finished_at is not None:
+            from moduly.audity.sluzby.audit_program_service import audit_program_service
+
+            audit_program_service.sync_on_audit_completed(
+                updated.id,
+                finished_at=updated.finished_at,
+            )
+
+        return updated
 
     def delete_audit(self, audit_id: int) -> bool:
         finding_service.delete_for_entity(ENTITY_AUDITY, audit_id)
@@ -224,6 +238,14 @@ class AuditService:
         else:
             data["workplace_id"] = None
 
+        program_id = data.get("program_id")
+        data["program_id"] = int(program_id) if program_id is not None else None
+
+        program_visit_id = data.get("program_visit_id")
+        data["program_visit_id"] = (
+            int(program_visit_id) if program_visit_id is not None else None
+        )
+
         data["workplace_name"] = str(data.get("workplace_name") or "").strip()
         data["title"] = str(data.get("title") or "").strip()
 
@@ -244,6 +266,8 @@ class AuditService:
             "workplace_id": data.get("workplace_id"),
             "workplace_name": data["workplace_name"],
             "title": data["title"],
+            "program_id": data.get("program_id"),
+            "program_visit_id": data.get("program_visit_id"),
         }
 
     @staticmethod

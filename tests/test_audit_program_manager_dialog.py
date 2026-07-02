@@ -137,7 +137,7 @@ class AuditProgramManagerDialogTestCase(unittest.TestCase):
             dialog._generate_visits_btn.click()
         QApplication.processEvents()
         self.assertEqual(dialog._status_label.text(), AUDIT_PROGRAM_STATUS_VISITS_GENERATED)
-        self.assertEqual(dialog._visit_count_value.text(), "6")
+        self.assertEqual(dialog._visit_count_value.text(), "0 / 6")
 
         dialog._distribute_processes_btn.click()
         QApplication.processEvents()
@@ -276,6 +276,64 @@ class AuditProgramManagerDialogTestCase(unittest.TestCase):
             AuditProgramPlanTreeWidget.node_type(workplace_item),
             NODE_WORKPLACE,
         )
+
+    def test_start_audit_action_enabled_for_planned_visit(self) -> None:
+        program = audit_program_service.create_program(
+            name="Program auditů 2026–2029",
+            date_from=date(2026, 4, 1),
+            date_to=date(2029, 3, 31),
+        )
+        audit_program_service.add_workplace(
+            program.id,
+            workplace_id=self._workplace.id,
+            workplace_name=self._workplace.name,
+            audit_interval_months=6,
+        )
+        visit = audit_program_service.add_visit(
+            program.id,
+            workplace_id=self._workplace.id,
+            planned_year=2026,
+            planned_month=4,
+        )
+
+        dialog = self._create_dialog()
+        dialog._reload_program_list(select_program_id=program.id)
+        visit_item = dialog._plan_tree.topLevelItem(0).child(0)
+        dialog._plan_tree.setCurrentItem(visit_item)
+        QApplication.processEvents()
+
+        self.assertTrue(dialog._start_audit_btn.isEnabled())
+        self.assertFalse(dialog._open_audit_btn.isEnabled())
+
+    def test_open_audit_action_after_visit_linked(self) -> None:
+        program = audit_program_service.create_program(
+            name="Program auditů 2026–2029",
+            date_from=date(2026, 4, 1),
+            date_to=date(2029, 3, 31),
+        )
+        audit_program_service.add_workplace(
+            program.id,
+            workplace_id=self._workplace.id,
+            workplace_name=self._workplace.name,
+            audit_interval_months=6,
+        )
+        visit = audit_program_service.add_visit(
+            program.id,
+            workplace_id=self._workplace.id,
+            planned_year=2026,
+            planned_month=4,
+        )
+        audit_program_service.create_audit_from_visit(visit.id)
+
+        dialog = self._create_dialog()
+        dialog._reload_program_list(select_program_id=program.id)
+        visit_item = dialog._plan_tree.topLevelItem(0).child(0)
+        dialog._plan_tree.setCurrentItem(visit_item)
+        QApplication.processEvents()
+
+        self.assertFalse(dialog._start_audit_btn.isEnabled())
+        self.assertTrue(dialog._open_audit_btn.isEnabled())
+        self.assertIn("▶", visit_item.text(0))
 
 
 class AudityPageProgramButtonTestCase(unittest.TestCase):
