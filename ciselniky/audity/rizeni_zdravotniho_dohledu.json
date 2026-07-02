@@ -1,0 +1,1917 @@
+{
+  "verze": 1,
+  "id": "rizeni_zdravotniho_dohledu",
+  "nazev": "Řízení zdravotního dohledu",
+  "popis": "Proces kategorizace prací, lékařských prohlídek a vyhodnocování zdravotních rizik.",
+  "ucel_procesu": "Zajistit, aby organizace:\n- kategorizovala práce z hlediska zdravotních rizik,\n- zajišťovala lékařské prohlídky,\n- prováděla mimořádné prohlídky,\n- vedla evidenci zdravotního dohledu,\n- vyhodnocovala zdravotní rizika.",
+  "proc_je_dulezity": "Zdravotní dohled propojuje BOZP se zdravím — auditor ověřuje kategorizaci, prohlídky a evidenci.\n\nNejde o razítko v personalistice, ale o včasnou ochranu zdraví.\n\nTypická neshoda: zaměstnanec v rizikové práci bez platné prohlídky.",
+  "ocekavany_vystup": "Organizace prokazatelně:\n\n- kategorizuje práce,\n- zajišťuje prohlídky,\n- provádí mimořádné prohlídky,\n- vede evidenci,\n- vyhodnocuje zdravotní rizika.",
+  "poradi": 250,
+  "aktivni": true,
+  "vazby_procesy": [
+    {
+      "id": "vazba_urazy",
+      "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+      "poradi": 10,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_rizika",
+      "nazev": "Řízení rizik",
+      "poradi": 20,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_kompetence",
+      "nazev": "Řízení kompetencí",
+      "poradi": 30,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dokumentace",
+      "nazev": "Řízení dokumentovaných informací",
+      "poradi": 40,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_zmeny",
+      "nazev": "Řízení změn",
+      "poradi": 50,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_napravna",
+      "nazev": "Řízení nápravných opatření",
+      "poradi": 60,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dodavatele",
+      "nazev": "Řízení dodavatelů",
+      "poradi": 70,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_provoz",
+      "nazev": "Řízení provozu",
+      "poradi": 80,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_mu",
+      "nazev": "Připravenost na mimořádné události",
+      "poradi": 90,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_komunikace",
+      "nazev": "Interní komunikace",
+      "poradi": 100,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_prezkoumani",
+      "nazev": "Přezkoumání vedením",
+      "poradi": 110,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_legislativa",
+      "nazev": "Řízení právních a jiných požadavků",
+      "poradi": 120,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_cile",
+      "nazev": "Řízení cílů a programů BOZP",
+      "poradi": 130,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_monitoring",
+      "nazev": "Monitorování a měření",
+      "poradi": 140,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_audity",
+      "nazev": "Interní audity",
+      "poradi": 150,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_neshody",
+      "nazev": "Řízení neshod",
+      "poradi": 160,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_ucast",
+      "nazev": "Konzultace a účast zaměstnanců",
+      "poradi": 170,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_kultura",
+      "nazev": "Bezpečnostní kultura",
+      "poradi": 180,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_externi",
+      "nazev": "Řízení externích pracovníků",
+      "poradi": 190,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_udrzba",
+      "nazev": "Řízení preventivní údržby",
+      "poradi": 200,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_revize",
+      "nazev": "Řízení revizí a kontrol zařízení",
+      "poradi": 210,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_oopp",
+      "nazev": "Řízení osobních ochranných pracovních prostředků",
+      "poradi": 220,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_chemie",
+      "nazev": "Řízení chemických látek",
+      "poradi": 230,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_prostredi",
+      "nazev": "Řízení pracovního prostředí",
+      "poradi": 240,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dohled",
+      "nazev": "Řízení zdravotního dohledu",
+      "poradi": 250,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_lidsky",
+      "nazev": "Lidský faktor",
+      "poradi": 260,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_znalosti",
+      "nazev": "Řízení znalostí",
+      "poradi": 270,
+      "aktivni": true
+    }
+  ],
+  "pozadavky_norem": [
+    {
+      "id": "iso45001_81_zd_10",
+      "nazev": "ISO 45001: 8.1",
+      "poradi": 10,
+      "aktivni": true,
+      "popis": "Informativní reference – provozní plánování."
+    },
+    {
+      "id": "iso45001_613_zd_20",
+      "nazev": "ISO 45001: 6.1.3",
+      "poradi": 20,
+      "aktivni": true,
+      "popis": "Informativní reference – dodržování požadavků."
+    }
+  ],
+  "sekce": [
+    {
+      "id": "kategorizace_praci",
+      "nazev": "Kategorizace prací",
+      "popis": "Ověření kategorizace prací z hlediska zdravotních rizik.",
+      "cil_overeni": "Ověřit, že práce jsou kategorizovány podle zdravotních rizik.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "kategorizace_praci_provedena",
+          "text": "Kategorizace prací z hlediska zdravotních rizik je provedena.",
+          "popis": "Organizace zná rizikové práce.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "kategorizace_praci_aktualni",
+          "text": "Kategorizace je aktuální.",
+          "popis": "Nové práce jsou zařazeny.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "kategorizace_praci_posouzeni",
+          "text": "Kategorizaci provádí nebo schvaluje odborně způsobilá osoba.",
+          "popis": "Posouzení má autoritu.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "kategorizace_praci_dokumentovano",
+          "text": "Výsledky kategorizace jsou dokumentovány.",
+          "popis": "Existuje záznam.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "kategorizace_praci_propojeni",
+          "text": "Kategorizace je propojena s plánem prohlídek.",
+          "popis": "Riziková práce má prohlídku.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_kategorizace_praci_0",
+          "nazev": "kategorizace prací",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_kategorizace_praci_1",
+          "nazev": "posouzení rizik pro zdraví",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_kategorizace_praci_2",
+          "nazev": "seznam rizikových prací",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_kategorizace_praci_3",
+          "nazev": "schválení posouzení",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_kategorizace_praci_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_kategorizace_praci_1",
+          "nazev": "poskytovatel pracovnělékařských služeb",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_kategorizace_praci_2",
+          "nazev": "personalista",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_kategorizace_praci_3",
+          "nazev": "vedoucí BOZP",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_kategorizace_praci_0",
+          "nazev": "kategorizace odpovídá provozu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_kategorizace_praci_1",
+          "nazev": "nové práce jsou zařazeny",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_kategorizace_praci_0",
+          "nazev": "Kategorizace prací z hlediska zdravotních rizik nebyla provedena.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_kategorizace_praci_1",
+          "nazev": "Kategorizace prací není aktuální.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_kategorizace_praci_2",
+          "nazev": "Výsledky kategorizace nejsou dokumentovány.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_kategorizace_praci_3",
+          "nazev": "Kategorizace není propojena s plánem lékařských prohlídek.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_kategorizace_praci_0",
+          "nazev": "Revidovat kategorizaci při každé změně pracovního místa.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_kategorizace_praci_1",
+          "nazev": "Propojit kategorizaci s maticí prohlídek.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_kategorizace_praci_0",
+          "nazev": "riziková práce není v kategorizaci",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_613_zd_10",
+          "nazev": "ISO 45001: 6.1.3",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – dodržování požadavků."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_oopp",
+          "nazev": "Řízení osobních ochranných pracovních prostředků",
+          "poradi": 220,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_chemie",
+          "nazev": "Řízení chemických látek",
+          "poradi": 230,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prostredi",
+          "nazev": "Řízení pracovního prostředí",
+          "poradi": 240,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dohled",
+          "nazev": "Řízení zdravotního dohledu",
+          "poradi": 250,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_lidsky",
+          "nazev": "Lidský faktor",
+          "poradi": 260,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_znalosti",
+          "nazev": "Řízení znalostí",
+          "poradi": 270,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "lekarske_prohlidky",
+      "nazev": "Lékařské prohlídky",
+      "popis": "Ověření zajištění lékařských prohlídek.",
+      "cil_overeni": "Ověřit, že lékařské prohlídky jsou prováděny v požadovaném rozsahu a intervalu.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "lekarske_prohlidky_provadene",
+          "text": "Lékařské prohlídky jsou prováděny podle kategorizace.",
+          "popis": "Prohlídky odpovídají riziku.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "lekarske_prohlidky_intervaly",
+          "text": "Intervaly prohlídek jsou dodržovány.",
+          "popis": "Platnost není překročena.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "lekarske_prohlidky_pred_zarazenim",
+          "text": "Vstupní prohlídky jsou provedeny před zařazením do rizikové práce.",
+          "popis": "Organizace ne spoléhá na dodatečnou prohlídku.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "lekarske_prohlidky_zpusobilost",
+          "text": "Výsledky prohlídek ovlivňují zařazení do práce.",
+          "popis": "Organizace respektuje posudek.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "lekarske_prohlidky_smlouva",
+          "text": "Organizace má zajištěny pracovnělékařské služby.",
+          "popis": "SLA s poskytovatelem existuje.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_lekarske_prohlidky_0",
+          "nazev": "evidence prohlídek",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_lekarske_prohlidky_1",
+          "nazev": "posudky způsobilosti",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_lekarske_prohlidky_2",
+          "nazev": "plán prohlídek",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_lekarske_prohlidky_3",
+          "nazev": "smlouva s poskytovatelem",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_lekarske_prohlidky_0",
+          "nazev": "personalista",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_lekarske_prohlidky_1",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_lekarske_prohlidky_2",
+          "nazev": "poskytovatel pracovnělékařských služeb",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_lekarske_prohlidky_0",
+          "nazev": "prohlídky jsou platné",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_lekarske_prohlidky_1",
+          "nazev": "vstupní prohlídka před prací",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_lekarske_prohlidky_0",
+          "nazev": "Lékařské prohlídky nejsou prováděny podle kategorizace prací.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_lekarske_prohlidky_1",
+          "nazev": "Intervaly lékařských prohlídek nejsou dodržovány.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_lekarske_prohlidky_2",
+          "nazev": "Vstupní prohlídky nejsou provedeny před zařazením do rizikové práce.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_lekarske_prohlidky_3",
+          "nazev": "Výsledky prohlídek neovlivňují zařazení do práce.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_lekarske_prohlidky_0",
+          "nazev": "Automatické upozornění na konec platnosti prohlídky.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_lekarske_prohlidky_1",
+          "nazev": "Blokovat zařazení do rizikové práce bez prohlídky.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_lekarske_prohlidky_0",
+          "nazev": "zaměstnanec pracuje s prošlou prohlídkou",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_613_zd_10",
+          "nazev": "ISO 45001: 6.1.3",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – dodržování požadavků."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_oopp",
+          "nazev": "Řízení osobních ochranných pracovních prostředků",
+          "poradi": 220,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_chemie",
+          "nazev": "Řízení chemických látek",
+          "poradi": 230,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prostredi",
+          "nazev": "Řízení pracovního prostředí",
+          "poradi": 240,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dohled",
+          "nazev": "Řízení zdravotního dohledu",
+          "poradi": 250,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_lidsky",
+          "nazev": "Lidský faktor",
+          "poradi": 260,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_znalosti",
+          "nazev": "Řízení znalostí",
+          "poradi": 270,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "mimoradne_prohlidky",
+      "nazev": "Mimořádné prohlídky",
+      "popis": "Ověření provádění mimořádných lékařských prohlídek.",
+      "cil_overeni": "Ověřit, že mimořádné prohlídky jsou prováděny při definovaných událostech.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "mimoradne_prohlidky_duvody",
+          "text": "Důvody mimořádných prohlídek jsou definovány.",
+          "popis": "Organizace ví, kdy provést.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "mimoradne_prohlidky_provadene",
+          "text": "Mimořádné prohlídky jsou prováděny při splnění důvodů.",
+          "popis": "Prohlídka není odkládána.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "mimoradne_prohlidky_urazy",
+          "text": "Mimořádná prohlídka po pracovním úrazu je zajištěna.",
+          "popis": "Zdraví je chráněno.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "mimoradne_prohlidky_expozice",
+          "text": "Mimořádná prohlídka po nadměrné expozici je zajištěna.",
+          "popis": "Organizace reaguje.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "mimoradne_prohlidky_evidence",
+          "text": "Mimořádné prohlídky jsou evidovány.",
+          "popis": "Existuje záznam.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_mimoradne_prohlidky_0",
+          "nazev": "postup mimořádných prohlídek",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_mimoradne_prohlidky_1",
+          "nazev": "evidence mimořádných prohlídek",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_mimoradne_prohlidky_2",
+          "nazev": "záznamy po úrazech",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_mimoradne_prohlidky_3",
+          "nazev": "hlášení expozice",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_mimoradne_prohlidky_0",
+          "nazev": "personalista",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_mimoradne_prohlidky_1",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_mimoradne_prohlidky_2",
+          "nazev": "poskytovatel pracovnělékařských služeb",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_mimoradne_prohlidky_0",
+          "nazev": "po úrazu probíhá mimořádná prohlídka",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_mimoradne_prohlidky_1",
+          "nazev": "důvody jsou známé",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_mimoradne_prohlidky_0",
+          "nazev": "Důvody mimořádných prohlídek nejsou definovány.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_mimoradne_prohlidky_1",
+          "nazev": "Mimořádné prohlídky nejsou prováděny při splnění důvodů.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_mimoradne_prohlidky_2",
+          "nazev": "Mimořádná prohlídka po pracovním úrazu není zajištěna.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_mimoradne_prohlidky_3",
+          "nazev": "Mimořádné prohlídky nejsou evidovány.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_mimoradne_prohlidky_0",
+          "nazev": "Publikovat seznam událostí spouštějících mimořádnou prohlídku.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_mimoradne_prohlidky_1",
+          "nazev": "Propojit hlášení úrazu s mimořádnou prohlídkou.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_mimoradne_prohlidky_0",
+          "nazev": "po úrazu chybí mimořádná prohlídka",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_613_zd_10",
+          "nazev": "ISO 45001: 6.1.3",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – dodržování požadavků."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_oopp",
+          "nazev": "Řízení osobních ochranných pracovních prostředků",
+          "poradi": 220,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_chemie",
+          "nazev": "Řízení chemických látek",
+          "poradi": 230,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prostredi",
+          "nazev": "Řízení pracovního prostředí",
+          "poradi": 240,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dohled",
+          "nazev": "Řízení zdravotního dohledu",
+          "poradi": 250,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_lidsky",
+          "nazev": "Lidský faktor",
+          "poradi": 260,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_znalosti",
+          "nazev": "Řízení znalostí",
+          "poradi": 270,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "evidence_dohledu",
+      "nazev": "Evidence zdravotního dohledu",
+      "popis": "Ověření evidence zdravotního dohledu.",
+      "cil_overeni": "Ověřit, že evidence zdravotního dohledu je úplná a aktuální.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "evidence_dohledu_evidovano",
+          "text": "Zdravotní dohled je evidován u relevantních zaměstnanců.",
+          "popis": "Organizace má přehled.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "evidence_dohledu_aktualni",
+          "text": "Evidence zdravotního dohledu je aktuální.",
+          "popis": "Odpovídá skutečnosti.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "evidence_dohledu_dohledatelna",
+          "text": "Evidence je dohledatelná.",
+          "popis": "Auditor může ověřit stav.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "evidence_dohledu_platnost",
+          "text": "Platnost prohlídek je sledována.",
+          "popis": "Organizace ví o expiraci.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "evidence_dohledu_duvernost",
+          "text": "Evidence je chráněna v souladu s pravidly.",
+          "popis": "Přístup je řízen.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_evidence_dohledu_0",
+          "nazev": "evidence prohlídek",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_evidence_dohledu_1",
+          "nazev": "přehled platnosti",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_evidence_dohledu_2",
+          "nazev": "složky zdravotního dohledu",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_evidence_dohledu_3",
+          "nazev": "upozornění na expiraci",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_evidence_dohledu_0",
+          "nazev": "personalista",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_evidence_dohledu_1",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_evidence_dohledu_2",
+          "nazev": "vedoucí BOZP",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_evidence_dohledu_0",
+          "nazev": "evidence odpovídá stavu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_evidence_dohledu_1",
+          "nazev": "platnost je sledována",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_evidence_dohledu_0",
+          "nazev": "Zdravotní dohled není evidován u relevantních zaměstnanců.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_evidence_dohledu_1",
+          "nazev": "Evidence zdravotního dohledu není aktuální.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_evidence_dohledu_2",
+          "nazev": "Platnost prohlídek není sledována.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_evidence_dohledu_3",
+          "nazev": "Evidence zdravotního dohledu není dohledatelná.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_evidence_dohledu_0",
+          "nazev": "Elektronická evidence s hlídáním platnosti prohlídek.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_evidence_dohledu_1",
+          "nazev": "Měsíční kontrola úplnosti evidence.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_evidence_dohledu_0",
+          "nazev": "prohlídky jsou v papírech bez přehledu",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_75_zd_10",
+          "nazev": "ISO 45001: 7.5",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – dokumentované informace."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_oopp",
+          "nazev": "Řízení osobních ochranných pracovních prostředků",
+          "poradi": 220,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_chemie",
+          "nazev": "Řízení chemických látek",
+          "poradi": 230,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prostredi",
+          "nazev": "Řízení pracovního prostředí",
+          "poradi": 240,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dohled",
+          "nazev": "Řízení zdravotního dohledu",
+          "poradi": 250,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_lidsky",
+          "nazev": "Lidský faktor",
+          "poradi": 260,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_znalosti",
+          "nazev": "Řízení znalostí",
+          "poradi": 270,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "vyhodnoceni_zdravotnich_rizik",
+      "nazev": "Vyhodnocování zdravotních rizik",
+      "popis": "Ověření vyhodnocování zdravotních rizik a opatření.",
+      "cil_overeni": "Ověřit, že organizace vyhodnocuje zdravotní rizika a reaguje.",
+      "poradi": 50,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "vyhodnoceni_zdravotnich_rizik_vyhodnocuje",
+          "text": "Zdravotní rizika jsou vyhodnocována.",
+          "popis": "Organizace sleduje zdraví.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_zdravotnich_rizik_trendy",
+          "text": "Trendy pracovnělékařských nálezů jsou analyzovány.",
+          "popis": "Organizace vidí vývoj.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_zdravotnich_rizik_opatreni",
+          "text": "Z vyhodnocení vyplynou opatření BOZP.",
+          "popis": "Zdraví ovlivňuje provoz.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_zdravotnich_rizik_spoluprace",
+          "text": "Organizace spolupracuje s poskytovatelem pracovnělékařských služeb.",
+          "popis": "Výměna informací funguje.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_zdravotnich_rizik_prezkum",
+          "text": "Zdravotní rizika jsou projednána s vedením.",
+          "popis": "Vedení zná stav.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_vyhodnoceni_zdravotnich_rizik_0",
+          "nazev": "souhrny pracovnělékařských služeb",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyhodnoceni_zdravotnich_rizik_1",
+          "nazev": "analýzy trendů",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyhodnoceni_zdravotnich_rizik_2",
+          "nazev": "opatření po nálezech",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyhodnoceni_zdravotnich_rizik_3",
+          "nazev": "záznamy z jednání",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_vyhodnoceni_zdravotnich_rizik_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyhodnoceni_zdravotnich_rizik_1",
+          "nazev": "poskytovatel pracovnělékařských služeb",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyhodnoceni_zdravotnich_rizik_2",
+          "nazev": "vedoucí BOZP",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyhodnoceni_zdravotnich_rizik_3",
+          "nazev": "vedení",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_vyhodnoceni_zdravotnich_rizik_0",
+          "nazev": "opatření vycházejí z nálezů",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_vyhodnoceni_zdravotnich_rizik_1",
+          "nazev": "trendy jsou diskutovány",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_vyhodnoceni_zdravotnich_rizik_0",
+          "nazev": "Zdravotní rizika nejsou vyhodnocována.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyhodnoceni_zdravotnich_rizik_1",
+          "nazev": "Trendy pracovnělékařských nálezů nejsou analyzovány.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyhodnoceni_zdravotnich_rizik_2",
+          "nazev": "Z vyhodnocení nevyplývají opatření BOZP.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyhodnoceni_zdravotnich_rizik_3",
+          "nazev": "Zdravotní rizika nejsou projednána s vedením.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_vyhodnoceni_zdravotnich_rizik_0",
+          "nazev": "Roční souhrn zdravotních rizik pro vedení.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_vyhodnoceni_zdravotnich_rizik_1",
+          "nazev": "Propojit nálezy prohlídek s plánem BOZP.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_vyhodnoceni_zdravotnich_rizik_0",
+          "nazev": "nálezy prohlídek nemají vliv na provoz",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_91_zd_10",
+          "nazev": "ISO 45001: 9.1",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – monitorování."
+        },
+        {
+          "id": "iso45001_93_zd_20",
+          "nazev": "ISO 45001: 9.3",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – hodnocení."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_oopp",
+          "nazev": "Řízení osobních ochranných pracovních prostředků",
+          "poradi": 220,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_chemie",
+          "nazev": "Řízení chemických látek",
+          "poradi": 230,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prostredi",
+          "nazev": "Řízení pracovního prostředí",
+          "poradi": 240,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dohled",
+          "nazev": "Řízení zdravotního dohledu",
+          "poradi": 250,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_lidsky",
+          "nazev": "Lidský faktor",
+          "poradi": 260,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_znalosti",
+          "nazev": "Řízení znalostí",
+          "poradi": 270,
+          "aktivni": true
+        }
+      ]
+    }
+  ]
+}

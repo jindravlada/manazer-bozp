@@ -1,0 +1,1936 @@
+{
+  "verze": 1,
+  "id": "rizeni_chemickych_latek",
+  "nazev": "Řízení chemických látek",
+  "popis": "Proces evidence, skladování, používání a řízení rizik chemických látek.",
+  "ucel_procesu": "Zajistit, aby organizace:\n- evidovala chemické látky,\n- disponovala bezpečnostními listy,\n- správně označovala a skladovala látky,\n- bezpečně používala chemikálie,\n- měla opatření pro mimořádné události.",
+  "proc_je_dulezity": "Chemické látky jsou riziko, které auditor vidí na etiketě, ve skladu i u pracovníka.\n\nOvěřuje se evidence, bezpečnostní listy, skladování, použití a připravenost na únik.\n\nTypická neshoda: látky bez bezpečnostního listu nebo v neoznačených nádobách.",
+  "ocekavany_vystup": "Organizace prokazatelně:\n\n- eviduje chemické látky,\n- má bezpečnostní listy,\n- správně skladuje a označuje,\n- používá látky bezpečně,\n- je připravena na mimořádné události.",
+  "poradi": 230,
+  "aktivni": true,
+  "vazby_procesy": [
+    {
+      "id": "vazba_urazy",
+      "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+      "poradi": 10,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_rizika",
+      "nazev": "Řízení rizik",
+      "poradi": 20,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_kompetence",
+      "nazev": "Řízení kompetencí",
+      "poradi": 30,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dokumentace",
+      "nazev": "Řízení dokumentovaných informací",
+      "poradi": 40,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_zmeny",
+      "nazev": "Řízení změn",
+      "poradi": 50,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_napravna",
+      "nazev": "Řízení nápravných opatření",
+      "poradi": 60,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dodavatele",
+      "nazev": "Řízení dodavatelů",
+      "poradi": 70,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_provoz",
+      "nazev": "Řízení provozu",
+      "poradi": 80,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_mu",
+      "nazev": "Připravenost na mimořádné události",
+      "poradi": 90,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_komunikace",
+      "nazev": "Interní komunikace",
+      "poradi": 100,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_prezkoumani",
+      "nazev": "Přezkoumání vedením",
+      "poradi": 110,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_legislativa",
+      "nazev": "Řízení právních a jiných požadavků",
+      "poradi": 120,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_cile",
+      "nazev": "Řízení cílů a programů BOZP",
+      "poradi": 130,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_monitoring",
+      "nazev": "Monitorování a měření",
+      "poradi": 140,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_audity",
+      "nazev": "Interní audity",
+      "poradi": 150,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_neshody",
+      "nazev": "Řízení neshod",
+      "poradi": 160,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_ucast",
+      "nazev": "Konzultace a účast zaměstnanců",
+      "poradi": 170,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_kultura",
+      "nazev": "Bezpečnostní kultura",
+      "poradi": 180,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_externi",
+      "nazev": "Řízení externích pracovníků",
+      "poradi": 190,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_udrzba",
+      "nazev": "Řízení preventivní údržby",
+      "poradi": 200,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_revize",
+      "nazev": "Řízení revizí a kontrol zařízení",
+      "poradi": 210,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_oopp",
+      "nazev": "Řízení osobních ochranných pracovních prostředků",
+      "poradi": 220,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_chemie",
+      "nazev": "Řízení chemických látek",
+      "poradi": 230,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_prostredi",
+      "nazev": "Řízení pracovního prostředí",
+      "poradi": 240,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dohled",
+      "nazev": "Řízení zdravotního dohledu",
+      "poradi": 250,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_lidsky",
+      "nazev": "Lidský faktor",
+      "poradi": 260,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_znalosti",
+      "nazev": "Řízení znalostí",
+      "poradi": 270,
+      "aktivni": true
+    }
+  ],
+  "pozadavky_norem": [
+    {
+      "id": "iso45001_81_chem_10",
+      "nazev": "ISO 45001: 8.1",
+      "poradi": 10,
+      "aktivni": true,
+      "popis": "Informativní reference – provozní plánování."
+    },
+    {
+      "id": "iso45001_82_chem_20",
+      "nazev": "ISO 45001: 8.2",
+      "poradi": 20,
+      "aktivni": true,
+      "popis": "Informativní reference – odstraňování nebezpečí."
+    }
+  ],
+  "sekce": [
+    {
+      "id": "evidence_chemii",
+      "nazev": "Evidence chemických látek",
+      "popis": "Ověření evidence používaných chemických látek.",
+      "cil_overeni": "Ověřit, že chemické látky jsou evidovány a aktuální.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "evidence_chemii_evidovany",
+          "text": "Používané chemické látky jsou evidovány.",
+          "popis": "Organizace zná, co používá.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "evidence_chemii_aktualni",
+          "text": "Evidence chemických látek je aktuální.",
+          "popis": "Nové látky jsou zahrnuty.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "evidence_chemii_mnozstvi",
+          "text": "Evidence obsahuje místo použití a množství.",
+          "popis": "Záznam je praktický.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "evidence_chemii_odpovednost",
+          "text": "Je určena odpovědnost za evidenci.",
+          "popis": "Evidence má vlastníka.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "evidence_chemii_revize",
+          "text": "Evidence je pravidelně revidována.",
+          "popis": "Zastaralé látky jsou vyřazeny.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_evidence_chemii_0",
+          "nazev": "evidence chemických látek",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_evidence_chemii_1",
+          "nazev": "inventura chemikálií",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_evidence_chemii_2",
+          "nazev": "seznam látek na pracovištích",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_evidence_chemii_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_evidence_chemii_1",
+          "nazev": "chemik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_evidence_chemii_2",
+          "nazev": "vedoucí provozu",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_evidence_chemii_3",
+          "nazev": "skladník",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_evidence_chemii_0",
+          "nazev": "evidence odpovídá skladu a provozu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_evidence_chemii_1",
+          "nazev": "revize probíhá pravidelně",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_evidence_chemii_0",
+          "nazev": "Používané chemické látky nejsou evidovány.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_evidence_chemii_1",
+          "nazev": "Evidence chemických látek není aktuální.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_evidence_chemii_2",
+          "nazev": "Evidence neobsahuje místo použití a množství.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_evidence_chemii_3",
+          "nazev": "Evidence chemických látek není pravidelně revidována.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_evidence_chemii_0",
+          "nazev": "Roční inventura chemických látek na všech pracovištích.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_evidence_chemii_1",
+          "nazev": "Schvalovat novou látku pouze po zařazení do evidence.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_evidence_chemii_0",
+          "nazev": "neznámé látky v provozu bez evidence",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_81_chem_10",
+          "nazev": "ISO 45001: 8.1",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – provozní plánování."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_oopp",
+          "nazev": "Řízení osobních ochranných pracovních prostředků",
+          "poradi": 220,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_chemie",
+          "nazev": "Řízení chemických látek",
+          "poradi": 230,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prostredi",
+          "nazev": "Řízení pracovního prostředí",
+          "poradi": 240,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dohled",
+          "nazev": "Řízení zdravotního dohledu",
+          "poradi": 250,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_lidsky",
+          "nazev": "Lidský faktor",
+          "poradi": 260,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_znalosti",
+          "nazev": "Řízení znalostí",
+          "poradi": 270,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "bezpecnostni_listy",
+      "nazev": "Bezpečnostní listy",
+      "popis": "Ověření dostupnosti a aktuálnosti bezpečnostních listů.",
+      "cil_overeni": "Ověřit, že bezpečnostní listy jsou k dispozici a aktuální.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "bezpecnostni_listy_dostupne",
+          "text": "Bezpečnostní listy jsou dostupné u místa použití.",
+          "popis": "Pracovník má informace.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "bezpecnostni_listy_aktualni",
+          "text": "Bezpečnostní listy jsou aktuální.",
+          "popis": "Platí poslední verze.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "bezpecnostni_listy_jazyk",
+          "text": "Bezpečnostní listy jsou v srozumitelném jazyce.",
+          "popis": "Zaměstnanec rozumí.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "bezpecnostni_listy_rizika",
+          "text": "Rizika z bezpečnostních listů jsou promítnuta do praxe.",
+          "popis": "BL není archiv.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "bezpecnostni_listy_archiv",
+          "text": "Bezpečnostní listy jsou archivovány a dohledatelné.",
+          "popis": "Organizace je může předložit.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_bezpecnostni_listy_0",
+          "nazev": "bezpečnostní listy",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_bezpecnostni_listy_1",
+          "nazev": "registr BL",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_bezpecnostni_listy_2",
+          "nazev": "chemické karty",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_bezpecnostni_listy_3",
+          "nazev": "přístup k BL u pracoviště",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_bezpecnostni_listy_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_bezpecnostni_listy_1",
+          "nazev": "chemik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_bezpecnostni_listy_2",
+          "nazev": "mistr",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_bezpecnostni_listy_3",
+          "nazev": "zaměstnanci",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_bezpecnostni_listy_0",
+          "nazev": "BL je dostupný u pracoviště",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_bezpecnostni_listy_1",
+          "nazev": "verze BL je aktuální",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_bezpecnostni_listy_0",
+          "nazev": "Bezpečnostní listy nejsou dostupné u místa použití.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_bezpecnostni_listy_1",
+          "nazev": "Bezpečnostní listy nejsou aktuální.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_bezpecnostni_listy_2",
+          "nazev": "Rizika z bezpečnostních listů nejsou promítnuta do praxe.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_bezpecnostni_listy_3",
+          "nazev": "Bezpečnostní listy chybí u evidovaných látek.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_bezpecnostni_listy_0",
+          "nazev": "Zavést povinný registr BL s datem platnosti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_bezpecnostni_listy_1",
+          "nazev": "Umístit chemické karty u každého skladu a pracoviště.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_bezpecnostni_listy_0",
+          "nazev": "BL existuje pouze v centrálním archivu",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_75_chem_10",
+          "nazev": "ISO 45001: 7.5",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – dokumentované informace."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_oopp",
+          "nazev": "Řízení osobních ochranných pracovních prostředků",
+          "poradi": 220,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_chemie",
+          "nazev": "Řízení chemických látek",
+          "poradi": 230,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prostredi",
+          "nazev": "Řízení pracovního prostředí",
+          "poradi": 240,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dohled",
+          "nazev": "Řízení zdravotního dohledu",
+          "poradi": 250,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_lidsky",
+          "nazev": "Lidský faktor",
+          "poradi": 260,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_znalosti",
+          "nazev": "Řízení znalostí",
+          "poradi": 270,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "oznacovani_skladovani",
+      "nazev": "Označování a skladování",
+      "popis": "Ověření označování a skladování chemických látek.",
+      "cil_overeni": "Ověřit, že chemické látky jsou správně označeny a skladovány.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "oznacovani_skladovani_oznaceno",
+          "text": "Chemické látky jsou správně označeny.",
+          "popis": "Etiketa obsahuje identifikaci a nebezpečí.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "oznacovani_skladovani_neoznacene",
+          "text": "Nepoužívají se neoznačené nádoby.",
+          "popis": "Organizace blokuje neidentifikované látky.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "oznacovani_skladovani_skladovani",
+          "text": "Chemické látky jsou skladovány podle požadavků.",
+          "popis": "Nekompatibilní látky nejsou spolu.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "oznacovani_skladovani_zabezpeceni",
+          "text": "Sklad chemikálií je zabezpečen proti neoprávněnému přístupu.",
+          "popis": "Přístup je řízen.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "oznacovani_skladovani_kapacita",
+          "text": "Skladovací prostory odpovídají množství a typu látek.",
+          "popis": "Sklad není přeplněn.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_oznacovani_skladovani_0",
+          "nazev": "prohlídka skladu chemikálií",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_oznacovani_skladovani_1",
+          "nazev": "skladovací pravidla",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_oznacovani_skladovani_2",
+          "nazev": "fotodokumentace označení",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_oznacovani_skladovani_3",
+          "nazev": "evidence skladu",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_oznacovani_skladovani_0",
+          "nazev": "skladník",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_oznacovani_skladovani_1",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_oznacovani_skladovani_2",
+          "nazev": "chemik",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_oznacovani_skladovani_3",
+          "nazev": "mistr",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_oznacovani_skladovani_0",
+          "nazev": "nádoby jsou označené",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_oznacovani_skladovani_1",
+          "nazev": "sklad je uspořádán bezpečně",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_oznacovani_skladovani_0",
+          "nazev": "Chemické látky nejsou správně označeny.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_oznacovani_skladovani_1",
+          "nazev": "V provozu jsou neoznačené nádoby s chemikáliemi.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_oznacovani_skladovani_2",
+          "nazev": "Chemické látky nejsou skladovány podle požadavků.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_oznacovani_skladovani_3",
+          "nazev": "Sklad chemikálií není zabezpečen proti neoprávněnému přístupu.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_oznacovani_skladovani_0",
+          "nazev": "Zavést pravidlo nulové tolerance pro neoznačené nádoby.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_oznacovani_skladovani_1",
+          "nazev": "Revize skladu chemikálií čtvrtletně.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_oznacovani_skladovani_0",
+          "nazev": "neidentifikované látky ve skladu",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_82_chem_10",
+          "nazev": "ISO 45001: 8.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – odstraňování nebezpečí."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_oopp",
+          "nazev": "Řízení osobních ochranných pracovních prostředků",
+          "poradi": 220,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_chemie",
+          "nazev": "Řízení chemických látek",
+          "poradi": 230,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prostredi",
+          "nazev": "Řízení pracovního prostředí",
+          "poradi": 240,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dohled",
+          "nazev": "Řízení zdravotního dohledu",
+          "poradi": 250,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_lidsky",
+          "nazev": "Lidský faktor",
+          "poradi": 260,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_znalosti",
+          "nazev": "Řízení znalostí",
+          "poradi": 270,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "pouzivani_chemii",
+      "nazev": "Používání chemických látek",
+      "popis": "Ověření bezpečného používání chemických látek.",
+      "cil_overeni": "Ověřit, že chemické látky jsou používány bezpečně v provozu.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "pouzivani_chemii_postupy",
+          "text": "Existují postupy pro bezpečné používání chemikálií.",
+          "popis": "Pracovník ví, jak postupovat.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pouzivani_chemii_oopp",
+          "text": "Při práci s chemikáliemi jsou používána vhodná OOPP.",
+          "popis": "Ochrana odpovídá riziku.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pouzivani_chemii_ventilace",
+          "text": "Práce s chemikáliemi probíhá za vhodných podmínek prostředí.",
+          "popis": "Ventilace a odsávání fungují.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pouzivani_chemii_skoleni",
+          "text": "Zaměstnanci jsou proškoleni v práci s chemikáliemi.",
+          "popis": "Znají rizika a postupy.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pouzivani_chemii_kontrola",
+          "text": "Dodržování postupů je kontrolováno.",
+          "popis": "Organizace dohlíží.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_pouzivani_chemii_0",
+          "nazev": "pracovní instrukce",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_pouzivani_chemii_1",
+          "nazev": "záznamy školení",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_pouzivani_chemii_2",
+          "nazev": "kontrolní listy",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_pouzivani_chemii_3",
+          "nazev": "pozorování v provozu",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_pouzivani_chemii_0",
+          "nazev": "chemik",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_pouzivani_chemii_1",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_pouzivani_chemii_2",
+          "nazev": "mistr",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_pouzivani_chemii_3",
+          "nazev": "zaměstnanci",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_pouzivani_chemii_0",
+          "nazev": "OOPP a ventilace odpovídají práci",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_pouzivani_chemii_1",
+          "nazev": "postupy jsou dodržovány",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_pouzivani_chemii_0",
+          "nazev": "Neexistují postupy pro bezpečné používání chemikálií.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_pouzivani_chemii_1",
+          "nazev": "Při práci s chemikáliemi není používáno vhodné OOPP.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_pouzivani_chemii_2",
+          "nazev": "Zaměstnanci nejsou proškoleni v práci s chemikáliemi.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_pouzivani_chemii_3",
+          "nazev": "Práce probíhá bez vhodné ventilace nebo odsávání.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_pouzivani_chemii_0",
+          "nazev": "Pracovní instrukce s chemickou kartou u každého pracoviště.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_pouzivani_chemii_1",
+          "nazev": "Praktické školení s chemikáliemi v provozu.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_pouzivani_chemii_0",
+          "nazev": "chemikálie se používají bez postupu",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_72_chem_10",
+          "nazev": "ISO 45001: 7.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – kompetence."
+        },
+        {
+          "id": "iso45001_82_chem_20",
+          "nazev": "ISO 45001: 8.2",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – odstraňování nebezpečí."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_oopp",
+          "nazev": "Řízení osobních ochranných pracovních prostředků",
+          "poradi": 220,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_chemie",
+          "nazev": "Řízení chemických látek",
+          "poradi": 230,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prostredi",
+          "nazev": "Řízení pracovního prostředí",
+          "poradi": 240,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dohled",
+          "nazev": "Řízení zdravotního dohledu",
+          "poradi": 250,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_lidsky",
+          "nazev": "Lidský faktor",
+          "poradi": 260,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_znalosti",
+          "nazev": "Řízení znalostí",
+          "poradi": 270,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "chemie_mu",
+      "nazev": "Opatření při mimořádných událostech",
+      "popis": "Ověření připravenosti na únik a mimořádné události s chemikáliemi.",
+      "cil_overeni": "Ověřit, že organizace má opatření pro mimořádné události s chemikáliemi.",
+      "poradi": 50,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "chemie_mu_postupy",
+          "text": "Existují postupy pro únik chemických látek.",
+          "popis": "Organizace ví, jak reagovat.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "chemie_mu_vybaveni",
+          "text": "Vybavení pro zachycení úniku je dostupné.",
+          "popis": "Sorbenty, ZEH apod.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "chemie_mu_skoleni",
+          "text": "Zaměstnanci znají postup při úniku chemikálie.",
+          "popis": "Reakce není improvizovaná.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "chemie_mu_cviceni",
+          "text": "Postupy pro chemické MU jsou ověřeny cvičením.",
+          "popis": "Připravenost je testována.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "chemie_mu_komunikace",
+          "text": "Komunikační řetězec při chemické MU je definován.",
+          "popis": "Je jasné, koho volat.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_chemie_mu_0",
+          "nazev": "postup úniku chemikálie",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_chemie_mu_1",
+          "nazev": "evidence vybavení ZEH",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_chemie_mu_2",
+          "nazev": "záznamy cvičení",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_chemie_mu_3",
+          "nazev": "kontakty pro MU",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_chemie_mu_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_chemie_mu_1",
+          "nazev": "chemik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_chemie_mu_2",
+          "nazev": "vedoucí odvrácení MU",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_chemie_mu_3",
+          "nazev": "vedoucí směny",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_chemie_mu_0",
+          "nazev": "vybavení je dostupné",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_chemie_mu_1",
+          "nazev": "zaměstnanci znají postup",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_chemie_mu_0",
+          "nazev": "Neexistují postupy pro únik chemických látek.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_chemie_mu_1",
+          "nazev": "Vybavení pro zachycení úniku není dostupné.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_chemie_mu_2",
+          "nazev": "Zaměstnanci neznají postup při úniku chemikálie.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_chemie_mu_3",
+          "nazev": "Postupy pro chemické MU nejsou ověřeny cvičením.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_chemie_mu_0",
+          "nazev": "Umístit sorbenty a ZEH u skladů chemikálií.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_chemie_mu_1",
+          "nazev": "Roční cvičení úniku chemikálie na klíčovém pracovišti.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_chemie_mu_0",
+          "nazev": "únik by řešili improvizací",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_82_chem_10",
+          "nazev": "ISO 45001: 8.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – odstraňování nebezpečí."
+        },
+        {
+          "id": "iso45001_81_chem_20",
+          "nazev": "ISO 45001: 8.1",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – MU v provozu."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_oopp",
+          "nazev": "Řízení osobních ochranných pracovních prostředků",
+          "poradi": 220,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_chemie",
+          "nazev": "Řízení chemických látek",
+          "poradi": 230,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prostredi",
+          "nazev": "Řízení pracovního prostředí",
+          "poradi": 240,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dohled",
+          "nazev": "Řízení zdravotního dohledu",
+          "poradi": 250,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_lidsky",
+          "nazev": "Lidský faktor",
+          "poradi": 260,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_znalosti",
+          "nazev": "Řízení znalostí",
+          "poradi": 270,
+          "aktivni": true
+        }
+      ]
+    }
+  ]
+}

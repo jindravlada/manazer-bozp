@@ -1,5 +1,5 @@
 {
-  "verze": 8,
+  "verze": 9,
   "procesy": [
     {
       "id": "urazy_mimo_udalosti",
@@ -189,6 +189,60 @@
       "poradi": 210,
       "aktivni": true,
       "soubor_znalosti": "revize_kontroly_zarizeni.json"
+    },
+    {
+      "id": "rizeni_oopp",
+      "nazev": "Řízení osobních ochranných pracovních prostředků",
+      "popis": "Proces stanovení, přidělování, používání a vyhodnocování OOPP.",
+      "ucel_procesu": "Zajistit stanovení požadavků na OOPP, přidělování vhodných prostředků, kontrolu používání, údržbu a vyhodnocení účinnosti.",
+      "poradi": 220,
+      "aktivni": true,
+      "soubor_znalosti": "rizeni_oopp.json"
+    },
+    {
+      "id": "rizeni_chemickych_latek",
+      "nazev": "Řízení chemických látek",
+      "popis": "Proces evidence, skladování, používání a řízení rizik chemických látek.",
+      "ucel_procesu": "Zajistit evidenci chemických látek, bezpečnostní listy, správné skladování a označování, bezpečné používání a opatření pro mimořádné události.",
+      "poradi": 230,
+      "aktivni": true,
+      "soubor_znalosti": "rizeni_chemickych_latek.json"
+    },
+    {
+      "id": "rizeni_pracovniho_prostredi",
+      "nazev": "Řízení pracovního prostředí",
+      "popis": "Proces řízení mikroklimatu, osvětlení, hluku, škodlivin a ergonomie pracovišť.",
+      "ucel_procesu": "Zajistit řízení mikroklimatu, osvětlení, hluku a vibrací, prašnosti a škodlivin a zlepšování ergonomie pracovišť.",
+      "poradi": 240,
+      "aktivni": true,
+      "soubor_znalosti": "rizeni_pracovniho_prostredi.json"
+    },
+    {
+      "id": "rizeni_zdravotniho_dohledu",
+      "nazev": "Řízení zdravotního dohledu",
+      "popis": "Proces kategorizace prací, lékařských prohlídek a vyhodnocování zdravotních rizik.",
+      "ucel_procesu": "Zajistit kategorizaci prací, lékařské a mimořádné prohlídky, evidenci zdravotního dohledu a vyhodnocování zdravotních rizik.",
+      "poradi": 250,
+      "aktivni": true,
+      "soubor_znalosti": "rizeni_zdravotniho_dohledu.json"
+    },
+    {
+      "id": "lidsky_faktor",
+      "nazev": "Lidský faktor",
+      "popis": "Proces řízení lidského faktoru — únava, stres, rutina, komunikace a bezpečné chování.",
+      "ucel_procesu": "Zajistit řízení rizik únavy, stresu a psychosociálních rizik, rutiny, bezpečné komunikace a posilování bezpečného chování.",
+      "poradi": 260,
+      "aktivni": true,
+      "soubor_znalosti": "lidsky_faktor.json"
+    },
+    {
+      "id": "rizeni_znalosti",
+      "nazev": "Řízení znalostí",
+      "popis": "Proces identifikace, předávání, uchovávání a využívání znalostí BOZP.",
+      "ucel_procesu": "Zajistit identifikaci klíčových znalostí, předávání zkušeností, adaptaci nových zaměstnanců, uchovávání znalostí a využití pro zlepšování systému.",
+      "poradi": 270,
+      "aktivni": true,
+      "soubor_znalosti": "rizeni_znalosti.json"
     }
   ]
 }

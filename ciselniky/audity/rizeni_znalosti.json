@@ -1,0 +1,1936 @@
+{
+  "verze": 1,
+  "id": "rizeni_znalosti",
+  "nazev": "Řízení znalostí",
+  "popis": "Proces identifikace, předávání, uchovávání a využívání znalostí BOZP.",
+  "ucel_procesu": "Zajistit, aby organizace:\n- identifikovala klíčové BOZP znalosti,\n- předávala zkušenosti,\n- adaptovala nové zaměstnance,\n- uchovávala znalosti organizace,\n- využívala zkušenosti pro zlepšování.",
+  "proc_je_dulezity": "Znalosti odcházejí s lidmi — auditor ověřuje, zda organizace klíčové know-how zachycuje a předává.\n\nNejde o školení obecně, ale o systematické řízení znalostí pro bezpečný provoz.\n\nTypická neshoda: zkušený mistr odejde a nikdo nepřevezme jeho know-how.",
+  "ocekavany_vystup": "Organizace prokazatelně:\n\n- zná klíčové znalosti,\n- předává zkušenosti,\n- adaptuje nováčky,\n- uchovává znalosti,\n- využívá zkušenosti pro zlepšování.",
+  "poradi": 270,
+  "aktivni": true,
+  "vazby_procesy": [
+    {
+      "id": "vazba_urazy",
+      "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+      "poradi": 10,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_rizika",
+      "nazev": "Řízení rizik",
+      "poradi": 20,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_kompetence",
+      "nazev": "Řízení kompetencí",
+      "poradi": 30,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dokumentace",
+      "nazev": "Řízení dokumentovaných informací",
+      "poradi": 40,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_zmeny",
+      "nazev": "Řízení změn",
+      "poradi": 50,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_napravna",
+      "nazev": "Řízení nápravných opatření",
+      "poradi": 60,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dodavatele",
+      "nazev": "Řízení dodavatelů",
+      "poradi": 70,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_provoz",
+      "nazev": "Řízení provozu",
+      "poradi": 80,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_mu",
+      "nazev": "Připravenost na mimořádné události",
+      "poradi": 90,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_komunikace",
+      "nazev": "Interní komunikace",
+      "poradi": 100,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_prezkoumani",
+      "nazev": "Přezkoumání vedením",
+      "poradi": 110,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_legislativa",
+      "nazev": "Řízení právních a jiných požadavků",
+      "poradi": 120,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_cile",
+      "nazev": "Řízení cílů a programů BOZP",
+      "poradi": 130,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_monitoring",
+      "nazev": "Monitorování a měření",
+      "poradi": 140,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_audity",
+      "nazev": "Interní audity",
+      "poradi": 150,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_neshody",
+      "nazev": "Řízení neshod",
+      "poradi": 160,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_ucast",
+      "nazev": "Konzultace a účast zaměstnanců",
+      "poradi": 170,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_kultura",
+      "nazev": "Bezpečnostní kultura",
+      "poradi": 180,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_externi",
+      "nazev": "Řízení externích pracovníků",
+      "poradi": 190,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_udrzba",
+      "nazev": "Řízení preventivní údržby",
+      "poradi": 200,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_revize",
+      "nazev": "Řízení revizí a kontrol zařízení",
+      "poradi": 210,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_oopp",
+      "nazev": "Řízení osobních ochranných pracovních prostředků",
+      "poradi": 220,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_chemie",
+      "nazev": "Řízení chemických látek",
+      "poradi": 230,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_prostredi",
+      "nazev": "Řízení pracovního prostředí",
+      "poradi": 240,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dohled",
+      "nazev": "Řízení zdravotního dohledu",
+      "poradi": 250,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_lidsky",
+      "nazev": "Lidský faktor",
+      "poradi": 260,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_znalosti",
+      "nazev": "Řízení znalostí",
+      "poradi": 270,
+      "aktivni": true
+    }
+  ],
+  "pozadavky_norem": [
+    {
+      "id": "iso45001_72_zn_10",
+      "nazev": "ISO 45001: 7.2",
+      "poradi": 10,
+      "aktivni": true,
+      "popis": "Informativní reference – kompetence."
+    },
+    {
+      "id": "iso45001_75_zn_20",
+      "nazev": "ISO 45001: 7.5",
+      "poradi": 20,
+      "aktivni": true,
+      "popis": "Informativní reference – dokumentované informace."
+    },
+    {
+      "id": "iso45001_103_zn_30",
+      "nazev": "ISO 45001: 10.3",
+      "poradi": 30,
+      "aktivni": true,
+      "popis": "Informativní reference – zlepšování."
+    }
+  ],
+  "sekce": [
+    {
+      "id": "identifikace_znalosti",
+      "nazev": "Identifikace klíčových znalostí",
+      "popis": "Ověření identifikace klíčových BOZP znalostí.",
+      "cil_overeni": "Ověřit, že organizace identifikovala klíčové znalosti pro bezpečný provoz.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "identifikace_znalosti_identifikovany",
+          "text": "Klíčové BOZP znalosti jsou identifikovány.",
+          "popis": "Organizace ví, co nesmí ztratit.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "identifikace_znalosti_pracoviste",
+          "text": "Klíčové znalosti jsou vázány na pracoviště a role.",
+          "popis": "Znalosti nejsou obecné.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "identifikace_znalosti_rizika",
+          "text": "Identifikace vychází z rizik a kritických činností.",
+          "popis": "Prioritizace je logická.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "identifikace_znalosti_aktualizace",
+          "text": "Seznam klíčových znalostí je aktualizován.",
+          "popis": "Změny jsou reflektovány.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "identifikace_znalosti_odpovednost",
+          "text": "Je určena odpovědnost za správu znalostí.",
+          "popis": "Znalosti mají vlastníka.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_identifikace_znalosti_0",
+          "nazev": "seznam klíčových znalostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_identifikace_znalosti_1",
+          "nazev": "matice znalostí podle rolí",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_identifikace_znalosti_2",
+          "nazev": "posouzení rizik",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_identifikace_znalosti_3",
+          "nazev": "revize seznamu",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_identifikace_znalosti_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_identifikace_znalosti_1",
+          "nazev": "vedoucí provozu",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_identifikace_znalosti_2",
+          "nazev": "mistr",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_identifikace_znalosti_3",
+          "nazev": "vedoucí BOZP",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_identifikace_znalosti_0",
+          "nazev": "znalosti odpovídají kritickým pracím",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_identifikace_znalosti_1",
+          "nazev": "seznam je aktuální",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_identifikace_znalosti_0",
+          "nazev": "Klíčové BOZP znalosti nejsou identifikovány.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_identifikace_znalosti_1",
+          "nazev": "Klíčové znalosti nejsou vázány na pracoviště a role.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_identifikace_znalosti_2",
+          "nazev": "Seznam klíčových znalostí není aktualizován.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_identifikace_znalosti_3",
+          "nazev": "Není určena odpovědnost za správu znalostí.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_identifikace_znalosti_0",
+          "nazev": "Vytvořit matici klíčových znalostí pro kritická pracoviště.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_identifikace_znalosti_1",
+          "nazev": "Revidovat seznam při každé významné změně.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_identifikace_znalosti_0",
+          "nazev": "know-how existuje pouze v hlavách lidí",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_72_zn_10",
+          "nazev": "ISO 45001: 7.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – kompetence."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_oopp",
+          "nazev": "Řízení osobních ochranných pracovních prostředků",
+          "poradi": 220,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_chemie",
+          "nazev": "Řízení chemických látek",
+          "poradi": 230,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prostredi",
+          "nazev": "Řízení pracovního prostředí",
+          "poradi": 240,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dohled",
+          "nazev": "Řízení zdravotního dohledu",
+          "poradi": 250,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_lidsky",
+          "nazev": "Lidský faktor",
+          "poradi": 260,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_znalosti",
+          "nazev": "Řízení znalostí",
+          "poradi": 270,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "predavani_zkusenosti",
+      "nazev": "Předávání zkušeností",
+      "popis": "Ověření předávání zkušeností mezi zaměstnanci.",
+      "cil_overeni": "Ověřit, že zkušenosti jsou systematicky předávány.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "predavani_zkusenosti_predavano",
+          "text": "Zkušenosti jsou předávány mezi zaměstnanci.",
+          "popis": "Organizace ne spoléhá na náhodu.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "predavani_zkusenosti_mentoring",
+          "text": "Mentoring nebo vedení zkušeným pracovníkem je využíván.",
+          "popis": "Nováčci se učí od expertů.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "predavani_zkusenosti_odchod",
+          "text": "Odchod klíčových zaměstnanců spouští předání znalostí.",
+          "popis": "Organizace plánuje.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "predavani_zkusenosti_dokumentovano",
+          "text": "Klíčové zkušenosti jsou dokumentovány.",
+          "popis": "Znalosti nejsou pouze ústní.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "predavani_zkusenosti_cas",
+          "text": "Na předávání znalostí je vyhrazen čas.",
+          "popis": "Předání není ad hoc.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_predavani_zkusenosti_0",
+          "nazev": "plány předání znalostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_predavani_zkusenosti_1",
+          "nazev": "záznamy mentoringu",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_predavani_zkusenosti_2",
+          "nazev": "exit checklisty",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_predavani_zkusenosti_3",
+          "nazev": "dokumentované postupy",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_predavani_zkusenosti_0",
+          "nazev": "mistr",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_predavani_zkusenosti_1",
+          "nazev": "vedoucí směny",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_predavani_zkusenosti_2",
+          "nazev": "technik BOZP",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_predavani_zkusenosti_3",
+          "nazev": "personalista",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_predavani_zkusenosti_0",
+          "nazev": "zkušený pracovník učí nováčka",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_predavani_zkusenosti_1",
+          "nazev": "odchod má plán předání",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_predavani_zkusenosti_0",
+          "nazev": "Zkušenosti nejsou systematicky předávány mezi zaměstnanci.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_predavani_zkusenosti_1",
+          "nazev": "Odchod klíčových zaměstnanců nespouští předání znalostí.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_predavani_zkusenosti_2",
+          "nazev": "Klíčové zkušenosti nejsou dokumentovány.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_predavani_zkusenosti_3",
+          "nazev": "Mentoring není využíván u rizikových prací.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_predavani_zkusenosti_0",
+          "nazev": "Povinný plán předání při odchodu klíčové osoby.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_predavani_zkusenosti_1",
+          "nazev": "Mentoring pro nové zaměstnance na rizikových pracích.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_predavani_zkusenosti_0",
+          "nazev": "odchod mistra bez předání know-how",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_72_zn_10",
+          "nazev": "ISO 45001: 7.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – kompetence."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_oopp",
+          "nazev": "Řízení osobních ochranných pracovních prostředků",
+          "poradi": 220,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_chemie",
+          "nazev": "Řízení chemických látek",
+          "poradi": 230,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prostredi",
+          "nazev": "Řízení pracovního prostředí",
+          "poradi": 240,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dohled",
+          "nazev": "Řízení zdravotního dohledu",
+          "poradi": 250,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_lidsky",
+          "nazev": "Lidský faktor",
+          "poradi": 260,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_znalosti",
+          "nazev": "Řízení znalostí",
+          "poradi": 270,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "adaptace_novych",
+      "nazev": "Adaptace nových zaměstnanců",
+      "popis": "Ověření adaptace nových zaměstnanců z hlediska BOZP znalostí.",
+      "cil_overeni": "Ověřit, že noví zaměstnanci získávají potřebné znalosti pro bezpečnou práci.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "adaptace_novych_program",
+          "text": "Existuje program adaptace s BOZP obsahem.",
+          "popis": "Nováček má strukturovaný nástup.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "adaptace_novych_prakticka",
+          "text": "Adaptace zahrnuje praktickou část na pracovišti.",
+          "popis": "Učení v provozu.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "adaptace_novych_hodnoceni",
+          "text": "Znalosti nového zaměstnance jsou ověřeny před samostatnou prací.",
+          "popis": "Organizace potvrzuje připravenost.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "adaptace_novych_mentor",
+          "text": "Nový zaměstnanec má určeného mentora.",
+          "popis": "Podpora je zajištěna.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "adaptace_novych_dokumentovano",
+          "text": "Průběh adaptace je dokumentován.",
+          "popis": "Existuje záznam.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_adaptace_novych_0",
+          "nazev": "program adaptace",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_adaptace_novych_1",
+          "nazev": "checklist nástupu BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_adaptace_novych_2",
+          "nazev": "záznamy ověření znalostí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_adaptace_novych_3",
+          "nazev": "jmenování mentora",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_adaptace_novych_0",
+          "nazev": "personalista",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_adaptace_novych_1",
+          "nazev": "mistr",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_adaptace_novych_2",
+          "nazev": "technik BOZP",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_adaptace_novych_3",
+          "nazev": "mentor",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_adaptace_novych_0",
+          "nazev": "nováček není samostatný bez ověření",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_adaptace_novych_1",
+          "nazev": "mentor je určen",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_adaptace_novych_0",
+          "nazev": "Neexistuje program adaptace s BOZP obsahem.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_adaptace_novych_1",
+          "nazev": "Adaptace nezahrnuje praktickou část na pracovišti.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_adaptace_novych_2",
+          "nazev": "Znalosti nového zaměstnance nejsou ověřeny před samostatnou prací.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_adaptace_novych_3",
+          "nazev": "Nový zaměstnanec nemá určeného mentora.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_adaptace_novych_0",
+          "nazev": "Standardizovat BOZP checklist adaptace.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_adaptace_novych_1",
+          "nazev": "Ověřit znalosti praktickým testem v provozu.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_adaptace_novych_0",
+          "nazev": "nováček je hned samostatný na rizikové práci",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_72_zn_10",
+          "nazev": "ISO 45001: 7.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – kompetence."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_oopp",
+          "nazev": "Řízení osobních ochranných pracovních prostředků",
+          "poradi": 220,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_chemie",
+          "nazev": "Řízení chemických látek",
+          "poradi": 230,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prostredi",
+          "nazev": "Řízení pracovního prostředí",
+          "poradi": 240,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dohled",
+          "nazev": "Řízení zdravotního dohledu",
+          "poradi": 250,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_lidsky",
+          "nazev": "Lidský faktor",
+          "poradi": 260,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_znalosti",
+          "nazev": "Řízení znalostí",
+          "poradi": 270,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "uchovavani_znalosti",
+      "nazev": "Uchovávání znalostí organizace",
+      "popis": "Ověření uchovávání a dostupnosti znalostí.",
+      "cil_overeni": "Ověřit, že znalosti organizace jsou uchovávány a dostupné.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "uchovavani_znalosti_uchovavany",
+          "text": "Klíčové znalosti jsou uchovávány.",
+          "popis": "Organizace ne ztrácí know-how.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "uchovavani_znalosti_dostupne",
+          "text": "Uchované znalosti jsou dostupné potřebným osobám.",
+          "popis": "Informace lze najít.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "uchovavani_znalosti_aktualni",
+          "text": "Uchované znalosti jsou aktuální.",
+          "popis": "Revize probíhá.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "uchovavani_znalosti_format",
+          "text": "Znalosti jsou uchovávány v použitelné formě.",
+          "popis": "Postupy, karty, videa.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "uchovavani_znalosti_zabezpeceni",
+          "text": "Přístup ke znalostem je řízen.",
+          "popis": "Citlivé informace jsou chráněny.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_uchovavani_znalosti_0",
+          "nazev": "dokumentované postupy",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_uchovavani_znalosti_1",
+          "nazev": "bezpečnostní karty",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_uchovavani_znalosti_2",
+          "nazev": "intranet BOZP",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_uchovavani_znalosti_3",
+          "nazev": "revize dokumentace",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_uchovavani_znalosti_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_uchovavani_znalosti_1",
+          "nazev": "vedoucí provozu",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_uchovavani_znalosti_2",
+          "nazev": "správce dokumentace",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_uchovavani_znalosti_0",
+          "nazev": "znalosti jsou dohledatelné",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_uchovavani_znalosti_1",
+          "nazev": "dokumentace je aktuální",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_uchovavani_znalosti_0",
+          "nazev": "Klíčové znalosti nejsou uchovávány.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_uchovavani_znalosti_1",
+          "nazev": "Uchované znalosti nejsou dostupné potřebným osobám.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_uchovavani_znalosti_2",
+          "nazev": "Uchované znalosti nejsou aktuální.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_uchovavani_znalosti_3",
+          "nazev": "Znalosti jsou uchovávány v nepoužitelné formě.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_uchovavani_znalosti_0",
+          "nazev": "Centralizovat BOZP znalosti na jednom místě.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_uchovavani_znalosti_1",
+          "nazev": "Pravidelná revize klíčových postupů.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_uchovavani_znalosti_0",
+          "nazev": "postup existuje jen ústně",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_75_zn_10",
+          "nazev": "ISO 45001: 7.5",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – dokumentované informace."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_oopp",
+          "nazev": "Řízení osobních ochranných pracovních prostředků",
+          "poradi": 220,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_chemie",
+          "nazev": "Řízení chemických látek",
+          "poradi": 230,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prostredi",
+          "nazev": "Řízení pracovního prostředí",
+          "poradi": 240,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dohled",
+          "nazev": "Řízení zdravotního dohledu",
+          "poradi": 250,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_lidsky",
+          "nazev": "Lidský faktor",
+          "poradi": 260,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_znalosti",
+          "nazev": "Řízení znalostí",
+          "poradi": 270,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "vyuziti_zkusenosti",
+      "nazev": "Využívání zkušeností při zlepšování systému",
+      "popis": "Ověření využití znalostí a zkušeností pro zlepšování BOZP.",
+      "cil_overeni": "Ověřit, že zkušenosti jsou využívány pro zlepšování systému BOZP.",
+      "poradi": 50,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "vyuziti_zkusenosti_vyuzivany",
+          "text": "Zkušenosti zaměstnanců jsou využívány pro zlepšování.",
+          "popis": "Organizace se učí.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyuziti_zkusenosti_incidenty",
+          "text": "Poučení z incidentů je zachyceno a sdíleno.",
+          "popis": "Znalosti rostou.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyuziti_zkusenosti_revize",
+          "text": "Zkušenosti vedou k revizi postupů a školení.",
+          "popis": "Systém se zlepšuje.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyuziti_zkusenosti_sdileni",
+          "text": "Dobré praktiky jsou sdíleny mezi pracovišti.",
+          "popis": "Organizace ne izoluje know-how.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyuziti_zkusenosti_zaznam",
+          "text": "Využití zkušeností je zaznamenáno.",
+          "popis": "Existuje stopa zlepšování.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_vyuziti_zkusenosti_0",
+          "nazev": "revize postupů po incidentech",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyuziti_zkusenosti_1",
+          "nazev": "sdílení dobrých praktik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyuziti_zkusenosti_2",
+          "nazev": "záznamy zlepšování",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyuziti_zkusenosti_3",
+          "nazev": "lessons learned",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_vyuziti_zkusenosti_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyuziti_zkusenosti_1",
+          "nazev": "vedoucí BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyuziti_zkusenosti_2",
+          "nazev": "mistr",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyuziti_zkusenosti_3",
+          "nazev": "vedoucí provozu",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_vyuziti_zkusenosti_0",
+          "nazev": "poučení vede k revizi postupu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_vyuziti_zkusenosti_1",
+          "nazev": "praktiky se sdílejí",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_vyuziti_zkusenosti_0",
+          "nazev": "Zkušenosti zaměstnanců nejsou využívány pro zlepšování BOZP.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyuziti_zkusenosti_1",
+          "nazev": "Poučení z incidentů není zachyceno a sdíleno.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyuziti_zkusenosti_2",
+          "nazev": "Zkušenosti nevedou k revizi postupů a školení.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyuziti_zkusenosti_3",
+          "nazev": "Dobré praktiky nejsou sdíleny mezi pracovišti.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_vyuziti_zkusenosti_0",
+          "nazev": "Zavést formát lessons learned po každém incidentu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_vyuziti_zkusenosti_1",
+          "nazev": "Pravidelné sdílení dobrých praktik mezi provozy.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_vyuziti_zkusenosti_0",
+          "nazev": "stejné chyby se opakují bez poučení",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_103_zn_10",
+          "nazev": "ISO 45001: 10.3",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – zlepšování."
+        },
+        {
+          "id": "iso45001_93_zn_20",
+          "nazev": "ISO 45001: 9.3",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – hodnocení."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_oopp",
+          "nazev": "Řízení osobních ochranných pracovních prostředků",
+          "poradi": 220,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_chemie",
+          "nazev": "Řízení chemických látek",
+          "poradi": 230,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prostredi",
+          "nazev": "Řízení pracovního prostředí",
+          "poradi": 240,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dohled",
+          "nazev": "Řízení zdravotního dohledu",
+          "poradi": 250,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_lidsky",
+          "nazev": "Lidský faktor",
+          "poradi": 260,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_znalosti",
+          "nazev": "Řízení znalostí",
+          "poradi": 270,
+          "aktivni": true
+        }
+      ]
+    }
+  ]
+}

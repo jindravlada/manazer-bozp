@@ -1,0 +1,1917 @@
+{
+  "verze": 1,
+  "id": "rizeni_oopp",
+  "nazev": "Řízení osobních ochranných pracovních prostředků",
+  "popis": "Proces stanovení, přidělování, používání a vyhodnocování OOPP.",
+  "ucel_procesu": "Zajistit, aby organizace:\n- stanovila požadavky na OOPP,\n- přidělovala vhodné OOPP,\n- ověřovala používání v provozu,\n- kontrolovala, udržovala a vyměňovala OOPP,\n- vyhodnocovala účinnost OOPP.",
+  "proc_je_dulezity": "OOPP nejsou jen položka v objednávce.\n\nAuditor ověřuje, zda požadavky odpovídají riziku, zda zaměstnanec OOPP skutečně používá a zda je funkční.\n\nTypická neshoda: OOPP je přiděleno, ale v provozu visí na hřebíku.",
+  "ocekavany_vystup": "Organizace prokazatelně:\n\n- zná požadavky na OOPP u prací,\n- přiděluje vhodné prostředky,\n- kontroluje používání,\n- udržuje a vyměňuje OOPP,\n- vyhodnocuje účinnost.",
+  "poradi": 220,
+  "aktivni": true,
+  "vazby_procesy": [
+    {
+      "id": "vazba_urazy",
+      "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+      "poradi": 10,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_rizika",
+      "nazev": "Řízení rizik",
+      "poradi": 20,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_kompetence",
+      "nazev": "Řízení kompetencí",
+      "poradi": 30,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dokumentace",
+      "nazev": "Řízení dokumentovaných informací",
+      "poradi": 40,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_zmeny",
+      "nazev": "Řízení změn",
+      "poradi": 50,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_napravna",
+      "nazev": "Řízení nápravných opatření",
+      "poradi": 60,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dodavatele",
+      "nazev": "Řízení dodavatelů",
+      "poradi": 70,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_provoz",
+      "nazev": "Řízení provozu",
+      "poradi": 80,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_mu",
+      "nazev": "Připravenost na mimořádné události",
+      "poradi": 90,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_komunikace",
+      "nazev": "Interní komunikace",
+      "poradi": 100,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_prezkoumani",
+      "nazev": "Přezkoumání vedením",
+      "poradi": 110,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_legislativa",
+      "nazev": "Řízení právních a jiných požadavků",
+      "poradi": 120,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_cile",
+      "nazev": "Řízení cílů a programů BOZP",
+      "poradi": 130,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_monitoring",
+      "nazev": "Monitorování a měření",
+      "poradi": 140,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_audity",
+      "nazev": "Interní audity",
+      "poradi": 150,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_neshody",
+      "nazev": "Řízení neshod",
+      "poradi": 160,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_ucast",
+      "nazev": "Konzultace a účast zaměstnanců",
+      "poradi": 170,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_kultura",
+      "nazev": "Bezpečnostní kultura",
+      "poradi": 180,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_externi",
+      "nazev": "Řízení externích pracovníků",
+      "poradi": 190,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_udrzba",
+      "nazev": "Řízení preventivní údržby",
+      "poradi": 200,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_revize",
+      "nazev": "Řízení revizí a kontrol zařízení",
+      "poradi": 210,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_oopp",
+      "nazev": "Řízení osobních ochranných pracovních prostředků",
+      "poradi": 220,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_chemie",
+      "nazev": "Řízení chemických látek",
+      "poradi": 230,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_prostredi",
+      "nazev": "Řízení pracovního prostředí",
+      "poradi": 240,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dohled",
+      "nazev": "Řízení zdravotního dohledu",
+      "poradi": 250,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_lidsky",
+      "nazev": "Lidský faktor",
+      "poradi": 260,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_znalosti",
+      "nazev": "Řízení znalostí",
+      "poradi": 270,
+      "aktivni": true
+    }
+  ],
+  "pozadavky_norem": [
+    {
+      "id": "iso45001_81_oopp_10",
+      "nazev": "ISO 45001: 8.1",
+      "poradi": 10,
+      "aktivni": true,
+      "popis": "Informativní reference – provozní plánování a řízení."
+    },
+    {
+      "id": "iso45001_82_oopp_20",
+      "nazev": "ISO 45001: 8.2",
+      "poradi": 20,
+      "aktivni": true,
+      "popis": "Informativní reference – odstraňování nebezpečí."
+    }
+  ],
+  "sekce": [
+    {
+      "id": "pozadavky_oopp",
+      "nazev": "Stanovení požadavků na OOPP",
+      "popis": "Ověření stanovení požadavků na OOPP podle rizik.",
+      "cil_overeni": "Ověřit, že požadavky na OOPP jsou definovány pro rizikové činnosti.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "pozadavky_oopp_definovany",
+          "text": "Požadavky na OOPP jsou definovány pro rizikové činnosti.",
+          "popis": "Organizace ví, co je potřeba.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pozadavky_oopp_rizika",
+          "text": "Požadavky na OOPP vycházejí z posouzení rizik.",
+          "popis": "OOPP odpovídá nebezpečí.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pozadavky_oopp_typy",
+          "text": "Jsou určeny typy OOPP pro jednotlivá pracoviště.",
+          "popis": "Výběr není náhodný.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pozadavky_oopp_aktualni",
+          "text": "Požadavky na OOPP jsou aktualizovány při změnách.",
+          "popis": "Změna práce mění OOPP.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pozadavky_oopp_dokumentovano",
+          "text": "Požadavky na OOPP jsou dokumentovány.",
+          "popis": "Požadavky jsou dohledatelné.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_pozadavky_oopp_0",
+          "nazev": "matice OOPP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_pozadavky_oopp_1",
+          "nazev": "posouzení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_pozadavky_oopp_2",
+          "nazev": "pracovní instrukce",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_pozadavky_oopp_3",
+          "nazev": "seznam OOPP podle pracovišť",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_pozadavky_oopp_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_pozadavky_oopp_1",
+          "nazev": "vedoucí provozu",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_pozadavky_oopp_2",
+          "nazev": "mistr",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_pozadavky_oopp_3",
+          "nazev": "specialista OOPP",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_pozadavky_oopp_0",
+          "nazev": "matice odpovídá rizikům",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_pozadavky_oopp_1",
+          "nazev": "požadavky jsou u pracoviště",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_pozadavky_oopp_0",
+          "nazev": "Požadavky na OOPP nejsou definovány pro rizikové činnosti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_pozadavky_oopp_1",
+          "nazev": "Požadavky na OOPP ne vycházejí z posouzení rizik.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_pozadavky_oopp_2",
+          "nazev": "Požadavky na OOPP nejsou aktualizovány po změně práce.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_pozadavky_oopp_3",
+          "nazev": "Požadavky na OOPP nejsou dokumentovány.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_pozadavky_oopp_0",
+          "nazev": "Vytvořit matici OOPP pro všechna riziková pracoviště.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_pozadavky_oopp_1",
+          "nazev": "Revidovat požadavky po každé změně rizika.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_pozadavky_oopp_0",
+          "nazev": "OOPP je obecné bez vazby na práci",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_82_oopp_10",
+          "nazev": "ISO 45001: 8.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – odstraňování nebezpečí."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_oopp",
+          "nazev": "Řízení osobních ochranných pracovních prostředků",
+          "poradi": 220,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_chemie",
+          "nazev": "Řízení chemických látek",
+          "poradi": 230,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prostredi",
+          "nazev": "Řízení pracovního prostředí",
+          "poradi": 240,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dohled",
+          "nazev": "Řízení zdravotního dohledu",
+          "poradi": 250,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_lidsky",
+          "nazev": "Lidský faktor",
+          "poradi": 260,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_znalosti",
+          "nazev": "Řízení znalostí",
+          "poradi": 270,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "pridelovani_oopp",
+      "nazev": "Přidělování OOPP",
+      "popis": "Ověření přidělování vhodných OOPP zaměstnancům.",
+      "cil_overeni": "Ověřit, že zaměstnanci obdrží vhodné a funkční OOPP.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "pridelovani_oopp_prideleno",
+          "text": "Zaměstnancům jsou přiděleny předepsané OOPP.",
+          "popis": "Přidělení odpovídá požadavkům.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pridelovani_oopp_vhodne",
+          "text": "Přidělené OOPP odpovídá riziku a velikosti.",
+          "popis": "OOPP sedí a chrání.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pridelovani_oopp_pred_praci",
+          "text": "OOPP je přiděleno před zahájením rizikové práce.",
+          "popis": "Organizace ne spoléhá na dodatečné přidělení.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pridelovani_oopp_evidence",
+          "text": "Přidělení OOPP je evidováno.",
+          "popis": "Existuje záznam o vydání.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pridelovani_oopp_skoleni",
+          "text": "Zaměstnanec je proškolen v používání OOPP.",
+          "popis": "Ví, jak prostředek správně použít.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_pridelovani_oopp_0",
+          "nazev": "evidence vydání OOPP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_pridelovani_oopp_1",
+          "nazev": "potvrzení o převzetí",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_pridelovani_oopp_2",
+          "nazev": "záznamy školení OOPP",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_pridelovani_oopp_3",
+          "nazev": "matice přidělení",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_pridelovani_oopp_0",
+          "nazev": "specialista OOPP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_pridelovani_oopp_1",
+          "nazev": "mistr",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_pridelovani_oopp_2",
+          "nazev": "personalista",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_pridelovani_oopp_3",
+          "nazev": "technik BOZP",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_pridelovani_oopp_0",
+          "nazev": "zaměstnanec má správné OOPP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_pridelovani_oopp_1",
+          "nazev": "vydání je zdokumentováno",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_pridelovani_oopp_0",
+          "nazev": "Zaměstnancům nejsou přiděleny předepsané OOPP.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_pridelovani_oopp_1",
+          "nazev": "Přidělené OOPP neodpovídá riziku nebo velikosti.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_pridelovani_oopp_2",
+          "nazev": "OOPP není přiděleno před zahájením rizikové práce.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_pridelovani_oopp_3",
+          "nazev": "Přidělení OOPP není evidováno.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_pridelovani_oopp_0",
+          "nazev": "Zavést potvrzení o převzetí a zaškolení OOPP.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_pridelovani_oopp_1",
+          "nazev": "Kontrolovat velikost a typ OOPP při nástupu.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_pridelovani_oopp_0",
+          "nazev": "OOPP je v skladu, ale ne u pracovníka",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_72_oopp_10",
+          "nazev": "ISO 45001: 7.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – kompetence."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_oopp",
+          "nazev": "Řízení osobních ochranných pracovních prostředků",
+          "poradi": 220,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_chemie",
+          "nazev": "Řízení chemických látek",
+          "poradi": 230,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prostredi",
+          "nazev": "Řízení pracovního prostředí",
+          "poradi": 240,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dohled",
+          "nazev": "Řízení zdravotního dohledu",
+          "poradi": 250,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_lidsky",
+          "nazev": "Lidský faktor",
+          "poradi": 260,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_znalosti",
+          "nazev": "Řízení znalostí",
+          "poradi": 270,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "pouzivani_oopp",
+      "nazev": "Používání OOPP",
+      "popis": "Ověření používání OOPP v provozu.",
+      "cil_overeni": "Ověřit, že zaměstnanci skutečně používají předepsané OOPP.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "pouzivani_oopp_pouzivaji",
+          "text": "Zaměstnanci používají předepsané OOPP.",
+          "popis": "OOPP není odloženo.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pouzivani_oopp_spravne",
+          "text": "OOPP je používáno správným způsobem.",
+          "popis": "Prostředek plní svou funkci.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pouzivani_oopp_kontrola",
+          "text": "Používání OOPP je kontrolováno vedoucími.",
+          "popis": "Dohled probíhá.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pouzivani_oopp_poruseni",
+          "text": "Porušení povinnosti používat OOPP je řešeno.",
+          "popis": "Organizace reaguje.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pouzivani_oopp_nahradni",
+          "text": "Při dočasném ne použití jsou zavedena náhradní opatření.",
+          "popis": "Riziko je ošetřeno.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_pouzivani_oopp_0",
+          "nazev": "záznamy kontrol v provozu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_pouzivani_oopp_1",
+          "nazev": "evidence porušení",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_pouzivani_oopp_2",
+          "nazev": "pozorování v provozu",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_pouzivani_oopp_0",
+          "nazev": "mistr",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_pouzivani_oopp_1",
+          "nazev": "vedoucí směny",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_pouzivani_oopp_2",
+          "nazev": "technik BOZP",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_pouzivani_oopp_3",
+          "nazev": "zaměstnanci",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_pouzivani_oopp_0",
+          "nazev": "OOPP je používáno v provozu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_pouzivani_oopp_1",
+          "nazev": "vedoucí kontroluje dodržování",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_pouzivani_oopp_0",
+          "nazev": "Zaměstnanci nepoužívají předepsané OOPP v provozu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_pouzivani_oopp_1",
+          "nazev": "OOPP není používáno správným způsobem.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_pouzivani_oopp_2",
+          "nazev": "Používání OOPP není kontrolováno vedoucími.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_pouzivani_oopp_3",
+          "nazev": "Porušení povinnosti používat OOPP není řešeno.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_pouzivani_oopp_0",
+          "nazev": "Pravidelné kontroly používání OOPP v provozu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_pouzivani_oopp_1",
+          "nazev": "Posílit dohled vedoucích u rizikových prací.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_pouzivani_oopp_0",
+          "nazev": "OOPP visí na hřebíku, práce probíhá bez něj",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_82_oopp_10",
+          "nazev": "ISO 45001: 8.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – odstraňování nebezpečí."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_oopp",
+          "nazev": "Řízení osobních ochranných pracovních prostředků",
+          "poradi": 220,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_chemie",
+          "nazev": "Řízení chemických látek",
+          "poradi": 230,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prostredi",
+          "nazev": "Řízení pracovního prostředí",
+          "poradi": 240,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dohled",
+          "nazev": "Řízení zdravotního dohledu",
+          "poradi": 250,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_lidsky",
+          "nazev": "Lidský faktor",
+          "poradi": 260,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_znalosti",
+          "nazev": "Řízení znalostí",
+          "poradi": 270,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "kontrola_udrzba_oopp",
+      "nazev": "Kontrola, údržba a výměna",
+      "popis": "Ověření kontroly stavu a výměny OOPP.",
+      "cil_overeni": "Ověřit, že OOPP je kontrolováno, udržováno a včas vyměňováno.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "kontrola_udrzba_oopp_kontrolovano",
+          "text": "Stav OOPP je pravidelně kontrolován.",
+          "popis": "Organizace sleduje opotřebení.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "kontrola_udrzba_oopp_vymena",
+          "text": "OOPP je vyměňováno podle životnosti nebo poškození.",
+          "popis": "Poškozené OOPP není používáno.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "kontrola_udrzba_oopp_cisteni",
+          "text": "OOPP je udržováno v čistotě a funkčním stavu.",
+          "popis": "Údržba ovlivňuje ochranu.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "kontrola_udrzba_oopp_skladovani",
+          "text": "OOPP je skladováno vhodným způsobem.",
+          "popis": "Skladování ne poškozuje prostředek.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "kontrola_udrzba_oopp_evidence",
+          "text": "Kontrola a výměna OOPP je evidována.",
+          "popis": "Existuje historie.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_kontrola_udrzba_oopp_0",
+          "nazev": "evidence kontrol OOPP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_kontrola_udrzba_oopp_1",
+          "nazev": "plán výměn",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_kontrola_udrzba_oopp_2",
+          "nazev": "skladové karty",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_kontrola_udrzba_oopp_3",
+          "nazev": "záznamy likvidace poškozeného OOPP",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_kontrola_udrzba_oopp_0",
+          "nazev": "specialista OOPP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_kontrola_udrzba_oopp_1",
+          "nazev": "mistr",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_kontrola_udrzba_oopp_2",
+          "nazev": "technik BOZP",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_kontrola_udrzba_oopp_0",
+          "nazev": "OOPP není poškozené",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_kontrola_udrzba_oopp_1",
+          "nazev": "výměna probíhá včas",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_kontrola_udrzba_oopp_0",
+          "nazev": "Stav OOPP není pravidelně kontrolován.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_kontrola_udrzba_oopp_1",
+          "nazev": "Poškozené OOPP je nadále používáno.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_kontrola_udrzba_oopp_2",
+          "nazev": "OOPP není vyměňováno podle životnosti.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_kontrola_udrzba_oopp_3",
+          "nazev": "OOPP není skladováno vhodným způsobem.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_kontrola_udrzba_oopp_0",
+          "nazev": "Měsíční vizuální kontrola OOPP u pracovišť.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_kontrola_udrzba_oopp_1",
+          "nazev": "Okamžitá výměna po zjištění poškození.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_kontrola_udrzba_oopp_0",
+          "nazev": "OOPP je viditelně opotřebené",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_81_oopp_10",
+          "nazev": "ISO 45001: 8.1",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – provozní plánování."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_oopp",
+          "nazev": "Řízení osobních ochranných pracovních prostředků",
+          "poradi": 220,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_chemie",
+          "nazev": "Řízení chemických látek",
+          "poradi": 230,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prostredi",
+          "nazev": "Řízení pracovního prostředí",
+          "poradi": 240,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dohled",
+          "nazev": "Řízení zdravotního dohledu",
+          "poradi": 250,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_lidsky",
+          "nazev": "Lidský faktor",
+          "poradi": 260,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_znalosti",
+          "nazev": "Řízení znalostí",
+          "poradi": 270,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "ucinnost_oopp",
+      "nazev": "Vyhodnocování účinnosti OOPP",
+      "popis": "Ověření vyhodnocování účinnosti zvolených OOPP.",
+      "cil_overeni": "Ověřit, že organizace vyhodnocuje, zda OOPP skutečně chrání.",
+      "poradi": 50,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "ucinnost_oopp_vyhodnocuje",
+          "text": "Účinnost OOPP je vyhodnocována.",
+          "popis": "Organizace ne spoléhá na papír.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "ucinnost_oopp_incidenty",
+          "text": "Incidenty související s OOPP jsou analyzovány.",
+          "popis": "Selhání vede k revizi.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "ucinnost_oopp_revize",
+          "text": "Výběr OOPP je revidován podle zkušeností.",
+          "popis": "Lepší prostředek je zvolen.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "ucinnost_oopp_zaznam",
+          "text": "Výsledky vyhodnocení jsou zaznamenány.",
+          "popis": "Existuje poučení.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "ucinnost_oopp_zlepsovani",
+          "text": "Z vyhodnocení vyplynou opatření pro zlepšení.",
+          "popis": "OOPP se zlepšuje.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_ucinnost_oopp_0",
+          "nazev": "analýzy incidentů s OOPP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_ucinnost_oopp_1",
+          "nazev": "revize matice OOPP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_ucinnost_oopp_2",
+          "nazev": "hodnocení dodavatelů OOPP",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_ucinnost_oopp_3",
+          "nazev": "záznamy opatření",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_ucinnost_oopp_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_ucinnost_oopp_1",
+          "nazev": "specialista OOPP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_ucinnost_oopp_2",
+          "nazev": "vedoucí provozu",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_ucinnost_oopp_0",
+          "nazev": "OOPP odpovídá skutečnému riziku",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_ucinnost_oopp_1",
+          "nazev": "incidenty vedou k revizi",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_ucinnost_oopp_0",
+          "nazev": "Účinnost OOPP není vyhodnocována.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_ucinnost_oopp_1",
+          "nazev": "Incidenty související s OOPP nejsou analyzovány.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_ucinnost_oopp_2",
+          "nazev": "Výběr OOPP není revidován podle zkušeností.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_ucinnost_oopp_3",
+          "nazev": "Z vyhodnocení nevyplývají opatření pro zlepšení.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_ucinnost_oopp_0",
+          "nazev": "Revize matice OOPP po každém relevantním incidentu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_ucinnost_oopp_1",
+          "nazev": "Konzultovat výběr OOPP s dodavatelem při změně rizika.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_ucinnost_oopp_0",
+          "nazev": "stejné neúčinné OOPP se používá opakovaně",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_103_oopp_10",
+          "nazev": "ISO 45001: 10.3",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – zlepšování."
+        },
+        {
+          "id": "iso45001_91_oopp_20",
+          "nazev": "ISO 45001: 9.1",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – monitorování."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_oopp",
+          "nazev": "Řízení osobních ochranných pracovních prostředků",
+          "poradi": 220,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_chemie",
+          "nazev": "Řízení chemických látek",
+          "poradi": 230,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prostredi",
+          "nazev": "Řízení pracovního prostředí",
+          "poradi": 240,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dohled",
+          "nazev": "Řízení zdravotního dohledu",
+          "poradi": 250,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_lidsky",
+          "nazev": "Lidský faktor",
+          "poradi": 260,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_znalosti",
+          "nazev": "Řízení znalostí",
+          "poradi": 270,
+          "aktivni": true
+        }
+      ]
+    }
+  ]
+}
