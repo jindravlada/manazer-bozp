@@ -26,6 +26,9 @@ from moduly.audity.constants import (
 )
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.audity.ui.audit_dialog import AuditDialog
+from moduly.audity.ui.audit_program_manager_banner_widget import (
+    AuditProgramManagerBannerWidget,
+)
 from moduly.audity.ui.audit_program_manager_dialog import AuditProgramManagerDialog
 from moduly.audity.ui.audity_knowledge_editor_dialog import AudityKnowledgeEditorDialog
 from moduly.audity.ui.audit_table import AuditTable
@@ -76,6 +79,11 @@ class AudityPage(QWidget):
         configure_table_columns(self.table, "audity")
 
         layout.addLayout(toolbar)
+
+        self._program_manager_banner = AuditProgramManagerBannerWidget()
+        self._program_manager_banner.open_manager_requested.connect(self.open_program_manager)
+        layout.addWidget(self._program_manager_banner)
+
         layout.addWidget(self.table)
 
         self.new_btn.clicked.connect(self.new_audit)
@@ -94,6 +102,7 @@ class AudityPage(QWidget):
         audits = self._filter_audits(audit_service.get_all())
         self.table.load_audits(audits)
         configure_table_columns(self.table, "audity")
+        self._program_manager_banner.refresh()
 
     def _populate_year_filter(self) -> None:
         current_year = date.today().year

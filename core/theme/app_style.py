@@ -231,6 +231,17 @@ def apply_app_style(app: QApplication) -> None:
             font-weight: bold;
         }
 
+        QFrame#AuditProgramManagerBanner {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+        }
+
+        QLabel#AuditProgramManagerBannerTitle {
+            font-size: 15px;
+            font-weight: bold;
+        }
+
         QLabel#ControlResultPhotoThumbnail {
             background-color: #f9fafb;
             border: 1px solid #e5e7eb;

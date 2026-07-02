@@ -5,6 +5,8 @@ from datetime import date, datetime
 from moduly.audity.constants import (
     AUDIT_PROGRAM_MANUAL_DISTRIBUTE_BLOCKED,
     AUDIT_PROGRAM_MANUAL_GENERATE_BLOCKED,
+    AUDIT_PROGRAM_STATUS_APPROVED,
+    AUDIT_PROGRAM_STATUS_RUNNING,
     AUDIT_PROGRAM_STATUSES,
     AUDIT_PROGRAM_VISIT_HAS_AUDIT,
     AUDIT_PROGRAM_VISIT_PROCESS_STATUS_COMPLETED,
@@ -43,7 +45,10 @@ from moduly.nastaveni.sluzby.workplace_audit_planning import (
     parse_preferred_months_json,
     plan_visit_months,
 )
-from moduly.audity.sluzby.audit_program_visit_formatting import visit_sort_key
+from moduly.audity.sluzby.audit_program_visit_formatting import (
+    format_planned_term,
+    visit_sort_key,
+)
 
 
 @dataclass(frozen=True)
@@ -96,6 +101,17 @@ class PlannedVisitOverviewRow:
 
 
 @dataclass(frozen=True)
+class AuditProgramBannerInfo:
+    has_program: bool
+    program_id: int | None
+    program_name: str
+    period_label: str
+    completion_percent: float | None
+    nearest_visit_term: str | None
+    nearest_visit_workplace: str | None
+
+
+@dataclass(frozen=True)
 class AuditProgramGenerationResult:
     created_visits: tuple[AuditProgramVisit, ...]
     skipped_existing: int
@@ -118,11 +134,112 @@ class AuditProgramService:
         saved.number = self._make_number(saved.id)
         return self.repository.update_program(saved)
 
-    def get_program(self, program_id: int) -> AuditProgram | None:
-        return self.repository.get_program(program_id)
-
     def list_programs(self) -> list[AuditProgram]:
         return self.repository.list_programs()
+
+    def get_active_program(self) -> AuditProgram | None:
+        programs = self.list_programs()
+        if not programs:
+            return None
+
+        for status in (AUDIT_PROGRAM_STATUS_RUNNING, AUDIT_PROGRAM_STATUS_APPROVED):
+            candidates = [program for program in programs if program.status == status]
+            if candidates:
+                return self._newest_program(candidates)
+        return self._newest_program(programs)
+
+    def get_banner_info(self) -> AuditProgramBannerInfo:
+        program = self.get_active_program()
+        if program is None:
+            return AuditProgramBannerInfo(
+                has_program=False,
+                program_id=None,
+                program_name="",
+                period_label="",
+                completion_percent=None,
+                nearest_visit_term=None,
+                nearest_visit_workplace=None,
+            )
+
+        coverage = self.get_program_coverage(program.id)
+        completion = coverage.completion_percent if coverage is not None else None
+        nearest_visit = self.get_nearest_unstarted_visit(program.id)
+        nearest_term = None
+        nearest_workplace = None
+        if nearest_visit is not None:
+            nearest_term = format_planned_term(
+                planned_date=nearest_visit.planned_date,
+                planned_year=nearest_visit.planned_year,
+                planned_month=nearest_visit.planned_month,
+            )
+            nearest_workplace = self._resolve_visit_workplace_name(program.id, nearest_visit)
+
+        return AuditProgramBannerInfo(
+            has_program=True,
+            program_id=program.id,
+            program_name=program.name.strip() or program.number.strip(),
+            period_label=self._format_program_period(program.date_from, program.date_to),
+            completion_percent=completion,
+            nearest_visit_term=nearest_term,
+            nearest_visit_workplace=nearest_workplace or None,
+        )
+
+    def get_nearest_unstarted_visit(self, program_id: int) -> AuditProgramVisit | None:
+        visits = [
+            visit
+            for visit in self.repository.list_visits(program_id)
+            if visit.status != AUDIT_PROGRAM_VISIT_STATUS_SKIPPED
+            and visit.audit_id is None
+        ]
+        if not visits:
+            return None
+
+        today = date.today()
+        dated_visits = [
+            (self._visit_effective_date(visit), visit)
+            for visit in visits
+            if self._visit_effective_date(visit) is not None
+        ]
+        if not dated_visits:
+            return sorted(visits, key=visit_sort_key)[0]
+
+        dated_visits.sort(key=lambda item: (item[0], item[1].id))
+        upcoming = [visit for effective, visit in dated_visits if effective >= today]
+        if upcoming:
+            return upcoming[0]
+
+        return dated_visits[-1][1]
+
+    @staticmethod
+    def _newest_program(programs: list[AuditProgram]) -> AuditProgram:
+        return max(
+            programs,
+            key=lambda program: (
+                program.date_from or date.min,
+                program.created_at or datetime.min,
+                program.id,
+            ),
+        )
+
+    @staticmethod
+    def _visit_effective_date(visit: AuditProgramVisit) -> date | None:
+        if visit.planned_date is not None:
+            return visit.planned_date
+        if visit.planned_year and visit.planned_month:
+            return date(visit.planned_year, visit.planned_month, 1)
+        return None
+
+    @staticmethod
+    def _format_program_period(date_from: date | None, date_to: date | None) -> str:
+        if date_from is None or date_to is None:
+            return "—"
+        return (
+            f"{date_from.day}. {date_from.month}. {date_from.year} – "
+            f"{date_to.day}. {date_to.month}. {date_to.year}"
+        )
+
+    def get_program(self, program_id: int) -> AuditProgram | None:
+        return self.repository.get_program(program_id)
 
     def update_program(self, program_id: int, **fields) -> AuditProgram:
         program = self.repository.get_program(program_id)
@@ -780,6 +897,18 @@ class AuditProgramService:
             return
         program.manual_planning = True
         self.repository.update_program(program)
+
+    def _resolve_visit_workplace_name(
+        self,
+        program_id: int,
+        visit: AuditProgramVisit,
+    ) -> str:
+        for workplace in self.repository.list_workplaces(program_id):
+            if workplace.workplace_id == visit.workplace_id:
+                name = workplace.workplace_name.strip()
+                if name:
+                    return name
+        return self._resolve_workplace_name(visit)
 
     @staticmethod
     def _resolve_workplace_name(visit: AuditProgramVisit) -> str:
