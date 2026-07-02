@@ -16,15 +16,19 @@ from moduly.audity.constants import (
 )
 from moduly.audity.sluzby.audit_knowledge_service import KnowledgeTreeNode, audit_knowledge_service
 from moduly.audity.ui.audit_knowledge_tree_widget import AuditKnowledgeTreeWidget
-from moduly.audity.ui.audit_process_knowledge_widget import AuditProcessKnowledgeWidget
+from moduly.audity.ui.audit_process_knowledge_widget import (
+    AuditProcessKnowledgeWidget,
+    AuditProcessOverviewWidget,
+)
 
 
 class AuditProcessesWidget(QWidget):
-    """Záložka Auditované procesy — strom procesů a pracovní karta."""
+    """Záložka Řídicí procesy — strom procesů a pracovní karta."""
 
     _PAGE_HINT = 0
     _PAGE_PLACEHOLDER = 1
-    _PAGE_KNOWLEDGE = 2
+    _PAGE_OVERVIEW = 2
+    _PAGE_KNOWLEDGE = 3
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -60,6 +64,8 @@ class AuditProcessesWidget(QWidget):
         self.content_stack = QStackedWidget()
         self.content_stack.addWidget(self._build_hint_page())
         self.content_stack.addWidget(self._build_placeholder_page())
+        self.overview_widget = AuditProcessOverviewWidget()
+        self.content_stack.addWidget(self.overview_widget)
         self.knowledge_widget = AuditProcessKnowledgeWidget()
         self.content_stack.addWidget(self.knowledge_widget)
 
@@ -121,10 +127,11 @@ class AuditProcessesWidget(QWidget):
         self._current_criterion_label = ""
         self.process_title_label.setText(TAB_AUDITOVANE_PROCESY)
         self.process_description_label.setText(
-            f"Vyberte {PROCESS_TERM_CRITERION.lower()} ve stromu auditovaných procesů vlevo."
+            f"Vyberte {PROCESS_TERM_CRITERION.lower()} ve stromu řídicích procesů vlevo."
         )
         self.process_description_label.setVisible(True)
         self.knowledge_widget.clear_criterion()
+        self.overview_widget.show_process(None)
         self.content_stack.setCurrentIndex(self._PAGE_HINT)
 
     def _on_process_selected(self, node: KnowledgeTreeNode) -> None:
@@ -154,9 +161,12 @@ class AuditProcessesWidget(QWidget):
             self.process_description_label.setVisible(True)
 
         self.knowledge_widget.clear_criterion()
-        if process_def and process_def.has_knowledge_file and node.children:
-            self.content_stack.setCurrentIndex(self._PAGE_HINT)
+        if process_def and process_def.has_knowledge_file:
+            knowledge = audit_knowledge_service.load_process_knowledge(process_def)
+            self.overview_widget.show_process(knowledge)
+            self.content_stack.setCurrentIndex(self._PAGE_OVERVIEW)
         else:
+            self.overview_widget.show_process(None)
             self.content_stack.setCurrentIndex(self._PAGE_PLACEHOLDER)
 
     def _on_criterion_selected(self, node: KnowledgeTreeNode | None) -> None:
@@ -179,10 +189,11 @@ class AuditProcessesWidget(QWidget):
 
         self.process_title_label.setText(node.process_label)
         criterion_popis = str(criterion.get("popis") or "").strip()
+        cil_overeni = audit_knowledge_service.get_text_field(criterion, "cil_overeni")
         header_parts = []
-        if self._current_process_purpose:
-            header_parts.append(f"Účel procesu: {self._current_process_purpose}")
-        if criterion_popis:
+        if cil_overeni:
+            header_parts.append(f"Cíl ověření: {cil_overeni}")
+        elif criterion_popis:
             header_parts.append(f"{PROCESS_TERM_CRITERION}: {criterion_popis}")
         if header_parts:
             self.process_description_label.setText("\n\n".join(header_parts))

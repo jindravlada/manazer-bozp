@@ -66,7 +66,7 @@ AUDIT_STATUS_BY_FILTER = {
 
 YEAR_FILTER_VSE = "Vše"
 
-TAB_AUDITOVANE_PROCESY = "Auditované procesy"
+TAB_AUDITOVANE_PROCESY = "Řídicí procesy"
 
 COMMISSION_RECORD_LEADER = "vedouci_komise"
 COMMISSION_RECORD_WORKPLACE = "zastupce_pracoviste"
@@ -120,9 +120,29 @@ TAB_LABELS = (
 )
 
 PROCESS_PANEL_LEFT_WIDTH = 260
-PROCESS_NOT_IMPLEMENTED_TEXT = "Tento auditovaný proces zatím není implementován."
+PROCESS_NOT_IMPLEMENTED_TEXT = "Tento řídicí proces zatím není implementován."
 PROCESS_PART_NOT_IMPLEMENTED_TEXT = "Tato část bude doplněna."
 KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT = PROCESS_PART_NOT_IMPLEMENTED_TEXT
+
+GUIDE_BLOCK_UNDERSTAND = "Pochop proces"
+GUIDE_BLOCK_VERIFY = "Ověř fungování"
+GUIDE_BLOCK_EVALUATE = "Vyhodnoť"
+
+GUIDE_LABEL_UCEL = "Účel procesu"
+GUIDE_LABEL_WHY_IMPORTANT = "Proč je důležitý"
+GUIDE_LABEL_EXPECTED_OUTPUT = "Očekávaný výstup procesu"
+GUIDE_LABEL_PROCESS_LINKS = "Vazby na ostatní řídicí procesy"
+GUIDE_LABEL_NORM_REQUIREMENTS = "Související požadavky norem"
+GUIDE_LABEL_VERIFICATION_GOAL = "Cíl ověření"
+GUIDE_LABEL_AREAS = "Oblasti ověření"
+GUIDE_LABEL_OBJECTIVE_EVIDENCE = "Doporučené objektivní důkazy"
+GUIDE_LABEL_RECOMMENDED_INTERVIEWS = "Doporučené rozhovory / role"
+GUIDE_LABEL_OBSERVATIONS_IN_OPERATION = "Možné pozorování v provozu"
+GUIDE_LABEL_TYPICAL_NONCONFORMITIES = "Typické neshody"
+
+GUIDE_SELECT_AREA_FOR_EVALUATION = (
+    "Vyberte oblast ověření ve stromu vlevo pro vyhodnocení návodných otázek."
+)
 KNOWLEDGE_REFERENCE_PHOTOS_TITLE = "📷 Referenční fotografie"
 REFERENCE_PHOTO_THUMBNAIL_SIZE = 120
 REFERENCE_PHOTO_PLACEHOLDER_WIDTH = 220
@@ -135,10 +155,10 @@ FINDING_DIALOG_TITLE = "Zjištění auditu"
 FINDING_CREATE_FROM_CONTROL_POINT_LABEL = "➕ Založit zjištění"
 FINDING_OPEN_EXISTING_LABEL = "Otevřít zjištění"
 FINDING_CREATED_LABEL = "Zjištění založeno"
-FINDING_DUPLICATE_MESSAGE = "Pro tuto auditní otázku už existuje zjištění. Otevře se existující záznam."
+FINDING_DUPLICATE_MESSAGE = "Pro tuto návodnou otázku už existuje zjištění. Otevře se existující záznam."
 AUDIT_MUST_BE_SAVED_MESSAGE = "Audit je nutné nejdříve uložit."
 FINDING_REQUIRES_NONCOMPLIANCE_MESSAGE = (
-    "Zjištění lze založit pouze u auditní otázky s výsledkem „Nevyhovuje“."
+    "Zjištění lze založit pouze u návodné otázky s výsledkem „Nevyhovuje“."
 )
 
 AUDIT_FINDING_TYPE_NESHODA = "neshoda"
@@ -153,12 +173,12 @@ AUDIT_FINDING_TYPE_LABELS = {
 
 AUDIT_FINDING_TYPES = frozenset(AUDIT_FINDING_TYPE_LABELS.keys())
 
-PROCESS_TERM_PROCESS = "Auditovaný proces"
-PROCESS_TERM_CRITERION = "Kritérium"
-PROCESS_TERM_QUESTION = "Auditní otázka"
+PROCESS_TERM_PROCESS = "Řídicí proces"
+PROCESS_TERM_CRITERION = "Oblast ověření"
+PROCESS_TERM_QUESTION = "Návodná otázka"
 
 CONTROL_POINT_HISTORY_EMPTY = "Zatím bez historie."
-CONTROL_POINT_HISTORY_SELECT = "Vyberte auditní otázku vlevo."
+CONTROL_POINT_HISTORY_SELECT = "Vyberte návodnou otázku vlevo."
 CONTROL_POINT_HISTORY_LIMIT = 5
 CONTROL_POINT_HISTORY_WORKPLACE_TITLE = "Historie tohoto auditovaného provozu"
 CONTROL_POINT_SHARED_EXPERIENCES_TITLE = "Sdílené zkušenosti"

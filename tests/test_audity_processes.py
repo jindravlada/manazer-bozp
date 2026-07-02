@@ -131,7 +131,7 @@ class AudityProcessesTestCase(unittest.TestCase):
         tree.reload_tree()
 
         labels = [tree.topLevelItem(i).text(0) for i in range(tree.topLevelItemCount())]
-        self.assertIn("Plánování systému BOZP", labels)
+        self.assertIn("Řízení plánování systému BOZP", labels)
 
     def test_select_criterion_shows_question(self) -> None:
         from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
@@ -146,7 +146,61 @@ class AudityProcessesTestCase(unittest.TestCase):
         self.assertEqual(widget.content_stack.currentIndex(), widget._PAGE_KNOWLEDGE)
 
         criterion_widget = widget.knowledge_widget.criterion_widget
-        self.assertIn("politika_schvalena", criterion_widget._control_point_frames)
+        self.assertIn("politika_promitnuti", criterion_widget._control_point_frames)
+
+    def test_select_process_shows_guide_overview(self) -> None:
+        from PySide6.QtWidgets import QLabel
+        from moduly.audity.constants import (
+            GUIDE_BLOCK_EVALUATE,
+            GUIDE_BLOCK_UNDERSTAND,
+            GUIDE_BLOCK_VERIFY,
+        )
+        from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
+
+        widget = AuditProcessesWidget()
+        widget.knowledge_tree.select_node("planovani_bozp")
+
+        self.assertEqual(widget.content_stack.currentIndex(), widget._PAGE_OVERVIEW)
+        overview_text = widget.overview_widget._content_host.findChildren(QLabel)
+        texts = {label.text() for label in overview_text}
+        self.assertIn(GUIDE_BLOCK_UNDERSTAND, texts)
+        self.assertIn(GUIDE_BLOCK_VERIFY, texts)
+        self.assertIn(GUIDE_BLOCK_EVALUATE, texts)
+
+    def test_criterion_shows_guide_blocks_and_seed_content(self) -> None:
+        from PySide6.QtWidgets import QLabel
+        from moduly.audity.constants import (
+            GUIDE_BLOCK_EVALUATE,
+            GUIDE_BLOCK_UNDERSTAND,
+            GUIDE_BLOCK_VERIFY,
+            GUIDE_LABEL_OBJECTIVE_EVIDENCE,
+            GUIDE_LABEL_TYPICAL_NONCONFORMITIES,
+            GUIDE_LABEL_VERIFICATION_GOAL,
+        )
+        from moduly.audity.ui.audit_knowledge_criterion_widget import AuditKnowledgeCriterionWidget
+
+        criterion = audit_knowledge_service.get_criterion("planovani_bozp", "cile_politika")
+        assert criterion is not None
+
+        widget = AuditKnowledgeCriterionWidget()
+        widget.set_criterion(
+            criterion,
+            area_id="planovani_bozp",
+            area_label="Řízení plánování systému BOZP",
+            section_label="Politika, cíle a plánování",
+        )
+
+        labels = {label.text() for label in widget.findChildren(QLabel)}
+        self.assertIn(GUIDE_BLOCK_UNDERSTAND, labels)
+        self.assertIn(GUIDE_BLOCK_VERIFY, labels)
+        self.assertIn(GUIDE_BLOCK_EVALUATE, labels)
+        self.assertIn(GUIDE_LABEL_VERIFICATION_GOAL, labels)
+        self.assertIn(GUIDE_LABEL_OBJECTIVE_EVIDENCE, labels)
+        self.assertIn(GUIDE_LABEL_TYPICAL_NONCONFORMITIES, labels)
+        self.assertIn(
+            "Jak organizace zajišťuje, že politika BOZP a cíle BOZP jsou promítnuty do skutečného řízení práce?",
+            labels,
+        )
 
     def test_control_result_persists_after_reopen(self) -> None:
         audit = self._create_audit_with_team()
@@ -214,8 +268,8 @@ class AudityProcessesTestCase(unittest.TestCase):
         widget.set_criterion(
             criterion,
             area_id="planovani_bozp",
-            area_label="Plánování systému BOZP",
-            section_label="Cíle a politika BOZP",
+            area_label="Řízení plánování systému BOZP",
+            section_label="Politika, cíle a plánování",
         )
 
         question = audit_knowledge_service.get_audit_questions(criterion)[0]
@@ -226,9 +280,9 @@ class AudityProcessesTestCase(unittest.TestCase):
         finding = findings[0]
         self.assertEqual(finding.entity_type, ENTITY_AUDITY)
         self.assertEqual(finding.entity_id, audit.id)
-        self.assertEqual(finding.source_area_label, "Plánování systému BOZP")
-        self.assertEqual(finding.source_section_label, "Cíle a politika BOZP")
-        self.assertEqual(finding.source_control_point_id, "politika_schvalena")
+        self.assertEqual(finding.source_area_label, "Řízení plánování systému BOZP")
+        self.assertEqual(finding.source_section_label, "Politika, cíle a plánování")
+        self.assertEqual(finding.source_control_point_id, "politika_promitnuti")
         self.assertEqual(finding.reference_label, stable_key)
 
     @patch("moduly.audity.ui.audit_knowledge_criterion_widget.FindingDialog")
@@ -271,8 +325,8 @@ class AudityProcessesTestCase(unittest.TestCase):
         dialog.processes_widget.knowledge_widget.criterion_widget.set_criterion(
             criterion,
             area_id="planovani_bozp",
-            area_label="Plánování systému BOZP",
-            section_label="Cíle a politika BOZP",
+            area_label="Řízení plánování systému BOZP",
+            section_label="Politika, cíle a plánování",
         )
 
         question = audit_knowledge_service.get_audit_questions(criterion)[0]

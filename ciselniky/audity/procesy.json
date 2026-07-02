@@ -1,9 +1,9 @@
 {
-  "verze": 1,
+  "verze": 2,
   "procesy": [
     {
       "id": "planovani_bozp",
-      "nazev": "Plánování systému BOZP",
+      "nazev": "Řízení plánování systému BOZP",
       "popis": "Proces plánování a řízení BOZP v organizaci.",
       "ucel_procesu": "Zajistit systematické plánování prevence rizik a cílů BOZP.",
       "poradi": 10,

@@ -36,9 +36,12 @@ _KNOWLEDGE_LIST_FIELDS = (
     "postup_kontroly",
     "referencni_fotografie",
     "kontrolni_body",
+    "navodne_otazky",
     "typicke_neshody",
     "typicke_zavady",
     "doporucene_postupy",
+    "doporucene_rozhovory",
+    "pozorovani_v_provozu",
     "legislativa",
     "pozadavky_normy",
     "objektivni_dukazy",
@@ -48,6 +51,15 @@ _KNOWLEDGE_LIST_FIELDS = (
     "vazby_procesy",
     "historie",
 )
+
+_KNOWLEDGE_TEXT_FIELDS = (
+    "ucel_procesu",
+    "proc_je_dulezity",
+    "ocekavany_vystup",
+    "cil_overeni",
+)
+
+_MERGE_SKIP_LIST_FIELDS = frozenset({"kontrolni_body", "navodne_otazky"})
 
 EDITABLE_SECTION_PROCEDURE_FIELDS: tuple[tuple[str, str], ...] = (
     ("Postup auditu", "postup_kontroly"),
@@ -431,7 +443,7 @@ class AuditKnowledgeService:
                 continue
 
             for field in _KNOWLEDGE_LIST_FIELDS:
-                if field == "kontrolni_body":
+                if field in _MERGE_SKIP_LIST_FIELDS:
                     continue
                 if not self._list_field_is_empty(user_section.get(field)):
                     continue
@@ -456,6 +468,23 @@ class AuditKnowledgeService:
 
         if full_severity_sync:
             user[_ZAVAZNOST_SEED_SYNC_KEY] = _ZAVAZNOST_SEED_SYNC_VERSION
+            changed = True
+
+        for field in _KNOWLEDGE_TEXT_FIELDS:
+            if not self._text_field_is_empty(user.get(field)):
+                continue
+            seed_value = str(seed.get(field) or "").strip()
+            if seed_value:
+                user[field] = seed_value
+                changed = True
+
+        for field in ("vazby_procesy", "pozadavky_norem"):
+            if not self._list_field_is_empty(user.get(field)):
+                continue
+            seed_values = seed.get(field) or []
+            if not seed_values:
+                continue
+            user[field] = deepcopy(seed_values)
             changed = True
 
         seed_verze = int(seed.get("verze") or 0)
@@ -533,12 +562,27 @@ class AuditKnowledgeService:
         if nested:
             return True
 
+        for field in _KNOWLEDGE_TEXT_FIELDS:
+            if str(section.get(field) or "").strip():
+                return True
+
         for field in _KNOWLEDGE_LIST_FIELDS:
             values = section.get(field) or []
             if values:
                 return True
 
         return False
+
+    @staticmethod
+    def get_text_field(data: dict | None, field: str) -> str:
+        if not data:
+            return ""
+        return str(data.get(field) or "").strip()
+
+    def has_active_list(self, data: dict | None, field: str) -> bool:
+        if not data:
+            return False
+        return bool(self.get_active_items(data.get(field)))
 
     def _parse_process_definition(self, raw: dict) -> AuditProcessDefinition | None:
         process_id = str(raw.get("id") or "").strip()
@@ -793,7 +837,11 @@ class AuditKnowledgeService:
         return None
 
     def get_audit_questions(self, criterion: dict) -> list[dict]:
-        return self.get_active_items(criterion.get("kontrolni_body") or criterion.get("auditni_otazky"))
+        for field in ("navodne_otazky", "kontrolni_body", "auditni_otazky"):
+            items = criterion.get(field)
+            if items:
+                return self.get_active_items(items)
+        return []
 
     @staticmethod
     def question_stable_key(process_id: str, criterion_id: str, question_id: str) -> str:

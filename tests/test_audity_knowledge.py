@@ -33,7 +33,7 @@ class AudityKnowledgeTestCase(unittest.TestCase):
         process = audit_knowledge_service.get_process_by_id("planovani_bozp")
 
         assert process is not None
-        self.assertEqual(process.nazev, "Plánování systému BOZP")
+        self.assertEqual(process.nazev, "Řízení plánování systému BOZP")
         self.assertTrue(process.ucel_procesu)
         self.assertTrue(process.has_knowledge_file)
 
@@ -58,16 +58,16 @@ class AudityKnowledgeTestCase(unittest.TestCase):
         assert criterion is not None
         questions = audit_knowledge_service.get_audit_questions(criterion)
         self.assertGreaterEqual(len(questions), 1)
-        self.assertEqual(questions[0]["id"], "politika_schvalena")
+        self.assertEqual(questions[0]["id"], "politika_promitnuti")
 
     def test_question_stable_key(self) -> None:
         stable_key = audit_knowledge_service.question_stable_key(
             "planovani_bozp",
             "cile_politika",
-            "politika_schvalena",
+            "politika_promitnuti",
         )
 
-        self.assertEqual(stable_key, "planovani_bozp/cile_politika/politika_schvalena")
+        self.assertEqual(stable_key, "planovani_bozp/cile_politika/politika_promitnuti")
 
 
 if __name__ == "__main__":

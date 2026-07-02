@@ -1,4 +1,4 @@
-"""Pracovní karta kritéria auditovaného procesu."""
+"""Pracovní karta oblasti ověření řídicího procesu."""
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QPixmap
@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QScrollArea,
-    QSplitter,
     QVBoxLayout,
     QWidget,
 )
@@ -21,7 +20,6 @@ from core.shared.sluzby.control_result_service import ControlPointContext, contr
 from core.shared.sluzby.finding_service import finding_service
 from core.widgets.control_result_selector import ControlResultSelectorWidget
 from core.widgets.control_result_photo_widget import ControlResultPhotoWidget
-from core.widgets.dialog_utils import wrap_in_scroll_area
 from core.widgets.finding_dialog import FindingDialog
 from core.widgets.image_viewer_dialog import ImageViewerDialog
 from moduly.audity.constants import (
@@ -45,10 +43,15 @@ from moduly.audity.constants import (
     AUDIT_FINDING_TYPES,
     AUDIT_RESULT_HEADER_LABEL,
     AUDIT_RESULT_NOTE_LABEL,
-    KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT,
+    GUIDE_BLOCK_EVALUATE,
+    GUIDE_BLOCK_UNDERSTAND,
+    GUIDE_BLOCK_VERIFY,
+    GUIDE_LABEL_OBJECTIVE_EVIDENCE,
+    GUIDE_LABEL_OBSERVATIONS_IN_OPERATION,
+    GUIDE_LABEL_RECOMMENDED_INTERVIEWS,
+    GUIDE_LABEL_TYPICAL_NONCONFORMITIES,
+    GUIDE_LABEL_VERIFICATION_GOAL,
     KNOWLEDGE_REFERENCE_PHOTOS_TITLE,
-    REFERENCE_PHOTO_PLACEHOLDER_ICON_SIZE_PX,
-    REFERENCE_PHOTO_PLACEHOLDER_WIDTH,
     REFERENCE_PHOTO_THUMBNAIL_SIZE,
     PROCESS_TERM_CRITERION,
     PROCESS_TERM_QUESTION,
@@ -86,17 +89,18 @@ class _ReferencePhotoThumbnail(QLabel):
 
 
 
-_RIGHT_COLUMN_BLOCKS: tuple[tuple[str, str], ...] = (
-    ("Objektivní důkazy", "objektivni_dukazy"),
-    ("Typické neshody", "typicke_neshody"),
+_VERIFY_LIST_BLOCKS: tuple[tuple[str, str], ...] = (
+    (GUIDE_LABEL_OBJECTIVE_EVIDENCE, "objektivni_dukazy"),
+    (GUIDE_LABEL_RECOMMENDED_INTERVIEWS, "doporucene_rozhovory"),
+    (GUIDE_LABEL_OBSERVATIONS_IN_OPERATION, "pozorovani_v_provozu"),
+)
+
+_EVALUATE_LIST_BLOCKS: tuple[tuple[str, str], ...] = (
+    (GUIDE_LABEL_TYPICAL_NONCONFORMITIES, "typicke_neshody"),
     ("PKZ", "pkz"),
     ("Pozorování", "pozorovani"),
     ("Poznámky auditora", "poznamky_auditora"),
-    ("Historie", "historie"),
 )
-
-_COLUMN_SPLIT_LEFT_STRETCH = 65
-_COLUMN_SPLIT_RIGHT_STRETCH = 35
 
 _SEVERITY_LABELS = dict(CONTROL_POINT_SEVERITY_OPTIONS)
 
@@ -135,9 +139,14 @@ class AuditKnowledgeCriterionWidget(QWidget):
         self._content_layout.setContentsMargins(0, 0, 0, 0)
         self._content_layout.setSpacing(12)
 
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        scroll.setWidget(self._content_host)
+
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
-        outer.addWidget(self._content_host, 1)
+        outer.addWidget(scroll, 1)
 
     def set_process_purpose(self, purpose: str) -> None:
         self._process_purpose = str(purpose or "").strip()
@@ -181,44 +190,122 @@ class AuditKnowledgeCriterionWidget(QWidget):
         if not self._section_label:
             self._section_label = str(section.get("nazev") or "").strip()
 
-        self._content_layout.addWidget(self._build_popis_block(section))
-        if self._process_purpose:
+        understand = self._build_understand_block(section)
+        if understand is not None:
+            self._content_layout.addWidget(understand)
+
+        verify = self._build_verify_block(section)
+        if verify is not None:
+            self._content_layout.addWidget(verify)
+
+        evaluate = self._build_evaluate_block(section)
+        if evaluate is not None:
+            self._content_layout.addWidget(evaluate)
+
+        photos = audit_knowledge_service.get_general_reference_photos(section)
+        if photos:
             self._content_layout.addWidget(
                 self._build_block(
-                    "Účel procesu",
-                    self._build_info_label(self._process_purpose),
+                    KNOWLEDGE_REFERENCE_PHOTOS_TITLE,
+                    self._build_reference_photo_gallery(photos),
                 )
             )
-        self._content_layout.addWidget(self._build_referencni_fotografie_block(section))
-        self._content_layout.addWidget(self._build_columns(section), 1)
 
-    def _build_columns(self, section: dict) -> QWidget:
-        right_host = self._build_right_column(section)
-        left_scroll = self._build_control_points_scroll_area(section)
+        self._content_layout.addStretch()
 
-        splitter = QSplitter(Qt.Orientation.Horizontal)
-        splitter.setObjectName("KnowledgeSectionSplitter")
-        splitter.setChildrenCollapsible(False)
-        splitter.addWidget(left_scroll)
-        splitter.addWidget(wrap_in_scroll_area(right_host))
-        splitter.setStretchFactor(0, _COLUMN_SPLIT_LEFT_STRETCH)
-        splitter.setStretchFactor(1, _COLUMN_SPLIT_RIGHT_STRETCH)
-        return splitter
+    def _build_understand_block(self, section: dict) -> QWidget | None:
+        parts: list[QWidget] = []
 
-    def _build_right_column(self, section: dict) -> QWidget:
-        host = QWidget()
-        layout = QVBoxLayout(host)
+        cil_overeni = audit_knowledge_service.get_text_field(section, "cil_overeni")
+        if cil_overeni:
+            parts.append(
+                self._build_subsection(GUIDE_LABEL_VERIFICATION_GOAL, self._build_info_label(cil_overeni))
+            )
+        else:
+            popis = audit_knowledge_service.get_text_field(section, "popis")
+            if popis:
+                parts.append(self._build_subsection("Popis", self._build_info_label(popis)))
+
+        if not parts:
+            return None
+        return self._build_guide_block(GUIDE_BLOCK_UNDERSTAND, parts)
+
+    def _build_verify_block(self, section: dict) -> QWidget | None:
+        parts: list[QWidget] = []
+
+        questions = self._build_control_points_section(section)
+        if questions is not None:
+            parts.append(questions)
+
+        for title, field in _VERIFY_LIST_BLOCKS:
+            block = self._build_optional_list_block(title, section, field)
+            if block is not None:
+                parts.append(block)
+
+        if not parts:
+            return None
+        return self._build_guide_block(GUIDE_BLOCK_VERIFY, parts)
+
+    def _build_evaluate_block(self, section: dict) -> QWidget | None:
+        parts: list[QWidget] = []
+
+        for title, field in _EVALUATE_LIST_BLOCKS:
+            block = self._build_optional_list_block(title, section, field)
+            if block is not None:
+                parts.append(block)
+
+        historie = self._build_historie_block("Historie")
+        parts.append(historie)
+
+        if not parts:
+            return None
+        return self._build_guide_block(GUIDE_BLOCK_EVALUATE, parts)
+
+    def _build_guide_block(self, title: str, parts: list[QWidget]) -> QWidget:
+        container = QWidget()
+        block_layout = QVBoxLayout(container)
+        block_layout.setContentsMargins(0, 0, 0, 0)
+        block_layout.setSpacing(8)
+
+        header = QLabel(title)
+        header.setObjectName("GuideBlockTitle")
+        block_layout.addWidget(header)
+
+        panel = QFrame()
+        panel.setObjectName("ModulePanel")
+        panel_layout = QVBoxLayout(panel)
+        panel_layout.setContentsMargins(12, 12, 12, 12)
+        panel_layout.setSpacing(10)
+
+        for part in parts:
+            panel_layout.addWidget(part)
+
+        block_layout.addWidget(panel)
+        return container
+
+    def _build_subsection(self, title: str, content: QWidget) -> QWidget:
+        container = QWidget()
+        layout = QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(12)
+        layout.setSpacing(6)
 
-        for title, field in _RIGHT_COLUMN_BLOCKS:
-            if field == "historie":
-                layout.addWidget(self._build_historie_block(title))
-            else:
-                layout.addWidget(self._build_list_block(title, section, field))
+        header = QLabel(title)
+        header.setObjectName("SectionTitle")
+        layout.addWidget(header)
+        layout.addWidget(content)
+        return container
 
-        layout.addStretch()
-        return host
+    def _build_optional_list_block(self, title: str, section: dict, field: str) -> QWidget | None:
+        items = audit_knowledge_service.get_active_items(section.get(field))
+        if not items:
+            return None
+
+        if field == "legislativa":
+            content = self._build_reference_list(items)
+        else:
+            content = self._build_knowledge_items_list(items)
+
+        return self._build_subsection(title, content)
 
     def _clear_content(self) -> None:
         self._selected_control_point_id = ""
@@ -231,55 +318,6 @@ class AuditKnowledgeCriterionWidget(QWidget):
             widget = item.widget()
             if widget is not None:
                 widget.deleteLater()
-
-    def _build_popis_block(self, section: dict) -> QWidget:
-        popis = str(section.get("popis") or "").strip()
-        if popis:
-            return self._build_block("Popis", self._build_info_label(popis))
-        return self._build_block("Popis", self._build_info_label(KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT))
-
-    def _build_referencni_fotografie_block(self, section: dict) -> QWidget:
-        photos = audit_knowledge_service.get_general_reference_photos(section)
-        if photos:
-            content = self._build_reference_photo_gallery(photos)
-        else:
-            content = self._build_reference_photo_placeholder()
-        return self._build_block(KNOWLEDGE_REFERENCE_PHOTOS_TITLE, content)
-
-    def _build_reference_photo_placeholder(self) -> QWidget:
-        panel = QFrame()
-        panel.setObjectName("ReferencePhotoPlaceholder")
-        panel.setFixedSize(REFERENCE_PHOTO_PLACEHOLDER_WIDTH, REFERENCE_PHOTO_THUMBNAIL_SIZE)
-
-        layout = QVBoxLayout(panel)
-        layout.setContentsMargins(12, 10, 12, 10)
-        layout.setSpacing(4)
-
-        icon = QLabel("📷")
-        icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        icon.setStyleSheet(
-            f"font-size: {REFERENCE_PHOTO_PLACEHOLDER_ICON_SIZE_PX}px;"
-            " border: none; background: transparent; padding: 0;"
-        )
-
-        text = QLabel("Referenční fotografie<br>budou doplněny.")
-        text.setObjectName("InfoText")
-        text.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        text.setWordWrap(False)
-
-        layout.addStretch(1)
-        layout.addWidget(icon)
-        layout.addWidget(text)
-        layout.addStretch(1)
-
-        row = QHBoxLayout()
-        row.setContentsMargins(0, 0, 0, 0)
-        row.addWidget(panel)
-        row.addStretch()
-
-        host = QWidget()
-        host.setLayout(row)
-        return host
 
     def _build_reference_photo_gallery(self, photos: list[dict]) -> QWidget:
         scroll = QScrollArea()
@@ -334,18 +372,6 @@ class AuditKnowledgeCriterionWidget(QWidget):
 
         dialog = ImageViewerDialog(image_path, title=KNOWLEDGE_REFERENCE_PHOTOS_TITLE, parent=self)
         dialog.exec()
-
-    def _build_list_block(self, title: str, section: dict, field: str) -> QWidget:
-        items = audit_knowledge_service.get_active_items(section.get(field))
-        if not items:
-            return self._build_block(title, self._build_info_label(KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT))
-
-        if field == "legislativa":
-            content = self._build_reference_list(items)
-        else:
-            content = self._build_knowledge_items_list(items)
-
-        return self._build_block(title, content)
 
     def _build_historie_block(self, title: str) -> QWidget:
         container = QWidget()
@@ -589,37 +615,26 @@ class AuditKnowledgeCriterionWidget(QWidget):
             frame.style().polish(frame)
         self._refresh_control_point_history(context)
 
-    def _build_control_points_scroll_area(self, section: dict) -> QScrollArea:
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QScrollArea.Shape.NoFrame)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    def _build_control_points_section(self, section: dict) -> QWidget | None:
+        items = audit_knowledge_service.get_audit_questions(section)
+        if not items:
+            return None
 
         content = QWidget()
         layout = QVBoxLayout(content)
-        layout.setContentsMargins(0, 0, 8, 0)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(12)
 
-        header = QLabel(PROCESS_TERM_QUESTION)
-        header.setObjectName("SectionTitle")
-        layout.addWidget(header)
+        first_context: AuditFindingKnowledgeContext | None = None
+        for item in items:
+            context = self._context_for_control_point(item)
+            if first_context is None:
+                first_context = context
+            layout.addWidget(self._build_control_point_row(item))
+        if first_context is not None:
+            self._select_control_point(first_context)
 
-        items = audit_knowledge_service.get_audit_questions(section)
-        if not items:
-            layout.addWidget(self._build_info_label(KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT))
-        else:
-            first_context: AuditFindingKnowledgeContext | None = None
-            for item in items:
-                context = self._context_for_control_point(item)
-                if first_context is None:
-                    first_context = context
-                layout.addWidget(self._build_control_point_row(item))
-            if first_context is not None:
-                self._select_control_point(first_context)
-
-        layout.addStretch()
-        scroll.setWidget(content)
-        return scroll
+        return self._build_subsection(PROCESS_TERM_QUESTION, content)
 
     def _build_control_point_row(self, item: dict) -> QWidget:
         context = self._context_for_control_point(item)
