@@ -1,5 +1,5 @@
 {
-  "verze": 5,
+  "verze": 6,
   "procesy": [
     {
       "id": "urazy_mimo_udalosti",
@@ -54,6 +54,51 @@
       "poradi": 60,
       "aktivni": true,
       "soubor_znalosti": "rizeni_napravnych_opatreni.json"
+    },
+    {
+      "id": "rizeni_dodavatelu",
+      "nazev": "Řízení dodavatelů",
+      "popis": "Proces výběru, řízení a vyhodnocování dodavatelů s dopadem na BOZP.",
+      "ucel_procesu": "Zajistit, aby organizace vybírala a hodnotila dodavatele z hlediska BOZP, stanovila požadavky, řídila jejich činnosti na pracovišti, komunikovala rizika a vyhodnocovala výkon.",
+      "poradi": 70,
+      "aktivni": true,
+      "soubor_znalosti": "rizeni_dodavatelu.json"
+    },
+    {
+      "id": "rizeni_provozu",
+      "nazev": "Řízení provozu",
+      "popis": "Proces řízení bezpečného provozu, pracovních postupů a technického stavu.",
+      "ucel_procesu": "Zajistit, aby organizace definovala a uplatňovala provozní pravidla, řídila rizika provozních činností, udržovala technický stav zařízení a kontrolovala dodržování pravidel.",
+      "poradi": 80,
+      "aktivni": true,
+      "soubor_znalosti": "rizeni_provozu.json"
+    },
+    {
+      "id": "pripravenost_mimoradne_udalosti",
+      "nazev": "Připravenost na mimořádné události",
+      "popis": "Proces připravenosti organizace na mimořádné události a krizové situace BOZP.",
+      "ucel_procesu": "Zajistit, aby organizace identifikovala možné mimořádné události, měla plány reakce, disponovala vybavením, cvičila připravenost a vyhodnocovala zlepšování.",
+      "poradi": 90,
+      "aktivni": true,
+      "soubor_znalosti": "pripravenost_mimoradne_udalosti.json"
+    },
+    {
+      "id": "interni_komunikace",
+      "nazev": "Interní komunikace",
+      "popis": "Proces interní komunikace o BOZP, rizicích, změnách a odpovědnostech.",
+      "ucel_procesu": "Zajistit systematickou interní komunikaci o BOZP včetně požadavků, odpovědností, změn, rizik, zapojení zaměstnanců a eskalace problémů.",
+      "poradi": 100,
+      "aktivni": true,
+      "soubor_znalosti": "interni_komunikace.json"
+    },
+    {
+      "id": "prezkoumani_vedenim",
+      "nazev": "Přezkoumání vedením",
+      "popis": "Proces přezkoumání systému BOZP vedením organizace.",
+      "ucel_procesu": "Zajistit, aby vedení získávalo relevantní vstupy, vyhodnocovalo výkonnost systému BOZP, rozhodovalo o opatřeních, sledovalo plnění závěrů a propojovalo BOZP se strategií.",
+      "poradi": 110,
+      "aktivni": true,
+      "soubor_znalosti": "prezkoumani_vedenim.json"
     }
   ]
 }

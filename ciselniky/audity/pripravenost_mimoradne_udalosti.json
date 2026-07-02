@@ -1,0 +1,1366 @@
+{
+  "verze": 1,
+  "id": "pripravenost_mimoradne_udalosti",
+  "nazev": "Připravenost na mimořádné události",
+  "popis": "Proces připravenosti organizace na mimořádné události a krizové situace BOZP.",
+  "ucel_procesu": "Zajistit, aby organizace:\n- identifikovala možné mimořádné události,\n- měla plány a postupy reakce,\n- disponovala vybavením a prostředky,\n- cvičila a ověřovala připravenost,\n- vyhodnocovala a zlepšovala připravenost.",
+  "proc_je_dulezity": "Připravenost na mimořádné události se auditně ověřuje v okamžiku, kdy už je pozdě.\n\nAuditor posuzuje, zda organizace ví, co se stane při požáru, úniku, vážném úrazu nebo výpadku — a zda to bylo ověřeno.\n\nNejčastější slabina: plán existuje, ale nikdo ho nezná a nikdy nebyl vyzkoušen.",
+  "ocekavany_vystup": "Organizace prokazatelně:\n\n- zná scénáře mimořádných událostí,\n- má aktuální plány reakce,\n- disponuje vybavením a vyškolenými osobami,\n- pravidelně cvičí a vyhodnocuje,\n- zlepšuje připravenost na základě zkušeností.",
+  "poradi": 90,
+  "aktivni": true,
+  "vazby_procesy": [
+    {
+      "id": "vazba_urazy",
+      "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+      "poradi": 10,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_rizika",
+      "nazev": "Řízení rizik",
+      "poradi": 20,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_kompetence",
+      "nazev": "Řízení kompetencí",
+      "poradi": 30,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dokumentace",
+      "nazev": "Řízení dokumentovaných informací",
+      "poradi": 40,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_zmeny",
+      "nazev": "Řízení změn",
+      "poradi": 50,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_napravna",
+      "nazev": "Řízení nápravných opatření",
+      "poradi": 60,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dodavatele",
+      "nazev": "Řízení dodavatelů",
+      "poradi": 70,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_provoz",
+      "nazev": "Řízení provozu",
+      "poradi": 80,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_mu",
+      "nazev": "Připravenost na mimořádné události",
+      "poradi": 90,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_komunikace",
+      "nazev": "Interní komunikace",
+      "poradi": 100,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_prezkoumani",
+      "nazev": "Přezkoumání vedením",
+      "poradi": 110,
+      "aktivni": true
+    }
+  ],
+  "pozadavky_norem": [
+    {
+      "id": "iso45001_82_mu_10",
+      "nazev": "ISO 45001: 8.2",
+      "poradi": 10,
+      "aktivni": true,
+      "popis": "Informativní reference – odstraňování nebezpečí a snižování rizik."
+    },
+    {
+      "id": "iso45001_81_mu_20",
+      "nazev": "ISO 45001: 8.1",
+      "poradi": 20,
+      "aktivni": true,
+      "popis": "Informativní reference – provozní plánování a řízení."
+    },
+    {
+      "id": "iso45001_74_mu_30",
+      "nazev": "ISO 45001: 7.4",
+      "poradi": 30,
+      "aktivni": true,
+      "popis": "Informativní reference – komunikace."
+    }
+  ],
+  "sekce": [
+    {
+      "id": "identifikace_mu",
+      "nazev": "Identifikace možných mimořádných událostí",
+      "popis": "Ověření identifikace scénářů mimořádných událostí.",
+      "cil_overeni": "Ověřit, že organizace identifikovala relevantní mimořádné události a jejich dopady.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "identifikace_mu_scenare",
+          "text": "Scénáře mimořádných událostí jsou identifikovány.",
+          "popis": "Organizace zná, co může nastat.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "identifikace_mu_posouzeni",
+          "text": "Dopady mimořádných událostí jsou posouzeny.",
+          "popis": "Organizace chápe následky pro lidi a provoz.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "identifikace_mu_aktualizace",
+          "text": "Identifikace je aktualizována při změnách.",
+          "popis": "Nová technologie nebo lokalita mění scénáře.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "identifikace_mu_odpovednosti",
+          "text": "Pro každý scénář jsou určeny odpovědné role.",
+          "popis": "Je jasné, kdo reaguje.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "identifikace_mu_propojeni",
+          "text": "Scénáře jsou propojeny s posouzením rizik.",
+          "popis": "MU vycházejí z analýzy nebezpečí.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_identifikace_mu_0",
+          "nazev": "analýza mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_identifikace_mu_1",
+          "nazev": "posouzení rizik MU",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_identifikace_mu_2",
+          "nazev": "evidence scénářů",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_identifikace_mu_3",
+          "nazev": "organizační pokyny",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_identifikace_mu_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_identifikace_mu_1",
+          "nazev": "vedoucí provozu",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_identifikace_mu_2",
+          "nazev": "vedoucí odvrácení MU",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_identifikace_mu_3",
+          "nazev": "vedoucí hasičský",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_identifikace_mu_0",
+          "nazev": "scénáře odpovídají skutečnému provozu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_identifikace_mu_1",
+          "nazev": "role jsou jmenovitě určeny",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_identifikace_mu_0",
+          "nazev": "Scénáře mimořádných událostí nejsou identifikovány.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_identifikace_mu_1",
+          "nazev": "Dopady mimořádných událostí nejsou posouzeny.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_identifikace_mu_2",
+          "nazev": "Identifikace není aktualizována po změně provozu.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_identifikace_mu_3",
+          "nazev": "Odpovědné role pro reakci na MU nejsou určeny.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_identifikace_mu_0",
+          "nazev": "Zrevidovat scénáře MU po každé významné změně provozu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_identifikace_mu_1",
+          "nazev": "Propojit scénáře MU s registrem rizik.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_identifikace_mu_0",
+          "nazev": "scénáře existují obecně bez vazby na pracoviště",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_61_mu_10",
+          "nazev": "ISO 45001: 6.1",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – rizika a příležitosti."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "plany_postupy_reakce",
+      "nazev": "Plány a postupy reakce",
+      "popis": "Ověření existence a aktuálnosti plánů reakce.",
+      "cil_overeni": "Ověřit, že plány a postupy reakce jsou připraveny, schváleny a známé.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "plany_postupy_reakce_existuji",
+          "text": "Plány reakce na mimořádné události existují.",
+          "popis": "Organizace má písemné postupy.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "plany_postupy_reakce_schvalene",
+          "text": "Plány reakce jsou schváleny vedením.",
+          "popis": "Plány mají autoritu.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "plany_postupy_reakce_aktualni",
+          "text": "Plány reakce jsou aktuální.",
+          "popis": "Plány odpovídají současnému provozu.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "plany_postupy_reakce_dostupne",
+          "text": "Plány reakce jsou dostupné odpovědným osobám.",
+          "popis": "V krizovém stavu je lze rychle najít.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "plany_postupy_reakce_evakuace",
+          "text": "Evakuační a záchranné postupy jsou definovány.",
+          "popis": "Organizace ví, jak evakuovat.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_plany_postupy_reakce_0",
+          "nazev": "plány krizové připravenosti",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_plany_postupy_reakce_1",
+          "nazev": "evakuační plán",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_plany_postupy_reakce_2",
+          "nazev": "postup havarijní reakce",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_plany_postupy_reakce_3",
+          "nazev": "organizační pokyny MU",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_plany_postupy_reakce_0",
+          "nazev": "vedoucí odvrácení MU",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_plany_postupy_reakce_1",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_plany_postupy_reakce_2",
+          "nazev": "vedoucí provozu",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_plany_postupy_reakce_3",
+          "nazev": "vedoucí hasičský",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_plany_postupy_reakce_0",
+          "nazev": "odpovědné osoby znají postup reakce",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_plany_postupy_reakce_1",
+          "nazev": "evakuační trasy jsou značeny",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_plany_postupy_reakce_0",
+          "nazev": "Plány reakce na mimořádné události neexistují.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_plany_postupy_reakce_1",
+          "nazev": "Plány reakce nejsou aktuální.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_plany_postupy_reakce_2",
+          "nazev": "Plány nejsou dostupné odpovědným osobám v provozu.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_plany_postupy_reakce_3",
+          "nazev": "Evakuační postupy nejsou definovány nebo nejsou známy.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_plany_postupy_reakce_0",
+          "nazev": "Umístit klíčové postupy MU na viditelná místa.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_plany_postupy_reakce_1",
+          "nazev": "Schvalovat plány MU minimálně jednou ročně.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_plany_postupy_reakce_0",
+          "nazev": "plán je v šanonu, ale nikdo ho nezná",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_82_mu_10",
+          "nazev": "ISO 45001: 8.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – odstraňování nebezpečí."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "vybaveni_prostredky",
+      "nazev": "Vybavení a prostředky pro reakci",
+      "popis": "Ověření dostupnosti a funkčnosti vybavení pro reakci na MU.",
+      "cil_overeni": "Ověřit, že vybavení a prostředky pro reakci jsou dostupné a udržované.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "vybaveni_prostredky_dostupne",
+          "text": "Vybavení pro reakci na MU je dostupné v místě potřeby.",
+          "popis": "Hasicí přístroje, lékárničky, ZEH apod.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vybaveni_prostredky_udrzovane",
+          "text": "Vybavení je pravidelně kontrolováno a udržováno.",
+          "popis": "Platnost a funkčnost jsou sledovány.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vybaveni_prostredky_evidovane",
+          "text": "Vybavení je evidováno s termíny kontrol.",
+          "popis": "Organizace zná stav vybavení.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vybaveni_prostredky_osoby",
+          "text": "Osoby pro reakci na MU jsou určeny a dostupné.",
+          "popis": "Organizace zná zástupce.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vybaveni_prostredky_komunikace",
+          "text": "Komunikační prostředky pro MU jsou zajištěny.",
+          "popis": "Organizace může koordinovat reakci.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_vybaveni_prostredky_0",
+          "nazev": "evidence hasicích přístrojů",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vybaveni_prostredky_1",
+          "nazev": "kontrolní listy ZEH",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vybaveni_prostredky_2",
+          "nazev": "seznam pověřených osob",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vybaveni_prostredky_3",
+          "nazev": "záznamy kontrol vybavení",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_vybaveni_prostredky_0",
+          "nazev": "vedoucí hasičský",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vybaveni_prostredky_1",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vybaveni_prostredky_2",
+          "nazev": "správce budovy",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vybaveni_prostredky_3",
+          "nazev": "vedoucí směny",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_vybaveni_prostredky_0",
+          "nazev": "vybavení je funkční a dostupné",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_vybaveni_prostredky_1",
+          "nazev": "kontrolní plomby a termíny jsou v pořádku",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_vybaveni_prostredky_0",
+          "nazev": "Vybavení pro reakci na MU není dostupné v místě potřeby.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vybaveni_prostredky_1",
+          "nazev": "Kontrola a údržba vybavení není prokazatelně prováděna.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vybaveni_prostredky_2",
+          "nazev": "Osoby pro reakci na MU nejsou určeny nebo nejsou dostupné.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vybaveni_prostredky_3",
+          "nazev": "Evidence vybavení s termíny kontrol není vedena.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_vybaveni_prostredky_0",
+          "nazev": "Zavést měsíční vizuální kontrolu klíčového vybavení MU.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_vybaveni_prostredky_1",
+          "nazev": "Určit náhradníky pro všechny klíčové role reakce.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_vybaveni_prostredky_0",
+          "nazev": "vybavení je nefunkční nebo po termínu",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_81_mu_10",
+          "nazev": "ISO 45001: 8.1",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – provozní plánování."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "cviceni_overovani",
+      "nazev": "Cvičení a ověřování připravenosti",
+      "popis": "Ověření cvičení a testování připravenosti.",
+      "cil_overeni": "Ověřit, že organizace cvičí reakci a vyhodnocuje výsledky cvičení.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "cviceni_overovani_plan_cviceni",
+          "text": "Existuje plán cvičení reakce na MU.",
+          "popis": "Cvičení jsou plánována.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "cviceni_overovani_provedena",
+          "text": "Cvičení jsou prokazatelně prováděna.",
+          "popis": "Organizace nezůstává pouze u papírového plánu.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "cviceni_overovani_zaznam",
+          "text": "Výsledky cvičení jsou zaznamenány.",
+          "popis": "Existuje protokol z cvičení.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "cviceni_overovani_zlepseni",
+          "text": "Z cvičení vyplynulá zjištění vedou k opatřením.",
+          "popis": "Organizace se z cvičení učí.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "cviceni_overovani_zapojeni",
+          "text": "Do cvičení jsou zapojeni relevantní zaměstnanci.",
+          "popis": "Cvičení není pouze pro vedení.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_cviceni_overovani_0",
+          "nazev": "plán cvičení MU",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_cviceni_overovani_1",
+          "nazev": "protokoly z cvičení",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_cviceni_overovani_2",
+          "nazev": "záznamy opatření po cvičení",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_cviceni_overovani_3",
+          "nazev": "evidence evakuačních cvičení",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_cviceni_overovani_0",
+          "nazev": "vedoucí odvrácení MU",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_cviceni_overovani_1",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_cviceni_overovani_2",
+          "nazev": "vedoucí směny",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_cviceni_overovani_3",
+          "nazev": "zaměstnanci",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_cviceni_overovani_0",
+          "nazev": "cvičení probíhá v provozu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_cviceni_overovani_1",
+          "nazev": "zaměstnanci reagují podle postupu",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_cviceni_overovani_0",
+          "nazev": "Plán cvičení reakce na MU není veden.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_cviceni_overovani_1",
+          "nazev": "Cvičení nejsou prokazatelně prováděna.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_cviceni_overovani_2",
+          "nazev": "Zjištění z cvičení nevedou k nápravným opatřením.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_cviceni_overovani_3",
+          "nazev": "Do cvičení nejsou zapojeni provozní zaměstnanci.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_cviceni_overovani_0",
+          "nazev": "Zavést roční evakuační cvičení na každém pracovišti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_cviceni_overovani_1",
+          "nazev": "Vyhodnocovat cvičení do 14 dnů a sledovat plnění opatření.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_cviceni_overovani_0",
+          "nazev": "poslední cvičení je starší než dva roky",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_82_mu_10",
+          "nazev": "ISO 45001: 8.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – odstraňování nebezpečí."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "vyhodnoceni_zlepsovani",
+      "nazev": "Vyhodnocení a zlepšování připravenosti",
+      "popis": "Ověření vyhodnocení skutečných MU a zlepšování připravenosti.",
+      "cil_overeni": "Ověřit, že organizace vyhodnocuje skutečné MU a zlepšuje připravenost.",
+      "poradi": 50,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "vyhodnoceni_zlepsovani_skutecne_mu",
+          "text": "Skutečné mimořádné události jsou vyhodnoceny.",
+          "popis": "Organizace analyzuje reakci.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_zlepsovani_ucinnost",
+          "text": "Účinnost reakce je posouzena.",
+          "popis": "Organizace ví, co fungovalo a co ne.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_zlepsovani_opatreni",
+          "text": "Z vyhodnocení vyplynou opatření pro zlepšení.",
+          "popis": "Poučení vede ke změně.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_zlepsovani_prezkum",
+          "text": "Připravenost na MU je pravidelně přezkoumávána.",
+          "popis": "Plány nejsou archivovány a zapomenuty.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_zlepsovani_sdileni",
+          "text": "Poznatky jsou sdíleny s dotčenými pracovníky.",
+          "popis": "Organizace komunikuje poučení.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_vyhodnoceni_zlepsovani_0",
+          "nazev": "záznamy o skutečných MU",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyhodnoceni_zlepsovani_1",
+          "nazev": "závěry z vyhodnocení",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyhodnoceni_zlepsovani_2",
+          "nazev": "revize plánů MU",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyhodnoceni_zlepsovani_3",
+          "nazev": "opatření po MU",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_vyhodnoceni_zlepsovani_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyhodnoceni_zlepsovani_1",
+          "nazev": "vedoucí odvrácení MU",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyhodnoceni_zlepsovani_2",
+          "nazev": "vedoucí provozu",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyhodnoceni_zlepsovani_3",
+          "nazev": "vedení",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_vyhodnoceni_zlepsovani_0",
+          "nazev": "plány MU jsou revidovány po incidentu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_vyhodnoceni_zlepsovani_1",
+          "nazev": "opatření jsou implementována",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_vyhodnoceni_zlepsovani_0",
+          "nazev": "Skutečné mimořádné události nejsou vyhodnoceny.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyhodnoceni_zlepsovani_1",
+          "nazev": "Z vyhodnocení nevyplývají opatření pro zlepšení připravenosti.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyhodnoceni_zlepsovani_2",
+          "nazev": "Plány MU nejsou pravidelně přezkoumávány.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyhodnoceni_zlepsovani_3",
+          "nazev": "Poznatky z MU nejsou sdíleny s provozními pracovníky.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_vyhodnoceni_zlepsovani_0",
+          "nazev": "Zavést povinné vyhodnocení každé MU do 30 dnů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_vyhodnoceni_zlepsovani_1",
+          "nazev": "Revidovat plány MU po každém skutečném incidentu.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_vyhodnoceni_zlepsovani_0",
+          "nazev": "stejné MU se opakují bez poučení",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_103_mu_10",
+          "nazev": "ISO 45001: 10.3",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – neustálé zlepšování."
+        },
+        {
+          "id": "iso45001_93_mu_20",
+          "nazev": "ISO 45001: 9.3",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – analýza a hodnocení."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1384 @@
+{
+  "verze": 1,
+  "id": "rizeni_provozu",
+  "nazev": "Řízení provozu",
+  "popis": "Proces řízení bezpečného provozu, pracovních postupů a technického stavu.",
+  "ucel_procesu": "Zajistit, aby organizace:\n- definovala a uplatňovala provozní pravidla,\n- řídila rizika při provozních činnostech,\n- udržovala technický stav zařízení,\n- řídila práce se zvýšeným rizikem,\n- kontrolovala dodržování provozních pravidel.",
+  "proc_je_dulezity": "Provoz je místo, kde se systém BOZP projeví nebo selže.\n\nAuditor sleduje, zda pravidla existují a zda se podle nich skutečně pracuje.\n\nNejvětší riziko bývá u rutinních činností, kde se pravidla postupně obcházejí.",
+  "ocekavany_vystup": "Organizace prokazatelně:\n\n- má aktuální provozní pravidla,\n- ošetřuje rizika běžných i mimořádných činností,\n- udržuje zařízení v bezpečném stavu,\n- řídí práce se zvýšeným rizikem,\n- kontroluje dodržování pravidel v provozu.",
+  "poradi": 80,
+  "aktivni": true,
+  "vazby_procesy": [
+    {
+      "id": "vazba_urazy",
+      "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+      "poradi": 10,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_rizika",
+      "nazev": "Řízení rizik",
+      "poradi": 20,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_kompetence",
+      "nazev": "Řízení kompetencí",
+      "poradi": 30,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dokumentace",
+      "nazev": "Řízení dokumentovaných informací",
+      "poradi": 40,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_zmeny",
+      "nazev": "Řízení změn",
+      "poradi": 50,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_napravna",
+      "nazev": "Řízení nápravných opatření",
+      "poradi": 60,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dodavatele",
+      "nazev": "Řízení dodavatelů",
+      "poradi": 70,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_provoz",
+      "nazev": "Řízení provozu",
+      "poradi": 80,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_mu",
+      "nazev": "Připravenost na mimořádné události",
+      "poradi": 90,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_komunikace",
+      "nazev": "Interní komunikace",
+      "poradi": 100,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_prezkoumani",
+      "nazev": "Přezkoumání vedením",
+      "poradi": 110,
+      "aktivni": true
+    }
+  ],
+  "pozadavky_norem": [
+    {
+      "id": "iso45001_81_prov_10",
+      "nazev": "ISO 45001: 8.1",
+      "poradi": 10,
+      "aktivni": true,
+      "popis": "Informativní reference – provozní plánování a řízení."
+    },
+    {
+      "id": "iso45001_82_prov_20",
+      "nazev": "ISO 45001: 8.2",
+      "poradi": 20,
+      "aktivni": true,
+      "popis": "Informativní reference – odstraňování nebezpečí a snižování rizik."
+    },
+    {
+      "id": "iso45001_75_prov_30",
+      "nazev": "ISO 45001: 7.5",
+      "poradi": 30,
+      "aktivni": true,
+      "popis": "Informativní reference – dokumentované informace."
+    }
+  ],
+  "sekce": [
+    {
+      "id": "provozni_pravidla",
+      "nazev": "Provozní pravidla a pracovní postupy",
+      "popis": "Ověření existence a uplatňování provozních pravidel.",
+      "cil_overeni": "Ověřit, že provozní pravidla jsou definována, schválená a používaná v praxi.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "provozni_pravidla_definovana",
+          "text": "Provozní pravidla a pracovní postupy jsou definovány pro rizikové činnosti.",
+          "popis": "Pravidla pokrývají skutečnou práci.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "provozni_pravidla_schvalena",
+          "text": "Provozní pravidla jsou schválena odpovědnými osobami.",
+          "popis": "Pravidla mají platnost a autoritu.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "provozni_pravidla_dostupna",
+          "text": "Provozní pravidla jsou dostupná pracovníkům v místě potřeby.",
+          "popis": "Zaměstnanec ví, kde pravidla najít.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "provozni_pravidla_srozumitelna",
+          "text": "Provozní pravidla jsou srozumitelná pro vykonavatele.",
+          "popis": "Pravidla odpovídají úrovni pracovníků.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "provozni_pravidla_aktualni",
+          "text": "Provozní pravidla jsou aktualizována při změnách.",
+          "popis": "Změna technologie vede k revizi postupu.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_provozni_pravidla_0",
+          "nazev": "pracovní instrukce",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_provozni_pravidla_1",
+          "nazev": "provozní směrnice",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_provozni_pravidla_2",
+          "nazev": "bezpečnostní karty",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_provozni_pravidla_3",
+          "nazev": "SOP u pracoviště",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "duk_provozni_pravidla_4",
+          "nazev": "záznamy revizí postupů",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_provozni_pravidla_0",
+          "nazev": "vedoucí provozu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_provozni_pravidla_1",
+          "nazev": "mistr",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_provozni_pravidla_2",
+          "nazev": "technik BOZP",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_provozni_pravidla_3",
+          "nazev": "zaměstnanci v provozu",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_provozni_pravidla_0",
+          "nazev": "pracovníci znají postup",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_provozni_pravidla_1",
+          "nazev": "pravidla jsou dostupná u pracoviště",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_provozni_pravidla_0",
+          "nazev": "Provozní pravidla pro rizikové činnosti nejsou definována.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_provozni_pravidla_1",
+          "nazev": "Pracovní postupy nejsou schváleny odpovědnou osobou.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_provozni_pravidla_2",
+          "nazev": "Provozní pravidla nejsou dostupná pracovníkům v místě potřeby.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_provozni_pravidla_3",
+          "nazev": "Pravidla nejsou aktualizována po změně technologie nebo provozu.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_provozni_pravidla_0",
+          "nazev": "Zavést pracovištní bezpečnostní karty u klíčových operací.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_provozni_pravidla_1",
+          "nazev": "Revidovat postupy po každé významné změně provozu.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_provozni_pravidla_0",
+          "nazev": "pravidla existují, ale nejsou používána",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_81_prov_10",
+          "nazev": "ISO 45001: 8.1",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – provozní plánování a řízení."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "rizika_provoznich_cinnosti",
+      "nazev": "Řízení rizik při provozních činnostech",
+      "popis": "Ověření ošetření rizik běžných provozních činností.",
+      "cil_overeni": "Ověřit, že rizika provozních činností jsou identifikována a ošetřena.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "rizika_provoznich_cinnosti_identifikovana",
+          "text": "Rizika provozních činností jsou identifikována.",
+          "popis": "Organizace zná nebezpečí běžné práce.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "rizika_provoznich_cinnosti_osetrena",
+          "text": "Identifikovaná rizika jsou ošetřena provozními opatřeními.",
+          "popis": "Opatření odpovídají riziku.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "rizika_provoznich_cinnosti_propojena",
+          "text": "Provozní opatření jsou propojena s posouzením rizik.",
+          "popis": "Rizikový register ovlivňuje provoz.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "rizika_provoznich_cinnosti_docasne",
+          "text": "Dočasné a nestandardní činnosti jsou posuzovány z hlediska rizik.",
+          "popis": "Odchylky od běžného provozu jsou řízeny.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "rizika_provoznich_cinnosti_komunikovana",
+          "text": "Rizika provozních činností jsou komunikována dotčeným pracovníkům.",
+          "popis": "Zaměstnanci znají rizika své práce.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_rizika_provoznich_cinnosti_0",
+          "nazev": "posouzení rizik",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_rizika_provoznich_cinnosti_1",
+          "nazev": "provozní plán BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_rizika_provoznich_cinnosti_2",
+          "nazev": "záznamy o dočasných opatřeních",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_rizika_provoznich_cinnosti_3",
+          "nazev": "bezpečnostní plánování prací",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_rizika_provoznich_cinnosti_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_rizika_provoznich_cinnosti_1",
+          "nazev": "vedoucí provozu",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_rizika_provoznich_cinnosti_2",
+          "nazev": "mistr",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_rizika_provoznich_cinnosti_3",
+          "nazev": "zaměstnanci",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_rizika_provoznich_cinnosti_0",
+          "nazev": "opatření v provozu odpovídají posouzení rizik",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_rizika_provoznich_cinnosti_1",
+          "nazev": "dočasná práce je ošetřena",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_rizika_provoznich_cinnosti_0",
+          "nazev": "Rizika běžných provozních činností nejsou identifikována.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_rizika_provoznich_cinnosti_1",
+          "nazev": "Provozní opatření neodpovídají posouzeným rizikům.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_rizika_provoznich_cinnosti_2",
+          "nazev": "Dočasné a nestandardní činnosti nejsou posuzovány z hlediska BOZP.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_rizika_provoznich_cinnosti_3",
+          "nazev": "Rizika nejsou komunikována pracovníkům v provozu.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_rizika_provoznich_cinnosti_0",
+          "nazev": "Propojit denní provoz s aktualizovaným registrem rizik.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_rizika_provoznich_cinnosti_1",
+          "nazev": "Zavést krátké posouzení rizika před nestandardní prací.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_rizika_provoznich_cinnosti_0",
+          "nazev": "posouzení rizik neodpovídá skutečnému provozu",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_61_prov_10",
+          "nazev": "ISO 45001: 6.1",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – rizika a příležitosti."
+        },
+        {
+          "id": "iso45001_81_prov_20",
+          "nazev": "ISO 45001: 8.1",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – provozní plánování."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "udrzba_technicky_stav",
+      "nazev": "Údržba a technický stav zařízení",
+      "popis": "Ověření údržby a bezpečného technického stavu zařízení.",
+      "cil_overeni": "Ověřit, že zařízení je udržováno a technicky způsobilé pro bezpečný provoz.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "udrzba_technicky_stav_plan",
+          "text": "Existuje plán údržby pro zařízení s dopadem na BOZP.",
+          "popis": "Údržba je plánovaná, ne pouze havarijní.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "udrzba_technicky_stav_provedena",
+          "text": "Plánovaná údržba je prokazatelně prováděna.",
+          "popis": "Záznamy odpovídají plánu.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "udrzba_technicky_stav_zavady",
+          "text": "Zjištěné závady jsou hlášeny a odstraňovány.",
+          "popis": "Organizace reaguje na technické neshody.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "udrzba_technicky_stav_revize",
+          "text": "Povinné revize a kontroly jsou platné.",
+          "popis": "Organizace sleduje termíny.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "udrzba_technicky_stav_vylouceni",
+          "text": "Nebezpečné zařízení je vyřazeno z provozu do odstranění závady.",
+          "popis": "Organizace blokuje nebezpečný provoz.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_udrzba_technicky_stav_0",
+          "nazev": "plán údržby",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_udrzba_technicky_stav_1",
+          "nazev": "záznamy o údržbě",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_udrzba_technicky_stav_2",
+          "nazev": "revizní zprávy",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_udrzba_technicky_stav_3",
+          "nazev": "hlášení závad",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "duk_udrzba_technicky_stav_4",
+          "nazev": "záznamy vyřazení z provozu",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_udrzba_technicky_stav_0",
+          "nazev": "údržbář",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_udrzba_technicky_stav_1",
+          "nazev": "vedoucí provozu",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_udrzba_technicky_stav_2",
+          "nazev": "technik BOZP",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_udrzba_technicky_stav_3",
+          "nazev": "revizní technik",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_udrzba_technicky_stav_0",
+          "nazev": "zařízení je v dobrém technickém stavu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_udrzba_technicky_stav_1",
+          "nazev": "závady jsou označeny a řešeny",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_udrzba_technicky_stav_0",
+          "nazev": "Plán údržby pro zařízení s dopadem na BOZP není veden.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_udrzba_technicky_stav_1",
+          "nazev": "Plánovaná údržba není prokazatelně prováděna.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_udrzba_technicky_stav_2",
+          "nazev": "Povinné revize nejsou platné.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_udrzba_technicky_stav_3",
+          "nazev": "Nebezpečné zařízení zůstává v provozu bez odstranění závady.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_udrzba_technicky_stav_0",
+          "nazev": "Propojit plán údržby s kritickými zařízeními z registru rizik.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_udrzba_technicky_stav_1",
+          "nazev": "Zavést okamžité vyřazení zařízení při bezpečnostní závadě.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_udrzba_technicky_stav_0",
+          "nazev": "údržba probíhá až po poruše",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_81_prov_10",
+          "nazev": "ISO 45001: 8.1",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – provozní plánování a řízení."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "prace_zvysene_riziko",
+      "nazev": "Řízení prací se zvýšeným rizikem",
+      "popis": "Ověření řízení prací se zvýšeným rizikem (PTW, LOTO, výškové práce apod.).",
+      "cil_overeni": "Ověřit, že práce se zvýšeným rizikem jsou povolovány a kontrolovány.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "prace_zvysene_riziko_identifikovane",
+          "text": "Práce se zvýšeným rizikem jsou identifikovány.",
+          "popis": "Organizace ví, které činnosti vyžadují zvláštní režim.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "prace_zvysene_riziko_povoleni",
+          "text": "Práce se zvýšeným rizikem jsou povolovány před zahájením.",
+          "popis": "Existuje systém povolení k práci.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "prace_zvysene_riziko_kontrola",
+          "text": "Plnění podmínek povolení je kontrolováno.",
+          "popis": "Odpovědná osoba ověřuje dodržení.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "prace_zvysene_riziko_loto",
+          "text": "Blokace a označení zařízení je uplatňováno tam, kde je vyžadováno.",
+          "popis": "LOTO není obcházeno.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "prace_zvysene_riziko_ukonceni",
+          "text": "Po ukončení práce se zvýšeným rizikem je pracoviště předáno bezpečně.",
+          "popis": "Povolení je formálně ukončeno.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_prace_zvysene_riziko_0",
+          "nazev": "povolení k práci",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_prace_zvysene_riziko_1",
+          "nazev": "checklisty PTW",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_prace_zvysene_riziko_2",
+          "nazev": "záznamy LOTO",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_prace_zvysene_riziko_3",
+          "nazev": "plán práce ve výšce",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "duk_prace_zvysene_riziko_4",
+          "nazev": "záznamy kontroly",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_prace_zvysene_riziko_0",
+          "nazev": "vedoucí směny",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_prace_zvysene_riziko_1",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_prace_zvysene_riziko_2",
+          "nazev": "mistr",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_prace_zvysene_riziko_3",
+          "nazev": "oprávněný pracovník",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_prace_zvysene_riziko_0",
+          "nazev": "práce se zvýšeným rizikem probíhá podle povolení",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_prace_zvysene_riziko_1",
+          "nazev": "LOTO je aplikováno",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_prace_zvysene_riziko_0",
+          "nazev": "Práce se zvýšeným rizikem nejsou identifikovány.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_prace_zvysene_riziko_1",
+          "nazev": "Práce probíhá bez povolení k práci.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_prace_zvysene_riziko_2",
+          "nazev": "Blokace a označení zařízení není uplatňováno.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_prace_zvysene_riziko_3",
+          "nazev": "Podmínky povolení nejsou kontrolovány v průběhu práce.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_prace_zvysene_riziko_0",
+          "nazev": "Standardizovat PTW pro nejčastější rizikové činnosti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_prace_zvysene_riziko_1",
+          "nazev": "Pravidelně auditovat dodržování LOTO v provozu.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_prace_zvysene_riziko_0",
+          "nazev": "povolení k práci je formalita",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_81_prov_10",
+          "nazev": "ISO 45001: 8.1",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – provozní plánování a řízení."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "kontrola_dodrzovani_pravidel",
+      "nazev": "Kontrola dodržování provozních pravidel",
+      "popis": "Ověření kontrol a dohledu nad dodržováním pravidel v provozu.",
+      "cil_overeni": "Ověřit, že organizace systematicky kontroluje dodržování provozních pravidel.",
+      "poradi": 50,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "kontrola_dodrzovani_pravidel_plan_kontrol",
+          "text": "Existuje plán kontrol dodržování provozních pravidel.",
+          "popis": "Kontroly jsou plánované.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "kontrola_dodrzovani_pravidel_provedene",
+          "text": "Kontroly jsou prokazatelně prováděny.",
+          "popis": "Záznamy odpovídají plánu.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "kontrola_dodrzovani_pravidel_odchylky",
+          "text": "Zjištěné odchylky jsou evidovány a řešeny.",
+          "popis": "Kontrola vede k opatřením.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "kontrola_dodrzovani_pravidel_vedouci",
+          "text": "Vedoucí zaměstnanci vykonávají dohled v provozu.",
+          "popis": "Dohled není pouze úkol technika BOZP.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "kontrola_dodrzovani_pravidel_trendy",
+          "text": "Výsledky kontrol jsou vyhodnocovány pro zlepšování.",
+          "popis": "Organizace sleduje opakující se odchylky.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_kontrola_dodrzovani_pravidel_0",
+          "nazev": "plán kontrol BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_kontrola_dodrzovani_pravidel_1",
+          "nazev": "záznamy kontrol",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_kontrola_dodrzovani_pravidel_2",
+          "nazev": "evidence odchylek",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_kontrola_dodrzovani_pravidel_3",
+          "nazev": "statistiky neshod v provozu",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_kontrola_dodrzovani_pravidel_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_kontrola_dodrzovani_pravidel_1",
+          "nazev": "vedoucí provozu",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_kontrola_dodrzovani_pravidel_2",
+          "nazev": "mistr",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_kontrola_dodrzovani_pravidel_3",
+          "nazev": "vedoucí směny",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_kontrola_dodrzovani_pravidel_0",
+          "nazev": "kontrola odhalí skutečné chování",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_kontrola_dodrzovani_pravidel_1",
+          "nazev": "odchylky vedou k nápravě",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_kontrola_dodrzovani_pravidel_0",
+          "nazev": "Plán kontrol dodržování provozních pravidel není veden.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_kontrola_dodrzovani_pravidel_1",
+          "nazev": "Kontroly nejsou prokazatelně prováděny.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_kontrola_dodrzovani_pravidel_2",
+          "nazev": "Zjištěné odchylky nejsou evidovány a řešeny.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_kontrola_dodrzovani_pravidel_3",
+          "nazev": "Vedoucí zaměstnanci nevykonávají dohled v provozu.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_kontrola_dodrzovani_pravidel_0",
+          "nazev": "Zapojit vedoucí směn do pravidelných kontrol v provozu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_kontrola_dodrzovani_pravidel_1",
+          "nazev": "Vyhodnocovat opakující se odchylky v týdenním provozním review.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_kontrola_dodrzovani_pravidel_0",
+          "nazev": "kontroly jsou nahrazovány papírovou evidencí",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_91_prov_10",
+          "nazev": "ISO 45001: 9.1",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – monitorování a hodnocení."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        }
+      ]
+    }
+  ]
+}

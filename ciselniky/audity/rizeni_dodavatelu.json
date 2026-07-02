@@ -1,0 +1,1391 @@
+{
+  "verze": 1,
+  "id": "rizeni_dodavatelu",
+  "nazev": "Řízení dodavatelů",
+  "popis": "Proces výběru, řízení a vyhodnocování dodavatelů s dopadem na BOZP.",
+  "ucel_procesu": "Zajistit, aby organizace:\n- vybírala a hodnotila dodavatele z hlediska BOZP,\n- stanovila požadavky BOZP na dodavatele,\n- řídila činnosti dodavatelů na pracovišti,\n- komunikovala rizika a odpovědnosti,\n- vyhodnocovala výkon dodavatelů.",
+  "proc_je_dulezity": "Dodavatel na pracovišti je často neviditelné riziko.\n\nAuditor ověřuje, zda organizace skutečně řídí cizí práci — ne zda má podepsanou smlouvu.\n\nNejvětší neshody bývají u koordinace prací, předávání pracoviště a kontroly plnění BOZP požadavků.",
+  "ocekavany_vystup": "Organizace prokazatelně:\n\n- vybírá dodavatele s ohledem na BOZP,\n- předává jasný BOZP rámec,\n- koordinuje a kontroluje práci dodavatelů,\n- reaguje na selhání dodavatelů,\n- vyhodnocuje výkon dodavatelů.",
+  "poradi": 70,
+  "aktivni": true,
+  "vazby_procesy": [
+    {
+      "id": "vazba_urazy",
+      "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+      "poradi": 10,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_rizika",
+      "nazev": "Řízení rizik",
+      "poradi": 20,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_kompetence",
+      "nazev": "Řízení kompetencí",
+      "poradi": 30,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dokumentace",
+      "nazev": "Řízení dokumentovaných informací",
+      "poradi": 40,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_zmeny",
+      "nazev": "Řízení změn",
+      "poradi": 50,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_napravna",
+      "nazev": "Řízení nápravných opatření",
+      "poradi": 60,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dodavatele",
+      "nazev": "Řízení dodavatelů",
+      "poradi": 70,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_provoz",
+      "nazev": "Řízení provozu",
+      "poradi": 80,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_mu",
+      "nazev": "Připravenost na mimořádné události",
+      "poradi": 90,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_komunikace",
+      "nazev": "Interní komunikace",
+      "poradi": 100,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_prezkoumani",
+      "nazev": "Přezkoumání vedením",
+      "poradi": 110,
+      "aktivni": true
+    }
+  ],
+  "pozadavky_norem": [
+    {
+      "id": "iso45001_814_dod_10",
+      "nazev": "ISO 45001: 8.1.4",
+      "poradi": 10,
+      "aktivni": true,
+      "popis": "Informativní reference – řízení dodavatelů."
+    },
+    {
+      "id": "iso45001_81_dod_20",
+      "nazev": "ISO 45001: 8.1",
+      "poradi": 20,
+      "aktivni": true,
+      "popis": "Informativní reference – provozní plánování a řízení."
+    },
+    {
+      "id": "iso45001_74_dod_30",
+      "nazev": "ISO 45001: 7.4",
+      "poradi": 30,
+      "aktivni": true,
+      "popis": "Informativní reference – komunikace."
+    }
+  ],
+  "sekce": [
+    {
+      "id": "vyber_hodnoceni_dodavatelu",
+      "nazev": "Výběr a hodnocení dodavatelů",
+      "popis": "Ověření kritérií výběru a hodnocení dodavatelů z hlediska BOZP.",
+      "cil_overeni": "Ověřit, že organizace systematicky hodnotí BOZP při výběru a průběžném hodnocení dodavatelů.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "vyber_hodnoceni_dodavatelu_kriteria",
+          "text": "Kritéria výběru dodavatelů zahrnují požadavky BOZP.",
+          "popis": "BOZP je součástí výběrového řízení.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyber_hodnoceni_dodavatelu_posouzeni",
+          "text": "BOZP je posuzována před uzavřením smlouvy s rizikovým dodavatelem.",
+          "popis": "Organizace nezařazuje dodavatele bez posouzení.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyber_hodnoceni_dodavatelu_register",
+          "text": "Organizace vede přehled dodavatelů s rizikovými činnostmi.",
+          "popis": "Existuje aktuální seznam dodavatelů na pracovišti.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyber_hodnoceni_dodavatelu_periodicke",
+          "text": "Výkon dodavatelů z hlediska BOZP je průběžně hodnocen.",
+          "popis": "Hodnocení není jednorázové při výběru.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "vyber_hodnoceni_dodavatelu_vylouceni",
+          "text": "Opakované porušování BOZP vede k opatřením vůči dodavateli.",
+          "popis": "Organizace reaguje na selhání dodavatele.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_vyber_hodnoceni_dodavatelu_0",
+          "nazev": "kritéria výběru dodavatelů",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyber_hodnoceni_dodavatelu_1",
+          "nazev": "hodnotící listy BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyber_hodnoceni_dodavatelu_2",
+          "nazev": "smlouvy s dodavateli",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyber_hodnoceni_dodavatelu_3",
+          "nazev": "register dodavatelů",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyber_hodnoceni_dodavatelu_4",
+          "nazev": "záznamy hodnocení",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_vyber_hodnoceni_dodavatelu_0",
+          "nazev": "nákupčí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyber_hodnoceni_dodavatelu_1",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyber_hodnoceni_dodavatelu_2",
+          "nazev": "vedoucí provozu",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyber_hodnoceni_dodavatelu_3",
+          "nazev": "vedoucí projektu",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_vyber_hodnoceni_dodavatelu_0",
+          "nazev": "dodavatel prokazuje splnění BOZP požadavků",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_vyber_hodnoceni_dodavatelu_1",
+          "nazev": "hodnocení odpovídá riziku práce",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_vyber_hodnoceni_dodavatelu_0",
+          "nazev": "Organizace neprokázala BOZP kritéria při výběru dodavatelů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyber_hodnoceni_dodavatelu_1",
+          "nazev": "Rizikový dodavatel byl zařazen bez posouzení BOZP.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyber_hodnoceni_dodavatelu_2",
+          "nazev": "Register dodavatelů s rizikovými činnostmi není veden.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyber_hodnoceni_dodavatelu_3",
+          "nazev": "Opakované porušování BOZP dodavatelem nevede k opatřením.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_vyber_hodnoceni_dodavatelu_0",
+          "nazev": "Zavést BOZP checklist do výběru dodavatelů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_vyber_hodnoceni_dodavatelu_1",
+          "nazev": "Propojit register dodavatelů s plánem kontrol na pracovišti.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_vyber_hodnoceni_dodavatelu_0",
+          "nazev": "výběr pouze podle ceny bez BOZP",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_814_dod_10",
+          "nazev": "ISO 45001: 8.1.4",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – řízení dodavatelů."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "pozadavky_bozp_dodavatele",
+      "nazev": "Požadavky BOZP na dodavatele",
+      "popis": "Ověření stanovení a předání BOZP požadavků dodavatelům.",
+      "cil_overeni": "Ověřit, že požadavky BOZP jsou definovány, smluvně ošetřeny a srozumitelně předány.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "pozadavky_bozp_dodavatele_definovany",
+          "text": "Požadavky BOZP na dodavatele jsou definovány podle rizika práce.",
+          "popis": "Požadavky odpovídají druhu činnosti.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pozadavky_bozp_dodavatele_smluvni",
+          "text": "BOZP požadavky jsou smluvně nebo písemně ošetřeny.",
+          "popis": "Odpovědnosti jsou dohodnuty.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pozadavky_bozp_dodavatele_predani",
+          "text": "Požadavky BOZP jsou předány dodavateli před zahájením prací.",
+          "popis": "Dodavatel obdrží pravidla pracoviště.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pozadavky_bozp_dodavatele_opravneni",
+          "text": "Organizace ověřuje oprávnění a kompetence pracovníků dodavatele.",
+          "popis": "Kontrolují se osvědčení u rizikových prací.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pozadavky_bozp_dodavatele_oopp",
+          "text": "Požadavky na OOPP a pracovní postupy jsou stanoveny pro dodavatele.",
+          "popis": "Dodavatel ví, co na pracovišti platí.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_pozadavky_bozp_dodavatele_0",
+          "nazev": "smlouvy o dílo",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_pozadavky_bozp_dodavatele_1",
+          "nazev": "BOZP instrukce pro dodavatele",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_pozadavky_bozp_dodavatele_2",
+          "nazev": "předávací protokoly",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_pozadavky_bozp_dodavatele_3",
+          "nazev": "kontrolní listy vstupu",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "duk_pozadavky_bozp_dodavatele_4",
+          "nazev": "evidence oprávnění",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_pozadavky_bozp_dodavatele_0",
+          "nazev": "nákupčí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_pozadavky_bozp_dodavatele_1",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_pozadavky_bozp_dodavatele_2",
+          "nazev": "vedoucí provozu",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_pozadavky_bozp_dodavatele_3",
+          "nazev": "zástupce dodavatele",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_pozadavky_bozp_dodavatele_0",
+          "nazev": "dodavatel obdržel BOZP instrukce",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_pozadavky_bozp_dodavatele_1",
+          "nazev": "pracovníci dodavatele mají platná oprávnění",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_pozadavky_bozp_dodavatele_0",
+          "nazev": "BOZP požadavky na dodavatele nejsou definovány podle rizika práce.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_pozadavky_bozp_dodavatele_1",
+          "nazev": "Dodavatel zahájil práce bez předání BOZP pravidel pracoviště.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_pozadavky_bozp_dodavatele_2",
+          "nazev": "Organizace neověřila oprávnění pracovníků dodavatele.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_pozadavky_bozp_dodavatele_3",
+          "nazev": "Smlouva neobsahuje BOZP odpovědnosti dodavatele.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_pozadavky_bozp_dodavatele_0",
+          "nazev": "Standardizovat BOZP přílohu ke smlouvě podle typu rizika.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_pozadavky_bozp_dodavatele_1",
+          "nazev": "Zavést vstupní briefing pro každého dodavatele.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_pozadavky_bozp_dodavatele_0",
+          "nazev": "dodavatel pracuje bez znalosti pravidel",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_814_dod_10",
+          "nazev": "ISO 45001: 8.1.4",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – řízení dodavatelů."
+        },
+        {
+          "id": "iso45001_72_dod_20",
+          "nazev": "ISO 45001: 7.2",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – kompetence."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "cinnosti_dodavatelu",
+      "nazev": "Řízení činností dodavatelů na pracovišti",
+      "popis": "Ověření koordinace a dohledu nad prací dodavatelů.",
+      "cil_overeni": "Ověřit, že činnosti dodavatelů jsou koordinovány a kontrolovány v provozu.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "cinnosti_dodavatelu_koordinace",
+          "text": "Práce dodavatelů je koordinována s provozem organizace.",
+          "popis": "Existuje dohled odpovědné osoby.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "cinnosti_dodavatelu_povoleni",
+          "text": "Rizikové práce dodavatelů jsou povolovány podle interních pravidel.",
+          "popis": "Práce není zahajována bez povolení.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "cinnosti_dodavatelu_blokace",
+          "text": "Organizace řídí souběh prací více dodavatelů na jednom pracovišti.",
+          "popis": "Kolize činností je ošetřena.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "cinnosti_dodavatelu_dohled",
+          "text": "Dohled nad dodavateli je vykonáván tam, kde je to vyžadováno.",
+          "popis": "Odpovědná osoba je přítomna nebo dostupná.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "cinnosti_dodavatelu_ukonceni",
+          "text": "Po ukončení prací dodavatele je pracoviště předáno v bezpečném stavu.",
+          "popis": "Organizace ověřuje stav po dodavateli.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_cinnosti_dodavatelu_0",
+          "nazev": "povolení k práci",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_cinnosti_dodavatelu_1",
+          "nazev": "záznamy koordinace",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_cinnosti_dodavatelu_2",
+          "nazev": "kontrolní prohlídky",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_cinnosti_dodavatelu_3",
+          "nazev": "předávací protokoly",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "duk_cinnosti_dodavatelu_4",
+          "nazev": "evidence dohledu",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_cinnosti_dodavatelu_0",
+          "nazev": "vedoucí provozu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_cinnosti_dodavatelu_1",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_cinnosti_dodavatelu_2",
+          "nazev": "koordinátor dodavatelů",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_cinnosti_dodavatelu_3",
+          "nazev": "zástupce dodavatele",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_cinnosti_dodavatelu_0",
+          "nazev": "dodavatel pracuje pod dohledem",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_cinnosti_dodavatelu_1",
+          "nazev": "pracoviště je po dodavateli uklizeno a bezpečné",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_cinnosti_dodavatelu_0",
+          "nazev": "Práce dodavatelů není koordinována s provozem organizace.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_cinnosti_dodavatelu_1",
+          "nazev": "Rizikové práce dodavatele probíhají bez povolení k práci.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_cinnosti_dodavatelu_2",
+          "nazev": "Souběh prací více dodavatelů není ošetřen.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_cinnosti_dodavatelu_3",
+          "nazev": "Po ukončení prací zůstává pracoviště v nebezpečném stavu.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_cinnosti_dodavatelu_0",
+          "nazev": "Zavést koordinační briefing při souběhu dodavatelů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_cinnosti_dodavatelu_1",
+          "nazev": "Povinná kontrola pracoviště po ukončení prací dodavatele.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_cinnosti_dodavatelu_0",
+          "nazev": "dodavatel pracuje bez dohledu tam, kde je potřeba",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_81_dod_10",
+          "nazev": "ISO 45001: 8.1",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – provozní plánování a řízení."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "komunikace_dodavatele",
+      "nazev": "Komunikace s dodavateli",
+      "popis": "Ověření komunikace rizik, změn a incidentů s dodavateli.",
+      "cil_overeni": "Ověřit, že komunikace BOZP s dodavateli probíhá obousměrně a včas.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "komunikace_dodavatele_predani_rizik",
+          "text": "Dodavatel je informován o rizicích pracoviště.",
+          "popis": "Organizace předává relevantní informace o rizicích.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "komunikace_dodavatele_zmeny",
+          "text": "Změny podmínek nebo rozsahu prací jsou komunikovány dodavateli.",
+          "popis": "Dodavatel ví o změnách ovlivňujících BOZP.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "komunikace_dodavatele_incidenty",
+          "text": "Incidenty související s dodavatelem jsou hlášeny a řešeny.",
+          "popis": "Existuje postup hlášení.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "komunikace_dodavatele_jazyk",
+          "text": "Komunikace BOZP je srozumitelná pracovníkům dodavatele.",
+          "popis": "Organizace ověřuje porozumění.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "komunikace_dodavatele_zpetna",
+          "text": "Dodavatel může hlásit rizika a neshody organizaci.",
+          "popis": "Existuje kanál zpětné vazby.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_komunikace_dodavatele_0",
+          "nazev": "BOZP instrukce pro dodavatele",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_komunikace_dodavatele_1",
+          "nazev": "záznamy briefingů",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_komunikace_dodavatele_2",
+          "nazev": "hlášení incidentů",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_komunikace_dodavatele_3",
+          "nazev": "emailová/kmenová komunikace",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_komunikace_dodavatele_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_komunikace_dodavatele_1",
+          "nazev": "vedoucí provozu",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_komunikace_dodavatele_2",
+          "nazev": "zástupce dodavatele",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_komunikace_dodavatele_3",
+          "nazev": "koordinátor projektu",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_komunikace_dodavatele_0",
+          "nazev": "dodavatel zná aktuální rizika pracoviště",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_komunikace_dodavatele_1",
+          "nazev": "incident je nahlášen oběma stranám",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_komunikace_dodavatele_0",
+          "nazev": "Dodavatel nebyl informován o rizicích pracoviště.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_komunikace_dodavatele_1",
+          "nazev": "Změna rozsahu prací nebyla komunikována z hlediska BOZP.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_komunikace_dodavatele_2",
+          "nazev": "Incident související s dodavatelem nebyl řešen systematicky.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_komunikace_dodavatele_3",
+          "nazev": "Komunikace BOZP není srozumitelná pracovníkům dodavatele.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_komunikace_dodavatele_0",
+          "nazev": "Zavést krátký BOZP briefing při každém vstupu na pracoviště.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_komunikace_dodavatele_1",
+          "nazev": "Určit jednotného kontaktního koordinátora BOZP pro dodavatele.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_komunikace_dodavatele_0",
+          "nazev": "dodavatel nezná aktuální omezení pracoviště",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_74_dod_10",
+          "nazev": "ISO 45001: 7.4",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – komunikace."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "vyhodnoceni_vykonu_dodavatelu",
+      "nazev": "Vyhodnocování výkonu dodavatelů",
+      "popis": "Ověření hodnocení a následných opatření vůči dodavatelům.",
+      "cil_overeni": "Ověřit, že výkon dodavatelů z hlediska BOZP je vyhodnocován a využíván pro rozhodování.",
+      "poradi": 50,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "vyhodnoceni_vykonu_dodavatelu_hodnoceni",
+          "text": "Výkon dodavatelů z hlediska BOZP je hodnocen.",
+          "popis": "Organizace posuzuje plnění BOZP požadavků.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_vykonu_dodavatelu_zaznam",
+          "text": "Výsledky hodnocení jsou zaznamenány.",
+          "popis": "Existuje historie hodnocení dodavatele.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_vykonu_dodavatelu_opatreni",
+          "text": "Zjištěné nedostatky vedou k opatřením vůči dodavateli.",
+          "popis": "Organizace reaguje na selhání.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_vykonu_dodavatelu_opakovani",
+          "text": "Opakované selhání ovlivňuje další spolupráci.",
+          "popis": "Rozhodnutí o pokračování je informované.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "vyhodnoceni_vykonu_dodavatelu_sdileni",
+          "text": "Poznatky z hodnocení dodavatelů jsou sdíleny uvnitř organizace.",
+          "popis": "Nákup a provoz se učí z incidentů.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_vyhodnoceni_vykonu_dodavatelu_0",
+          "nazev": "hodnotící listy dodavatelů",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyhodnoceni_vykonu_dodavatelu_1",
+          "nazev": "záznamy kontrol",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyhodnoceni_vykonu_dodavatelu_2",
+          "nazev": "evidence neshod dodavatelů",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyhodnoceni_vykonu_dodavatelu_3",
+          "nazev": "závěry z incidentů",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_vyhodnoceni_vykonu_dodavatelu_0",
+          "nazev": "nákupčí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyhodnoceni_vykonu_dodavatelu_1",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyhodnoceni_vykonu_dodavatelu_2",
+          "nazev": "vedoucí provozu",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyhodnoceni_vykonu_dodavatelu_3",
+          "nazev": "vedoucí nákupu",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_vyhodnoceni_vykonu_dodavatelu_0",
+          "nazev": "hodnocení reflektuje skutečný stav",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_vyhodnoceni_vykonu_dodavatelu_1",
+          "nazev": "nedostatky vedou k nápravě",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_vyhodnoceni_vykonu_dodavatelu_0",
+          "nazev": "Organizace neprokázala hodnocení výkonu dodavatelů z hlediska BOZP.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyhodnoceni_vykonu_dodavatelu_1",
+          "nazev": "Zjištěné nedostatky u dodavatele nevedou k opatřením.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyhodnoceni_vykonu_dodavatelu_2",
+          "nazev": "Historie hodnocení dodavatelů není vedena.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyhodnoceni_vykonu_dodavatelu_3",
+          "nazev": "Opakované porušování BOZP dodavatelem neovlivňuje další spolupráci.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_vyhodnoceni_vykonu_dodavatelu_0",
+          "nazev": "Zavést roční hodnocení BOZP u klíčových dodavatelů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_vyhodnoceni_vykonu_dodavatelu_1",
+          "nazev": "Propojit hodnocení dodavatelů s registrem incidentů.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_vyhodnoceni_vykonu_dodavatelu_0",
+          "nazev": "hodnocení je formální bez vlivu na spolupráci",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_91_dod_10",
+          "nazev": "ISO 45001: 9.1",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – monitorování a hodnocení."
+        },
+        {
+          "id": "iso45001_102_dod_20",
+          "nazev": "ISO 45001: 10.2",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – neshody a nápravná opatření."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        }
+      ]
+    }
+  ]
+}
