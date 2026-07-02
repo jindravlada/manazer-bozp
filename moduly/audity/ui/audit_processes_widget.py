@@ -10,13 +10,16 @@ from PySide6.QtWidgets import (
 )
 
 from moduly.audity.constants import (
+    METHODOLOGY_PANEL_STRETCH,
     PROCESS_NOT_IMPLEMENTED_TEXT,
     PROCESS_PANEL_LEFT_WIDTH,
     PROCESS_TERM_CRITERION,
     TAB_AUDITOVANE_PROCESY,
+    WORK_PANEL_STRETCH,
 )
 from moduly.audity.sluzby.audit_knowledge_service import KnowledgeTreeNode, audit_knowledge_service
 from moduly.audity.ui.audit_knowledge_tree_widget import AuditKnowledgeTreeWidget
+from moduly.audity.ui.audit_methodology_panel_widget import AuditMethodologyPanelWidget
 from moduly.audity.ui.audit_process_knowledge_widget import (
     AuditProcessKnowledgeWidget,
     AuditProcessOverviewWidget,
@@ -24,7 +27,7 @@ from moduly.audity.ui.audit_process_knowledge_widget import (
 
 
 class AuditProcessesWidget(QWidget):
-    """Záložka Řídicí procesy — vlevo strom, vpravo metodika a pracovní karta."""
+    """Záložka Řídicí procesy — strom | pracovní plocha | metodická podpora."""
 
     _PAGE_HINT = 0
     _PAGE_PLACEHOLDER = 1
@@ -37,7 +40,7 @@ class AuditProcessesWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        splitter = QSplitter()
+        main_splitter = QSplitter()
 
         self.tree_panel = QWidget()
         tree_layout = QVBoxLayout(self.tree_panel)
@@ -52,28 +55,27 @@ class AuditProcessesWidget(QWidget):
         self.tree_panel.setMinimumWidth(PROCESS_PANEL_LEFT_WIDTH)
         self.tree_panel.setMaximumWidth(PROCESS_PANEL_LEFT_WIDTH)
 
-        self.detail_panel = QFrame()
-        self.detail_panel.setObjectName("ModulePanel")
-        detail_layout = QVBoxLayout(self.detail_panel)
-        detail_layout.setContentsMargins(12, 12, 12, 12)
-        detail_layout.setSpacing(8)
+        self.work_methodology_splitter = QSplitter()
+
+        self.center_panel = QFrame()
+        self.center_panel.setObjectName("ModulePanel")
+        center_layout = QVBoxLayout(self.center_panel)
+        center_layout.setContentsMargins(12, 12, 12, 12)
+        center_layout.setSpacing(8)
 
         self._current_process_id = ""
         self._current_process_purpose = ""
+        self._current_process_knowledge: dict | None = None
         self._current_criterion_id = ""
         self._current_criterion_label = ""
 
-        header_row = QHBoxLayout()
-        header_row.setContentsMargins(0, 0, 0, 0)
+        self.center_title_label = QLabel()
+        self.center_title_label.setObjectName("SectionTitle")
+        self.center_title_label.setWordWrap(True)
 
-        self.process_title_label = QLabel()
-        self.process_title_label.setObjectName("SectionTitle")
-        self.process_title_label.setWordWrap(True)
-        header_row.addWidget(self.process_title_label, 1)
-
-        self.process_description_label = QLabel()
-        self.process_description_label.setObjectName("InfoText")
-        self.process_description_label.setWordWrap(True)
+        self.center_description_label = QLabel()
+        self.center_description_label.setObjectName("InfoText")
+        self.center_description_label.setWordWrap(True)
 
         self.content_stack = QStackedWidget()
         self.content_stack.setSizePolicy(
@@ -84,21 +86,29 @@ class AuditProcessesWidget(QWidget):
         self.content_stack.addWidget(self._build_placeholder_page())
         self.overview_widget = AuditProcessOverviewWidget()
         self.content_stack.addWidget(self.overview_widget)
-        self.knowledge_widget = AuditProcessKnowledgeWidget()
+
+        self.methodology_panel = AuditMethodologyPanelWidget()
+        self.knowledge_widget = AuditProcessKnowledgeWidget(self.methodology_panel)
         self.content_stack.addWidget(self.knowledge_widget)
 
-        detail_layout.addLayout(header_row)
-        detail_layout.addWidget(self.process_description_label)
-        detail_layout.addSpacing(4)
-        detail_layout.addWidget(self.content_stack, 1)
+        center_layout.addWidget(self.center_title_label)
+        center_layout.addWidget(self.center_description_label)
+        center_layout.addSpacing(4)
+        center_layout.addWidget(self.content_stack, 1)
 
-        splitter.addWidget(self.tree_panel)
-        splitter.addWidget(self.detail_panel)
-        splitter.setStretchFactor(0, 0)
-        splitter.setStretchFactor(1, 1)
-        splitter.setSizes([PROCESS_PANEL_LEFT_WIDTH, 720])
+        self.work_methodology_splitter.addWidget(self.center_panel)
+        self.work_methodology_splitter.addWidget(self.methodology_panel)
+        self.work_methodology_splitter.setStretchFactor(0, WORK_PANEL_STRETCH)
+        self.work_methodology_splitter.setStretchFactor(1, METHODOLOGY_PANEL_STRETCH)
+        self.work_methodology_splitter.setSizes([640, 320])
 
-        layout.addWidget(splitter, 1)
+        main_splitter.addWidget(self.tree_panel)
+        main_splitter.addWidget(self.work_methodology_splitter)
+        main_splitter.setStretchFactor(0, 0)
+        main_splitter.setStretchFactor(1, 1)
+        main_splitter.setSizes([PROCESS_PANEL_LEFT_WIDTH, 960])
+
+        layout.addWidget(main_splitter, 1)
 
         self.reload_processes()
 
@@ -142,15 +152,17 @@ class AuditProcessesWidget(QWidget):
     def _show_hint(self) -> None:
         self._current_process_id = ""
         self._current_process_purpose = ""
+        self._current_process_knowledge = None
         self._current_criterion_id = ""
         self._current_criterion_label = ""
-        self.process_title_label.setText(TAB_AUDITOVANE_PROCESY)
-        self.process_description_label.setText(
+        self.center_title_label.setText(TAB_AUDITOVANE_PROCESY)
+        self.center_description_label.setText(
             f"Vyberte {PROCESS_TERM_CRITERION.lower()} ve stromu řídicích procesů vlevo."
         )
-        self.process_description_label.setVisible(True)
+        self.center_description_label.setVisible(True)
         self.knowledge_widget.clear_criterion()
         self.overview_widget.show_process(None)
+        self.methodology_panel.show_hint()
         self.content_stack.setCurrentIndex(self._PAGE_HINT)
 
     def _on_process_selected(self, node: KnowledgeTreeNode) -> None:
@@ -159,7 +171,7 @@ class AuditProcessesWidget(QWidget):
         self._current_criterion_label = ""
 
         process_def = audit_knowledge_service.get_process_by_id(node.process_id)
-        self.process_title_label.setText(node.process_label)
+        self.center_title_label.setText(node.process_label)
 
         if process_def and process_def.ucel_procesu:
             self._current_process_purpose = process_def.ucel_procesu
@@ -167,21 +179,25 @@ class AuditProcessesWidget(QWidget):
             self._current_process_purpose = ""
 
         if process_def and process_def.popis:
-            self.process_description_label.setText(process_def.popis)
-            self.process_description_label.setVisible(True)
+            self.center_description_label.setText(process_def.popis)
+            self.center_description_label.setVisible(True)
         else:
-            self.process_description_label.setText(
+            self.center_description_label.setText(
                 f"Vyberte {PROCESS_TERM_CRITERION.lower()} pod tímto procesem."
             )
-            self.process_description_label.setVisible(True)
+            self.center_description_label.setVisible(True)
 
         self.knowledge_widget.clear_criterion()
         if process_def and process_def.has_knowledge_file:
             knowledge = audit_knowledge_service.load_process_knowledge(process_def)
+            self._current_process_knowledge = knowledge
             self.overview_widget.show_process(knowledge)
+            self.methodology_panel.show_process(knowledge)
             self.content_stack.setCurrentIndex(self._PAGE_OVERVIEW)
         else:
+            self._current_process_knowledge = None
             self.overview_widget.show_process(None)
+            self.methodology_panel.show_hint("Pro tento proces zatím není metodická podpora.")
             self.content_stack.setCurrentIndex(self._PAGE_PLACEHOLDER)
 
     def _on_criterion_selected(self, node: KnowledgeTreeNode | None) -> None:
@@ -197,23 +213,28 @@ class AuditProcessesWidget(QWidget):
         self._current_criterion_id = node.node_id
         self._current_criterion_label = str(criterion.get("nazev") or "").strip()
 
-        if not self._current_process_purpose:
+        if not self._current_process_purpose or self._current_process_knowledge is None:
             process_def = audit_knowledge_service.get_process_by_id(node.process_id)
             if process_def is not None:
                 self._current_process_purpose = process_def.ucel_procesu
+                if process_def.has_knowledge_file:
+                    self._current_process_knowledge = audit_knowledge_service.load_process_knowledge(
+                        process_def
+                    )
 
-        self.process_title_label.setText(node.process_label)
         section_label = str(criterion.get("nazev") or "").strip()
+        self.center_title_label.setText(section_label)
+
         section_popis = str(criterion.get("popis") or "").strip()
         cil_overeni = audit_knowledge_service.get_text_field(criterion, "cil_overeni")
         if cil_overeni:
-            self.process_description_label.setText(cil_overeni)
-            self.process_description_label.setVisible(True)
+            self.center_description_label.setText(cil_overeni)
+            self.center_description_label.setVisible(True)
         elif section_popis:
-            self.process_description_label.setText(section_popis)
-            self.process_description_label.setVisible(True)
+            self.center_description_label.setText(section_popis)
+            self.center_description_label.setVisible(True)
         else:
-            self.process_description_label.setVisible(False)
+            self.center_description_label.setVisible(False)
 
         self.knowledge_widget.show_criterion(
             criterion,
@@ -221,5 +242,6 @@ class AuditProcessesWidget(QWidget):
             process_label=node.process_label,
             process_purpose=self._current_process_purpose,
             criterion_label=section_label,
+            process_knowledge=self._current_process_knowledge,
         )
         self.content_stack.setCurrentIndex(self._PAGE_KNOWLEDGE)

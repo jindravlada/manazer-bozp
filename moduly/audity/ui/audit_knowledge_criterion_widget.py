@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.shared.constants import ENTITY_AUDITY
-from core.shared.control_result_display import allows_finding, control_result_label
+from core.shared.control_result_display import allows_finding
 from core.shared.finding_display import finding_status_label
 from core.shared.sluzby.control_result_service import ControlPointContext, control_result_service
 from core.shared.sluzby.finding_service import finding_service
@@ -24,14 +24,7 @@ from core.widgets.control_result_photo_widget import ControlResultPhotoWidget
 from core.widgets.finding_dialog import FindingDialog
 from core.widgets.image_viewer_dialog import ImageViewerDialog
 from moduly.audity.constants import (
-    CONTROL_POINT_HISTORY_EMPTY,
-    CONTROL_POINT_HISTORY_LIMIT,
-    CONTROL_POINT_HISTORY_SELECT,
     CONTROL_POINT_SEVERITY_OPTIONS,
-    CONTROL_POINT_SHARED_EXPERIENCES_EMPTY,
-    CONTROL_POINT_SHARED_EXPERIENCES_TITLE,
-    CONTROL_POINT_HISTORY_WORKPLACE_NO_WORKPLACE,
-    CONTROL_POINT_HISTORY_WORKPLACE_TITLE,
     FINDING_CREATE_FROM_CONTROL_POINT_LABEL,
     FINDING_CREATED_LABEL,
     FINDING_DIALOG_TITLE,
@@ -44,14 +37,6 @@ from moduly.audity.constants import (
     AUDIT_FINDING_TYPES,
     AUDIT_RESULT_HEADER_LABEL,
     AUDIT_RESULT_NOTE_LABEL,
-    GUIDE_BLOCK_EVALUATE,
-    GUIDE_BLOCK_UNDERSTAND,
-    GUIDE_BLOCK_VERIFY,
-    GUIDE_LABEL_OBJECTIVE_EVIDENCE,
-    GUIDE_LABEL_OBSERVATIONS_IN_OPERATION,
-    GUIDE_LABEL_RECOMMENDED_INTERVIEWS,
-    GUIDE_LABEL_TYPICAL_NONCONFORMITIES,
-    GUIDE_LABEL_VERIFICATION_GOAL,
     KNOWLEDGE_REFERENCE_PHOTOS_TITLE,
     REFERENCE_PHOTO_THUMBNAIL_SIZE,
     PROCESS_TERM_CRITERION,
@@ -59,9 +44,9 @@ from moduly.audity.constants import (
     AuditFindingKnowledgeContext,
 )
 from moduly.audity.sluzby.audit_service import audit_service
-from moduly.audity.sluzby.audit_control_point_history_service import audit_control_point_history_service
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 from moduly.audity.sluzby.audit_reference_photo_service import audit_reference_photo_service
+from moduly.audity.ui.audit_methodology_panel_widget import AuditMethodologyPanelWidget
 
 
 class _ControlPointFrame(QFrame):
@@ -90,19 +75,6 @@ class _ReferencePhotoThumbnail(QLabel):
 
 
 
-_VERIFY_LIST_BLOCKS: tuple[tuple[str, str], ...] = (
-    (GUIDE_LABEL_OBJECTIVE_EVIDENCE, "objektivni_dukazy"),
-    (GUIDE_LABEL_RECOMMENDED_INTERVIEWS, "doporucene_rozhovory"),
-    (GUIDE_LABEL_OBSERVATIONS_IN_OPERATION, "pozorovani_v_provozu"),
-)
-
-_EVALUATE_LIST_BLOCKS: tuple[tuple[str, str], ...] = (
-    (GUIDE_LABEL_TYPICAL_NONCONFORMITIES, "typicke_neshody"),
-    ("PKZ", "pkz"),
-    ("Pozorování", "pozorovani"),
-    ("Poznámky auditora", "poznamky_auditora"),
-)
-
 _SEVERITY_LABELS = dict(CONTROL_POINT_SEVERITY_OPTIONS)
 
 
@@ -116,10 +88,12 @@ class _ControlPointSeverityBadge(QLabel):
 
 
 class AuditKnowledgeCriterionWidget(QWidget):
-    """Vykreslí znalostní uzel sekce — popis a tematické bloky z JSON."""
+    """Střední pracovní plocha oblasti ověření — návodné otázky a hodnocení."""
 
-    def __init__(self, parent=None):
+    def __init__(self, methodology_panel: AuditMethodologyPanelWidget | None = None, parent=None):
         super().__init__(parent)
+
+        self._methodology_panel = methodology_panel
 
         self._area_id = ""
         self._area_label = ""
@@ -131,9 +105,6 @@ class AuditKnowledgeCriterionWidget(QWidget):
         self._on_finding_saved = None
         self._selected_control_point_id = ""
         self._control_point_frames: dict[str, _ControlPointFrame] = {}
-        self._history_point_label: QLabel | None = None
-        self._workplace_history_host: QWidget | None = None
-        self._shared_experiences_host: QWidget | None = None
 
         self._content_host = QWidget()
         self._content_layout = QVBoxLayout(self._content_host)
@@ -192,17 +163,9 @@ class AuditKnowledgeCriterionWidget(QWidget):
         if not self._section_label:
             self._section_label = str(section.get("nazev") or "").strip()
 
-        understand = self._build_understand_block(section)
-        if understand is not None:
-            self._content_layout.addWidget(understand)
-
-        verify = self._build_verify_block(section)
-        if verify is not None:
-            self._content_layout.addWidget(verify)
-
-        evaluate = self._build_evaluate_block(section)
-        if evaluate is not None:
-            self._content_layout.addWidget(evaluate)
+        questions = self._build_control_points_section(section)
+        if questions is not None:
+            self._content_layout.addWidget(questions)
 
         photos = audit_knowledge_service.get_general_reference_photos(section)
         if photos:
@@ -215,106 +178,11 @@ class AuditKnowledgeCriterionWidget(QWidget):
 
         self._content_layout.addStretch()
 
-    def _build_understand_block(self, section: dict) -> QWidget | None:
-        parts: list[QWidget] = []
-
-        cil_overeni = audit_knowledge_service.get_text_field(section, "cil_overeni")
-        if cil_overeni:
-            parts.append(
-                self._build_subsection(GUIDE_LABEL_VERIFICATION_GOAL, self._build_info_label(cil_overeni))
-            )
-        else:
-            popis = audit_knowledge_service.get_text_field(section, "popis")
-            if popis:
-                parts.append(self._build_subsection("Popis", self._build_info_label(popis)))
-
-        if not parts:
-            return None
-        return self._build_guide_block(GUIDE_BLOCK_UNDERSTAND, parts)
-
-    def _build_verify_block(self, section: dict) -> QWidget | None:
-        parts: list[QWidget] = []
-
-        questions = self._build_control_points_section(section)
-        if questions is not None:
-            parts.append(questions)
-
-        for title, field in _VERIFY_LIST_BLOCKS:
-            block = self._build_optional_list_block(title, section, field)
-            if block is not None:
-                parts.append(block)
-
-        if not parts:
-            return None
-        return self._build_guide_block(GUIDE_BLOCK_VERIFY, parts)
-
-    def _build_evaluate_block(self, section: dict) -> QWidget | None:
-        parts: list[QWidget] = []
-
-        for title, field in _EVALUATE_LIST_BLOCKS:
-            block = self._build_optional_list_block(title, section, field)
-            if block is not None:
-                parts.append(block)
-
-        historie = self._build_historie_block("Historie")
-        parts.append(historie)
-
-        if not parts:
-            return None
-        return self._build_guide_block(GUIDE_BLOCK_EVALUATE, parts)
-
-    def _build_guide_block(self, title: str, parts: list[QWidget]) -> QWidget:
-        container = QWidget()
-        block_layout = QVBoxLayout(container)
-        block_layout.setContentsMargins(0, 0, 0, 0)
-        block_layout.setSpacing(8)
-
-        header = QLabel(title)
-        header.setObjectName("GuideBlockTitle")
-        block_layout.addWidget(header)
-
-        panel = QFrame()
-        panel.setObjectName("ModulePanel")
-        panel_layout = QVBoxLayout(panel)
-        panel_layout.setContentsMargins(12, 12, 12, 12)
-        panel_layout.setSpacing(10)
-
-        for part in parts:
-            panel_layout.addWidget(part)
-
-        block_layout.addWidget(panel)
-        return container
-
-    def _build_subsection(self, title: str, content: QWidget) -> QWidget:
-        container = QWidget()
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
-
-        header = QLabel(title)
-        header.setObjectName("SectionTitle")
-        layout.addWidget(header)
-        layout.addWidget(content)
-        return container
-
-    def _build_optional_list_block(self, title: str, section: dict, field: str) -> QWidget | None:
-        items = audit_knowledge_service.get_active_items(section.get(field))
-        if not items:
-            return None
-
-        if field == "legislativa":
-            content = self._build_reference_list(items)
-        else:
-            content = self._build_knowledge_items_list(items)
-
-        return self._build_subsection(title, content)
-
     def _clear_content(self) -> None:
         self._selected_control_point_id = ""
         self._control_point_frames.clear()
-        self._history_point_label = None
-        self._workplace_history_host = None
-        self._shared_experiences_host = None
+        if self._methodology_panel is not None:
+            self._methodology_panel.refresh_history(None)
         while self._content_layout.count():
             item = self._content_layout.takeAt(0)
             widget = item.widget()
@@ -375,239 +243,6 @@ class AuditKnowledgeCriterionWidget(QWidget):
         dialog = ImageViewerDialog(image_path, title=KNOWLEDGE_REFERENCE_PHOTOS_TITLE, parent=self)
         dialog.exec()
 
-    def _build_historie_block(self, title: str) -> QWidget:
-        container = QWidget()
-        block_layout = QVBoxLayout(container)
-        block_layout.setContentsMargins(0, 0, 0, 0)
-        block_layout.setSpacing(8)
-
-        header = QLabel(title)
-        header.setObjectName("SectionTitle")
-        block_layout.addWidget(header)
-
-        self._history_point_label = QLabel(CONTROL_POINT_HISTORY_SELECT)
-        self._history_point_label.setObjectName("InfoText")
-        self._history_point_label.setWordWrap(True)
-        block_layout.addWidget(self._history_point_label)
-
-        block_layout.addWidget(self._build_history_section_block(
-            CONTROL_POINT_HISTORY_WORKPLACE_TITLE,
-            host_attr="_workplace_history_host",
-            initial_text=CONTROL_POINT_HISTORY_SELECT,
-        ))
-        block_layout.addWidget(self._build_history_section_block(
-            CONTROL_POINT_SHARED_EXPERIENCES_TITLE,
-            host_attr="_shared_experiences_host",
-            initial_text=CONTROL_POINT_SHARED_EXPERIENCES_EMPTY,
-        ))
-        return container
-
-    def _build_history_section_block(
-        self,
-        title: str,
-        *,
-        host_attr: str,
-        initial_text: str,
-    ) -> QWidget:
-        section = QWidget()
-        section_layout = QVBoxLayout(section)
-        section_layout.setContentsMargins(0, 0, 0, 0)
-        section_layout.setSpacing(6)
-
-        header = QLabel(title)
-        header.setObjectName("InfoText")
-        section_layout.addWidget(header)
-
-        content_host = QWidget()
-        content_layout = QVBoxLayout(content_host)
-        content_layout.setContentsMargins(0, 0, 0, 0)
-        content_layout.setSpacing(8)
-        content_layout.addWidget(self._build_info_label(initial_text))
-
-        panel = QFrame()
-        panel.setObjectName("ModulePanel")
-        panel_layout = QVBoxLayout(panel)
-        panel_layout.setContentsMargins(12, 12, 12, 12)
-        panel_layout.setSpacing(6)
-        panel_layout.addWidget(content_host)
-
-        section_layout.addWidget(panel)
-        setattr(self, host_attr, content_host)
-        return section
-
-    def _set_panel_content(self, host: QWidget | None, widget: QWidget) -> None:
-        if host is None:
-            return
-
-        layout = host.layout()
-        while layout.count():
-            item = layout.takeAt(0)
-            child = item.widget()
-            if child is not None:
-                child.deleteLater()
-        layout.addWidget(widget)
-
-    def _refresh_control_point_history(self, context: AuditFindingKnowledgeContext | None = None) -> None:
-        if self._workplace_history_host is None or self._shared_experiences_host is None:
-            return
-
-        if context is None and self._selected_control_point_id:
-            context = AuditFindingKnowledgeContext(
-                area_id=self._area_id,
-                area_label=self._area_label,
-                section_id=self._section_id,
-                section_label=self._section_label,
-                control_point_id=self._selected_control_point_id,
-                control_point_label="",
-            )
-
-        if context is None or not context.control_point_id:
-            if self._history_point_label is not None:
-                self._history_point_label.setText(CONTROL_POINT_HISTORY_SELECT)
-            self._set_panel_content(
-                self._workplace_history_host,
-                self._build_info_label(CONTROL_POINT_HISTORY_SELECT),
-            )
-            self._set_panel_content(
-                self._shared_experiences_host,
-                self._build_info_label(CONTROL_POINT_SHARED_EXPERIENCES_EMPTY),
-            )
-            return
-
-        if self._history_point_label is not None:
-            label = context.control_point_label.strip() or context.control_point_id
-            self._history_point_label.setText(label)
-
-        workplace_id = None
-        if self._audit_id is not None:
-            audit = audit_service.get_by_id(self._audit_id)
-            if audit is not None:
-                workplace_id = audit.workplace_id
-
-        if workplace_id is None:
-            self._set_panel_content(
-                self._workplace_history_host,
-                self._build_info_label(CONTROL_POINT_HISTORY_WORKPLACE_NO_WORKPLACE),
-            )
-        else:
-            workplace_entries = audit_control_point_history_service.get_workplace_history(
-                process_label=context.area_label,
-                criterion_label=context.section_label,
-                question_id=context.control_point_id,
-                workplace_id=workplace_id,
-                exclude_audit_id=self._audit_id,
-                limit=CONTROL_POINT_HISTORY_LIMIT,
-            )
-            if not workplace_entries:
-                self._set_panel_content(
-                    self._workplace_history_host,
-                    self._build_info_label(CONTROL_POINT_HISTORY_EMPTY),
-                )
-            else:
-                self._set_panel_content(
-                    self._workplace_history_host,
-                    self._build_history_entries_list(
-                        workplace_entries,
-                        include_workplace=False,
-                    ),
-                )
-
-        shared_entries = audit_control_point_history_service.get_shared_experiences(
-            process_label=context.area_label,
-            criterion_label=context.section_label,
-            question_id=context.control_point_id,
-            exclude_audit_id=self._audit_id,
-            limit=CONTROL_POINT_HISTORY_LIMIT,
-        )
-        if not shared_entries:
-            self._set_panel_content(
-                self._shared_experiences_host,
-                self._build_info_label(CONTROL_POINT_SHARED_EXPERIENCES_EMPTY),
-            )
-        else:
-            self._set_panel_content(
-                self._shared_experiences_host,
-                self._build_history_entries_list(
-                    shared_entries,
-                    include_workplace=True,
-                ),
-            )
-
-    def _build_history_entries_list(
-        self,
-        entries,
-        *,
-        include_workplace: bool,
-    ) -> QWidget:
-        list_host = QWidget()
-        list_layout = QVBoxLayout(list_host)
-        list_layout.setContentsMargins(0, 0, 0, 0)
-        list_layout.setSpacing(10)
-        for entry in entries:
-            if include_workplace:
-                list_layout.addWidget(self._build_similar_history_entry_row(entry))
-            else:
-                list_layout.addWidget(self._build_history_entry_row(entry))
-        return list_host
-
-    def _build_history_entry_row(self, entry) -> QWidget:
-        row = QWidget()
-        layout = QVBoxLayout(row)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(2)
-
-        date_text = self._format_history_datetime(entry.recorded_at)
-        header = QLabel(f"• {date_text} — {control_result_label(entry.result)}")
-        header.setWordWrap(True)
-        layout.addWidget(header)
-
-        inspection_label = entry.audit_number or str(entry.audit_id)
-        layout.addWidget(self._build_info_label(f"Audit: {inspection_label}"))
-
-        if entry.note.strip():
-            layout.addWidget(self._build_info_label(f"Poznámka: {entry.note.strip()}"))
-
-        if entry.finding is not None:
-            finding_text = self._text_preview(entry.finding.description, max_len=80)
-            layout.addWidget(
-                self._build_info_label(
-                    f"Zjištění: {finding_text} ({finding_status_label(entry.finding.status)})"
-                )
-            )
-
-        return row
-
-    def _build_similar_history_entry_row(self, entry) -> QWidget:
-        row = QWidget()
-        layout = QVBoxLayout(row)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(2)
-
-        date_text = self._format_history_datetime(entry.recorded_at)
-        workplace_label = entry.workplace_name or "—"
-        header = QLabel(f"• {date_text} — {workplace_label} — {control_result_label(entry.result)}")
-        header.setWordWrap(True)
-        layout.addWidget(header)
-
-        if entry.note.strip():
-            layout.addWidget(self._build_info_label(f"Poznámka: {entry.note.strip()}"))
-
-        if entry.finding is not None:
-            finding_text = self._text_preview(entry.finding.description, max_len=80)
-            layout.addWidget(
-                self._build_info_label(
-                    f"Zjištění: {finding_text} ({finding_status_label(entry.finding.status)})"
-                )
-            )
-
-        return row
-
-    @staticmethod
-    def _format_history_datetime(value) -> str:
-        if value is None:
-            return "—"
-        return value.strftime("%d.%m.%Y %H:%M")
-
     def _select_control_point(self, context: AuditFindingKnowledgeContext) -> None:
         self._selected_control_point_id = context.control_point_id
         for control_point_id, frame in self._control_point_frames.items():
@@ -615,7 +250,8 @@ class AuditKnowledgeCriterionWidget(QWidget):
             frame.setProperty("selected", selected)
             frame.style().unpolish(frame)
             frame.style().polish(frame)
-        self._refresh_control_point_history(context)
+        if self._methodology_panel is not None:
+            self._methodology_panel.refresh_history(context)
 
     def _build_control_points_section(self, section: dict) -> QWidget | None:
         items = audit_knowledge_service.get_audit_questions(section)
@@ -636,7 +272,7 @@ class AuditKnowledgeCriterionWidget(QWidget):
         if first_context is not None:
             self._select_control_point(first_context)
 
-        return self._build_subsection(PROCESS_TERM_QUESTION, content)
+        return self._build_block(PROCESS_TERM_QUESTION, content)
 
     def _build_control_point_row(self, item: dict) -> QWidget:
         context = self._context_for_control_point(item)
@@ -718,7 +354,9 @@ class AuditKnowledgeCriterionWidget(QWidget):
             )
         )
         result_selector.data_saved.connect(
-            lambda ctx=context: self._refresh_control_point_history(ctx)
+            lambda ctx=context: self._methodology_panel.refresh_history(ctx)
+            if self._methodology_panel is not None
+            else None
         )
 
         return row_frame
@@ -933,60 +571,6 @@ class AuditKnowledgeCriterionWidget(QWidget):
         self.refresh()
         if self._on_finding_saved is not None:
             self._on_finding_saved()
-
-    def _build_knowledge_items_list(self, items: list[dict]) -> QWidget:
-        container = QWidget()
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(10)
-
-        for item in items:
-            layout.addWidget(self._build_knowledge_item_row(item))
-
-        return container
-
-    def _build_knowledge_item_row(self, item: dict) -> QWidget:
-        row = QWidget()
-        row_layout = QVBoxLayout(row)
-        row_layout.setContentsMargins(0, 0, 0, 0)
-        row_layout.setSpacing(2)
-
-        nazev = str(item.get("nazev") or "—").strip() or "—"
-        title_label = QLabel(f"• {nazev}")
-        title_label.setWordWrap(True)
-        row_layout.addWidget(title_label)
-
-        popis = str(item.get("popis") or "").strip()
-        if popis:
-            description = QLabel(popis)
-            description.setObjectName("InfoText")
-            description.setWordWrap(True)
-            description.setContentsMargins(16, 0, 0, 0)
-            row_layout.addWidget(description)
-
-        return row
-
-    def _build_reference_list(self, items: list[dict]) -> QWidget:
-        container = QWidget()
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
-
-        for item in items:
-            nazev = str(item.get("nazev") or "—").strip() or "—"
-            label = QLabel(f"• {nazev}")
-            label.setWordWrap(True)
-            layout.addWidget(label)
-
-            popis = str(item.get("popis") or "").strip()
-            if popis:
-                description = QLabel(popis)
-                description.setObjectName("InfoText")
-                description.setWordWrap(True)
-                description.setContentsMargins(16, 0, 0, 0)
-                layout.addWidget(description)
-
-        return container
 
     def _build_block(self, title: str, content: QWidget) -> QWidget:
         container = QWidget()

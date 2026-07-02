@@ -151,10 +151,9 @@ class AudityProcessesTestCase(unittest.TestCase):
     def test_select_process_shows_guide_overview(self) -> None:
         from PySide6.QtWidgets import QLabel
         from moduly.audity.constants import (
-            GUIDE_BLOCK_EVALUATE,
-            GUIDE_BLOCK_UNDERSTAND,
-            GUIDE_BLOCK_VERIFY,
+            GUIDE_LABEL_AREAS,
             GUIDE_LABEL_UCEL,
+            METHODOLOGY_PANEL_TITLE,
         )
         from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
 
@@ -163,49 +162,41 @@ class AudityProcessesTestCase(unittest.TestCase):
 
         self.assertEqual(widget.content_stack.currentIndex(), widget._PAGE_OVERVIEW)
         tree_labels = {label.text() for label in widget.tree_panel.findChildren(QLabel)}
-        self.assertNotIn(GUIDE_BLOCK_UNDERSTAND, tree_labels)
         self.assertNotIn(GUIDE_LABEL_UCEL, tree_labels)
 
-        overview_text = widget.overview_widget._content_host.findChildren(QLabel)
-        texts = {label.text() for label in overview_text}
-        self.assertIn(GUIDE_BLOCK_UNDERSTAND, texts)
-        self.assertIn(GUIDE_BLOCK_VERIFY, texts)
-        self.assertIn(GUIDE_BLOCK_EVALUATE, texts)
+        center_texts = {label.text() for label in widget.overview_widget.findChildren(QLabel)}
+        self.assertIn(GUIDE_LABEL_UCEL, center_texts)
+        self.assertIn(GUIDE_LABEL_AREAS, center_texts)
 
-    def test_criterion_shows_guide_blocks_and_seed_content(self) -> None:
+        right_texts = {label.text() for label in widget.methodology_panel.findChildren(QLabel)}
+        self.assertIn(METHODOLOGY_PANEL_TITLE, right_texts)
+
+    def test_criterion_work_center_and_methodology_right(self) -> None:
         from PySide6.QtWidgets import QLabel
         from moduly.audity.constants import (
-            GUIDE_BLOCK_EVALUATE,
-            GUIDE_BLOCK_UNDERSTAND,
-            GUIDE_BLOCK_VERIFY,
             GUIDE_LABEL_OBJECTIVE_EVIDENCE,
             GUIDE_LABEL_TYPICAL_NONCONFORMITIES,
-            GUIDE_LABEL_VERIFICATION_GOAL,
+            PROCESS_TERM_QUESTION,
         )
-        from moduly.audity.ui.audit_knowledge_criterion_widget import AuditKnowledgeCriterionWidget
+        from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
 
-        criterion = audit_knowledge_service.get_criterion("planovani_bozp", "cile_politika")
-        assert criterion is not None
+        widget = AuditProcessesWidget()
+        widget.knowledge_tree.select_node("planovani_bozp", "cile_politika")
 
-        widget = AuditKnowledgeCriterionWidget()
-        widget.set_criterion(
-            criterion,
-            area_id="planovani_bozp",
-            area_label="Řízení plánování systému BOZP",
-            section_label="Politika, cíle a plánování",
-        )
-
-        labels = {label.text() for label in widget.findChildren(QLabel)}
-        self.assertIn(GUIDE_BLOCK_UNDERSTAND, labels)
-        self.assertIn(GUIDE_BLOCK_VERIFY, labels)
-        self.assertIn(GUIDE_BLOCK_EVALUATE, labels)
-        self.assertIn(GUIDE_LABEL_VERIFICATION_GOAL, labels)
-        self.assertIn(GUIDE_LABEL_OBJECTIVE_EVIDENCE, labels)
-        self.assertIn(GUIDE_LABEL_TYPICAL_NONCONFORMITIES, labels)
+        center_widget = widget.knowledge_widget.criterion_widget
+        center_labels = {label.text() for label in center_widget.findChildren(QLabel)}
+        self.assertIn(PROCESS_TERM_QUESTION, center_labels)
+        self.assertNotIn(GUIDE_LABEL_OBJECTIVE_EVIDENCE, center_labels)
+        self.assertNotIn(GUIDE_LABEL_TYPICAL_NONCONFORMITIES, center_labels)
         self.assertIn(
             "Jak organizace zajišťuje, že politika BOZP a cíle BOZP jsou promítnuty do skutečného řízení práce?",
-            labels,
+            center_labels,
         )
+
+        right_labels = {label.text() for label in widget.methodology_panel.findChildren(QLabel)}
+        self.assertIn(GUIDE_LABEL_OBJECTIVE_EVIDENCE, right_labels)
+        self.assertIn(GUIDE_LABEL_TYPICAL_NONCONFORMITIES, right_labels)
+        self.assertIn("Historie", right_labels)
 
     def test_control_result_persists_after_reopen(self) -> None:
         audit = self._create_audit_with_team()
@@ -265,8 +256,10 @@ class AudityProcessesTestCase(unittest.TestCase):
         mock_dialog_cls.return_value = mock_dialog
 
         from moduly.audity.ui.audit_knowledge_criterion_widget import AuditKnowledgeCriterionWidget
+        from moduly.audity.ui.audit_methodology_panel_widget import AuditMethodologyPanelWidget
 
-        widget = AuditKnowledgeCriterionWidget()
+        methodology_panel = AuditMethodologyPanelWidget()
+        widget = AuditKnowledgeCriterionWidget(methodology_panel=methodology_panel)
         widget.set_audit_id(audit.id)
         criterion = audit_knowledge_service.get_criterion("planovani_bozp", "cile_politika")
         assert criterion is not None
