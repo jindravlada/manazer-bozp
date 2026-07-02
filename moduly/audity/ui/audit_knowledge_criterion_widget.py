@@ -181,8 +181,6 @@ class AuditKnowledgeCriterionWidget(QWidget):
     def _clear_content(self) -> None:
         self._selected_control_point_id = ""
         self._control_point_frames.clear()
-        if self._methodology_panel is not None:
-            self._methodology_panel.refresh_history(None)
         while self._content_layout.count():
             item = self._content_layout.takeAt(0)
             widget = item.widget()

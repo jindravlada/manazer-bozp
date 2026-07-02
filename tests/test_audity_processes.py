@@ -207,6 +207,27 @@ class AudityProcessesTestCase(unittest.TestCase):
         self.assertIn(GUIDE_LABEL_OBJECTIVE_EVIDENCE, right_labels)
         self.assertIn(GUIDE_LABEL_TYPICAL_NONCONFORMITIES, right_labels)
         self.assertIn("Historie", right_labels)
+        self.assertNotIn("Vyberte položku ve stromu vlevo.", right_labels)
+
+    def test_methodology_panel_no_tree_hint_between_sections(self) -> None:
+        from PySide6.QtWidgets import QLabel
+        from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
+
+        widget = AuditProcessesWidget()
+        widget.knowledge_tree.select_node("urazy_mimo_udalosti", "evidence_hlaseni_urazu")
+
+        labels = [label.text() for label in widget.methodology_panel.findChildren(QLabel)]
+        self.assertNotIn("Vyberte položku ve stromu vlevo.", labels)
+
+        section_titles = [
+            "Doporučené rozhovory / role",
+            "Možné pozorování v provozu",
+        ]
+        indices = [labels.index(title) for title in section_titles if title in labels]
+        if len(indices) == 2:
+            between = labels[indices[0] + 1 : indices[1]]
+            self.assertNotIn("Vyberte položku ve stromu vlevo.", between)
+            self.assertNotIn("Vyberte auditní tvrzení vlevo.", between)
 
     def test_control_result_persists_after_reopen(self) -> None:
         audit = self._create_audit_with_team()

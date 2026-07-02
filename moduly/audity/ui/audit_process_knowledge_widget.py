@@ -134,13 +134,13 @@ class AuditProcessKnowledgeWidget(QWidget):
     ) -> None:
         self._process_knowledge = process_knowledge
         self.criterion_widget.set_process_purpose(process_purpose)
+        self._methodology_panel.show_criterion(criterion, process_knowledge)
         self.criterion_widget.set_criterion(
             criterion,
             area_id=process_id,
             area_label=process_label,
             section_label=criterion_label,
         )
-        self._methodology_panel.show_criterion(criterion, process_knowledge)
 
     def clear_criterion(self) -> None:
         self._process_knowledge = None

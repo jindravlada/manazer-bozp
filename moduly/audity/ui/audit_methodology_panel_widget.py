@@ -54,7 +54,6 @@ class AuditMethodologyPanelWidget(QFrame):
         self._mode = "hint"
         self._section: dict | None = None
         self._process_knowledge: dict | None = None
-        self._history_point_label: QLabel | None = None
         self._workplace_history_host: QWidget | None = None
         self._shared_experiences_host: QWidget | None = None
         self._history_area_label = ""
@@ -163,7 +162,6 @@ class AuditMethodologyPanelWidget(QFrame):
                 self._info_label("Pro tuto oblast zatím není metodická podpora.")
             )
         self._content_layout.addStretch()
-        self._refresh_control_point_history(None)
 
     def _build_merged_list_block(self, title: str, section: dict, field: str) -> QWidget | None:
         items = audit_knowledge_service.get_active_items(section.get(field))
@@ -207,16 +205,11 @@ class AuditMethodologyPanelWidget(QFrame):
         header.setObjectName("SectionTitle")
         block_layout.addWidget(header)
 
-        self._history_point_label = QLabel(CONTROL_POINT_HISTORY_SELECT)
-        self._history_point_label.setObjectName("InfoText")
-        self._history_point_label.setWordWrap(True)
-        block_layout.addWidget(self._history_point_label)
-
         block_layout.addWidget(
             self._build_history_section_block(
                 CONTROL_POINT_HISTORY_WORKPLACE_TITLE,
                 host_attr="_workplace_history_host",
-                initial_text=CONTROL_POINT_HISTORY_SELECT,
+                initial_text=CONTROL_POINT_HISTORY_EMPTY,
             )
         )
         block_layout.addWidget(
@@ -266,8 +259,6 @@ class AuditMethodologyPanelWidget(QFrame):
             return
 
         if context is None or not context.control_point_id:
-            if self._history_point_label is not None:
-                self._history_point_label.setText(CONTROL_POINT_HISTORY_SELECT)
             self._set_panel_content(
                 self._workplace_history_host,
                 self._info_label(CONTROL_POINT_HISTORY_SELECT),
@@ -277,10 +268,6 @@ class AuditMethodologyPanelWidget(QFrame):
                 self._info_label(CONTROL_POINT_SHARED_EXPERIENCES_EMPTY),
             )
             return
-
-        if self._history_point_label is not None:
-            label = context.control_point_label.strip() or context.control_point_id
-            self._history_point_label.setText(label)
 
         workplace_id = None
         if self._audit_id is not None:
@@ -460,13 +447,14 @@ class AuditMethodologyPanelWidget(QFrame):
         return container
 
     def _clear_content(self) -> None:
-        self._history_point_label = None
         self._workplace_history_host = None
         self._shared_experiences_host = None
         while self._content_layout.count():
             item = self._content_layout.takeAt(0)
             widget = item.widget()
             if widget is not None:
+                widget.hide()
+                widget.setParent(None)
                 widget.deleteLater()
 
     @staticmethod
