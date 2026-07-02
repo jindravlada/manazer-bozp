@@ -20,7 +20,6 @@
       "aktivni": true,
       "sekce": [],
       "postup_kontroly": [],
-      "kontrolni_body": [],
       "auditni_tvrzeni": [
         {
           "id": "vsechny_urazy_evidovany",
@@ -63,6 +62,8 @@
           "zavaznost": "stredni"
         }
       ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
       "objektivni_dukazy": [
         {
           "id": "dukaz_kniha_urazu",
@@ -185,6 +186,7 @@
           "aktivni": true
         }
       ],
+      "typicke_zavady": [],
       "pkz": [
         {
           "id": "pkz_lhuty",
@@ -231,32 +233,8 @@
           "aktivni": true
         }
       ],
-      "vazby_procesy": [
-        {
-          "id": "vazba_rizika",
-          "nazev": "Řízení rizik",
-          "poradi": 10,
-          "aktivni": true
-        },
-        {
-          "id": "vazba_napravna",
-          "nazev": "Řízení nápravných opatření",
-          "poradi": 20,
-          "aktivni": true
-        },
-        {
-          "id": "vazba_kompetence",
-          "nazev": "Řízení kompetencí",
-          "poradi": 30,
-          "aktivni": true
-        },
-        {
-          "id": "vazba_dokumentace",
-          "nazev": "Řízení dokumentovaných informací",
-          "poradi": 40,
-          "aktivni": true
-        }
-      ],
+      "doporucene_postupy": [],
+      "legislativa": [],
       "pozadavky_normy": [
         {
           "id": "iso45001_102",
@@ -287,10 +265,34 @@
           "aktivni": true
         }
       ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
       "poznamky_auditora": [],
       "referencni_fotografie": [],
-      "doporucene_postupy": [],
-      "legislativa": [],
       "historie": []
     }
   ]

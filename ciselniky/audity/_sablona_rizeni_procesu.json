@@ -1,0 +1,42 @@
+{
+  "verze": 1,
+  "id": "ID_PROCESU",
+  "nazev": "",
+  "popis": "",
+  "ucel_procesu": "",
+  "proc_je_dulezity": "",
+  "ocekavany_vystup": "",
+  "poradi": 10,
+  "aktivni": false,
+  "vazby_procesy": [],
+  "pozadavky_norem": [],
+  "sekce": [
+    {
+      "id": "ID_OBLASTI",
+      "nazev": "",
+      "popis": "",
+      "cil_overeni": "",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "objektivni_dukazy": [],
+      "doporucene_rozhovory": [],
+      "pozorovani_v_provozu": [],
+      "typicke_neshody": [],
+      "typicke_zavady": [],
+      "pkz": [],
+      "pozorovani": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "pozadavky_normy": [],
+      "vazby_procesy": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": []
+    }
+  ]
+}
