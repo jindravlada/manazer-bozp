@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import shutil
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -250,6 +251,53 @@ class AuditKnowledgeEditorService:
             reverse=True,
         )
         return backups[0] if backups else None
+
+    def save_section_metadata(
+        self,
+        process_id: str,
+        section_id: str,
+        metadata: dict,
+    ) -> list[str]:
+        self.ensure_user_catalogs()
+
+        process = audit_knowledge_service.get_process_by_id(process_id)
+        if process is None or not process.soubor_znalosti:
+            return [f"Proces '{process_id}' nebyl nalezen."]
+
+        relative_path = f"{_CATALOG_DIR}/{process.soubor_znalosti}"
+        path = self.resolve_user_path(relative_path)
+        data, error = self.load_json_safe(path)
+        if error or data is None:
+            return [error or f"Soubor {process.soubor_znalosti} nelze načíst."]
+
+        found = audit_knowledge_service._find_criterion_in_sections(
+            data.get("sekce") or [],
+            section_id,
+        )
+        if found is None:
+            return [f"Oblast '{section_id}' v procesu '{process_id}' nebyla nalezena."]
+
+        nazev = str(metadata.get("nazev") or "").strip()
+        if not nazev:
+            return ["Název oblasti ověření musí být vyplněn."]
+
+        try:
+            poradi = int(metadata.get("poradi") or 0)
+        except (TypeError, ValueError):
+            return ["Pořadí musí být celé číslo."]
+
+        parent_list, index = found
+        existing = parent_list[index]
+        updated = deepcopy(existing)
+        updated["id"] = section_id
+        updated["nazev"] = nazev
+        updated["popis"] = str(metadata.get("popis") or "").strip()
+        updated["cil_overeni"] = str(metadata.get("cil_overeni") or "").strip()
+        updated["poradi"] = poradi
+        updated["aktivni"] = bool(metadata.get("aktivni", True))
+        parent_list[index] = updated
+
+        return self.save_user_json(relative_path, data)
 
 
 audit_knowledge_editor_service = AuditKnowledgeEditorService()

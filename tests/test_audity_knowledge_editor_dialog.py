@@ -74,6 +74,7 @@ class AudityKnowledgeEditorDialogTestCase(unittest.TestCase):
 
         self.assertEqual(dialog.content_stack.currentIndex(), dialog._PAGE_SECTION)
         self.assertTrue(dialog.center_title_label.text())
+        self.assertTrue(dialog._save_btn.isEnabled())
 
     def test_exec_maximized_shows_dialog_maximized(self) -> None:
         from PySide6.QtWidgets import QDialog

@@ -196,6 +196,20 @@ KNOWLEDGE_EDITOR_SELECT_PROCESS_HINT = (
 KNOWLEDGE_EDITOR_ASSERTIONS_PLACEHOLDER = (
     "Auditní tvrzení budou editovatelná v další verzi."
 )
+KNOWLEDGE_EDITOR_TAB_PLACEHOLDER = (
+    "Tato část bude implementována v dalších commitech."
+)
+KNOWLEDGE_EDITOR_SECTION_TABS = (
+    "Auditní tvrzení",
+    "Objektivní důkazy",
+    "Rozhovory",
+    "Pozorování v provozu",
+    "Typické neshody",
+    "PKZ",
+    "Pozorování",
+    "Vazby",
+    "Normy",
+)
 
 CONTROL_POINT_HISTORY_EMPTY = "Zatím bez historie."
 CONTROL_POINT_HISTORY_SELECT = "Vyberte auditní tvrzení vlevo."

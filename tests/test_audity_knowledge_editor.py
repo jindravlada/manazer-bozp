@@ -119,31 +119,35 @@ class AudityKnowledgeEditorTestCase(unittest.TestCase):
         with path.open(encoding="utf-8") as handle:
             original = json.load(handle)
 
-        modified = json.loads(json.dumps(original))
-        section = modified["sekce"][0]
-        assertions = section.get("auditni_tvrzeni") or []
-        if assertions:
-            assertions[0] = {
-                **assertions[0],
-                "text": "Testovací úprava editoru metodiky.",
-            }
+        try:
+            modified = json.loads(json.dumps(original))
+            section = modified["sekce"][0]
+            assertions = section.get("auditni_tvrzeni") or []
+            if assertions:
+                assertions[0] = {
+                    **assertions[0],
+                    "text": "Testovací úprava editoru metodiky.",
+                }
 
-        errors = audit_knowledge_editor_service.save_user_json(relative_path, modified)
-        self.assertEqual(errors, [])
+            errors = audit_knowledge_editor_service.save_user_json(relative_path, modified)
+            self.assertEqual(errors, [])
 
-        backup_dir = audit_knowledge_editor_service.backup_dir()
-        backups = list(backup_dir.glob("urazy_mimo_udalosti.json.*.bak"))
-        self.assertGreaterEqual(len(backups), 1)
-        self.assertFalse(path.with_name(f"{path.name}.tmp").exists())
+            backup_dir = audit_knowledge_editor_service.backup_dir()
+            backups = list(backup_dir.glob("urazy_mimo_udalosti.json.*.bak"))
+            self.assertGreaterEqual(len(backups), 1)
+            self.assertFalse(path.with_name(f"{path.name}.tmp").exists())
 
-        with path.open(encoding="utf-8") as handle:
-            saved = json.load(handle)
-        self.assertEqual(
-            saved["sekce"][0]["auditni_tvrzeni"][0]["text"],
-            "Testovací úprava editoru metodiky.",
-        )
-
-        shutil.copy2(backups[0], path)
+            with path.open(encoding="utf-8") as handle:
+                saved = json.load(handle)
+            self.assertEqual(
+                saved["sekce"][0]["auditni_tvrzeni"][0]["text"],
+                "Testovací úprava editoru metodiky.",
+            )
+        finally:
+            path.write_text(
+                json.dumps(original, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
 
     def test_save_user_json_rejects_invalid_data(self) -> None:
         audit_knowledge_editor_service.ensure_user_catalogs()

@@ -32,8 +32,12 @@ class AuditKnowledgeTreeWidget(QTreeWidget):
         self.setExpandsOnDoubleClick(True)
         self.currentItemChanged.connect(self._on_current_item_changed)
 
-    def reload_tree(self) -> None:
-        self._roots = audit_knowledge_service.get_knowledge_tree()
+    def reload_tree(self, *, include_inactive: bool = False, ensure: bool = True) -> None:
+        self._include_inactive = include_inactive
+        self._roots = audit_knowledge_service.get_knowledge_tree(
+            include_inactive=include_inactive,
+            ensure=ensure,
+        )
         self.blockSignals(True)
         self.clear()
         self._nodes_by_item.clear()

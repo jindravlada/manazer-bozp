@@ -14,6 +14,16 @@ from moduly.audity.constants import (
     CONTROL_POINT_SEVERITY_STREDNI,
     CONTROL_POINT_SEVERITY_VYSOKA,
 )
+from moduly.audity.sluzby.audit_knowledge_validator import SECTION_REQUIRED_FIELDS
+
+_SKIP_SECTION_BACKFILL_FIELDS = frozenset(
+    {
+        "auditni_tvrzeni",
+        "navodne_otazky",
+        "kontrolni_body",
+        "historie",
+    }
+)
 
 _VALID_CONTROL_POINT_SEVERITIES = frozenset(
     {
@@ -257,8 +267,14 @@ class AuditKnowledgeService:
     def audity_dir(self) -> Path:
         return self.ciselniky_dir / _CATALOG_DIR
 
-    def get_processes(self, *, include_inactive: bool = False) -> list[AuditProcessDefinition]:
-        self.ensure_catalogs()
+    def get_processes(
+        self,
+        *,
+        include_inactive: bool = False,
+        ensure: bool = True,
+    ) -> list[AuditProcessDefinition]:
+        if ensure:
+            self.ensure_catalogs()
         payload = self._load_json(self.audity_dir / "procesy.json")
         raw_processes = payload.get("procesy") or []
 
@@ -276,20 +292,38 @@ class AuditKnowledgeService:
         processes.sort(key=lambda item: (item.poradi, item.nazev.lower()))
         return processes
 
-    def get_process_by_id(self, process_id: str) -> AuditProcessDefinition | None:
-        for process in self.get_processes(include_inactive=True):
+    def get_process_by_id(
+        self,
+        process_id: str,
+        *,
+        ensure: bool = True,
+    ) -> AuditProcessDefinition | None:
+        for process in self.get_processes(include_inactive=True, ensure=ensure):
             if process.id == process_id:
                 return process
         return None
 
-    def get_knowledge_tree(self) -> list[KnowledgeTreeNode]:
+    def get_knowledge_tree(
+        self,
+        *,
+        include_inactive: bool = False,
+        ensure: bool = True,
+    ) -> list[KnowledgeTreeNode]:
         roots: list[KnowledgeTreeNode] = []
-        for process in self.get_processes():
+        for process in self.get_processes(include_inactive=include_inactive, ensure=ensure):
             children: tuple[KnowledgeTreeNode, ...] = ()
             if process.has_knowledge_file:
-                knowledge = self.load_process_knowledge(process)
+                knowledge = self.load_process_knowledge(process, ensure=ensure)
                 if knowledge:
-                    children = self._build_criterion_nodes(process, self.get_active_criteria(knowledge))
+                    criteria = self._filter_sections(
+                        knowledge.get("sekce") or [],
+                        include_inactive=include_inactive,
+                    )
+                    children = self._build_criterion_nodes(
+                        process,
+                        criteria,
+                        include_inactive=include_inactive,
+                    )
 
             roots.append(
                 KnowledgeTreeNode(
@@ -324,11 +358,22 @@ class AuditKnowledgeService:
         self,
         process: AuditProcessDefinition,
         criteria: list[dict],
+        *,
+        include_inactive: bool = False,
     ) -> tuple[KnowledgeTreeNode, ...]:
         nodes: list[KnowledgeTreeNode] = []
         for criterion in criteria:
-            nested = self.get_active_criteria(criterion) if criterion.get("sekce") else []
-            child_nodes = self._build_criterion_nodes(process, nested) if nested else ()
+            nested_sections = criterion.get("sekce") or []
+            nested = (
+                self._filter_sections(nested_sections, include_inactive=include_inactive)
+                if nested_sections
+                else []
+            )
+            child_nodes = (
+                self._build_criterion_nodes(process, nested, include_inactive=include_inactive)
+                if nested
+                else ()
+            )
             nodes.append(
                 KnowledgeTreeNode(
                     node_type=KNOWLEDGE_NODE_SECTION,
@@ -343,24 +388,48 @@ class AuditKnowledgeService:
         return tuple(nodes)
 
     @staticmethod
+    def _filter_sections(sections: list, *, include_inactive: bool) -> list[dict]:
+        filtered: list[dict] = []
+        for section in sections:
+            if not isinstance(section, dict):
+                continue
+            if not include_inactive and not section.get("aktivni", True):
+                continue
+            filtered.append(section)
+
+        filtered.sort(
+            key=lambda item: (
+                int(item.get("poradi") or 0),
+                str(item.get("nazev") or "").lower(),
+            )
+        )
+        return filtered
+
+    @staticmethod
     def _find_criterion_node(
         nodes: tuple[KnowledgeTreeNode, ...],
         criterion_id: str,
     ) -> KnowledgeTreeNode | None:
         for node in nodes:
-            if node.node_id == section_id:
+            if node.node_id == criterion_id:
                 return node
             if node.children:
-                found = AuditKnowledgeService._find_criterion_node(node.children, section_id)
+                found = AuditKnowledgeService._find_criterion_node(node.children, criterion_id)
                 if found is not None:
                     return found
         return None
 
-    def load_process_knowledge(self, process: AuditProcessDefinition) -> dict | None:
+    def load_process_knowledge(
+        self,
+        process: AuditProcessDefinition,
+        *,
+        ensure: bool = True,
+    ) -> dict | None:
         if not process.soubor_znalosti:
             return None
 
-        self.ensure_catalogs()
+        if ensure:
+            self.ensure_catalogs()
         path = self.audity_dir / process.soubor_znalosti
         if not path.is_file():
             return None
@@ -535,6 +604,16 @@ class AuditKnowledgeService:
         full_severity_sync: bool,
     ) -> bool:
         changed = False
+
+        for field in SECTION_REQUIRED_FIELDS:
+            if field in user_section or field in _SKIP_SECTION_BACKFILL_FIELDS:
+                continue
+            if field in seed_section:
+                user_section[field] = deepcopy(seed_section[field])
+                changed = True
+            elif field == "sekce":
+                user_section[field] = []
+                changed = True
 
         if self._merge_auditni_tvrzeni_from_seed(user_section, seed_section):
             changed = True
@@ -756,12 +835,18 @@ class AuditKnowledgeService:
 
         return self._collect_criteria(knowledge.get("sekce") or [], include_inactive=include_inactive)
 
-    def get_criterion(self, process_id: str, criterion_id: str) -> dict | None:
-        process = self.get_process_by_id(process_id)
+    def get_criterion(
+        self,
+        process_id: str,
+        criterion_id: str,
+        *,
+        ensure: bool = True,
+    ) -> dict | None:
+        process = self.get_process_by_id(process_id, ensure=ensure)
         if process is None or not process.has_knowledge_file:
             return None
 
-        knowledge = self.load_process_knowledge(process)
+        knowledge = self.load_process_knowledge(process, ensure=ensure)
         if knowledge is None:
             return None
 
