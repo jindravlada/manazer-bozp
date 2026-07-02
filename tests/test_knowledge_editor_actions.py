@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication, QDialog, QLineEdit, QMessageBox
+from PySide6.QtWidgets import QApplication, QDialog, QLineEdit, QMessageBox, QSizePolicy
 
 _TMP = Path(tempfile.mkdtemp())
 _HOME_PATCHER = patch.object(Path, "home", return_value=_TMP)
@@ -42,11 +42,16 @@ def _import_audity_services() -> None:
     global KNOWLEDGE_EDITOR_SAVED_MESSAGE
 
     from core.services.editable_catalog_service import editable_catalog_service
-    from core.widgets.knowledge_editor_actions import KNOWLEDGE_EDITOR_SAVED_MESSAGE
+    from core.widgets.knowledge_editor_actions import (
+        KNOWLEDGE_EDITOR_SAVED_MESSAGE,
+        KNOWLEDGE_EDITOR_UNSAVED_MESSAGE,
+    )
     from moduly.audity.sluzby.audit_knowledge_editor_service import (
         audit_knowledge_editor_service,
     )
     from moduly.audity.ui.audity_knowledge_editor_dialog import AudityKnowledgeEditorDialog
+
+    globals()["KNOWLEDGE_EDITOR_UNSAVED_MESSAGE"] = KNOWLEDGE_EDITOR_UNSAVED_MESSAGE
 
 
 _bootstrap_audity_storage()
@@ -83,6 +88,36 @@ class AudityKnowledgeEditorActionsTestCase(unittest.TestCase):
         self.assertEqual(dialog._apply_btn.text(), "Použít")
         self.assertEqual(dialog._save_close_btn.text(), "Uložit a zavřít")
         self.assertEqual(dialog._close_btn.text(), "Zavřít")
+
+    def test_footer_layout_stable_on_open(self) -> None:
+        dialog = AudityKnowledgeEditorDialog()
+        self.assertEqual(dialog._status_label.text(), "")
+        self.assertFalse(dialog._status_label.isHidden())
+        for button in (dialog._apply_btn, dialog._save_close_btn, dialog._close_btn):
+            self.assertEqual(
+                button.sizePolicy().horizontalPolicy(),
+                QSizePolicy.Policy.Fixed,
+            )
+            self.assertFalse(button.icon().isNull())
+
+    def test_footer_status_cycle(self) -> None:
+        dialog = AudityKnowledgeEditorDialog()
+        self.assertTrue(dialog.knowledge_tree.select_node(_PROCESS_ID))
+
+        dialog.process_editor._nazev_edit.setText("Editor test — cyklus stavu")
+        self.assertEqual(dialog._status_label.text(), KNOWLEDGE_EDITOR_UNSAVED_MESSAGE)
+        self.assertTrue(dialog._modified)
+
+        dialog._apply_changes()
+        self.assertEqual(dialog._status_label.text(), KNOWLEDGE_EDITOR_SAVED_MESSAGE)
+        self.assertFalse(dialog._modified)
+
+        dialog.process_editor._nazev_edit.setText("Editor test — další změna")
+        self.assertEqual(dialog._status_label.text(), KNOWLEDGE_EDITOR_UNSAVED_MESSAGE)
+
+        apply_width = dialog._apply_btn.width()
+        dialog._apply_changes()
+        self.assertEqual(dialog._apply_btn.width(), apply_width)
 
     def test_apply_saves_and_keeps_dialog_open(self) -> None:
         dialog = AudityKnowledgeEditorDialog()
@@ -169,7 +204,7 @@ class AudityKnowledgeEditorActionsTestCase(unittest.TestCase):
         dialog._apply_changes()
 
         mock_warning.assert_called_once()
-        self.assertFalse(dialog._status_label.text())
+        self.assertEqual(dialog._status_label.text(), "")
 
 
 class ProverkyKnowledgeEditorActionsTestCase(unittest.TestCase):
@@ -214,13 +249,32 @@ class ProverkyKnowledgeEditorActionsTestCase(unittest.TestCase):
         self.assertEqual(dialog._save_close_btn.text(), "Uložit a zavřít")
         self.assertEqual(dialog._close_btn.text(), "Zavřít")
 
+    def test_footer_layout_stable_on_open(self) -> None:
+        dialog = self._create_dialog()
+        self.assertEqual(dialog._status_label.text(), "")
+        self.assertFalse(dialog._status_label.isHidden())
+        for button in (dialog._apply_btn, dialog._save_close_btn, dialog._close_btn):
+            self.assertEqual(
+                button.sizePolicy().horizontalPolicy(),
+                QSizePolicy.Policy.Fixed,
+            )
+            self.assertFalse(button.icon().isNull())
+
+    def test_modified_flag_and_status_on_edit(self) -> None:
+        dialog = self._create_dialog()
+        self.assertFalse(dialog._modified)
+        self.assertEqual(dialog._status_label.text(), "")
+        dialog._nazev_edit.setText("Editor test — modified flag")
+        self.assertTrue(dialog._modified)
+        self.assertEqual(dialog._status_label.text(), "● Neuložené změny")
+
     def test_apply_saves_and_keeps_dialog_open(self) -> None:
         dialog = self._create_dialog()
         dialog._nazev_edit.setText("Editor test — Prověrky Použít")
         dialog._apply_changes()
 
         self.assertEqual(dialog.result(), QDialog.DialogCode.Rejected)
-        self.assertEqual(dialog._status_label.text(), "Uloženo.")
+        self.assertEqual(dialog._status_label.text(), KNOWLEDGE_EDITOR_SAVED_MESSAGE)
         self.assertFalse(dialog._modified)
 
     def test_save_and_close_accepts_dialog(self) -> None:
@@ -230,11 +284,13 @@ class ProverkyKnowledgeEditorActionsTestCase(unittest.TestCase):
 
         self.assertEqual(dialog.result(), QDialog.DialogCode.Accepted)
 
-    def test_modified_flag_on_edit(self) -> None:
+    def test_footer_status_after_save_and_reedit(self) -> None:
         dialog = self._create_dialog()
-        self.assertFalse(dialog._modified)
-        dialog._nazev_edit.setText("Editor test — modified flag")
-        self.assertTrue(dialog._modified)
+        dialog._nazev_edit.setText("Editor test — Prověrky stav")
+        dialog._apply_changes()
+        self.assertEqual(dialog._status_label.text(), "✓ Uloženo.")
+        dialog._popis_edit.setPlainText("Další úprava")
+        self.assertEqual(dialog._status_label.text(), "● Neuložené změny")
 
 
 if __name__ == "__main__":

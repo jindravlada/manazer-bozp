@@ -146,15 +146,20 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
         section_id: str,
         section: dict,
     ) -> None:
-        self._process_id = process_id
-        self._section_id = section_id
+        self._set_metadata_signals_blocked(True)
+        try:
+            self._process_id = process_id
+            self._section_id = section_id
 
-        self._id_label.setText(section_id)
-        self._nazev_edit.setText(str(section.get("nazev") or ""))
-        self._popis_edit.setPlainText(str(section.get("popis") or ""))
-        self._cil_overeni_edit.setPlainText(str(section.get("cil_overeni") or ""))
-        self._poradi_spin.setValue(int(section.get("poradi") or 0))
-        self._aktivni_check.setChecked(bool(section.get("aktivni", True)))
+            self._id_label.setText(section_id)
+            self._nazev_edit.setText(str(section.get("nazev") or ""))
+            self._popis_edit.setPlainText(str(section.get("popis") or ""))
+            self._cil_overeni_edit.setPlainText(str(section.get("cil_overeni") or ""))
+            self._poradi_spin.setValue(int(section.get("poradi") or 0))
+            self._aktivni_check.setChecked(bool(section.get("aktivni", True)))
+        finally:
+            self._set_metadata_signals_blocked(False)
+
         self._assertions_widget.load_section(
             process_id=process_id,
             section_id=section_id,
@@ -178,19 +183,30 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
         )
 
     def clear_section(self) -> None:
-        self._process_id = ""
-        self._section_id = ""
-        self._id_label.clear()
-        self._nazev_edit.clear()
-        self._popis_edit.clear()
-        self._cil_overeni_edit.clear()
-        self._poradi_spin.setValue(0)
-        self._aktivni_check.setChecked(True)
+        self._set_metadata_signals_blocked(True)
+        try:
+            self._process_id = ""
+            self._section_id = ""
+            self._id_label.clear()
+            self._nazev_edit.clear()
+            self._popis_edit.clear()
+            self._cil_overeni_edit.clear()
+            self._poradi_spin.setValue(0)
+            self._aktivni_check.setChecked(True)
+        finally:
+            self._set_metadata_signals_blocked(False)
+
         self._assertions_widget.clear_section()
         for list_widget in self._list_widgets.values():
             list_widget.clear_section()
         self._postup_widget.clear_section()
         self._reference_photo_widget.clear_section()
+
+    def _set_metadata_signals_blocked(self, blocked: bool) -> None:
+        for widget in (self._nazev_edit, self._popis_edit, self._cil_overeni_edit):
+            widget.blockSignals(blocked)
+        self._poradi_spin.blockSignals(blocked)
+        self._aktivni_check.blockSignals(blocked)
 
     def section_metadata(self) -> dict:
         return {

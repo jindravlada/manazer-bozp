@@ -19,6 +19,7 @@ from core.widgets.knowledge_editor_actions import (
     confirm_close_with_unsaved_changes,
     create_knowledge_editor_footer,
     show_save_status,
+    show_unsaved_status,
 )
 from moduly.audity.constants import (
     KNOWLEDGE_EDITOR_ADD_PROCESS_BUTTON,
@@ -113,7 +114,7 @@ class AudityKnowledgeEditorDialog(QDialog):
         self.content_stack.addWidget(self.process_editor)
         self.section_editor = AudityKnowledgeSectionEditorWidget()
         self.section_editor.content_modified.connect(self._mark_modified)
-        self.section_editor.content_saved.connect(self._mark_saved)
+        self.section_editor.content_saved.connect(self._on_section_content_saved)
         self.content_stack.addWidget(self.section_editor)
 
         center_layout.addWidget(self.center_title_label)
@@ -156,9 +157,14 @@ class AudityKnowledgeEditorDialog(QDialog):
 
     def _mark_modified(self) -> None:
         self._modified = True
+        show_unsaved_status(self._status_label)
 
     def _mark_saved(self) -> None:
         self._modified = False
+
+    def _on_section_content_saved(self) -> None:
+        self._mark_saved()
+        show_save_status(self._status_label)
 
     def _apply_changes(self) -> None:
         if self._save_current():

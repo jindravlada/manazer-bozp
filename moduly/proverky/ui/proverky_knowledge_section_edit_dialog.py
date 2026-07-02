@@ -27,6 +27,7 @@ from core.widgets.knowledge_editor_actions import (
     confirm_close_with_unsaved_changes,
     create_knowledge_editor_footer,
     show_save_status,
+    show_unsaved_status,
 )
 from moduly.proverky.constants import CONTROL_POINT_SEVERITY_OPTIONS, REFERENCE_PHOTO_FILTER
 from moduly.proverky.sluzby.proverky_knowledge_service import (
@@ -246,6 +247,7 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
 
     def _mark_modified(self) -> None:
         self._modified = True
+        show_unsaved_status(self._status_label)
 
     def _mark_saved(self) -> None:
         self._modified = False

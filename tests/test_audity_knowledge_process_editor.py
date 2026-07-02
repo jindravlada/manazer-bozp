@@ -303,7 +303,7 @@ class AudityKnowledgeEditorDialogSaveFeedbackTestCase(
         dialog._apply_changes()
 
         mock_warning.assert_called_once()
-        self.assertFalse(dialog._status_label.isVisible())
+        self.assertEqual(dialog._status_label.text(), "")
 
 
 if __name__ == "__main__":

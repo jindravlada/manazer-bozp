@@ -1,7 +1,6 @@
 """Editační formulář metadat řídicího procesu v editoru metodiky auditora."""
 
 from PySide6.QtCore import Signal
-from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QFormLayout,
@@ -100,28 +99,48 @@ class AudityKnowledgeProcessEditorWidget(QWidget):
         return bool(self._process_id)
 
     def load_process(self, *, process_id: str, metadata: dict) -> None:
-        self._process_id = process_id
-        self._id_label.setText(process_id)
-        self._add_section_btn.setEnabled(True)
-        self._nazev_edit.setText(str(metadata.get("nazev") or ""))
-        self._popis_edit.setPlainText(str(metadata.get("popis") or ""))
-        self._ucel_edit.setPlainText(str(metadata.get("ucel_procesu") or ""))
-        self._proc_je_dulezity_edit.setPlainText(str(metadata.get("proc_je_dulezity") or ""))
-        self._ocekavany_vystup_edit.setPlainText(str(metadata.get("ocekavany_vystup") or ""))
-        self._poradi_spin.setValue(int(metadata.get("poradi") or 0))
-        self._aktivni_check.setChecked(bool(metadata.get("aktivni", True)))
+        self._set_form_signals_blocked(True)
+        try:
+            self._process_id = process_id
+            self._id_label.setText(process_id)
+            self._add_section_btn.setEnabled(True)
+            self._nazev_edit.setText(str(metadata.get("nazev") or ""))
+            self._popis_edit.setPlainText(str(metadata.get("popis") or ""))
+            self._ucel_edit.setPlainText(str(metadata.get("ucel_procesu") or ""))
+            self._proc_je_dulezity_edit.setPlainText(str(metadata.get("proc_je_dulezity") or ""))
+            self._ocekavany_vystup_edit.setPlainText(str(metadata.get("ocekavany_vystup") or ""))
+            self._poradi_spin.setValue(int(metadata.get("poradi") or 0))
+            self._aktivni_check.setChecked(bool(metadata.get("aktivni", True)))
+        finally:
+            self._set_form_signals_blocked(False)
 
     def clear_process(self) -> None:
-        self._process_id = ""
-        self._id_label.clear()
-        self._add_section_btn.setEnabled(False)
-        self._nazev_edit.clear()
-        self._popis_edit.clear()
-        self._ucel_edit.clear()
-        self._proc_je_dulezity_edit.clear()
-        self._ocekavany_vystup_edit.clear()
-        self._poradi_spin.setValue(0)
-        self._aktivni_check.setChecked(True)
+        self._set_form_signals_blocked(True)
+        try:
+            self._process_id = ""
+            self._id_label.clear()
+            self._add_section_btn.setEnabled(False)
+            self._nazev_edit.clear()
+            self._popis_edit.clear()
+            self._ucel_edit.clear()
+            self._proc_je_dulezity_edit.clear()
+            self._ocekavany_vystup_edit.clear()
+            self._poradi_spin.setValue(0)
+            self._aktivni_check.setChecked(True)
+        finally:
+            self._set_form_signals_blocked(False)
+
+    def _set_form_signals_blocked(self, blocked: bool) -> None:
+        for widget in (
+            self._nazev_edit,
+            self._popis_edit,
+            self._ucel_edit,
+            self._proc_je_dulezity_edit,
+            self._ocekavany_vystup_edit,
+        ):
+            widget.blockSignals(blocked)
+        self._poradi_spin.blockSignals(blocked)
+        self._aktivni_check.blockSignals(blocked)
 
     def process_metadata(self) -> dict:
         return {
