@@ -217,7 +217,12 @@ class AudityKnowledgeSectionEditorWidgetTestCase(unittest.TestCase):
         widget = AudityKnowledgeSectionEditorWidget()
 
         self.assertEqual(widget._tabs.count(), len(KNOWLEDGE_EDITOR_SECTION_TABS))
+        self.assertEqual(widget._tabs.tabText(0), "Auditní tvrzení")
+        self.assertIs(widget._tabs.widget(0), widget._assertions_widget)
+
         for index, title in enumerate(KNOWLEDGE_EDITOR_SECTION_TABS):
+            if index == 0:
+                continue
             self.assertEqual(widget._tabs.tabText(index), title)
             tab = widget._tabs.widget(index)
             label = tab.findChild(QLabel)

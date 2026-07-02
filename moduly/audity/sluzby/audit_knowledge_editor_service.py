@@ -14,6 +14,7 @@ from core.services.storage_service import storage_service
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 from moduly.audity.sluzby.audit_knowledge_validator import (
     PROCESY_BASENAME,
+    VALID_ZAVAZNOST,
     load_json_file,
     validate_all_catalogs,
     validate_knowledge_data,
@@ -298,6 +299,197 @@ class AuditKnowledgeEditorService:
         parent_list[index] = updated
 
         return self.save_user_json(relative_path, data)
+
+    def _resolve_section_context(
+        self,
+        process_id: str,
+        section_id: str,
+    ) -> tuple[str, dict, list, int, dict] | tuple[None, list[str]]:
+        self.ensure_user_catalogs()
+
+        process = audit_knowledge_service.get_process_by_id(process_id)
+        if process is None or not process.soubor_znalosti:
+            return None, [f"Proces '{process_id}' nebyl nalezen."]
+
+        relative_path = f"{_CATALOG_DIR}/{process.soubor_znalosti}"
+        data, error = self.load_json_safe(self.resolve_user_path(relative_path))
+        if error or data is None:
+            return None, [error or f"Soubor {process.soubor_znalosti} nelze načíst."]
+
+        found = audit_knowledge_service._find_criterion_in_sections(
+            data.get("sekce") or [],
+            section_id,
+        )
+        if found is None:
+            return None, [f"Oblast '{section_id}' v procesu '{process_id}' nebyla nalezena."]
+
+        parent_list, index = found
+        section = parent_list[index]
+        return (relative_path, data, parent_list, index, section), []
+
+    @staticmethod
+    def _validate_assertion_payload(payload: dict, *, require_id: bool) -> tuple[dict | None, list[str]]:
+        item_id = str(payload.get("id") or "").strip()
+        if require_id and not item_id:
+            return None, ["Chybí identifikátor auditního tvrzení."]
+
+        text = str(payload.get("text") or payload.get("nazev") or "").strip()
+        if not text:
+            return None, ["Text auditního tvrzení musí být vyplněn."]
+
+        try:
+            poradi = int(payload.get("poradi"))
+        except (TypeError, ValueError):
+            return None, ["Pořadí musí být celé číslo."]
+
+        zavaznost = str(payload.get("zavaznost") or "").strip().lower()
+        if not zavaznost:
+            return None, ["Závažnost musí být vyplněna."]
+        if zavaznost not in VALID_ZAVAZNOST:
+            return None, [f"Neplatná závažnost '{zavaznost}'."]
+
+        normalized = {
+            "text": text,
+            "nazev": text,
+            "popis": str(payload.get("popis") or "").strip(),
+            "poradi": poradi,
+            "aktivni": bool(payload.get("aktivni", True)),
+            "zavaznost": zavaznost,
+        }
+        if item_id:
+            normalized["id"] = item_id
+        return normalized, []
+
+    def _save_section_assertions(
+        self,
+        *,
+        relative_path: str,
+        data: dict,
+        section: dict,
+        before_assertions: list,
+        after_assertions: list,
+    ) -> list[str]:
+        removal_errors = self.validate_no_list_items_removed(
+            before_assertions,
+            after_assertions,
+            path=f"{section.get('id')}.auditni_tvrzeni",
+        )
+        if removal_errors:
+            return removal_errors
+
+        section["auditni_tvrzeni"] = after_assertions
+        return self.save_user_json(relative_path, data)
+
+    def save_assertion(
+        self,
+        process_id: str,
+        section_id: str,
+        payload: dict,
+        *,
+        assertion_id: str | None = None,
+    ) -> list[str]:
+        context, errors = self._resolve_section_context(process_id, section_id)
+        if errors:
+            return errors
+        assert context is not None
+
+        relative_path, data, _parent_list, _index, section = context
+        before_assertions = deepcopy(section.get("auditni_tvrzeni") or [])
+        after_assertions = deepcopy(before_assertions)
+        existing_ids = {
+            str(item.get("id") or "").strip()
+            for item in after_assertions
+            if isinstance(item, dict) and str(item.get("id") or "").strip()
+        }
+
+        normalized, validation_errors = self._validate_assertion_payload(
+            {**payload, "id": assertion_id or payload.get("id")},
+            require_id=assertion_id is not None,
+        )
+        if validation_errors:
+            return validation_errors
+        assert normalized is not None
+
+        if assertion_id:
+            target_id = assertion_id.strip()
+            if not target_id:
+                return ["Chybí identifikátor auditního tvrzení."]
+            if target_id not in existing_ids:
+                return [f"Auditní tvrzení '{target_id}' nebylo nalezeno."]
+
+            updated = False
+            for index, item in enumerate(after_assertions):
+                if not isinstance(item, dict):
+                    continue
+                if str(item.get("id") or "").strip() != target_id:
+                    continue
+                after_assertions[index] = {
+                    **normalized,
+                    "id": target_id,
+                }
+                updated = True
+                break
+            if not updated:
+                return [f"Auditní tvrzení '{target_id}' nebylo nalezeno."]
+        else:
+            new_id = audit_knowledge_service.generate_item_id(
+                normalized["text"],
+                existing_ids,
+            )
+            if new_id in existing_ids:
+                return [f"Identifikátor '{new_id}' již existuje."]
+            after_assertions.append({**normalized, "id": new_id})
+
+        return self._save_section_assertions(
+            relative_path=relative_path,
+            data=data,
+            section=section,
+            before_assertions=before_assertions,
+            after_assertions=after_assertions,
+        )
+
+    def set_assertion_active(
+        self,
+        process_id: str,
+        section_id: str,
+        assertion_id: str,
+        *,
+        aktivni: bool,
+    ) -> list[str]:
+        context, errors = self._resolve_section_context(process_id, section_id)
+        if errors:
+            return errors
+        assert context is not None
+
+        relative_path, data, _parent_list, _index, section = context
+        before_assertions = deepcopy(section.get("auditni_tvrzeni") or [])
+        after_assertions = deepcopy(before_assertions)
+        target_id = assertion_id.strip()
+        if not target_id:
+            return ["Chybí identifikátor auditního tvrzení."]
+
+        updated = False
+        for index, item in enumerate(after_assertions):
+            if not isinstance(item, dict):
+                continue
+            if str(item.get("id") or "").strip() != target_id:
+                continue
+            updated_item = deepcopy(item)
+            updated_item["aktivni"] = aktivni
+            after_assertions[index] = updated_item
+            updated = True
+            break
+
+        if not updated:
+            return [f"Auditní tvrzení '{target_id}' nebylo nalezeno."]
+
+        return self._save_section_assertions(
+            relative_path=relative_path,
+            data=data,
+            section=section,
+            before_assertions=before_assertions,
+            after_assertions=after_assertions,
+        )
 
 
 audit_knowledge_editor_service = AuditKnowledgeEditorService()

@@ -17,6 +17,7 @@ from moduly.audity.constants import (
     KNOWLEDGE_EDITOR_SECTION_TABS,
     KNOWLEDGE_EDITOR_TAB_PLACEHOLDER,
 )
+from moduly.audity.ui.audity_knowledge_assertions_widget import AudityKnowledgeAssertionsWidget
 
 
 class AudityKnowledgeSectionEditorWidget(QWidget):
@@ -64,7 +65,11 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
         scroll_layout.addLayout(form)
 
         self._tabs = QTabWidget()
-        for title in KNOWLEDGE_EDITOR_SECTION_TABS:
+        self._assertions_widget = AudityKnowledgeAssertionsWidget()
+        for index, title in enumerate(KNOWLEDGE_EDITOR_SECTION_TABS):
+            if index == 0:
+                self._tabs.addTab(self._assertions_widget, title)
+                continue
             tab = QWidget()
             tab_layout = QVBoxLayout(tab)
             placeholder = QLabel(KNOWLEDGE_EDITOR_TAB_PLACEHOLDER)
@@ -105,6 +110,11 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
         self._cil_overeni_edit.setPlainText(str(section.get("cil_overeni") or ""))
         self._poradi_spin.setValue(int(section.get("poradi") or 0))
         self._aktivni_check.setChecked(bool(section.get("aktivni", True)))
+        self._assertions_widget.load_section(
+            process_id=process_id,
+            section_id=section_id,
+            section=section,
+        )
 
     def clear_section(self) -> None:
         self._process_id = ""
@@ -115,6 +125,7 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
         self._cil_overeni_edit.clear()
         self._poradi_spin.setValue(0)
         self._aktivni_check.setChecked(True)
+        self._assertions_widget.clear_section()
 
     def section_metadata(self) -> dict:
         return {
