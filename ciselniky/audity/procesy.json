@@ -1,5 +1,5 @@
 {
-  "verze": 3,
+  "verze": 4,
   "procesy": [
     {
       "id": "urazy_mimo_udalosti",
@@ -9,6 +9,15 @@
       "poradi": 10,
       "aktivni": true,
       "soubor_znalosti": "urazy_mimo_udalosti.json"
+    },
+    {
+      "id": "rizeni_rizik",
+      "nazev": "Řízení rizik",
+      "popis": "Proces identifikace, hodnocení, ošetření a přezkumu rizik BOZP v organizaci.",
+      "ucel_procesu": "Zajistit systematické řízení rizik BOZP včetně identifikace nebezpečí, hodnocení, ošetření, přezkumu a komunikace rizik.",
+      "poradi": 20,
+      "aktivni": true,
+      "soubor_znalosti": "rizeni_rizik.json"
     }
   ]
 }

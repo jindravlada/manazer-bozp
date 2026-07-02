@@ -28,6 +28,21 @@ class AudityKnowledgeTestCase(unittest.TestCase):
         self.assertGreaterEqual(len(processes), 1)
         process_ids = {process.id for process in processes}
         self.assertIn("urazy_mimo_udalosti", process_ids)
+        self.assertIn("rizeni_rizik", process_ids)
+
+    def test_load_rizeni_rizik_process(self) -> None:
+        process = audit_knowledge_service.get_process_by_id("rizeni_rizik")
+        assert process is not None
+        self.assertEqual(process.nazev, "Řízení rizik")
+
+        knowledge = audit_knowledge_service.load_process_knowledge(process)
+        assert knowledge is not None
+        criteria = audit_knowledge_service.get_active_criteria(knowledge)
+        self.assertEqual(len(criteria), 5)
+        self.assertEqual(criteria[0]["id"], "identifikace_nebezpeci")
+
+        questions = audit_knowledge_service.get_audit_questions(criteria[0])
+        self.assertGreaterEqual(len(questions), 4)
 
     def test_load_process_detail(self) -> None:
         process = audit_knowledge_service.get_process_by_id("urazy_mimo_udalosti")

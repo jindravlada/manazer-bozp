@@ -1,0 +1,1198 @@
+{
+  "verze": 1,
+  "id": "rizeni_rizik",
+  "nazev": "Řízení rizik",
+  "popis": "Proces identifikace, hodnocení, ošetření a přezkumu rizik BOZP v organizaci.",
+  "ucel_procesu": "Zajistit, aby organizace:\n- systematicky identifikovala nebezpečí a rizika,\n- rizika hodnotila a prioritizovala,\n- nepřijatelná rizika ošetřovala účinnými opatřeními,\n- rizika pravidelně přezkoumávala a aktualizovala,\n- informace o rizicích sdílela s dotčenými zaměstnanci.",
+  "proc_je_dulezity": "Řízení rizik není formalita ani plnění povinnosti vytvořit registr.\n\nJe to základní nástroj, kterým organizace předchází pracovním úrazům a nemocím z povolání.\n\nSelhání řízení rizik se projeví až následně — úrazem, mimořádnou událostí nebo opakovanými neshodami.",
+  "ocekavany_vystup": "Organizace prokazatelně:\n\n- zná nebezpečí a rizika svých činností,\n- rozhoduje o prioritách ošetření na základě hodnocení,\n- realizuje opatření pro snížení rizik,\n- pravidelně přezkoumává a aktualizuje posouzení rizik,\n- informuje zaměstnance o rizicích jejich práce.",
+  "poradi": 20,
+  "aktivni": true,
+  "vazby_procesy": [
+    {
+      "id": "vazba_urazy",
+      "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+      "poradi": 10,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_napravna",
+      "nazev": "Řízení nápravných opatření",
+      "poradi": 20,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_kompetence",
+      "nazev": "Řízení kompetencí",
+      "poradi": 30,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dokumentace",
+      "nazev": "Řízení dokumentovaných informací",
+      "poradi": 40,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_zmeny",
+      "nazev": "Řízení změn",
+      "poradi": 50,
+      "aktivni": true
+    }
+  ],
+  "pozadavky_norem": [
+    {
+      "id": "iso45001_61_10",
+      "nazev": "ISO 45001: 6.1",
+      "poradi": 10,
+      "aktivni": true,
+      "popis": "Informativní reference – rizika a příležitosti."
+    },
+    {
+      "id": "iso45001_812_20",
+      "nazev": "ISO 45001: 8.1.2",
+      "poradi": 20,
+      "aktivni": true,
+      "popis": "Informativní reference – odstraňování nebezpečí a snižování rizik."
+    },
+    {
+      "id": "iso45001_91_30",
+      "nazev": "ISO 45001: 9.1",
+      "poradi": 30,
+      "aktivni": true,
+      "popis": "Informativní reference – monitorování, měření, analýza a hodnocení."
+    },
+    {
+      "id": "iso45001_103_40",
+      "nazev": "ISO 45001: 10.3",
+      "poradi": 40,
+      "aktivni": true,
+      "popis": "Informativní reference – neustálé zlepšování."
+    }
+  ],
+  "sekce": [
+    {
+      "id": "identifikace_nebezpeci",
+      "nazev": "Identifikace nebezpečí a rizik",
+      "popis": "Ověření systematické identifikace nebezpečí na pracovištích a u činností.",
+      "cil_overeni": "Ověřit, že organizace proaktivně identifikuje nebezpečí a rizika včetně změn a nových činností.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "id_proces_identifikace",
+          "text": "Nebezpečí jsou identifikována systematicky pro relevantní činnosti a pracoviště.",
+          "popis": "Organizace má stanovený postup identifikace nebezpečí u pracovišť, procesů a změn.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "id_zapojeni_zamestnancu",
+          "text": "Zaměstnanci jsou zapojeni do identifikace nebezpečí.",
+          "popis": "Vedoucí a zaměstnanci znají a používají způsob hlášení nebezpečí.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "id_zmeny_hodnoceny",
+          "text": "Změny jsou posuzovány z hlediska nových nebezpečí.",
+          "popis": "Před zavedením změn organizace posuzuje dopad na bezpečnost a zdraví.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "id_evidence_nebezpeci",
+          "text": "Identifikovaná nebezpečí jsou evidována a dohledatelná.",
+          "popis": "Evidence nebezpečí umožňuje zpětně dohledat zdroj a odpovědnost za identifikaci.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "id_nove_cinnosti",
+          "text": "Nové činnosti a pracoviště jsou posuzovány před zahájením.",
+          "popis": "Organizace nezačíná novou činnost bez počáteční identifikace rizik.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_id_registr",
+          "nazev": "registr nebezpečí a rizik",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_id_posouzeni",
+          "nazev": "posouzení nebezpečí u pracovišť",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_id_prohlidky",
+          "nazev": "záznamy z prohlídek pracovišť",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_id_zmeny",
+          "nazev": "posouzení rizik u změn",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "duk_id_metodika",
+          "nazev": "metodika identifikace nebezpečí",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_id_vedouci",
+          "nazev": "vedoucí zaměstnanci",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_id_technik",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_id_zamestnanci",
+          "nazev": "zaměstnanci v provozu",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_id_odborne",
+          "nazev": "odborně způsobilá osoba BOZP",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "poz_id_hlaseni",
+          "nazev": "zaměstnanci hlásí nebezpečí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poz_id_prohlidky",
+          "nazev": "prohlídky pracovišť jsou prováděny",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "poz_id_zmeny",
+          "nazev": "u změn existuje posouzení rizik",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_id_neidentifikovano",
+          "nazev": "Organizace neprokázala systematickou identifikaci nebezpečí u relevantních činností.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_id_zmeny",
+          "nazev": "Změny nejsou posuzovány z hlediska nových nebezpečí.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_id_neevidovano",
+          "nazev": "Identifikovaná nebezpečí nejsou evidována.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_id_nove_cinnosti",
+          "nazev": "Nové činnosti jsou zahajovány bez posouzení rizik.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_id_checklist",
+          "nazev": "Zavést jednotný checklist pro identifikaci nebezpečí u pracovišť.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_id_hlaseni",
+          "nazev": "Zjednodušit hlášení nebezpečí zaměstnanci.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_id_elektronicky",
+          "nazev": "Vést registr nebezpečí elektronicky.",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_id_formalni",
+          "nazev": "identifikace je pouze formální bez zapojení provozu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poz_id_zastarale",
+          "nazev": "registr nebezpečí není aktualizován",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_61_10",
+          "nazev": "ISO 45001: 6.1",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – rizika a příležitosti."
+        },
+        {
+          "id": "iso45001_812_20",
+          "nazev": "ISO 45001: 8.1.2",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – odstraňování nebezpečí a snižování rizik."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "hodnoceni_rizik",
+      "nazev": "Hodnocení rizik",
+      "popis": "Ověření hodnocení rizik včetně určení přijatelnosti a priorit.",
+      "cil_overeni": "Ověřit, že organizace hodnotí rizika jednotně a určuje priority pro ošetření.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "ho_metodika",
+          "text": "Rizika jsou hodnocena podle stanovené metodiky.",
+          "popis": "Organizace používá definovaná kritéria pravděpodobnosti a závažnosti.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "ho_prioritizace",
+          "text": "Rizika jsou prioritizována pro ošetření.",
+          "popis": "Z hodnocení vyplynou priority a pořadí ošetření rizik.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "ho_prijatelnost",
+          "text": "Organizace určuje, která rizika jsou přijatelná a která vyžadují opatření.",
+          "popis": "Existují kritéria přijatelnosti rizik.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "ho_zaznam",
+          "text": "Výsledky hodnocení rizik jsou zdokumentovány.",
+          "popis": "Hodnocení je dohledatelné a obsahuje zdůvodnění.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "ho_opakovane",
+          "text": "Hodnocení rizik je prováděno opakovaně při změnách podmínek.",
+          "popis": "Organizace přehodnocuje rizika při změně procesu, technologie nebo po události.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_ho_matice",
+          "nazev": "matice hodnocení rizik",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_ho_kriteria",
+          "nazev": "kritéria pravděpodobnosti a dopadu",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_ho_vystupy",
+          "nazev": "výstupy hodnocení rizik",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_ho_schvaleni",
+          "nazev": "schválení přijatelných rizik",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_ho_technik",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_ho_vedouci",
+          "nazev": "vedoucí provozu",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_ho_vedeni",
+          "nazev": "vedení odpovědné za rozhodnutí o rizicích",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "poz_ho_jednotne",
+          "nazev": "hodnocení je prováděno jednotně",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poz_ho_priority",
+          "nazev": "priority ošetření odpovídají závažnosti",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_ho_bez_metodiky",
+          "nazev": "Organizace neprokázala hodnocení rizik podle stanovené metodiky.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_ho_bez_priority",
+          "nazev": "Rizika nejsou prioritizována pro ošetření.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_ho_nedokumentovano",
+          "nazev": "Výsledky hodnocení rizik nejsou zdokumentovány.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_ho_prijatelnost",
+          "nazev": "Organizace neurčuje přijatelnost rizik.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_ho_sablona",
+          "nazev": "Zavést jednotnou šablonu hodnocení rizik.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_ho_skoleni",
+          "nazev": "Proškolit hodnotitele rizik.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_ho_softwar",
+          "nazev": "Používat nástroj pro vizualizaci rizik.",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_ho_subjektivni",
+          "nazev": "hodnocení je subjektivní bez kritérií",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_61_10",
+          "nazev": "ISO 45001: 6.1",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – rizika a příležitosti."
+        },
+        {
+          "id": "iso45001_812_20",
+          "nazev": "ISO 45001: 8.1.2",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – odstraňování nebezpečí a snižování rizik."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "osetreni_rizik",
+      "nazev": "Ošetření rizik",
+      "popis": "Ověření realizace opatření pro snížení rizik podle hierarchie ošetření.",
+      "cil_overeni": "Ověřit, že organizace ošetřuje rizika v souladu s hierarchií opatření a sleduje plnění.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "os_hierarchie",
+          "text": "Opatření jsou volena podle hierarchie ošetření rizik.",
+          "popis": "Organizace preferuje odstranění nebezpečí před individuální ochranou.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "os_stanovena",
+          "text": "Ke každému nepřijatelnému riziku jsou stanovena opatření.",
+          "popis": "Každé riziko nad hranicí přijatelnosti má definované ošetření.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "os_odpovednost",
+          "text": "Opatření mají určenou odpovědnou osobu a termín.",
+          "popis": "Plán ošetření rizik obsahuje odpovědnost a termíny.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "os_realizace",
+          "text": "Opatření jsou realizována v dohodnutých termínech.",
+          "popis": "Organizace prokazuje plnění opatření pro snížení rizik.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "os_zbytkove",
+          "text": "Zbytková rizika jsou vyhodnocena a schválena.",
+          "popis": "Po opatřeních organizace posuzuje zbytkové riziko.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_os_plan",
+          "nazev": "plán ošetření rizik",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_os_opatreni",
+          "nazev": "evidence realizovaných opatření",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_os_technicka",
+          "nazev": "technická opatření a OOPP",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_os_schvaleni",
+          "nazev": "schválení zbytkových rizik",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_os_vedouci",
+          "nazev": "vedoucí odpovědní za opatření",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_os_technik",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_os_udrzba",
+          "nazev": "odpovědný za údržbu a technická opatření",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "poz_os_provoz",
+          "nazev": "opatření jsou viditelně realizována v provozu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poz_os_oopp",
+          "nazev": "OOPP odpovídají posouzeným rizikům",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_os_bez_opatreni",
+          "nazev": "Organizace neprokázala opatření pro nepřijatelná rizika.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_os_hierarchie",
+          "nazev": "Opatření neodpovídají hierarchii ošetření rizik.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_os_neplneni",
+          "nazev": "Opatření nejsou realizována v termínech.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_os_zbytkove",
+          "nazev": "Zbytková rizika nejsou vyhodnocena.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_os_workflow",
+          "nazev": "Zavést workflow pro sledování ošetření rizik.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_os_review",
+          "nazev": "Pravidelně reviewovat otevřená opatření.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_os_pouze_oopp",
+          "nazev": "ošetření rizik je redukováno pouze na OOPP",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_812_10",
+          "nazev": "ISO 45001: 8.1.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – odstraňování nebezpečí a snižování rizik."
+        },
+        {
+          "id": "iso45001_813_20",
+          "nazev": "ISO 45001: 8.1.3",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – plánování a řízení provozu."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "prezkum_rizik",
+      "nazev": "Přezkoumání a aktualizace rizik",
+      "popis": "Ověření pravidelného přezkumu a aktualizace registrů rizik.",
+      "cil_overeni": "Ověřit, že rizika jsou pravidelně přezkoumávána a aktualizována na základě změn a zkušeností.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "pr_pravidelne",
+          "text": "Rizika jsou pravidelně přezkoumávána.",
+          "popis": "Organizace má stanovenou periodicitu přezkumu rizik.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pr_udalosti",
+          "text": "Přezkum rizik probíhá po pracovních úrazech a mimořádných událostech.",
+          "popis": "Události spouští aktualizaci posouzení rizik.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pr_aktualizace",
+          "text": "Registr rizik je aktualizován po zjištěných změnách.",
+          "popis": "Změny v procesech, technologiích nebo organizaci vedou k aktualizaci.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pr_vedeni",
+          "text": "Výsledky přezkumu rizik jsou projednávány s vedením.",
+          "popis": "Vedení je informováno o významných rizicích a stavu ošetření.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "pr_ucinnost",
+          "text": "Účinnost opatření pro snížení rizik je při přezkumu vyhodnocována.",
+          "popis": "Přezkum zahrnuje posouzení, zda opatření riziko skutečně snížilo.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_pr_zapis",
+          "nazev": "záznamy z přezkumu rizik",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_pr_harmonogram",
+          "nazev": "harmonogram přezkumů",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_pr_aktualizace",
+          "nazev": "revize registrů rizik",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_pr_vedeni",
+          "nazev": "podklady pro jednání vedení",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_pr_technik",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_pr_vedeni",
+          "nazev": "vedení organizace",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_pr_vedouci",
+          "nazev": "vedoucí provozů",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "poz_pr_aktualni",
+          "nazev": "registr rizik odpovídá skutečnému stavu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poz_pr_po_urazu",
+          "nazev": "po úrazu došlo k přezkumu rizik",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_pr_neprobehl",
+          "nazev": "Organizace neprokázala pravidelný přezkum rizik.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_pr_zastaraly",
+          "nazev": "Registr rizik není aktualizován.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_pr_bez_urazu",
+          "nazev": "Přezkum neprobíhá po pracovních úrazech.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_pr_vedeni",
+          "nazev": "Vedení není informováno o stavu rizik.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_pr_perioda",
+          "nazev": "Stanovit povinnou periodu přezkumu podle typu rizika.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_pr_automat",
+          "nazev": "Automaticky spouštět přezkum po události v systému.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_pr_formalni",
+          "nazev": "přezkum je pouze formalita bez změn",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_91_10",
+          "nazev": "ISO 45001: 9.1",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – monitorování, měření, analýza a hodnocení."
+        },
+        {
+          "id": "iso45001_93_20",
+          "nazev": "ISO 45001: 9.3",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – přezkoumání managementu."
+        },
+        {
+          "id": "iso45001_103_30",
+          "nazev": "ISO 45001: 10.3",
+          "poradi": 30,
+          "aktivni": true,
+          "popis": "Informativní reference – neustálé zlepšování."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "komunikace_rizik",
+      "nazev": "Komunikace a informovanost o rizicích",
+      "popis": "Ověření, že zaměstnanci znají rizika své práce a opatření k nim.",
+      "cil_overeni": "Ověřit, že informace o rizicích jsou srozumitelně sděleny dotčeným zaměstnancům.",
+      "poradi": 50,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "ko_zamestnanci",
+          "text": "Zaměstnanci znají rizika spojená se svou prací.",
+          "popis": "Zaměstnanci jsou informováni o nebezpečích a opatřeních na svém pracovišti.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "ko_postupy",
+          "text": "Bezpečné pracovní postupy jsou dostupné a srozumitelné.",
+          "popis": "Postupy odpovídají posouzeným rizikům.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "ko_skoleni",
+          "text": "Informace o rizicích jsou součástí vstupních a pravidelných školení.",
+          "popis": "Školení BOZP zahrnuje rizika konkrétního pracoviště.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "ko_vedouci",
+          "text": "Vedoucí zaměstnanci komunikují rizika svým podřízeným.",
+          "popis": "Vedoucí předávají informace o rizicích a změnách opatření.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "ko_cizinci",
+          "text": "Rizika jsou komunikována srozumitelně i cizojazyčným zaměstnancům.",
+          "popis": "Organizace zajišťuje srozumitelnost informací pro všechny skupiny zaměstnanců.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_ko_bpp",
+          "nazev": "bezpečné pracovní postupy",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_ko_skoleni",
+          "nazev": "prezenční listiny a osnovy školení",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_ko_pokyny",
+          "nazev": "pokyny a bezpečnostní značení",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_ko_sdileni",
+          "nazev": "záznamy o sdělení informací o rizicích",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_ko_zamestnanci",
+          "nazev": "zaměstnanci v provozu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_ko_vedouci",
+          "nazev": "vedoucí zaměstnanci",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_ko_personalist",
+          "nazev": "personalista / školitel",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "poz_ko_postupy",
+          "nazev": "postupy jsou dostupné na pracovišti",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poz_ko_chapou",
+          "nazev": "zaměstnanci rozumějí rizikům své práce",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_ko_neinformovani",
+          "nazev": "Zaměstnanci nejsou informováni o rizicích své práce.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_ko_postupy",
+          "nazev": "Bezpečné pracovní postupy nejsou dostupné nebo neodpovídají rizikům.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_ko_skoleni",
+          "nazev": "Informace o rizicích nejsou součástí školení.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_ko_vedouci",
+          "nazev": "Vedoucí zaměstnanci nekomunikují rizika podřízeným.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_ko_vizual",
+          "nazev": "Zlepšit vizuální komunikaci rizik na pracovištích.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_ko_kratke",
+          "nazev": "Zavést krátká bezpečnostní sdělení k rizikům.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_ko_pouze_papir",
+          "nazev": "informace o rizicích existují pouze v dokumentech",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_74_10",
+          "nazev": "ISO 45001: 7.4",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – komunikace."
+        },
+        {
+          "id": "iso45001_75_20",
+          "nazev": "ISO 45001: 7.5",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – dokumentované informace."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ]
+    }
+  ]
+}
