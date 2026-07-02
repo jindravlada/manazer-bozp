@@ -23,14 +23,16 @@ from moduly.audity.constants import (
 from moduly.audity.sluzby.audit_knowledge_editor_service import audit_knowledge_editor_service
 from moduly.audity.sluzby.audit_knowledge_service import KnowledgeTreeNode, audit_knowledge_service
 from moduly.audity.ui.audit_knowledge_tree_widget import AuditKnowledgeTreeWidget
+from moduly.audity.ui.audity_knowledge_process_editor_widget import (
+    AudityKnowledgeProcessEditorWidget,
+)
 from moduly.audity.ui.audity_knowledge_section_editor_widget import (
     AudityKnowledgeSectionEditorWidget,
 )
-from moduly.audity.ui.audit_process_knowledge_widget import AuditProcessOverviewWidget
 
 
 class AudityKnowledgeEditorDialog(QDialog):
-    """Editor metodiky auditora — editace metadat oblasti ověření."""
+    """Editor metodiky auditora — editace metadat procesu a oblastí ověření."""
 
     _PAGE_HINT = 0
     _PAGE_PROCESS = 1
@@ -84,8 +86,8 @@ class AudityKnowledgeEditorDialog(QDialog):
 
         self.content_stack = QStackedWidget()
         self.content_stack.addWidget(self._build_hint_page())
-        self.overview_widget = AuditProcessOverviewWidget()
-        self.content_stack.addWidget(self.overview_widget)
+        self.process_editor = AudityKnowledgeProcessEditorWidget()
+        self.content_stack.addWidget(self.process_editor)
         self.section_editor = AudityKnowledgeSectionEditorWidget()
         self.content_stack.addWidget(self.section_editor)
 
@@ -108,7 +110,7 @@ class AudityKnowledgeEditorDialog(QDialog):
         configure_close_button(self._button_box)
         self._save_btn = self._button_box.button(QDialogButtonBox.StandardButton.Save)
         self._save_btn.setEnabled(False)
-        self._save_btn.clicked.connect(self._save_current_section)
+        self._save_btn.clicked.connect(self._save_current)
         self._button_box.rejected.connect(self.reject)
         root.addWidget(self._button_box)
 
@@ -131,40 +133,43 @@ class AudityKnowledgeEditorDialog(QDialog):
         self._current_process_id = ""
         self._current_section_id = ""
         self._save_btn.setEnabled(False)
+        self.process_editor.clear_process()
         self.section_editor.clear_section()
         self.center_title_label.setText(self.windowTitle())
         self.center_description_label.setText(
-            f"Vyberte {PROCESS_TERM_CRITERION.lower()} ve stromu řídicích procesů vlevo."
+            f"Vyberte řídicí proces nebo {PROCESS_TERM_CRITERION.lower()} ve stromu vlevo."
         )
         self.center_description_label.setVisible(True)
-        self.overview_widget.show_process(None)
         self.content_stack.setCurrentIndex(self._PAGE_HINT)
 
     def _on_process_selected(self, node: KnowledgeTreeNode) -> None:
         self._current_process_id = node.process_id
         self._current_section_id = ""
-        self._save_btn.setEnabled(False)
         self.section_editor.clear_section()
 
-        process_def = audit_knowledge_service.get_process_by_id(node.process_id)
-        self.center_title_label.setText(node.process_label)
-
-        if process_def and process_def.popis:
-            self.center_description_label.setText(process_def.popis)
-            self.center_description_label.setVisible(True)
-        else:
+        metadata = audit_knowledge_service.get_process_metadata(
+            node.process_id,
+            ensure=False,
+        )
+        if metadata is None:
+            self._save_btn.setEnabled(False)
+            self.process_editor.clear_process()
+            self.center_title_label.setText(node.process_label)
             self.center_description_label.setText(
-                f"Vyberte {PROCESS_TERM_CRITERION.lower()} pod tímto procesem."
+                "Proces nemá načtený soubor znalostí."
             )
             self.center_description_label.setVisible(True)
-
-        if process_def and process_def.has_knowledge_file:
-            knowledge = audit_knowledge_service.load_process_knowledge(process_def)
-            self.overview_widget.show_process(knowledge)
-            self.content_stack.setCurrentIndex(self._PAGE_PROCESS)
-        else:
-            self.overview_widget.show_process(None)
             self.content_stack.setCurrentIndex(self._PAGE_HINT)
+            return
+
+        self.process_editor.load_process(
+            process_id=node.process_id,
+            metadata=metadata,
+        )
+        self._save_btn.setEnabled(True)
+        self.center_title_label.setText(str(metadata.get("nazev") or node.process_label))
+        self.center_description_label.setVisible(False)
+        self.content_stack.setCurrentIndex(self._PAGE_PROCESS)
 
     def _on_criterion_selected(self, node: KnowledgeTreeNode | None) -> None:
         if node is None:
@@ -177,15 +182,20 @@ class AudityKnowledgeEditorDialog(QDialog):
 
         self._current_process_id = node.process_id
         self._current_section_id = node.node_id
+        self.process_editor.clear_process()
 
         section_label = str(criterion.get("nazev") or "").strip()
-        process_def = audit_knowledge_service.get_process_by_id(node.process_id)
+        process_def = audit_knowledge_service.get_process_by_id(node.process_id, ensure=False)
         process_label = process_def.nazev if process_def else node.process_label
 
         self.center_title_label.setText(f"{process_label} → {section_label}")
         self.center_description_label.setVisible(False)
 
-        fresh_section = audit_knowledge_service.get_criterion(node.process_id, node.node_id)
+        fresh_section = audit_knowledge_service.get_criterion(
+            node.process_id,
+            node.node_id,
+            ensure=False,
+        )
         if fresh_section is None:
             fresh_section = criterion
 
@@ -196,6 +206,44 @@ class AudityKnowledgeEditorDialog(QDialog):
         )
         self._save_btn.setEnabled(True)
         self.content_stack.setCurrentIndex(self._PAGE_SECTION)
+
+    def _save_current(self) -> list[str]:
+        if self.content_stack.currentIndex() == self._PAGE_PROCESS:
+            return self._save_current_process()
+        if self.content_stack.currentIndex() == self._PAGE_SECTION:
+            return self._save_current_section()
+        return []
+
+    def _save_current_process(self) -> list[str]:
+        if not self.process_editor.has_process():
+            return []
+
+        process_id = self.process_editor.process_id
+        errors = audit_knowledge_editor_service.save_process_metadata(
+            process_id,
+            self.process_editor.process_metadata(),
+        )
+        if errors:
+            QMessageBox.warning(
+                self,
+                self.windowTitle(),
+                "\n".join(errors),
+            )
+            return errors
+
+        self.knowledge_tree.reload_tree(include_inactive=True, ensure=False)
+        if not self.knowledge_tree.select_node(process_id):
+            self._show_hint()
+            return []
+
+        refreshed = audit_knowledge_service.get_process_metadata(process_id, ensure=False)
+        if refreshed is None:
+            self._show_hint()
+            return []
+
+        self.process_editor.load_process(process_id=process_id, metadata=refreshed)
+        self.center_title_label.setText(str(refreshed.get("nazev") or process_id))
+        return []
 
     def _save_current_section(self) -> list[str]:
         if not self.section_editor.has_section():

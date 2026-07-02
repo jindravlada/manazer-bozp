@@ -60,6 +60,7 @@ class AudityKnowledgeEditorDialogTestCase(unittest.TestCase):
 
         self.assertEqual(dialog.content_stack.currentIndex(), dialog._PAGE_PROCESS)
         self.assertTrue(dialog.center_title_label.text())
+        self.assertTrue(dialog._save_btn.isEnabled())
 
     def test_dialog_section_selection_updates_view(self) -> None:
         dialog = AudityKnowledgeEditorDialog()

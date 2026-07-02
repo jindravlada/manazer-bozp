@@ -436,6 +436,36 @@ class AuditKnowledgeService:
 
         return self._load_json(path)
 
+    def get_process_metadata(
+        self,
+        process_id: str,
+        *,
+        ensure: bool = True,
+    ) -> dict | None:
+        process = self.get_process_by_id(process_id, ensure=ensure)
+        if process is None or not process.soubor_znalosti:
+            return None
+
+        knowledge = self.load_process_knowledge(process, ensure=ensure)
+        if knowledge is None:
+            return None
+
+        return {
+            "nazev": str(knowledge.get("nazev") or process.nazev or "").strip(),
+            "popis": str(knowledge.get("popis") or process.popis or "").strip(),
+            "ucel_procesu": str(
+                knowledge.get("ucel_procesu") or process.ucel_procesu or ""
+            ).strip(),
+            "proc_je_dulezity": str(knowledge.get("proc_je_dulezity") or "").strip(),
+            "ocekavany_vystup": str(knowledge.get("ocekavany_vystup") or "").strip(),
+            "poradi": int(knowledge.get("poradi") if knowledge.get("poradi") is not None else process.poradi),
+            "aktivni": bool(
+                knowledge.get("aktivni")
+                if knowledge.get("aktivni") is not None
+                else process.aktivni
+            ),
+        }
+
     def get_active_criteria(self, knowledge: dict) -> list[dict]:
         sections = knowledge.get("sekce") or []
         active = [

@@ -20,6 +20,7 @@ from moduly.audity.sluzby.audit_knowledge_validator import (
     validate_all_catalogs,
     validate_knowledge_data,
     validate_knowledge_file,
+    validate_procesy_registry_data,
 )
 
 _CATALOG_DIR = "audity"
@@ -138,6 +139,8 @@ class AuditKnowledgeEditorService:
         path = self.resolve_user_path(relative_path)
         if data is None:
             return validate_knowledge_file(path)
+        if path.name == PROCESY_BASENAME:
+            return validate_procesy_registry_data(data, source_name=path.name)
         return validate_knowledge_data(data, source_name=path.name)
 
     @staticmethod
@@ -300,6 +303,125 @@ class AuditKnowledgeEditorService:
         parent_list[index] = updated
 
         return self.save_user_json(relative_path, data)
+
+    def _save_user_json_files(
+        self,
+        files: tuple[tuple[str, dict], ...],
+    ) -> list[str]:
+        resolved: list[tuple[str, Path, dict]] = []
+        errors: list[str] = []
+
+        for relative_path, data in files:
+            path = self.resolve_user_path(relative_path)
+            file_errors = self.validate_user_file(relative_path, data)
+            if file_errors:
+                errors.extend(file_errors)
+            resolved.append((relative_path, path, data))
+
+        if errors:
+            return errors
+
+        for _relative_path, path, _data in resolved:
+            if path.is_file():
+                self.backup_file(path)
+
+        written: list[tuple[str, Path]] = []
+        try:
+            for relative_path, path, data in resolved:
+                self.atomic_write_json(path, data)
+                written.append((relative_path, path))
+        except OSError as exc:
+            for _relative_path, path in written:
+                backup = self._latest_backup(path.name)
+                if backup is not None:
+                    shutil.copy2(backup, path)
+            return [f"Zápis metadat procesu selhal ({exc})"]
+
+        post_errors: list[str] = []
+        for relative_path, path in written:
+            post_errors.extend(self.validate_user_file(relative_path))
+
+        if post_errors:
+            for _relative_path, path in written:
+                backup = self._latest_backup(path.name)
+                if backup is not None:
+                    shutil.copy2(backup, path)
+            return post_errors + [
+                "Uložená metadata procesu neprošla validací, obnovena záloha."
+            ]
+
+        return []
+
+    def save_process_metadata(self, process_id: str, metadata: dict) -> list[str]:
+        self.ensure_user_catalogs()
+
+        process = audit_knowledge_service.get_process_by_id(process_id)
+        if process is None or not process.soubor_znalosti:
+            return [f"Proces '{process_id}' nebyl nalezen."]
+
+        nazev = str(metadata.get("nazev") or "").strip()
+        if not nazev:
+            return ["Název procesu musí být vyplněn."]
+
+        try:
+            poradi = int(metadata.get("poradi") or 0)
+        except (TypeError, ValueError):
+            return ["Pořadí musí být celé číslo."]
+
+        popis = str(metadata.get("popis") or "").strip()
+        aktivni = bool(metadata.get("aktivni", True))
+        ucel_procesu = str(metadata.get("ucel_procesu") or "").strip()
+        proc_je_dulezity = str(metadata.get("proc_je_dulezity") or "").strip()
+        ocekavany_vystup = str(metadata.get("ocekavany_vystup") or "").strip()
+
+        procesy_relative = f"{_CATALOG_DIR}/{PROCESY_BASENAME}"
+        knowledge_relative = f"{_CATALOG_DIR}/{process.soubor_znalosti}"
+
+        procesy_path = self.resolve_user_path(procesy_relative)
+        knowledge_path = self.resolve_user_path(knowledge_relative)
+
+        procesy_data, procesy_error = self.load_json_safe(procesy_path)
+        knowledge_data, knowledge_error = self.load_json_safe(knowledge_path)
+        if procesy_error or procesy_data is None:
+            return [procesy_error or "procesy.json nelze načíst."]
+        if knowledge_error or knowledge_data is None:
+            return [knowledge_error or f"Soubor {process.soubor_znalosti} nelze načíst."]
+
+        processes = procesy_data.get("procesy") or []
+        registry_entry = None
+        for index, raw in enumerate(processes):
+            if not isinstance(raw, dict):
+                continue
+            if str(raw.get("id") or "").strip() != process_id:
+                continue
+            registry_entry = deepcopy(raw)
+            processes[index] = registry_entry
+            break
+
+        if registry_entry is None:
+            return [f"Proces '{process_id}' nebyl nalezen v procesy.json."]
+
+        registry_entry["id"] = process_id
+        registry_entry["nazev"] = nazev
+        registry_entry["popis"] = popis
+        registry_entry["poradi"] = poradi
+        registry_entry["aktivni"] = aktivni
+
+        knowledge_data["id"] = process_id
+        knowledge_data["nazev"] = nazev
+        knowledge_data["popis"] = popis
+        knowledge_data["poradi"] = poradi
+        knowledge_data["aktivni"] = aktivni
+        knowledge_data["ucel_procesu"] = ucel_procesu
+        knowledge_data["proc_je_dulezity"] = proc_je_dulezity
+        knowledge_data["ocekavany_vystup"] = ocekavany_vystup
+
+        return self._save_user_json_files(
+            (
+                (procesy_relative, procesy_data),
+                (knowledge_relative, knowledge_data),
+            )
+        )
 
     def _resolve_section_context(
         self,

@@ -207,11 +207,51 @@ def validate_knowledge_data(data: dict, *, source_name: str) -> list[str]:
     return errors
 
 
+def validate_procesy_registry_data(data: dict, *, source_name: str = PROCESY_BASENAME) -> list[str]:
+    errors: list[str] = []
+
+    if not isinstance(data, dict):
+        return [f"{source_name}: kořen musí být objekt"]
+
+    processes = data.get("procesy") or []
+    if not isinstance(processes, list):
+        errors.append(f"{source_name}: pole 'procesy' musí být seznam")
+        return errors
+
+    seen_ids: set[str] = set()
+    for index, process in enumerate(processes):
+        if not isinstance(process, dict):
+            errors.append(f"{source_name}[{index}]: proces není objekt")
+            continue
+
+        item_path = f"{source_name}[{index}]"
+        process_id = str(process.get("id") or "").strip()
+        nazev = str(process.get("nazev") or "").strip()
+        soubor = str(process.get("soubor_znalosti") or "").strip()
+
+        if not process_id:
+            errors.append(f"{item_path}: chybí id")
+            continue
+        if process_id in seen_ids:
+            errors.append(f"{source_name}: duplicitní id '{process_id}'")
+        seen_ids.add(process_id)
+
+        if not nazev:
+            errors.append(f"{item_path}: chybí název")
+        if not soubor:
+            errors.append(f"{source_name}: proces '{process_id}' nemá soubor_znalosti")
+
+    return errors
+
+
 def validate_knowledge_file(path: Path, *, data: dict | None = None) -> list[str]:
     try:
         payload = data if data is not None else load_json_file(path)
     except (OSError, json.JSONDecodeError, ValueError) as exc:
         return [f"{path.name}: neplatný JSON ({exc})"]
+
+    if path.name == PROCESY_BASENAME:
+        return validate_procesy_registry_data(payload, source_name=path.name)
 
     return validate_knowledge_data(payload, source_name=path.name)
 
