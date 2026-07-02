@@ -215,6 +215,7 @@ class AuditProgramManagerDialogTestCase(unittest.TestCase):
         self.assertEqual(dialog._status_label.text(), AUDIT_PROGRAM_STATUS_VISIT_CREATED)
         self.assertEqual(dialog._plan_tree.topLevelItem(0).childCount(), 1)
         self.assertIn("Květen 2026", dialog._plan_tree.topLevelItem(0).child(0).text(0))
+        self.assertIn("12. 5. 2026", dialog._plan_tree.topLevelItem(0).child(0).text(0))
 
     def test_plan_tree_action_states(self) -> None:
         from moduly.audity.ui.audit_program_plan_tree_widget import AuditProgramPlanTreeWidget

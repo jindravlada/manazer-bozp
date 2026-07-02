@@ -12,10 +12,12 @@ from moduly.audity.constants import (
     AUDIT_PROGRAM_VISIT_PROCESS_STATUS_COMPLETED,
     AUDIT_PROGRAM_VISIT_STATUS_COMPLETED,
     AUDIT_PROGRAM_VISIT_STATUS_SKIPPED,
-    AUDIT_PROGRAM_VISIT_SKIPPED_SUFFIX,
-    MONTH_NAMES_CAPITALIZED,
 )
 from moduly.audity.sluzby.audit_program_service import AuditProgramOverview
+from moduly.audity.sluzby.audit_program_visit_formatting import (
+    visit_sort_key,
+    visit_tree_label,
+)
 
 
 NODE_WORKPLACE = "workplace"
@@ -55,16 +57,10 @@ class AuditProgramPlanTreeWidget(QTreeWidget):
             self.addTopLevelItem(workplace_item)
 
             workplace_visits = visits_by_workplace.get(workplace.workplace_id, [])
-            workplace_visits.sort(
-                key=lambda item: (
-                    item.planned_year or 0,
-                    item.planned_month or 0,
-                    item.id,
-                )
-            )
+            workplace_visits.sort(key=visit_sort_key)
 
             for visit in workplace_visits:
-                visit_label = self._visit_label(visit)
+                visit_label = visit_tree_label(visit)
                 visit_item = QTreeWidgetItem([visit_label])
                 self._set_node_data(
                     visit_item,
@@ -139,22 +135,6 @@ class AuditProgramPlanTreeWidget(QTreeWidget):
         if not isinstance(payload, dict):
             return None
         return payload.get("visit_id")
-
-    @staticmethod
-    def _visit_label(visit) -> str:
-        month = visit.planned_month or 0
-        year = visit.planned_year or 0
-        if 1 <= month <= 12:
-            label = f"{MONTH_NAMES_CAPITALIZED[month - 1]} {year}"
-        else:
-            label = f"{month}/{year}"
-        if visit.status == AUDIT_PROGRAM_VISIT_STATUS_SKIPPED:
-            label = f"{label} {AUDIT_PROGRAM_VISIT_SKIPPED_SUFFIX}"
-        elif visit.status == AUDIT_PROGRAM_VISIT_STATUS_COMPLETED:
-            label = f"✓ {label}"
-        elif visit.audit_id is not None:
-            label = f"▶ {label}"
-        return label
 
     @staticmethod
     def _set_node_data(

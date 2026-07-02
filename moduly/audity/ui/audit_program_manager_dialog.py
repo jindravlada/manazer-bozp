@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QSplitter,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -31,6 +32,8 @@ from moduly.audity.constants import (
     AUDIT_PROGRAM_LEFT_PANEL_TITLE,
     AUDIT_PROGRAM_MOVE_PROCESS_BUTTON,
     AUDIT_PROGRAM_OPEN_AUDIT_BUTTON,
+    AUDIT_PROGRAM_PLAN_TAB_TREE,
+    AUDIT_PROGRAM_PLAN_TAB_VISITS,
     AUDIT_PROGRAM_REFRESH_OVERVIEW_BUTTON,
     AUDIT_PROGRAM_RIGHT_PANEL_TITLE,
     AUDIT_PROGRAM_SKIP_VISIT_BUTTON,
@@ -65,6 +68,9 @@ from moduly.audity.ui.audit_program_dashboard_widget import AuditProgramDashboar
 from moduly.audity.ui.audit_program_move_process_dialog import (
     AuditProgramMoveProcessDialog,
     load_target_visits,
+)
+from moduly.audity.ui.audit_program_planned_visits_widget import (
+    AuditProgramPlannedVisitsWidget,
 )
 from moduly.audity.ui.audit_program_plan_tree_widget import (
     NODE_PROCESS,
@@ -246,7 +252,16 @@ class AuditProgramManagerDialog(QDialog):
         self._plan_tree.customContextMenuRequested.connect(self._show_plan_context_menu)
         self._plan_tree.itemSelectionChanged.connect(self._update_plan_actions)
         self._plan_tree.itemDoubleClicked.connect(self._on_plan_tree_double_clicked)
-        layout.addWidget(self._plan_tree, 1)
+
+        self._planned_visits_widget = AuditProgramPlannedVisitsWidget()
+
+        self._plan_tabs = QTabWidget()
+        self._plan_tabs.addTab(self._plan_tree, AUDIT_PROGRAM_PLAN_TAB_TREE)
+        self._plan_tabs.addTab(
+            self._planned_visits_widget,
+            AUDIT_PROGRAM_PLAN_TAB_VISITS,
+        )
+        layout.addWidget(self._plan_tabs, 1)
 
         self._set_plan_actions_enabled(False)
         return panel
@@ -389,6 +404,7 @@ class AuditProgramManagerDialog(QDialog):
         self._set_action_buttons_enabled(True)
         self._fill_detail_panel(overview, coverage)
         self._plan_tree.populate(overview)
+        self._planned_visits_widget.load_program(program_id)
         self._update_plan_actions()
         self._dashboard_widget.load_program(program_id)
 
@@ -675,6 +691,7 @@ class AuditProgramManagerDialog(QDialog):
         self._detail_form.setVisible(False)
         self._set_action_buttons_enabled(False)
         self._plan_tree.clear()
+        self._planned_visits_widget.load_program(None)
         self._set_plan_actions_enabled(False)
         self._dashboard_widget.load_program(None)
         self._clear_detail_values()

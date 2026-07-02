@@ -43,6 +43,7 @@ from moduly.nastaveni.sluzby.workplace_audit_planning import (
     parse_preferred_months_json,
     plan_visit_months,
 )
+from moduly.audity.sluzby.audit_program_visit_formatting import visit_sort_key
 
 
 @dataclass(frozen=True)
@@ -78,6 +79,20 @@ class AuditProgramCoverage:
     completed_process_count: int
     completion_percent: float
     missing_by_workplace: tuple[AuditProgramWorkplaceCoverage, ...]
+
+
+@dataclass(frozen=True)
+class PlannedVisitOverviewRow:
+    visit_id: int
+    planned_date: date | None
+    planned_year: int | None
+    planned_month: int | None
+    sort_date: date | None
+    workplace_name: str
+    process_names: tuple[str, ...]
+    status: str
+    audit_id: int | None
+    audit_number: str | None
 
 
 @dataclass(frozen=True)
@@ -383,6 +398,60 @@ class AuditProgramService:
             visits=self.repository.list_visits(program_id),
             visit_processes=self.repository.list_program_visit_processes(program_id),
         )
+
+    def get_planned_visits_overview(
+        self,
+        program_id: int,
+    ) -> tuple[PlannedVisitOverviewRow, ...]:
+        overview = self.get_program_overview(program_id)
+        if overview is None:
+            return ()
+
+        workplace_names = {
+            workplace.workplace_id: workplace.workplace_name
+            for workplace in overview.workplaces
+        }
+        processes_by_visit: dict[int, list[str]] = {}
+        for visit_process in overview.visit_processes:
+            label = visit_process.process_name or visit_process.process_id
+            processes_by_visit.setdefault(visit_process.visit_id, []).append(label)
+
+        from moduly.audity.sluzby.audit_service import audit_service
+
+        audit_numbers: dict[int, str] = {}
+        rows: list[PlannedVisitOverviewRow] = []
+        visits = sorted(overview.visits, key=visit_sort_key)
+
+        for visit in visits:
+            workplace_name = workplace_names.get(visit.workplace_id, "") or self._resolve_workplace_name(visit)
+            sort_date = visit.planned_date
+            if sort_date is None and visit.planned_year and visit.planned_month:
+                sort_date = date(visit.planned_year, visit.planned_month, 1)
+
+            audit_number = None
+            if visit.audit_id is not None:
+                if visit.audit_id not in audit_numbers:
+                    audit = audit_service.get_by_id(visit.audit_id)
+                    audit_numbers[visit.audit_id] = audit.number if audit is not None else ""
+                audit_number = audit_numbers.get(visit.audit_id) or None
+
+            process_names = tuple(sorted(processes_by_visit.get(visit.id, [])))
+            rows.append(
+                PlannedVisitOverviewRow(
+                    visit_id=visit.id,
+                    planned_date=visit.planned_date,
+                    planned_year=visit.planned_year,
+                    planned_month=visit.planned_month,
+                    sort_date=sort_date,
+                    workplace_name=workplace_name,
+                    process_names=process_names,
+                    status=visit.status,
+                    audit_id=visit.audit_id,
+                    audit_number=audit_number,
+                )
+            )
+
+        return tuple(rows)
 
     def generate_visits(self, program_id: int) -> AuditProgramGenerationResult:
         program = self.repository.get_program(program_id)

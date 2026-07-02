@@ -1,0 +1,105 @@
+"""Přehled plánovaných návštěv v manažeru programu auditů."""
+
+from __future__ import annotations
+
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (
+    QFrame,
+    QHeaderView,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+)
+
+from moduly.audity.constants import AUDIT_PROGRAM_VISIT_STATUS_LABELS
+from moduly.audity.sluzby.audit_program_service import audit_program_service
+from moduly.audity.sluzby.audit_program_visit_formatting import (
+    format_czech_date,
+    format_month_name,
+)
+
+_SORT_ROLE = Qt.ItemDataRole.UserRole + 1
+
+
+class AuditProgramPlannedVisitsWidget(QFrame):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setObjectName("ModulePanel")
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        self._table = QTableWidget()
+        self._table.setColumnCount(6)
+        self._table.setHorizontalHeaderLabels(
+            [
+                "Datum",
+                "Měsíc",
+                "Pracoviště",
+                "Plánované procesy",
+                "Stav",
+                "Audit",
+            ]
+        )
+        self._table.setAlternatingRowColors(True)
+        self._table.setSelectionBehavior(QTableWidget.SelectRows)
+        self._table.setSelectionMode(QTableWidget.SingleSelection)
+        self._table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self._table.verticalHeader().setVisible(False)
+        self._table.horizontalHeader().setSectionResizeMode(
+            3,
+            QHeaderView.ResizeMode.Stretch,
+        )
+        layout.addWidget(self._table, 1)
+
+    def load_program(self, program_id: int | None) -> None:
+        if program_id is None:
+            self._table.setRowCount(0)
+            return
+
+        rows = audit_program_service.get_planned_visits_overview(program_id)
+        self._table.setRowCount(len(rows))
+
+        for row_index, row in enumerate(rows):
+            values = [
+                format_czech_date(row.planned_date),
+                format_month_name(row.planned_month),
+                row.workplace_name or "—",
+                ", ".join(row.process_names) if row.process_names else "—",
+                AUDIT_PROGRAM_VISIT_STATUS_LABELS.get(row.status, row.status),
+                row.audit_number or "—",
+            ]
+            sort_key = row.sort_date.toordinal() if row.sort_date is not None else 99999999
+
+            for column_index, value in enumerate(values):
+                item = QTableWidgetItem(value)
+                if column_index == 0:
+                    item.setData(_SORT_ROLE, sort_key)
+                    item.setData(Qt.ItemDataRole.UserRole, row.visit_id)
+                self._table.setItem(row_index, column_index, item)
+
+        self._table.sortItems(0, Qt.SortOrder.AscendingOrder)
+
+    def selected_visit_id(self) -> int | None:
+        selected = self._table.selectionModel().selectedRows()
+        if not selected:
+            return None
+        row = selected[0].row()
+        item = self._table.item(row, 0)
+        if item is None:
+            return None
+        visit_id = item.data(Qt.ItemDataRole.UserRole)
+        return int(visit_id) if visit_id is not None else None
+
+    def set_selected_visit_id(self, visit_id: int | None) -> None:
+        if visit_id is None:
+            self._table.clearSelection()
+            return
+
+        for row in range(self._table.rowCount()):
+            item = self._table.item(row, 0)
+            if item is None:
+                continue
+            if item.data(Qt.ItemDataRole.UserRole) == visit_id:
+                self._table.selectRow(row)
+                return
