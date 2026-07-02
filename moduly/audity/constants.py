@@ -110,10 +110,14 @@ COMMISSION_LABEL_WORKPLACE = "Zástupce auditovaného provozu"
 COMMISSION_LABEL_UNION = "Zástupce odborové organizace"
 COMMISSION_LABEL_INVITED = "Přizvané osoby"
 
+TAB_AUDITOVANE_PROCESY = "Řídicí procesy"
+TAB_WORKPLACE_HISTORY = "Historie pracoviště"
+
 TAB_LABELS = (
     "Spis",
     "Komise",
     TAB_AUDITOVANE_PROCESY,
+    TAB_WORKPLACE_HISTORY,
     "Zjištění",
     "Úkoly",
     "Závěr",

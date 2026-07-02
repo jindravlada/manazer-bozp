@@ -17,6 +17,24 @@ class AuditRepository:
         with get_session() as session:
             return session.get(Audit, audit_id)
 
+    def list_for_workplace(
+        self,
+        workplace_id: int,
+        *,
+        exclude_audit_id: int | None = None,
+    ) -> list[Audit]:
+        with get_session() as session:
+            stmt = select(Audit).where(Audit.workplace_id == workplace_id)
+            if exclude_audit_id is not None:
+                stmt = stmt.where(Audit.id != exclude_audit_id)
+            stmt = stmt.order_by(
+                Audit.audit_date.desc(),
+                Audit.finished_at.desc(),
+                Audit.started_at.desc(),
+                Audit.id.desc(),
+            )
+            return list(session.scalars(stmt))
+
     def add(self, audit: Audit) -> Audit:
         with get_session() as session:
             session.add(audit)

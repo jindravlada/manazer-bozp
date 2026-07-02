@@ -122,11 +122,12 @@ class AudityProcessesTestCase(unittest.TestCase):
         audit = self._create_audit_with_team()
         dialog = AuditDialog(audit=audit)
 
-        self.assertEqual(dialog.tabs.count(), 6)
+        self.assertEqual(dialog.tabs.count(), 7)
         self.assertEqual(dialog.tabs.tabText(2), TAB_AUDITOVANE_PROCESY)
-        self.assertEqual(dialog.tabs.tabText(3), "Zjištění")
-        self.assertEqual(dialog.tabs.tabText(4), "Úkoly")
-        self.assertEqual(dialog.tabs.tabText(5), "Závěr")
+        self.assertEqual(dialog.tabs.tabText(3), "Historie pracoviště")
+        self.assertEqual(dialog.tabs.tabText(4), "Zjištění")
+        self.assertEqual(dialog.tabs.tabText(5), "Úkoly")
+        self.assertEqual(dialog.tabs.tabText(6), "Závěr")
 
     def test_tree_shows_seed_process(self) -> None:
         from moduly.audity.ui.audit_knowledge_tree_widget import AuditKnowledgeTreeWidget

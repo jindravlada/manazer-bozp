@@ -72,6 +72,19 @@ class AuditProgramRepository:
             )
             return list(session.scalars(stmt))
 
+    def list_visits_by_workplace(self, workplace_id: int) -> list[AuditProgramVisit]:
+        with get_session() as session:
+            stmt = (
+                select(AuditProgramVisit)
+                .where(AuditProgramVisit.workplace_id == workplace_id)
+                .order_by(
+                    AuditProgramVisit.planned_year.desc(),
+                    AuditProgramVisit.planned_month.desc(),
+                    AuditProgramVisit.id.desc(),
+                )
+            )
+            return list(session.scalars(stmt))
+
     def get_visit(self, visit_id: int) -> AuditProgramVisit | None:
         with get_session() as session:
             return session.get(AuditProgramVisit, visit_id)

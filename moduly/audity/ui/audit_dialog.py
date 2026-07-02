@@ -16,6 +16,7 @@ from moduly.audity.ui.audit_findings_widget import AuditFindingsWidget
 from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
 from moduly.audity.ui.audit_spis_widget import AuditSpisWidget
 from moduly.audity.ui.audit_tasks_widget import AuditTasksWidget
+from moduly.audity.ui.audit_workplace_history_widget import AuditWorkplaceHistoryWidget
 
 
 class AuditDialog(QDialog):
@@ -36,15 +37,17 @@ class AuditDialog(QDialog):
         self.spis_widget = AuditSpisWidget()
         self.commission_widget = AuditCommissionWidget()
         self.processes_widget = AuditProcessesWidget()
+        self.history_widget = AuditWorkplaceHistoryWidget()
         self.findings_widget = AuditFindingsWidget()
         self.tasks_widget = AuditTasksWidget()
         self.conclusion_widget = AuditConclusionWidget()
         self.tabs.addTab(self.spis_widget, TAB_LABELS[0])
         self.tabs.addTab(self.commission_widget, TAB_LABELS[1])
         self.tabs.addTab(self.processes_widget, TAB_LABELS[2])
-        self.tabs.addTab(self.findings_widget, TAB_LABELS[3])
-        self.tabs.addTab(self.tasks_widget, TAB_LABELS[4])
-        self.tabs.addTab(self.conclusion_widget, TAB_LABELS[5])
+        self.tabs.addTab(self.history_widget, TAB_LABELS[3])
+        self.tabs.addTab(self.findings_widget, TAB_LABELS[4])
+        self.tabs.addTab(self.tasks_widget, TAB_LABELS[5])
+        self.tabs.addTab(self.conclusion_widget, TAB_LABELS[6])
         layout.addWidget(self.tabs)
 
         buttons = create_save_cancel_box(self)
@@ -60,6 +63,7 @@ class AuditDialog(QDialog):
         self.findings_widget.set_on_task_changed(self._on_related_data_changed)
         self.conclusion_widget.set_complete_handler(self._complete_audit)
         self.spis_widget.load_audit(audit)
+        self.history_widget.load_audit(audit)
         self.conclusion_widget.load_audit(audit)
         self.commission_widget.set_audit_context(audit_id)
 
@@ -139,4 +143,5 @@ class AuditDialog(QDialog):
 
         self.audit = updated
         self.conclusion_widget.load_audit(self.audit)
+        self.history_widget.load_audit(self.audit)
         return True
