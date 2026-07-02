@@ -1,5 +1,5 @@
 {
-  "verze": 7,
+  "verze": 8,
   "procesy": [
     {
       "id": "urazy_mimo_udalosti",
@@ -144,6 +144,51 @@
       "poradi": 160,
       "aktivni": true,
       "soubor_znalosti": "rizeni_neshod.json"
+    },
+    {
+      "id": "konzultace_ucast_zamestnancu",
+      "nazev": "Konzultace a účast zaměstnanců",
+      "popis": "Proces zapojení, konzultací a účasti zaměstnanců v řízení BOZP.",
+      "ucel_procesu": "Zajistit zapojení zaměstnanců do BOZP, konzultace před změnami, účast při hodnocení rizik, podávání podnětů a reakci organizace.",
+      "poradi": 170,
+      "aktivni": true,
+      "soubor_znalosti": "konzultace_ucast_zamestnancu.json"
+    },
+    {
+      "id": "bezpecnostni_kultura",
+      "nazev": "Bezpečnostní kultura",
+      "popis": "Proces rozvoje a ověřování bezpečnostní kultury v organizaci.",
+      "ucel_procesu": "Zajistit viditelný závazek vedení, bezpečné chování vedoucích a zaměstnanců, otevřené hlášení problémů a učení se z událostí.",
+      "poradi": 180,
+      "aktivni": true,
+      "soubor_znalosti": "bezpecnostni_kultura.json"
+    },
+    {
+      "id": "rizeni_externich_pracovniku",
+      "nazev": "Řízení externích pracovníků",
+      "popis": "Proces řízení externích pracovníků a návštěvníků na pracovištích.",
+      "ucel_procesu": "Zajistit evidenci externích pracovníků, seznámení s riziky, řízení vstupu, dohled a vyhodnocování porušení pravidel.",
+      "poradi": 190,
+      "aktivni": true,
+      "soubor_znalosti": "rizeni_externich_pracovniku.json"
+    },
+    {
+      "id": "preventivni_udrzba",
+      "nazev": "Řízení preventivní údržby",
+      "popis": "Proces plánování, provádění a vyhodnocování preventivní údržby zařízení BOZP.",
+      "ucel_procesu": "Zajistit plánování a včasnou realizaci preventivní údržby, evidenci, řešení závad a vyhodnocování opakovaných poruch.",
+      "poradi": 200,
+      "aktivni": true,
+      "soubor_znalosti": "preventivni_udrzba.json"
+    },
+    {
+      "id": "revize_kontroly_zarizeni",
+      "nazev": "Řízení revizí a kontrol zařízení",
+      "popis": "Proces identifikace, plánování a provádění povinných revizí a kontrol zařízení.",
+      "ucel_procesu": "Zajistit evidenci zařízení podléhajících kontrolám, plán revizí, včasné provedení, řešení závad a sledování platnosti.",
+      "poradi": 210,
+      "aktivni": true,
+      "soubor_znalosti": "revize_kontroly_zarizeni.json"
     }
   ]
 }

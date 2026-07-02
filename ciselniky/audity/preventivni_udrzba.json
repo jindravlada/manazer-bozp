@@ -1,0 +1,1701 @@
+{
+  "verze": 1,
+  "id": "preventivni_udrzba",
+  "nazev": "Řízení preventivní údržby",
+  "popis": "Proces plánování, provádění a vyhodnocování preventivní údržby zařízení BOZP.",
+  "ucel_procesu": "Zajistit, aby organizace:\n- plánovala preventivní údržbu,\n- prováděla údržbu včas,\n- vedla evidenci údržby,\n- řešila zjištěné závady,\n- vyhodnocovala poruchy a opakované závady.",
+  "proc_je_dulezity": "Preventivní údržba není luxus — je to prevence úrazu a prostoje.\n\nAuditor ověřuje plán, realizaci, evidenci a reakci na závady — ne zda existuje tabulka v Excelu.\n\nTypická neshoda: údržba probíhá až po poruše, plán je neplněný.",
+  "ocekavany_vystup": "Organizace prokazatelně:\n\n- plánuje údržbu,\n- provádí ji včas,\n- eviduje ji,\n- řeší závady,\n- vyhodnocuje opakování.",
+  "poradi": 200,
+  "aktivni": true,
+  "vazby_procesy": [
+    {
+      "id": "vazba_urazy",
+      "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+      "poradi": 10,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_rizika",
+      "nazev": "Řízení rizik",
+      "poradi": 20,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_kompetence",
+      "nazev": "Řízení kompetencí",
+      "poradi": 30,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dokumentace",
+      "nazev": "Řízení dokumentovaných informací",
+      "poradi": 40,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_zmeny",
+      "nazev": "Řízení změn",
+      "poradi": 50,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_napravna",
+      "nazev": "Řízení nápravných opatření",
+      "poradi": 60,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dodavatele",
+      "nazev": "Řízení dodavatelů",
+      "poradi": 70,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_provoz",
+      "nazev": "Řízení provozu",
+      "poradi": 80,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_mu",
+      "nazev": "Připravenost na mimořádné události",
+      "poradi": 90,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_komunikace",
+      "nazev": "Interní komunikace",
+      "poradi": 100,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_prezkoumani",
+      "nazev": "Přezkoumání vedením",
+      "poradi": 110,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_legislativa",
+      "nazev": "Řízení právních a jiných požadavků",
+      "poradi": 120,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_cile",
+      "nazev": "Řízení cílů a programů BOZP",
+      "poradi": 130,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_monitoring",
+      "nazev": "Monitorování a měření",
+      "poradi": 140,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_audity",
+      "nazev": "Interní audity",
+      "poradi": 150,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_neshody",
+      "nazev": "Řízení neshod",
+      "poradi": 160,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_ucast",
+      "nazev": "Konzultace a účast zaměstnanců",
+      "poradi": 170,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_kultura",
+      "nazev": "Bezpečnostní kultura",
+      "poradi": 180,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_externi",
+      "nazev": "Řízení externích pracovníků",
+      "poradi": 190,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_udrzba",
+      "nazev": "Řízení preventivní údržby",
+      "poradi": 200,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_revize",
+      "nazev": "Řízení revizí a kontrol zařízení",
+      "poradi": 210,
+      "aktivni": true
+    }
+  ],
+  "pozadavky_norem": [
+    {
+      "id": "iso45001_81_udr_10",
+      "nazev": "ISO 45001: 8.1",
+      "poradi": 10,
+      "aktivni": true,
+      "popis": "Informativní reference – provozní plánování a řízení."
+    },
+    {
+      "id": "iso45001_82_udr_20",
+      "nazev": "ISO 45001: 8.2",
+      "poradi": 20,
+      "aktivni": true,
+      "popis": "Informativní reference – odstraňování nebezpečí."
+    }
+  ],
+  "sekce": [
+    {
+      "id": "planovani_udrzby",
+      "nazev": "Plánování údržby",
+      "popis": "Ověření plánování preventivní údržby.",
+      "cil_overeni": "Ověřit, že preventivní údržba je plánována pro zařízení s dopadem na BOZP.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "planovani_udrzby_plan",
+          "text": "Existuje plán preventivní údržby.",
+          "popis": "Údržba je plánovaná.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "planovani_udrzby_zarizeni",
+          "text": "Plán pokrývá zařízení s dopadem na BOZP.",
+          "popis": "Kritická zařízení jsou zahrnuta.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "planovani_udrzby_intervaly",
+          "text": "Intervaly údržby jsou definovány.",
+          "popis": "Frekvence odpovídá riziku.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "planovani_udrzby_odpovednost",
+          "text": "Za plán údržby je určena odpovědnost.",
+          "popis": "Plán má vlastníka.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "planovani_udrzby_aktualni",
+          "text": "Plán údržby je aktuální.",
+          "popis": "Plán reflektuje stav zařízení.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_planovani_udrzby_0",
+          "nazev": "plán preventivní údržby",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_planovani_udrzby_1",
+          "nazev": "seznam kritických zařízení",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_planovani_udrzby_2",
+          "nazev": "intervaly údržby",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_planovani_udrzby_3",
+          "nazev": "revize plánu",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_planovani_udrzby_0",
+          "nazev": "údržbář",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_planovani_udrzby_1",
+          "nazev": "vedoucí provozu",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_planovani_udrzby_2",
+          "nazev": "technik BOZP",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_planovani_udrzby_3",
+          "nazev": "správce zařízení",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_planovani_udrzby_0",
+          "nazev": "plán pokrývá kritická zařízení",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_planovani_udrzby_1",
+          "nazev": "intervaly jsou definovány",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_planovani_udrzby_0",
+          "nazev": "Plán preventivní údržby neexistuje.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_planovani_udrzby_1",
+          "nazev": "Plán nepokrývá zařízení s dopadem na BOZP.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_planovani_udrzby_2",
+          "nazev": "Intervaly údržby nejsou definovány.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_planovani_udrzby_3",
+          "nazev": "Plán údržby není aktuální.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_planovani_udrzby_0",
+          "nazev": "Propojit plán údržby s registrem rizik.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_planovani_udrzby_1",
+          "nazev": "Revidovat plán po každé závažné poruše.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_planovani_udrzby_0",
+          "nazev": "údržba je pouze havarijní",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_81_udr_10",
+          "nazev": "ISO 45001: 8.1",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – provozní plánování."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "provadeni_udrzby",
+      "nazev": "Provádění preventivní údržby",
+      "popis": "Ověření realizace plánované údržby.",
+      "cil_overeni": "Ověřit, že preventivní údržba je prokazatelně prováděna.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "provadeni_udrzby_provedena",
+          "text": "Plánovaná preventivní údržba je prováděna.",
+          "popis": "Plán není ignorován.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "provadeni_udrzby_terminy",
+          "text": "Údržba je prováděna ve stanovených termínech.",
+          "popis": "Prodlení je sledováno.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "provadeni_udrzby_kvalifikace",
+          "text": "Údržbu provádějí kvalifikované osoby.",
+          "popis": "Kompetence odpovídá práci.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "provadeni_udrzby_bezpecne",
+          "text": "Údržba je prováděna bezpečně.",
+          "popis": "LOTO a PTW jsou uplatňovány.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "provadeni_udrzby_kontrola",
+          "text": "Provedení údržby je kontrolováno.",
+          "popis": "Organizace ověřuje kvalitu.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_provadeni_udrzby_0",
+          "nazev": "záznamy o údržbě",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_provadeni_udrzby_1",
+          "nazev": "servisní listy",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_provadeni_udrzby_2",
+          "nazev": "evidence termínů",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_provadeni_udrzby_3",
+          "nazev": "povolení k práci při údržbě",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_provadeni_udrzby_0",
+          "nazev": "údržbář",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_provadeni_udrzby_1",
+          "nazev": "vedoucí provozu",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_provadeni_udrzby_2",
+          "nazev": "technik BOZP",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_provadeni_udrzby_3",
+          "nazev": "revizní technik",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_provadeni_udrzby_0",
+          "nazev": "údržba probíhá dle plánu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_provadeni_udrzby_1",
+          "nazev": "LOTO je aplikováno",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_provadeni_udrzby_0",
+          "nazev": "Plánovaná preventivní údržba není prokazatelně prováděna.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_provadeni_udrzby_1",
+          "nazev": "Údržba není prováděna ve stanovených termínech.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_provadeni_udrzby_2",
+          "nazev": "Údržbu provádějí nekompetentní osoby.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_provadeni_udrzby_3",
+          "nazev": "Při údržbě není uplatňováno LOTO tam, kde je vyžadováno.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_provadeni_udrzby_0",
+          "nazev": "Sledovat plnění plánu údržby měsíčně.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_provadeni_udrzby_1",
+          "nazev": "Kontrolovat bezpečnost prací při údržbě.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_provadeni_udrzby_0",
+          "nazev": "termíny údržby jsou systematicky překračovány",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_81_udr_10",
+          "nazev": "ISO 45001: 8.1",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – provozní plánování."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "evidence_udrzby",
+      "nazev": "Evidence údržby",
+      "popis": "Ověření evidence provedené údržby.",
+      "cil_overeni": "Ověřit, že údržba je řádně evidována a dohledatelná.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "evidence_udrzby_evidovana",
+          "text": "Provedená údržba je evidována.",
+          "popis": "Existují záznamy.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "evidence_udrzby_udaje",
+          "text": "Evidence obsahuje datum, rozsah a odpovědnou osobu.",
+          "popis": "Záznam je úplný.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "evidence_udrzby_dohledatelna",
+          "text": "Evidence údržby je dohledatelná.",
+          "popis": "Auditor může ověřit historii.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "evidence_udrzby_soulad",
+          "text": "Evidence odpovídá plánu údržby.",
+          "popis": "Plán a realita souhlasí.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "evidence_udrzby_archiv",
+          "text": "Historie údržby je uchovávána.",
+          "popis": "Organizace vidí vývoj.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_evidence_udrzby_0",
+          "nazev": "servisní knihy",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_evidence_udrzby_1",
+          "nazev": "záznamy CMMS",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_evidence_udrzby_2",
+          "nazev": "servisní listy",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_evidence_udrzby_3",
+          "nazev": "evidence plnění plánu",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_evidence_udrzby_0",
+          "nazev": "údržbář",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_evidence_udrzby_1",
+          "nazev": "vedoucí provozu",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_evidence_udrzby_2",
+          "nazev": "správce zařízení",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_evidence_udrzby_0",
+          "nazev": "záznamy odpovídají plánu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_evidence_udrzby_1",
+          "nazev": "historie je dohledatelná",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_evidence_udrzby_0",
+          "nazev": "Provedená údržba není evidována.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_evidence_udrzby_1",
+          "nazev": "Evidence neobsahuje datum, rozsah a odpovědnou osobu.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_evidence_udrzby_2",
+          "nazev": "Evidence údržby neodpovídá plánu.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_evidence_udrzby_3",
+          "nazev": "Historie údržby není uchovávána.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_evidence_udrzby_0",
+          "nazev": "Zavést jednotný formulář záznamu údržby.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_evidence_udrzby_1",
+          "nazev": "Měsíčně porovnávat plán a evidenci.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_evidence_udrzby_0",
+          "nazev": "údržba proběhla, ale není zapsána",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_75_udr_10",
+          "nazev": "ISO 45001: 7.5",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – dokumentované informace."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "reseni_zavad",
+      "nazev": "Řešení zjištěných závad",
+      "popis": "Ověření řešení závad zjištěných při údržbě.",
+      "cil_overeni": "Ověřit, že závady zjištěné při údržbě jsou řešeny.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "reseni_zavad_hlaseni",
+          "text": "Závady zjištěné při údržbě jsou hlášeny.",
+          "popis": "Organizace reaguje na nález.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "reseni_zavad_evidence",
+          "text": "Závady jsou evidovány.",
+          "popis": "Existuje přehled závad.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "reseni_zavad_reseni",
+          "text": "Závady jsou řešeny v přiměřených lhůtách.",
+          "popis": "Náprava není odkládána.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "reseni_zavad_vyrazeni",
+          "text": "Nebezpečné zařízení je vyřazeno do opravy.",
+          "popis": "Organizace blokuje riziko.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "reseni_zavad_overeni",
+          "text": "Po opravě je ověřena funkčnost.",
+          "popis": "Zařízení je zpět bezpečně.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_reseni_zavad_0",
+          "nazev": "evidence závad",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_reseni_zavad_1",
+          "nazev": "hlášení závad",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_reseni_zavad_2",
+          "nazev": "záznamy oprav",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_reseni_zavad_3",
+          "nazev": "záznamy vyřazení z provozu",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_reseni_zavad_0",
+          "nazev": "údržbář",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_reseni_zavad_1",
+          "nazev": "vedoucí provozu",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_reseni_zavad_2",
+          "nazev": "technik BOZP",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_reseni_zavad_0",
+          "nazev": "závady jsou označeny a řešeny",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_reseni_zavad_1",
+          "nazev": "nebezpečné zařízení je odstaveno",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_reseni_zavad_0",
+          "nazev": "Závady zjištěné při údržbě nejsou hlášeny.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_reseni_zavad_1",
+          "nazev": "Závady nejsou evidovány.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_reseni_zavad_2",
+          "nazev": "Závady nejsou řešeny v přiměřených lhůtách.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_reseni_zavad_3",
+          "nazev": "Nebezpečné zařízení zůstává v provozu se závadou.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_reseni_zavad_0",
+          "nazev": "Okamžité vyřazení zařízení při bezpečnostní závadě.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_reseni_zavad_1",
+          "nazev": "Sledovat stáří otevřených závad z údržby.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_reseni_zavad_0",
+          "nazev": "závada je známa, ale zařízení běží dál",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_102_udr_10",
+          "nazev": "ISO 45001: 10.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – neshody."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "vyhodnoceni_poruch",
+      "nazev": "Vyhodnocení poruch a opakovaných závad",
+      "popis": "Ověření analýzy poruch a opakujících se závad.",
+      "cil_overeni": "Ověřit, že organizace vyhodnocuje poruchy a opakované závady.",
+      "poradi": 50,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "vyhodnoceni_poruch_analyzovany",
+          "text": "Poruchy jsou analyzovány.",
+          "popis": "Organizace hledá příčinu.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_poruch_opakovani",
+          "text": "Opakované závady jsou identifikovány.",
+          "popis": "Trendy jsou viditelné.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_poruch_opatreni",
+          "text": "Z analýzy vyplynou opatření.",
+          "popis": "Organizace reaguje systémově.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_poruch_prevence",
+          "text": "Opatření směřují k prevenci opakování.",
+          "popis": "Údržba se zlepšuje.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_poruch_sdileni",
+          "text": "Poučení z poruch je sdíleno.",
+          "popis": "Organizace se učí.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_vyhodnoceni_poruch_0",
+          "nazev": "analýzy poruch",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyhodnoceni_poruch_1",
+          "nazev": "statistika závad",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyhodnoceni_poruch_2",
+          "nazev": "opatření po poruchách",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyhodnoceni_poruch_3",
+          "nazev": "revize plánu údržby",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_vyhodnoceni_poruch_0",
+          "nazev": "údržbář",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyhodnoceni_poruch_1",
+          "nazev": "vedoucí provozu",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyhodnoceni_poruch_2",
+          "nazev": "technik BOZP",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_vyhodnoceni_poruch_0",
+          "nazev": "opakované závady vedou k revizi plánu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_vyhodnoceni_poruch_1",
+          "nazev": "analýza hledá kořen",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_vyhodnoceni_poruch_0",
+          "nazev": "Poruchy nejsou analyzovány.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyhodnoceni_poruch_1",
+          "nazev": "Opakované závady nejsou identifikovány.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyhodnoceni_poruch_2",
+          "nazev": "Z analýzy poruch nevyplývají opatření.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyhodnoceni_poruch_3",
+          "nazev": "Opatření nesměřují k prevenci opakování.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_vyhodnoceni_poruch_0",
+          "nazev": "Měsíční review top opakovaných závad.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_vyhodnoceni_poruch_1",
+          "nazev": "Revidovat interval údržby po opakované poruše.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_vyhodnoceni_poruch_0",
+          "nazev": "stejná závada se opakuje bez analýzy",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_103_udr_10",
+          "nazev": "ISO 45001: 10.3",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – zlepšování."
+        },
+        {
+          "id": "iso45001_91_udr_20",
+          "nazev": "ISO 45001: 9.1",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – monitorování."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dodavatele",
+          "nazev": "Řízení dodavatelů",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_provoz",
+          "nazev": "Řízení provozu",
+          "poradi": 80,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_mu",
+          "nazev": "Připravenost na mimořádné události",
+          "poradi": 90,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_komunikace",
+          "nazev": "Interní komunikace",
+          "poradi": 100,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 110,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_legislativa",
+          "nazev": "Řízení právních a jiných požadavků",
+          "poradi": 120,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 130,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 140,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_audity",
+          "nazev": "Interní audity",
+          "poradi": 150,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_neshody",
+          "nazev": "Řízení neshod",
+          "poradi": 160,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_ucast",
+          "nazev": "Konzultace a účast zaměstnanců",
+          "poradi": 170,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kultura",
+          "nazev": "Bezpečnostní kultura",
+          "poradi": 180,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_externi",
+          "nazev": "Řízení externích pracovníků",
+          "poradi": 190,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_udrzba",
+          "nazev": "Řízení preventivní údržby",
+          "poradi": 200,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_revize",
+          "nazev": "Řízení revizí a kontrol zařízení",
+          "poradi": 210,
+          "aktivni": true
+        }
+      ]
+    }
+  ]
+}
