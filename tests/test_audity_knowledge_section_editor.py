@@ -220,11 +220,13 @@ class AudityKnowledgeSectionEditorWidgetTestCase(unittest.TestCase):
 
         self.assertEqual(
             widget._tabs.count(),
-            1 + len(KNOWLEDGE_EDITOR_SECTION_LIST_TABS),
+            1 + len(KNOWLEDGE_EDITOR_SECTION_LIST_TABS) + 2,
         )
         self.assertEqual(widget._tabs.tabText(0), "Auditní tvrzení")
         self.assertIs(widget._tabs.widget(0), widget._assertions_widget)
         self.assertEqual(len(widget._list_widgets), len(KNOWLEDGE_EDITOR_SECTION_LIST_TABS))
+        self.assertEqual(widget._tabs.tabText(9), "Postup kontroly")
+        self.assertEqual(widget._tabs.tabText(10), "Referenční fotografie")
 
 
 class AudityKnowledgeEditorDialogSectionTestCase(unittest.TestCase):

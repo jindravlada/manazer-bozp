@@ -209,6 +209,8 @@ KNOWLEDGE_EDITOR_SECTION_TABS = (
     "Pozorování",
     "Vazby",
     "Normy",
+    "Postup kontroly",
+    "Referenční fotografie",
 )
 
 KNOWLEDGE_EDITOR_SECTION_LIST_TABS: tuple[tuple[str, str], ...] = (
@@ -224,6 +226,23 @@ KNOWLEDGE_EDITOR_SECTION_LIST_TABS: tuple[tuple[str, str], ...] = (
 
 KNOWLEDGE_EDITOR_SECTION_LIST_FIELDS = frozenset(
     field_name for _title, field_name in KNOWLEDGE_EDITOR_SECTION_LIST_TABS
+)
+
+KNOWLEDGE_EDITOR_SECTION_POSTUP_TAB = ("Postup kontroly", "postup_kontroly")
+KNOWLEDGE_EDITOR_SECTION_REFERENCE_PHOTO_TAB = (
+    "Referenční fotografie",
+    "referencni_fotografie",
+)
+
+KNOWLEDGE_EDITOR_SECTION_EXTENDED_LIST_FIELDS = frozenset(
+    {
+        KNOWLEDGE_EDITOR_SECTION_POSTUP_TAB[1],
+        KNOWLEDGE_EDITOR_SECTION_REFERENCE_PHOTO_TAB[1],
+    }
+)
+
+KNOWLEDGE_EDITOR_SECTION_EDITABLE_LIST_FIELDS = (
+    KNOWLEDGE_EDITOR_SECTION_LIST_FIELDS | KNOWLEDGE_EDITOR_SECTION_EXTENDED_LIST_FIELDS
 )
 
 CONTROL_POINT_HISTORY_EMPTY = "Zatím bez historie."

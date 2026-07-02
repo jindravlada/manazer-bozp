@@ -1085,6 +1085,42 @@ class AuditKnowledgeService:
             )
         return normalized
 
+    @staticmethod
+    def normalize_reference_photos_for_editor(items: list[dict]) -> list[dict]:
+        normalized: list[dict] = []
+        for index, raw in enumerate(items):
+            if not isinstance(raw, dict):
+                continue
+            item_id = str(raw.get("id") or "").strip()
+            nazev = str(raw.get("nazev") or "").strip()
+            if not item_id or not nazev:
+                continue
+
+            control_point_id = raw.get("control_point_id")
+            if control_point_id is None or not str(control_point_id).strip():
+                control_point_value = None
+            else:
+                control_point_value = str(control_point_id).strip()
+
+            poradi = raw.get("poradi")
+            try:
+                poradi_value = int(poradi) if poradi is not None else (index + 1) * 10
+            except (TypeError, ValueError):
+                poradi_value = (index + 1) * 10
+
+            normalized.append(
+                {
+                    "id": item_id,
+                    "nazev": nazev,
+                    "popis": str(raw.get("popis") or "").strip(),
+                    "soubor": str(raw.get("soubor") or "").strip(),
+                    "control_point_id": control_point_value,
+                    "poradi": poradi_value,
+                    "aktivni": bool(raw.get("aktivni", True)),
+                }
+            )
+        return normalized
+
     def _save_knowledge(self, process: AuditProcessDefinition, data: dict) -> bool:
         if not process.soubor_znalosti:
             return False

@@ -346,7 +346,10 @@ class AudityKnowledgeSectionEditorListTabsTestCase(_KnowledgeEditorTestBase):
             section=section,
         )
 
-        self.assertEqual(widget._tabs.count(), len(KNOWLEDGE_EDITOR_SECTION_LIST_TABS) + 1)
+        self.assertEqual(
+            widget._tabs.count(),
+            len(KNOWLEDGE_EDITOR_SECTION_LIST_TABS) + 3,
+        )
         self.assertEqual(len(widget._list_widgets), len(KNOWLEDGE_EDITOR_SECTION_LIST_TABS))
 
         for title, field_name in KNOWLEDGE_EDITOR_SECTION_LIST_TABS:

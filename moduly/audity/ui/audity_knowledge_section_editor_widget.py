@@ -15,10 +15,18 @@ from PySide6.QtWidgets import (
 
 from moduly.audity.constants import (
     KNOWLEDGE_EDITOR_SECTION_LIST_TABS,
+    KNOWLEDGE_EDITOR_SECTION_POSTUP_TAB,
+    KNOWLEDGE_EDITOR_SECTION_REFERENCE_PHOTO_TAB,
     KNOWLEDGE_EDITOR_SECTION_TABS,
 )
 from moduly.audity.ui.audity_knowledge_assertions_widget import AudityKnowledgeAssertionsWidget
+from moduly.audity.ui.audity_knowledge_described_list_editor_widget import (
+    AudityKnowledgeDescribedListEditorWidget,
+)
 from moduly.audity.ui.audity_knowledge_list_editor_widget import AudityKnowledgeListEditorWidget
+from moduly.audity.ui.audity_knowledge_reference_photo_editor_widget import (
+    AudityKnowledgeReferencePhotoEditorWidget,
+)
 
 
 class AudityKnowledgeSectionEditorWidget(QWidget):
@@ -68,11 +76,26 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
         self._tabs = QTabWidget()
         self._assertions_widget = AudityKnowledgeAssertionsWidget()
         self._list_widgets: dict[str, AudityKnowledgeListEditorWidget] = {}
+        self._postup_widget = AudityKnowledgeDescribedListEditorWidget(
+            KNOWLEDGE_EDITOR_SECTION_POSTUP_TAB[1]
+        )
+        self._reference_photo_widget = AudityKnowledgeReferencePhotoEditorWidget()
 
         list_tab_titles = {title: field_name for title, field_name in KNOWLEDGE_EDITOR_SECTION_LIST_TABS}
+        postup_title, postup_field = KNOWLEDGE_EDITOR_SECTION_POSTUP_TAB
+        reference_title, reference_field = KNOWLEDGE_EDITOR_SECTION_REFERENCE_PHOTO_TAB
+
         for index, title in enumerate(KNOWLEDGE_EDITOR_SECTION_TABS):
             if index == 0:
                 self._tabs.addTab(self._assertions_widget, title)
+                continue
+
+            if title == postup_title:
+                self._tabs.addTab(self._postup_widget, title)
+                continue
+
+            if title == reference_title:
+                self._tabs.addTab(self._reference_photo_widget, title)
                 continue
 
             field_name = list_tab_titles.get(title)
@@ -124,6 +147,16 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
                 section_id=section_id,
                 section=section,
             )
+        self._postup_widget.load_section(
+            process_id=process_id,
+            section_id=section_id,
+            section=section,
+        )
+        self._reference_photo_widget.load_section(
+            process_id=process_id,
+            section_id=section_id,
+            section=section,
+        )
 
     def clear_section(self) -> None:
         self._process_id = ""
@@ -137,6 +170,8 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
         self._assertions_widget.clear_section()
         for list_widget in self._list_widgets.values():
             list_widget.clear_section()
+        self._postup_widget.clear_section()
+        self._reference_photo_widget.clear_section()
 
     def section_metadata(self) -> dict:
         return {

@@ -11,7 +11,7 @@ from pathlib import Path
 
 from core.services.editable_catalog_service import editable_catalog_service
 from core.services.storage_service import storage_service
-from moduly.audity.constants import KNOWLEDGE_EDITOR_SECTION_LIST_FIELDS
+from moduly.audity.constants import KNOWLEDGE_EDITOR_SECTION_EDITABLE_LIST_FIELDS
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 from moduly.audity.sluzby.audit_knowledge_validator import (
     PROCESY_BASENAME,
@@ -730,6 +730,95 @@ class AuditKnowledgeEditorService:
         )
 
     @staticmethod
+    def _validate_described_list_item_payload(
+        payload: dict,
+        *,
+        require_id: bool,
+    ) -> tuple[dict | None, list[str]]:
+        item_id = str(payload.get("id") or "").strip()
+        if require_id and not item_id:
+            return None, ["Chybí identifikátor položky."]
+
+        nazev = str(payload.get("nazev") or payload.get("text") or "").strip()
+        if not nazev:
+            return None, ["Název kroku musí být vyplněn."]
+
+        try:
+            poradi = int(payload.get("poradi"))
+        except (TypeError, ValueError):
+            return None, ["Pořadí musí být celé číslo."]
+
+        normalized = {
+            "nazev": nazev,
+            "popis": str(payload.get("popis") or "").strip(),
+            "poradi": poradi,
+            "aktivni": bool(payload.get("aktivni", True)),
+        }
+        if item_id:
+            normalized["id"] = item_id
+        return normalized, []
+
+    @staticmethod
+    def _validate_reference_photo_payload(
+        payload: dict,
+        *,
+        require_id: bool,
+    ) -> tuple[dict | None, list[str]]:
+        item_id = str(payload.get("id") or "").strip()
+        if require_id and not item_id:
+            return None, ["Chybí identifikátor položky."]
+
+        nazev = str(payload.get("nazev") or "").strip()
+        if not nazev:
+            return None, ["Název referenční fotografie musí být vyplněn."]
+
+        try:
+            poradi = int(payload.get("poradi"))
+        except (TypeError, ValueError):
+            return None, ["Pořadí musí být celé číslo."]
+
+        aktivni = bool(payload.get("aktivni", True))
+        soubor = str(payload.get("soubor") or "").strip()
+        if aktivni and not soubor:
+            return None, ["Soubor referenční fotografie musí být vyplněn u aktivní položky."]
+
+        normalized = {
+            "nazev": nazev,
+            "popis": str(payload.get("popis") or "").strip(),
+            "soubor": soubor,
+            "poradi": poradi,
+            "aktivni": aktivni,
+        }
+        control_point_id = payload.get("control_point_id")
+        if control_point_id is not None and str(control_point_id).strip():
+            normalized["control_point_id"] = str(control_point_id).strip()
+        if item_id:
+            normalized["id"] = item_id
+        return normalized, []
+
+    @staticmethod
+    def _validate_section_list_payload(
+        field_name: str,
+        payload: dict,
+        *,
+        require_id: bool,
+    ) -> tuple[dict | None, list[str]]:
+        if field_name == "postup_kontroly":
+            return AuditKnowledgeEditorService._validate_described_list_item_payload(
+                payload,
+                require_id=require_id,
+            )
+        if field_name == "referencni_fotografie":
+            return AuditKnowledgeEditorService._validate_reference_photo_payload(
+                payload,
+                require_id=require_id,
+            )
+        return AuditKnowledgeEditorService._validate_list_item_payload(
+            payload,
+            require_id=require_id,
+        )
+
+    @staticmethod
     def _validate_list_item_payload(payload: dict, *, require_id: bool) -> tuple[dict | None, list[str]]:
         item_id = str(payload.get("id") or "").strip()
         if require_id and not item_id:
@@ -786,7 +875,7 @@ class AuditKnowledgeEditorService:
         *,
         item_id: str | None = None,
     ) -> list[str]:
-        if field_name not in KNOWLEDGE_EDITOR_SECTION_LIST_FIELDS:
+        if field_name not in KNOWLEDGE_EDITOR_SECTION_EDITABLE_LIST_FIELDS:
             return [f"Pole '{field_name}' nelze editovat v tomto editoru."]
 
         context, errors = self._resolve_section_context(process_id, section_id)
@@ -803,7 +892,8 @@ class AuditKnowledgeEditorService:
             if isinstance(item, dict) and str(item.get("id") or "").strip()
         }
 
-        normalized, validation_errors = self._validate_list_item_payload(
+        normalized, validation_errors = self._validate_section_list_payload(
+            field_name,
             {**payload, "id": item_id or payload.get("id")},
             require_id=item_id is not None,
         )
@@ -859,7 +949,7 @@ class AuditKnowledgeEditorService:
         *,
         aktivni: bool,
     ) -> list[str]:
-        if field_name not in KNOWLEDGE_EDITOR_SECTION_LIST_FIELDS:
+        if field_name not in KNOWLEDGE_EDITOR_SECTION_EDITABLE_LIST_FIELDS:
             return [f"Pole '{field_name}' nelze editovat v tomto editoru."]
 
         context, errors = self._resolve_section_context(process_id, section_id)
@@ -882,6 +972,12 @@ class AuditKnowledgeEditorService:
                 continue
             updated_item = deepcopy(item)
             updated_item["aktivni"] = aktivni
+            if field_name == "referencni_fotografie" and aktivni:
+                soubor = str(updated_item.get("soubor") or "").strip()
+                if not soubor:
+                    return [
+                        f"Referenční fotografie '{target_id}' nelze aktivovat bez souboru."
+                    ]
             after_items[index] = updated_item
             updated = True
             break
