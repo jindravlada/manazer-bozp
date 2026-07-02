@@ -1,6 +1,6 @@
 """Panel řídicího procesu — přehled procesu a pracovní karta oblasti ověření."""
 
-from PySide6.QtWidgets import QFrame, QLabel, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QLabel, QScrollArea, QSizePolicy, QVBoxLayout, QWidget
 
 from moduly.audity.constants import (
     GUIDE_BLOCK_EVALUATE,
@@ -36,7 +36,8 @@ class AuditProcessOverviewWidget(QWidget):
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
-        outer.addWidget(scroll)
+        outer.addWidget(scroll, 1)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
     def show_process(self, knowledge: dict | None) -> None:
         self._clear_content()
@@ -201,7 +202,8 @@ class AuditProcessKnowledgeWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.criterion_widget = AuditKnowledgeCriterionWidget()
-        layout.addWidget(self.criterion_widget)
+        layout.addWidget(self.criterion_widget, 1)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
     def show_criterion(
         self,

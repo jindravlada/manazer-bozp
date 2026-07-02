@@ -154,6 +154,7 @@ class AudityProcessesTestCase(unittest.TestCase):
             GUIDE_BLOCK_EVALUATE,
             GUIDE_BLOCK_UNDERSTAND,
             GUIDE_BLOCK_VERIFY,
+            GUIDE_LABEL_UCEL,
         )
         from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
 
@@ -161,6 +162,10 @@ class AudityProcessesTestCase(unittest.TestCase):
         widget.knowledge_tree.select_node("planovani_bozp")
 
         self.assertEqual(widget.content_stack.currentIndex(), widget._PAGE_OVERVIEW)
+        tree_labels = {label.text() for label in widget.tree_panel.findChildren(QLabel)}
+        self.assertNotIn(GUIDE_BLOCK_UNDERSTAND, tree_labels)
+        self.assertNotIn(GUIDE_LABEL_UCEL, tree_labels)
+
         overview_text = widget.overview_widget._content_host.findChildren(QLabel)
         texts = {label.text() for label in overview_text}
         self.assertIn(GUIDE_BLOCK_UNDERSTAND, texts)
