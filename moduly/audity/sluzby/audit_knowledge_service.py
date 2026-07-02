@@ -36,6 +36,7 @@ _KNOWLEDGE_LIST_FIELDS = (
     "postup_kontroly",
     "referencni_fotografie",
     "kontrolni_body",
+    "auditni_tvrzeni",
     "navodne_otazky",
     "typicke_neshody",
     "typicke_zavady",
@@ -59,7 +60,7 @@ _KNOWLEDGE_TEXT_FIELDS = (
     "cil_overeni",
 )
 
-_MERGE_SKIP_LIST_FIELDS = frozenset({"kontrolni_body", "navodne_otazky"})
+_MERGE_SKIP_LIST_FIELDS = frozenset({"kontrolni_body", "auditni_tvrzeni", "navodne_otazky"})
 
 EDITABLE_SECTION_PROCEDURE_FIELDS: tuple[tuple[str, str], ...] = (
     ("Postup auditu", "postup_kontroly"),
@@ -688,6 +689,30 @@ class AuditKnowledgeService:
         return cls.normalize_control_point_severity(item.get("zavaznost"))
 
     @classmethod
+    def normalize_auditni_tvrzeni(cls, items: list[dict]) -> list[dict]:
+        normalized: list[dict] = []
+        for index, raw in enumerate(items):
+            if not isinstance(raw, dict):
+                continue
+            item_id = str(raw.get("id") or "").strip()
+            text = str(raw.get("text") or raw.get("nazev") or "").strip()
+            if not item_id or not text:
+                continue
+            poradi = raw.get("poradi")
+            normalized.append(
+                {
+                    "id": item_id,
+                    "text": text,
+                    "nazev": text,
+                    "popis": str(raw.get("popis") or "").strip(),
+                    "poradi": poradi if poradi is not None else (index + 1) * 10,
+                    "aktivni": bool(raw.get("aktivni", True)),
+                    "zavaznost": cls.normalize_control_point_severity(raw.get("zavaznost")),
+                }
+            )
+        return normalized
+
+    @classmethod
     def normalize_kontrolni_body(cls, items: list[dict]) -> list[dict]:
         normalized: list[dict] = []
         for index, raw in enumerate(items):
@@ -837,6 +862,10 @@ class AuditKnowledgeService:
         return None
 
     def get_audit_questions(self, criterion: dict) -> list[dict]:
+        auditni_tvrzeni = criterion.get("auditni_tvrzeni")
+        if auditni_tvrzeni:
+            return self.normalize_auditni_tvrzeni(self.get_active_items(auditni_tvrzeni))
+
         for field in ("navodne_otazky", "kontrolni_body", "auditni_otazky"):
             items = criterion.get(field)
             if items:

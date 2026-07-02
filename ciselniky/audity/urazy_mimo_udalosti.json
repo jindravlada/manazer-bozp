@@ -1,5 +1,5 @@
 {
-  "verze": 3,
+  "verze": 4,
   "id": "urazy_mimo_udalosti",
   "nazev": "Řízení pracovních úrazů a mimořádných událostí",
   "popis": "Proces řízení pracovních úrazů a mimořádných událostí v organizaci.",
@@ -21,14 +21,46 @@
       "sekce": [],
       "postup_kontroly": [],
       "kontrolni_body": [],
-      "navodne_otazky": [
+      "auditni_tvrzeni": [
         {
-          "id": "evidence_klasifikace_ohlasovani",
-          "nazev": "Jak organizace zajišťuje, že jsou všechny pracovní úrazy řádně evidovány, správně klasifikovány a jsou splněny všechny zákonné ohlašovací povinnosti?",
-          "popis": "Organizace má zavedený a uplatňovaný postup pro hlášení, evidenci, klasifikaci a plnění ohlašovacích povinností u pracovních úrazů.",
+          "id": "vsechny_urazy_evidovany",
+          "text": "Všechny pracovní úrazy jsou evidovány.",
+          "popis": "Organizace vede evidenci všech pracovních úrazů včetně drobných úrazů bez pracovní neschopnosti.",
           "poradi": 10,
           "aktivni": true,
           "zavaznost": "vysoka"
+        },
+        {
+          "id": "urazy_klasifikovany",
+          "text": "Pracovní úrazy jsou správně klasifikovány.",
+          "popis": "Organizace rozlišuje pracovní úrazy bez pracovní neschopnosti, pracovní úrazy s pracovní neschopností, závažné pracovní úrazy a smrtelné pracovní úrazy.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "ohlasovaci_povinnosti",
+          "text": "Ohlašovací povinnosti jsou plněny v zákonných lhůtách.",
+          "popis": "Organizace má nastaven postup pro včasné ohlášení pracovních úrazů a zaslání záznamu o pracovním úrazu příslušným subjektům.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vedouci_znaji_postup",
+          "text": "Vedoucí zaměstnanci znají postup při pracovním úrazu.",
+          "popis": "Vedoucí zaměstnanci vědí, komu úraz oznámit, jak zajistit místo události a jaké prvotní informace zajistit.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "uplnost_evidence_overovana",
+          "text": "Úplnost evidence pracovních úrazů je ověřována.",
+          "popis": "Organizace ověřuje, zda nedochází k zatajení nebo neevidování pracovních úrazů.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
         }
       ],
       "objektivni_dukazy": [

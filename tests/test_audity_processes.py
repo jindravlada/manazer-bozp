@@ -149,7 +149,14 @@ class AudityProcessesTestCase(unittest.TestCase):
         self.assertEqual(widget.content_stack.currentIndex(), widget._PAGE_KNOWLEDGE)
 
         criterion_widget = widget.knowledge_widget.criterion_widget
-        self.assertIn("evidence_klasifikace_ohlasovani", criterion_widget._control_point_frames)
+        expected_ids = {
+            "vsechny_urazy_evidovany",
+            "urazy_klasifikovany",
+            "ohlasovaci_povinnosti",
+            "vedouci_znaji_postup",
+            "uplnost_evidence_overovana",
+        }
+        self.assertTrue(expected_ids.issubset(criterion_widget._control_point_frames))
 
     def test_select_process_shows_guide_overview(self) -> None:
         from PySide6.QtWidgets import QLabel
@@ -192,7 +199,7 @@ class AudityProcessesTestCase(unittest.TestCase):
         self.assertNotIn(GUIDE_LABEL_OBJECTIVE_EVIDENCE, center_labels)
         self.assertNotIn(GUIDE_LABEL_TYPICAL_NONCONFORMITIES, center_labels)
         self.assertIn(
-            "Jak organizace zajišťuje, že jsou všechny pracovní úrazy řádně evidovány, správně klasifikovány a jsou splněny všechny zákonné ohlašovací povinnosti?",
+            "Všechny pracovní úrazy jsou evidovány.",
             center_labels,
         )
 
@@ -289,7 +296,7 @@ class AudityProcessesTestCase(unittest.TestCase):
             "Řízení pracovních úrazů a mimořádných událostí",
         )
         self.assertEqual(finding.source_section_label, "Evidence a hlášení pracovních úrazů")
-        self.assertEqual(finding.source_control_point_id, "evidence_klasifikace_ohlasovani")
+        self.assertEqual(finding.source_control_point_id, "vsechny_urazy_evidovany")
         self.assertEqual(finding.reference_label, stable_key)
 
     @patch("moduly.audity.ui.audit_knowledge_criterion_widget.FindingDialog")

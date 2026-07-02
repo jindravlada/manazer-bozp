@@ -61,20 +61,36 @@ class AudityKnowledgeTestCase(unittest.TestCase):
 
         assert criterion is not None
         questions = audit_knowledge_service.get_audit_questions(criterion)
-        self.assertGreaterEqual(len(questions), 1)
-        self.assertEqual(questions[0]["id"], "evidence_klasifikace_ohlasovani")
+        self.assertEqual(len(questions), 5)
+        self.assertEqual(questions[0]["id"], "vsechny_urazy_evidovany")
+        self.assertEqual(questions[0]["text"], "Všechny pracovní úrazy jsou evidovány.")
+        self.assertEqual(questions[0]["nazev"], "Všechny pracovní úrazy jsou evidovány.")
 
     def test_question_stable_key(self) -> None:
         stable_key = audit_knowledge_service.question_stable_key(
             "urazy_mimo_udalosti",
             "evidence_hlaseni_urazu",
-            "evidence_klasifikace_ohlasovani",
+            "vsechny_urazy_evidovany",
         )
 
         self.assertEqual(
             stable_key,
-            "urazy_mimo_udalosti/evidence_hlaseni_urazu/evidence_klasifikace_ohlasovani",
+            "urazy_mimo_udalosti/evidence_hlaseni_urazu/vsechny_urazy_evidovany",
         )
+
+    def test_auditni_tvrzeni_fallback_to_navodne_otazky(self) -> None:
+        criterion = {
+            "navodne_otazky": [
+                {
+                    "id": "legacy_question",
+                    "nazev": "Stará otázka",
+                    "aktivni": True,
+                }
+            ]
+        }
+        questions = audit_knowledge_service.get_audit_questions(criterion)
+        self.assertEqual(len(questions), 1)
+        self.assertEqual(questions[0]["id"], "legacy_question")
 
 
 if __name__ == "__main__":

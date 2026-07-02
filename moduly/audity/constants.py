@@ -145,7 +145,7 @@ GUIDE_LABEL_OBSERVATIONS_IN_OPERATION = "Možné pozorování v provozu"
 GUIDE_LABEL_TYPICAL_NONCONFORMITIES = "Typické neshody"
 
 GUIDE_SELECT_AREA_FOR_EVALUATION = (
-    "Vyberte oblast ověření ve stromu vlevo pro vyhodnocení návodných otázek."
+    "Vyberte oblast ověření ve stromu vlevo pro vyhodnocení auditních tvrzení."
 )
 KNOWLEDGE_REFERENCE_PHOTOS_TITLE = "📷 Referenční fotografie"
 REFERENCE_PHOTO_THUMBNAIL_SIZE = 120
@@ -159,10 +159,10 @@ FINDING_DIALOG_TITLE = "Zjištění auditu"
 FINDING_CREATE_FROM_CONTROL_POINT_LABEL = "➕ Založit zjištění"
 FINDING_OPEN_EXISTING_LABEL = "Otevřít zjištění"
 FINDING_CREATED_LABEL = "Zjištění založeno"
-FINDING_DUPLICATE_MESSAGE = "Pro tuto návodnou otázku už existuje zjištění. Otevře se existující záznam."
+FINDING_DUPLICATE_MESSAGE = "Pro toto auditní tvrzení už existuje zjištění. Otevře se existující záznam."
 AUDIT_MUST_BE_SAVED_MESSAGE = "Audit je nutné nejdříve uložit."
 FINDING_REQUIRES_NONCOMPLIANCE_MESSAGE = (
-    "Zjištění lze založit pouze u návodné otázky s výsledkem „Nevyhovuje“."
+    "Zjištění lze založit pouze u auditního tvrzení s výsledkem „Nevyhovuje“."
 )
 
 AUDIT_FINDING_TYPE_NESHODA = "neshoda"
@@ -179,10 +179,10 @@ AUDIT_FINDING_TYPES = frozenset(AUDIT_FINDING_TYPE_LABELS.keys())
 
 PROCESS_TERM_PROCESS = "Řídicí proces"
 PROCESS_TERM_CRITERION = "Oblast ověření"
-PROCESS_TERM_QUESTION = "Návodná otázka"
+PROCESS_TERM_QUESTION = "Auditní tvrzení"
 
 CONTROL_POINT_HISTORY_EMPTY = "Zatím bez historie."
-CONTROL_POINT_HISTORY_SELECT = "Vyberte návodnou otázku vlevo."
+CONTROL_POINT_HISTORY_SELECT = "Vyberte auditní tvrzení vlevo."
 CONTROL_POINT_HISTORY_LIMIT = 5
 CONTROL_POINT_HISTORY_WORKPLACE_TITLE = "Historie tohoto auditovaného provozu"
 CONTROL_POINT_SHARED_EXPERIENCES_TITLE = "Sdílené zkušenosti"

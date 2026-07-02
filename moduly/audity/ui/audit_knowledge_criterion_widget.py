@@ -443,7 +443,9 @@ class AuditKnowledgeCriterionWidget(QWidget):
         return container
 
     def _context_for_control_point(self, control_point: dict) -> AuditFindingKnowledgeContext:
-        control_point_label = str(control_point.get("nazev") or "—").strip() or "—"
+        control_point_label = str(
+            control_point.get("text") or control_point.get("nazev") or "—"
+        ).strip() or "—"
         question_id = str(control_point.get("id") or "").strip()
         return AuditFindingKnowledgeContext(
             area_id=self._area_id,
