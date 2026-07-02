@@ -1,0 +1,1109 @@
+{
+  "verze": 1,
+  "id": "rizeni_dokumentovanych_informaci",
+  "nazev": "Řízení dokumentovaných informací",
+  "popis": "Proces tvorby, schvalování, distribuce a aktualizace dokumentace BOZP.",
+  "ucel_procesu": "Zajistit, aby organizace:\n- vytvářela potřebnou dokumentaci BOZP,\n- schvalovala dokumenty před vydáním,\n- zajistila dostupnost aktuálních verzí,\n- řídila změny dokumentace,\n- archivovala a uchovávala záznamy.",
+  "proc_je_dulezity": "Dokumentace není cílem sama o sobě.\n\nAuditor ověřuje, zda dokumentace skutečně řídí praxi — a zda praxe používá aktuální verze.\n\nZastaralá nebo nedostupná dokumentace je častější neshoda než chybějící směrnice.",
+  "ocekavany_vystup": "Organizace prokazatelně:\n\n- má schválenou a aktuální dokumentaci BOZP,\n- distribuuje dokumenty dotčeným zaměstnancům,\n- řídí změny a verze,\n- uchovává záznamy dle požadavků,\n- používá dokumentaci v praxi.",
+  "poradi": 40,
+  "aktivni": true,
+  "vazby_procesy": [
+    {
+      "id": "vazba_urazy",
+      "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+      "poradi": 10,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_rizika",
+      "nazev": "Řízení rizik",
+      "poradi": 20,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_kompetence",
+      "nazev": "Řízení kompetencí",
+      "poradi": 30,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dokumentace",
+      "nazev": "Řízení dokumentovaných informací",
+      "poradi": 40,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_zmeny",
+      "nazev": "Řízení změn",
+      "poradi": 50,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_napravna",
+      "nazev": "Řízení nápravných opatření",
+      "poradi": 60,
+      "aktivni": true
+    }
+  ],
+  "pozadavky_norem": [
+    {
+      "id": "iso45001_75_doc_10",
+      "nazev": "ISO 45001: 7.5",
+      "poradi": 10,
+      "aktivni": true,
+      "popis": "Informativní reference – dokumentované informace."
+    },
+    {
+      "id": "iso45001_74_doc_20",
+      "nazev": "ISO 45001: 7.4",
+      "poradi": 20,
+      "aktivni": true,
+      "popis": "Informativní reference – komunikace."
+    },
+    {
+      "id": "iso45001_813_doc_30",
+      "nazev": "ISO 45001: 8.1.3",
+      "poradi": 30,
+      "aktivni": true,
+      "popis": "Informativní reference – plánování a řízení provozu."
+    }
+  ],
+  "sekce": [
+    {
+      "id": "tvorba_dokumentace",
+      "nazev": "Tvorba dokumentace",
+      "popis": "Ověření, že organizace vytváří potřebnou dokumentaci BOZP.",
+      "cil_overeni": "Ověřit, že dokumentace BOZP existuje pro rizikové oblasti a odpovídá praxi.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "tvorba_dokumentace_existuje",
+          "text": "Potřebná dokumentace BOZP existuje.",
+          "popis": "Organizace má dokumenty pro klíčové procesy BOZP.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "tvorba_dokumentace_odpovida",
+          "text": "Dokumentace odpovídá skutečné praxi a rizikům.",
+          "popis": "Obsah není obecný, ale vázaný na organizaci.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "tvorba_dokumentace_odpovedny",
+          "text": "Tvorba dokumentace má určené odpovědné osoby.",
+          "popis": "Existuje vlastník dokumentace.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "tvorba_dokumentace_srozumitelna",
+          "text": "Dokumentace je srozumitelná pro dotčené zaměstnance.",
+          "popis": "Jazyk a forma odpovídají cílové skupině.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "tvorba_dokumentace_revize",
+          "text": "Dokumentace je pravidelně revidována.",
+          "popis": "Existuje periodicita revize dokumentů.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_tvorba_dokumentace_0",
+          "nazev": "seznam dokumentů BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_tvorba_dokumentace_1",
+          "nazev": "vzory dokumentů",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_tvorba_dokumentace_2",
+          "nazev": "bezpečné pracovní postupy",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_tvorba_dokumentace_3",
+          "nazev": "záznamy o revizích",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_tvorba_dokumentace_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_tvorba_dokumentace_1",
+          "nazev": "vedoucí procesů",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_tvorba_dokumentace_2",
+          "nazev": "vedoucí zaměstnanci",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_tvorba_dokumentace_0",
+          "nazev": "dokumentace odpovídá provozu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_tvorba_dokumentace_1",
+          "nazev": "zaměstnanci rozumějí postupům",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_tvorba_dokumentace_0",
+          "nazev": "Organizace neprokázala existenci potřebné dokumentace BOZP.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_tvorba_dokumentace_1",
+          "nazev": "Dokumentace neodpovídá skutečné praxi.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_tvorba_dokumentace_2",
+          "nazev": "Dokumentace není pravidelně revidována.",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_tvorba_dokumentace_0",
+          "nazev": "Vytvořit přehled povinné dokumentace BOZP.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_tvorba_dokumentace_1",
+          "nazev": "Standardizovat vzory bezpečných pracovních postupů.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_tvorba_dokumentace_0",
+          "nazev": "dokumentace je obecná a ne použitelná v provozu",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_75_doc_10",
+          "nazev": "ISO 45001: 7.5",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – dokumentované informace."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "schvalovani_dokumentace",
+      "nazev": "Schvalování dokumentace",
+      "popis": "Ověření schvalování dokumentů před vydáním.",
+      "cil_overeni": "Ověřit, že dokumenty BOZP jsou schvalovány oprávněnými osobami.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "schvalovani_dokumentace_schvaleno",
+          "text": "Dokumenty BOZP jsou schvalovány před vydáním.",
+          "popis": "Existuje záznam o schválení.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "schvalovani_dokumentace_opravnene",
+          "text": "Schvalování provádějí oprávněné osoby.",
+          "popis": "Schvalovatel má definovanou roli a kompetenci.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "schvalovani_dokumentace_verze",
+          "text": "Schválené verze jsou jednoznačně identifikovatelné.",
+          "popis": "Verze a datum jsou uvedeny na dokumentu.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "schvalovani_dokumentace_zmeny",
+          "text": "Změny dokumentů procházejí schvalovacím procesem.",
+          "popis": "Neoprávněné změny nejsou přípustné.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "schvalovani_dokumentace_zaznam",
+          "text": "Schválení je doložitelné.",
+          "popis": "Existuje auditní stopa schvalování.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_schvalovani_dokumentace_0",
+          "nazev": "schvalovací záznamy",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_schvalovani_dokumentace_1",
+          "nazev": "verzované dokumenty",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_schvalovani_dokumentace_2",
+          "nazev": "seznam schvalovatelů",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_schvalovani_dokumentace_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_schvalovani_dokumentace_1",
+          "nazev": "vedení organizace",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_schvalovani_dokumentace_2",
+          "nazev": "vlastníci procesů",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_schvalovani_dokumentace_0",
+          "nazev": "dokumenty mají uvedenou verzi a schválení",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_schvalovani_dokumentace_0",
+          "nazev": "Organizace neprokázala schvalování dokumentace před vydáním.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_schvalovani_dokumentace_1",
+          "nazev": "Schválené verze nejsou jednoznačně identifikovatelné.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_schvalovani_dokumentace_2",
+          "nazev": "Změny dokumentů neprocházejí schvalovacím procesem.",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_schvalovani_dokumentace_0",
+          "nazev": "Zavést elektronické schvalování dokumentů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_schvalovani_dokumentace_1",
+          "nazev": "Povinně uvádět verzi a datum schválení.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_schvalovani_dokumentace_0",
+          "nazev": "dokumenty jsou v provozu bez schválení",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_75_doc_10",
+          "nazev": "ISO 45001: 7.5",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – dokumentované informace."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "dostupnost_dokumentace",
+      "nazev": "Dostupnost dokumentace",
+      "popis": "Ověření, že zaměstnanci mají přístup k aktuálním dokumentům.",
+      "cil_overeni": "Ověřit, že aktuální dokumentace je dostupná tam, kde je potřeba.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "dostupnost_dokumentace_dostupna",
+          "text": "Aktuální dokumentace je dostupná na pracovištích.",
+          "popis": "Zaměstnanec najde potřebný postup.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "dostupnost_dokumentace_aktualni",
+          "text": "V provozu jsou pouze aktuální verze dokumentů.",
+          "popis": "Zastaralé verze nejsou používány.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "dostupnost_dokumentace_elektronicka",
+          "text": "Elektronická dokumentace je spravována centrálně.",
+          "popis": "Existuje jediný zdroj pravdy.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "dostupnost_dokumentace_cizinci",
+          "text": "Dokumentace je srozumitelná i cizojazyčným zaměstnancům.",
+          "popis": "Kritické informace jsou dostupné v jazyce zaměstnance.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "dostupnost_dokumentace_vedouci",
+          "text": "Vedoucí zaměstnanci znají, kde dokumentaci najít.",
+          "popis": "Vedoucí směruje podřízené ke správným verzím.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_dostupnost_dokumentace_0",
+          "nazev": "dostupné BPP na pracovištích",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_dostupnost_dokumentace_1",
+          "nazev": "intranet / DMS",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_dostupnost_dokumentace_2",
+          "nazev": "seznam platných verzí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_dostupnost_dokumentace_3",
+          "nazev": "značení zastaralých verzí",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_dostupnost_dokumentace_0",
+          "nazev": "zaměstnanci v provozu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_dostupnost_dokumentace_1",
+          "nazev": "vedoucí zaměstnanci",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_dostupnost_dokumentace_2",
+          "nazev": "technik BOZP",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_dostupnost_dokumentace_0",
+          "nazev": "zaměstnanci vědí, kde najít postup",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_dostupnost_dokumentace_1",
+          "nazev": "v provozu nejsou zastaralé verze",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_dostupnost_dokumentace_0",
+          "nazev": "Organizace neprokázala dostupnost aktuální dokumentace na pracovištích.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_dostupnost_dokumentace_1",
+          "nazev": "V provozu jsou používány zastaralé verze dokumentů.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_dostupnost_dokumentace_2",
+          "nazev": "Zaměstnanci nemají přístup k potřebným postupům.",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_dostupnost_dokumentace_0",
+          "nazev": "Zavést jednotné úložiště dokumentů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_dostupnost_dokumentace_1",
+          "nazev": "Odstranit zastaralé verze z pracovišť.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_dostupnost_dokumentace_0",
+          "nazev": "zastaralé postupy na pracovištích",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_75_doc_10",
+          "nazev": "ISO 45001: 7.5",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – dokumentované informace."
+        },
+        {
+          "id": "iso45001_74_doc_20",
+          "nazev": "ISO 45001: 7.4",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – komunikace."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "rizeni_zmen_dokumentace",
+      "nazev": "Řízení změn dokumentace",
+      "popis": "Ověření řízení změn a distribuce aktualizovaných verzí.",
+      "cil_overeni": "Ověřit, že změny dokumentace jsou řízeny a distribuovány.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "rizeni_zmen_dokumentace_rizeny",
+          "text": "Změny dokumentace jsou řízeny.",
+          "popis": "Existuje postup pro změnu dokumentu.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "rizeni_zmen_dokumentace_distribuce",
+          "text": "Aktualizované verze jsou distribuovány dotčeným osobám.",
+          "popis": "Změna se dostane k uživatelům dokumentu.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "rizeni_zmen_dokumentace_stare",
+          "text": "Zastaralé verze jsou stahovány nebo označeny.",
+          "popis": "Organizace brání použití staré verze.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "rizeni_zmen_dokumentace_vazba",
+          "text": "Změna dokumentace je navázána na změnu procesu nebo rizika.",
+          "popis": "Revize dokumentu reaguje na změnu.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "rizeni_zmen_dokumentace_zaznam",
+          "text": "Změny dokumentace jsou zaznamenány.",
+          "popis": "Existuje historie verzí.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_rizeni_zmen_dokumentace_0",
+          "nazev": "historie verzí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_rizeni_zmen_dokumentace_1",
+          "nazev": "záznamy o distribuci",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_rizeni_zmen_dokumentace_2",
+          "nazev": "žádosti o změnu dokumentu",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_rizeni_zmen_dokumentace_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_rizeni_zmen_dokumentace_1",
+          "nazev": "vlastníci dokumentů",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_rizeni_zmen_dokumentace_2",
+          "nazev": "vedoucí zaměstnanci",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_rizeni_zmen_dokumentace_0",
+          "nazev": "po změně jsou staženy staré verze",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_rizeni_zmen_dokumentace_1",
+          "nazev": "distribuce proběhla",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_rizeni_zmen_dokumentace_0",
+          "nazev": "Organizace neprokázala řízení změn dokumentace.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_rizeni_zmen_dokumentace_1",
+          "nazev": "Aktualizované verze nejsou distribuovány dotčeným osobám.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_rizeni_zmen_dokumentace_2",
+          "nazev": "Zastaralé verze zůstávají v provozu.",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_rizeni_zmen_dokumentace_0",
+          "nazev": "Automatizovat notifikaci o nové verzi dokumentu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_rizeni_zmen_dokumentace_1",
+          "nazev": "Zavést kontrolu stažení zastaralých verzí.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_rizeni_zmen_dokumentace_0",
+          "nazev": "změny nejsou distribuovány",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_75_doc_10",
+          "nazev": "ISO 45001: 7.5",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – dokumentované informace."
+        },
+        {
+          "id": "iso45001_813_doc_20",
+          "nazev": "ISO 45001: 8.1.3",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – plánování a řízení provozu."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "archivace_dokumentace",
+      "nazev": "Archivace a uchovávání",
+      "popis": "Ověření archivace a doby uchovávání záznamů BOZP.",
+      "cil_overeni": "Ověřit, že záznamy BOZP jsou uchovávány po požadovanou dobu.",
+      "poradi": 50,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "archivace_dokumentace_doba",
+          "text": "Doba uchovávání záznamů BOZP je stanovena.",
+          "popis": "Organizace zná, jak dlouho záznamy uchovávat.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "archivace_dokumentace_uchovava",
+          "text": "Záznamy BOZP jsou skutečně uchovávány.",
+          "popis": "Záznamy jsou dohledatelné po požadovanou dobu.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "archivace_dokumentace_archiv",
+          "text": "Archivace probíhá systematicky.",
+          "popis": "Ukončené záznamy jsou archivovány, ne likvidovány.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "archivace_dokumentace_ochrana",
+          "text": "Archivované záznamy jsou chráněny proti ztrátě.",
+          "popis": "Existuje ochrana dat a fyzických záznamů.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "archivace_dokumentace_likvidace",
+          "text": "Likvidace záznamů probíhá podle pravidel.",
+          "popis": "Záznamy nejsou likvidovány předčasně.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_archivace_dokumentace_0",
+          "nazev": "archivační plán",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_archivace_dokumentace_1",
+          "nazev": "evidence archivovaných záznamů",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_archivace_dokumentace_2",
+          "nazev": "pravidla likvidace",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_archivace_dokumentace_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_archivace_dokumentace_1",
+          "nazev": "správce dokumentace",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_archivace_dokumentace_2",
+          "nazev": "personalista",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_archivace_dokumentace_0",
+          "nazev": "záznamy jsou dohledatelné",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_archivace_dokumentace_1",
+          "nazev": "archivace probíhá systematicky",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_archivace_dokumentace_0",
+          "nazev": "Organizace neprokázala stanovení doby uchovávání záznamů BOZP.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_archivace_dokumentace_1",
+          "nazev": "Záznamy BOZP nejsou uchovávány po požadovanou dobu.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_archivace_dokumentace_2",
+          "nazev": "Archivace záznamů není systematická.",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_archivace_dokumentace_0",
+          "nazev": "Zavést archivační plán BOZP záznamů.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_archivace_dokumentace_1",
+          "nazev": "Automatizovat archivaci elektronických záznamů.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_archivace_dokumentace_0",
+          "nazev": "záznamy chybí nebo jsou neúplné",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_75_doc_10",
+          "nazev": "ISO 45001: 7.5",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – dokumentované informace."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ]
+    }
+  ]
+}

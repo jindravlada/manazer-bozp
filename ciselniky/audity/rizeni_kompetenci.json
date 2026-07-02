@@ -1,0 +1,1189 @@
+{
+  "verze": 1,
+  "id": "rizeni_kompetenci",
+  "nazev": "Řízení kompetencí",
+  "popis": "Proces zajištění kompetencí zaměstnanců pro bezpečnou práci.",
+  "ucel_procesu": "Zajistit, aby organizace:\n- stanovila požadavky na kompetence pro bezpečnou práci,\n- ověřovala odbornou způsobilost zaměstnanců,\n- zajišťovala školení a rozvoj kompetencí,\n- ověřovala účinnost školení,\n- uchovávala záznamy o kompetencích.",
+  "proc_je_dulezity": "Kompetence nejsou pouze osvědčení v šanonu.\n\nAuditor ověřuje, zda zaměstnanec skutečně umí pracovat bezpečně — ne zda má podepsanou prezenčku.\n\nSelhání řízení kompetencí se projeví nejčastěji chybou v provozu, nikoli chybějícím dokumentem.",
+  "ocekavany_vystup": "Organizace prokazatelně:\n\n- zná požadavky na kompetence u jednotlivých prací,\n- ověřuje způsobilost před zařazením do práce,\n- školí a aktualizuje kompetence,\n- vyhodnocuje účinnost školení,\n- vede doložitelné záznamy.",
+  "poradi": 30,
+  "aktivni": true,
+  "vazby_procesy": [
+    {
+      "id": "vazba_urazy",
+      "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+      "poradi": 10,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_rizika",
+      "nazev": "Řízení rizik",
+      "poradi": 20,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_kompetence",
+      "nazev": "Řízení kompetencí",
+      "poradi": 30,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dokumentace",
+      "nazev": "Řízení dokumentovaných informací",
+      "poradi": 40,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_zmeny",
+      "nazev": "Řízení změn",
+      "poradi": 50,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_napravna",
+      "nazev": "Řízení nápravných opatření",
+      "poradi": 60,
+      "aktivni": true
+    }
+  ],
+  "pozadavky_norem": [
+    {
+      "id": "iso45001_72_kom_10",
+      "nazev": "ISO 45001: 7.2",
+      "poradi": 10,
+      "aktivni": true,
+      "popis": "Informativní reference – kompetence."
+    },
+    {
+      "id": "iso45001_73_kom_20",
+      "nazev": "ISO 45001: 7.3",
+      "poradi": 20,
+      "aktivni": true,
+      "popis": "Informativní reference – povědomí."
+    },
+    {
+      "id": "iso45001_74_kom_30",
+      "nazev": "ISO 45001: 7.4",
+      "poradi": 30,
+      "aktivni": true,
+      "popis": "Informativní reference – komunikace."
+    },
+    {
+      "id": "iso45001_75_kom_40",
+      "nazev": "ISO 45001: 7.5",
+      "poradi": 40,
+      "aktivni": true,
+      "popis": "Informativní reference – dokumentované informace."
+    }
+  ],
+  "sekce": [
+    {
+      "id": "stanoveni_pozadavku",
+      "nazev": "Stanovení požadavků na kompetence",
+      "popis": "Ověření, že organizace definuje, jaké kompetence jsou pro práci vyžadovány.",
+      "cil_overeni": "Ověřit, že požadavky na kompetence jsou definovány pro rizikové činnosti a pracovní místa.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "stanoveni_pozadavku_definovany",
+          "text": "Požadavky na kompetence jsou definovány pro relevantní pracovní místa a činnosti.",
+          "popis": "Organizace má stanovené kompetence pro práce s rizikem.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "stanoveni_pozadavku_rizikove",
+          "text": "Požadavky na kompetence reflektují rizika práce.",
+          "popis": "Kompetence odpovídají posouzeným rizikům.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "stanoveni_pozadavku_aktualizovany",
+          "text": "Požadavky na kompetence jsou aktualizovány při změnách.",
+          "popis": "Změna procesu nebo technologie vede k revizi kompetencí.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "stanoveni_pozadavku_dostupne",
+          "text": "Požadavky na kompetence jsou dostupné vedoucím a personalistům.",
+          "popis": "Vedoucí znají, jaké kompetence od podřízených očekávat.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "stanoveni_pozadavku_odpovednost",
+          "text": "Je určena odpovědnost za stanovení a aktualizaci požadavků na kompetence.",
+          "popis": "Existuje vlastník procesu kompetencí.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_stanoveni_pozadavku_0",
+          "nazev": "matice kompetencí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_stanoveni_pozadavku_1",
+          "nazev": "popis pracovních míst",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_stanoveni_pozadavku_2",
+          "nazev": "posouzení rizik u prací",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_stanoveni_pozadavku_3",
+          "nazev": "interní směrnice kompetencí",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_stanoveni_pozadavku_0",
+          "nazev": "personalista",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_stanoveni_pozadavku_1",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_stanoveni_pozadavku_2",
+          "nazev": "vedoucí provozu",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_stanoveni_pozadavku_3",
+          "nazev": "vedoucí zaměstnanci",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_stanoveni_pozadavku_0",
+          "nazev": "vedoucí znají požadavky na kompetence",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_stanoveni_pozadavku_1",
+          "nazev": "matice kompetencí odpovídá provozu",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_stanoveni_pozadavku_0",
+          "nazev": "Organizace neprokázala definici požadavků na kompetence pro rizikové činnosti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_stanoveni_pozadavku_1",
+          "nazev": "Požadavky na kompetence neodpovídají posouzeným rizikům.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_stanoveni_pozadavku_2",
+          "nazev": "Požadavky na kompetence nejsou aktualizovány po změnách.",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_stanoveni_pozadavku_0",
+          "nazev": "Zavést matici kompetencí pro všechna riziková pracoviště.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_stanoveni_pozadavku_1",
+          "nazev": "Propojit kompetence s posouzením rizik.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_stanoveni_pozadavku_0",
+          "nazev": "požadavky existují pouze obecně bez vazby na práci",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_72_kom_10",
+          "nazev": "ISO 45001: 7.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – kompetence."
+        },
+        {
+          "id": "iso45001_61_kom_20",
+          "nazev": "ISO 45001: 6.1",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – rizika a příležitosti."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "odborna_zpusobilost",
+      "nazev": "Odborná způsobilost zaměstnanců",
+      "popis": "Ověření způsobilosti zaměstnanců před zařazením a v průběhu práce.",
+      "cil_overeni": "Ověřit, že zaměstnanci mají pro svou práci prokázanou odbornou způsobilost.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "odborna_zpusobilost_overena",
+          "text": "Odborná způsobilost je ověřována před zařazením do rizikové práce.",
+          "popis": "Organizace nezařazuje zaměstnance bez ověření kompetence.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "odborna_zpusobilost_opravneni",
+          "text": "Zaměstnanci mají platná oprávnění pro práce vyžadující zvláštní kvalifikaci.",
+          "popis": "Vazači, jeřábníci, elektrikáři a další role mají platné osvědčení.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "odborna_zpusobilost_zdravotni",
+          "text": "Zdravotní způsobilost je posuzována tam, kde je vyžadována.",
+          "popis": "Lékařské prohlídky odpovídají riziku práce.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "odborna_zpusobilost_zastupitelnost",
+          "text": "Organizace řídí zastupitelnost u klíčových kompetencí.",
+          "popis": "Při nepřítomnosti kompetentní osoby je zajištěna náhrada.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "odborna_zpusobilost_cizinci",
+          "text": "Kompetence cizojazyčných zaměstnanců jsou ověřeny srozumitelným způsobem.",
+          "popis": "Organizace ověřuje porozumění bezpečnostním požadavkům.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_odborna_zpusobilost_0",
+          "nazev": "osvědčení o odborné způsobilosti",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_odborna_zpusobilost_1",
+          "nazev": "záznamy o ověření kompetencí",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_odborna_zpusobilost_2",
+          "nazev": "lékařské posudky",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_odborna_zpusobilost_3",
+          "nazev": "evidence platnosti oprávnění",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_odborna_zpusobilost_0",
+          "nazev": "personalista",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_odborna_zpusobilost_1",
+          "nazev": "vedoucí zaměstnanci",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_odborna_zpusobilost_2",
+          "nazev": "zaměstnanci s oprávněním",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_odborna_zpusobilost_3",
+          "nazev": "technik BOZP",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_odborna_zpusobilost_0",
+          "nazev": "zaměstnanci mají oprávnění pro vykonávanou práci",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_odborna_zpusobilost_1",
+          "nazev": "ověření probíhá před zařazením",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_odborna_zpusobilost_0",
+          "nazev": "Organizace neprokázala ověření odborné způsobilosti před zařazením do práce.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_odborna_zpusobilost_1",
+          "nazev": "Platnost oprávnění pro rizikové práce není kontrolována.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_odborna_zpusobilost_2",
+          "nazev": "Zdravotní způsobilost není posuzována u rizikových prací.",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_odborna_zpusobilost_0",
+          "nazev": "Zavést evidenci platnosti oprávnění s upozorněním na konec platnosti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_odborna_zpusobilost_1",
+          "nazev": "Standardizovat ověření kompetencí před zařazením.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_odborna_zpusobilost_0",
+          "nazev": "pracují nekompetentní zaměstnanci",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poz_odborna_zpusobilost_1",
+          "nazev": "platnost osvědčení není sledována",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_72_kom_10",
+          "nazev": "ISO 45001: 7.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – kompetence."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "skoleni_rozvoj",
+      "nazev": "Školení a rozvoj kompetencí",
+      "popis": "Ověření plánování a realizace BOZP školení.",
+      "cil_overeni": "Ověřit, že organizace systematicky školí a rozvíjí kompetence zaměstnanců.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "skoleni_rozvoj_plan",
+          "text": "Existuje plán BOZP školení.",
+          "popis": "Organizace plánuje školení podle rizik a rolí.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "skoleni_rozvoj_vstupni",
+          "text": "Vstupní školení je poskytováno před zahájením práce.",
+          "popis": "Nový zaměstnanec je proškolen před samostatnou prací.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "skoleni_rozvoj_periodicke",
+          "text": "Pravidelná školení jsou prováděna v definovaných intervalech.",
+          "popis": "Periodicita odpovídá interním požadavkům.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "skoleni_rozvoj_specificke",
+          "text": "Mimořádná školení jsou prováděna po změnách nebo událostech.",
+          "popis": "Změna technologie nebo úraz spouští školení.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "skoleni_rozvoj_obsah",
+          "text": "Obsah školení odpovídá rizikům konkrétního pracoviště.",
+          "popis": "Školení není pouze obecné, ale vázané na práci.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_skoleni_rozvoj_0",
+          "nazev": "plán BOZP školení",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_skoleni_rozvoj_1",
+          "nazev": "prezenční listiny",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_skoleni_rozvoj_2",
+          "nazev": "osnovy školení",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_skoleni_rozvoj_3",
+          "nazev": "hodnotící testy",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "duk_skoleni_rozvoj_4",
+          "nazev": "záznamy o mimořádných školeních",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_skoleni_rozvoj_0",
+          "nazev": "školitel BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_skoleni_rozvoj_1",
+          "nazev": "personalista",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_skoleni_rozvoj_2",
+          "nazev": "vedoucí zaměstnanci",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_skoleni_rozvoj_3",
+          "nazev": "zaměstnanci",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_skoleni_rozvoj_0",
+          "nazev": "nový zaměstnanec absolvoval vstupní školení",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_skoleni_rozvoj_1",
+          "nazev": "školení reflektuje konkrétní rizika pracoviště",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_skoleni_rozvoj_0",
+          "nazev": "Organizace neprokázala plán BOZP školení.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_skoleni_rozvoj_1",
+          "nazev": "Vstupní školení není poskytováno před zahájením práce.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_skoleni_rozvoj_2",
+          "nazev": "Pravidelná školení nejsou prováděna v definovaných intervalech.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_skoleni_rozvoj_3",
+          "nazev": "Obsah školení neodpovídá rizikům pracoviště.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_skoleni_rozvoj_0",
+          "nazev": "Zavést roční plán školení navázaný na rizika.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_skoleni_rozvoj_1",
+          "nazev": "Používat pracovištní část školení v provozu.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_skoleni_rozvoj_0",
+          "nazev": "školení je pouze formální",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poz_skoleni_rozvoj_1",
+          "nazev": "prezenční listiny bez obsahu",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_72_kom_10",
+          "nazev": "ISO 45001: 7.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – kompetence."
+        },
+        {
+          "id": "iso45001_73_kom_20",
+          "nazev": "ISO 45001: 7.3",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – povědomí."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "ucinnost_skoleni",
+      "nazev": "Ověřování účinnosti školení",
+      "popis": "Ověření, zda školení skutečně změnilo chování zaměstnanců.",
+      "cil_overeni": "Ověřit, že organizace vyhodnocuje účinnost školení, ne pouze jeho absolvování.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "ucinnost_skoleni_vyhodnocuje",
+          "text": "Účinnost školení je vyhodnocována.",
+          "popis": "Organizace posuzuje, zda školení vedlo ke změně chování.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "ucinnost_skoleni_metody",
+          "text": "Pro ověření účinnosti jsou použity vhodné metody.",
+          "popis": "Používají se testy, pozorování v provozu nebo simulace.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "ucinnost_skoleni_opakovani",
+          "text": "Neúčinné školení vede k opakovanému školení nebo jiným opatřením.",
+          "popis": "Organizace reaguje na zjištěnou neúčinnost.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "ucinnost_skoleni_vedouci",
+          "text": "Vedoucí zaměstnanci ověřují uplatnění získaných znalostí v praxi.",
+          "popis": "Vedoucí sleduje chování po školení.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "ucinnost_skoleni_zaznam",
+          "text": "Výsledek ověření účinnosti je zaznamenán.",
+          "popis": "Existuje záznam o vyhodnocení účinnosti školení.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_ucinnost_skoleni_0",
+          "nazev": "záznamy o vyhodnocení účinnosti",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_ucinnost_skoleni_1",
+          "nazev": "výsledky testů",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_ucinnost_skoleni_2",
+          "nazev": "záznamy z pozorování v provozu",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_ucinnost_skoleni_3",
+          "nazev": "revize školicích materiálů",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_ucinnost_skoleni_0",
+          "nazev": "školitel BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_ucinnost_skoleni_1",
+          "nazev": "vedoucí zaměstnanci",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_ucinnost_skoleni_2",
+          "nazev": "technik BOZP",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_ucinnost_skoleni_0",
+          "nazev": "zaměstnanci aplikují znalosti z školení",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_ucinnost_skoleni_1",
+          "nazev": "vedoucí sleduje chování po školení",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_ucinnost_skoleni_0",
+          "nazev": "Organizace neprokázala vyhodnocení účinnosti školení.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_ucinnost_skoleni_1",
+          "nazev": "Neúčinné školení nevede k nápravným opatřením.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_ucinnost_skoleni_2",
+          "nazev": "Účinnost školení je zaměňována za pouhou prezenční listinu.",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_ucinnost_skoleni_0",
+          "nazev": "Zavést pozorování v provozu po školení.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_ucinnost_skoleni_1",
+          "nazev": "Používat krátké praktické testy u rizikových prací.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_ucinnost_skoleni_0",
+          "nazev": "školení nemá vliv na chování v provozu",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_72_kom_10",
+          "nazev": "ISO 45001: 7.2",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – kompetence."
+        },
+        {
+          "id": "iso45001_91_kom_20",
+          "nazev": "ISO 45001: 9.1",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – monitorování, měření, analýza a hodnocení."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "zaznamy_kompetenci",
+      "nazev": "Uchovávání záznamů o kompetencích",
+      "popis": "Ověření evidence a dostupnosti záznamů o kompetencích.",
+      "cil_overeni": "Ověřit, že záznamy o kompetencích jsou úplné, aktuální a dohledatelné.",
+      "poradi": 50,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "zaznamy_kompetenci_evidence",
+          "text": "Záznamy o kompetencích jsou vedeny pro relevantní zaměstnance.",
+          "popis": "Organizace eviduje školení, oprávnění a ověření.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "zaznamy_kompetenci_aktualni",
+          "text": "Záznamy o kompetencích jsou aktuální.",
+          "popis": "Evidence odpovídá skutečnému stavu kompetencí.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "zaznamy_kompetenci_dohledatelne",
+          "text": "Záznamy o kompetencích jsou dohledatelné.",
+          "popis": "Auditor může rychle dohledat kompetenci konkrétního zaměstnance.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "zaznamy_kompetenci_platnost",
+          "text": "Platnost oprávnění a školení je sledována.",
+          "popis": "Organizace ví, kdy kompetence expiruje.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "zaznamy_kompetenci_duvernost",
+          "text": "Záznamy o kompetencích jsou chráněny a spravovány v souladu s pravidly.",
+          "popis": "Přístup k záznamům je řízen.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_zaznamy_kompetenci_0",
+          "nazev": "evidence školení",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_zaznamy_kompetenci_1",
+          "nazev": "evidence oprávnění",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_zaznamy_kompetenci_2",
+          "nazev": "složky kompetencí zaměstnanců",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_zaznamy_kompetenci_3",
+          "nazev": "přehled platnosti",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_zaznamy_kompetenci_0",
+          "nazev": "personalista",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_zaznamy_kompetenci_1",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_zaznamy_kompetenci_2",
+          "nazev": "vedoucí zaměstnanci",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_zaznamy_kompetenci_0",
+          "nazev": "záznamy odpovídají skutečnosti",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_zaznamy_kompetenci_1",
+          "nazev": "platnost je sledována",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_zaznamy_kompetenci_0",
+          "nazev": "Organizace neprokázala evidenci kompetencí u rizikových prací.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_zaznamy_kompetenci_1",
+          "nazev": "Záznamy o kompetencích nejsou aktuální.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_zaznamy_kompetenci_2",
+          "nazev": "Platnost oprávnění není sledována.",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_zaznamy_kompetenci_0",
+          "nazev": "Zavést elektronickou evidenci kompetencí s hlídáním platnosti.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_zaznamy_kompetenci_1",
+          "nazev": "Propojit evidenci kompetencí s plánem školení.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_zaznamy_kompetenci_0",
+          "nazev": "záznamy jsou neúplné nebo zastaralé",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_75_kom_10",
+          "nazev": "ISO 45001: 7.5",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – dokumentované informace."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ]
+    }
+  ]
+}

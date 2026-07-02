@@ -1,5 +1,5 @@
 {
-  "verze": 4,
+  "verze": 5,
   "procesy": [
     {
       "id": "urazy_mimo_udalosti",
@@ -18,6 +18,42 @@
       "poradi": 20,
       "aktivni": true,
       "soubor_znalosti": "rizeni_rizik.json"
+    },
+    {
+      "id": "rizeni_kompetenci",
+      "nazev": "Řízení kompetencí",
+      "popis": "Proces zajištění kompetencí zaměstnanců pro bezpečnou práci.",
+      "ucel_procesu": "Zajistit, aby organizace stanovila požadavky na kompetence, ověřovala odbornou způsobilost, zajišťovala školení a rozvoj, ověřovala účinnost školení a uchovávala záznamy o kompetencích.",
+      "poradi": 30,
+      "aktivni": true,
+      "soubor_znalosti": "rizeni_kompetenci.json"
+    },
+    {
+      "id": "rizeni_dokumentovanych_informaci",
+      "nazev": "Řízení dokumentovaných informací",
+      "popis": "Proces tvorby, schvalování, distribuce a uchovávání dokumentace BOZP.",
+      "ucel_procesu": "Zajistit, aby dokumentované informace BOZP byly aktuální, schválené, dostupné oprávněným osobám a řízeně archivované.",
+      "poradi": 40,
+      "aktivni": true,
+      "soubor_znalosti": "rizeni_dokumentovanych_informaci.json"
+    },
+    {
+      "id": "rizeni_zmen",
+      "nazev": "Řízení změn",
+      "popis": "Proces identifikace, posouzení a řízeného zavádění změn s dopadem na BOZP.",
+      "ucel_procesu": "Zajistit, aby změny v organizaci, technologii nebo provozu byly identifikovány, posouzeny z hlediska rizik, schváleny, řízeně zavedeny a vyhodnoceny.",
+      "poradi": 50,
+      "aktivni": true,
+      "soubor_znalosti": "rizeni_zmen.json"
+    },
+    {
+      "id": "rizeni_napravnych_opatreni",
+      "nazev": "Řízení nápravných opatření",
+      "popis": "Proces evidence neshod, analýzy příčin, stanovení a ověření nápravných opatření.",
+      "ucel_procesu": "Zajistit, aby neshody byly evidovány, analyzovány, nápravná opatření stanovená a realizovaná a jejich účinnost ověřena.",
+      "poradi": 60,
+      "aktivni": true,
+      "soubor_znalosti": "rizeni_napravnych_opatreni.json"
     }
   ]
 }

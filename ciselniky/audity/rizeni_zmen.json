@@ -1,0 +1,1128 @@
+{
+  "verze": 1,
+  "id": "rizeni_zmen",
+  "nazev": "Řízení změn",
+  "popis": "Proces identifikace, posouzení a zavádění změn s dopadem na BOZP.",
+  "ucel_procesu": "Zajistit, aby organizace:\n- identifikovala plánované i neplánované změny,\n- posuzovala rizika změn před zavedením,\n- schvalovala změny,\n- zaváděla změny kontrolovaným způsobem,\n- vyhodnocovala účinnost změn.",
+  "proc_je_dulezity": "Změna je jednou z nejčastějších příčin pracovních úrazů.\n\nAuditor ověřuje, zda organizace změnu nezavádí „za běhu“, ale s posouzením rizik a zapojením dotčených osob.\n\nNeplánované změny musí být řízeny stejně důsledně jako plánované.",
+  "ocekavany_vystup": "Organizace prokazatelně:\n\n- identifikuje a eviduje změny,\n- posuzuje rizika změn,\n- schvaluje změny před zavedením,\n- zavádí změny s aktualizací dokumentace a kompetencí,\n- vyhodnocuje dopad změn.",
+  "poradi": 50,
+  "aktivni": true,
+  "vazby_procesy": [
+    {
+      "id": "vazba_urazy",
+      "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+      "poradi": 10,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_rizika",
+      "nazev": "Řízení rizik",
+      "poradi": 20,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_kompetence",
+      "nazev": "Řízení kompetencí",
+      "poradi": 30,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dokumentace",
+      "nazev": "Řízení dokumentovaných informací",
+      "poradi": 40,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_zmeny",
+      "nazev": "Řízení změn",
+      "poradi": 50,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_napravna",
+      "nazev": "Řízení nápravných opatření",
+      "poradi": 60,
+      "aktivni": true
+    }
+  ],
+  "pozadavky_norem": [
+    {
+      "id": "iso45001_813_zmen_10",
+      "nazev": "ISO 45001: 8.1.3",
+      "poradi": 10,
+      "aktivni": true,
+      "popis": "Informativní reference – plánování a řízení provozu."
+    },
+    {
+      "id": "iso45001_61_zmen_20",
+      "nazev": "ISO 45001: 6.1",
+      "poradi": 20,
+      "aktivni": true,
+      "popis": "Informativní reference – rizika a příležitosti."
+    },
+    {
+      "id": "iso45001_75_zmen_30",
+      "nazev": "ISO 45001: 7.5",
+      "poradi": 30,
+      "aktivni": true,
+      "popis": "Informativní reference – dokumentované informace."
+    }
+  ],
+  "sekce": [
+    {
+      "id": "identifikace_zmen",
+      "nazev": "Identifikace změn",
+      "popis": "Ověření identifikace plánovaných i neplánovaných změn.",
+      "cil_overeni": "Ověřit, že organizace identifikuje změny s dopadem na BOZP.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "identifikace_zmen_identifikovany",
+          "text": "Změny s dopadem na BOZP jsou identifikovány.",
+          "popis": "Organizace má postup pro hlášení změn.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "identifikace_zmen_planovane",
+          "text": "Plánované změny jsou evidovány před zavedením.",
+          "popis": "Investice, reorganizace a nové technologie jsou posuzovány.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "identifikace_zmen_neplanovane",
+          "text": "Neplánované změny jsou také řízeny.",
+          "popis": "Ad hoc změny nejsou mimo systém.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "identifikace_zmen_zodpovedny",
+          "text": "Je určena odpovědnost za identifikaci změn.",
+          "popis": "Vedoucí a technik BOZP znají svou roli.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "identifikace_zmen_zaznam",
+          "text": "Identifikované změny jsou zaznamenány.",
+          "popis": "Existuje evidence změn.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_identifikace_zmen_0",
+          "nazev": "evidence změn",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_identifikace_zmen_1",
+          "nazev": "žádosti o změnu",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_identifikace_zmen_2",
+          "nazev": "záznamy z projektů",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_identifikace_zmen_3",
+          "nazev": "interní směrnice řízení změn",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_identifikace_zmen_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_identifikace_zmen_1",
+          "nazev": "vedoucí projektů",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_identifikace_zmen_2",
+          "nazev": "vedoucí provozu",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_identifikace_zmen_3",
+          "nazev": "údržba",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_identifikace_zmen_0",
+          "nazev": "změny jsou hlášeny před zavedením",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_identifikace_zmen_1",
+          "nazev": "evidence změn existuje",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_identifikace_zmen_0",
+          "nazev": "Organizace neprokázala identifikaci změn s dopadem na BOZP.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_identifikace_zmen_1",
+          "nazev": "Plánované změny nejsou evidovány před zavedením.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_identifikace_zmen_2",
+          "nazev": "Neplánované změny nejsou řízeny.",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_identifikace_zmen_0",
+          "nazev": "Zavést jednotný formulář hlášení změn.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_identifikace_zmen_1",
+          "nazev": "Propojit projektové řízení s posouzením BOZP.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_identifikace_zmen_0",
+          "nazev": "změny se zavádějí bez hlášení",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_813_zmen_10",
+          "nazev": "ISO 45001: 8.1.3",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – plánování a řízení provozu."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "posouzeni_rizik_zmen",
+      "nazev": "Posouzení rizik změn",
+      "popis": "Ověření posouzení rizik před zavedením změny.",
+      "cil_overeni": "Ověřit, že každá významná změna je posouzena z hlediska BOZP.",
+      "poradi": 20,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "posouzeni_rizik_zmen_posuzovany",
+          "text": "Rizika změn jsou posuzována před zavedením.",
+          "popis": "Posouzení rizik je součástí změny.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "posouzeni_rizik_zmen_dokumentovano",
+          "text": "Posouzení rizik změny je zdokumentováno.",
+          "popis": "Existuje záznam o posouzení.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "posouzeni_rizik_zmen_opatreni",
+          "text": "Z posouzení rizik vyplynou opatření před zavedením.",
+          "popis": "Opatření jsou realizována před spuštěním.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "posouzeni_rizik_zmen_odborne",
+          "text": "Posouzení provádí kompetentní osoba.",
+          "popis": "Technik BOZP nebo OZO se podílí na posouzení.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "posouzeni_rizik_zmen_opakovane",
+          "text": "Po zavedení změny je posouzení rizik aktualizováno.",
+          "popis": "Organizace ověřuje skutečný dopad změny.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_posouzeni_rizik_zmen_0",
+          "nazev": "posouzení rizik změn",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_posouzeni_rizik_zmen_1",
+          "nazev": "checklist změn BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_posouzeni_rizik_zmen_2",
+          "nazev": "záznamy o opatřeních před zavedením",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_posouzeni_rizik_zmen_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_posouzeni_rizik_zmen_1",
+          "nazev": "vedoucí projektu",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_posouzeni_rizik_zmen_2",
+          "nazev": "odborně způsobilá osoba BOZP",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_posouzeni_rizik_zmen_0",
+          "nazev": "posouzení existuje před spuštěním",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_posouzeni_rizik_zmen_1",
+          "nazev": "opatření jsou realizována",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_posouzeni_rizik_zmen_0",
+          "nazev": "Organizace neprokázala posouzení rizik změn před zavedením.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_posouzeni_rizik_zmen_1",
+          "nazev": "Posouzení rizik změny není zdokumentováno.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_posouzeni_rizik_zmen_2",
+          "nazev": "Opatření z posouzení nejsou realizována před zavedením.",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_posouzeni_rizik_zmen_0",
+          "nazev": "Zavést povinný checklist BOZP pro každou změnu.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_posouzeni_rizik_zmen_1",
+          "nazev": "Standardizovat šablonu posouzení rizik změn.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_posouzeni_rizik_zmen_0",
+          "nazev": "změny bez posouzení rizik",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_61_zmen_10",
+          "nazev": "ISO 45001: 6.1",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – rizika a příležitosti."
+        },
+        {
+          "id": "iso45001_813_zmen_20",
+          "nazev": "ISO 45001: 8.1.3",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – plánování a řízení provozu."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "schvalovani_zmen",
+      "nazev": "Schvalování změn",
+      "popis": "Ověření schvalování změn před zavedením.",
+      "cil_overeni": "Ověřit, že významné změny jsou schvalovány oprávněnými osobami.",
+      "poradi": 30,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "schvalovani_zmen_schvalovany",
+          "text": "Významné změny jsou schvalovány před zavedením.",
+          "popis": "Schválení je podmínkou zavedení.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "schvalovani_zmen_opravnene",
+          "text": "Schvalování provádějí oprávněné osoby.",
+          "popis": "Schvalovatel zohledňuje BOZP.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "schvalovani_zmen_kritéria",
+          "text": "Kritéria pro schválení změn jsou definována.",
+          "popis": "Organizace ví, kdo a kdy schvaluje.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "schvalovani_zmen_zaznam",
+          "text": "Schválení změn je doložitelné.",
+          "popis": "Existuje záznam o schválení.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "schvalovani_zmen_odmitnuti",
+          "text": "Změny s nepřijatelným rizikem nejsou schváleny.",
+          "popis": "Organizace odmítne zavést nebezpečnou změnu.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_schvalovani_zmen_0",
+          "nazev": "schvalovací záznamy změn",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_schvalovani_zmen_1",
+          "nazev": "kritéria schvalování",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_schvalovani_zmen_2",
+          "nazev": "protokoly o schválení",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_schvalovani_zmen_0",
+          "nazev": "vedení",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_schvalovani_zmen_1",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_schvalovani_zmen_2",
+          "nazev": "vedoucí provozu",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_schvalovani_zmen_0",
+          "nazev": "změna bez schválení neproběhne",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_schvalovani_zmen_0",
+          "nazev": "Organizace neprokázala schvalování změn před zavedením.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_schvalovani_zmen_1",
+          "nazev": "Schválení změn není doložitelné.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_schvalovani_zmen_2",
+          "nazev": "Kritéria pro schválení změn nejsou definována.",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_schvalovani_zmen_0",
+          "nazev": "Zavést schvalovací workflow pro BOZP změny.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_schvalovani_zmen_1",
+          "nazev": "Definovat prahové hodnoty pro povinné schválení.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_schvalovani_zmen_0",
+          "nazev": "změny probíhají bez schválení",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_813_zmen_10",
+          "nazev": "ISO 45001: 8.1.3",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – plánování a řízení provozu."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "zavadeni_zmen",
+      "nazev": "Zavádění změn",
+      "popis": "Ověření kontrolovaného zavádění změn včetně dokumentace a školení.",
+      "cil_overeni": "Ověřit, že změny jsou zaváděny s aktualizací dokumentace, kompetencí a informováním zaměstnanců.",
+      "poradi": 40,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "zavadeni_zmen_kontrolovane",
+          "text": "Změny jsou zaváděny kontrolovaným způsobem.",
+          "popis": "Zavedení probíhá podle plánu.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "zavadeni_zmen_dokumentace",
+          "text": "Dokumentace je aktualizována před nebo při zavedení změny.",
+          "popis": "BPP a směrnice odpovídají novému stavu.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "zavadeni_zmen_skoleni",
+          "text": "Zaměstnanci jsou proškoleni před prací v novém režimu.",
+          "popis": "Kompetence jsou ověřeny.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "zavadeni_zmen_informovani",
+          "text": "Dotčení zaměstnanci jsou informováni o změně.",
+          "popis": "Komunikace probíhá před zavedením.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "zavadeni_zmen_zkouska",
+          "text": "Kritické změny jsou zkušebně provozovány.",
+          "popis": "Pilotní provoz nebo test před plným spuštěním.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_zavadeni_zmen_0",
+          "nazev": "plán zavedení změny",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_zavadeni_zmen_1",
+          "nazev": "aktualizovaná dokumentace",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_zavadeni_zmen_2",
+          "nazev": "záznamy o školení",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_zavadeni_zmen_3",
+          "nazev": "komunikační materiály",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_zavadeni_zmen_0",
+          "nazev": "vedoucí projektu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_zavadeni_zmen_1",
+          "nazev": "technik BOZP",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_zavadeni_zmen_2",
+          "nazev": "vedoucí zaměstnanci",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_zavadeni_zmen_3",
+          "nazev": "zaměstnanci",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_zavadeni_zmen_0",
+          "nazev": "dokumentace odpovídá novému stavu",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_zavadeni_zmen_1",
+          "nazev": "zaměstnanci jsou proškoleni",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_zavadeni_zmen_0",
+          "nazev": "Organizace neprokázala kontrolované zavádění změn.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_zavadeni_zmen_1",
+          "nazev": "Dokumentace není aktualizována při zavedení změny.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_zavadeni_zmen_2",
+          "nazev": "Zaměstnanci nejsou proškoleni před prací v novém režimu.",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_zavadeni_zmen_0",
+          "nazev": "Zavést checklist zavedení změny včetně BOZP kroků.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_zavadeni_zmen_1",
+          "nazev": "Propojit zavedení změny s aktualizací BPP.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_zavadeni_zmen_0",
+          "nazev": "změna je v provozu bez školení",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_813_zmen_10",
+          "nazev": "ISO 45001: 8.1.3",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – plánování a řízení provozu."
+        },
+        {
+          "id": "iso45001_72_zmen_20",
+          "nazev": "ISO 45001: 7.2",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – kompetence."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ]
+    },
+    {
+      "id": "vyhodnoceni_zmen",
+      "nazev": "Vyhodnocení účinnosti změn",
+      "popis": "Ověření vyhodnocení dopadu a účinnosti zavedených změn.",
+      "cil_overeni": "Ověřit, že organizace po zavedení změny vyhodnocuje, zda změna dosáhla cíle bez negativního dopadu na BOZP.",
+      "poradi": 50,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "vyhodnoceni_zmen_vyhodnocuje",
+          "text": "Účinnost změn je vyhodnocována.",
+          "popis": "Organizace posuzuje dopad po zavedení.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_zmen_dopad",
+          "text": "Negativní dopad změny na BOZP je sledován.",
+          "popis": "Po změně se sledují úrazy, neshody a reklamace.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_zmen_korekce",
+          "text": "Neúčinné změny vedou ke korekčním opatřením.",
+          "popis": "Organizace reaguje na zjištěné problémy.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnoceni_zmen_zaznam",
+          "text": "Vyhodnocení změny je zdokumentováno.",
+          "popis": "Existuje závěr z vyhodnocení.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "vyhodnoceni_zmen_pouceni",
+          "text": "Poučení ze změn je využito v dalších projektech.",
+          "popis": "Zkušenost je sdílena.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "typicke_zavady": [],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_vyhodnoceni_zmen_0",
+          "nazev": "záznamy o vyhodnocení změn",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyhodnoceni_zmen_1",
+          "nazev": "statistiky po zavedení",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_vyhodnoceni_zmen_2",
+          "nazev": "revize rizik po změně",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_vyhodnoceni_zmen_0",
+          "nazev": "technik BOZP",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyhodnoceni_zmen_1",
+          "nazev": "vedoucí projektu",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vyhodnoceni_zmen_2",
+          "nazev": "vedení",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_vyhodnoceni_zmen_0",
+          "nazev": "po změně došlo k přezkumu rizik",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_vyhodnoceni_zmen_1",
+          "nazev": "problémy jsou řešeny",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_vyhodnoceni_zmen_0",
+          "nazev": "Organizace neprokázala vyhodnocení účinnosti změn.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyhodnoceni_zmen_1",
+          "nazev": "Negativní dopad změny na BOZP není sledován.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vyhodnoceni_zmen_2",
+          "nazev": "Neúčinné změny nevedou ke korekčním opatřením.",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "pkz": [
+        {
+          "id": "pkz_vyhodnoceni_zmen_0",
+          "nazev": "Zavést povinné vyhodnocení změny po 3–6 měsících.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_vyhodnoceni_zmen_1",
+          "nazev": "Sledovat ukazatele BOZP po zavedení změny.",
+          "poradi": 20,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_vyhodnoceni_zmen_0",
+          "nazev": "změny nejsou vyhodnocovány",
+          "poradi": 10,
+          "aktivni": true
+        }
+      ],
+      "pozadavky_normy": [
+        {
+          "id": "iso45001_91_zmen_10",
+          "nazev": "ISO 45001: 9.1",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – monitorování, měření, analýza a hodnocení."
+        },
+        {
+          "id": "iso45001_103_zmen_20",
+          "nazev": "ISO 45001: 10.3",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – neustálé zlepšování."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_urazy",
+          "nazev": "Řízení pracovních úrazů a mimořádných událostí",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_kompetence",
+          "nazev": "Řízení kompetencí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_dokumentace",
+          "nazev": "Řízení dokumentovaných informací",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_napravna",
+          "nazev": "Řízení nápravných opatření",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ]
+    }
+  ]
+}
