@@ -1,0 +1,417 @@
+{
+  "verze": 1,
+  "id": "rizeni_planovani_systemu",
+  "nazev": "Řízení plánování systému",
+  "popis": "Proces systematického plánování systému řízení organizace napříč oblastmi kvality, BOZP a dalšími požadavky.",
+  "ucel_procesu": "Zajistit systematické plánování systému řízení organizace, stanovení cílů, potřebných změn, opatření, odpovědností a zdrojů tak, aby byly plněny požadavky jednotlivých systémů řízení.",
+  "proc_je_dulezity": "Plánování není formalita pro certifikaci.\n\nAuditor ověřuje, zda organizace ví, kam směřuje, z čeho vychází a jak pozná, že plnění probíhá.\n\nTypická slabina: cíle existují v dokumentu, ale nejsou propojeny s riziky, zdroji ani rozhodováním vedení.",
+  "ocekavany_vystup": "Organizace prokazatelně:\n\n- stanovuje měřitelné cíle systému řízení,\n- zohledňuje při plánování rizika i příležitosti,\n- určuje odpovědnosti, termíny a zdroje,\n- pravidelně vyhodnocuje plnění cílů,\n- plánuje a řídí změny systému řízení,\n- přezkoumává výsledky plánování na úrovni vedení.",
+  "poradi": 5,
+  "aktivni": true,
+  "vazby_procesy": [
+    {
+      "id": "vazba_rizika",
+      "nazev": "Řízení rizik",
+      "poradi": 10,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_zmeny",
+      "nazev": "Řízení změn",
+      "poradi": 20,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_cile",
+      "nazev": "Řízení cílů a programů BOZP",
+      "poradi": 30,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_monitoring",
+      "nazev": "Monitorování a měření",
+      "poradi": 40,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_prezkoumani",
+      "nazev": "Přezkoumání vedením",
+      "poradi": 50,
+      "aktivni": true
+    },
+    {
+      "id": "vazba_dokumentace",
+      "nazev": "Řízení dokumentovaných informací",
+      "poradi": 60,
+      "aktivni": true
+    }
+  ],
+  "pozadavky_norem": [
+    {
+      "id": "iso9001_61_plan_10",
+      "nazev": "ISO 9001: 6.1",
+      "poradi": 10,
+      "aktivni": true,
+      "popis": "Informativní reference – rizika a příležitosti při plánování."
+    },
+    {
+      "id": "iso9001_62_plan_20",
+      "nazev": "ISO 9001: 6.2",
+      "poradi": 20,
+      "aktivni": true,
+      "popis": "Informativní reference – cíle kvality a plánování jejich dosažení."
+    },
+    {
+      "id": "iso9001_93_plan_30",
+      "nazev": "ISO 9001: 9.3",
+      "poradi": 30,
+      "aktivni": true,
+      "popis": "Informativní reference – přezkoumání vedením."
+    },
+    {
+      "id": "iso45001_61_plan_40",
+      "nazev": "ISO 45001: 6.1",
+      "poradi": 40,
+      "aktivni": true,
+      "popis": "Informativní reference – plánování činností v systému řízení BOZP."
+    },
+    {
+      "id": "iso45001_62_plan_50",
+      "nazev": "ISO 45001: 6.2",
+      "poradi": 50,
+      "aktivni": true,
+      "popis": "Informativní reference – cíle BOZP a plánování jejich dosažení."
+    },
+    {
+      "id": "iso45001_93_plan_60",
+      "nazev": "ISO 45001: 9.3",
+      "poradi": 60,
+      "aktivni": true,
+      "popis": "Informativní reference – přezkoumání vedením."
+    }
+  ],
+  "sekce": [
+    {
+      "id": "systematicke_planovani",
+      "nazev": "Systematické plánování systému řízení",
+      "popis": "Ověření, že organizace plánuje systém řízení systematicky a propojuje cíle, rizika, zdroje a rozhodování vedení.",
+      "cil_overeni": "Ověřit, že plánování systému řízení je prokazatelné, měřitelné a vede k rozhodnutím vedení.",
+      "poradi": 10,
+      "aktivni": true,
+      "sekce": [],
+      "postup_kontroly": [],
+      "auditni_tvrzeni": [
+        {
+          "id": "meritelne_cile",
+          "text": "Organizace stanovuje měřitelné cíle systému řízení.",
+          "popis": "Cíle jsou konkrétní, sledovatelné a vycházejí z potřeb organizace a závazků vedení.",
+          "poradi": 10,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "rizika_prilezitosti",
+          "text": "Při plánování jsou zohledněna rizika i příležitosti.",
+          "popis": "Plán vychází z analýzy rizik, právních požadavků a příležitostí ke zlepšení, ne pouze z minulých zvyklostí.",
+          "poradi": 20,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "odpovednosti_zdroje",
+          "text": "Jsou určeny odpovědnosti, termíny a potřebné zdroje.",
+          "popis": "Každý významný cíl nebo opatření má vlastníka, termín a prokazatelné zajištění zdrojů.",
+          "poradi": 30,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "vyhodnocovani_cilu",
+          "text": "Plnění cílů je pravidelně vyhodnocováno.",
+          "popis": "Organizace sleduje ukazatele, vyhodnocuje odchylky a reaguje na neplnění.",
+          "poradi": 40,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        },
+        {
+          "id": "rizeni_zmen_planovani",
+          "text": "Změny systému řízení jsou plánovány a řízeny.",
+          "popis": "Nové požadavky, reorganizace nebo projekty jsou zahrnuty do plánování a nejsou zaváděny ad hoc.",
+          "poradi": 50,
+          "aktivni": true,
+          "zavaznost": "stredni"
+        },
+        {
+          "id": "prezkoumavani_vedenim",
+          "text": "Výsledky plánování jsou přezkoumávány vedením.",
+          "popis": "Vedení dostává přehled o plnění cílů, stavu plánů a navrhuje potřebné změny.",
+          "poradi": 60,
+          "aktivni": true,
+          "zavaznost": "vysoka"
+        }
+      ],
+      "kontrolni_body": [],
+      "navodne_otazky": [],
+      "objektivni_dukazy": [
+        {
+          "id": "duk_plan_cilu",
+          "nazev": "plán cílů a programů systému řízení",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "duk_politika_zavazky",
+          "nazev": "politika a strategické závazky vedení",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "duk_register_rizik",
+          "nazev": "register rizik a příležitostí",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "duk_ukazatele",
+          "nazev": "ukazatele výkonnosti a vyhodnocení plnění",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "duk_odpovednosti",
+          "nazev": "matice odpovědností a termínů",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "duk_rozpocet",
+          "nazev": "rozpis zdrojů nebo schválený rozpočet opatření",
+          "poradi": 60,
+          "aktivni": true
+        },
+        {
+          "id": "duk_prezkoumavani",
+          "nazev": "záznamy z přezkoumání vedením",
+          "poradi": 70,
+          "aktivni": true
+        },
+        {
+          "id": "duk_plan_zmen",
+          "nazev": "evidence plánovaných změn systému řízení",
+          "poradi": 80,
+          "aktivni": true
+        }
+      ],
+      "doporucene_rozhovory": [
+        {
+          "id": "rozh_vedeni",
+          "nazev": "vrcholové vedení / statutární orgán",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_mana_kvality",
+          "nazev": "manažer kvality nebo koordinátor IMS",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_technik_bozp",
+          "nazev": "technik BOZP / odpovědná osoba za BOZP",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_vedouci_jednotek",
+          "nazev": "vedoucí provozních jednotek",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "rozh_financni",
+          "nazev": "ekonom nebo osoba zodpovědná za rozpočet",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "pozorovani_v_provozu": [
+        {
+          "id": "pozp_cile_na_pracovisti",
+          "nazev": "cíle a priority jsou známé na pracovištích",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_plan_viditelny",
+          "nazev": "plán opatření je dostupný odpovědným osobám",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pozp_sledovani",
+          "nazev": "plnění je průběžně sledováno, ne až na konci roku",
+          "poradi": 30,
+          "aktivni": true
+        }
+      ],
+      "typicke_neshody": [
+        {
+          "id": "nesh_cile_nejsou_meritelne",
+          "nazev": "Cíle jsou obecné a nelze posoudit jejich plnění.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_bez_rizik",
+          "nazev": "Plán neodpovídá aktuálním rizikům a požadavkům organizace.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_bez_odpovednosti",
+          "nazev": "Chybí určení odpovědných osob nebo termínů u opatření.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_bez_vyhodnoceni",
+          "nazev": "Plnění cílů není pravidelně vyhodnocováno.",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_zmeny_adhoc",
+          "nazev": "Změny systému řízení jsou zaváděny bez plánování.",
+          "poradi": 50,
+          "aktivni": true
+        },
+        {
+          "id": "nesh_vedeni_nezna",
+          "nazev": "Vedení nezná stav plnění plánů a cílů.",
+          "poradi": 60,
+          "aktivni": true
+        }
+      ],
+      "typicke_zavady": [],
+      "pkz": [
+        {
+          "id": "pkz_dashboard",
+          "nazev": "Zavést přehled plnění cílů pro vedení a odpovědné osoby.",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_propojeni_rizik",
+          "nazev": "Propojit plánování cílů s registerem rizik a příležitostí.",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_matici",
+          "nazev": "Doplnit matici odpovědností, termínů a zdrojů u všech opatření.",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "pkz_pravidelne_review",
+          "nazev": "Stanovit pravidelný cyklus vyhodnocování plnění cílů.",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "pozorovani": [
+        {
+          "id": "poz_cile_formalni",
+          "nazev": "cíle existují jen v dokumentu, ne v praxi",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "poz_rozdilne_priority",
+          "nazev": "jednotky mají rozdílné priority bez společného rámce",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "poz_chybi_zdroje",
+          "nazev": "opatření jsou schválena bez zajištění zdrojů",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "poz_prezkoumavani_formalita",
+          "nazev": "přezkoumání vedením je pouze formalita bez rozhodnutí",
+          "poradi": 40,
+          "aktivni": true
+        }
+      ],
+      "doporucene_postupy": [],
+      "legislativa": [],
+      "pozadavky_normy": [
+        {
+          "id": "iso9001_61_plan_10",
+          "nazev": "ISO 9001: 6.1",
+          "poradi": 10,
+          "aktivni": true,
+          "popis": "Informativní reference – rizika a příležitosti při plánování."
+        },
+        {
+          "id": "iso9001_62_plan_20",
+          "nazev": "ISO 9001: 6.2",
+          "poradi": 20,
+          "aktivni": true,
+          "popis": "Informativní reference – cíle kvality a plánování jejich dosažení."
+        },
+        {
+          "id": "iso45001_61_plan_40",
+          "nazev": "ISO 45001: 6.1",
+          "poradi": 30,
+          "aktivni": true,
+          "popis": "Informativní reference – plánování činností v systému řízení BOZP."
+        },
+        {
+          "id": "iso45001_62_plan_50",
+          "nazev": "ISO 45001: 6.2",
+          "poradi": 40,
+          "aktivni": true,
+          "popis": "Informativní reference – cíle BOZP a plánování jejich dosažení."
+        }
+      ],
+      "vazby_procesy": [
+        {
+          "id": "vazba_rizika",
+          "nazev": "Řízení rizik",
+          "poradi": 10,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_zmeny",
+          "nazev": "Řízení změn",
+          "poradi": 20,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_cile",
+          "nazev": "Řízení cílů a programů BOZP",
+          "poradi": 30,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_monitoring",
+          "nazev": "Monitorování a měření",
+          "poradi": 40,
+          "aktivni": true
+        },
+        {
+          "id": "vazba_prezkoumani",
+          "nazev": "Přezkoumání vedením",
+          "poradi": 50,
+          "aktivni": true
+        }
+      ],
+      "poznamky_auditora": [],
+      "referencni_fotografie": [],
+      "historie": []
+    }
+  ]
+}

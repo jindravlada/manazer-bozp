@@ -334,6 +334,52 @@ class AudityProcessesTestCase(unittest.TestCase):
         right_texts = {label.text() for label in widget.methodology_panel.findChildren(QLabel)}
         self.assertIn(METHODOLOGY_PANEL_TITLE, right_texts)
 
+    def test_planovani_process_shows_dual_standard_methodology(self) -> None:
+        from PySide6.QtWidgets import QLabel
+        from moduly.audity.constants import (
+            GUIDE_LABEL_NORM_REQUIREMENTS,
+            GUIDE_LABEL_OBJECTIVE_EVIDENCE,
+            GUIDE_LABEL_RECOMMENDED_INTERVIEWS,
+            PROCESS_TERM_QUESTION,
+        )
+        from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
+
+        widget = AuditProcessesWidget()
+        widget.knowledge_tree.select_node("rizeni_planovani_systemu")
+
+        right_texts = {label.text() for label in widget.methodology_panel.findChildren(QLabel)}
+        self.assertIn(GUIDE_LABEL_NORM_REQUIREMENTS, right_texts)
+        self.assertIn("ISO 9001", " ".join(right_texts))
+        self.assertIn("ISO 45001", " ".join(right_texts))
+
+        widget.knowledge_tree.select_node("rizeni_planovani_systemu", "systematicke_planovani")
+
+        criterion_widget = widget.knowledge_widget.criterion_widget
+        center_labels = {label.text() for label in criterion_widget.findChildren(QLabel)}
+        self.assertIn(PROCESS_TERM_QUESTION, center_labels)
+        self.assertIn(
+            "Organizace stanovuje měřitelné cíle systému řízení.",
+            center_labels,
+        )
+        self.assertIn("Při plánování jsou zohledněna rizika i příležitosti.", center_labels)
+
+        right_labels = {label.text() for label in widget.methodology_panel.findChildren(QLabel)}
+        self.assertIn(GUIDE_LABEL_OBJECTIVE_EVIDENCE, right_labels)
+        self.assertIn(GUIDE_LABEL_RECOMMENDED_INTERVIEWS, right_labels)
+        self.assertIn(GUIDE_LABEL_NORM_REQUIREMENTS, right_labels)
+        self.assertIn("ISO 9001", " ".join(right_labels))
+        self.assertIn("ISO 45001", " ".join(right_labels))
+
+        expected_ids = {
+            "meritelne_cile",
+            "rizika_prilezitosti",
+            "odpovednosti_zdroje",
+            "vyhodnocovani_cilu",
+            "rizeni_zmen_planovani",
+            "prezkoumavani_vedenim",
+        }
+        self.assertTrue(expected_ids.issubset(criterion_widget._control_point_frames))
+
     def test_criterion_work_center_and_methodology_right(self) -> None:
         from PySide6.QtWidgets import QLabel
         from moduly.audity.constants import (

@@ -29,6 +29,39 @@ class AudityKnowledgeTestCase(unittest.TestCase):
         process_ids = {process.id for process in processes}
         self.assertIn("urazy_mimo_udalosti", process_ids)
         self.assertIn("rizeni_rizik", process_ids)
+        self.assertIn("rizeni_planovani_systemu", process_ids)
+
+    def test_load_rizeni_planovani_systemu_process(self) -> None:
+        process = audit_knowledge_service.get_process_by_id("rizeni_planovani_systemu")
+        assert process is not None
+        self.assertEqual(process.nazev, "Řízení plánování systému")
+        self.assertIn("systematické plánování systému řízení", process.ucel_procesu.lower())
+
+        knowledge = audit_knowledge_service.load_process_knowledge(process)
+        assert knowledge is not None
+        criteria = audit_knowledge_service.get_active_criteria(knowledge)
+        self.assertEqual(len(criteria), 1)
+        self.assertEqual(criteria[0]["id"], "systematicke_planovani")
+
+        questions = audit_knowledge_service.get_audit_questions(criteria[0])
+        self.assertEqual(len(questions), 6)
+        self.assertEqual(questions[0]["id"], "meritelne_cile")
+        self.assertEqual(
+            questions[0]["text"],
+            "Organizace stanovuje měřitelné cíle systému řízení.",
+        )
+
+        norm_labels = {
+            item.get("nazev")
+            for item in knowledge.get("pozadavky_norem") or []
+            if item.get("aktivni", True)
+        }
+        self.assertTrue(any(label.startswith("ISO 9001") for label in norm_labels))
+        self.assertTrue(any(label.startswith("ISO 45001") for label in norm_labels))
+
+    def test_planovani_process_is_first_in_catalog(self) -> None:
+        processes = audit_knowledge_service.get_processes()
+        self.assertEqual(processes[0].id, "rizeni_planovani_systemu")
 
     def test_load_rizeni_rizik_process(self) -> None:
         process = audit_knowledge_service.get_process_by_id("rizeni_rizik")
