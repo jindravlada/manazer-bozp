@@ -29,27 +29,26 @@ class AudityKnowledgeTestCase(unittest.TestCase):
         process_ids = {process.id for process in processes}
         self.assertIn("urazy_mimo_udalosti", process_ids)
         self.assertIn("rizeni_rizik", process_ids)
-        self.assertIn("rizeni_planovani_systemu", process_ids)
+        self.assertIn("planovani_bozp", process_ids)
 
-    def test_load_rizeni_planovani_systemu_process(self) -> None:
-        process = audit_knowledge_service.get_process_by_id("rizeni_planovani_systemu")
+    def test_load_planovani_bozp_process(self) -> None:
+        process = audit_knowledge_service.get_process_by_id("planovani_bozp")
         assert process is not None
         self.assertEqual(process.nazev, "Řízení plánování systému")
         self.assertIn("systematické plánování systému řízení", process.ucel_procesu.lower())
 
         knowledge = audit_knowledge_service.load_process_knowledge(process)
         assert knowledge is not None
+        self.assertEqual(knowledge["id"], "planovani_bozp")
         criteria = audit_knowledge_service.get_active_criteria(knowledge)
         self.assertEqual(len(criteria), 1)
-        self.assertEqual(criteria[0]["id"], "systematicke_planovani")
+        self.assertEqual(criteria[0]["id"], "cile_politika")
 
         questions = audit_knowledge_service.get_audit_questions(criteria[0])
-        self.assertEqual(len(questions), 6)
-        self.assertEqual(questions[0]["id"], "meritelne_cile")
-        self.assertEqual(
-            questions[0]["text"],
-            "Organizace stanovuje měřitelné cíle systému řízení.",
-        )
+        question_ids = {item["id"] for item in questions}
+        self.assertEqual(len(questions), 7)
+        self.assertIn("meritelne_cile", question_ids)
+        self.assertIn("politika_schvalena", question_ids)
 
         norm_labels = {
             item.get("nazev")
@@ -61,7 +60,7 @@ class AudityKnowledgeTestCase(unittest.TestCase):
 
     def test_planovani_process_is_first_in_catalog(self) -> None:
         processes = audit_knowledge_service.get_processes()
-        self.assertEqual(processes[0].id, "rizeni_planovani_systemu")
+        self.assertEqual(processes[0].id, "planovani_bozp")
 
     def test_load_rizeni_rizik_process(self) -> None:
         process = audit_knowledge_service.get_process_by_id("rizeni_rizik")

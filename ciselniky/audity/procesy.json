@@ -2,13 +2,13 @@
   "verze": 10,
   "procesy": [
     {
-      "id": "rizeni_planovani_systemu",
+      "id": "planovani_bozp",
       "nazev": "Řízení plánování systému",
       "popis": "Proces systematického plánování systému řízení organizace napříč oblastmi kvality, BOZP a dalšími požadavky.",
       "ucel_procesu": "Zajistit systematické plánování systému řízení organizace, stanovení cílů, potřebných změn, opatření, odpovědností a zdrojů tak, aby byly plněny požadavky jednotlivých systémů řízení.",
       "poradi": 5,
       "aktivni": true,
-      "soubor_znalosti": "rizeni_planovani_systemu.json"
+      "soubor_znalosti": "planovani_bozp.json"
     },
     {
       "id": "urazy_mimo_udalosti",

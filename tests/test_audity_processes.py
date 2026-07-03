@@ -345,14 +345,14 @@ class AudityProcessesTestCase(unittest.TestCase):
         from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
 
         widget = AuditProcessesWidget()
-        widget.knowledge_tree.select_node("rizeni_planovani_systemu")
+        widget.knowledge_tree.select_node("planovani_bozp")
 
         right_texts = {label.text() for label in widget.methodology_panel.findChildren(QLabel)}
         self.assertIn(GUIDE_LABEL_NORM_REQUIREMENTS, right_texts)
         self.assertIn("ISO 9001", " ".join(right_texts))
         self.assertIn("ISO 45001", " ".join(right_texts))
 
-        widget.knowledge_tree.select_node("rizeni_planovani_systemu", "systematicke_planovani")
+        widget.knowledge_tree.select_node("planovani_bozp", "cile_politika")
 
         criterion_widget = widget.knowledge_widget.criterion_widget
         center_labels = {label.text() for label in criterion_widget.findChildren(QLabel)}
@@ -377,8 +377,19 @@ class AudityProcessesTestCase(unittest.TestCase):
             "vyhodnocovani_cilu",
             "rizeni_zmen_planovani",
             "prezkoumavani_vedenim",
+            "politika_schvalena",
         }
         self.assertTrue(expected_ids.issubset(criterion_widget._control_point_frames))
+
+    def test_planned_program_process_id_resolves_in_catalog(self) -> None:
+        process = audit_knowledge_service.get_process_by_id("planovani_bozp")
+        assert process is not None
+        self.assertTrue(process.has_knowledge_file)
+        knowledge = audit_knowledge_service.load_process_knowledge(process)
+        assert knowledge is not None
+        criterion = audit_knowledge_service.get_criterion("planovani_bozp", "cile_politika")
+        assert criterion is not None
+        self.assertGreaterEqual(len(audit_knowledge_service.get_audit_questions(criterion)), 6)
 
     def test_criterion_work_center_and_methodology_right(self) -> None:
         from PySide6.QtWidgets import QLabel
