@@ -81,8 +81,6 @@ class MuIshikawaChainDialog(QDialog):
         buttons.rejected.connect(self.reject)
         add_work_dialog_footer(layout, work_widgets=[self.export_pdf_btn], buttons=buttons)
 
-        self.showMaximized()
-
     def _export_pdf(self) -> None:
         if not self._graph_widget.can_export_to_pdf():
             QMessageBox.information(

@@ -700,7 +700,3 @@ class MuInvestigationDialog(QDialog):
             "ishikawa_json": self.findings_widget.get_ishikawa_json(),
             **self.oznameni_widget.get_data(),
         }
-
-    def exec(self) -> int:
-        self.showMaximized()
-        return super().exec()

@@ -295,10 +295,6 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         if self._confirm_close():
             super().reject()
 
-    def exec(self) -> int:
-        self.showMaximized()
-        return super().exec()
-
     def _create_list_section(
         self,
         parent_layout: QVBoxLayout,

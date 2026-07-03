@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from moduly.kniha_urazu.sluzby.accident_service import accident_service
 from moduly.kniha_urazu.ui.accident_dialog import AccidentDialog
@@ -84,7 +85,7 @@ class KnihaUrazuPage(QWidget):
 
     def new_accident(self):
         dialog = AccidentDialog(self)
-        if dialog.exec():
+        if exec_maximized(dialog):
             data = dialog.get_data()
             if data["jmeno_prijmeni"] or data["popis_urazoveho_deje"]:
                 accident_service.create_accident(**data)
@@ -122,7 +123,7 @@ class KnihaUrazuPage(QWidget):
             return
 
         dialog = AccidentDialog(self, accident=accident)
-        if dialog.exec():
+        if exec_maximized(dialog):
             data = dialog.get_data()
             accident_service.update_accident(accident_id, **data)
             self.refresh()
@@ -184,7 +185,7 @@ class KnihaUrazuPage(QWidget):
 
         accident_id = accident.id
         dialog = SetreniDialog(self, accident=accident)
-        dialog.exec()
+        exec_maximized(dialog)
         self.refresh()
         if dialog.open_mu_after_close:
             self.open_mu_investigation(accident_id)

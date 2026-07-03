@@ -103,10 +103,6 @@ class SetreniDialog(QDialog):
         self._save_administrativa()
         super().accept()
 
-    def exec(self):
-        self.showMaximized()
-        return super().exec()
-
     def _save_administrativa(self) -> None:
         if self.accident is None:
             return

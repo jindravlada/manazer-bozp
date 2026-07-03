@@ -197,10 +197,6 @@ class MuIshikawaFactorEditDialog(QDialog):
         button_row.addWidget(buttons)
         root_layout.addLayout(button_row)
 
-    def exec(self) -> int:
-        self.showMaximized()
-        return super().exec()
-
     def _create_list_widget(self) -> QListWidget:
         list_widget = QListWidget()
         list_widget.setMinimumHeight(_LIST_MIN_HEIGHT)

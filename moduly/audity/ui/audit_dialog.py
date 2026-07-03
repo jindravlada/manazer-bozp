@@ -85,10 +85,6 @@ class AuditDialog(QDialog):
         self.tasks_widget.refresh()
         self.conclusion_widget.refresh()
 
-    def exec(self):
-        self.showMaximized()
-        return super().exec()
-
     def accept(self) -> None:
         valid, message = self.commission_widget.validate()
         if not valid:

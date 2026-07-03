@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from core.widgets.dialog_utils import exec_maximized
 from moduly.proverky.constants import (
     KNOWLEDGE_EDITOR_DEFAULT_AREA_ID,
     KNOWLEDGE_EDITOR_DEFAULT_SECTION_ID,
@@ -101,5 +102,5 @@ class ProverkyKnowledgeEditorDialog(QDialog):
             QMessageBox.warning(self, self.windowTitle(), str(exc))
             return
 
-        if dialog.exec() == QDialog.DialogCode.Accepted:
+        if exec_maximized(dialog) == QDialog.DialogCode.Accepted:
             self.accept()

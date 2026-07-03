@@ -31,6 +31,7 @@ from moduly.vysetrovani_mu.constants import (
     ishikawa_question_for_category,
 )
 from moduly.vysetrovani_mu.sluzby.ishikawa_factors_service import ishikawa_factors_service
+from core.widgets.dialog_utils import exec_maximized
 from moduly.vysetrovani_mu.ui.mu_ishikawa_factor_edit_dialog import MuIshikawaFactorEditDialog
 
 
@@ -244,8 +245,6 @@ class MuIshikawaCauseDialog(QDialog):
         self._update_custom_factor_visibility()
         self._update_factor_details()
 
-        self.showMaximized()
-
     @staticmethod
     def _create_readonly_group(title: str, parent_layout: QVBoxLayout, *, monospace: bool = False) -> QGroupBox:
         group = QGroupBox(title)
@@ -416,7 +415,7 @@ class MuIshikawaCauseDialog(QDialog):
             return
 
         dialog = MuIshikawaFactorEditDialog(self, category=category, factor=factor)
-        if not dialog.exec():
+        if not exec_maximized(dialog):
             return
 
         data = dialog.get_data()

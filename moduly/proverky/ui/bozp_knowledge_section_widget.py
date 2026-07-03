@@ -23,6 +23,7 @@ from core.widgets.control_result_selector import ControlResultSelectorWidget
 from core.widgets.control_result_photo_widget import ControlResultPhotoWidget
 from core.widgets.dialog_utils import wrap_in_scroll_area
 from core.widgets.finding_dialog import FindingDialog
+from core.widgets.dialog_utils import exec_maximized
 from core.widgets.image_viewer_dialog import ImageViewerDialog
 from moduly.proverky.constants import (
     CONTROL_POINT_HISTORY_EMPTY,
@@ -311,8 +312,7 @@ class BozpKnowledgeSectionWidget(QWidget):
             )
             return
 
-        dialog = ImageViewerDialog(image_path, title=KNOWLEDGE_REFERENCE_PHOTOS_TITLE, parent=self)
-        dialog.exec()
+        exec_maximized(ImageViewerDialog(image_path, title=KNOWLEDGE_REFERENCE_PHOTOS_TITLE, parent=self))
 
     def _build_list_block(self, title: str, section: dict, field: str) -> QWidget:
         items = proverky_knowledge_service.get_active_items(section.get(field))

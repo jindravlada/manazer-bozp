@@ -80,15 +80,20 @@ class AudityKnowledgeEditorDialogTestCase(unittest.TestCase):
     def test_exec_maximized_shows_dialog_maximized(self) -> None:
         from PySide6.QtWidgets import QDialog
 
-        from core.widgets.dialog_utils import exec_maximized
+        from core.widgets.dialog_utils import exec_maximized, prepare_work_dialog_maximized
 
         dialog = AudityKnowledgeEditorDialog()
         with (
+            patch(
+                "core.widgets.dialog_utils.prepare_work_dialog_maximized",
+                wraps=prepare_work_dialog_maximized,
+            ) as mock_prepare,
             patch.object(dialog, "showMaximized") as mock_show,
             patch.object(QDialog, "exec", return_value=0),
         ):
             exec_maximized(dialog)
 
+        mock_prepare.assert_called_once_with(dialog)
         mock_show.assert_called_once()
 
 

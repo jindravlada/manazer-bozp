@@ -136,10 +136,6 @@ class AuditProgramManagerDialog(QDialog):
 
         self._reload_program_list()
 
-    def exec(self) -> int:
-        self.showMaximized()
-        return super().exec()
-
     def _build_left_panel(self) -> QFrame:
         panel = QFrame()
         panel.setObjectName("ModulePanel")

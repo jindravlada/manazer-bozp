@@ -414,22 +414,25 @@ class SetreniDialogExecTestCase(unittest.TestCase):
         cls._app = QApplication.instance() or QApplication([])
         cls._dialog = QDialog
 
-    def test_exec_uses_super_without_recursion(self) -> None:
+    def test_opens_via_exec_maximized_helper(self) -> None:
         from PySide6.QtWidgets import QDialog
 
+        from core.widgets.dialog_utils import exec_maximized
         from moduly.kniha_urazu.modely.accident import Accident
         from moduly.kniha_urazu.ui.setreni.setreni_dialog import SetreniDialog
 
         accident = Accident(number="2026-001")
         accident.id = 1
 
-        with patch.object(QDialog, "exec", return_value=QDialog.Accepted) as mock_exec:
-            with patch.object(QDialog, "showMaximized") as mock_maximized:
+        with patch(
+            "core.widgets.dialog_utils.prepare_work_dialog_maximized"
+        ) as mock_prepare:
+            with patch.object(QDialog, "exec", return_value=QDialog.Accepted) as mock_exec:
                 dialog = SetreniDialog(accident=accident)
-                result = dialog.exec()
+                result = exec_maximized(dialog)
 
         self.assertEqual(result, QDialog.Accepted)
-        mock_maximized.assert_called_once()
+        mock_prepare.assert_called_once_with(dialog)
         mock_exec.assert_called_once()
 
 
@@ -441,18 +444,21 @@ class AccidentDialogExecTestCase(unittest.TestCase):
         cls._app = QApplication.instance() or QApplication([])
         cls._dialog = QDialog
 
-    def test_exec_uses_super_without_recursion(self) -> None:
+    def test_opens_via_exec_maximized_helper(self) -> None:
         from PySide6.QtWidgets import QDialog
 
+        from core.widgets.dialog_utils import exec_maximized
         from moduly.kniha_urazu.ui.accident_dialog import AccidentDialog
 
-        with patch.object(QDialog, "exec", return_value=QDialog.Accepted) as mock_exec:
-            with patch.object(QDialog, "showMaximized") as mock_maximized:
+        with patch(
+            "core.widgets.dialog_utils.prepare_work_dialog_maximized"
+        ) as mock_prepare:
+            with patch.object(QDialog, "exec", return_value=QDialog.Accepted) as mock_exec:
                 dialog = AccidentDialog()
-                result = dialog.exec()
+                result = exec_maximized(dialog)
 
         self.assertEqual(result, QDialog.Accepted)
-        mock_maximized.assert_called_once()
+        mock_prepare.assert_called_once_with(dialog)
         mock_exec.assert_called_once()
 
 

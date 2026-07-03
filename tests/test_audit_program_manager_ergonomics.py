@@ -47,8 +47,10 @@ class AuditProgramManagerErgonomicsTestCase(unittest.TestCase):
         cls._app = QApplication.instance() or QApplication([])
 
     def _create_dialog(self) -> AuditProgramManagerDialog:
+        from core.widgets.dialog_utils import prepare_work_dialog_maximized
+
         dialog = AuditProgramManagerDialog()
-        dialog.showMaximized()
+        prepare_work_dialog_maximized(dialog)
         QApplication.processEvents()
         return dialog
 

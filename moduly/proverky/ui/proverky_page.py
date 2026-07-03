@@ -238,7 +238,7 @@ class ProverkyPage(QWidget):
         exec_maximized(RocniPlanDialog(self, year=year_value))
 
     def open_knowledge_editor(self) -> None:
-        ProverkyKnowledgeEditorDialog(self).exec()
+        exec_maximized(ProverkyKnowledgeEditorDialog(self))
 
     def show_annual_report(self) -> None:
         exec_maximized(RocniZpravaDialog(self))

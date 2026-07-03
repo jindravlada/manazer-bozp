@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
 from moduly.vysetrovani_mu.constants import (
@@ -142,7 +143,7 @@ class VysetrovaniMuPage(QWidget):
 
     def new_investigation(self):
         dialog = MuInvestigationDialog(self)
-        if dialog.exec():
+        if exec_maximized(dialog):
             data = dialog.get_data()
             mu_investigation_service.create_investigation(**data)
             self._populate_year_filter()
@@ -164,7 +165,7 @@ class VysetrovaniMuPage(QWidget):
             return
 
         dialog = MuInvestigationDialog(self, investigation=investigation)
-        if dialog.exec():
+        if exec_maximized(dialog):
             data = dialog.get_data()
             mu_investigation_service.update_investigation(investigation_id, **data)
             self._populate_year_filter()
@@ -183,7 +184,7 @@ class VysetrovaniMuPage(QWidget):
             return
 
         dialog = MuInvestigationDialog(self, accident_id=accident_id)
-        if dialog.exec():
+        if exec_maximized(dialog):
             data = dialog.get_data()
             mu_investigation_service.create_investigation(**data)
             self._populate_year_filter()

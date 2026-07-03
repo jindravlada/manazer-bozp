@@ -95,11 +95,13 @@ class AudityDialogTestCase(unittest.TestCase):
     def test_dialog_opens_maximized(self) -> None:
         from PySide6.QtWidgets import QDialog
 
+        from core.widgets.dialog_utils import exec_maximized
+
         dialog = self._open_dialog()
 
         with patch.object(QDialog, "exec", return_value=0):
             with patch.object(dialog, "showMaximized") as mock_maximized:
-                dialog.exec()
+                exec_maximized(dialog)
 
         mock_maximized.assert_called_once()
 

@@ -31,6 +31,7 @@ from moduly.vysetrovani_mu.constants import (
     ISHIKAWA_STATUS_LABELS,
     ISHIKAWA_STATUSES,
 )
+from core.widgets.dialog_utils import exec_maximized
 from moduly.vysetrovani_mu.ui.mu_ishikawa_cause_dialog import MuIshikawaCauseDialog
 
 _LEVEL_TO_FINDING_TYPE = {
@@ -121,7 +122,7 @@ class MuIshikawaWidget(QWidget):
             return
 
         dialog = MuIshikawaCauseDialog(self, title="Přidat příčinu")
-        if not dialog.exec():
+        if not exec_maximized(dialog):
             return
 
         data = dialog.get_data()
@@ -139,7 +140,7 @@ class MuIshikawaWidget(QWidget):
             return
 
         dialog = MuIshikawaCauseDialog(self, cause=cause, title="Upravit příčinu")
-        if not dialog.exec():
+        if not exec_maximized(dialog):
             return
 
         data = dialog.get_data()

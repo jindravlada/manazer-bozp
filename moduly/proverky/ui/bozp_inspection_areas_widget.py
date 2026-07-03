@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.widgets.dialog_utils import exec_maximized
 from moduly.proverky.constants import (
     AREA_NOT_IMPLEMENTED_TEXT,
     KNOWLEDGE_CONTROL_PROCEDURE_BUTTON_LABEL,
@@ -151,11 +152,11 @@ class BozpInspectionAreasWidget(QWidget):
                 QMessageBox.warning(self, KNOWLEDGE_EDIT_FROM_CARD_LABEL, str(exc))
                 return
 
-            if dialog.exec() == QDialog.DialogCode.Accepted:
+            if exec_maximized(dialog) == QDialog.DialogCode.Accepted:
                 self._refresh_after_knowledge_edit()
             return
 
-        ProverkyKnowledgeEditorDialog(self).exec()
+        exec_maximized(ProverkyKnowledgeEditorDialog(self))
 
     def _open_control_procedure_dialog(self) -> None:
         if not self._current_area_id or not self._current_section_id:

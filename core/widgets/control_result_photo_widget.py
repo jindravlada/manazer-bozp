@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 
 from core.services.control_result_photo_service import control_result_photo_service
 from core.shared.sluzby.control_result_service import ControlPointContext, control_result_service
+from core.widgets.dialog_utils import exec_maximized
 from core.widgets.image_viewer_dialog import ImageViewerDialog
 
 PHOTO_SECTION_LABEL = "Fotografie"
@@ -209,5 +210,4 @@ class ControlResultPhotoWidget(QWidget):
         if path is None:
             return
 
-        dialog = ImageViewerDialog(path, title=PHOTO_SECTION_LABEL, parent=self)
-        dialog.exec()
+        exec_maximized(ImageViewerDialog(path, title=PHOTO_SECTION_LABEL, parent=self))

@@ -111,8 +111,25 @@ def wrap_in_scroll_area(content: QWidget) -> QScrollArea:
     return scroll
 
 
-def exec_maximized(dialog: QDialog) -> int:
+def prepare_work_dialog_maximized(dialog: QDialog) -> None:
+    """Prepare a large work dialog for maximized display across window managers."""
+    if dialog.minimumWidth() <= 0 or dialog.minimumHeight() <= 0:
+        dialog.setMinimumSize(480, 400)
+
+    screen = QApplication.primaryScreen()
+    if screen is not None:
+        available = screen.availableGeometry()
+        if available.isValid():
+            dialog.resize(available.size())
+            dialog.move(available.topLeft())
+
+    dialog.setWindowState(dialog.windowState() | Qt.WindowState.WindowMaximized)
     dialog.showMaximized()
+    QApplication.processEvents()
+
+
+def exec_maximized(dialog: QDialog) -> int:
+    prepare_work_dialog_maximized(dialog)
     return dialog.exec()
 
 

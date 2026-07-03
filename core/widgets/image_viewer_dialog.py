@@ -42,10 +42,6 @@ class ImageViewerDialog(QDialog):
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
-    def exec(self) -> int:
-        self.showMaximized()
-        return super().exec()
-
     def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)
         self._refresh_image()
