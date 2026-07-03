@@ -1,3 +1,4 @@
+from PySide6.QtGui import QHideEvent, QShowEvent
 from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
@@ -63,12 +64,21 @@ class UkolyPage(QWidget):
 
         self.refresh()
 
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
+        self.table.clear_selection()
+
+    def hideEvent(self, event: QHideEvent) -> None:
+        self.table.clear_selection()
+        super().hideEvent(event)
+
     def refresh(self):
         tasks = task_service.get_all_tasks()
         tasks = self._filter_tasks(tasks)
 
         self.table.load_tasks(tasks)
         configure_table_columns(self.table, "tasks")
+        self.table.clear_selection()
         self.text_filter.update_count()
 
     def _filter_tasks(self, tasks):

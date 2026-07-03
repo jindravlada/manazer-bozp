@@ -1,7 +1,7 @@
 from datetime import date
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QBrush
+from PySide6.QtGui import QColor, QBrush, QMouseEvent
 from PySide6.QtWidgets import QHeaderView, QTableWidget, QTableWidgetItem
 
 from core.shared.sluzby.finding_service import finding_service
@@ -56,6 +56,20 @@ class TaskTable(QTableWidget):
         header.setSectionResizeMode(COL_DESCRIPTION, QHeaderView.Stretch)
         for column in (COL_DUE_DATE, COL_RESPONSIBLE, COL_WORKPLACE, COL_SOURCE, COL_SOURCE_RECORD, COL_TYPE):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
+
+    def clear_selection(self) -> None:
+        self.clearSelection()
+        selection_model = self.selectionModel()
+        if selection_model is not None:
+            selection_model.clearCurrentIndex()
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        position = event.position().toPoint()
+        if not self.indexAt(position).isValid():
+            self.clear_selection()
+            event.accept()
+            return
+        super().mousePressEvent(event)
 
     def load_tasks(self, tasks):
         self.setRowCount(len(tasks))
