@@ -24,7 +24,9 @@ with patch.object(Path, "home", return_value=_TMP):
     initialize_database()
 
     from core.shared.constants import (
+        CONTROL_RESULT_NEVYHOVUJE,
         CONTROL_RESULT_VYHOVUJE,
+        CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
         ENTITY_AUDITY,
         FINDING_STATUS_OTEVRENE,
         FINDING_TYPE_NESHODA,
@@ -195,6 +197,57 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         self.assertIn(audit.number, content)
         self.assertIn("Počet kontrolovaných oblastí: 1", content)
         self.assertIn("Počet hodnocení Vyhovuje: 1", content)
+
+    def test_evaluation_in_output_includes_only_recommendations_and_noncompliance(self) -> None:
+        audit = self._create_audit()
+        assert audit is not None
+
+        contexts = [
+            (
+                "q_ok",
+                "Vyhovuje tvrzení",
+                CONTROL_RESULT_VYHOVUJE,
+            ),
+            (
+                "q_rec",
+                "Doporučení tvrzení",
+                CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
+            ),
+            (
+                "q_bad",
+                "Neshoda tvrzení",
+                CONTROL_RESULT_NEVYHOVUJE,
+            ),
+        ]
+        for question_id, label, result in contexts:
+            control_result_service.set_result(
+                ENTITY_AUDITY,
+                audit.id,
+                ControlPointContext(
+                    area_id="rizeni_rizik",
+                    area_label="Řízení rizik",
+                    section_id="sekce",
+                    section_label="Sekce",
+                    control_point_id=question_id,
+                    control_point_label=label,
+                ),
+                result=result,
+            )
+
+        context = audit_export_context_service.build(audit)
+        evaluation_text = context.evaluation_text()
+
+        self.assertIn("🟡 Vyhovuje s doporučením", evaluation_text)
+        self.assertIn("Doporučení tvrzení", evaluation_text)
+        self.assertIn("🔴 Nevyhovuje", evaluation_text)
+        self.assertIn("Neshoda tvrzení", evaluation_text)
+        self.assertNotIn("Vyhovuje tvrzení", evaluation_text)
+
+        path = protokol_audit_service.generate_for_audit(audit)
+        content = _odt_content(path)
+        self.assertIn("🟡 Vyhovuje s doporučením", content)
+        self.assertIn("🔴 Nevyhovuje", content)
+        self.assertNotIn("Vyhovuje tvrzení", content)
 
     def test_findings_in_output(self) -> None:
         audit = self._create_audit()

@@ -28,5 +28,18 @@ def allows_finding(result: str) -> bool:
     return result == CONTROL_RESULT_NEVYHOVUJE
 
 
+def allows_pkz_action(result: str) -> bool:
+    return result == CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM
+
+
+def protocol_evaluation_results() -> frozenset[str]:
+    return frozenset(
+        {
+            CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
+            CONTROL_RESULT_NEVYHOVUJE,
+        }
+    )
+
+
 def is_valid_control_result(result: str) -> bool:
     return result in VALID_CONTROL_RESULTS

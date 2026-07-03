@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 
 from core.shared.constants import ENTITY_AUDITY
-from core.shared.control_result_display import control_result_label
+from core.shared.control_result_display import control_result_label, protocol_evaluation_results
 from core.shared.finding_display import finding_status_label, finding_type_label
 from core.shared.sluzby.control_activity_statistics_service import (
     control_activity_statistics_service,
@@ -171,10 +171,15 @@ class AuditExportContext:
         if not results:
             return []
 
+        included_results = protocol_evaluation_results()
         lines: list[str] = []
         for index, row in enumerate(
             sorted(
-                results,
+                (
+                    item
+                    for item in results
+                    if item.result in included_results
+                ),
                 key=lambda item: (
                     item.source_area_label,
                     item.source_section_label,

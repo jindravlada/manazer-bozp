@@ -94,6 +94,77 @@ class AuditProgramSupplementWorkplacesTestCase(unittest.TestCase):
         }
         self.assertEqual(stored_original, original)
 
+    def test_supplement_works_when_program_manually_modified(self) -> None:
+        program = self._create_program()
+        existing = settings_service.save_workplace(name="Původní ruční", audit_enabled=True)
+        new_workplace = settings_service.save_workplace(name="Nové ruční", audit_enabled=True)
+        audit_program_service.add_workplace(
+            program.id,
+            workplace_id=existing.id,
+            workplace_name=existing.name,
+            audit_interval_months=6,
+        )
+        audit_program_service.generate_visits(program.id)
+        audit_program_service.distribute_processes(program.id)
+
+        overview = audit_program_service.get_program_overview(program.id)
+        assert overview is not None
+        audit_program_service.update_visit_plan(
+            overview.visits[0].id,
+            planned_year=overview.visits[0].planned_year,
+            planned_month=(overview.visits[0].planned_month or 4) + 1
+            if (overview.visits[0].planned_month or 4) < 12
+            else 1,
+        )
+        self.assertTrue(audit_program_service.get_program(program.id).manual_planning)
+
+        overview = audit_program_service.get_program_overview(program.id)
+        assert overview is not None
+        original = {
+            (visit.workplace_id, visit.planned_year, visit.planned_month)
+            for visit in overview.visits
+            if visit.workplace_id == existing.id
+        }
+        original_processes = {
+            (item.visit_id, item.process_id)
+            for item in overview.visit_processes
+            if item.visit_id in {visit.id for visit in overview.visits if visit.workplace_id == existing.id}
+        }
+
+        result = audit_program_service.supplement_workplaces(program.id, (new_workplace.id,))
+
+        self.assertEqual(result.added_workplaces, 1)
+        self.assertGreater(result.created_visits, 0)
+        self.assertGreater(result.assigned_processes, 0)
+
+        overview = audit_program_service.get_program_overview(program.id)
+        assert overview is not None
+        stored_original = {
+            (visit.workplace_id, visit.planned_year, visit.planned_month)
+            for visit in overview.visits
+            if visit.workplace_id == existing.id
+        }
+        self.assertEqual(stored_original, original)
+
+        stored_original_processes = {
+            (item.visit_id, item.process_id)
+            for item in overview.visit_processes
+            if item.visit_id in {visit.id for visit in overview.visits if visit.workplace_id == existing.id}
+        }
+        self.assertEqual(stored_original_processes, original_processes)
+
+        new_visits = [
+            visit
+            for visit in overview.visits
+            if visit.workplace_id == new_workplace.id
+        ]
+        self.assertGreater(len(new_visits), 0)
+        new_visit_ids = {visit.id for visit in new_visits}
+        new_processes = [
+            item for item in overview.visit_processes if item.visit_id in new_visit_ids
+        ]
+        self.assertGreater(len(new_processes), 0)
+
     def test_supplement_is_idempotent_for_existing_workplaces(self) -> None:
         program = self._create_program()
         workplace = settings_service.save_workplace(name="Jedno", audit_enabled=True)

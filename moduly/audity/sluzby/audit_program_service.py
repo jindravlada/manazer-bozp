@@ -374,7 +374,10 @@ class AuditProgramService:
             program_id,
             only_workplace_ids=tuple(added_workplace_ids) if added_workplace_ids else None,
         )
-        distribution = self.distribute_processes(program_id)
+        distribution = self.distribute_processes(
+            program_id,
+            only_workplace_ids=tuple(added_workplace_ids) if added_workplace_ids else None,
+        )
         return AuditProgramSupplementWorkplacesResult(
             added_workplaces=added,
             created_visits=len(visits.created_visits),
@@ -673,7 +676,7 @@ class AuditProgramService:
             raise ValueError(f"Program auditů {program_id} neexistuje.")
         if program.date_from is None or program.date_to is None:
             raise ValueError("Program auditů musí mít vyplněné období od/do.")
-        if program.manual_planning:
+        if program.manual_planning and only_workplace_ids is None:
             raise ValueError(AUDIT_PROGRAM_MANUAL_GENERATE_BLOCKED)
 
         existing_keys = self._existing_visit_keys(program_id)
@@ -742,11 +745,16 @@ class AuditProgramService:
             skipped_existing=skipped,
         )
 
-    def distribute_processes(self, program_id: int) -> AuditProgramDistributionResult:
+    def distribute_processes(
+        self,
+        program_id: int,
+        *,
+        only_workplace_ids: tuple[int, ...] | None = None,
+    ) -> AuditProgramDistributionResult:
         program = self.repository.get_program(program_id)
         if program is None:
             raise ValueError(f"Program auditů {program_id} neexistuje.")
-        if program.manual_planning:
+        if program.manual_planning and only_workplace_ids is None:
             raise ValueError(AUDIT_PROGRAM_MANUAL_DISTRIBUTE_BLOCKED)
 
         processes = self._processes_for_program(program)
@@ -764,6 +772,11 @@ class AuditProgramService:
 
         for workplace in self.repository.list_workplaces(program_id):
             if not workplace.active:
+                continue
+            if (
+                only_workplace_ids is not None
+                and workplace.workplace_id not in only_workplace_ids
+            ):
                 continue
 
             workplace_visits = visits_by_workplace.get(workplace.workplace_id, [])

@@ -250,6 +250,8 @@ class AuditProcessesWidget(QWidget):
             self.methodology_panel.show_hint("Pro tento proces zatím není metodická podpora.")
             self.content_stack.setCurrentIndex(self._PAGE_PLACEHOLDER)
 
+        self.overview_widget.scroll_to_top()
+
     def _on_criterion_selected(self, node: KnowledgeTreeNode | None) -> None:
         if node is None:
             return

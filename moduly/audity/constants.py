@@ -168,6 +168,11 @@ AUDIT_MUST_BE_SAVED_MESSAGE = "Audit je nutné nejdříve uložit."
 FINDING_REQUIRES_NONCOMPLIANCE_MESSAGE = (
     "Zjištění lze založit pouze u auditního tvrzení s výsledkem „Nevyhovuje“."
 )
+PKZ_CREATE_FROM_CONTROL_POINT_LABEL = "Založit PKZ / opatření"
+PKZ_REQUIRES_RECOMMENDATION_MESSAGE = (
+    "PKZ / opatření lze založit pouze u auditního tvrzení s výsledkem "
+    "„Vyhovuje s doporučením“."
+)
 
 AUDIT_FINDING_TYPE_NESHODA = "neshoda"
 AUDIT_FINDING_TYPE_PKZ = "prilezitost_zlepseni"

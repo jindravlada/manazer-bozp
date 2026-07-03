@@ -28,6 +28,7 @@ class AuditProcessOverviewWidget(QWidget):
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QScrollArea.Shape.NoFrame)
         scroll.setWidget(self._content_host)
+        self._scroll_area = scroll
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
@@ -40,6 +41,7 @@ class AuditProcessOverviewWidget(QWidget):
         if not knowledge:
             self._content_layout.addWidget(self._info_label("Vyberte řídicí proces ve stromu vlevo."))
             self._content_layout.addStretch()
+            self.scroll_to_top()
             return
 
         for label, field in (
@@ -71,6 +73,10 @@ class AuditProcessOverviewWidget(QWidget):
             self._content_layout.addWidget(self._build_panel_block(areas_host))
 
         self._content_layout.addStretch()
+        self.scroll_to_top()
+
+    def scroll_to_top(self) -> None:
+        self._scroll_area.verticalScrollBar().setValue(0)
 
     def _build_text_block(self, label: str, text: str) -> QWidget:
         container = QWidget()
@@ -141,6 +147,7 @@ class AuditProcessKnowledgeWidget(QWidget):
             area_label=process_label,
             section_label=criterion_label,
         )
+        self.criterion_widget.scroll_to_top()
 
     def clear_criterion(self) -> None:
         self._process_knowledge = None

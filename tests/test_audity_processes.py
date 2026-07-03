@@ -24,8 +24,10 @@ with patch.object(Path, "home", return_value=_TMP):
     from core.shared.constants import (
         CONTROL_RESULT_NEVYHOVUJE,
         CONTROL_RESULT_VYHOVUJE,
+        CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
         ENTITY_AUDITY,
         FINDING_TYPE_NESHODA,
+        FINDING_TYPE_PRILEZITOST,
         FINDING_STATUS_OTEVRENE,
     )
     from core.shared.sluzby.control_result_service import ControlPointContext, control_result_service
@@ -159,6 +161,77 @@ class AudityProcessesTestCase(unittest.TestCase):
             "uplnost_evidence_overovana",
         }
         self.assertTrue(expected_ids.issubset(criterion_widget._control_point_frames))
+
+    def test_switching_criterion_resets_scroll_to_top(self) -> None:
+        from moduly.audity.ui.audit_knowledge_criterion_widget import AuditKnowledgeCriterionWidget
+
+        widget = AuditKnowledgeCriterionWidget()
+        with patch.object(widget, "scroll_to_top") as mock_scroll:
+            widget.set_criterion({"id": "sekce", "nazev": "Sekce"})
+            mock_scroll.assert_called_once()
+
+        from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
+
+        processes = AuditProcessesWidget()
+        with patch.object(
+            processes.knowledge_widget.criterion_widget,
+            "scroll_to_top",
+        ) as mock_scroll:
+            processes.knowledge_tree.select_node("urazy_mimo_udalosti", "evidence_hlaseni_urazu")
+            mock_scroll.assert_called()
+
+    @patch("moduly.audity.ui.audit_knowledge_criterion_widget.TaskDialog")
+    def test_recommendation_result_allows_pkz_task_creation(self, mock_task_dialog) -> None:
+        from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
+
+        audit = self._create_audit_with_team()
+        context = ControlPointContext(
+            area_id="urazy_mimo_udalosti",
+            area_label="Řízení pracovních úrazů a mimořádných událostí",
+            section_id="evidence_hlaseni_urazu",
+            section_label="Evidence a hlášení pracovních úrazů",
+            control_point_id="vsechny_urazy_evidovany",
+            control_point_label="Všechny pracovní úrazy jsou evidovány.",
+        )
+        control_result_service.set_result(
+            ENTITY_AUDITY,
+            audit.id,
+            context,
+            result=CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
+            note="Doplnit evidence chybějících záznamů",
+        )
+
+        widget = AuditProcessesWidget()
+        widget.set_audit_id(audit.id)
+        widget.knowledge_tree.select_node("urazy_mimo_udalosti", "evidence_hlaseni_urazu")
+
+        criterion_widget = widget.knowledge_widget.criterion_widget
+        from PySide6.QtWidgets import QPushButton
+
+        pkz_buttons = [
+            button
+            for button in criterion_widget.findChildren(QPushButton)
+            if button.text() == "Založit PKZ / opatření"
+        ]
+        self.assertEqual(len(pkz_buttons), 1)
+
+        mock_dialog = MagicMock()
+        mock_dialog.exec.return_value = 0
+        mock_task_dialog.return_value = mock_dialog
+
+        pkz_buttons[0].click()
+
+        mock_task_dialog.assert_called_once()
+        finding = audit_service.finding_for_control_point(
+            audit.id,
+            process_label=context.area_label,
+            criterion_label=context.section_label,
+            question_id=context.control_point_id,
+        )
+        self.assertIsNotNone(finding)
+        assert finding is not None
+        self.assertEqual(finding.finding_type, FINDING_TYPE_PRILEZITOST)
+        self.assertIsNotNone(finding.task_id)
 
     def test_select_process_shows_guide_overview(self) -> None:
         from PySide6.QtWidgets import QLabel
