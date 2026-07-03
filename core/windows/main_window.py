@@ -1,8 +1,10 @@
 from datetime import date
 
 from PySide6.QtCore import QStringListModel, Qt
+from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QCompleter,
+    QDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -20,6 +22,7 @@ from PySide6.QtWidgets import (
 from core.modules.module_manager import ModuleManager
 from core.navigation.source_navigator import source_navigator
 from core.search import global_search_service
+from core.search.ui.global_search_dialog import GlobalSearchDialog
 
 
 class MainWindow(QMainWindow):
@@ -79,6 +82,15 @@ class MainWindow(QMainWindow):
         self.search_completer.activated[str].connect(self._open_search_result)
 
         toolbar.addWidget(self.search_edit)
+
+        self.global_search_button = QPushButton("Globální vyhledávání")
+        self.global_search_button.setToolTip("Globální vyhledávání (Ctrl+K)")
+        self.global_search_button.clicked.connect(self._open_global_search_dialog)
+        toolbar.addWidget(self.global_search_button)
+
+        self._global_search_shortcut = QShortcut(QKeySequence("Ctrl+K"), self)
+        self._global_search_shortcut.setContext(Qt.ShortcutContext.ApplicationShortcut)
+        self._global_search_shortcut.activated.connect(self._open_global_search_dialog)
 
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
@@ -216,6 +228,15 @@ class MainWindow(QMainWindow):
         self.search_edit.setFocus()
         if self.search_edit.text():
             self.search_edit.selectAll()
+
+    def _open_global_search_dialog(self) -> None:
+        dialog = GlobalSearchDialog(
+            parent=self,
+            search_service=global_search_service,
+            host=self,
+        )
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.statusBar().showMessage("Globální vyhledávání: výsledek otevřen")
 
     def _update_global_search(self, text: str):
         if self._completer_row_from_text(text) is not None:
