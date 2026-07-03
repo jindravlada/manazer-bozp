@@ -580,21 +580,31 @@ class AuditProgramService:
             raise ValueError(AUDIT_PROGRAM_MANUAL_GENERATE_BLOCKED)
 
         existing_keys = self._existing_visit_keys(program_id)
+        month_usage = self._existing_visit_month_usage(program_id)
         created: list[AuditProgramVisit] = []
         skipped = 0
 
-        for workplace in self.repository.list_workplaces(program_id):
-            if not workplace.active:
-                continue
+        workplaces = sorted(
+            (
+                workplace
+                for workplace in self.repository.list_workplaces(program_id)
+                if workplace.active
+            ),
+            key=lambda item: (item.workplace_id or 0, item.id),
+        )
 
+        for workplace in workplaces:
             planning = self._resolve_workplace_planning_config(workplace)
             if planning is None or not planning.audit_enabled:
                 continue
 
+            local_usage = dict(month_usage)
             for planned_year, planned_month in self._plan_workplace_visits(
                 program.date_from,
                 program.date_to,
                 planning,
+                month_usage=local_usage,
+                workplace_key=workplace.workplace_id or 0,
             ):
                 key = (workplace.workplace_id, planned_year, planned_month)
                 if key in existing_keys:
@@ -612,6 +622,8 @@ class AuditProgramService:
                 )
                 existing_keys.add(key)
                 created.append(visit)
+                month_key = (planned_year, planned_month)
+                month_usage[month_key] = month_usage.get(month_key, 0) + 1
 
         return AuditProgramGenerationResult(
             created_visits=tuple(created),
@@ -751,6 +763,9 @@ class AuditProgramService:
         date_from: date,
         date_to: date,
         planning: WorkplacePlanningConfig,
+        *,
+        month_usage: dict[tuple[int, int], int] | None = None,
+        workplace_key: int = 0,
     ) -> list[tuple[int, int]]:
         if planning.preferred_months:
             return plan_visit_months(
@@ -758,6 +773,8 @@ class AuditProgramService:
                 date_to,
                 planning.audit_interval_months,
                 planning.preferred_months,
+                month_usage=month_usage,
+                workplace_key=workplace_key,
             )
         return iter_visit_month_anchors(
             date_from,
@@ -806,6 +823,15 @@ class AuditProgramService:
                 continue
             keys.add((visit.workplace_id, visit.planned_year, visit.planned_month))
         return keys
+
+    def _existing_visit_month_usage(self, program_id: int) -> dict[tuple[int, int], int]:
+        usage: dict[tuple[int, int], int] = {}
+        for visit in self.repository.list_visits(program_id):
+            if visit.planned_year is None or visit.planned_month is None:
+                continue
+            key = (visit.planned_year, visit.planned_month)
+            usage[key] = usage.get(key, 0) + 1
+        return usage
 
     @staticmethod
     def _group_visits_by_workplace(

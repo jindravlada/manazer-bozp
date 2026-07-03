@@ -40,18 +40,75 @@ class WorkplaceAuditPlanningTestCase(unittest.TestCase):
 
         cls._app = QApplication.instance() or QApplication([])
 
-    def test_plan_visit_months_rotates_preferred_months(self) -> None:
+    def test_plan_visit_months_balances_preferred_months(self) -> None:
+        date_from = date(2026, 4, 1)
+        date_to = date(2029, 3, 31)
         planned = plan_visit_months(
-            date(2026, 4, 1),
-            date(2029, 3, 31),
+            date_from,
+            date_to,
             6,
             DEFAULT_PREFERRED_AUDIT_MONTHS,
+            month_usage={},
+            workplace_key=1,
         )
 
         self.assertEqual(
             planned,
-            [(2026, 4), (2026, 10), (2027, 3), (2027, 11), (2028, 5), (2028, 9)],
+            [(2026, 4), (2026, 11), (2027, 3), (2027, 10), (2028, 5), (2028, 9)],
         )
+
+    def test_plan_visit_months_spreads_workplaces(self) -> None:
+        date_from = date(2026, 4, 1)
+        date_to = date(2029, 3, 31)
+        usage: dict[tuple[int, int], int] = {}
+        patterns: list[list[tuple[int, int]]] = []
+
+        for workplace_key in (1, 2, 3):
+            local_usage = dict(usage)
+            planned = plan_visit_months(
+                date_from,
+                date_to,
+                6,
+                DEFAULT_PREFERRED_AUDIT_MONTHS,
+                month_usage=local_usage,
+                workplace_key=workplace_key,
+            )
+            patterns.append(planned)
+            for month_key in planned:
+                usage[month_key] = usage.get(month_key, 0) + 1
+
+        self.assertNotEqual(patterns[0], patterns[1])
+        self.assertNotEqual(patterns[1], patterns[2])
+        self.assertEqual(
+            patterns[0],
+            [(2026, 4), (2026, 11), (2027, 3), (2027, 10), (2028, 5), (2028, 9)],
+        )
+        self.assertEqual(
+            patterns[1],
+            [(2026, 5), (2026, 9), (2027, 4), (2027, 11), (2028, 3), (2028, 10)],
+        )
+
+    def test_plan_visit_months_is_stable(self) -> None:
+        date_from = date(2026, 4, 1)
+        date_to = date(2029, 3, 31)
+        first = plan_visit_months(
+            date_from,
+            date_to,
+            6,
+            DEFAULT_PREFERRED_AUDIT_MONTHS,
+            month_usage={},
+            workplace_key=2,
+        )
+        second = plan_visit_months(
+            date_from,
+            date_to,
+            6,
+            DEFAULT_PREFERRED_AUDIT_MONTHS,
+            month_usage={},
+            workplace_key=2,
+        )
+
+        self.assertEqual(first, second)
 
     def test_plan_visit_months_respects_interval(self) -> None:
         planned = plan_visit_months(
@@ -130,26 +187,64 @@ class AuditProgramIntelligentPlanningTestCase(unittest.TestCase):
 
         result = audit_program_service.generate_visits(program.id)
 
+        expected = plan_visit_months(
+            program.date_from,
+            program.date_to,
+            6,
+            DEFAULT_PREFERRED_AUDIT_MONTHS,
+            month_usage={},
+            workplace_key=workplace.id,
+        )
+
         self.assertEqual(len(result.created_visits), 6)
         self.assertEqual(
             [(visit.planned_year, visit.planned_month) for visit in result.created_visits],
-            [(2026, 4), (2026, 10), (2027, 3), (2027, 11), (2028, 5), (2028, 9)],
+            expected,
         )
 
     def test_generate_rotates_instead_of_repeating_same_months(self) -> None:
         program = self._create_program()
-        workplace = self._save_workplace(name="Rotace")
-        self._add_program_workplace(program.id, workplace)
+        workplace_a = self._save_workplace(name="Rotace A")
+        workplace_b = self._save_workplace(name="Rotace B")
+        self._add_program_workplace(program.id, workplace_a)
+        self._add_program_workplace(program.id, workplace_b)
 
         result = audit_program_service.generate_visits(program.id)
-        months_by_year: dict[int, list[int]] = {}
+        by_workplace: dict[int | None, list[tuple[int, int]]] = {}
         for visit in result.created_visits:
-            assert visit.planned_year is not None
-            assert visit.planned_month is not None
-            months_by_year.setdefault(visit.planned_year, []).append(visit.planned_month)
+            by_workplace.setdefault(visit.workplace_id, []).append(
+                (visit.planned_year, visit.planned_month)
+            )
 
-        self.assertNotEqual(months_by_year[2026], months_by_year[2027])
-        self.assertNotEqual(months_by_year[2027], months_by_year[2028])
+        first, second = sorted(
+            (workplace_a, workplace_b),
+            key=lambda item: item.id,
+        )
+        usage: dict[tuple[int, int], int] = {}
+        expected_first = plan_visit_months(
+            program.date_from,
+            program.date_to,
+            6,
+            DEFAULT_PREFERRED_AUDIT_MONTHS,
+            month_usage=usage,
+            workplace_key=first.id,
+        )
+        for month_key in expected_first:
+            usage[month_key] = usage.get(month_key, 0) + 1
+        expected_second = plan_visit_months(
+            program.date_from,
+            program.date_to,
+            6,
+            DEFAULT_PREFERRED_AUDIT_MONTHS,
+            month_usage=usage,
+            workplace_key=second.id,
+        )
+
+        pattern_a = by_workplace[workplace_a.id]
+        pattern_b = by_workplace[workplace_b.id]
+        self.assertNotEqual(pattern_a, pattern_b)
+        self.assertEqual(pattern_a, expected_first if workplace_a.id == first.id else expected_second)
+        self.assertEqual(pattern_b, expected_second if workplace_b.id == second.id else expected_first)
 
     def test_settings_change_does_not_rewrite_existing_plan(self) -> None:
         program = self._create_program()

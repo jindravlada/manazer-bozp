@@ -137,6 +137,32 @@ class ProverkyFindingsTaskTestCase(unittest.TestCase):
         widget.refresh()
         self.assertEqual(widget.table.rowCount(), 0)
 
+    @patch("core.widgets.finding_task_actions.TaskDialog")
+    def test_create_task_opens_task_dialog(self, mock_task_dialog) -> None:
+        from PySide6.QtCore import QItemSelectionModel
+
+        from moduly.proverky.ui.bozp_inspection_findings_widget import (
+            BozpInspectionFindingsWidget,
+        )
+
+        inspection = bozp_inspection_service.create_inspection()
+        finding_id = self._create_finding(inspection.id)
+
+        widget = BozpInspectionFindingsWidget()
+        widget.set_inspection_id(inspection.id)
+        index = widget.table.model().index(0, 0)
+        widget.table.selectionModel().select(
+            index,
+            QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows,
+        )
+        widget.task_actions.update_state()
+        widget.task_actions._create_task(finding_id)
+
+        mock_task_dialog.assert_called_once()
+        finding = finding_service.get_by_id(finding_id)
+        assert finding is not None
+        self.assertIsNotNone(finding.task_id)
+
 
 if __name__ == "__main__":
     unittest.main()

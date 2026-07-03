@@ -132,6 +132,30 @@ class AudityFindingsTaskTestCase(unittest.TestCase):
         widget.refresh()
         self.assertEqual(widget.table.rowCount(), 0)
 
+    @patch("core.widgets.finding_task_actions.TaskDialog")
+    def test_create_task_opens_task_dialog(self, mock_task_dialog) -> None:
+        from PySide6.QtCore import QItemSelectionModel
+
+        from moduly.audity.ui.audit_findings_widget import AuditFindingsWidget
+
+        audit = audit_service.create_audit()
+        finding_id = self._create_finding(audit.id)
+
+        widget = AuditFindingsWidget()
+        widget.set_audit_id(audit.id)
+        index = widget.table.model().index(0, 0)
+        widget.table.selectionModel().select(
+            index,
+            QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows,
+        )
+        widget.task_actions.update_state()
+        widget.task_actions._create_task(finding_id)
+
+        mock_task_dialog.assert_called_once()
+        finding = finding_service.get_by_id(finding_id)
+        assert finding is not None
+        self.assertIsNotNone(finding.task_id)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -43,7 +43,6 @@ class BozpInspectionDialog(QDialog):
         self.tabs.addTab(self.findings_widget, "Zjištění")
         self.tasks_widget = BozpInspectionTasksWidget()
         self.tabs.addTab(self.tasks_widget, "Úkoly")
-        self.tabs.addTab(self._placeholder_tab("Přílohy"), "Přílohy")
         self.conclusion_widget = BozpInspectionConclusionWidget()
         self.tabs.addTab(self.conclusion_widget, "Závěr")
         layout.addWidget(self.tabs)
@@ -130,17 +129,3 @@ class BozpInspectionDialog(QDialog):
         self.inspection = updated
         self.conclusion_widget.load_inspection(self.inspection)
         return True
-
-    def _placeholder_tab(self, title: str):
-        from PySide6.QtWidgets import QLabel, QWidget
-
-        tab = QWidget()
-        tab_layout = QVBoxLayout(tab)
-
-        info = QLabel(
-            f"Záložka „{title}“ bude doplněna v další fázi vývoje."
-        )
-        info.setWordWrap(True)
-        tab_layout.addWidget(info)
-        tab_layout.addStretch()
-        return tab

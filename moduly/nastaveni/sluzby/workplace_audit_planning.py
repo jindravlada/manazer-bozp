@@ -68,20 +68,6 @@ def iter_visit_month_anchors(
     return slots
 
 
-def _closest_index(group: list[int], target: int) -> int:
-    if not group:
-        return 0
-
-    best_index = 0
-    best_distance = 13
-    for index, month in enumerate(group):
-        distance = min(abs(month - target), 12 - abs(month - target))
-        if distance < best_distance:
-            best_distance = distance
-            best_index = index
-    return best_index
-
-
 def _visit_in_program_range(
     planned_year: int,
     planned_month: int,
@@ -95,31 +81,13 @@ def _visit_in_program_range(
     return date(planned_year, planned_month, last_day) >= date_from
 
 
-def plan_visit_months(
-    date_from: date,
-    date_to: date,
+def _candidate_months_for_anchor(
+    preferred: tuple[int, ...],
+    anchor_month: int,
     interval_months: int,
-    preferred_months: tuple[int, ...],
-) -> list[tuple[int, int]]:
-    interval = int(interval_months or DEFAULT_WORKPLACE_AUDIT_INTERVAL_MONTHS)
-    preferred = normalize_preferred_months(preferred_months)
-    anchors = iter_visit_month_anchors(date_from, date_to, interval)
-
-    if not preferred:
-        return anchors
-
-    sorted_pref = sorted(preferred)
-    start = _closest_index(sorted_pref, date_from.month)
-
-    if interval >= 12:
-        planned: list[tuple[int, int]] = []
-        for index, (anchor_year, _anchor_month) in enumerate(anchors):
-            chosen_month = sorted_pref[(start + index) % len(sorted_pref)]
-            chosen_year = anchor_year
-            if not _visit_in_program_range(chosen_year, chosen_month, date_from, date_to):
-                continue
-            planned.append((chosen_year, chosen_month))
-        return planned
+) -> list[int]:
+    if interval_months >= 12:
+        return list(preferred)
 
     lower = [month for month in preferred if month < 7]
     upper = [month for month in preferred if month >= 7]
@@ -128,40 +96,79 @@ def plan_visit_months(
     if not upper:
         upper = list(preferred)
 
-    lower_start = _closest_index(lower, date_from.month)
-    upper_start = _closest_index(upper, 10)
+    if anchor_month >= 7:
+        return upper
+    return lower
 
-    lower_slot_count = 0
-    upper_slot_count = 0
+
+def _pick_balanced_month(
+    candidates: list[int],
+    anchor_year: int,
+    date_from: date,
+    date_to: date,
+    month_usage: dict[tuple[int, int], int],
+    workplace_key: int,
+    slot_index: int,
+) -> tuple[int, int] | None:
+    if not candidates:
+        return None
+
+    start = (workplace_key + slot_index) % len(candidates)
+    ordered = candidates[start:] + candidates[:start]
+
+    options: list[tuple[int, int, int, int, int]] = []
+    for rotation, month in enumerate(ordered):
+        for year_offset, year in enumerate((anchor_year, anchor_year + 1, anchor_year - 1)):
+            if not _visit_in_program_range(year, month, date_from, date_to):
+                continue
+
+            usage = month_usage.get((year, month), 0)
+            options.append((usage, rotation, year_offset, year, month))
+
+    if not options:
+        return None
+
+    options.sort()
+    _, _, _, year, month = options[0]
+    return year, month
+
+
+def plan_visit_months(
+    date_from: date,
+    date_to: date,
+    interval_months: int,
+    preferred_months: tuple[int, ...],
+    *,
+    month_usage: dict[tuple[int, int], int] | None = None,
+    workplace_key: int = 0,
+) -> list[tuple[int, int]]:
+    interval = int(interval_months or DEFAULT_WORKPLACE_AUDIT_INTERVAL_MONTHS)
+    preferred = normalize_preferred_months(preferred_months)
+    anchors = iter_visit_month_anchors(date_from, date_to, interval)
+    usage = month_usage if month_usage is not None else {}
+
+    if not preferred:
+        return anchors
+
     planned: list[tuple[int, int]] = []
-
-    for anchor_year, anchor_month in anchors:
-        fiscal_year_index = anchor_year - date_from.year
-        if anchor_year == date_from.year and anchor_month < date_from.month:
-            fiscal_year_index -= 1
-
-        if anchor_month >= 7:
-            group = upper
-            start = upper_start
-            upper_slot_count += 1
-            month_index = (start + fiscal_year_index) % len(group)
-        else:
-            group = lower
-            start = lower_start
-            lower_slot_count += 1
-            month_index = (start - fiscal_year_index) % len(group)
-
-        chosen_month = group[month_index]
-        chosen_year = anchor_year
-
-        if not _visit_in_program_range(chosen_year, chosen_month, date_from, date_to):
-            if _visit_in_program_range(chosen_year + 1, chosen_month, date_from, date_to):
-                chosen_year += 1
-            elif _visit_in_program_range(chosen_year, anchor_month, date_from, date_to):
-                chosen_month = anchor_month
+    for slot_index, (anchor_year, anchor_month) in enumerate(anchors):
+        candidates = _candidate_months_for_anchor(preferred, anchor_month, interval)
+        chosen = _pick_balanced_month(
+            candidates,
+            anchor_year,
+            date_from,
+            date_to,
+            usage,
+            workplace_key,
+            slot_index,
+        )
+        if chosen is None:
+            if _visit_in_program_range(anchor_year, anchor_month, date_from, date_to):
+                chosen = (anchor_year, anchor_month)
             else:
                 continue
 
-        planned.append((chosen_year, chosen_month))
+        planned.append(chosen)
+        usage[chosen] = usage.get(chosen, 0) + 1
 
     return planned

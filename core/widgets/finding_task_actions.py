@@ -45,12 +45,17 @@ class FindingTaskActions:
 
     def _create_task(self, finding_id: int) -> None:
         try:
-            finding_task_service.create_task_from_finding(finding_id)
+            task = finding_task_service.create_task_from_finding(finding_id)
         except ValueError as exc:
             QMessageBox.warning(self._parent, "Úkol", str(exc))
             return
 
         self._on_changed()
+
+        dialog = TaskDialog(self._parent, task=task)
+        if dialog.exec() == QDialog.Accepted:
+            task_service.update_task(task.id, **dialog.get_data())
+            self._on_changed()
 
     def _open_task(self, finding_id: int) -> None:
         from core.shared.sluzby.finding_service import finding_service

@@ -111,6 +111,13 @@ class ProverkyCompletionTestCase(unittest.TestCase):
 
         self.assertEqual(dialog.tabs.tabText(dialog.tabs.count() - 1), "Závěr")
 
+    def test_dialog_has_no_attachments_tab(self) -> None:
+        inspection, _ = self._create_inspection_with_leader()
+        dialog = self._open_dialog(inspection)
+
+        tab_labels = [dialog.tabs.tabText(index) for index in range(dialog.tabs.count())]
+        self.assertNotIn("Přílohy", tab_labels)
+
     def test_spis_has_no_status_editor(self) -> None:
         inspection, _ = self._create_inspection_with_leader()
         dialog = self._open_dialog(inspection)

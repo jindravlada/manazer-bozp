@@ -3,6 +3,9 @@ from datetime import date, datetime
 
 from core.shared.constants import ENTITY_PROVERKY
 from core.shared.finding_display import finding_status_label, finding_type_label
+from core.shared.sluzby.control_activity_statistics_service import (
+    control_activity_statistics_service,
+)
 from core.shared.sluzby.finding_service import finding_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.proverky.constants import (
@@ -173,12 +176,18 @@ class InspectionExportContext:
         lines = self.tasks_lines()
         return "\n".join(lines) if lines else "Nejsou evidována."
 
+    def statistics_text(self) -> str:
+        stats = control_activity_statistics_service.compute(
+            ENTITY_PROVERKY,
+            self.inspection_id,
+        )
+        return stats.format_text()
+
     def summary_text(self) -> str:
         summary = bozp_inspection_service.get_conclusion_summary(self.inspection_id)
         return (
-            f"Zjištění celkem: {summary['findings_total']}\n"
+            f"{self.statistics_text()}\n\n"
             f"Otevřená zjištění: {summary['findings_open']}\n"
-            f"Úkoly celkem: {summary['tasks_total']}\n"
             f"Aktivní úkoly: {summary['tasks_active']}\n"
             f"Stav prověrky: {self.status_label()}"
         )
@@ -198,6 +207,7 @@ class InspectionExportContext:
             "komise_text": self.commission_text(),
             "zjisteni_text": self.findings_text(),
             "ukoly_text": self.tasks_text(),
+            "statistika_text": self.statistics_text(),
             "souhrn_text": self.summary_text(),
             "datum_vygenerovani": datetime.now().strftime("%d.%m.%Y"),
         }

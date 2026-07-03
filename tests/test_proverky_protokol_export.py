@@ -342,10 +342,43 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
             "komise_text",
             "zjisteni_text",
             "ukoly_text",
+            "statistika_text",
             "souhrn_text",
             "datum_vygenerovani",
         }
         self.assertEqual(set(values.keys()), expected_keys)
+
+    def test_statistics_in_output(self) -> None:
+        from core.shared.constants import CONTROL_RESULT_VYHOVUJE
+
+        workplace = settings_service.save_workplace(name="Statistika")
+        inspection = self._create_inspection_with_leader(
+            workplace_id=workplace.id,
+            workplace_name=workplace.name,
+        )
+        assert inspection is not None
+
+        from core.shared.sluzby.control_result_service import ControlPointContext, control_result_service
+
+        control_result_service.set_result(
+            ENTITY_PROVERKY,
+            inspection.id,
+            ControlPointContext(
+                area_id="bozp",
+                area_label="BOZP",
+                section_id="sekce",
+                section_label="Sekce",
+                control_point_id="cp1",
+                control_point_label="Bod 1",
+            ),
+            result=CONTROL_RESULT_VYHOVUJE,
+        )
+
+        path = protokol_proverky_service.generate_for_inspection(inspection)
+        content = _odt_content(path)
+
+        self.assertIn("Počet kontrolovaných oblastí: 1", content)
+        self.assertIn("Počet hodnocení Vyhovuje: 1", content)
 
 
 if __name__ == "__main__":

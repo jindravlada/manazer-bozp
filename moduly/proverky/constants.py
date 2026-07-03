@@ -105,7 +105,6 @@ TAB_LABELS = (
     TAB_KONTROLOVANE_OBLASTI,
     "Zjištění",
     "Úkoly",
-    "Přílohy",
     "Závěr",
 )
 
