@@ -32,6 +32,10 @@ def allows_pkz_action(result: str) -> bool:
     return result == CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM
 
 
+def allows_create_finding(result: str) -> bool:
+    return allows_finding(result) or allows_pkz_action(result)
+
+
 def protocol_evaluation_results() -> frozenset[str]:
     return frozenset(
         {

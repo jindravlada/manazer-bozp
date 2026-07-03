@@ -156,6 +156,35 @@ class AudityFindingsTaskTestCase(unittest.TestCase):
         assert finding is not None
         self.assertIsNotNone(finding.task_id)
 
+    @patch("moduly.ukoly.ui.task_dialog.source_navigator.can_open", return_value=True)
+    def test_task_dialog_hides_audit_source_open_button_from_modal_parent(
+        self, _mock_can_open
+    ) -> None:
+        from PySide6.QtWidgets import QDialog
+
+        from moduly.ukoly.ui.task_dialog import TaskDialog
+
+        audit = audit_service.create_audit()
+        finding_id = self._create_finding(audit.id)
+        task = finding_task_service.create_task_from_finding(finding_id)
+
+        parent_dialog = QDialog()
+        dialog = TaskDialog(parent_dialog, task=task)
+        self.assertTrue(dialog.source_panel.open_button.isHidden())
+
+    @patch("moduly.ukoly.ui.task_dialog.source_navigator.can_open", return_value=True)
+    def test_task_dialog_shows_audit_source_open_button_without_modal_parent(
+        self, _mock_can_open
+    ) -> None:
+        from moduly.ukoly.ui.task_dialog import TaskDialog
+
+        audit = audit_service.create_audit()
+        finding_id = self._create_finding(audit.id)
+        task = finding_task_service.create_task_from_finding(finding_id)
+
+        dialog = TaskDialog(task=task)
+        self.assertFalse(dialog.source_panel.open_button.isHidden())
+
 
 if __name__ == "__main__":
     unittest.main()

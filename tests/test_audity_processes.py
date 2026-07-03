@@ -36,6 +36,9 @@ with patch.object(Path, "home", return_value=_TMP):
         COMMISSION_RECORD_LEADER,
         COMMISSION_RECORD_UNION,
         COMMISSION_RECORD_WORKPLACE,
+        AUDIT_FINDING_TYPE_NESHODA,
+        AUDIT_FINDING_TYPE_PKZ,
+        FINDING_CREATE_FROM_CONTROL_POINT_LABEL,
         KNOWLEDGE_EDITOR_BUTTON_LABEL,
         TAB_AUDITOVANE_PROCESY,
     )
@@ -180,11 +183,16 @@ class AudityProcessesTestCase(unittest.TestCase):
             processes.knowledge_tree.select_node("urazy_mimo_udalosti", "evidence_hlaseni_urazu")
             mock_scroll.assert_called()
 
-    @patch("moduly.audity.ui.audit_knowledge_criterion_widget.TaskDialog")
-    def test_recommendation_result_allows_pkz_task_creation(self, mock_task_dialog) -> None:
-        from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
+    def _finding_create_buttons(self, criterion_widget):
+        from PySide6.QtWidgets import QPushButton
 
-        audit = self._create_audit_with_team()
+        return [
+            button
+            for button in criterion_widget.findChildren(QPushButton)
+            if button.text() == FINDING_CREATE_FROM_CONTROL_POINT_LABEL
+        ]
+
+    def _open_criterion_with_result(self, audit, result: str, note: str = ""):
         context = ControlPointContext(
             area_id="urazy_mimo_udalosti",
             area_label="Řízení pracovních úrazů a mimořádných událostí",
@@ -197,31 +205,56 @@ class AudityProcessesTestCase(unittest.TestCase):
             ENTITY_AUDITY,
             audit.id,
             context,
-            result=CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
-            note="Doplnit evidence chybějících záznamů",
+            result=result,
+            note=note,
         )
+
+        from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
 
         widget = AuditProcessesWidget()
         widget.set_audit_id(audit.id)
         widget.knowledge_tree.select_node("urazy_mimo_udalosti", "evidence_hlaseni_urazu")
+        return widget, context
+
+    @patch("moduly.audity.ui.audit_knowledge_criterion_widget.FindingDialog")
+    def test_recommendation_result_opens_finding_dialog_with_pkz_type(
+        self, mock_finding_dialog
+    ) -> None:
+        audit = self._create_audit_with_team()
+        widget, context = self._open_criterion_with_result(
+            audit,
+            CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
+            note="Doplnit evidence chybějících záznamů",
+        )
 
         criterion_widget = widget.knowledge_widget.criterion_widget
-        from PySide6.QtWidgets import QPushButton
-
-        pkz_buttons = [
-            button
-            for button in criterion_widget.findChildren(QPushButton)
-            if button.text() == "Založit PKZ / opatření"
-        ]
-        self.assertEqual(len(pkz_buttons), 1)
+        create_buttons = self._finding_create_buttons(criterion_widget)
+        self.assertEqual(len(create_buttons), 1)
 
         mock_dialog = MagicMock()
-        mock_dialog.exec.return_value = 0
-        mock_task_dialog.return_value = mock_dialog
+        mock_dialog.exec.return_value = 1
+        mock_dialog.get_data.return_value = {
+            "finding_type": FINDING_TYPE_PRILEZITOST,
+            "reference_label": context.control_point_label,
+            "description": "Doplnit evidence chybějících záznamů",
+            "recommended_action": "Doplnit evidence chybějících záznamů",
+            "responsible_person_id": None,
+            "responsible_person_name": "",
+            "due_date": None,
+            "status": FINDING_STATUS_OTEVRENE,
+            "resolution_note": "",
+        }
+        mock_finding_dialog.return_value = mock_dialog
 
-        pkz_buttons[0].click()
+        create_buttons[0].click()
 
-        mock_task_dialog.assert_called_once()
+        mock_finding_dialog.assert_called_once()
+        _, kwargs = mock_finding_dialog.call_args
+        self.assertEqual(kwargs["default_finding_type"], AUDIT_FINDING_TYPE_PKZ)
+        mock_dialog.recommended_action_edit.setPlainText.assert_called_once_with(
+            "Doplnit evidence chybějících záznamů"
+        )
+
         finding = audit_service.finding_for_control_point(
             audit.id,
             process_label=context.area_label,
@@ -231,7 +264,52 @@ class AudityProcessesTestCase(unittest.TestCase):
         self.assertIsNotNone(finding)
         assert finding is not None
         self.assertEqual(finding.finding_type, FINDING_TYPE_PRILEZITOST)
-        self.assertIsNotNone(finding.task_id)
+        self.assertIsNone(finding.task_id)
+
+    @patch("moduly.audity.ui.audit_knowledge_criterion_widget.FindingDialog")
+    def test_noncompliance_result_opens_finding_dialog_with_neshoda_type(
+        self, mock_finding_dialog
+    ) -> None:
+        audit = self._create_audit_with_team()
+        widget, context = self._open_criterion_with_result(
+            audit,
+            CONTROL_RESULT_NEVYHOVUJE,
+        )
+
+        criterion_widget = widget.knowledge_widget.criterion_widget
+        create_buttons = self._finding_create_buttons(criterion_widget)
+        self.assertEqual(len(create_buttons), 1)
+
+        mock_dialog = MagicMock()
+        mock_dialog.exec.return_value = 1
+        mock_dialog.get_data.return_value = {
+            "finding_type": FINDING_TYPE_NESHODA,
+            "reference_label": context.control_point_label,
+            "description": "Neshoda u kontrolního bodu",
+            "recommended_action": "",
+            "responsible_person_id": None,
+            "responsible_person_name": "",
+            "due_date": None,
+            "status": FINDING_STATUS_OTEVRENE,
+            "resolution_note": "",
+        }
+        mock_finding_dialog.return_value = mock_dialog
+
+        create_buttons[0].click()
+
+        mock_finding_dialog.assert_called_once()
+        _, kwargs = mock_finding_dialog.call_args
+        self.assertEqual(kwargs["default_finding_type"], AUDIT_FINDING_TYPE_NESHODA)
+
+        finding = audit_service.finding_for_control_point(
+            audit.id,
+            process_label=context.area_label,
+            criterion_label=context.section_label,
+            question_id=context.control_point_id,
+        )
+        self.assertIsNotNone(finding)
+        assert finding is not None
+        self.assertEqual(finding.finding_type, FINDING_TYPE_NESHODA)
 
     def test_select_process_shows_guide_overview(self) -> None:
         from PySide6.QtWidgets import QLabel

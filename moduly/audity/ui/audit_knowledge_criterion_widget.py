@@ -3,7 +3,6 @@
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
-    QDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -15,11 +14,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.shared.constants import ENTITY_AUDITY, FINDING_STATUS_OTEVRENE
-from core.shared.control_result_display import allows_finding, allows_pkz_action
+from core.shared.constants import ENTITY_AUDITY
+from core.shared.control_result_display import (
+    allows_create_finding,
+    allows_finding,
+    allows_pkz_action,
+)
 from core.shared.finding_display import finding_status_label
 from core.shared.sluzby.control_result_service import ControlPointContext, control_result_service
-from core.shared.sluzby.finding_task_service import finding_task_service
 from core.shared.sluzby.finding_service import finding_service
 from core.widgets.control_result_selector import ControlResultSelectorWidget
 from core.widgets.control_result_photo_widget import ControlResultPhotoWidget
@@ -33,7 +35,7 @@ from moduly.audity.constants import (
     FINDING_DIALOG_TITLE,
     FINDING_DUPLICATE_MESSAGE,
     FINDING_OPEN_EXISTING_LABEL,
-    FINDING_REQUIRES_NONCOMPLIANCE_MESSAGE,
+    FINDING_REQUIRES_RESULT_MESSAGE,
     FINDING_SOURCE_LABEL,
     AUDIT_MUST_BE_SAVED_MESSAGE,
     AUDIT_FINDING_TYPE_NESHODA,
@@ -42,15 +44,11 @@ from moduly.audity.constants import (
     AUDIT_RESULT_HEADER_LABEL,
     AUDIT_RESULT_NOTE_LABEL,
     KNOWLEDGE_REFERENCE_PHOTOS_TITLE,
-    PKZ_CREATE_FROM_CONTROL_POINT_LABEL,
-    PKZ_REQUIRES_RECOMMENDATION_MESSAGE,
     REFERENCE_PHOTO_THUMBNAIL_SIZE,
     PROCESS_TERM_CRITERION,
     PROCESS_TERM_QUESTION,
     AuditFindingKnowledgeContext,
 )
-from moduly.ukoly.sluzby.task_service import task_service
-from moduly.ukoly.ui.task_dialog import TaskDialog
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 from moduly.audity.sluzby.audit_reference_photo_service import audit_reference_photo_service
@@ -390,26 +388,12 @@ class AuditKnowledgeCriterionWidget(QWidget):
 
         if finding is not None:
             layout.addWidget(self._build_linked_finding_block(finding, context))
-            if allows_pkz_action(result):
-                task_action = self._build_pkz_task_action(finding.id)
-                if task_action is not None:
-                    layout.addWidget(task_action)
             return
 
-        if allows_finding(result):
+        if allows_create_finding(result):
             actions = QHBoxLayout()
             actions.setContentsMargins(0, 4, 0, 0)
             actions.addWidget(self._build_create_finding_button(control_point))
-            actions.addStretch()
-            wrapper = QWidget()
-            wrapper.setLayout(actions)
-            layout.addWidget(wrapper)
-            return
-
-        if allows_pkz_action(result):
-            actions = QHBoxLayout()
-            actions.setContentsMargins(0, 4, 0, 0)
-            actions.addWidget(self._build_create_pkz_task_button(control_point))
             actions.addStretch()
             wrapper = QWidget()
             wrapper.setLayout(actions)
@@ -438,119 +422,12 @@ class AuditKnowledgeCriterionWidget(QWidget):
         button.clicked.connect(lambda _checked=False, item=control_point: self._create_finding(item))
         return button
 
-    def _build_create_pkz_task_button(self, control_point: dict) -> QPushButton:
-        button = QPushButton(PKZ_CREATE_FROM_CONTROL_POINT_LABEL)
-        button.clicked.connect(
-            lambda _checked=False, item=control_point: self._create_pkz_task(item)
-        )
-        return button
-
-    def _build_pkz_task_action(self, finding_id: int) -> QWidget | None:
-        action = finding_task_service.get_task_action(finding_id)
-        if action == "hidden":
-            return None
-
-        button = QPushButton(
-            "Otevřít úkol" if action == "open" else "Vytvořit úkol"
-        )
-        button.clicked.connect(
-            lambda _checked=False, fid=finding_id: self._open_or_create_task_for_finding(fid)
-        )
-
-        wrapper = QWidget()
-        layout = QHBoxLayout(wrapper)
-        layout.setContentsMargins(0, 4, 0, 0)
-        layout.addWidget(button)
-        layout.addStretch()
-        return wrapper
-
-    def _open_or_create_task_for_finding(self, finding_id: int) -> None:
-        action = finding_task_service.get_task_action(finding_id)
-        if action == "create":
-            self._create_task_from_finding(finding_id)
-            return
-        if action == "open":
-            finding = finding_service.get_by_id(finding_id)
-            task = finding_task_service.get_linked_task(finding)
-            if task is None:
-                QMessageBox.warning(self, "Úkol", "Propojený úkol nebyl nalezen.")
-                self._notify_finding_saved()
-                return
-            self._open_task_dialog(task)
-
-    def _create_task_from_finding(self, finding_id: int) -> None:
-        try:
-            task = finding_task_service.create_task_from_finding(finding_id)
-        except ValueError as exc:
-            QMessageBox.warning(self, "Úkol", str(exc))
-            return
-
-        self._notify_finding_saved()
-        self._open_task_dialog(task)
-
-    def _open_task_dialog(self, task) -> None:
-        dialog = TaskDialog(self, task=task)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            task_service.update_task(task.id, **dialog.get_data())
-            self._notify_finding_saved()
-
-    def _create_pkz_task(self, control_point: dict) -> None:
-        if self._audit_id is None:
-            QMessageBox.information(self, "Úkol", AUDIT_MUST_BE_SAVED_MESSAGE)
-            return
-
-        context = self._context_for_control_point(control_point)
-        point_context = self._control_point_context(context)
-        current_result = control_result_service.current_result(
-            ENTITY_AUDITY,
-            self._audit_id,
-            point_context,
-        )
-        if not allows_pkz_action(current_result):
-            QMessageBox.information(self, "Úkol", PKZ_REQUIRES_RECOMMENDATION_MESSAGE)
-            return
-
-        existing = self._finding_for_context(context)
-        if existing is not None:
-            action = finding_task_service.get_task_action(existing.id)
-            if action == "open":
-                self._open_or_create_task_for_finding(existing.id)
-                return
-            if action == "create":
-                self._create_task_from_finding(existing.id)
-                return
-            QMessageBox.information(self, "Úkol", FINDING_DUPLICATE_MESSAGE)
-            self._open_existing_finding(existing, context)
-            return
-
-        stored = control_result_service.get_for_control_point(
-            ENTITY_AUDITY,
-            self._audit_id,
-            point_context,
-        )
-        note = str(stored.note or "").strip() if stored is not None else ""
-        description = note or (
-            f"Doporučení u auditního tvrzení: {context.control_point_label}"
-        )
-
-        finding = finding_service.create(
-            ENTITY_AUDITY,
-            self._audit_id,
-            finding_type=AUDIT_FINDING_TYPE_PKZ,
-            reference_label=context.question_stable_key or context.control_point_label,
-            description=description,
-            recommended_action=note,
-            responsible_person_id=None,
-            responsible_person_name="",
-            due_date=None,
-            status=FINDING_STATUS_OTEVRENE,
-            resolution_note="",
-            source_area_label=context.area_label,
-            source_section_label=context.section_label,
-            source_control_point_id=context.control_point_id,
-            source_control_point_label=context.control_point_label,
-        )
-        self._create_task_from_finding(finding.id)
+    def _default_finding_type_for_result(self, result: str) -> str | None:
+        if allows_finding(result):
+            return AUDIT_FINDING_TYPE_NESHODA
+        if allows_pkz_action(result):
+            return AUDIT_FINDING_TYPE_PKZ
+        return None
 
     def _build_linked_finding_block(self, finding, context: AuditFindingKnowledgeContext) -> QWidget:
         panel = QFrame()
@@ -633,8 +510,9 @@ class AuditKnowledgeCriterionWidget(QWidget):
             self._audit_id,
             point_context,
         )
-        if not allows_finding(current_result):
-            QMessageBox.information(self, "Zjištění", FINDING_REQUIRES_NONCOMPLIANCE_MESSAGE)
+        default_finding_type = self._default_finding_type_for_result(current_result)
+        if default_finding_type is None:
+            QMessageBox.information(self, "Zjištění", FINDING_REQUIRES_RESULT_MESSAGE)
             return
 
         existing_open = audit_service.open_finding_for_control_point(
@@ -658,7 +536,7 @@ class AuditKnowledgeCriterionWidget(QWidget):
             self,
             title=FINDING_DIALOG_TITLE,
             allowed_finding_types=AUDIT_FINDING_TYPES,
-            default_finding_type=AUDIT_FINDING_TYPE_NESHODA,
+            default_finding_type=default_finding_type,
             knowledge_source={
                 "source_label": FINDING_SOURCE_LABEL,
                 "area_label": context.area_label,
@@ -666,6 +544,16 @@ class AuditKnowledgeCriterionWidget(QWidget):
                 "control_point_label": context.control_point_label,
             },
         )
+        stored = control_result_service.get_for_control_point(
+            ENTITY_AUDITY,
+            self._audit_id,
+            point_context,
+        )
+        note = str(stored.note or "").strip() if stored is not None else ""
+        if note and allows_pkz_action(current_result):
+            dialog.recommended_action_edit.setPlainText(note)
+            if not dialog.description_edit.toPlainText().strip():
+                dialog.description_edit.setPlainText(note)
         if not dialog.exec():
             return
 

@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.shared.constants import ENTITY_MU_INVESTIGATION
+from core.shared.constants import ENTITY_AUDITY, ENTITY_MU_INVESTIGATION
 from core.navigation.source_navigator import source_navigator
 from core.shared.sluzby.finding_task_service import finding_task_service
 from core.shared.task_source_display import task_source_label, task_type_label
@@ -52,7 +52,7 @@ class TaskDialog(QDialog):
                 task_source_label(task),
                 self._finding.description,
             )
-            if source_navigator.can_open(self._finding.entity_type, self._finding.entity_id):
+            if self._should_show_source_open_button():
                 self.source_panel.open_button.clicked.connect(self._open_source_record)
             else:
                 self.source_panel.open_button.setVisible(False)
@@ -114,6 +114,23 @@ class TaskDialog(QDialog):
 
         self._verification_changed()
         self._refresh_status()
+
+    def _should_show_source_open_button(self) -> bool:
+        if self._finding is None:
+            return False
+        if not source_navigator.can_open(self._finding.entity_type, self._finding.entity_id):
+            return False
+        if self._finding.entity_type == ENTITY_AUDITY and self._is_opened_from_modal_parent():
+            return False
+        return True
+
+    def _is_opened_from_modal_parent(self) -> bool:
+        parent = self.parentWidget()
+        while parent is not None:
+            if isinstance(parent, QDialog):
+                return True
+            parent = parent.parentWidget()
+        return False
 
     def _open_source_record(self) -> None:
         if self._finding is None:
