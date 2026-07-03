@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeyEvent
-from PySide6.QtWidgets import QApplication, QDialog
+from PySide6.QtWidgets import QApplication, QDialog, QListWidgetItem
 
 _TMP = Path(tempfile.mkdtemp())
 
@@ -108,6 +108,68 @@ class GlobalSearchDialogTestCase(unittest.TestCase):
 
         dialog.keyPressEvent(event)
 
+        self.assertEqual(dialog.result(), QDialog.DialogCode.Rejected)
+
+    def _first_result_item(self, dialog: GlobalSearchDialog) -> QListWidgetItem:
+        for row in range(dialog._results_list.count()):
+            item = dialog._results_list.item(row)
+            if item is not None and isinstance(item.data(Qt.ItemDataRole.UserRole), SearchResult):
+                return item
+        raise AssertionError("No result item found in dialog list")
+
+    def test_double_click_opens_result_and_closes_dialog(self) -> None:
+        service = MagicMock(spec=GlobalSearchService)
+        service.search.return_value = [self._sample_result()]
+        service.can_open_result.return_value = True
+        service.open_result.return_value = True
+        host = MagicMock()
+        dialog = GlobalSearchDialog(search_service=service, host=host)
+        dialog._search_edit.setText("oop")
+
+        item = self._first_result_item(dialog)
+        dialog._on_result_item_activated(item)
+
+        service.open_result.assert_called_once()
+        self.assertEqual(dialog.result(), QDialog.DialogCode.Accepted)
+
+    def test_enter_on_selected_result_opens_and_closes_dialog(self) -> None:
+        service = MagicMock(spec=GlobalSearchService)
+        service.search.return_value = [self._sample_result()]
+        service.can_open_result.return_value = True
+        service.open_result.return_value = True
+        host = MagicMock()
+        dialog = GlobalSearchDialog(search_service=service, host=host)
+        dialog._search_edit.setText("oop")
+
+        item = self._first_result_item(dialog)
+        dialog._results_list.setCurrentItem(item)
+        dialog._results_list.itemActivated.emit(item)
+
+        service.open_result.assert_called_once()
+        self.assertEqual(dialog.result(), QDialog.DialogCode.Accepted)
+
+    def test_open_failure_shows_error_and_keeps_dialog_open(self) -> None:
+        service = MagicMock(spec=GlobalSearchService)
+        service.search.return_value = [self._sample_result()]
+        service.can_open_result.return_value = True
+        service.open_result.return_value = False
+        dialog = GlobalSearchDialog(search_service=service, host=MagicMock())
+        dialog._search_edit.setText("oop")
+
+        dialog._open_result(self._sample_result())
+
+        self.assertEqual(dialog._status_label.text(), GlobalSearchDialog.STATUS_OPEN_FAILED)
+        self.assertEqual(dialog.result(), QDialog.DialogCode.Rejected)
+
+    def test_open_error_does_not_crash_dialog(self) -> None:
+        service = MagicMock(spec=GlobalSearchService)
+        service.can_open_result.return_value = True
+        service.open_result.side_effect = RuntimeError("boom")
+        dialog = GlobalSearchDialog(search_service=service, host=MagicMock())
+
+        dialog._open_result(self._sample_result())
+
+        self.assertEqual(dialog._status_label.text(), GlobalSearchDialog.STATUS_OPEN_ERROR)
         self.assertEqual(dialog.result(), QDialog.DialogCode.Rejected)
 
 

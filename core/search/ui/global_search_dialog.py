@@ -1,6 +1,8 @@
-"""Dialog globálního vyhledávání (Commit 3 — bez otevírání výsledků)."""
+"""Dialog globálního vyhledávání."""
 
 from __future__ import annotations
+
+import logging
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QKeyEvent
@@ -19,21 +21,28 @@ from core.search.constants import MIN_QUERY_LENGTH
 from core.search.global_search_service import GlobalSearchService
 from core.search.search_result import SearchResult
 
+logger = logging.getLogger(__name__)
+
 _RESULT_ROLE = Qt.ItemDataRole.UserRole
 
 
 class GlobalSearchDialog(QDialog):
     STATUS_QUERY_TOO_SHORT = "Zadejte alespoň 2 znaky."
     STATUS_EMPTY = "Nic nenalezeno."
+    STATUS_OPEN_FAILED = "Výsledek nelze otevřít."
+    STATUS_OPEN_UNSUPPORTED = "Tento typ výsledku zatím nelze otevřít."
+    STATUS_OPEN_ERROR = "Chyba při otevírání výsledku."
 
     def __init__(
         self,
         parent: QWidget | None = None,
         *,
         search_service: GlobalSearchService | None = None,
+        host=None,
     ) -> None:
         super().__init__(parent)
         self._service = search_service or global_search_service
+        self._host = host if host is not None else parent
 
         self.setWindowTitle("Globální vyhledávání")
         self.setMinimumSize(640, 480)
@@ -45,6 +54,8 @@ class GlobalSearchDialog(QDialog):
 
         self._results_list = QListWidget()
         self._results_list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
+        self._results_list.itemDoubleClicked.connect(self._on_result_item_activated)
+        self._results_list.itemActivated.connect(self._on_result_item_activated)
 
         self._status_label = QLabel(self.STATUS_QUERY_TOO_SHORT)
 
@@ -64,8 +75,9 @@ class GlobalSearchDialog(QDialog):
             return
 
         if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-            event.accept()
-            return
+            if self._search_edit.hasFocus():
+                event.accept()
+                return
 
         super().keyPressEvent(event)
 
@@ -134,6 +146,30 @@ class GlobalSearchDialog(QDialog):
             layout.addWidget(description)
 
         return widget
+
+    def _on_result_item_activated(self, item: QListWidgetItem) -> None:
+        result = item.data(_RESULT_ROLE)
+        if isinstance(result, SearchResult):
+            self._open_result(result)
+
+    def _open_result(self, result: SearchResult) -> None:
+        try:
+            if not self._service.can_open_result(result):
+                self._status_label.setText(self.STATUS_OPEN_UNSUPPORTED)
+                return
+
+            if self._service.open_result(result, self._host):
+                self.accept()
+                return
+
+            self._status_label.setText(self.STATUS_OPEN_FAILED)
+        except Exception:
+            logger.exception(
+                "Failed to open search result %s/%s from dialog",
+                result.source_type,
+                result.source_id,
+            )
+            self._status_label.setText(self.STATUS_OPEN_ERROR)
 
     def result_items(self) -> list[SearchResult]:
         items: list[SearchResult] = []

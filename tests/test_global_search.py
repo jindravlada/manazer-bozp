@@ -93,9 +93,17 @@ class GlobalSearchServiceTestCase(unittest.TestCase):
         self.assertNotIn("ukoly", source)
         self.assertNotIn("task_service", source)
         self.assertNotIn("TaskSearchProvider", source)
+        self.assertNotIn("TaskDialog", source)
 
-    def test_open_result_not_implemented(self) -> None:
-        service = GlobalSearchService()
+    def test_open_result_delegates_to_opener(self) -> None:
+        from unittest.mock import MagicMock
+
+        from core.search.search_result_opener import SearchResultOpener
+
+        opener = SearchResultOpener()
+        handler = MagicMock(return_value=True)
+        opener.register(SOURCE_TYPE_TASK, handler)
+        service = GlobalSearchService(result_opener=opener)
         result = SearchResult(
             source_type=SOURCE_TYPE_TASK,
             source_id=1,
@@ -103,9 +111,49 @@ class GlobalSearchServiceTestCase(unittest.TestCase):
             module_key="ukoly",
             module_label="Úkoly",
         )
+        host = MagicMock()
 
-        with self.assertRaises(NotImplementedError):
-            service.open_result(result, host=None)
+        self.assertTrue(service.open_result(result, host))
+        handler.assert_called_once_with(host, result)
+
+    def test_open_result_returns_false_for_unknown_source_type(self) -> None:
+        service = GlobalSearchService()
+        result = SearchResult(
+            source_type="audit",
+            source_id=1,
+            title="Audit",
+            module_key="audity",
+            module_label="Audity",
+        )
+
+        self.assertFalse(service.open_result(result, host=None))
+
+    def test_task_opener_opens_ukoly_page(self) -> None:
+        from unittest.mock import MagicMock
+
+        from core.search.bootstrap import build_default_search_result_opener
+
+        task = task_service.create_task(title="Globální test úkolu")
+        opener = build_default_search_result_opener()
+        service = GlobalSearchService(result_opener=opener)
+        result = SearchResult(
+            source_type=SOURCE_TYPE_TASK,
+            source_id=task.id,
+            title=task.title,
+            module_key="ukoly",
+            module_label="Úkoly",
+        )
+
+        host = MagicMock()
+        ukoly_page = MagicMock()
+        host._page_widgets = {"ukoly": ukoly_page}
+
+        with patch("moduly.ukoly.ui.task_dialog.TaskDialog") as mock_dialog:
+            mock_dialog.return_value.exec.return_value = 0
+            self.assertTrue(service.open_result(result, host))
+
+        host._show.assert_called_once_with("ukoly")
+        ukoly_page.open_task.assert_called_once_with(task.id)
 
     def test_deduplicates_by_source_type_and_id(self) -> None:
         service = GlobalSearchService()

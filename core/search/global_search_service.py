@@ -7,14 +7,18 @@ import logging
 from core.search.constants import DEFAULT_SEARCH_LIMIT, MIN_QUERY_LENGTH
 from core.search.search_provider import SearchProvider
 from core.search.search_result import SearchResult
+from core.search.search_result_opener import SearchResultOpener
 from core.search.search_utils import normalize_query
 
 logger = logging.getLogger(__name__)
 
 
 class GlobalSearchService:
-    def __init__(self) -> None:
+    def __init__(self, result_opener: SearchResultOpener | None = None) -> None:
         self._providers: list[SearchProvider] = []
+        self._result_opener = (
+            result_opener if result_opener is not None else SearchResultOpener()
+        )
 
     def register_provider(self, provider: SearchProvider) -> None:
         self._providers.append(provider)
@@ -49,7 +53,10 @@ class GlobalSearchService:
         return deduplicated[:limit]
 
     def open_result(self, result: SearchResult, host) -> bool:
-        raise NotImplementedError
+        return self._result_opener.open(result, host)
+
+    def can_open_result(self, result: SearchResult) -> bool:
+        return self._result_opener.can_open(result)
 
     @staticmethod
     def _deduplicate(results: list[SearchResult]) -> list[SearchResult]:
