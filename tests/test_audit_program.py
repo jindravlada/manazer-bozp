@@ -30,6 +30,10 @@ with patch.object(Path, "home", return_value=_TMP):
         DEFAULT_AUDIT_PROGRAM_STANDARDS,
     )
     from moduly.audity.sluzby.audit_program_service import audit_program_service
+    from moduly.nastaveni.constants.workplace_audit_constants import (
+        DEFAULT_PREFERRED_AUDIT_MONTHS,
+    )
+    from moduly.nastaveni.sluzby.workplace_audit_planning import plan_visit_months
 
 
 class AuditProgramServiceTestCase(unittest.TestCase):
@@ -194,11 +198,22 @@ class AuditProgramGenerationTestCase(unittest.TestCase):
     def _create_program_with_workplace(
         self,
         *,
-        workplace_id: int = 10,
+        workplace_id: int | None = None,
         interval: int = 6,
         active: bool = True,
         name: str = "Provoz Gamma",
     ):
+        from moduly.nastaveni.sluzby.settings_service import settings_service
+
+        if workplace_id is None:
+            workplace_id = settings_service.save_workplace(
+                name=name,
+                address="",
+                note="",
+                active=True,
+                audit_enabled=True,
+                audit_interval_months=interval,
+            ).id
         program = audit_program_service.create_program(
             name="Interní audity 2026–2029",
             date_from=date(2026, 4, 1),
@@ -212,21 +227,29 @@ class AuditProgramGenerationTestCase(unittest.TestCase):
             audit_interval_months=interval,
             active=active,
         )
-        return program
+        return program, workplace_id
 
     def test_generate_visits_six_month_cycle(self) -> None:
-        program = self._create_program_with_workplace(interval=6)
+        program, workplace_id = self._create_program_with_workplace(interval=6)
+        expected = plan_visit_months(
+            date(2026, 4, 1),
+            date(2029, 3, 31),
+            6,
+            DEFAULT_PREFERRED_AUDIT_MONTHS,
+            month_usage={},
+            workplace_key=workplace_id,
+        )
 
         result = audit_program_service.generate_visits(program.id)
 
         self.assertEqual(len(result.created_visits), 6)
         self.assertEqual(
             [(visit.planned_year, visit.planned_month) for visit in result.created_visits],
-            [(2026, 4), (2026, 10), (2027, 4), (2027, 10), (2028, 4), (2028, 10)],
+            expected,
         )
 
     def test_generate_visits_is_idempotent(self) -> None:
-        program = self._create_program_with_workplace(interval=6)
+        program, _workplace_id = self._create_program_with_workplace(interval=6)
 
         first = audit_program_service.generate_visits(program.id)
         second = audit_program_service.generate_visits(program.id)
@@ -239,7 +262,7 @@ class AuditProgramGenerationTestCase(unittest.TestCase):
         self.assertEqual(len(overview.visits), 6)
 
     def test_generate_visits_ignores_inactive_workplace(self) -> None:
-        program = self._create_program_with_workplace(interval=6)
+        program, active_workplace_id = self._create_program_with_workplace(interval=6)
         audit_program_service.add_workplace(
             program.id,
             workplace_id=20,
@@ -252,10 +275,10 @@ class AuditProgramGenerationTestCase(unittest.TestCase):
 
         self.assertEqual(len(result.created_visits), 6)
         workplace_ids = {visit.workplace_id for visit in result.created_visits}
-        self.assertEqual(workplace_ids, {10})
+        self.assertEqual(workplace_ids, {active_workplace_id})
 
     def test_distribute_processes_covers_all_active_processes(self) -> None:
-        program = self._create_program_with_workplace(interval=6)
+        program, _workplace_id = self._create_program_with_workplace(interval=6)
         audit_program_service.generate_visits(program.id)
 
         distribution = audit_program_service.distribute_processes(program.id)
@@ -267,7 +290,7 @@ class AuditProgramGenerationTestCase(unittest.TestCase):
         self.assertEqual(coverage.missing_by_workplace[0].missing_process_ids, ())
 
     def test_distribute_processes_is_idempotent(self) -> None:
-        program = self._create_program_with_workplace(interval=6)
+        program, _workplace_id = self._create_program_with_workplace(interval=6)
         audit_program_service.generate_visits(program.id)
 
         first = audit_program_service.distribute_processes(program.id)
@@ -278,7 +301,7 @@ class AuditProgramGenerationTestCase(unittest.TestCase):
         self.assertEqual(second.skipped_existing, len(first.created_processes))
 
     def test_distribute_processes_does_not_overwrite_manual_plan(self) -> None:
-        program = self._create_program_with_workplace(interval=6)
+        program, _workplace_id = self._create_program_with_workplace(interval=6)
         audit_program_service.generate_visits(program.id)
         audit_program_service.distribute_processes(program.id)
 
@@ -303,7 +326,7 @@ class AuditProgramGenerationTestCase(unittest.TestCase):
         self.assertEqual(len(second.created_processes), 0)
 
     def test_get_program_coverage_counts(self) -> None:
-        program = self._create_program_with_workplace(interval=6)
+        program, _workplace_id = self._create_program_with_workplace(interval=6)
         audit_program_service.generate_visits(program.id)
         audit_program_service.distribute_processes(program.id)
 

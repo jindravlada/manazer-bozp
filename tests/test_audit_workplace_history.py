@@ -307,6 +307,88 @@ class AuditWorkplaceHistoryServiceTestCase(unittest.TestCase):
             1,
         )
 
+    def test_completed_tasks_are_listed(self) -> None:
+        audit = self._create_completed_audit(audit_date=date(2025, 10, 15))
+        finding = finding_service.create(
+            ENTITY_AUDITY,
+            audit.id,
+            finding_type=FINDING_TYPE_NESHODA,
+            description="Uzavřené opatření",
+            status=FINDING_STATUS_OTEVRENE,
+        )
+        task = task_service.create_task(
+            title="Opravit zábradlí",
+            completed=True,
+            completed_date=date(2025, 11, 1),
+        )
+        finding_service.update(finding.id, task_id=task.id)
+
+        current = audit_service.create_audit(
+            workplace_id=self.workplace.id,
+            workplace_name=self.workplace.name,
+            year=2026,
+            planned_month=4,
+        )
+
+        history = audit_history_service.get_workplace_history(
+            self.workplace.id,
+            exclude_audit_id=current.id,
+        )
+
+        self.assertEqual(len(history.tasks), 1)
+        self.assertEqual(history.tasks[0].status_label, "Ukončeno")
+        self.assertEqual(history.tasks[0].completed_date, date(2025, 11, 1))
+
+    def test_program_history_limits_to_program_audits(self) -> None:
+        program_a = audit_program_service.create_program(
+            name="Program A",
+            date_from=date(2026, 4, 1),
+            date_to=date(2029, 3, 31),
+        )
+        program_b = audit_program_service.create_program(
+            name="Program B",
+            date_from=date(2026, 4, 1),
+            date_to=date(2029, 3, 31),
+        )
+        for program in (program_a, program_b):
+            audit_program_service.add_workplace(
+                program.id,
+                workplace_id=self.workplace.id,
+                workplace_name=self.workplace.name,
+                audit_interval_months=6,
+            )
+            visit = audit_program_service.add_visit(
+                program.id,
+                workplace_id=self.workplace.id,
+                planned_year=2026,
+                planned_month=4,
+            )
+            audit = audit_program_service.create_audit_from_visit(visit.id)
+            finding_service.create(
+                ENTITY_AUDITY,
+                audit.id,
+                finding_type=FINDING_TYPE_NESHODA,
+                description=f"Zjištění programu {program.id}",
+                status=FINDING_STATUS_OTEVRENE,
+            )
+
+        current = audit_service.create_audit(
+            workplace_id=self.workplace.id,
+            workplace_name=self.workplace.name,
+            program_id=program_a.id,
+            year=2026,
+            planned_month=5,
+        )
+
+        history = audit_history_service.get_workplace_history(
+            self.workplace.id,
+            exclude_audit_id=current.id,
+            program_id=program_a.id,
+        )
+
+        self.assertEqual(len(history.findings), 1)
+        self.assertIn("Zjištění programu", history.findings[0].title)
+
 
 class AuditWorkplaceHistoryWidgetTestCase(unittest.TestCase):
     @classmethod

@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.audity.constants import AUDIT_COMPLETION_CONFIRM_MESSAGE
 from moduly.audity.sluzby.audit_service import audit_service
+from moduly.audity.sluzby.protokol_audit_service import protokol_audit_service
 
 
 class AuditConclusionWidget(QWidget):
@@ -52,6 +53,10 @@ class AuditConclusionWidget(QWidget):
         self.complete_btn = QPushButton("Dokončit audit")
         self.complete_btn.clicked.connect(self._complete_audit)
         layout.addWidget(self.complete_btn)
+
+        self.protocol_btn = QPushButton("Protokol z auditu")
+        self.protocol_btn.clicked.connect(self._export_protocol)
+        layout.addWidget(self.protocol_btn)
 
         layout.addStretch()
 
@@ -103,6 +108,25 @@ class AuditConclusionWidget(QWidget):
     def _update_state(self) -> None:
         enabled = self.audit is not None and self.audit.id is not None
         self.info_label.setVisible(not enabled)
+        self.protocol_btn.setEnabled(enabled)
+
+    def _export_protocol(self) -> None:
+        if self.audit is None or self.audit.id is None:
+            QMessageBox.information(self, "Protokol z auditu", "Audit je nutné nejdříve uložit.")
+            return
+
+        warning = protokol_audit_service.incomplete_warning(self.audit)
+        if warning:
+            QMessageBox.warning(self, "Protokol z auditu", warning)
+
+        try:
+            protokol_audit_service.open_for_audit(self.audit)
+        except Exception as exc:
+            QMessageBox.warning(
+                self,
+                "Protokol z auditu",
+                f"Protokol se nepodařilo vygenerovat.\n\n{exc}",
+            )
 
     def _complete_audit(self) -> None:
         if self.audit is None or self.audit.id is None:

@@ -183,5 +183,33 @@ class AuditProgramPlannedDateTestCase(unittest.TestCase):
         self.assertEqual(audit.program_visit_id, visit.id)
 
 
+    def test_planned_visits_widget_sorts_by_calendar(self) -> None:
+        program = audit_program_service.create_program(
+            name="Interní audity 2026–2029",
+            date_from=date(2026, 4, 1),
+            date_to=date(2029, 3, 31),
+            standards=list(DEFAULT_AUDIT_PROGRAM_STANDARDS),
+        )
+        audit_program_service.add_workplace(
+            program.id,
+            workplace_id=10,
+            workplace_name="Provoz A",
+            audit_interval_months=6,
+        )
+        for month in (11, 3, 5):
+            audit_program_service.add_visit(
+                program.id,
+                workplace_id=10,
+                planned_year=2026,
+                planned_month=month,
+            )
+
+        widget = AuditProgramPlannedVisitsWidget()
+        widget.load_program(program.id)
+
+        terms = [widget._table.item(row, 0).text() for row in range(widget._table.rowCount())]
+        self.assertEqual(terms, ["Březen 2026", "Květen 2026", "Listopad 2026"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -84,10 +84,10 @@ class AuditWorkplaceHistoryWidget(QWidget):
         findings_layout.addWidget(self._findings_table)
         layout.addWidget(findings_group)
 
-        tasks_group = QGroupBox("Otevřené úkoly")
+        tasks_group = QGroupBox("Úkoly / opatření")
         tasks_layout = QVBoxLayout(tasks_group)
         self._tasks_table = self._build_table(
-            ["ID", "Úkol", "Odpovědný", "Termín", "Splněno"]
+            ["ID", "Úkol", "Odpovědný", "Termín", "Stav", "Datum splnění"]
         )
         self._tasks_table.doubleClicked.connect(self._open_selected_task)
         tasks_layout.addWidget(self._tasks_table)
@@ -142,6 +142,7 @@ class AuditWorkplaceHistoryWidget(QWidget):
         self._history = audit_history_service.get_workplace_history(
             workplace_id,
             exclude_audit_id=exclude_audit_id,
+            program_id=getattr(self._audit, "program_id", None),
         )
         self._hint_label.setVisible(False)
         self._set_content_visible(True)
@@ -228,7 +229,8 @@ class AuditWorkplaceHistoryWidget(QWidget):
                 item.title,
                 item.responsible_person,
                 item.due_date.strftime("%d.%m.%Y") if item.due_date else "—",
-                item.completion_label,
+                item.status_label,
+                item.completed_date.strftime("%d.%m.%Y") if item.completed_date else "—",
             ]
             for column_index, value in enumerate(values):
                 self._tasks_table.setItem(

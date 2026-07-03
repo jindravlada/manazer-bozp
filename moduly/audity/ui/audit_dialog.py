@@ -26,6 +26,10 @@ class AuditDialog(QDialog):
         super().__init__(parent)
 
         self.audit = audit
+        if visit_context is None and audit is not None:
+            from moduly.audity.sluzby.audit_program_service import audit_program_service
+
+            visit_context = audit_program_service.resolve_visit_context_for_audit(audit)
         self._visit_context = visit_context
 
         self.setWindowTitle(FINDING_SOURCE_LABEL)

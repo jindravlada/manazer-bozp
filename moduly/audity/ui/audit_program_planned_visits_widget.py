@@ -98,8 +98,6 @@ class AuditProgramPlannedVisitsWidget(QFrame):
                     item.setToolTip(processes_tooltip)
                 self._table.setItem(row_index, column_index, item)
 
-        self._table.sortItems(_COLUMN_TERM, Qt.SortOrder.AscendingOrder)
-
     def selected_visit_id(self) -> int | None:
         selected = self._table.selectionModel().selectedRows()
         if not selected:

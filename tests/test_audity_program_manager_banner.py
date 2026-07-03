@@ -54,7 +54,7 @@ class AuditProgramBannerServiceTestCase(unittest.TestCase):
         cls._app = QApplication.instance() or QApplication([])
 
     def test_get_active_program_prefers_running_over_approved(self) -> None:
-        audit_program_service.create_program(
+        approved = audit_program_service.create_program(
             name="Schválený program",
             date_from=date(2028, 1, 1),
             date_to=date(2031, 12, 31),
@@ -67,7 +67,13 @@ class AuditProgramBannerServiceTestCase(unittest.TestCase):
             status=AUDIT_PROGRAM_STATUS_RUNNING,
         )
 
-        active = audit_program_service.get_active_program()
+        with patch.object(
+            audit_program_service,
+            "list_programs",
+            return_value=[approved, running],
+        ):
+            active = audit_program_service.get_active_program()
+
         assert active is not None
         self.assertEqual(active.id, running.id)
 

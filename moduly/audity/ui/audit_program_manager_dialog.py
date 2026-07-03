@@ -53,6 +53,8 @@ from moduly.audity.constants import (
     AUDIT_PROGRAM_STATUS_VISIT_CREATED,
     AUDIT_PROGRAM_STATUS_VISIT_SKIPPED,
     AUDIT_PROGRAM_STATUS_VISIT_UPDATED,
+    AUDIT_PROGRAM_STATUS_WORKPLACES_SUPPLEMENTED,
+    AUDIT_PROGRAM_SUPPLEMENT_WORKPLACES_BUTTON,
     AUDIT_PROGRAM_VISIT_STATUS_SKIPPED,
     AUDIT_PROGRAM_WINDOW_TITLE,
     AUDIT_STATUS_DOKONCENO,
@@ -74,6 +76,9 @@ from moduly.audity.ui.audit_program_move_process_dialog import (
 )
 from moduly.audity.ui.audit_program_planned_visits_widget import (
     AuditProgramPlannedVisitsWidget,
+)
+from moduly.audity.ui.audit_program_supplement_workplaces_dialog import (
+    AuditProgramSupplementWorkplacesDialog,
 )
 from moduly.audity.ui.audit_program_plan_tree_widget import (
     NODE_PROCESS,
@@ -236,14 +241,17 @@ class AuditProgramManagerDialog(QDialog):
         actions.setSpacing(6)
         actions.setContentsMargins(0, 0, 0, 0)
         self._generate_visits_btn = QPushButton(AUDIT_PROGRAM_GENERATE_VISITS_BUTTON)
+        self._supplement_workplaces_btn = QPushButton(AUDIT_PROGRAM_SUPPLEMENT_WORKPLACES_BUTTON)
         self._distribute_processes_btn = QPushButton(
             audit_program_distribute_processes_button_label(False)
         )
         self._refresh_overview_btn = QPushButton(AUDIT_PROGRAM_REFRESH_OVERVIEW_BUTTON)
         self._generate_visits_btn.clicked.connect(self._generate_visits)
+        self._supplement_workplaces_btn.clicked.connect(self._supplement_workplaces)
         self._distribute_processes_btn.clicked.connect(self._distribute_processes)
         self._refresh_overview_btn.clicked.connect(self._refresh_overview)
         actions.addWidget(self._generate_visits_btn)
+        actions.addWidget(self._supplement_workplaces_btn)
         actions.addWidget(self._distribute_processes_btn)
         actions.addWidget(self._refresh_overview_btn)
         card_layout.addLayout(actions)
@@ -401,6 +409,42 @@ class AuditProgramManagerDialog(QDialog):
             return
 
         self._set_status(AUDIT_PROGRAM_STATUS_VISITS_GENERATED)
+        self._refresh_selected_program_views()
+
+    def _supplement_workplaces(self) -> None:
+        program_id = self._selected_program_id
+        if program_id is None:
+            return
+
+        try:
+            missing = audit_program_service.list_missing_auditable_workplaces(program_id)
+        except ValueError as error:
+            QMessageBox.warning(self, self.windowTitle(), str(error))
+            return
+
+        if not missing:
+            QMessageBox.information(
+                self,
+                self.windowTitle(),
+                "Všechna auditovaná pracoviště z nastavení jsou již v programu.",
+            )
+            return
+
+        dialog = AuditProgramSupplementWorkplacesDialog(self, workplaces=missing)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        selected = dialog.selected_workplace_ids()
+        if not selected:
+            return
+
+        try:
+            audit_program_service.supplement_workplaces(program_id, selected)
+        except ValueError as error:
+            QMessageBox.warning(self, self.windowTitle(), str(error))
+            return
+
+        self._set_status(AUDIT_PROGRAM_STATUS_WORKPLACES_SUPPLEMENTED)
         self._refresh_selected_program_views()
 
     def _distribute_processes(self) -> None:
@@ -783,6 +827,7 @@ class AuditProgramManagerDialog(QDialog):
     def _set_action_buttons_enabled(self, enabled: bool) -> None:
         self._edit_program_btn.setEnabled(enabled)
         self._generate_visits_btn.setEnabled(enabled)
+        self._supplement_workplaces_btn.setEnabled(enabled)
         self._distribute_processes_btn.setEnabled(enabled)
         self._refresh_overview_btn.setEnabled(enabled)
 

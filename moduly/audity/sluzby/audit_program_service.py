@@ -123,6 +123,21 @@ class AuditProgramDistributionResult:
     skipped_existing: int
 
 
+@dataclass(frozen=True)
+class AuditProgramSupplementWorkplacesResult:
+    added_workplaces: int
+    created_visits: int
+    skipped_existing_visits: int
+    assigned_processes: int
+
+
+@dataclass(frozen=True)
+class MissingAuditableWorkplace:
+    workplace_id: int
+    workplace_name: str
+    audit_interval_months: int
+
+
 class AuditProgramService:
     def __init__(self) -> None:
         self.repository = AuditProgramRepository()
@@ -295,6 +310,78 @@ class AuditProgramService:
             created += 1
         return created
 
+    def list_missing_auditable_workplaces(
+        self,
+        program_id: int,
+    ) -> tuple[MissingAuditableWorkplace, ...]:
+        if self.repository.get_program(program_id) is None:
+            raise ValueError(f"Program auditů {program_id} neexistuje.")
+
+        from moduly.nastaveni.sluzby.settings_service import settings_service
+
+        existing_ids = {
+            workplace.workplace_id
+            for workplace in self.repository.list_workplaces(program_id)
+        }
+        missing: list[MissingAuditableWorkplace] = []
+        for workplace in settings_service.get_workplaces():
+            if not workplace.audit_enabled or workplace.id in existing_ids:
+                continue
+            missing.append(
+                MissingAuditableWorkplace(
+                    workplace_id=workplace.id,
+                    workplace_name=workplace.name,
+                    audit_interval_months=workplace.audit_interval_months,
+                )
+            )
+        return tuple(sorted(missing, key=lambda item: item.workplace_name.lower()))
+
+    def supplement_workplaces(
+        self,
+        program_id: int,
+        workplace_ids: tuple[int, ...],
+    ) -> AuditProgramSupplementWorkplacesResult:
+        if self.repository.get_program(program_id) is None:
+            raise ValueError(f"Program auditů {program_id} neexistuje.")
+
+        from moduly.nastaveni.sluzby.settings_service import settings_service
+
+        existing_ids = {
+            workplace.workplace_id
+            for workplace in self.repository.list_workplaces(program_id)
+        }
+        added = 0
+        added_workplace_ids: list[int] = []
+        for workplace_id in workplace_ids:
+            if workplace_id in existing_ids:
+                continue
+            workplace = settings_service.get_workplace_by_id(workplace_id)
+            if workplace is None or not workplace.audit_enabled:
+                continue
+            self.add_workplace(
+                program_id,
+                workplace_id=workplace.id,
+                workplace_name=workplace.name,
+                audit_interval_months=workplace.audit_interval_months,
+                preferred_months_json=workplace.preferred_months_json,
+                active=True,
+            )
+            existing_ids.add(workplace.id)
+            added_workplace_ids.append(workplace.id)
+            added += 1
+
+        visits = self.generate_visits(
+            program_id,
+            only_workplace_ids=tuple(added_workplace_ids) if added_workplace_ids else None,
+        )
+        distribution = self.distribute_processes(program_id)
+        return AuditProgramSupplementWorkplacesResult(
+            added_workplaces=added,
+            created_visits=len(visits.created_visits),
+            skipped_existing_visits=visits.skipped_existing,
+            assigned_processes=len(distribution.created_processes),
+        )
+
     def add_workplace(self, program_id: int, **fields) -> AuditProgramWorkplace:
         if self.repository.get_program(program_id) is None:
             raise ValueError(f"Program auditů {program_id} neexistuje.")
@@ -455,6 +542,11 @@ class AuditProgramService:
             standards=tuple(self.parse_standards(program.standards_json)),
         )
 
+    def resolve_visit_context_for_audit(self, audit: Audit | None) -> AuditVisitContext | None:
+        if audit is None or not audit.program_id or not audit.program_visit_id:
+            return None
+        return self.get_visit_audit_context(audit.program_visit_id)
+
     def create_audit_from_visit(self, visit_id: int) -> Audit:
         visit = self.repository.get_visit(visit_id)
         if visit is None:
@@ -570,7 +662,12 @@ class AuditProgramService:
 
         return tuple(rows)
 
-    def generate_visits(self, program_id: int) -> AuditProgramGenerationResult:
+    def generate_visits(
+        self,
+        program_id: int,
+        *,
+        only_workplace_ids: tuple[int, ...] | None = None,
+    ) -> AuditProgramGenerationResult:
         program = self.repository.get_program(program_id)
         if program is None:
             raise ValueError(f"Program auditů {program_id} neexistuje.")
@@ -581,6 +678,10 @@ class AuditProgramService:
 
         existing_keys = self._existing_visit_keys(program_id)
         month_usage = self._existing_visit_month_usage(program_id)
+        workplaces_with_visits = {
+            visit.workplace_id
+            for visit in self.repository.list_visits(program_id)
+        }
         created: list[AuditProgramVisit] = []
         skipped = 0
 
@@ -594,6 +695,17 @@ class AuditProgramService:
         )
 
         for workplace in workplaces:
+            if only_workplace_ids is not None:
+                if workplace.workplace_id not in only_workplace_ids:
+                    continue
+            elif workplace.workplace_id in workplaces_with_visits:
+                skipped += sum(
+                    1
+                    for visit in self.repository.list_visits(program_id)
+                    if visit.workplace_id == workplace.workplace_id
+                )
+                continue
+
             planning = self._resolve_workplace_planning_config(workplace)
             if planning is None or not planning.audit_enabled:
                 continue

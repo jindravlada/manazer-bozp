@@ -476,6 +476,58 @@ class AudityProcessesTestCase(unittest.TestCase):
         self.assertEqual(reloaded.note, "Zachovat po editoru")
         self.assertEqual(widget._current_criterion_id, "evidence_hlaseni_urazu")
 
+    def test_dialog_filters_processes_from_program_visit_links(self) -> None:
+        from datetime import date
+
+        from moduly.audity.constants import DEFAULT_AUDIT_PROGRAM_STANDARDS
+        from moduly.audity.sluzby.audit_program_service import audit_program_service
+        from moduly.audity.ui.audit_dialog import AuditDialog
+
+        from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
+
+        audit_knowledge_service.ensure_catalogs()
+        process_ids = [process.id for process in audit_knowledge_service.get_processes()[:2]]
+        self.assertEqual(len(process_ids), 2)
+
+        workplace = settings_service.save_workplace(name="Filtr provoz")
+        program = audit_program_service.create_program(
+            name="Program filtrace",
+            date_from=date(2026, 4, 1),
+            date_to=date(2029, 3, 31),
+            standards=list(DEFAULT_AUDIT_PROGRAM_STANDARDS),
+        )
+        audit_program_service.add_workplace(
+            program.id,
+            workplace_id=workplace.id,
+            workplace_name=workplace.name,
+            audit_interval_months=6,
+        )
+        visit = audit_program_service.add_visit(
+            program.id,
+            workplace_id=workplace.id,
+            planned_year=2026,
+            planned_month=4,
+        )
+        audit_program_service.add_visit_process(
+            visit.id,
+            process_id=process_ids[0],
+            process_name="Proces 1",
+        )
+        audit_program_service.add_visit_process(
+            visit.id,
+            process_id=process_ids[1],
+            process_name="Proces 2",
+        )
+        audit = audit_program_service.create_audit_from_visit(visit.id)
+
+        dialog = AuditDialog(audit=audit)
+
+        self.assertEqual(
+            dialog.processes_widget._planned_process_ids,
+            set(process_ids),
+        )
+        self.assertEqual(dialog.processes_widget.knowledge_tree.topLevelItemCount(), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

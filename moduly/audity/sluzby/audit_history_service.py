@@ -53,7 +53,8 @@ class WorkplaceTaskHistoryItem:
     title: str
     responsible_person: str
     due_date: date | None
-    completion_label: str
+    status_label: str
+    completed_date: date | None
 
 
 @dataclass(frozen=True)
@@ -92,6 +93,7 @@ class AuditHistoryService:
         workplace_id: int | None,
         *,
         exclude_audit_id: int | None = None,
+        program_id: int | None = None,
     ) -> WorkplaceHistory:
         if workplace_id is None:
             return self._empty_history()
@@ -100,9 +102,11 @@ class AuditHistoryService:
             workplace_id,
             exclude_audit_id=exclude_audit_id,
         )
+        if program_id is not None:
+            audits = self._filter_audits_for_program(audits, program_id)
         last_audit = self._build_last_audit_summary(audits[0]) if audits else None
         findings = self._collect_open_findings(audits)
-        tasks = self._collect_open_tasks(audits, findings)
+        tasks = self._collect_tasks(audits, findings)
         process_history = self._build_process_history(workplace_id, audits)
         summary = self._build_summary(last_audit, findings, tasks, process_history)
         return WorkplaceHistory(
@@ -207,7 +211,10 @@ class AuditHistoryService:
             return audit_label
         return finding_type_label(finding.finding_type)
 
-    def _collect_open_tasks(
+    def _filter_audits_for_program(self, audits, program_id: int) -> list:
+        return [audit for audit in audits if audit.program_id == program_id]
+
+    def _collect_tasks(
         self,
         audits,
         findings: list[WorkplaceFindingHistoryItem],
@@ -218,8 +225,6 @@ class AuditHistoryService:
         for audit in audits:
             for task in audit_service.get_tasks_for_audit(audit.id):
                 if task.id in seen_task_ids:
-                    continue
-                if task.computed_status in {"Ukončeno", "Zrušeno"}:
                     continue
                 seen_task_ids.add(task.id)
                 items.append(self._task_item(task))
@@ -232,23 +237,29 @@ class AuditHistoryService:
             if task_id in seen_task_ids:
                 continue
             task = task_service.get_task_by_id(task_id)
-            if task is None or task.computed_status in {"Ukončeno", "Zrušeno"}:
+            if task is None:
                 continue
             seen_task_ids.add(task_id)
             items.append(self._task_item(task))
 
-        items.sort(key=lambda item: (item.due_date or date.max, item.task_id))
+        items.sort(
+            key=lambda item: (
+                item.status_label in {"Ukončeno", "Zrušeno"},
+                item.due_date or date.max,
+                item.task_id,
+            )
+        )
         return items
 
     @staticmethod
     def _task_item(task) -> WorkplaceTaskHistoryItem:
-        completed = task.computed_status == "Ukončeno"
         return WorkplaceTaskHistoryItem(
             task_id=task.id,
             title=task_description_table_text(task),
             responsible_person=task.responsible_person or "—",
             due_date=task.due_date,
-            completion_label="Ano" if completed else "Ne",
+            status_label=task.computed_status,
+            completed_date=task.completed_date,
         )
 
     def _build_process_history(
@@ -331,7 +342,9 @@ class AuditHistoryService:
         return WorkplaceHistorySummary(
             last_audit_date=last_audit.audit_date if last_audit is not None else None,
             open_findings_count=len(findings),
-            open_tasks_count=len(tasks),
+            open_tasks_count=sum(
+                1 for item in tasks if item.status_label not in {"Ukončeno", "Zrušeno"}
+            ),
             audited_processes_count=audited_count,
             total_processes_count=len(process_history),
         )

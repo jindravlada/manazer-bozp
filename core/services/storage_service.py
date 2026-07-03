@@ -96,6 +96,7 @@ class StorageService:
         return [
             project_root / "moduly" / "kniha_urazu" / "templates",
             project_root / "moduly" / "proverky" / "templates",
+            project_root / "moduly" / "audity" / "templates",
         ]
 
     def ensure_default_templates(self) -> None:
