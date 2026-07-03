@@ -1,5 +1,6 @@
 """Dialog editoru metodiky auditora."""
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QDialog,
@@ -8,11 +9,14 @@ from PySide6.QtWidgets import (
     QLabel,
     QMessageBox,
     QPushButton,
+    QSizePolicy,
     QSplitter,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
+
+from core.widgets.dialog_utils import configure_resizable_form_dialog
 
 from core.widgets.knowledge_editor_actions import (
     clear_save_status,
@@ -27,7 +31,6 @@ from moduly.audity.constants import (
     KNOWLEDGE_EDITOR_USER_COPY_HINT,
     KNOWLEDGE_EDITOR_WINDOW_TITLE,
     PROCESS_PANEL_LEFT_WIDTH,
-    PROCESS_TERM_CRITERION,
 )
 from moduly.audity.sluzby.audit_knowledge_editor_service import audit_knowledge_editor_service
 from moduly.audity.sluzby.audit_knowledge_service import KnowledgeTreeNode, audit_knowledge_service
@@ -47,15 +50,23 @@ from moduly.audity.ui.audity_knowledge_section_editor_widget import (
 class AudityKnowledgeEditorDialog(QDialog):
     """Editor metodiky auditora — editace metadat procesu a oblastí ověření."""
 
-    _PAGE_HINT = 0
-    _PAGE_PROCESS = 1
-    _PAGE_SECTION = 2
+    _PAGE_PROCESS = 0
+    _PAGE_SECTION = 1
 
-    def __init__(self, parent=None):
+    def __init__(
+        self,
+        parent=None,
+        *,
+        process_id: str | None = None,
+        criterion_id: str | None = None,
+    ):
         super().__init__(parent)
 
         self.setWindowTitle(KNOWLEDGE_EDITOR_WINDOW_TITLE)
+        configure_resizable_form_dialog(self, width=1180, height=760, min_width=640, min_height=420)
 
+        self._initial_process_id = (process_id or "").strip()
+        self._initial_criterion_id = (criterion_id or "").strip()
         self._current_process_id = ""
         self._current_section_id = ""
         self._modified = False
@@ -106,8 +117,22 @@ class AudityKnowledgeEditorDialog(QDialog):
         self.center_description_label.setObjectName("InfoText")
         self.center_description_label.setWordWrap(True)
 
+        self._empty_state_label = QLabel(KNOWLEDGE_EDITOR_SELECT_PROCESS_HINT)
+        self._empty_state_label.setObjectName("InfoText")
+        self._empty_state_label.setWordWrap(True)
+        self._empty_state_label.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
+        self._empty_state_label.setAlignment(
+            self._empty_state_label.alignment() | Qt.AlignmentFlag.AlignTop
+        )
+
         self.content_stack = QStackedWidget()
-        self.content_stack.addWidget(self._build_hint_page())
+        self.content_stack.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
         self.process_editor = AudityKnowledgeProcessEditorWidget()
         self.process_editor.add_section_requested.connect(self._add_section)
         self.process_editor.content_modified.connect(self._mark_modified)
@@ -119,6 +144,7 @@ class AudityKnowledgeEditorDialog(QDialog):
 
         center_layout.addWidget(self.center_title_label)
         center_layout.addWidget(self.center_description_label)
+        center_layout.addWidget(self._empty_state_label, 1)
         center_layout.addWidget(self.content_stack, 1)
 
         main_splitter.addWidget(tree_panel)
@@ -126,6 +152,11 @@ class AudityKnowledgeEditorDialog(QDialog):
         main_splitter.setStretchFactor(0, 0)
         main_splitter.setStretchFactor(1, 1)
         main_splitter.setSizes([PROCESS_PANEL_LEFT_WIDTH, 960])
+        main_splitter.setMinimumHeight(0)
+        main_splitter.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
 
         root.addWidget(main_splitter, 1)
 
@@ -137,10 +168,22 @@ class AudityKnowledgeEditorDialog(QDialog):
                 apply_enabled=False,
             )
         )
-        root.addLayout(footer)
+        footer_host = QWidget()
+        footer_host.setLayout(footer)
+        footer_host.setSizePolicy(
+            QSizePolicy.Policy.Preferred,
+            QSizePolicy.Policy.Fixed,
+        )
+        root.addWidget(footer_host, 0)
 
         self.knowledge_tree.reload_tree(include_inactive=True)
-        self._show_hint()
+        if self._initial_process_id:
+            self._apply_initial_context(
+                self._initial_process_id,
+                self._initial_criterion_id or None,
+            )
+        else:
+            self._show_hint()
 
     def _can_save_current(self) -> bool:
         index = self.content_stack.currentIndex()
@@ -211,22 +254,29 @@ class AudityKnowledgeEditorDialog(QDialog):
         if self._confirm_close():
             super().reject()
 
-    def _build_hint_page(self) -> QWidget:
-        page = QWidget()
-        layout = QVBoxLayout(page)
-        layout.setContentsMargins(0, 0, 0, 0)
+    def _apply_initial_context(
+        self,
+        process_id: str,
+        criterion_id: str | None = None,
+    ) -> None:
+        if criterion_id:
+            if self.knowledge_tree.select_node(process_id, criterion_id):
+                return
 
-        label = QLabel(KNOWLEDGE_EDITOR_SELECT_PROCESS_HINT)
-        label.setObjectName("InfoText")
-        label.setWordWrap(True)
-        layout.addWidget(label)
-        layout.addStretch()
-        return page
+        if self.knowledge_tree.select_node(process_id):
+            return
+
+        self._show_hint()
+
+    def _show_content_page(self, page_index: int) -> None:
+        self._empty_state_label.setVisible(False)
+        self.content_stack.setVisible(True)
+        self.content_stack.setCurrentIndex(page_index)
 
     def _clear_save_status(self) -> None:
         clear_save_status(self._status_label)
 
-    def _show_hint(self) -> None:
+    def _show_hint(self, *, message: str | None = None) -> None:
         self._clear_save_status()
         self._mark_saved()
         self._current_process_id = ""
@@ -235,11 +285,13 @@ class AudityKnowledgeEditorDialog(QDialog):
         self.process_editor.clear_process()
         self.section_editor.clear_section()
         self.center_title_label.setText(self.windowTitle())
-        self.center_description_label.setText(
-            f"Vyberte řídicí proces nebo {PROCESS_TERM_CRITERION.lower()} ve stromu vlevo."
+        self.center_description_label.clear()
+        self.center_description_label.setVisible(False)
+        self._empty_state_label.setText(
+            message or KNOWLEDGE_EDITOR_SELECT_PROCESS_HINT
         )
-        self.center_description_label.setVisible(True)
-        self.content_stack.setCurrentIndex(self._PAGE_HINT)
+        self._empty_state_label.setVisible(True)
+        self.content_stack.setVisible(False)
 
     def _on_process_selected(self, node: KnowledgeTreeNode) -> None:
         self._clear_save_status()
@@ -255,11 +307,7 @@ class AudityKnowledgeEditorDialog(QDialog):
             self._update_action_buttons()
             self.process_editor.clear_process()
             self.center_title_label.setText(node.process_label)
-            self.center_description_label.setText(
-                "Proces nemá načtený soubor znalostí."
-            )
-            self.center_description_label.setVisible(True)
-            self.content_stack.setCurrentIndex(self._PAGE_HINT)
+            self._show_hint(message="Proces nemá načtený soubor znalostí.")
             return
 
         self.process_editor.load_process(
@@ -269,7 +317,7 @@ class AudityKnowledgeEditorDialog(QDialog):
         self._mark_saved()
         self.center_title_label.setText(str(metadata.get("nazev") or node.process_label))
         self.center_description_label.setVisible(False)
-        self.content_stack.setCurrentIndex(self._PAGE_PROCESS)
+        self._show_content_page(self._PAGE_PROCESS)
         self._update_action_buttons()
 
     def _on_criterion_selected(self, node: KnowledgeTreeNode | None) -> None:
@@ -306,7 +354,7 @@ class AudityKnowledgeEditorDialog(QDialog):
         self._mark_saved()
         self.center_title_label.setText(f"{process_label} → {section_label}")
         self.center_description_label.setVisible(False)
-        self.content_stack.setCurrentIndex(self._PAGE_SECTION)
+        self._show_content_page(self._PAGE_SECTION)
         self._update_action_buttons()
 
     def _save_current(self) -> bool:

@@ -112,6 +112,7 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
         scroll_layout.addWidget(self._tabs, stretch=1)
         scroll.setWidget(scroll_content)
         root.addWidget(scroll, stretch=1)
+        self.setMinimumHeight(0)
 
         for widget in (self._nazev_edit, self._popis_edit, self._cil_overeni_edit):
             widget.textChanged.connect(lambda *_args: self.content_modified.emit())

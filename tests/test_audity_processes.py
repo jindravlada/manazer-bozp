@@ -444,6 +444,18 @@ class AudityProcessesTestCase(unittest.TestCase):
         self.assertIsInstance(dialog, AudityKnowledgeEditorDialog)
 
     @patch("moduly.audity.ui.audit_processes_widget.exec_maximized", return_value=0)
+    def test_knowledge_editor_button_passes_current_context(self, mock_exec) -> None:
+        from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
+
+        widget = AuditProcessesWidget()
+        widget.knowledge_tree.select_node("urazy_mimo_udalosti", "evidence_hlaseni_urazu")
+        widget.edit_knowledge_btn.click()
+
+        dialog = mock_exec.call_args.args[0]
+        self.assertEqual(dialog._initial_process_id, "urazy_mimo_udalosti")
+        self.assertEqual(dialog._initial_criterion_id, "evidence_hlaseni_urazu")
+
+    @patch("moduly.audity.ui.audit_processes_widget.exec_maximized", return_value=0)
     def test_knowledge_editor_refresh_preserves_control_results(self, mock_exec) -> None:
         from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
 

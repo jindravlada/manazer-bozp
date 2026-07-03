@@ -148,7 +148,15 @@ class AuditProcessesWidget(QWidget):
         self.knowledge_widget.refresh_findings_display()
 
     def _open_knowledge_editor(self) -> None:
-        exec_maximized(AudityKnowledgeEditorDialog(self))
+        process_id = self._current_process_id or None
+        criterion_id = self._current_criterion_id or None
+        exec_maximized(
+            AudityKnowledgeEditorDialog(
+                self,
+                process_id=process_id,
+                criterion_id=criterion_id,
+            )
+        )
         self._refresh_after_knowledge_edit()
 
     def _refresh_after_knowledge_edit(self) -> None:

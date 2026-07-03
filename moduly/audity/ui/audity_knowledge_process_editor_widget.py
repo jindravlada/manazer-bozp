@@ -79,6 +79,7 @@ class AudityKnowledgeProcessEditorWidget(QWidget):
 
         scroll.setWidget(scroll_content)
         root.addWidget(scroll, stretch=1)
+        self.setMinimumHeight(0)
 
         for widget in (
             self._nazev_edit,
