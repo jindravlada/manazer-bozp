@@ -108,8 +108,11 @@ class SearchResult:
 | `workplace` | Pracoviště |
 | `person` | THP pracovník / odpovědná osoba |
 | `employer` | Zaměstnavatel (volitelně V1) |
+| `action` | **Budoucí** — spuštění aplikční akce (Command Palette), viz níže |
 
 Konstanty patří do `core/search/constants.py` (ne do modulů).
+
+Typ `action` **není součástí V1** — dokumentován pro budoucí rozšíření na Command Palette.
 
 ---
 
@@ -312,6 +315,125 @@ Zatím **pouze návrh**, bez kódu.
 
 ---
 
+## Budoucí rozšíření: Command Palette
+
+> **Mimo rozsah V1.** Tato kapitola popisuje směr vývoje po dokončení základního globálního vyhledávání dat. **Command Palette se v Commit 1–6 neimplementuje.**
+
+### Účel
+
+Globální vyhledávání může být v budoucnu rozšířeno tak, aby nesloužilo **jen k hledání datových objektů**, ale i ke **spouštění akcí** v aplikaci — podobně jako paleta příkazů (Command Palette) v moderních IDE (VS Code, IntelliJ, Cursor).
+
+Uživatel zadá text a kromě nalezených záznamů uvidí i **příkazy**, které může okamžitě spustit.
+
+### Příklady dotazů a akcí
+
+| Dotaz uživatele | Typ výsledku | Co se stane |
+|-----------------|--------------|-------------|
+| nový audit | `action` | Otevře dialog nového auditu |
+| nová prověrka | `action` | Otevře dialog nové prověrky |
+| nový úkol | `action` | Otevře dialog nového úkolu |
+| manažer auditů | `action` | Otevře Manažer auditů |
+| editor metodiky | `action` | Otevře editor znalostí auditora |
+| záloha databáze | `action` | Spustí zálohu databáze |
+| obnova databáze | `action` | Spustí obnovu ze zálohy |
+| přehled právních požadavků | `action` | Přejde do modulu / přehledu (až bude existovat) |
+| registr rizik | `action` | Přejde do modulu rizik (až bude existovat) |
+
+Akce se registrují deklarativně — stejně jako search providery — a filtrují se podle aliasů, klíčových slov a českých synonym.
+
+### Typ výsledku `action`
+
+Vedle běžných objektů:
+
+| `source_type` | Kategorie |
+|---------------|-----------|
+| `task` | datový objekt |
+| `audit` | datový objekt |
+| `finding` | datový objekt |
+| `bozp_inspection` | datový objekt |
+| `accident` | datový objekt |
+| `workplace` | datový objekt |
+| `person` | datový objekt |
+
+přibude typ:
+
+| `source_type` | Kategorie |
+|---------------|-----------|
+| `action` | aplikční příkaz |
+
+U výsledku typu `action`:
+
+- `source_id` může být `0` nebo interní ID akce v registru příkazů,
+- `metadata` obsahuje např. `{"action_key": "audit.new"}` — stabilní identifikátor pro spuštění,
+- `title` = lidský název akce („Nový audit“),
+- `subtitle` = krátký popis („Vytvořit nový audit systémů řízení“).
+
+`SearchResult` z V1 **nemusí** měnit tvar dat — stačí rozšířit množinu `source_type` a chování `open_result()`.
+
+### Otevření / spuštění akce
+
+U datového objektu `open_result()` otevře **konkrétní záznam** (dialog, stránka s ID).
+
+U výsledku typu `action` se **nez otevírá záznam** — spustí se **definovaná aplikční akce**:
+
+| Kategorie akce | Příklad |
+|----------------|---------|
+| Otevřít modul | přejít na Dashboard, Úkoly, Audity |
+| Otevřít dialog | Nový audit, Nová prověrka, Nový úraz |
+| Vytvořit nový záznam | `page.new_audit()`, `page.new_task()` |
+| Systémová operace | záloha / obnova databáze |
+| Otevřít nástroj | Manažer auditů, editor metodiky |
+
+Navrhované rozhraní (budoucí):
+
+```python
+class SearchAction(Protocol):
+    action_key: str
+    title: str
+    keywords: tuple[str, ...]
+
+    def execute(self, host) -> bool: ...
+```
+
+Agregátor nebo `ActionSearchProvider` vrací `SearchResult(source_type="action", …)` a `open_result()` deleguje na `ActionRegistry.execute(action_key, host)`.
+
+### Architektura Command Palette (náčrt)
+
+```
+GlobalSearchService.search()
+    ├── DataSearchProvider(s)     → task, audit, finding, …
+    └── ActionSearchProvider      → action (příkazy aplikace)
+```
+
+Obě větve sdílejí stejný dialog a stejný model `SearchResult` — liší se pouze `source_type` a chování po Enter.
+
+### UI Command Palette
+
+Budoucí UI vychází z dialogu globálního vyhledávání (Commit 3), ale vizuálně a chováním se blíží **Command Palette**:
+
+- **Klávesová zkratka Ctrl+K** — primární vstup (jednotné s moderními aplikacemi).
+- **Dialog přes celou šířku** nahoře uprostřed obrazovky (overlay), ne malé pole v toolbaru.
+- **Okamžité filtrování** při psaní — bez nutnosti potvrzovat dotaz.
+- **Výsledky ve třech skupinách** (volitelně s nadpisy):
+  - **Data** — nalezené záznamy (úkoly, audity, úrazy…),
+  - **Akce** — spustitelné příkazy,
+  - **Moduly** — rychlý přechod do modulu aplikace.
+- **Ikony podle typu výsledku** — úkol, audit, prověrka, akce (+), modul (složka) atd.; konzistentní s ikonografií sidebaru.
+- **Enter** = otevřít záznam nebo spustit akci; **Esc** = zavřít paletu.
+
+Pořadí skupin: nejdříve **Akce** (přesná shoda s příkazem), pak **Data**, pak **Moduly** — nebo podle relevance skóre.
+
+### Vztah k implementačnímu plánu V1
+
+| Fáze | Obsah |
+|------|--------|
+| Commit 1–6 | Globální vyhledávání **dat** (V1) |
+| Commit 7+ (budoucí) | `ActionSearchProvider`, registr akcí, Command Palette UI |
+
+V1 musí být navržena tak, aby Command Palette **nepožadovala přepis** — pouze doplnění providera akcí a rozšíření `open_result()` o větev `action`.
+
+---
+
 ## Výkon
 
 ### V1 — jednoduché dotazy
@@ -330,6 +452,7 @@ Zatím **pouze návrh**, bez kódu.
 | **Relevance score** | `bm25()` ve FTS5 nebo vlastní váhy polí |
 | **Inkrementální index** | Per-modul indexy sloučené agregátorem |
 | **Cache posledního dotazu** | Krátkodobá cache pro opakované hledání |
+| **Command Palette** | Akce aplikace vedle datových výsledků — viz kapitola výše |
 
 Dokumentace implementace FTS patří do samostatného addenda po dokončení V1.
 
@@ -387,6 +510,7 @@ Moduly **nemusí** vědět o globálním vyhledávání — stačí, že jejich 
 | **Commit 4** | `open_result()` / `SearchResultOpener`, napojení na stránky modulů a dialogy |
 | **Commit 5** | Další providery: **Audity**, **Program auditů**, **Zjištění**, **Prověrky**, **Kniha úrazů**, **Pracoviště**, **THP** |
 | **Commit 6** | Integrace do hlavního okna, klávesová zkratka Ctrl+K / Ctrl+F, vylepšení toolbar completeru |
+| **Commit 7+** (budoucí) | Command Palette — `ActionSearchProvider`, registr akcí, skupiny Data / Akce / Moduly |
 
 Každý commit = malý reviewovatelný diff, testy u providerů a otevírání.
 
@@ -403,6 +527,6 @@ Každý commit = malý reviewovatelný diff, testy u providerů a otevírání.
 
 ## Shrnutí
 
-Globální vyhledávání BOZP 3.0 stojí na **jednom agregátoru** a **více tenkých providerech**. `SearchResult` s `source_type` + `source_id` umožní jednotné zobrazení i otevírání. V1 používá jednoduché LIKE dotazy; FTS5 a relevance přijdou později. Provider nesmí shodit celé hledání. UI dialog a zkratky přijdou až po stabilní službě a prvních providerech.
+Globální vyhledávání BOZP 3.0 stojí na **jednom agregátoru** a **více tenkých providerech**. `SearchResult` s `source_type` + `source_id` umožní jednotné zobrazení i otevírání. V1 používá jednoduché LIKE dotazy; FTS5 a relevance přijdou později. Provider nesmí shodit celé hledání. UI dialog a zkratky přijdou až po stabilní službě a prvních providerech. **Budoucí Command Palette** rozšíří stejný model o typ `action` a spouštění aplikčních příkazů bez přepisu V1.
 
 **Schválením tohoto dokumentu se spouští Commit 2.**
