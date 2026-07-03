@@ -1,3 +1,4 @@
+from core.search import global_search_service
 from core.search.bootstrap import build_default_global_search_service
 from core.search.global_search_service import GlobalSearchService
 from core.search.search_provider import SearchProvider
