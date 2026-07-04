@@ -164,6 +164,10 @@ def _format_ratio_change(
     return f"{label}: {previous_text} → {current_text}"
 
 
+def _occurrence_group_heading(count: int) -> str:
+    return f"Výskyt ({_inspection_count_label(count)})"
+
+
 def _inspection_count_label(count: int) -> str:
     if count == 1:
         return "1 prověrka"
@@ -401,10 +405,7 @@ class AnnualReportAttentionProblem:
 
     def to_text(self) -> str:
         emoji = "🔴" if self.severity == CONTROL_RESULT_NEVYHOVUJE else "🟡"
-        lines = [f"{emoji} {self.label}"]
-        if self.count > 1:
-            lines.extend(["", "Výskyt:", _inspection_count_label(self.count)])
-        return "\n".join(lines)
+        return f"{emoji} {self.label}"
 
 
 @dataclass(frozen=True)
@@ -972,6 +973,7 @@ class BozpAnnualExportContextService:
     ) -> list[AnnualReportAttentionProblem]:
         grouped: dict[tuple[str, str], dict[str, object]] = {}
         for inspection in inspections:
+            seen_in_inspection: set[tuple[str, str]] = set()
             for row in control_result_service.get_for_entity(ENTITY_PROVERKY, inspection.id):
                 if row.result not in (
                     CONTROL_RESULT_NEVYHOVUJE,
@@ -983,6 +985,9 @@ class BozpAnnualExportContextService:
                 if not problem_label:
                     continue
                 key = (row.result, problem_label.casefold())
+                if key in seen_in_inspection:
+                    continue
+                seen_in_inspection.add(key)
                 bucket = grouped.setdefault(
                     key,
                     {
@@ -1003,7 +1008,6 @@ class BozpAnnualExportContextService:
         ]
         problems.sort(
             key=lambda item: (
-                0 if item.severity == CONTROL_RESULT_NEVYHOVUJE else 1,
                 -item.count,
                 item.label.casefold(),
             ),
@@ -1013,7 +1017,28 @@ class BozpAnnualExportContextService:
     def _attention_areas_text(self, problems: list[AnnualReportAttentionProblem]) -> str:
         if not problems:
             return "—"
-        return "\n\n".join(problem.to_text() for problem in problems)
+
+        blocks: list[str] = []
+        current_count: int | None = None
+        current_items: list[str] = []
+
+        for problem in problems:
+            if current_count is None or problem.count != current_count:
+                if current_items:
+                    blocks.append(self._format_attention_group(current_count, current_items))
+                current_count = problem.count
+                current_items = [problem.to_text()]
+            else:
+                current_items.append(problem.to_text())
+
+        if current_items and current_count is not None:
+            blocks.append(self._format_attention_group(current_count, current_items))
+
+        return "\n\n".join(blocks)
+
+    @staticmethod
+    def _format_attention_group(count: int, items: list[str]) -> str:
+        return "\n".join([_occurrence_group_heading(count), "", *items])
 
     @staticmethod
     def _is_problem_statement(label: str) -> bool:

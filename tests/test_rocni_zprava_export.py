@@ -348,6 +348,85 @@ class RocniZpravaExportTestCase(unittest.TestCase):
         self.assertNotIn("Kontroly probíhají pravidelně", text)
         self.assertIn("Doplnit systém evidence školení.", text)
 
+    def test_attention_areas_grouped_and_sorted_by_frequency(self) -> None:
+        common_problem = "Chybí označení únikových východů."
+        shared_problem = "Evidence preventivních opatření není vždy úplná."
+        rare_problem = "Doplnit systém evidence školení."
+
+        for index in range(3):
+            inspection = self._create_inspection_with_commission(
+                year=2026,
+                inspection_date=date(2026, 3, 10 + index),
+                workplace_name=f"Hala {index}",
+            )
+            assert inspection is not None
+            control_result_service.set_result(
+                ENTITY_PROVERKY,
+                inspection.id,
+                ControlPointContext(
+                    area_id="bozp",
+                    area_label="BOZP",
+                    section_id="s1",
+                    section_label="Sekce",
+                    control_point_id=f"cp-common-{index}",
+                    control_point_label=common_problem,
+                ),
+                result=CONTROL_RESULT_NEVYHOVUJE,
+            )
+            if index < 2:
+                control_result_service.set_result(
+                    ENTITY_PROVERKY,
+                    inspection.id,
+                    ControlPointContext(
+                        area_id="bozp",
+                        area_label="BOZP",
+                        section_id="s1",
+                        section_label="Sekce",
+                        control_point_id=f"cp-shared-{index}",
+                        control_point_label=shared_problem,
+                    ),
+                    result=CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
+                )
+            if index == 0:
+                control_result_service.set_result(
+                    ENTITY_PROVERKY,
+                    inspection.id,
+                    ControlPointContext(
+                        area_id="bozp",
+                        area_label="BOZP",
+                        section_id="s1",
+                        section_label="Sekce",
+                        control_point_id="cp-rare",
+                        control_point_label=rare_problem,
+                    ),
+                    result=CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
+                )
+
+        context = bozp_annual_export_context_service.build(2026)
+        text = context.attention_areas_text
+
+        self.assertLess(
+            text.index("Výskyt (3 prověrky)"),
+            text.index("Výskyt (2 prověrky)"),
+        )
+        self.assertLess(
+            text.index("Výskyt (2 prověrky)"),
+            text.index("Výskyt (1 prověrka)"),
+        )
+
+        group_three_start = text.index("Výskyt (3 prověrky)")
+        group_two_start = text.index("Výskyt (2 prověrky)")
+        group_one_start = text.index("Výskyt (1 prověrka)")
+        group_three = text[group_three_start:group_two_start]
+        group_two = text[group_two_start:group_one_start]
+        group_one = text[group_one_start:]
+
+        self.assertIn(f"🔴 {common_problem}", group_three)
+        self.assertNotIn(shared_problem, group_three)
+        self.assertIn(f"🟡 {shared_problem}", group_two)
+        self.assertNotIn(common_problem, group_two)
+        self.assertIn(f"🟡 {rare_problem}", group_one)
+
     def test_normalized_metrics_in_year_comparison(self) -> None:
         for index in range(2):
             inspection = self._create_inspection_with_commission(
