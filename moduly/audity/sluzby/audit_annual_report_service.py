@@ -1,5 +1,6 @@
 from moduly.audity.modely.audit_annual_report import AuditAnnualReport
 from moduly.audity.repository.audit_annual_report_repository import AuditAnnualReportRepository
+from moduly.audity.sluzby.audit_annual_program_service import audit_annual_program_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
 
 
@@ -11,15 +12,23 @@ class AuditAnnualReportService:
     def __init__(self) -> None:
         self.repository = AuditAnnualReportRepository()
 
-    def get_for_year(self, year: int) -> AuditAnnualReport | None:
-        return self.repository.get_by_year(year)
+    def get_for_year(self, year: int, *, audit_program_id: int | None = None) -> AuditAnnualReport | None:
+        program_id = audit_annual_program_service.resolve_program_id(year, audit_program_id)
+        return self.repository.get_by_year_and_program(year, program_id)
 
-    def get_or_create_for_year(self, year: int) -> AuditAnnualReport:
-        report = self.repository.get_by_year(year)
+    def get_or_create_for_year(
+        self,
+        year: int,
+        *,
+        audit_program_id: int | None = None,
+    ) -> AuditAnnualReport:
+        program_id = audit_annual_program_service.resolve_program_id(year, audit_program_id)
+        report = self.repository.get_by_year_and_program(year, program_id)
         if report is not None:
             return report
         return AuditAnnualReport(
             year=year,
+            audit_program_id=program_id,
             silne_stranky="",
             top_priority="",
             doporuceni_specialisty="",
@@ -61,13 +70,16 @@ class AuditAnnualReportService:
         self,
         year: int,
         *,
+        audit_program_id: int | None = None,
         silne_stranky: str = "",
         top_priority: str = "",
         doporuceni_specialisty: str = "",
         zpracoval_worker_id: int | None = None,
         zpracoval: str | None = None,
     ) -> AuditAnnualReport:
-        report = self.get_or_create_for_year(year)
+        program_id = audit_annual_program_service.resolve_program_id(year, audit_program_id)
+        report = self.get_or_create_for_year(year, audit_program_id=program_id)
+        report.audit_program_id = program_id
         report.silne_stranky = _text(silne_stranky)
         report.top_priority = _text(top_priority)
         report.doporuceni_specialisty = _text(doporuceni_specialisty)

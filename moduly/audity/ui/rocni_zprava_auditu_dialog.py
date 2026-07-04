@@ -19,6 +19,7 @@ from core.widgets.thp_worker_selector import ThpWorkerSelector
 from moduly.audity.sluzby.audit_annual_export_context_service import (
     audit_annual_export_context_service,
 )
+from moduly.audity.sluzby.audit_annual_program_service import audit_annual_program_service
 from moduly.audity.sluzby.audit_annual_report_service import audit_annual_report_service
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.audity.sluzby.rocni_zprava_auditu_service import rocni_zprava_auditu_service
@@ -31,15 +32,17 @@ class RocniZpravaAudituDialog(QDialog):
         super().__init__(parent)
 
         self.setWindowTitle("Roční zpráva z auditů")
-        self.resize(720, 620)
+        self.resize(720, 680)
 
         layout = QVBoxLayout(self)
 
-        year_group = QGroupBox("Vyber rok")
+        year_group = QGroupBox("Vyber rok a auditní program")
         year_form = QFormLayout(year_group)
         self.year_combo = QComboBox()
         self._populate_years(year)
         year_form.addRow("Rok:", self.year_combo)
+        self.program_combo = QComboBox()
+        year_form.addRow("Auditní program:", self.program_combo)
         self.zpracoval_selector = ThpWorkerSelector(include_empty=True)
         year_form.addRow("Zpracoval:", self.zpracoval_selector)
         layout.addWidget(year_group)
@@ -87,11 +90,16 @@ class RocniZpravaAudituDialog(QDialog):
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
-        self.year_combo.currentIndexChanged.connect(self._load_year_content)
-        self._load_year_content()
+        self.year_combo.currentIndexChanged.connect(self._on_year_changed)
+        self.program_combo.currentIndexChanged.connect(self._load_year_content)
+        self._on_year_changed()
 
     def selected_year(self) -> int:
         return int(self.year_combo.currentData())
+
+    def selected_program_id(self) -> int | None:
+        value = self.program_combo.currentData()
+        return int(value) if value is not None else None
 
     def _populate_years(self, selected_year: int | None) -> None:
         current_year = date.today().year
@@ -115,9 +123,42 @@ class RocniZpravaAudituDialog(QDialog):
                 self.year_combo.setCurrentIndex(index)
         self.year_combo.blockSignals(False)
 
+    def _populate_programs(self) -> None:
+        year = self.selected_year()
+        programs = audit_annual_program_service.list_programs_for_year(year)
+        saved = audit_annual_report_service.get_for_year(
+            year,
+            audit_program_id=self.selected_program_id(),
+        )
+        selected_program_id = saved.audit_program_id if saved else None
+
+        self.program_combo.blockSignals(True)
+        self.program_combo.clear()
+        if not programs:
+            self.program_combo.addItem("Bez vazby na program", None)
+            self.program_combo.setEnabled(False)
+        elif len(programs) == 1:
+            program = programs[0]
+            self.program_combo.addItem(program.name, program.id)
+            self.program_combo.setEnabled(False)
+        else:
+            self.program_combo.setEnabled(True)
+            for program in programs:
+                self.program_combo.addItem(program.name, program.id)
+            if selected_program_id is not None:
+                index = self.program_combo.findData(selected_program_id)
+                if index >= 0:
+                    self.program_combo.setCurrentIndex(index)
+        self.program_combo.blockSignals(False)
+
+    def _on_year_changed(self) -> None:
+        self._populate_programs()
+        self._load_year_content()
+
     def _load_year_content(self) -> None:
         year = self.selected_year()
-        report = audit_annual_report_service.get_for_year(year)
+        program_id = self.selected_program_id()
+        report = audit_annual_report_service.get_for_year(year, audit_program_id=program_id)
         if report is None:
             self.silne_stranky_edit.clear()
             self.top_priority_edit.clear()
@@ -133,7 +174,10 @@ class RocniZpravaAudituDialog(QDialog):
     def _show_rating_explanation(self) -> None:
         year = self.selected_year()
         try:
-            explanation = audit_annual_export_context_service.build_evaluation_explanation(year)
+            explanation = audit_annual_export_context_service.build_evaluation_explanation(
+                year,
+                audit_program_id=self.selected_program_id(),
+            )
         except Exception as exc:
             QMessageBox.warning(
                 self,
@@ -149,13 +193,17 @@ class RocniZpravaAudituDialog(QDialog):
         year = self.selected_year()
         audit_annual_report_service.save_for_year(
             year,
+            audit_program_id=self.selected_program_id(),
             silne_stranky=self.silne_stranky_edit.toPlainText(),
             top_priority=self.top_priority_edit.toPlainText(),
             doporuceni_specialisty=self.doporuceni_edit.toPlainText(),
             zpracoval_worker_id=self.zpracoval_selector.current_person_id(),
         )
         try:
-            rocni_zprava_auditu_service.open_for_year(year)
+            rocni_zprava_auditu_service.open_for_year(
+                year,
+                audit_program_id=self.selected_program_id(),
+            )
         except Exception as exc:
             QMessageBox.warning(
                 self,

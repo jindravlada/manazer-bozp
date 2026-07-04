@@ -82,10 +82,13 @@ class RocniZpravaAudituExportTestCase(unittest.TestCase):
 
         from core.database.session import get_session
         from moduly.audity.modely.audit_annual_report import AuditAnnualReport
+        from moduly.audity.modely.audit_process_maturity_snapshot import AuditProcessMaturitySnapshot
 
         with get_session() as session:
             for report in session.query(AuditAnnualReport).all():
                 session.delete(report)
+            for snapshot in session.query(AuditProcessMaturitySnapshot).all():
+                session.delete(snapshot)
             session.commit()
 
         settings_service.save_employer(
@@ -168,6 +171,8 @@ class RocniZpravaAudituExportTestCase(unittest.TestCase):
             "datum_vytvoreni",
             "datum_vygenerovani",
             "zpracoval",
+            "celkove_hodnoceni_nadpis",
+            "celkove_hodnoceni_emoji",
             "celkove_hodnoceni_text",
             "prehled_vysledku_text",
             "silne_stranky_text",
@@ -203,6 +208,11 @@ class RocniZpravaAudituExportTestCase(unittest.TestCase):
             "podil_nevyhovuje_procent",
             "ukazatele_vykonnosti_text",
             "vyspelost_systemu_text",
+            "vyspelost_legenda_text",
+            "prumerna_vyspelost_systemu_text",
+            "auditni_program_nazev",
+            "trendy_procesu_text",
+            "historie_vyspelosti_text",
             "vykonnost_systemu_text",
             "ucinnost_procesu_text",
             "systemicke_problemy_text",
@@ -232,6 +242,7 @@ class RocniZpravaAudituExportTestCase(unittest.TestCase):
             "ROČNÍ ZPRÁVA Z INTERNÍCH AUDITŮ",
             "Základní informace",
             "CELKOVÉ HODNOCENÍ",
+            "Průměrná vyspělost systému řízení",
             "KLÍČOVÉ POZNATKY ROKU",
             "Přehled výsledků",
             "Vyspělost systému řízení",
@@ -307,7 +318,47 @@ class RocniZpravaAudituExportTestCase(unittest.TestCase):
         self.assertIn("Jedná se o první hodnocené období", content)
         self.assertIn("• Nejčastější systémový problém:", content)
 
-    def test_process_maturity_block(self) -> None:
+    def test_attention_areas_normalize_positive_assertions(self) -> None:
+        audit = self._create_audit(year=2026, audit_date=date(2026, 5, 1))
+        assert audit is not None
+        control_result_service.set_result(
+            ENTITY_AUDITY,
+            audit.id,
+            ControlPointContext(
+                area_id="proces-a",
+                area_label="Řízení dokumentace",
+                section_id="s1",
+                section_label="Kritérium",
+                control_point_id="cp_pos",
+                control_point_label="Je schválena politika BOZP?",
+            ),
+            result=CONTROL_RESULT_NEVYHOVUJE,
+        )
+        control_result_service.set_result(
+            ENTITY_AUDITY,
+            audit.id,
+            ControlPointContext(
+                area_id="proces-a",
+                area_label="Řízení dokumentace",
+                section_id="s1",
+                section_label="Kritérium",
+                control_point_id="cp_rec",
+                control_point_label="Doplnit systém evidence školení.",
+            ),
+            result=CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
+        )
+
+        context = audit_annual_export_context_service.build(2026)
+        text = context.attention_areas_text
+        self.assertIn("Politika není schválena", text)
+        self.assertNotIn("Je schválena politika BOZP?", text)
+        self.assertIn("Doplnit systém evidence školení.", text)
+
+    def test_maturity_history_snapshot_is_recorded(self) -> None:
+        from moduly.audity.sluzby.audit_process_maturity_history_service import (
+            audit_process_maturity_history_service,
+        )
+
         audit = self._create_audit(year=2026, audit_date=date(2026, 5, 1))
         assert audit is not None
         control_result_service.set_result(
@@ -325,9 +376,13 @@ class RocniZpravaAudituExportTestCase(unittest.TestCase):
         )
 
         context = audit_annual_export_context_service.build(2026)
+        snapshots = audit_process_maturity_history_service.get_year_snapshots(2026)
+        self.assertEqual(len(snapshots), 1)
+        self.assertEqual(snapshots[0].process_id, "proces-b")
+        self.assertIn("Legenda vyspělosti", context.process_maturity.legend_text)
         self.assertIn("🟠", context.process_maturity.text)
-        self.assertTrue(context.process_maturity.items)
         self.assertIn("Řídicí proces B", context.process_maturity.text)
+        self.assertTrue(context.placeholder_values()["prumerna_vyspelost_systemu_text"])
 
     def test_systemic_problems_axis(self) -> None:
         audit1 = self._create_audit(year=2026, audit_date=date(2026, 2, 1), workplace_name="Hala 1")

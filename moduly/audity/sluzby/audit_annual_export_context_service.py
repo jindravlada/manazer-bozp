@@ -16,6 +16,7 @@ from core.shared.sluzby.control_activity_statistics_service import (
 from core.shared.sluzby.control_result_service import control_result_service
 from core.shared.sluzby.finding_service import finding_service
 from core.shared.sluzby.performance_evaluation_methodology_service import (
+    EVALUATION_DOMAIN_AUDIT_MANAGEMENT,
     PerformanceEvaluationExplanation,
     PerformanceEvaluationInput,
     PerformanceMethodologyContent,
@@ -29,6 +30,11 @@ from core.shared.sluzby.performance_evaluation_methodology_service import (
     SEVERITY_LEVEL_MEDIUM,
     SEVERITY_WEIGHTS,
     performance_evaluation_methodology_service,
+)
+from moduly.audity.sluzby.audit_attention_problem_normalizer import normalize_attention_problem
+from moduly.audity.sluzby.audit_annual_program_service import audit_annual_program_service
+from moduly.audity.sluzby.audit_process_maturity_history_service import (
+    audit_process_maturity_history_service,
 )
 from moduly.audity.constants import (
     AUDIT_PROGRAM_VISIT_STATUS_COMPLETED,
@@ -71,6 +77,24 @@ _MATURITY_LEVELS = (
     ("stabilni", "🟡", "Stabilní"),
     ("vyspely", "🟢", "Vyspělý"),
 )
+
+_MATURITY_LEGEND = """Legenda vyspělosti řídicích procesů:
+
+🟢 Vyspělý
+Proces je dlouhodobě stabilní a nevykazuje významné systémové nedostatky.
+
+🟡 Stabilní
+Proces je funkční, ale existuje prostor ke zlepšení.
+
+🟠 Rizikový
+Proces vykazuje opakované nedostatky a vyžaduje zvýšenou pozornost.
+
+🔴 Kritický
+Proces není dostatečně řízen a představuje významné riziko pro účinnost systému řízení."""
+
+
+def _overall_rating_heading(emoji: str) -> str:
+    return f"CELKOVÉ HODNOCENÍ {emoji}"
 
 
 def _text(value) -> str:
@@ -289,22 +313,26 @@ class AuditProcessMaturityItem:
     process_id: str
     process_name: str
     audits_count: int
+    control_points_count: int
+    weighted_score: int
     nevyhovuje_count: int
     doporuceni_count: int
     open_findings_count: int
     overdue_measures_count: int
+    open_measures_count: int
     maturity_level: str
     maturity_label: str
     maturity_emoji: str
     summary: str
+    trend_label: str = ""
 
     def to_text(self) -> str:
+        trend_suffix = f"\n   Trend: {self.trend_label}" if self.trend_label else ""
         return (
             f"{self.maturity_emoji} {self.process_name}\n"
-            f"   {_audit_count_label(self.audits_count)} · "
-            f"{self.nevyhovuje_count} neshod · "
+            f"   {self.nevyhovuje_count} neshod · "
             f"{self.doporuceni_count} doporučení · "
-            f"{self.open_findings_count} otevřených zjištění\n"
+            f"{self.open_findings_count} otevřených zjištění{trend_suffix}\n"
             f"   {self.summary}"
         )
 
@@ -313,6 +341,14 @@ class AuditProcessMaturityItem:
 class AuditProcessMaturityAssessment:
     items: tuple[AuditProcessMaturityItem, ...]
     text: str
+    legend_text: str
+    average_level: str
+    average_emoji: str
+    average_label: str
+    trends_text: str
+
+    def average_maturity_text(self) -> str:
+        return f"{self.average_emoji} {self.average_label}"
 
     def strong_processes_text(self) -> str:
         lines = [item.process_name for item in self.items if item.maturity_level == "vyspely"]
@@ -402,6 +438,8 @@ class AuditAnnualAppendices:
 @dataclass(frozen=True)
 class AuditAnnualReportContext:
     year: int
+    audit_program_id: int | None
+    audit_program_name: str
     metrics: AuditAnnualMetrics
     severity: AuditAnnualSeverityMetrics
     overall_rating: PerformanceRatingResult
@@ -431,10 +469,14 @@ class AuditAnnualReportContext:
             "obdobi": f"1. 1. {self.year} – 31. 12. {self.year}",
             "datum_vytvoreni": datetime.now().strftime("%d.%m.%Y"),
             "datum_vygenerovani": datetime.now().strftime("%d.%m.%Y"),
+            "celkove_hodnoceni_nadpis": _overall_rating_heading(self.overall_rating.emoji),
+            "celkove_hodnoceni_emoji": self.overall_rating.emoji,
             "celkove_hodnoceni_text": self.overall_assessment_text,
             "souhrn_text": self.overall_assessment_text,
             "oblasti_pozornosti_text": self.attention_areas_text,
             "vyspelost_systemu_text": self.process_maturity.text,
+            "vyspelost_legenda_text": self.process_maturity.legend_text,
+            "prumerna_vyspelost_systemu_text": self.process_maturity.average_maturity_text(),
             "vykonnost_systemu_text": self.management_performance_text,
             "ucinnost_procesu_text": self.process_effectiveness_text,
             "systemicke_problemy_text": self.systemic_problems_text,
@@ -442,6 +484,8 @@ class AuditAnnualReportContext:
             "plneni_programu_text": self.program_fulfillment_text,
             "silne_procesy_text": self.process_maturity.strong_processes_text() or "—",
             "slabe_procesy_text": self.process_maturity.weak_processes_text() or "—",
+            "auditni_program_nazev": self.audit_program_name or "—",
+            "trendy_procesu_text": self.process_maturity.trends_text,
         }
         values.update(
             self.metrics.to_placeholders(
@@ -463,9 +507,14 @@ class AuditAnnualExportContextService:
         if year < 1900 or year > 3000:
             raise ValueError("Neplatný rok roční zprávy z auditů.")
 
-        audits = audit_service.get_for_year(year)
         saved = report or audit_annual_report_service.get_or_create_for_year(year)
-        history = self._load_historical_series(year)
+        program_id = saved.audit_program_id
+        program = audit_annual_program_service.get_program_by_id(program_id)
+        audits = audit_annual_program_service.filter_audits_for_program(
+            audit_service.get_for_year(year),
+            program_id=program_id,
+        )
+        history = self._load_historical_series(year, program_id=program_id)
         metrics = history.metrics_for_year(year) or self._compute_metrics(year, audits)
         attention_problems = self._collect_attention_problems(audits)
         comparison = self._build_comparison(year, metrics, history)
@@ -478,11 +527,19 @@ class AuditAnnualExportContextService:
         severity = self._compute_severity_assessment(audits, metrics, attention_problems)
         overall_rating = self._determine_overall_rating(metrics, severity, comparison, history)
         methodology = performance_evaluation_methodology_service.build(
-            self._performance_signals(metrics, severity, overall_rating, comparison, history)
+            self._performance_signals(metrics, severity, overall_rating, comparison, history),
+            domain=EVALUATION_DOMAIN_AUDIT_MANAGEMENT,
         )
-        process_maturity = self._build_process_maturity(audits)
-        program_fulfillment_text = self._build_program_fulfillment_text(year)
-        management_performance_text = self._build_management_performance_text(metrics, severity, overall_rating)
+        process_maturity = self._build_process_maturity(
+            audits,
+            year=year,
+            audit_program_id=program_id,
+            severity_index=self._build_severity_index(),
+        )
+        program_fulfillment_text = self._build_program_fulfillment_text(year, program_id=program_id)
+        management_performance_text = self._build_management_performance_text(
+            metrics, severity, overall_rating, process_maturity
+        )
         process_effectiveness_text = self._build_process_effectiveness_text(process_maturity)
         systemic_problems_text = self._build_systemic_problems_text(attention_problems)
         corrective_measures_text = self._build_corrective_measures_text(metrics, severity)
@@ -496,6 +553,8 @@ class AuditAnnualExportContextService:
         )
         return AuditAnnualReportContext(
             year=year,
+            audit_program_id=program_id,
+            audit_program_name=_text(program.name if program else ""),
             metrics=metrics,
             severity=severity,
             overall_rating=overall_rating,
@@ -512,19 +571,31 @@ class AuditAnnualExportContextService:
             appendices=appendices,
             manual=manual,
             attention_areas_text=self._attention_areas_text(attention_problems),
-            overall_assessment_text=self._overall_assessment_text(metrics, severity, overall_rating, methodology),
+            overall_assessment_text=self._overall_assessment_text(
+                severity, overall_rating, methodology, process_maturity
+            ),
             extension_placeholders=self._reserved_extension_placeholders(history),
         )
 
-    def build_evaluation_explanation(self, year: int) -> PerformanceEvaluationExplanation:
-        context = self.build(year)
+    def build_evaluation_explanation(
+        self,
+        year: int,
+        *,
+        audit_program_id: int | None = None,
+    ) -> PerformanceEvaluationExplanation:
+        report = audit_annual_report_service.get_or_create_for_year(
+            year,
+            audit_program_id=audit_program_id,
+        )
+        context = self.build(year, report=report)
         return performance_evaluation_methodology_service.build_explanation(
             self._performance_input_from(
                 metrics=context.metrics,
                 severity=context.severity,
                 comparison=context.comparison,
                 history=context.history,
-            )
+            ),
+            domain=EVALUATION_DOMAIN_AUDIT_MANAGEMENT,
         )
 
     def _compute_metrics(self, year: int, audits: list[Audit]) -> AuditAnnualMetrics:
@@ -578,7 +649,12 @@ class AuditAnnualExportContextService:
             measures_closed=measures_closed,
         )
 
-    def _load_historical_series(self, target_year: int) -> AuditAnnualHistoricalSeries:
+    def _load_historical_series(
+        self,
+        target_year: int,
+        *,
+        program_id: int | None = None,
+    ) -> AuditAnnualHistoricalSeries:
         years = {target_year}
         for audit in audit_service.get_all():
             if audit.audit_date is not None:
@@ -588,7 +664,10 @@ class AuditAnnualExportContextService:
 
         metrics_by_year: dict[int, AuditAnnualMetrics] = {}
         for year in years:
-            audits = audit_service.get_for_year(year)
+            audits = audit_annual_program_service.filter_audits_for_program(
+                audit_service.get_for_year(year),
+                program_id=program_id,
+            )
             if audits:
                 metrics_by_year[year] = self._compute_metrics(year, audits)
 
@@ -784,7 +863,8 @@ class AuditAnnualExportContextService:
                 severity=severity,
                 comparison=comparison,
                 history=history,
-            )
+            ),
+            domain=EVALUATION_DOMAIN_AUDIT_MANAGEMENT,
         )
 
     def _performance_signals(
@@ -861,14 +941,17 @@ class AuditAnnualExportContextService:
                     CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
                 ):
                     continue
-                label = _text(row.source_control_point_label) or _text(row.note) or "—"
-                key = (row.result, label.casefold())
+                raw_label = self._attention_area_label(row)
+                problem_label = normalize_attention_problem(raw_label)
+                if not problem_label:
+                    continue
+                key = (row.result, problem_label.casefold())
                 if key in seen_in_audit:
                     continue
                 seen_in_audit.add(key)
                 bucket = grouped.setdefault(
                     key,
-                    {"label": label, "severity": row.result, "count": 0},
+                    {"label": problem_label, "severity": row.result, "count": 0},
                 )
                 bucket["count"] = int(bucket["count"]) + 1
 
@@ -882,6 +965,14 @@ class AuditAnnualExportContextService:
         ]
         problems.sort(key=lambda item: (-item.count, item.label.casefold()))
         return problems
+
+    @staticmethod
+    def _attention_area_label(row) -> str:
+        for attr in ("source_control_point_label", "note", "source_section_label"):
+            value = _text(getattr(row, attr, ""))
+            if value:
+                return value
+        return "—"
 
     def _attention_areas_text(self, problems: list[AuditAnnualAttentionProblem]) -> str:
         if not problems:
@@ -901,7 +992,14 @@ class AuditAnnualExportContextService:
             blocks.append("\n".join([_occurrence_group_heading(current_count), "", *current_items]))
         return "\n\n".join(blocks)
 
-    def _build_process_maturity(self, audits: list[Audit]) -> AuditProcessMaturityAssessment:
+    def _build_process_maturity(
+        self,
+        audits: list[Audit],
+        *,
+        year: int,
+        audit_program_id: int | None,
+        severity_index: dict[str, str],
+    ) -> AuditProcessMaturityAssessment:
         process_stats: dict[str, dict[str, object]] = {}
         process_names: dict[str, str] = {}
         process_labels: dict[str, str] = {}
@@ -928,9 +1026,27 @@ class AuditAnnualExportContextService:
                         "doporuceni": 0,
                         "open_findings": 0,
                         "overdue_measures": 0,
+                        "open_measures": 0,
+                        "control_points": 0,
+                        "weighted_score": 0,
                         "audits": set(),
                     },
                 )
+                bucket["control_points"] = int(bucket["control_points"]) + 1
+                if row.result in (
+                    CONTROL_RESULT_NEVYHOVUJE,
+                    CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
+                ):
+                    severity = self._resolve_severity(
+                        process_id=process_id,
+                        criterion_id=str(row.source_section_id or ""),
+                        control_point_id=control_point_id,
+                        severity_index=severity_index,
+                    )
+                    bucket["weighted_score"] = int(bucket["weighted_score"]) + SEVERITY_WEIGHTS.get(
+                        severity,
+                        SEVERITY_WEIGHTS[CONTROL_POINT_SEVERITY_STREDNI],
+                    )
                 if row.result == CONTROL_RESULT_NEVYHOVUJE:
                     bucket["nevyhovuje"] = int(bucket["nevyhovuje"]) + 1
                 elif row.result == CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM:
@@ -954,6 +1070,22 @@ class AuditAnnualExportContextService:
                             int(process_stats[process_id]["overdue_measures"]) + 1
                         )
 
+            for task in audit_service.get_tasks_for_audit(audit.id):
+                if task.computed_status in {"Ukončeno", "Zrušeno"}:
+                    continue
+                process_id = ""
+                for finding in finding_service.get_for_entity(ENTITY_AUDITY, audit.id):
+                    if finding.task_id == task.id:
+                        process_id = control_point_process.get(
+                            _text(finding.source_control_point_id),
+                            "",
+                        )
+                        break
+                if process_id in process_stats:
+                    process_stats[process_id]["open_measures"] = (
+                        int(process_stats[process_id]["open_measures"]) + 1
+                    )
+
         items: list[AuditProcessMaturityItem] = []
         maturity_order = {level: index for index, (level, _, _) in enumerate(_MATURITY_LEVELS)}
         for process_id, bucket in process_stats.items():
@@ -961,7 +1093,11 @@ class AuditAnnualExportContextService:
             doporuceni = int(bucket["doporuceni"])
             open_findings = int(bucket["open_findings"])
             overdue = int(bucket["overdue_measures"])
+            open_measures = int(bucket["open_measures"])
             audits_count = len(bucket["audits"])
+            control_points_count = int(bucket["control_points"])
+            weighted_score = int(bucket["weighted_score"])
+            process_name = process_names.get(process_id, process_labels.get(process_id, process_id))
             level, emoji, label = self._resolve_maturity_level(
                 nevyhovuje=nevyhovuje,
                 doporuceni=doporuceni,
@@ -969,25 +1105,67 @@ class AuditAnnualExportContextService:
                 overdue_measures=overdue,
             )
             summary = self._maturity_summary(level, nevyhovuje, doporuceni, open_findings, overdue)
+            snapshot = audit_process_maturity_history_service.record_snapshot(
+                year=year,
+                audit_program_id=audit_program_id,
+                process_id=process_id,
+                process_name=process_name,
+                maturity_level=level,
+                maturity_emoji=emoji,
+                maturity_label=label,
+                weighted_score=weighted_score,
+                audits_count=audits_count,
+                control_points_count=control_points_count,
+                nevyhovuje_count=nevyhovuje,
+                doporuceni_count=doporuceni,
+                open_measures_count=open_measures,
+                overdue_measures_count=overdue,
+            )
             items.append(
                 AuditProcessMaturityItem(
                     process_id=process_id,
-                    process_name=process_names.get(process_id, process_labels.get(process_id, process_id)),
+                    process_name=process_name,
                     audits_count=audits_count,
+                    control_points_count=control_points_count,
+                    weighted_score=weighted_score,
                     nevyhovuje_count=nevyhovuje,
                     doporuceni_count=doporuceni,
                     open_findings_count=open_findings,
                     overdue_measures_count=overdue,
+                    open_measures_count=open_measures,
                     maturity_level=level,
                     maturity_label=label,
                     maturity_emoji=emoji,
                     summary=summary,
+                    trend_label=snapshot.trend_label,
                 )
             )
 
-        items.sort(key=lambda item: (maturity_order.get(item.maturity_level, 99), -item.nevyhovuje_count, item.process_name.casefold()))
-        text = "\n\n".join(item.to_text() for item in items) if items else "—"
-        return AuditProcessMaturityAssessment(items=tuple(items), text=text)
+        items.sort(
+            key=lambda item: (
+                maturity_order.get(item.maturity_level, 99),
+                -item.nevyhovuje_count,
+                item.process_name.casefold(),
+            )
+        )
+        average_level, average_emoji, average_label = audit_process_maturity_history_service.average_maturity_level(
+            [item.maturity_level for item in items]
+        )
+        trends_text = audit_process_maturity_history_service.trends_text_for_year(
+            year,
+            audit_program_id=audit_program_id,
+        )
+        process_lines = "\n\n".join(item.to_text() for item in items) if items else "—"
+        text = f"{_MATURITY_LEGEND}\n\n{process_lines}" if items else "—"
+        return AuditProcessMaturityAssessment(
+            items=tuple(items),
+            text=text,
+            legend_text=_MATURITY_LEGEND,
+            average_level=average_level,
+            average_emoji=average_emoji,
+            average_label=average_label,
+            trends_text=trends_text,
+        )
 
     @staticmethod
     def _resolve_maturity_level(
@@ -1023,10 +1201,13 @@ class AuditAnnualExportContextService:
             return "Řídicí proces je vyspělý, drobná doporučení nenarušují celkovou účinnost."
         return "Řídicí proces je vyspělý a stabilně plní svou roli v systému řízení."
 
-    def _build_program_fulfillment_text(self, year: int) -> str:
+    def _build_program_fulfillment_text(self, year: int, *, program_id: int | None = None) -> str:
         repository = AuditProgramRepository()
         lines: list[str] = []
-        for program in audit_program_service.list_programs():
+        programs = audit_program_service.list_programs()
+        if program_id is not None:
+            programs = [program for program in programs if program.id == program_id]
+        for program in programs:
             visits = [
                 visit
                 for visit in repository.list_visits(program.id)
@@ -1049,13 +1230,15 @@ class AuditAnnualExportContextService:
         metrics: AuditAnnualMetrics,
         severity: AuditAnnualSeverityMetrics,
         rating: PerformanceRatingResult,
+        process_maturity: AuditProcessMaturityAssessment,
     ) -> str:
         return (
-            f"Celkové hodnocení výkonnosti systému řízení v roce {metrics.year} je "
-            f"{rating.headline.lower().replace('celkové hodnocení je ', '')}.\n"
-            f"Bylo provedeno {metrics.audits_count} auditů na {metrics.workplaces_count} pracovištích "
-            f"a {metrics.processes_count} řídicích procesech.\n"
-            f"Podíl nevyhovujících auditních tvrzení: {severity.nevyhovuje_percent:.2f} %."
+            f"Výkonnost systému řízení v roce {metrics.year} je hodnocena jako "
+            f"{rating.headline.split('–', 1)[-1].strip().rstrip('.') if '–' in rating.headline else rating.headline}.\n"
+            f"Průměrná vyspělost řídicích procesů: {process_maturity.average_maturity_text()}.\n"
+            f"Podíl nevyhovujících auditních tvrzení: {severity.nevyhovuje_percent:.2f} %.\n"
+            f"Váhové skóre zjištění: {severity.weighted_score} "
+            f"({_format_ratio('Váhové skóre', severity.score_per_audit).replace('Váhové skóre: ', '')})."
         )
 
     def _build_process_effectiveness_text(self, maturity: AuditProcessMaturityAssessment) -> str:
@@ -1197,20 +1380,20 @@ class AuditAnnualExportContextService:
 
     def _overall_assessment_text(
         self,
-        metrics: AuditAnnualMetrics,
         severity: AuditAnnualSeverityMetrics,
         rating: PerformanceRatingResult,
         methodology: PerformanceMethodologyContent,
+        process_maturity: AuditProcessMaturityAssessment,
     ) -> str:
         detail = (
-            f"Bylo provedeno {metrics.audits_count} auditů.\n"
+            f"Průměrná vyspělost systému řízení: {process_maturity.average_maturity_text()}.\n"
             f"Podíl nevyhovujících auditních tvrzení: {severity.nevyhovuje_percent:.2f} %.\n"
             f"Váhové skóre zjištění: {severity.weighted_score} "
             f"({_format_ratio('Váhové skóre', severity.score_per_audit).replace('Váhové skóre: ', '')}).\n"
             f"Spolehlivost hodnocení: {methodology.reliability.label}.\n"
             f"{methodology.expert_justification}"
         )
-        return f"{rating.emoji}\n{rating.headline}\n{detail}"
+        return f"{rating.headline}\n{detail}"
 
     def _build_appendices(
         self,
@@ -1304,6 +1487,7 @@ class AuditAnnualExportContextService:
             "trendy_text": "",
             "grafy_text": "",
             "historie_roky_text": ", ".join(str(year) for year in history.available_years),
+            "historie_vyspelosti_text": "",
             "program_zprava_rezerva_text": "",
         }
 

@@ -47,6 +47,9 @@ NONCOMPLIANCE_RED_THRESHOLD = 15.0
 NONCOMPLIANCE_GREEN_THRESHOLD = 5.0
 OVERDUE_MEASURES_RED_THRESHOLD = 3
 
+EVALUATION_DOMAIN_BOZP = "bozp"
+EVALUATION_DOMAIN_AUDIT_MANAGEMENT = "audit_management"
+
 INDICATOR_EXPLANATIONS: dict[str, str] = {
     "noncompliance": (
         "Udává, jak velká část kontrolních bodů nevyhověla. "
@@ -204,12 +207,17 @@ class PerformanceMethodologyContent:
 
 
 class PerformanceEvaluationMethodologyService:
-    def build_explanation(self, evaluation_input: PerformanceEvaluationInput) -> PerformanceEvaluationExplanation:
-        rating = self.determine_rating(evaluation_input)
+    def build_explanation(
+        self,
+        evaluation_input: PerformanceEvaluationInput,
+        *,
+        domain: str = EVALUATION_DOMAIN_BOZP,
+    ) -> PerformanceEvaluationExplanation:
+        rating = self.determine_rating(evaluation_input, domain=domain)
         signals = self._signals_from_input(evaluation_input, rating=rating)
-        methodology = self.build(signals)
-        indicators = self._build_indicators(evaluation_input)
-        rules = self._build_applied_rules(evaluation_input, rating)
+        methodology = self.build(signals, domain=domain)
+        indicators = self._build_indicators(evaluation_input, domain=domain)
+        rules = self._build_applied_rules(evaluation_input, rating, domain=domain)
         simulation = self._input_to_simulation(evaluation_input)
         return PerformanceEvaluationExplanation(
             rating=rating,
@@ -223,7 +231,12 @@ class PerformanceEvaluationMethodologyService:
     def simulate(self, simulation: PerformanceEvaluationSimulationInput) -> PerformanceEvaluationExplanation:
         return self.build_explanation(self._simulation_to_input(simulation))
 
-    def determine_rating(self, evaluation_input: PerformanceEvaluationInput) -> PerformanceRatingResult:
+    def determine_rating(
+        self,
+        evaluation_input: PerformanceEvaluationInput,
+        *,
+        domain: str = EVALUATION_DOMAIN_BOZP,
+    ) -> PerformanceRatingResult:
         majority_closed = (
             evaluation_input.measures_total == 0
             or evaluation_input.measures_closed >= evaluation_input.measures_open
@@ -265,7 +278,7 @@ class PerformanceEvaluationMethodologyService:
             return PerformanceRatingResult(
                 level=RATING_GREEN,
                 emoji="🟢",
-                headline="Celkové hodnocení je zelené – systém BOZP je funkční a stabilní.",
+                headline=self._green_headline(domain),
             )
 
         return PerformanceRatingResult(
@@ -274,13 +287,19 @@ class PerformanceEvaluationMethodologyService:
             headline="Celkové hodnocení je žluté – existují významnější nedostatky vyžadující pozornost.",
         )
 
-    def build(self, signals: PerformanceEvaluationSignals) -> PerformanceMethodologyContent:
-        reliability = self._build_reliability(signals)
-        expert_justification = self._build_expert_justification(signals)
+    def build(
+        self,
+        signals: PerformanceEvaluationSignals,
+        *,
+        domain: str = EVALUATION_DOMAIN_BOZP,
+    ) -> PerformanceMethodologyContent:
+        reliability = self._build_reliability(signals, domain=domain)
+        expert_justification = self._build_expert_justification(signals, domain=domain)
         appendix_text = self._build_appendix_text(
             signals,
             reliability=reliability,
             expert_justification=expert_justification,
+            domain=domain,
         )
         return PerformanceMethodologyContent(
             appendix_text=appendix_text,
@@ -288,7 +307,18 @@ class PerformanceEvaluationMethodologyService:
             reliability=reliability,
         )
 
-    def _build_reliability(self, signals: PerformanceEvaluationSignals) -> PerformanceEvaluationReliability:
+    @staticmethod
+    def _green_headline(domain: str) -> str:
+        if domain == EVALUATION_DOMAIN_AUDIT_MANAGEMENT:
+            return "Celkové hodnocení je zelené – systém řízení je funkční a stabilní."
+        return "Celkové hodnocení je zelené – systém BOZP je funkční a stabilní."
+
+    def _build_reliability(
+        self,
+        signals: PerformanceEvaluationSignals,
+        *,
+        domain: str = EVALUATION_DOMAIN_BOZP,
+    ) -> PerformanceEvaluationReliability:
         score = 0
         if signals.activities_count >= 15:
             score += 2
@@ -309,12 +339,15 @@ class PerformanceEvaluationMethodologyService:
         elif signals.workplaces_covered_count >= 3:
             score += 1
 
+        activity_label = "auditů" if domain == EVALUATION_DOMAIN_AUDIT_MANAGEMENT else "kontrolních aktivit"
+        point_label = "auditních tvrzení" if domain == EVALUATION_DOMAIN_AUDIT_MANAGEMENT else "kontrolních bodů"
+
         if score >= 5:
             level = RELIABILITY_HIGH
             label = "Vysoká"
             explanation = (
-                f"Hodnocení vychází z {signals.activities_count} kontrolních aktivit, "
-                f"{signals.control_points_count} kontrolních bodů a pokrytí "
+                f"Hodnocení vychází z {signals.activities_count} {activity_label}, "
+                f"{signals.control_points_count} {point_label} a pokrytí "
                 f"{signals.workplaces_covered_count} pracovišť. "
                 "Rozsah dat podporuje reprezentativní závěr."
             )
@@ -322,35 +355,57 @@ class PerformanceEvaluationMethodologyService:
             level = RELIABILITY_MEDIUM
             label = "Střední"
             explanation = (
-                f"Hodnocení vychází z {signals.activities_count} kontrolních aktivit "
-                f"a {signals.control_points_count} kontrolních bodů. "
+                f"Hodnocení vychází z {signals.activities_count} {activity_label} "
+                f"a {signals.control_points_count} {point_label}. "
                 "Závěry jsou použitelné, avšak s omezenou reprezentativitou."
             )
         else:
             level = RELIABILITY_LOW
             label = "Nízká"
             explanation = (
-                f"Hodnocení vychází pouze z {signals.activities_count} kontrolních aktivit. "
+                f"Hodnocení vychází pouze z {signals.activities_count} {activity_label}. "
                 "Omezený rozsah dat snižuje reprezentativnost výsledku."
             )
 
         return PerformanceEvaluationReliability(level=level, label=label, explanation=explanation)
 
-    def _build_expert_justification(self, signals: PerformanceEvaluationSignals) -> str:
+    def _build_expert_justification(
+        self,
+        signals: PerformanceEvaluationSignals,
+        *,
+        domain: str = EVALUATION_DOMAIN_BOZP,
+    ) -> str:
         parts: list[str] = []
 
         if signals.comparison_summary:
             parts.append(signals.comparison_summary.rstrip("."))
 
+        risk_phrase = (
+            "účinnost systému řízení"
+            if domain == EVALUATION_DOMAIN_AUDIT_MANAGEMENT
+            else "bezpečnost práce"
+        )
+        activity_phrase = (
+            "auditech"
+            if domain == EVALUATION_DOMAIN_AUDIT_MANAGEMENT
+            else "kontrolních aktivitách"
+        )
+
+        finding_phrase = (
+            "kritické zjištění"
+            if domain == EVALUATION_DOMAIN_AUDIT_MANAGEMENT
+            else "kritická závada"
+        )
+
         if signals.open_critical_overdue >= 1:
             parts.append(
-                "zůstává otevřená kritická závada po termínu. "
+                f"zůstává otevřené {finding_phrase} po termínu. "
                 "Z tohoto důvodu je systém hodnocen jako nevyhovující"
             )
         elif signals.open_critical_count >= 2:
             parts.append(
-                f"jsou evidovány {signals.open_critical_count} kritické otevřené závady, "
-                "což představuje zásadní riziko pro bezpečnost práce"
+                f"jsou evidována {signals.open_critical_count} kritická otevřená zjištění, "
+                f"což představuje zásadní riziko pro {risk_phrase}"
             )
         elif signals.open_high_overdue >= 1:
             parts.append(
@@ -374,7 +429,7 @@ class PerformanceEvaluationMethodologyService:
             )
         elif signals.repeated_problems_count:
             parts.append(
-                "některé problémy se opakují v různých kontrolních aktivitách, "
+                f"některé problémy se opakují v různých {activity_phrase}, "
                 "což signalizuje systémový charakter nedostatků"
             )
         elif signals.rating_level == RATING_GREEN:
@@ -409,9 +464,22 @@ class PerformanceEvaluationMethodologyService:
         *,
         reliability: PerformanceEvaluationReliability,
         expert_justification: str,
+        domain: str = EVALUATION_DOMAIN_BOZP,
     ) -> str:
-        lines = [
-            (
+        if domain == EVALUATION_DOMAIN_AUDIT_MANAGEMENT:
+            intro = (
+                "Celkové hodnocení systému řízení není stanoveno pouze podle počtu zjištěných neshod.\n"
+                "Hodnocení zohledňuje zejména:\n"
+                "• podíl nevyhovujících auditních tvrzení,\n"
+                "• závažnost jednotlivých zjištění,\n"
+                "• stav plnění nápravných opatření,\n"
+                "• opakované systémové problémy,\n"
+                "• význam zjištění pro účinnost řídicích procesů.\n"
+                "Cílem metodiky je hodnotit skutečnou výkonnost systému řízení, "
+                "nikoli pouze počet evidovaných nedostatků."
+            )
+        else:
+            intro = (
                 "Celkové hodnocení systému BOZP není stanoveno pouze podle počtu zjištěných neshod.\n"
                 "Hodnocení zohledňuje zejména:\n"
                 "• podíl nevyhovujících kontrolních bodů,\n"
@@ -421,7 +489,9 @@ class PerformanceEvaluationMethodologyService:
                 "• význam jednotlivých zjištění pro bezpečnost práce.\n"
                 "Cílem metodiky je hodnotit skutečnou výkonnost systému BOZP, "
                 "nikoli pouze počet evidovaných nedostatků."
-            ),
+            )
+        lines = [
+            intro,
             "",
             "Kritéria hodnocení",
             "Kritérium".ljust(34) + "Váha",
@@ -491,6 +561,8 @@ class PerformanceEvaluationMethodologyService:
     def _build_indicators(
         self,
         evaluation_input: PerformanceEvaluationInput,
+        *,
+        domain: str = EVALUATION_DOMAIN_BOZP,
     ) -> tuple[PerformanceEvaluationIndicator, ...]:
         influenced_noncompliance = (
             evaluation_input.noncompliance_percent > 0
@@ -500,10 +572,26 @@ class PerformanceEvaluationMethodologyService:
         influenced_overdue = evaluation_input.overdue_measures_count > 0
         influenced_repeated = evaluation_input.repeated_problems_count > 0
 
+        noncompliance_label = (
+            "Podíl nevyhovujících auditních tvrzení"
+            if domain == EVALUATION_DOMAIN_AUDIT_MANAGEMENT
+            else "Podíl nevyhovujících bodů"
+        )
+        activities_label = (
+            "Počet auditů"
+            if domain == EVALUATION_DOMAIN_AUDIT_MANAGEMENT
+            else "Počet kontrolních aktivit"
+        )
+        points_label = (
+            "Počet auditních tvrzení"
+            if domain == EVALUATION_DOMAIN_AUDIT_MANAGEMENT
+            else "Počet kontrolních bodů"
+        )
+
         return (
             PerformanceEvaluationIndicator(
                 key="noncompliance",
-                label="Podíl nevyhovujících bodů",
+                label=noncompliance_label,
                 value_text=self._format_percent(evaluation_input.noncompliance_percent),
                 influenced=influenced_noncompliance,
                 explanation=INDICATOR_EXPLANATIONS["noncompliance"],
@@ -531,14 +619,14 @@ class PerformanceEvaluationMethodologyService:
             ),
             PerformanceEvaluationIndicator(
                 key="activities_count",
-                label="Počet kontrolních aktivit",
+                label=activities_label,
                 value_text=str(evaluation_input.activities_count),
                 influenced=evaluation_input.activities_count > 0,
                 explanation=INDICATOR_EXPLANATIONS["activities_count"],
             ),
             PerformanceEvaluationIndicator(
                 key="control_points_count",
-                label="Počet kontrolních bodů",
+                label=points_label,
                 value_text=str(evaluation_input.control_points_count),
                 influenced=evaluation_input.control_points_count > 0,
                 explanation=INDICATOR_EXPLANATIONS["control_points_count"],
@@ -549,6 +637,8 @@ class PerformanceEvaluationMethodologyService:
         self,
         evaluation_input: PerformanceEvaluationInput,
         rating: PerformanceRatingResult,
+        *,
+        domain: str = EVALUATION_DOMAIN_BOZP,
     ) -> tuple[PerformanceEvaluationAppliedRule, ...]:
         return (
             PerformanceEvaluationAppliedRule(

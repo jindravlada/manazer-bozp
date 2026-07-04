@@ -504,6 +504,10 @@ class AnnualReportContext:
             "obdobi": f"1. 1. {self.year} – 31. 12. {self.year}",
             "datum_vytvoreni": datetime.now().strftime("%d.%m.%Y"),
             "datum_vygenerovani": datetime.now().strftime("%d.%m.%Y"),
+            "celkove_hodnoceni_nadpis": BozpAnnualExportContextService._overall_rating_heading(
+                self.overall_rating.emoji
+            ),
+            "celkove_hodnoceni_emoji": self.overall_rating.emoji,
             "celkove_hodnoceni_text": self.overall_assessment_text,
             "oblasti_pozornosti_text": self.attention_areas_text,
             "zamestnavatel_nazev": organization,
@@ -732,7 +736,11 @@ class BozpAnnualExportContextService:
             f"{resolved}\n"
             f"{methodology.expert_justification}"
         )
-        return f"{rating.emoji}\n{rating.headline}\n{detail}"
+        return f"{rating.headline}\n{detail}"
+
+    @staticmethod
+    def _overall_rating_heading(emoji: str) -> str:
+        return f"CELKOVÉ HODNOCENÍ {emoji}"
 
     def _performance_signals(
         self,

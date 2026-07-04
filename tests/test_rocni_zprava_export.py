@@ -176,6 +176,8 @@ class RocniZpravaExportTestCase(unittest.TestCase):
             "datum_vytvoreni",
             "datum_vygenerovani",
             "zpracoval",
+            "celkove_hodnoceni_nadpis",
+            "celkove_hodnoceni_emoji",
             "celkove_hodnoceni_text",
             "prehled_vysledku_text",
             "silne_stranky_text",

@@ -24,7 +24,7 @@ class RocniZpravaAudituService:
         storage_service.ensure_structure()
         return storage_service.template_file(self.TEMPLATE_SUBDIR, self.TEMPLATE_NAME)
 
-    def generate_for_year(self, year: int) -> Path:
+    def generate_for_year(self, year: int, *, audit_program_id: int | None = None) -> Path:
         if year < 1900 or year > 3000:
             raise ValueError("Neplatný rok roční zprávy.")
 
@@ -32,7 +32,10 @@ class RocniZpravaAudituService:
         if not template.exists():
             raise FileNotFoundError(f"Šablona roční zprávy nebyla nalezena: {template}")
 
-        report = audit_annual_report_service.get_or_create_for_year(year)
+        report = audit_annual_report_service.get_or_create_for_year(
+            year,
+            audit_program_id=audit_program_id,
+        )
         context = audit_annual_export_context_service.build(year, report=report)
         values = context.placeholder_values()
 
@@ -42,8 +45,8 @@ class RocniZpravaAudituService:
         )
         return self.engine.render(template, output_path, values)
 
-    def open_for_year(self, year: int) -> Path:
-        path = self.generate_for_year(year)
+    def open_for_year(self, year: int, *, audit_program_id: int | None = None) -> Path:
+        path = self.generate_for_year(year, audit_program_id=audit_program_id)
         subprocess.Popen(["xdg-open", str(path)])
         return path
 

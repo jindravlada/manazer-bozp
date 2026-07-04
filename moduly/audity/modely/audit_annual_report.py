@@ -10,10 +10,17 @@ class AuditAnnualReport(Base):
     """Ručně doplňovaná část roční zprávy z interních auditů."""
 
     __tablename__ = "audit_annual_reports"
-    __table_args__ = (UniqueConstraint("year", name="uq_audit_annual_reports_year"),)
+    __table_args__ = (
+        UniqueConstraint(
+            "year",
+            "audit_program_id",
+            name="uq_audit_annual_reports_year_program",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     year: Mapped[int] = mapped_column(Integer, nullable=False)
+    audit_program_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     silne_stranky: Mapped[str] = mapped_column(Text, default="", nullable=False)
     top_priority: Mapped[str] = mapped_column(Text, default="", nullable=False)
     doporuceni_specialisty: Mapped[str] = mapped_column(Text, default="", nullable=False)
