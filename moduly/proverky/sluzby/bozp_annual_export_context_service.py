@@ -6,6 +6,8 @@ from core.shared.constants import (
     CONTROL_RESULT_NEVYHOVUJE,
     CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
     ENTITY_PROVERKY,
+    FINDING_STATUS_OTEVRENE,
+    FINDING_STATUS_V_PROCESU,
 )
 from core.shared.finding_display import finding_status_label, finding_type_label
 from core.shared.sluzby.control_activity_statistics_service import (
@@ -14,10 +16,43 @@ from core.shared.sluzby.control_activity_statistics_service import (
 from core.shared.sluzby.control_result_service import control_result_service
 from core.shared.sluzby.finding_service import finding_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
+from moduly.proverky.constants import (
+    CONTROL_POINT_SEVERITY_DEFAULT,
+    CONTROL_POINT_SEVERITY_KRITICKA,
+    CONTROL_POINT_SEVERITY_NIZKA,
+    CONTROL_POINT_SEVERITY_STREDNI,
+    CONTROL_POINT_SEVERITY_VYSOKA,
+)
 from moduly.proverky.modely.bozp_annual_report import BozpAnnualReport
 from moduly.proverky.modely.bozp_inspection import BozpInspection
 from moduly.proverky.sluzby.bozp_annual_report_service import bozp_annual_report_service
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
+from moduly.proverky.sluzby.proverky_knowledge_service import proverky_knowledge_service
+from moduly.ukoly.sluzby.task_service import task_service
+
+_OPEN_FINDING_STATUSES = frozenset({FINDING_STATUS_OTEVRENE, FINDING_STATUS_V_PROCESU})
+_OVERDUE_MEASURES_RED_THRESHOLD = 3
+
+_SEVERITY_WEIGHTS = {
+    CONTROL_POINT_SEVERITY_NIZKA: 1,
+    CONTROL_POINT_SEVERITY_STREDNI: 3,
+    CONTROL_POINT_SEVERITY_VYSOKA: 7,
+    CONTROL_POINT_SEVERITY_KRITICKA: 15,
+}
+
+_SEVERITY_LABELS = {
+    CONTROL_POINT_SEVERITY_NIZKA: "Nízká",
+    CONTROL_POINT_SEVERITY_STREDNI: "Střední",
+    CONTROL_POINT_SEVERITY_VYSOKA: "Vysoká",
+    CONTROL_POINT_SEVERITY_KRITICKA: "Kritická",
+}
+
+_SEVERITY_ORDER = (
+    CONTROL_POINT_SEVERITY_KRITICKA,
+    CONTROL_POINT_SEVERITY_VYSOKA,
+    CONTROL_POINT_SEVERITY_STREDNI,
+    CONTROL_POINT_SEVERITY_NIZKA,
+)
 
 _NEGATIVE_MARKERS = (
     "neprobíh",
@@ -131,6 +166,14 @@ def _inspection_count_label(count: int) -> str:
     return f"{count} prověrek"
 
 
+def _plural_findings(count: int) -> str:
+    if count == 1:
+        return "1 zjištění"
+    if 2 <= count <= 4:
+        return f"{count} zjištění"
+    return f"{count} zjištění"
+
+
 def _inspection_year(inspection: BozpInspection) -> int | None:
     if inspection.inspection_date is not None:
         return inspection.inspection_date.year
@@ -173,6 +216,70 @@ def _format_ratio(label: str, value: float | None) -> str:
 
 
 @dataclass(frozen=True)
+class AnnualReportSeverityMetrics:
+    counts_by_severity: dict[str, int]
+    weighted_score: int
+    score_per_inspection: float | None
+    score_per_100_control_points: float | None
+    nevyhovuje_percent: float
+    overdue_open_measures: int
+    open_critical_count: int
+    open_critical_overdue: int
+    open_high_overdue: int
+    repeated_problems_count: int
+
+    def count_for(self, severity: str) -> int:
+        return int(self.counts_by_severity.get(severity, 0))
+
+    def performance_lines(self, metrics: "AnnualReportMetrics") -> list[str]:
+        normalized = metrics.normalized()
+        lines = [
+            "Ukazatele výkonnosti systému BOZP:",
+            _format_ratio("Neshody", normalized.neshody_per_inspection),
+            _format_ratio("Zjištění", normalized.zjisteni_per_inspection),
+            _format_ratio("Opatření", normalized.opatreni_per_inspection),
+            f"Váhové skóre zjištění: {self.weighted_score}",
+            _format_ratio("Váhové skóre", self.score_per_inspection),
+        ]
+        if self.score_per_100_control_points is not None:
+            lines.append(
+                f"Váhové skóre: {self.score_per_100_control_points:.2f} / 100 kontrolních bodů"
+            )
+        else:
+            lines.append("Váhové skóre: — / 100 kontrolních bodů")
+        lines.append("Počet zjištění podle závažnosti:")
+        for severity in _SEVERITY_ORDER:
+            lines.append(f"{_SEVERITY_LABELS[severity]}: {self.count_for(severity)}")
+        lines.append(f"Otevřená opatření po termínu: {self.overdue_open_measures}")
+        return lines
+
+    def to_placeholders(self) -> dict[str, str]:
+        return {
+            "vahove_skore_zjisteni": str(self.weighted_score),
+            "vahove_skore_na_proverku": (
+                f"{self.score_per_inspection:.2f}"
+                if self.score_per_inspection is not None
+                else "—"
+            ),
+            "vahove_skore_na_100_bodu": (
+                f"{self.score_per_100_control_points:.2f}"
+                if self.score_per_100_control_points is not None
+                else "—"
+            ),
+            "otevrena_opatreni_po_terminu": str(self.overdue_open_measures),
+            "podil_nevyhovuje_procent": f"{self.nevyhovuje_percent:.2f}",
+        }
+
+
+@dataclass(frozen=True)
+class AnnualReportOverallRating:
+    level: str
+    emoji: str
+    headline: str
+    explanation: str
+
+
+@dataclass(frozen=True)
 class AnnualReportMetrics:
     """Agregované ukazatele za rok – rozšiřitelné o trendy a grafy."""
 
@@ -192,7 +299,7 @@ class AnnualReportMetrics:
     def normalized(self) -> AnnualReportNormalizedMetrics:
         return AnnualReportNormalizedMetrics.from_metrics(self)
 
-    def to_lines(self) -> list[str]:
+    def to_lines(self, *, severity: AnnualReportSeverityMetrics | None = None) -> list[str]:
         lines = [
             f"Počet prověrek: {self.inspections_count}",
             f"Počet kontrolovaných pracovišť: {self.workplaces_count}",
@@ -206,13 +313,17 @@ class AnnualReportMetrics:
             f"Počet otevřených opatření: {self.measures_open}",
             f"Počet uzavřených opatření: {self.measures_closed}",
         ]
-        lines.extend(self.normalized().to_lines())
+        if severity is not None:
+            lines.append("")
+            lines.extend(severity.performance_lines(self))
+        else:
+            lines.extend(self.normalized().to_lines())
         return lines
 
-    def to_placeholders(self) -> dict[str, str]:
-        overview = "\n".join(self.to_lines())
+    def to_placeholders(self, *, severity: AnnualReportSeverityMetrics | None = None) -> dict[str, str]:
+        overview = "\n".join(self.to_lines(severity=severity))
         normalized = self.normalized()
-        return {
+        values = {
             "prehled_vysledku_text": overview,
             "statistika_text": overview,
             "pocet_proverek": str(self.inspections_count),
@@ -240,6 +351,10 @@ class AnnualReportMetrics:
                 else "—"
             ),
         }
+        if severity is not None:
+            values.update(severity.to_placeholders())
+            values["ukazatele_vykonnosti_text"] = "\n".join(severity.performance_lines(self))
+        return values
 
 
 @dataclass(frozen=True)
@@ -342,6 +457,8 @@ class AnnualReportContext:
 
     year: int
     metrics: AnnualReportMetrics
+    severity: AnnualReportSeverityMetrics
+    overall_rating: AnnualReportOverallRating
     history: AnnualReportHistoricalSeries
     comparison: AnnualReportYearComparison
     key_insights: AnnualReportKeyInsights
@@ -367,7 +484,7 @@ class AnnualReportContext:
             "zamestnavatel_nazev": organization,
             "souhrn_text": self.overall_assessment_text,
         }
-        values.update(self.metrics.to_placeholders())
+        values.update(self.metrics.to_placeholders(severity=self.severity))
         values.update(self.comparison.to_placeholders())
         values.update(self.key_insights.to_placeholders())
         values.update(self.appendices.to_placeholders())
@@ -394,6 +511,12 @@ class BozpAnnualExportContextService:
             doporuceni_specialisty=saved.doporuceni_specialisty,
             zpracoval=_text(saved.zpracoval),
         )
+        severity = self._compute_severity_assessment(
+            inspections,
+            metrics,
+            attention_problems,
+        )
+        overall_rating = self._determine_overall_rating(metrics, severity)
         key_insights = self._build_key_insights(
             metrics=metrics,
             manual=manual,
@@ -403,6 +526,8 @@ class BozpAnnualExportContextService:
         return AnnualReportContext(
             year=year,
             metrics=metrics,
+            severity=severity,
+            overall_rating=overall_rating,
             history=history,
             comparison=comparison,
             key_insights=key_insights,
@@ -410,7 +535,11 @@ class BozpAnnualExportContextService:
             manual=manual,
             attention_areas_text=self._attention_areas_text(attention_problems),
             attention_problems=tuple(attention_problems),
-            overall_assessment_text=self._overall_assessment_text(metrics),
+            overall_assessment_text=self._overall_assessment_text(
+                metrics,
+                severity,
+                overall_rating,
+            ),
             extension_placeholders=self._reserved_extension_placeholders(history),
         )
 
@@ -486,28 +615,305 @@ class BozpAnnualExportContextService:
             measures_closed=measures_closed,
         )
 
-    def _overall_assessment_text(self, metrics: AnnualReportMetrics) -> str:
-        if metrics.ratings_nevyhovuje:
-            headline = "🔴\nByly zjištěny závažné nedostatky ovlivňující úroveň BOZP."
-        elif metrics.ratings_vyhovuje_s_doporucenim:
-            headline = "🟡\nByly zjištěny oblasti vyžadující zvýšenou pozornost."
-        else:
-            headline = "🟢\nSystém BOZP je funkční a stabilní."
-
+    def _overall_assessment_text(
+        self,
+        metrics: AnnualReportMetrics,
+        severity: AnnualReportSeverityMetrics,
+        rating: AnnualReportOverallRating,
+    ) -> str:
         resolved = (
             "Všechna závažná zjištění byla řešena."
-            if metrics.measures_open == 0 and metrics.ratings_nevyhovuje == 0
+            if metrics.measures_open == 0 and severity.open_critical_count == 0
             else "Některá závažná zjištění vyžadují další sledování plnění opatření."
         )
-        normalized = metrics.normalized()
         detail = (
             f"Bylo provedeno {metrics.inspections_count} prověrek.\n"
-            f"Bylo zjištěno {metrics.ratings_nevyhovuje} neshod "
-            f"a {metrics.ratings_vyhovuje_s_doporucenim} doporučení.\n"
-            f"{_format_ratio('Neshody', normalized.neshody_per_inspection).replace('Neshody: ', 'Průměrně neshod: ')}\n"
-            f"{resolved}"
+            f"Podíl nevyhovujících bodů: {severity.nevyhovuje_percent:.2f} %.\n"
+            f"Váhové skóre zjištění: {severity.weighted_score} "
+            f"({_format_ratio('Váhové skóre', severity.score_per_inspection).replace('Váhové skóre: ', '')}).\n"
+            f"{resolved}\n"
+            f"{rating.explanation}"
         )
-        return f"{headline}\n{detail}"
+        return f"{rating.emoji}\n{rating.headline}\n{detail}"
+
+    def _build_control_point_severity_index(self) -> dict[str, str]:
+        index: dict[str, str] = {}
+        for area in proverky_knowledge_service.get_areas(include_inactive=True):
+            if not area.has_knowledge_file:
+                continue
+            knowledge = proverky_knowledge_service.load_area_knowledge(area)
+            if not knowledge:
+                continue
+            for section in self._iter_knowledge_sections(knowledge.get("sekce") or []):
+                for item in proverky_knowledge_service.get_active_items(section.get("kontrolni_body")):
+                    item_id = _text(item.get("id"))
+                    if item_id:
+                        index[item_id] = proverky_knowledge_service.get_control_point_severity(item)
+        return index
+
+    @staticmethod
+    def _iter_knowledge_sections(sections: list) -> list[dict]:
+        collected: list[dict] = []
+        for section in sections:
+            if not isinstance(section, dict):
+                continue
+            collected.append(section)
+            nested = section.get("sekce") or []
+            if isinstance(nested, list):
+                collected.extend(BozpAnnualExportContextService._iter_knowledge_sections(nested))
+        return collected
+
+    def _resolve_control_point_severity(
+        self,
+        *,
+        area_id: str = "",
+        section_id: str = "",
+        control_point_id: str = "",
+        severity_index: dict[str, str],
+    ) -> str:
+        control_point_id = _text(control_point_id)
+        if control_point_id and control_point_id in severity_index:
+            return severity_index[control_point_id]
+
+        area_id = _text(area_id)
+        section_id = _text(section_id)
+        if area_id and section_id and control_point_id:
+            section = proverky_knowledge_service.get_section(area_id, section_id)
+            if section:
+                for item in proverky_knowledge_service.get_active_items(section.get("kontrolni_body")):
+                    if _text(item.get("id")) == control_point_id:
+                        return proverky_knowledge_service.get_control_point_severity(item)
+        return CONTROL_POINT_SEVERITY_DEFAULT
+
+    @staticmethod
+    def _is_overdue_task(task, *, today: date | None = None) -> bool:
+        if task.computed_status in {"Ukončeno", "Zrušeno"}:
+            return False
+        due_date = getattr(task, "due_date", None)
+        if due_date is None:
+            return False
+        reference = today or date.today()
+        return due_date < reference
+
+    def _compute_severity_assessment(
+        self,
+        inspections: list[BozpInspection],
+        metrics: AnnualReportMetrics,
+        attention_problems: list[AnnualReportAttentionProblem],
+    ) -> AnnualReportSeverityMetrics:
+        severity_index = self._build_control_point_severity_index()
+        counts = {severity: 0 for severity in _SEVERITY_ORDER}
+        weighted_score = 0
+        open_critical_count = 0
+        open_critical_overdue = 0
+        open_high_overdue = 0
+        overdue_open_measures = 0
+        seen_overdue_task_ids: set[int] = set()
+
+        for inspection in inspections:
+            for row in control_result_service.get_for_entity(ENTITY_PROVERKY, inspection.id):
+                if row.result not in (
+                    CONTROL_RESULT_NEVYHOVUJE,
+                    CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
+                ):
+                    continue
+                severity = self._resolve_control_point_severity(
+                    area_id=row.source_area_id,
+                    section_id=row.source_section_id,
+                    control_point_id=row.source_control_point_id,
+                    severity_index=severity_index,
+                )
+                counts[severity] = counts.get(severity, 0) + 1
+                weighted_score += _SEVERITY_WEIGHTS.get(severity, _SEVERITY_WEIGHTS[CONTROL_POINT_SEVERITY_STREDNI])
+
+            for finding in finding_service.get_for_entity(ENTITY_PROVERKY, inspection.id):
+                if finding.status not in _OPEN_FINDING_STATUSES:
+                    continue
+                severity = self._resolve_control_point_severity(
+                    control_point_id=finding.source_control_point_id,
+                    severity_index=severity_index,
+                )
+                if severity == CONTROL_POINT_SEVERITY_KRITICKA:
+                    open_critical_count += 1
+                elif severity == CONTROL_POINT_SEVERITY_VYSOKA:
+                    pass
+
+                if finding.task_id:
+                    task = task_service.get_task_by_id(finding.task_id)
+                    if task is None or task.id in seen_overdue_task_ids:
+                        continue
+                    if self._is_overdue_task(task):
+                        seen_overdue_task_ids.add(task.id)
+                        overdue_open_measures += 1
+                        if severity == CONTROL_POINT_SEVERITY_KRITICKA:
+                            open_critical_overdue += 1
+                        elif severity == CONTROL_POINT_SEVERITY_VYSOKA:
+                            open_high_overdue += 1
+
+            for task in bozp_inspection_service.get_tasks_for_inspection(inspection.id):
+                if task.id in seen_overdue_task_ids:
+                    continue
+                if self._is_overdue_task(task):
+                    seen_overdue_task_ids.add(task.id)
+                    overdue_open_measures += 1
+
+        nevyhovuje_percent = (
+            metrics.ratings_nevyhovuje / metrics.control_points_count * 100
+            if metrics.control_points_count > 0
+            else 0.0
+        )
+        repeated_problems_count = sum(
+            1 for problem in attention_problems if problem.count > 1
+        )
+        return AnnualReportSeverityMetrics(
+            counts_by_severity=counts,
+            weighted_score=weighted_score,
+            score_per_inspection=_per_inspection(weighted_score, metrics.inspections_count),
+            score_per_100_control_points=(
+                weighted_score / metrics.control_points_count * 100
+                if metrics.control_points_count > 0
+                else None
+            ),
+            nevyhovuje_percent=nevyhovuje_percent,
+            overdue_open_measures=overdue_open_measures,
+            open_critical_count=open_critical_count,
+            open_critical_overdue=open_critical_overdue,
+            open_high_overdue=open_high_overdue,
+            repeated_problems_count=repeated_problems_count,
+        )
+
+    def _determine_overall_rating(
+        self,
+        metrics: AnnualReportMetrics,
+        severity: AnnualReportSeverityMetrics,
+    ) -> AnnualReportOverallRating:
+        majority_closed = (
+            metrics.measures_total == 0
+            or metrics.measures_closed >= metrics.measures_open
+        )
+
+        if severity.open_critical_overdue >= 1:
+            return AnnualReportOverallRating(
+                level="red",
+                emoji="🔴",
+                headline="Celkové hodnocení je červené kvůli kritické otevřené závadě po termínu.",
+                explanation=(
+                    "Byla evidována alespoň jedna kritická otevřená závada po termínu, "
+                    "která vyžaduje okamžitou nápravu."
+                ),
+            )
+        if severity.open_critical_count >= 2:
+            return AnnualReportOverallRating(
+                level="red",
+                emoji="🔴",
+                headline="Celkové hodnocení je červené kvůli více kritickým otevřeným závadám.",
+                explanation=(
+                    f"Byly evidovány {severity.open_critical_count} kritické otevřené závady, "
+                    "což představuje zásadní riziko pro bezpečnost práce."
+                ),
+            )
+        if severity.nevyhovuje_percent > 15:
+            return AnnualReportOverallRating(
+                level="red",
+                emoji="🔴",
+                headline="Celkové hodnocení je červené kvůli vysokému podílu nevyhovujících bodů.",
+                explanation=(
+                    f"Podíl nevyhovujících bodů ({severity.nevyhovuje_percent:.2f} %) překračuje "
+                    "práh 15 % a signalizuje závažný problém v systému BOZP."
+                ),
+            )
+        if severity.overdue_open_measures >= _OVERDUE_MEASURES_RED_THRESHOLD:
+            return AnnualReportOverallRating(
+                level="red",
+                emoji="🔴",
+                headline="Celkové hodnocení je červené kvůli vysokému počtu opatření po termínu.",
+                explanation=(
+                    f"Je otevřeno {severity.overdue_open_measures} opatření po termínu, "
+                    "což oslabuje efektivitu nápravných procesů."
+                ),
+            )
+
+        if (
+            severity.open_critical_count == 0
+            and severity.open_high_overdue == 0
+            and severity.nevyhovuje_percent <= 5
+            and majority_closed
+            and severity.count_for(CONTROL_POINT_SEVERITY_VYSOKA) == 0
+            and severity.count_for(CONTROL_POINT_SEVERITY_KRITICKA) == 0
+        ):
+            return AnnualReportOverallRating(
+                level="green",
+                emoji="🟢",
+                headline="Celkové hodnocení je zelené – systém BOZP je funkční a stabilní.",
+                explanation=self._rating_explanation(metrics, severity, level="green"),
+            )
+
+        return AnnualReportOverallRating(
+            level="yellow",
+            emoji="🟡",
+            headline="Celkové hodnocení je žluté – existují významnější nedostatky vyžadující pozornost.",
+            explanation=self._rating_explanation(metrics, severity, level="yellow"),
+        )
+
+    def _rating_explanation(
+        self,
+        metrics: AnnualReportMetrics,
+        severity: AnnualReportSeverityMetrics,
+        *,
+        level: str,
+    ) -> str:
+        parts: list[str] = []
+        if severity.nevyhovuje_percent <= 5:
+            parts.append("podíl nevyhovujících bodů je nízký")
+        elif severity.nevyhovuje_percent <= 15:
+            parts.append(
+                f"podíl nevyhovujících bodů je {severity.nevyhovuje_percent:.2f} %"
+            )
+        else:
+            parts.append(
+                f"podíl nevyhovujících bodů je {severity.nevyhovuje_percent:.2f} %"
+            )
+
+        high_count = severity.count_for(CONTROL_POINT_SEVERITY_VYSOKA)
+        critical_count = severity.count_for(CONTROL_POINT_SEVERITY_KRITICKA)
+        if critical_count:
+            parts.append(
+                f"bylo zjištěno {_plural_findings(critical_count)} s kritickou závažností"
+            )
+        elif high_count == 1:
+            parts.append("byla zjištěna jedna závada s vysokou závažností")
+        elif high_count > 1:
+            parts.append(f"bylo zjištěno {_plural_findings(high_count)} s vysokou závažností")
+
+        if severity.overdue_open_measures:
+            parts.append(
+                f"existuje {severity.overdue_open_measures} otevřených opatření po termínu"
+            )
+        elif metrics.measures_open:
+            parts.append("některá opatření zůstávají otevřená, avšak bez kritického dopadu")
+
+        if severity.repeated_problems_count:
+            parts.append("některé problémy se opakují ve více prověrkách")
+
+        if (
+            level == "yellow"
+            and metrics.ratings_nevyhovuje > 0
+            and severity.score_per_inspection is not None
+            and severity.score_per_inspection <= 3
+        ):
+            parts.append(
+                "váhové skóre závažnosti na prověrku zůstává relativně nízké"
+            )
+
+        if not parts:
+            return (
+                "Hodnocení vychází z kombinace podílu nevyhovujících bodů, "
+                "váhového skóre závažnosti a stavu opatření."
+            )
+
+        joined = ", ale ".join(parts) if len(parts) == 2 else ", ".join(parts)
+        color_label = {"green": "zelené", "yellow": "žluté", "red": "červené"}[level]
+        return f"Celkové hodnocení je {color_label}, protože {joined}."
 
     def _collect_attention_problems(
         self,

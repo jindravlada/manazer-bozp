@@ -2,7 +2,7 @@ import importlib
 import tempfile
 import unittest
 import zipfile
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
@@ -33,7 +33,14 @@ with patch.object(Path, "home", return_value=_TMP):
     from core.shared.sluzby.control_result_service import ControlPointContext, control_result_service
     from core.shared.sluzby.finding_service import finding_service
     from core.shared.sluzby.finding_task_service import finding_task_service
+    from moduly.proverky.constants import (
+        CONTROL_POINT_SEVERITY_KRITICKA,
+        CONTROL_POINT_SEVERITY_NIZKA,
+        CONTROL_POINT_SEVERITY_VYSOKA,
+    )
     from moduly.proverky.sluzby.bozp_annual_export_context_service import (
+        AnnualReportMetrics,
+        AnnualReportSeverityMetrics,
         bozp_annual_export_context_service,
     )
     from moduly.proverky.sluzby.bozp_annual_report_service import bozp_annual_report_service
@@ -44,6 +51,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.proverky.sluzby.rocni_zprava_service import rocni_zprava_service
     from moduly.nastaveni.sluzby.person_service import person_service
     from moduly.nastaveni.sluzby.settings_service import settings_service
+    from moduly.ukoly.sluzby.task_service import task_service
 
 
 def _ensure_annual_report_template() -> Path:
@@ -191,6 +199,12 @@ class RocniZpravaExportTestCase(unittest.TestCase):
             "doporuceni_na_proverku",
             "zjisteni_na_proverku",
             "opatreni_na_proverku",
+            "vahove_skore_zjisteni",
+            "vahove_skore_na_proverku",
+            "vahove_skore_na_100_bodu",
+            "otevrena_opatreni_po_terminu",
+            "podil_nevyhovuje_procent",
+            "ukazatele_vykonnosti_text",
             "trendy_text",
             "grafy_text",
             "top10_zavad_text",
@@ -471,6 +485,196 @@ class RocniZpravaExportTestCase(unittest.TestCase):
 
         dialog = RocniZpravaDialog(year=2026)
         self.assertEqual(dialog.zpracoval_selector.current_person_id(), self.preparer_worker.id)
+
+    def _severity_side_effect(self, **_kwargs):
+        control_point_id = str(_kwargs.get("control_point_id", ""))
+        if control_point_id.startswith("cp-low"):
+            return CONTROL_POINT_SEVERITY_NIZKA
+        if control_point_id.startswith("cp-high"):
+            return CONTROL_POINT_SEVERITY_VYSOKA
+        if control_point_id.startswith("cp-crit"):
+            return CONTROL_POINT_SEVERITY_KRITICKA
+        return "stredni"
+
+    def test_many_low_severity_issues_do_not_force_red_rating(self) -> None:
+        inspection = self._create_inspection_with_commission(year=2026, inspection_date=date(2026, 3, 10))
+        assert inspection is not None
+        with patch.object(
+            bozp_annual_export_context_service,
+            "_resolve_control_point_severity",
+            side_effect=self._severity_side_effect,
+        ):
+            for index in range(4):
+                control_result_service.set_result(
+                    ENTITY_PROVERKY,
+                    inspection.id,
+                    ControlPointContext(
+                        area_id="bozp",
+                        area_label="BOZP",
+                        section_id="s1",
+                        section_label="Sekce",
+                        control_point_id=f"cp-low-{index}",
+                        control_point_label=f"Formální nedostatek {index}",
+                    ),
+                    result=CONTROL_RESULT_NEVYHOVUJE,
+                )
+            for index in range(4996):
+                control_result_service.set_result(
+                    ENTITY_PROVERKY,
+                    inspection.id,
+                    ControlPointContext(
+                        area_id="bozp",
+                        area_label="BOZP",
+                        section_id="s1",
+                        section_label="Sekce",
+                        control_point_id=f"cp-ok-{index}",
+                        control_point_label=f"Vyhovující bod {index}",
+                    ),
+                    result=CONTROL_RESULT_VYHOVUJE,
+                )
+
+            context = bozp_annual_export_context_service.build(2026)
+            self.assertEqual(context.overall_rating.level, "green")
+            self.assertLess(context.severity.nevyhovuje_percent, 5)
+            self.assertEqual(context.severity.count_for(CONTROL_POINT_SEVERITY_NIZKA), 4)
+            self.assertIn("Celkové hodnocení je zelené", context.overall_assessment_text)
+
+    def test_critical_open_overdue_finding_worsens_rating(self) -> None:
+        inspection = self._create_inspection_with_commission(year=2026, inspection_date=date(2026, 3, 10))
+        assert inspection is not None
+        with patch.object(
+            bozp_annual_export_context_service,
+            "_resolve_control_point_severity",
+            side_effect=self._severity_side_effect,
+        ):
+            control_result_service.set_result(
+                ENTITY_PROVERKY,
+                inspection.id,
+                ControlPointContext(
+                    area_id="bozp",
+                    area_label="BOZP",
+                    section_id="s1",
+                    section_label="Sekce",
+                    control_point_id="cp-crit",
+                    control_point_label="Kritická závada",
+                ),
+                result=CONTROL_RESULT_NEVYHOVUJE,
+            )
+            finding = finding_service.create(
+                ENTITY_PROVERKY,
+                inspection.id,
+                finding_type=FINDING_TYPE_ZJISTENI,
+                description="Kritická závada po termínu",
+                status=FINDING_STATUS_OTEVRENE,
+                source_control_point_id="cp-crit",
+            )
+            task = finding_task_service.create_task_from_finding(finding.id)
+            task_service.update_task(
+                task.id,
+                task.title,
+                due_date=date.today() - timedelta(days=7),
+            )
+
+            context = bozp_annual_export_context_service.build(2026)
+            self.assertEqual(context.overall_rating.level, "red")
+            self.assertGreaterEqual(context.severity.open_critical_overdue, 1)
+            self.assertIn("kritická otevřená závada po termínu", context.overall_assessment_text)
+
+    def test_high_severity_has_greater_weight_than_low(self) -> None:
+        metrics = AnnualReportMetrics(
+            year=2026,
+            inspections_count=1,
+            workplaces_count=1,
+            areas_count=1,
+            control_points_count=2,
+            ratings_vyhovuje=0,
+            ratings_vyhovuje_s_doporucenim=0,
+            ratings_nevyhovuje=2,
+            findings_count=2,
+            measures_total=0,
+            measures_open=0,
+            measures_closed=0,
+        )
+        low = AnnualReportSeverityMetrics(
+            counts_by_severity={
+                CONTROL_POINT_SEVERITY_NIZKA: 2,
+                "stredni": 0,
+                CONTROL_POINT_SEVERITY_VYSOKA: 0,
+                CONTROL_POINT_SEVERITY_KRITICKA: 0,
+            },
+            weighted_score=2,
+            score_per_inspection=2.0,
+            score_per_100_control_points=100.0,
+            nevyhovuje_percent=100.0,
+            overdue_open_measures=0,
+            open_critical_count=0,
+            open_critical_overdue=0,
+            open_high_overdue=0,
+            repeated_problems_count=0,
+        )
+        high = AnnualReportSeverityMetrics(
+            counts_by_severity={
+                CONTROL_POINT_SEVERITY_NIZKA: 0,
+                "stredni": 0,
+                CONTROL_POINT_SEVERITY_VYSOKA: 2,
+                CONTROL_POINT_SEVERITY_KRITICKA: 0,
+            },
+            weighted_score=14,
+            score_per_inspection=14.0,
+            score_per_100_control_points=700.0,
+            nevyhovuje_percent=100.0,
+            overdue_open_measures=0,
+            open_critical_count=0,
+            open_critical_overdue=0,
+            open_high_overdue=0,
+            repeated_problems_count=0,
+        )
+        self.assertGreater(high.weighted_score, low.weighted_score)
+        self.assertEqual(low.weighted_score, 2)
+        self.assertEqual(high.weighted_score, 14)
+
+    def test_overall_assessment_explains_rating_color(self) -> None:
+        inspection = self._create_inspection_with_commission(year=2026, inspection_date=date(2026, 4, 1))
+        assert inspection is not None
+        with patch.object(
+            bozp_annual_export_context_service,
+            "_resolve_control_point_severity",
+            side_effect=self._severity_side_effect,
+        ):
+            for index in range(20):
+                control_result_service.set_result(
+                    ENTITY_PROVERKY,
+                    inspection.id,
+                    ControlPointContext(
+                        area_id="bozp",
+                        area_label="BOZP",
+                        section_id="s1",
+                        section_label="Sekce",
+                        control_point_id=f"cp-ok-{index}",
+                        control_point_label=f"Vyhovující bod {index}",
+                    ),
+                    result=CONTROL_RESULT_VYHOVUJE,
+                )
+            control_result_service.set_result(
+                ENTITY_PROVERKY,
+                inspection.id,
+                ControlPointContext(
+                    area_id="bozp",
+                    area_label="BOZP",
+                    section_id="s1",
+                    section_label="Sekce",
+                    control_point_id="cp-high",
+                    control_point_label="Závada s vysokou závažností",
+                ),
+                result=CONTROL_RESULT_NEVYHOVUJE,
+            )
+
+            context = bozp_annual_export_context_service.build(2026)
+            self.assertEqual(context.overall_rating.level, "yellow")
+            self.assertIn("Celkové hodnocení je žluté", context.overall_assessment_text)
+            self.assertIn("vysokou závažností", context.overall_assessment_text)
+            self.assertIn("Ukazatele výkonnosti systému BOZP", context.placeholder_values()["prehled_vysledku_text"])
+            self.assertIn("Váhové skóre zjištění: 7", context.placeholder_values()["prehled_vysledku_text"])
 
 
 if __name__ == "__main__":
