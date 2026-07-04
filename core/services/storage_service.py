@@ -1,3 +1,5 @@
+import os
+import platform
 import shutil
 from pathlib import Path
 
@@ -6,15 +8,22 @@ class StorageService:
     """
     Jednotná správa uživatelských dat aplikace.
 
-    Všechna uživatelská data patří sem:
-    ~/.local/share/manazer-bozp/
+    Linux:
+        ~/.local/share/manazer-bozp
+
+    Windows:
+        %LOCALAPPDATA%\manazer-bozp
     """
 
     APP_NAME = "manazer-bozp"
     DATABASE_NAME = "manager_bozp.db"
 
     def __init__(self):
-        self.base = Path.home() / ".local" / "share" / self.APP_NAME
+        if platform.system() == "Windows":
+            self.base = Path(os.environ["LOCALAPPDATA"]) / self.APP_NAME
+        else:
+            self.base = Path.home() / ".local" / "share" / self.APP_NAME
+
         self.ensure_structure()
 
     def ensure_structure(self) -> None:
@@ -28,6 +37,7 @@ class StorageService:
         self.templates_dir.mkdir(parents=True, exist_ok=True)
         self.config_dir.mkdir(parents=True, exist_ok=True)
         self.ciselniky_dir.mkdir(parents=True, exist_ok=True)
+
         self.ensure_default_templates()
         self.ensure_editable_catalogs()
 
@@ -67,6 +77,14 @@ class StorageService:
     def template_file(self, *parts: str) -> Path:
         """Vrátí cestu k uživatelské šabloně v ~/.local/share/manazer-bozp/templates."""
         return self.templates_dir.joinpath(*parts)
+
+    def bundled_template_file(self, *parts: str) -> Path | None:
+        """Vrátí cestu k dodávané šabloně z balíčku aplikace."""
+        for source_root in self.bundled_template_roots():
+            candidate = source_root.joinpath(*parts)
+            if candidate.exists():
+                return candidate
+        return None
 
     def export_file(self, *parts: str) -> Path:
         """Vrátí cestu k exportnímu souboru v ~/.local/share/manazer-bozp/export."""

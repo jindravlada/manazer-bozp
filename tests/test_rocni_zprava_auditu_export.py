@@ -48,21 +48,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
 
 def _ensure_annual_report_template() -> Path:
-    import shutil
-
-    path = rocni_zprava_auditu_service.template_path()
-    bundled = (
-        Path(__file__).resolve().parents[1]
-        / "moduly"
-        / "audity"
-        / "templates"
-        / "exporty"
-        / "RocniZpravaAuditu.odt"
-    )
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if bundled.exists():
-        shutil.copy2(bundled, path)
-    return path
+    return rocni_zprava_auditu_service.template_path()
 
 
 def _odt_content(path: Path) -> str:
@@ -207,6 +193,15 @@ class RocniZpravaAudituExportTestCase(unittest.TestCase):
         path = rocni_zprava_auditu_service.generate_for_year(2026)
         self.assertTrue(path.exists())
         self.assertEqual(path.suffix.lower(), ".odt")
+
+    def test_template_uses_bundled_heading_placeholder(self) -> None:
+        from core.services.storage_service import storage_service
+
+        template = rocni_zprava_auditu_service.template_path()
+        bundled = storage_service.bundled_template_file("exporty", "RocniZpravaAuditu.odt")
+        assert bundled is not None
+        self.assertEqual(template.resolve(), bundled.resolve())
+        self.assertIn("${celkove_hodnoceni_nadpis}", _odt_content(template))
 
     def test_context_placeholder_keys(self) -> None:
         self._create_audit(year=2026, audit_date=date(2026, 3, 10))
