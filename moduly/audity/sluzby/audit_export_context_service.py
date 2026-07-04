@@ -47,6 +47,23 @@ def _text(value) -> str:
     return str(value or "").replace("\r\n", "\n").replace("\r", "\n").strip()
 
 
+def _format_labeled_block(
+    index: int,
+    title: str,
+    fields: list[tuple[str, str]],
+) -> str:
+    lines = [f"{index}. {title}"]
+    for label, value in fields:
+        text = _text(value)
+        if text:
+            lines.append(f"   {label}: {text}")
+    return "\n".join(lines)
+
+
+def _join_blocks(blocks: list[str]) -> str:
+    return "\n\n".join(blocks)
+
+
 _COMMISSION_ROLE_LABELS = {
     COMMISSION_RECORD_LEADER: "Vedoucí komise",
     COMMISSION_RECORD_WORKPLACE: "Zástupce pracoviště",
@@ -119,12 +136,7 @@ class AuditExportContext:
             ),
         ):
             role = _COMMISSION_ROLE_LABELS.get(member.record_type, member.record_type)
-            parts = [f"• {member.display_name} ({role})"]
-            if member.role_text:
-                parts.append(f"role: {member.role_text}")
-            if member.note_text:
-                parts.append(f"poznámka: {member.note_text}")
-            lines.append("; ".join(parts))
+            lines.append(f"• {member.display_name} – {role}")
         return lines
 
     def commission_text(self) -> str:
@@ -166,6 +178,109 @@ class AuditExportContext:
             return "Nejsou evidovány."
         return "\n".join(f"• {line}" for line in lines)
 
+    def _activity_statistics(self):
+        return control_activity_statistics_service.compute(ENTITY_AUDITY, self.audit_id)
+
+    def audited_system_label(self) -> str:
+        program = self.program_name()
+        if program:
+            return program
+        audit_type = _text(self.audit.audit_type)
+        return audit_type or "Systém managementu BOZP"
+
+    def overall_rating_label(self) -> str:
+        stats = self._activity_statistics()
+        if stats.ratings_nevyhovuje:
+            return "🔴 Nevyhovující"
+        if stats.ratings_vyhovuje_s_doporucenim:
+            return "🟡 Vyhovuje s výhradami"
+        return "🟢 Vyhovující"
+
+    def auditor_recommendation_text(self) -> str:
+        stats = self._activity_statistics()
+        summary = audit_service.get_conclusion_summary(self.audit_id)
+        sentences: list[str] = []
+
+        if stats.ratings_nevyhovuje:
+            sentences.append(
+                f"Audit identifikoval {stats.ratings_nevyhovuje} neshod "
+                "vyžadujících bezodkladné řešení."
+            )
+        if stats.ratings_vyhovuje_s_doporucenim:
+            sentences.append(
+                f"V {stats.ratings_vyhovuje_s_doporucenim} oblastech byla "
+                "doporučena preventivní zlepšení."
+            )
+        if not sentences:
+            sentences.append(
+                "Audit potvrdil účinnost systému managementu BOZP "
+                "bez závažných nedostatků."
+            )
+        if summary["findings_open"] > 0 or summary["tasks_active"] > 0:
+            sentences.append(
+                f"Organizaci doporučujeme prioritně dokončit "
+                f"{summary['findings_open']} otevřených zjištění "
+                f"a {summary['tasks_active']} aktivních úkolů."
+            )
+        else:
+            sentences.append(
+                "Doporučujeme průběžně sledovat plnění přijatých opatření "
+                "a udržovat zavedené kontroly."
+            )
+        return " ".join(sentences[:4])
+
+    def executive_summary_text(self) -> str:
+        stats = self._activity_statistics()
+        lines = [
+            f"Celkové hodnocení: {self.overall_rating_label()}",
+            f"Auditovaný provoz: {_text(self.audit.workplace_name) or '—'}",
+            f"Auditovaný systém: {self.audited_system_label()}",
+            f"Datum auditu: {_fmt_date(self.audit.audit_date) or '—'}",
+            "Auditované procesy:",
+            self.processes_text(),
+            f"Počet auditních tvrzení: {stats.control_points_checked}",
+            f"Počet neshod: {stats.ratings_nevyhovuje}",
+            f"Počet doporučení: {stats.ratings_vyhovuje_s_doporucenim}",
+            "",
+            "Stručné doporučení auditora:",
+            self.auditor_recommendation_text(),
+        ]
+        return "\n".join(lines)
+
+    def results_overview_text(self) -> str:
+        stats = self._activity_statistics()
+        summary = audit_service.get_conclusion_summary(self.audit_id)
+        return "\n".join(
+            [
+                f"Auditovaných procesů: {len(self.processes_lines())}",
+                f"Auditních tvrzení: {stats.control_points_checked}",
+                f"Vyhovuje: {stats.ratings_vyhovuje}",
+                f"Vyhovuje s doporučením: {stats.ratings_vyhovuje_s_doporucenim}",
+                f"Nevyhovuje: {stats.ratings_nevyhovuje}",
+                f"Zjištění: {stats.findings_total}",
+                f"Úkolů: {summary['tasks_total']}",
+            ]
+        )
+
+    def signatures_text(self) -> str:
+        lines = ["Auditní tým:"]
+        commission = self.commission_lines()
+        if commission:
+            lines.extend(commission)
+        else:
+            lines.append("Nejsou evidováni.")
+
+        lines.extend(
+            [
+                "",
+                f"Datum vyhotovení protokolu: {datetime.now().strftime('%d.%m.%Y')}",
+                "",
+                "Podpis vedoucího auditu: _________________________",
+                "Podpis zástupce zaměstnavatele: _________________________",
+            ]
+        )
+        return "\n".join(lines)
+
     def evaluation_lines(self) -> list[str]:
         results = control_result_service.get_for_entity(ENTITY_AUDITY, self.audit_id)
         if not results:
@@ -189,21 +304,26 @@ class AuditExportContext:
             ),
             start=1,
         ):
-            parts = [f"{index}. {control_result_label(row.result)}"]
-            if row.source_area_label:
-                parts.append(f"proces: {row.source_area_label}")
-            if row.source_section_label:
-                parts.append(f"kritérium: {row.source_section_label}")
-            if row.source_control_point_label:
-                parts.append(f"tvrzení: {row.source_control_point_label}")
-            if row.note:
-                parts.append(f"poznámka: {_text(row.note)}")
-            lines.append("; ".join(parts))
+            lines.append(
+                _format_labeled_block(
+                    index,
+                    control_result_label(row.result),
+                    [
+                        ("Proces", row.source_area_label),
+                        ("Kritérium", row.source_section_label),
+                        ("Tvrzení", row.source_control_point_label),
+                        ("Poznámka", row.note),
+                    ],
+                )
+            )
         return lines
 
     def evaluation_text(self) -> str:
         lines = self.evaluation_lines()
-        return "\n".join(lines) if lines else "Nejsou evidována."
+        return _join_blocks(lines) if lines else "Nejsou evidována významná zjištění."
+
+    def significant_findings_text(self) -> str:
+        return self.evaluation_text()
 
     def findings_lines(self) -> list[str]:
         findings = finding_service.get_for_entity(ENTITY_AUDITY, self.audit_id)
@@ -215,30 +335,29 @@ class AuditExportContext:
             sorted(findings, key=lambda item: (item.display_order, item.id)),
             start=1,
         ):
-            parts = [f"{index}. {finding_type_label(finding.finding_type)}"]
-            if finding.source_area_label:
-                parts.append(f"proces: {finding.source_area_label}")
-            if finding.source_section_label:
-                parts.append(f"kritérium: {finding.source_section_label}")
-            if finding.source_control_point_label:
-                parts.append(f"tvrzení: {finding.source_control_point_label}")
-            if finding.reference_label:
-                parts.append(f"reference: {finding.reference_label}")
-            if finding.description:
-                parts.append(f"popis: {_text(finding.description)}")
-            parts.append(f"stav: {finding_status_label(finding.status)}")
-            if finding.recommended_action:
-                parts.append(f"doporučení: {_text(finding.recommended_action)}")
-            if finding.due_date:
-                parts.append(f"termín: {_fmt_date(finding.due_date)}")
-            if finding.responsible_person_name:
-                parts.append(f"odpovědná osoba: {finding.responsible_person_name}")
-            lines.append("; ".join(parts))
+            lines.append(
+                _format_labeled_block(
+                    index,
+                    finding_type_label(finding.finding_type),
+                    [
+                        ("Proces", finding.source_area_label),
+                        ("Kritérium", finding.source_section_label),
+                        ("Popis", finding.description),
+                        ("Doporučení", finding.recommended_action),
+                        ("Termín", _fmt_date(finding.due_date)),
+                        ("Odpovědná osoba", finding.responsible_person_name),
+                        ("Stav", finding_status_label(finding.status)),
+                    ],
+                )
+            )
         return lines
 
     def findings_text(self) -> str:
         lines = self.findings_lines()
-        return "\n".join(lines) if lines else "Nejsou evidována."
+        return _join_blocks(lines) if lines else "Nejsou evidována."
+
+    def findings_detail_text(self) -> str:
+        return self.findings_text()
 
     def tasks_lines(self) -> list[str]:
         tasks = audit_service.get_tasks_for_audit(self.audit_id)
@@ -247,51 +366,78 @@ class AuditExportContext:
 
         lines: list[str] = []
         for index, task in enumerate(tasks, start=1):
-            parts = [f"{index}. {task.title or 'Úkol'}"]
-            if task.responsible_person:
-                parts.append(f"odpovídá: {task.responsible_person}")
-            if task.due_date:
-                parts.append(f"termín: {_fmt_date(task.due_date)}")
-            parts.append(f"stav: {task.computed_status}")
-            if task.completed_date:
-                parts.append(f"splněno: {_fmt_date(task.completed_date)}")
-            if task.note:
-                parts.append(f"poznámka: {_text(task.note)}")
-            lines.append("; ".join(parts))
+            lines.append(
+                _format_labeled_block(
+                    index,
+                    task.title or "Úkol",
+                    [
+                        ("Odpovídá", task.responsible_person),
+                        ("Termín", _fmt_date(task.due_date)),
+                        ("Stav", task.computed_status),
+                        ("Splněno", _fmt_date(task.completed_date)),
+                    ],
+                )
+            )
         return lines
 
     def tasks_text(self) -> str:
         lines = self.tasks_lines()
-        return "\n".join(lines) if lines else "Nejsou evidována."
+        return _join_blocks(lines) if lines else "Nejsou evidována."
+
+    def accepted_measures_text(self) -> str:
+        return self.tasks_text()
 
     def statistics_text(self) -> str:
-        stats = control_activity_statistics_service.compute(ENTITY_AUDITY, self.audit_id)
-        return stats.format_text()
-
-    def conclusion_text(self) -> str:
-        process_names = self.processes_lines()
-        if process_names:
-            areas = ", ".join(process_names)
-            return (
-                "Na základě provedeného interního auditu bylo ověřeno plnění požadavků "
-                f"z oblastí: {areas}. Zjištěné nedostatky byly zaznamenány a byla "
-                "přijata odpovídající nápravná opatření."
-            )
-        return (
-            "Na základě provedeného interního auditu byly zjištěné nedostatky "
-            "zaznamenány a byla přijata odpovídající nápravná opatření."
-        )
+        return self.results_overview_text()
 
     def summary_text(self) -> str:
+        return self.executive_summary_text()
+
+    def conclusion_text(self) -> str:
         summary = audit_service.get_conclusion_summary(self.audit_id)
-        return (
-            f"{self.statistics_text()}\n\n"
-            f"Otevřená zjištění: {summary['findings_open']}\n"
-            f"Aktivní úkoly: {summary['tasks_active']}\n"
-            f"Stav auditu: {self.status_label()}"
-        )
+        stats = self._activity_statistics()
+
+        evaluation_parts: list[str] = []
+        if stats.ratings_nevyhovuje:
+            evaluation_parts.append(f"{stats.ratings_nevyhovuje} neshod")
+        if stats.ratings_vyhovuje_s_doporucenim:
+            evaluation_parts.append(
+                f"{stats.ratings_vyhovuje_s_doporucenim} oblastí s doporučením"
+            )
+
+        if evaluation_parts:
+            sentence = (
+                "Na základě provedeného interního auditu bylo zjištěno "
+                + " a ".join(evaluation_parts)
+                + "."
+            )
+        else:
+            sentence = (
+                "Na základě provedeného interního auditu nebyly zjištěny "
+                "neshody ani doporučení k nápravě."
+            )
+
+        if summary["findings_open"] > 0 or summary["tasks_active"] > 0:
+            sentence += (
+                f" K uzavření zbývá {summary['findings_open']} otevřených zjištění"
+                f" a {summary['tasks_active']} aktivních úkolů."
+            )
+        else:
+            sentence += (
+                " Zjištěné nedostatky byly zaznamenány a byla přijata "
+                "odpovídající nápravná opatření."
+            )
+        return sentence
 
     def placeholder_values(self) -> dict[str, str]:
+        executive_summary = self.executive_summary_text()
+        results_overview = self.results_overview_text()
+        significant_findings = self.significant_findings_text()
+        accepted_measures = self.accepted_measures_text()
+        findings_detail = self.findings_detail_text()
+        conclusion = self.conclusion_text()
+        signatures = self.signatures_text()
+
         return {
             "cislo_auditu": _text(self.audit.number),
             "zamestnavatel_nazev": self.employer_name(),
@@ -308,12 +454,22 @@ class AuditExportContext:
             "komise_text": self.commission_text(),
             "auditni_tym_text": self.commission_text(),
             "procesy_text": self.processes_text(),
-            "hodnoceni_text": self.evaluation_text(),
-            "zjisteni_text": self.findings_text(),
-            "ukoly_text": self.tasks_text(),
-            "zaver_text": self.conclusion_text(),
-            "statistika_text": self.statistics_text(),
-            "souhrn_text": self.summary_text(),
+            "celkove_hodnoceni": self.overall_rating_label(),
+            "auditovany_provoz": _text(self.audit.workplace_name),
+            "auditovany_system": self.audited_system_label(),
+            "doporuceni_auditora": self.auditor_recommendation_text(),
+            "executive_summary_text": executive_summary,
+            "prehled_vysledku_text": results_overview,
+            "vyznamna_zjisteni_text": significant_findings,
+            "prijata_opatreni_text": accepted_measures,
+            "detail_zjisteni_text": findings_detail,
+            "podpisy_text": signatures,
+            "hodnoceni_text": significant_findings,
+            "zjisteni_text": findings_detail,
+            "ukoly_text": accepted_measures,
+            "zaver_text": conclusion,
+            "statistika_text": results_overview,
+            "souhrn_text": executive_summary,
             "datum_vygenerovani": datetime.now().strftime("%d.%m.%Y"),
         }
 
