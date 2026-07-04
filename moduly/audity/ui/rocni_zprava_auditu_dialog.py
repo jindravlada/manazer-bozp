@@ -126,16 +126,26 @@ class RocniZpravaAudituDialog(QDialog):
     def _populate_programs(self) -> None:
         year = self.selected_year()
         programs = audit_annual_program_service.list_programs_for_year(year)
-        saved = audit_annual_report_service.get_for_year(
-            year,
-            audit_program_id=self.selected_program_id(),
-        )
-        selected_program_id = saved.audit_program_id if saved else None
+        selected_program_id = self.selected_program_id()
+
+        saved = None
+        if len(programs) == 1:
+            saved = audit_annual_report_service.get_for_year(
+                year,
+                audit_program_id=programs[0].id,
+            )
+        elif selected_program_id is not None:
+            saved = audit_annual_report_service.get_for_year(
+                year,
+                audit_program_id=selected_program_id,
+            )
+        if saved is not None:
+            selected_program_id = saved.audit_program_id
 
         self.program_combo.blockSignals(True)
         self.program_combo.clear()
         if not programs:
-            self.program_combo.addItem("Bez vazby na program", None)
+            self.program_combo.addItem("— chybí auditní program —", None)
             self.program_combo.setEnabled(False)
         elif len(programs) == 1:
             program = programs[0]
@@ -158,7 +168,15 @@ class RocniZpravaAudituDialog(QDialog):
     def _load_year_content(self) -> None:
         year = self.selected_year()
         program_id = self.selected_program_id()
-        report = audit_annual_report_service.get_for_year(year, audit_program_id=program_id)
+        report = None
+        if program_id is not None:
+            try:
+                report = audit_annual_report_service.get_for_year(
+                    year,
+                    audit_program_id=program_id,
+                )
+            except ValueError:
+                report = None
         if report is None:
             self.silne_stranky_edit.clear()
             self.top_priority_edit.clear()
@@ -191,18 +209,31 @@ class RocniZpravaAudituDialog(QDialog):
 
     def _create_report(self) -> None:
         year = self.selected_year()
-        audit_annual_report_service.save_for_year(
-            year,
-            audit_program_id=self.selected_program_id(),
-            silne_stranky=self.silne_stranky_edit.toPlainText(),
-            top_priority=self.top_priority_edit.toPlainText(),
-            doporuceni_specialisty=self.doporuceni_edit.toPlainText(),
-            zpracoval_worker_id=self.zpracoval_selector.current_person_id(),
-        )
+        program_id = self.selected_program_id()
+        if program_id is None:
+            QMessageBox.warning(
+                self,
+                "Roční zpráva z auditů",
+                "Pro vytvoření roční zprávy je nutné vybrat auditní program "
+                "s návštěvami v daném roce.",
+            )
+            return
+        try:
+            audit_annual_report_service.save_for_year(
+                year,
+                audit_program_id=program_id,
+                silne_stranky=self.silne_stranky_edit.toPlainText(),
+                top_priority=self.top_priority_edit.toPlainText(),
+                doporuceni_specialisty=self.doporuceni_edit.toPlainText(),
+                zpracoval_worker_id=self.zpracoval_selector.current_person_id(),
+            )
+        except ValueError as exc:
+            QMessageBox.warning(self, "Roční zpráva z auditů", str(exc))
+            return
         try:
             rocni_zprava_auditu_service.open_for_year(
                 year,
-                audit_program_id=self.selected_program_id(),
+                audit_program_id=program_id,
             )
         except Exception as exc:
             QMessageBox.warning(

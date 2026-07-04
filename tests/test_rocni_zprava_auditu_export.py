@@ -37,6 +37,7 @@ with patch.object(Path, "home", return_value=_TMP):
         AuditAnnualSeverityMetrics,
         audit_annual_export_context_service,
     )
+    from moduly.audity.sluzby.audit_annual_program_service import audit_annual_program_service
     from moduly.audity.sluzby.audit_annual_report_service import audit_annual_report_service
     from moduly.audity.sluzby.audit_commission_service import audit_commission_service
     from moduly.audity.sluzby.audit_service import audit_service
@@ -83,12 +84,26 @@ class RocniZpravaAudituExportTestCase(unittest.TestCase):
         from core.database.session import get_session
         from moduly.audity.modely.audit_annual_report import AuditAnnualReport
         from moduly.audity.modely.audit_process_maturity_snapshot import AuditProcessMaturitySnapshot
+        from moduly.audity.modely.audit_program import (
+            AuditProgram,
+            AuditProgramVisit,
+            AuditProgramVisitProcess,
+            AuditProgramWorkplace,
+        )
 
         with get_session() as session:
             for report in session.query(AuditAnnualReport).all():
                 session.delete(report)
             for snapshot in session.query(AuditProcessMaturitySnapshot).all():
                 session.delete(snapshot)
+            for row in session.query(AuditProgramVisitProcess).all():
+                session.delete(row)
+            for row in session.query(AuditProgramVisit).all():
+                session.delete(row)
+            for row in session.query(AuditProgramWorkplace).all():
+                session.delete(row)
+            for row in session.query(AuditProgram).all():
+                session.delete(row)
             session.commit()
 
         settings_service.save_employer(
@@ -107,9 +122,42 @@ class RocniZpravaAudituExportTestCase(unittest.TestCase):
             for worker in settings_service.get_workers()
             if worker.last_name == "Auditor"
         )
+        self.default_program = self._ensure_audit_program(2026, "Výchozí program")
         _ensure_annual_report_template()
 
+    def _ensure_audit_program(self, year: int, name: str):
+        from datetime import date
+
+        from moduly.audity.constants import DEFAULT_AUDIT_PROGRAM_STANDARDS
+        from moduly.audity.sluzby.audit_program_service import audit_program_service
+
+        for program in audit_annual_program_service.list_programs_for_year(year):
+            if program.name == name:
+                return program
+
+        workplace = settings_service.save_workplace(name=f"Pracoviště {name}")
+        program = audit_program_service.create_program(
+            name=name,
+            date_from=date(year, 1, 1),
+            date_to=date(year + 3, 12, 31),
+            standards=list(DEFAULT_AUDIT_PROGRAM_STANDARDS),
+        )
+        audit_program_service.add_workplace(
+            program.id,
+            workplace_id=workplace.id,
+            workplace_name=workplace.name,
+            audit_interval_months=6,
+        )
+        audit_program_service.add_visit(
+            program.id,
+            workplace_id=workplace.id,
+            planned_year=year,
+            planned_month=3,
+        )
+        return audit_program_service.get_program(program.id)
+
     def _create_audit(self, **fields):
+        program_id = fields.pop("program_id", self.default_program.id)
         workplace = settings_service.save_workplace(name=fields.pop("workplace_name", "Hala A"))
         leader_id = settings_service.save_worker(first_name="Jan", last_name="Novák").id
         workplace_rep_id = settings_service.save_worker(first_name="Eva", last_name="Králová").id
@@ -145,7 +193,10 @@ class RocniZpravaAudituExportTestCase(unittest.TestCase):
                 },
             ],
         )
-        return audit_service.get_by_id(audit.id)
+        audit = audit_service.get_by_id(audit.id)
+        if program_id is not None and audit is not None and audit.program_id != program_id:
+            audit = audit_service.update_audit(audit.id, program_id=program_id)
+        return audit
 
     def test_generate_creates_odt_file(self) -> None:
         self._create_audit(year=2026, audit_date=date(2026, 3, 10))
@@ -376,7 +427,10 @@ class RocniZpravaAudituExportTestCase(unittest.TestCase):
         )
 
         context = audit_annual_export_context_service.build(2026)
-        snapshots = audit_process_maturity_history_service.get_year_snapshots(2026)
+        snapshots = audit_process_maturity_history_service.get_year_snapshots(
+            2026,
+            audit_program_id=self.default_program.id,
+        )
         self.assertEqual(len(snapshots), 1)
         self.assertEqual(snapshots[0].process_id, "proces-b")
         self.assertIn("Legenda vyspělosti", context.process_maturity.legend_text)
@@ -488,6 +542,100 @@ class RocniZpravaAudituExportTestCase(unittest.TestCase):
             repeated_problems_count=0,
         )
         self.assertGreater(high.weighted_score, low.weighted_score)
+
+    def test_save_reports_per_program_year(self) -> None:
+        from core.database.session import get_session
+        from moduly.audity.modely.audit_annual_report import AuditAnnualReport
+
+        program_a = self._ensure_audit_program(2026, "Program A")
+        program_b = self._ensure_audit_program(2026, "Program B")
+
+        saved_a = audit_annual_report_service.save_for_year(
+            2026,
+            audit_program_id=program_a.id,
+            silne_stranky="Text A",
+        )
+        saved_b = audit_annual_report_service.save_for_year(
+            2026,
+            audit_program_id=program_b.id,
+            silne_stranky="Text B",
+        )
+        self.assertNotEqual(saved_a.id, saved_b.id)
+
+        updated_a = audit_annual_report_service.save_for_year(
+            2026,
+            audit_program_id=program_a.id,
+            silne_stranky="Text A updated",
+        )
+        self.assertEqual(saved_a.id, updated_a.id)
+        self.assertEqual(updated_a.silne_stranky, "Text A updated")
+
+        with get_session() as session:
+            reports = session.query(AuditAnnualReport).filter_by(year=2026).all()
+            self.assertEqual(len(reports), 2)
+            by_program = {report.audit_program_id: report for report in reports}
+            self.assertEqual(by_program[program_a.id].silne_stranky, "Text A updated")
+            self.assertEqual(by_program[program_b.id].silne_stranky, "Text B")
+
+    def test_migration_allows_multiple_programs_per_year(self) -> None:
+        from sqlalchemy import text
+
+        from core.database.database_initializer import (
+            _audit_annual_reports_has_year_only_unique,
+            _ensure_audit_annual_report_table,
+        )
+        from core.database.session import engine, get_session
+        from moduly.audity.modely.audit_annual_report import AuditAnnualReport
+
+        program_a = self._ensure_audit_program(2026, "Migrace A")
+        program_b = self._ensure_audit_program(2026, "Migrace B")
+
+        with get_session() as session:
+            for report in session.query(AuditAnnualReport).all():
+                session.delete(report)
+            session.commit()
+
+        with engine.connect() as connection:
+            connection.execute(text("DROP TABLE audit_annual_reports"))
+            connection.execute(
+                text(
+                    """
+                    CREATE TABLE audit_annual_reports (
+                        id INTEGER NOT NULL PRIMARY KEY,
+                        year INTEGER NOT NULL,
+                        silne_stranky TEXT DEFAULT '' NOT NULL,
+                        top_priority TEXT DEFAULT '' NOT NULL,
+                        doporuceni_specialisty TEXT DEFAULT '' NOT NULL,
+                        zpracoval VARCHAR(150) DEFAULT '' NOT NULL,
+                        zpracoval_worker_id INTEGER,
+                        created_at DATETIME,
+                        updated_at DATETIME,
+                        CONSTRAINT uq_audit_annual_reports_year UNIQUE (year)
+                    )
+                    """
+                )
+            )
+            connection.commit()
+
+        _ensure_audit_annual_report_table()
+        self.assertFalse(_audit_annual_reports_has_year_only_unique())
+
+        audit_annual_report_service.save_for_year(
+            2026,
+            audit_program_id=program_a.id,
+            silne_stranky="A",
+        )
+        audit_annual_report_service.save_for_year(
+            2026,
+            audit_program_id=program_b.id,
+            silne_stranky="B",
+        )
+
+        with get_session() as session:
+            self.assertEqual(
+                session.query(AuditAnnualReport).filter_by(year=2026).count(),
+                2,
+            )
 
 
 if __name__ == "__main__":

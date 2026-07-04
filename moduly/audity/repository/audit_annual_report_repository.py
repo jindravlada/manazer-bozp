@@ -8,18 +8,15 @@ class AuditAnnualReportRepository:
     def get_by_year_and_program(
         self,
         year: int,
-        audit_program_id: int | None,
+        audit_program_id: int,
     ) -> AuditAnnualReport | None:
         with get_session() as session:
-            stmt = select(AuditAnnualReport).where(AuditAnnualReport.year == year)
-            if audit_program_id is None:
-                stmt = stmt.where(AuditAnnualReport.audit_program_id.is_(None))
-            else:
-                stmt = stmt.where(AuditAnnualReport.audit_program_id == audit_program_id)
+            stmt = (
+                select(AuditAnnualReport)
+                .where(AuditAnnualReport.year == year)
+                .where(AuditAnnualReport.audit_program_id == audit_program_id)
+            )
             return session.scalars(stmt).first()
-
-    def get_by_year(self, year: int) -> AuditAnnualReport | None:
-        return self.get_by_year_and_program(year, None)
 
     def get_last_with_preparer(self) -> AuditAnnualReport | None:
         with get_session() as session:
@@ -32,11 +29,11 @@ class AuditAnnualReportRepository:
 
     def save(self, report: AuditAnnualReport) -> AuditAnnualReport:
         with get_session() as session:
-            stmt = select(AuditAnnualReport).where(AuditAnnualReport.year == report.year)
-            if report.audit_program_id is None:
-                stmt = stmt.where(AuditAnnualReport.audit_program_id.is_(None))
-            else:
-                stmt = stmt.where(AuditAnnualReport.audit_program_id == report.audit_program_id)
+            stmt = (
+                select(AuditAnnualReport)
+                .where(AuditAnnualReport.year == report.year)
+                .where(AuditAnnualReport.audit_program_id == report.audit_program_id)
+            )
             existing = session.scalars(stmt).first()
             if existing is None:
                 session.add(report)

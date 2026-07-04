@@ -271,14 +271,89 @@ def _ensure_bozp_annual_report_table() -> None:
 
 
 def _ensure_audit_annual_report_table() -> None:
+    from moduly.audity.modely.audit_annual_report import AuditAnnualReport
+
     columns = _table_columns("audit_annual_reports")
     if not columns:
-        from moduly.audity.modely.audit_annual_report import AuditAnnualReport
-
         AuditAnnualReport.__table__.create(bind=engine, checkfirst=True)
         return
     if "audit_program_id" not in columns:
         _add_column("audit_annual_reports", "audit_program_id INTEGER")
+    if _audit_annual_reports_has_year_only_unique():
+        _migrate_audit_annual_reports_year_program_unique()
+
+
+def _audit_annual_reports_has_year_only_unique() -> bool:
+    with engine.connect() as connection:
+        table_sql = connection.execute(
+            text(
+                "SELECT sql FROM sqlite_master "
+                "WHERE type = 'table' AND name = 'audit_annual_reports'"
+            )
+        ).scalar()
+        if table_sql and "uq_audit_annual_reports_year_program" in table_sql:
+            return False
+
+        indexes = connection.execute(text("PRAGMA index_list(audit_annual_reports)")).fetchall()
+        for index in indexes:
+            if not index[2]:
+                continue
+            index_name = index[1]
+            if index_name == "uq_audit_annual_reports_year_program":
+                continue
+            columns = connection.execute(text(f"PRAGMA index_info({index_name})")).fetchall()
+            column_names = [column[2] for column in columns]
+            if column_names == ["year"]:
+                return True
+    return False
+
+
+def _migrate_audit_annual_reports_year_program_unique() -> None:
+    from moduly.audity.modely.audit_annual_report import AuditAnnualReport
+    from moduly.audity.sluzby.audit_annual_program_service import audit_annual_program_service
+
+    with engine.connect() as connection:
+        rows = connection.execute(
+            text(
+                "SELECT id, year, audit_program_id, silne_stranky, top_priority, "
+                "doporuceni_specialisty, zpracoval, zpracoval_worker_id, created_at, updated_at "
+                "FROM audit_annual_reports"
+            )
+        ).mappings().all()
+
+    migrated_rows: list[dict] = []
+    for row in rows:
+        program_id = row["audit_program_id"]
+        if program_id is None:
+            programs = audit_annual_program_service.list_programs_for_year(row["year"])
+            if len(programs) != 1:
+                continue
+            program_id = programs[0].id
+        migrated_rows.append({**row, "audit_program_id": program_id})
+
+    with engine.connect() as connection:
+        connection.execute(text("DROP TABLE audit_annual_reports"))
+        connection.commit()
+
+    AuditAnnualReport.__table__.create(bind=engine, checkfirst=True)
+
+    if not migrated_rows:
+        return
+
+    with engine.connect() as connection:
+        for row in migrated_rows:
+            connection.execute(
+                text(
+                    "INSERT INTO audit_annual_reports "
+                    "(id, year, audit_program_id, silne_stranky, top_priority, "
+                    "doporuceni_specialisty, zpracoval, zpracoval_worker_id, created_at, updated_at) "
+                    "VALUES "
+                    "(:id, :year, :audit_program_id, :silne_stranky, :top_priority, "
+                    ":doporuceni_specialisty, :zpracoval, :zpracoval_worker_id, :created_at, :updated_at)"
+                ),
+                row,
+            )
+        connection.commit()
 
 
 def _ensure_audit_process_maturity_snapshot_table() -> None:

@@ -20,7 +20,7 @@ class AuditAnnualReport(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     year: Mapped[int] = mapped_column(Integer, nullable=False)
-    audit_program_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    audit_program_id: Mapped[int] = mapped_column(Integer, nullable=False)
     silne_stranky: Mapped[str] = mapped_column(Text, default="", nullable=False)
     top_priority: Mapped[str] = mapped_column(Text, default="", nullable=False)
     doporuceni_specialisty: Mapped[str] = mapped_column(Text, default="", nullable=False)

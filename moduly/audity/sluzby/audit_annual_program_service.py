@@ -29,10 +29,20 @@ class AuditAnnualProgramService:
                 return program
         return None
 
-    def resolve_program_id(self, year: int, program_id: int | None) -> int | None:
+    def resolve_program_id(self, year: int, program_id: int | None) -> int:
         programs = self.list_programs_for_year(year)
+        if not programs:
+            raise ValueError(
+                f"Pro rok {year} není evidován žádný auditní program. "
+                "Nejprve vytvořte auditní program s návštěvami v daném roce."
+            )
         if len(programs) == 1:
             return programs[0].id
+        if program_id is None:
+            raise ValueError("Vyberte auditní program pro roční zprávu.")
+        valid_ids = {program.id for program in programs}
+        if program_id not in valid_ids:
+            raise ValueError("Vybraný auditní program není pro zvolený rok platný.")
         return program_id
 
     def filter_audits_for_program(
