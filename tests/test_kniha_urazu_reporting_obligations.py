@@ -435,6 +435,28 @@ class SetreniDialogExecTestCase(unittest.TestCase):
         mock_prepare.assert_called_once_with(dialog)
         mock_exec.assert_called_once()
 
+    def test_save_administrativa_marks_accident_closed(self) -> None:
+        from moduly.kniha_urazu.modely.accident import Accident
+        from moduly.kniha_urazu.ui.setreni.setreni_dialog import SetreniDialog
+
+        accident = Accident(number="2026-001", closed=False)
+        accident.id = 7
+        dialog = SetreniDialog(accident=accident)
+        dialog.admin_pripad_uzavren = dialog._radio_choice(["ANO", "NE"])
+        dialog._set_radio_choice(dialog.admin_pripad_uzavren, "ANO")
+
+        with patch(
+            "moduly.kniha_urazu.ui.setreni.setreni_dialog.investigation_service.save_zajisteni_dukazu"
+        ) as mock_save:
+            with patch(
+                "moduly.kniha_urazu.ui.setreni.setreni_dialog.accident_service.update_accident",
+                return_value=accident,
+            ) as mock_update:
+                dialog._save_administrativa()
+
+        mock_save.assert_called_once()
+        mock_update.assert_called_once_with(7, closed=True)
+
 
 class AccidentDialogExecTestCase(unittest.TestCase):
     @classmethod

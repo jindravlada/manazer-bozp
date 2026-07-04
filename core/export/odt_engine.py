@@ -1,4 +1,5 @@
 import html
+import os
 import re
 import zipfile
 from pathlib import Path
@@ -58,7 +59,8 @@ class OdtExportEngine:
         except zipfile.BadZipFile as exc:
             raise OdtExportError(f"Šablona není platný ODT/ZIP soubor: {template}") from exc
 
-        return output
+        _sync_written_file(output)
+        return output.resolve()
 
     def _replace_placeholders(self, xml: str, values: Mapping[str, str]) -> str:
         def repl(match: re.Match[str]) -> str:
@@ -74,3 +76,8 @@ class OdtExportEngine:
 
 def export_odt_template(template_path: str | Path, output_path: str | Path, values: Mapping[str, Any]) -> Path:
     return OdtExportEngine().render(template_path, output_path, values)
+
+
+def _sync_written_file(path: Path) -> None:
+    with path.open("rb") as handle:
+        os.fsync(handle.fileno())

@@ -51,6 +51,7 @@ from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     requires_police_obligation,
     row_status,
 )
+from moduly.kniha_urazu.sluzby.accident_service import accident_service
 from moduly.kniha_urazu.sluzby.investigation_service import investigation_service
 from core.services.attachment_service import attachment_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
@@ -112,6 +113,11 @@ class SetreniDialog(QDialog):
             self.accident.id,
             json.dumps(merged, ensure_ascii=False),
         )
+        closed = merged.get("admin_pripad_uzavren") == "ANO"
+        if getattr(self.accident, "closed", False) != closed:
+            updated = accident_service.update_accident(self.accident.id, closed=closed)
+            if updated is not None:
+                self.accident = updated
 
     def _open_mu_investigation(self) -> None:
         if self.accident is None:
@@ -3003,9 +3009,9 @@ class SetreniDialog(QDialog):
                 zout.writestr(item, data)
 
     def _open_setreni_form(self, template_filename, title):
-        import subprocess
-        import tempfile
         from PySide6.QtWidgets import QMessageBox
+
+        from core.export import open_export_file
         from core.services.storage_service import storage_service
 
         if self.accident is None:
@@ -3026,10 +3032,7 @@ class SetreniDialog(QDialog):
         attachment = attachment_service.add_file_as("accident", self.accident.id, str(tmp_path), stored_name)
         final_path = attachment_service.resolve_path(attachment) if attachment is not None else tmp_path
 
-        try:
-            subprocess.Popen(["xdg-open", str(final_path)])
-        except Exception as exc:
-            QMessageBox.warning(self, "Formuláře", f"Formulář se nepodařilo otevřít.\n\n{exc}")
+        open_export_file(final_path, parent=self, title="Formuláře")
 
     def _tab_formulare(self):
         w = QWidget()

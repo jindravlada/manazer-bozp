@@ -1,8 +1,7 @@
-import subprocess
 from datetime import datetime
 from pathlib import Path
 
-from core.export import OdtExportEngine
+from core.export import OdtExportEngine, open_export_file
 from core.services.storage_service import storage_service
 from moduly.audity.sluzby.audit_annual_export_context_service import (
     audit_annual_export_context_service,
@@ -50,7 +49,7 @@ class RocniZpravaAudituService:
 
     def open_for_year(self, year: int, *, audit_program_id: int | None = None) -> Path:
         path = self.generate_for_year(year, audit_program_id=audit_program_id)
-        subprocess.Popen(["xdg-open", str(path)])
+        open_export_file(path, title="Roční zpráva auditu")
         return path
 
     @staticmethod

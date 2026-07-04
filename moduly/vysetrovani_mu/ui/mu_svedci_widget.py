@@ -1,10 +1,11 @@
 import html
 import json
-import subprocess
 import unicodedata
 import zipfile
 from datetime import datetime
 from pathlib import Path
+
+from core.export import open_export_file
 
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -269,10 +270,7 @@ class MuSvedciWidget(QWidget):
         )
         final_path = attachment_service.resolve_path(attachment) if attachment is not None else tmp_path
 
-        try:
-            subprocess.Popen(["xdg-open", str(final_path)])
-        except Exception as exc:
-            QMessageBox.warning(self, "Formuláře", f"Formulář se nepodařilo otevřít.\n\n{exc}")
+        open_export_file(final_path, parent=self, title="Formuláře")
 
     def _slug(self, text: str) -> str:
         text = text.replace(":", "").strip()

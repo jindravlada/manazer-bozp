@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-import subprocess
+from core.export import open_export_file
 
 from PySide6.QtWidgets import (
     QFileDialog,
@@ -203,7 +203,4 @@ class MuOhledaniMistaWidget(QWidget):
             QMessageBox.warning(self, "Příloha", "Soubor protokolu nebyl nalezen.")
             return
 
-        try:
-            subprocess.Popen(["xdg-open", str(path)])
-        except Exception as exc:
-            QMessageBox.warning(self, "Příloha", f"Protokol se nepodařilo otevřít.\n\n{exc}")
+        open_export_file(path, parent=self, title="Příloha")

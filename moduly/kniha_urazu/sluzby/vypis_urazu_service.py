@@ -1,8 +1,7 @@
-import subprocess
 from datetime import date, datetime
 from pathlib import Path
 
-from core.export import OdtExportEngine
+from core.export import OdtExportEngine, open_export_file
 from core.services.storage_service import storage_service
 from moduly.kniha_urazu.sluzby.accident_export_context_service import (
     AccidentExportContext,
@@ -45,7 +44,7 @@ class VypisUrazuService:
 
     def open_for_accident(self, accident) -> Path:
         path = self.generate_for_accident(accident)
-        subprocess.Popen(["xdg-open", str(path)])
+        open_export_file(path, title="Výpis pracovního úrazu")
         return path
 
     def _output_filename(self, accident) -> str:

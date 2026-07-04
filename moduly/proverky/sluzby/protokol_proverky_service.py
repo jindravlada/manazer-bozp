@@ -1,8 +1,7 @@
-import subprocess
 from datetime import datetime
 from pathlib import Path
 
-from core.export import OdtExportEngine
+from core.export import OdtExportEngine, open_export_file
 from core.services.storage_service import storage_service
 from moduly.proverky.modely.bozp_inspection import BozpInspection
 from moduly.proverky.sluzby.bozp_inspection_export_context_service import (
@@ -47,7 +46,7 @@ class ProtokolProverkyService:
 
     def open_for_inspection(self, inspection: BozpInspection) -> Path:
         path = self.generate_for_inspection(inspection)
-        subprocess.Popen(["xdg-open", str(path)])
+        open_export_file(path, title="Protokol prověrky")
         return path
 
     def incomplete_warning(self, inspection: BozpInspection) -> str | None:

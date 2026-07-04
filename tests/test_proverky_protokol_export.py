@@ -288,16 +288,14 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
 
         self.assertIsNone(warning)
 
-    @patch("moduly.proverky.sluzby.protokol_proverky_service.subprocess.Popen")
-    def test_open_for_inspection_calls_xdg_open(self, mock_popen) -> None:
+    @patch("moduly.proverky.sluzby.protokol_proverky_service.open_export_file")
+    def test_open_for_inspection_opens_export(self, mock_open) -> None:
         inspection = self._create_inspection_with_leader()
         assert inspection is not None
 
         path = protokol_proverky_service.open_for_inspection(inspection)
 
-        mock_popen.assert_called_once()
-        self.assertEqual(mock_popen.call_args.args[0][0], "xdg-open")
-        self.assertEqual(mock_popen.call_args.args[0][1], str(path))
+        mock_open.assert_called_once_with(path, title="Protokol prověrky")
 
     @patch("moduly.proverky.ui.bozp_inspection_conclusion_widget.QMessageBox.warning")
     @patch("moduly.proverky.ui.bozp_inspection_conclusion_widget.protokol_proverky_service.open_for_inspection")

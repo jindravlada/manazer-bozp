@@ -1,8 +1,11 @@
 import html
-import subprocess
+import os
 import zipfile
 from datetime import date, datetime
 from pathlib import Path
+
+from core.export import open_export_file
+from core.export.odt_engine import _sync_written_file
 
 from core.services.attachment_service import attachment_service
 from core.services.storage_service import storage_service
@@ -44,11 +47,14 @@ class ZaverecnaZpravaService:
         self._fill_odt_template(template, tmp_output, values)
 
         attachment = attachment_service.add_file_as("accident", accident.id, str(tmp_output), output_name)
-        return attachment_service.resolve_path(attachment) if attachment is not None else tmp_output
+        if attachment is not None:
+            attachment_path = attachment_service.resolve_path(attachment)
+            return attachment_path.resolve()
+        return tmp_output.resolve()
 
     def open_for_accident(self, accident) -> Path:
         path = self.generate_for_accident(accident)
-        subprocess.Popen(["xdg-open", str(path)])
+        open_export_file(path, title="Závěrečná zpráva")
         return path
 
     def _output_filename(self, accident) -> str:
@@ -212,6 +218,7 @@ class ZaverecnaZpravaService:
                         xml = xml.replace("${" + key + "}", self._escape_odt_text(value))
                     data = xml.encode("utf-8")
                 zout.writestr(item, data)
+        _sync_written_file(output_path)
 
 
 zaverecna_zprava_service = ZaverecnaZpravaService()

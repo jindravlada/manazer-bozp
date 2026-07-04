@@ -1,8 +1,7 @@
-import subprocess
 from datetime import datetime
 from pathlib import Path
 
-from core.export import OdtExportEngine
+from core.export import OdtExportEngine, open_export_file
 from core.services.storage_service import storage_service
 from moduly.audity.modely.audit import Audit
 from moduly.audity.sluzby.audit_export_context_service import audit_export_context_service
@@ -45,7 +44,7 @@ class ProtokolAuditService:
 
     def open_for_audit(self, audit: Audit) -> Path:
         path = self.generate_for_audit(audit)
-        subprocess.Popen(["xdg-open", str(path)])
+        open_export_file(path, title="Protokol auditu")
         return path
 
     def incomplete_warning(self, audit: Audit) -> str | None:
