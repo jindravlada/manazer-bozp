@@ -274,6 +274,8 @@ class AuditProgramService:
             "approved_at": program.approved_at,
             "closed_at": program.closed_at,
             "manual_planning": program.manual_planning,
+            "previous_program_id": program.previous_program_id,
+            "id": program.id,
         }
         merged.update(fields)
         data = self._validated_program_fields(merged)
@@ -1125,6 +1127,20 @@ class AuditProgramService:
         if date_from is not None and date_to is not None and date_from > date_to:
             raise ValueError("Datum od nesmí být později než datum do.")
 
+        previous_program_id = fields.get("previous_program_id")
+        if previous_program_id is not None:
+            previous_program_id = int(previous_program_id)
+            if previous_program_id <= 0:
+                previous_program_id = None
+
+        program_id = fields.get("id")
+        if previous_program_id is not None:
+            if program_id is not None and previous_program_id == int(program_id):
+                raise ValueError("Program nemůže navazovat sám na sebe.")
+            previous = self.repository.get_program(previous_program_id)
+            if previous is None:
+                raise ValueError("Vybraný předchozí program auditů neexistuje.")
+
         return {
             "number": str(fields.get("number") or "").strip(),
             "name": name,
@@ -1138,6 +1154,7 @@ class AuditProgramService:
             "approved_at": fields.get("approved_at"),
             "closed_at": fields.get("closed_at"),
             "manual_planning": bool(fields.get("manual_planning", False)),
+            "previous_program_id": previous_program_id,
         }
 
     def _validated_workplace_fields(self, fields: dict) -> dict:

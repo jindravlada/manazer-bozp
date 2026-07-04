@@ -33,6 +33,7 @@ def initialize_database() -> None:
     from moduly.vysetrovani_mu.modely.mu_investigation import MuInvestigation  # noqa: F401
     from moduly.proverky.modely.bozp_annual_report import BozpAnnualReport  # noqa: F401
     from moduly.audity.modely.audit_annual_report import AuditAnnualReport  # noqa: F401
+    from moduly.audity.modely.audit_program_final_report import AuditProgramFinalReport  # noqa: F401
     from moduly.audity.modely.audit_process_maturity_snapshot import (  # noqa: F401
         AuditProcessMaturitySnapshot,
     )
@@ -58,6 +59,7 @@ def initialize_database() -> None:
     _ensure_bozp_annual_report_table()
     _ensure_audit_annual_report_table()
     _ensure_audit_process_maturity_snapshot_table()
+    _ensure_audit_program_final_report_table()
     _ensure_workplace_audit_columns()
     _ensure_audit_program_columns()
     _ensure_audit_program_workplace_columns()
@@ -398,6 +400,16 @@ def _ensure_audit_program_columns() -> None:
     columns = _table_columns("audit_programs")
     if columns and "manual_planning" not in columns:
         _add_column("audit_programs", "manual_planning BOOLEAN DEFAULT 0 NOT NULL")
+    if columns and "previous_program_id" not in columns:
+        _add_column("audit_programs", "previous_program_id INTEGER")
+
+
+def _ensure_audit_program_final_report_table() -> None:
+    from moduly.audity.modely.audit_program_final_report import AuditProgramFinalReport
+
+    columns = _table_columns("audit_program_final_reports")
+    if not columns:
+        AuditProgramFinalReport.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_audit_program_workplace_columns() -> None:

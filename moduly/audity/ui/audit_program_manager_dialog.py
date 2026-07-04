@@ -28,6 +28,8 @@ from moduly.audity.constants import (
     AUDIT_PROGRAM_CENTER_PANEL_TITLE,
     AUDIT_PROGRAM_DETAIL_ACTIONS_LABEL,
     AUDIT_PROGRAM_DETAIL_STANDARDS_LABEL,
+    AUDIT_PROGRAM_FINAL_REPORT_BUTTON,
+    AUDIT_PROGRAM_PREVIOUS_PROGRAM_LABEL,
     audit_program_distribute_processes_button_label,
     AUDIT_PROGRAM_EDIT_VISIT_BUTTON,
     AUDIT_PROGRAM_GENERATE_VISITS_BUTTON,
@@ -87,6 +89,9 @@ from moduly.audity.ui.audit_program_plan_tree_widget import (
     AuditProgramPlanTreeWidget,
 )
 from moduly.audity.ui.audit_program_visit_dialog import AuditProgramVisitDialog
+from moduly.audity.ui.zaverecna_zprava_programu_auditu_dialog import (
+    ZaverecnaZpravaProgramuAudituDialog,
+)
 
 
 class AuditProgramManagerDialog(QDialog):
@@ -202,6 +207,11 @@ class AuditProgramManagerDialog(QDialog):
         self._program_period_label.setObjectName("MutedText")
         card_layout.addWidget(self._program_period_label)
 
+        self._previous_program_label = QLabel()
+        self._previous_program_label.setObjectName("InfoText")
+        self._previous_program_label.setWordWrap(True)
+        card_layout.addWidget(self._previous_program_label)
+
         card_layout.addWidget(self._card_separator())
 
         standards_label = QLabel(AUDIT_PROGRAM_DETAIL_STANDARDS_LABEL)
@@ -242,14 +252,17 @@ class AuditProgramManagerDialog(QDialog):
             audit_program_distribute_processes_button_label(False)
         )
         self._refresh_overview_btn = QPushButton(AUDIT_PROGRAM_REFRESH_OVERVIEW_BUTTON)
+        self._final_report_btn = QPushButton(AUDIT_PROGRAM_FINAL_REPORT_BUTTON)
         self._generate_visits_btn.clicked.connect(self._generate_visits)
         self._supplement_workplaces_btn.clicked.connect(self._supplement_workplaces)
         self._distribute_processes_btn.clicked.connect(self._distribute_processes)
         self._refresh_overview_btn.clicked.connect(self._refresh_overview)
+        self._final_report_btn.clicked.connect(self._open_final_report_dialog)
         actions.addWidget(self._generate_visits_btn)
         actions.addWidget(self._supplement_workplaces_btn)
         actions.addWidget(self._distribute_processes_btn)
         actions.addWidget(self._refresh_overview_btn)
+        actions.addWidget(self._final_report_btn)
         card_layout.addLayout(actions)
 
         self._detail_card.setVisible(False)
@@ -462,6 +475,12 @@ class AuditProgramManagerDialog(QDialog):
             return
         self._set_status(AUDIT_PROGRAM_STATUS_OVERVIEW_REFRESHED)
         self._refresh_selected_program_views()
+
+    def _open_final_report_dialog(self) -> None:
+        program_id = self._selected_program_id
+        if program_id is None:
+            return
+        exec_maximized(ZaverecnaZpravaProgramuAudituDialog(self, program_id=program_id))
 
     def _on_program_selected(
         self,
@@ -766,6 +785,16 @@ class AuditProgramManagerDialog(QDialog):
         self._program_period_label.setText(
             self._format_period(program.date_from, program.date_to)
         )
+        if program.previous_program_id is None:
+            self._previous_program_label.setText(
+                f"{AUDIT_PROGRAM_PREVIOUS_PROGRAM_LABEL} —"
+            )
+        else:
+            previous = audit_program_service.get_program(program.previous_program_id)
+            previous_name = previous.name if previous is not None else "—"
+            self._previous_program_label.setText(
+                f"{AUDIT_PROGRAM_PREVIOUS_PROGRAM_LABEL} {previous_name}"
+            )
         self._set_program_status_badge(program.status)
         standards = audit_program_service.parse_standards(program.standards_json)
         self._standards_value.setText("\n".join(standards) if standards else "—")
@@ -811,6 +840,7 @@ class AuditProgramManagerDialog(QDialog):
         for label in (
             self._program_title_label,
             self._program_period_label,
+            self._previous_program_label,
             self._program_status_badge,
             self._standards_value,
             self._workplaces_stat_label,
@@ -826,6 +856,7 @@ class AuditProgramManagerDialog(QDialog):
         self._supplement_workplaces_btn.setEnabled(enabled)
         self._distribute_processes_btn.setEnabled(enabled)
         self._refresh_overview_btn.setEnabled(enabled)
+        self._final_report_btn.setEnabled(enabled)
 
     def _set_status(self, message: str) -> None:
         self._status_label.setText(message)

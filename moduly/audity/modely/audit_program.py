@@ -31,6 +31,7 @@ class AuditProgram(Base):
     approved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     manual_planning: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    previous_program_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
 
 class AuditProgramWorkplace(Base):

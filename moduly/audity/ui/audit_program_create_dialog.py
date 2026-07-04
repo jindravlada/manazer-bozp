@@ -4,6 +4,7 @@ from datetime import date
 
 from PySide6.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QDialog,
     QFormLayout,
     QLineEdit,
@@ -16,6 +17,7 @@ from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.audity.constants import (
     AUDIT_PROGRAM_CREATE_DIALOG_TITLE,
     AUDIT_PROGRAM_EDIT_DIALOG_TITLE,
+    AUDIT_PROGRAM_PREVIOUS_PROGRAM_LABEL,
     AUDIT_PROGRAM_STANDARDS_V1,
     AUDIT_STANDARD_ISO_45001,
     AUDIT_STANDARD_ISO_9001,
@@ -49,6 +51,7 @@ class AuditProgramCreateDialog(QDialog):
         self._description_edit.setMinimumHeight(90)
         self._note_edit = QTextEdit()
         self._note_edit.setMinimumHeight(70)
+        self._previous_program_combo = QComboBox()
 
         self._iso_45001_check.setChecked(True)
         self._iso_9001_check.setChecked(True)
@@ -56,6 +59,7 @@ class AuditProgramCreateDialog(QDialog):
         form.addRow("Název:", self._name_edit)
         form.addRow("Datum od:", self._date_from_edit)
         form.addRow("Datum do:", self._date_to_edit)
+        form.addRow(AUDIT_PROGRAM_PREVIOUS_PROGRAM_LABEL, self._previous_program_combo)
         form.addRow("Normy:", self._iso_45001_check)
         form.addRow("", self._iso_9001_check)
         form.addRow("Popis:", self._description_edit)
@@ -69,6 +73,24 @@ class AuditProgramCreateDialog(QDialog):
 
         if program is not None:
             self._load_program(program)
+        self._populate_previous_programs(program.id if program is not None else None)
+
+    def _populate_previous_programs(self, current_program_id: int | None) -> None:
+        self._previous_program_combo.blockSignals(True)
+        self._previous_program_combo.clear()
+        self._previous_program_combo.addItem("— žádný —", None)
+        selected_id = None
+        if self._program is not None:
+            selected_id = self._program.previous_program_id
+        for program in audit_program_service.list_programs():
+            if current_program_id is not None and program.id == current_program_id:
+                continue
+            self._previous_program_combo.addItem(program.name, program.id)
+        if selected_id is not None:
+            index = self._previous_program_combo.findData(selected_id)
+            if index >= 0:
+                self._previous_program_combo.setCurrentIndex(index)
+        self._previous_program_combo.blockSignals(False)
 
     def _load_program(self, program: AuditProgram) -> None:
         self._name_edit.setText(program.name)
@@ -109,6 +131,7 @@ class AuditProgramCreateDialog(QDialog):
             "standards": self._selected_standards() or list(AUDIT_PROGRAM_STANDARDS_V1),
             "description": self._description_edit.toPlainText().strip(),
             "note": self._note_edit.toPlainText().strip(),
+            "previous_program_id": self._previous_program_combo.currentData(),
         }
 
     @staticmethod

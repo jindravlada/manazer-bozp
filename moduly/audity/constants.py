@@ -256,6 +256,8 @@ AUDIT_PROGRAM_DISTRIBUTE_PROCESSES_BUTTON = "Rozdělit procesy"
 AUDIT_PROGRAM_SUPPLEMENT_PROCESSES_BUTTON = "Doplnit nové procesy"
 AUDIT_PROGRAM_USE_SUPPLEMENT_PROCESSES_LABEL = False
 AUDIT_PROGRAM_REFRESH_OVERVIEW_BUTTON = "Přepočítat přehled"
+AUDIT_PROGRAM_FINAL_REPORT_BUTTON = "Závěrečná zpráva programu"
+AUDIT_PROGRAM_PREVIOUS_PROGRAM_LABEL = "Navazuje na program:"
 
 
 def audit_program_distribute_processes_button_label(has_existing_processes: bool) -> str:
