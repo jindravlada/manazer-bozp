@@ -1,7 +1,11 @@
 from dataclasses import dataclass
 from datetime import date, datetime
 
-from core.shared.constants import ENTITY_AUDITY
+from core.shared.constants import (
+    CONTROL_RESULT_NEVYHOVUJE,
+    CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
+    ENTITY_AUDITY,
+)
 from core.shared.control_result_display import control_result_label, protocol_evaluation_results
 from core.shared.finding_display import finding_status_label, finding_type_label
 from core.shared.sluzby.control_activity_statistics_service import (
@@ -143,6 +147,18 @@ class AuditExportContext:
         lines = self.commission_lines()
         return "\n".join(lines) if lines else "Nejsou evidováni."
 
+    def commission_member_name(self, record_type: str) -> str:
+        for member in audit_commission_service.get_for_audit(self.audit_id):
+            if member.record_type == record_type:
+                return _text(member.display_name)
+        return "—"
+
+    def leader_auditor_name(self) -> str:
+        return self.commission_member_name(COMMISSION_RECORD_LEADER)
+
+    def workplace_representative_name(self) -> str:
+        return self.commission_member_name(COMMISSION_RECORD_WORKPLACE)
+
     def planned_process_ids(self) -> tuple[str, ...]:
         visit_id = self.audit.program_visit_id
         if visit_id is None:
@@ -178,6 +194,9 @@ class AuditExportContext:
             return "Nejsou evidovány."
         return "\n".join(f"• {line}" for line in lines)
 
+    def appendix_processes_text(self) -> str:
+        return self.processes_text()
+
     def _activity_statistics(self):
         return control_activity_statistics_service.compute(ENTITY_AUDITY, self.audit_id)
 
@@ -195,6 +214,92 @@ class AuditExportContext:
         if stats.ratings_vyhovuje_s_doporucenim:
             return "🟡 Vyhovuje s výhradami"
         return "🟢 Vyhovující"
+
+    def overall_assessment_text(self) -> str:
+        stats = self._activity_statistics()
+        if stats.ratings_nevyhovuje:
+            first_sentence = "Systém řízení vykazuje neshody vyžadující nápravu."
+        elif stats.ratings_vyhovuje_s_doporucenim:
+            first_sentence = "Systém řízení je funkční s doporučeními ke zlepšení."
+        else:
+            first_sentence = "Systém řízení plní požadavky bez závažných výhrad."
+
+        detail_parts: list[str] = []
+        if stats.ratings_nevyhovuje == 1:
+            detail_parts.append("1 neshoda")
+        elif stats.ratings_nevyhovuje > 1:
+            detail_parts.append(f"{stats.ratings_nevyhovuje} neshody")
+        if stats.ratings_vyhovuje_s_doporucenim == 1:
+            detail_parts.append("1 příležitost ke zlepšení")
+        elif stats.ratings_vyhovuje_s_doporucenim > 1:
+            detail_parts.append(
+                f"{stats.ratings_vyhovuje_s_doporucenim} příležitosti ke zlepšení"
+            )
+
+        if detail_parts:
+            if len(detail_parts) == 2:
+                second_sentence = (
+                    f"Během auditu byla zjištěna {detail_parts[0]} a {detail_parts[1]}. "
+                )
+            else:
+                second_sentence = f"Během auditu byla zjištěna {detail_parts[0]}. "
+        else:
+            second_sentence = "Během auditu nebyla zjištěna významná zjištění. "
+
+        if stats.ratings_nevyhovuje >= 3:
+            second_sentence += "Bylo prokázáno systémové selhání v některých oblastech."
+        else:
+            second_sentence += "Audit neprokázal systémové selhání."
+        return f"{first_sentence}\n{second_sentence}"
+
+    def strengths_text(self) -> str:
+        raw = _text(getattr(self.audit, "silne_stranky", ""))
+        if not raw:
+            return "—"
+        lines: list[str] = []
+        for line in raw.split("\n"):
+            text = line.strip()
+            if not text:
+                continue
+            if text.startswith("✔"):
+                lines.append(text)
+            else:
+                lines.append(f"✔ {text}")
+        return "\n".join(lines) if lines else "—"
+
+    def attention_areas_text(self) -> str:
+        results = control_result_service.get_for_entity(ENTITY_AUDITY, self.audit_id)
+        lines: list[str] = []
+        for row in sorted(
+            results,
+            key=lambda item: (
+                0 if item.result == CONTROL_RESULT_NEVYHOVUJE else 1,
+                item.source_area_label,
+                item.source_section_label,
+                item.source_control_point_label,
+                item.id,
+            ),
+        ):
+            label = self._attention_area_label(row)
+            if row.result == CONTROL_RESULT_NEVYHOVUJE:
+                lines.append(f"🔴 {label}")
+            elif row.result == CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM:
+                lines.append(f"🟡 {label}")
+        return "\n".join(lines) if lines else "—"
+
+    @staticmethod
+    def _attention_area_label(row) -> str:
+        for attr in ("source_control_point_label", "note", "source_section_label"):
+            value = _text(getattr(row, attr, ""))
+            if value:
+                return value
+        return "—"
+
+    def audit_scope_text(self) -> str:
+        return (
+            "Audit byl proveden podle schváleného programu interních auditů.\n"
+            "Auditované procesy jsou uvedeny v příloze této zprávy."
+        )
 
     def auditor_recommendation_text(self) -> str:
         stats = self._activity_statistics()
@@ -236,8 +341,6 @@ class AuditExportContext:
             f"Auditovaný provoz: {_text(self.audit.workplace_name) or '—'}",
             f"Auditovaný systém: {self.audited_system_label()}",
             f"Datum auditu: {_fmt_date(self.audit.audit_date) or '—'}",
-            "Auditované procesy:",
-            self.processes_text(),
             f"Počet auditních tvrzení: {stats.control_points_checked}",
             f"Počet neshod: {stats.ratings_nevyhovuje}",
             f"Počet doporučení: {stats.ratings_vyhovuje_s_doporucenim}",
@@ -258,27 +361,20 @@ class AuditExportContext:
                 f"Vyhovuje s doporučením: {stats.ratings_vyhovuje_s_doporucenim}",
                 f"Nevyhovuje: {stats.ratings_nevyhovuje}",
                 f"Zjištění: {stats.findings_total}",
-                f"Úkolů: {summary['tasks_total']}",
+                f"Otevřené úkoly: {summary['tasks_active']}",
             ]
         )
 
     def signatures_text(self) -> str:
-        lines = ["Auditní tým:"]
-        commission = self.commission_lines()
-        if commission:
-            lines.extend(commission)
-        else:
-            lines.append("Nejsou evidováni.")
-
-        lines.extend(
-            [
-                "",
-                f"Datum vyhotovení protokolu: {datetime.now().strftime('%d.%m.%Y')}",
-                "",
-                "Podpis vedoucího auditu: _________________________",
-                "Podpis zástupce zaměstnavatele: _________________________",
-            ]
-        )
+        lines = [
+            "Vedoucí auditor:",
+            self.leader_auditor_name(),
+            "",
+            "Zástupce auditovaného provozu:",
+            self.workplace_representative_name(),
+            "",
+            f"Datum vyhotovení protokolu: {datetime.now().strftime('%d.%m.%Y')}",
+        ]
         return "\n".join(lines)
 
     def evaluation_lines(self) -> list[str]:
@@ -454,10 +550,17 @@ class AuditExportContext:
             "komise_text": self.commission_text(),
             "auditni_tym_text": self.commission_text(),
             "procesy_text": self.processes_text(),
+            "priloha_procesy_text": self.appendix_processes_text(),
             "celkove_hodnoceni": self.overall_rating_label(),
+            "celkove_hodnoceni_text": self.overall_assessment_text(),
             "auditovany_provoz": _text(self.audit.workplace_name),
             "auditovany_system": self.audited_system_label(),
+            "vedouci_auditor": self.leader_auditor_name(),
+            "zastupce_provozu": self.workplace_representative_name(),
             "doporuceni_auditora": self.auditor_recommendation_text(),
+            "silne_stranky_text": self.strengths_text(),
+            "oblasti_pozornosti_text": self.attention_areas_text(),
+            "rozsah_auditu_text": self.audit_scope_text(),
             "executive_summary_text": executive_summary,
             "prehled_vysledku_text": results_overview,
             "vyznamna_zjisteni_text": significant_findings,

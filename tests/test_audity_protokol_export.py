@@ -181,7 +181,7 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         self.assertIn(audit.number, content)
         self.assertIn("Auditních tvrzení: 1", content)
         self.assertIn("Vyhovuje: 1", content)
-        self.assertIn("Executive Summary", content)
+        self.assertIn("ZPRÁVA Z INTERNÍHO AUDITU", content)
 
     def test_evaluation_in_output_includes_only_recommendations_and_noncompliance(self) -> None:
         audit = self._create_audit()
@@ -371,10 +371,17 @@ class AudityProtokolExportTestCase(unittest.TestCase):
             "komise_text",
             "auditni_tym_text",
             "procesy_text",
+            "priloha_procesy_text",
             "celkove_hodnoceni",
+            "celkove_hodnoceni_text",
             "auditovany_provoz",
             "auditovany_system",
+            "vedouci_auditor",
+            "zastupce_provozu",
             "doporuceni_auditora",
+            "silne_stranky_text",
+            "oblasti_pozornosti_text",
+            "rozsah_auditu_text",
             "executive_summary_text",
             "prehled_vysledku_text",
             "vyznamna_zjisteni_text",
@@ -399,19 +406,73 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         content = _odt_content(path)
 
         for heading in (
-            "PROTOKOL Z AUDITU",
-            "Executive Summary",
+            "ZPRÁVA Z INTERNÍHO AUDITU",
+            "Základní informace",
+            "CELKOVÉ HODNOCENÍ",
             "Přehled výsledků",
+            "Silné stránky systému",
+            "Oblasti vyžadující pozornost",
+            "Doporučení vedoucího auditora",
+            "Rozsah auditu",
             "Významná zjištění",
             "Přijatá opatření / úkoly",
             "Detail zjištění",
-            "Závěr",
+            "Příloha – Auditované procesy",
             "Podpisy",
         ):
             self.assertIn(heading, content)
 
-        self.assertIn("Podpis vedoucího auditu:", content)
+        self.assertIn("Jan Novák", content)
+        self.assertIn("Eva Králová", content)
+        self.assertNotIn("Lucie Horáková", content)
         self.assertNotIn("Zobrazit pouze výsledky", content)
+        self.assertNotIn("Executive Summary", content)
+
+    def test_strengths_and_attention_areas_in_output(self) -> None:
+        audit = self._create_audit()
+        assert audit is not None
+        audit = audit_service.update_audit(
+            audit.id,
+            silne_stranky="Funkční systém řízení.\nDobře vedená dokumentace.",
+        )
+        assert audit is not None
+
+        control_result_service.set_result(
+            ENTITY_AUDITY,
+            audit.id,
+            ControlPointContext(
+                area_id="rizeni_rizik",
+                area_label="Řízení rizik",
+                section_id="sekce",
+                section_label="Sekce",
+                control_point_id="q_rec",
+                control_point_label="Evidence preventivních opatření není vždy úplná.",
+            ),
+            result=CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
+        )
+        control_result_service.set_result(
+            ENTITY_AUDITY,
+            audit.id,
+            ControlPointContext(
+                area_id="rizeni_rizik",
+                area_label="Řízení rizik",
+                section_id="sekce",
+                section_label="Sekce",
+                control_point_id="q_bad",
+                control_point_label="Analýza příčin neshod není prováděna jednotným způsobem.",
+            ),
+            result=CONTROL_RESULT_NEVYHOVUJE,
+        )
+
+        path = protokol_audit_service.generate_for_audit(audit)
+        content = _odt_content(path)
+
+        self.assertIn("✔ Funkční systém řízení.", content)
+        self.assertIn("✔ Dobře vedená dokumentace.", content)
+        self.assertIn("🔴 Analýza příčin neshod není prováděna jednotným způsobem.", content)
+        self.assertIn("🟡 Evidence preventivních opatření není vždy úplná.", content)
+        self.assertIn("Auditované procesy jsou uvedeny v příloze této zprávy.", content)
+        self.assertIn("Otevřené úkoly:", content)
 
     def test_incomplete_warning(self) -> None:
         audit = self._create_audit()

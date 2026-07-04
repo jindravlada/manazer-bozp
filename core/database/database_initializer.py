@@ -47,6 +47,7 @@ def initialize_database() -> None:
     _ensure_audit_program_columns()
     _ensure_audit_program_workplace_columns()
     _ensure_audit_program_link_columns()
+    _ensure_audit_columns()
     _normalize_task_status_values()
     _normalize_accident_legacy_values()
 
@@ -273,6 +274,14 @@ def _ensure_audit_program_link_columns() -> None:
         _add_column("audits", "program_id INTEGER")
     if columns and "program_visit_id" not in columns:
         _add_column("audits", "program_visit_id INTEGER")
+
+
+def _ensure_audit_columns() -> None:
+    columns = _table_columns("audits")
+    if not columns:
+        return
+    if "silne_stranky" not in columns:
+        _add_column("audits", "silne_stranky TEXT DEFAULT '' NOT NULL")
 
 
 def _normalize_task_status_values() -> None:

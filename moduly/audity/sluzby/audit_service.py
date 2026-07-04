@@ -71,6 +71,7 @@ class AuditService:
             "title": audit.title,
             "program_id": audit.program_id,
             "program_visit_id": audit.program_visit_id,
+            "silne_stranky": audit.silne_stranky,
         }
         merged.update(fields)
         data = self._validated_fields(merged)
@@ -248,6 +249,7 @@ class AuditService:
 
         data["workplace_name"] = str(data.get("workplace_name") or "").strip()
         data["title"] = str(data.get("title") or "").strip()
+        data["silne_stranky"] = str(data.get("silne_stranky") or "").replace("\r\n", "\n").replace("\r", "\n").strip()
 
         started_at = data.get("started_at")
         finished_at = data.get("finished_at")
@@ -268,6 +270,7 @@ class AuditService:
             "title": data["title"],
             "program_id": data.get("program_id"),
             "program_visit_id": data.get("program_visit_id"),
+            "silne_stranky": data["silne_stranky"],
         }
 
     @staticmethod

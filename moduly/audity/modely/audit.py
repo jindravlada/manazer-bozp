@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Integer, String
+from sqlalchemy import Date, DateTime, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database.base import Base
@@ -30,6 +30,7 @@ class Audit(Base):
 
     program_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     program_visit_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    silne_stranky: Mapped[str] = mapped_column(Text, default="", nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(
