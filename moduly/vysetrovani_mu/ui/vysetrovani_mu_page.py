@@ -16,6 +16,7 @@ from core.widgets.table_utils import configure_table_columns
 from moduly.vysetrovani_mu.constants import (
     DEFAULT_MU_STATUS_FILTER,
     MU_STATUS_BY_FILTER,
+    MU_STATUS_DOKONCENO,
     MU_STATUS_FILTER_ODLOZENO,
     MU_STATUS_FILTER_DOKONCENO,
     MU_STATUS_FILTER_PROBIHA,
@@ -141,11 +142,30 @@ class VysetrovaniMuPage(QWidget):
     def show_sedmero(self):
         MuSedmeroDialog(self).exec()
 
+    def _sync_accident_closed_from_investigation(self, investigation) -> None:
+        if (
+            investigation is None
+            or investigation.source_type != SOURCE_TYPE_ACCIDENT
+            or not isinstance(investigation.source_id, int)
+            or investigation.source_id <= 0
+        ):
+            return
+
+        from moduly.kniha_urazu.sluzby.accident_service import accident_service
+
+        should_close = investigation.status == MU_STATUS_DOKONCENO
+        accident = accident_service.get_by_id(investigation.source_id)
+        if accident is None or getattr(accident, "closed", False) == should_close:
+            return
+
+        accident_service.update_accident(investigation.source_id, closed=should_close)
+
     def new_investigation(self):
         dialog = MuInvestigationDialog(self)
         if exec_maximized(dialog):
             data = dialog.get_data()
-            mu_investigation_service.create_investigation(**data)
+            investigation = mu_investigation_service.create_investigation(**data)
+            self._sync_accident_closed_from_investigation(investigation)
             self._populate_year_filter()
             self.refresh()
 
@@ -167,9 +187,13 @@ class VysetrovaniMuPage(QWidget):
         dialog = MuInvestigationDialog(self, investigation=investigation)
         if exec_maximized(dialog):
             data = dialog.get_data()
-            mu_investigation_service.update_investigation(investigation_id, **data)
-            self._populate_year_filter()
-            self.refresh()
+            updated = mu_investigation_service.update_investigation(investigation_id, **data)
+            self._sync_accident_closed_from_investigation(updated)
+            if data.get("status") == MU_STATUS_DOKONCENO and self.status_filter.currentText() == MU_STATUS_FILTER_PROBIHA:
+                self.status_filter.setCurrentText(MU_STATUS_FILTER_DOKONCENO)
+            else:
+                self._populate_year_filter()
+                self.refresh()
 
     def open_from_accident(self, accident_id: int) -> None:
         existing = mu_investigation_service.find_by_source(SOURCE_TYPE_ACCIDENT, accident_id)
@@ -186,7 +210,8 @@ class VysetrovaniMuPage(QWidget):
         dialog = MuInvestigationDialog(self, accident_id=accident_id)
         if exec_maximized(dialog):
             data = dialog.get_data()
-            mu_investigation_service.create_investigation(**data)
+            investigation = mu_investigation_service.create_investigation(**data)
+            self._sync_accident_closed_from_investigation(investigation)
             self._populate_year_filter()
             self.refresh()
 

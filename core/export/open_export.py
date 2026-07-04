@@ -1,5 +1,7 @@
 import os
+import shutil
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -20,11 +22,38 @@ def _wait_for_export_file_ready(path: Path) -> bool:
 
 
 def _open_with_xdg_open(path: Path) -> bool:
+    xdg_open = shutil.which("xdg-open")
+    if not xdg_open:
+        return False
+
     try:
-        subprocess.Popen(["xdg-open", str(path)], shell=False)
+        subprocess.Popen(
+            [xdg_open, str(path)],
+            shell=False,
+            start_new_session=True,
+            close_fds=True,
+        )
         return True
     except OSError:
         return False
+
+
+def _open_with_qt_desktop(path: Path) -> bool:
+    try:
+        return bool(QDesktopServices.openUrl(QUrl.fromLocalFile(str(path))))
+    except Exception:
+        return False
+
+
+def _show_open_failed(parent: QWidget | None, title: str, path: Path) -> None:
+    QMessageBox.warning(
+        parent,
+        title,
+        (
+            "Export byl vytvořen, ale nepodařilo se ho automaticky otevřít.\n\n"
+            f"Soubor:\n{path}"
+        ),
+    )
 
 
 def open_export_file(path: Path | str, *, parent: QWidget | None = None, title: str = "Export") -> bool:
@@ -39,21 +68,15 @@ def open_export_file(path: Path | str, *, parent: QWidget | None = None, title: 
         )
         return False
 
-    opened = False
-    # QDesktopServices.openUrl() can block or misbehave inside AppImage; prefer xdg-open there.
-    if not os.environ.get("APPIMAGE"):
-        opened = QDesktopServices.openUrl(QUrl.fromLocalFile(str(resolved)))
+    if sys.platform.startswith("linux"):
+        if _open_with_xdg_open(resolved):
+            return True
+        opened = _open_with_qt_desktop(resolved)
+    else:
+        opened = _open_with_qt_desktop(resolved)
+        if not opened:
+            opened = _open_with_xdg_open(resolved)
 
     if not opened:
-        opened = _open_with_xdg_open(resolved)
-
-    if not opened:
-        QMessageBox.warning(
-            parent,
-            title,
-            (
-                "Export byl vytvořen, ale nepodařilo se ho automaticky otevřít.\n\n"
-                f"Soubor:\n{resolved}"
-            ),
-        )
+        _show_open_failed(parent, title, resolved)
     return opened
