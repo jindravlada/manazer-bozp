@@ -130,7 +130,7 @@ class ProverkyCommissionSaveTestCase(unittest.TestCase):
 
         mock_warning.assert_not_called()
 
-    def test_protocol_shows_all_commission_roles(self) -> None:
+    def test_protocol_shows_signature_roles_only(self) -> None:
         leader_id, workplace_id, member_id, union_id, invited_id = self._create_workers_and_union()
         inspection = bozp_inspection_service.create_inspection()
         bozp_inspection_commission_service.save_members(
@@ -183,19 +183,13 @@ class ProverkyCommissionSaveTestCase(unittest.TestCase):
 
         leader_pos = content.index("Jan Novák")
         workplace_pos = content.index("Eva Králová")
-        union_pos = content.index("Lucie Horáková")
-        member_pos = content.index("Petr Svoboda")
-        invited_pos = content.index("Tomáš Malý")
 
-        self.assertIn("Vedoucí komise", content)
-        self.assertIn("Zástupce pracoviště", content)
-        self.assertIn("Zástupce odborové organizace", content)
-        self.assertIn("Člen komise", content)
-        self.assertIn("Přizvaná osoba", content)
+        self.assertIn("Vedoucí prověrky", content)
+        self.assertIn("Zástupce kontrolovaného pracoviště", content)
         self.assertLess(leader_pos, workplace_pos)
-        self.assertLess(workplace_pos, union_pos)
-        self.assertLess(union_pos, member_pos)
-        self.assertLess(member_pos, invited_pos)
+        self.assertNotIn("Lucie Horáková", content)
+        self.assertNotIn("Petr Svoboda", content)
+        self.assertNotIn("Tomáš Malý", content)
 
 
 if __name__ == "__main__":

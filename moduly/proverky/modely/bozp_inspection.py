@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Integer, String
+from sqlalchemy import Date, DateTime, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database.base import Base
@@ -27,6 +27,8 @@ class BozpInspection(Base):
     workplace_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     workplace_name: Mapped[str] = mapped_column(String(150), default="")
     title: Mapped[str] = mapped_column(String(250), default="")
+    silne_stranky: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    doporuceni_vedouciho: Mapped[str] = mapped_column(Text, default="", nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(

@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QMessageBox,
     QPushButton,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -40,6 +41,26 @@ class BozpInspectionConclusionWidget(QWidget):
         summary_form.addRow("Úkoly celkem:", self.tasks_total_label)
         summary_form.addRow("Aktivní úkoly:", self.tasks_active_label)
         layout.addWidget(summary_group)
+
+        strengths_group = QGroupBox("Silné stránky systému")
+        strengths_layout = QVBoxLayout(strengths_group)
+        self.silne_stranky_edit = QTextEdit()
+        self.silne_stranky_edit.setPlaceholderText(
+            "Každý řádek bude ve zprávě uveden jako samostatná silná stránka."
+        )
+        self.silne_stranky_edit.setMinimumHeight(90)
+        strengths_layout.addWidget(self.silne_stranky_edit)
+        layout.addWidget(strengths_group)
+
+        recommendation_group = QGroupBox("Doporučení vedoucího prověrky")
+        recommendation_layout = QVBoxLayout(recommendation_group)
+        self.doporuceni_edit = QTextEdit()
+        self.doporuceni_edit.setPlaceholderText(
+            "Shrňte hlavní doporučení pro kontrolované pracoviště."
+        )
+        self.doporuceni_edit.setMinimumHeight(90)
+        recommendation_layout.addWidget(self.doporuceni_edit)
+        layout.addWidget(recommendation_group)
 
         completion_group = QGroupBox("Dokončení prověrky")
         completion_form = QFormLayout(completion_group)
@@ -76,6 +97,8 @@ class BozpInspectionConclusionWidget(QWidget):
         if inspection_id is None:
             self.status_label.setText("—")
             self.finished_at_edit.clear_date()
+            self.silne_stranky_edit.clear()
+            self.doporuceni_edit.clear()
             self.findings_total_label.setText("0")
             self.findings_open_label.setText("0")
             self.tasks_total_label.setText("0")
@@ -98,11 +121,16 @@ class BozpInspectionConclusionWidget(QWidget):
         else:
             self.finished_at_edit.clear_date()
 
+        self.silne_stranky_edit.setPlainText(getattr(self.inspection, "silne_stranky", "") or "")
+        self.doporuceni_edit.setPlainText(getattr(self.inspection, "doporuceni_vedouciho", "") or "")
+
         self.complete_btn.setEnabled(finished_at is None)
 
     def get_data(self) -> dict:
         return {
             "finished_at": self.finished_at_edit.get_date(),
+            "silne_stranky": self.silne_stranky_edit.toPlainText().strip(),
+            "doporuceni_vedouciho": self.doporuceni_edit.toPlainText().strip(),
         }
 
     def _update_state(self) -> None:

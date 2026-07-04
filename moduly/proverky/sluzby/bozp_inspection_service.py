@@ -98,6 +98,8 @@ class BozpInspectionService:
             "workplace_id": inspection.workplace_id,
             "workplace_name": inspection.workplace_name,
             "title": inspection.title,
+            "silne_stranky": inspection.silne_stranky,
+            "doporuceni_vedouciho": inspection.doporuceni_vedouciho,
         }
         merged.update(fields)
         data = self._validated_fields(merged)
@@ -256,6 +258,8 @@ class BozpInspectionService:
 
         data["workplace_name"] = str(data.get("workplace_name") or "").strip()
         data["title"] = str(data.get("title") or "").strip()
+        data["silne_stranky"] = str(data.get("silne_stranky") or "").replace("\r\n", "\n").replace("\r", "\n").strip()
+        data["doporuceni_vedouciho"] = str(data.get("doporuceni_vedouciho") or "").replace("\r\n", "\n").replace("\r", "\n").strip()
 
         started_at = data.get("started_at")
         finished_at = data.get("finished_at")
@@ -274,6 +278,8 @@ class BozpInspectionService:
             "workplace_id": data.get("workplace_id"),
             "workplace_name": data["workplace_name"],
             "title": data["title"],
+            "silne_stranky": data["silne_stranky"],
+            "doporuceni_vedouciho": data["doporuceni_vedouciho"],
         }
 
     @staticmethod

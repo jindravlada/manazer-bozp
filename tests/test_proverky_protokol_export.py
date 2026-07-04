@@ -23,6 +23,9 @@ with patch.object(Path, "home", return_value=_TMP):
     initialize_database()
 
     from core.shared.constants import (
+        CONTROL_RESULT_NEVYHOVUJE,
+        CONTROL_RESULT_VYHOVUJE,
+        CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
         ENTITY_PROVERKY,
         FINDING_STATUS_OTEVRENE,
         FINDING_TYPE_ZJISTENI,
@@ -50,6 +53,26 @@ def _odt_content(path: Path) -> str:
         return zin.read("content.xml").decode("utf-8")
 
 
+def _ensure_proverky_protocol_template() -> Path:
+    import moduly.proverky.sluzby.protokol_proverky_service as protokol_module
+    import shutil
+
+    importlib.reload(protokol_module)
+    path = protokol_module.protokol_proverky_service.template_path()
+    bundled = (
+        Path(__file__).resolve().parents[1]
+        / "moduly"
+        / "proverky"
+        / "templates"
+        / "exporty"
+        / "ProtokolProverkyBOZP.odt"
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if bundled.exists():
+        shutil.copy2(bundled, path)
+    return path
+
+
 class ProverkyProtokolExportTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -67,6 +90,7 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
             address="Praha 1",
             nace="62.01",
         )
+        _ensure_proverky_protocol_template()
 
     def _create_leader(self) -> int:
         worker = settings_service.save_worker(first_name="Jan", last_name="Novák")
@@ -139,12 +163,11 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
         self.assertIn(inspection.number, content)
         self.assertIn("Test Zaměstnavatel s.r.o.", content)
         self.assertIn("Sklad B", content)
-        self.assertIn("2026", content)
-        self.assertIn("květen", content)
+        self.assertIn("Prověrky BOZP 2026", content)
         self.assertIn("Mimořádná", content)
         self.assertIn("12.05.2026", content)
-        self.assertIn("10.05.2026", content)
-        self.assertIn("Probíhá", content)
+        self.assertIn("Jan Novák", content)
+        self.assertIn("Eva Králová", content)
 
     def test_commission_in_output(self) -> None:
         leader_id = self._create_leader()
@@ -192,13 +215,9 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
         content = _odt_content(path)
 
         self.assertIn("Jan Novák", content)
-        self.assertIn("Vedoucí komise", content)
         self.assertIn("Eva Králová", content)
-        self.assertIn("Zástupce pracoviště", content)
-        self.assertIn("Lucie Horáková", content)
-        self.assertIn("Zástupce odborové organizace", content)
-        self.assertIn("Petr Svoboda", content)
-        self.assertIn("Člen komise", content)
+        self.assertNotIn("Lucie Horáková", content)
+        self.assertNotIn("Petr Svoboda", content)
 
     def test_findings_in_output(self) -> None:
         inspection = self._create_inspection_with_leader()
@@ -332,6 +351,8 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
             "cislo_proverky",
             "zamestnavatel_nazev",
             "pracoviste",
+            "provoz",
+            "program_proverek",
             "rok",
             "planovany_mesic",
             "typ_proverky",
@@ -340,6 +361,20 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
             "datum_ukonceni",
             "stav",
             "komise_text",
+            "kontrolovany_provoz",
+            "kontrolovane_pracoviste",
+            "vedouci_proverky",
+            "zastupce_pracoviste",
+            "celkove_hodnoceni_text",
+            "prehled_vysledku_text",
+            "silne_stranky_text",
+            "oblasti_pozornosti_text",
+            "doporuceni_vedouciho",
+            "doporuceni_proverky",
+            "rozsah_proverky_text",
+            "detail_zjisteni_text",
+            "prijata_opatreni_text",
+            "priloha_oblasti_text",
             "zjisteni_text",
             "ukoly_text",
             "statistika_text",
@@ -349,8 +384,6 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
         self.assertEqual(set(values.keys()), expected_keys)
 
     def test_statistics_in_output(self) -> None:
-        from core.shared.constants import CONTROL_RESULT_VYHOVUJE
-
         workplace = settings_service.save_workplace(name="Statistika")
         inspection = self._create_inspection_with_leader(
             workplace_id=workplace.id,
@@ -377,8 +410,82 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
         path = protokol_proverky_service.generate_for_inspection(inspection)
         content = _odt_content(path)
 
-        self.assertIn("Počet kontrolovaných oblastí: 1", content)
-        self.assertIn("Počet hodnocení Vyhovuje: 1", content)
+        self.assertIn("Kontrolovaných oblastí: 1", content)
+        self.assertIn("Kontrolních bodů: 1", content)
+        self.assertIn("Vyhovuje: 1", content)
+
+    def test_management_reporting_structure_in_output(self) -> None:
+        inspection = self._create_inspection_with_leader()
+        assert inspection is not None
+
+        path = protokol_proverky_service.generate_for_inspection(inspection)
+        content = _odt_content(path)
+
+        for heading in (
+            "ZPRÁVA Z PROVĚRKY BOZP",
+            "Základní informace",
+            "CELKOVÉ HODNOCENÍ",
+            "Přehled výsledků",
+            "Silné stránky systému",
+            "Oblasti vyžadující pozornost",
+            "Doporučení vedoucího prověrky",
+            "Rozsah prověrky",
+            "Detail zjištění",
+            "Přijatá opatření / úkoly",
+            "Podpisy",
+            "Příloha – Kontrolované oblasti",
+        ):
+            self.assertIn(heading, content)
+
+        self.assertNotIn("Protokol o prověrce BOZP", content)
+
+    def test_strengths_and_attention_areas_in_output(self) -> None:
+        inspection = self._create_inspection_with_leader()
+        assert inspection is not None
+        inspection = bozp_inspection_service.update_inspection(
+            inspection.id,
+            silne_stranky="Funkční organizace práce.\nDobře vedená dokumentace BOZP.",
+            doporuceni_vedouciho="Doporučuje se dokončit otevřená nápravná opatření.",
+        )
+        assert inspection is not None
+
+        from core.shared.sluzby.control_result_service import ControlPointContext, control_result_service
+
+        control_result_service.set_result(
+            ENTITY_PROVERKY,
+            inspection.id,
+            ControlPointContext(
+                area_id="bozp",
+                area_label="BOZP",
+                section_id="sekce",
+                section_label="Sekce",
+                control_point_id="cp_rec",
+                control_point_label="Evidence preventivních opatření není vždy úplná.",
+            ),
+            result=CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
+        )
+        control_result_service.set_result(
+            ENTITY_PROVERKY,
+            inspection.id,
+            ControlPointContext(
+                area_id="bozp",
+                area_label="BOZP",
+                section_id="sekce",
+                section_label="Sekce",
+                control_point_id="cp_bad",
+                control_point_label="Chybí označení únikových východů.",
+            ),
+            result=CONTROL_RESULT_NEVYHOVUJE,
+        )
+
+        path = protokol_proverky_service.generate_for_inspection(inspection)
+        content = _odt_content(path)
+
+        self.assertIn("✔ Funkční organizace práce.", content)
+        self.assertIn("Doporučuje se dokončit otevřená nápravná opatření.", content)
+        self.assertIn("🔴 Chybí označení únikových východů.", content)
+        self.assertIn("🟡 Evidence preventivních opatření není vždy úplná.", content)
+        self.assertIn("Kontrolované oblasti jsou uvedeny v příloze této zprávy.", content)
 
 
 if __name__ == "__main__":
