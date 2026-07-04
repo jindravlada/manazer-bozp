@@ -16,6 +16,8 @@ from core.shared.sluzby.control_activity_statistics_service import (
 from core.shared.sluzby.control_result_service import control_result_service
 from core.shared.sluzby.finding_service import finding_service
 from core.shared.sluzby.performance_evaluation_methodology_service import (
+    PerformanceEvaluationExplanation,
+    PerformanceEvaluationInput,
     PerformanceEvaluationSignals,
     PerformanceMethodologyContent,
     performance_evaluation_methodology_service,
@@ -36,7 +38,6 @@ from moduly.proverky.sluzby.proverky_knowledge_service import proverky_knowledge
 from moduly.ukoly.sluzby.task_service import task_service
 
 _OPEN_FINDING_STATUSES = frozenset({FINDING_STATUS_OTEVRENE, FINDING_STATUS_V_PROCESU})
-_OVERDUE_MEASURES_RED_THRESHOLD = 3
 
 _SEVERITY_WEIGHTS = {
     CONTROL_POINT_SEVERITY_NIZKA: 1,
@@ -169,14 +170,6 @@ def _inspection_count_label(count: int) -> str:
     if 2 <= count <= 4:
         return f"{count} prověrky"
     return f"{count} prověrek"
-
-
-def _plural_findings(count: int) -> str:
-    if count == 1:
-        return "1 zjištění"
-    if 2 <= count <= 4:
-        return f"{count} zjištění"
-    return f"{count} zjištění"
 
 
 def _inspection_year(inspection: BozpInspection) -> int | None:
@@ -552,7 +545,12 @@ class BozpAnnualExportContextService:
             metrics,
             attention_problems,
         )
-        overall_rating = self._determine_overall_rating(metrics, severity)
+        overall_rating = self._determine_overall_rating(
+            metrics,
+            severity,
+            comparison=comparison,
+            history=history,
+        )
         methodology = performance_evaluation_methodology_service.build(
             self._performance_signals(
                 metrics=metrics,
@@ -664,6 +662,52 @@ class BozpAnnualExportContextService:
             measures_total=measures_total,
             measures_open=measures_open,
             measures_closed=measures_closed,
+        )
+
+    def build_evaluation_explanation(self, year: int) -> PerformanceEvaluationExplanation:
+        context = self.build(year)
+        evaluation_input = self._performance_input_from(
+            metrics=context.metrics,
+            severity=context.severity,
+            comparison=context.comparison,
+            history=context.history,
+        )
+        return performance_evaluation_methodology_service.build_explanation(evaluation_input)
+
+    def _performance_input_from(
+        self,
+        *,
+        metrics: AnnualReportMetrics,
+        severity: AnnualReportSeverityMetrics,
+        comparison: "AnnualReportYearComparison",
+        history: "AnnualReportHistoricalSeries",
+    ) -> PerformanceEvaluationInput:
+        workplaces = settings_service.get_workplaces(include_inactive=False)
+        return PerformanceEvaluationInput(
+            activities_count=metrics.inspections_count,
+            control_points_count=metrics.control_points_count,
+            workplaces_covered_count=metrics.workplaces_count,
+            workplaces_total_count=len(workplaces),
+            noncompliance_count=metrics.ratings_nevyhovuje,
+            noncompliance_percent=severity.nevyhovuje_percent,
+            weighted_severity_score=severity.weighted_score,
+            score_per_activity=severity.score_per_inspection,
+            measures_total=metrics.measures_total,
+            measures_open=metrics.measures_open,
+            measures_closed=metrics.measures_closed,
+            open_critical_overdue=severity.open_critical_overdue,
+            open_high_overdue=severity.open_high_overdue,
+            open_critical_count=severity.open_critical_count,
+            critical_findings_count=severity.count_for(CONTROL_POINT_SEVERITY_KRITICKA),
+            high_findings_count=severity.count_for(CONTROL_POINT_SEVERITY_VYSOKA),
+            repeated_problems_count=severity.repeated_problems_count,
+            overdue_measures_count=severity.overdue_open_measures,
+            comparison_summary=self._comparison_summary_for_methodology(
+                metrics,
+                severity,
+                comparison,
+                history,
+            ),
         )
 
     def _overall_assessment_text(
@@ -904,134 +948,23 @@ class BozpAnnualExportContextService:
         self,
         metrics: AnnualReportMetrics,
         severity: AnnualReportSeverityMetrics,
-    ) -> AnnualReportOverallRating:
-        majority_closed = (
-            metrics.measures_total == 0
-            or metrics.measures_closed >= metrics.measures_open
-        )
-
-        if severity.open_critical_overdue >= 1:
-            return AnnualReportOverallRating(
-                level="red",
-                emoji="🔴",
-                headline="Celkové hodnocení je červené kvůli kritické otevřené závadě po termínu.",
-                explanation=(
-                    "Byla evidována alespoň jedna kritická otevřená závada po termínu, "
-                    "která vyžaduje okamžitou nápravu."
-                ),
-            )
-        if severity.open_critical_count >= 2:
-            return AnnualReportOverallRating(
-                level="red",
-                emoji="🔴",
-                headline="Celkové hodnocení je červené kvůli více kritickým otevřeným závadám.",
-                explanation=(
-                    f"Byly evidovány {severity.open_critical_count} kritické otevřené závady, "
-                    "což představuje zásadní riziko pro bezpečnost práce."
-                ),
-            )
-        if severity.nevyhovuje_percent > 15:
-            return AnnualReportOverallRating(
-                level="red",
-                emoji="🔴",
-                headline="Celkové hodnocení je červené kvůli vysokému podílu nevyhovujících bodů.",
-                explanation=(
-                    f"Podíl nevyhovujících bodů ({severity.nevyhovuje_percent:.2f} %) překračuje "
-                    "práh 15 % a signalizuje závažný problém v systému BOZP."
-                ),
-            )
-        if severity.overdue_open_measures >= _OVERDUE_MEASURES_RED_THRESHOLD:
-            return AnnualReportOverallRating(
-                level="red",
-                emoji="🔴",
-                headline="Celkové hodnocení je červené kvůli vysokému počtu opatření po termínu.",
-                explanation=(
-                    f"Je otevřeno {severity.overdue_open_measures} opatření po termínu, "
-                    "což oslabuje efektivitu nápravných procesů."
-                ),
-            )
-
-        if (
-            severity.open_critical_count == 0
-            and severity.open_high_overdue == 0
-            and severity.nevyhovuje_percent <= 5
-            and majority_closed
-            and severity.count_for(CONTROL_POINT_SEVERITY_VYSOKA) == 0
-            and severity.count_for(CONTROL_POINT_SEVERITY_KRITICKA) == 0
-        ):
-            return AnnualReportOverallRating(
-                level="green",
-                emoji="🟢",
-                headline="Celkové hodnocení je zelené – systém BOZP je funkční a stabilní.",
-                explanation=self._rating_explanation(metrics, severity, level="green"),
-            )
-
-        return AnnualReportOverallRating(
-            level="yellow",
-            emoji="🟡",
-            headline="Celkové hodnocení je žluté – existují významnější nedostatky vyžadující pozornost.",
-            explanation=self._rating_explanation(metrics, severity, level="yellow"),
-        )
-
-    def _rating_explanation(
-        self,
-        metrics: AnnualReportMetrics,
-        severity: AnnualReportSeverityMetrics,
         *,
-        level: str,
-    ) -> str:
-        parts: list[str] = []
-        if severity.nevyhovuje_percent <= 5:
-            parts.append("podíl nevyhovujících bodů je nízký")
-        elif severity.nevyhovuje_percent <= 15:
-            parts.append(
-                f"podíl nevyhovujících bodů je {severity.nevyhovuje_percent:.2f} %"
-            )
-        else:
-            parts.append(
-                f"podíl nevyhovujících bodů je {severity.nevyhovuje_percent:.2f} %"
-            )
-
-        high_count = severity.count_for(CONTROL_POINT_SEVERITY_VYSOKA)
-        critical_count = severity.count_for(CONTROL_POINT_SEVERITY_KRITICKA)
-        if critical_count:
-            parts.append(
-                f"bylo zjištěno {_plural_findings(critical_count)} s kritickou závažností"
-            )
-        elif high_count == 1:
-            parts.append("byla zjištěna jedna závada s vysokou závažností")
-        elif high_count > 1:
-            parts.append(f"bylo zjištěno {_plural_findings(high_count)} s vysokou závažností")
-
-        if severity.overdue_open_measures:
-            parts.append(
-                f"existuje {severity.overdue_open_measures} otevřených opatření po termínu"
-            )
-        elif metrics.measures_open:
-            parts.append("některá opatření zůstávají otevřená, avšak bez kritického dopadu")
-
-        if severity.repeated_problems_count:
-            parts.append("některé problémy se opakují ve více prověrkách")
-
-        if (
-            level == "yellow"
-            and metrics.ratings_nevyhovuje > 0
-            and severity.score_per_inspection is not None
-            and severity.score_per_inspection <= 3
-        ):
-            parts.append(
-                "váhové skóre závažnosti na prověrku zůstává relativně nízké"
-            )
-
-        if not parts:
-            return (
-                "Hodnocení vychází z kombinace podílu nevyhovujících bodů, "
-                "váhového skóre závažnosti a stavu opatření."
-            )
-
-        joined = ", ale ".join(parts) if len(parts) == 2 else ", ".join(parts)
-        color_label = {"green": "zelené", "yellow": "žluté", "red": "červené"}[level]
-        return f"Celkové hodnocení je {color_label}, protože {joined}."
+        comparison: AnnualReportYearComparison,
+        history: AnnualReportHistoricalSeries,
+    ) -> AnnualReportOverallRating:
+        evaluation_input = self._performance_input_from(
+            metrics=metrics,
+            severity=severity,
+            comparison=comparison,
+            history=history,
+        )
+        result = performance_evaluation_methodology_service.determine_rating(evaluation_input)
+        return AnnualReportOverallRating(
+            level=result.level,
+            emoji=result.emoji,
+            headline=result.headline,
+            explanation="",
+        )
 
     def _collect_attention_problems(
         self,

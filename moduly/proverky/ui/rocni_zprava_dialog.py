@@ -7,10 +7,17 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QGroupBox,
     QMessageBox,
+    QPushButton,
     QTextEdit,
     QVBoxLayout,
 )
+from core.widgets.performance_evaluation_explanation_dialog import (
+    PerformanceEvaluationExplanationDialog,
+)
 from core.widgets.thp_worker_selector import ThpWorkerSelector
+from moduly.proverky.sluzby.bozp_annual_export_context_service import (
+    bozp_annual_export_context_service,
+)
 from moduly.proverky.sluzby.bozp_annual_report_service import bozp_annual_report_service
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 from moduly.proverky.sluzby.rocni_zprava_service import rocni_zprava_service
@@ -61,6 +68,10 @@ class RocniZpravaDialog(QDialog):
         manual_layout.addWidget(self.doporuceni_edit)
 
         layout.addWidget(manual_group)
+
+        self.explanation_btn = QPushButton("🧠 Vysvětlení hodnocení")
+        self.explanation_btn.clicked.connect(self._show_rating_explanation)
+        layout.addWidget(self.explanation_btn)
 
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
@@ -117,6 +128,21 @@ class RocniZpravaDialog(QDialog):
             self.doporuceni_edit.setPlainText(report.doporuceni_specialisty or "")
             worker_id = bozp_annual_report_service.resolve_preparer_worker_id(report)
         self.zpracoval_selector.set_person_id(worker_id)
+
+    def _show_rating_explanation(self) -> None:
+        year = self.selected_year()
+        try:
+            explanation = bozp_annual_export_context_service.build_evaluation_explanation(year)
+        except Exception as exc:
+            QMessageBox.warning(
+                self,
+                "Vysvětlení hodnocení",
+                f"Hodnocení se nepodařilo vypočítat.\n\n{exc}",
+            )
+            return
+
+        dialog = PerformanceEvaluationExplanationDialog(self, explanation=explanation)
+        dialog.exec()
 
     def _create_report(self) -> None:
         year = self.selected_year()

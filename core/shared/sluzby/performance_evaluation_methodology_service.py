@@ -43,6 +43,38 @@ DECISION_RULES: tuple[str, ...] = (
     "Splnění opatření v termínu zlepšuje hodnocení systému.",
 )
 
+NONCOMPLIANCE_RED_THRESHOLD = 15.0
+NONCOMPLIANCE_GREEN_THRESHOLD = 5.0
+OVERDUE_MEASURES_RED_THRESHOLD = 3
+
+INDICATOR_EXPLANATIONS: dict[str, str] = {
+    "noncompliance": (
+        "Udává, jak velká část kontrolních bodů nevyhověla. "
+        "Překročení 15 % obvykle vede ke červenému hodnocení."
+    ),
+    "weighted_score": (
+        "Součet bodů podle závažnosti zjištění "
+        "(nízká 1, střední 3, vysoká 7, kritická 15). "
+        "Vyšší skóre signalizuje závažnější rizika."
+    ),
+    "overdue_measures": (
+        "Počet otevřených opatření po stanoveném termínu. "
+        "Každé opožděné opatření oslabuje efektivitu nápravy."
+    ),
+    "repeated_problems": (
+        "Problémy evidované ve více kontrolních aktivitách. "
+        "Opakování naznačuje systémový charakter nedostatku."
+    ),
+    "activities_count": (
+        "Vyšší počet kontrolních aktivit obvykle vede k vyššímu počtu zjištění. "
+        "Proto jsou používány normalizované ukazatele."
+    ),
+    "control_points_count": (
+        "Rozsah hodnocených kontrolních bodů ovlivňuje spolehlivost závěru. "
+        "Větší vzorek posiluje reprezentativnost výsledku."
+    ),
+}
+
 
 @dataclass(frozen=True)
 class PerformanceEvaluationSignals:
@@ -83,6 +115,80 @@ class PerformanceEvaluationReliability:
 
 
 @dataclass(frozen=True)
+class PerformanceEvaluationInput:
+    """Vstupy pro výpočet hodnocení – bez vazby na konkrétní modul."""
+
+    activities_count: int
+    control_points_count: int
+    workplaces_covered_count: int
+    workplaces_total_count: int
+    noncompliance_count: int
+    noncompliance_percent: float
+    weighted_severity_score: int
+    score_per_activity: float | None
+    measures_total: int
+    measures_open: int
+    measures_closed: int
+    open_critical_overdue: int
+    open_high_overdue: int
+    open_critical_count: int
+    critical_findings_count: int
+    high_findings_count: int
+    repeated_problems_count: int
+    overdue_measures_count: int
+    comparison_summary: str = ""
+
+
+@dataclass(frozen=True)
+class PerformanceRatingResult:
+    level: str
+    emoji: str
+    headline: str
+
+
+@dataclass(frozen=True)
+class PerformanceEvaluationIndicator:
+    key: str
+    label: str
+    value_text: str
+    influenced: bool
+    explanation: str
+
+
+@dataclass(frozen=True)
+class PerformanceEvaluationAppliedRule:
+    label: str
+    effect_text: str
+    applied: bool
+
+
+@dataclass(frozen=True)
+class PerformanceEvaluationSimulationInput:
+    activities_count: int
+    control_points_count: int
+    noncompliance_count: int
+    overdue_measures_count: int
+    critical_findings_count: int
+    high_severity_count: int
+    repeated_problems_count: int
+    measures_open: int = 0
+    measures_closed: int = 0
+    workplaces_covered_count: int = 1
+    workplaces_total_count: int = 1
+    comparison_summary: str = ""
+
+
+@dataclass(frozen=True)
+class PerformanceEvaluationExplanation:
+    rating: PerformanceRatingResult
+    indicators: tuple[PerformanceEvaluationIndicator, ...]
+    rules: tuple[PerformanceEvaluationAppliedRule, ...]
+    justification: str
+    reliability: PerformanceEvaluationReliability
+    simulation: PerformanceEvaluationSimulationInput
+
+
+@dataclass(frozen=True)
 class PerformanceMethodologyContent:
     appendix_text: str
     expert_justification: str
@@ -98,6 +204,76 @@ class PerformanceMethodologyContent:
 
 
 class PerformanceEvaluationMethodologyService:
+    def build_explanation(self, evaluation_input: PerformanceEvaluationInput) -> PerformanceEvaluationExplanation:
+        rating = self.determine_rating(evaluation_input)
+        signals = self._signals_from_input(evaluation_input, rating=rating)
+        methodology = self.build(signals)
+        indicators = self._build_indicators(evaluation_input)
+        rules = self._build_applied_rules(evaluation_input, rating)
+        simulation = self._input_to_simulation(evaluation_input)
+        return PerformanceEvaluationExplanation(
+            rating=rating,
+            indicators=indicators,
+            rules=rules,
+            justification=methodology.expert_justification,
+            reliability=methodology.reliability,
+            simulation=simulation,
+        )
+
+    def simulate(self, simulation: PerformanceEvaluationSimulationInput) -> PerformanceEvaluationExplanation:
+        return self.build_explanation(self._simulation_to_input(simulation))
+
+    def determine_rating(self, evaluation_input: PerformanceEvaluationInput) -> PerformanceRatingResult:
+        majority_closed = (
+            evaluation_input.measures_total == 0
+            or evaluation_input.measures_closed >= evaluation_input.measures_open
+        )
+
+        if evaluation_input.open_critical_overdue >= 1:
+            return PerformanceRatingResult(
+                level=RATING_RED,
+                emoji="🔴",
+                headline="Celkové hodnocení je červené kvůli kritické otevřené závadě po termínu.",
+            )
+        if evaluation_input.open_critical_count >= 2:
+            return PerformanceRatingResult(
+                level=RATING_RED,
+                emoji="🔴",
+                headline="Celkové hodnocení je červené kvůli více kritickým otevřeným závadám.",
+            )
+        if evaluation_input.noncompliance_percent > NONCOMPLIANCE_RED_THRESHOLD:
+            return PerformanceRatingResult(
+                level=RATING_RED,
+                emoji="🔴",
+                headline="Celkové hodnocení je červené kvůli vysokému podílu nevyhovujících bodů.",
+            )
+        if evaluation_input.overdue_measures_count >= OVERDUE_MEASURES_RED_THRESHOLD:
+            return PerformanceRatingResult(
+                level=RATING_RED,
+                emoji="🔴",
+                headline="Celkové hodnocení je červené kvůli vysokému počtu opatření po termínu.",
+            )
+
+        if (
+            evaluation_input.open_critical_count == 0
+            and evaluation_input.open_high_overdue == 0
+            and evaluation_input.noncompliance_percent <= NONCOMPLIANCE_GREEN_THRESHOLD
+            and majority_closed
+            and evaluation_input.high_findings_count == 0
+            and evaluation_input.critical_findings_count == 0
+        ):
+            return PerformanceRatingResult(
+                level=RATING_GREEN,
+                emoji="🟢",
+                headline="Celkové hodnocení je zelené – systém BOZP je funkční a stabilní.",
+            )
+
+        return PerformanceRatingResult(
+            level=RATING_YELLOW,
+            emoji="🟡",
+            headline="Celkové hodnocení je žluté – existují významnější nedostatky vyžadující pozornost.",
+        )
+
     def build(self, signals: PerformanceEvaluationSignals) -> PerformanceMethodologyContent:
         reliability = self._build_reliability(signals)
         expert_justification = self._build_expert_justification(signals)
@@ -284,6 +460,226 @@ class PerformanceEvaluationMethodologyService:
             ]
         )
         return "\n".join(lines)
+
+    def _signals_from_input(
+        self,
+        evaluation_input: PerformanceEvaluationInput,
+        *,
+        rating: PerformanceRatingResult,
+    ) -> PerformanceEvaluationSignals:
+        return PerformanceEvaluationSignals(
+            activities_count=evaluation_input.activities_count,
+            control_points_count=evaluation_input.control_points_count,
+            workplaces_covered_count=evaluation_input.workplaces_covered_count,
+            workplaces_total_count=evaluation_input.workplaces_total_count,
+            noncompliance_percent=evaluation_input.noncompliance_percent,
+            weighted_severity_score=evaluation_input.weighted_severity_score,
+            score_per_activity=evaluation_input.score_per_activity,
+            measures_open=evaluation_input.measures_open,
+            measures_closed=evaluation_input.measures_closed,
+            open_critical_overdue=evaluation_input.open_critical_overdue,
+            open_high_overdue=evaluation_input.open_high_overdue,
+            open_critical_count=evaluation_input.open_critical_count,
+            high_severity_count=evaluation_input.high_findings_count,
+            repeated_problems_count=evaluation_input.repeated_problems_count,
+            overdue_measures_count=evaluation_input.overdue_measures_count,
+            rating_level=rating.level,
+            rating_headline=rating.headline,
+            comparison_summary=evaluation_input.comparison_summary,
+        )
+
+    def _build_indicators(
+        self,
+        evaluation_input: PerformanceEvaluationInput,
+    ) -> tuple[PerformanceEvaluationIndicator, ...]:
+        influenced_noncompliance = (
+            evaluation_input.noncompliance_percent > 0
+            or evaluation_input.noncompliance_percent > NONCOMPLIANCE_RED_THRESHOLD
+        )
+        influenced_weighted = evaluation_input.weighted_severity_score > 0
+        influenced_overdue = evaluation_input.overdue_measures_count > 0
+        influenced_repeated = evaluation_input.repeated_problems_count > 0
+
+        return (
+            PerformanceEvaluationIndicator(
+                key="noncompliance",
+                label="Podíl nevyhovujících bodů",
+                value_text=self._format_percent(evaluation_input.noncompliance_percent),
+                influenced=influenced_noncompliance,
+                explanation=INDICATOR_EXPLANATIONS["noncompliance"],
+            ),
+            PerformanceEvaluationIndicator(
+                key="weighted_score",
+                label="Váhové skóre zjištění",
+                value_text=f"{evaluation_input.weighted_severity_score} bodů",
+                influenced=influenced_weighted,
+                explanation=INDICATOR_EXPLANATIONS["weighted_score"],
+            ),
+            PerformanceEvaluationIndicator(
+                key="overdue_measures",
+                label="Otevřená opatření po termínu",
+                value_text=str(evaluation_input.overdue_measures_count),
+                influenced=influenced_overdue,
+                explanation=INDICATOR_EXPLANATIONS["overdue_measures"],
+            ),
+            PerformanceEvaluationIndicator(
+                key="repeated_problems",
+                label="Opakované problémy",
+                value_text=str(evaluation_input.repeated_problems_count),
+                influenced=influenced_repeated,
+                explanation=INDICATOR_EXPLANATIONS["repeated_problems"],
+            ),
+            PerformanceEvaluationIndicator(
+                key="activities_count",
+                label="Počet kontrolních aktivit",
+                value_text=str(evaluation_input.activities_count),
+                influenced=evaluation_input.activities_count > 0,
+                explanation=INDICATOR_EXPLANATIONS["activities_count"],
+            ),
+            PerformanceEvaluationIndicator(
+                key="control_points_count",
+                label="Počet kontrolních bodů",
+                value_text=str(evaluation_input.control_points_count),
+                influenced=evaluation_input.control_points_count > 0,
+                explanation=INDICATOR_EXPLANATIONS["control_points_count"],
+            ),
+        )
+
+    def _build_applied_rules(
+        self,
+        evaluation_input: PerformanceEvaluationInput,
+        rating: PerformanceRatingResult,
+    ) -> tuple[PerformanceEvaluationAppliedRule, ...]:
+        return (
+            PerformanceEvaluationAppliedRule(
+                label="Kritická závada po termínu",
+                effect_text="→ červené hodnocení",
+                applied=evaluation_input.open_critical_overdue >= 1,
+            ),
+            PerformanceEvaluationAppliedRule(
+                label="Více kritických otevřených závad",
+                effect_text="→ červené hodnocení",
+                applied=evaluation_input.open_critical_count >= 2,
+            ),
+            PerformanceEvaluationAppliedRule(
+                label="Podíl nevyhovujících bodů > 15 %",
+                effect_text="→ červené hodnocení",
+                applied=evaluation_input.noncompliance_percent > NONCOMPLIANCE_RED_THRESHOLD,
+            ),
+            PerformanceEvaluationAppliedRule(
+                label="3 a více opatření po termínu",
+                effect_text="→ červené hodnocení",
+                applied=evaluation_input.overdue_measures_count >= OVERDUE_MEASURES_RED_THRESHOLD,
+            ),
+            PerformanceEvaluationAppliedRule(
+                label="Vysoká závada po termínu",
+                effect_text="→ hodnocení maximálně žluté",
+                applied=evaluation_input.open_high_overdue >= 1,
+            ),
+            PerformanceEvaluationAppliedRule(
+                label="Normalizované ukazatele",
+                effect_text="→ zlepšení oproti minulému roku",
+                applied=bool(evaluation_input.comparison_summary),
+            ),
+            PerformanceEvaluationAppliedRule(
+                label="Opakované problémy",
+                effect_text="→ zhoršení hodnocení",
+                applied=evaluation_input.repeated_problems_count > 0,
+            ),
+            PerformanceEvaluationAppliedRule(
+                label="Splnění opatření v termínu",
+                effect_text="→ zlepšení hodnocení",
+                applied=(
+                    evaluation_input.overdue_measures_count == 0
+                    and evaluation_input.measures_closed > 0
+                ),
+            ),
+        )
+
+    def _input_to_simulation(
+        self,
+        evaluation_input: PerformanceEvaluationInput,
+    ) -> PerformanceEvaluationSimulationInput:
+        return PerformanceEvaluationSimulationInput(
+            activities_count=max(0, evaluation_input.activities_count),
+            control_points_count=max(0, evaluation_input.control_points_count),
+            noncompliance_count=max(0, evaluation_input.noncompliance_count),
+            overdue_measures_count=max(0, evaluation_input.overdue_measures_count),
+            critical_findings_count=max(0, evaluation_input.critical_findings_count),
+            high_severity_count=max(0, evaluation_input.high_findings_count),
+            repeated_problems_count=max(0, evaluation_input.repeated_problems_count),
+            measures_open=max(0, evaluation_input.measures_open),
+            measures_closed=max(0, evaluation_input.measures_closed),
+            workplaces_covered_count=max(0, evaluation_input.workplaces_covered_count),
+            workplaces_total_count=max(1, evaluation_input.workplaces_total_count),
+            comparison_summary=evaluation_input.comparison_summary,
+        )
+
+    def _simulation_to_input(
+        self,
+        simulation: PerformanceEvaluationSimulationInput,
+    ) -> PerformanceEvaluationInput:
+        activities_count = max(0, simulation.activities_count)
+        control_points_count = max(0, simulation.control_points_count)
+        noncompliance_count = max(0, simulation.noncompliance_count)
+        critical_findings_count = max(0, simulation.critical_findings_count)
+        high_severity_count = max(0, simulation.high_severity_count)
+        overdue_measures_count = max(0, simulation.overdue_measures_count)
+
+        if noncompliance_count > control_points_count and control_points_count > 0:
+            noncompliance_count = control_points_count
+
+        noncompliance_percent = (
+            noncompliance_count / control_points_count * 100
+            if control_points_count > 0
+            else 0.0
+        )
+        remaining = max(0, noncompliance_count - critical_findings_count - high_severity_count)
+        weighted_severity_score = (
+            critical_findings_count * SEVERITY_WEIGHTS[SEVERITY_LEVEL_CRITICAL]
+            + high_severity_count * SEVERITY_WEIGHTS[SEVERITY_LEVEL_HIGH]
+            + remaining * SEVERITY_WEIGHTS[SEVERITY_LEVEL_MEDIUM]
+        )
+        score_per_activity = (
+            weighted_severity_score / activities_count if activities_count > 0 else None
+        )
+
+        open_critical_overdue = (
+            min(critical_findings_count, overdue_measures_count)
+            if critical_findings_count > 0 and overdue_measures_count > 0
+            else 0
+        )
+        open_high_overdue = (
+            min(high_severity_count, overdue_measures_count)
+            if high_severity_count > 0 and overdue_measures_count > 0
+            else 0
+        )
+
+        return PerformanceEvaluationInput(
+            activities_count=activities_count,
+            control_points_count=control_points_count,
+            workplaces_covered_count=max(0, simulation.workplaces_covered_count),
+            workplaces_total_count=max(1, simulation.workplaces_total_count),
+            noncompliance_count=noncompliance_count,
+            noncompliance_percent=noncompliance_percent,
+            weighted_severity_score=weighted_severity_score,
+            score_per_activity=score_per_activity,
+            measures_total=max(0, simulation.measures_open + simulation.measures_closed),
+            measures_open=max(0, simulation.measures_open),
+            measures_closed=max(0, simulation.measures_closed),
+            open_critical_overdue=open_critical_overdue,
+            open_high_overdue=open_high_overdue,
+            open_critical_count=critical_findings_count,
+            critical_findings_count=critical_findings_count,
+            high_findings_count=high_severity_count,
+            repeated_problems_count=max(0, simulation.repeated_problems_count),
+            overdue_measures_count=overdue_measures_count,
+            comparison_summary=simulation.comparison_summary,
+        )
+
+    @staticmethod
+    def _format_percent(value: float) -> str:
+        return f"{value:.2f} %".replace(".", ",")
 
 
 performance_evaluation_methodology_service = PerformanceEvaluationMethodologyService()

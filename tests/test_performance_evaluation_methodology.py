@@ -4,7 +4,9 @@ from core.shared.sluzby.performance_evaluation_methodology_service import (
     RATING_GREEN,
     RATING_RED,
     RATING_YELLOW,
+    PerformanceEvaluationInput,
     PerformanceEvaluationSignals,
+    PerformanceEvaluationSimulationInput,
     performance_evaluation_methodology_service,
 )
 
@@ -113,6 +115,86 @@ class PerformanceEvaluationMethodologyTestCase(unittest.TestCase):
             )
         )
         self.assertIn("nízký", content.expert_justification.lower())
+
+
+def _evaluation_input(**overrides) -> PerformanceEvaluationInput:
+    defaults = {
+        "activities_count": 5,
+        "control_points_count": 100,
+        "workplaces_covered_count": 2,
+        "workplaces_total_count": 4,
+        "noncompliance_count": 10,
+        "noncompliance_percent": 10.0,
+        "weighted_severity_score": 30,
+        "score_per_activity": 6.0,
+        "measures_total": 4,
+        "measures_open": 1,
+        "measures_closed": 3,
+        "open_critical_overdue": 0,
+        "open_high_overdue": 1,
+        "open_critical_count": 0,
+        "critical_findings_count": 0,
+        "high_findings_count": 1,
+        "repeated_problems_count": 0,
+        "overdue_measures_count": 1,
+        "comparison_summary": "",
+    }
+    defaults.update(overrides)
+    return PerformanceEvaluationInput(**defaults)
+
+
+class PerformanceEvaluationExplanationTestCase(unittest.TestCase):
+    def test_build_explanation_contains_indicators_and_rules(self) -> None:
+        explanation = performance_evaluation_methodology_service.build_explanation(
+            _evaluation_input()
+        )
+        labels = [item.label for item in explanation.indicators]
+        self.assertIn("Podíl nevyhovujících bodů", labels)
+        self.assertIn("Váhové skóre zjištění", labels)
+        self.assertTrue(any(rule.applied for rule in explanation.rules))
+        self.assertTrue(explanation.justification)
+
+    def test_critical_overdue_forces_red_rating(self) -> None:
+        rating = performance_evaluation_methodology_service.determine_rating(
+            _evaluation_input(open_critical_overdue=1, open_critical_count=1)
+        )
+        self.assertEqual(rating.level, RATING_RED)
+
+    def test_simulation_recalculates_rating(self) -> None:
+        baseline = performance_evaluation_methodology_service.build_explanation(
+            _evaluation_input()
+        )
+        self.assertEqual(baseline.rating.level, RATING_YELLOW)
+
+        simulated = performance_evaluation_methodology_service.simulate(
+            PerformanceEvaluationSimulationInput(
+                activities_count=5,
+                control_points_count=100,
+                noncompliance_count=10,
+                overdue_measures_count=1,
+                critical_findings_count=1,
+                high_severity_count=0,
+                repeated_problems_count=0,
+            )
+        )
+        self.assertEqual(simulated.rating.level, RATING_RED)
+        self.assertIn("kritická závada", simulated.justification.lower())
+
+    def test_green_rating_for_stable_system(self) -> None:
+        rating = performance_evaluation_methodology_service.determine_rating(
+            _evaluation_input(
+                noncompliance_count=2,
+                noncompliance_percent=2.0,
+                weighted_severity_score=2,
+                high_findings_count=0,
+                critical_findings_count=0,
+                open_high_overdue=0,
+                overdue_measures_count=0,
+                measures_open=0,
+                measures_closed=2,
+            )
+        )
+        self.assertEqual(rating.level, RATING_GREEN)
 
 
 if __name__ == "__main__":
