@@ -356,10 +356,10 @@ class AuditProgramFinalExportContextService:
             )
             if not snapshots:
                 continue
-            _, emoji, label = audit_process_maturity_history_service.average_maturity_level(
+            level, emoji, label = audit_process_maturity_history_service.average_maturity_level(
                 [item.maturity_level for item in snapshots]
             )
-            levels.append(label.lower())
+            levels.append(level)
             lines.append(f"{year}   {emoji} {label}")
         if not lines:
             return "Historie vyspělosti systému řízení zatím není evidována."
