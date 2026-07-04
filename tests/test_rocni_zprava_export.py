@@ -80,6 +80,14 @@ class RocniZpravaExportTestCase(unittest.TestCase):
         for inspection in bozp_inspection_service.get_all():
             bozp_inspection_service.delete_inspection(inspection.id)
 
+        from core.database.session import get_session
+        from moduly.proverky.modely.bozp_annual_report import BozpAnnualReport
+
+        with get_session() as session:
+            for report in session.query(BozpAnnualReport).all():
+                session.delete(report)
+            session.commit()
+
         settings_service.save_employer(
             ico="12345678",
             name="Test Zaměstnavatel s.r.o.",
@@ -165,6 +173,7 @@ class RocniZpravaExportTestCase(unittest.TestCase):
             "silne_stranky_text",
             "oblasti_pozornosti_text",
             "vyvoj_text",
+            "klicove_poznatky_text",
             "top_priority_text",
             "doporuceni_specialisty",
             "priloha_proverky_text",
@@ -178,11 +187,16 @@ class RocniZpravaExportTestCase(unittest.TestCase):
             "pocet_pracovist",
             "pocet_oblasti",
             "pocet_kontrolnich_bodu",
+            "neshody_na_proverku",
+            "doporuceni_na_proverku",
+            "zjisteni_na_proverku",
+            "opatreni_na_proverku",
             "trendy_text",
             "grafy_text",
             "top10_zavad_text",
             "problemova_pracoviste_text",
             "priciny_zavad_text",
+            "historie_roky_text",
         }
         self.assertEqual(set(values.keys()), expected_keys)
 
@@ -201,6 +215,7 @@ class RocniZpravaExportTestCase(unittest.TestCase):
             "ROČNÍ ZPRÁVA O STAVU BOZP",
             "Základní informace",
             "CELKOVÉ HODNOCENÍ",
+            "KLÍČOVÉ POZNATKY ROKU",
             "Přehled výsledků",
             "Silné stránky systému",
             "Oblasti vyžadující pozornost",
@@ -270,10 +285,108 @@ class RocniZpravaExportTestCase(unittest.TestCase):
 
         self.assertIn("Počet prověrek: 1", content)
         self.assertIn("Nevyhovuje: 1", content)
+        self.assertIn("Neshody: 1.00 / prověrku", content)
         self.assertIn("✔ Funkční organizace práce.", content)
         self.assertIn("🔴 Chybí označení únikových východů.", content)
         self.assertIn("🟡 Evidence preventivních opatření není vždy úplná.", content)
         self.assertIn("Jedná se o první hodnocené období.", content)
+        self.assertIn("• Nejčastější problém:", content)
+
+    def test_attention_areas_skip_positive_audit_assertions(self) -> None:
+        inspection = self._create_inspection_with_commission(year=2026, inspection_date=date(2026, 5, 1))
+        assert inspection is not None
+        control_result_service.set_result(
+            ENTITY_PROVERKY,
+            inspection.id,
+            ControlPointContext(
+                area_id="bozp",
+                area_label="BOZP",
+                section_id="s1",
+                section_label="Sekce",
+                control_point_id="cp_pos",
+                control_point_label="Kontroly probíhají pravidelně",
+            ),
+            result=CONTROL_RESULT_NEVYHOVUJE,
+        )
+        control_result_service.set_result(
+            ENTITY_PROVERKY,
+            inspection.id,
+            ControlPointContext(
+                area_id="bozp",
+                area_label="BOZP",
+                section_id="s1",
+                section_label="Sekce",
+                control_point_id="cp_rec",
+                control_point_label="Doplnit systém evidence školení.",
+            ),
+            result=CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
+        )
+
+        context = bozp_annual_export_context_service.build(2026)
+        text = context.attention_areas_text
+        self.assertIn("Neprobíhají pravidelné kontroly pracovišť.", text)
+        self.assertNotIn("Kontroly probíhají pravidelně", text)
+        self.assertIn("Doplnit systém evidence školení.", text)
+
+    def test_normalized_metrics_in_year_comparison(self) -> None:
+        for index in range(2):
+            inspection = self._create_inspection_with_commission(
+                year=2025,
+                inspection_date=date(2025, 3, 10 + index),
+                workplace_name=f"Hala 2025-{index}",
+            )
+            assert inspection is not None
+            for neshoda_index in range(2 if index == 0 else 1):
+                control_result_service.set_result(
+                    ENTITY_PROVERKY,
+                    inspection.id,
+                    ControlPointContext(
+                        area_id="bozp",
+                        area_label="BOZP",
+                        section_id="s1",
+                        section_label="Sekce",
+                        control_point_id=f"cp-2025-{index}-{neshoda_index}",
+                        control_point_label=f"Neshoda 2025-{index}-{neshoda_index}",
+                    ),
+                    result=CONTROL_RESULT_NEVYHOVUJE,
+                )
+
+        for index in range(9):
+            inspection = self._create_inspection_with_commission(
+                year=2026,
+                inspection_date=date(2026, 3, 10 + (index % 20)),
+                workplace_name=f"Hala 2026-{index}",
+            )
+            assert inspection is not None
+            control_result_service.set_result(
+                ENTITY_PROVERKY,
+                inspection.id,
+                ControlPointContext(
+                    area_id="bozp",
+                    area_label="BOZP",
+                    section_id="s1",
+                    section_label="Sekce",
+                    control_point_id=f"cp-2026-{index}",
+                    control_point_label=f"Neshoda 2026-{index}",
+                ),
+                result=CONTROL_RESULT_NEVYHOVUJE,
+            )
+
+        context = bozp_annual_export_context_service.build(2026)
+        self.assertIn("Prověrky: 2 → 9", context.comparison.text)
+        self.assertIn("Neshody: 3 → 9", context.comparison.text)
+        self.assertIn("Neshody: 1.50 / prověrku → 1.00 / prověrku", context.comparison.text)
+        self.assertIn("samotný nárůst absolutního počtu tedy neznamená zhoršení úrovně BOZP", context.comparison.text)
+
+    def test_historical_series_loads_all_previous_years(self) -> None:
+        self._create_inspection_with_commission(year=2023, inspection_date=date(2023, 1, 1))
+        self._create_inspection_with_commission(year=2025, inspection_date=date(2025, 1, 1))
+        self._create_inspection_with_commission(year=2026, inspection_date=date(2026, 1, 1))
+
+        context = bozp_annual_export_context_service.build(2026)
+        self.assertEqual(context.history.available_years, (2023, 2025, 2026))
+        self.assertEqual(context.history.previous_years(), (2023, 2025))
+        self.assertEqual(context.placeholder_values()["historie_roky_text"], "2023, 2025, 2026")
 
     def test_year_comparison_when_previous_year_exists(self) -> None:
         self._create_inspection_with_commission(year=2025, inspection_date=date(2025, 2, 1))
