@@ -78,6 +78,10 @@ class RocniZpravaAudituExportTestCase(unittest.TestCase):
         cls._app = QApplication.instance() or QApplication([])
 
     def setUp(self) -> None:
+        from core.database.database_initializer import _ensure_audit_annual_report_table
+
+        _ensure_audit_annual_report_table()
+
         for audit in audit_service.get_all():
             audit_service.delete_audit(audit.id)
 
@@ -317,6 +321,10 @@ class RocniZpravaAudituExportTestCase(unittest.TestCase):
 
         self.assertIn("Test Zaměstnavatel s.r.o.", content)
         self.assertIn("Petr Auditor", content)
+        self.assertRegex(content, r"CELKOVÉ HODNOCENÍ [🟢🟡🔴]")
+        self.assertIn("Reprezentativnost dat", content)
+        self.assertIn("Legenda úrovní vyspělosti řídicích procesů je uvedena v příloze.", content)
+        self.assertIn("Legenda vyspělosti řídicích procesů:", content)
         self.assertNotIn("prověrka", content.lower())
         self.assertNotIn("kontrolovaná oblast", content.lower())
 
@@ -433,7 +441,11 @@ class RocniZpravaAudituExportTestCase(unittest.TestCase):
         )
         self.assertEqual(len(snapshots), 1)
         self.assertEqual(snapshots[0].process_id, "proces-b")
-        self.assertIn("Legenda vyspělosti", context.process_maturity.legend_text)
+        self.assertEqual(
+            context.process_maturity.legend_text,
+            "Legenda úrovní vyspělosti řídicích procesů je uvedena v příloze.",
+        )
+        self.assertNotIn("Legenda vyspělosti řídicích procesů:", context.process_maturity.text)
         self.assertIn("🟠", context.process_maturity.text)
         self.assertIn("Řídicí proces B", context.process_maturity.text)
         self.assertTrue(context.placeholder_values()["prumerna_vyspelost_systemu_text"])

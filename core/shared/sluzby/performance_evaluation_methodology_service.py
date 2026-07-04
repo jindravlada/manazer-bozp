@@ -50,6 +50,8 @@ OVERDUE_MEASURES_RED_THRESHOLD = 3
 EVALUATION_DOMAIN_BOZP = "bozp"
 EVALUATION_DOMAIN_AUDIT_MANAGEMENT = "audit_management"
 
+DATA_REPRESENTATIVENESS_LABEL = "Reprezentativnost dat"
+
 INDICATOR_EXPLANATIONS: dict[str, str] = {
     "noncompliance": (
         "Udává, jak velká část kontrolních bodů nevyhověla. "
@@ -73,8 +75,8 @@ INDICATOR_EXPLANATIONS: dict[str, str] = {
         "Proto jsou používány normalizované ukazatele."
     ),
     "control_points_count": (
-        "Rozsah hodnocených kontrolních bodů ovlivňuje spolehlivost závěru. "
-        "Větší vzorek posiluje reprezentativnost výsledku."
+        "Rozsah hodnocených kontrolních bodů ovlivňuje reprezentativnost závěru. "
+        "Větší vzorek posiluje věrohodnost výsledku."
     ),
 }
 
@@ -112,7 +114,7 @@ class PerformanceEvaluationReliability:
     def to_placeholders(self) -> dict[str, str]:
         return {
             "spolehlivost_hodnoceni": self.label,
-            "spolehlivost_hodnoceni_text": f"Spolehlivost hodnocení: {self.label}",
+            "spolehlivost_hodnoceni_text": f"{DATA_REPRESENTATIVENESS_LABEL}: {self.label}",
             "spolehlivost_hodnoceni_vysvetleni": self.explanation,
         }
 
@@ -346,7 +348,7 @@ class PerformanceEvaluationMethodologyService:
             level = RELIABILITY_HIGH
             label = "Vysoká"
             explanation = (
-                f"Hodnocení vychází z {signals.activities_count} {activity_label}, "
+                f"Dostupné podklady zahrnují {signals.activities_count} {activity_label}, "
                 f"{signals.control_points_count} {point_label} a pokrytí "
                 f"{signals.workplaces_covered_count} pracovišť. "
                 "Rozsah dat podporuje reprezentativní závěr."
@@ -355,16 +357,17 @@ class PerformanceEvaluationMethodologyService:
             level = RELIABILITY_MEDIUM
             label = "Střední"
             explanation = (
-                f"Hodnocení vychází z {signals.activities_count} {activity_label} "
+                f"Dostupné podklady zahrnují {signals.activities_count} {activity_label} "
                 f"a {signals.control_points_count} {point_label}. "
-                "Závěry jsou použitelné, avšak s omezenou reprezentativitou."
+                "Závěry jsou orientační, reprezentativnost dat je omezená."
             )
         else:
             level = RELIABILITY_LOW
             label = "Nízká"
             explanation = (
-                f"Hodnocení vychází pouze z {signals.activities_count} {activity_label}. "
-                "Omezený rozsah dat snižuje reprezentativnost výsledku."
+                f"K dispozici je pouze {signals.activities_count} {activity_label} "
+                f"a {signals.control_points_count} {point_label}. "
+                "Omezený rozsah dostupných podkladů snižuje reprezentativnost závěru."
             )
 
         return PerformanceEvaluationReliability(level=level, label=label, explanation=explanation)
@@ -525,7 +528,7 @@ class PerformanceEvaluationMethodologyService:
                 "Vysvětlení výsledného hodnocení tohoto období",
                 expert_justification,
                 "",
-                f"Spolehlivost hodnocení: {reliability.label}",
+                f"{DATA_REPRESENTATIVENESS_LABEL}: {reliability.label}",
                 reliability.explanation,
             ]
         )

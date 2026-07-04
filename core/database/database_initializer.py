@@ -1,6 +1,12 @@
 from sqlalchemy import text
 
-from core.database.session import create_database, engine
+from core.database.session import create_database
+
+
+def _db_engine():
+    from core.database.session import engine
+
+    return engine
 
 
 def initialize_database() -> None:
@@ -62,13 +68,13 @@ def initialize_database() -> None:
 
 
 def _table_columns(table_name: str) -> set[str]:
-    with engine.connect() as connection:
+    with _db_engine().connect() as connection:
         columns = connection.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
         return {column[1] for column in columns}
 
 
 def _add_column(table_name: str, column_sql: str) -> None:
-    with engine.connect() as connection:
+    with _db_engine().connect() as connection:
         connection.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column_sql}"))
         connection.commit()
 
@@ -151,7 +157,7 @@ def _ensure_control_columns() -> None:
 def _ensure_audit_commission_table() -> None:
     columns = _table_columns("audit_commission_members")
     if columns and "record_type" not in columns:
-        with engine.connect() as connection:
+        with _db_engine().connect() as connection:
             connection.execute(text("DROP TABLE audit_commission_members"))
             connection.commit()
         columns = set()
@@ -162,7 +168,7 @@ def _ensure_audit_commission_table() -> None:
     if not columns:
         from moduly.audity.modely.audit_commission_member import AuditCommissionMember
 
-        AuditCommissionMember.__table__.create(bind=engine, checkfirst=True)
+        AuditCommissionMember.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_person_columns() -> None:
@@ -233,7 +239,7 @@ def _ensure_control_result_columns() -> None:
 def _ensure_bozp_inspection_commission_table() -> None:
     columns = _table_columns("bozp_inspection_commission_members")
     if columns and "record_type" not in columns:
-        with engine.connect() as connection:
+        with _db_engine().connect() as connection:
             connection.execute(text("DROP TABLE bozp_inspection_commission_members"))
             connection.commit()
         columns = set()
@@ -246,7 +252,7 @@ def _ensure_bozp_inspection_commission_table() -> None:
             BozpInspectionCommissionMember,
         )
 
-        BozpInspectionCommissionMember.__table__.create(bind=engine, checkfirst=True)
+        BozpInspectionCommissionMember.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_bozp_inspection_columns() -> None:
@@ -264,7 +270,7 @@ def _ensure_bozp_annual_report_table() -> None:
     if not columns:
         from moduly.proverky.modely.bozp_annual_report import BozpAnnualReport
 
-        BozpAnnualReport.__table__.create(bind=engine, checkfirst=True)
+        BozpAnnualReport.__table__.create(bind=_db_engine(), checkfirst=True)
         return
     if "zpracoval_worker_id" not in columns:
         _add_column("bozp_annual_reports", "zpracoval_worker_id INTEGER")
@@ -275,7 +281,7 @@ def _ensure_audit_annual_report_table() -> None:
 
     columns = _table_columns("audit_annual_reports")
     if not columns:
-        AuditAnnualReport.__table__.create(bind=engine, checkfirst=True)
+        AuditAnnualReport.__table__.create(bind=_db_engine(), checkfirst=True)
         return
     if "audit_program_id" not in columns:
         _add_column("audit_annual_reports", "audit_program_id INTEGER")
@@ -284,7 +290,7 @@ def _ensure_audit_annual_report_table() -> None:
 
 
 def _audit_annual_reports_has_year_only_unique() -> bool:
-    with engine.connect() as connection:
+    with _db_engine().connect() as connection:
         table_sql = connection.execute(
             text(
                 "SELECT sql FROM sqlite_master "
@@ -293,6 +299,8 @@ def _audit_annual_reports_has_year_only_unique() -> bool:
         ).scalar()
         if table_sql and "uq_audit_annual_reports_year_program" in table_sql:
             return False
+        if table_sql and "uq_audit_annual_reports_year" in table_sql:
+            return True
 
         indexes = connection.execute(text("PRAGMA index_list(audit_annual_reports)")).fetchall()
         for index in indexes:
@@ -312,7 +320,7 @@ def _migrate_audit_annual_reports_year_program_unique() -> None:
     from moduly.audity.modely.audit_annual_report import AuditAnnualReport
     from moduly.audity.sluzby.audit_annual_program_service import audit_annual_program_service
 
-    with engine.connect() as connection:
+    with _db_engine().connect() as connection:
         rows = connection.execute(
             text(
                 "SELECT id, year, audit_program_id, silne_stranky, top_priority, "
@@ -331,16 +339,16 @@ def _migrate_audit_annual_reports_year_program_unique() -> None:
             program_id = programs[0].id
         migrated_rows.append({**row, "audit_program_id": program_id})
 
-    with engine.connect() as connection:
+    with _db_engine().connect() as connection:
         connection.execute(text("DROP TABLE audit_annual_reports"))
         connection.commit()
 
-    AuditAnnualReport.__table__.create(bind=engine, checkfirst=True)
+    AuditAnnualReport.__table__.create(bind=_db_engine(), checkfirst=True)
 
     if not migrated_rows:
         return
 
-    with engine.connect() as connection:
+    with _db_engine().connect() as connection:
         for row in migrated_rows:
             connection.execute(
                 text(
@@ -361,11 +369,11 @@ def _ensure_audit_process_maturity_snapshot_table() -> None:
     if not columns:
         from moduly.audity.modely.audit_process_maturity_snapshot import AuditProcessMaturitySnapshot
 
-        AuditProcessMaturitySnapshot.__table__.create(bind=engine, checkfirst=True)
+        AuditProcessMaturitySnapshot.__table__.create(bind=_db_engine(), checkfirst=True)
         return
     if "note" not in columns:
         _add_column("audit_process_maturity_snapshots", "note TEXT DEFAULT '' NOT NULL")
-    with engine.connect() as connection:
+    with _db_engine().connect() as connection:
         connection.execute(
             text("UPDATE audit_process_maturity_snapshots SET note = '' WHERE note IS NULL")
         )
@@ -420,7 +428,7 @@ def _normalize_task_status_values() -> None:
     columns = _table_columns("tasks")
     if "status" not in columns:
         return
-    with engine.connect() as connection:
+    with _db_engine().connect() as connection:
         connection.execute(text("UPDATE tasks SET status = 'Aktivní' WHERE status IS NULL OR status = ''"))
         connection.commit()
 
@@ -438,7 +446,7 @@ def _normalize_accident_legacy_values() -> None:
         "measures_summary",
     ]
 
-    with engine.connect() as connection:
+    with _db_engine().connect() as connection:
         for column in legacy_defaults:
             if column in columns:
                 connection.execute(text(f"UPDATE accidents SET {column} = '' WHERE {column} IS NULL"))

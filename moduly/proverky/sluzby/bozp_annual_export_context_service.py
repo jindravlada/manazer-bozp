@@ -16,6 +16,7 @@ from core.shared.sluzby.control_activity_statistics_service import (
 from core.shared.sluzby.control_result_service import control_result_service
 from core.shared.sluzby.finding_service import finding_service
 from core.shared.sluzby.performance_evaluation_methodology_service import (
+    DATA_REPRESENTATIVENESS_LABEL,
     PerformanceEvaluationExplanation,
     PerformanceEvaluationInput,
     PerformanceEvaluationSignals,
@@ -259,7 +260,7 @@ class AnnualReportSeverityMetrics:
             lines.append(f"{_SEVERITY_LABELS[severity]}: {self.count_for(severity)}")
         lines.append(f"Otevřená opatření po termínu: {self.overdue_open_measures}")
         if reliability_label:
-            lines.append(f"Spolehlivost hodnocení: {reliability_label}")
+            lines.append(f"{DATA_REPRESENTATIVENESS_LABEL}: {reliability_label}")
         return lines
 
     def to_placeholders(self) -> dict[str, str]:
@@ -732,7 +733,7 @@ class BozpAnnualExportContextService:
             f"Podíl nevyhovujících bodů: {severity.nevyhovuje_percent:.2f} %.\n"
             f"Váhové skóre zjištění: {severity.weighted_score} "
             f"({_format_ratio('Váhové skóre', severity.score_per_inspection).replace('Váhové skóre: ', '')}).\n"
-            f"Spolehlivost hodnocení: {methodology.reliability.label}.\n"
+            f"{DATA_REPRESENTATIVENESS_LABEL}: {methodology.reliability.label}.\n"
             f"{resolved}\n"
             f"{methodology.expert_justification}"
         )

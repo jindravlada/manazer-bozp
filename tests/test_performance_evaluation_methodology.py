@@ -104,7 +104,7 @@ class PerformanceEvaluationMethodologyTestCase(unittest.TestCase):
         self.assertIn("spolehlivost_hodnoceni", placeholders)
         self.assertIn("spolehlivost_hodnoceni_text", placeholders)
         self.assertIn("spolehlivost_hodnoceni_vysvetleni", placeholders)
-        self.assertEqual(placeholders["spolehlivost_hodnoceni_text"], "Spolehlivost hodnocení: Nízká")
+        self.assertEqual(placeholders["spolehlivost_hodnoceni_text"], "Reprezentativnost dat: Nízká")
 
     def test_green_rating_justification(self) -> None:
         content = performance_evaluation_methodology_service.build(

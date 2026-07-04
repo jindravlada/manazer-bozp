@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.shared.sluzby.performance_evaluation_methodology_service import (
+    DATA_REPRESENTATIVENESS_LABEL,
     PerformanceEvaluationExplanation,
     PerformanceEvaluationSimulationInput,
     performance_evaluation_methodology_service,
@@ -121,7 +122,7 @@ class PerformanceEvaluationExplanationDialog(QDialog):
         try:
             self.rating_label.setText(
                 f"{explanation.rating.emoji} {explanation.rating.headline}\n"
-                f"Spolehlivost hodnocení: {explanation.reliability.label}"
+                f"{DATA_REPRESENTATIVENESS_LABEL}: {explanation.reliability.label}"
             )
             self._render_indicators(explanation)
             self._render_rules(explanation)

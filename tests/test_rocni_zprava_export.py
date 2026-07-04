@@ -253,6 +253,7 @@ class RocniZpravaExportTestCase(unittest.TestCase):
 
         self.assertIn("Test Zaměstnavatel s.r.o.", content)
         self.assertIn("Petr Specialista", content)
+        self.assertRegex(content, r"CELKOVÉ HODNOCENÍ [🟢🟡🔴]")
 
     def test_export_without_preparer_does_not_auto_fill_name(self) -> None:
         self._create_inspection_with_commission(year=2026, inspection_date=date(2026, 3, 10))
@@ -666,7 +667,7 @@ class RocniZpravaExportTestCase(unittest.TestCase):
             self.assertEqual(context.overall_rating.level, "red")
             self.assertGreaterEqual(context.severity.open_critical_overdue, 1)
             self.assertIn("kritická závada po termínu", context.overall_assessment_text)
-            self.assertIn("Spolehlivost hodnocení:", context.overall_assessment_text)
+            self.assertIn("Reprezentativnost dat:", context.overall_assessment_text)
             self.assertIn("Kritéria hodnocení", context.methodology.appendix_text)
 
     def test_high_severity_has_greater_weight_than_low(self) -> None:
@@ -764,7 +765,7 @@ class RocniZpravaExportTestCase(unittest.TestCase):
             self.assertIn("vysokou závažností", context.overall_assessment_text)
             self.assertIn("Ukazatele výkonnosti systému BOZP", context.placeholder_values()["prehled_vysledku_text"])
             self.assertIn("Váhové skóre zjištění: 7", context.placeholder_values()["prehled_vysledku_text"])
-            self.assertIn("Spolehlivost hodnocení:", context.placeholder_values()["ukazatele_vykonnosti_text"])
+            self.assertIn("Reprezentativnost dat:", context.placeholder_values()["ukazatele_vykonnosti_text"])
 
     def test_methodology_appendix_in_export(self) -> None:
         self._create_inspection_with_commission(year=2026, inspection_date=date(2026, 3, 10))
@@ -774,7 +775,7 @@ class RocniZpravaExportTestCase(unittest.TestCase):
         self.assertIn("Kritéria hodnocení", content)
         self.assertIn("Podíl nevyhovujících bodů", content)
         self.assertIn("Rozhodovací pravidla", content)
-        self.assertIn("Spolehlivost hodnocení", content)
+        self.assertIn("Reprezentativnost dat", content)
 
 
 if __name__ == "__main__":

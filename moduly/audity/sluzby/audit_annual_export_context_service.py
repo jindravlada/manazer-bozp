@@ -16,6 +16,7 @@ from core.shared.sluzby.control_activity_statistics_service import (
 from core.shared.sluzby.control_result_service import control_result_service
 from core.shared.sluzby.finding_service import finding_service
 from core.shared.sluzby.performance_evaluation_methodology_service import (
+    DATA_REPRESENTATIVENESS_LABEL,
     EVALUATION_DOMAIN_AUDIT_MANAGEMENT,
     PerformanceEvaluationExplanation,
     PerformanceEvaluationInput,
@@ -91,6 +92,10 @@ Proces vykazuje opakované nedostatky a vyžaduje zvýšenou pozornost.
 
 🔴 Kritický
 Proces není dostatečně řízen a představuje významné riziko pro účinnost systému řízení."""
+
+_MATURITY_LEGEND_REFERENCE = (
+    "Legenda úrovní vyspělosti řídicích procesů je uvedena v příloze."
+)
 
 
 def _overall_rating_heading(emoji: str) -> str:
@@ -253,7 +258,7 @@ class AuditAnnualMetrics:
             values.update(severity.to_placeholders())
             perf_lines = severity.performance_lines(self)
             if reliability_label:
-                perf_lines.append(f"Spolehlivost hodnocení: {reliability_label}")
+                perf_lines.append(f"{DATA_REPRESENTATIVENESS_LABEL}: {reliability_label}")
             values["ukazatele_vykonnosti_text"] = "\n".join(perf_lines)
         return values
 
@@ -530,6 +535,11 @@ class AuditAnnualExportContextService:
             self._performance_signals(metrics, severity, overall_rating, comparison, history),
             domain=EVALUATION_DOMAIN_AUDIT_MANAGEMENT,
         )
+        methodology = PerformanceMethodologyContent(
+            appendix_text=f"{methodology.appendix_text}\n\n{_MATURITY_LEGEND}",
+            expert_justification=methodology.expert_justification,
+            reliability=methodology.reliability,
+        )
         process_maturity = self._build_process_maturity(
             audits,
             year=year,
@@ -543,7 +553,10 @@ class AuditAnnualExportContextService:
         process_effectiveness_text = self._build_process_effectiveness_text(process_maturity)
         systemic_problems_text = self._build_systemic_problems_text(attention_problems)
         corrective_measures_text = self._build_corrective_measures_text(metrics, severity)
-        appendices = self._build_appendices(audits, methodology_text=methodology.appendix_text)
+        appendices = self._build_appendices(
+            audits,
+            methodology_text=methodology.appendix_text,
+        )
         key_insights = self._build_key_insights(
             metrics=metrics,
             manual=manual,
@@ -1156,11 +1169,10 @@ class AuditAnnualExportContextService:
             audit_program_id=audit_program_id,
         )
         process_lines = "\n\n".join(item.to_text() for item in items) if items else "—"
-        text = f"{_MATURITY_LEGEND}\n\n{process_lines}" if items else "—"
         return AuditProcessMaturityAssessment(
             items=tuple(items),
-            text=text,
-            legend_text=_MATURITY_LEGEND,
+            text=process_lines,
+            legend_text=_MATURITY_LEGEND_REFERENCE,
             average_level=average_level,
             average_emoji=average_emoji,
             average_label=average_label,
@@ -1390,7 +1402,7 @@ class AuditAnnualExportContextService:
             f"Podíl nevyhovujících auditních tvrzení: {severity.nevyhovuje_percent:.2f} %.\n"
             f"Váhové skóre zjištění: {severity.weighted_score} "
             f"({_format_ratio('Váhové skóre', severity.score_per_audit).replace('Váhové skóre: ', '')}).\n"
-            f"Spolehlivost hodnocení: {methodology.reliability.label}.\n"
+            f"{DATA_REPRESENTATIVENESS_LABEL}: {methodology.reliability.label}.\n"
             f"{methodology.expert_justification}"
         )
         return f"{rating.headline}\n{detail}"
