@@ -32,6 +32,7 @@ from moduly.vysetrovani_mu.constants import (
 )
 from moduly.vysetrovani_mu.sluzby.ishikawa_factors_service import ishikawa_factors_service
 from core.widgets.dialog_utils import exec_maximized
+from moduly.vysetrovani_mu.ui.ishikawa_cause_chain import cause_factor_display
 from moduly.vysetrovani_mu.ui.mu_ishikawa_factor_edit_dialog import MuIshikawaFactorEditDialog
 
 
@@ -296,14 +297,7 @@ class MuIshikawaCauseDialog(QDialog):
     @staticmethod
     def _trigger_cause_label(cause: dict, description_max_len: int = 50) -> str:
         category = str(cause.get("category") or "").strip() or "—"
-        factor = str(cause.get("factor") or "").strip()
-        custom_factor = str(cause.get("custom_factor") or "").strip()
-        if factor == ISHIKAWA_OTHER_FACTOR and custom_factor:
-            factor_label = custom_factor
-        elif factor:
-            factor_label = factor
-        else:
-            factor_label = ""
+        factor_label = cause_factor_display(cause)
 
         description = str(cause.get("description") or "").strip()
         if len(description) > description_max_len:

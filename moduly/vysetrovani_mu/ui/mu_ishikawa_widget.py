@@ -33,6 +33,7 @@ from moduly.vysetrovani_mu.constants import (
 )
 from core.widgets.dialog_utils import exec_maximized
 from moduly.vysetrovani_mu.ui.mu_ishikawa_cause_dialog import MuIshikawaCauseDialog
+from moduly.vysetrovani_mu.ui.mu_ishikawa_chain_dialog import MuIshikawaChainDialog
 
 _LEVEL_TO_FINDING_TYPE = {
     ISHIKAWA_LEVEL_BEZPROSTREDNI: FINDING_TYPE_BEZPROSTREDNI_PRICINA,
@@ -60,10 +61,12 @@ class MuIshikawaWidget(QWidget):
         self.edit_btn = QPushButton("Upravit")
         self.delete_btn = QPushButton("Odebrat")
         self.create_finding_btn = QPushButton("Vytvořit zjištění")
+        self.chain_btn = QPushButton("Řetězec příčin")
         toolbar.addWidget(self.add_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.delete_btn)
         toolbar.addWidget(self.create_finding_btn)
+        toolbar.addWidget(self.chain_btn)
         toolbar.addStretch()
         group_layout.addLayout(toolbar)
 
@@ -98,6 +101,7 @@ class MuIshikawaWidget(QWidget):
         self.edit_btn.clicked.connect(self.edit_cause)
         self.delete_btn.clicked.connect(self.delete_cause)
         self.create_finding_btn.clicked.connect(self.create_finding)
+        self.chain_btn.clicked.connect(self.show_chain_dialog)
         self.table.itemSelectionChanged.connect(self._update_toolbar_state)
 
         self._update_toolbar_state()
@@ -121,7 +125,11 @@ class MuIshikawaWidget(QWidget):
         if not self._ensure_investigation():
             return
 
-        dialog = MuIshikawaCauseDialog(self, title="Přidat příčinu")
+        dialog = MuIshikawaCauseDialog(
+            self,
+            title="Přidat příčinu",
+            other_causes=list(self._causes),
+        )
         if not exec_maximized(dialog):
             return
 
@@ -130,7 +138,7 @@ class MuIshikawaWidget(QWidget):
             QMessageBox.information(self, "Ishikawa+", "Vyplňte popis možné příčiny.")
             return
 
-        self._causes.append(self._new_cause(data))
+        self._causes.append(self._cause_from_data(data))
         self._refresh_table()
 
     def edit_cause(self) -> None:
@@ -139,7 +147,15 @@ class MuIshikawaWidget(QWidget):
             QMessageBox.information(self, "Ishikawa+", "Vyberte příčinu.")
             return
 
-        dialog = MuIshikawaCauseDialog(self, cause=cause, title="Upravit příčinu")
+        other_causes = [
+            item for item in self._causes if item.get("id") != cause.get("id")
+        ]
+        dialog = MuIshikawaCauseDialog(
+            self,
+            cause=cause,
+            title="Upravit příčinu",
+            other_causes=other_causes,
+        )
         if not exec_maximized(dialog):
             return
 
@@ -148,7 +164,11 @@ class MuIshikawaWidget(QWidget):
             QMessageBox.information(self, "Ishikawa+", "Vyplňte popis možné příčiny.")
             return
 
-        cause.update(data)
+        cause_id = str(cause.get("id") or "")
+        for index, item in enumerate(self._causes):
+            if item.get("id") == cause_id:
+                self._causes[index] = self._cause_from_data(data, cause_id=cause_id)
+                break
         self._refresh_table()
 
     def delete_cause(self) -> None:
@@ -199,6 +219,18 @@ class MuIshikawaWidget(QWidget):
         if self._on_findings_changed is not None:
             self._on_findings_changed()
 
+    def show_chain_dialog(self) -> None:
+        if not self._causes:
+            QMessageBox.information(
+                self,
+                "Řetězec příčin",
+                "Nejsou zadány žádné příčiny.",
+            )
+            return
+
+        dialog = MuIshikawaChainDialog(self, causes=list(self._causes))
+        exec_maximized(dialog)
+
     def _ensure_investigation(self) -> bool:
         if self._investigation_id is not None:
             return True
@@ -209,18 +241,35 @@ class MuIshikawaWidget(QWidget):
         )
         return False
 
-    def _new_cause(self, data: dict) -> dict:
+    def _cause_from_data(self, data: dict, *, cause_id: str | None = None) -> dict:
+        factor, factors = self._factor_fields(data)
         return {
-            "id": str(uuid.uuid4()),
+            "id": cause_id or str(uuid.uuid4()),
             "category": data["category"],
-            "factors": list(data.get("factors") or []),
+            "factor": factor,
+            "factors": factors,
             "custom_factor": data.get("custom_factor") or "",
             "description": data["description"],
             "evidence": data["evidence"],
             "status": data["status"],
             "cause_level": data["cause_level"],
+            "triggered_by_cause_id": str(data.get("triggered_by_cause_id") or "").strip(),
             "note": data["note"],
         }
+
+    @staticmethod
+    def _factor_fields(data: dict) -> tuple[str, list[str]]:
+        factor = str(data.get("factor") or "").strip()
+        factors = [
+            str(item).strip()
+            for item in (data.get("factors") or [])
+            if str(item).strip()
+        ]
+        if factor and factor not in factors:
+            factors = [factor, *factors] if factors else [factor]
+        elif not factor and factors:
+            factor = factors[0]
+        return factor, factors
 
     def _normalize_causes(self, causes: list) -> list[dict]:
         normalized = []
@@ -236,20 +285,21 @@ class MuIshikawaWidget(QWidget):
             cause_level = raw.get("cause_level") or ISHIKAWA_LEVEL_BEZPROSTREDNI
             if cause_level not in ISHIKAWA_LEVELS:
                 cause_level = ISHIKAWA_LEVEL_BEZPROSTREDNI
+            factor, factors = MuIshikawaWidget._factor_fields(raw)
             normalized.append(
                 {
                     "id": str(raw.get("id") or uuid.uuid4()),
                     "category": category,
-                    "factors": [
-                        str(factor).strip()
-                        for factor in (raw.get("factors") or [])
-                        if str(factor).strip()
-                    ],
+                    "factor": factor,
+                    "factors": factors,
                     "custom_factor": str(raw.get("custom_factor") or "").strip(),
                     "description": str(raw.get("description") or "").strip(),
                     "evidence": str(raw.get("evidence") or "").strip(),
                     "status": status,
                     "cause_level": cause_level,
+                    "triggered_by_cause_id": str(
+                        raw.get("triggered_by_cause_id") or ""
+                    ).strip(),
                     "note": str(raw.get("note") or "").strip(),
                 }
             )

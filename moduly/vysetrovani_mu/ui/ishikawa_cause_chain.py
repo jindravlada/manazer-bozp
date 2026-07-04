@@ -35,12 +35,23 @@ def _text_preview(text: str | None, max_len: int = 80) -> str:
     return value[: max_len - 1].rstrip() + "…"
 
 
-def _factor_display(cause: dict) -> str:
+def cause_factor_display(cause: dict) -> str:
+    """Vrátí zobrazitelný faktor příčiny – podporuje `factor` i první položku z `factors`."""
     factor = (cause.get("factor") or "").strip()
+    if not factor:
+        for raw in cause.get("factors") or []:
+            candidate = str(raw).strip()
+            if candidate:
+                factor = candidate
+                break
     custom_factor = (cause.get("custom_factor") or "").strip()
     if factor == ISHIKAWA_OTHER_FACTOR and custom_factor:
         return custom_factor
     return factor
+
+
+def _factor_display(cause: dict) -> str:
+    return cause_factor_display(cause)
 
 
 def chain_cause_label(cause: dict) -> str:
