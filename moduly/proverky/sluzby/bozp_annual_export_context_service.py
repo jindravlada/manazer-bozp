@@ -13,13 +13,9 @@ from core.shared.sluzby.control_activity_statistics_service import (
 from core.shared.sluzby.control_result_service import control_result_service
 from core.shared.sluzby.finding_service import finding_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
-from moduly.proverky.constants import COMMISSION_RECORD_LEADER
 from moduly.proverky.modely.bozp_annual_report import BozpAnnualReport
 from moduly.proverky.modely.bozp_inspection import BozpInspection
 from moduly.proverky.sluzby.bozp_annual_report_service import bozp_annual_report_service
-from moduly.proverky.sluzby.bozp_inspection_commission_service import (
-    bozp_inspection_commission_service,
-)
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 
 
@@ -211,7 +207,7 @@ class BozpAnnualExportContextService:
             silne_stranky=saved.silne_stranky,
             top_priority=saved.top_priority,
             doporuceni_specialisty=saved.doporuceni_specialisty,
-            zpracoval=saved.zpracoval or self._resolve_specialist_name(inspections),
+            zpracoval=saved.zpracoval,
         )
         return AnnualReportContext(
             year=year,
@@ -446,24 +442,6 @@ class BozpAnnualExportContextService:
             measures_text=_join_blocks(measure_blocks) if measure_blocks else "Nejsou evidována.",
             open_measures_text=_join_blocks(open_measure_blocks) if open_measure_blocks else "Nejsou evidována.",
         )
-
-    def _resolve_specialist_name(self, inspections: list[BozpInspection]) -> str:
-        default = bozp_annual_report_service.default_specialist_name()
-        if default:
-            return default
-
-        counts: dict[str, int] = {}
-        for inspection in inspections:
-            for member in bozp_inspection_commission_service.get_for_inspection(inspection.id):
-                if member.record_type != COMMISSION_RECORD_LEADER:
-                    continue
-                name = _text(member.display_name)
-                if not name:
-                    continue
-                counts[name] = counts.get(name, 0) + 1
-        if not counts:
-            return "—"
-        return max(counts.items(), key=lambda item: (item[1], item[0]))[0]
 
     @staticmethod
     def _reserved_extension_placeholders() -> dict[str, str]:

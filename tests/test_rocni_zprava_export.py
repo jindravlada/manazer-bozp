@@ -91,6 +91,11 @@ class RocniZpravaExportTestCase(unittest.TestCase):
             last_name="Specialista",
             performs_controls=True,
         )
+        self.preparer_worker = next(
+            worker
+            for worker in settings_service.get_workers()
+            if worker.last_name == "Specialista"
+        )
         _ensure_annual_report_template()
 
     def _create_inspection_with_commission(self, **fields):
@@ -184,6 +189,10 @@ class RocniZpravaExportTestCase(unittest.TestCase):
     def test_management_report_structure_in_output(self) -> None:
         inspection = self._create_inspection_with_commission(year=2026, inspection_date=date(2026, 3, 10))
         assert inspection is not None
+        bozp_annual_report_service.save_for_year(
+            2026,
+            zpracoval_worker_id=self.preparer_worker.id,
+        )
 
         path = rocni_zprava_service.generate_for_year(2026)
         content = _odt_content(path)
@@ -207,6 +216,17 @@ class RocniZpravaExportTestCase(unittest.TestCase):
 
         self.assertIn("Test Zaměstnavatel s.r.o.", content)
         self.assertIn("Petr Specialista", content)
+
+    def test_export_without_preparer_does_not_auto_fill_name(self) -> None:
+        self._create_inspection_with_commission(year=2026, inspection_date=date(2026, 3, 10))
+
+        context = bozp_annual_export_context_service.build(2026)
+        self.assertEqual(context.manual.zpracoval, "")
+        self.assertEqual(context.placeholder_values()["zpracoval"], "—")
+
+        path = rocni_zprava_service.generate_for_year(2026)
+        content = _odt_content(path)
+        self.assertNotIn("Petr Specialista", content)
 
     def test_aggregated_statistics_and_attention_areas(self) -> None:
         inspection = self._create_inspection_with_commission(year=2026, inspection_date=date(2026, 4, 1))
@@ -304,12 +324,40 @@ class RocniZpravaExportTestCase(unittest.TestCase):
         dialog.silne_stranky_edit.setPlainText("Silná stránka")
         dialog.top_priority_edit.setPlainText("Priorita")
         dialog.doporuceni_edit.setPlainText("Doporučení")
+        dialog.zpracoval_selector.set_person_id(self.preparer_worker.id)
         dialog._create_report()
 
         mock_open.assert_called_once_with(2026)
         saved = bozp_annual_report_service.get_for_year(2026)
         assert saved is not None
         self.assertEqual(saved.silne_stranky, "Silná stránka")
+        self.assertEqual(saved.zpracoval_worker_id, self.preparer_worker.id)
+        self.assertEqual(saved.zpracoval, "Petr Specialista")
+
+    def test_dialog_restores_saved_preparer_for_year(self) -> None:
+        from moduly.proverky.ui.rocni_zprava_dialog import RocniZpravaDialog
+
+        self._create_inspection_with_commission(year=2026, inspection_date=date(2026, 3, 10))
+        bozp_annual_report_service.save_for_year(
+            2026,
+            zpracoval_worker_id=self.preparer_worker.id,
+        )
+
+        dialog = RocniZpravaDialog(year=2026)
+        self.assertEqual(dialog.zpracoval_selector.current_person_id(), self.preparer_worker.id)
+
+    def test_dialog_prefills_last_preparer_for_new_year(self) -> None:
+        from moduly.proverky.ui.rocni_zprava_dialog import RocniZpravaDialog
+
+        self._create_inspection_with_commission(year=2025, inspection_date=date(2025, 3, 10))
+        self._create_inspection_with_commission(year=2026, inspection_date=date(2026, 3, 10))
+        bozp_annual_report_service.save_for_year(
+            2025,
+            zpracoval_worker_id=self.preparer_worker.id,
+        )
+
+        dialog = RocniZpravaDialog(year=2026)
+        self.assertEqual(dialog.zpracoval_selector.current_person_id(), self.preparer_worker.id)
 
 
 if __name__ == "__main__":

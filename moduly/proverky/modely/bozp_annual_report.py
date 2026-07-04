@@ -18,6 +18,7 @@ class BozpAnnualReport(Base):
     top_priority: Mapped[str] = mapped_column(Text, default="", nullable=False)
     doporuceni_specialisty: Mapped[str] = mapped_column(Text, default="", nullable=False)
     zpracoval: Mapped[str] = mapped_column(String(150), default="", nullable=False)
+    zpracoval_worker_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(

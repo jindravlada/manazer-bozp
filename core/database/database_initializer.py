@@ -259,6 +259,9 @@ def _ensure_bozp_annual_report_table() -> None:
         from moduly.proverky.modely.bozp_annual_report import BozpAnnualReport
 
         BozpAnnualReport.__table__.create(bind=engine, checkfirst=True)
+        return
+    if "zpracoval_worker_id" not in columns:
+        _add_column("bozp_annual_reports", "zpracoval_worker_id INTEGER")
 
 
 def _ensure_workplace_audit_columns() -> None:

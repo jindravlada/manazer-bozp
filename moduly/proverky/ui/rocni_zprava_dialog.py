@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
 )
+from core.widgets.thp_worker_selector import ThpWorkerSelector
 from moduly.proverky.sluzby.bozp_annual_report_service import bozp_annual_report_service
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 from moduly.proverky.sluzby.rocni_zprava_service import rocni_zprava_service
@@ -31,6 +32,8 @@ class RocniZpravaDialog(QDialog):
         self.year_combo = QComboBox()
         self._populate_years(year)
         year_form.addRow("Rok:", self.year_combo)
+        self.zpracoval_selector = ThpWorkerSelector(include_empty=True)
+        year_form.addRow("Zpracoval:", self.zpracoval_selector)
         layout.addWidget(year_group)
 
         manual_group = QGroupBox("Obsah zprávy")
@@ -101,10 +104,19 @@ class RocniZpravaDialog(QDialog):
         self.year_combo.blockSignals(False)
 
     def _load_year_content(self) -> None:
-        report = bozp_annual_report_service.get_or_create_for_year(self.selected_year())
-        self.silne_stranky_edit.setPlainText(report.silne_stranky or "")
-        self.top_priority_edit.setPlainText(report.top_priority or "")
-        self.doporuceni_edit.setPlainText(report.doporuceni_specialisty or "")
+        year = self.selected_year()
+        report = bozp_annual_report_service.get_for_year(year)
+        if report is None:
+            self.silne_stranky_edit.clear()
+            self.top_priority_edit.clear()
+            self.doporuceni_edit.clear()
+            worker_id = bozp_annual_report_service.get_last_preparer_worker_id()
+        else:
+            self.silne_stranky_edit.setPlainText(report.silne_stranky or "")
+            self.top_priority_edit.setPlainText(report.top_priority or "")
+            self.doporuceni_edit.setPlainText(report.doporuceni_specialisty or "")
+            worker_id = bozp_annual_report_service.resolve_preparer_worker_id(report)
+        self.zpracoval_selector.set_person_id(worker_id)
 
     def _create_report(self) -> None:
         year = self.selected_year()
@@ -113,6 +125,7 @@ class RocniZpravaDialog(QDialog):
             silne_stranky=self.silne_stranky_edit.toPlainText(),
             top_priority=self.top_priority_edit.toPlainText(),
             doporuceni_specialisty=self.doporuceni_edit.toPlainText(),
+            zpracoval_worker_id=self.zpracoval_selector.current_person_id(),
         )
         try:
             rocni_zprava_service.open_for_year(year)

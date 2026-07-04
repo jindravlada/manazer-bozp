@@ -18,10 +18,38 @@ class BozpAnnualReportService:
         report = self.repository.get_by_year(year)
         if report is not None:
             return report
-        return BozpAnnualReport(
-            year=year,
-            zpracoval=self.default_specialist_name(),
-        )
+        return BozpAnnualReport(year=year)
+
+    def get_last_preparer_worker_id(self) -> int | None:
+        report = self.repository.get_last_with_preparer()
+        if report is None:
+            return None
+        return report.zpracoval_worker_id
+
+    def resolve_preparer_worker_id(self, report: BozpAnnualReport) -> int | None:
+        if report.zpracoval_worker_id is not None:
+            return report.zpracoval_worker_id
+
+        name = _text(report.zpracoval)
+        if not name:
+            return None
+
+        for worker in settings_service.get_workers(include_inactive=True):
+            if _text(worker.display_name) == name:
+                return worker.id
+        return None
+
+    def resolve_preparer_name(
+        self,
+        *,
+        worker_id: int | None = None,
+        fallback_name: str = "",
+    ) -> str:
+        if worker_id is not None:
+            worker = settings_service.get_worker_by_id(worker_id)
+            if worker is not None:
+                return _text(worker.display_name)
+        return _text(fallback_name)
 
     def save_for_year(
         self,
@@ -30,27 +58,19 @@ class BozpAnnualReportService:
         silne_stranky: str = "",
         top_priority: str = "",
         doporuceni_specialisty: str = "",
+        zpracoval_worker_id: int | None = None,
         zpracoval: str | None = None,
     ) -> BozpAnnualReport:
         report = self.get_or_create_for_year(year)
         report.silne_stranky = _text(silne_stranky)
         report.top_priority = _text(top_priority)
         report.doporuceni_specialisty = _text(doporuceni_specialisty)
-        if zpracoval is not None:
-            report.zpracoval = _text(zpracoval)
-        elif not report.zpracoval:
-            report.zpracoval = self.default_specialist_name()
+        report.zpracoval_worker_id = zpracoval_worker_id
+        report.zpracoval = self.resolve_preparer_name(
+            worker_id=zpracoval_worker_id,
+            fallback_name=zpracoval if zpracoval is not None else "",
+        )
         return self.repository.save(report)
-
-    def default_specialist_name(self) -> str:
-        workers = settings_service.get_workers_for_controls()
-        if len(workers) == 1:
-            worker = workers[0]
-            return _text(f"{worker.first_name} {worker.last_name}".strip())
-        if workers:
-            worker = sorted(workers, key=lambda item: (item.last_name, item.first_name))[0]
-            return _text(f"{worker.first_name} {worker.last_name}".strip())
-        return ""
 
 
 bozp_annual_report_service = BozpAnnualReportService()
