@@ -25,7 +25,6 @@ with patch.object(Path, "home", return_value=_TMP):
         INSPECTION_STATUS_PLANOVANO,
         INSPECTION_TYPE_MIMORADNA,
         INSPECTION_TYPE_RADNA,
-        ROCNI_ZPRAVA_TOOLTIP,
     )
     from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
     from moduly.nastaveni.sluzby.settings_service import settings_service
@@ -48,8 +47,8 @@ class ProverkyToolbarTestCase(unittest.TestCase):
         page = ProverkyPage()
 
         self.assertTrue(page.plan_btn.isEnabled())
-        self.assertFalse(page.report_btn.isEnabled())
-        self.assertEqual(page.report_btn.toolTip(), ROCNI_ZPRAVA_TOOLTIP)
+        self.assertTrue(page.report_btn.isEnabled())
+        self.assertIn("Roční zpráva o stavu BOZP", page.report_btn.toolTip())
         self.assertTrue(page.new_btn.isEnabled())
         self.assertTrue(page.edit_btn.isEnabled())
         self.assertTrue(page.delete_btn.isEnabled())

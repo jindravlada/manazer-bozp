@@ -25,6 +25,7 @@ def initialize_database() -> None:
     from moduly.kniha_urazu.modely.accident import Accident  # noqa: F401
     from moduly.kniha_urazu.modely.investigation import AccidentInvestigation  # noqa: F401
     from moduly.vysetrovani_mu.modely.mu_investigation import MuInvestigation  # noqa: F401
+    from moduly.proverky.modely.bozp_annual_report import BozpAnnualReport  # noqa: F401
     from moduly.proverky.modely.bozp_inspection import BozpInspection  # noqa: F401
     from moduly.proverky.modely.bozp_inspection_commission_member import (  # noqa: F401
         BozpInspectionCommissionMember,
@@ -44,6 +45,7 @@ def initialize_database() -> None:
     _ensure_audit_commission_table()
     _ensure_bozp_inspection_commission_table()
     _ensure_bozp_inspection_columns()
+    _ensure_bozp_annual_report_table()
     _ensure_workplace_audit_columns()
     _ensure_audit_program_columns()
     _ensure_audit_program_workplace_columns()
@@ -249,6 +251,14 @@ def _ensure_bozp_inspection_columns() -> None:
         _add_column("bozp_inspections", "silne_stranky TEXT DEFAULT '' NOT NULL")
     if "doporuceni_vedouciho" not in columns:
         _add_column("bozp_inspections", "doporuceni_vedouciho TEXT DEFAULT '' NOT NULL")
+
+
+def _ensure_bozp_annual_report_table() -> None:
+    columns = _table_columns("bozp_annual_reports")
+    if not columns:
+        from moduly.proverky.modely.bozp_annual_report import BozpAnnualReport
+
+        BozpAnnualReport.__table__.create(bind=engine, checkfirst=True)
 
 
 def _ensure_workplace_audit_columns() -> None:
