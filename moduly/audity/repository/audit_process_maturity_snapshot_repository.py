@@ -5,6 +5,31 @@ from moduly.audity.modely.audit_process_maturity_snapshot import AuditProcessMat
 
 
 class AuditProcessMaturitySnapshotRepository:
+    _UPDATABLE_FIELDS = (
+        "process_name",
+        "maturity_level",
+        "maturity_emoji",
+        "maturity_label",
+        "weighted_score",
+        "audits_count",
+        "control_points_count",
+        "nevyhovuje_count",
+        "doporuceni_count",
+        "open_measures_count",
+        "overdue_measures_count",
+        "trend_direction",
+        "trend_label",
+        "note",
+    )
+
+    @staticmethod
+    def _normalized_field_value(field: str, value) -> object:
+        if field == "note":
+            return str(value or "")
+        return value
+
+    def _prepare_snapshot_for_save(self, snapshot: AuditProcessMaturitySnapshot) -> None:
+        snapshot.note = str(snapshot.note or "")
     def get_for_year_program_process(
         self,
         *,
@@ -57,6 +82,7 @@ class AuditProcessMaturitySnapshotRepository:
             return list(session.scalars(stmt).all())
 
     def save(self, snapshot: AuditProcessMaturitySnapshot) -> AuditProcessMaturitySnapshot:
+        self._prepare_snapshot_for_save(snapshot)
         with get_session() as session:
             existing = session.scalars(
                 select(AuditProcessMaturitySnapshot).where(
@@ -75,23 +101,12 @@ class AuditProcessMaturitySnapshotRepository:
                 session.refresh(snapshot)
                 return snapshot
 
-            for field in (
-                "process_name",
-                "maturity_level",
-                "maturity_emoji",
-                "maturity_label",
-                "weighted_score",
-                "audits_count",
-                "control_points_count",
-                "nevyhovuje_count",
-                "doporuceni_count",
-                "open_measures_count",
-                "overdue_measures_count",
-                "trend_direction",
-                "trend_label",
-                "note",
-            ):
-                setattr(existing, field, getattr(snapshot, field))
+            for field in self._UPDATABLE_FIELDS:
+                setattr(
+                    existing,
+                    field,
+                    self._normalized_field_value(field, getattr(snapshot, field)),
+                )
             session.commit()
             session.refresh(existing)
             return existing

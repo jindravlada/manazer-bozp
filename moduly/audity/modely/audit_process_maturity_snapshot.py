@@ -36,7 +36,7 @@ class AuditProcessMaturitySnapshot(Base):
     overdue_measures_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     trend_direction: Mapped[str] = mapped_column(String(20), default="", nullable=False)
     trend_label: Mapped[str] = mapped_column(String(80), default="", nullable=False)
-    note: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    note: Mapped[str] = mapped_column(Text, default="", insert_default="", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,

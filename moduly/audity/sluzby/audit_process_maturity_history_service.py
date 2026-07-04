@@ -114,6 +114,7 @@ class AuditProcessMaturityHistoryService:
             overdue_measures_count=overdue_measures_count,
             trend_direction=direction,
             trend_label=label,
+            note="",
         )
         return self.repository.save(snapshot)
 

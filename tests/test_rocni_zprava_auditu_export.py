@@ -438,6 +438,65 @@ class RocniZpravaAudituExportTestCase(unittest.TestCase):
         self.assertIn("Řídicí proces B", context.process_maturity.text)
         self.assertTrue(context.placeholder_values()["prumerna_vyspelost_systemu_text"])
 
+    def test_maturity_snapshot_save_and_update_without_note(self) -> None:
+        from moduly.audity.modely.audit_process_maturity_snapshot import AuditProcessMaturitySnapshot
+        from moduly.audity.repository.audit_process_maturity_snapshot_repository import (
+            AuditProcessMaturitySnapshotRepository,
+        )
+        from moduly.audity.sluzby.audit_process_maturity_history_service import (
+            audit_process_maturity_history_service,
+        )
+
+        repository = AuditProcessMaturitySnapshotRepository()
+        common_fields = {
+            "year": 2026,
+            "audit_program_id": self.default_program.id,
+            "process_id": "proces-note",
+            "process_name": "Proces bez poznámky",
+            "maturity_level": "rizikovy",
+            "maturity_emoji": "🟠",
+            "maturity_label": "Rizikový",
+            "weighted_score": 7,
+            "audits_count": 1,
+            "control_points_count": 1,
+            "nevyhovuje_count": 1,
+            "doporuceni_count": 0,
+            "open_measures_count": 0,
+            "overdue_measures_count": 0,
+        }
+
+        created = audit_process_maturity_history_service.record_snapshot(**common_fields)
+        self.assertEqual(created.note, "")
+
+        updated = repository.save(
+            AuditProcessMaturitySnapshot(
+                **common_fields,
+                trend_direction="stable",
+                trend_label="→ Stabilní",
+            )
+        )
+        self.assertEqual(updated.id, created.id)
+        self.assertEqual(updated.note, "")
+
+        updated_again = audit_process_maturity_history_service.record_snapshot(
+            year=2026,
+            audit_program_id=self.default_program.id,
+            process_id="proces-note",
+            process_name="Proces bez poznámky",
+            maturity_level="stabilni",
+            maturity_emoji="🟡",
+            maturity_label="Stabilní",
+            weighted_score=3,
+            audits_count=1,
+            control_points_count=1,
+            nevyhovuje_count=0,
+            doporuceni_count=1,
+            open_measures_count=0,
+            overdue_measures_count=0,
+        )
+        self.assertEqual(updated_again.id, created.id)
+        self.assertEqual(updated_again.note, "")
+
     def test_systemic_problems_axis(self) -> None:
         audit1 = self._create_audit(year=2026, audit_date=date(2026, 2, 1), workplace_name="Hala 1")
         audit2 = self._create_audit(year=2026, audit_date=date(2026, 3, 1), workplace_name="Hala 2")

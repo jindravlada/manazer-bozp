@@ -362,6 +362,14 @@ def _ensure_audit_process_maturity_snapshot_table() -> None:
         from moduly.audity.modely.audit_process_maturity_snapshot import AuditProcessMaturitySnapshot
 
         AuditProcessMaturitySnapshot.__table__.create(bind=engine, checkfirst=True)
+        return
+    if "note" not in columns:
+        _add_column("audit_process_maturity_snapshots", "note TEXT DEFAULT '' NOT NULL")
+    with engine.connect() as connection:
+        connection.execute(
+            text("UPDATE audit_process_maturity_snapshots SET note = '' WHERE note IS NULL")
+        )
+        connection.commit()
 
 
 def _ensure_workplace_audit_columns() -> None:
