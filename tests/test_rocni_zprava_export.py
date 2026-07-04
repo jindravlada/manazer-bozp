@@ -188,6 +188,11 @@ class RocniZpravaExportTestCase(unittest.TestCase):
             "priloha_zjisteni_text",
             "priloha_opatreni_text",
             "priloha_otevrena_opatreni_text",
+            "priloha_metodika_text",
+            "metodika_zduvodneni_text",
+            "spolehlivost_hodnoceni",
+            "spolehlivost_hodnoceni_text",
+            "spolehlivost_hodnoceni_vysvetleni",
             "statistika_text",
             "souhrn_text",
             "zamestnavatel_nazev",
@@ -240,6 +245,7 @@ class RocniZpravaExportTestCase(unittest.TestCase):
             "Příloha – Významná zjištění",
             "Příloha – Uložená opatření",
             "Příloha – Otevřená opatření",
+            "Příloha – Metodika hodnocení výkonnosti systému BOZP",
         ):
             self.assertIn(heading, content)
 
@@ -578,7 +584,9 @@ class RocniZpravaExportTestCase(unittest.TestCase):
             context = bozp_annual_export_context_service.build(2026)
             self.assertEqual(context.overall_rating.level, "red")
             self.assertGreaterEqual(context.severity.open_critical_overdue, 1)
-            self.assertIn("kritická otevřená závada po termínu", context.overall_assessment_text)
+            self.assertIn("kritická závada po termínu", context.overall_assessment_text)
+            self.assertIn("Spolehlivost hodnocení:", context.overall_assessment_text)
+            self.assertIn("Kritéria hodnocení", context.methodology.appendix_text)
 
     def test_high_severity_has_greater_weight_than_low(self) -> None:
         metrics = AnnualReportMetrics(
@@ -675,6 +683,17 @@ class RocniZpravaExportTestCase(unittest.TestCase):
             self.assertIn("vysokou závažností", context.overall_assessment_text)
             self.assertIn("Ukazatele výkonnosti systému BOZP", context.placeholder_values()["prehled_vysledku_text"])
             self.assertIn("Váhové skóre zjištění: 7", context.placeholder_values()["prehled_vysledku_text"])
+            self.assertIn("Spolehlivost hodnocení:", context.placeholder_values()["ukazatele_vykonnosti_text"])
+
+    def test_methodology_appendix_in_export(self) -> None:
+        self._create_inspection_with_commission(year=2026, inspection_date=date(2026, 3, 10))
+        path = rocni_zprava_service.generate_for_year(2026)
+        content = _odt_content(path)
+
+        self.assertIn("Kritéria hodnocení", content)
+        self.assertIn("Podíl nevyhovujících bodů", content)
+        self.assertIn("Rozhodovací pravidla", content)
+        self.assertIn("Spolehlivost hodnocení", content)
 
 
 if __name__ == "__main__":

@@ -15,6 +15,11 @@ from core.shared.sluzby.control_activity_statistics_service import (
 )
 from core.shared.sluzby.control_result_service import control_result_service
 from core.shared.sluzby.finding_service import finding_service
+from core.shared.sluzby.performance_evaluation_methodology_service import (
+    PerformanceEvaluationSignals,
+    PerformanceMethodologyContent,
+    performance_evaluation_methodology_service,
+)
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.proverky.constants import (
     CONTROL_POINT_SEVERITY_DEFAULT,
@@ -231,7 +236,12 @@ class AnnualReportSeverityMetrics:
     def count_for(self, severity: str) -> int:
         return int(self.counts_by_severity.get(severity, 0))
 
-    def performance_lines(self, metrics: "AnnualReportMetrics") -> list[str]:
+    def performance_lines(
+        self,
+        metrics: "AnnualReportMetrics",
+        *,
+        reliability_label: str | None = None,
+    ) -> list[str]:
         normalized = metrics.normalized()
         lines = [
             "Ukazatele výkonnosti systému BOZP:",
@@ -251,6 +261,8 @@ class AnnualReportSeverityMetrics:
         for severity in _SEVERITY_ORDER:
             lines.append(f"{_SEVERITY_LABELS[severity]}: {self.count_for(severity)}")
         lines.append(f"Otevřená opatření po termínu: {self.overdue_open_measures}")
+        if reliability_label:
+            lines.append(f"Spolehlivost hodnocení: {reliability_label}")
         return lines
 
     def to_placeholders(self) -> dict[str, str]:
@@ -299,7 +311,12 @@ class AnnualReportMetrics:
     def normalized(self) -> AnnualReportNormalizedMetrics:
         return AnnualReportNormalizedMetrics.from_metrics(self)
 
-    def to_lines(self, *, severity: AnnualReportSeverityMetrics | None = None) -> list[str]:
+    def to_lines(
+        self,
+        *,
+        severity: AnnualReportSeverityMetrics | None = None,
+        reliability_label: str | None = None,
+    ) -> list[str]:
         lines = [
             f"Počet prověrek: {self.inspections_count}",
             f"Počet kontrolovaných pracovišť: {self.workplaces_count}",
@@ -315,13 +332,22 @@ class AnnualReportMetrics:
         ]
         if severity is not None:
             lines.append("")
-            lines.extend(severity.performance_lines(self))
+            lines.extend(
+                severity.performance_lines(self, reliability_label=reliability_label)
+            )
         else:
             lines.extend(self.normalized().to_lines())
         return lines
 
-    def to_placeholders(self, *, severity: AnnualReportSeverityMetrics | None = None) -> dict[str, str]:
-        overview = "\n".join(self.to_lines(severity=severity))
+    def to_placeholders(
+        self,
+        *,
+        severity: AnnualReportSeverityMetrics | None = None,
+        reliability_label: str | None = None,
+    ) -> dict[str, str]:
+        overview = "\n".join(
+            self.to_lines(severity=severity, reliability_label=reliability_label)
+        )
         normalized = self.normalized()
         values = {
             "prehled_vysledku_text": overview,
@@ -353,7 +379,9 @@ class AnnualReportMetrics:
         }
         if severity is not None:
             values.update(severity.to_placeholders())
-            values["ukazatele_vykonnosti_text"] = "\n".join(severity.performance_lines(self))
+            values["ukazatele_vykonnosti_text"] = "\n".join(
+                severity.performance_lines(self, reliability_label=reliability_label)
+            )
         return values
 
 
@@ -413,6 +441,7 @@ class AnnualReportAppendices:
     findings_text: str
     measures_text: str
     open_measures_text: str
+    methodology_text: str
 
     def to_placeholders(self) -> dict[str, str]:
         return {
@@ -420,6 +449,7 @@ class AnnualReportAppendices:
             "priloha_zjisteni_text": self.findings_text,
             "priloha_opatreni_text": self.measures_text,
             "priloha_otevrena_opatreni_text": self.open_measures_text,
+            "priloha_metodika_text": self.methodology_text,
         }
 
 
@@ -467,6 +497,7 @@ class AnnualReportContext:
     attention_areas_text: str
     attention_problems: tuple[AnnualReportAttentionProblem, ...]
     overall_assessment_text: str
+    methodology: PerformanceMethodologyContent
     extension_placeholders: dict[str, str] = field(default_factory=dict)
 
     def placeholder_values(self) -> dict[str, str]:
@@ -484,11 +515,17 @@ class AnnualReportContext:
             "zamestnavatel_nazev": organization,
             "souhrn_text": self.overall_assessment_text,
         }
-        values.update(self.metrics.to_placeholders(severity=self.severity))
+        values.update(
+            self.metrics.to_placeholders(
+                severity=self.severity,
+                reliability_label=self.methodology.reliability.label,
+            )
+        )
         values.update(self.comparison.to_placeholders())
         values.update(self.key_insights.to_placeholders())
         values.update(self.appendices.to_placeholders())
         values.update(self.manual.to_placeholders())
+        values.update(self.methodology.to_placeholders())
         values.update(self.extension_placeholders)
         return values
 
@@ -504,7 +541,6 @@ class BozpAnnualExportContextService:
         metrics = history.metrics_for_year(year) or self._compute_metrics(year, inspections)
         attention_problems = self._collect_attention_problems(inspections)
         comparison = self._build_comparison(year, metrics, history)
-        appendices = self._build_appendices(inspections)
         manual = AnnualReportManualContent(
             silne_stranky=saved.silne_stranky,
             top_priority=saved.top_priority,
@@ -517,6 +553,19 @@ class BozpAnnualExportContextService:
             attention_problems,
         )
         overall_rating = self._determine_overall_rating(metrics, severity)
+        methodology = performance_evaluation_methodology_service.build(
+            self._performance_signals(
+                metrics=metrics,
+                severity=severity,
+                overall_rating=overall_rating,
+                comparison=comparison,
+                history=history,
+            )
+        )
+        appendices = self._build_appendices(
+            inspections,
+            methodology_text=methodology.appendix_text,
+        )
         key_insights = self._build_key_insights(
             metrics=metrics,
             manual=manual,
@@ -539,7 +588,9 @@ class BozpAnnualExportContextService:
                 metrics,
                 severity,
                 overall_rating,
+                methodology,
             ),
+            methodology=methodology,
             extension_placeholders=self._reserved_extension_placeholders(history),
         )
 
@@ -620,6 +671,7 @@ class BozpAnnualExportContextService:
         metrics: AnnualReportMetrics,
         severity: AnnualReportSeverityMetrics,
         rating: AnnualReportOverallRating,
+        methodology: PerformanceMethodologyContent,
     ) -> str:
         resolved = (
             "Všechna závažná zjištění byla řešena."
@@ -631,10 +683,76 @@ class BozpAnnualExportContextService:
             f"Podíl nevyhovujících bodů: {severity.nevyhovuje_percent:.2f} %.\n"
             f"Váhové skóre zjištění: {severity.weighted_score} "
             f"({_format_ratio('Váhové skóre', severity.score_per_inspection).replace('Váhové skóre: ', '')}).\n"
+            f"Spolehlivost hodnocení: {methodology.reliability.label}.\n"
             f"{resolved}\n"
-            f"{rating.explanation}"
+            f"{methodology.expert_justification}"
         )
         return f"{rating.emoji}\n{rating.headline}\n{detail}"
+
+    def _performance_signals(
+        self,
+        *,
+        metrics: AnnualReportMetrics,
+        severity: AnnualReportSeverityMetrics,
+        overall_rating: AnnualReportOverallRating,
+        comparison: AnnualReportYearComparison,
+        history: AnnualReportHistoricalSeries,
+    ) -> PerformanceEvaluationSignals:
+        workplaces = settings_service.get_workplaces(include_inactive=False)
+        return PerformanceEvaluationSignals(
+            activities_count=metrics.inspections_count,
+            control_points_count=metrics.control_points_count,
+            workplaces_covered_count=metrics.workplaces_count,
+            workplaces_total_count=len(workplaces),
+            noncompliance_percent=severity.nevyhovuje_percent,
+            weighted_severity_score=severity.weighted_score,
+            score_per_activity=severity.score_per_inspection,
+            measures_open=metrics.measures_open,
+            measures_closed=metrics.measures_closed,
+            open_critical_overdue=severity.open_critical_overdue,
+            open_high_overdue=severity.open_high_overdue,
+            open_critical_count=severity.open_critical_count,
+            high_severity_count=severity.count_for(CONTROL_POINT_SEVERITY_VYSOKA),
+            repeated_problems_count=severity.repeated_problems_count,
+            overdue_measures_count=severity.overdue_open_measures,
+            rating_level=overall_rating.level,
+            rating_headline=overall_rating.headline,
+            comparison_summary=self._comparison_summary_for_methodology(
+                metrics,
+                severity,
+                comparison,
+                history,
+            ),
+        )
+
+    def _comparison_summary_for_methodology(
+        self,
+        metrics: AnnualReportMetrics,
+        severity: AnnualReportSeverityMetrics,
+        comparison: AnnualReportYearComparison,
+        history: AnnualReportHistoricalSeries,
+    ) -> str:
+        if not comparison.has_previous_year:
+            return ""
+
+        previous_metrics = history.metrics_for_year(metrics.year - 1)
+        if previous_metrics is None or previous_metrics.inspections_count == 0:
+            return ""
+
+        previous_normalized = previous_metrics.normalized()
+        current_normalized = metrics.normalized()
+        if (
+            previous_normalized.neshody_per_inspection is not None
+            and current_normalized.neshody_per_inspection is not None
+            and current_normalized.neshody_per_inspection
+            < previous_normalized.neshody_per_inspection
+        ):
+            return (
+                "Přestože meziročně došlo ke snížení počtu neshod na jednu kontrolní aktivitu "
+                f"z {previous_normalized.neshody_per_inspection:.2f} "
+                f"na {current_normalized.neshody_per_inspection:.2f}"
+            )
+        return ""
 
     def _build_control_point_severity_index(self) -> dict[str, str]:
         index: dict[str, str] = {}
@@ -1224,7 +1342,12 @@ class BozpAnnualExportContextService:
 
         return AnnualReportKeyInsights(text="\n".join(bullets))
 
-    def _build_appendices(self, inspections: list[BozpInspection]) -> AnnualReportAppendices:
+    def _build_appendices(
+        self,
+        inspections: list[BozpInspection],
+        *,
+        methodology_text: str,
+    ) -> AnnualReportAppendices:
         inspection_lines: list[str] = []
         finding_blocks: list[str] = []
         measure_blocks: list[str] = []
@@ -1302,6 +1425,7 @@ class BozpAnnualExportContextService:
             findings_text=_join_blocks(finding_blocks) if finding_blocks else "Nejsou evidována.",
             measures_text=_join_blocks(measure_blocks) if measure_blocks else "Nejsou evidována.",
             open_measures_text=_join_blocks(open_measure_blocks) if open_measure_blocks else "Nejsou evidována.",
+            methodology_text=methodology_text,
         )
 
     @staticmethod
