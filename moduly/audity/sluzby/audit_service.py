@@ -42,6 +42,28 @@ class AuditService:
     def get_all(self) -> list[Audit]:
         return self.repository.get_all()
 
+    def get_for_year(self, year: int) -> list[Audit]:
+        audits = [
+            audit
+            for audit in self.get_all()
+            if (
+                audit.audit_date is not None
+                and audit.audit_date.year == year
+            )
+            or (
+                audit.audit_date is None
+                and audit.year == year
+            )
+        ]
+        return sorted(
+            audits,
+            key=lambda item: (
+                item.planned_month if item.planned_month is not None else 99,
+                item.audit_date or date.max,
+                item.id,
+            ),
+        )
+
     def get_by_id(self, audit_id: int) -> Audit | None:
         return self.repository.get_by_id(audit_id)
 

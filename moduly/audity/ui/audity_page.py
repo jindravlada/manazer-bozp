@@ -32,6 +32,7 @@ from moduly.audity.ui.audit_program_manager_banner_widget import (
 from moduly.audity.ui.audit_program_manager_dialog import AuditProgramManagerDialog
 from moduly.audity.ui.audity_knowledge_editor_dialog import AudityKnowledgeEditorDialog
 from moduly.audity.ui.audit_table import AuditTable
+from moduly.audity.ui.rocni_zprava_auditu_dialog import RocniZpravaAudituDialog
 
 
 class AudityPage(QWidget):
@@ -50,6 +51,8 @@ class AudityPage(QWidget):
         self.delete_btn = QPushButton("Smazat")
         self.refresh_btn = QPushButton("Obnovit")
         self.knowledge_editor_btn = QPushButton(KNOWLEDGE_EDITOR_BUTTON_LABEL)
+        self.report_btn = QPushButton("Roční zpráva")
+        self.report_btn.setToolTip("Roční zpráva z interních auditů za vybraný kalendářní rok.")
 
         self.status_filter = QComboBox()
         self.status_filter.addItems([
@@ -69,6 +72,7 @@ class AudityPage(QWidget):
         toolbar.addWidget(self.delete_btn)
         toolbar.addWidget(self.refresh_btn)
         toolbar.addWidget(self.knowledge_editor_btn)
+        toolbar.addWidget(self.report_btn)
         toolbar.addStretch()
         toolbar.addWidget(QLabel("Stav:"))
         toolbar.addWidget(self.status_filter)
@@ -91,6 +95,7 @@ class AudityPage(QWidget):
         self.delete_btn.clicked.connect(self.delete_selected_audit)
         self.refresh_btn.clicked.connect(self.refresh)
         self.knowledge_editor_btn.clicked.connect(self.open_knowledge_editor)
+        self.report_btn.clicked.connect(self.open_annual_report)
         self.table.doubleClicked.connect(self.open_selected_audit)
         self.status_filter.currentIndexChanged.connect(self.refresh)
         self.year_filter.currentIndexChanged.connect(self.refresh)
@@ -181,6 +186,12 @@ class AudityPage(QWidget):
 
     def open_program_manager(self) -> None:
         exec_maximized(AuditProgramManagerDialog(self))
+
+    def open_annual_report(self) -> None:
+        year_value = self.year_filter.currentData()
+        if year_value == YEAR_FILTER_VSE:
+            year_value = date.today().year
+        exec_maximized(RocniZpravaAudituDialog(self, year=year_value))
 
     def delete_selected_audit(self) -> None:
         audit_id = self._selected_audit_id()

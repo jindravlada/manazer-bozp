@@ -26,6 +26,7 @@ def initialize_database() -> None:
     from moduly.kniha_urazu.modely.investigation import AccidentInvestigation  # noqa: F401
     from moduly.vysetrovani_mu.modely.mu_investigation import MuInvestigation  # noqa: F401
     from moduly.proverky.modely.bozp_annual_report import BozpAnnualReport  # noqa: F401
+    from moduly.audity.modely.audit_annual_report import AuditAnnualReport  # noqa: F401
     from moduly.proverky.modely.bozp_inspection import BozpInspection  # noqa: F401
     from moduly.proverky.modely.bozp_inspection_commission_member import (  # noqa: F401
         BozpInspectionCommissionMember,
@@ -46,6 +47,7 @@ def initialize_database() -> None:
     _ensure_bozp_inspection_commission_table()
     _ensure_bozp_inspection_columns()
     _ensure_bozp_annual_report_table()
+    _ensure_audit_annual_report_table()
     _ensure_workplace_audit_columns()
     _ensure_audit_program_columns()
     _ensure_audit_program_workplace_columns()
@@ -262,6 +264,14 @@ def _ensure_bozp_annual_report_table() -> None:
         return
     if "zpracoval_worker_id" not in columns:
         _add_column("bozp_annual_reports", "zpracoval_worker_id INTEGER")
+
+
+def _ensure_audit_annual_report_table() -> None:
+    columns = _table_columns("audit_annual_reports")
+    if not columns:
+        from moduly.audity.modely.audit_annual_report import AuditAnnualReport
+
+        AuditAnnualReport.__table__.create(bind=engine, checkfirst=True)
 
 
 def _ensure_workplace_audit_columns() -> None:
