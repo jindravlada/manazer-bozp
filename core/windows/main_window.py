@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMainWindow,
+    QMessageBox,
     QPushButton,
     QSizePolicy,
     QStackedWidget,
@@ -116,6 +117,7 @@ class MainWindow(QMainWindow):
             from moduly.dashboard.ui.dashboard_page import DashboardPage
             return DashboardPage(
                 open_tasks_callback=self._open_new_task,
+                open_task_by_id_callback=self._open_task_by_id,
                 open_accidents_callback=self._open_new_accident,
                 open_search_callback=self._focus_search,
                 open_kontroly_callback=self._open_kontroly,
@@ -205,6 +207,29 @@ class MainWindow(QMainWindow):
         page = self._page_widgets.get("ukoly")
         if page is not None:
             page.new_task()
+
+    def _open_task_by_id(self, task_id: int) -> None:
+        from moduly.ukoly.sluzby.task_service import task_service
+        from moduly.ukoly.ui.task_dialog import TaskDialog
+
+        task = task_service.get_task_by_id(task_id)
+        dashboard = self._page_widgets.get("dashboard")
+
+        if task is None:
+            QMessageBox.warning(self, "Úkoly", "Opatření nebylo nalezeno.")
+            if dashboard is not None and hasattr(dashboard, "refresh"):
+                dashboard.refresh()
+            return
+
+        parent = dashboard if dashboard is not None else self
+        dialog = TaskDialog(parent, task=task)
+        if dialog.exec():
+            data = dialog.get_data()
+            if data["title"]:
+                task_service.update_task(task_id=task_id, **data)
+
+        if dashboard is not None and hasattr(dashboard, "refresh"):
+            dashboard.refresh()
 
     def _open_new_accident(self):
         self._show("kniha_urazu")

@@ -1,3 +1,4 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -13,6 +14,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.resources.app_icon import load_app_pixmap
 from core.services.backup_service import (
     BACKUP_TYPE_CATALOGS_TEMPLATES,
     BACKUP_TYPE_DATABASE,
@@ -44,6 +46,7 @@ class DashboardPage(QWidget):
     def __init__(
         self,
         open_tasks_callback=None,
+        open_task_by_id_callback=None,
         open_accidents_callback=None,
         open_search_callback=None,
         open_kontroly_callback=None,
@@ -51,6 +54,7 @@ class DashboardPage(QWidget):
     ) -> None:
         super().__init__()
         self.open_tasks_callback = open_tasks_callback
+        self.open_task_by_id_callback = open_task_by_id_callback
         self.open_accidents_callback = open_accidents_callback
         self.open_search_callback = open_search_callback
         self.open_kontroly_callback = open_kontroly_callback
@@ -126,8 +130,11 @@ class DashboardPage(QWidget):
         grid = QGridLayout()
         grid.setSpacing(14)
 
-        self.today = TodayWidget()
-        self.upcoming = UpcomingTasksWidget(open_tasks_callback=self.open_tasks_callback)
+        self.today = TodayWidget(open_task_callback=self.open_task_by_id_callback)
+        self.upcoming = UpcomingTasksWidget(
+            open_tasks_callback=self.open_tasks_callback,
+            open_task_callback=self.open_task_by_id_callback,
+        )
         self.calendar = CalendarPlaceholderWidget()
         self.activity = RecentActivityWidget()
         self.stats = StatisticsPlaceholderWidget()
@@ -138,7 +145,7 @@ class DashboardPage(QWidget):
         self.today.setFixedHeight(170)
         self.calendar.setFixedHeight(280)
         self.stats.setFixedHeight(130)
-        self.controls.setFixedHeight(170)
+        self.controls.setMinimumHeight(200)
         self.accidents.setFixedHeight(170)
         self.upcoming.setMinimumHeight(260)
         self.activity.setMinimumHeight(220)
@@ -173,8 +180,20 @@ class DashboardPage(QWidget):
         header.setFixedHeight(92)
         header.setMinimumWidth(280)
 
-        layout = QVBoxLayout(header)
+        layout = QHBoxLayout(header)
         layout.setContentsMargins(18, 14, 18, 14)
+        layout.setSpacing(14)
+
+        icon_label = QLabel()
+        icon_pixmap = load_app_pixmap(40)
+        if not icon_pixmap.isNull():
+            icon_label.setPixmap(icon_pixmap)
+            icon_label.setFixedSize(40, 40)
+            icon_label.setScaledContents(False)
+            layout.addWidget(icon_label, 0, Qt.AlignmentFlag.AlignVCenter)
+
+        text_layout = QVBoxLayout()
+        text_layout.setSpacing(2)
 
         title = QLabel("Pracovní plocha")
         title.setObjectName("PageTitle")
@@ -182,8 +201,9 @@ class DashboardPage(QWidget):
         subtitle = QLabel("Dobrý den. Co dnes budeme řešit?")
         subtitle.setObjectName("InfoText")
 
-        layout.addWidget(title)
-        layout.addWidget(subtitle)
+        text_layout.addWidget(title)
+        text_layout.addWidget(subtitle)
+        layout.addLayout(text_layout, 1)
 
         return header
 

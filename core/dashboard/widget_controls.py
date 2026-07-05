@@ -1,7 +1,7 @@
 from datetime import date
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLabel, QPushButton
+from PySide6.QtWidgets import QLabel, QPushButton, QSizePolicy
 
 from core.dashboard.widget_base import DashboardPanel
 from moduly.kontroly.sluzby.monthly_control_service import monthly_control_service
@@ -16,14 +16,17 @@ class ControlsWidget(DashboardPanel):
         self.content.setWordWrap(True)
         self.content.setTextFormat(Qt.TextFormat.RichText)
         self.content.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        self.content.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.open_button = QPushButton("Otevřít Kontroly")
         if self.open_kontroly_callback:
             self.open_button.clicked.connect(self.open_kontroly_callback)
 
-        self.layout.addWidget(self.content)
-        self.layout.addWidget(self.open_button)
+        self.layout.addWidget(self.content, 1)
+        self.layout.addSpacing(4)
+        self.layout.addWidget(self.open_button, 0, Qt.AlignmentFlag.AlignBottom)
 
+        self.setMinimumHeight(200)
         self.refresh()
 
     def refresh(self):
