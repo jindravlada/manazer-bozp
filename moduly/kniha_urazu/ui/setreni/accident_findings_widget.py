@@ -18,6 +18,7 @@ from core.shared.constants import (
     ENTITY_ACCIDENT,
     FINDING_TYPE_BEZPROSTREDNI_PRICINA,
 )
+from core.widgets.info_tooltip import wrap_tooltip_text
 from core.shared.finding_display import (
     finding_status_background,
     finding_status_label,
@@ -183,7 +184,7 @@ class AccidentFindingsWidget(QWidget):
         ]
         if finding.resolution_note:
             lines.append(f"Poznámka k vypořádání: {finding.resolution_note}")
-        return "\n".join(lines)
+        return wrap_tooltip_text("\n".join(lines))
 
     def _update_state(self) -> None:
         enabled = self.accident_id is not None

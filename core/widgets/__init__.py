@@ -11,6 +11,6 @@ from .code_selector import CodeSelector
 from .attachment_widget import AttachmentWidget
 from .notes_widget import NotesWidget
 from .table_utils import configure_table_columns
-from .info_tooltip import format_info_card
+from .info_tooltip import format_info_card, set_widget_tooltip, wrap_tooltip_text
 
 from .multi_code_selector import MultiCodeSelector

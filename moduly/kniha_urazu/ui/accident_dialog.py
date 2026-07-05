@@ -13,6 +13,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.shared.constants import ENTITY_ACCIDENT
+from core.widgets.attachment_widget import AttachmentWidget
 from core.widgets.dialog_utils import create_save_cancel_box, configure_resizable_form_dialog, wrap_in_scroll_area
 
 from core.widgets.date_edit import DateEdit
@@ -43,12 +45,17 @@ class AccidentDialog(QDialog):
         self.tab_pracoviste_widget = TabPracoviste()
         self.tab_dalsi_widget = TabDalsiUdaje()
         self.tab_svedci_widget = TabSvedci()
+        self.tab_attachments_widget = AttachmentWidget(
+            entity_type=ENTITY_ACCIDENT,
+            entity_id=accident.id if accident is not None else None,
+        )
 
         self.tabs.addTab(wrap_in_scroll_area(self.tab_podatel_widget), "Zapisovatel / zaměstnavatel")
         self.tabs.addTab(wrap_in_scroll_area(self.tab_zamestnanec_widget), "Zaměstnanec")
         self.tabs.addTab(wrap_in_scroll_area(self.tab_uraz_widget), "Údaje o úrazu")
         self.tabs.addTab(wrap_in_scroll_area(self.tab_pracoviste_widget), "Pracoviště")
         self.tabs.addTab(wrap_in_scroll_area(self.tab_dalsi_widget), "Další údaje")
+        self.tabs.addTab(wrap_in_scroll_area(self.tab_attachments_widget), "Přílohy")
         self.tabs.addTab(wrap_in_scroll_area(self.tab_svedci_widget), "Svědci / podpisy")
 
         layout.addWidget(self.tabs, 1)

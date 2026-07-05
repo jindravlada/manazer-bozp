@@ -7,6 +7,7 @@ from sqlalchemy import select
 
 from core.database.session import get_session
 from core.theme.status_colors import STATUS_DONE_BG, STATUS_MISSING_BG, STATUS_WARNING_BG
+from core.widgets.info_tooltip import format_info_card
 from moduly.kniha_urazu.modely.investigation import AccidentInvestigation
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     obligation_rows_for_summary,
@@ -203,11 +204,15 @@ class AccidentTable(QTableWidget):
 
     def _tooltip(self, accident):
         datum = "" if accident.accident_date is None else accident.accident_date.strftime("%d.%m.%Y")
-        return (
-            f"Pracovní úraz {accident.number or '—'}\n"
-            f"Datum: {datum} {accident.accident_time or ''}\n"
-            f"Zaměstnanec: {accident.employee_name or '—'}\n"
-            f"Pracoviště: {accident.workplace_name or accident.pracoviste or '—'}\n"
-            f"Druh úrazu: {accident.druh_urazu or '—'}\n\n"
-            f"{accident.popis_urazoveho_deje or ''}"
+        rows = [
+            ("Číslo:", accident.number or "—"),
+            ("Datum:", f"{datum} {accident.accident_time or ''}".strip()),
+            ("Zaměstnanec:", accident.employee_name or "—"),
+            ("Pracoviště:", accident.workplace_name or accident.pracoviste or "—"),
+            ("Druh úrazu:", accident.druh_urazu or "—"),
+        ]
+        return format_info_card(
+            title="Pracovní úraz",
+            rows=rows,
+            note=accident.popis_urazoveho_deje or "",
         )

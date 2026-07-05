@@ -297,4 +297,13 @@ def apply_app_style(app: QApplication) -> None:
             border: 1px solid #e5e7eb;
             border-radius: 6px;
         }
+
+        QToolTip {
+            max-width: 480px;
+            padding: 6px 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background-color: #ffffff;
+            color: #111827;
+        }
     """)
