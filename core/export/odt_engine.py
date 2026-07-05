@@ -79,13 +79,12 @@ def export_odt_template(template_path: str | Path, output_path: str | Path, valu
 
 
 def _sync_written_file(path: Path) -> None:
-    """Ensure the export file is flushed to disk (Linux/AppImage)."""
     if os.name == "nt":
+        # Windows – zipfile po close() korektně flushne data.
+        # os.fsync() zde není potřeba a může selhat.
         return
 
-    try:
-        with path.open("r+b") as handle:
-            handle.flush()
-            os.fsync(handle.fileno())
-    except OSError:
-        return
+    # POSIX/Linux – AppImage může otevřít soubor okamžitě po vytvoření,
+    # proto explicitně flushujeme metadata i obsah.
+    with path.open("r+b") as handle:
+        os.fsync(handle.fileno())
