@@ -99,6 +99,10 @@ class DashboardPage(QWidget):
                 min-height: 34px;
                 font-weight: 600;
             }
+
+            QFrame#HeaderIconSection {
+                border-right: 1px solid #e8ecf1;
+            }
         """)
 
         root_layout = QVBoxLayout(self)
@@ -119,9 +123,11 @@ class DashboardPage(QWidget):
         top_row = QHBoxLayout()
         top_row.setSpacing(14)
         self.days_without_accident = DaysWithoutAccidentWidget(compact=True)
+        self.days_without_accident.setMaximumWidth(260)
         top_row.addWidget(self._create_header(), 0)
         top_row.addWidget(self._create_vertical_separator())
-        top_row.addWidget(self.days_without_accident, 1)
+        top_row.addWidget(self.days_without_accident, 0)
+        top_row.addStretch(1)
         top_row.addWidget(self._create_quick_actions(), 0)
         layout.addLayout(top_row)
 
@@ -176,27 +182,42 @@ class DashboardPage(QWidget):
         layout.addStretch(1)
 
     def _create_header(self) -> QFrame:
+        header_icon_size = 60
+
         header = QFrame()
         header.setObjectName("HeaderCard")
-        header.setFixedHeight(92)
-        header.setMinimumWidth(280)
+        header.setFixedHeight(100)
+        header.setMinimumWidth(360)
 
         layout = QHBoxLayout(header)
-        layout.setContentsMargins(18, 14, 18, 14)
-        layout.setSpacing(14)
+        layout.setContentsMargins(18, 16, 20, 16)
+        layout.setSpacing(0)
+
+        icon_section = QFrame()
+        icon_section.setObjectName("HeaderIconSection")
+        icon_layout = QHBoxLayout(icon_section)
+        icon_layout.setContentsMargins(0, 0, 18, 0)
+        icon_layout.setSpacing(0)
 
         app_icon = load_app_icon()
         if not app_icon.isNull():
-            icon_pixmap = app_icon.pixmap(40, 40, QIcon.Mode.Normal, QIcon.State.Off)
+            icon_pixmap = app_icon.pixmap(
+                header_icon_size,
+                header_icon_size,
+                QIcon.Mode.Normal,
+                QIcon.State.Off,
+            )
             if not icon_pixmap.isNull():
                 icon_label = QLabel()
                 icon_label.setPixmap(icon_pixmap)
-                icon_label.setFixedSize(40, 40)
+                icon_label.setFixedSize(header_icon_size, header_icon_size)
                 icon_label.setScaledContents(False)
-                layout.addWidget(icon_label, 0, Qt.AlignmentFlag.AlignVCenter)
+                icon_layout.addWidget(icon_label, 0, Qt.AlignmentFlag.AlignTop)
 
-        text_layout = QVBoxLayout()
-        text_layout.setSpacing(2)
+        text_section = QWidget()
+        text_layout = QVBoxLayout(text_section)
+        text_layout.setContentsMargins(0, 0, 0, 0)
+        text_layout.setSpacing(6)
 
         title = QLabel("Pracovní plocha")
         title.setObjectName("PageTitle")
@@ -204,9 +225,13 @@ class DashboardPage(QWidget):
         subtitle = QLabel("Dobrý den. Co dnes budeme řešit?")
         subtitle.setObjectName("InfoText")
 
-        text_layout.addWidget(title)
-        text_layout.addWidget(subtitle)
-        layout.addLayout(text_layout, 1)
+        text_layout.addWidget(title, 0, Qt.AlignmentFlag.AlignTop)
+        text_layout.addWidget(subtitle, 0, Qt.AlignmentFlag.AlignTop)
+        text_layout.addStretch(1)
+
+        if icon_layout.count() > 0:
+            layout.addWidget(icon_section, 0, Qt.AlignmentFlag.AlignTop)
+        layout.addWidget(text_section, 1, Qt.AlignmentFlag.AlignTop)
 
         return header
 
@@ -214,13 +239,13 @@ class DashboardPage(QWidget):
         line = QFrame()
         line.setFrameShape(QFrame.VLine)
         line.setFrameShadow(QFrame.Sunken)
-        line.setFixedHeight(72)
+        line.setFixedHeight(80)
         return line
 
     def _create_quick_actions(self) -> QFrame:
         panel = QFrame()
         panel.setObjectName("DashboardPanel")
-        panel.setFixedHeight(92)
+        panel.setFixedHeight(100)
 
         layout = QHBoxLayout(panel)
         layout.setContentsMargins(16, 12, 16, 12)

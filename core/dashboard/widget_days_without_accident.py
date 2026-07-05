@@ -1,7 +1,7 @@
 from datetime import date
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLabel
+from PySide6.QtWidgets import QLabel, QSizePolicy
 
 from core.dashboard.widget_base import DashboardPanel
 from moduly.kniha_urazu.sluzby.accident_service import accident_service
@@ -17,7 +17,8 @@ class DaysWithoutAccidentWidget(DashboardPanel):
         self.layout.addWidget(self.content)
         if compact:
             self.title_label.hide()
-            self.setFixedHeight(92)
+            self.setFixedHeight(100)
+            self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.refresh()
 
     def _last_accident_date(self) -> date | None:
