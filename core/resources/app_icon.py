@@ -3,32 +3,29 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QPixmap
 
-
-def _project_root() -> Path:
-    return Path(__file__).resolve().parents[2]
+_ICON_FILENAME = "manager_bozp.ico"
 
 
 def app_icon_path() -> Path | None:
-    root = _project_root()
-    for candidate in (root / "AppDir" / "manazer-bozp.png", root / "manager_bozp.ico"):
-        if candidate.is_file():
-            return candidate
-    return None
+    path = Path(__file__).resolve().parent / _ICON_FILENAME
+    return path if path.is_file() else None
 
 
 def load_app_icon() -> QIcon:
     path = app_icon_path()
     if path is None:
         return QIcon()
-    return QIcon(str(path))
+
+    icon = QIcon(str(path))
+    return icon if not icon.isNull() else QIcon()
 
 
 def load_app_pixmap(size: int = 40) -> QPixmap:
-    path = app_icon_path()
-    if path is None:
+    icon = load_app_icon()
+    if icon.isNull():
         return QPixmap()
 
-    pixmap = QPixmap(str(path))
+    pixmap = icon.pixmap(size, size, QIcon.Mode.Normal, QIcon.State.Off)
     if pixmap.isNull():
         return QPixmap()
 

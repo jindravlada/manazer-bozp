@@ -1,4 +1,5 @@
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -14,7 +15,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.resources.app_icon import load_app_pixmap
+from core.resources.app_icon import load_app_icon
 from core.services.backup_service import (
     BACKUP_TYPE_CATALOGS_TEMPLATES,
     BACKUP_TYPE_DATABASE,
@@ -184,13 +185,15 @@ class DashboardPage(QWidget):
         layout.setContentsMargins(18, 14, 18, 14)
         layout.setSpacing(14)
 
-        icon_label = QLabel()
-        icon_pixmap = load_app_pixmap(40)
-        if not icon_pixmap.isNull():
-            icon_label.setPixmap(icon_pixmap)
-            icon_label.setFixedSize(40, 40)
-            icon_label.setScaledContents(False)
-            layout.addWidget(icon_label, 0, Qt.AlignmentFlag.AlignVCenter)
+        app_icon = load_app_icon()
+        if not app_icon.isNull():
+            icon_pixmap = app_icon.pixmap(40, 40, QIcon.Mode.Normal, QIcon.State.Off)
+            if not icon_pixmap.isNull():
+                icon_label = QLabel()
+                icon_label.setPixmap(icon_pixmap)
+                icon_label.setFixedSize(40, 40)
+                icon_label.setScaledContents(False)
+                layout.addWidget(icon_label, 0, Qt.AlignmentFlag.AlignVCenter)
 
         text_layout = QVBoxLayout()
         text_layout.setSpacing(2)
