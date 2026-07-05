@@ -26,7 +26,7 @@ class ControlsWidget(DashboardPanel):
         self.layout.addSpacing(4)
         self.layout.addWidget(self.open_button, 0, Qt.AlignmentFlag.AlignBottom)
 
-        self.setMinimumHeight(200)
+        self.setMinimumHeight(220)
         self.refresh()
 
     def refresh(self):
@@ -43,11 +43,13 @@ class ControlsWidget(DashboardPanel):
         done_count = monthly.done_by_month[month_index]
         none_count = monthly.none_by_month[month_index]
         defect_count = monthly.defect_by_month[month_index]
+        excused_count = monthly.excused_by_month[month_index]
         percent = round(done_count * 100 / thp_count) if thp_count else 0
 
         self.content.setText(
             f"THP: <b>{thp_count}</b><br>"
             f"Provedeno: <b>{done_count} / {thp_count}</b> ({percent} %)<br>"
             f"Chybí: <b>{none_count}</b><br>"
+            f"Omluveno: <b>{excused_count}</b><br>"
             f"Se závadou: <b>{defect_count}</b>"
         )

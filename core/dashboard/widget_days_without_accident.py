@@ -18,7 +18,7 @@ class DaysWithoutAccidentWidget(DashboardPanel):
         if compact:
             self.title_label.hide()
             self.setFixedHeight(100)
-            self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.refresh()
 
     def _last_accident_date(self) -> date | None:

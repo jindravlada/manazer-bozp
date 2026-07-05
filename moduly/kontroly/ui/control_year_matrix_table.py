@@ -12,6 +12,7 @@ class ControlYearMatrixTable(QTableWidget):
         "none": QColor("#ffcdd2"),
         "ok": QColor("#ffe0b2"),
         "defect": QColor("#c8e6c9"),
+        "excused": QColor("#bbdefb"),
     }
     KL_INACTIVE_COLOR = QColor("#ffcdd2")
     KL_ACTIVE_COLOR = QColor("#c8e6c9")

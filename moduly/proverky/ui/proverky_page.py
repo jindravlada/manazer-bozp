@@ -30,6 +30,7 @@ from moduly.proverky.sluzby.bozp_inspection_commission_service import (
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 from moduly.proverky.ui.bozp_inspection_dialog import BozpInspectionDialog
 from moduly.proverky.ui.bozp_inspection_table import BozpInspectionTable
+from moduly.proverky.ui.generate_inspections_dialog import GenerateInspectionsDialog
 from moduly.proverky.ui.rocni_plan_dialog import RocniPlanDialog
 from moduly.proverky.ui.rocni_zprava_dialog import RocniZpravaDialog
 
@@ -60,6 +61,7 @@ class ProverkyPage(QWidget):
         self.edit_btn = QPushButton("Upravit")
         self.delete_btn = QPushButton("Smazat")
         self.plan_btn = QPushButton("Roční plán")
+        self.generate_btn = QPushButton("Generovat kontroly")
         self.report_btn = QPushButton("Roční zpráva")
         self.report_btn.setToolTip("Roční zpráva o stavu BOZP za vybraný kalendářní rok.")
         self.knowledge_editor_btn = QPushButton(KNOWLEDGE_EDITOR_BUTTON_LABEL)
@@ -80,6 +82,7 @@ class ProverkyPage(QWidget):
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.delete_btn)
         toolbar.addWidget(self.plan_btn)
+        toolbar.addWidget(self.generate_btn)
         toolbar.addWidget(self.report_btn)
         toolbar.addWidget(self.knowledge_editor_btn)
         toolbar.addStretch()
@@ -100,6 +103,7 @@ class ProverkyPage(QWidget):
         self.edit_btn.clicked.connect(self.open_selected_inspection)
         self.delete_btn.clicked.connect(self.delete_selected_inspection)
         self.plan_btn.clicked.connect(self.show_annual_plan)
+        self.generate_btn.clicked.connect(self.generate_inspections)
         self.report_btn.clicked.connect(self.show_annual_report)
         self.knowledge_editor_btn.clicked.connect(self.open_knowledge_editor)
         self.table.doubleClicked.connect(self.open_selected_inspection)
@@ -234,6 +238,14 @@ class ProverkyPage(QWidget):
         if year_value == YEAR_FILTER_VSE:
             year_value = date.today().year
         exec_maximized(RocniPlanDialog(self, year=year_value))
+
+    def generate_inspections(self) -> None:
+        year_value = self.year_filter.currentData()
+        if year_value == YEAR_FILTER_VSE:
+            year_value = date.today().year
+        dialog = GenerateInspectionsDialog(self, year=year_value)
+        if dialog.exec():
+            self.refresh()
 
     def open_knowledge_editor(self) -> None:
         exec_maximized(ProverkyKnowledgeEditorDialog(self))

@@ -15,6 +15,7 @@ ROW_LABEL_STYLES = {
     "Provedeno": ("#e8f5e9", "#c8e6c9"),
     "Se závadou": ("#fff3e0", "#ffe0b2"),
     "Neprovedeno": ("#ffebee", "#ffcdd2"),
+    "Omluveno": ("#e3f2fd", "#bbdefb"),
 }
 
 KL_COMPLETE_BG = "#c8e6c9"
@@ -54,8 +55,14 @@ class ControlSummaryPanel(QWidget):
             "#ffcdd2",
             "Počet měsíců, ve kterých zatím nebyla provedena kontrola.",
         )
+        self.excused_card = ControlSummaryCard(
+            "Omluveno",
+            "#e3f2fd",
+            "#bbdefb",
+            "Počet kontrol označených jako omluvené (dovolená, nemoc, nerelevantní list).",
+        )
 
-        for card in (self.thp_card, self.done_card, self.defect_card, self.none_card):
+        for card in (self.thp_card, self.done_card, self.defect_card, self.none_card, self.excused_card):
             cards_row.addWidget(card, 1)
 
         root.addLayout(cards_row)
@@ -81,6 +88,7 @@ class ControlSummaryPanel(QWidget):
         self._month_done_labels = self._add_monthly_row(monthly_grid, 1, "Provedeno")
         self._month_defect_labels = self._add_monthly_row(monthly_grid, 2, "Se závadou")
         self._month_none_labels = self._add_monthly_row(monthly_grid, 3, "Neprovedeno")
+        self._month_excused_labels = self._add_monthly_row(monthly_grid, 4, "Omluveno")
 
         root.addLayout(monthly_grid)
 
@@ -114,6 +122,7 @@ class ControlSummaryPanel(QWidget):
             self._month_done_labels,
             self._month_defect_labels,
             self._month_none_labels,
+            self._month_excused_labels,
         )
 
     def set_highlight_month(self, month: int | None):
@@ -198,6 +207,7 @@ class ControlSummaryPanel(QWidget):
         self.done_card.set_values(summary.done_count, total_slots)
         self.defect_card.set_value(str(summary.defect_count))
         self.none_card.set_value(str(summary.none_count))
+        self.excused_card.set_value(str(summary.excused_count))
 
         for index, value in enumerate(monthly.done_by_month):
             self._month_done_labels[index].setText(str(value))
@@ -205,6 +215,8 @@ class ControlSummaryPanel(QWidget):
             self._month_defect_labels[index].setText(str(value))
         for index, value in enumerate(monthly.none_by_month):
             self._month_none_labels[index].setText(str(value))
+        for index, value in enumerate(monthly.excused_by_month):
+            self._month_excused_labels[index].setText(str(value))
 
         missing_kl = set(kl.missing_kl_numbers)
         for index, kl_number in enumerate(range(1, 13)):

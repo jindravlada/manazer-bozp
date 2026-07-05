@@ -26,6 +26,7 @@ class YearMatrixSummary:
     done_count: int = 0
     defect_count: int = 0
     none_count: int = 0
+    excused_count: int = 0
 
 
 @dataclass(frozen=True)
@@ -33,6 +34,7 @@ class YearMatrixMonthSummary:
     done_by_month: tuple[int, ...] = (0,) * 12
     defect_by_month: tuple[int, ...] = (0,) * 12
     none_by_month: tuple[int, ...] = (0,) * 12
+    excused_by_month: tuple[int, ...] = (0,) * 12
 
 
 @dataclass(frozen=True)
@@ -42,8 +44,8 @@ class YearMatrixKlSummary:
 
 
 class MonthlyControlService:
-    VALID_STATUSES = {"none", "ok", "defect"}
-    STATUS_CYCLE = ("none", "ok", "defect")
+    VALID_STATUSES = {"none", "ok", "defect", "excused"}
+    STATUS_CYCLE = ("none", "ok", "defect", "excused")
 
     def __init__(self):
         self.repository = MonthlyControlRepository()
@@ -89,6 +91,7 @@ class MonthlyControlService:
         none_count = 0
         done_count = 0
         defect_count = 0
+        excused_count = 0
 
         for row in rows:
             for month in range(1, 13):
@@ -99,6 +102,8 @@ class MonthlyControlService:
                 elif status == "defect":
                     done_count += 1
                     defect_count += 1
+                elif status == "excused":
+                    excused_count += 1
                 else:
                     none_count += 1
 
@@ -107,12 +112,14 @@ class MonthlyControlService:
             done_count=done_count,
             defect_count=defect_count,
             none_count=none_count,
+            excused_count=excused_count,
         )
 
     def compute_monthly_summary(self, rows: list[ThpYearRow]) -> YearMatrixMonthSummary:
         done_by_month = [0] * 12
         defect_by_month = [0] * 12
         none_by_month = [0] * 12
+        excused_by_month = [0] * 12
 
         for row in rows:
             for month in range(1, 13):
@@ -124,6 +131,8 @@ class MonthlyControlService:
                     done_by_month[index] += 1
                 elif status == "ok":
                     done_by_month[index] += 1
+                elif status == "excused":
+                    excused_by_month[index] += 1
                 else:
                     none_by_month[index] += 1
 
@@ -131,6 +140,7 @@ class MonthlyControlService:
             done_by_month=tuple(done_by_month),
             defect_by_month=tuple(defect_by_month),
             none_by_month=tuple(none_by_month),
+            excused_by_month=tuple(excused_by_month),
         )
 
     def compute_kl_summary(self, rows: list[ThpYearRow]) -> YearMatrixKlSummary:
