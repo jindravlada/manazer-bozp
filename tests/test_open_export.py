@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from PySide6.QtWidgets import QApplication
 
+from core.export.odt_engine import _sync_written_file
 from core.export.open_export import (
     _APPIMAGE_ENV_KEYS,
     _cleaned_system_env,
@@ -18,6 +19,15 @@ class OpenExportFileTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls._app = QApplication.instance() or QApplication([])
+
+    def test_sync_written_file_skips_fsync_on_windows(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "export.odt"
+            path.write_text("test", encoding="utf-8")
+            with patch("core.export.odt_engine.os.name", "nt"):
+                with patch("core.export.odt_engine.os.fsync") as mock_fsync:
+                    _sync_written_file(path)
+                mock_fsync.assert_not_called()
 
     def test_strip_appimage_path_entries(self) -> None:
         with patch.dict(

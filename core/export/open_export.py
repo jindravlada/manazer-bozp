@@ -103,14 +103,16 @@ def _wait_for_export_file_ready(path: Path) -> bool:
 
 
 def _run_detached(command: list[str], *, env: dict[str, str] | None = None) -> bool:
+    popen_kwargs: dict = {
+        "shell": False,
+        "env": env,
+    }
+    if sys.platform.startswith("linux"):
+        popen_kwargs["start_new_session"] = True
+        popen_kwargs["close_fds"] = True
+
     try:
-        subprocess.Popen(
-            command,
-            shell=False,
-            env=env,
-            start_new_session=True,
-            close_fds=True,
-        )
+        subprocess.Popen(command, **popen_kwargs)
         return True
     except OSError:
         return False

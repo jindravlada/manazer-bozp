@@ -79,5 +79,13 @@ def export_odt_template(template_path: str | Path, output_path: str | Path, valu
 
 
 def _sync_written_file(path: Path) -> None:
-    with path.open("rb") as handle:
-        os.fsync(handle.fileno())
+    """Ensure the export file is flushed to disk (Linux/AppImage)."""
+    if os.name == "nt":
+        return
+
+    try:
+        with path.open("r+b") as handle:
+            handle.flush()
+            os.fsync(handle.fileno())
+    except OSError:
+        return
