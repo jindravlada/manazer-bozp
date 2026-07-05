@@ -1,14 +1,45 @@
+import sys
 from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QPixmap
 
-_ICON_FILENAME = "manager_bozp.ico"
+_ICON_BASENAMES = ("manager_bozp.png", "manager_bozp.ico")
+
+
+def _resource_dirs() -> list[Path]:
+    dirs: list[Path] = []
+
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        meipass = Path(sys._MEIPASS)
+        dirs.extend(
+            (
+                meipass / "core" / "resources",
+                meipass / "resources",
+            )
+        )
+
+    dirs.append(Path(__file__).resolve().parent)
+
+    unique_dirs: list[Path] = []
+    seen: set[Path] = set()
+    for directory in dirs:
+        resolved = directory.resolve()
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        unique_dirs.append(resolved)
+
+    return unique_dirs
 
 
 def app_icon_path() -> Path | None:
-    path = Path(__file__).resolve().parent / _ICON_FILENAME
-    return path if path.is_file() else None
+    for directory in _resource_dirs():
+        for basename in _ICON_BASENAMES:
+            path = directory / basename
+            if path.is_file():
+                return path
+    return None
 
 
 def load_app_icon() -> QIcon:

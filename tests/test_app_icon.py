@@ -13,8 +13,12 @@ class AppIconTests(unittest.TestCase):
         cls._app = QApplication.instance() or QApplication(sys.argv)
 
     def test_bundled_icon_file_exists(self) -> None:
-        path = Path(__file__).resolve().parents[1] / "core" / "resources" / "manager_bozp.ico"
-        self.assertTrue(path.is_file(), f"Missing bundled icon: {path}")
+        resources_dir = Path(__file__).resolve().parents[1] / "core" / "resources"
+        icon_paths = [resources_dir / name for name in ("manager_bozp.png", "manager_bozp.ico")]
+        self.assertTrue(
+            any(path.is_file() for path in icon_paths),
+            f"Missing bundled icon in: {resources_dir}",
+        )
 
     def test_load_app_icon_is_valid(self) -> None:
         from core.resources.app_icon import app_icon_path, load_app_icon, load_app_pixmap
@@ -22,7 +26,7 @@ class AppIconTests(unittest.TestCase):
         path = app_icon_path()
         self.assertIsNotNone(path)
         assert path is not None
-        self.assertTrue(path.name == "manager_bozp.ico")
+        self.assertIn(path.name, ("manager_bozp.png", "manager_bozp.ico"))
         self.assertTrue(path.parent.name == "resources")
 
         icon = load_app_icon()
