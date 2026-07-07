@@ -9,6 +9,9 @@ from moduly.pravni_pozadavky.constants import (
     SECTION_TYPE_LABELS,
 )
 from moduly.pravni_pozadavky.sluzby.legal_change_service import legal_change_service
+from moduly.pravni_pozadavky.sluzby.legal_change_impact_service import (
+    legal_change_impact_service,
+)
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
 from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
     legal_document_version_service,
@@ -36,6 +39,15 @@ def _fmt_datetime(value) -> str:
 
 def _text(value) -> str:
     return str(value or "").replace("\r\n", "\n").replace("\r", "\n").strip()
+
+
+@dataclass(frozen=True)
+class LegalChangeImpactExportLink:
+    target_type: str
+    target_id: int
+    link_type: str
+    note: str
+    active: bool
 
 
 @dataclass(frozen=True)
@@ -75,6 +87,9 @@ class LegalChangeExportRow:
     legal_section_title: str
     legal_section_text: str
     links: list[LegalChangeLinkExportRow]
+    total_impact_count: int
+    impact_counts_by_type: dict[str, int]
+    impact_links: list[LegalChangeImpactExportLink]
 
 
 @dataclass(frozen=True)
@@ -136,6 +151,8 @@ class LegalChangeExportContextService:
             change.id,
             include_inactive=include_inactive_links,
         )
+        impact = legal_change_impact_service.build_summary(change.id)
+        assert impact is not None
         return LegalChangeExportRow(
             change_id=change.id,
             change_type=CHANGE_TYPE_LABELS.get(change.change_type, change.change_type),
@@ -172,6 +189,18 @@ class LegalChangeExportContextService:
             legal_section_title=_text(section.title if section else ""),
             legal_section_text=_text(section.text if section else ""),
             links=[self._build_link_row(link) for link in links],
+            total_impact_count=impact.total_count,
+            impact_counts_by_type=dict(impact.counts_by_type),
+            impact_links=[self._build_impact_link_row(link) for link in impact.links],
+        )
+
+    def _build_impact_link_row(self, link) -> LegalChangeImpactExportLink:
+        return LegalChangeImpactExportLink(
+            target_type=_text(link.target_type),
+            target_id=link.target_id,
+            link_type=_text(link.link_type),
+            note=_text(link.note),
+            active=link.active,
         )
 
     def _build_link_row(self, link) -> LegalChangeLinkExportRow:

@@ -25,6 +25,7 @@ with patch.object(Path, "home", return_value=_TMP):
         ENTITY_LEGAL_CHANGE,
         ENTITY_LEGAL_REQUIREMENT,
         ENTITY_RISK,
+        ENTITY_TASK,
         LINK_RELATED,
     )
     from core.shared.sluzby.entity_link_service import entity_link_service
@@ -36,6 +37,9 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.pravni_pozadavky.sluzby.legal_change_export_context_service import (
         legal_change_export_context_service,
+    )
+    from moduly.pravni_pozadavky.sluzby.legal_change_impact_service import (
+        legal_change_impact_service,
     )
     from moduly.pravni_pozadavky.sluzby.legal_change_service import legal_change_service
     from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
@@ -284,6 +288,120 @@ class LegalChangeServiceTestCase(unittest.TestCase):
         self.assertEqual(len(row.links), 2)
         self.assertEqual(row.links[0].target_type, ENTITY_LEGAL_REQUIREMENT)
         self.assertEqual(row.links[1].target_type, ENTITY_RISK)
+        self.assertEqual(row.total_impact_count, 2)
+        self.assertEqual(row.impact_counts_by_type[ENTITY_LEGAL_REQUIREMENT], 1)
+        self.assertEqual(row.impact_counts_by_type[ENTITY_RISK], 1)
+        self.assertEqual(len(row.impact_links), 2)
+        self.assertTrue(all(link.active for link in row.impact_links))
+
+    def test_change_without_links_has_zero_impacts(self) -> None:
+        document = self._create_document()
+        change = self._create_change(document)
+
+        summary = legal_change_impact_service.build_summary(change.id)
+        assert summary is not None
+        self.assertEqual(summary.total_count, 0)
+        self.assertEqual(summary.counts_by_type, {})
+        self.assertEqual(summary.links, [])
+
+    def test_change_with_multiple_links_returns_correct_total_count(self) -> None:
+        document = self._create_document()
+        change = self._create_change(document)
+        entity_link_service.create(
+            source_type=ENTITY_LEGAL_CHANGE,
+            source_id=change.id,
+            target_type=ENTITY_LEGAL_REQUIREMENT,
+            target_id=1,
+        )
+        entity_link_service.create(
+            source_type=ENTITY_LEGAL_CHANGE,
+            source_id=change.id,
+            target_type=ENTITY_TASK,
+            target_id=2,
+        )
+        entity_link_service.create(
+            source_type=ENTITY_LEGAL_CHANGE,
+            source_id=change.id,
+            target_type=ENTITY_RISK,
+            target_id=3,
+        )
+
+        summary = legal_change_impact_service.build_summary(change.id)
+        assert summary is not None
+        self.assertEqual(summary.total_count, 3)
+        self.assertEqual(len(summary.links), 3)
+
+    def test_impact_counts_by_target_type(self) -> None:
+        document = self._create_document()
+        change = self._create_change(document)
+        entity_link_service.create(
+            source_type=ENTITY_LEGAL_CHANGE,
+            source_id=change.id,
+            target_type=ENTITY_LEGAL_REQUIREMENT,
+            target_id=10,
+        )
+        entity_link_service.create(
+            source_type=ENTITY_LEGAL_CHANGE,
+            source_id=change.id,
+            target_type=ENTITY_LEGAL_REQUIREMENT,
+            target_id=11,
+        )
+        entity_link_service.create(
+            source_type=ENTITY_LEGAL_CHANGE,
+            source_id=change.id,
+            target_type=ENTITY_RISK,
+            target_id=20,
+        )
+
+        summary = legal_change_impact_service.build_summary(change.id)
+        assert summary is not None
+        self.assertEqual(summary.counts_by_type[ENTITY_LEGAL_REQUIREMENT], 2)
+        self.assertEqual(summary.counts_by_type[ENTITY_RISK], 1)
+
+    def test_inactive_links_are_excluded_from_impacts(self) -> None:
+        document = self._create_document()
+        change = self._create_change(document)
+        active_link = entity_link_service.create(
+            source_type=ENTITY_LEGAL_CHANGE,
+            source_id=change.id,
+            target_type=ENTITY_TASK,
+            target_id=5,
+        )
+        inactive_link = entity_link_service.create(
+            source_type=ENTITY_LEGAL_CHANGE,
+            source_id=change.id,
+            target_type=ENTITY_RISK,
+            target_id=6,
+        )
+        entity_link_service.deactivate(inactive_link.id)
+
+        summary = legal_change_impact_service.build_summary(change.id)
+        assert summary is not None
+        self.assertEqual(summary.total_count, 1)
+        self.assertEqual(summary.links[0].target_type, ENTITY_TASK)
+        self.assertEqual(summary.links[0].target_id, active_link.target_id)
+        self.assertNotIn(ENTITY_RISK, summary.counts_by_type)
+
+    def test_export_includes_impacts(self) -> None:
+        document = self._create_document()
+        change = self._create_change(document)
+        entity_link_service.create(
+            source_type=ENTITY_LEGAL_CHANGE,
+            source_id=change.id,
+            target_type=ENTITY_LEGAL_REQUIREMENT,
+            target_id=99,
+            note="Dopad na požadavek",
+        )
+
+        context = legal_change_export_context_service.build_for_change(change.id)
+        assert context is not None
+        row = context.rows[0]
+        self.assertEqual(row.total_impact_count, 1)
+        self.assertEqual(row.impact_counts_by_type[ENTITY_LEGAL_REQUIREMENT], 1)
+        self.assertEqual(len(row.impact_links), 1)
+        self.assertEqual(row.impact_links[0].target_id, 99)
+        self.assertEqual(row.impact_links[0].note, "Dopad na požadavek")
+        self.assertTrue(row.impact_links[0].active)
 
 
 if __name__ == "__main__":

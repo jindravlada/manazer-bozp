@@ -27,6 +27,7 @@ from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
     legal_document_version_service,
 )
 from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
+from moduly.pravni_pozadavky.ui.legal_change_impacts_tab import LegalChangeImpactsTab
 
 
 class LegalChangeDialog(QDialog):
@@ -50,8 +51,12 @@ class LegalChangeDialog(QDialog):
             links_layout = QVBoxLayout(links_tab)
             links_layout.addWidget(QLabel("Vazby lze přidat až po uložení změny."))
             self.tabs.addTab(links_tab, "Vazby")
+            impacts_tab = LegalChangeImpactsTab()
+            self.tabs.addTab(impacts_tab, "Dopady")
         else:
             self.tabs.addTab(self.links_widget, "Vazby")
+            self.impacts_tab = LegalChangeImpactsTab(change_id=change.id)
+            self.tabs.addTab(self.impacts_tab, "Dopady")
         layout.addWidget(self.tabs, 1)
         layout.addWidget(create_save_cancel_box(self))
 
