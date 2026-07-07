@@ -32,6 +32,33 @@ class LegalRequirementRepository:
                 stmt = stmt.where(LegalRequirement.source_section_id.in_(section_ids))
             return {value for value in session.scalars(stmt) if value is not None}
 
+    def get_by_source_section_id(self, section_id: int) -> LegalRequirement | None:
+        with get_session() as session:
+            stmt = (
+                select(LegalRequirement)
+                .where(LegalRequirement.source_section_id == section_id)
+                .order_by(
+                    LegalRequirement.active.desc(),
+                    LegalRequirement.id.desc(),
+                )
+            )
+            return session.scalars(stmt).first()
+
+    def list_by_source_section_ids(self, section_ids: list[int]) -> list[LegalRequirement]:
+        if not section_ids:
+            return []
+        with get_session() as session:
+            stmt = (
+                select(LegalRequirement)
+                .where(LegalRequirement.source_section_id.in_(section_ids))
+                .order_by(
+                    LegalRequirement.source_section_id,
+                    LegalRequirement.active.desc(),
+                    LegalRequirement.id.desc(),
+                )
+            )
+            return list(session.scalars(stmt))
+
     def add(self, requirement: LegalRequirement) -> LegalRequirement:
         with get_session() as session:
             session.add(requirement)

@@ -6,6 +6,9 @@ from moduly.pravni_pozadavky.constants import (
     COMPLIANCE_NENI_RELEVANTNI,
     DEFAULT_PROCESSING_STATUS,
     PERIODICITY_MONTHS,
+    PROCESSING_APPROVED,
+    REQUIREMENT_STATUS_APPROVED,
+    REQUIREMENT_STATUS_EXISTS,
     VALID_COMPLIANCE_STATUSES,
     VALID_PERIODICITIES,
     VALID_PROCESSING_STATUSES,
@@ -76,6 +79,23 @@ class LegalRequirementService:
 
     def get_source_section_ids(self, section_ids: list[int] | None = None) -> set[int]:
         return self.repository.list_source_section_ids(section_ids=section_ids)
+
+    def get_by_source_section_id(self, section_id: int) -> LegalRequirement | None:
+        return self.repository.get_by_source_section_id(section_id)
+
+    def get_source_section_requirement_statuses(
+        self,
+        section_ids: list[int],
+    ) -> dict[int, str]:
+        statuses: dict[int, str] = {}
+        for requirement in self.repository.list_by_source_section_ids(section_ids):
+            if requirement.source_section_id is None:
+                continue
+            if requirement.processing_status == PROCESSING_APPROVED:
+                statuses[requirement.source_section_id] = REQUIREMENT_STATUS_APPROVED
+            elif requirement.source_section_id not in statuses:
+                statuses[requirement.source_section_id] = REQUIREMENT_STATUS_EXISTS
+        return statuses
 
     def create_requirement(
         self,

@@ -3,6 +3,11 @@ from PySide6.QtGui import QColor, QBrush
 from PySide6.QtWidgets import QHeaderView, QTreeWidget, QTreeWidgetItem
 
 from moduly.pravni_pozadavky.constants import (
+    REQUIREMENT_STATUS_APPROVED,
+    REQUIREMENT_STATUS_EXISTS,
+    REQUIREMENT_TREE_ICON_APPROVED,
+    REQUIREMENT_TREE_ICON_EXISTS,
+    REQUIREMENT_TREE_ICON_NONE,
     SECTION_DIVISION,
     SECTION_HEAD,
     SECTION_LETTER,
@@ -29,6 +34,36 @@ def build_section_children_map(sections) -> dict[int | None, list]:
     for child_list in children_by_parent.values():
         child_list.sort(key=lambda item: (item.sort_order, item.id))
     return children_by_parent
+
+
+def ordered_processable_sections(sections) -> list:
+    return sorted(
+        [
+            section
+            for section in sections
+            if section.active and LegalSectionTree.allows_requirement_creation(section.section_type)
+        ],
+        key=lambda item: (item.sort_order, item.id),
+    )
+
+
+def next_processable_section(sections, current_section_id: int):
+    ordered = ordered_processable_sections(sections)
+    for index, section in enumerate(ordered):
+        if section.id == current_section_id and index + 1 < len(ordered):
+            return ordered[index + 1]
+    return None
+
+
+def requirement_tree_icon(section, section_requirement_statuses: dict[int, str]) -> str:
+    if not LegalSectionTree.allows_requirement_creation(section.section_type):
+        return ""
+    status = section_requirement_statuses.get(section.id)
+    if status == REQUIREMENT_STATUS_APPROVED:
+        return REQUIREMENT_TREE_ICON_APPROVED
+    if status == REQUIREMENT_STATUS_EXISTS:
+        return REQUIREMENT_TREE_ICON_EXISTS
+    return REQUIREMENT_TREE_ICON_NONE
 
 
 class LegalSectionTree(QTreeWidget):
@@ -92,15 +127,22 @@ class LegalSectionTree(QTreeWidget):
         sections,
         *,
         sections_with_requirements: set[int] | None = None,
+        section_requirement_statuses: dict[int, str] | None = None,
     ) -> None:
-        requirement_section_ids = sections_with_requirements or set()
+        resolved_statuses = section_requirement_statuses
+        if resolved_statuses is None and sections_with_requirements:
+            resolved_statuses = {
+                section_id: REQUIREMENT_STATUS_EXISTS
+                for section_id in sections_with_requirements
+            }
+        requirement_statuses = resolved_statuses or {}
         self.clear()
         children_by_parent = build_section_children_map(sections)
         self._add_children(
             parent_item=None,
             child_sections=children_by_parent.get(None, []),
             children_by_parent=children_by_parent,
-            sections_with_requirements=requirement_section_ids,
+            section_requirement_statuses=requirement_statuses,
         )
         self._apply_expand_state()
 
@@ -110,10 +152,10 @@ class LegalSectionTree(QTreeWidget):
         parent_item: QTreeWidgetItem | None,
         child_sections,
         children_by_parent: dict[int | None, list],
-        sections_with_requirements: set[int],
+        section_requirement_statuses: dict[int, str],
     ) -> None:
         for section in child_sections:
-            item = self._create_item(section, sections_with_requirements)
+            item = self._create_item(section, section_requirement_statuses)
             if parent_item is None:
                 self.addTopLevelItem(item)
             else:
@@ -125,10 +167,10 @@ class LegalSectionTree(QTreeWidget):
                     parent_item=item,
                     child_sections=grandchildren,
                     children_by_parent=children_by_parent,
-                    sections_with_requirements=sections_with_requirements,
+                    section_requirement_statuses=section_requirement_statuses,
                 )
 
-    def _create_item(self, section, sections_with_requirements: set[int]) -> QTreeWidgetItem:
+    def _create_item(self, section, section_requirement_statuses: dict[int, str]) -> QTreeWidgetItem:
         section_type = SECTION_TYPE_LABELS.get(
             section.section_type,
             section.section_type,
@@ -142,7 +184,7 @@ class LegalSectionTree(QTreeWidget):
             section.title or "",
             str(section.sort_order),
             "Ano" if section.active else "Ne",
-            "Ano" if section.id in sections_with_requirements else "Ne",
+            requirement_tree_icon(section, section_requirement_statuses),
         ])
         item.setData(self.COLUMN_ID, Qt.ItemDataRole.UserRole, section.id)
         item.setData(self.COLUMN_TYPE, Qt.ItemDataRole.UserRole, section.section_type)
@@ -190,3 +232,26 @@ class LegalSectionTree(QTreeWidget):
             self.topLevelItem(index).data(self.COLUMN_TYPE, Qt.ItemDataRole.UserRole)
             for index in range(self.topLevelItemCount())
         ]
+
+    def find_item_by_section_id(self, section_id: int) -> QTreeWidgetItem | None:
+        def walk(item: QTreeWidgetItem) -> QTreeWidgetItem | None:
+            if item.data(self.COLUMN_ID, Qt.ItemDataRole.UserRole) == section_id:
+                return item
+            for index in range(item.childCount()):
+                found = walk(item.child(index))
+                if found is not None:
+                    return found
+            return None
+
+        for index in range(self.topLevelItemCount()):
+            found = walk(self.topLevelItem(index))
+            if found is not None:
+                return found
+        return None
+
+    def select_section_id(self, section_id: int) -> bool:
+        item = self.find_item_by_section_id(section_id)
+        if item is None:
+            return False
+        self.setCurrentItem(item)
+        return True

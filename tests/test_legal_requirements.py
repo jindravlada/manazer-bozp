@@ -647,7 +647,7 @@ class LegalRequirementServiceTestCase(unittest.TestCase):
                 requirement_value = item.text(LegalSectionTree.COLUMN_REQUIREMENT)
                 break
 
-        self.assertEqual(requirement_value, "Ano")
+        self.assertEqual(requirement_value, "●")
 
     def test_section_table_detects_existing_requirement(self) -> None:
         document = self._create_document()

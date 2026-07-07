@@ -16,6 +16,7 @@ from core.widgets.dialog_utils import (
 )
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.pravni_pozadavky.ui.legal_document_sections_tab import LegalDocumentSectionsTab
+from moduly.pravni_pozadavky.ui.legal_document_workbench_tab import LegalDocumentWorkbenchTab
 
 
 class LegalDocumentVersionDialog(QDialog):
@@ -38,6 +39,11 @@ class LegalDocumentVersionDialog(QDialog):
             version_id=version.id if version is not None else None,
         )
         self.tabs.addTab(wrap_in_scroll_area(self.sections_tab), "Struktura")
+        self.workbench_tab = LegalDocumentWorkbenchTab(
+            document_id=resolved_document_id,
+            version_id=version.id if version is not None else None,
+        )
+        self.tabs.addTab(self.workbench_tab, "Pracovní režim")
         layout.addWidget(self.tabs, 1)
         add_save_cancel_footer(layout, self)
 

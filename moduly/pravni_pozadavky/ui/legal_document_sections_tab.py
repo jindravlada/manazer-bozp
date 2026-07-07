@@ -83,10 +83,12 @@ class LegalDocumentSectionsTab(QWidget):
             include_inactive=True,
         )
         section_ids = [section.id for section in sections]
-        sections_with_requirements = legal_requirement_service.get_source_section_ids(section_ids)
+        section_statuses = legal_requirement_service.get_source_section_requirement_statuses(
+            section_ids,
+        )
         self.tree.load_sections(
             sections,
-            sections_with_requirements=sections_with_requirements,
+            section_requirement_statuses=section_statuses,
         )
         self._update_action_buttons()
 
