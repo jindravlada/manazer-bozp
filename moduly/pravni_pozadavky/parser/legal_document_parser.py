@@ -1,5 +1,6 @@
 import json
 import re
+from dataclasses import dataclass
 from pathlib import Path
 
 from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_LABELS, VALID_DOCUMENT_TYPES
@@ -33,6 +34,62 @@ _SECTION_DEBUG_LABELS = {
 
 def _debug(message: str) -> None:
     print(f"[LegalDocumentParser] {message}", flush=True)
+
+
+@dataclass
+class _HierarchyContext:
+    current_part: int | None = None
+    current_head: int | None = None
+    current_section: int | None = None
+    current_paragraph: int | None = None
+    current_subsection: int | None = None
+
+    def parent_for(self, section_type: str) -> int | None:
+        if section_type == SECTION_PART:
+            return None
+        if section_type == SECTION_HEAD:
+            return self.current_part
+        if section_type == SECTION_DIVISION:
+            return self.current_head or self.current_part
+        if section_type == SECTION_PARAGRAPH:
+            return self.current_section or self.current_head or self.current_part
+        if section_type == SECTION_SUBSECTION:
+            return self.current_paragraph
+        if section_type == SECTION_LETTER:
+            return self.current_subsection or self.current_paragraph
+        return None
+
+    def register(self, section: ParsedLegalSection) -> None:
+        sort_order = section.sort_order
+        if section.section_type == SECTION_PART:
+            self.current_part = sort_order
+            self.current_head = None
+            self.current_section = None
+            self.current_paragraph = None
+            self.current_subsection = None
+            return
+
+        if section.section_type == SECTION_HEAD:
+            self.current_head = sort_order
+            self.current_section = None
+            self.current_paragraph = None
+            self.current_subsection = None
+            return
+
+        if section.section_type == SECTION_DIVISION:
+            self.current_section = sort_order
+            self.current_paragraph = None
+            self.current_subsection = None
+            return
+
+        if section.section_type == SECTION_PARAGRAPH:
+            self.current_paragraph = sort_order
+            self.current_subsection = None
+            return
+
+        if section.section_type == SECTION_SUBSECTION:
+            self.current_subsection = sort_order
+            return
 
 
 class LegalDocumentParser:
@@ -108,13 +165,16 @@ class LegalDocumentParser:
         sort_order = 0
         current: ParsedLegalSection | None = None
         awaiting_paragraph_title = False
+        hierarchy = _HierarchyContext()
 
         def flush_current() -> None:
             nonlocal current, awaiting_paragraph_title, sort_order
             if current is not None and self._has_content(current):
                 sort_order += 1
                 current.sort_order = sort_order
+                current.parent_sort_order = hierarchy.parent_for(current.section_type)
                 sections.append(current)
+                hierarchy.register(current)
                 self._debug_section(current)
             current = None
             awaiting_paragraph_title = False
@@ -225,10 +285,11 @@ class LegalDocumentParser:
         else:
             identifier = section.section_number
         identifier = identifier.strip()
+        parent = section.parent_sort_order
         if identifier:
-            _debug(f"{label} {identifier} text={len(section.text)}")
+            _debug(f"{label} {identifier} parent={parent} text={len(section.text)}")
         else:
-            _debug(f"{label} text={len(section.text)}")
+            _debug(f"{label} parent={parent} text={len(section.text)}")
 
     def _has_content(self, section: ParsedLegalSection) -> bool:
         return bool(

@@ -91,14 +91,17 @@ class LegalDocumentJsonImportService:
         )
 
         section_count = 0
+        created_sections: list[tuple] = []
+        sort_order_to_id: dict[int, int] = {}
+
         for index, section_data in enumerate(sections_data):
             if not isinstance(section_data, dict):
                 raise ValueError(f"Část předpisu na pozici {index + 1} musí být objekt.")
-            legal_section_service.create(
+            section = legal_section_service.create(
                 legal_document_id=document.id,
                 legal_document_version_id=version.id,
                 section_type=self._optional_text(section_data.get("section_type")),
-                parent_section_id=self._optional_int(section_data.get("parent_section_id")),
+                parent_section_id=None,
                 section_number=self._optional_text(section_data.get("section_number")),
                 paragraph=self._optional_text(section_data.get("paragraph")),
                 item_letter=self._optional_text(section_data.get("item_letter")),
@@ -107,7 +110,34 @@ class LegalDocumentJsonImportService:
                 sort_order=self._optional_int(section_data.get("sort_order"), default=0) or 0,
                 note=self._optional_text(section_data.get("note")),
             )
+            created_sections.append((section, section_data))
+            sort_order = self._optional_int(section_data.get("sort_order"), default=section.sort_order)
+            if sort_order is not None:
+                sort_order_to_id[sort_order] = section.id
             section_count += 1
+
+        for section, section_data in created_sections:
+            parent_sort_order = self._optional_int(section_data.get("parent_sort_order"))
+            if parent_sort_order is None:
+                continue
+            parent_section_id = sort_order_to_id.get(parent_sort_order)
+            if parent_section_id is None:
+                continue
+            legal_section_service.update(
+                section.id,
+                legal_document_id=document.id,
+                legal_document_version_id=version.id,
+                section_type=section.section_type,
+                parent_section_id=parent_section_id,
+                section_number=section.section_number,
+                paragraph=section.paragraph,
+                item_letter=section.item_letter,
+                title=section.title,
+                text=section.text,
+                sort_order=section.sort_order,
+                note=section.note,
+                active=section.active,
+            )
 
         return LegalDocumentJsonImportResult(
             document_id=document.id,

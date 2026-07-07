@@ -175,6 +175,61 @@ class LegalDocumentParserTestCase(unittest.TestCase):
         import_result = legal_document_json_import_service.import_data(result.to_dict())
         self.assertGreater(import_result.section_count, 0)
 
+    def _section_by_sort(self, sections, sort_order: int):
+        return next(section for section in sections if section.sort_order == sort_order)
+
+    def test_head_parent_is_part(self) -> None:
+        result = self._parse_sample()
+        part = self._section_by_sort(result.sections, 1)
+        head = self._section_by_sort(result.sections, 2)
+
+        self.assertEqual(part.section_type, SECTION_PART)
+        self.assertEqual(head.section_type, SECTION_HEAD)
+        self.assertIsNone(part.parent_sort_order)
+        self.assertEqual(head.parent_sort_order, part.sort_order)
+
+    def test_paragraph_parent_is_division(self) -> None:
+        result = self._parse_sample()
+        division = self._section_by_sort(result.sections, 3)
+        paragraph = self._section_by_sort(result.sections, 4)
+
+        self.assertEqual(division.section_type, SECTION_DIVISION)
+        self.assertEqual(paragraph.section_type, SECTION_PARAGRAPH)
+        self.assertEqual(paragraph.parent_sort_order, division.sort_order)
+
+    def test_subsection_parent_is_paragraph(self) -> None:
+        result = self._parse_sample()
+        paragraph = self._section_by_sort(result.sections, 4)
+        subsection = self._section_by_sort(result.sections, 5)
+
+        self.assertEqual(subsection.section_type, SECTION_SUBSECTION)
+        self.assertEqual(subsection.parent_sort_order, paragraph.sort_order)
+
+    def test_letter_parent_is_subsection(self) -> None:
+        result = self._parse_sample()
+        subsection = self._section_by_sort(result.sections, 6)
+        letter = self._section_by_sort(result.sections, 7)
+
+        self.assertEqual(letter.section_type, SECTION_LETTER)
+        self.assertEqual(letter.parent_sort_order, subsection.sort_order)
+
+    def test_import_sets_parent_section_id(self) -> None:
+        result = self._parse_sample()
+        import_result = legal_document_json_import_service.import_data(result.to_dict())
+        db_sections = legal_section_service.list_by_version(import_result.version_id)
+
+        sort_order_to_id = {section.sort_order: section.id for section in db_sections}
+        parsed_by_sort = {section.sort_order: section for section in result.sections}
+
+        for db_section in db_sections:
+            parsed_section = parsed_by_sort.get(db_section.sort_order)
+            assert parsed_section is not None
+            if parsed_section.parent_sort_order is None:
+                self.assertIsNone(db_section.parent_section_id)
+            else:
+                expected_parent_id = sort_order_to_id.get(parsed_section.parent_sort_order)
+                self.assertEqual(db_section.parent_section_id, expected_parent_id)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -15,7 +15,7 @@ from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requi
 from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
 from moduly.pravni_pozadavky.ui.legal_requirement_dialog import LegalRequirementDialog
 from moduly.pravni_pozadavky.ui.legal_section_dialog import LegalSectionDialog
-from moduly.pravni_pozadavky.ui.legal_section_table import LegalSectionTable
+from moduly.pravni_pozadavky.ui.legal_section_tree import LegalSectionTree
 
 
 class LegalDocumentSectionsTab(QWidget):
@@ -32,10 +32,11 @@ class LegalDocumentSectionsTab(QWidget):
 
         if version_id is None:
             layout.addWidget(QLabel("Strukturu lze přidat až po uložení verze předpisu."))
-            self.table = None
+            self.tree = None
             self.add_btn = None
             self.edit_btn = None
             self.toggle_btn = None
+            self.create_requirement_btn = None
             return
 
         toolbar = QHBoxLayout()
@@ -49,22 +50,22 @@ class LegalDocumentSectionsTab(QWidget):
         toolbar.addWidget(self.toggle_btn)
         toolbar.addStretch()
 
-        self.table = LegalSectionTable()
+        self.tree = LegalSectionTree()
 
         layout.addLayout(toolbar)
-        layout.addWidget(self.table)
+        layout.addWidget(self.tree)
 
         self.add_btn.clicked.connect(self.add_section)
         self.create_requirement_btn.clicked.connect(self.create_requirement_from_section)
         self.edit_btn.clicked.connect(self.edit_selected_section)
         self.toggle_btn.clicked.connect(self.toggle_selected_section)
-        self.table.doubleClicked.connect(self.edit_selected_section)
-        self.table.itemSelectionChanged.connect(self._update_action_buttons)
+        self.tree.itemDoubleClicked.connect(self._on_item_double_clicked)
+        self.tree.itemSelectionChanged.connect(self._update_action_buttons)
 
         self.refresh()
 
     def refresh(self) -> None:
-        if self.table is None or self.version_id is None:
+        if self.tree is None or self.version_id is None:
             return
         sections = legal_section_service.list_by_version(
             self.version_id,
@@ -72,28 +73,35 @@ class LegalDocumentSectionsTab(QWidget):
         )
         section_ids = [section.id for section in sections]
         sections_with_requirements = legal_requirement_service.get_source_section_ids(section_ids)
-        self.table.load_sections(
+        self.tree.load_sections(
             sections,
             sections_with_requirements=sections_with_requirements,
         )
         self._update_action_buttons()
 
     def _selected_section(self):
-        if self.table is None:
+        if self.tree is None:
             return None
-        section_id = self.table.selected_section_id()
+        section_id = self.tree.selected_section_id()
         if section_id is None:
             return None
         return legal_section_service.get_by_id(section_id)
 
     def _update_action_buttons(self) -> None:
-        if self.toggle_btn is None:
+        if self.toggle_btn is None or self.create_requirement_btn is None:
             return
         section = self._selected_section()
+        section_type = self.tree.selected_section_type() if self.tree is not None else None
+        self.create_requirement_btn.setEnabled(
+            LegalSectionTree.allows_requirement_creation(section_type),
+        )
         if section is None:
             self.toggle_btn.setText("Deaktivovat")
             return
         self.toggle_btn.setText("Obnovit" if not section.active else "Deaktivovat")
+
+    def _on_item_double_clicked(self, _item, _column: int) -> None:
+        self.edit_selected_section()
 
     def add_section(self) -> None:
         if self.document_id is None or self.version_id is None:
@@ -118,6 +126,14 @@ class LegalDocumentSectionsTab(QWidget):
         section = self._selected_section()
         if section is None:
             QMessageBox.information(self, "Právní požadavek", "Vyberte ustanovení předpisu.")
+            return
+
+        if not LegalSectionTree.allows_requirement_creation(section.section_type):
+            QMessageBox.information(
+                self,
+                "Právní požadavek",
+                "Právní požadavek lze vytvořit pouze z paragrafu, odstavce nebo písmene.",
+            )
             return
 
         try:

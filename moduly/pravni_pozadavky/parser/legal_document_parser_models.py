@@ -17,10 +17,11 @@ class ParsedLegalSection:
     title: str = ""
     text: str = ""
     sort_order: int = 0
+    parent_sort_order: int | None = None
     note: str = ""
 
     def to_dict(self) -> dict:
-        return {
+        data = {
             "section_type": self.section_type,
             "section_number": self.section_number,
             "paragraph": self.paragraph,
@@ -30,6 +31,9 @@ class ParsedLegalSection:
             "sort_order": self.sort_order,
             "note": self.note,
         }
+        if self.parent_sort_order is not None:
+            data["parent_sort_order"] = self.parent_sort_order
+        return data
 
 
 @dataclass
