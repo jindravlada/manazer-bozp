@@ -129,6 +129,42 @@ class LegalDocumentParserDiagnosticsTestCase(unittest.TestCase):
         self.assertIn("Počet všech částí: 7", completed.stdout)
         self.assertIn("hierarchy_ok: Ano", completed.stdout)
 
+    def test_cli_prints_hierarchy_errors_for_invalid_txt(self) -> None:
+        with tempfile.NamedTemporaryFile("w", suffix=".txt", encoding="utf-8", delete=False) as handle:
+            handle.write("§ 1\nNadpis\na) písmeno bez odstavce\n")
+            invalid_path = handle.name
+
+        try:
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(CLI_PATH),
+                    invalid_path,
+                    "--title",
+                    "Neplatný předpis",
+                    "--type",
+                    "Zákon",
+                    "--number",
+                    "1",
+                    "--year",
+                    "2026",
+                ],
+                cwd=PROJECT_ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        finally:
+            Path(invalid_path).unlink(missing_ok=True)
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn("hierarchy_ok: Ne", completed.stdout)
+        self.assertIn("Celkový počet chyb hierarchie: 2", completed.stdout)
+        self.assertIn("Prvních 2 chyb hierarchie:", completed.stdout)
+        self.assertIn("section_type=pismeno", completed.stdout)
+        self.assertIn("parent_sort_order=1", completed.stdout)
+        self.assertIn("Neplatný rodič", completed.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

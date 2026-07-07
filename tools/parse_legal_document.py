@@ -14,8 +14,36 @@ if str(PROJECT_ROOT) not in sys.path:
 from moduly.pravni_pozadavky.constants import SECTION_TYPE_LABELS
 from moduly.pravni_pozadavky.parser.legal_document_parser import legal_document_parser
 from moduly.pravni_pozadavky.parser.legal_document_parser_diagnostics import (
+    HierarchyError,
+    ParserDiagnosticsResult,
     legal_document_parser_diagnostics,
 )
+
+
+def _print_hierarchy_errors(diagnostics: ParserDiagnosticsResult, show_errors: int) -> None:
+    error_count = len(diagnostics.errors)
+    print(f"Celkový počet chyb hierarchie: {error_count}")
+    if show_errors <= 0 or error_count == 0:
+        return
+
+    limit = min(show_errors, error_count)
+    print(f"Prvních {limit} chyb hierarchie:")
+    for error in diagnostics.errors[:limit]:
+        _print_hierarchy_error(error)
+
+
+def _print_hierarchy_error(error: HierarchyError) -> None:
+    parent_sort_order = (
+        str(error.parent_sort_order) if error.parent_sort_order is not None else "-"
+    )
+    print(
+        "  "
+        f"sort_order={error.sort_order}, "
+        f"section_type={error.section_type}, "
+        f"section_number={error.section_number}, "
+        f"parent_sort_order={parent_sort_order}, "
+        f"message={error.message}"
+    )
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -27,6 +55,12 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--year", type=int, default=None, help="Rok vydání předpisu.")
     parser.add_argument("--export-tree", dest="export_tree", help="Cesta pro export stromu do TXT.")
     parser.add_argument("--export-json", dest="export_json", help="Cesta pro export JSON.")
+    parser.add_argument(
+        "--show-errors",
+        type=int,
+        default=30,
+        help="Počet chyb hierarchie k výpisu (0 = nevypisovat).",
+    )
     return parser
 
 
@@ -60,6 +94,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  {label}: {count}")
     print(f"Počet chyb hierarchie: {len(diagnostics.errors)}")
     print(f"hierarchy_ok: {'Ano' if diagnostics.hierarchy_ok else 'Ne'}")
+    _print_hierarchy_errors(diagnostics, args.show_errors)
 
     if args.export_tree:
         legal_document_parser_diagnostics.export_tree(parse_result, args.export_tree)
