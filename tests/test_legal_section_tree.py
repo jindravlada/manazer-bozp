@@ -38,6 +38,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.pravni_pozadavky.ui.legal_section_tree import (
         LegalSectionTree,
         build_section_children_map,
+        load_version_sections_into_tree,
     )
 
 
@@ -65,6 +66,51 @@ def _section(
         active=active,
         text="",
     )
+
+
+def _tree_node_signature(item) -> tuple:
+    from PySide6.QtCore import Qt
+
+    children = tuple(
+        _tree_node_signature(item.child(index))
+        for index in range(item.childCount())
+    )
+    return (
+        item.data(LegalSectionTree.COLUMN_TYPE, Qt.ItemDataRole.UserRole),
+        item.text(LegalSectionTree.COLUMN_PARAGRAPH),
+        item.text(LegalSectionTree.COLUMN_NUMBER),
+        item.text(LegalSectionTree.COLUMN_LETTER),
+        children,
+    )
+
+
+def _tree_signature(tree: LegalSectionTree) -> tuple:
+    return tuple(
+        _tree_node_signature(tree.topLevelItem(index))
+        for index in range(tree.topLevelItemCount())
+    )
+
+
+def _import_nv_390_sections():
+    from pathlib import Path
+    from unittest.mock import patch
+
+    from moduly.pravni_pozadavky.import_export.legal_document_esbirka_client import (
+        legal_document_esbirka_client,
+    )
+    from moduly.pravni_pozadavky.import_export.legal_document_internet_import_service import (
+        legal_document_internet_import_service,
+    )
+
+    fixture = Path(__file__).resolve().parent / "data" / "sample_esbirka_390_2021.html"
+    html = fixture.read_text(encoding="utf-8")
+    with patch.object(legal_document_esbirka_client, "fetch_full_text_html", return_value=html):
+        result = legal_document_internet_import_service.import_from_internet(
+            document_type="narizeni_vlady",
+            number="390",
+            year=2021,
+        )
+    return legal_section_service.list_by_version(result.version_id)
 
 
 def _find_item_by_paragraph(tree: LegalSectionTree, paragraph: str):
@@ -264,6 +310,23 @@ class LegalSectionTreeWidgetTestCase(unittest.TestCase):
         self.assertTrue(paragraph_item.isExpanded())
         self.assertGreaterEqual(paragraph_item.childCount(), 2)
 
+    def test_sample_zakonik_structure_shows_letters_under_subsection_2(self) -> None:
+        from PySide6.QtCore import Qt
+
+        tree = LegalSectionTree()
+        tree.load_sections(_sample_zakonik_sections())
+
+        paragraph_item = _find_item_by_paragraph(tree, "101")
+        assert paragraph_item is not None
+        subsection_two = paragraph_item.child(1)
+        self.assertEqual(
+            subsection_two.data(LegalSectionTree.COLUMN_TYPE, Qt.ItemDataRole.UserRole),
+            SECTION_SUBSECTION,
+        )
+        self.assertTrue(subsection_two.isExpanded())
+        self.assertEqual(subsection_two.childCount(), 1)
+        self.assertEqual(subsection_two.child(0).text(LegalSectionTree.COLUMN_LETTER), "a")
+
     def test_expands_on_double_click_is_disabled(self) -> None:
         tree = LegalSectionTree()
         self.assertFalse(tree.expandsOnDoubleClick())
@@ -327,6 +390,76 @@ class LegalSectionTreeWidgetTestCase(unittest.TestCase):
 
         paragraph_item.setExpanded(False)
         self.assertFalse(paragraph_item.isExpanded())
+
+
+class LegalSectionTreeNv390TestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        import os
+
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from PySide6.QtWidgets import QApplication
+
+        cls._app = QApplication.instance() or QApplication([])
+
+    def setUp(self) -> None:
+        from sqlalchemy import delete
+
+        from core.database.session import get_session
+        from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
+        from moduly.pravni_pozadavky.modely.legal_document_version import LegalDocumentVersion
+        from moduly.pravni_pozadavky.modely.legal_section import LegalSection
+
+        with get_session() as session:
+            session.execute(delete(LegalSection))
+            session.execute(delete(LegalDocumentVersion))
+            session.execute(delete(LegalDocument))
+            session.commit()
+
+        self.sections = _import_nv_390_sections()
+
+    def test_section_3_shows_letters_under_subsection_1(self) -> None:
+        from PySide6.QtCore import Qt
+
+        tree = LegalSectionTree()
+        load_version_sections_into_tree(tree, self.sections)
+
+        paragraph_item = _find_item_by_paragraph(tree, "3")
+        self.assertIsNotNone(paragraph_item)
+        assert paragraph_item is not None
+        self.assertTrue(paragraph_item.isExpanded())
+        self.assertGreaterEqual(paragraph_item.childCount(), 1)
+
+        subsection_one = paragraph_item.child(0)
+        self.assertEqual(
+            subsection_one.data(LegalSectionTree.COLUMN_TYPE, Qt.ItemDataRole.UserRole),
+            SECTION_SUBSECTION,
+        )
+        self.assertEqual(subsection_one.text(LegalSectionTree.COLUMN_NUMBER), "1")
+        self.assertTrue(subsection_one.isExpanded())
+        self.assertEqual(subsection_one.childCount(), 4)
+        self.assertEqual(subsection_one.child(0).text(LegalSectionTree.COLUMN_LETTER), "a")
+        self.assertEqual(subsection_one.child(1).text(LegalSectionTree.COLUMN_LETTER), "b")
+        self.assertEqual(subsection_one.child(2).text(LegalSectionTree.COLUMN_LETTER), "c")
+        self.assertEqual(subsection_one.child(3).text(LegalSectionTree.COLUMN_LETTER), "d")
+
+    def test_struktura_and_workbench_use_same_tree_hierarchy(self) -> None:
+        from moduly.pravni_pozadavky.ui.legal_document_sections_tab import LegalDocumentSectionsTab
+        from moduly.pravni_pozadavky.ui.legal_document_workbench_tab import LegalDocumentWorkbenchTab
+
+        document = legal_document_service.get_by_id(self.sections[0].legal_document_id)
+        assert document is not None
+        version_id = self.sections[0].legal_document_version_id
+
+        sections_tab = LegalDocumentSectionsTab(document_id=document.id, version_id=version_id)
+        workbench_tab = LegalDocumentWorkbenchTab(document_id=document.id, version_id=version_id)
+
+        assert sections_tab.tree is not None
+        assert workbench_tab.tree is not None
+        self.assertEqual(
+            _tree_signature(sections_tab.tree),
+            _tree_signature(workbench_tab.tree),
+        )
 
 
 class LegalDocumentSectionsTabDoubleClickTestCase(unittest.TestCase):

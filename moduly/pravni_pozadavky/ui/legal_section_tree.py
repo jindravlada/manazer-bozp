@@ -22,7 +22,25 @@ _DEFAULT_EXPANDED_TYPES = frozenset({
     SECTION_HEAD,
     SECTION_DIVISION,
     SECTION_PARAGRAPH,
+    SECTION_SUBSECTION,
 })
+
+
+def load_version_sections_into_tree(
+    tree: LegalSectionTree,
+    sections,
+    *,
+    section_requirement_statuses: dict[int, str] | None = None,
+) -> None:
+    statuses = section_requirement_statuses
+    if statuses is None:
+        from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
+            legal_requirement_service,
+        )
+
+        section_ids = [section.id for section in sections]
+        statuses = legal_requirement_service.get_source_section_requirement_statuses(section_ids)
+    tree.load_sections(sections, section_requirement_statuses=statuses)
 
 
 def build_section_children_map(sections) -> dict[int | None, list]:

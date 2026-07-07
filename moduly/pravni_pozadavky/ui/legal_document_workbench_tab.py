@@ -17,6 +17,7 @@ from moduly.pravni_pozadavky.ui.legal_requirement_workbench_editor import (
 )
 from moduly.pravni_pozadavky.ui.legal_section_tree import (
     LegalSectionTree,
+    load_version_sections_into_tree,
     next_processable_section,
 )
 
@@ -78,14 +79,7 @@ class LegalDocumentWorkbenchTab(QWidget):
             self.version_id,
             include_inactive=True,
         )
-        section_ids = [section.id for section in self._sections]
-        section_statuses = legal_requirement_service.get_source_section_requirement_statuses(
-            section_ids,
-        )
-        self.tree.load_sections(
-            self._sections,
-            section_requirement_statuses=section_statuses,
-        )
+        load_version_sections_into_tree(self.tree, self._sections)
 
     def _on_section_selected(self) -> None:
         if self._suppress_selection_load or self.tree is None or self.editor is None:

@@ -15,7 +15,7 @@ from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requi
 from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
 from moduly.pravni_pozadavky.ui.legal_requirement_dialog import LegalRequirementDialog
 from moduly.pravni_pozadavky.ui.legal_section_dialog import LegalSectionDialog
-from moduly.pravni_pozadavky.ui.legal_section_tree import LegalSectionTree
+from moduly.pravni_pozadavky.ui.legal_section_tree import LegalSectionTree, load_version_sections_into_tree
 
 
 def _find_pravni_pozadavky_page(widget):
@@ -82,14 +82,7 @@ class LegalDocumentSectionsTab(QWidget):
             self.version_id,
             include_inactive=True,
         )
-        section_ids = [section.id for section in sections]
-        section_statuses = legal_requirement_service.get_source_section_requirement_statuses(
-            section_ids,
-        )
-        self.tree.load_sections(
-            sections,
-            section_requirement_statuses=section_statuses,
-        )
+        load_version_sections_into_tree(self.tree, sections)
         self._update_action_buttons()
 
     def _selected_section(self):
