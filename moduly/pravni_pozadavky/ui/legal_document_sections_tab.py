@@ -8,7 +8,12 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import exec_maximized
+from moduly.pravni_pozadavky.sluzby.legal_requirement_creation_service import (
+    legal_requirement_creation_service,
+)
+from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
 from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
+from moduly.pravni_pozadavky.ui.legal_requirement_dialog import LegalRequirementDialog
 from moduly.pravni_pozadavky.ui.legal_section_dialog import LegalSectionDialog
 from moduly.pravni_pozadavky.ui.legal_section_table import LegalSectionTable
 
@@ -35,9 +40,11 @@ class LegalDocumentSectionsTab(QWidget):
 
         toolbar = QHBoxLayout()
         self.add_btn = QPushButton("Přidat")
+        self.create_requirement_btn = QPushButton("Vytvořit právní požadavek")
         self.edit_btn = QPushButton("Upravit")
         self.toggle_btn = QPushButton("Deaktivovat")
         toolbar.addWidget(self.add_btn)
+        toolbar.addWidget(self.create_requirement_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.toggle_btn)
         toolbar.addStretch()
@@ -48,6 +55,7 @@ class LegalDocumentSectionsTab(QWidget):
         layout.addWidget(self.table)
 
         self.add_btn.clicked.connect(self.add_section)
+        self.create_requirement_btn.clicked.connect(self.create_requirement_from_section)
         self.edit_btn.clicked.connect(self.edit_selected_section)
         self.toggle_btn.clicked.connect(self.toggle_selected_section)
         self.table.doubleClicked.connect(self.edit_selected_section)
@@ -62,7 +70,12 @@ class LegalDocumentSectionsTab(QWidget):
             self.version_id,
             include_inactive=True,
         )
-        self.table.load_sections(sections)
+        section_ids = [section.id for section in sections]
+        sections_with_requirements = legal_requirement_service.get_source_section_ids(section_ids)
+        self.table.load_sections(
+            sections,
+            sections_with_requirements=sections_with_requirements,
+        )
         self._update_action_buttons()
 
     def _selected_section(self):
@@ -98,6 +111,29 @@ class LegalDocumentSectionsTab(QWidget):
             )
         except ValueError as exc:
             QMessageBox.warning(self, "Část předpisu", str(exc))
+            return
+        self.refresh()
+
+    def create_requirement_from_section(self) -> None:
+        section = self._selected_section()
+        if section is None:
+            QMessageBox.information(self, "Právní požadavek", "Vyberte ustanovení předpisu.")
+            return
+
+        try:
+            draft = legal_requirement_creation_service.create_from_section(section.id)
+        except ValueError as exc:
+            QMessageBox.warning(self, "Právní požadavek", str(exc))
+            return
+
+        dialog = LegalRequirementDialog(self, draft=draft)
+        if not exec_maximized(dialog):
+            return
+
+        try:
+            legal_requirement_service.create_requirement(**dialog.get_data())
+        except ValueError as exc:
+            QMessageBox.warning(self, "Právní požadavek", str(exc))
             return
         self.refresh()
 

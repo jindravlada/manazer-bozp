@@ -4,6 +4,7 @@ from sqlalchemy import Boolean, Date, DateTime, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database.base import Base
+from moduly.pravni_pozadavky.constants import DEFAULT_PROCESSING_STATUS
 
 
 class LegalRequirement(Base):
@@ -20,6 +21,7 @@ class LegalRequirement(Base):
 
     legal_document_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     legal_section_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source_section_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     requirement_summary: Mapped[str] = mapped_column(Text, default="")
     organization_impact: Mapped[str] = mapped_column(Text, default="")
@@ -32,6 +34,10 @@ class LegalRequirement(Base):
     next_verification_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     compliance_status: Mapped[str] = mapped_column(String(50), default="")
+    processing_status: Mapped[str] = mapped_column(
+        String(50),
+        default=DEFAULT_PROCESSING_STATUS,
+    )
     note: Mapped[str] = mapped_column(Text, default="")
 
     active: Mapped[bool] = mapped_column(Boolean, default=True)

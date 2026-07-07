@@ -9,7 +9,7 @@ class LegalSectionTable(QTableWidget):
     def __init__(self):
         super().__init__()
 
-        self.setColumnCount(8)
+        self.setColumnCount(9)
         self.setHorizontalHeaderLabels([
             "ID",
             "Typ",
@@ -19,6 +19,7 @@ class LegalSectionTable(QTableWidget):
             "Název",
             "Pořadí",
             "Aktivní",
+            "Požadavek",
         ])
 
         self.setColumnHidden(0, True)
@@ -34,7 +35,7 @@ class LegalSectionTable(QTableWidget):
         header = self.horizontalHeader()
         header.setStretchLastSection(False)
         header.setSectionResizeMode(5, QHeaderView.Stretch)
-        for column in (1, 2, 3, 4, 6, 7):
+        for column in (1, 2, 3, 4, 6, 7, 8):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
         self.setColumnWidth(1, 100)
         self.setColumnWidth(2, 70)
@@ -42,8 +43,15 @@ class LegalSectionTable(QTableWidget):
         self.setColumnWidth(4, 70)
         self.setColumnWidth(6, 70)
         self.setColumnWidth(7, 80)
+        self.setColumnWidth(8, 90)
 
-    def load_sections(self, sections) -> None:
+    def load_sections(
+        self,
+        sections,
+        *,
+        sections_with_requirements: set[int] | None = None,
+    ) -> None:
+        requirement_section_ids = sections_with_requirements or set()
         self.setRowCount(len(sections))
 
         for row, section in enumerate(sections):
@@ -59,6 +67,11 @@ class LegalSectionTable(QTableWidget):
             self._set_item(row, 5, section.title)
             self._set_item(row, 6, str(section.sort_order))
             self._set_item(row, 7, "Ano" if section.active else "Ne")
+            self._set_item(
+                row,
+                8,
+                "Ano" if section.id in requirement_section_ids else "Ne",
+            )
 
             if not section.active:
                 brush = QBrush(QColor("#f0f0f0"))

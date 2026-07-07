@@ -4,9 +4,11 @@ from datetime import date
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.pravni_pozadavky.constants import (
     COMPLIANCE_NENI_RELEVANTNI,
+    DEFAULT_PROCESSING_STATUS,
     PERIODICITY_MONTHS,
     VALID_COMPLIANCE_STATUSES,
     VALID_PERIODICITIES,
+    VALID_PROCESSING_STATUSES,
 )
 from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
 from moduly.pravni_pozadavky.modely.legal_requirement_check import LegalRequirementCheck
@@ -72,6 +74,9 @@ class LegalRequirementService:
         }
         return sorted(areas)
 
+    def get_source_section_ids(self, section_ids: list[int] | None = None) -> set[int]:
+        return self.repository.list_source_section_ids(section_ids=section_ids)
+
     def create_requirement(
         self,
         *,
@@ -81,6 +86,7 @@ class LegalRequirementService:
         area: str = "",
         legal_document_id: int | None = None,
         legal_section_id: int | None = None,
+        source_section_id: int | None = None,
         requirement_summary: str = "",
         organization_impact: str = "",
         responsible_person_id: int | None = None,
@@ -88,11 +94,13 @@ class LegalRequirementService:
         last_verification_date: date | None = None,
         next_verification_date: date | None = None,
         compliance_status: str = "",
+        processing_status: str = DEFAULT_PROCESSING_STATUS,
         note: str = "",
         active: bool = True,
     ) -> LegalRequirement:
         self._validate_legal_document_id(legal_document_id)
         self._validate_legal_section_id(legal_section_id)
+        self._validate_source_section_id(source_section_id)
 
         requirement = LegalRequirement(
             regulation_name=regulation_name.strip(),
@@ -101,6 +109,7 @@ class LegalRequirementService:
             area=area.strip(),
             legal_document_id=legal_document_id,
             legal_section_id=legal_section_id,
+            source_section_id=source_section_id,
             requirement_summary=requirement_summary.strip(),
             organization_impact=organization_impact.strip(),
             responsible_person_id=responsible_person_id,
@@ -109,6 +118,7 @@ class LegalRequirementService:
             last_verification_date=last_verification_date,
             next_verification_date=next_verification_date,
             compliance_status=self._normalize_compliance_status(compliance_status),
+            processing_status=self._normalize_processing_status(processing_status),
             note=note.strip(),
             active=active,
         )
@@ -124,6 +134,7 @@ class LegalRequirementService:
         area: str = "",
         legal_document_id: int | None = None,
         legal_section_id: int | None = None,
+        source_section_id: int | None = None,
         requirement_summary: str = "",
         organization_impact: str = "",
         responsible_person_id: int | None = None,
@@ -131,6 +142,7 @@ class LegalRequirementService:
         last_verification_date: date | None = None,
         next_verification_date: date | None = None,
         compliance_status: str = "",
+        processing_status: str = DEFAULT_PROCESSING_STATUS,
         note: str = "",
         active: bool = True,
     ) -> LegalRequirement | None:
@@ -140,6 +152,7 @@ class LegalRequirementService:
 
         self._validate_legal_document_id(legal_document_id)
         self._validate_legal_section_id(legal_section_id)
+        self._validate_source_section_id(source_section_id)
 
         requirement.regulation_name = regulation_name.strip()
         requirement.regulation_number = regulation_number.strip()
@@ -147,6 +160,7 @@ class LegalRequirementService:
         requirement.area = area.strip()
         requirement.legal_document_id = legal_document_id
         requirement.legal_section_id = legal_section_id
+        requirement.source_section_id = source_section_id
         requirement.requirement_summary = requirement_summary.strip()
         requirement.organization_impact = organization_impact.strip()
         requirement.responsible_person_id = responsible_person_id
@@ -155,6 +169,7 @@ class LegalRequirementService:
         requirement.last_verification_date = last_verification_date
         requirement.next_verification_date = next_verification_date
         requirement.compliance_status = self._normalize_compliance_status(compliance_status)
+        requirement.processing_status = self._normalize_processing_status(processing_status)
         requirement.note = note.strip()
         requirement.active = active
         return self.repository.update(requirement)
@@ -245,6 +260,21 @@ class LegalRequirementService:
             raise ValueError("Ustanovení předpisu nebylo nalezeno.")
         if not section.active:
             raise ValueError("Ustanovení předpisu není aktivní.")
+
+    def _validate_source_section_id(self, source_section_id: int | None) -> None:
+        if source_section_id is None:
+            return
+        if not isinstance(source_section_id, int) or source_section_id <= 0:
+            raise ValueError("Neplatné zdrojové ustanovení.")
+        section = legal_section_service.get_by_id(source_section_id)
+        if section is None:
+            raise ValueError("Zdrojové ustanovení nebylo nalezeno.")
+
+    def _normalize_processing_status(self, value: str) -> str:
+        normalized = (value or "").strip()
+        if normalized in VALID_PROCESSING_STATUSES:
+            return normalized
+        return DEFAULT_PROCESSING_STATUS
 
 
 legal_requirement_service = LegalRequirementService()

@@ -6,6 +6,7 @@ from moduly.pravni_pozadavky.constants import (
     COMPLIANCE_STATUS_LABELS,
     DOCUMENT_TYPE_LABELS,
     PERIODICITY_LABELS,
+    PROCESSING_STATUS_LABELS,
     SECTION_TYPE_LABELS,
 )
 from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
@@ -91,6 +92,9 @@ class LegalRequirementExportRow:
     legal_section_item_letter: str
     legal_section_title: str
     legal_section_text: str
+    source_section_id: int | None
+    processing_status: str
+    processing_status_label: str
     sanctions: list[LegalRequirementSanctionExportRow]
     links: list[LegalRequirementLinkExportRow]
 
@@ -201,6 +205,12 @@ class LegalRequirementExportContextService:
             legal_section_item_letter=_text(section.item_letter if section else ""),
             legal_section_title=_text(section.title if section else ""),
             legal_section_text=_text(section.text if section else ""),
+            source_section_id=requirement.source_section_id,
+            processing_status=_text(requirement.processing_status),
+            processing_status_label=PROCESSING_STATUS_LABELS.get(
+                requirement.processing_status,
+                requirement.processing_status,
+            ),
             sanctions=[self._build_sanction_row(sanction) for sanction in sanctions],
             links=[self._build_link_row(link) for link in links],
         )

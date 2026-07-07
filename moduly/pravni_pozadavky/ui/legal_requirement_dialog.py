@@ -29,9 +29,12 @@ from moduly.pravni_pozadavky.ui.legal_requirement_sanctions_tab import LegalRequ
 
 
 class LegalRequirementDialog(QDialog):
-    def __init__(self, parent=None, requirement=None):
+    def __init__(self, parent=None, requirement=None, draft=None):
         super().__init__(parent)
         self.requirement = requirement
+        self.draft = draft
+        self._source_section_id: int | None = None
+        self._processing_status: str | None = None
 
         self.setWindowTitle("Právní požadavek" if requirement is None else "Upravit požadavek")
         configure_resizable_form_dialog(self, width=760, height=680, min_width=560, min_height=480)
@@ -54,6 +57,8 @@ class LegalRequirementDialog(QDialog):
 
         if requirement is not None:
             self._load_requirement(requirement)
+        elif draft is not None:
+            self._load_draft(draft)
         else:
             self.active_checkbox.setChecked(True)
             self._populate_legal_sections()
@@ -68,6 +73,8 @@ class LegalRequirementDialog(QDialog):
         self.legal_document = QComboBox()
         self._populate_legal_documents()
         self.legal_section = QComboBox()
+        self.source_section_display = QLineEdit()
+        self.source_section_display.setReadOnly(True)
         self.area = QLineEdit()
         self.requirement_summary = QTextEdit()
         self.requirement_summary.setMinimumHeight(80)
@@ -92,6 +99,7 @@ class LegalRequirementDialog(QDialog):
         form.addRow("Paragraf / ustanovení:", self.provision)
         form.addRow("Právní předpis:", self.legal_document)
         form.addRow("Ustanovení předpisu:", self.legal_section)
+        form.addRow("Zdrojové ustanovení:", self.source_section_display)
         form.addRow("Oblast:", self.area)
         form.addRow("Stručný požadavek:", self.requirement_summary)
         form.addRow("Dopad na organizaci:", self.organization_impact)
@@ -125,6 +133,36 @@ class LegalRequirementDialog(QDialog):
         self._set_combo_value(self.compliance_status, requirement.compliance_status)
         self.note.setPlainText(requirement.note)
         self.active_checkbox.setChecked(requirement.active)
+        self._source_section_id = requirement.source_section_id
+        self._processing_status = requirement.processing_status
+        self._update_source_section_display()
+
+    def _load_draft(self, draft) -> None:
+        self.regulation_name.setText(draft.regulation_name)
+        self.regulation_number.setText(draft.regulation_number)
+        self.provision.setText(draft.provision)
+        self._populate_legal_documents(selected_id=draft.legal_document_id)
+        self._populate_legal_sections(
+            selected_id=draft.legal_section_id,
+            document_id=draft.legal_document_id,
+        )
+        self.area.setText(draft.area)
+        self.requirement_summary.setPlainText(draft.requirement_summary)
+        self.organization_impact.setPlainText(draft.organization_impact)
+        self.active_checkbox.setChecked(draft.active)
+        self._source_section_id = draft.source_section_id
+        self._processing_status = draft.processing_status
+        self._update_source_section_display()
+
+    def _update_source_section_display(self) -> None:
+        if self._source_section_id is None:
+            self.source_section_display.clear()
+            return
+        section = legal_section_service.get_by_id(self._source_section_id)
+        if section is None:
+            self.source_section_display.clear()
+            return
+        self.source_section_display.setText(legal_section_display_label(section))
 
     def _populate_legal_documents(self, *, selected_id: int | None = None) -> None:
         self.legal_document.blockSignals(True)
@@ -220,6 +258,7 @@ class LegalRequirementDialog(QDialog):
             "provision": self.provision.text().strip(),
             "legal_document_id": self.legal_document.currentData(),
             "legal_section_id": self.legal_section.currentData(),
+            "source_section_id": self._source_section_id,
             "area": self.area.text().strip(),
             "requirement_summary": self.requirement_summary.toPlainText().strip(),
             "organization_impact": self.organization_impact.toPlainText().strip(),
@@ -228,6 +267,7 @@ class LegalRequirementDialog(QDialog):
             "last_verification_date": self.last_verification.get_date(),
             "next_verification_date": self.next_verification.get_date(),
             "compliance_status": compliance_status,
+            "processing_status": self._processing_status or "",
             "note": self.note.toPlainText().strip(),
             "active": self.active_checkbox.isChecked(),
         }

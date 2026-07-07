@@ -28,6 +28,7 @@ with patch.object(Path, "home", return_value=_TMP):
         COMPLIANCE_SPLNENO,
         DOCUMENT_TYPE_ZAKON,
         PERIODICITY_ROCNE,
+        PROCESSING_NEW,
         SECTION_PARAGRAPH,
         SECTION_SUBSECTION,
         legal_section_display_label,
@@ -35,6 +36,9 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
     from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
         legal_document_version_service,
+    )
+    from moduly.pravni_pozadavky.sluzby.legal_requirement_creation_service import (
+        legal_requirement_creation_service,
     )
     from moduly.pravni_pozadavky.sluzby.legal_requirement_export_context_service import (
         legal_requirement_export_context_service,
@@ -528,6 +532,125 @@ class LegalRequirementServiceTestCase(unittest.TestCase):
 
         label = legal_section_display_label(section)
         self.assertEqual(label, "§ 103 odst. 2 písm. c) – Školení zaměstnanců")
+
+    def test_create_draft_requirement_from_section(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        section = self._create_section(document, version)
+
+        draft = legal_requirement_creation_service.create_from_section(section.id)
+
+        self.assertIsNone(draft.id)
+        self.assertEqual(draft.regulation_name, "Školení zaměstnanců")
+        self.assertEqual(draft.requirement_summary, "")
+
+    def test_draft_inherits_legal_document_id(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        section = self._create_section(document, version)
+
+        draft = legal_requirement_creation_service.create_from_section(section.id)
+
+        self.assertEqual(draft.legal_document_id, document.id)
+
+    def test_draft_inherits_legal_section_id(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        section = self._create_section(document, version)
+
+        draft = legal_requirement_creation_service.create_from_section(section.id)
+
+        self.assertEqual(draft.legal_section_id, section.id)
+
+    def test_draft_sets_source_section_id(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        section = self._create_section(document, version)
+
+        draft = legal_requirement_creation_service.create_from_section(section.id)
+
+        self.assertEqual(draft.source_section_id, section.id)
+
+    def test_draft_processing_status_is_new(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        section = self._create_section(document, version)
+
+        draft = legal_requirement_creation_service.create_from_section(section.id)
+
+        self.assertEqual(draft.processing_status, PROCESSING_NEW)
+
+    def test_saved_requirement_from_section_keeps_source_link(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        section = self._create_section(document, version)
+        draft = legal_requirement_creation_service.create_from_section(section.id)
+
+        requirement = legal_requirement_service.create_requirement(
+            regulation_name=draft.regulation_name,
+            regulation_number=draft.regulation_number,
+            provision=draft.provision,
+            legal_document_id=draft.legal_document_id,
+            legal_section_id=draft.legal_section_id,
+            source_section_id=draft.source_section_id,
+            requirement_summary="Zajistit školení zaměstnanců",
+            processing_status=draft.processing_status,
+        )
+
+        saved = legal_requirement_service.get_by_id(requirement.id)
+        assert saved is not None
+        self.assertEqual(saved.source_section_id, section.id)
+        self.assertEqual(saved.legal_section_id, section.id)
+
+    def test_section_table_detects_existing_requirement(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        section_with_requirement = self._create_section(
+            document,
+            version,
+            paragraph="1",
+            title="S požadavkem",
+        )
+        section_without_requirement = self._create_section(
+            document,
+            version,
+            paragraph="2",
+            title="Bez požadavku",
+        )
+        legal_requirement_service.create_requirement(
+            regulation_name="Test",
+            legal_document_id=document.id,
+            legal_section_id=section_with_requirement.id,
+            source_section_id=section_with_requirement.id,
+            requirement_summary="Požadavek ze sekce",
+        )
+
+        linked_section_ids = legal_requirement_service.get_source_section_ids(
+            [section_with_requirement.id, section_without_requirement.id],
+        )
+
+        self.assertIn(section_with_requirement.id, linked_section_ids)
+        self.assertNotIn(section_without_requirement.id, linked_section_ids)
+
+    def test_export_context_includes_processing_fields(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        section = self._create_section(document, version)
+        requirement = legal_requirement_service.create_requirement(
+            regulation_name="Test",
+            legal_document_id=document.id,
+            legal_section_id=section.id,
+            source_section_id=section.id,
+            requirement_summary="Export stavu zpracování",
+            processing_status=PROCESSING_NEW,
+        )
+
+        context = legal_requirement_export_context_service.build_for_requirement(requirement.id)
+        assert context is not None
+        row = context.rows[0]
+        self.assertEqual(row.source_section_id, section.id)
+        self.assertEqual(row.processing_status, PROCESSING_NEW)
+        self.assertEqual(row.processing_status_label, "Nový")
 
 
 if __name__ == "__main__":

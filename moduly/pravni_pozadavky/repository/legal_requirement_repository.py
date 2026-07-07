@@ -23,6 +23,15 @@ class LegalRequirementRepository:
         with get_session() as session:
             return session.get(LegalRequirement, requirement_id)
 
+    def list_source_section_ids(self, *, section_ids: list[int] | None = None) -> set[int]:
+        with get_session() as session:
+            stmt = select(LegalRequirement.source_section_id).where(
+                LegalRequirement.source_section_id.is_not(None),
+            )
+            if section_ids:
+                stmt = stmt.where(LegalRequirement.source_section_id.in_(section_ids))
+            return {value for value in session.scalars(stmt) if value is not None}
+
     def add(self, requirement: LegalRequirement) -> LegalRequirement:
         with get_session() as session:
             session.add(requirement)

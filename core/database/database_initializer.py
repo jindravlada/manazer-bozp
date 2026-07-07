@@ -461,6 +461,10 @@ def _ensure_legal_requirement_columns() -> None:
         _add_column("legal_requirements", "legal_document_id INTEGER")
     if "legal_section_id" not in columns:
         _add_column("legal_requirements", "legal_section_id INTEGER")
+    if "source_section_id" not in columns:
+        _add_column("legal_requirements", "source_section_id INTEGER")
+    if "processing_status" not in columns:
+        _add_column("legal_requirements", "processing_status VARCHAR(50) DEFAULT 'new'")
 
 
 def _ensure_legal_change_columns() -> None:
