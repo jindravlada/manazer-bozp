@@ -3,6 +3,7 @@ from PySide6.QtGui import QColor, QBrush
 from PySide6.QtWidgets import QHeaderView, QTreeWidget, QTreeWidgetItem
 
 from moduly.pravni_pozadavky.constants import (
+    SECTION_DIVISION,
     SECTION_HEAD,
     SECTION_LETTER,
     SECTION_PARAGRAPH,
@@ -10,6 +11,13 @@ from moduly.pravni_pozadavky.constants import (
     SECTION_SUBSECTION,
     SECTION_TYPE_LABELS,
 )
+
+_DEFAULT_EXPANDED_TYPES = frozenset({
+    SECTION_PART,
+    SECTION_HEAD,
+    SECTION_DIVISION,
+    SECTION_PARAGRAPH,
+})
 
 
 def build_section_children_map(sections) -> dict[int | None, list]:
@@ -147,9 +155,7 @@ class LegalSectionTree(QTreeWidget):
 
     def _apply_expand_state(self) -> None:
         for index in range(self.topLevelItemCount()):
-            top_item = self.topLevelItem(index)
-            self._expand_matching(top_item, {SECTION_PART, SECTION_HEAD})
-            self._collapse_paragraphs(top_item)
+            self._expand_matching(self.topLevelItem(index), _DEFAULT_EXPANDED_TYPES)
 
     def _expand_matching(self, item: QTreeWidgetItem, section_types: set[str]) -> None:
         section_type = item.data(self.COLUMN_TYPE, Qt.ItemDataRole.UserRole)
@@ -157,13 +163,6 @@ class LegalSectionTree(QTreeWidget):
             item.setExpanded(True)
         for child_index in range(item.childCount()):
             self._expand_matching(item.child(child_index), section_types)
-
-    def _collapse_paragraphs(self, item: QTreeWidgetItem) -> None:
-        section_type = item.data(self.COLUMN_TYPE, Qt.ItemDataRole.UserRole)
-        if section_type == SECTION_PARAGRAPH:
-            item.setExpanded(False)
-        for child_index in range(item.childCount()):
-            self._collapse_paragraphs(item.child(child_index))
 
     def selected_section_id(self) -> int | None:
         selected_items = self.selectedItems()

@@ -67,6 +67,75 @@ def _section(
     )
 
 
+def _find_item_by_paragraph(tree: LegalSectionTree, paragraph: str):
+    def walk(item):
+        if item.text(LegalSectionTree.COLUMN_PARAGRAPH) == paragraph:
+            return item
+        for index in range(item.childCount()):
+            found = walk(item.child(index))
+            if found is not None:
+                return found
+        return None
+
+    for index in range(tree.topLevelItemCount()):
+        found = walk(tree.topLevelItem(index))
+        if found is not None:
+            return found
+    return None
+
+
+def _sample_zakonik_sections():
+    return [
+        _section(1, section_type=SECTION_PART, sort_order=1, section_number="PRVNÍ"),
+        _section(2, section_type=SECTION_HEAD, parent_section_id=1, sort_order=2, section_number="I"),
+        _section(3, section_type=SECTION_DIVISION, parent_section_id=2, sort_order=3, section_number="1"),
+        _section(
+            4,
+            section_type=SECTION_PARAGRAPH,
+            parent_section_id=3,
+            sort_order=4,
+            paragraph="101",
+            title="Předmět úpravy",
+        ),
+        _section(
+            5,
+            section_type=SECTION_SUBSECTION,
+            parent_section_id=4,
+            sort_order=5,
+            section_number="1",
+        ),
+        _section(
+            6,
+            section_type=SECTION_SUBSECTION,
+            parent_section_id=4,
+            sort_order=6,
+            section_number="2",
+        ),
+        _section(
+            7,
+            section_type=SECTION_LETTER,
+            parent_section_id=6,
+            sort_order=7,
+            item_letter="a",
+        ),
+        _section(
+            8,
+            section_type=SECTION_PARAGRAPH,
+            parent_section_id=3,
+            sort_order=8,
+            paragraph="102",
+            title="Povinnosti zaměstnance",
+        ),
+        _section(
+            9,
+            section_type=SECTION_SUBSECTION,
+            parent_section_id=8,
+            sort_order=9,
+            section_number="1",
+        ),
+    ]
+
+
 class LegalSectionTreeUtilsTestCase(unittest.TestCase):
     def test_build_section_children_map_creates_hierarchy(self) -> None:
         sections = [
@@ -157,7 +226,43 @@ class LegalSectionTreeWidgetTestCase(unittest.TestCase):
             paragraph_item.data(LegalSectionTree.COLUMN_TYPE, Qt.ItemDataRole.UserRole),
             SECTION_PARAGRAPH,
         )
+        self.assertTrue(paragraph_item.isExpanded())
+
+    def test_sample_zakonik_structure_shows_subsections_under_paragraph_101(self) -> None:
+        from PySide6.QtCore import Qt
+
+        tree = LegalSectionTree()
+        tree.load_sections(_sample_zakonik_sections())
+
+        paragraph_item = _find_item_by_paragraph(tree, "101")
+        self.assertIsNotNone(paragraph_item)
+        assert paragraph_item is not None
+        self.assertTrue(paragraph_item.isExpanded())
+        self.assertGreaterEqual(paragraph_item.childCount(), 2)
+
+        subsection_types = [
+            paragraph_item.child(index).data(LegalSectionTree.COLUMN_TYPE, Qt.ItemDataRole.UserRole)
+            for index in range(paragraph_item.childCount())
+        ]
+        self.assertEqual(subsection_types[:2], [SECTION_SUBSECTION, SECTION_SUBSECTION])
+        self.assertEqual(paragraph_item.child(0).text(LegalSectionTree.COLUMN_NUMBER), "1")
+        self.assertEqual(paragraph_item.child(1).text(LegalSectionTree.COLUMN_NUMBER), "2")
+
+    def test_refresh_keeps_default_expansion_for_sample_zakonik(self) -> None:
+        tree = LegalSectionTree()
+        tree.load_sections(_sample_zakonik_sections())
+
+        paragraph_item = _find_item_by_paragraph(tree, "101")
+        assert paragraph_item is not None
+        paragraph_item.setExpanded(False)
         self.assertFalse(paragraph_item.isExpanded())
+
+        tree.load_sections(_sample_zakonik_sections())
+
+        paragraph_item = _find_item_by_paragraph(tree, "101")
+        assert paragraph_item is not None
+        self.assertTrue(paragraph_item.isExpanded())
+        self.assertGreaterEqual(paragraph_item.childCount(), 2)
 
     def test_expands_on_double_click_is_disabled(self) -> None:
         tree = LegalSectionTree()
@@ -185,7 +290,7 @@ class LegalSectionTreeWidgetTestCase(unittest.TestCase):
         head_item = tree.topLevelItem(0).child(0)
         paragraph_item = head_item.child(0)
         self.assertTrue(head_item.isExpanded())
-        self.assertFalse(paragraph_item.isExpanded())
+        self.assertTrue(paragraph_item.isExpanded())
 
         dialog_opened = []
         tree.itemDoubleClicked.connect(
@@ -195,7 +300,7 @@ class LegalSectionTreeWidgetTestCase(unittest.TestCase):
 
         self.assertEqual(dialog_opened, [True])
         self.assertTrue(head_item.isExpanded())
-        self.assertFalse(paragraph_item.isExpanded())
+        self.assertTrue(paragraph_item.isExpanded())
 
     def test_branch_expand_can_still_be_toggled_manually(self) -> None:
         sections = [
@@ -215,7 +320,7 @@ class LegalSectionTreeWidgetTestCase(unittest.TestCase):
         tree.load_sections(sections)
 
         paragraph_item = tree.topLevelItem(0).child(0).child(0)
-        self.assertFalse(paragraph_item.isExpanded())
+        self.assertTrue(paragraph_item.isExpanded())
 
         paragraph_item.setExpanded(True)
         self.assertTrue(paragraph_item.isExpanded())
@@ -273,20 +378,44 @@ class LegalDocumentSectionsTabDoubleClickTestCase(unittest.TestCase):
             section_number="I",
             sort_order=2,
         )
+        self.division = legal_section_service.create(
+            legal_document_id=self.document.id,
+            legal_document_version_id=self.version.id,
+            section_type=SECTION_DIVISION,
+            parent_section_id=self.head.id,
+            section_number="1",
+            sort_order=3,
+        )
         self.paragraph = legal_section_service.create(
             legal_document_id=self.document.id,
             legal_document_version_id=self.version.id,
             section_type=SECTION_PARAGRAPH,
-            parent_section_id=self.head.id,
+            parent_section_id=self.division.id,
             paragraph="101",
             title="Předmět",
-            sort_order=3,
+            sort_order=4,
+        )
+        legal_section_service.create(
+            legal_document_id=self.document.id,
+            legal_document_version_id=self.version.id,
+            section_type=SECTION_SUBSECTION,
+            parent_section_id=self.paragraph.id,
+            section_number="1",
+            text="Text odstavce 1",
+            sort_order=5,
+        )
+        legal_section_service.create(
+            legal_document_id=self.document.id,
+            legal_document_version_id=self.version.id,
+            section_type=SECTION_SUBSECTION,
+            parent_section_id=self.paragraph.id,
+            section_number="2",
+            text="Text odstavce 2",
+            sort_order=6,
         )
 
     def _paragraph_item(self, tab):
-        root = tab.tree.topLevelItem(0)
-        head_item = root.child(0)
-        return head_item.child(0)
+        return _find_item_by_paragraph(tab.tree, "101")
 
     @patch("moduly.pravni_pozadavky.ui.legal_document_sections_tab.exec_maximized", return_value=False)
     @patch("moduly.pravni_pozadavky.ui.legal_document_sections_tab.LegalSectionDialog")
@@ -316,6 +445,54 @@ class LegalDocumentSectionsTabDoubleClickTestCase(unittest.TestCase):
             paragraph_item.isExpanded(),
         }
         self.assertEqual(expanded_after, expanded_before)
+
+    @patch("moduly.pravni_pozadavky.ui.legal_document_sections_tab.exec_maximized", return_value=True)
+    @patch("moduly.pravni_pozadavky.ui.legal_document_sections_tab.LegalRequirementDialog")
+    def test_refresh_after_requirement_creation_keeps_usable_expansion(
+        self,
+        mock_dialog_cls,
+        _mock_exec,
+    ) -> None:
+        from moduly.pravni_pozadavky.ui.legal_document_sections_tab import LegalDocumentSectionsTab
+
+        mock_dialog = mock_dialog_cls.return_value
+        mock_dialog.get_data.return_value = {
+            "regulation_name": "Předmět",
+            "regulation_number": "262/2006 Sb.",
+            "provision": "§ 101",
+            "legal_document_id": self.document.id,
+            "legal_section_id": self.paragraph.id,
+            "source_section_id": self.paragraph.id,
+            "area": "",
+            "requirement_summary": "Nový požadavek",
+            "organization_impact": "",
+            "responsible_person_id": None,
+            "verification_periodicity": "",
+            "last_verification_date": None,
+            "next_verification_date": None,
+            "compliance_status": "",
+            "processing_status": "new",
+            "note": "",
+            "active": True,
+        }
+
+        tab = LegalDocumentSectionsTab(
+            document_id=self.document.id,
+            version_id=self.version.id,
+        )
+        paragraph_item = self._paragraph_item(tab)
+        assert paragraph_item is not None
+        tab.tree.setCurrentItem(paragraph_item)
+        self.assertTrue(paragraph_item.isExpanded())
+        self.assertGreaterEqual(paragraph_item.childCount(), 2)
+
+        tab.create_requirement_from_section()
+
+        paragraph_item = self._paragraph_item(tab)
+        assert paragraph_item is not None
+        self.assertTrue(paragraph_item.isExpanded())
+        self.assertGreaterEqual(paragraph_item.childCount(), 2)
+        self.assertEqual(paragraph_item.child(0).text(LegalSectionTree.COLUMN_NUMBER), "1")
 
 
 if __name__ == "__main__":
