@@ -175,20 +175,17 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
 
     elif profile == "legal_requirements":
         from moduly.pravni_pozadavky.ui.legal_requirement_table import (
-            COL_AREA,
             COL_LAST_CHECK,
             COL_NEXT_CHECK,
             COL_PERIODICITY,
-            COL_PROVISION,
-            COL_REGULATION,
+            COL_PROCESS,
             COL_RESPONSIBLE,
             COL_STATUS,
             COL_SUMMARY,
         )
 
         widths = {
-            COL_REGULATION: 140,
-            COL_PROVISION: 180,
+            COL_PROCESS: 220,
             COL_SUMMARY: 320,
             COL_RESPONSIBLE: 170,
             COL_STATUS: 130,
@@ -199,11 +196,9 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
-        table.setColumnHidden(COL_AREA, True)
         header.setSectionResizeMode(COL_SUMMARY, QHeaderView.Stretch)
         for column in (
-            COL_REGULATION,
-            COL_PROVISION,
+            COL_PROCESS,
             COL_RESPONSIBLE,
             COL_STATUS,
             COL_LAST_CHECK,

@@ -160,6 +160,21 @@ def legal_requirement_regulation_label(requirement) -> str:
     return (getattr(requirement, "regulation_name", "") or "").strip()
 
 
+def legal_requirement_process_label(requirement) -> str:
+    return (getattr(requirement, "regulation_name", "") or "").strip()
+
+
+def legal_requirement_responsible_label(requirement) -> str:
+    parts: list[str] = []
+    person_name = (getattr(requirement, "responsible_person_name", "") or "").strip()
+    role_name = (getattr(requirement, "responsible_role_name", "") or "").strip()
+    if person_name:
+        parts.append(person_name)
+    if role_name:
+        parts.append(role_name)
+    return " / ".join(parts)
+
+
 def legal_requirement_provision_label(
     requirement,
     *,

@@ -7,22 +7,19 @@ from PySide6.QtWidgets import QHeaderView, QTableWidget, QTableWidgetItem
 from moduly.pravni_pozadavky.constants import (
     COMPLIANCE_STATUS_LABELS,
     PERIODICITY_LABELS,
-    legal_requirement_provision_label,
-    legal_requirement_regulation_label,
+    legal_requirement_process_label,
+    legal_requirement_responsible_label,
 )
-from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
 
 COL_ID = 0
-COL_REGULATION = 1
-COL_PROVISION = 2
-COL_AREA = 3
-COL_SUMMARY = 4
-COL_RESPONSIBLE = 5
-COL_STATUS = 6
-COL_LAST_CHECK = 7
-COL_NEXT_CHECK = 8
-COL_PERIODICITY = 9
-COLUMN_COUNT = 10
+COL_PROCESS = 1
+COL_SUMMARY = 2
+COL_RESPONSIBLE = 3
+COL_STATUS = 4
+COL_LAST_CHECK = 5
+COL_NEXT_CHECK = 6
+COL_PERIODICITY = 7
+COLUMN_COUNT = 8
 
 
 def _format_date(value) -> str:
@@ -40,11 +37,9 @@ class LegalRequirementTable(QTableWidget):
         self.setColumnCount(COLUMN_COUNT)
         self.setHorizontalHeaderLabels([
             "ID",
-            "Předpis",
-            "Ustanovení",
-            "Oblast",
-            "Požadavek",
-            "Odpovědná osoba",
+            "Proces",
+            "Způsob plnění",
+            "Odpovědná osoba / funkce",
             "Stav plnění",
             "Poslední ověření",
             "Další ověření",
@@ -52,7 +47,6 @@ class LegalRequirementTable(QTableWidget):
         ])
 
         self.setColumnHidden(COL_ID, True)
-        self.setColumnHidden(COL_AREA, True)
         self.setWordWrap(True)
         self.verticalHeader().setVisible(False)
         self.verticalHeader().setDefaultSectionSize(28)
@@ -66,8 +60,7 @@ class LegalRequirementTable(QTableWidget):
         header.setStretchLastSection(False)
         header.setSectionResizeMode(COL_SUMMARY, QHeaderView.Stretch)
         for column in (
-            COL_REGULATION,
-            COL_PROVISION,
+            COL_PROCESS,
             COL_RESPONSIBLE,
             COL_STATUS,
             COL_LAST_CHECK,
@@ -85,26 +78,12 @@ class LegalRequirementTable(QTableWidget):
     def load_requirements(self, requirements) -> None:
         self.setRowCount(len(requirements))
         today = date.today()
-        sections_by_id = self._sections_by_id(requirements)
 
         for row, requirement in enumerate(requirements):
-            section_id = requirement.source_section_id or requirement.legal_section_id
-            section = sections_by_id.get(section_id) if section_id is not None else None
-
             self._set_item(row, COL_ID, str(requirement.id))
-            self._set_item(row, COL_REGULATION, legal_requirement_regulation_label(requirement))
-            self._set_item(
-                row,
-                COL_PROVISION,
-                legal_requirement_provision_label(
-                    requirement,
-                    section=section,
-                    sections_by_id=sections_by_id,
-                ),
-            )
-            self._set_item(row, COL_AREA, requirement.area)
+            self._set_item(row, COL_PROCESS, legal_requirement_process_label(requirement))
             self._set_item(row, COL_SUMMARY, requirement.requirement_summary)
-            self._set_item(row, COL_RESPONSIBLE, requirement.responsible_person_name)
+            self._set_item(row, COL_RESPONSIBLE, legal_requirement_responsible_label(requirement))
             self._set_item(
                 row,
                 COL_STATUS,
@@ -125,27 +104,6 @@ class LegalRequirementTable(QTableWidget):
             )
 
             self._apply_row_style(row, requirement, today)
-
-    def _sections_by_id(self, requirements) -> dict:
-        section_ids: set[int] = set()
-        for requirement in requirements:
-            section_id = requirement.source_section_id or requirement.legal_section_id
-            if section_id is not None:
-                section_ids.add(section_id)
-
-        sections_by_id = {}
-        pending = set(section_ids)
-        while pending:
-            section_id = pending.pop()
-            if section_id in sections_by_id:
-                continue
-            section = legal_section_service.get_by_id(section_id)
-            if section is None:
-                continue
-            sections_by_id[section_id] = section
-            if section.parent_section_id is not None:
-                pending.add(section.parent_section_id)
-        return sections_by_id
 
     def _set_item(self, row: int, column: int, text: str) -> None:
         item = QTableWidgetItem(text or "")

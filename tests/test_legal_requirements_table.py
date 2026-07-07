@@ -29,8 +29,10 @@ with patch.object(Path, "home", return_value=_TMP):
         SECTION_LETTER,
         SECTION_PARAGRAPH,
         SECTION_SUBSECTION,
+        legal_requirement_process_label,
         legal_requirement_provision_label,
         legal_requirement_regulation_label,
+        legal_requirement_responsible_label,
     )
     from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
     from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
@@ -39,9 +41,9 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
     from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
     from moduly.pravni_pozadavky.ui.legal_requirement_table import (
-        COL_AREA,
-        COL_PROVISION,
-        COL_REGULATION,
+        COL_PROCESS,
+        COL_RESPONSIBLE,
+        COL_SUMMARY,
         LegalRequirementTable,
     )
     from moduly.pravni_pozadavky.ui.pravni_pozadavky_page import PravniPozadavkyPage
@@ -133,25 +135,104 @@ class LegalRequirementTableDisplayTestCase(unittest.TestCase):
         )
         self.assertEqual(label, "§ 101 odst. 1 písm. a)")
 
-    def test_table_hides_area_column_and_shows_formatted_values(self) -> None:
+    def test_process_label_uses_regulation_name(self) -> None:
+        requirement = legal_requirement_service.create_requirement(
+            regulation_name="Školení BOZP",
+            requirement_summary="Test",
+        )
+
+        self.assertEqual(legal_requirement_process_label(requirement), "Školení BOZP")
+
+    def test_responsible_label_combines_person_and_role(self) -> None:
+        requirement = legal_requirement_service.create_requirement(
+            regulation_name="Test",
+            requirement_summary="Test",
+        )
+        requirement.responsible_person_name = "Jan Novák"
+        requirement.responsible_role_name = "Vedoucí provozu"
+        legal_requirement_service.repository.update(requirement)
+
+        self.assertEqual(
+            legal_requirement_responsible_label(requirement),
+            "Jan Novák / Vedoucí provozu",
+        )
+
+    def test_table_shows_process_and_fulfillment_columns(self) -> None:
         document, version, letter = self._create_hierarchy_with_letter()
         requirement = legal_requirement_service.create_requirement(
-            regulation_name="Zákoník práce",
+            regulation_name="Školení BOZP",
             regulation_number="262/2006 Sb.",
             provision="písm. a",
             area="BOZP",
             legal_document_id=document.id,
             legal_section_id=letter.id,
             source_section_id=letter.id,
-            requirement_summary="Test požadavku",
+            requirement_summary="Zajistit školení zaměstnanců",
         )
+        requirement.responsible_person_name = "Jan Novák"
+        requirement.responsible_role_name = "Vedoucí provozu"
+        legal_requirement_service.repository.update(requirement)
 
         table = LegalRequirementTable()
         table.load_requirements([requirement])
 
-        self.assertTrue(table.isColumnHidden(COL_AREA))
-        self.assertEqual(table.item(0, COL_REGULATION).text(), "262/2006 Sb.")
-        self.assertEqual(table.item(0, COL_PROVISION).text(), "§ 101 odst. 1 písm. a)")
+        self.assertEqual(table.item(0, COL_PROCESS).text(), "Školení BOZP")
+        self.assertEqual(table.item(0, COL_SUMMARY).text(), "Zajistit školení zaměstnanců")
+        self.assertEqual(table.item(0, COL_RESPONSIBLE).text(), "Jan Novák / Vedoucí provozu")
+
+    def test_refresh_sorts_by_process_name(self) -> None:
+        legal_requirement_service.create_requirement(
+            regulation_name="Zápis do dokumentace",
+            requirement_summary="A",
+        )
+        legal_requirement_service.create_requirement(
+            regulation_name="Školení BOZP",
+            requirement_summary="B",
+        )
+        legal_requirement_service.create_requirement(
+            regulation_name="Hodnocení rizik",
+            requirement_summary="C",
+        )
+
+        tab = PravniPozadavkyRequirementsTab()
+        tab.refresh()
+
+        process_names = [
+            tab.table.item(row, COL_PROCESS).text()
+            for row in range(tab.table.rowCount())
+        ]
+        self.assertEqual(process_names, ["Hodnocení rizik", "Školení BOZP", "Zápis do dokumentace"])
+
+    def test_text_filter_searches_process_and_fulfillment(self) -> None:
+        legal_requirement_service.create_requirement(
+            regulation_name="Školení BOZP",
+            requirement_summary="Zajistit školení zaměstnanců",
+        )
+        legal_requirement_service.create_requirement(
+            regulation_name="Hodnocení rizik",
+            requirement_summary="Provést analýzu pracoviště",
+        )
+
+        tab = PravniPozadavkyRequirementsTab()
+        tab.refresh()
+
+        tab.text_filter.search_edit.setText("školení")
+        tab.text_filter.apply_filter()
+        visible_processes = [
+            tab.table.item(row, COL_PROCESS).text()
+            for row in range(tab.table.rowCount())
+            if not tab.table.isRowHidden(row)
+        ]
+        self.assertEqual(visible_processes, ["Školení BOZP"])
+
+        tab.text_filter.search_edit.setText("analýzu")
+        tab.text_filter.apply_filter()
+        visible_processes = [
+            tab.table.item(row, COL_PROCESS).text()
+            for row in range(tab.table.rowCount())
+            if not tab.table.isRowHidden(row)
+        ]
+        self.assertEqual(visible_processes, ["Hodnocení rizik"])
 
 
 class PravniPozadavkyRequirementsTabSelectionTestCase(unittest.TestCase):

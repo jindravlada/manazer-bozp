@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
+from core.utils.czech_sort import czech_sorted
 from moduly.pravni_pozadavky.constants import (
     COMPLIANCE_STATUS_LABELS,
     DEFAULT_ACTIVE_FILTER,
@@ -80,7 +81,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
 
         self.table = LegalRequirementTable()
         configure_table_columns(self.table, "legal_requirements")
-        self.text_filter = FilterBar(self.table, placeholder="🔍 Hledat požadavek...")
+        self.text_filter = FilterBar(self.table, placeholder="🔍 Hledat proces...")
 
         layout.addLayout(toolbar)
         layout.addWidget(self.text_filter)
@@ -111,6 +112,10 @@ class PravniPozadavkyRequirementsTab(QWidget):
     def refresh(self) -> None:
         self._populate_filter_options()
         requirements = self._filter_requirements(legal_requirement_service.get_all())
+        requirements = czech_sorted(
+            requirements,
+            key=lambda item: item.regulation_name or "",
+        )
         self.table.load_requirements(requirements)
         configure_table_columns(self.table, "legal_requirements")
         self.table.clear_selection()
