@@ -1,5 +1,6 @@
 from PySide6.QtGui import QHideEvent, QShowEvent
 from PySide6.QtWidgets import (
+    QFileDialog,
     QComboBox,
     QHBoxLayout,
     QLabel,
@@ -28,6 +29,9 @@ from moduly.pravni_pozadavky.sluzby.legal_requirement_task_service import (
 )
 from moduly.pravni_pozadavky.ui.legal_requirement_check_dialog import LegalRequirementCheckDialog
 from moduly.pravni_pozadavky.ui.legal_requirement_dialog import LegalRequirementDialog
+from moduly.pravni_pozadavky.ui.legal_requirement_json_import_dialog import (
+    LegalRequirementJsonImportDialog,
+)
 from moduly.pravni_pozadavky.ui.legal_requirement_table import LegalRequirementTable
 
 
@@ -41,6 +45,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
         toolbar = QHBoxLayout()
 
         self.new_btn = QPushButton("Nový požadavek")
+        self.import_json_btn = QPushButton("Import požadavků JSON")
         self.edit_btn = QPushButton("Upravit")
         self.archive_btn = QPushButton("Archivovat")
         self.verify_btn = QPushButton("Ověřit plnění")
@@ -58,6 +63,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
         self.active_filter.setCurrentText(DEFAULT_ACTIVE_FILTER)
 
         toolbar.addWidget(self.new_btn)
+        toolbar.addWidget(self.import_json_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.archive_btn)
         toolbar.addWidget(self.verify_btn)
@@ -81,6 +87,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
         layout.addWidget(self.table)
 
         self.new_btn.clicked.connect(self.new_requirement)
+        self.import_json_btn.clicked.connect(self.import_requirements_json)
         self.edit_btn.clicked.connect(self.edit_selected_requirement)
         self.archive_btn.clicked.connect(self.archive_selected_requirement)
         self.verify_btn.clicked.connect(self.verify_selected_requirement)
@@ -183,6 +190,21 @@ class PravniPozadavkyRequirementsTab(QWidget):
             return None
         item = self.table.item(selected[0].row(), 0)
         return int(item.text()) if item else None
+
+    def import_requirements_json(self) -> None:
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Import požadavků z JSON",
+            "",
+            "JSON soubory (*.json);;Všechny soubory (*)",
+        )
+        if not file_path:
+            return
+
+        dialog = LegalRequirementJsonImportDialog(self, file_path=file_path)
+        exec_maximized(dialog)
+        if dialog.import_summary is not None:
+            self.refresh()
 
     def new_requirement(self) -> None:
         dialog = LegalRequirementDialog(self)
