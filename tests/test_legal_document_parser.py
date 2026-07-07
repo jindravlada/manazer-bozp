@@ -26,8 +26,11 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.pravni_pozadavky.parser.legal_document_parser import legal_document_parser
     from moduly.pravni_pozadavky.parser.legal_document_parser_models import (
+        SECTION_DIVISION,
+        SECTION_HEAD,
         SECTION_LETTER,
         SECTION_PARAGRAPH,
+        SECTION_PART,
         SECTION_SUBSECTION,
     )
     from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
@@ -135,6 +138,42 @@ class LegalDocumentParserTestCase(unittest.TestCase):
 
         paragraph = next(item for item in sections if item.paragraph == "101")
         self.assertEqual(paragraph.title, "Předmět úpravy")
+
+    def _section_has_import_content(self, section) -> bool:
+        return bool(
+            (section.section_number or "").strip()
+            or (section.title or "").strip()
+            or (section.text or "").strip()
+        )
+
+    def test_realistic_sample_has_no_empty_sections(self) -> None:
+        result = self._parse_sample()
+
+        self.assertGreater(len(result.sections), 0)
+        for section in result.sections:
+            self.assertTrue(
+                self._section_has_import_content(section),
+                f"Prázdná sekce: {section.section_type} "
+                f"number={section.section_number!r} "
+                f"title={section.title!r} "
+                f"text={section.text!r}",
+            )
+
+        section_types = {section.section_type for section in result.sections}
+        self.assertIn(SECTION_PART, section_types)
+        self.assertIn(SECTION_HEAD, section_types)
+        self.assertIn(SECTION_DIVISION, section_types)
+        self.assertIn(SECTION_PARAGRAPH, section_types)
+
+        paragraphs = {section.paragraph for section in result.sections if section.section_type == SECTION_PARAGRAPH}
+        self.assertIn("101", paragraphs)
+        self.assertIn("102", paragraphs)
+        self.assertNotIn("999", paragraphs)
+
+    def test_realistic_sample_imports_without_validation_error(self) -> None:
+        result = self._parse_sample()
+        import_result = legal_document_json_import_service.import_data(result.to_dict())
+        self.assertGreater(import_result.section_count, 0)
 
 
 if __name__ == "__main__":

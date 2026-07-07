@@ -21,6 +21,19 @@ _PARAGRAPH_RE = re.compile(r"^\s*§\s*(\d+[a-z]?)\s*(.*)$", re.IGNORECASE)
 _SUBSECTION_RE = re.compile(r"^\s*\((\d+)\)\s*(.*)$")
 _LETTER_RE = re.compile(r"^\s*([a-záčďéěíňóřšťúůýž])\)\s*(.*)$", re.IGNORECASE)
 
+_SECTION_DEBUG_LABELS = {
+    SECTION_PART: "CAST",
+    SECTION_HEAD: "HLAVA",
+    SECTION_DIVISION: "DIL",
+    SECTION_PARAGRAPH: "PARAGRAF",
+    SECTION_SUBSECTION: "ODSTAVEC",
+    SECTION_LETTER: "PISMENO",
+}
+
+
+def _debug(message: str) -> None:
+    print(f"[LegalDocumentParser] {message}", flush=True)
+
 
 class LegalDocumentParser:
     DEFAULT_VERSION_NAME = "Aktuální znění"
@@ -97,17 +110,19 @@ class LegalDocumentParser:
         awaiting_paragraph_title = False
 
         def flush_current() -> None:
-            nonlocal current, awaiting_paragraph_title
+            nonlocal current, awaiting_paragraph_title, sort_order
             if current is not None and self._has_content(current):
+                sort_order += 1
+                current.sort_order = sort_order
                 sections.append(current)
+                self._debug_section(current)
             current = None
             awaiting_paragraph_title = False
 
         def start_section(**kwargs) -> None:
-            nonlocal current, sort_order, awaiting_paragraph_title
+            nonlocal current, awaiting_paragraph_title
             flush_current()
-            sort_order += 1
-            current = ParsedLegalSection(sort_order=sort_order, **kwargs)
+            current = ParsedLegalSection(**kwargs)
             awaiting_paragraph_title = kwargs.get("section_type") == SECTION_PARAGRAPH
 
         def append_text(line: str) -> None:
@@ -119,10 +134,8 @@ class LegalDocumentParser:
             else:
                 current.text = line
 
-        for raw_line in text.splitlines():
-            line = raw_line.strip()
-            if not line:
-                continue
+        def process_line(line: str) -> None:
+            nonlocal current, awaiting_paragraph_title
 
             match = _PART_RE.match(line)
             if match:
@@ -130,7 +143,7 @@ class LegalDocumentParser:
                     section_type=SECTION_PART,
                     section_number=match.group(1).strip(),
                 )
-                continue
+                return
 
             match = _HEAD_RE.match(line)
             if match:
@@ -138,7 +151,7 @@ class LegalDocumentParser:
                     section_type=SECTION_HEAD,
                     section_number=match.group(1).strip(),
                 )
-                continue
+                return
 
             match = _DIVISION_RE.match(line)
             if match:
@@ -146,7 +159,7 @@ class LegalDocumentParser:
                     section_type=SECTION_DIVISION,
                     section_number=match.group(1).strip(),
                 )
-                continue
+                return
 
             match = _PARAGRAPH_RE.match(line)
             if match:
@@ -158,7 +171,7 @@ class LegalDocumentParser:
                     title=inline_title,
                 )
                 awaiting_paragraph_title = not inline_title
-                continue
+                return
 
             match = _SUBSECTION_RE.match(line)
             if match:
@@ -167,7 +180,7 @@ class LegalDocumentParser:
                     section_number=match.group(1).strip(),
                     text=match.group(2).strip(),
                 )
-                continue
+                return
 
             match = _LETTER_RE.match(line)
             if match:
@@ -176,7 +189,7 @@ class LegalDocumentParser:
                     item_letter=match.group(1).lower(),
                     text=match.group(2).strip(),
                 )
-                continue
+                return
 
             if (
                 current is not None
@@ -186,18 +199,40 @@ class LegalDocumentParser:
             ):
                 current.title = line
                 awaiting_paragraph_title = False
-                continue
+                return
 
             append_text(line)
+
+        for raw_line in text.splitlines():
+            line = raw_line.strip()
+            if not line:
+                continue
+
+            try:
+                process_line(line)
+            except Exception:
+                continue
 
         flush_current()
         return sections
 
+    def _debug_section(self, section: ParsedLegalSection) -> None:
+        label = _SECTION_DEBUG_LABELS.get(section.section_type, section.section_type.upper())
+        if section.section_type == SECTION_PARAGRAPH:
+            identifier = f"§{section.paragraph}" if section.paragraph else ""
+        elif section.section_type == SECTION_LETTER:
+            identifier = section.item_letter
+        else:
+            identifier = section.section_number
+        identifier = identifier.strip()
+        if identifier:
+            _debug(f"{label} {identifier} text={len(section.text)}")
+        else:
+            _debug(f"{label} text={len(section.text)}")
+
     def _has_content(self, section: ParsedLegalSection) -> bool:
         return bool(
             section.section_number.strip()
-            or section.paragraph.strip()
-            or section.item_letter.strip()
             or section.title.strip()
             or section.text.strip()
         )
