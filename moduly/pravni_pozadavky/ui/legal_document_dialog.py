@@ -4,13 +4,16 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QLineEdit,
     QMessageBox,
+    QTabWidget,
     QTextEdit,
     QVBoxLayout,
+    QWidget,
 )
 
-from core.widgets.dialog_utils import configure_resizable_form_dialog, create_save_cancel_box
+from core.widgets.dialog_utils import configure_resizable_form_dialog, create_save_cancel_box, wrap_in_scroll_area
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_LABELS, VALID_DOCUMENT_TYPES
+from moduly.pravni_pozadavky.ui.legal_document_versions_tab import LegalDocumentVersionsTab
 
 
 class LegalDocumentDialog(QDialog):
@@ -19,10 +22,25 @@ class LegalDocumentDialog(QDialog):
         self.document = document
 
         self.setWindowTitle("Právní předpis" if document is None else "Upravit právní předpis")
-        configure_resizable_form_dialog(self, width=700, height=560, min_width=520, min_height=420)
+        configure_resizable_form_dialog(self, width=720, height=620, min_width=520, min_height=460)
 
         layout = QVBoxLayout(self)
-        form = QFormLayout()
+
+        self.tabs = QTabWidget()
+        self.tabs.addTab(wrap_in_scroll_area(self._main_tab()), "Předpis")
+        self.versions_tab = LegalDocumentVersionsTab(
+            document.id if document is not None else None,
+        )
+        self.tabs.addTab(self.versions_tab, "Verze")
+        layout.addWidget(self.tabs, 1)
+        layout.addWidget(create_save_cancel_box(self))
+
+        if document is not None:
+            self._load_document(document)
+
+    def _main_tab(self) -> QWidget:
+        tab = QWidget()
+        form = QFormLayout(tab)
 
         self.document_type = QComboBox()
         for key in sorted(DOCUMENT_TYPE_LABELS, key=lambda item: DOCUMENT_TYPE_LABELS[item]):
@@ -53,12 +71,7 @@ class LegalDocumentDialog(QDialog):
         form.addRow("Zdroj URL:", self.source_url)
         form.addRow("Lokální soubor:", self.local_file_path)
         form.addRow("Poznámka:", self.note)
-
-        layout.addLayout(form)
-        layout.addWidget(create_save_cancel_box(self))
-
-        if document is not None:
-            self._load_document(document)
+        return tab
 
     def _load_document(self, document) -> None:
         index = self.document_type.findData(document.document_type)
