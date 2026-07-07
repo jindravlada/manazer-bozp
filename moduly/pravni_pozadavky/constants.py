@@ -204,6 +204,21 @@ def legal_section_provision_label(section, *, sections_by_id: dict | None = None
     return _strip_section_title_suffix(legal_section_display_label(section))
 
 
+def legal_requirement_source_display_label(
+    document,
+    section,
+    *,
+    sections_by_id: dict | None = None,
+) -> str:
+    document_label = legal_document_display_label(document)
+    provision = legal_section_provision_label(section, sections_by_id=sections_by_id)
+    if document_label and provision:
+        return f"{document_label} – {provision}"
+    if provision:
+        return provision
+    return document_label
+
+
 def legal_section_display_label(section) -> str:
     paragraph = (getattr(section, "paragraph", "") or "").strip()
     section_number = (getattr(section, "section_number", "") or "").strip()

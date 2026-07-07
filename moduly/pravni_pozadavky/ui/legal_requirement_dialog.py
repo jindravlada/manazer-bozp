@@ -25,7 +25,8 @@ from moduly.pravni_pozadavky.constants import (
     VALID_COMPLIANCE_STATUSES,
     VALID_PERIODICITIES,
     legal_document_display_label,
-    legal_section_display_label,
+    legal_requirement_source_display_label,
+    legal_section_provision_label,
 )
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
 from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
@@ -103,8 +104,7 @@ class LegalRequirementDialog(QDialog):
         form.addRow("Paragraf / ustanovení:", self.provision)
         form.addRow("Právní předpis:", self.legal_document)
         form.addRow("Ustanovení předpisu:", self.legal_section)
-        form.addRow("Zdrojové ustanovení:", self.source_section_display)
-        form.addRow("Oblast:", self.area)
+        form.addRow("Zdroj:", self.source_section_display)
         form.addRow("Stručný požadavek:", self.requirement_summary)
         form.addRow("Dopad na organizaci:", self.organization_impact)
         form.addRow("Odpovědná osoba:", self.responsible_person)
@@ -119,14 +119,14 @@ class LegalRequirementDialog(QDialog):
         return tab
 
     def _load_requirement(self, requirement) -> None:
-        self.regulation_name.setText(requirement.regulation_name)
-        self.regulation_number.setText(requirement.regulation_number)
-        self.provision.setText(requirement.provision)
         self._populate_legal_documents(selected_id=requirement.legal_document_id)
         self._populate_legal_sections(
             selected_id=requirement.legal_section_id,
             document_id=requirement.legal_document_id,
         )
+        self.regulation_name.setText(requirement.regulation_name)
+        self.regulation_number.setText(requirement.regulation_number)
+        self.provision.setText(self._provision_display_text(requirement.provision, requirement.legal_section_id))
         self.area.setText(requirement.area)
         self.requirement_summary.setPlainText(requirement.requirement_summary)
         self.organization_impact.setPlainText(requirement.organization_impact)
@@ -142,14 +142,14 @@ class LegalRequirementDialog(QDialog):
         self._update_source_section_display()
 
     def _load_draft(self, draft) -> None:
-        self.regulation_name.setText(draft.regulation_name)
-        self.regulation_number.setText(draft.regulation_number)
-        self.provision.setText(draft.provision)
         self._populate_legal_documents(selected_id=draft.legal_document_id)
         self._populate_legal_sections(
             selected_id=draft.legal_section_id,
             document_id=draft.legal_document_id,
         )
+        self.regulation_name.setText(draft.regulation_name)
+        self.regulation_number.setText(draft.regulation_number)
+        self.provision.setText(self._provision_display_text(draft.provision, draft.legal_section_id))
         self.area.setText(draft.area)
         self.requirement_summary.setPlainText(draft.requirement_summary)
         self.organization_impact.setPlainText(draft.organization_impact)
@@ -166,7 +166,32 @@ class LegalRequirementDialog(QDialog):
         if section is None:
             self.source_section_display.clear()
             return
-        self.source_section_display.setText(legal_section_display_label(section))
+        document = legal_document_service.get_by_id(section.legal_document_id)
+        sections_by_id = legal_section_service.build_sections_map([section])
+        self.source_section_display.setText(
+            legal_requirement_source_display_label(
+                document,
+                section,
+                sections_by_id=sections_by_id,
+            ),
+        )
+
+    def _provision_display_text(self, provision: str, section_id: int | None) -> str:
+        if section_id is None:
+            return provision
+        section = legal_section_service.get_by_id(section_id)
+        if section is None:
+            return provision
+        sections_by_id = legal_section_service.build_sections_map([section])
+        return legal_section_provision_label(section, sections_by_id=sections_by_id)
+
+    def _sync_regulation_name_from_document(self, document_id: int | None) -> None:
+        if document_id is None:
+            return
+        document = legal_document_service.get_by_id(document_id)
+        if document is None:
+            return
+        self.regulation_name.setText(document.title.strip())
 
     def _populate_legal_documents(self, *, selected_id: int | None = None) -> None:
         self.legal_document.blockSignals(True)
@@ -192,6 +217,7 @@ class LegalRequirementDialog(QDialog):
 
         if selected_id is not None:
             self._set_combo_value(self.legal_document, selected_id)
+            self._sync_regulation_name_from_document(selected_id)
         self.legal_document.blockSignals(False)
 
     def _populate_legal_sections(
@@ -217,8 +243,9 @@ class LegalRequirementDialog(QDialog):
             ):
                 sections = [selected_section, *sections]
 
+        sections_by_id = legal_section_service.build_sections_map(sections)
         for section in sections:
-            label = legal_section_display_label(section)
+            label = legal_section_provision_label(section, sections_by_id=sections_by_id)
             if not label:
                 label = f"Ustanovení #{section.id}"
             self.legal_section.addItem(label, section.id)
@@ -229,6 +256,7 @@ class LegalRequirementDialog(QDialog):
     def _on_legal_document_changed(self) -> None:
         selected_section_id = self.legal_section.currentData()
         document_id = self.legal_document.currentData()
+        self._sync_regulation_name_from_document(document_id)
         if selected_section_id is not None:
             section = legal_section_service.get_by_id(selected_section_id)
             if section is not None and document_id is not None:

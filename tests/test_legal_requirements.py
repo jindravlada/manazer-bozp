@@ -542,7 +542,7 @@ class LegalRequirementServiceTestCase(unittest.TestCase):
         draft = legal_requirement_creation_service.create_from_section(section.id)
 
         self.assertIsNone(draft.id)
-        self.assertEqual(draft.regulation_name, "Školení zaměstnanců")
+        self.assertEqual(draft.regulation_name, "Zákoník práce")
         self.assertEqual(draft.requirement_summary, "")
 
     def test_draft_inherits_legal_document_id(self) -> None:

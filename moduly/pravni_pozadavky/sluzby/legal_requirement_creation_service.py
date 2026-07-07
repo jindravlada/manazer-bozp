@@ -1,4 +1,7 @@
-from moduly.pravni_pozadavky.constants import DEFAULT_PROCESSING_STATUS, legal_section_display_label
+from moduly.pravni_pozadavky.constants import (
+    DEFAULT_PROCESSING_STATUS,
+    legal_section_provision_label,
+)
 from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
 from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
@@ -18,13 +21,19 @@ class LegalRequirementCreationService:
             elif document.number:
                 regulation_number = document.number
 
+        regulation_name = ""
+        if document is not None:
+            regulation_name = document.title.strip()
+
+        sections_by_id = legal_section_service.build_sections_map([section])
+
         return LegalRequirement(
             legal_document_id=section.legal_document_id,
             legal_section_id=section.id,
             source_section_id=section.id,
-            regulation_name=section.title.strip(),
+            regulation_name=regulation_name,
             regulation_number=regulation_number,
-            provision=legal_section_display_label(section),
+            provision=legal_section_provision_label(section, sections_by_id=sections_by_id),
             requirement_summary="",
             processing_status=DEFAULT_PROCESSING_STATUS,
             active=True,

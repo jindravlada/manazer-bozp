@@ -59,6 +59,25 @@ class LegalSectionService:
     def get_by_id(self, section_id: int) -> LegalSection | None:
         return self.repository.get_by_id(section_id)
 
+    def build_sections_map(self, sections: list[LegalSection]) -> dict[int, LegalSection]:
+        sections_by_id = {section.id: section for section in sections}
+        pending = {
+            section.parent_section_id
+            for section in sections
+            if section.parent_section_id is not None
+        }
+        while pending:
+            section_id = pending.pop()
+            if section_id in sections_by_id:
+                continue
+            section = self.get_by_id(section_id)
+            if section is None:
+                continue
+            sections_by_id[section_id] = section
+            if section.parent_section_id is not None:
+                pending.add(section.parent_section_id)
+        return sections_by_id
+
     def create(
         self,
         *,
