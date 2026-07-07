@@ -185,6 +185,37 @@ def _open_appimage_odt_via_tmp_copy(path: Path, env: dict[str, str]) -> bool:
     )
 
 
+def _open_appimage_via_tmp_copy(path: Path, env: dict[str, str]) -> bool:
+    tmp_path = Path(tempfile.gettempdir()) / f"manazer-bozp-{uuid.uuid4().hex}-{path.name}"
+    try:
+        shutil.copy2(path, tmp_path)
+        os.chmod(tmp_path, 0o644)
+    except OSError:
+        return False
+
+    return _open_with_gio(tmp_path, env) or _open_with_system_xdg_open(tmp_path, env)
+
+
+def _open_appimage_attachment(path: Path) -> bool:
+    env = _cleaned_system_env()
+    openers = (
+        lambda: _open_with_gio(path, env),
+        lambda: _open_with_system_xdg_open(path, env),
+        lambda: _open_appimage_via_tmp_copy(path, env),
+        lambda: _open_with_qt_desktop(path),
+    )
+    for opener in openers:
+        if opener():
+            return True
+    return False
+
+
+def _open_appimage_file(path: Path) -> bool:
+    if path.suffix.lower() == ".odt":
+        return _open_appimage_odt(path)
+    return _open_appimage_attachment(path)
+
+
 def _open_with_xdg_open(path: Path) -> bool:
     env = _cleaned_system_env() if _is_appimage() else None
     xdg_open = _system_binary("xdg-open") if _is_appimage() else shutil.which("xdg-open")
@@ -200,15 +231,60 @@ def _open_with_qt_desktop(path: Path) -> bool:
         return False
 
 
-def _show_open_failed(parent: QWidget | None, title: str, path: Path) -> None:
-    QMessageBox.warning(
-        parent,
-        title,
-        (
+def _show_open_failed(
+    parent: QWidget | None,
+    title: str,
+    path: Path,
+    *,
+    is_export: bool = False,
+) -> None:
+    if is_export:
+        message = (
             "Export byl vytvořen, ale nepodařilo se ho automaticky otevřít.\n\n"
             f"Soubor:\n{path}"
-        ),
-    )
+        )
+    else:
+        message = (
+            "Soubor se nepodařilo otevřít.\n\n"
+            f"Soubor:\n{path}"
+        )
+
+    QMessageBox.warning(parent, title, message)
+
+
+def open_local_file(
+    path: Path | str,
+    *,
+    parent: QWidget | None = None,
+    title: str = "Soubor",
+    failure_context: str = "file",
+) -> bool:
+    """Open a local file with a system handler, isolated from AppImage env on Linux."""
+    resolved = Path(path).resolve()
+
+    if not resolved.exists():
+        QMessageBox.warning(
+            parent,
+            title,
+            f"Soubor nebyl nalezen:\n{resolved}",
+        )
+        return False
+
+    if _is_appimage():
+        opened = _open_appimage_file(resolved)
+    elif sys.platform.startswith("linux"):
+        opened = _open_with_xdg_open(resolved) or _open_with_qt_desktop(resolved)
+    else:
+        opened = _open_with_qt_desktop(resolved) or _open_with_xdg_open(resolved)
+
+    if not opened:
+        _show_open_failed(
+            parent,
+            title,
+            resolved,
+            is_export=failure_context == "export",
+        )
+    return opened
 
 
 def open_export_file(path: Path | str, *, parent: QWidget | None = None, title: str = "Export") -> bool:
@@ -223,21 +299,9 @@ def open_export_file(path: Path | str, *, parent: QWidget | None = None, title: 
         )
         return False
 
-    if _is_appimage() and resolved.suffix.lower() == ".odt":
-        opened = _open_appimage_odt(resolved)
-        if not opened:
-            _show_open_failed(parent, title, resolved)
-        return opened
-
-    if sys.platform.startswith("linux"):
-        if _open_with_xdg_open(resolved):
-            return True
-        opened = _open_with_qt_desktop(resolved)
-    else:
-        opened = _open_with_qt_desktop(resolved)
-        if not opened:
-            opened = _open_with_xdg_open(resolved)
-
-    if not opened:
-        _show_open_failed(parent, title, resolved)
-    return opened
+    return open_local_file(
+        resolved,
+        parent=parent,
+        title=title,
+        failure_context="export",
+    )

@@ -12,6 +12,7 @@ from core.export.open_export import (
     _cleaned_system_env,
     _strip_appimage_path_entries,
     open_export_file,
+    open_local_file,
 )
 
 
@@ -117,6 +118,34 @@ class OpenExportFileTests(unittest.TestCase):
             mock_open.assert_called_once_with(path.resolve())
             mock_warning.assert_called_once()
             self.assertIn(str(path.resolve()), mock_warning.call_args.args[2])
+
+    @patch.dict(os.environ, {"APPIMAGE": "/tmp/ManazerBozp.AppImage", "APPDIR": "/tmp/.mount_app/usr"}, clear=False)
+    @patch("core.export.open_export._open_with_gio", return_value=True)
+    @patch("core.export.open_export._open_with_system_xdg_open")
+    def test_appimage_opens_jpg_attachment_with_gio(self, mock_xdg, mock_gio) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "photo.jpg"
+            path.write_bytes(b"fake-jpg")
+
+            result = open_local_file(path, title="Přílohy")
+
+            self.assertTrue(result)
+            mock_gio.assert_called_once()
+            mock_xdg.assert_not_called()
+
+    @patch.dict(os.environ, {"APPIMAGE": "/tmp/ManazerBozp.AppImage", "APPDIR": "/tmp/.mount_app/usr"}, clear=False)
+    @patch("core.export.open_export._open_with_gio", return_value=True)
+    @patch("core.export.open_export._open_with_system_xdg_open")
+    def test_appimage_opens_pdf_attachment_with_gio(self, mock_xdg, mock_gio) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "document.pdf"
+            path.write_bytes(b"%PDF-1.4")
+
+            result = open_local_file(path, title="Přílohy")
+
+            self.assertTrue(result)
+            mock_gio.assert_called_once()
+            mock_xdg.assert_not_called()
 
     @patch("core.export.open_export.sys.platform", "linux")
     @patch("core.export.open_export._is_appimage", return_value=False)

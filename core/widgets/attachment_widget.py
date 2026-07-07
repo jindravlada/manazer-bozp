@@ -1,5 +1,4 @@
 from pathlib import Path
-import subprocess
 
 from PySide6.QtWidgets import (
     QFileDialog,
@@ -11,6 +10,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.export.open_export import open_local_file
 from core.services.attachment_service import attachment_service
 
 
@@ -113,10 +113,7 @@ class AttachmentWidget(QWidget):
             QMessageBox.warning(self, "Přílohy", "Soubor nebyl nalezen.")
             return
 
-        try:
-            subprocess.Popen(["xdg-open", str(path)])
-        except Exception as exc:
-            QMessageBox.warning(self, "Přílohy", f"Nepodařilo se otevřít soubor.\n\n{exc}")
+        open_local_file(path, parent=self, title="Přílohy")
 
     def remove_selected(self):
         attachment = self._selected_attachment()
