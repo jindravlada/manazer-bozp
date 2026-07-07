@@ -41,6 +41,10 @@ def initialize_database() -> None:
     from moduly.proverky.modely.bozp_inspection_commission_member import (  # noqa: F401
         BozpInspectionCommissionMember,
     )
+    from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement  # noqa: F401
+    from moduly.pravni_pozadavky.modely.legal_requirement_check import (  # noqa: F401
+        LegalRequirementCheck,
+    )
     from core.shared.modely.control_result import ControlResult  # noqa: F401
 
     create_database()

@@ -1,0 +1,118 @@
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QFormLayout,
+    QLineEdit,
+    QTextEdit,
+    QVBoxLayout,
+)
+
+from core.widgets.dialog_utils import configure_resizable_form_dialog, create_save_cancel_box
+from core.widgets.nullable_date_edit import NullableDateEdit
+from core.widgets.thp_worker_selector import ThpWorkerSelector
+from moduly.pravni_pozadavky.constants import (
+    COMPLIANCE_STATUS_LABELS,
+    PERIODICITY_LABELS,
+    VALID_COMPLIANCE_STATUSES,
+    VALID_PERIODICITIES,
+)
+
+
+class LegalRequirementDialog(QDialog):
+    def __init__(self, parent=None, requirement=None):
+        super().__init__(parent)
+        self.requirement = requirement
+
+        self.setWindowTitle("Právní požadavek" if requirement is None else "Upravit požadavek")
+        configure_resizable_form_dialog(self, width=760, height=680, min_width=560, min_height=480)
+
+        layout = QVBoxLayout(self)
+        form = QFormLayout()
+
+        self.regulation_name = QLineEdit()
+        self.regulation_number = QLineEdit()
+        self.provision = QLineEdit()
+        self.area = QLineEdit()
+        self.requirement_summary = QTextEdit()
+        self.requirement_summary.setMinimumHeight(80)
+        self.organization_impact = QTextEdit()
+        self.organization_impact.setMinimumHeight(80)
+        self.responsible_person = ThpWorkerSelector()
+        self.periodicity = QComboBox()
+        self.periodicity.addItem("", "")
+        for key in sorted(PERIODICITY_LABELS, key=lambda item: PERIODICITY_LABELS[item]):
+            self.periodicity.addItem(PERIODICITY_LABELS[key], key)
+        self.last_verification = NullableDateEdit()
+        self.next_verification = NullableDateEdit()
+        self.compliance_status = QComboBox()
+        for key in sorted(COMPLIANCE_STATUS_LABELS, key=lambda item: COMPLIANCE_STATUS_LABELS[item]):
+            self.compliance_status.addItem(COMPLIANCE_STATUS_LABELS[key], key)
+        self.note = QTextEdit()
+        self.note.setMinimumHeight(70)
+        self.active_checkbox = QCheckBox("Aktivní záznam")
+
+        form.addRow("Název předpisu:", self.regulation_name)
+        form.addRow("Číslo předpisu:", self.regulation_number)
+        form.addRow("Paragraf / ustanovení:", self.provision)
+        form.addRow("Oblast:", self.area)
+        form.addRow("Stručný požadavek:", self.requirement_summary)
+        form.addRow("Dopad na organizaci:", self.organization_impact)
+        form.addRow("Odpovědná osoba:", self.responsible_person)
+        form.addRow("Periodicita ověření:", self.periodicity)
+        form.addRow("Poslední ověření:", self.last_verification)
+        form.addRow("Další ověření:", self.next_verification)
+        form.addRow("Stav plnění:", self.compliance_status)
+        form.addRow("Poznámka:", self.note)
+        form.addRow("", self.active_checkbox)
+
+        layout.addLayout(form)
+        layout.addWidget(create_save_cancel_box(self))
+
+        if requirement is not None:
+            self._load_requirement(requirement)
+        else:
+            self.active_checkbox.setChecked(True)
+
+    def _load_requirement(self, requirement) -> None:
+        self.regulation_name.setText(requirement.regulation_name)
+        self.regulation_number.setText(requirement.regulation_number)
+        self.provision.setText(requirement.provision)
+        self.area.setText(requirement.area)
+        self.requirement_summary.setPlainText(requirement.requirement_summary)
+        self.organization_impact.setPlainText(requirement.organization_impact)
+        self.responsible_person.set_person_id(requirement.responsible_person_id)
+        self._set_combo_value(self.periodicity, requirement.verification_periodicity)
+        self.last_verification.set_date_value(requirement.last_verification_date)
+        self.next_verification.set_date_value(requirement.next_verification_date)
+        self._set_combo_value(self.compliance_status, requirement.compliance_status)
+        self.note.setPlainText(requirement.note)
+        self.active_checkbox.setChecked(requirement.active)
+
+    def _set_combo_value(self, combo: QComboBox, value: str) -> None:
+        index = combo.findData(value)
+        combo.setCurrentIndex(index if index >= 0 else 0)
+
+    def get_data(self) -> dict:
+        periodicity = self.periodicity.currentData() or ""
+        compliance_status = self.compliance_status.currentData() or ""
+        if periodicity not in VALID_PERIODICITIES:
+            periodicity = ""
+        if compliance_status not in VALID_COMPLIANCE_STATUSES:
+            compliance_status = ""
+
+        return {
+            "regulation_name": self.regulation_name.text().strip(),
+            "regulation_number": self.regulation_number.text().strip(),
+            "provision": self.provision.text().strip(),
+            "area": self.area.text().strip(),
+            "requirement_summary": self.requirement_summary.toPlainText().strip(),
+            "organization_impact": self.organization_impact.toPlainText().strip(),
+            "responsible_person_id": self.responsible_person.current_person_id(),
+            "verification_periodicity": periodicity,
+            "last_verification_date": self.last_verification.get_date(),
+            "next_verification_date": self.next_verification.get_date(),
+            "compliance_status": compliance_status,
+            "note": self.note.toPlainText().strip(),
+            "active": self.active_checkbox.isChecked(),
+        }

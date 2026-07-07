@@ -2,6 +2,7 @@ from core.shared.constants import (
     ENTITY_ACCIDENT,
     ENTITY_AUDITY,
     ENTITY_FINDING,
+    ENTITY_LEGAL_REQUIREMENT,
     ENTITY_MU_INVESTIGATION,
     ENTITY_PROVERKY,
 )
@@ -16,6 +17,8 @@ def task_type_label(task) -> str:
 
 def task_source_short_label(task) -> str:
     source_module = task.source_module or ""
+    if source_module == ENTITY_LEGAL_REQUIREMENT:
+        return "Právní pož."
     if source_module == ENTITY_MU_INVESTIGATION:
         return _entity_source_short_label(ENTITY_MU_INVESTIGATION)
     if source_module == ENTITY_FINDING and task.source_record_id:
@@ -50,12 +53,15 @@ def _legacy_source_short_label(source: str) -> str:
         "kontrola": "Kontrola",
         ENTITY_FINDING: "Zjištění",
         ENTITY_MU_INVESTIGATION: "MU",
+        ENTITY_LEGAL_REQUIREMENT: "Právní pož.",
     }
     return mapping.get(source or "", source or "—")
 
 
 def task_source_label(task) -> str:
     source_module = task.source_module or ""
+    if source_module == ENTITY_LEGAL_REQUIREMENT and task.source_record_id:
+        return _legal_requirement_source_label(task.source_record_id)
     if source_module == ENTITY_MU_INVESTIGATION and task.source_record_id:
         return _finding_entity_source_label(ENTITY_MU_INVESTIGATION, task.source_record_id)
     if source_module == ENTITY_FINDING and task.source_record_id:
@@ -64,6 +70,17 @@ def task_source_label(task) -> str:
             return _finding_entity_source_label(finding.entity_type, finding.entity_id)
 
     return _legacy_source_label(source_module)
+
+
+def _legal_requirement_source_label(requirement_id: int) -> str:
+    from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
+
+    requirement = legal_requirement_service.get_by_id(requirement_id)
+    if requirement is None:
+        return "Právní požadavek"
+    if requirement.regulation_name.strip():
+        return f"Právní požadavek – {requirement.regulation_name.strip()}"
+    return f"Právní požadavek #{requirement_id}"
 
 
 def _finding_entity_source_label(entity_type: str, entity_id: int) -> str:
@@ -116,5 +133,6 @@ def _legacy_source_label(source: str) -> str:
         "kontrola": "Kontrola",
         ENTITY_FINDING: "Zjištění",
         ENTITY_MU_INVESTIGATION: "Vyšetřování MU",
+        ENTITY_LEGAL_REQUIREMENT: "Právní požadavek",
     }
     return mapping.get(source or "", source or "—")

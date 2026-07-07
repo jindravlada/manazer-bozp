@@ -149,6 +149,7 @@ class MainWindow(QMainWindow):
             "kontroly",
             "audity",
             "proverky",
+            "pravni_pozadavky",
             "dokumentace",
             "statistiky",
         ]

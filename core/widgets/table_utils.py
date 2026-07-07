@@ -173,6 +173,46 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             header.setSectionResizeMode(column, QHeaderView.Fixed)
         header.setSectionResizeMode(7, QHeaderView.Stretch)
 
+    elif profile == "legal_requirements":
+        from moduly.pravni_pozadavky.ui.legal_requirement_table import (
+            COL_AREA,
+            COL_LAST_CHECK,
+            COL_NEXT_CHECK,
+            COL_PERIODICITY,
+            COL_PROVISION,
+            COL_REGULATION,
+            COL_RESPONSIBLE,
+            COL_STATUS,
+            COL_SUMMARY,
+        )
+
+        widths = {
+            COL_REGULATION: 220,
+            COL_PROVISION: 120,
+            COL_AREA: 130,
+            COL_SUMMARY: 320,
+            COL_RESPONSIBLE: 170,
+            COL_STATUS: 130,
+            COL_LAST_CHECK: 110,
+            COL_NEXT_CHECK: 110,
+            COL_PERIODICITY: 120,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        header.setSectionResizeMode(COL_SUMMARY, QHeaderView.Stretch)
+        for column in (
+            COL_REGULATION,
+            COL_PROVISION,
+            COL_AREA,
+            COL_RESPONSIBLE,
+            COL_STATUS,
+            COL_LAST_CHECK,
+            COL_NEXT_CHECK,
+            COL_PERIODICITY,
+        ):
+            header.setSectionResizeMode(column, QHeaderView.Fixed)
+
     elif profile == "controls_year_matrix":
         table.setColumnWidth(0, 230)
         table.setColumnWidth(1, 55)

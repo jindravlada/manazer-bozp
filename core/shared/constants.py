@@ -5,6 +5,7 @@ ENTITY_MU_INVESTIGATION = "mu_investigation"
 
 ENTITY_FINDING = "finding"
 ENTITY_TASK = "task"
+ENTITY_LEGAL_REQUIREMENT = "legal_requirement"
 
 VALID_ENTITY_TYPES = frozenset(
     {
@@ -14,6 +15,7 @@ VALID_ENTITY_TYPES = frozenset(
         ENTITY_MU_INVESTIGATION,
         ENTITY_FINDING,
         ENTITY_TASK,
+        ENTITY_LEGAL_REQUIREMENT,
     }
 )
 
