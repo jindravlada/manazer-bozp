@@ -31,6 +31,9 @@ from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
     legal_document_version_service,
 )
 from moduly.pravni_pozadavky.ui.legal_document_dialog import LegalDocumentDialog
+from moduly.pravni_pozadavky.ui.legal_document_internet_import_dialog import (
+    LegalDocumentInternetImportDialog,
+)
 from moduly.pravni_pozadavky.ui.legal_document_txt_import_dialog import LegalDocumentTxtImportDialog
 from moduly.pravni_pozadavky.ui.legal_document_table import LegalDocumentTable
 
@@ -47,6 +50,7 @@ class PravniPredpisyTab(QWidget):
         self.new_btn = QPushButton("Nový")
         self.import_btn = QPushButton("Import JSON")
         self.import_txt_btn = QPushButton("Import TXT")
+        self.import_internet_btn = QPushButton("Import Internet")
         self.export_btn = QPushButton("Export JSON")
         self.edit_btn = QPushButton("Upravit")
         self.toggle_btn = QPushButton("Deaktivovat")
@@ -60,6 +64,7 @@ class PravniPredpisyTab(QWidget):
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.import_btn)
         toolbar.addWidget(self.import_txt_btn)
+        toolbar.addWidget(self.import_internet_btn)
         toolbar.addWidget(self.export_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.toggle_btn)
@@ -77,6 +82,7 @@ class PravniPredpisyTab(QWidget):
         self.new_btn.clicked.connect(self.new_document)
         self.import_btn.clicked.connect(self.import_json_document)
         self.import_txt_btn.clicked.connect(self.import_txt_document)
+        self.import_internet_btn.clicked.connect(self.import_internet_document)
         self.export_btn.clicked.connect(self.export_json_document)
         self.edit_btn.clicked.connect(self.edit_selected_document)
         self.toggle_btn.clicked.connect(self.toggle_selected_document)
@@ -178,6 +184,28 @@ class PravniPredpisyTab(QWidget):
         QMessageBox.information(
             self,
             "Import TXT",
+            (
+                f"Import dokončen.\n\n"
+                f"Předpis: {document_title}\n"
+                f"Verze: {version_name}\n"
+                f"Počet částí: {result.section_count}"
+            ),
+        )
+        self.refresh()
+
+    def import_internet_document(self) -> None:
+        dialog = LegalDocumentInternetImportDialog(self)
+        if not exec_maximized(dialog) or dialog.import_result is None:
+            return
+
+        result = dialog.import_result
+        document = legal_document_service.get_by_id(result.document_id)
+        version = legal_document_version_service.get_by_id(result.version_id)
+        document_title = document.title if document is not None else f"Předpis #{result.document_id}"
+        version_name = version.version_name if version is not None else f"Verze #{result.version_id}"
+        QMessageBox.information(
+            self,
+            "Import Internet",
             (
                 f"Import dokončen.\n\n"
                 f"Předpis: {document_title}\n"
