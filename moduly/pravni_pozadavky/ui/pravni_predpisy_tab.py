@@ -9,6 +9,9 @@ from PySide6.QtWidgets import (
 
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
+from moduly.pravni_pozadavky.import_export.legal_document_json_export_service import (
+    legal_document_json_export_service,
+)
 from moduly.pravni_pozadavky.import_export.legal_document_json_import_service import (
     legal_document_json_import_service,
 )
@@ -28,10 +31,12 @@ class PravniPredpisyTab(QWidget):
 
         self.new_btn = QPushButton("Nový")
         self.import_btn = QPushButton("Import JSON")
+        self.export_btn = QPushButton("Export JSON")
         self.edit_btn = QPushButton("Upravit")
         self.toggle_btn = QPushButton("Deaktivovat")
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.import_btn)
+        toolbar.addWidget(self.export_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.toggle_btn)
         toolbar.addStretch()
@@ -45,6 +50,7 @@ class PravniPredpisyTab(QWidget):
 
         self.new_btn.clicked.connect(self.new_document)
         self.import_btn.clicked.connect(self.import_json_document)
+        self.export_btn.clicked.connect(self.export_json_document)
         self.edit_btn.clicked.connect(self.edit_selected_document)
         self.toggle_btn.clicked.connect(self.toggle_selected_document)
         self.table.doubleClicked.connect(self.edit_selected_document)
@@ -112,6 +118,38 @@ class PravniPredpisyTab(QWidget):
             ),
         )
         self.refresh()
+
+    def export_json_document(self) -> None:
+        document = self._selected_document()
+        if document is None:
+            QMessageBox.information(self, "Právní předpisy", "Vyberte právní předpis.")
+            return
+
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export právního předpisu do JSON",
+            f"{document.short_title or document.title}.json",
+            "JSON soubory (*.json);;Všechny soubory (*)",
+        )
+        if not file_path:
+            return
+
+        try:
+            result = legal_document_json_export_service.export_to_file(document.id, file_path)
+        except ValueError as exc:
+            QMessageBox.warning(self, "Export JSON", str(exc))
+            return
+
+        QMessageBox.information(
+            self,
+            "Export JSON",
+            (
+                "Export dokončen.\n\n"
+                f"Předpis:\n{result.document_title}\n\n"
+                f"Verzí:\n{result.version_name}\n\n"
+                f"Částí:\n{result.section_count}"
+            ),
+        )
 
     def edit_selected_document(self) -> None:
         document = self._selected_document()

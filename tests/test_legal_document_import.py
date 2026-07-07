@@ -21,6 +21,9 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
+    from moduly.pravni_pozadavky.import_export.legal_document_json_export_service import (
+        legal_document_json_export_service,
+    )
     from moduly.pravni_pozadavky.import_export.legal_document_json_import_service import (
         legal_document_json_import_service,
     )
@@ -152,6 +155,136 @@ class LegalDocumentJsonImportTestCase(unittest.TestCase):
         self.assertEqual(result.section_count, 2)
         sections = legal_section_service.list_by_version(result.version_id)
         self.assertEqual(len(sections), 2)
+
+
+class LegalDocumentJsonExportTestCase(unittest.TestCase):
+    def setUp(self) -> None:
+        from sqlalchemy import delete
+
+        from core.database.session import get_session
+        from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
+        from moduly.pravni_pozadavky.modely.legal_document_version import LegalDocumentVersion
+        from moduly.pravni_pozadavky.modely.legal_section import LegalSection
+
+        with get_session() as session:
+            session.execute(delete(LegalSection))
+            session.execute(delete(LegalDocumentVersion))
+            session.execute(delete(LegalDocument))
+            session.commit()
+
+        self.sample_path = (
+            Path(__file__).resolve().parents[1]
+            / "moduly"
+            / "pravni_pozadavky"
+            / "import_export"
+            / "sample_legal_document_import.json"
+        )
+
+    def _import_sample(self):
+        return legal_document_json_import_service.import_from_file(self.sample_path)
+
+    def test_export_creates_json_file(self) -> None:
+        import_result = self._import_sample()
+
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as handle:
+            temp_path = handle.name
+
+        try:
+            legal_document_json_export_service.export_to_file(import_result.document_id, temp_path)
+            exported_text = Path(temp_path).read_text(encoding="utf-8")
+            exported_data = json.loads(exported_text)
+            self.assertIsInstance(exported_data, dict)
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+
+    def test_export_contains_document(self) -> None:
+        import_result = self._import_sample()
+        data = legal_document_json_export_service.build_data(import_result.document_id)
+
+        self.assertIn("document", data)
+        self.assertEqual(data["document"]["title"], "Nařízení vlády č. 390/2021 Sb.")
+        self.assertEqual(data["document"]["number"], "390")
+        self.assertEqual(data["document"]["year"], 2021)
+
+    def test_export_contains_version(self) -> None:
+        import_result = self._import_sample()
+        data = legal_document_json_export_service.build_data(import_result.document_id)
+
+        self.assertIn("version", data)
+        self.assertEqual(data["version"]["version_name"], "Aktuální znění")
+
+    def test_export_contains_sections(self) -> None:
+        import_result = self._import_sample()
+        data = legal_document_json_export_service.build_data(import_result.document_id)
+
+        self.assertIn("sections", data)
+        self.assertEqual(len(data["sections"]), 1)
+        self.assertEqual(data["sections"][0]["title"], "Předmět úpravy")
+        self.assertEqual(data["sections"][0]["paragraph"], "1")
+
+    def test_export_empty_sections(self) -> None:
+        document = legal_document_service.create(
+            document_type="zakon",
+            title="Zákon bez částí",
+        )
+        legal_document_version_service.create(
+            legal_document_id=document.id,
+            version_name="Verze 1",
+        )
+
+        data = legal_document_json_export_service.build_data(document.id)
+        self.assertEqual(data["sections"], [])
+
+    def test_export_without_active_version_raises_value_error(self) -> None:
+        document = legal_document_service.create(
+            document_type="zakon",
+            title="Zákon bez verze",
+        )
+
+        with self.assertRaises(ValueError) as context:
+            legal_document_json_export_service.build_data(document.id)
+        self.assertIn("verzi", str(context.exception).lower())
+
+    def test_export_import_round_trip_creates_matching_document(self) -> None:
+        import_result = self._import_sample()
+        original_document = legal_document_service.get_by_id(import_result.document_id)
+        original_version = legal_document_version_service.get_by_id(import_result.version_id)
+        original_sections = legal_section_service.list_by_version(import_result.version_id)
+        assert original_document is not None
+        assert original_version is not None
+
+        exported_data = legal_document_json_export_service.build_data(import_result.document_id)
+
+        from sqlalchemy import delete
+
+        from core.database.session import get_session
+        from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
+        from moduly.pravni_pozadavky.modely.legal_document_version import LegalDocumentVersion
+        from moduly.pravni_pozadavky.modely.legal_section import LegalSection
+
+        with get_session() as session:
+            session.execute(delete(LegalSection))
+            session.execute(delete(LegalDocumentVersion))
+            session.execute(delete(LegalDocument))
+            session.commit()
+
+        round_trip_result = legal_document_json_import_service.import_data(exported_data)
+        imported_document = legal_document_service.get_by_id(round_trip_result.document_id)
+        imported_version = legal_document_version_service.get_by_id(round_trip_result.version_id)
+        imported_sections = legal_section_service.list_by_version(round_trip_result.version_id)
+        assert imported_document is not None
+        assert imported_version is not None
+
+        self.assertEqual(imported_document.document_type, original_document.document_type)
+        self.assertEqual(imported_document.title, original_document.title)
+        self.assertEqual(imported_document.number, original_document.number)
+        self.assertEqual(imported_document.year, original_document.year)
+        self.assertEqual(imported_document.short_title, original_document.short_title)
+        self.assertEqual(imported_version.version_name, original_version.version_name)
+        self.assertEqual(len(imported_sections), len(original_sections))
+        self.assertEqual(imported_sections[0].title, original_sections[0].title)
+        self.assertEqual(imported_sections[0].paragraph, original_sections[0].paragraph)
+        self.assertEqual(imported_sections[0].text, original_sections[0].text)
 
 
 if __name__ == "__main__":
