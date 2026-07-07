@@ -56,7 +56,9 @@ class _HierarchyContext:
         if section_type == SECTION_SUBSECTION:
             return self.current_paragraph
         if section_type == SECTION_LETTER:
-            return self.current_subsection or self.current_paragraph
+            if self.current_subsection is not None:
+                return self.current_subsection
+            return self.current_paragraph
         return None
 
     def register(self, section: ParsedLegalSection) -> None:
@@ -167,9 +169,12 @@ class LegalDocumentParser:
         awaiting_paragraph_title = False
         hierarchy = _HierarchyContext()
 
-        def flush_current() -> None:
+        def flush_current(*, allow_bare_paragraph: bool = True) -> None:
             nonlocal current, awaiting_paragraph_title, sort_order
-            if current is not None and self._has_content(current):
+            if current is not None and self._has_content(
+                current,
+                allow_bare_paragraph=allow_bare_paragraph,
+            ):
                 sort_order += 1
                 current.sort_order = sort_order
                 current.parent_sort_order = hierarchy.parent_for(current.section_type)
@@ -181,9 +186,14 @@ class LegalDocumentParser:
 
         def start_section(**kwargs) -> None:
             nonlocal current, awaiting_paragraph_title
+            section_type = kwargs.get("section_type")
             flush_current()
+            if section_type == SECTION_PARAGRAPH:
+                hierarchy.current_subsection = None
+            elif section_type == SECTION_SUBSECTION:
+                hierarchy.current_subsection = None
             current = ParsedLegalSection(**kwargs)
-            awaiting_paragraph_title = kwargs.get("section_type") == SECTION_PARAGRAPH
+            awaiting_paragraph_title = section_type == SECTION_PARAGRAPH
 
         def append_text(line: str) -> None:
             nonlocal current
@@ -273,7 +283,7 @@ class LegalDocumentParser:
             except Exception:
                 continue
 
-        flush_current()
+        flush_current(allow_bare_paragraph=False)
         return sections
 
     def _debug_section(self, section: ParsedLegalSection) -> None:
@@ -291,7 +301,17 @@ class LegalDocumentParser:
         else:
             _debug(f"{label} parent={parent} text={len(section.text)}")
 
-    def _has_content(self, section: ParsedLegalSection) -> bool:
+    def _has_content(self, section: ParsedLegalSection, *, allow_bare_paragraph: bool = True) -> bool:
+        if section.section_type == SECTION_PARAGRAPH:
+            if section.title.strip() or section.text.strip():
+                return True
+            if allow_bare_paragraph and section.paragraph.strip():
+                return True
+            return False
+        if section.section_type == SECTION_SUBSECTION:
+            return bool(section.section_number.strip() or section.text.strip())
+        if section.section_type == SECTION_LETTER:
+            return bool(section.item_letter.strip() or section.text.strip())
         return bool(
             section.section_number.strip()
             or section.title.strip()

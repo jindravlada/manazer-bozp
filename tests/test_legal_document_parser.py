@@ -25,6 +25,9 @@ with patch.object(Path, "home", return_value=_TMP):
         legal_document_json_import_service,
     )
     from moduly.pravni_pozadavky.parser.legal_document_parser import legal_document_parser
+    from moduly.pravni_pozadavky.parser.legal_document_parser_diagnostics import (
+        legal_document_parser_diagnostics,
+    )
     from moduly.pravni_pozadavky.parser.legal_document_parser_models import (
         SECTION_DIVISION,
         SECTION_HEAD,
@@ -229,6 +232,82 @@ class LegalDocumentParserTestCase(unittest.TestCase):
             else:
                 expected_parent_id = sort_order_to_id.get(parsed_section.parent_sort_order)
                 self.assertEqual(db_section.parent_section_id, expected_parent_id)
+
+    def _parse_fragment(self, text: str):
+        return legal_document_parser.parse_text(
+            text,
+            document_type="zakon",
+            number="262",
+            year=2006,
+            title="Zákoník práce",
+        )
+
+    def test_subsection_after_paragraph_has_paragraph_parent(self) -> None:
+        result = self._parse_fragment(
+            "ČÁST I\n"
+            "§ 101\n"
+            "(1) Text prvního odstavce.\n",
+        )
+        paragraph = next(section for section in result.sections if section.section_type == SECTION_PARAGRAPH)
+        subsection = next(section for section in result.sections if section.section_type == SECTION_SUBSECTION)
+
+        self.assertEqual(subsection.parent_sort_order, paragraph.sort_order)
+
+    def test_letter_after_subsection_has_subsection_parent(self) -> None:
+        result = self._parse_fragment(
+            "ČÁST I\n"
+            "§ 101\n"
+            "(1) Text odstavce.\n"
+            "a) Text písmene.\n",
+        )
+        subsection = next(section for section in result.sections if section.section_type == SECTION_SUBSECTION)
+        letter = next(section for section in result.sections if section.section_type == SECTION_LETTER)
+
+        self.assertEqual(letter.parent_sort_order, subsection.sort_order)
+
+    def test_text_between_paragraph_and_subsection_keeps_paragraph_parent(self) -> None:
+        result = self._parse_fragment(
+            "ČÁST I\n"
+            "§ 101\n"
+            "Předmět úpravy\n"
+            "doplňující text paragrafu\n"
+            "(1) Text odstavce.\n",
+        )
+        paragraph = next(section for section in result.sections if section.section_type == SECTION_PARAGRAPH)
+        subsection = next(section for section in result.sections if section.section_type == SECTION_SUBSECTION)
+
+        self.assertEqual(paragraph.title, "Předmět úpravy")
+        self.assertIn("doplňující text paragrafu", paragraph.text)
+        self.assertEqual(subsection.parent_sort_order, paragraph.sort_order)
+
+    def test_text_between_subsection_and_letter_keeps_subsection_parent(self) -> None:
+        result = self._parse_fragment(
+            "ČÁST I\n"
+            "§ 101\n"
+            "(1) Text odstavce.\n"
+            "pokračování odstavce\n"
+            "a) Text písmene.\n",
+        )
+        subsection = next(section for section in result.sections if section.section_type == SECTION_SUBSECTION)
+        letter = next(section for section in result.sections if section.section_type == SECTION_LETTER)
+
+        self.assertIn("pokračování odstavce", subsection.text)
+        self.assertEqual(letter.parent_sort_order, subsection.sort_order)
+
+    def test_realistic_sample_has_no_subsection_without_parent(self) -> None:
+        result = self._parse_sample()
+        diagnostics = legal_document_parser_diagnostics.analyze(result)
+
+        self.assertTrue(diagnostics.hierarchy_ok)
+        subsection_errors = [
+            error
+            for error in diagnostics.errors
+            if error.section_type == SECTION_SUBSECTION
+        ]
+        self.assertEqual(subsection_errors, [])
+        for section in result.sections:
+            if section.section_type == SECTION_SUBSECTION:
+                self.assertIsNotNone(section.parent_sort_order)
 
 
 if __name__ == "__main__":
