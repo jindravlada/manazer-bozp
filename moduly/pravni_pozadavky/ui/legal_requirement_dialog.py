@@ -24,12 +24,12 @@ from moduly.pravni_pozadavky.constants import (
     PERIODICITY_LABELS,
     VALID_COMPLIANCE_STATUSES,
     VALID_PERIODICITIES,
-    legal_document_display_label,
     legal_requirement_source_display_label,
     legal_section_provision_label,
 )
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
 from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
+from moduly.pravni_pozadavky.ui.legal_document_selector import LegalDocumentNameSelector
 from moduly.pravni_pozadavky.ui.legal_requirement_sanctions_tab import LegalRequirementSanctionsTab
 
 
@@ -40,6 +40,8 @@ class LegalRequirementDialog(QDialog):
         self.draft = draft
         self._source_section_id: int | None = None
         self._processing_status: str | None = None
+        self._syncing_document_fields = False
+        self._last_document_id: int | None = None
 
         self.setWindowTitle("Právní požadavek" if requirement is None else "Upravit požadavek")
         configure_resizable_form_dialog(self, width=760, height=680, min_width=560, min_height=480)
@@ -72,11 +74,9 @@ class LegalRequirementDialog(QDialog):
         tab = QWidget()
         form = QFormLayout(tab)
 
-        self.regulation_name = QLineEdit()
+        self.regulation_name = LegalDocumentNameSelector()
         self.regulation_number = QLineEdit()
         self.provision = QLineEdit()
-        self.legal_document = QComboBox()
-        self._populate_legal_documents()
         self.legal_section = QComboBox()
         self.source_section_display = QLineEdit()
         self.source_section_display.setReadOnly(True)
@@ -101,10 +101,9 @@ class LegalRequirementDialog(QDialog):
 
         form.addRow("Název předpisu:", self.regulation_name)
         form.addRow("Číslo předpisu:", self.regulation_number)
-        form.addRow("Paragraf / ustanovení:", self.provision)
-        form.addRow("Právní předpis:", self.legal_document)
+        form.addRow("Ustanovení:", self.provision)
         form.addRow("Ustanovení předpisu:", self.legal_section)
-        form.addRow("Zdroj:", self.source_section_display)
+        form.addRow("Vychází z:", self.source_section_display)
         form.addRow("Stručný požadavek:", self.requirement_summary)
         form.addRow("Dopad na organizaci:", self.organization_impact)
         form.addRow("Odpovědná osoba:", self.responsible_person)
@@ -115,17 +114,21 @@ class LegalRequirementDialog(QDialog):
         form.addRow("Poznámka:", self.note)
         form.addRow("", self.active_checkbox)
 
-        self.legal_document.currentIndexChanged.connect(self._on_legal_document_changed)
+        self.regulation_name.document_changed.connect(self._on_regulation_name_changed)
+        self.regulation_number.textChanged.connect(self._on_regulation_number_changed)
+        self.legal_section.currentIndexChanged.connect(self._on_legal_section_changed)
         return tab
 
     def _load_requirement(self, requirement) -> None:
-        self._populate_legal_documents(selected_id=requirement.legal_document_id)
+        self.regulation_name.reload(selected_id=requirement.legal_document_id)
+        if requirement.legal_document_id is None:
+            self.regulation_name.setCurrentText(requirement.regulation_name)
+        self._last_document_id = requirement.legal_document_id
+        self.regulation_number.setText(requirement.regulation_number)
         self._populate_legal_sections(
             selected_id=requirement.legal_section_id,
             document_id=requirement.legal_document_id,
         )
-        self.regulation_name.setText(requirement.regulation_name)
-        self.regulation_number.setText(requirement.regulation_number)
         self.provision.setText(self._provision_display_text(requirement.provision, requirement.legal_section_id))
         self.area.setText(requirement.area)
         self.requirement_summary.setPlainText(requirement.requirement_summary)
@@ -142,13 +145,13 @@ class LegalRequirementDialog(QDialog):
         self._update_source_section_display()
 
     def _load_draft(self, draft) -> None:
-        self._populate_legal_documents(selected_id=draft.legal_document_id)
+        self.regulation_name.reload(selected_id=draft.legal_document_id)
+        self._last_document_id = draft.legal_document_id
+        self.regulation_number.setText(draft.regulation_number)
         self._populate_legal_sections(
             selected_id=draft.legal_section_id,
             document_id=draft.legal_document_id,
         )
-        self.regulation_name.setText(draft.regulation_name)
-        self.regulation_number.setText(draft.regulation_number)
         self.provision.setText(self._provision_display_text(draft.provision, draft.legal_section_id))
         self.area.setText(draft.area)
         self.requirement_summary.setPlainText(draft.requirement_summary)
@@ -156,6 +159,92 @@ class LegalRequirementDialog(QDialog):
         self.active_checkbox.setChecked(draft.active)
         self._source_section_id = draft.source_section_id
         self._processing_status = draft.processing_status
+        self._update_source_section_display()
+
+    def _current_legal_document_id(self) -> int | None:
+        return self.regulation_name.current_document_id()
+
+    def _on_regulation_name_changed(self) -> None:
+        if self._syncing_document_fields:
+            return
+
+        new_document_id = self.regulation_name.current_document_id()
+
+        self._syncing_document_fields = True
+        try:
+            if new_document_id is not None:
+                document = self.regulation_name.current_document()
+                if document is not None:
+                    self.regulation_name.set_document_id_without_signal(document.id)
+                regulation_number = self.regulation_name.regulation_number_for_current_document()
+                if regulation_number:
+                    self.regulation_number.setText(regulation_number)
+
+            if new_document_id != self._last_document_id:
+                self._last_document_id = new_document_id
+                self._on_legal_document_changed(clear_section=True)
+            elif new_document_id is not None:
+                self._populate_legal_sections(document_id=new_document_id)
+        finally:
+            self._syncing_document_fields = False
+
+    def _on_regulation_number_changed(self, text: str) -> None:
+        if self._syncing_document_fields:
+            return
+
+        document = self.regulation_name.find_document_by_text(text)
+        if document is None:
+            if self._last_document_id is not None:
+                self._last_document_id = None
+                self._on_legal_document_changed(clear_section=True)
+            return
+
+        self._syncing_document_fields = True
+        try:
+            self.regulation_name.set_document_id_without_signal(document.id)
+            formatted_number = self.regulation_name.regulation_number_for_current_document()
+            if formatted_number:
+                self.regulation_number.setText(formatted_number)
+            if document.id != self._last_document_id:
+                self._last_document_id = document.id
+                self._on_legal_document_changed(clear_section=True)
+        finally:
+            self._syncing_document_fields = False
+
+    def _on_legal_section_changed(self) -> None:
+        section_id = self.legal_section.currentData()
+        if section_id is None:
+            return
+        section = legal_section_service.get_by_id(section_id)
+        if section is None:
+            return
+        self.provision.setText(self._provision_display_text(self.provision.text(), section_id))
+
+    def _on_legal_document_changed(self, *, clear_section: bool) -> None:
+        document_id = self._current_legal_document_id()
+        selected_section_id = None if clear_section else self.legal_section.currentData()
+
+        if not clear_section and selected_section_id is not None:
+            section = legal_section_service.get_by_id(selected_section_id)
+            if section is None or section.legal_document_id != document_id:
+                selected_section_id = None
+
+        if self._source_section_id is not None:
+            source_section = legal_section_service.get_by_id(self._source_section_id)
+            if (
+                source_section is None
+                or document_id is None
+                or source_section.legal_document_id != document_id
+            ):
+                self._source_section_id = None
+                self.source_section_display.clear()
+
+        self._populate_legal_sections(
+            selected_id=selected_section_id,
+            document_id=document_id,
+        )
+        if clear_section:
+            self.provision.clear()
         self._update_source_section_display()
 
     def _update_source_section_display(self) -> None:
@@ -185,41 +274,6 @@ class LegalRequirementDialog(QDialog):
         sections_by_id = legal_section_service.build_sections_map([section])
         return legal_section_provision_label(section, sections_by_id=sections_by_id)
 
-    def _sync_regulation_name_from_document(self, document_id: int | None) -> None:
-        if document_id is None:
-            return
-        document = legal_document_service.get_by_id(document_id)
-        if document is None:
-            return
-        self.regulation_name.setText(document.title.strip())
-
-    def _populate_legal_documents(self, *, selected_id: int | None = None) -> None:
-        self.legal_document.blockSignals(True)
-        self.legal_document.clear()
-        self.legal_document.addItem("— bez vazby —", None)
-
-        documents = legal_document_service.list_all(include_inactive=False)
-        selected_document = None
-        if selected_id is not None:
-            selected_document = legal_document_service.get_by_id(selected_id)
-            if (
-                selected_document is not None
-                and not selected_document.active
-                and all(item.id != selected_id for item in documents)
-            ):
-                documents = [selected_document, *documents]
-
-        for document in documents:
-            label = legal_document_display_label(document)
-            if not label:
-                label = f"Předpis #{document.id}"
-            self.legal_document.addItem(label, document.id)
-
-        if selected_id is not None:
-            self._set_combo_value(self.legal_document, selected_id)
-            self._sync_regulation_name_from_document(selected_id)
-        self.legal_document.blockSignals(False)
-
     def _populate_legal_sections(
         self,
         *,
@@ -227,13 +281,13 @@ class LegalRequirementDialog(QDialog):
         document_id: int | None = None,
     ) -> None:
         if document_id is None:
-            document_id = self.legal_document.currentData()
+            document_id = self._current_legal_document_id()
 
+        self.legal_section.blockSignals(True)
         self.legal_section.clear()
         self.legal_section.addItem("— bez vazby —", None)
 
         sections = legal_section_service.list_for_selector(document_id=document_id)
-        selected_section = None
         if selected_id is not None:
             selected_section = legal_section_service.get_by_id(selected_id)
             if (
@@ -252,22 +306,7 @@ class LegalRequirementDialog(QDialog):
 
         if selected_id is not None:
             self._set_combo_value(self.legal_section, selected_id)
-
-    def _on_legal_document_changed(self) -> None:
-        selected_section_id = self.legal_section.currentData()
-        document_id = self.legal_document.currentData()
-        self._sync_regulation_name_from_document(document_id)
-        if selected_section_id is not None:
-            section = legal_section_service.get_by_id(selected_section_id)
-            if section is not None and document_id is not None:
-                if section.legal_document_id != document_id:
-                    selected_section_id = None
-            elif section is not None and document_id is None:
-                pass
-        self._populate_legal_sections(
-            selected_id=selected_section_id,
-            document_id=document_id,
-        )
+        self.legal_section.blockSignals(False)
 
     def _set_combo_value(self, combo: QComboBox, value) -> None:
         if value is None:
@@ -285,10 +324,10 @@ class LegalRequirementDialog(QDialog):
             compliance_status = ""
 
         return {
-            "regulation_name": self.regulation_name.text().strip(),
+            "regulation_name": self.regulation_name.currentText().strip(),
             "regulation_number": self.regulation_number.text().strip(),
             "provision": self.provision.text().strip(),
-            "legal_document_id": self.legal_document.currentData(),
+            "legal_document_id": self._current_legal_document_id(),
             "legal_section_id": self.legal_section.currentData(),
             "source_section_id": self._source_section_id,
             "area": self.area.text().strip(),

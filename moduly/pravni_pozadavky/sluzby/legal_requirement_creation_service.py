@@ -1,5 +1,6 @@
 from moduly.pravni_pozadavky.constants import (
     DEFAULT_PROCESSING_STATUS,
+    legal_document_regulation_number,
     legal_section_provision_label,
 )
 from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
@@ -16,10 +17,7 @@ class LegalRequirementCreationService:
         document = legal_document_service.get_by_id(section.legal_document_id)
         regulation_number = ""
         if document is not None:
-            if document.number and document.year is not None:
-                regulation_number = f"{document.number}/{document.year} Sb."
-            elif document.number:
-                regulation_number = document.number
+            regulation_number = legal_document_regulation_number(document)
 
         regulation_name = ""
         if document is not None:

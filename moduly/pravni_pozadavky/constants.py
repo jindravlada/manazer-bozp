@@ -127,6 +127,16 @@ SECTION_TYPE_LABELS: dict[str, str] = {
 }
 
 
+def legal_document_regulation_number(document) -> str:
+    number = (getattr(document, "number", "") or "").strip()
+    if "sb." in number.casefold():
+        return number
+    year = getattr(document, "year", None)
+    if number and year is not None:
+        return f"{number}/{year} Sb."
+    return number
+
+
 def legal_document_display_label(document) -> str:
     short_title = (getattr(document, "short_title", "") or "").strip()
     if short_title:
@@ -210,7 +220,11 @@ def legal_requirement_source_display_label(
     *,
     sections_by_id: dict | None = None,
 ) -> str:
-    document_label = legal_document_display_label(document)
+    document_label = ""
+    if document is not None:
+        title = (getattr(document, "title", "") or "").strip()
+        document_label = title or legal_document_regulation_number(document)
+
     provision = legal_section_provision_label(section, sections_by_id=sections_by_id)
     if document_label and provision:
         return f"{document_label} – {provision}"

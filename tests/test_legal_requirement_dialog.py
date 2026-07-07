@@ -59,14 +59,24 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
             session.execute(delete(LegalDocument))
             session.commit()
 
-    def _create_subsection_101_odst_2(self):
-        document = legal_document_service.create(
+    def _create_document(
+        self,
+        *,
+        title: str = "Zákoník práce",
+        number: str = "262/2006 Sb.",
+        year: int = 2006,
+        short_title: str = "ZP",
+    ):
+        return legal_document_service.create(
             document_type=DOCUMENT_TYPE_ZAKON,
-            title="Zákoník práce",
-            number="262/2006 Sb.",
-            year=2006,
-            short_title="ZP",
+            title=title,
+            number=number,
+            year=year,
+            short_title=short_title,
         )
+
+    def _create_subsection_101_odst_2(self, document=None):
+        document = document or self._create_document()
         version = legal_document_version_service.create(
             legal_document_id=document.id,
             version_name="Verze 2024",
@@ -88,7 +98,7 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
             text="Text odstavce 2",
             sort_order=2,
         )
-        return subsection
+        return document, subsection
 
     def _form_labels(self, dialog: LegalRequirementDialog) -> list[str]:
         labels = []
@@ -99,17 +109,88 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         return labels
 
     def test_dialog_prefills_fields_when_created_from_section(self) -> None:
-        subsection = self._create_subsection_101_odst_2()
+        _document, subsection = self._create_subsection_101_odst_2()
         draft = legal_requirement_creation_service.create_from_section(subsection.id)
 
         dialog = LegalRequirementDialog(draft=draft)
 
-        self.assertEqual(dialog.regulation_name.text(), "Zákoník práce")
+        self.assertEqual(dialog.regulation_name.currentText(), "Zákoník práce")
+        self.assertEqual(dialog.regulation_number.text(), "262/2006 Sb.")
         self.assertEqual(dialog.provision.text(), "§ 101 odst. 2")
         self.assertEqual(dialog.legal_section.currentText(), "§ 101 odst. 2")
-        self.assertEqual(dialog.source_section_display.text(), "ZP – § 101 odst. 2")
+        self.assertEqual(dialog.source_section_display.text(), "Zákoník práce – § 101 odst. 2")
+        self.assertNotIn("Právní předpis:", self._form_labels(dialog))
         self.assertNotIn("Oblast:", self._form_labels(dialog))
-        self.assertEqual(dialog.get_data()["area"], "")
+        self.assertEqual(dialog.get_data()["legal_document_id"], _document.id)
+
+    def test_selecting_name_fills_regulation_number(self) -> None:
+        self._create_document()
+        dialog = LegalRequirementDialog()
+        dialog.regulation_number.clear()
+
+        dialog.regulation_name.apply_search_text("Zákoník práce")
+
+        self.assertEqual(dialog.regulation_name.currentText(), "Zákoník práce")
+        self.assertEqual(dialog.regulation_number.text(), "262/2006 Sb.")
+
+    def test_selecting_number_fills_regulation_name(self) -> None:
+        self._create_document()
+        dialog = LegalRequirementDialog()
+        dialog.regulation_name.setCurrentText("")
+        dialog.regulation_number.setText("262/2006 Sb.")
+
+        self.assertEqual(dialog.regulation_name.currentText(), "Zákoník práce")
+        self.assertEqual(dialog.regulation_number.text(), "262/2006 Sb.")
+
+    def test_selecting_short_title_fills_name_and_number(self) -> None:
+        self._create_document()
+        dialog = LegalRequirementDialog()
+        dialog.regulation_name.setCurrentText("")
+        dialog.regulation_number.clear()
+
+        dialog.regulation_name.apply_search_text("ZP")
+
+        self.assertEqual(dialog.regulation_name.currentText(), "Zákoník práce")
+        self.assertEqual(dialog.regulation_number.text(), "262/2006 Sb.")
+
+    def test_changing_document_clears_selected_section_and_source(self) -> None:
+        first_document, subsection = self._create_subsection_101_odst_2()
+        second_document = self._create_document(
+            title="Nařízení vlády",
+            number="390/2021",
+            year=2021,
+            short_title="NV",
+        )
+        second_version = legal_document_version_service.create(
+            legal_document_id=second_document.id,
+            version_name="Verze 2021",
+        )
+        second_section = legal_section_service.create(
+            legal_document_id=second_document.id,
+            legal_document_version_id=second_version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="5",
+            title="Test",
+            sort_order=1,
+        )
+
+        draft = legal_requirement_creation_service.create_from_section(subsection.id)
+        dialog = LegalRequirementDialog(draft=draft)
+        self.assertEqual(dialog.legal_section.currentData(), subsection.id)
+        self.assertEqual(dialog.source_section_display.text(), "Zákoník práce – § 101 odst. 2")
+
+        dialog.regulation_name.apply_search_text("Nařízení vlády")
+
+        self.assertIsNone(dialog.legal_section.currentData())
+        self.assertEqual(dialog.source_section_display.text(), "")
+        self.assertEqual(dialog.get_data()["legal_document_id"], second_document.id)
+        section_ids = [
+            dialog.legal_section.itemData(index)
+            for index in range(dialog.legal_section.count())
+        ]
+        self.assertIn(second_section.id, section_ids)
+        self.assertNotIn(subsection.id, section_ids)
+        self.assertNotIn(first_document.id, [dialog.get_data()["legal_document_id"]])
 
 
 if __name__ == "__main__":
