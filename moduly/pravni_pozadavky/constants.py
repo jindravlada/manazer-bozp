@@ -132,6 +132,76 @@ def legal_document_display_label(document) -> str:
     return (getattr(document, "title", "") or "").strip()
 
 
+def _strip_section_title_suffix(label: str) -> str:
+    if " – " in label:
+        return label.split(" – ", 1)[0].strip()
+    return label.strip()
+
+
+def legal_requirement_regulation_label(requirement) -> str:
+    number = (getattr(requirement, "regulation_number", "") or "").strip()
+    if number:
+        return number
+    return (getattr(requirement, "regulation_name", "") or "").strip()
+
+
+def legal_requirement_provision_label(
+    requirement,
+    *,
+    section=None,
+    sections_by_id: dict | None = None,
+) -> str:
+    if section is not None:
+        return legal_section_provision_label(section, sections_by_id=sections_by_id)
+
+    provision = (getattr(requirement, "provision", "") or "").strip()
+    if provision.startswith("§"):
+        return _strip_section_title_suffix(provision)
+    return provision
+
+
+def legal_section_provision_label(section, *, sections_by_id: dict | None = None) -> str:
+    paragraph = ""
+    subsection = ""
+    letter = ""
+
+    current = section
+    visited: set[int] = set()
+    while current is not None and current.id not in visited:
+        visited.add(current.id)
+        section_type = (getattr(current, "section_type", "") or "").strip()
+        if section_type == SECTION_LETTER:
+            letter = (getattr(current, "item_letter", "") or "").strip()
+        elif section_type == SECTION_SUBSECTION:
+            subsection = (getattr(current, "section_number", "") or "").strip()
+        elif section_type == SECTION_PARAGRAPH:
+            paragraph = (getattr(current, "paragraph", "") or "").strip()
+        else:
+            paragraph_value = (getattr(current, "paragraph", "") or "").strip()
+            if paragraph_value:
+                paragraph = paragraph_value
+
+        parent_id = getattr(current, "parent_section_id", None)
+        if parent_id is None:
+            break
+        if sections_by_id is not None:
+            current = sections_by_id.get(parent_id)
+        else:
+            current = None
+
+    parts: list[str] = []
+    if paragraph:
+        parts.append(f"§ {paragraph}")
+    if subsection:
+        parts.append(f"odst. {subsection}")
+    if letter:
+        parts.append(f"písm. {letter})")
+    if parts:
+        return " ".join(parts)
+
+    return _strip_section_title_suffix(legal_section_display_label(section))
+
+
 def legal_section_display_label(section) -> str:
     paragraph = (getattr(section, "paragraph", "") or "").strip()
     section_number = (getattr(section, "section_number", "") or "").strip()

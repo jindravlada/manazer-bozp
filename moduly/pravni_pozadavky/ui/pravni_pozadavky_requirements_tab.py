@@ -1,3 +1,4 @@
+from PySide6.QtGui import QHideEvent, QShowEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -92,11 +93,20 @@ class PravniPozadavkyRequirementsTab(QWidget):
 
         self.refresh()
 
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
+        self.table.clear_selection()
+
+    def hideEvent(self, event: QHideEvent) -> None:
+        self.table.clear_selection()
+        super().hideEvent(event)
+
     def refresh(self) -> None:
         self._populate_filter_options()
         requirements = self._filter_requirements(legal_requirement_service.get_all())
         self.table.load_requirements(requirements)
         configure_table_columns(self.table, "legal_requirements")
+        self.table.clear_selection()
         self.text_filter.update_count()
 
     def show_created_requirement(self, requirement_id: int | None = None) -> None:
@@ -177,8 +187,8 @@ class PravniPozadavkyRequirementsTab(QWidget):
     def new_requirement(self) -> None:
         dialog = LegalRequirementDialog(self)
         if exec_maximized(dialog):
-            legal_requirement_service.create_requirement(**dialog.get_data())
-            self.refresh()
+            requirement = legal_requirement_service.create_requirement(**dialog.get_data())
+            self.show_created_requirement(requirement.id)
 
     def edit_selected_requirement(self) -> None:
         requirement_id = self._selected_requirement_id()

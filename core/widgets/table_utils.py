@@ -187,9 +187,8 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         )
 
         widths = {
-            COL_REGULATION: 220,
-            COL_PROVISION: 120,
-            COL_AREA: 130,
+            COL_REGULATION: 140,
+            COL_PROVISION: 180,
             COL_SUMMARY: 320,
             COL_RESPONSIBLE: 170,
             COL_STATUS: 130,
@@ -200,11 +199,11 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
+        table.setColumnHidden(COL_AREA, True)
         header.setSectionResizeMode(COL_SUMMARY, QHeaderView.Stretch)
         for column in (
             COL_REGULATION,
             COL_PROVISION,
-            COL_AREA,
             COL_RESPONSIBLE,
             COL_STATUS,
             COL_LAST_CHECK,
