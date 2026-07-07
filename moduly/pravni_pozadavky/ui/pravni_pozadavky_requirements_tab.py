@@ -1,5 +1,6 @@
 from PySide6.QtGui import QHideEvent, QShowEvent
 from PySide6.QtWidgets import (
+    QDialog,
     QFileDialog,
     QComboBox,
     QHBoxLayout,
@@ -33,6 +34,7 @@ from moduly.pravni_pozadavky.ui.legal_requirement_dialog import LegalRequirement
 from moduly.pravni_pozadavky.ui.legal_requirement_json_import_dialog import (
     LegalRequirementJsonImportDialog,
 )
+from moduly.pravni_pozadavky.ui.legal_requirement_merge_dialog import LegalRequirementMergeDialog
 from moduly.pravni_pozadavky.ui.legal_requirement_table import LegalRequirementTable
 
 
@@ -48,6 +50,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
         self.new_btn = QPushButton("Nový požadavek")
         self.import_json_btn = QPushButton("Import požadavků JSON")
         self.edit_btn = QPushButton("Upravit")
+        self.merge_btn = QPushButton("Sloučit procesy")
         self.archive_btn = QPushButton("Archivovat")
         self.verify_btn = QPushButton("Ověřit plnění")
         self.task_btn = QPushButton("Vytvořit úkol")
@@ -66,6 +69,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.import_json_btn)
         toolbar.addWidget(self.edit_btn)
+        toolbar.addWidget(self.merge_btn)
         toolbar.addWidget(self.archive_btn)
         toolbar.addWidget(self.verify_btn)
         toolbar.addWidget(self.task_btn)
@@ -90,6 +94,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
         self.new_btn.clicked.connect(self.new_requirement)
         self.import_json_btn.clicked.connect(self.import_requirements_json)
         self.edit_btn.clicked.connect(self.edit_selected_requirement)
+        self.merge_btn.clicked.connect(self.merge_processes)
         self.archive_btn.clicked.connect(self.archive_selected_requirement)
         self.verify_btn.clicked.connect(self.verify_selected_requirement)
         self.task_btn.clicked.connect(self.create_task_for_selected)
@@ -235,6 +240,37 @@ class PravniPozadavkyRequirementsTab(QWidget):
         if exec_maximized(dialog):
             legal_requirement_service.update_requirement(requirement_id, **dialog.get_data())
             self.refresh()
+
+    def merge_processes(self) -> None:
+        processes = legal_requirement_service.list_active_processes()
+        if len(processes) < 2:
+            QMessageBox.information(
+                self,
+                "Sloučit procesy",
+                "Ke sloučení jsou potřeba alespoň dva aktivní procesy.",
+            )
+            return
+
+        dialog = LegalRequirementMergeDialog(
+            self,
+            processes=processes,
+            preselected_source_id=self._selected_requirement_id(),
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        source_id = dialog.source_requirement_id()
+        target_id = dialog.target_requirement_id()
+        if source_id is None or target_id is None:
+            return
+
+        try:
+            merged = legal_requirement_service.merge_process_requirements(source_id, target_id)
+        except ValueError as exc:
+            QMessageBox.warning(self, "Sloučit procesy", str(exc))
+            return
+
+        self.show_created_requirement(merged.id)
 
     def archive_selected_requirement(self) -> None:
         requirement_id = self._selected_requirement_id()

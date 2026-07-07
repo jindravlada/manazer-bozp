@@ -1,9 +1,11 @@
 import calendar
 from datetime import date
 
-from sqlalchemy import delete
+from sqlalchemy import delete, update
 
 from core.database.session import get_session
+from core.shared.constants import ENTITY_LEGAL_REQUIREMENT
+from core.shared.sluzby.entity_link_service import entity_link_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.nastaveni.sluzby.responsibility_role_service import responsibility_role_service
 from moduly.pravni_pozadavky.constants import (
@@ -17,6 +19,7 @@ from moduly.pravni_pozadavky.constants import (
     VALID_PERIODICITIES,
     VALID_PROCESSING_STATUSES,
 )
+from moduly.ukoly.modely.task import Task
 from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
 from moduly.pravni_pozadavky.modely.legal_requirement_check import LegalRequirementCheck
 from moduly.pravni_pozadavky.modely.legal_requirement_sanction import LegalRequirementSanction
@@ -342,6 +345,71 @@ class LegalRequirementService:
             return None
         requirement.active = True
         return self.repository.update(requirement)
+
+    def merge_process_requirements(
+        self,
+        source_id: int,
+        target_id: int,
+    ) -> LegalRequirement:
+        if source_id == target_id:
+            raise ValueError("Zdrojový a cílový proces musí být různé.")
+
+        source = self.repository.get_by_id(source_id)
+        target = self.repository.get_by_id(target_id)
+        if source is None or target is None:
+            raise ValueError("Proces nebyl nalezen.")
+        if not source.active or not target.active:
+            raise ValueError("Sloučit lze pouze aktivní procesy.")
+
+        target_section_ids = self.list_source_section_ids_for_requirement(target_id)
+        source_section_ids = self.list_source_section_ids_for_requirement(source_id)
+        merged_section_ids = list(target_section_ids)
+        for section_id in source_section_ids:
+            if section_id not in merged_section_ids:
+                merged_section_ids.append(section_id)
+
+        self.source_repository.replace_for_requirement(target_id, merged_section_ids)
+        target = self.repository.get_by_id(target_id)
+        if target is not None and target.source_section_id is None and merged_section_ids:
+            target.source_section_id = merged_section_ids[0]
+            target = self.repository.update(target)
+
+        with get_session() as session:
+            session.execute(
+                update(LegalRequirementCheck)
+                .where(LegalRequirementCheck.legal_requirement_id == source_id)
+                .values(legal_requirement_id=target_id),
+            )
+            session.execute(
+                update(LegalRequirementSanction)
+                .where(LegalRequirementSanction.requirement_id == source_id)
+                .values(requirement_id=target_id),
+            )
+            session.execute(
+                update(Task)
+                .where(
+                    Task.source_module == ENTITY_LEGAL_REQUIREMENT,
+                    Task.source_record_id == source_id,
+                )
+                .values(source_record_id=target_id),
+            )
+            session.commit()
+
+        entity_link_service.reassign_entity_id(
+            ENTITY_LEGAL_REQUIREMENT,
+            source_id,
+            target_id,
+        )
+        self.source_repository.delete_by_requirement(source_id)
+
+        archived = self.archive_requirement(source_id)
+        if archived is None:
+            raise ValueError("Zdrojový proces se nepodařilo archivovat.")
+
+        merged = self.repository.get_by_id(target_id)
+        if merged is None:
+            raise ValueError("Cílový proces nebyl nalezen.")
+        return merged
 
     def record_verification(
         self,

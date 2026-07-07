@@ -151,6 +151,54 @@ class EntityLinkService:
     def delete(self, link_id: int) -> bool:
         return self.repository.delete(link_id)
 
+    def reassign_entity_id(self, entity_type: str, from_id: int, to_id: int) -> None:
+        if from_id == to_id:
+            return
+
+        normalized_type = (entity_type or "").strip()
+        if not normalized_type:
+            raise ValueError("Typ entity je povinný.")
+
+        for link in self.repository.list_for_source(
+            normalized_type,
+            from_id,
+            include_inactive=True,
+        ):
+            duplicate = self.repository.find_active_duplicate(
+                source_type=normalized_type,
+                source_id=to_id,
+                target_type=link.target_type,
+                target_id=link.target_id,
+                link_type=link.link_type,
+            )
+            if duplicate is not None:
+                self.repository.delete(link.id)
+                continue
+
+            link.source_id = to_id
+            self.repository.update(link)
+
+        for link in self.repository.list_for_target(
+            normalized_type,
+            from_id,
+            include_inactive=True,
+        ):
+            duplicate = self.repository.find_active_duplicate(
+                source_type=link.source_type,
+                source_id=link.source_id,
+                target_type=normalized_type,
+                target_id=to_id,
+                link_type=link.link_type,
+            )
+            if duplicate is not None:
+                self.repository.delete(link.id)
+                continue
+
+            if link.source_type == normalized_type and link.source_id == from_id:
+                link.source_id = to_id
+            link.target_id = to_id
+            self.repository.update(link)
+
     def _normalize_payload(
         self,
         *,
