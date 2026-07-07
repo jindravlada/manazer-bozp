@@ -56,6 +56,7 @@ class LegalSectionTree(QTreeWidget):
         self.setSelectionMode(QTreeWidget.SelectionMode.SingleSelection)
         self.setEditTriggers(QTreeWidget.EditTrigger.NoEditTriggers)
         self.setUniformRowHeights(False)
+        self.setExpandsOnDoubleClick(False)
 
         header = self.header()
         header.setStretchLastSection(False)

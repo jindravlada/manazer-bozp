@@ -22,6 +22,7 @@ with patch.object(Path, "home", return_value=_TMP):
     initialize_database()
 
     from moduly.pravni_pozadavky.constants import (
+        DOCUMENT_TYPE_ZAKON,
         SECTION_DIVISION,
         SECTION_HEAD,
         SECTION_LETTER,
@@ -29,6 +30,11 @@ with patch.object(Path, "home", return_value=_TMP):
         SECTION_PART,
         SECTION_SUBSECTION,
     )
+    from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
+    from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
+        legal_document_version_service,
+    )
+    from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
     from moduly.pravni_pozadavky.ui.legal_section_tree import (
         LegalSectionTree,
         build_section_children_map,
@@ -152,6 +158,164 @@ class LegalSectionTreeWidgetTestCase(unittest.TestCase):
             SECTION_PARAGRAPH,
         )
         self.assertFalse(paragraph_item.isExpanded())
+
+    def test_expands_on_double_click_is_disabled(self) -> None:
+        tree = LegalSectionTree()
+        self.assertFalse(tree.expandsOnDoubleClick())
+
+    def test_double_click_signal_preserves_expand_state(self) -> None:
+        from PySide6.QtCore import Qt
+
+        sections = [
+            _section(1, section_type=SECTION_PART, sort_order=1, section_number="PRVNÍ"),
+            _section(2, section_type=SECTION_HEAD, parent_section_id=1, sort_order=2, section_number="I"),
+            _section(
+                3,
+                section_type=SECTION_PARAGRAPH,
+                parent_section_id=2,
+                sort_order=3,
+                paragraph="101",
+                title="Předmět",
+            ),
+        ]
+
+        tree = LegalSectionTree()
+        tree.load_sections(sections)
+
+        head_item = tree.topLevelItem(0).child(0)
+        paragraph_item = head_item.child(0)
+        self.assertTrue(head_item.isExpanded())
+        self.assertFalse(paragraph_item.isExpanded())
+
+        dialog_opened = []
+        tree.itemDoubleClicked.connect(
+            lambda _item, _column: dialog_opened.append(True),
+        )
+        tree.itemDoubleClicked.emit(paragraph_item, LegalSectionTree.COLUMN_TITLE)
+
+        self.assertEqual(dialog_opened, [True])
+        self.assertTrue(head_item.isExpanded())
+        self.assertFalse(paragraph_item.isExpanded())
+
+    def test_branch_expand_can_still_be_toggled_manually(self) -> None:
+        sections = [
+            _section(1, section_type=SECTION_PART, sort_order=1, section_number="PRVNÍ"),
+            _section(2, section_type=SECTION_HEAD, parent_section_id=1, sort_order=2, section_number="I"),
+            _section(
+                3,
+                section_type=SECTION_PARAGRAPH,
+                parent_section_id=2,
+                sort_order=3,
+                paragraph="101",
+                title="Předmět",
+            ),
+        ]
+
+        tree = LegalSectionTree()
+        tree.load_sections(sections)
+
+        paragraph_item = tree.topLevelItem(0).child(0).child(0)
+        self.assertFalse(paragraph_item.isExpanded())
+
+        paragraph_item.setExpanded(True)
+        self.assertTrue(paragraph_item.isExpanded())
+
+        paragraph_item.setExpanded(False)
+        self.assertFalse(paragraph_item.isExpanded())
+
+
+class LegalDocumentSectionsTabDoubleClickTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        import os
+
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from PySide6.QtWidgets import QApplication
+
+        cls._app = QApplication.instance() or QApplication([])
+
+    def setUp(self) -> None:
+        from sqlalchemy import delete
+
+        from core.database.session import get_session
+        from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
+        from moduly.pravni_pozadavky.modely.legal_document_version import LegalDocumentVersion
+        from moduly.pravni_pozadavky.modely.legal_section import LegalSection
+
+        with get_session() as session:
+            session.execute(delete(LegalSection))
+            session.execute(delete(LegalDocumentVersion))
+            session.execute(delete(LegalDocument))
+            session.commit()
+
+        self.document = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_ZAKON,
+            title="Zákoník práce",
+            number="262",
+            year=2006,
+        )
+        self.version = legal_document_version_service.create(
+            legal_document_id=self.document.id,
+            version_name="Aktuální znění",
+        )
+        self.part = legal_section_service.create(
+            legal_document_id=self.document.id,
+            legal_document_version_id=self.version.id,
+            section_type=SECTION_PART,
+            section_number="PRVNÍ",
+            sort_order=1,
+        )
+        self.head = legal_section_service.create(
+            legal_document_id=self.document.id,
+            legal_document_version_id=self.version.id,
+            section_type=SECTION_HEAD,
+            parent_section_id=self.part.id,
+            section_number="I",
+            sort_order=2,
+        )
+        self.paragraph = legal_section_service.create(
+            legal_document_id=self.document.id,
+            legal_document_version_id=self.version.id,
+            section_type=SECTION_PARAGRAPH,
+            parent_section_id=self.head.id,
+            paragraph="101",
+            title="Předmět",
+            sort_order=3,
+        )
+
+    def _paragraph_item(self, tab):
+        root = tab.tree.topLevelItem(0)
+        head_item = root.child(0)
+        return head_item.child(0)
+
+    @patch("moduly.pravni_pozadavky.ui.legal_document_sections_tab.exec_maximized", return_value=False)
+    @patch("moduly.pravni_pozadavky.ui.legal_document_sections_tab.LegalSectionDialog")
+    def test_double_click_on_paragraph_opens_dialog(self, mock_dialog_cls, _mock_exec) -> None:
+        from moduly.pravni_pozadavky.ui.legal_document_sections_tab import LegalDocumentSectionsTab
+
+        tab = LegalDocumentSectionsTab(
+            document_id=self.document.id,
+            version_id=self.version.id,
+        )
+        paragraph_item = self._paragraph_item(tab)
+        tab.tree.setCurrentItem(paragraph_item)
+
+        head_item = paragraph_item.parent()
+        expanded_before = {
+            tab.tree.topLevelItem(0).isExpanded(),
+            head_item.isExpanded(),
+            paragraph_item.isExpanded(),
+        }
+
+        tab._on_item_double_clicked(paragraph_item, LegalSectionTree.COLUMN_TITLE)
+
+        mock_dialog_cls.assert_called_once()
+        expanded_after = {
+            tab.tree.topLevelItem(0).isExpanded(),
+            head_item.isExpanded(),
+            paragraph_item.isExpanded(),
+        }
+        self.assertEqual(expanded_after, expanded_before)
 
 
 if __name__ == "__main__":
