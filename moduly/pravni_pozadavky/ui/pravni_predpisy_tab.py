@@ -1,6 +1,8 @@
 from PySide6.QtWidgets import (
     QFileDialog,
+    QComboBox,
     QHBoxLayout,
+    QLabel,
     QMessageBox,
     QPushButton,
     QVBoxLayout,
@@ -9,6 +11,12 @@ from PySide6.QtWidgets import (
 
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
+from moduly.pravni_pozadavky.constants import (
+    DEFAULT_DOCUMENT_ACTIVE_FILTER,
+    FILTER_ACTIVE_ONLY,
+    FILTER_ALL_RECORDS,
+    FILTER_INACTIVE_ONLY,
+)
 from moduly.pravni_pozadavky.import_export.legal_document_json_export_service import (
     legal_document_json_export_service,
 )
@@ -42,6 +50,13 @@ class PravniPredpisyTab(QWidget):
         self.export_btn = QPushButton("Export JSON")
         self.edit_btn = QPushButton("Upravit")
         self.toggle_btn = QPushButton("Deaktivovat")
+        self.active_filter = QComboBox()
+        self.active_filter.addItems([
+            FILTER_ACTIVE_ONLY,
+            FILTER_INACTIVE_ONLY,
+            FILTER_ALL_RECORDS,
+        ])
+        self.active_filter.setCurrentText(DEFAULT_DOCUMENT_ACTIVE_FILTER)
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.import_btn)
         toolbar.addWidget(self.import_txt_btn)
@@ -49,6 +64,8 @@ class PravniPredpisyTab(QWidget):
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.toggle_btn)
         toolbar.addStretch()
+        toolbar.addWidget(QLabel("Záznamy:"))
+        toolbar.addWidget(self.active_filter)
 
         self.table = LegalDocumentTable()
         self.text_filter = FilterBar(self.table, placeholder="🔍 Hledat předpis...")
@@ -65,14 +82,24 @@ class PravniPredpisyTab(QWidget):
         self.toggle_btn.clicked.connect(self.toggle_selected_document)
         self.table.doubleClicked.connect(self.edit_selected_document)
         self.table.itemSelectionChanged.connect(self._update_action_buttons)
+        self.active_filter.currentIndexChanged.connect(self.refresh)
 
         self.refresh()
 
     def refresh(self) -> None:
-        documents = legal_document_service.list_all(include_inactive=True)
+        documents = self._filter_documents(legal_document_service.list_all(include_inactive=True))
         self.table.load_documents(documents)
+        self.text_filter.apply_filter()
         self.text_filter.update_count()
         self._update_action_buttons()
+
+    def _filter_documents(self, documents):
+        active_mode = self.active_filter.currentText()
+        if active_mode == FILTER_ACTIVE_ONLY:
+            return [document for document in documents if document.active]
+        if active_mode == FILTER_INACTIVE_ONLY:
+            return [document for document in documents if not document.active]
+        return documents
 
     def _selected_document(self):
         document_id = self.table.selected_document_id()
