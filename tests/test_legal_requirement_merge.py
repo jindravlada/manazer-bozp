@@ -104,7 +104,7 @@ class LegalRequirementMergeTestCase(unittest.TestCase):
         sections = self._create_subsections(document, version, 3)
 
         target = legal_requirement_service.create_requirement(
-            title="P-002",
+            title="Prevence rizik",
             regulation_name="Zákoník práce",
             legal_document_id=document.id,
             legal_section_id=sections[0].id,
@@ -112,7 +112,7 @@ class LegalRequirementMergeTestCase(unittest.TestCase):
             requirement_summary="Cílový proces",
         )
         source = legal_requirement_service.create_requirement(
-            title="P-004",
+            title="Kontrola dokumentace",
             regulation_name="Zákoník práce",
             legal_document_id=document.id,
             legal_section_id=sections[1].id,
@@ -165,11 +165,13 @@ class LegalRequirementMergeTestCase(unittest.TestCase):
         archived_source = legal_requirement_service.get_by_id(source.id)
         assert archived_source is not None
         self.assertFalse(archived_source.active)
+        self.assertEqual(archived_source.merged_into_requirement_id, target.id)
+        self.assertEqual(archived_source.process_code, source.process_code)
 
         active_processes = legal_requirement_service.list_active_processes()
-        active_titles = [item.title for item in active_processes]
-        self.assertIn("P-002", active_titles)
-        self.assertNotIn("P-004", active_titles)
+        active_codes = [item.process_code for item in active_processes]
+        self.assertIn(target.process_code, active_codes)
+        self.assertNotIn(source.process_code, active_codes)
 
     def test_merge_does_not_create_duplicate_sources(self) -> None:
         document = self._create_document()

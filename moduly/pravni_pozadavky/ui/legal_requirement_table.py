@@ -12,14 +12,15 @@ from moduly.pravni_pozadavky.constants import (
 )
 
 COL_ID = 0
-COL_PROCESS = 1
-COL_SUMMARY = 2
-COL_RESPONSIBLE = 3
-COL_STATUS = 4
-COL_LAST_CHECK = 5
-COL_NEXT_CHECK = 6
-COL_PERIODICITY = 7
-COLUMN_COUNT = 8
+COL_CODE = 1
+COL_PROCESS = 2
+COL_SUMMARY = 3
+COL_RESPONSIBLE = 4
+COL_STATUS = 5
+COL_LAST_CHECK = 6
+COL_NEXT_CHECK = 7
+COL_PERIODICITY = 8
+COLUMN_COUNT = 9
 
 
 def _format_date(value) -> str:
@@ -37,6 +38,7 @@ class LegalRequirementTable(QTableWidget):
         self.setColumnCount(COLUMN_COUNT)
         self.setHorizontalHeaderLabels([
             "ID",
+            "Kód",
             "Proces",
             "Způsob plnění",
             "Odpovědná osoba / funkce",
@@ -60,6 +62,7 @@ class LegalRequirementTable(QTableWidget):
         header.setStretchLastSection(False)
         header.setSectionResizeMode(COL_SUMMARY, QHeaderView.Stretch)
         for column in (
+            COL_CODE,
             COL_PROCESS,
             COL_RESPONSIBLE,
             COL_STATUS,
@@ -81,6 +84,7 @@ class LegalRequirementTable(QTableWidget):
 
         for row, requirement in enumerate(requirements):
             self._set_item(row, COL_ID, str(requirement.id))
+            self._set_item(row, COL_CODE, requirement.process_code)
             self._set_item(row, COL_PROCESS, legal_requirement_process_label(requirement))
             self._set_item(row, COL_SUMMARY, requirement.requirement_summary)
             self._set_item(row, COL_RESPONSIBLE, legal_requirement_responsible_label(requirement))

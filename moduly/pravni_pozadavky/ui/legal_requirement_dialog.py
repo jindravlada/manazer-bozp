@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QFormLayout,
     QGroupBox,
+    QLabel,
     QLineEdit,
     QTabWidget,
     QTextEdit,
@@ -26,6 +27,7 @@ from moduly.pravni_pozadavky.constants import (
     PERIODICITY_LABELS,
     VALID_COMPLIANCE_STATUSES,
     VALID_PERIODICITIES,
+    legal_requirement_merged_target_label,
     legal_section_provision_label,
 )
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
@@ -70,11 +72,20 @@ class LegalRequirementDialog(QDialog):
             self._load_draft(draft)
         else:
             self.active_checkbox.setChecked(True)
+            self.process_code.setText("Přidělí se automaticky při uložení")
             self._populate_legal_sections()
 
     def _main_tab(self) -> QWidget:
         tab = QWidget()
         form = QFormLayout(tab)
+
+        self.merged_into_label = QLabel()
+        self.merged_into_label.setWordWrap(True)
+        self.merged_into_label.setObjectName("InfoText")
+        self.merged_into_label.setVisible(False)
+
+        self.process_code = QLineEdit()
+        self.process_code.setReadOnly(True)
 
         self.regulation_name = LegalDocumentNameSelector()
         self.regulation_number = QLineEdit()
@@ -101,6 +112,8 @@ class LegalRequirementDialog(QDialog):
         self.note.setMinimumHeight(70)
         self.active_checkbox = QCheckBox("Aktivní záznam")
 
+        form.addRow(self.merged_into_label)
+        form.addRow("Kód procesu:", self.process_code)
         form.addRow("Název předpisu:", self.regulation_name)
         form.addRow("Číslo předpisu:", self.regulation_number)
         form.addRow("Ustanovení:", self.provision)
@@ -128,6 +141,20 @@ class LegalRequirementDialog(QDialog):
         return tab
 
     def _load_requirement(self, requirement) -> None:
+        self.process_code.setText(requirement.process_code or "")
+        if requirement.merged_into_requirement_id is not None:
+            target = legal_requirement_service.get_by_id(requirement.merged_into_requirement_id)
+            if target is not None:
+                self.merged_into_label.setText(
+                    "Tento proces byl sloučen do:\n"
+                    f"{legal_requirement_merged_target_label(target)}",
+                )
+                self.merged_into_label.setVisible(True)
+            else:
+                self.merged_into_label.setVisible(False)
+        else:
+            self.merged_into_label.setVisible(False)
+
         self.regulation_name.reload(selected_id=requirement.legal_document_id)
         if requirement.legal_document_id is None:
             self.regulation_name.setCurrentText(requirement.regulation_name)
@@ -159,6 +186,8 @@ class LegalRequirementDialog(QDialog):
         self.sources_widget.load_section_ids(source_section_ids)
 
     def _load_draft(self, draft) -> None:
+        self.process_code.setText("Přidělí se automaticky při uložení")
+        self.merged_into_label.setVisible(False)
         self.regulation_name.reload(selected_id=draft.legal_document_id)
         self._last_document_id = draft.legal_document_id
         self.regulation_number.setText(draft.regulation_number)

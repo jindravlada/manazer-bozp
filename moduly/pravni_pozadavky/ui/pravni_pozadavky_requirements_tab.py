@@ -14,7 +14,6 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
-from core.utils.czech_sort import czech_sorted
 from moduly.pravni_pozadavky.constants import (
     COMPLIANCE_STATUS_LABELS,
     DEFAULT_ACTIVE_FILTER,
@@ -24,6 +23,7 @@ from moduly.pravni_pozadavky.constants import (
     FILTER_AREA_VSE,
     FILTER_PERSON_VSE,
     FILTER_STATUS_VSE,
+    process_code_sort_key,
 )
 from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
 from moduly.pravni_pozadavky.sluzby.legal_requirement_task_service import (
@@ -117,10 +117,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
     def refresh(self) -> None:
         self._populate_filter_options()
         requirements = self._filter_requirements(legal_requirement_service.get_all())
-        requirements = czech_sorted(
-            requirements,
-            key=lambda item: item.title or item.regulation_name or "",
-        )
+        requirements = sorted(requirements, key=process_code_sort_key)
         self.table.load_requirements(requirements)
         configure_table_columns(self.table, "legal_requirements")
         self.table.clear_selection()

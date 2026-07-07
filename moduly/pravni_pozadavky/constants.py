@@ -1,3 +1,5 @@
+import re
+
 COMPLIANCE_SPLNENO = "splneno"
 COMPLIANCE_CASTECNE_SPLNENO = "castecne_splneno"
 COMPLIANCE_NESPLNENO = "nesplneno"
@@ -151,6 +153,39 @@ def _strip_section_title_suffix(label: str) -> str:
     if " – " in label:
         return label.split(" – ", 1)[0].strip()
     return label.strip()
+
+
+_PROCESS_CODE_RE = re.compile(r"^P-(\d+)$", re.IGNORECASE)
+
+
+def format_process_code(number: int) -> str:
+    return f"P-{number:03d}"
+
+
+def parse_process_code_number(code: str) -> int | None:
+    match = _PROCESS_CODE_RE.match((code or "").strip())
+    if match is None:
+        return None
+    return int(match.group(1))
+
+
+def process_code_sort_key(requirement) -> tuple:
+    number = parse_process_code_number(getattr(requirement, "process_code", "") or "")
+    if number is not None:
+        return (0, number)
+    return (1, (getattr(requirement, "process_code", "") or "").strip().lower())
+
+
+def legal_requirement_merged_target_label(target) -> str:
+    code = (getattr(target, "process_code", "") or "").strip()
+    title = legal_requirement_process_label(target)
+    if code and title:
+        return f"{code} – {title}"
+    if code:
+        return code
+    if title:
+        return title
+    return f"Proces #{getattr(target, 'id', '')}"
 
 
 def legal_requirement_regulation_label(requirement) -> str:

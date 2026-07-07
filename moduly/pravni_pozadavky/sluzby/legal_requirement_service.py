@@ -18,6 +18,8 @@ from moduly.pravni_pozadavky.constants import (
     VALID_COMPLIANCE_STATUSES,
     VALID_PERIODICITIES,
     VALID_PROCESSING_STATUSES,
+    format_process_code,
+    parse_process_code_number,
 )
 from moduly.ukoly.modely.task import Task
 from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
@@ -229,6 +231,7 @@ class LegalRequirementService:
 
         requirement = LegalRequirement(
             title=title.strip(),
+            process_code=self._allocate_process_code(),
             regulation_name=regulation_name.strip(),
             regulation_number=regulation_number.strip(),
             provision=provision.strip(),
@@ -402,9 +405,12 @@ class LegalRequirementService:
         )
         self.source_repository.delete_by_requirement(source_id)
 
-        archived = self.archive_requirement(source_id)
-        if archived is None:
+        source = self.repository.get_by_id(source_id)
+        if source is None:
             raise ValueError("Zdrojový proces se nepodařilo archivovat.")
+        source.merged_into_requirement_id = target_id
+        source.active = False
+        self.repository.update(source)
 
         merged = self.repository.get_by_id(target_id)
         if merged is None:
@@ -459,6 +465,14 @@ class LegalRequirementService:
             "checks": checks_deleted,
             "sanctions": sanctions_deleted,
         }
+
+    def _allocate_process_code(self) -> str:
+        max_number = 0
+        for requirement in self.repository.get_all():
+            number = parse_process_code_number(requirement.process_code)
+            if number is not None:
+                max_number = max(max_number, number)
+        return format_process_code(max_number + 1)
 
     def _person_name(self, person_id: int | None) -> str:
         if person_id is None:

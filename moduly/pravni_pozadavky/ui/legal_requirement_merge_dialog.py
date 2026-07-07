@@ -12,10 +12,15 @@ from moduly.pravni_pozadavky.constants import legal_requirement_process_label
 
 
 def _process_combo_label(requirement) -> str:
+    code = (requirement.process_code or "").strip()
     label = legal_requirement_process_label(requirement)
-    if not label:
-        label = f"Proces #{requirement.id}"
-    return f"{label} (#{requirement.id})"
+    if code and label:
+        return f"{code} – {label}"
+    if code:
+        return code
+    if label:
+        return f"{label} (#{requirement.id})"
+    return f"Proces #{requirement.id}"
 
 
 class LegalRequirementMergeDialog(QDialog):

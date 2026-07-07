@@ -203,16 +203,18 @@ class LegalRequirementTableDisplayTestCase(unittest.TestCase):
         self.assertEqual(table.item(0, COL_PROCESS).text(), "Systém řízení BOZP")
         self.assertEqual(table.item(0, COL_SUMMARY).text(), "Zajistit systém řízení BOZP")
 
-    def test_refresh_sorts_by_process_name(self) -> None:
-        legal_requirement_service.create_requirement(
+    def test_refresh_sorts_by_process_code(self) -> None:
+        from moduly.pravni_pozadavky.ui.legal_requirement_table import COL_CODE
+
+        third = legal_requirement_service.create_requirement(
             title="Zápis do dokumentace",
             requirement_summary="A",
         )
-        legal_requirement_service.create_requirement(
+        first = legal_requirement_service.create_requirement(
             title="Školení BOZP",
             requirement_summary="B",
         )
-        legal_requirement_service.create_requirement(
+        second = legal_requirement_service.create_requirement(
             title="Hodnocení rizik",
             requirement_summary="C",
         )
@@ -220,11 +222,17 @@ class LegalRequirementTableDisplayTestCase(unittest.TestCase):
         tab = PravniPozadavkyRequirementsTab()
         tab.refresh()
 
-        process_names = [
-            tab.table.item(row, COL_PROCESS).text()
+        process_codes = [
+            tab.table.item(row, COL_CODE).text()
             for row in range(tab.table.rowCount())
         ]
-        self.assertEqual(process_names, ["Hodnocení rizik", "Školení BOZP", "Zápis do dokumentace"])
+        self.assertEqual(
+            process_codes,
+            sorted(
+                [first.process_code, second.process_code, third.process_code],
+                key=lambda code: int(code.split("-")[1]),
+            ),
+        )
 
     def test_text_filter_searches_process_and_fulfillment(self) -> None:
         legal_requirement_service.create_requirement(

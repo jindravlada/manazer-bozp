@@ -480,6 +480,45 @@ def _ensure_legal_requirement_columns() -> None:
     if "title" not in columns:
         _add_column("legal_requirements", "title VARCHAR(250) DEFAULT ''")
         _migrate_legal_requirement_titles()
+    if "process_code" not in columns:
+        _add_column("legal_requirements", "process_code VARCHAR(20) DEFAULT ''")
+        _migrate_legal_requirement_process_codes()
+    if "merged_into_requirement_id" not in columns:
+        _add_column("legal_requirements", "merged_into_requirement_id INTEGER")
+
+
+def _migrate_legal_requirement_process_codes() -> None:
+    from moduly.pravni_pozadavky.constants import format_process_code, parse_process_code_number
+
+    with _db_engine().connect() as connection:
+        rows = connection.execute(
+            text("SELECT id, process_code FROM legal_requirements ORDER BY id"),
+        ).fetchall()
+
+        max_number = 0
+        for _row_id, process_code in rows:
+            number = parse_process_code_number(process_code or "")
+            if number is not None:
+                max_number = max(max_number, number)
+
+        for row_id, process_code in rows:
+            if (process_code or "").strip():
+                continue
+            max_number += 1
+            connection.execute(
+                text(
+                    """
+                    UPDATE legal_requirements
+                    SET process_code = :process_code
+                    WHERE id = :row_id
+                    """,
+                ),
+                {
+                    "process_code": format_process_code(max_number),
+                    "row_id": row_id,
+                },
+            )
+        connection.commit()
 
 
 def _migrate_legal_requirement_titles() -> None:
