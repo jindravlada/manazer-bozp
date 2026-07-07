@@ -71,3 +71,35 @@ FILTER_ARCHIVED_ONLY = "Archivní"
 FILTER_ALL_RECORDS = "Vše"
 
 DEFAULT_ACTIVE_FILTER = FILTER_ACTIVE_ONLY
+
+DOCUMENT_TYPE_ZAKON = "zakon"
+DOCUMENT_TYPE_NARIZENI_VLADY = "narizeni_vlady"
+DOCUMENT_TYPE_VYHLASKA = "vyhlaska"
+DOCUMENT_TYPE_SMERNICE_EU = "smernice_eu"
+DOCUMENT_TYPE_JINY = "jiny"
+
+VALID_DOCUMENT_TYPES = frozenset(
+    {
+        DOCUMENT_TYPE_ZAKON,
+        DOCUMENT_TYPE_NARIZENI_VLADY,
+        DOCUMENT_TYPE_VYHLASKA,
+        DOCUMENT_TYPE_SMERNICE_EU,
+        DOCUMENT_TYPE_JINY,
+    }
+)
+
+DOCUMENT_TYPE_LABELS: dict[str, str] = {
+    DOCUMENT_TYPE_ZAKON: "Zákon",
+    DOCUMENT_TYPE_NARIZENI_VLADY: "Nařízení vlády",
+    DOCUMENT_TYPE_VYHLASKA: "Vyhláška",
+    DOCUMENT_TYPE_SMERNICE_EU: "Směrnice EU",
+    DOCUMENT_TYPE_JINY: "Jiný předpis",
+}
+
+
+def legal_document_display_label(document) -> str:
+    short_title = (getattr(document, "short_title", "") or "").strip()
+    if short_title:
+        return short_title
+    return (getattr(document, "title", "") or "").strip()
+

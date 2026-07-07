@@ -26,8 +26,10 @@ with patch.object(Path, "home", return_value=_TMP):
         COMPLIANCE_CASTECNE_SPLNENO,
         COMPLIANCE_NESPLNENO,
         COMPLIANCE_SPLNENO,
+        DOCUMENT_TYPE_ZAKON,
         PERIODICITY_ROCNE,
     )
+    from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
     from moduly.pravni_pozadavky.sluzby.legal_requirement_export_context_service import (
         legal_requirement_export_context_service,
     )
@@ -173,6 +175,8 @@ class LegalRequirementServiceTestCase(unittest.TestCase):
         self.assertEqual(row.area, "BOZP")
         self.assertEqual(row.sanctions, [])
         self.assertEqual(row.links, [])
+        self.assertIsNone(row.legal_document_id)
+        self.assertEqual(row.legal_document_title, "")
 
     def test_export_context_includes_links(self) -> None:
         from core.shared.constants import ENTITY_RISK, LINK_LEGAL_BASIS
@@ -196,6 +200,53 @@ class LegalRequirementServiceTestCase(unittest.TestCase):
         self.assertEqual(row.links[0].target_id, 15)
         self.assertEqual(row.links[0].link_type, LINK_LEGAL_BASIS)
         self.assertEqual(row.links[0].note, "Právní základ rizika")
+
+    def test_requirement_can_link_to_legal_document(self) -> None:
+        document = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_ZAKON,
+            title="Zákoník práce",
+            number="262/2006 Sb.",
+            year=2006,
+            short_title="ZP",
+        )
+        requirement = legal_requirement_service.create_requirement(
+            regulation_name="Zákoník práce",
+            legal_document_id=document.id,
+            requirement_summary="Test",
+        )
+
+        self.assertEqual(requirement.legal_document_id, document.id)
+
+        updated = legal_requirement_service.get_by_id(requirement.id)
+        assert updated is not None
+        self.assertEqual(updated.legal_document_id, document.id)
+
+    def test_requirement_can_exist_without_legal_document(self) -> None:
+        requirement = self._create_requirement()
+        self.assertIsNone(requirement.legal_document_id)
+
+    def test_export_context_includes_legal_document(self) -> None:
+        document = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_ZAKON,
+            title="Zákon o BOZP",
+            number="309/2006 Sb.",
+            year=2006,
+            short_title="BOZP",
+        )
+        requirement = legal_requirement_service.create_requirement(
+            regulation_name="Ruční název",
+            legal_document_id=document.id,
+            requirement_summary="Export test",
+        )
+
+        context = legal_requirement_export_context_service.build_for_requirement(requirement.id)
+        assert context is not None
+        row = context.rows[0]
+        self.assertEqual(row.legal_document_id, document.id)
+        self.assertEqual(row.legal_document_title, "Zákon o BOZP")
+        self.assertEqual(row.legal_document_short_title, "BOZP")
+        self.assertEqual(row.legal_document_number, "309/2006 Sb.")
+        self.assertEqual(row.legal_document_year, "2006")
 
     def test_create_sanction_for_requirement(self) -> None:
         requirement = self._create_requirement()

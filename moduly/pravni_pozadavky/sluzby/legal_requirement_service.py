@@ -10,6 +10,7 @@ from moduly.pravni_pozadavky.constants import (
 )
 from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
 from moduly.pravni_pozadavky.modely.legal_requirement_check import LegalRequirementCheck
+from moduly.pravni_pozadavky.repository.legal_document_repository import LegalDocumentRepository
 from moduly.pravni_pozadavky.repository.legal_requirement_check_repository import (
     LegalRequirementCheckRepository,
 )
@@ -51,6 +52,7 @@ class LegalRequirementService:
     def __init__(self):
         self.repository = LegalRequirementRepository()
         self.check_repository = LegalRequirementCheckRepository()
+        self.document_repository = LegalDocumentRepository()
 
     def get_all(self, *, active_only: bool | None = None) -> list[LegalRequirement]:
         return self.repository.get_all(active_only=active_only)
@@ -76,6 +78,7 @@ class LegalRequirementService:
         regulation_number: str = "",
         provision: str = "",
         area: str = "",
+        legal_document_id: int | None = None,
         requirement_summary: str = "",
         organization_impact: str = "",
         responsible_person_id: int | None = None,
@@ -86,11 +89,14 @@ class LegalRequirementService:
         note: str = "",
         active: bool = True,
     ) -> LegalRequirement:
+        self._validate_legal_document_id(legal_document_id)
+
         requirement = LegalRequirement(
             regulation_name=regulation_name.strip(),
             regulation_number=regulation_number.strip(),
             provision=provision.strip(),
             area=area.strip(),
+            legal_document_id=legal_document_id,
             requirement_summary=requirement_summary.strip(),
             organization_impact=organization_impact.strip(),
             responsible_person_id=responsible_person_id,
@@ -112,6 +118,7 @@ class LegalRequirementService:
         regulation_number: str = "",
         provision: str = "",
         area: str = "",
+        legal_document_id: int | None = None,
         requirement_summary: str = "",
         organization_impact: str = "",
         responsible_person_id: int | None = None,
@@ -126,10 +133,13 @@ class LegalRequirementService:
         if requirement is None:
             return None
 
+        self._validate_legal_document_id(legal_document_id)
+
         requirement.regulation_name = regulation_name.strip()
         requirement.regulation_number = regulation_number.strip()
         requirement.provision = provision.strip()
         requirement.area = area.strip()
+        requirement.legal_document_id = legal_document_id
         requirement.requirement_summary = requirement_summary.strip()
         requirement.organization_impact = organization_impact.strip()
         requirement.responsible_person_id = responsible_person_id
@@ -209,6 +219,14 @@ class LegalRequirementService:
         if normalized in VALID_COMPLIANCE_STATUSES:
             return normalized
         return COMPLIANCE_NENI_RELEVANTNI
+
+    def _validate_legal_document_id(self, legal_document_id: int | None) -> None:
+        if legal_document_id is None:
+            return
+        if not isinstance(legal_document_id, int) or legal_document_id <= 0:
+            raise ValueError("Neplatný právní předpis.")
+        if self.document_repository.get_by_id(legal_document_id) is None:
+            raise ValueError("Právní předpis nebyl nalezen.")
 
 
 legal_requirement_service = LegalRequirementService()

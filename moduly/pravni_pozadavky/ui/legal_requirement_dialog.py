@@ -20,7 +20,9 @@ from moduly.pravni_pozadavky.constants import (
     PERIODICITY_LABELS,
     VALID_COMPLIANCE_STATUSES,
     VALID_PERIODICITIES,
+    legal_document_display_label,
 )
+from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
 from moduly.pravni_pozadavky.ui.legal_requirement_sanctions_tab import LegalRequirementSanctionsTab
 
 
@@ -60,6 +62,8 @@ class LegalRequirementDialog(QDialog):
         self.regulation_name = QLineEdit()
         self.regulation_number = QLineEdit()
         self.provision = QLineEdit()
+        self.legal_document = QComboBox()
+        self._populate_legal_documents()
         self.area = QLineEdit()
         self.requirement_summary = QTextEdit()
         self.requirement_summary.setMinimumHeight(80)
@@ -82,6 +86,7 @@ class LegalRequirementDialog(QDialog):
         form.addRow("Název předpisu:", self.regulation_name)
         form.addRow("Číslo předpisu:", self.regulation_number)
         form.addRow("Paragraf / ustanovení:", self.provision)
+        form.addRow("Právní předpis:", self.legal_document)
         form.addRow("Oblast:", self.area)
         form.addRow("Stručný požadavek:", self.requirement_summary)
         form.addRow("Dopad na organizaci:", self.organization_impact)
@@ -98,6 +103,7 @@ class LegalRequirementDialog(QDialog):
         self.regulation_name.setText(requirement.regulation_name)
         self.regulation_number.setText(requirement.regulation_number)
         self.provision.setText(requirement.provision)
+        self._populate_legal_documents(selected_id=requirement.legal_document_id)
         self.area.setText(requirement.area)
         self.requirement_summary.setPlainText(requirement.requirement_summary)
         self.organization_impact.setPlainText(requirement.organization_impact)
@@ -109,7 +115,34 @@ class LegalRequirementDialog(QDialog):
         self.note.setPlainText(requirement.note)
         self.active_checkbox.setChecked(requirement.active)
 
-    def _set_combo_value(self, combo: QComboBox, value: str) -> None:
+    def _populate_legal_documents(self, *, selected_id: int | None = None) -> None:
+        self.legal_document.clear()
+        self.legal_document.addItem("— bez vazby —", None)
+
+        documents = legal_document_service.list_all(include_inactive=False)
+        selected_document = None
+        if selected_id is not None:
+            selected_document = legal_document_service.get_by_id(selected_id)
+            if (
+                selected_document is not None
+                and not selected_document.active
+                and all(item.id != selected_id for item in documents)
+            ):
+                documents = [selected_document, *documents]
+
+        for document in documents:
+            label = legal_document_display_label(document)
+            if not label:
+                label = f"Předpis #{document.id}"
+            self.legal_document.addItem(label, document.id)
+
+        if selected_id is not None:
+            self._set_combo_value(self.legal_document, selected_id)
+
+    def _set_combo_value(self, combo: QComboBox, value) -> None:
+        if value is None:
+            combo.setCurrentIndex(0)
+            return
         index = combo.findData(value)
         combo.setCurrentIndex(index if index >= 0 else 0)
 
@@ -125,6 +158,7 @@ class LegalRequirementDialog(QDialog):
             "regulation_name": self.regulation_name.text().strip(),
             "regulation_number": self.regulation_number.text().strip(),
             "provision": self.provision.text().strip(),
+            "legal_document_id": self.legal_document.currentData(),
             "area": self.area.text().strip(),
             "requirement_summary": self.requirement_summary.toPlainText().strip(),
             "organization_impact": self.organization_impact.toPlainText().strip(),

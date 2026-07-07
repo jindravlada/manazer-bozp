@@ -4,9 +4,11 @@ from decimal import Decimal
 
 from moduly.pravni_pozadavky.constants import (
     COMPLIANCE_STATUS_LABELS,
+    DOCUMENT_TYPE_LABELS,
     PERIODICITY_LABELS,
 )
 from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
+from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
 from moduly.pravni_pozadavky.sluzby.legal_requirement_sanction_service import (
     legal_requirement_sanction_service,
 )
@@ -74,6 +76,12 @@ class LegalRequirementExportRow:
     compliance_status_label: str
     note: str
     active_label: str
+    legal_document_id: int | None
+    legal_document_title: str
+    legal_document_short_title: str
+    legal_document_type: str
+    legal_document_number: str
+    legal_document_year: str
     sanctions: list[LegalRequirementSanctionExportRow]
     links: list[LegalRequirementLinkExportRow]
 
@@ -136,6 +144,9 @@ class LegalRequirementExportContextService:
             requirement.id,
             include_inactive=include_inactive_links,
         )
+        document = None
+        if requirement.legal_document_id is not None:
+            document = legal_document_service.get_by_id(requirement.legal_document_id)
         return LegalRequirementExportRow(
             requirement_id=requirement.id,
             regulation_name=_text(requirement.regulation_name),
@@ -157,6 +168,16 @@ class LegalRequirementExportContextService:
             ),
             note=_text(requirement.note),
             active_label="Aktivní" if requirement.active else "Archivní",
+            legal_document_id=requirement.legal_document_id,
+            legal_document_title=_text(document.title if document else ""),
+            legal_document_short_title=_text(document.short_title if document else ""),
+            legal_document_type=(
+                DOCUMENT_TYPE_LABELS.get(document.document_type, document.document_type)
+                if document is not None
+                else ""
+            ),
+            legal_document_number=_text(document.number if document else ""),
+            legal_document_year=str(document.year) if document and document.year is not None else "",
             sanctions=[self._build_sanction_row(sanction) for sanction in sanctions],
             links=[self._build_link_row(link) for link in links],
         )

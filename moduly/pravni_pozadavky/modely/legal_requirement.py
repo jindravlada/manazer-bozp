@@ -18,6 +18,8 @@ class LegalRequirement(Base):
     provision: Mapped[str] = mapped_column(String(200), default="")
     area: Mapped[str] = mapped_column(String(150), default="")
 
+    legal_document_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     requirement_summary: Mapped[str] = mapped_column(Text, default="")
     organization_impact: Mapped[str] = mapped_column(Text, default="")
 
