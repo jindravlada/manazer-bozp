@@ -138,6 +138,30 @@ class LegalRequirementWorkbenchServiceTestCase(unittest.TestCase):
         last_next = next_processable_section(all_sections, sections[2].id)
         self.assertIsNone(last_next)
 
+    def test_attach_source_section_links_section_to_existing_process(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        sections = self._create_processable_sections(document, version, 2)
+        existing = legal_requirement_service.create_requirement(
+            title="Systém řízení BOZP",
+            regulation_name="Zákoník práce",
+            legal_document_id=document.id,
+            legal_section_id=sections[0].id,
+            source_section_id=sections[0].id,
+            requirement_summary="Společný proces",
+        )
+
+        updated = legal_requirement_service.attach_source_section(existing.id, sections[1].id)
+
+        self.assertEqual(
+            legal_requirement_service.list_source_section_ids_for_requirement(existing.id),
+            [sections[0].id, sections[1].id],
+        )
+        linked = legal_requirement_service.get_by_source_section_id(sections[1].id)
+        assert linked is not None
+        self.assertEqual(linked.id, updated.id)
+        self.assertEqual(updated.requirement_summary, "Společný proces")
+
 
 class LegalRequirementWorkbenchWidgetTestCase(unittest.TestCase):
     @classmethod
@@ -380,6 +404,78 @@ class LegalRequirementWorkbenchWidgetTestCase(unittest.TestCase):
 
         assert tab.editor is not None
         self.assertEqual(tab.editor.current_section_id(), sections[-1].id)
+
+    @patch(
+        "moduly.pravni_pozadavky.ui.legal_document_workbench_tab.LegalRequirementSectionAttachDialog",
+    )
+    def test_unassigned_section_attach_dialog_opens_existing_process(
+        self,
+        mock_dialog_cls,
+    ) -> None:
+        from PySide6.QtWidgets import QDialog
+
+        document = self._create_document()
+        version = self._create_version(document)
+        sections = self._create_processable_sections(document, version, 2)
+        existing = legal_requirement_service.create_requirement(
+            title="Systém řízení BOZP",
+            regulation_name="Zákoník práce",
+            legal_document_id=document.id,
+            legal_section_id=sections[0].id,
+            source_section_id=sections[0].id,
+            requirement_summary="Společný proces",
+            area="BOZP",
+        )
+
+        mock_dialog = mock_dialog_cls.return_value
+        mock_dialog.exec.return_value = QDialog.DialogCode.Accepted
+        mock_dialog.create_new_process.return_value = False
+        mock_dialog.selected_requirement_id.return_value = existing.id
+
+        tab = LegalDocumentWorkbenchTab(document_id=document.id, version_id=version.id)
+        tab.load_section(sections[1].id)
+
+        mock_dialog_cls.assert_called_once()
+        assert tab.editor is not None
+        self.assertEqual(tab.editor.regulation_name.text(), "Systém řízení BOZP")
+        self.assertEqual(tab.editor.requirement_summary.toPlainText(), "Společný proces")
+        self.assertEqual(tab.editor.current_section_id(), sections[1].id)
+        self.assertEqual(
+            legal_requirement_service.list_source_section_ids_for_requirement(existing.id),
+            [sections[0].id, sections[1].id],
+        )
+
+    @patch(
+        "moduly.pravni_pozadavky.ui.legal_document_workbench_tab.LegalRequirementSectionAttachDialog",
+    )
+    def test_unassigned_section_create_new_process_keeps_draft_behavior(
+        self,
+        mock_dialog_cls,
+    ) -> None:
+        from PySide6.QtWidgets import QDialog
+
+        document = self._create_document()
+        version = self._create_version(document)
+        sections = self._create_processable_sections(document, version, 2)
+        legal_requirement_service.create_requirement(
+            title="Existující proces",
+            legal_document_id=document.id,
+            legal_section_id=sections[0].id,
+            source_section_id=sections[0].id,
+            requirement_summary="Text",
+        )
+
+        mock_dialog = mock_dialog_cls.return_value
+        mock_dialog.exec.return_value = QDialog.DialogCode.Accepted
+        mock_dialog.create_new_process.return_value = True
+
+        tab = LegalDocumentWorkbenchTab(document_id=document.id, version_id=version.id)
+        tab.load_section(sections[1].id)
+
+        assert tab.editor is not None
+        self.assertEqual(tab.editor.regulation_name.text(), "")
+        self.assertEqual(tab.editor.requirement_summary.toPlainText(), sections[1].text)
+        self.assertIsNone(legal_requirement_service.get_by_source_section_id(sections[1].id))
 
 
 if __name__ == "__main__":

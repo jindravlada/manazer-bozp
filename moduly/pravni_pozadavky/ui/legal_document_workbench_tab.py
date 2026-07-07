@@ -1,4 +1,5 @@
 from PySide6.QtWidgets import (
+    QDialog,
     QLabel,
     QMessageBox,
     QSplitter,
@@ -12,6 +13,9 @@ from moduly.pravni_pozadavky.sluzby.legal_requirement_creation_service import (
 )
 from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
 from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
+from moduly.pravni_pozadavky.ui.legal_requirement_section_attach_dialog import (
+    LegalRequirementSectionAttachDialog,
+)
 from moduly.pravni_pozadavky.ui.legal_requirement_workbench_editor import (
     LegalRequirementWorkbenchEditor,
 )
@@ -122,6 +126,72 @@ class LegalDocumentWorkbenchTab(QWidget):
             )
             return
 
+        self._load_unassigned_section(
+            section_id,
+            section_text=section_text,
+            context_label=context_label,
+        )
+
+    def _load_unassigned_section(
+        self,
+        section_id: int,
+        *,
+        section_text: str,
+        context_label: str,
+    ) -> None:
+        processes = legal_requirement_service.list_active_processes()
+        if not processes:
+            self._load_new_process_draft(
+                section_id,
+                section_text=section_text,
+                context_label=context_label,
+            )
+            return
+
+        dialog = LegalRequirementSectionAttachDialog(self, processes=processes)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            self.editor.clear_form()
+            return
+
+        if dialog.create_new_process():
+            self._load_new_process_draft(
+                section_id,
+                section_text=section_text,
+                context_label=context_label,
+            )
+            return
+
+        requirement_id = dialog.selected_requirement_id()
+        if requirement_id is None:
+            self.editor.clear_form()
+            return
+
+        try:
+            requirement = legal_requirement_service.attach_source_section(
+                requirement_id,
+                section_id,
+            )
+        except ValueError as exc:
+            QMessageBox.warning(self, "Právní požadavek", str(exc))
+            self.editor.clear_form()
+            return
+
+        self.refresh()
+        self.editor.load_requirement(
+            requirement,
+            section_id=section_id,
+            section_text=section_text,
+            context_label=context_label,
+        )
+        self._notify_requirements_page(requirement.id)
+
+    def _load_new_process_draft(
+        self,
+        section_id: int,
+        *,
+        section_text: str,
+        context_label: str,
+    ) -> None:
         try:
             draft = legal_requirement_creation_service.create_from_section(section_id)
         except ValueError as exc:

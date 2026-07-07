@@ -73,6 +73,47 @@ class LegalRequirementService:
     def get_all(self, *, active_only: bool | None = None) -> list[LegalRequirement]:
         return self.repository.get_all(active_only=active_only)
 
+    def list_active_processes(self) -> list[LegalRequirement]:
+        from core.utils.czech_sort import czech_sorted
+
+        processes = self.repository.get_all(active_only=True)
+        return czech_sorted(
+            processes,
+            key=lambda item: item.title or item.regulation_name or "",
+        )
+
+    def attach_source_section(
+        self,
+        requirement_id: int,
+        section_id: int,
+    ) -> LegalRequirement:
+        requirement = self.repository.get_by_id(requirement_id)
+        if requirement is None:
+            raise ValueError("Proces nebyl nalezen.")
+        if not requirement.active:
+            raise ValueError("Proces není aktivní.")
+
+        existing_requirement = self.get_by_source_section_id(section_id)
+        if existing_requirement is not None and existing_requirement.id != requirement_id:
+            raise ValueError("Ustanovení je již přiřazeno jinému procesu.")
+
+        self._validate_source_section_id(section_id)
+
+        section_ids = self.list_source_section_ids_for_requirement(requirement_id)
+        if section_id in section_ids:
+            return requirement
+
+        section_ids.append(section_id)
+        self.source_repository.replace_for_requirement(requirement_id, section_ids)
+
+        requirement = self.repository.get_by_id(requirement_id)
+        if requirement is None:
+            raise ValueError("Proces nebyl nalezen.")
+        if requirement.source_section_id is None:
+            requirement.source_section_id = section_ids[0]
+            requirement = self.repository.update(requirement)
+        return requirement
+
     def get_by_id(self, requirement_id: int) -> LegalRequirement | None:
         return self.repository.get_by_id(requirement_id)
 
