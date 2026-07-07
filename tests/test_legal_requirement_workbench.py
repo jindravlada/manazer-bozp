@@ -234,6 +234,29 @@ class LegalRequirementWorkbenchWidgetTestCase(unittest.TestCase):
         self.assertEqual(icons[sections[0].id], REQUIREMENT_TREE_ICON_EXISTS)
         self.assertEqual(icons[sections[1].id], REQUIREMENT_TREE_ICON_APPROVED)
 
+    def test_click_loads_new_requirement_with_section_text_prefill(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        sections = self._create_processable_sections(document, version, 1)
+        section = sections[0]
+
+        tab = LegalDocumentWorkbenchTab(document_id=document.id, version_id=version.id)
+        tab.tree.select_section_id(section.id)
+        tab.load_section(section.id)
+
+        assert tab.editor is not None
+        self.assertEqual(tab.editor.regulation_name.text(), "")
+        self.assertEqual(tab.editor.requirement_summary.toPlainText(), section.text)
+
+        tab.editor.regulation_name.setText("Interní povinnost BOZP")
+        tab.editor.requirement_summary.setPlainText("Upravený text požadavku")
+        requirement_id = tab.save_current()
+        self.assertIsNotNone(requirement_id)
+
+        tab.load_section(section.id)
+        self.assertEqual(tab.editor.regulation_name.text(), "Interní povinnost BOZP")
+        self.assertEqual(tab.editor.requirement_summary.toPlainText(), "Upravený text požadavku")
+
     def test_click_loads_existing_requirement_without_dialog(self) -> None:
         document = self._create_document()
         version = self._create_version(document)

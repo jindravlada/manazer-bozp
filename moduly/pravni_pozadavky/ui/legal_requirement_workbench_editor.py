@@ -125,8 +125,8 @@ class LegalRequirementWorkbenchEditor(QWidget):
 
         self.context_label.setText(context_label or draft.provision)
         self.section_text.setPlainText(section_text)
-        self.regulation_name.setText(draft.regulation_name)
-        self.requirement_summary.setPlainText(draft.requirement_summary)
+        self.regulation_name.clear()
+        self.requirement_summary.setPlainText(section_text)
         self.area.setText(draft.area)
         self.responsible_person.set_person_id(None)
         self.periodicity.setCurrentIndex(0)
