@@ -57,6 +57,28 @@ class LegalDocumentParserDiagnosticsTestCase(unittest.TestCase):
         self.assertEqual(result.invalid_parent_count, 0)
         self.assertEqual(len(result.errors), 0)
 
+    def test_letters_directly_under_paragraph_have_hierarchy_ok_true(self) -> None:
+        parse_result = legal_document_parser.parse_text(
+            "ČÁST I\n"
+            "§ 1\n"
+            "a) první písmeno,\n"
+            "b) druhé písmeno.\n",
+            document_type="zakon",
+            number="1",
+            year=2026,
+            title="Testovací předpis",
+        )
+
+        result = self.diagnostics.analyze(parse_result)
+
+        self.assertTrue(result.hierarchy_ok)
+        self.assertEqual(result.invalid_parent_count, 0)
+        self.assertEqual(result.letters_under_paragraph_count, 2)
+        letters = [section for section in parse_result.sections if section.section_type == SECTION_LETTER]
+        paragraph = next(section for section in parse_result.sections if section.section_type == SECTION_PARAGRAPH)
+        for letter in letters:
+            self.assertEqual(letter.parent_sort_order, paragraph.sort_order)
+
     def test_invalid_hierarchy_returns_error(self) -> None:
         invalid_result = LegalDocumentParseResult(
             sections=[
@@ -66,8 +88,8 @@ class LegalDocumentParserDiagnosticsTestCase(unittest.TestCase):
                     sort_order=1,
                 ),
                 ParsedLegalSection(
-                    section_type=SECTION_PARAGRAPH,
-                    paragraph="1",
+                    section_type=SECTION_HEAD,
+                    section_number="I",
                     sort_order=2,
                     parent_sort_order=1,
                 ),
@@ -131,7 +153,7 @@ class LegalDocumentParserDiagnosticsTestCase(unittest.TestCase):
 
     def test_cli_prints_hierarchy_errors_for_invalid_txt(self) -> None:
         with tempfile.NamedTemporaryFile("w", suffix=".txt", encoding="utf-8", delete=False) as handle:
-            handle.write("§ 1\nNadpis\na) písmeno bez odstavce\n")
+            handle.write("(1) Odstavec bez nadřazeného paragrafu.\n")
             invalid_path = handle.name
 
         try:
@@ -159,11 +181,10 @@ class LegalDocumentParserDiagnosticsTestCase(unittest.TestCase):
 
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertIn("hierarchy_ok: Ne", completed.stdout)
-        self.assertIn("Celkový počet chyb hierarchie: 2", completed.stdout)
-        self.assertIn("Prvních 2 chyb hierarchie:", completed.stdout)
-        self.assertIn("section_type=pismeno", completed.stdout)
-        self.assertIn("parent_sort_order=1", completed.stdout)
-        self.assertIn("Neplatný rodič", completed.stdout)
+        self.assertIn("Celkový počet chyb hierarchie: 1", completed.stdout)
+        self.assertIn("Prvních 1 chyb hierarchie:", completed.stdout)
+        self.assertIn("section_type=odstavec", completed.stdout)
+        self.assertIn("Chybí rodič", completed.stdout)
 
 
 if __name__ == "__main__":

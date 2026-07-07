@@ -20,7 +20,7 @@ _VALID_PARENT_TYPES: dict[str, frozenset[str]] = {
     SECTION_DIVISION: frozenset({SECTION_HEAD, SECTION_PART}),
     SECTION_PARAGRAPH: frozenset({SECTION_DIVISION, SECTION_HEAD, SECTION_PART}),
     SECTION_SUBSECTION: frozenset({SECTION_PARAGRAPH}),
-    SECTION_LETTER: frozenset({SECTION_SUBSECTION}),
+    SECTION_LETTER: frozenset({SECTION_SUBSECTION, SECTION_PARAGRAPH}),
 }
 
 _ALL_SECTION_TYPES = (
@@ -51,6 +51,7 @@ class ParserDiagnosticsResult:
     root_count: int
     max_depth: int
     hierarchy_ok: bool
+    letters_under_paragraph_count: int = 0
     errors: list[HierarchyError] = field(default_factory=list)
 
 
@@ -63,6 +64,7 @@ class LegalDocumentParserDiagnostics:
         missing_parent_count = 0
         invalid_parent_count = 0
         root_count = 0
+        letters_under_paragraph_count = 0
 
         for section in sections:
             counts_by_type[section.section_type] = counts_by_type.get(section.section_type, 0) + 1
@@ -112,6 +114,13 @@ class LegalDocumentParserDiagnostics:
                         ),
                     ),
                 )
+                continue
+
+            if (
+                section.section_type == SECTION_LETTER
+                and parent.section_type == SECTION_PARAGRAPH
+            ):
+                letters_under_paragraph_count += 1
 
         max_depth = self._compute_max_depth(sections, by_sort_order)
 
@@ -123,6 +132,7 @@ class LegalDocumentParserDiagnostics:
             root_count=root_count,
             max_depth=max_depth,
             hierarchy_ok=len(errors) == 0,
+            letters_under_paragraph_count=letters_under_paragraph_count,
             errors=errors,
         )
 
