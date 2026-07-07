@@ -1,4 +1,9 @@
-from moduly.pravni_pozadavky.constants import VALID_SECTION_TYPES
+from moduly.pravni_pozadavky.constants import (
+    SECTION_LETTER,
+    SECTION_PARAGRAPH,
+    SECTION_SUBSECTION,
+    VALID_SECTION_TYPES,
+)
 from moduly.pravni_pozadavky.modely.legal_section import LegalSection
 from moduly.pravni_pozadavky.repository.legal_section_repository import LegalSectionRepository
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
@@ -74,7 +79,14 @@ class LegalSectionService:
         self._validate_version_id(legal_document_version_id)
         normalized_type = section_type.strip()
         self._validate_section_type(normalized_type)
-        self._validate_content(section_number, title, text)
+        self._validate_content(
+            normalized_type,
+            section_number,
+            paragraph,
+            item_letter,
+            title,
+            text,
+        )
 
         section = LegalSection(
             legal_document_id=legal_document_id,
@@ -117,7 +129,14 @@ class LegalSectionService:
         self._validate_version_id(legal_document_version_id)
         normalized_type = section_type.strip()
         self._validate_section_type(normalized_type)
-        self._validate_content(section_number, title, text)
+        self._validate_content(
+            normalized_type,
+            section_number,
+            paragraph,
+            item_letter,
+            title,
+            text,
+        )
 
         section.legal_document_id = legal_document_id
         section.legal_document_version_id = legal_document_version_id
@@ -157,9 +176,27 @@ class LegalSectionService:
         if section_type not in VALID_SECTION_TYPES:
             raise ValueError("Neplatný typ části.")
 
-    def _validate_content(self, section_number: str, title: str, text: str) -> None:
-        if not section_number.strip() and not title.strip() and not text.strip():
-            raise ValueError("Vyplňte číslo, název nebo text části.")
+    def _validate_content(
+        self,
+        section_type: str,
+        section_number: str,
+        paragraph: str,
+        item_letter: str,
+        title: str,
+        text: str,
+    ) -> None:
+        if section_type == SECTION_PARAGRAPH:
+            if title.strip() or text.strip() or paragraph.strip():
+                return
+        elif section_type == SECTION_SUBSECTION:
+            if section_number.strip() or text.strip():
+                return
+        elif section_type == SECTION_LETTER:
+            if item_letter.strip() or text.strip():
+                return
+        elif section_number.strip() or title.strip() or text.strip():
+            return
+        raise ValueError("Vyplňte číslo, název nebo text části.")
 
 
 legal_section_service = LegalSectionService()

@@ -143,11 +143,19 @@ class LegalDocumentParserTestCase(unittest.TestCase):
         self.assertEqual(paragraph.title, "Předmět úpravy")
 
     def _section_has_import_content(self, section) -> bool:
-        return bool(
-            (section.section_number or "").strip()
-            or (section.title or "").strip()
-            or (section.text or "").strip()
-        )
+        section_number = (section.section_number or "").strip()
+        paragraph = (section.paragraph or "").strip()
+        item_letter = (section.item_letter or "").strip()
+        title = (section.title or "").strip()
+        text = (section.text or "").strip()
+
+        if section.section_type == SECTION_PARAGRAPH:
+            return bool(title or text or paragraph)
+        if section.section_type == SECTION_SUBSECTION:
+            return bool(section_number or text)
+        if section.section_type == SECTION_LETTER:
+            return bool(item_letter or text)
+        return bool(section_number or title or text)
 
     def test_realistic_sample_has_no_empty_sections(self) -> None:
         result = self._parse_sample()
@@ -177,6 +185,33 @@ class LegalDocumentParserTestCase(unittest.TestCase):
         result = self._parse_sample()
         import_result = legal_document_json_import_service.import_data(result.to_dict())
         self.assertGreater(import_result.section_count, 0)
+
+    def test_sample_zakonik_prace_parser_import_to_database(self) -> None:
+        result = self._parse_sample()
+        import_result = legal_document_json_import_service.import_data(result.to_dict())
+        db_sections = legal_section_service.list_by_version(import_result.version_id)
+
+        self.assertEqual(import_result.section_count, len(result.sections))
+        self.assertEqual(len(db_sections), len(result.sections))
+        self.assertGreater(len(db_sections), 0)
+
+        paragraph = next(item for item in db_sections if item.paragraph == "101")
+        self.assertEqual(paragraph.title, "Předmět úpravy")
+
+    def test_bare_paragraph_from_parser_imports_without_validation_error(self) -> None:
+        result = self._parse_fragment(
+            "ČÁST I\n"
+            "§ 1\n"
+            "a) první písmeno,\n"
+            "b) druhé písmeno.\n",
+        )
+        import_result = legal_document_json_import_service.import_data(result.to_dict())
+        db_sections = legal_section_service.list_by_version(import_result.version_id)
+
+        self.assertEqual(import_result.section_count, len(result.sections))
+        bare_paragraph = next(section for section in db_sections if section.paragraph == "1")
+        self.assertEqual(bare_paragraph.title, "")
+        self.assertEqual(bare_paragraph.text, "")
 
     def _section_by_sort(self, sections, sort_order: int):
         return next(section for section in sections if section.sort_order == sort_order)

@@ -11,6 +11,53 @@ from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
 from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
 
 
+def _debug(message: str) -> None:
+    print(f"[LegalDocumentJsonImport] {message}", flush=True)
+
+
+def _debug_section_save(
+    *,
+    sort_order: int,
+    section_type: str,
+    section_number: str,
+    title: str,
+    text: str,
+    parent_sort_order: int | None,
+) -> None:
+    _debug(
+        "ukládám sekci: "
+        f"sort_order={sort_order}, "
+        f"type={section_type}, "
+        f"number={section_number}, "
+        f"title={title}, "
+        f"text_length={len(text)}, "
+        f"parent={parent_sort_order if parent_sort_order is not None else '-'}"
+    )
+
+
+def _debug_section_save_error(
+    *,
+    sort_order: int,
+    section_type: str,
+    section_number: str,
+    title: str,
+    text: str,
+    parent_sort_order: int | None,
+    exc: Exception,
+) -> None:
+    print("ERROR při ukládání sekce:", flush=True)
+    print(
+        f"  sort_order={sort_order}\n"
+        f"  type={section_type}\n"
+        f"  number={section_number}\n"
+        f"  title={title}\n"
+        f"  text_length={len(text)}\n"
+        f"  parent={parent_sort_order if parent_sort_order is not None else '-'}",
+        flush=True,
+    )
+    print(f"  výjimka={exc}", flush=True)
+
+
 @dataclass(frozen=True)
 class LegalDocumentJsonImportResult:
     document_id: int
@@ -97,19 +144,45 @@ class LegalDocumentJsonImportService:
         for index, section_data in enumerate(sections_data):
             if not isinstance(section_data, dict):
                 raise ValueError(f"Část předpisu na pozici {index + 1} musí být objekt.")
-            section = legal_section_service.create(
-                legal_document_id=document.id,
-                legal_document_version_id=version.id,
-                section_type=self._optional_text(section_data.get("section_type")),
-                parent_section_id=None,
-                section_number=self._optional_text(section_data.get("section_number")),
-                paragraph=self._optional_text(section_data.get("paragraph")),
-                item_letter=self._optional_text(section_data.get("item_letter")),
-                title=self._optional_text(section_data.get("title")),
-                text=self._optional_text(section_data.get("text")),
-                sort_order=self._optional_int(section_data.get("sort_order"), default=0) or 0,
-                note=self._optional_text(section_data.get("note")),
+            sort_order = self._optional_int(section_data.get("sort_order"), default=0) or 0
+            section_type = self._optional_text(section_data.get("section_type"))
+            section_number = self._optional_text(section_data.get("section_number"))
+            title = self._optional_text(section_data.get("title"))
+            text = self._optional_text(section_data.get("text"))
+            parent_sort_order = self._optional_int(section_data.get("parent_sort_order"))
+            _debug_section_save(
+                sort_order=sort_order,
+                section_type=section_type,
+                section_number=section_number,
+                title=title,
+                text=text,
+                parent_sort_order=parent_sort_order,
             )
+            try:
+                section = legal_section_service.create(
+                    legal_document_id=document.id,
+                    legal_document_version_id=version.id,
+                    section_type=section_type,
+                    parent_section_id=None,
+                    section_number=section_number,
+                    paragraph=self._optional_text(section_data.get("paragraph")),
+                    item_letter=self._optional_text(section_data.get("item_letter")),
+                    title=title,
+                    text=text,
+                    sort_order=sort_order,
+                    note=self._optional_text(section_data.get("note")),
+                )
+            except Exception as exc:
+                _debug_section_save_error(
+                    sort_order=sort_order,
+                    section_type=section_type,
+                    section_number=section_number,
+                    title=title,
+                    text=text,
+                    parent_sort_order=parent_sort_order,
+                    exc=exc,
+                )
+                raise
             created_sections.append((section, section_data))
             sort_order = self._optional_int(section_data.get("sort_order"), default=section.sort_order)
             if sort_order is not None:
