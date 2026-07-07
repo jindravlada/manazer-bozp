@@ -1,5 +1,7 @@
+import os
 import re
 from html import unescape
+from pathlib import Path
 
 import requests
 
@@ -18,6 +20,8 @@ _H1_TITLE_RE = re.compile(
     re.DOTALL | re.IGNORECASE,
 )
 _TITLE_PREFIX_RE = re.compile(r"^\d+/\d+\s+Sb\.\s*", re.IGNORECASE)
+_CONTENT_LEVEL_RE = re.compile(r"^L(\d+)$", re.IGNORECASE)
+_DEBUG_TXT_ENV = "LEGAL_DOCUMENT_ESBIRKA_DEBUG_TXT"
 
 
 class LegalDocumentESbirkaClient:
@@ -59,7 +63,7 @@ class LegalDocumentESbirkaClient:
 
         raise ValueError("Neočekávaný formát stránky.")
 
-    def html_to_text(self, html: str) -> str:
+    def html_to_text(self, html: str, *, debug_txt_path: str | Path | None = None) -> str:
         frags_html = self._extract_frags_html(html)
         lines: list[str] = []
 
@@ -80,7 +84,7 @@ class LegalDocumentESbirkaClient:
             if "NADPIS" in classes:
                 lines.append(self._element_to_line(inner_html))
                 continue
-            if classes & {"L4", "L5", "L6"}:
+            if self._is_content_level(classes):
                 line = self._element_to_line(inner_html)
                 if line:
                     lines.append(line)
@@ -88,7 +92,19 @@ class LegalDocumentESbirkaClient:
         text = "\n".join(line for line in lines if line)
         if not text.strip():
             raise ValueError("Neočekávaný formát stránky.")
+
+        resolved_debug_path = debug_txt_path or os.environ.get(_DEBUG_TXT_ENV)
+        if resolved_debug_path:
+            Path(resolved_debug_path).write_text(text + "\n", encoding="utf-8")
+
         return text + "\n"
+
+    def _is_content_level(self, classes: set[str]) -> bool:
+        for class_name in classes:
+            match = _CONTENT_LEVEL_RE.match(class_name)
+            if match is not None and int(match.group(1)) >= 2:
+                return True
+        return False
 
     def _extract_frags_html(self, html: str) -> str:
         start = html.find(_FRAGS_START)
@@ -103,12 +119,14 @@ class LegalDocumentESbirkaClient:
 
     def _element_to_line(self, inner_html: str) -> str:
         content = inner_html
+        content = re.sub(r"<br\s*/?>", " ", content, flags=re.IGNORECASE)
         content = re.sub(
             r"<a[^>]*class=\"linknote\"[^>]*>.*?</a>",
             "",
             content,
             flags=re.DOTALL | re.IGNORECASE,
         )
+        image_description = self._image_description(content)
         content = re.sub(r"<a[^>]*>", "", content, flags=re.IGNORECASE)
         content = re.sub(r"</a>", "", content, flags=re.IGNORECASE)
         content = re.sub(r"<i[^>]*>.*?</i>", "", content, flags=re.DOTALL | re.IGNORECASE)
@@ -118,7 +136,22 @@ class LegalDocumentESbirkaClient:
             content,
             flags=re.DOTALL | re.IGNORECASE,
         )
-        return self._strip_tags(content)
+        line = self._strip_tags(content)
+        if not line and image_description:
+            return image_description
+        return line
+
+    def _image_description(self, content: str) -> str:
+        for pattern in (
+            r"<img[^>]*alt=\"([^\"]*)\"",
+            r"<a[^>]*title=\"([^\"]*)\"",
+        ):
+            match = re.search(pattern, content, flags=re.IGNORECASE)
+            if match is not None:
+                description = unescape(match.group(1)).strip()
+                if description:
+                    return description
+        return ""
 
     def _strip_tags(self, value: str) -> str:
         text = re.sub(r"<[^>]+>", "", value)

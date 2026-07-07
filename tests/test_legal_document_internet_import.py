@@ -36,6 +36,7 @@ with patch.object(Path, "home", return_value=_TMP):
         legal_document_version_service,
     )
     from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
+    from moduly.pravni_pozadavky.constants import SECTION_PARAGRAPH
 
 
 class LegalDocumentInternetImportTestCase(unittest.TestCase):
@@ -237,6 +238,69 @@ class LegalDocumentInternetImportTestCase(unittest.TestCase):
                 "Hotovo.",
             ],
         )
+
+    def _paragraph_sections(self, version_id: int, *, paragraph_numbers: set[str] | None = None):
+        sections = legal_section_service.list_by_version(version_id)
+        paragraphs = [
+            section
+            for section in sections
+            if section.section_type == SECTION_PARAGRAPH
+        ]
+        if paragraph_numbers is None:
+            return paragraphs
+        return [section for section in paragraphs if section.paragraph in paragraph_numbers]
+
+    def test_html_to_text_390_2021_contains_paragraph_bodies(self) -> None:
+        html = self._fixture_html(self.fixture_390)
+        text = legal_document_esbirka_client.html_to_text(html)
+
+        self.assertIn("§ 1", text)
+        self.assertIn("Toto nařízení zapracovává příslušné předpisy Evropské unie", text)
+        self.assertIn("§ 2", text)
+        self.assertIn("Osobním ochranným pracovním prostředkem pro účely tohoto nařízení není", text)
+        self.assertIn("§ 7", text)
+        self.assertIn("Toto nařízení nabývá účinnosti dnem 1. listopadu 2021.", text)
+
+    def test_html_to_text_can_save_debug_txt(self) -> None:
+        html = self._fixture_html(self.fixture_390)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            debug_path = Path(temp_dir) / "predpis.txt"
+            legal_document_esbirka_client.html_to_text(html, debug_txt_path=debug_path)
+            saved_text = debug_path.read_text(encoding="utf-8")
+        self.assertIn("§ 1", saved_text)
+        self.assertIn("Toto nařízení zapracovává", saved_text)
+
+    def _paragraph_has_content(self, section, sections) -> bool:
+        if section.text.strip() or section.title.strip():
+            return True
+        return any(child.parent_section_id == section.id for child in sections)
+
+    def test_internet_import_390_2021_paragraphs_have_text(self) -> None:
+        result = self._import_via_internet_mock(
+            self.fixture_390,
+            document_type="narizeni_vlady",
+            number="390",
+            year=2021,
+        )
+
+        sections = legal_section_service.list_by_version(result.version_id)
+        main_paragraphs = self._paragraph_sections(
+            result.version_id,
+            paragraph_numbers={"1", "2", "3", "4", "5", "6", "7"},
+        )
+        self.assertEqual(len(main_paragraphs), 7)
+
+        paragraph_one = next(section for section in main_paragraphs if section.paragraph == "1")
+        paragraph_two = next(section for section in main_paragraphs if section.paragraph == "2")
+        self.assertTrue(paragraph_one.title.strip() or paragraph_one.text.strip())
+        self.assertTrue(paragraph_two.title.strip() or paragraph_two.text.strip())
+
+        empty_main_paragraphs = [
+            section
+            for section in main_paragraphs
+            if not self._paragraph_has_content(section, sections)
+        ]
+        self.assertEqual(empty_main_paragraphs, [])
 
     def test_import_without_document_type_raises_value_error(self) -> None:
         with self.assertRaises(ValueError) as context:
