@@ -132,6 +132,53 @@ class LegalDocumentTxtImportTestCase(unittest.TestCase):
         finally:
             Path(temp_path).unlink(missing_ok=True)
 
+    def test_import_large_txt_with_many_paragraphs(self) -> None:
+        lines: list[str] = []
+        paragraph_count = 250
+        for index in range(1, paragraph_count + 1):
+            lines.extend(
+                [
+                    f"§ {index}",
+                    f"Paragraf {index}",
+                    f"(1) Text paragrafu {index} s delším popisem ustanovení.",
+                    "a) první písmeno,",
+                    "b) druhé písmeno,",
+                    "c) třetí písmeno.",
+                    "",
+                ],
+            )
+        large_text = "\n".join(lines)
+
+        with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False, encoding="utf-8") as handle:
+            handle.write(large_text)
+            temp_path = handle.name
+
+        try:
+            with patch(
+                "moduly.pravni_pozadavky.import_export.legal_document_txt_import_service._debug",
+            ) as debug_mock:
+                result = legal_document_txt_import_service.import_from_txt(
+                    temp_path,
+                    document_type="zakon",
+                    number="262",
+                    year=2006,
+                    title="Zákoník práce – test",
+                    short_title="ZP test",
+                )
+
+            self.assertGreater(result.section_count, paragraph_count)
+            sections = legal_section_service.list_by_version(result.version_id)
+            self.assertEqual(len(sections), result.section_count)
+            self.assertGreaterEqual(debug_mock.call_count, 3)
+            debug_messages = [call.args[0] for call in debug_mock.call_args_list]
+            self.assertTrue(any("načítám txt" in message.lower() for message in debug_messages))
+            self.assertTrue(any("parsování dokončeno" in message.lower() for message in debug_messages))
+            self.assertTrue(
+                any("import do databáze dokončen" in message.lower() for message in debug_messages),
+            )
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+
 
 if __name__ == "__main__":
     unittest.main()

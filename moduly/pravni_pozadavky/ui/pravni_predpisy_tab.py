@@ -139,19 +139,11 @@ class PravniPredpisyTab(QWidget):
         if not file_path:
             return
 
-        metadata_dialog = LegalDocumentTxtImportDialog(self)
-        if not exec_maximized(metadata_dialog):
+        metadata_dialog = LegalDocumentTxtImportDialog(self, file_path=file_path)
+        if not exec_maximized(metadata_dialog) or metadata_dialog.import_result is None:
             return
 
-        try:
-            result = legal_document_txt_import_service.import_from_txt(
-                file_path,
-                **metadata_dialog.get_data(),
-            )
-        except ValueError as exc:
-            QMessageBox.warning(self, "Import TXT", str(exc))
-            return
-
+        result = metadata_dialog.import_result
         document = legal_document_service.get_by_id(result.document_id)
         version = legal_document_version_service.get_by_id(result.version_id)
         document_title = document.title if document is not None else f"Předpis #{result.document_id}"

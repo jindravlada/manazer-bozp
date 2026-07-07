@@ -1,7 +1,10 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QApplication,
     QComboBox,
     QDialog,
     QFormLayout,
+    QLabel,
     QLineEdit,
     QMessageBox,
     QVBoxLayout,
@@ -10,17 +13,33 @@ from PySide6.QtWidgets import (
 
 from core.widgets.dialog_utils import configure_resizable_form_dialog, create_save_cancel_box
 from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_LABELS, VALID_DOCUMENT_TYPES
+from moduly.pravni_pozadavky.import_export.legal_document_json_import_service import (
+    LegalDocumentJsonImportResult,
+)
+from moduly.pravni_pozadavky.import_export.legal_document_txt_import_service import (
+    legal_document_txt_import_service,
+)
 
 
 class LegalDocumentTxtImportDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, *, file_path: str):
         super().__init__(parent)
+        self.file_path = file_path
+        self.import_result: LegalDocumentJsonImportResult | None = None
+
         self.setWindowTitle("Import právního předpisu z TXT")
-        configure_resizable_form_dialog(self, width=520, height=320, min_width=420, min_height=260)
+        configure_resizable_form_dialog(self, width=520, height=340, min_width=420, min_height=280)
 
         layout = QVBoxLayout(self)
         layout.addWidget(self._build_form())
-        layout.addWidget(create_save_cancel_box(self))
+        self.status_label = QLabel("")
+        self.status_label.setWordWrap(True)
+        self.status_label.hide()
+        layout.addWidget(self.status_label)
+        self.button_box = create_save_cancel_box(self)
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
+        layout.addWidget(self.button_box)
 
     def _build_form(self) -> QWidget:
         form_widget = QWidget()
@@ -55,6 +74,20 @@ class LegalDocumentTxtImportDialog(QDialog):
             "short_title": self.short_title.text().strip(),
         }
 
+    def _set_import_in_progress(self, active: bool) -> None:
+        self.document_type.setEnabled(not active)
+        self.number.setEnabled(not active)
+        self.year.setEnabled(not active)
+        self.title.setEnabled(not active)
+        self.short_title.setEnabled(not active)
+        self.button_box.setEnabled(not active)
+        if active:
+            self.status_label.setText("Probíhá import…")
+            self.status_label.show()
+        else:
+            self.status_label.hide()
+            self.status_label.clear()
+
     def accept(self) -> None:
         data = self.get_data()
         if data["document_type"] not in VALID_DOCUMENT_TYPES:
@@ -63,4 +96,21 @@ class LegalDocumentTxtImportDialog(QDialog):
         if not data["title"]:
             QMessageBox.warning(self, "Import TXT", "Název je povinný.")
             return
+
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        self._set_import_in_progress(True)
+        QApplication.processEvents()
+
+        try:
+            self.import_result = legal_document_txt_import_service.import_from_txt(
+                self.file_path,
+                **data,
+            )
+        except ValueError as exc:
+            QMessageBox.warning(self, "Import TXT", str(exc))
+            return
+        finally:
+            self._set_import_in_progress(False)
+            QApplication.restoreOverrideCursor()
+
         super().accept()

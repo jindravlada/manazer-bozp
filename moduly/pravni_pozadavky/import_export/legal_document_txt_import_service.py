@@ -7,6 +7,10 @@ from moduly.pravni_pozadavky.import_export.legal_document_json_import_service im
 from moduly.pravni_pozadavky.parser.legal_document_parser import legal_document_parser
 
 
+def _debug(message: str) -> None:
+    print(f"[LegalDocumentTxtImport] {message}", flush=True)
+
+
 class LegalDocumentTxtImportService:
     def import_from_txt(
         self,
@@ -22,6 +26,7 @@ class LegalDocumentTxtImportService:
         if not file_path.is_file():
             raise ValueError("Soubor pro import nebyl nalezen.")
 
+        _debug(f"načítám TXT: {file_path}")
         try:
             raw_text = file_path.read_text(encoding="utf-8")
         except OSError as exc:
@@ -43,10 +48,18 @@ class LegalDocumentTxtImportService:
             title=normalized_title,
             short_title=(short_title or "").strip(),
         )
+        _debug(f"parsování dokončeno, počet částí: {len(parsed.sections)}")
         if not parsed.sections:
             raise ValueError("Text předpisu neobsahuje rozpoznatelná ustanovení.")
 
-        return legal_document_json_import_service.import_data(parsed.to_dict())
+        result = legal_document_json_import_service.import_data(parsed.to_dict())
+        _debug(
+            "import do databáze dokončen: "
+            f"document_id={result.document_id}, "
+            f"version_id={result.version_id}, "
+            f"section_count={result.section_count}",
+        )
+        return result
 
 
 legal_document_txt_import_service = LegalDocumentTxtImportService()
