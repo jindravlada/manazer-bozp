@@ -15,6 +15,7 @@ class LegalChange(Base):
     legal_document_id: Mapped[int] = mapped_column(Integer, nullable=False)
     legal_document_version_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     legal_section_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    legal_check_run_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     change_type: Mapped[str] = mapped_column(String(30), nullable=False)
     title: Mapped[str] = mapped_column(String(250), nullable=False)

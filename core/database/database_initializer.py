@@ -54,6 +54,7 @@ def initialize_database() -> None:
     )
     from moduly.pravni_pozadavky.modely.legal_section import LegalSection  # noqa: F401
     from moduly.pravni_pozadavky.modely.legal_change import LegalChange  # noqa: F401
+    from moduly.pravni_pozadavky.modely.legal_check_run import LegalCheckRun  # noqa: F401
     from core.shared.modely.entity_link import EntityLink  # noqa: F401
     from core.shared.modely.control_result import ControlResult  # noqa: F401
 
@@ -80,6 +81,7 @@ def initialize_database() -> None:
     _ensure_audit_program_link_columns()
     _ensure_audit_columns()
     _ensure_legal_requirement_columns()
+    _ensure_legal_change_columns()
     _normalize_task_status_values()
     _normalize_accident_legacy_values()
 
@@ -459,6 +461,14 @@ def _ensure_legal_requirement_columns() -> None:
         _add_column("legal_requirements", "legal_document_id INTEGER")
     if "legal_section_id" not in columns:
         _add_column("legal_requirements", "legal_section_id INTEGER")
+
+
+def _ensure_legal_change_columns() -> None:
+    columns = _table_columns("legal_changes")
+    if not columns:
+        return
+    if "legal_check_run_id" not in columns:
+        _add_column("legal_changes", "legal_check_run_id INTEGER")
 
 
 def _normalize_task_status_values() -> None:

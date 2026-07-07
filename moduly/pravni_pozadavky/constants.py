@@ -185,3 +185,24 @@ CHANGE_TYPE_LABELS: dict[str, str] = {
     CHANGE_OTHER: "Jiné",
 }
 
+
+CHECK_RUN_NEW = "new"
+CHECK_RUN_IN_PROGRESS = "in_progress"
+CHECK_RUN_COMPLETED = "completed"
+
+VALID_CHECK_RUN_STATUSES = frozenset(
+    {
+        CHECK_RUN_NEW,
+        CHECK_RUN_IN_PROGRESS,
+        CHECK_RUN_COMPLETED,
+    }
+)
+
+CHECK_RUN_STATUS_LABELS: dict[str, str] = {
+    CHECK_RUN_NEW: "Nová",
+    CHECK_RUN_IN_PROGRESS: "Probíhá",
+    CHECK_RUN_COMPLETED: "Dokončená",
+}
+
+DEFAULT_CHECK_RUN_STATUS = CHECK_RUN_NEW
+

@@ -56,6 +56,7 @@ class LegalChangeServiceTestCase(unittest.TestCase):
         from core.database.session import get_session
         from core.shared.modely.entity_link import EntityLink
         from moduly.pravni_pozadavky.modely.legal_change import LegalChange
+        from moduly.pravni_pozadavky.modely.legal_check_run import LegalCheckRun
         from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
         from moduly.pravni_pozadavky.modely.legal_document_version import LegalDocumentVersion
         from moduly.pravni_pozadavky.modely.legal_section import LegalSection
@@ -63,6 +64,7 @@ class LegalChangeServiceTestCase(unittest.TestCase):
         with get_session() as session:
             session.execute(delete(EntityLink))
             session.execute(delete(LegalChange))
+            session.execute(delete(LegalCheckRun))
             session.execute(delete(LegalSection))
             session.execute(delete(LegalDocumentVersion))
             session.execute(delete(LegalDocument))

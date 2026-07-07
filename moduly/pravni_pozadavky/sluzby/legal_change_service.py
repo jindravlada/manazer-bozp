@@ -8,6 +8,7 @@ from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
     legal_document_version_service,
 )
 from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
+from moduly.pravni_pozadavky.sluzby.legal_check_run_service import legal_check_run_service
 
 
 class LegalChangeService:
@@ -50,6 +51,17 @@ class LegalChangeService:
             include_inactive=include_inactive,
         )
 
+    def list_by_check_run(
+        self,
+        check_run_id: int,
+        *,
+        include_inactive: bool = False,
+    ) -> list[LegalChange]:
+        return self.repository.list_by_check_run(
+            check_run_id,
+            include_inactive=include_inactive,
+        )
+
     def get_by_id(self, change_id: int) -> LegalChange | None:
         return self.repository.get_by_id(change_id)
 
@@ -61,6 +73,7 @@ class LegalChangeService:
         title: str,
         legal_document_version_id: int | None = None,
         legal_section_id: int | None = None,
+        legal_check_run_id: int | None = None,
         description: str = "",
         published_at: date | None = None,
         effective_from: date | None = None,
@@ -73,6 +86,7 @@ class LegalChangeService:
         self._validate_document_id(legal_document_id)
         self._validate_version_id(legal_document_version_id)
         self._validate_section_id(legal_section_id)
+        self._validate_check_run_id(legal_check_run_id)
         normalized_type = change_type.strip()
         self._validate_change_type(normalized_type)
         normalized_title = title.strip()
@@ -86,6 +100,7 @@ class LegalChangeService:
             legal_document_id=legal_document_id,
             legal_document_version_id=legal_document_version_id,
             legal_section_id=legal_section_id,
+            legal_check_run_id=legal_check_run_id,
             change_type=normalized_type,
             title=normalized_title,
             description=description.strip(),
@@ -108,6 +123,7 @@ class LegalChangeService:
         title: str,
         legal_document_version_id: int | None = None,
         legal_section_id: int | None = None,
+        legal_check_run_id: int | None = None,
         description: str = "",
         published_at: date | None = None,
         effective_from: date | None = None,
@@ -124,6 +140,7 @@ class LegalChangeService:
         self._validate_document_id(legal_document_id)
         self._validate_version_id(legal_document_version_id)
         self._validate_section_id(legal_section_id)
+        self._validate_check_run_id(legal_check_run_id)
         normalized_type = change_type.strip()
         self._validate_change_type(normalized_type)
         normalized_title = title.strip()
@@ -140,6 +157,7 @@ class LegalChangeService:
         change.legal_document_id = legal_document_id
         change.legal_document_version_id = legal_document_version_id
         change.legal_section_id = legal_section_id
+        change.legal_check_run_id = legal_check_run_id
         change.change_type = normalized_type
         change.title = normalized_title
         change.description = description.strip()
@@ -212,6 +230,14 @@ class LegalChangeService:
             raise ValueError("Typ změny je povinný.")
         if change_type not in VALID_CHANGE_TYPES:
             raise ValueError("Neplatný typ změny.")
+
+    def _validate_check_run_id(self, legal_check_run_id: int | None) -> None:
+        if legal_check_run_id is None:
+            return
+        if not isinstance(legal_check_run_id, int) or legal_check_run_id <= 0:
+            raise ValueError("Neplatný kontrolní běh.")
+        if legal_check_run_service.get_by_id(legal_check_run_id) is None:
+            raise ValueError("Kontrolní běh nebyl nalezen.")
 
 
 legal_change_service = LegalChangeService()

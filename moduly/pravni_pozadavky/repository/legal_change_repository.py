@@ -60,6 +60,20 @@ class LegalChangeRepository:
                 stmt = stmt.where(LegalChange.active.is_(True))
             return list(session.scalars(stmt))
 
+    def list_by_check_run(
+        self,
+        check_run_id: int,
+        *,
+        include_inactive: bool = False,
+    ) -> list[LegalChange]:
+        with get_session() as session:
+            stmt = self._ordered(
+                select(LegalChange).where(LegalChange.legal_check_run_id == check_run_id),
+            )
+            if not include_inactive:
+                stmt = stmt.where(LegalChange.active.is_(True))
+            return list(session.scalars(stmt))
+
     def get_by_id(self, change_id: int) -> LegalChange | None:
         with get_session() as session:
             return session.get(LegalChange, change_id)

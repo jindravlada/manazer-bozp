@@ -22,6 +22,7 @@ from moduly.pravni_pozadavky.constants import (
     legal_document_display_label,
     legal_section_display_label,
 )
+from moduly.pravni_pozadavky.sluzby.legal_check_run_service import legal_check_run_service
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
 from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
     legal_document_version_service,
@@ -70,6 +71,7 @@ class LegalChangeDialog(QDialog):
         self.legal_document = QComboBox()
         self.legal_version = QComboBox()
         self.legal_section = QComboBox()
+        self.legal_check_run = QComboBox()
         self.change_type = QComboBox()
         for key in sorted(CHANGE_TYPE_LABELS, key=lambda item: CHANGE_TYPE_LABELS[item]):
             self.change_type.addItem(CHANGE_TYPE_LABELS[key], key)
@@ -86,6 +88,7 @@ class LegalChangeDialog(QDialog):
         form.addRow("Právní předpis:", self.legal_document)
         form.addRow("Verze předpisu:", self.legal_version)
         form.addRow("Ustanovení:", self.legal_section)
+        form.addRow("Kontrolní běh:", self.legal_check_run)
         form.addRow("Typ změny:", self.change_type)
         form.addRow("Název:", self.title)
         form.addRow("Popis:", self.description)
@@ -98,6 +101,7 @@ class LegalChangeDialog(QDialog):
         self._populate_documents()
         self._populate_versions()
         self._populate_sections()
+        self._populate_check_runs()
         self.legal_document.currentIndexChanged.connect(self._on_document_changed)
         self.legal_version.currentIndexChanged.connect(self._on_version_changed)
         return tab
@@ -113,6 +117,7 @@ class LegalChangeDialog(QDialog):
             version_id=change.legal_document_version_id,
             selected_id=change.legal_section_id,
         )
+        self._populate_check_runs(selected_id=change.legal_check_run_id)
         self._set_combo_value(self.change_type, change.change_type)
         self.title.setText(change.title)
         self.description.setPlainText(change.description)
@@ -203,6 +208,24 @@ class LegalChangeDialog(QDialog):
         if selected_id is not None:
             self._set_combo_value(self.legal_section, selected_id)
 
+    def _populate_check_runs(self, *, selected_id: int | None = None) -> None:
+        self.legal_check_run.clear()
+        self.legal_check_run.addItem("— bez vazby —", None)
+        runs = legal_check_run_service.list_for_selector()
+        if selected_id is not None:
+            selected = legal_check_run_service.get_by_id(selected_id)
+            if (
+                selected is not None
+                and not selected.active
+                and all(item.id != selected_id for item in runs)
+            ):
+                runs = [selected, *runs]
+        for run in runs:
+            label = f"{run.title} ({run.period_from:%d.%m.%Y}–{run.period_to:%d.%m.%Y})"
+            self.legal_check_run.addItem(label, run.id)
+        if selected_id is not None:
+            self._set_combo_value(self.legal_check_run, selected_id)
+
     def _on_document_changed(self) -> None:
         document_id = self.legal_document.currentData()
         self._populate_versions(document_id=document_id)
@@ -229,6 +252,7 @@ class LegalChangeDialog(QDialog):
             "legal_document_id": document_id,
             "legal_document_version_id": self.legal_version.currentData(),
             "legal_section_id": self.legal_section.currentData(),
+            "legal_check_run_id": self.legal_check_run.currentData(),
             "change_type": self.change_type.currentData() or "",
             "title": self.title.text().strip(),
             "description": self.description.toPlainText().strip(),
