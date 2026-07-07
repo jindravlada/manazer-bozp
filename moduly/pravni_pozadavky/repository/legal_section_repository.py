@@ -53,6 +53,21 @@ class LegalSectionRepository:
                 stmt = stmt.where(LegalSection.active.is_(True))
             return list(session.scalars(stmt))
 
+    def list_active(
+        self,
+        *,
+        document_id: int | None = None,
+    ) -> list[LegalSection]:
+        with get_session() as session:
+            stmt = (
+                select(LegalSection)
+                .where(LegalSection.active.is_(True))
+                .order_by(LegalSection.sort_order, LegalSection.id)
+            )
+            if document_id is not None:
+                stmt = stmt.where(LegalSection.legal_document_id == document_id)
+            return list(session.scalars(stmt))
+
     def get_by_id(self, section_id: int) -> LegalSection | None:
         with get_session() as session:
             return session.get(LegalSection, section_id)

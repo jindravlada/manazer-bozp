@@ -28,8 +28,14 @@ with patch.object(Path, "home", return_value=_TMP):
         COMPLIANCE_SPLNENO,
         DOCUMENT_TYPE_ZAKON,
         PERIODICITY_ROCNE,
+        SECTION_PARAGRAPH,
+        SECTION_SUBSECTION,
+        legal_section_display_label,
     )
     from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
+    from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
+        legal_document_version_service,
+    )
     from moduly.pravni_pozadavky.sluzby.legal_requirement_export_context_service import (
         legal_requirement_export_context_service,
     )
@@ -43,6 +49,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.pravni_pozadavky.sluzby.legal_requirement_task_service import (
         legal_requirement_task_service,
     )
+    from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
     from moduly.ukoly.sluzby.task_service import task_service
 
 
@@ -51,6 +58,34 @@ class LegalRequirementServiceTestCase(unittest.TestCase):
         for requirement in legal_requirement_service.get_all():
             requirement.active = False
             legal_requirement_service.repository.update(requirement)
+
+    def _create_document(self, *, title: str = "Zákoník práce"):
+        return legal_document_service.create(
+            document_type=DOCUMENT_TYPE_ZAKON,
+            title=title,
+            number="262/2006 Sb.",
+            year=2006,
+            short_title="ZP",
+        )
+
+    def _create_version(self, document):
+        return legal_document_version_service.create(
+            legal_document_id=document.id,
+            version_name="Verze 2024",
+        )
+
+    def _create_section(self, document, version, **kwargs):
+        defaults = {
+            "legal_document_id": document.id,
+            "legal_document_version_id": version.id,
+            "section_type": SECTION_PARAGRAPH,
+            "paragraph": "103",
+            "title": "Školení zaměstnanců",
+            "text": "Zaměstnavatel zajistí školení.",
+            "sort_order": 10,
+        }
+        defaults.update(kwargs)
+        return legal_section_service.create(**defaults)
 
     def _create_requirement(self, **kwargs):
         defaults = {
@@ -177,6 +212,8 @@ class LegalRequirementServiceTestCase(unittest.TestCase):
         self.assertEqual(row.links, [])
         self.assertIsNone(row.legal_document_id)
         self.assertEqual(row.legal_document_title, "")
+        self.assertIsNone(row.legal_section_id)
+        self.assertEqual(row.legal_section_title, "")
 
     def test_export_context_includes_links(self) -> None:
         from core.shared.constants import ENTITY_RISK, LINK_LEGAL_BASIS
@@ -367,6 +404,130 @@ class LegalRequirementServiceTestCase(unittest.TestCase):
             currency="",
         )
         self.assertEqual(sanction.currency, "Kč")
+
+    def test_requirement_can_link_to_legal_section(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        section = self._create_section(document, version)
+        requirement = legal_requirement_service.create_requirement(
+            regulation_name="Zákoník práce",
+            legal_document_id=document.id,
+            legal_section_id=section.id,
+            requirement_summary="Test ustanovení",
+        )
+
+        self.assertEqual(requirement.legal_section_id, section.id)
+
+        updated = legal_requirement_service.get_by_id(requirement.id)
+        assert updated is not None
+        self.assertEqual(updated.legal_section_id, section.id)
+
+    def test_requirement_can_exist_without_legal_section(self) -> None:
+        requirement = self._create_requirement()
+        self.assertIsNone(requirement.legal_section_id)
+
+    def test_requirement_cannot_link_to_missing_legal_section(self) -> None:
+        with self.assertRaises(ValueError):
+            legal_requirement_service.create_requirement(
+                regulation_name="Test",
+                legal_section_id=99999,
+                requirement_summary="Neexistující ustanovení",
+            )
+
+    def test_requirement_cannot_link_to_inactive_legal_section(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        section = self._create_section(document, version)
+        legal_section_service.deactivate(section.id)
+
+        with self.assertRaises(ValueError):
+            legal_requirement_service.create_requirement(
+                regulation_name="Test",
+                legal_section_id=section.id,
+                requirement_summary="Neaktivní ustanovení",
+            )
+
+    def test_export_context_includes_legal_section(self) -> None:
+        document = self._create_document(title="Zákon o BOZP")
+        version = self._create_version(document)
+        section = self._create_section(
+            document,
+            version,
+            paragraph="103",
+            section_number="2",
+            item_letter="c",
+            title="Školení zaměstnanců",
+            text="Text ustanovení pro export",
+        )
+        requirement = legal_requirement_service.create_requirement(
+            regulation_name="Ruční název",
+            legal_document_id=document.id,
+            legal_section_id=section.id,
+            requirement_summary="Export sekcí",
+        )
+
+        context = legal_requirement_export_context_service.build_for_requirement(requirement.id)
+        assert context is not None
+        row = context.rows[0]
+        self.assertEqual(row.legal_section_id, section.id)
+        self.assertEqual(row.legal_section_type, "Paragraf")
+        self.assertEqual(row.legal_section_paragraph, "103")
+        self.assertEqual(row.legal_section_number, "2")
+        self.assertEqual(row.legal_section_item_letter, "c")
+        self.assertEqual(row.legal_section_title, "Školení zaměstnanců")
+        self.assertEqual(row.legal_section_text, "Text ustanovení pro export")
+
+    def test_section_selector_filters_by_document(self) -> None:
+        first_document = self._create_document(title="První předpis")
+        second_document = self._create_document(title="Druhý předpis")
+        first_version = self._create_version(first_document)
+        second_version = self._create_version(second_document)
+        first_section = self._create_section(
+            first_document,
+            first_version,
+            paragraph="10",
+            title="První ustanovení",
+        )
+        second_section = self._create_section(
+            second_document,
+            second_version,
+            paragraph="20",
+            title="Druhé ustanovení",
+        )
+
+        all_sections = legal_section_service.list_for_selector()
+        all_ids = {item.id for item in all_sections}
+        self.assertIn(first_section.id, all_ids)
+        self.assertIn(second_section.id, all_ids)
+
+        first_only_ids = {
+            item.id
+            for item in legal_section_service.list_for_selector(document_id=first_document.id)
+        }
+        second_only_ids = {
+            item.id
+            for item in legal_section_service.list_for_selector(document_id=second_document.id)
+        }
+        self.assertIn(first_section.id, first_only_ids)
+        self.assertNotIn(second_section.id, first_only_ids)
+        self.assertIn(second_section.id, second_only_ids)
+        self.assertNotIn(first_section.id, second_only_ids)
+
+    def test_legal_section_display_label(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        section = self._create_section(
+            document,
+            version,
+            paragraph="103",
+            section_number="2",
+            section_type=SECTION_SUBSECTION,
+            item_letter="c",
+            title="Školení zaměstnanců",
+        )
+
+        label = legal_section_display_label(section)
+        self.assertEqual(label, "§ 103 odst. 2 písm. c) – Školení zaměstnanců")
 
 
 if __name__ == "__main__":

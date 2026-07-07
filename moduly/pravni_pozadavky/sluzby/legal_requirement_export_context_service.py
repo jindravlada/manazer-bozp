@@ -6,6 +6,7 @@ from moduly.pravni_pozadavky.constants import (
     COMPLIANCE_STATUS_LABELS,
     DOCUMENT_TYPE_LABELS,
     PERIODICITY_LABELS,
+    SECTION_TYPE_LABELS,
 )
 from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
@@ -13,6 +14,7 @@ from moduly.pravni_pozadavky.sluzby.legal_requirement_sanction_service import (
     legal_requirement_sanction_service,
 )
 from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
+from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
 from core.shared.constants import ENTITY_LEGAL_REQUIREMENT
 from core.shared.sluzby.entity_link_service import entity_link_service
 
@@ -82,6 +84,13 @@ class LegalRequirementExportRow:
     legal_document_type: str
     legal_document_number: str
     legal_document_year: str
+    legal_section_id: int | None
+    legal_section_type: str
+    legal_section_number: str
+    legal_section_paragraph: str
+    legal_section_item_letter: str
+    legal_section_title: str
+    legal_section_text: str
     sanctions: list[LegalRequirementSanctionExportRow]
     links: list[LegalRequirementLinkExportRow]
 
@@ -147,6 +156,9 @@ class LegalRequirementExportContextService:
         document = None
         if requirement.legal_document_id is not None:
             document = legal_document_service.get_by_id(requirement.legal_document_id)
+        section = None
+        if requirement.legal_section_id is not None:
+            section = legal_section_service.get_by_id(requirement.legal_section_id)
         return LegalRequirementExportRow(
             requirement_id=requirement.id,
             regulation_name=_text(requirement.regulation_name),
@@ -178,6 +190,17 @@ class LegalRequirementExportContextService:
             ),
             legal_document_number=_text(document.number if document else ""),
             legal_document_year=str(document.year) if document and document.year is not None else "",
+            legal_section_id=requirement.legal_section_id,
+            legal_section_type=(
+                SECTION_TYPE_LABELS.get(section.section_type, section.section_type)
+                if section is not None
+                else ""
+            ),
+            legal_section_number=_text(section.section_number if section else ""),
+            legal_section_paragraph=_text(section.paragraph if section else ""),
+            legal_section_item_letter=_text(section.item_letter if section else ""),
+            legal_section_title=_text(section.title if section else ""),
+            legal_section_text=_text(section.text if section else ""),
             sanctions=[self._build_sanction_row(sanction) for sanction in sanctions],
             links=[self._build_link_row(link) for link in links],
         )

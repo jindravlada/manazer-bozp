@@ -17,6 +17,7 @@ from moduly.pravni_pozadavky.repository.legal_requirement_check_repository impor
 from moduly.pravni_pozadavky.repository.legal_requirement_repository import (
     LegalRequirementRepository,
 )
+from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
 
 
 def _add_months(value: date, months: int) -> date:
@@ -79,6 +80,7 @@ class LegalRequirementService:
         provision: str = "",
         area: str = "",
         legal_document_id: int | None = None,
+        legal_section_id: int | None = None,
         requirement_summary: str = "",
         organization_impact: str = "",
         responsible_person_id: int | None = None,
@@ -90,6 +92,7 @@ class LegalRequirementService:
         active: bool = True,
     ) -> LegalRequirement:
         self._validate_legal_document_id(legal_document_id)
+        self._validate_legal_section_id(legal_section_id)
 
         requirement = LegalRequirement(
             regulation_name=regulation_name.strip(),
@@ -97,6 +100,7 @@ class LegalRequirementService:
             provision=provision.strip(),
             area=area.strip(),
             legal_document_id=legal_document_id,
+            legal_section_id=legal_section_id,
             requirement_summary=requirement_summary.strip(),
             organization_impact=organization_impact.strip(),
             responsible_person_id=responsible_person_id,
@@ -119,6 +123,7 @@ class LegalRequirementService:
         provision: str = "",
         area: str = "",
         legal_document_id: int | None = None,
+        legal_section_id: int | None = None,
         requirement_summary: str = "",
         organization_impact: str = "",
         responsible_person_id: int | None = None,
@@ -134,12 +139,14 @@ class LegalRequirementService:
             return None
 
         self._validate_legal_document_id(legal_document_id)
+        self._validate_legal_section_id(legal_section_id)
 
         requirement.regulation_name = regulation_name.strip()
         requirement.regulation_number = regulation_number.strip()
         requirement.provision = provision.strip()
         requirement.area = area.strip()
         requirement.legal_document_id = legal_document_id
+        requirement.legal_section_id = legal_section_id
         requirement.requirement_summary = requirement_summary.strip()
         requirement.organization_impact = organization_impact.strip()
         requirement.responsible_person_id = responsible_person_id
@@ -227,6 +234,17 @@ class LegalRequirementService:
             raise ValueError("Neplatný právní předpis.")
         if self.document_repository.get_by_id(legal_document_id) is None:
             raise ValueError("Právní předpis nebyl nalezen.")
+
+    def _validate_legal_section_id(self, legal_section_id: int | None) -> None:
+        if legal_section_id is None:
+            return
+        if not isinstance(legal_section_id, int) or legal_section_id <= 0:
+            raise ValueError("Neplatné ustanovení předpisu.")
+        section = legal_section_service.get_by_id(legal_section_id)
+        if section is None:
+            raise ValueError("Ustanovení předpisu nebylo nalezeno.")
+        if not section.active:
+            raise ValueError("Ustanovení předpisu není aktivní.")
 
 
 legal_requirement_service = LegalRequirementService()

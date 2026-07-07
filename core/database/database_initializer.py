@@ -456,6 +456,8 @@ def _ensure_legal_requirement_columns() -> None:
         return
     if "legal_document_id" not in columns:
         _add_column("legal_requirements", "legal_document_id INTEGER")
+    if "legal_section_id" not in columns:
+        _add_column("legal_requirements", "legal_section_id INTEGER")
 
 
 def _normalize_task_status_values() -> None:

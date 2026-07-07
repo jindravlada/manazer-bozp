@@ -131,3 +131,35 @@ def legal_document_display_label(document) -> str:
         return short_title
     return (getattr(document, "title", "") or "").strip()
 
+
+def legal_section_display_label(section) -> str:
+    paragraph = (getattr(section, "paragraph", "") or "").strip()
+    section_number = (getattr(section, "section_number", "") or "").strip()
+    item_letter = (getattr(section, "item_letter", "") or "").strip()
+    title = (getattr(section, "title", "") or "").strip()
+    section_type = (getattr(section, "section_type", "") or "").strip()
+
+    parts: list[str] = []
+    if paragraph:
+        parts.append(f"§ {paragraph}")
+    if section_number:
+        if section_type == SECTION_SUBSECTION:
+            parts.append(f"odst. {section_number}")
+        else:
+            parts.append(section_number)
+    if item_letter:
+        parts.append(f"písm. {item_letter})")
+
+    if title:
+        if parts:
+            return f"{' '.join(parts)} – {title}"
+        return title
+    if parts:
+        return " ".join(parts)
+
+    type_label = SECTION_TYPE_LABELS.get(section_type, section_type)
+    section_id = getattr(section, "id", None)
+    if type_label:
+        return type_label
+    return f"Ustanovení #{section_id}" if section_id is not None else ""
+

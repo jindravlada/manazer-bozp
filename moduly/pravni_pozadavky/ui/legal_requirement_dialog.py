@@ -21,8 +21,10 @@ from moduly.pravni_pozadavky.constants import (
     VALID_COMPLIANCE_STATUSES,
     VALID_PERIODICITIES,
     legal_document_display_label,
+    legal_section_display_label,
 )
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
+from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
 from moduly.pravni_pozadavky.ui.legal_requirement_sanctions_tab import LegalRequirementSanctionsTab
 
 
@@ -54,6 +56,7 @@ class LegalRequirementDialog(QDialog):
             self._load_requirement(requirement)
         else:
             self.active_checkbox.setChecked(True)
+            self._populate_legal_sections()
 
     def _main_tab(self) -> QWidget:
         tab = QWidget()
@@ -64,6 +67,7 @@ class LegalRequirementDialog(QDialog):
         self.provision = QLineEdit()
         self.legal_document = QComboBox()
         self._populate_legal_documents()
+        self.legal_section = QComboBox()
         self.area = QLineEdit()
         self.requirement_summary = QTextEdit()
         self.requirement_summary.setMinimumHeight(80)
@@ -87,6 +91,7 @@ class LegalRequirementDialog(QDialog):
         form.addRow("Číslo předpisu:", self.regulation_number)
         form.addRow("Paragraf / ustanovení:", self.provision)
         form.addRow("Právní předpis:", self.legal_document)
+        form.addRow("Ustanovení předpisu:", self.legal_section)
         form.addRow("Oblast:", self.area)
         form.addRow("Stručný požadavek:", self.requirement_summary)
         form.addRow("Dopad na organizaci:", self.organization_impact)
@@ -97,6 +102,8 @@ class LegalRequirementDialog(QDialog):
         form.addRow("Stav plnění:", self.compliance_status)
         form.addRow("Poznámka:", self.note)
         form.addRow("", self.active_checkbox)
+
+        self.legal_document.currentIndexChanged.connect(self._on_legal_document_changed)
         return tab
 
     def _load_requirement(self, requirement) -> None:
@@ -104,6 +111,10 @@ class LegalRequirementDialog(QDialog):
         self.regulation_number.setText(requirement.regulation_number)
         self.provision.setText(requirement.provision)
         self._populate_legal_documents(selected_id=requirement.legal_document_id)
+        self._populate_legal_sections(
+            selected_id=requirement.legal_section_id,
+            document_id=requirement.legal_document_id,
+        )
         self.area.setText(requirement.area)
         self.requirement_summary.setPlainText(requirement.requirement_summary)
         self.organization_impact.setPlainText(requirement.organization_impact)
@@ -116,6 +127,7 @@ class LegalRequirementDialog(QDialog):
         self.active_checkbox.setChecked(requirement.active)
 
     def _populate_legal_documents(self, *, selected_id: int | None = None) -> None:
+        self.legal_document.blockSignals(True)
         self.legal_document.clear()
         self.legal_document.addItem("— bez vazby —", None)
 
@@ -138,6 +150,54 @@ class LegalRequirementDialog(QDialog):
 
         if selected_id is not None:
             self._set_combo_value(self.legal_document, selected_id)
+        self.legal_document.blockSignals(False)
+
+    def _populate_legal_sections(
+        self,
+        *,
+        selected_id: int | None = None,
+        document_id: int | None = None,
+    ) -> None:
+        if document_id is None:
+            document_id = self.legal_document.currentData()
+
+        self.legal_section.clear()
+        self.legal_section.addItem("— bez vazby —", None)
+
+        sections = legal_section_service.list_for_selector(document_id=document_id)
+        selected_section = None
+        if selected_id is not None:
+            selected_section = legal_section_service.get_by_id(selected_id)
+            if (
+                selected_section is not None
+                and not selected_section.active
+                and all(item.id != selected_id for item in sections)
+            ):
+                sections = [selected_section, *sections]
+
+        for section in sections:
+            label = legal_section_display_label(section)
+            if not label:
+                label = f"Ustanovení #{section.id}"
+            self.legal_section.addItem(label, section.id)
+
+        if selected_id is not None:
+            self._set_combo_value(self.legal_section, selected_id)
+
+    def _on_legal_document_changed(self) -> None:
+        selected_section_id = self.legal_section.currentData()
+        document_id = self.legal_document.currentData()
+        if selected_section_id is not None:
+            section = legal_section_service.get_by_id(selected_section_id)
+            if section is not None and document_id is not None:
+                if section.legal_document_id != document_id:
+                    selected_section_id = None
+            elif section is not None and document_id is None:
+                pass
+        self._populate_legal_sections(
+            selected_id=selected_section_id,
+            document_id=document_id,
+        )
 
     def _set_combo_value(self, combo: QComboBox, value) -> None:
         if value is None:
@@ -159,6 +219,7 @@ class LegalRequirementDialog(QDialog):
             "regulation_number": self.regulation_number.text().strip(),
             "provision": self.provision.text().strip(),
             "legal_document_id": self.legal_document.currentData(),
+            "legal_section_id": self.legal_section.currentData(),
             "area": self.area.text().strip(),
             "requirement_summary": self.requirement_summary.toPlainText().strip(),
             "organization_impact": self.organization_impact.toPlainText().strip(),

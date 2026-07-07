@@ -44,6 +44,13 @@ class LegalSectionService:
             include_inactive=include_inactive,
         )
 
+    def list_for_selector(
+        self,
+        *,
+        document_id: int | None = None,
+    ) -> list[LegalSection]:
+        return self.repository.list_active(document_id=document_id)
+
     def get_by_id(self, section_id: int) -> LegalSection | None:
         return self.repository.get_by_id(section_id)
 
