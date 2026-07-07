@@ -699,6 +699,37 @@ class LegalRequirementServiceTestCase(unittest.TestCase):
         self.assertEqual(row.processing_status, PROCESSING_NEW)
         self.assertEqual(row.processing_status_label, "Nový")
 
+    def test_delete_all_process_requirements_keeps_legal_documents(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        section = self._create_section(document, version)
+        requirement = legal_requirement_service.create_requirement(
+            regulation_name="K vymazání",
+            legal_document_id=document.id,
+            legal_section_id=section.id,
+            source_section_ids=[section.id],
+            requirement_summary="Text",
+        )
+        legal_requirement_sanction_service.create(
+            requirement_id=requirement.id,
+            description="Sankce k vymazání",
+        )
+        legal_requirement_service.record_verification(
+            requirement.id,
+            check_date=date(2026, 1, 15),
+            result=COMPLIANCE_SPLNENO,
+        )
+
+        counts = legal_requirement_service.delete_all_process_requirements()
+
+        self.assertGreaterEqual(counts["requirements"], 1)
+        self.assertGreaterEqual(counts["sources"], 1)
+        self.assertGreaterEqual(counts["checks"], 1)
+        self.assertGreaterEqual(counts["sanctions"], 1)
+        self.assertEqual(legal_requirement_service.get_all(), [])
+        self.assertIsNotNone(legal_document_service.get_by_id(document.id))
+        self.assertIsNotNone(legal_section_service.get_by_id(section.id))
+
 
 if __name__ == "__main__":
     unittest.main()

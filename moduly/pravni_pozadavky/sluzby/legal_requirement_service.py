@@ -1,6 +1,9 @@
 import calendar
 from datetime import date
 
+from sqlalchemy import delete
+
+from core.database.session import get_session
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.nastaveni.sluzby.responsibility_role_service import responsibility_role_service
 from moduly.pravni_pozadavky.constants import (
@@ -16,6 +19,8 @@ from moduly.pravni_pozadavky.constants import (
 )
 from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
 from moduly.pravni_pozadavky.modely.legal_requirement_check import LegalRequirementCheck
+from moduly.pravni_pozadavky.modely.legal_requirement_sanction import LegalRequirementSanction
+from moduly.pravni_pozadavky.modely.legal_requirement_source import LegalRequirementSource
 from moduly.pravni_pozadavky.repository.legal_document_repository import LegalDocumentRepository
 from moduly.pravni_pozadavky.repository.legal_requirement_check_repository import (
     LegalRequirementCheckRepository,
@@ -325,6 +330,21 @@ class LegalRequirementService:
         requirement.compliance_status = normalized_result
         requirement.next_verification_date = computed_next
         return self.repository.update(requirement)
+
+    def delete_all_process_requirements(self) -> dict[str, int]:
+        with get_session() as session:
+            checks_deleted = session.execute(delete(LegalRequirementCheck)).rowcount or 0
+            sanctions_deleted = session.execute(delete(LegalRequirementSanction)).rowcount or 0
+            sources_deleted = session.execute(delete(LegalRequirementSource)).rowcount or 0
+            requirements_deleted = session.execute(delete(LegalRequirement)).rowcount or 0
+            session.commit()
+
+        return {
+            "requirements": requirements_deleted,
+            "sources": sources_deleted,
+            "checks": checks_deleted,
+            "sanctions": sanctions_deleted,
+        }
 
     def _person_name(self, person_id: int | None) -> str:
         if person_id is None:
