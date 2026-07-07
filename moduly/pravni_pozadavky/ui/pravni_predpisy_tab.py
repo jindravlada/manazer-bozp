@@ -1,4 +1,5 @@
 from PySide6.QtWidgets import (
+    QFileDialog,
     QHBoxLayout,
     QMessageBox,
     QPushButton,
@@ -8,6 +9,9 @@ from PySide6.QtWidgets import (
 
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
+from moduly.pravni_pozadavky.import_export.legal_document_json_import_service import (
+    legal_document_json_import_service,
+)
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
 from moduly.pravni_pozadavky.ui.legal_document_dialog import LegalDocumentDialog
 from moduly.pravni_pozadavky.ui.legal_document_table import LegalDocumentTable
@@ -23,9 +27,11 @@ class PravniPredpisyTab(QWidget):
         toolbar = QHBoxLayout()
 
         self.new_btn = QPushButton("Nový")
+        self.import_btn = QPushButton("Import JSON")
         self.edit_btn = QPushButton("Upravit")
         self.toggle_btn = QPushButton("Deaktivovat")
         toolbar.addWidget(self.new_btn)
+        toolbar.addWidget(self.import_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.toggle_btn)
         toolbar.addStretch()
@@ -38,6 +44,7 @@ class PravniPredpisyTab(QWidget):
         layout.addWidget(self.table)
 
         self.new_btn.clicked.connect(self.new_document)
+        self.import_btn.clicked.connect(self.import_json_document)
         self.edit_btn.clicked.connect(self.edit_selected_document)
         self.toggle_btn.clicked.connect(self.toggle_selected_document)
         self.table.doubleClicked.connect(self.edit_selected_document)
@@ -73,6 +80,37 @@ class PravniPredpisyTab(QWidget):
         except ValueError as exc:
             QMessageBox.warning(self, "Právní předpisy", str(exc))
             return
+        self.refresh()
+
+    def import_json_document(self) -> None:
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Import právního předpisu z JSON",
+            "",
+            "JSON soubory (*.json);;Všechny soubory (*)",
+        )
+        if not file_path:
+            return
+
+        try:
+            result = legal_document_json_import_service.import_from_file(file_path)
+        except ValueError as exc:
+            QMessageBox.warning(self, "Import JSON", str(exc))
+            return
+
+        document = legal_document_service.get_by_id(result.document_id)
+        document_title = document.title if document is not None else f"Předpis #{result.document_id}"
+        QMessageBox.information(
+            self,
+            "Import JSON",
+            (
+                f"Import dokončen.\n\n"
+                f"Předpis: {document_title}\n"
+                f"ID předpisu: {result.document_id}\n"
+                f"ID verze: {result.version_id}\n"
+                f"Počet částí: {result.section_count}"
+            ),
+        )
         self.refresh()
 
     def edit_selected_document(self) -> None:
