@@ -114,7 +114,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
         requirements = self._filter_requirements(legal_requirement_service.get_all())
         requirements = czech_sorted(
             requirements,
-            key=lambda item: item.regulation_name or "",
+            key=lambda item: item.title or item.regulation_name or "",
         )
         self.table.load_requirements(requirements)
         configure_table_columns(self.table, "legal_requirements")

@@ -28,6 +28,7 @@ class LegalRequirementWorkbenchEditor(QWidget):
         self._legal_section_id: int | None = None
         self._regulation_number = ""
         self._provision = ""
+        self._document_regulation_name = ""
         self._processing_status: str | None = None
         self._organization_impact = ""
 
@@ -90,6 +91,7 @@ class LegalRequirementWorkbenchEditor(QWidget):
         self._legal_section_id = None
         self._regulation_number = ""
         self._provision = ""
+        self._document_regulation_name = ""
         self._processing_status = None
         self._organization_impact = ""
         self.context_label.setText("Vyberte ustanovení ve stromu předpisu.")
@@ -110,6 +112,7 @@ class LegalRequirementWorkbenchEditor(QWidget):
         self._legal_section_id = None
         self._regulation_number = ""
         self._provision = ""
+        self._document_regulation_name = ""
         self._processing_status = None
         self._organization_impact = ""
 
@@ -140,10 +143,13 @@ class LegalRequirementWorkbenchEditor(QWidget):
         self._provision = requirement.provision
         self._processing_status = requirement.processing_status
         self._organization_impact = requirement.organization_impact
+        self._document_regulation_name = requirement.regulation_name
 
         self.context_label.setText(context_label or requirement.provision)
         self.section_text.setPlainText(section_text)
-        self.regulation_name.setText(requirement.regulation_name)
+        self.regulation_name.setText(
+            (requirement.title or requirement.regulation_name or "").strip(),
+        )
         self.requirement_summary.setPlainText(requirement.requirement_summary)
         self.area.setText(requirement.area)
         self.responsible_person.set_person_id(requirement.responsible_person_id)
@@ -164,6 +170,7 @@ class LegalRequirementWorkbenchEditor(QWidget):
         self._provision = draft.provision
         self._processing_status = draft.processing_status
         self._organization_impact = draft.organization_impact
+        self._document_regulation_name = draft.regulation_name
 
         self.context_label.setText(context_label or draft.provision)
         self.section_text.setPlainText(section_text)
@@ -185,7 +192,8 @@ class LegalRequirementWorkbenchEditor(QWidget):
             periodicity = ""
 
         data = {
-            "regulation_name": self.regulation_name.text().strip(),
+            "title": self.regulation_name.text().strip(),
+            "regulation_name": self._document_regulation_name,
             "regulation_number": self._regulation_number,
             "provision": self._provision,
             "legal_document_id": self._legal_document_id,

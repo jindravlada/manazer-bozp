@@ -161,6 +161,9 @@ def legal_requirement_regulation_label(requirement) -> str:
 
 
 def legal_requirement_process_label(requirement) -> str:
+    title = (getattr(requirement, "title", "") or "").strip()
+    if title:
+        return title
     return (getattr(requirement, "regulation_name", "") or "").strip()
 
 

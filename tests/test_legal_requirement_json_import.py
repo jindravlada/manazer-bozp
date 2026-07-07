@@ -143,7 +143,8 @@ class LegalRequirementJsonImportTestCase(unittest.TestCase):
 
         saved = legal_requirement_service.get_by_source_section_id(self.subsection.id)
         assert saved is not None
-        self.assertEqual(saved.regulation_name, "Bezpečnost práce")
+        self.assertEqual(saved.title, "Bezpečnost práce")
+        self.assertEqual(saved.regulation_name, "Zákoník práce")
         self.assertEqual(saved.requirement_summary, "Zajistit bezpečnost práce.")
         self.assertEqual(saved.processing_status, PROCESSING_NEW)
         self.assertEqual(saved.source_section_id, self.subsection.id)
@@ -222,7 +223,8 @@ class LegalRequirementJsonImportTestCase(unittest.TestCase):
 
         saved = legal_requirement_service.get_by_source_section_id(self.subsection.id)
         assert saved is not None
-        self.assertEqual(saved.regulation_name, "Z JSON souboru")
+        self.assertEqual(saved.title, "Z JSON souboru")
+        self.assertEqual(saved.regulation_name, "Zákoník práce")
 
         _ = sample_path
 

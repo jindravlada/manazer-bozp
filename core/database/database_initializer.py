@@ -477,6 +477,35 @@ def _ensure_legal_requirement_columns() -> None:
         _add_column("legal_requirements", "responsible_role_id INTEGER")
     if "responsible_role_name" not in columns:
         _add_column("legal_requirements", "responsible_role_name VARCHAR(150) DEFAULT ''")
+    if "title" not in columns:
+        _add_column("legal_requirements", "title VARCHAR(250) DEFAULT ''")
+        _migrate_legal_requirement_titles()
+
+
+def _migrate_legal_requirement_titles() -> None:
+    with _db_engine().connect() as connection:
+        connection.execute(
+            text(
+                """
+                UPDATE legal_requirements
+                SET title = regulation_name
+                WHERE COALESCE(title, '') = ''
+                  AND COALESCE(regulation_name, '') != ''
+                  AND (
+                    legal_document_id IS NULL
+                    OR regulation_name != COALESCE(
+                      (
+                        SELECT legal_documents.title
+                        FROM legal_documents
+                        WHERE legal_documents.id = legal_requirements.legal_document_id
+                      ),
+                      ''
+                    )
+                  )
+                """,
+            ),
+        )
+        connection.commit()
 
 
 def _ensure_responsibility_roles_table() -> None:

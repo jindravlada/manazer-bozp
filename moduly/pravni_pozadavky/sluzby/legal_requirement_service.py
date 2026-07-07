@@ -148,6 +148,7 @@ class LegalRequirementService:
     def create_requirement(
         self,
         *,
+        title: str = "",
         regulation_name: str = "",
         regulation_number: str = "",
         provision: str = "",
@@ -183,6 +184,7 @@ class LegalRequirementService:
         self._validate_responsible_role_id(responsible_role_id)
 
         requirement = LegalRequirement(
+            title=title.strip(),
             regulation_name=regulation_name.strip(),
             regulation_number=regulation_number.strip(),
             provision=provision.strip(),
@@ -215,6 +217,7 @@ class LegalRequirementService:
         self,
         requirement_id: int,
         *,
+        title: str | None = None,
         regulation_name: str = "",
         regulation_number: str = "",
         provision: str = "",
@@ -258,6 +261,8 @@ class LegalRequirementService:
             self._validate_source_section_id(source_section_id)
         self._validate_responsible_role_id(responsible_role_id)
 
+        if title is not None:
+            requirement.title = title.strip()
         requirement.regulation_name = regulation_name.strip()
         requirement.regulation_number = regulation_number.strip()
         requirement.provision = provision.strip()

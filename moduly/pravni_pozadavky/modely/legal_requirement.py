@@ -14,6 +14,7 @@ class LegalRequirement(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
+    title: Mapped[str] = mapped_column(String(250), default="")
     regulation_name: Mapped[str] = mapped_column(String(250), default="")
     regulation_number: Mapped[str] = mapped_column(String(100), default="")
     provision: Mapped[str] = mapped_column(String(200), default="")

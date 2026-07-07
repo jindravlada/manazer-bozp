@@ -135,13 +135,22 @@ class LegalRequirementTableDisplayTestCase(unittest.TestCase):
         )
         self.assertEqual(label, "§ 101 odst. 1 písm. a)")
 
-    def test_process_label_uses_regulation_name(self) -> None:
+    def test_process_label_uses_title(self) -> None:
         requirement = legal_requirement_service.create_requirement(
-            regulation_name="Školení BOZP",
+            title="Školení BOZP",
+            regulation_name="Zákoník práce",
             requirement_summary="Test",
         )
 
         self.assertEqual(legal_requirement_process_label(requirement), "Školení BOZP")
+
+    def test_process_label_falls_back_to_regulation_name(self) -> None:
+        requirement = legal_requirement_service.create_requirement(
+            regulation_name="Legacy proces",
+            requirement_summary="Test",
+        )
+
+        self.assertEqual(legal_requirement_process_label(requirement), "Legacy proces")
 
     def test_responsible_label_combines_person_and_role(self) -> None:
         requirement = legal_requirement_service.create_requirement(
@@ -160,7 +169,8 @@ class LegalRequirementTableDisplayTestCase(unittest.TestCase):
     def test_table_shows_process_and_fulfillment_columns(self) -> None:
         document, version, letter = self._create_hierarchy_with_letter()
         requirement = legal_requirement_service.create_requirement(
-            regulation_name="Školení BOZP",
+            title="Školení BOZP",
+            regulation_name="Zákoník práce",
             regulation_number="262/2006 Sb.",
             provision="písm. a",
             area="BOZP",
@@ -180,17 +190,30 @@ class LegalRequirementTableDisplayTestCase(unittest.TestCase):
         self.assertEqual(table.item(0, COL_SUMMARY).text(), "Zajistit školení zaměstnanců")
         self.assertEqual(table.item(0, COL_RESPONSIBLE).text(), "Jan Novák / Vedoucí provozu")
 
+    def test_table_shows_imported_process_title(self) -> None:
+        requirement = legal_requirement_service.create_requirement(
+            title="Systém řízení BOZP",
+            regulation_name="Zákoník práce",
+            requirement_summary="Zajistit systém řízení BOZP",
+        )
+
+        table = LegalRequirementTable()
+        table.load_requirements([requirement])
+
+        self.assertEqual(table.item(0, COL_PROCESS).text(), "Systém řízení BOZP")
+        self.assertEqual(table.item(0, COL_SUMMARY).text(), "Zajistit systém řízení BOZP")
+
     def test_refresh_sorts_by_process_name(self) -> None:
         legal_requirement_service.create_requirement(
-            regulation_name="Zápis do dokumentace",
+            title="Zápis do dokumentace",
             requirement_summary="A",
         )
         legal_requirement_service.create_requirement(
-            regulation_name="Školení BOZP",
+            title="Školení BOZP",
             requirement_summary="B",
         )
         legal_requirement_service.create_requirement(
-            regulation_name="Hodnocení rizik",
+            title="Hodnocení rizik",
             requirement_summary="C",
         )
 
@@ -205,11 +228,11 @@ class LegalRequirementTableDisplayTestCase(unittest.TestCase):
 
     def test_text_filter_searches_process_and_fulfillment(self) -> None:
         legal_requirement_service.create_requirement(
-            regulation_name="Školení BOZP",
+            title="Školení BOZP",
             requirement_summary="Zajistit školení zaměstnanců",
         )
         legal_requirement_service.create_requirement(
-            regulation_name="Hodnocení rizik",
+            title="Hodnocení rizik",
             requirement_summary="Provést analýzu pracoviště",
         )
 

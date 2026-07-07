@@ -268,7 +268,7 @@ class LegalRequirementJsonImportService:
                 return LegalRequirementJsonImportRowResult(
                     item_label=item_label,
                     status=REQUIREMENT_IMPORT_STATUS_SKIPPED,
-                    title=existing.regulation_name or item.title,
+                    title=existing.title or existing.regulation_name or item.title,
                     error=DUPLICATE_SKIP_MESSAGE,
                 )
 
@@ -276,7 +276,8 @@ class LegalRequirementJsonImportService:
         sections_by_id = legal_section_service.build_sections_map([primary_section])
         source_section_ids = [section.id for _document, section in resolved_sections]
         legal_requirement_service.create_requirement(
-            regulation_name=item.title,
+            title=item.title,
+            regulation_name=(primary_document.title or "").strip(),
             regulation_number=legal_document_regulation_number(primary_document),
             provision=legal_section_provision_label(primary_section, sections_by_id=sections_by_id),
             legal_document_id=primary_document.id,
