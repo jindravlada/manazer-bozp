@@ -57,7 +57,7 @@ class LegalRequirementWorkbenchEditor(QWidget):
         self.note.setMinimumHeight(70)
 
         form.addRow("Název:", self.regulation_name)
-        form.addRow("Text požadavku:", self.requirement_summary)
+        form.addRow("Způsob plnění:", self.requirement_summary)
         form.addRow("Oblast:", self.area)
         form.addRow("Odpovědná osoba:", self.responsible_person)
         form.addRow("Periodicita:", self.periodicity)

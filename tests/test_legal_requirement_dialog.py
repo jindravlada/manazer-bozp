@@ -193,5 +193,14 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         self.assertNotIn(first_document.id, [dialog.get_data()["legal_document_id"]])
 
 
+    def test_dialog_shows_zpusob_plneni_label(self) -> None:
+        dialog = LegalRequirementDialog()
+        labels = [label.text() for label in dialog.findChildren(QLabel)]
+
+        self.assertIn("Způsob plnění:", labels)
+        self.assertNotIn("Stručný požadavek:", labels)
+        self.assertEqual(dialog.requirement_summary.toolTip(), "")
+
+
 if __name__ == "__main__":
     unittest.main()

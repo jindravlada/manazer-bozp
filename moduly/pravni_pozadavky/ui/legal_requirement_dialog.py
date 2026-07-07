@@ -104,7 +104,7 @@ class LegalRequirementDialog(QDialog):
         form.addRow("Ustanovení:", self.provision)
         form.addRow("Ustanovení předpisu:", self.legal_section)
         form.addRow("Vychází z:", self.source_section_display)
-        form.addRow("Stručný požadavek:", self.requirement_summary)
+        form.addRow("Způsob plnění:", self.requirement_summary)
         form.addRow("Dopad na organizaci:", self.organization_impact)
         form.addRow("Odpovědná osoba:", self.responsible_person)
         form.addRow("Periodicita ověření:", self.periodicity)

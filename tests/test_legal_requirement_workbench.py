@@ -283,6 +283,20 @@ class LegalRequirementWorkbenchWidgetTestCase(unittest.TestCase):
         self.assertEqual(tab.editor.area.text(), "BOZP")
         self.assertEqual(tab.editor.note.toPlainText(), "Poznámka")
 
+    def test_editor_shows_zpusob_plneni_label(self) -> None:
+        from PySide6.QtWidgets import QLabel
+
+        from moduly.pravni_pozadavky.ui.legal_requirement_workbench_editor import (
+            LegalRequirementWorkbenchEditor,
+        )
+
+        editor = LegalRequirementWorkbenchEditor()
+        labels = [label.text() for label in editor.findChildren(QLabel)]
+
+        self.assertIn("Způsob plnění:", labels)
+        self.assertNotIn("Text požadavku:", labels)
+        self.assertEqual(editor.requirement_summary.toolTip(), "")
+
     def test_workbench_creates_ten_consecutive_requirements(self) -> None:
         document = self._create_document()
         version = self._create_version(document)
