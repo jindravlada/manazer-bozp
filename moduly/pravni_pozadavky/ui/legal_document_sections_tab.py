@@ -18,6 +18,17 @@ from moduly.pravni_pozadavky.ui.legal_section_dialog import LegalSectionDialog
 from moduly.pravni_pozadavky.ui.legal_section_tree import LegalSectionTree
 
 
+def _find_pravni_pozadavky_page(widget):
+    from moduly.pravni_pozadavky.ui.pravni_pozadavky_page import PravniPozadavkyPage
+
+    current = widget
+    while current is not None:
+        if isinstance(current, PravniPozadavkyPage):
+            return current
+        current = current.parentWidget()
+    return None
+
+
 class LegalDocumentSectionsTab(QWidget):
     def __init__(
         self,
@@ -147,11 +158,17 @@ class LegalDocumentSectionsTab(QWidget):
             return
 
         try:
-            legal_requirement_service.create_requirement(**dialog.get_data())
+            requirement = legal_requirement_service.create_requirement(**dialog.get_data())
         except ValueError as exc:
             QMessageBox.warning(self, "Právní požadavek", str(exc))
             return
         self.refresh()
+        self._notify_requirements_page(requirement.id)
+
+    def _notify_requirements_page(self, requirement_id: int) -> None:
+        page = _find_pravni_pozadavky_page(self)
+        if page is not None:
+            page.on_requirement_created(requirement_id)
 
     def edit_selected_section(self) -> None:
         section = self._selected_section()

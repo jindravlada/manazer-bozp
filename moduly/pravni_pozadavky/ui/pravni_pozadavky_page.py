@@ -27,3 +27,7 @@ class PravniPozadavkyPage(QWidget):
         self.tabs.addTab(self.changes_tab, "Změny legislativy")
         self.tabs.addTab(self.check_runs_tab, "Kontroly legislativy")
         layout.addWidget(self.tabs)
+
+    def on_requirement_created(self, requirement_id: int | None = None) -> None:
+        self.tabs.setCurrentWidget(self.requirements_tab)
+        self.requirements_tab.show_created_requirement(requirement_id)

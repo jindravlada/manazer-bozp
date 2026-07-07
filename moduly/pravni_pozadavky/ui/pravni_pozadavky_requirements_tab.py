@@ -99,6 +99,24 @@ class PravniPozadavkyRequirementsTab(QWidget):
         configure_table_columns(self.table, "legal_requirements")
         self.text_filter.update_count()
 
+    def show_created_requirement(self, requirement_id: int | None = None) -> None:
+        self.area_filter.setCurrentIndex(0)
+        self.status_filter.setCurrentIndex(0)
+        self.person_filter.setCurrentIndex(0)
+        self.active_filter.setCurrentText(DEFAULT_ACTIVE_FILTER)
+        self.text_filter.clear()
+        self.refresh()
+        if requirement_id is not None:
+            self._select_requirement(requirement_id)
+
+    def _select_requirement(self, requirement_id: int) -> None:
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 0)
+            if item is not None and item.text() == str(requirement_id):
+                self.table.selectRow(row)
+                self.table.scrollToItem(item)
+                break
+
     def _populate_filter_options(self) -> None:
         requirements = legal_requirement_service.get_all()
         areas = sorted({item.area.strip() for item in requirements if item.area.strip()})

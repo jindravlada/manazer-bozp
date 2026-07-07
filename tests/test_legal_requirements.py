@@ -1,4 +1,5 @@
 import importlib
+import os
 import tempfile
 import unittest
 from datetime import date
@@ -599,8 +600,54 @@ class LegalRequirementServiceTestCase(unittest.TestCase):
 
         saved = legal_requirement_service.get_by_id(requirement.id)
         assert saved is not None
+        self.assertTrue(saved.active)
         self.assertEqual(saved.source_section_id, section.id)
         self.assertEqual(saved.legal_section_id, section.id)
+        listed_ids = [item.id for item in legal_requirement_service.get_all()]
+        self.assertIn(saved.id, listed_ids)
+
+    def test_structure_tree_shows_requirement_column_after_create_from_section(self) -> None:
+        from PySide6.QtCore import Qt
+
+        document = self._create_document()
+        version = self._create_version(document)
+        section = self._create_section(document, version)
+        draft = legal_requirement_creation_service.create_from_section(section.id)
+
+        legal_requirement_service.create_requirement(
+            regulation_name=draft.regulation_name,
+            regulation_number=draft.regulation_number,
+            provision=draft.provision,
+            legal_document_id=draft.legal_document_id,
+            legal_section_id=draft.legal_section_id,
+            source_section_id=draft.source_section_id,
+            requirement_summary="Zajistit školení zaměstnanců",
+            processing_status=draft.processing_status,
+        )
+
+        sections = legal_section_service.list_by_version(version.id)
+        sections_with_requirements = legal_requirement_service.get_source_section_ids(
+            [section.id],
+        )
+        self.assertIn(section.id, sections_with_requirements)
+
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from PySide6.QtWidgets import QApplication
+
+        app = QApplication.instance() or QApplication([])
+        from moduly.pravni_pozadavky.ui.legal_section_tree import LegalSectionTree
+
+        tree = LegalSectionTree()
+        tree.load_sections(sections, sections_with_requirements=sections_with_requirements)
+
+        requirement_value = None
+        for index in range(tree.topLevelItemCount()):
+            item = tree.topLevelItem(index)
+            if item.data(LegalSectionTree.COLUMN_ID, Qt.ItemDataRole.UserRole) == section.id:
+                requirement_value = item.text(LegalSectionTree.COLUMN_REQUIREMENT)
+                break
+
+        self.assertEqual(requirement_value, "Ano")
 
     def test_section_table_detects_existing_requirement(self) -> None:
         document = self._create_document()
