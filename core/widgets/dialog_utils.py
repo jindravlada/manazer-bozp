@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QPushButton,
     QScrollArea,
+    QSizePolicy,
     QStyle,
     QWidget,
 )
@@ -90,6 +91,14 @@ def add_work_dialog_footer(
     return buttons
 
 
+def add_save_cancel_footer(parent_layout, dialog: QDialog) -> QDialogButtonBox:
+    buttons = create_save_cancel_box(dialog)
+    buttons.accepted.connect(dialog.accept)
+    buttons.rejected.connect(dialog.reject)
+    parent_layout.addWidget(buttons)
+    return buttons
+
+
 def configure_resizable_form_dialog(
     dialog: QDialog,
     *,
@@ -98,8 +107,19 @@ def configure_resizable_form_dialog(
     min_width: int = 480,
     min_height: int = 400,
 ) -> None:
-    dialog.resize(width, height)
     dialog.setMinimumSize(min_width, min_height)
+
+    screen = QApplication.primaryScreen()
+    if screen is not None:
+        available = screen.availableGeometry()
+        if available.isValid():
+            max_width = max(min_width, available.width())
+            max_height = max(min_height, available.height())
+            dialog.setMaximumSize(max_width, max_height)
+            width = min(width, max_width)
+            height = min(height, max_height)
+
+    dialog.resize(width, height)
 
 
 def wrap_in_scroll_area(content: QWidget) -> QScrollArea:
@@ -107,6 +127,7 @@ def wrap_in_scroll_area(content: QWidget) -> QScrollArea:
     scroll.setWidgetResizable(True)
     scroll.setFrameShape(QScrollArea.Shape.NoFrame)
     scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    scroll.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
     scroll.setWidget(content)
     return scroll
 

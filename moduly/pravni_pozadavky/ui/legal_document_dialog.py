@@ -10,7 +10,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.widgets.dialog_utils import configure_resizable_form_dialog, create_save_cancel_box, wrap_in_scroll_area
+from core.widgets.dialog_utils import (
+    add_save_cancel_footer,
+    configure_resizable_form_dialog,
+    wrap_in_scroll_area,
+)
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_LABELS, VALID_DOCUMENT_TYPES
 from moduly.pravni_pozadavky.ui.legal_document_versions_tab import LegalDocumentVersionsTab
@@ -31,9 +35,9 @@ class LegalDocumentDialog(QDialog):
         self.versions_tab = LegalDocumentVersionsTab(
             document.id if document is not None else None,
         )
-        self.tabs.addTab(self.versions_tab, "Verze")
+        self.tabs.addTab(wrap_in_scroll_area(self.versions_tab), "Verze")
         layout.addWidget(self.tabs, 1)
-        layout.addWidget(create_save_cancel_box(self))
+        add_save_cancel_footer(layout, self)
 
         if document is not None:
             self._load_document(document)

@@ -14,7 +14,11 @@ from PySide6.QtWidgets import (
 
 from core.shared.constants import ENTITY_LEGAL_CHANGE
 from core.shared.widgets.entity_links_widget import EntityLinksWidget
-from core.widgets.dialog_utils import configure_resizable_form_dialog, create_save_cancel_box, wrap_in_scroll_area
+from core.widgets.dialog_utils import (
+    add_save_cancel_footer,
+    configure_resizable_form_dialog,
+    wrap_in_scroll_area,
+)
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.pravni_pozadavky.constants import (
     CHANGE_TYPE_LABELS,
@@ -51,15 +55,15 @@ class LegalChangeDialog(QDialog):
             links_tab = QWidget()
             links_layout = QVBoxLayout(links_tab)
             links_layout.addWidget(QLabel("Vazby lze přidat až po uložení změny."))
-            self.tabs.addTab(links_tab, "Vazby")
+            self.tabs.addTab(wrap_in_scroll_area(links_tab), "Vazby")
             impacts_tab = LegalChangeImpactsTab()
-            self.tabs.addTab(impacts_tab, "Dopady")
+            self.tabs.addTab(wrap_in_scroll_area(impacts_tab), "Dopady")
         else:
-            self.tabs.addTab(self.links_widget, "Vazby")
+            self.tabs.addTab(wrap_in_scroll_area(self.links_widget), "Vazby")
             self.impacts_tab = LegalChangeImpactsTab(change_id=change.id)
-            self.tabs.addTab(self.impacts_tab, "Dopady")
+            self.tabs.addTab(wrap_in_scroll_area(self.impacts_tab), "Dopady")
         layout.addWidget(self.tabs, 1)
-        layout.addWidget(create_save_cancel_box(self))
+        add_save_cancel_footer(layout, self)
 
         if change is not None:
             self._load_change(change)

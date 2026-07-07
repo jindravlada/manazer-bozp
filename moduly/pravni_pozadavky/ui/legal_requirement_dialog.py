@@ -10,7 +10,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.widgets.dialog_utils import configure_resizable_form_dialog, create_save_cancel_box, wrap_in_scroll_area
+from core.widgets.dialog_utils import (
+    add_save_cancel_footer,
+    configure_resizable_form_dialog,
+    wrap_in_scroll_area,
+)
 from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.thp_worker_selector import ThpWorkerSelector
 from core.shared.constants import ENTITY_LEGAL_REQUIREMENT
@@ -46,14 +50,14 @@ class LegalRequirementDialog(QDialog):
         self.sanctions_tab = LegalRequirementSanctionsTab(
             requirement.id if requirement is not None else None,
         )
-        self.tabs.addTab(self.sanctions_tab, "Sankce")
+        self.tabs.addTab(wrap_in_scroll_area(self.sanctions_tab), "Sankce")
         self.links_widget = EntityLinksWidget(
             ENTITY_LEGAL_REQUIREMENT,
             requirement.id if requirement is not None else None,
         )
-        self.tabs.addTab(self.links_widget, "Vazby")
+        self.tabs.addTab(wrap_in_scroll_area(self.links_widget), "Vazby")
         layout.addWidget(self.tabs, 1)
-        layout.addWidget(create_save_cancel_box(self))
+        add_save_cancel_footer(layout, self)
 
         if requirement is not None:
             self._load_requirement(requirement)

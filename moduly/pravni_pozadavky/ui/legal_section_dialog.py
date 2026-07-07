@@ -6,9 +6,14 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QTextEdit,
     QVBoxLayout,
+    QWidget,
 )
 
-from core.widgets.dialog_utils import configure_resizable_form_dialog, create_save_cancel_box
+from core.widgets.dialog_utils import (
+    add_save_cancel_footer,
+    configure_resizable_form_dialog,
+    wrap_in_scroll_area,
+)
 from moduly.pravni_pozadavky.constants import SECTION_TYPE_LABELS, VALID_SECTION_TYPES
 
 
@@ -21,7 +26,8 @@ class LegalSectionDialog(QDialog):
         configure_resizable_form_dialog(self, width=680, height=560, min_width=520, min_height=420)
 
         layout = QVBoxLayout(self)
-        form = QFormLayout()
+        content = QWidget()
+        form = QFormLayout(content)
 
         self.section_type = QComboBox()
         for key in sorted(SECTION_TYPE_LABELS, key=lambda item: SECTION_TYPE_LABELS[item]):
@@ -49,8 +55,8 @@ class LegalSectionDialog(QDialog):
         form.addRow("Pořadí:", self.sort_order)
         form.addRow("Poznámka:", self.note)
 
-        layout.addLayout(form)
-        layout.addWidget(create_save_cancel_box(self))
+        layout.addWidget(wrap_in_scroll_area(content), 1)
+        add_save_cancel_footer(layout, self)
 
         if section is not None:
             self._load_section(section)

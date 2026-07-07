@@ -11,7 +11,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.widgets.dialog_utils import configure_resizable_form_dialog, create_save_cancel_box
+from core.widgets.dialog_utils import (
+    add_save_cancel_footer,
+    configure_resizable_form_dialog,
+    wrap_in_scroll_area,
+)
 from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_LABELS, VALID_DOCUMENT_TYPES
 from moduly.pravni_pozadavky.import_export.legal_document_json_import_service import (
     LegalDocumentJsonImportResult,
@@ -31,15 +35,12 @@ class LegalDocumentTxtImportDialog(QDialog):
         configure_resizable_form_dialog(self, width=520, height=340, min_width=420, min_height=280)
 
         layout = QVBoxLayout(self)
-        layout.addWidget(self._build_form())
+        layout.addWidget(wrap_in_scroll_area(self._build_form()), 1)
         self.status_label = QLabel("")
         self.status_label.setWordWrap(True)
         self.status_label.hide()
         layout.addWidget(self.status_label)
-        self.button_box = create_save_cancel_box(self)
-        self.button_box.accepted.connect(self.accept)
-        self.button_box.rejected.connect(self.reject)
-        layout.addWidget(self.button_box)
+        self.button_box = add_save_cancel_footer(layout, self)
 
     def _build_form(self) -> QWidget:
         form_widget = QWidget()

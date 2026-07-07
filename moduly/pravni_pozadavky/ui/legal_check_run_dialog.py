@@ -13,7 +13,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.widgets.dialog_utils import configure_resizable_form_dialog, create_save_cancel_box, wrap_in_scroll_area
+from core.widgets.dialog_utils import (
+    add_save_cancel_footer,
+    configure_resizable_form_dialog,
+    wrap_in_scroll_area,
+)
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.pravni_pozadavky.constants import (
     CHECK_RUN_STATUS_LABELS,
@@ -39,12 +43,12 @@ class LegalCheckRunDialog(QDialog):
             changes_tab = QWidget()
             changes_layout = QVBoxLayout(changes_tab)
             changes_layout.addWidget(QLabel("Změny budou dostupné až po uložení kontroly."))
-            self.tabs.addTab(changes_tab, "Změny")
+            self.tabs.addTab(wrap_in_scroll_area(changes_tab), "Změny")
         else:
             self.changes_tab = LegalCheckRunChangesTab(run_id=run.id)
-            self.tabs.addTab(self.changes_tab, "Změny")
+            self.tabs.addTab(wrap_in_scroll_area(self.changes_tab), "Změny")
         layout.addWidget(self.tabs, 1)
-        layout.addWidget(create_save_cancel_box(self))
+        add_save_cancel_footer(layout, self)
 
         if run is not None:
             self._load_run(run)
