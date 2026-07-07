@@ -21,6 +21,11 @@ _H1_TITLE_RE = re.compile(
 )
 _TITLE_PREFIX_RE = re.compile(r"^\d+/\d+\s+Sb\.\s*", re.IGNORECASE)
 _CONTENT_LEVEL_RE = re.compile(r"^L(\d+)$", re.IGNORECASE)
+_LETTER_MARKER_RE = re.compile(
+    r"<var>[a-záčďéěíňóřšťúůýž]\)</var>",
+    re.IGNORECASE,
+)
+_SUBSECTION_MARKER_RE = re.compile(r"<var>\(\d+\)</var>")
 _DEBUG_TXT_ENV = "LEGAL_DOCUMENT_ESBIRKA_DEBUG_TXT"
 
 
@@ -84,7 +89,7 @@ class LegalDocumentESbirkaClient:
             if "NADPIS" in classes:
                 lines.append(self._element_to_line(inner_html))
                 continue
-            if self._is_content_level(classes):
+            if self._should_extract_content_line(classes, inner_html):
                 line = self._element_to_line(inner_html)
                 if line:
                     lines.append(line)
@@ -98,6 +103,16 @@ class LegalDocumentESbirkaClient:
             Path(resolved_debug_path).write_text(text + "\n", encoding="utf-8")
 
         return text + "\n"
+
+    def _should_extract_content_line(self, classes: set[str], inner_html: str) -> bool:
+        # Zákoník práce používá L4/L5, nařízení vlády často L2/L3 pro odstavce a písmena.
+        if self._is_content_level(classes):
+            return True
+        if _LETTER_MARKER_RE.search(inner_html):
+            return True
+        if _SUBSECTION_MARKER_RE.search(inner_html):
+            return True
+        return False
 
     def _is_content_level(self, classes: set[str]) -> bool:
         for class_name in classes:

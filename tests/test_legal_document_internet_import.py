@@ -36,7 +36,7 @@ with patch.object(Path, "home", return_value=_TMP):
         legal_document_version_service,
     )
     from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
-    from moduly.pravni_pozadavky.constants import SECTION_PARAGRAPH
+    from moduly.pravni_pozadavky.constants import SECTION_LETTER, SECTION_PARAGRAPH, SECTION_SUBSECTION
 
 
 class LegalDocumentInternetImportTestCase(unittest.TestCase):
@@ -301,6 +301,80 @@ class LegalDocumentInternetImportTestCase(unittest.TestCase):
             if not self._paragraph_has_content(section, sections)
         ]
         self.assertEqual(empty_main_paragraphs, [])
+
+    def test_html_to_text_390_2021_section_3_has_letter_lines(self) -> None:
+        html = self._fixture_html(self.fixture_390)
+        text = legal_document_esbirka_client.html_to_text(html)
+
+        section_three_start = text.find("§ 3\n")
+        section_four_start = text.find("§ 4\n")
+        self.assertGreaterEqual(section_three_start, 0)
+        self.assertGreater(section_four_start, section_three_start)
+        section_three_text = text[section_three_start:section_four_start]
+
+        self.assertIn("(1) Osobní ochranný pracovní prostředek musí", section_three_text)
+        self.assertIn("a) být po dobu používání účinný", section_three_text)
+        self.assertIn("b) odpovídat podmínkám na pracovišti,", section_three_text)
+        self.assertIn("c) být přizpůsoben fyzickým předpokladům zaměstnance a", section_three_text)
+
+    def test_internet_import_390_2021_section_3_subsection_has_letters(self) -> None:
+        result = self._import_via_internet_mock(
+            self.fixture_390,
+            document_type="narizeni_vlady",
+            number="390",
+            year=2021,
+        )
+
+        sections = legal_section_service.list_by_version(result.version_id)
+        paragraph_three = next(
+            section
+            for section in sections
+            if section.section_type == SECTION_PARAGRAPH and section.paragraph == "3"
+        )
+        subsection_one = next(
+            section
+            for section in sections
+            if (
+                section.section_type == SECTION_SUBSECTION
+                and section.section_number == "1"
+                and section.parent_section_id == paragraph_three.id
+            )
+        )
+        letters = [
+            section
+            for section in sections
+            if section.section_type == SECTION_LETTER and section.parent_section_id == subsection_one.id
+        ]
+
+        self.assertEqual(len(letters), 4)
+        letter_a = next(section for section in letters if section.item_letter == "a")
+        self.assertTrue(letter_a.text.strip())
+        self.assertIn("účinný", letter_a.text)
+
+    def test_internet_import_390_2021_has_letters_under_paragraphs(self) -> None:
+        result = self._import_via_internet_mock(
+            self.fixture_390,
+            document_type="narizeni_vlady",
+            number="390",
+            year=2021,
+        )
+
+        sections = legal_section_service.list_by_version(result.version_id)
+        letters = [section for section in sections if section.section_type == SECTION_LETTER]
+        self.assertGreater(len(letters), 0)
+        self.assertTrue(any(section.text.strip() for section in letters))
+
+        paragraph_two = next(
+            section
+            for section in sections
+            if section.section_type == SECTION_PARAGRAPH and section.paragraph == "2"
+        )
+        paragraph_two_letters = [
+            section
+            for section in letters
+            if section.parent_section_id == paragraph_two.id
+        ]
+        self.assertGreaterEqual(len(paragraph_two_letters), 7)
 
     def test_import_without_document_type_raises_value_error(self) -> None:
         with self.assertRaises(ValueError) as context:
