@@ -113,9 +113,16 @@ class LegalRequirementWorkbenchEditor(QWidget):
         self.note.clear()
         self._set_enabled(False)
 
-    def load_requirement(self, requirement, *, section_text: str = "", context_label: str = "") -> None:
+    def load_requirement(
+        self,
+        requirement,
+        *,
+        section_id: int | None = None,
+        section_text: str = "",
+        context_label: str = "",
+    ) -> None:
         self._requirement_id = requirement.id
-        self._source_section_id = requirement.source_section_id
+        self._source_section_id = section_id if section_id is not None else requirement.source_section_id
         self._legal_document_id = requirement.legal_document_id
         self._legal_section_id = requirement.legal_section_id
         self._regulation_number = requirement.regulation_number
@@ -161,13 +168,12 @@ class LegalRequirementWorkbenchEditor(QWidget):
         if periodicity not in VALID_PERIODICITIES:
             periodicity = ""
 
-        return {
+        data = {
             "regulation_name": self.regulation_name.text().strip(),
             "regulation_number": self._regulation_number,
             "provision": self._provision,
             "legal_document_id": self._legal_document_id,
             "legal_section_id": self._legal_section_id,
-            "source_section_id": self._source_section_id,
             "area": self.area.text().strip(),
             "requirement_summary": self.requirement_summary.toPlainText().strip(),
             "organization_impact": self._organization_impact or "",
@@ -180,6 +186,10 @@ class LegalRequirementWorkbenchEditor(QWidget):
             "note": self.note.toPlainText().strip(),
             "active": True,
         }
+        if self._requirement_id is None and self._source_section_id is not None:
+            data["source_section_id"] = self._source_section_id
+            data["source_section_ids"] = [self._source_section_id]
+        return data
 
     def _set_enabled(self, enabled: bool) -> None:
         for widget in (

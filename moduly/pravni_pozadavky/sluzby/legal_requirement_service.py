@@ -22,6 +22,9 @@ from moduly.pravni_pozadavky.repository.legal_requirement_check_repository impor
 from moduly.pravni_pozadavky.repository.legal_requirement_repository import (
     LegalRequirementRepository,
 )
+from moduly.pravni_pozadavky.repository.legal_requirement_source_repository import (
+    LegalRequirementSourceRepository,
+)
 from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
 
 
@@ -57,6 +60,7 @@ def calculate_next_verification_date(
 class LegalRequirementService:
     def __init__(self):
         self.repository = LegalRequirementRepository()
+        self.source_repository = LegalRequirementSourceRepository()
         self.check_repository = LegalRequirementCheckRepository()
         self.document_repository = LegalDocumentRepository()
 
@@ -78,23 +82,61 @@ class LegalRequirementService:
         return sorted(areas)
 
     def get_source_section_ids(self, section_ids: list[int] | None = None) -> set[int]:
-        return self.repository.list_source_section_ids(section_ids=section_ids)
+        linked = self.source_repository.list_linked_section_ids(section_ids=section_ids)
+        legacy = self.repository.list_source_section_ids(section_ids=section_ids)
+        return linked | legacy
+
+    def list_source_section_ids_for_requirement(self, requirement_id: int) -> list[int]:
+        section_ids = self.source_repository.list_section_ids_by_requirement(requirement_id)
+        if section_ids:
+            return section_ids
+        requirement = self.repository.get_by_id(requirement_id)
+        if requirement is not None and requirement.source_section_id is not None:
+            return [requirement.source_section_id]
+        return []
 
     def get_by_source_section_id(self, section_id: int) -> LegalRequirement | None:
-        return self.repository.get_by_source_section_id(section_id)
+        requirement_id = self.source_repository.get_first_requirement_id_by_section(section_id)
+        if requirement_id is not None:
+            return self.repository.get_by_id(requirement_id)
+        requirement = self.repository.get_by_source_section_id(section_id)
+        if requirement is not None and not requirement.active:
+            return None
+        return requirement
+
+    def section_has_requirement(self, section_id: int) -> bool:
+        return self.get_by_source_section_id(section_id) is not None
 
     def get_source_section_requirement_statuses(
         self,
         section_ids: list[int],
     ) -> dict[int, str]:
         statuses: dict[int, str] = {}
+        if not section_ids:
+            return statuses
+
+        for link in self.source_repository.list_by_section_ids(section_ids):
+            requirement = self.repository.get_by_id(link.requirement_id)
+            if requirement is None or not requirement.active:
+                continue
+            section_id = link.legal_section_id
+            if requirement.processing_status == PROCESSING_APPROVED:
+                statuses[section_id] = REQUIREMENT_STATUS_APPROVED
+            elif section_id not in statuses:
+                statuses[section_id] = REQUIREMENT_STATUS_EXISTS
+
         for requirement in self.repository.list_by_source_section_ids(section_ids):
             if requirement.source_section_id is None:
                 continue
+            section_id = requirement.source_section_id
+            if section_id in statuses:
+                continue
+            if not requirement.active:
+                continue
             if requirement.processing_status == PROCESSING_APPROVED:
-                statuses[requirement.source_section_id] = REQUIREMENT_STATUS_APPROVED
-            elif requirement.source_section_id not in statuses:
-                statuses[requirement.source_section_id] = REQUIREMENT_STATUS_EXISTS
+                statuses[section_id] = REQUIREMENT_STATUS_APPROVED
+            else:
+                statuses[section_id] = REQUIREMENT_STATUS_EXISTS
         return statuses
 
     def create_requirement(
@@ -107,6 +149,7 @@ class LegalRequirementService:
         legal_document_id: int | None = None,
         legal_section_id: int | None = None,
         source_section_id: int | None = None,
+        source_section_ids: list[int] | None = None,
         requirement_summary: str = "",
         organization_impact: str = "",
         responsible_person_id: int | None = None,
@@ -118,9 +161,18 @@ class LegalRequirementService:
         note: str = "",
         active: bool = True,
     ) -> LegalRequirement:
+        resolved_source_ids = self._resolve_source_section_ids(
+            source_section_ids=source_section_ids,
+            source_section_id=source_section_id,
+        )
+        if resolved_source_ids and source_section_id is None:
+            source_section_id = resolved_source_ids[0]
+        if resolved_source_ids and legal_section_id is None:
+            legal_section_id = resolved_source_ids[0]
+
         self._validate_legal_document_id(legal_document_id)
         self._validate_legal_section_id(legal_section_id)
-        self._validate_source_section_id(source_section_id)
+        self._validate_source_section_ids(resolved_source_ids)
 
         requirement = LegalRequirement(
             regulation_name=regulation_name.strip(),
@@ -142,7 +194,12 @@ class LegalRequirementService:
             note=note.strip(),
             active=active,
         )
-        return self.repository.add(requirement)
+        requirement = self.repository.add(requirement)
+        if resolved_source_ids:
+            self.source_repository.replace_for_requirement(requirement.id, resolved_source_ids)
+            requirement.source_section_id = resolved_source_ids[0]
+            requirement = self.repository.update(requirement)
+        return requirement
 
     def update_requirement(
         self,
@@ -155,6 +212,7 @@ class LegalRequirementService:
         legal_document_id: int | None = None,
         legal_section_id: int | None = None,
         source_section_id: int | None = None,
+        source_section_ids: list[int] | None = None,
         requirement_summary: str = "",
         organization_impact: str = "",
         responsible_person_id: int | None = None,
@@ -170,9 +228,23 @@ class LegalRequirementService:
         if requirement is None:
             return None
 
+        resolved_source_ids = (
+            self._resolve_source_section_ids(
+                source_section_ids=source_section_ids,
+                source_section_id=source_section_id,
+            )
+            if source_section_ids is not None
+            else None
+        )
+        if resolved_source_ids is not None:
+            source_section_id = resolved_source_ids[0] if resolved_source_ids else None
+
         self._validate_legal_document_id(legal_document_id)
         self._validate_legal_section_id(legal_section_id)
-        self._validate_source_section_id(source_section_id)
+        if resolved_source_ids is not None:
+            self._validate_source_section_ids(resolved_source_ids)
+        else:
+            self._validate_source_section_id(source_section_id)
 
         requirement.regulation_name = regulation_name.strip()
         requirement.regulation_number = regulation_number.strip()
@@ -192,7 +264,10 @@ class LegalRequirementService:
         requirement.processing_status = self._normalize_processing_status(processing_status)
         requirement.note = note.strip()
         requirement.active = active
-        return self.repository.update(requirement)
+        requirement = self.repository.update(requirement)
+        if resolved_source_ids is not None:
+            self.source_repository.replace_for_requirement(requirement_id, resolved_source_ids)
+        return requirement
 
     def archive_requirement(self, requirement_id: int) -> LegalRequirement | None:
         requirement = self.repository.get_by_id(requirement_id)
@@ -289,6 +364,28 @@ class LegalRequirementService:
         section = legal_section_service.get_by_id(source_section_id)
         if section is None:
             raise ValueError("Zdrojové ustanovení nebylo nalezeno.")
+
+    def _validate_source_section_ids(self, section_ids: list[int]) -> None:
+        for section_id in section_ids:
+            self._validate_source_section_id(section_id)
+
+    def _resolve_source_section_ids(
+        self,
+        *,
+        source_section_ids: list[int] | None,
+        source_section_id: int | None,
+    ) -> list[int]:
+        resolved: list[int] = []
+        seen: set[int] = set()
+        candidates = source_section_ids if source_section_ids is not None else []
+        if not candidates and source_section_id is not None:
+            candidates = [source_section_id]
+        for section_id in candidates:
+            if section_id is None or section_id in seen:
+                continue
+            seen.add(section_id)
+            resolved.append(section_id)
+        return resolved
 
     def _normalize_processing_status(self, value: str) -> str:
         normalized = (value or "").strip()

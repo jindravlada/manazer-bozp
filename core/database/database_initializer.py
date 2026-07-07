@@ -48,6 +48,9 @@ def initialize_database() -> None:
     from moduly.pravni_pozadavky.modely.legal_requirement_sanction import (  # noqa: F401
         LegalRequirementSanction,
     )
+    from moduly.pravni_pozadavky.modely.legal_requirement_source import (  # noqa: F401
+        LegalRequirementSource,
+    )
     from moduly.pravni_pozadavky.modely.legal_document import LegalDocument  # noqa: F401
     from moduly.pravni_pozadavky.modely.legal_document_version import (  # noqa: F401
         LegalDocumentVersion,
@@ -81,6 +84,7 @@ def initialize_database() -> None:
     _ensure_audit_program_link_columns()
     _ensure_audit_columns()
     _ensure_legal_requirement_columns()
+    _ensure_legal_requirement_sources_table()
     _ensure_legal_change_columns()
     _normalize_task_status_values()
     _normalize_accident_legacy_values()
@@ -465,6 +469,40 @@ def _ensure_legal_requirement_columns() -> None:
         _add_column("legal_requirements", "source_section_id INTEGER")
     if "processing_status" not in columns:
         _add_column("legal_requirements", "processing_status VARCHAR(50) DEFAULT 'new'")
+
+
+def _ensure_legal_requirement_sources_table() -> None:
+    columns = _table_columns("legal_requirement_sources")
+    if not columns:
+        from moduly.pravni_pozadavky.modely.legal_requirement_source import LegalRequirementSource
+
+        LegalRequirementSource.__table__.create(bind=_db_engine(), checkfirst=True)
+        _migrate_legal_requirement_sources()
+
+
+def _migrate_legal_requirement_sources() -> None:
+    requirement_columns = _table_columns("legal_requirements")
+    if not requirement_columns or "source_section_id" not in requirement_columns:
+        return
+
+    with _db_engine().connect() as connection:
+        existing_count = connection.execute(
+            text("SELECT COUNT(*) FROM legal_requirement_sources"),
+        ).scalar_one()
+        if existing_count:
+            return
+
+        connection.execute(
+            text(
+                """
+                INSERT INTO legal_requirement_sources (requirement_id, legal_section_id, sort_order)
+                SELECT id, source_section_id, 1
+                FROM legal_requirements
+                WHERE source_section_id IS NOT NULL
+                """,
+            ),
+        )
+        connection.commit()
 
 
 def _ensure_legal_change_columns() -> None:

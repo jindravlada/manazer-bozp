@@ -35,10 +35,18 @@ _ProvisionProgressCallback = Callable[[int, int, str], None]
 
 
 @dataclass(frozen=True)
+class LegalRequirementJsonImportSource:
+    document_number: str
+    document_year: int
+    provision_label: str
+
+
+@dataclass(frozen=True)
 class LegalRequirementJsonImportItem:
     document_number: str
     document_year: int
     provision_label: str
+    sources: tuple[LegalRequirementJsonImportSource, ...]
     title: str
     fulfillment_text: str
     note: str
@@ -85,6 +93,57 @@ def normalize_provision_label(value: str) -> str:
     )
 
 
+def _parse_document_year(raw_item: dict, index: int) -> int:
+    year_value = raw_item.get("document_year")
+    if year_value is None or str(year_value).strip() == "":
+        raise ValueError(f"Položka {index}: document_year je povinné.")
+    try:
+        return int(year_value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Položka {index}: document_year musí být číslo.") from exc
+
+
+def _parse_import_source(raw_source, index: int, source_index: int) -> LegalRequirementJsonImportSource:
+    if not isinstance(raw_source, dict):
+        raise ValueError(f"Položka {index}, podklad {source_index}: není objekt.")
+
+    document_number = str(raw_source.get("document_number", "")).strip()
+    if not document_number:
+        raise ValueError(f"Položka {index}, podklad {source_index}: document_number je povinné.")
+
+    document_year = _parse_document_year(raw_source, index)
+
+    provision_label = str(raw_source.get("provision_label", "")).strip()
+    if not provision_label:
+        raise ValueError(f"Položka {index}, podklad {source_index}: provision_label je povinné.")
+
+    return LegalRequirementJsonImportSource(
+        document_number=document_number,
+        document_year=document_year,
+        provision_label=provision_label,
+    )
+
+
+def _parse_import_sources(raw_item: dict, index: int) -> tuple[LegalRequirementJsonImportSource, ...]:
+    raw_sources = raw_item.get("sources")
+    if raw_sources is None:
+        return (
+            LegalRequirementJsonImportSource(
+                document_number=str(raw_item.get("document_number", "")).strip(),
+                document_year=_parse_document_year(raw_item, index),
+                provision_label=str(raw_item.get("provision_label", "")).strip(),
+            ),
+        )
+
+    if not isinstance(raw_sources, list) or not raw_sources:
+        raise ValueError(f"Položka {index}: sources musí být neprázdný seznam.")
+
+    return tuple(
+        _parse_import_source(raw_source, index, source_index)
+        for source_index, raw_source in enumerate(raw_sources, start=1)
+    )
+
+
 def parse_import_items(data) -> list[LegalRequirementJsonImportItem]:
     if isinstance(data, list):
         raw_items = data
@@ -102,17 +161,19 @@ def parse_import_items(data) -> list[LegalRequirementJsonImportItem]:
         if not document_number:
             raise ValueError(f"Položka {index}: document_number je povinné.")
 
-        year_value = raw_item.get("document_year")
-        if year_value is None or str(year_value).strip() == "":
-            raise ValueError(f"Položka {index}: document_year je povinné.")
-        try:
-            document_year = int(year_value)
-        except (TypeError, ValueError) as exc:
-            raise ValueError(f"Položka {index}: document_year musí být číslo.") from exc
-
+        document_year = _parse_document_year(raw_item, index)
         provision_label = str(raw_item.get("provision_label", "")).strip()
         if not provision_label:
             raise ValueError(f"Položka {index}: provision_label je povinné.")
+
+        sources = _parse_import_sources(raw_item, index)
+        for source_index, source in enumerate(sources, start=1):
+            if not source.document_number:
+                raise ValueError(f"Položka {index}, podklad {source_index}: document_number je povinné.")
+            if not source.provision_label:
+                raise ValueError(
+                    f"Položka {index}, podklad {source_index}: provision_label je povinné.",
+                )
 
         processing_status = str(raw_item.get("processing_status", "")).strip()
         items.append(
@@ -120,6 +181,7 @@ def parse_import_items(data) -> list[LegalRequirementJsonImportItem]:
                 document_number=document_number,
                 document_year=document_year,
                 provision_label=provision_label,
+                sources=sources,
                 title=str(raw_item.get("title", "")).strip(),
                 fulfillment_text=str(raw_item.get("fulfillment_text", "")).strip(),
                 note=str(raw_item.get("note", "")).strip(),
@@ -189,31 +251,38 @@ class LegalRequirementJsonImportService:
 
     def _import_item(self, item: LegalRequirementJsonImportItem) -> LegalRequirementJsonImportRowResult:
         item_label = self._item_label(item)
-        document = self._find_active_document(item.document_number, item.document_year)
-        if document is None:
-            raise ValueError("Právní předpis nebyl nalezen.")
+        resolved_sections = []
+        for source in item.sources:
+            document = self._find_active_document(source.document_number, source.document_year)
+            if document is None:
+                raise ValueError("Právní předpis nebyl nalezen.")
 
-        section = self._find_section_by_provision_label(document.id, item.provision_label)
-        if section is None:
-            raise ValueError("Ustanovení nebylo nalezeno.")
+            section = self._find_section_by_provision_label(document.id, source.provision_label)
+            if section is None:
+                raise ValueError("Ustanovení nebylo nalezeno.")
+            resolved_sections.append((document, section))
 
-        existing = legal_requirement_service.get_by_source_section_id(section.id)
-        if existing is not None:
-            return LegalRequirementJsonImportRowResult(
-                item_label=item_label,
-                status=REQUIREMENT_IMPORT_STATUS_SKIPPED,
-                title=existing.regulation_name or item.title,
-                error=DUPLICATE_SKIP_MESSAGE,
-            )
+        for _document, section in resolved_sections:
+            existing = legal_requirement_service.get_by_source_section_id(section.id)
+            if existing is not None:
+                return LegalRequirementJsonImportRowResult(
+                    item_label=item_label,
+                    status=REQUIREMENT_IMPORT_STATUS_SKIPPED,
+                    title=existing.regulation_name or item.title,
+                    error=DUPLICATE_SKIP_MESSAGE,
+                )
 
-        sections_by_id = legal_section_service.build_sections_map([section])
+        primary_document, primary_section = resolved_sections[0]
+        sections_by_id = legal_section_service.build_sections_map([primary_section])
+        source_section_ids = [section.id for _document, section in resolved_sections]
         legal_requirement_service.create_requirement(
             regulation_name=item.title,
-            regulation_number=legal_document_regulation_number(document),
-            provision=legal_section_provision_label(section, sections_by_id=sections_by_id),
-            legal_document_id=document.id,
-            legal_section_id=section.id,
-            source_section_id=section.id,
+            regulation_number=legal_document_regulation_number(primary_document),
+            provision=legal_section_provision_label(primary_section, sections_by_id=sections_by_id),
+            legal_document_id=primary_document.id,
+            legal_section_id=primary_section.id,
+            source_section_id=primary_section.id,
+            source_section_ids=source_section_ids,
             requirement_summary=item.fulfillment_text,
             note=item.note,
             processing_status=item.processing_status,
@@ -270,8 +339,16 @@ class LegalRequirementJsonImportService:
         return max(versions, key=lambda version: version.id)
 
     def _item_label(self, item: LegalRequirementJsonImportItem) -> str:
-        number = normalize_document_number(item.document_number)
-        return f"{number}/{item.document_year} – {item.provision_label}"
+        if len(item.sources) == 1:
+            source = item.sources[0]
+            number = normalize_document_number(source.document_number)
+            return f"{number}/{source.document_year} – {source.provision_label}"
+        labels = []
+        for source in item.sources:
+            number = normalize_document_number(source.document_number)
+            labels.append(f"{number}/{source.document_year} – {source.provision_label}")
+        title = item.title or "Požadavek"
+        return f"{title} ({len(item.sources)} podkladů: {', '.join(labels)})"
 
     def _notify_progress(
         self,

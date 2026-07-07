@@ -116,6 +116,7 @@ class LegalDocumentWorkbenchTab(QWidget):
         if existing is not None:
             self.editor.load_requirement(
                 existing,
+                section_id=section_id,
                 section_text=section_text,
                 context_label=context_label,
             )
@@ -180,9 +181,16 @@ class LegalDocumentWorkbenchTab(QWidget):
         existing = None
         if source_section_id is not None:
             existing = legal_requirement_service.get_by_source_section_id(source_section_id)
+        elif data.get("id") is not None:
+            existing = legal_requirement_service.get_by_id(data["id"])
 
         if existing is not None:
-            updated = legal_requirement_service.update_requirement(existing.id, **data)
+            update_data = {
+                key: value
+                for key, value in data.items()
+                if key not in {"source_section_id", "source_section_ids"}
+            }
+            updated = legal_requirement_service.update_requirement(existing.id, **update_data)
             if updated is None:
                 raise ValueError("Požadavek nebyl nalezen.")
             return updated.id

@@ -118,7 +118,7 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         self.assertEqual(dialog.regulation_number.text(), "262/2006 Sb.")
         self.assertEqual(dialog.provision.text(), "§ 101 odst. 2")
         self.assertEqual(dialog.legal_section.currentText(), "§ 101 odst. 2")
-        self.assertEqual(dialog.source_section_display.text(), "Zákoník práce – § 101 odst. 2")
+        self.assertEqual(dialog.sources_widget.get_section_ids(), [subsection.id])
         self.assertNotIn("Právní předpis:", self._form_labels(dialog))
         self.assertNotIn("Oblast:", self._form_labels(dialog))
         self.assertEqual(dialog.get_data()["legal_document_id"], _document.id)
@@ -153,7 +153,7 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         self.assertEqual(dialog.regulation_name.currentText(), "Zákoník práce")
         self.assertEqual(dialog.regulation_number.text(), "262/2006 Sb.")
 
-    def test_changing_document_clears_selected_section_and_source(self) -> None:
+    def test_changing_document_clears_selected_section_but_keeps_sources(self) -> None:
         first_document, subsection = self._create_subsection_101_odst_2()
         second_document = self._create_document(
             title="Nařízení vlády",
@@ -177,12 +177,12 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         draft = legal_requirement_creation_service.create_from_section(subsection.id)
         dialog = LegalRequirementDialog(draft=draft)
         self.assertEqual(dialog.legal_section.currentData(), subsection.id)
-        self.assertEqual(dialog.source_section_display.text(), "Zákoník práce – § 101 odst. 2")
+        self.assertEqual(dialog.sources_widget.get_section_ids(), [subsection.id])
 
         dialog.regulation_name.apply_search_text("Nařízení vlády")
 
         self.assertIsNone(dialog.legal_section.currentData())
-        self.assertEqual(dialog.source_section_display.text(), "")
+        self.assertEqual(dialog.sources_widget.get_section_ids(), [subsection.id])
         self.assertEqual(dialog.get_data()["legal_document_id"], second_document.id)
         section_ids = [
             dialog.legal_section.itemData(index)
@@ -192,6 +192,11 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         self.assertNotIn(subsection.id, section_ids)
         self.assertNotIn(first_document.id, [dialog.get_data()["legal_document_id"]])
 
+    def test_dialog_shows_pravni_podklady_label(self) -> None:
+        dialog = LegalRequirementDialog()
+        labels = self._form_labels(dialog)
+        self.assertIn("Právní podklady:", labels)
+        self.assertNotIn("Vychází z:", labels)
 
     def test_dialog_shows_zpusob_plneni_label(self) -> None:
         dialog = LegalRequirementDialog()

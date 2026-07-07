@@ -324,6 +324,28 @@ class LegalRequirementWorkbenchWidgetTestCase(unittest.TestCase):
         self.assertEqual(tab.editor.regulation_name.text(), "")
         self.assertFalse(tab.editor.save_btn.isEnabled())
 
+    def test_workbench_opens_existing_requirement_by_secondary_source(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        sections = self._create_processable_sections(document, version, 2)
+        legal_requirement_service.create_requirement(
+            regulation_name="Procesní požadavek",
+            legal_document_id=document.id,
+            legal_section_id=sections[0].id,
+            source_section_ids=[sections[0].id, sections[1].id],
+            requirement_summary="Společný text",
+            area="BOZP",
+        )
+
+        tab = LegalDocumentWorkbenchTab(document_id=document.id, version_id=version.id)
+        tab.tree.select_section_id(sections[1].id)
+        tab.load_section(sections[1].id)
+
+        assert tab.editor is not None
+        self.assertEqual(tab.editor.regulation_name.text(), "Procesní požadavek")
+        self.assertEqual(tab.editor.requirement_summary.toPlainText(), "Společný text")
+        self.assertEqual(tab.editor.current_section_id(), sections[1].id)
+
     def test_workbench_creates_ten_consecutive_requirements(self) -> None:
         document = self._create_document()
         version = self._create_version(document)

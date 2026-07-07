@@ -52,9 +52,11 @@ class LegalRequirementJsonImportTestCase(unittest.TestCase):
         from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
         from moduly.pravni_pozadavky.modely.legal_document_version import LegalDocumentVersion
         from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
+        from moduly.pravni_pozadavky.modely.legal_requirement_source import LegalRequirementSource
         from moduly.pravni_pozadavky.modely.legal_section import LegalSection
 
         with get_session() as session:
+            session.execute(delete(LegalRequirementSource))
             session.execute(delete(LegalRequirement))
             session.execute(delete(LegalSection))
             session.execute(delete(LegalDocumentVersion))
@@ -145,6 +147,10 @@ class LegalRequirementJsonImportTestCase(unittest.TestCase):
         self.assertEqual(saved.requirement_summary, "Zajistit bezpečnost práce.")
         self.assertEqual(saved.processing_status, PROCESSING_NEW)
         self.assertEqual(saved.source_section_id, self.subsection.id)
+        self.assertEqual(
+            legal_requirement_service.list_source_section_ids_for_requirement(saved.id),
+            [self.subsection.id],
+        )
 
     def test_import_skips_existing_requirement(self) -> None:
         self._import_item()

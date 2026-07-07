@@ -24,13 +24,14 @@ from moduly.pravni_pozadavky.constants import (
     PERIODICITY_LABELS,
     VALID_COMPLIANCE_STATUSES,
     VALID_PERIODICITIES,
-    legal_requirement_source_display_label,
     legal_section_provision_label,
 )
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
+from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
 from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
 from moduly.pravni_pozadavky.ui.legal_document_selector import LegalDocumentNameSelector
 from moduly.pravni_pozadavky.ui.legal_requirement_sanctions_tab import LegalRequirementSanctionsTab
+from moduly.pravni_pozadavky.ui.legal_requirement_sources_widget import LegalRequirementSourcesWidget
 
 
 class LegalRequirementDialog(QDialog):
@@ -38,7 +39,6 @@ class LegalRequirementDialog(QDialog):
         super().__init__(parent)
         self.requirement = requirement
         self.draft = draft
-        self._source_section_id: int | None = None
         self._processing_status: str | None = None
         self._syncing_document_fields = False
         self._last_document_id: int | None = None
@@ -78,8 +78,7 @@ class LegalRequirementDialog(QDialog):
         self.regulation_number = QLineEdit()
         self.provision = QLineEdit()
         self.legal_section = QComboBox()
-        self.source_section_display = QLineEdit()
-        self.source_section_display.setReadOnly(True)
+        self.sources_widget = LegalRequirementSourcesWidget()
         self.area = QLineEdit()
         self.requirement_summary = QTextEdit()
         self.requirement_summary.setMinimumHeight(80)
@@ -103,7 +102,7 @@ class LegalRequirementDialog(QDialog):
         form.addRow("Číslo předpisu:", self.regulation_number)
         form.addRow("Ustanovení:", self.provision)
         form.addRow("Ustanovení předpisu:", self.legal_section)
-        form.addRow("Vychází z:", self.source_section_display)
+        form.addRow("Právní podklady:", self.sources_widget)
         form.addRow("Způsob plnění:", self.requirement_summary)
         form.addRow("Dopad na organizaci:", self.organization_impact)
         form.addRow("Odpovědná osoba:", self.responsible_person)
@@ -140,9 +139,11 @@ class LegalRequirementDialog(QDialog):
         self._set_combo_value(self.compliance_status, requirement.compliance_status)
         self.note.setPlainText(requirement.note)
         self.active_checkbox.setChecked(requirement.active)
-        self._source_section_id = requirement.source_section_id
         self._processing_status = requirement.processing_status
-        self._update_source_section_display()
+        source_section_ids = legal_requirement_service.list_source_section_ids_for_requirement(
+            requirement.id,
+        )
+        self.sources_widget.load_section_ids(source_section_ids)
 
     def _load_draft(self, draft) -> None:
         self.regulation_name.reload(selected_id=draft.legal_document_id)
@@ -157,9 +158,11 @@ class LegalRequirementDialog(QDialog):
         self.requirement_summary.setPlainText(draft.requirement_summary)
         self.organization_impact.setPlainText(draft.organization_impact)
         self.active_checkbox.setChecked(draft.active)
-        self._source_section_id = draft.source_section_id
         self._processing_status = draft.processing_status
-        self._update_source_section_display()
+        if draft.source_section_id is not None:
+            self.sources_widget.load_section_ids([draft.source_section_id])
+        else:
+            self.sources_widget.load_section_ids([])
 
     def _current_legal_document_id(self) -> int | None:
         return self.regulation_name.current_document_id()
@@ -229,41 +232,12 @@ class LegalRequirementDialog(QDialog):
             if section is None or section.legal_document_id != document_id:
                 selected_section_id = None
 
-        if self._source_section_id is not None:
-            source_section = legal_section_service.get_by_id(self._source_section_id)
-            if (
-                source_section is None
-                or document_id is None
-                or source_section.legal_document_id != document_id
-            ):
-                self._source_section_id = None
-                self.source_section_display.clear()
-
         self._populate_legal_sections(
             selected_id=selected_section_id,
             document_id=document_id,
         )
         if clear_section:
             self.provision.clear()
-        self._update_source_section_display()
-
-    def _update_source_section_display(self) -> None:
-        if self._source_section_id is None:
-            self.source_section_display.clear()
-            return
-        section = legal_section_service.get_by_id(self._source_section_id)
-        if section is None:
-            self.source_section_display.clear()
-            return
-        document = legal_document_service.get_by_id(section.legal_document_id)
-        sections_by_id = legal_section_service.build_sections_map([section])
-        self.source_section_display.setText(
-            legal_requirement_source_display_label(
-                document,
-                section,
-                sections_by_id=sections_by_id,
-            ),
-        )
 
     def _provision_display_text(self, provision: str, section_id: int | None) -> str:
         if section_id is None:
@@ -323,13 +297,15 @@ class LegalRequirementDialog(QDialog):
         if compliance_status not in VALID_COMPLIANCE_STATUSES:
             compliance_status = ""
 
+        source_section_ids = self.sources_widget.get_section_ids()
         return {
             "regulation_name": self.regulation_name.currentText().strip(),
             "regulation_number": self.regulation_number.text().strip(),
             "provision": self.provision.text().strip(),
             "legal_document_id": self._current_legal_document_id(),
             "legal_section_id": self.legal_section.currentData(),
-            "source_section_id": self._source_section_id,
+            "source_section_id": source_section_ids[0] if source_section_ids else None,
+            "source_section_ids": source_section_ids,
             "area": self.area.text().strip(),
             "requirement_summary": self.requirement_summary.toPlainText().strip(),
             "organization_impact": self.organization_impact.toPlainText().strip(),
