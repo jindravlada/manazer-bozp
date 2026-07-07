@@ -4,19 +4,24 @@ from PySide6.QtWidgets import (
     QDialog,
     QFormLayout,
     QLineEdit,
+    QTabWidget,
     QTextEdit,
     QVBoxLayout,
+    QWidget,
 )
 
-from core.widgets.dialog_utils import configure_resizable_form_dialog, create_save_cancel_box
+from core.widgets.dialog_utils import configure_resizable_form_dialog, create_save_cancel_box, wrap_in_scroll_area
 from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.thp_worker_selector import ThpWorkerSelector
+from core.shared.constants import ENTITY_LEGAL_REQUIREMENT
+from core.shared.widgets.entity_links_widget import EntityLinksWidget
 from moduly.pravni_pozadavky.constants import (
     COMPLIANCE_STATUS_LABELS,
     PERIODICITY_LABELS,
     VALID_COMPLIANCE_STATUSES,
     VALID_PERIODICITIES,
 )
+from moduly.pravni_pozadavky.ui.legal_requirement_sanctions_tab import LegalRequirementSanctionsTab
 
 
 class LegalRequirementDialog(QDialog):
@@ -28,7 +33,29 @@ class LegalRequirementDialog(QDialog):
         configure_resizable_form_dialog(self, width=760, height=680, min_width=560, min_height=480)
 
         layout = QVBoxLayout(self)
-        form = QFormLayout()
+
+        self.tabs = QTabWidget()
+        self.tabs.addTab(wrap_in_scroll_area(self._main_tab()), "Požadavek")
+        self.sanctions_tab = LegalRequirementSanctionsTab(
+            requirement.id if requirement is not None else None,
+        )
+        self.tabs.addTab(self.sanctions_tab, "Sankce")
+        self.links_widget = EntityLinksWidget(
+            ENTITY_LEGAL_REQUIREMENT,
+            requirement.id if requirement is not None else None,
+        )
+        self.tabs.addTab(self.links_widget, "Vazby")
+        layout.addWidget(self.tabs, 1)
+        layout.addWidget(create_save_cancel_box(self))
+
+        if requirement is not None:
+            self._load_requirement(requirement)
+        else:
+            self.active_checkbox.setChecked(True)
+
+    def _main_tab(self) -> QWidget:
+        tab = QWidget()
+        form = QFormLayout(tab)
 
         self.regulation_name = QLineEdit()
         self.regulation_number = QLineEdit()
@@ -65,14 +92,7 @@ class LegalRequirementDialog(QDialog):
         form.addRow("Stav plnění:", self.compliance_status)
         form.addRow("Poznámka:", self.note)
         form.addRow("", self.active_checkbox)
-
-        layout.addLayout(form)
-        layout.addWidget(create_save_cancel_box(self))
-
-        if requirement is not None:
-            self._load_requirement(requirement)
-        else:
-            self.active_checkbox.setChecked(True)
+        return tab
 
     def _load_requirement(self, requirement) -> None:
         self.regulation_name.setText(requirement.regulation_name)

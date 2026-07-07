@@ -7,6 +7,20 @@ ENTITY_FINDING = "finding"
 ENTITY_TASK = "task"
 ENTITY_LEGAL_REQUIREMENT = "legal_requirement"
 
+ENTITY_AUDIT = "audit"
+ENTITY_INSPECTION = "inspection"
+ENTITY_RISK = "risk"
+ENTITY_DIRECTIVE = "directive"
+ENTITY_TRAINING = "training"
+ENTITY_PPE = "ppe"
+ENTITY_CHEMICAL = "chemical"
+
+LINK_RELATED = "related"
+LINK_REQUIRES = "requires"
+LINK_EVIDENCE = "evidence"
+LINK_CONTROL_MEASURE = "control_measure"
+LINK_LEGAL_BASIS = "legal_basis"
+
 VALID_ENTITY_TYPES = frozenset(
     {
         ENTITY_AUDITY,
@@ -16,8 +30,65 @@ VALID_ENTITY_TYPES = frozenset(
         ENTITY_FINDING,
         ENTITY_TASK,
         ENTITY_LEGAL_REQUIREMENT,
+        ENTITY_AUDIT,
+        ENTITY_INSPECTION,
+        ENTITY_RISK,
+        ENTITY_DIRECTIVE,
+        ENTITY_TRAINING,
+        ENTITY_PPE,
+        ENTITY_CHEMICAL,
     }
 )
+
+VALID_LINK_ENTITY_TYPES = frozenset(
+    {
+        ENTITY_LEGAL_REQUIREMENT,
+        ENTITY_TASK,
+        ENTITY_AUDIT,
+        ENTITY_INSPECTION,
+        ENTITY_RISK,
+        ENTITY_DIRECTIVE,
+        ENTITY_TRAINING,
+        ENTITY_PPE,
+        ENTITY_CHEMICAL,
+        ENTITY_ACCIDENT,
+    }
+)
+
+VALID_LINK_TYPES = frozenset(
+    {
+        LINK_RELATED,
+        LINK_REQUIRES,
+        LINK_EVIDENCE,
+        LINK_CONTROL_MEASURE,
+        LINK_LEGAL_BASIS,
+    }
+)
+
+ENTITY_TYPE_LABELS: dict[str, str] = {
+    ENTITY_LEGAL_REQUIREMENT: "Právní požadavek",
+    ENTITY_TASK: "Úkol",
+    ENTITY_AUDIT: "Audit",
+    ENTITY_INSPECTION: "Kontrola / prověrka",
+    ENTITY_RISK: "Riziko",
+    ENTITY_DIRECTIVE: "Interní směrnice",
+    ENTITY_TRAINING: "Školení",
+    ENTITY_PPE: "OOPP",
+    ENTITY_CHEMICAL: "Chemická látka",
+    ENTITY_ACCIDENT: "Úraz",
+    ENTITY_AUDITY: "Audit systému",
+    ENTITY_PROVERKY: "Prověrka BOZP",
+    ENTITY_MU_INVESTIGATION: "Vyšetřování MU",
+    ENTITY_FINDING: "Zjištění",
+}
+
+LINK_TYPE_LABELS: dict[str, str] = {
+    LINK_RELATED: "Související",
+    LINK_REQUIRES: "Vyžaduje",
+    LINK_EVIDENCE: "Důkaz / evidence",
+    LINK_CONTROL_MEASURE: "Kontrolní opatření",
+    LINK_LEGAL_BASIS: "Právní základ",
+}
 
 FINDING_TYPE_ZAVADA = "zavada"
 FINDING_TYPE_NEDOSTATEK = "nedostatek"

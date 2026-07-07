@@ -45,6 +45,10 @@ def initialize_database() -> None:
     from moduly.pravni_pozadavky.modely.legal_requirement_check import (  # noqa: F401
         LegalRequirementCheck,
     )
+    from moduly.pravni_pozadavky.modely.legal_requirement_sanction import (  # noqa: F401
+        LegalRequirementSanction,
+    )
+    from core.shared.modely.entity_link import EntityLink  # noqa: F401
     from core.shared.modely.control_result import ControlResult  # noqa: F401
 
     create_database()

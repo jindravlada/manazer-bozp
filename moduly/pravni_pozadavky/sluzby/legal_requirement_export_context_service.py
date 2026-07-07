@@ -1,12 +1,18 @@
 from dataclasses import dataclass
 from datetime import date, datetime
+from decimal import Decimal
 
 from moduly.pravni_pozadavky.constants import (
     COMPLIANCE_STATUS_LABELS,
     PERIODICITY_LABELS,
 )
 from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
+from moduly.pravni_pozadavky.sluzby.legal_requirement_sanction_service import (
+    legal_requirement_sanction_service,
+)
 from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
+from core.shared.constants import ENTITY_LEGAL_REQUIREMENT
+from core.shared.sluzby.entity_link_service import entity_link_service
 
 
 def _fmt_date(value) -> str:
@@ -21,6 +27,35 @@ def _fmt_date(value) -> str:
 
 def _text(value) -> str:
     return str(value or "").replace("\r\n", "\n").replace("\r", "\n").strip()
+
+
+def _fmt_amount(value: Decimal | None, currency: str) -> str:
+    if value is None:
+        return ""
+    amount = f"{value:,.2f}".replace(",", " ").replace(".", ",")
+    if currency:
+        return f"{amount} {currency}"
+    return amount
+
+
+@dataclass(frozen=True)
+class LegalRequirementLinkExportRow:
+    target_type: str
+    target_id: int
+    link_type: str
+    note: str
+
+
+@dataclass(frozen=True)
+class LegalRequirementSanctionExportRow:
+    sanction_id: int
+    authority: str
+    legal_reference: str
+    description: str
+    max_amount: str
+    currency: str
+    note: str
+    active_label: str
 
 
 @dataclass(frozen=True)
@@ -39,6 +74,8 @@ class LegalRequirementExportRow:
     compliance_status_label: str
     note: str
     active_label: str
+    sanctions: list[LegalRequirementSanctionExportRow]
+    links: list[LegalRequirementLinkExportRow]
 
 
 @dataclass(frozen=True)
@@ -62,9 +99,13 @@ class LegalRequirementExportContextService:
         self,
         *,
         active_only: bool | None = True,
+        include_inactive_sanctions: bool = True,
     ) -> LegalRequirementExportContext:
         requirements = legal_requirement_service.get_all(active_only=active_only)
-        rows = [self._build_row(requirement) for requirement in requirements]
+        rows = [
+            self._build_row(requirement, include_inactive_sanctions=include_inactive_sanctions)
+            for requirement in requirements
+        ]
         return LegalRequirementExportContext(
             generated_at=datetime.now(),
             rows=rows,
@@ -76,10 +117,25 @@ class LegalRequirementExportContextService:
             return None
         return LegalRequirementExportContext(
             generated_at=datetime.now(),
-            rows=[self._build_row(requirement)],
+            rows=[self._build_row(requirement, include_inactive_sanctions=True)],
         )
 
-    def _build_row(self, requirement: LegalRequirement) -> LegalRequirementExportRow:
+    def _build_row(
+        self,
+        requirement: LegalRequirement,
+        *,
+        include_inactive_sanctions: bool,
+        include_inactive_links: bool = True,
+    ) -> LegalRequirementExportRow:
+        sanctions = legal_requirement_sanction_service.list_by_requirement(
+            requirement.id,
+            include_inactive=include_inactive_sanctions,
+        )
+        links = entity_link_service.list_for_source(
+            ENTITY_LEGAL_REQUIREMENT,
+            requirement.id,
+            include_inactive=include_inactive_links,
+        )
         return LegalRequirementExportRow(
             requirement_id=requirement.id,
             regulation_name=_text(requirement.regulation_name),
@@ -101,6 +157,28 @@ class LegalRequirementExportContextService:
             ),
             note=_text(requirement.note),
             active_label="Aktivní" if requirement.active else "Archivní",
+            sanctions=[self._build_sanction_row(sanction) for sanction in sanctions],
+            links=[self._build_link_row(link) for link in links],
+        )
+
+    def _build_link_row(self, link) -> LegalRequirementLinkExportRow:
+        return LegalRequirementLinkExportRow(
+            target_type=_text(link.target_type),
+            target_id=link.target_id,
+            link_type=_text(link.link_type),
+            note=_text(link.note),
+        )
+
+    def _build_sanction_row(self, sanction) -> LegalRequirementSanctionExportRow:
+        return LegalRequirementSanctionExportRow(
+            sanction_id=sanction.id,
+            authority=_text(sanction.authority),
+            legal_reference=_text(sanction.legal_reference),
+            description=_text(sanction.description),
+            max_amount=_fmt_amount(sanction.max_amount, ""),
+            currency=_text(sanction.currency),
+            note=_text(sanction.note),
+            active_label="Aktivní" if sanction.active else "Neaktivní",
         )
 
 
