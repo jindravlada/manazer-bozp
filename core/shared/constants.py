@@ -6,6 +6,7 @@ ENTITY_MU_INVESTIGATION = "mu_investigation"
 ENTITY_FINDING = "finding"
 ENTITY_TASK = "task"
 ENTITY_LEGAL_REQUIREMENT = "legal_requirement"
+ENTITY_LEGAL_CHANGE = "legal_change"
 
 ENTITY_AUDIT = "audit"
 ENTITY_INSPECTION = "inspection"
@@ -30,6 +31,7 @@ VALID_ENTITY_TYPES = frozenset(
         ENTITY_FINDING,
         ENTITY_TASK,
         ENTITY_LEGAL_REQUIREMENT,
+        ENTITY_LEGAL_CHANGE,
         ENTITY_AUDIT,
         ENTITY_INSPECTION,
         ENTITY_RISK,
@@ -43,6 +45,7 @@ VALID_ENTITY_TYPES = frozenset(
 VALID_LINK_ENTITY_TYPES = frozenset(
     {
         ENTITY_LEGAL_REQUIREMENT,
+        ENTITY_LEGAL_CHANGE,
         ENTITY_TASK,
         ENTITY_AUDIT,
         ENTITY_INSPECTION,
@@ -67,6 +70,7 @@ VALID_LINK_TYPES = frozenset(
 
 ENTITY_TYPE_LABELS: dict[str, str] = {
     ENTITY_LEGAL_REQUIREMENT: "Právní požadavek",
+    ENTITY_LEGAL_CHANGE: "Změna legislativy",
     ENTITY_TASK: "Úkol",
     ENTITY_AUDIT: "Audit",
     ENTITY_INSPECTION: "Kontrola / prověrka",

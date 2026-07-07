@@ -53,6 +53,7 @@ def initialize_database() -> None:
         LegalDocumentVersion,
     )
     from moduly.pravni_pozadavky.modely.legal_section import LegalSection  # noqa: F401
+    from moduly.pravni_pozadavky.modely.legal_change import LegalChange  # noqa: F401
     from core.shared.modely.entity_link import EntityLink  # noqa: F401
     from core.shared.modely.control_result import ControlResult  # noqa: F401
 

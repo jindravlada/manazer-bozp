@@ -163,3 +163,25 @@ def legal_section_display_label(section) -> str:
         return type_label
     return f"Ustanovení #{section_id}" if section_id is not None else ""
 
+
+CHANGE_NEW = "new"
+CHANGE_UPDATED = "updated"
+CHANGE_REPEALED = "repealed"
+CHANGE_OTHER = "other"
+
+VALID_CHANGE_TYPES = frozenset(
+    {
+        CHANGE_NEW,
+        CHANGE_UPDATED,
+        CHANGE_REPEALED,
+        CHANGE_OTHER,
+    }
+)
+
+CHANGE_TYPE_LABELS: dict[str, str] = {
+    CHANGE_NEW: "Nový předpis / ustanovení",
+    CHANGE_UPDATED: "Změna",
+    CHANGE_REPEALED: "Zrušení",
+    CHANGE_OTHER: "Jiné",
+}
+
