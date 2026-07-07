@@ -21,7 +21,11 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
-    from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_ZAKON
+    from moduly.pravni_pozadavky.constants import (
+        DOCUMENT_TYPE_ZAKON,
+        SECTION_PARAGRAPH,
+        SECTION_SUBSECTION,
+    )
     from moduly.pravni_pozadavky.sluzby.legal_document_export_context_service import (
         legal_document_export_context_service,
     )
@@ -29,6 +33,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
         legal_document_version_service,
     )
+    from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
 
 
 class LegalDocumentServiceTestCase(unittest.TestCase):
@@ -38,8 +43,10 @@ class LegalDocumentServiceTestCase(unittest.TestCase):
         from core.database.session import get_session
         from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
         from moduly.pravni_pozadavky.modely.legal_document_version import LegalDocumentVersion
+        from moduly.pravni_pozadavky.modely.legal_section import LegalSection
 
         with get_session() as session:
+            session.execute(delete(LegalSection))
             session.execute(delete(LegalDocumentVersion))
             session.execute(delete(LegalDocument))
             session.commit()
@@ -51,6 +58,12 @@ class LegalDocumentServiceTestCase(unittest.TestCase):
             number="262/2006 Sb.",
             year=2006,
             short_title="ZP",
+        )
+
+    def _create_version(self, document):
+        return legal_document_version_service.create(
+            legal_document_id=document.id,
+            version_name="Verze 2024",
         )
 
     def test_create_legal_document(self) -> None:
@@ -191,6 +204,7 @@ class LegalDocumentServiceTestCase(unittest.TestCase):
         self.assertEqual(version_row.publication_date, "01.12.2019")
         self.assertEqual(version_row.source_url, "https://example.com/export")
         self.assertEqual(version_row.local_file_path, "/data/zp.pdf")
+        self.assertEqual(version_row.sections, [])
 
     def test_create_version_requires_legal_document_id(self) -> None:
         with self.assertRaises(ValueError):
@@ -206,6 +220,218 @@ class LegalDocumentServiceTestCase(unittest.TestCase):
                 legal_document_id=document.id,
                 version_name="   ",
             )
+
+    def test_create_section_for_version(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        section = legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="90",
+            title="Přestávka v práci",
+            text="Zaměstnanci přísluší přestávka v práci.",
+            sort_order=10,
+        )
+
+        self.assertIsNotNone(section.id)
+        self.assertEqual(section.legal_document_id, document.id)
+        self.assertEqual(section.legal_document_version_id, version.id)
+        self.assertEqual(section.section_type, SECTION_PARAGRAPH)
+        self.assertTrue(section.active)
+
+    def test_update_section(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        section = legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="1",
+            text="Původní text",
+        )
+        updated = legal_section_service.update(
+            section.id,
+            legal_document_id=document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="1",
+            title="Upravený nadpis",
+            text="Upravený text",
+            sort_order=5,
+            active=True,
+        )
+
+        assert updated is not None
+        self.assertEqual(updated.title, "Upravený nadpis")
+        self.assertEqual(updated.text, "Upravený text")
+        self.assertEqual(updated.sort_order, 5)
+
+    def test_deactivate_and_restore_section(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        section = legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="2",
+            text="K deaktivaci",
+        )
+
+        deactivated = legal_section_service.deactivate(section.id)
+        assert deactivated is not None
+        self.assertFalse(deactivated.active)
+
+        active_only = legal_section_service.list_by_version(version.id)
+        self.assertEqual(active_only, [])
+
+        restored = legal_section_service.restore(section.id)
+        assert restored is not None
+        self.assertTrue(restored.active)
+
+    def test_list_sections_by_document(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        section = legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="3",
+            text="Podle předpisu",
+        )
+
+        sections = legal_section_service.list_by_document(document.id)
+        self.assertEqual(len(sections), 1)
+        self.assertEqual(sections[0].id, section.id)
+
+    def test_list_sections_by_version(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        section = legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="4",
+            text="Podle verze",
+        )
+
+        sections = legal_section_service.list_by_version(version.id)
+        self.assertEqual(len(sections), 1)
+        self.assertEqual(sections[0].id, section.id)
+
+    def test_list_child_sections(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        parent = legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="5",
+            text="Rodič",
+            sort_order=1,
+        )
+        child = legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_SUBSECTION,
+            parent_section_id=parent.id,
+            section_number="1",
+            text="Potomek",
+            sort_order=1,
+        )
+
+        children = legal_section_service.list_children(parent.id)
+        self.assertEqual(len(children), 1)
+        self.assertEqual(children[0].id, child.id)
+
+    def test_sections_sorted_by_sort_order(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        second = legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="20",
+            text="Druhý",
+            sort_order=20,
+        )
+        first = legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="10",
+            text="První",
+            sort_order=10,
+        )
+
+        sections = legal_section_service.list_by_version(version.id)
+        self.assertEqual([item.id for item in sections], [first.id, second.id])
+
+    def test_create_section_requires_legal_document_id(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        with self.assertRaises(ValueError):
+            legal_section_service.create(
+                legal_document_id=0,
+                legal_document_version_id=version.id,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="1",
+            )
+
+    def test_create_section_requires_legal_document_version_id(self) -> None:
+        document = self._create_document()
+        with self.assertRaises(ValueError):
+            legal_section_service.create(
+                legal_document_id=document.id,
+                legal_document_version_id=0,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="1",
+            )
+
+    def test_create_section_requires_section_type(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        with self.assertRaises(ValueError):
+            legal_section_service.create(
+                legal_document_id=document.id,
+                legal_document_version_id=version.id,
+                section_type="   ",
+                paragraph="1",
+            )
+
+    def test_create_section_requires_content(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        with self.assertRaises(ValueError):
+            legal_section_service.create(
+                legal_document_id=document.id,
+                legal_document_version_id=version.id,
+                section_type=SECTION_PARAGRAPH,
+            )
+
+    def test_export_context_includes_sections(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="90",
+            title="Přestávka",
+            text="Text ustanovení",
+            sort_order=15,
+        )
+
+        context = legal_document_export_context_service.build_for_document(document.id)
+        assert context is not None
+        version_row = context.rows[0].versions[0]
+        self.assertEqual(len(version_row.sections), 1)
+        section_row = version_row.sections[0]
+        self.assertEqual(section_row.section_type, "Paragraf")
+        self.assertEqual(section_row.paragraph, "90")
+        self.assertEqual(section_row.title, "Přestávka")
+        self.assertEqual(section_row.text, "Text ustanovení")
+        self.assertEqual(section_row.sort_order, 15)
 
 
 if __name__ == "__main__":

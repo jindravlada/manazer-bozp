@@ -3,24 +3,46 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QLineEdit,
     QMessageBox,
+    QTabWidget,
     QTextEdit,
     QVBoxLayout,
+    QWidget,
 )
 
-from core.widgets.dialog_utils import configure_resizable_form_dialog, create_save_cancel_box
+from core.widgets.dialog_utils import configure_resizable_form_dialog, create_save_cancel_box, wrap_in_scroll_area
 from core.widgets.nullable_date_edit import NullableDateEdit
+from moduly.pravni_pozadavky.ui.legal_document_sections_tab import LegalDocumentSectionsTab
 
 
 class LegalDocumentVersionDialog(QDialog):
-    def __init__(self, parent=None, version=None):
+    def __init__(self, parent=None, version=None, document_id: int | None = None):
         super().__init__(parent)
         self.version = version
+        resolved_document_id = document_id
+        if version is not None:
+            resolved_document_id = version.legal_document_id
 
         self.setWindowTitle("Verze předpisu" if version is None else "Upravit verzi")
-        configure_resizable_form_dialog(self, width=640, height=480, min_width=480, min_height=360)
+        configure_resizable_form_dialog(self, width=720, height=620, min_width=520, min_height=460)
 
         layout = QVBoxLayout(self)
-        form = QFormLayout()
+
+        self.tabs = QTabWidget()
+        self.tabs.addTab(wrap_in_scroll_area(self._main_tab()), "Verze")
+        self.sections_tab = LegalDocumentSectionsTab(
+            document_id=resolved_document_id,
+            version_id=version.id if version is not None else None,
+        )
+        self.tabs.addTab(self.sections_tab, "Struktura")
+        layout.addWidget(self.tabs, 1)
+        layout.addWidget(create_save_cancel_box(self))
+
+        if version is not None:
+            self._load_version(version)
+
+    def _main_tab(self) -> QWidget:
+        tab = QWidget()
+        form = QFormLayout(tab)
 
         self.version_name = QLineEdit()
         self.valid_from = NullableDateEdit()
@@ -44,12 +66,7 @@ class LegalDocumentVersionDialog(QDialog):
         form.addRow("Lokální soubor:", self.local_file_path)
         form.addRow("Checksum:", self.checksum)
         form.addRow("Poznámka:", self.note)
-
-        layout.addLayout(form)
-        layout.addWidget(create_save_cancel_box(self))
-
-        if version is not None:
-            self._load_version(version)
+        return tab
 
     def _load_version(self, version) -> None:
         self.version_name.setText(version.version_name)

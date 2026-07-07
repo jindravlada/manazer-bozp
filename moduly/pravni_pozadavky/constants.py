@@ -97,6 +97,34 @@ DOCUMENT_TYPE_LABELS: dict[str, str] = {
 }
 
 
+SECTION_PART = "cast"
+SECTION_HEAD = "hlava"
+SECTION_DIVISION = "dil"
+SECTION_PARAGRAPH = "paragraf"
+SECTION_SUBSECTION = "odstavec"
+SECTION_LETTER = "pismeno"
+
+VALID_SECTION_TYPES = frozenset(
+    {
+        SECTION_PART,
+        SECTION_HEAD,
+        SECTION_DIVISION,
+        SECTION_PARAGRAPH,
+        SECTION_SUBSECTION,
+        SECTION_LETTER,
+    }
+)
+
+SECTION_TYPE_LABELS: dict[str, str] = {
+    SECTION_PART: "Část",
+    SECTION_HEAD: "Hlava",
+    SECTION_DIVISION: "Díl",
+    SECTION_PARAGRAPH: "Paragraf",
+    SECTION_SUBSECTION: "Odstavec",
+    SECTION_LETTER: "Písmeno",
+}
+
+
 def legal_document_display_label(document) -> str:
     short_title = (getattr(document, "short_title", "") or "").strip()
     if short_title:

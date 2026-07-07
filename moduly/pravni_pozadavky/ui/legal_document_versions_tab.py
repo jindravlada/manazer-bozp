@@ -83,7 +83,7 @@ class LegalDocumentVersionsTab(QWidget):
         if self.document_id is None:
             return
 
-        dialog = LegalDocumentVersionDialog(self)
+        dialog = LegalDocumentVersionDialog(self, document_id=self.document_id)
         if not exec_maximized(dialog):
             return
 

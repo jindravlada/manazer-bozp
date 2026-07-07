@@ -1,12 +1,13 @@
 from dataclasses import dataclass
 from datetime import date, datetime
 
-from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_LABELS
+from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_LABELS, SECTION_TYPE_LABELS
 from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
 from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
     legal_document_version_service,
 )
+from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
 
 
 def _fmt_date(value) -> str:
@@ -24,6 +25,17 @@ def _text(value) -> str:
 
 
 @dataclass(frozen=True)
+class LegalSectionExportRow:
+    section_type: str
+    section_number: str
+    paragraph: str
+    item_letter: str
+    title: str
+    text: str
+    sort_order: int
+
+
+@dataclass(frozen=True)
 class LegalDocumentVersionExportRow:
     version_name: str
     valid_from: str
@@ -33,6 +45,7 @@ class LegalDocumentVersionExportRow:
     publication_date: str
     source_url: str
     local_file_path: str
+    sections: list[LegalSectionExportRow]
 
 
 @dataclass(frozen=True)
@@ -113,6 +126,10 @@ class LegalDocumentExportContextService:
         )
 
     def _build_version_row(self, version) -> LegalDocumentVersionExportRow:
+        sections = legal_section_service.list_by_version(
+            version.id,
+            include_inactive=True,
+        )
         return LegalDocumentVersionExportRow(
             version_name=_text(version.version_name),
             valid_from=_fmt_date(version.valid_from),
@@ -122,6 +139,21 @@ class LegalDocumentExportContextService:
             publication_date=_fmt_date(version.publication_date),
             source_url=_text(version.source_url),
             local_file_path=_text(version.local_file_path),
+            sections=[self._build_section_row(section) for section in sections],
+        )
+
+    def _build_section_row(self, section) -> LegalSectionExportRow:
+        return LegalSectionExportRow(
+            section_type=SECTION_TYPE_LABELS.get(
+                section.section_type,
+                section.section_type,
+            ),
+            section_number=_text(section.section_number),
+            paragraph=_text(section.paragraph),
+            item_letter=_text(section.item_letter),
+            title=_text(section.title),
+            text=_text(section.text),
+            sort_order=section.sort_order,
         )
 
 
