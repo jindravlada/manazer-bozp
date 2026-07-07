@@ -28,6 +28,8 @@ PERIODICITY_TRI_ROKY = "tri_roky"
 PERIODICITY_NA_POZADANI = "na_pozadani"
 PERIODICITY_BEZ = "bez_periodicity"
 
+DEFAULT_SANCTION_CURRENCY = "Kč"
+
 VALID_PERIODICITIES = frozenset(
     {
         PERIODICITY_MESICNE,
