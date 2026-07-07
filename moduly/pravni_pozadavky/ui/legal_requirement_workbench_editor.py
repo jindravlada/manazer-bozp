@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -10,6 +11,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.widgets.responsibility_role_selector import ResponsibilityRoleSelector
 from core.widgets.thp_worker_selector import ThpWorkerSelector
 from moduly.pravni_pozadavky.constants import (
     PERIODICITY_LABELS,
@@ -49,6 +51,7 @@ class LegalRequirementWorkbenchEditor(QWidget):
         self.requirement_summary.setMinimumHeight(120)
         self.area = QLineEdit()
         self.responsible_person = ThpWorkerSelector()
+        self.responsible_role = ResponsibilityRoleSelector()
         self.periodicity = QComboBox()
         self.periodicity.addItem("", "")
         for key in sorted(PERIODICITY_LABELS, key=lambda item: PERIODICITY_LABELS[item]):
@@ -59,7 +62,13 @@ class LegalRequirementWorkbenchEditor(QWidget):
         form.addRow("Název:", self.regulation_name)
         form.addRow("Způsob plnění:", self.requirement_summary)
         form.addRow("Oblast:", self.area)
-        form.addRow("Odpovědná osoba:", self.responsible_person)
+
+        responsibility_group = QGroupBox("Odpovědnost")
+        responsibility_form = QFormLayout(responsibility_group)
+        responsibility_form.addRow("Osoba:", self.responsible_person)
+        responsibility_form.addRow("Funkce / role:", self.responsible_role)
+        form.addRow(responsibility_group)
+
         form.addRow("Periodicita:", self.periodicity)
         form.addRow("Poznámka:", self.note)
         layout.addLayout(form, 1)
@@ -89,6 +98,7 @@ class LegalRequirementWorkbenchEditor(QWidget):
         self.requirement_summary.clear()
         self.area.clear()
         self.responsible_person.set_person_id(None)
+        self.responsible_role.set_role_id(None)
         self.periodicity.setCurrentIndex(0)
         self.note.clear()
         self._set_enabled(False)
@@ -109,6 +119,7 @@ class LegalRequirementWorkbenchEditor(QWidget):
         self.requirement_summary.clear()
         self.area.clear()
         self.responsible_person.set_person_id(None)
+        self.responsible_role.set_role_id(None)
         self.periodicity.setCurrentIndex(0)
         self.note.clear()
         self._set_enabled(False)
@@ -136,6 +147,10 @@ class LegalRequirementWorkbenchEditor(QWidget):
         self.requirement_summary.setPlainText(requirement.requirement_summary)
         self.area.setText(requirement.area)
         self.responsible_person.set_person_id(requirement.responsible_person_id)
+        self.responsible_role.set_role_id(
+            requirement.responsible_role_id,
+            requirement.responsible_role_name,
+        )
         self._set_combo_value(self.periodicity, requirement.verification_periodicity)
         self.note.setPlainText(requirement.note)
         self._set_enabled(True)
@@ -156,6 +171,7 @@ class LegalRequirementWorkbenchEditor(QWidget):
         self.requirement_summary.setPlainText(section_text)
         self.area.setText(draft.area)
         self.responsible_person.set_person_id(None)
+        self.responsible_role.set_role_id(None)
         self.periodicity.setCurrentIndex(0)
         self.note.clear()
         self._set_enabled(True)
@@ -178,6 +194,7 @@ class LegalRequirementWorkbenchEditor(QWidget):
             "requirement_summary": self.requirement_summary.toPlainText().strip(),
             "organization_impact": self._organization_impact or "",
             "responsible_person_id": self.responsible_person.current_person_id(),
+            "responsible_role_id": self.responsible_role.current_role_id(),
             "verification_periodicity": periodicity,
             "last_verification_date": None,
             "next_verification_date": None,
@@ -198,6 +215,7 @@ class LegalRequirementWorkbenchEditor(QWidget):
             self.requirement_summary,
             self.area,
             self.responsible_person,
+            self.responsible_role,
             self.periodicity,
             self.note,
             self.save_btn,

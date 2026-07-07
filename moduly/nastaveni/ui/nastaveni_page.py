@@ -10,8 +10,10 @@ from core.services.cz_nace_service import cz_nace_service
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
 from moduly.nastaveni.sluzby.person_service import person_service
+from moduly.nastaveni.sluzby.responsibility_role_service import responsibility_role_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.nastaveni.ui.person_dialog import PersonDialog
+from moduly.nastaveni.ui.responsibility_role_dialog import ResponsibilityRoleDialog
 from moduly.nastaveni.ui.thp_worker_dialog import ThpWorkerDialog
 from moduly.nastaveni.ui.workplace_dialog import WorkplaceDialog
 
@@ -26,6 +28,7 @@ class NastaveniPage(QWidget):
         self.tabs.addTab(self._workers_tab(), "THP pracovníci")
         self.tabs.addTab(self._persons_tab(), "Osoby")
         self.tabs.addTab(self._workplaces_tab(), "Pracoviště")
+        self.tabs.addTab(self._responsibility_roles_tab(), "Funkce / role")
         self.tabs.addTab(self._employer_tab(), "Zaměstnavatel")
 
         layout.addWidget(self.tabs)
@@ -231,6 +234,62 @@ class NastaveniPage(QWidget):
         layout.addLayout(toolbar)
         layout.addWidget(self.workplace_text_filter)
         layout.addWidget(self.workplace_table)
+
+        return tab
+
+    def _responsibility_roles_tab(self):
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+
+        info = QLabel(
+            "Číselník odpovědných funkcí a rolí pro procesní požadavky BOZP.",
+        )
+        info.setWordWrap(True)
+
+        toolbar = QHBoxLayout()
+
+        add_button = QPushButton("Přidat roli")
+        add_button.clicked.connect(self.add_responsibility_role)
+
+        edit_button = QPushButton("Upravit")
+        edit_button.clicked.connect(self.edit_selected_responsibility_role)
+
+        self.responsibility_role_active_toggle_button = QPushButton("Deaktivovat / Aktivovat")
+        self.responsibility_role_active_toggle_button.clicked.connect(
+            self.toggle_selected_responsibility_role_active,
+        )
+
+        self.responsibility_role_filter = QComboBox()
+        self.responsibility_role_filter.addItems(["Aktivní", "Všechny"])
+        self.responsibility_role_filter.currentIndexChanged.connect(self.refresh_responsibility_roles)
+
+        toolbar.addWidget(add_button)
+        toolbar.addWidget(edit_button)
+        toolbar.addWidget(self.responsibility_role_active_toggle_button)
+        toolbar.addStretch()
+        toolbar.addWidget(QLabel("Zobrazit:"))
+        toolbar.addWidget(self.responsibility_role_filter)
+
+        self.responsibility_role_table = QTableWidget()
+        self.responsibility_role_table.setColumnCount(4)
+        self.responsibility_role_table.setHorizontalHeaderLabels(
+            ["ID", "Název", "Popis", "Aktivní"],
+        )
+        self.responsibility_role_table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.responsibility_role_table.setSelectionMode(QTableWidget.SingleSelection)
+        self.responsibility_role_table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.responsibility_role_table.doubleClicked.connect(self.edit_selected_responsibility_role)
+        self.responsibility_role_table.itemSelectionChanged.connect(
+            self.update_responsibility_role_buttons,
+        )
+        configure_table_columns(self.responsibility_role_table, "responsibility_roles")
+
+        self.responsibility_role_text_filter = FilterBar(self.responsibility_role_table)
+
+        layout.addWidget(info)
+        layout.addLayout(toolbar)
+        layout.addWidget(self.responsibility_role_text_filter)
+        layout.addWidget(self.responsibility_role_table)
 
         return tab
 
@@ -506,6 +565,100 @@ class NastaveniPage(QWidget):
 
         self.workplace_active_toggle_button.setText("Deaktivovat" if workplace.active else "Aktivovat")
 
+    def add_responsibility_role(self):
+        dialog = ResponsibilityRoleDialog(self)
+        if dialog.exec():
+            data = dialog.get_data()
+            if data["name"]:
+                try:
+                    responsibility_role_service.create_role(**data)
+                except ValueError as exc:
+                    QMessageBox.warning(self, "Funkce / role", str(exc))
+                    return
+                self.refresh_responsibility_roles()
+
+    def _selected_responsibility_role_id(self) -> int | None:
+        selected = self.responsibility_role_table.selectionModel().selectedRows()
+        if not selected:
+            return None
+
+        item = self.responsibility_role_table.item(selected[0].row(), 0)
+        return int(item.text()) if item else None
+
+    def edit_selected_responsibility_role(self):
+        role_id = self._selected_responsibility_role_id()
+        if role_id is None:
+            QMessageBox.information(self, "Funkce / role", "Vyberte roli.")
+            return
+
+        role = responsibility_role_service.get_by_id(role_id)
+        if role is None:
+            QMessageBox.warning(self, "Funkce / role", "Role nebyla nalezena.")
+            self.refresh_responsibility_roles()
+            return
+
+        dialog = ResponsibilityRoleDialog(self, role=role)
+        if dialog.exec():
+            data = dialog.get_data()
+            if data["name"]:
+                try:
+                    responsibility_role_service.update_role(role_id, **data)
+                except ValueError as exc:
+                    QMessageBox.warning(self, "Funkce / role", str(exc))
+                    return
+                self.refresh_responsibility_roles()
+
+    def toggle_selected_responsibility_role_active(self):
+        role_id = self._selected_responsibility_role_id()
+        if role_id is None:
+            QMessageBox.information(self, "Funkce / role", "Vyberte roli.")
+            return
+
+        role = responsibility_role_service.get_by_id(role_id)
+        if role is None:
+            QMessageBox.warning(self, "Funkce / role", "Role nebyla nalezena.")
+            self.refresh_responsibility_roles()
+            return
+
+        if role.active:
+            text = f"Opravdu deaktivovat roli {role.name}?"
+            title = "Deaktivovat roli"
+            new_state = False
+        else:
+            text = f"Opravdu znovu aktivovat roli {role.name}?"
+            title = "Aktivovat roli"
+            new_state = True
+
+        answer = QMessageBox.question(
+            self,
+            title,
+            text,
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+
+        if answer == QMessageBox.Yes:
+            if new_state:
+                responsibility_role_service.activate(role_id)
+            else:
+                responsibility_role_service.deactivate(role_id)
+            self.refresh_responsibility_roles()
+
+    def update_responsibility_role_buttons(self):
+        role_id = self._selected_responsibility_role_id()
+        if role_id is None:
+            self.responsibility_role_active_toggle_button.setText("Deaktivovat / Aktivovat")
+            return
+
+        role = responsibility_role_service.get_by_id(role_id)
+        if role is None:
+            self.responsibility_role_active_toggle_button.setText("Deaktivovat / Aktivovat")
+            return
+
+        self.responsibility_role_active_toggle_button.setText(
+            "Deaktivovat" if role.active else "Aktivovat",
+        )
+
     def refresh(self):
         employer = settings_service.get_employer()
         if employer:
@@ -517,6 +670,7 @@ class NastaveniPage(QWidget):
         self.refresh_workers()
         self.refresh_persons()
         self.refresh_workplaces()
+        self.refresh_responsibility_roles()
 
     def refresh_workers(self):
         include_inactive = self.worker_filter.currentText() == "Všichni"
@@ -591,3 +745,22 @@ class NastaveniPage(QWidget):
         configure_table_columns(self.workplace_table, "workplaces")
         self.workplace_text_filter.update_count()
         self.update_workplace_buttons()
+
+    def refresh_responsibility_roles(self):
+        include_inactive = self.responsibility_role_filter.currentText() == "Všechny"
+        roles = responsibility_role_service.get_all(include_inactive=include_inactive)
+
+        self.responsibility_role_table.setRowCount(len(roles))
+        for row, role in enumerate(roles):
+            self.responsibility_role_table.setItem(row, 0, QTableWidgetItem(str(role.id)))
+            self.responsibility_role_table.setItem(row, 1, QTableWidgetItem(role.name))
+            self.responsibility_role_table.setItem(row, 2, QTableWidgetItem(role.description))
+            self.responsibility_role_table.setItem(
+                row,
+                3,
+                QTableWidgetItem("Ano" if role.active else "Ne"),
+            )
+
+        configure_table_columns(self.responsibility_role_table, "responsibility_roles")
+        self.responsibility_role_text_filter.update_count()
+        self.update_responsibility_role_buttons()

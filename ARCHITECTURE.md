@@ -55,3 +55,17 @@ Každý commit musí být:
 - funkční
 - otestovaný
 - samostatně pochopitelný
+
+---
+
+## Odpovědnost podle funkce / role (budoucí směr)
+
+Funkce a role jsou samostatná entita organizační struktury.
+
+V budoucnu budou osoby vykonávat jednu nebo více funkcí/rolí.
+
+Procesní požadavky budou primárně navázány na funkce/role, nikoliv na konkrétní osoby.
+
+Současná implementace (fáze 33) je prvním krokem k tomuto modelu.
+
+Zatím nepředělávat THP ani organizační strukturu.

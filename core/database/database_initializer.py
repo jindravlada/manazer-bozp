@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy import text
 
 from core.database.session import create_database
@@ -28,6 +30,7 @@ def initialize_database() -> None:
     from moduly.nastaveni.modely.thp_worker import ThpWorker  # noqa: F401
     from moduly.nastaveni.modely.person import Person  # noqa: F401
     from moduly.nastaveni.modely.workplace import Workplace  # noqa: F401
+    from moduly.nastaveni.modely.responsibility_role import ResponsibilityRole  # noqa: F401
     from moduly.kniha_urazu.modely.accident import Accident  # noqa: F401
     from moduly.kniha_urazu.modely.investigation import AccidentInvestigation  # noqa: F401
     from moduly.vysetrovani_mu.modely.mu_investigation import MuInvestigation  # noqa: F401
@@ -79,6 +82,7 @@ def initialize_database() -> None:
     _ensure_audit_process_maturity_snapshot_table()
     _ensure_audit_program_final_report_table()
     _ensure_workplace_audit_columns()
+    _ensure_responsibility_roles_table()
     _ensure_audit_program_columns()
     _ensure_audit_program_workplace_columns()
     _ensure_audit_program_link_columns()
@@ -469,6 +473,51 @@ def _ensure_legal_requirement_columns() -> None:
         _add_column("legal_requirements", "source_section_id INTEGER")
     if "processing_status" not in columns:
         _add_column("legal_requirements", "processing_status VARCHAR(50) DEFAULT 'new'")
+    if "responsible_role_id" not in columns:
+        _add_column("legal_requirements", "responsible_role_id INTEGER")
+    if "responsible_role_name" not in columns:
+        _add_column("legal_requirements", "responsible_role_name VARCHAR(150) DEFAULT ''")
+
+
+def _ensure_responsibility_roles_table() -> None:
+    columns = _table_columns("responsibility_roles")
+    if not columns:
+        from moduly.nastaveni.modely.responsibility_role import ResponsibilityRole
+
+        ResponsibilityRole.__table__.create(bind=_db_engine(), checkfirst=True)
+    _seed_responsibility_roles()
+
+
+def _seed_responsibility_roles() -> None:
+    default_roles = [
+        ("Vedoucí provozu", ""),
+        ("Vedoucí údržby", ""),
+        ("Mistr", ""),
+        ("OZO BOZP", ""),
+        ("Personalista", ""),
+    ]
+    with _db_engine().connect() as connection:
+        existing_count = connection.execute(
+            text("SELECT COUNT(*) FROM responsibility_roles"),
+        ).scalar_one()
+        if existing_count:
+            return
+
+        for name, description in default_roles:
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO responsibility_roles (name, description, active, created_at)
+                    VALUES (:name, :description, 1, :created_at)
+                    """,
+                ),
+                {
+                    "name": name,
+                    "description": description,
+                    "created_at": datetime.now(),
+                },
+            )
+        connection.commit()
 
 
 def _ensure_legal_requirement_sources_table() -> None:

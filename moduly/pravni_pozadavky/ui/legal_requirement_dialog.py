@@ -3,6 +3,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QFormLayout,
+    QGroupBox,
     QLineEdit,
     QTabWidget,
     QTextEdit,
@@ -16,6 +17,7 @@ from core.widgets.dialog_utils import (
     wrap_in_scroll_area,
 )
 from core.widgets.nullable_date_edit import NullableDateEdit
+from core.widgets.responsibility_role_selector import ResponsibilityRoleSelector
 from core.widgets.thp_worker_selector import ThpWorkerSelector
 from core.shared.constants import ENTITY_LEGAL_REQUIREMENT
 from core.shared.widgets.entity_links_widget import EntityLinksWidget
@@ -85,6 +87,7 @@ class LegalRequirementDialog(QDialog):
         self.organization_impact = QTextEdit()
         self.organization_impact.setMinimumHeight(80)
         self.responsible_person = ThpWorkerSelector()
+        self.responsible_role = ResponsibilityRoleSelector()
         self.periodicity = QComboBox()
         self.periodicity.addItem("", "")
         for key in sorted(PERIODICITY_LABELS, key=lambda item: PERIODICITY_LABELS[item]):
@@ -105,7 +108,13 @@ class LegalRequirementDialog(QDialog):
         form.addRow("Právní podklady:", self.sources_widget)
         form.addRow("Způsob plnění:", self.requirement_summary)
         form.addRow("Dopad na organizaci:", self.organization_impact)
-        form.addRow("Odpovědná osoba:", self.responsible_person)
+
+        responsibility_group = QGroupBox("Odpovědnost")
+        responsibility_form = QFormLayout(responsibility_group)
+        responsibility_form.addRow("Osoba:", self.responsible_person)
+        responsibility_form.addRow("Funkce / role:", self.responsible_role)
+        form.addRow(responsibility_group)
+
         form.addRow("Periodicita ověření:", self.periodicity)
         form.addRow("Poslední ověření:", self.last_verification)
         form.addRow("Další ověření:", self.next_verification)
@@ -133,6 +142,10 @@ class LegalRequirementDialog(QDialog):
         self.requirement_summary.setPlainText(requirement.requirement_summary)
         self.organization_impact.setPlainText(requirement.organization_impact)
         self.responsible_person.set_person_id(requirement.responsible_person_id)
+        self.responsible_role.set_role_id(
+            requirement.responsible_role_id,
+            requirement.responsible_role_name,
+        )
         self._set_combo_value(self.periodicity, requirement.verification_periodicity)
         self.last_verification.set_date_value(requirement.last_verification_date)
         self.next_verification.set_date_value(requirement.next_verification_date)
@@ -310,6 +323,7 @@ class LegalRequirementDialog(QDialog):
             "requirement_summary": self.requirement_summary.toPlainText().strip(),
             "organization_impact": self.organization_impact.toPlainText().strip(),
             "responsible_person_id": self.responsible_person.current_person_id(),
+            "responsible_role_id": self.responsible_role.current_role_id(),
             "verification_periodicity": periodicity,
             "last_verification_date": self.last_verification.get_date(),
             "next_verification_date": self.next_verification.get_date(),

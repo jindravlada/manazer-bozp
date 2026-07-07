@@ -28,6 +28,8 @@ class LegalRequirement(Base):
 
     responsible_person_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     responsible_person_name: Mapped[str] = mapped_column(String(150), default="")
+    responsible_role_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    responsible_role_name: Mapped[str] = mapped_column(String(150), default="")
 
     verification_periodicity: Mapped[str] = mapped_column(String(50), default="")
     last_verification_date: Mapped[date | None] = mapped_column(Date, nullable=True)

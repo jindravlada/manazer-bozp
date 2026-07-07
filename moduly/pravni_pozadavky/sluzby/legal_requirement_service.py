@@ -2,6 +2,7 @@ import calendar
 from datetime import date
 
 from moduly.nastaveni.sluzby.settings_service import settings_service
+from moduly.nastaveni.sluzby.responsibility_role_service import responsibility_role_service
 from moduly.pravni_pozadavky.constants import (
     COMPLIANCE_NENI_RELEVANTNI,
     DEFAULT_PROCESSING_STATUS,
@@ -153,6 +154,7 @@ class LegalRequirementService:
         requirement_summary: str = "",
         organization_impact: str = "",
         responsible_person_id: int | None = None,
+        responsible_role_id: int | None = None,
         verification_periodicity: str = "",
         last_verification_date: date | None = None,
         next_verification_date: date | None = None,
@@ -173,6 +175,7 @@ class LegalRequirementService:
         self._validate_legal_document_id(legal_document_id)
         self._validate_legal_section_id(legal_section_id)
         self._validate_source_section_ids(resolved_source_ids)
+        self._validate_responsible_role_id(responsible_role_id)
 
         requirement = LegalRequirement(
             regulation_name=regulation_name.strip(),
@@ -186,6 +189,8 @@ class LegalRequirementService:
             organization_impact=organization_impact.strip(),
             responsible_person_id=responsible_person_id,
             responsible_person_name=self._person_name(responsible_person_id),
+            responsible_role_id=responsible_role_id,
+            responsible_role_name=self._role_name(responsible_role_id),
             verification_periodicity=self._normalize_periodicity(verification_periodicity),
             last_verification_date=last_verification_date,
             next_verification_date=next_verification_date,
@@ -216,6 +221,7 @@ class LegalRequirementService:
         requirement_summary: str = "",
         organization_impact: str = "",
         responsible_person_id: int | None = None,
+        responsible_role_id: int | None = None,
         verification_periodicity: str = "",
         last_verification_date: date | None = None,
         next_verification_date: date | None = None,
@@ -245,6 +251,7 @@ class LegalRequirementService:
             self._validate_source_section_ids(resolved_source_ids)
         else:
             self._validate_source_section_id(source_section_id)
+        self._validate_responsible_role_id(responsible_role_id)
 
         requirement.regulation_name = regulation_name.strip()
         requirement.regulation_number = regulation_number.strip()
@@ -257,6 +264,8 @@ class LegalRequirementService:
         requirement.organization_impact = organization_impact.strip()
         requirement.responsible_person_id = responsible_person_id
         requirement.responsible_person_name = self._person_name(responsible_person_id)
+        requirement.responsible_role_id = responsible_role_id
+        requirement.responsible_role_name = self._role_name(responsible_role_id)
         requirement.verification_periodicity = self._normalize_periodicity(verification_periodicity)
         requirement.last_verification_date = last_verification_date
         requirement.next_verification_date = next_verification_date
@@ -324,6 +333,17 @@ class LegalRequirementService:
         if worker is None:
             return ""
         return worker.full_name
+
+    def _role_name(self, role_id: int | None) -> str:
+        return responsibility_role_service.display_name(role_id)
+
+    def _validate_responsible_role_id(self, role_id: int | None) -> None:
+        if role_id is None:
+            return
+        if not isinstance(role_id, int) or role_id <= 0:
+            raise ValueError("Neplatná odpovědná role.")
+        if responsibility_role_service.get_by_id(role_id) is None:
+            raise ValueError("Odpovědná role nebyla nalezena.")
 
     def _normalize_periodicity(self, value: str) -> str:
         normalized = (value or "").strip()
