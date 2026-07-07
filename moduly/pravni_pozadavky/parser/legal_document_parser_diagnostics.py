@@ -6,6 +6,7 @@ from pathlib import Path
 from moduly.pravni_pozadavky.parser.legal_document_parser_models import (
     LegalDocumentParseResult,
     ParsedLegalSection,
+    SECTION_ATTACHMENT,
     SECTION_DIVISION,
     SECTION_HEAD,
     SECTION_LETTER,
@@ -16,6 +17,7 @@ from moduly.pravni_pozadavky.parser.legal_document_parser_models import (
 
 _VALID_PARENT_TYPES: dict[str, frozenset[str]] = {
     SECTION_PART: frozenset(),
+    SECTION_ATTACHMENT: frozenset(),
     SECTION_HEAD: frozenset({SECTION_PART}),
     SECTION_DIVISION: frozenset({SECTION_HEAD, SECTION_PART}),
     SECTION_PARAGRAPH: frozenset({SECTION_DIVISION, SECTION_HEAD, SECTION_PART}),
@@ -25,6 +27,7 @@ _VALID_PARENT_TYPES: dict[str, frozenset[str]] = {
 
 _ALL_SECTION_TYPES = (
     SECTION_PART,
+    SECTION_ATTACHMENT,
     SECTION_HEAD,
     SECTION_DIVISION,
     SECTION_PARAGRAPH,
@@ -71,7 +74,7 @@ class LegalDocumentParserDiagnostics:
 
             if section.parent_sort_order is None:
                 root_count += 1
-                if section.section_type != SECTION_PART:
+                if section.section_type not in {SECTION_PART, SECTION_ATTACHMENT}:
                     missing_parent_count += 1
                     errors.append(
                         self._error(
@@ -81,12 +84,17 @@ class LegalDocumentParserDiagnostics:
                     )
                 continue
 
-            if section.section_type == SECTION_PART:
+            if section.section_type in {SECTION_PART, SECTION_ATTACHMENT}:
                 invalid_parent_count += 1
+                message = (
+                    "Příloha nesmí mít rodiče."
+                    if section.section_type == SECTION_ATTACHMENT
+                    else "ČÁST nesmí mít rodiče."
+                )
                 errors.append(
                     self._error(
                         section,
-                        "ČÁST nesmí mít rodiče.",
+                        message,
                     ),
                 )
                 continue
@@ -202,6 +210,12 @@ class LegalDocumentParserDiagnostics:
             return f"odst. {section.section_number}".strip()
         if section.section_type == SECTION_LETTER:
             return f"písm. {section.item_letter})".strip()
+        if section.section_type == SECTION_ATTACHMENT:
+            if section.title:
+                return section.title.strip()
+            if section.section_number:
+                return f"Příloha č. {section.section_number}".strip()
+            return "Příloha"
         return section.section_number or section.section_type
 
     def _error(self, section: ParsedLegalSection, message: str) -> HierarchyError:

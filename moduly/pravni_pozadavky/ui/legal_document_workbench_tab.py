@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from moduly.pravni_pozadavky.constants import legal_section_display_label
+from moduly.pravni_pozadavky.constants import SECTION_ATTACHMENT, legal_section_display_label
 from moduly.pravni_pozadavky.sluzby.legal_requirement_creation_service import (
     legal_requirement_creation_service,
 )
@@ -97,6 +97,13 @@ class LegalDocumentWorkbenchTab(QWidget):
         section = legal_section_service.get_by_id(section_id)
         if section is None:
             self.editor.clear_form()
+            return
+
+        if section.section_type == SECTION_ATTACHMENT:
+            self.editor.load_attachment_preview(
+                section_text=section.text or "",
+                context_label=legal_section_display_label(section),
+            )
             return
 
         if not LegalSectionTree.allows_requirement_creation(section.section_type):

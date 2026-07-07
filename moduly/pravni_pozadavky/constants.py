@@ -105,6 +105,7 @@ SECTION_DIVISION = "dil"
 SECTION_PARAGRAPH = "paragraf"
 SECTION_SUBSECTION = "odstavec"
 SECTION_LETTER = "pismeno"
+SECTION_ATTACHMENT = "priloha"
 
 VALID_SECTION_TYPES = frozenset(
     {
@@ -114,6 +115,7 @@ VALID_SECTION_TYPES = frozenset(
         SECTION_PARAGRAPH,
         SECTION_SUBSECTION,
         SECTION_LETTER,
+        SECTION_ATTACHMENT,
     }
 )
 
@@ -124,6 +126,7 @@ SECTION_TYPE_LABELS: dict[str, str] = {
     SECTION_PARAGRAPH: "Paragraf",
     SECTION_SUBSECTION: "Odstavec",
     SECTION_LETTER: "Písmeno",
+    SECTION_ATTACHMENT: "Příloha",
 }
 
 
@@ -239,6 +242,13 @@ def legal_section_display_label(section) -> str:
     item_letter = (getattr(section, "item_letter", "") or "").strip()
     title = (getattr(section, "title", "") or "").strip()
     section_type = (getattr(section, "section_type", "") or "").strip()
+
+    if section_type == SECTION_ATTACHMENT:
+        if title:
+            return title
+        if section_number:
+            return f"Příloha č. {section_number}"
+        return "Příloha"
 
     parts: list[str] = []
     if paragraph:

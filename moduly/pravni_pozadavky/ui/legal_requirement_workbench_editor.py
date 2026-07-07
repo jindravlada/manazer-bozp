@@ -93,6 +93,26 @@ class LegalRequirementWorkbenchEditor(QWidget):
         self.note.clear()
         self._set_enabled(False)
 
+    def load_attachment_preview(self, *, section_text: str = "", context_label: str = "") -> None:
+        self._requirement_id = None
+        self._source_section_id = None
+        self._legal_document_id = None
+        self._legal_section_id = None
+        self._regulation_number = ""
+        self._provision = ""
+        self._processing_status = None
+        self._organization_impact = ""
+
+        self.context_label.setText(context_label or "Příloha")
+        self.section_text.setPlainText(section_text)
+        self.regulation_name.clear()
+        self.requirement_summary.clear()
+        self.area.clear()
+        self.responsible_person.set_person_id(None)
+        self.periodicity.setCurrentIndex(0)
+        self.note.clear()
+        self._set_enabled(False)
+
     def load_requirement(self, requirement, *, section_text: str = "", context_label: str = "") -> None:
         self._requirement_id = requirement.id
         self._source_section_id = requirement.source_section_id

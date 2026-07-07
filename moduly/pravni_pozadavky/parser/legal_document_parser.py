@@ -7,6 +7,7 @@ from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_LABELS, VALID_DOCUME
 from moduly.pravni_pozadavky.parser.legal_document_parser_models import (
     LegalDocumentParseResult,
     ParsedLegalSection,
+    SECTION_ATTACHMENT,
     SECTION_DIVISION,
     SECTION_HEAD,
     SECTION_LETTER,
@@ -21,6 +22,10 @@ _DIVISION_RE = re.compile(r"^\s*DÍL\s+(.+?)\s*$", re.IGNORECASE)
 _PARAGRAPH_RE = re.compile(r"^\s*§\s*(\d+[a-z]?)\s*(.*)$", re.IGNORECASE)
 _SUBSECTION_RE = re.compile(r"^\s*\((\d+)\)\s*(.*)$")
 _LETTER_RE = re.compile(r"^\s*([a-záčďéěíňóřšťúůýž])\)\s*(.*)$", re.IGNORECASE)
+_ATTACHMENT_RE = re.compile(
+    r"^\s*(Příloha(?:\s+č\.\s*(?P<number>\d+))?(?:\s+k\s+.+)?)\s*$",
+    re.IGNORECASE,
+)
 
 _SECTION_DEBUG_LABELS = {
     SECTION_PART: "CAST",
@@ -29,6 +34,7 @@ _SECTION_DEBUG_LABELS = {
     SECTION_PARAGRAPH: "PARAGRAF",
     SECTION_SUBSECTION: "ODSTAVEC",
     SECTION_LETTER: "PISMENO",
+    SECTION_ATTACHMENT: "PRILOHA",
 }
 
 
@@ -45,7 +51,7 @@ class _HierarchyContext:
     current_subsection: int | None = None
 
     def parent_for(self, section_type: str) -> int | None:
-        if section_type == SECTION_PART:
+        if section_type in {SECTION_PART, SECTION_ATTACHMENT}:
             return None
         if section_type == SECTION_HEAD:
             return self.current_part
@@ -167,6 +173,7 @@ class LegalDocumentParser:
         sort_order = 0
         current: ParsedLegalSection | None = None
         awaiting_paragraph_title = False
+        in_attachment_mode = False
         hierarchy = _HierarchyContext()
 
         def flush_current(*, allow_bare_paragraph: bool = True) -> None:
@@ -185,7 +192,7 @@ class LegalDocumentParser:
             awaiting_paragraph_title = False
 
         def start_section(**kwargs) -> None:
-            nonlocal current, awaiting_paragraph_title
+            nonlocal current, awaiting_paragraph_title, in_attachment_mode
             section_type = kwargs.get("section_type")
             flush_current()
             if section_type == SECTION_PARAGRAPH:
@@ -193,6 +200,7 @@ class LegalDocumentParser:
             elif section_type == SECTION_SUBSECTION:
                 hierarchy.current_subsection = None
             current = ParsedLegalSection(**kwargs)
+            in_attachment_mode = section_type == SECTION_ATTACHMENT
             awaiting_paragraph_title = section_type == SECTION_PARAGRAPH
 
         def append_text(line: str) -> None:
@@ -205,7 +213,28 @@ class LegalDocumentParser:
                 current.text = line
 
         def process_line(line: str) -> None:
-            nonlocal current, awaiting_paragraph_title
+            nonlocal current, awaiting_paragraph_title, in_attachment_mode
+
+            if in_attachment_mode:
+                match = _ATTACHMENT_RE.match(line)
+                if match:
+                    start_section(
+                        section_type=SECTION_ATTACHMENT,
+                        section_number=(match.group("number") or "").strip(),
+                        title=match.group(1).strip(),
+                    )
+                    return
+                append_text(line)
+                return
+
+            match = _ATTACHMENT_RE.match(line)
+            if match:
+                start_section(
+                    section_type=SECTION_ATTACHMENT,
+                    section_number=(match.group("number") or "").strip(),
+                    title=match.group(1).strip(),
+                )
+                return
 
             match = _PART_RE.match(line)
             if match:
@@ -312,6 +341,12 @@ class LegalDocumentParser:
             return bool(section.section_number.strip() or section.text.strip())
         if section.section_type == SECTION_LETTER:
             return bool(section.item_letter.strip() or section.text.strip())
+        if section.section_type == SECTION_ATTACHMENT:
+            return bool(
+                section.section_number.strip()
+                or section.title.strip()
+                or section.text.strip()
+            )
         return bool(
             section.section_number.strip()
             or section.title.strip()

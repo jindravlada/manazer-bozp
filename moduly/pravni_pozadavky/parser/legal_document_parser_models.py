@@ -6,6 +6,7 @@ SECTION_DIVISION = "dil"
 SECTION_PARAGRAPH = "paragraf"
 SECTION_SUBSECTION = "odstavec"
 SECTION_LETTER = "pismeno"
+SECTION_ATTACHMENT = "priloha"
 
 
 @dataclass

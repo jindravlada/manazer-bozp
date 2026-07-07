@@ -297,6 +297,33 @@ class LegalRequirementWorkbenchWidgetTestCase(unittest.TestCase):
         self.assertNotIn("Text požadavku:", labels)
         self.assertEqual(editor.requirement_summary.toolTip(), "")
 
+    def test_click_on_attachment_shows_text_without_editor(self) -> None:
+        from moduly.pravni_pozadavky.constants import SECTION_ATTACHMENT
+        from moduly.pravni_pozadavky.ui.legal_document_workbench_tab import (
+            LegalDocumentWorkbenchTab,
+        )
+
+        document = self._create_document()
+        version = self._create_version(document)
+        attachment = legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_ATTACHMENT,
+            section_number="1",
+            title="Příloha č. 1 k nařízení vlády č. 378/2001 Sb.",
+            text="Technický obsah přílohy s položkami a) b) c).",
+            sort_order=1,
+        )
+
+        tab = LegalDocumentWorkbenchTab(document_id=document.id, version_id=version.id)
+        tab.tree.select_section_id(attachment.id)
+        tab.load_section(attachment.id)
+
+        assert tab.editor is not None
+        self.assertIn("Technický obsah přílohy", tab.editor.section_text.toPlainText())
+        self.assertEqual(tab.editor.regulation_name.text(), "")
+        self.assertFalse(tab.editor.save_btn.isEnabled())
+
     def test_workbench_creates_ten_consecutive_requirements(self) -> None:
         document = self._create_document()
         version = self._create_version(document)

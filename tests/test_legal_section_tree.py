@@ -23,6 +23,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
     from moduly.pravni_pozadavky.constants import (
         DOCUMENT_TYPE_ZAKON,
+        SECTION_ATTACHMENT,
         SECTION_DIVISION,
         SECTION_HEAD,
         SECTION_LETTER,
@@ -228,6 +229,7 @@ class LegalSectionTreeUtilsTestCase(unittest.TestCase):
         self.assertFalse(LegalSectionTree.allows_requirement_creation(SECTION_PART))
         self.assertFalse(LegalSectionTree.allows_requirement_creation(SECTION_HEAD))
         self.assertFalse(LegalSectionTree.allows_requirement_creation(SECTION_DIVISION))
+        self.assertFalse(LegalSectionTree.allows_requirement_creation(SECTION_ATTACHMENT))
 
 
 class LegalSectionTreeWidgetTestCase(unittest.TestCase):
