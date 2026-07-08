@@ -403,5 +403,137 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         self.assertEqual(dialog.provision_text_view.toPlainText(), _MISSING_SECTION_TEXT)
 
 
+class LegalRequirementDialogChildrenTabTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        cls._app = QApplication.instance() or QApplication([])
+
+    def setUp(self) -> None:
+        from sqlalchemy import delete
+
+        from core.database.session import get_session
+        from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
+
+        with get_session() as session:
+            session.execute(delete(LegalRequirement))
+            session.commit()
+
+    def _tab_names(self, dialog: LegalRequirementDialog) -> list[str]:
+        return [dialog.tabs.tabText(index) for index in range(dialog.tabs.count())]
+
+    def test_root_process_dialog_shows_children_tab(self) -> None:
+        from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
+            legal_requirement_service,
+        )
+
+        root = legal_requirement_service.create_requirement(
+            title="Řízení VTZ",
+            process_code="P-015",
+        )
+
+        dialog = LegalRequirementDialog(requirement=root)
+
+        self.assertIn("Podřízené procesy", self._tab_names(dialog))
+        self.assertIsNotNone(dialog.children_tab)
+
+    def test_child_process_dialog_hides_children_tab(self) -> None:
+        from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
+            legal_requirement_service,
+        )
+
+        root = legal_requirement_service.create_requirement(
+            title="Řízení VTZ",
+            process_code="P-015",
+        )
+        child = legal_requirement_service.create_requirement(
+            title="Elektrická zařízení",
+            parent_requirement_id=root.id,
+        )
+
+        dialog = LegalRequirementDialog(requirement=child)
+
+        self.assertNotIn("Podřízené procesy", self._tab_names(dialog))
+
+    def test_children_tab_lists_child_processes(self) -> None:
+        from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
+            legal_requirement_service,
+        )
+        from moduly.pravni_pozadavky.ui.legal_requirement_children_table import (
+            COL_ACTIVE,
+            COL_CODE,
+            COL_TITLE,
+        )
+
+        root = legal_requirement_service.create_requirement(
+            title="Řízení VTZ",
+            process_code="P-015",
+        )
+        child = legal_requirement_service.create_requirement(
+            title="Elektrická zařízení",
+            parent_requirement_id=root.id,
+        )
+
+        dialog = LegalRequirementDialog(requirement=root)
+        dialog.children_tab.refresh()
+
+        self.assertEqual(dialog.children_tab.table.rowCount(), 1)
+        self.assertEqual(dialog.children_tab.table.item(0, COL_CODE).text(), child.process_code)
+        self.assertEqual(dialog.children_tab.table.item(0, COL_TITLE).text(), "Elektrická zařízení")
+        self.assertEqual(dialog.children_tab.table.item(0, COL_ACTIVE).text(), "Ano")
+
+    def test_new_child_process_creates_child_and_opens_editor(self) -> None:
+        from unittest.mock import patch
+
+        from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
+            legal_requirement_service,
+        )
+
+        root = legal_requirement_service.create_requirement(
+            title="Řízení VTZ",
+            process_code="P-015",
+        )
+        dialog = LegalRequirementDialog(requirement=root)
+
+        with patch(
+            "moduly.pravni_pozadavky.ui.legal_requirement_children_tab.exec_maximized",
+            return_value=False,
+        ):
+            dialog.children_tab.create_child_process()
+
+        children = legal_requirement_service.list_children(root.id)
+        self.assertEqual(len(children), 1)
+        self.assertEqual(children[0].process_code, "P-015.1")
+        self.assertEqual(children[0].parent_requirement_id, root.id)
+
+    def test_open_child_process_opens_editor_for_selected_child(self) -> None:
+        from unittest.mock import patch
+
+        from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
+            legal_requirement_service,
+        )
+
+        root = legal_requirement_service.create_requirement(
+            title="Řízení VTZ",
+            process_code="P-015",
+        )
+        child = legal_requirement_service.create_requirement(
+            title="Elektrická zařízení",
+            parent_requirement_id=root.id,
+        )
+        dialog = LegalRequirementDialog(requirement=root)
+        dialog.children_tab.table.selectRow(0)
+
+        with patch(
+            "moduly.pravni_pozadavky.ui.legal_requirement_children_tab.exec_maximized",
+            return_value=False,
+        ) as open_dialog:
+            dialog.children_tab.open_selected_child()
+
+        self.assertTrue(open_dialog.called)
+        opened_dialog = open_dialog.call_args.args[0]
+        self.assertEqual(opened_dialog.requirement.id, child.id)
+
+
 if __name__ == "__main__":
     unittest.main()

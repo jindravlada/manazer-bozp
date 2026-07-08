@@ -44,6 +44,9 @@ from moduly.pravni_pozadavky.sluzby.legal_section_display_text_service import (
 from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
 from moduly.pravni_pozadavky.ui.legal_document_selector import LegalDocumentNameSelector
 from moduly.pravni_pozadavky.ui.legal_requirement_sanctions_tab import LegalRequirementSanctionsTab
+from moduly.pravni_pozadavky.ui.legal_requirement_children_tab import (
+    LegalRequirementChildrenTab,
+)
 from moduly.pravni_pozadavky.ui.legal_requirement_sources_widget import (
     LegalRequirementSourcesWidget,
     _MISSING_SECTION_TEXT,
@@ -67,6 +70,10 @@ class LegalRequirementDialog(QDialog):
 
         self.tabs = QTabWidget()
         self.tabs.addTab(self._main_tab(), "Řídicí proces")
+        self.children_tab: LegalRequirementChildrenTab | None = None
+        if self._should_show_children_tab():
+            self.children_tab = LegalRequirementChildrenTab(requirement.id)
+            self.tabs.addTab(wrap_in_scroll_area(self.children_tab), "Podřízené procesy")
         self.sanctions_tab = LegalRequirementSanctionsTab(
             requirement.id if requirement is not None else None,
         )
@@ -154,7 +161,16 @@ class LegalRequirementDialog(QDialog):
         identification_group = QGroupBox("Identifikace procesu")
         identification_form = QFormLayout(identification_group)
         identification_form.addRow("Kód procesu:", self.process_code)
-        identification_form.addRow("Řídicí proces:", self.process_title)
+        title_row = QWidget()
+        title_row_layout = QHBoxLayout(title_row)
+        title_row_layout.setContentsMargins(0, 0, 0, 0)
+        title_row_layout.addWidget(self.process_title, 1)
+        title_row_layout.addWidget(
+            self.active_checkbox,
+            0,
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+        )
+        identification_form.addRow("Řídicí proces:", title_row)
         left_layout.addWidget(identification_group, 0)
 
         sources_group = QGroupBox("Právní podklady")
@@ -177,8 +193,12 @@ class LegalRequirementDialog(QDialog):
         management_form.addRow("Poslední ověření:", self.last_verification)
         management_form.addRow("Další ověření:", self.next_verification)
         management_form.addRow("Stav plnění:", self.compliance_status)
-        management_form.addRow("Poznámka:", self.note)
-        management_form.addRow("", self.active_checkbox)
+        note_block = QWidget()
+        note_layout = QVBoxLayout(note_block)
+        note_layout.setContentsMargins(0, 0, 0, 0)
+        note_layout.addWidget(QLabel("Poznámka:"))
+        note_layout.addWidget(self.note)
+        management_form.addRow(note_block)
         left_layout.addWidget(management_group, 0)
 
         left_widget.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
@@ -211,6 +231,13 @@ class LegalRequirementDialog(QDialog):
 
         self._display_section_text(self.sources_widget.selected_section_id())
         return tab
+
+    def _should_show_children_tab(self) -> bool:
+        return (
+            self.requirement is not None
+            and self.requirement.id is not None
+            and self.requirement.parent_requirement_id is None
+        )
 
     def _load_requirement(self, requirement) -> None:
         self.process_code.setText(requirement.process_code or "")
