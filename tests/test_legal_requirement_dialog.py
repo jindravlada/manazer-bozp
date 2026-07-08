@@ -380,6 +380,7 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
             "(1) Zařazení práce do kategorie vyjadřuje souhrnné hodnocení.",
             dialog.provision_text_view.toPlainText(),
         )
+        self.assertTrue(dialog.provision_text_view.toPlainText().startswith("§ 2\n\n"))
         self.assertIn(
             "(2) Při zařazování prací do kategorií se stanoví kategorie.",
             dialog.provision_text_view.toPlainText(),
