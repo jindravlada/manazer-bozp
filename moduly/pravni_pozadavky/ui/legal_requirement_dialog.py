@@ -165,7 +165,7 @@ class LegalRequirementDialog(QDialog):
         process_group = QGroupBox("Řízení procesu")
         process_form = QFormLayout(process_group)
         process_form.addRow("Způsob plnění:", self.requirement_summary)
-        process_form.addRow("Dopad na organizaci:", self.organization_impact)
+        process_form.addRow("Metodika plnění:", self.organization_impact)
         left_layout.addWidget(process_group, 0)
 
         management_group = QGroupBox("Správa procesu")
