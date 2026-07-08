@@ -436,6 +436,28 @@ class LegalRequirementDialogChildrenTabTestCase(unittest.TestCase):
 
         self.assertIn("Podřízené procesy", self._tab_names(dialog))
         self.assertIsNotNone(dialog.children_tab)
+        self.assertEqual(dialog.parent_process_label.text(), "")
+
+    def test_child_process_dialog_shows_parent_process_label(self) -> None:
+        from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
+            legal_requirement_service,
+        )
+
+        root = legal_requirement_service.create_requirement(
+            title="Řízení vyhrazených technických zařízení",
+            process_code="P-015",
+        )
+        child = legal_requirement_service.create_requirement(
+            title="Elektrická zařízení",
+            parent_requirement_id=root.id,
+        )
+
+        dialog = LegalRequirementDialog(requirement=child)
+
+        self.assertEqual(
+            dialog.parent_process_label.text(),
+            "P-015 – Řízení vyhrazených technických zařízení",
+        )
 
     def test_child_process_dialog_hides_children_tab(self) -> None:
         from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (

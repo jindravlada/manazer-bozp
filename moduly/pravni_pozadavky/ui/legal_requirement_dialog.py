@@ -107,6 +107,9 @@ class LegalRequirementDialog(QDialog):
 
         self.process_code = QLineEdit()
         self.process_code.setReadOnly(True)
+        self.parent_process_caption = QLabel("Nadřazený proces:")
+        self.parent_process_label = QLabel()
+        self.parent_process_label.setWordWrap(True)
 
         self.regulation_name = LegalDocumentNameSelector()
         self.regulation_name.setVisible(False)
@@ -161,6 +164,7 @@ class LegalRequirementDialog(QDialog):
         identification_group = QGroupBox("Identifikace procesu")
         identification_form = QFormLayout(identification_group)
         identification_form.addRow("Kód procesu:", self.process_code)
+        identification_form.addRow(self.parent_process_caption, self.parent_process_label)
         title_row = QWidget()
         title_row_layout = QHBoxLayout(title_row)
         title_row_layout.setContentsMargins(0, 0, 0, 0)
@@ -171,6 +175,7 @@ class LegalRequirementDialog(QDialog):
             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
         )
         identification_form.addRow("Řídicí proces:", title_row)
+        self._set_parent_process_display(None)
         left_layout.addWidget(identification_group, 0)
 
         sources_group = QGroupBox("Právní podklady")
@@ -239,9 +244,28 @@ class LegalRequirementDialog(QDialog):
             and self.requirement.parent_requirement_id is None
         )
 
+    def _set_parent_process_display(self, text: str | None) -> None:
+        visible = bool(text)
+        self.parent_process_caption.setVisible(visible)
+        self.parent_process_label.setVisible(visible)
+        self.parent_process_label.setText(text or "")
+
+    def _load_parent_process_display(self, requirement) -> None:
+        if requirement.parent_requirement_id is None:
+            self._set_parent_process_display(None)
+            return
+
+        parent = legal_requirement_service.get_by_id(requirement.parent_requirement_id)
+        if parent is None:
+            self._set_parent_process_display(None)
+            return
+
+        self._set_parent_process_display(legal_requirement_merged_target_label(parent))
+
     def _load_requirement(self, requirement) -> None:
         self.process_code.setText(requirement.process_code or "")
         self.process_title.setText(requirement.title or "")
+        self._load_parent_process_display(requirement)
         if requirement.merged_into_requirement_id is not None:
             target = legal_requirement_service.get_by_id(requirement.merged_into_requirement_id)
             if target is not None:
@@ -289,6 +313,7 @@ class LegalRequirementDialog(QDialog):
     def _load_draft(self, draft) -> None:
         self.process_code.setText("Přidělí se automaticky při uložení")
         self.process_title.clear()
+        self._set_parent_process_display(None)
         self.merged_into_label.setVisible(False)
         self.regulation_name.reload(selected_id=draft.legal_document_id)
         self._last_document_id = draft.legal_document_id
