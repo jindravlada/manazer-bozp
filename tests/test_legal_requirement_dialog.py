@@ -230,6 +230,20 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         self.assertEqual(dialog.tabs.tabText(0), "Řídicí proces")
         self.assertEqual(dialog.tabs.tabText(2), "Vazby procesu")
 
+    def test_dialog_uses_vertical_splitter_for_left_work_areas(self) -> None:
+        from PySide6.QtCore import Qt
+        from PySide6.QtWidgets import QSplitter
+
+        dialog = LegalRequirementDialog()
+        vertical_splitters = [
+            splitter
+            for splitter in dialog.findChildren(QSplitter)
+            if splitter.orientation() == Qt.Orientation.Vertical
+        ]
+
+        self.assertEqual(len(vertical_splitters), 1)
+        self.assertEqual(vertical_splitters[0].count(), 2)
+
     def test_dialog_without_sources_prompts_to_select_source(self) -> None:
         from moduly.pravni_pozadavky.ui.legal_requirement_sources_widget import _NO_SOURCE_SELECTED_TEXT
 

@@ -93,14 +93,10 @@ class LegalRequirementDialog(QDialog):
         root_layout = QHBoxLayout(tab)
         root_layout.setContentsMargins(0, 0, 0, 0)
 
-        left_widget = QWidget()
-        left_layout = QVBoxLayout(left_widget)
-
         self.merged_into_label = QLabel()
         self.merged_into_label.setWordWrap(True)
         self.merged_into_label.setObjectName("InfoText")
         self.merged_into_label.setVisible(False)
-        left_layout.addWidget(self.merged_into_label)
 
         self.process_code = QLineEdit()
         self.process_code.setReadOnly(True)
@@ -150,23 +146,32 @@ class LegalRequirementDialog(QDialog):
         self.note.setMinimumHeight(70)
         self.active_checkbox = QCheckBox("Aktivní záznam")
 
+        left_top_widget = QWidget()
+        left_top_layout = QVBoxLayout(left_top_widget)
+        left_top_layout.setContentsMargins(0, 0, 0, 0)
+        left_top_layout.addWidget(self.merged_into_label)
+
         identification_group = QGroupBox("Identifikace procesu")
         identification_form = QFormLayout(identification_group)
         identification_form.addRow("Kód procesu:", self.process_code)
         identification_form.addRow("Řídicí proces:", self.process_title)
-        left_layout.addWidget(identification_group, 0)
+        left_top_layout.addWidget(identification_group, 0)
 
         sources_group = QGroupBox("Právní podklady")
         sources_layout = QVBoxLayout(sources_group)
         sources_layout.setContentsMargins(8, 8, 8, 8)
         sources_layout.addWidget(self.sources_widget, 1)
-        left_layout.addWidget(sources_group, 1)
+        left_top_layout.addWidget(sources_group, 1)
+
+        left_bottom_widget = QWidget()
+        left_bottom_layout = QVBoxLayout(left_bottom_widget)
+        left_bottom_layout.setContentsMargins(0, 0, 0, 0)
 
         process_group = QGroupBox("Řízení procesu")
         process_form = QFormLayout(process_group)
         process_form.addRow("Způsob plnění:", self.requirement_summary)
         process_form.addRow("Metodika plnění:", self.organization_impact)
-        left_layout.addWidget(process_group, 0)
+        left_bottom_layout.addWidget(process_group, 0)
 
         management_group = QGroupBox("Správa procesu")
         management_form = QFormLayout(management_group)
@@ -178,9 +183,21 @@ class LegalRequirementDialog(QDialog):
         management_form.addRow("Stav plnění:", self.compliance_status)
         management_form.addRow("Poznámka:", self.note)
         management_form.addRow("", self.active_checkbox)
-        left_layout.addWidget(management_group, 0)
+        left_bottom_layout.addWidget(management_group, 0)
 
-        left_widget.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        left_splitter = QSplitter(Qt.Orientation.Vertical)
+        left_splitter.addWidget(left_top_widget)
+        left_splitter.addWidget(left_bottom_widget)
+        left_splitter.setStretchFactor(0, 7)
+        left_splitter.setStretchFactor(1, 3)
+        left_splitter.setChildrenCollapsible(False)
+        left_splitter.setSizes([700, 300])
+        left_splitter.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+
+        left_widget = QWidget()
+        left_layout = QVBoxLayout(left_widget)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.addWidget(left_splitter)
 
         self.regulation_name.document_changed.connect(self._on_regulation_name_changed)
         self.regulation_number.textChanged.connect(self._on_regulation_number_changed)
