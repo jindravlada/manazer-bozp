@@ -260,7 +260,11 @@ class PravniPozadavkyRequirementsTab(QWidget):
 
         dialog = LegalRequirementDialog(self, requirement=requirement)
         if exec_maximized(dialog):
-            legal_requirement_service.update_requirement(requirement_id, **dialog.get_data())
+            try:
+                legal_requirement_service.update_requirement(requirement_id, **dialog.get_data())
+            except ValueError as exc:
+                QMessageBox.warning(self, "Právní požadavky", str(exc))
+                return
             self.refresh()
 
     def merge_processes(self) -> None:
@@ -327,7 +331,11 @@ class PravniPozadavkyRequirementsTab(QWidget):
             QMessageBox.No,
         )
         if answer == QMessageBox.Yes:
-            legal_requirement_service.archive_requirement(requirement_id)
+            try:
+                legal_requirement_service.archive_requirement(requirement_id)
+            except ValueError as exc:
+                QMessageBox.warning(self, "Archivovat požadavek", str(exc))
+                return
             self.refresh()
 
     def verify_selected_requirement(self) -> None:

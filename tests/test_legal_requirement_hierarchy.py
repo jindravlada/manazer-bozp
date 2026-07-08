@@ -226,6 +226,48 @@ class LegalRequirementHierarchyTestCase(unittest.TestCase):
                 parent_requirement_id=merged_source.id,
             )
 
+    def test_cannot_archive_root_with_active_children(self) -> None:
+        root = legal_requirement_service.create_requirement(
+            title="Řízení VTZ",
+            process_code="P-015",
+        )
+        legal_requirement_service.create_requirement(
+            title="Elektrická zařízení",
+            parent_requirement_id=root.id,
+        )
+
+        with self.assertRaisesRegex(ValueError, "aktivní podřízené procesy"):
+            legal_requirement_service.archive_requirement(root.id)
+
+    def test_can_archive_root_after_children_deactivated(self) -> None:
+        root = legal_requirement_service.create_requirement(
+            title="Řízení VTZ",
+            process_code="P-016",
+        )
+        child = legal_requirement_service.create_requirement(
+            title="Elektrická zařízení",
+            parent_requirement_id=root.id,
+        )
+        legal_requirement_service.archive_requirement(child.id)
+
+        archived_root = legal_requirement_service.archive_requirement(root.id)
+
+        self.assertIsNotNone(archived_root)
+        self.assertFalse(archived_root.active)
+
+    def test_cannot_deactivate_root_via_update_with_active_children(self) -> None:
+        root = legal_requirement_service.create_requirement(
+            title="Řízení VTZ",
+            process_code="P-017",
+        )
+        legal_requirement_service.create_requirement(
+            title="Elektrická zařízení",
+            parent_requirement_id=root.id,
+        )
+
+        with self.assertRaisesRegex(ValueError, "aktivní podřízené procesy"):
+            legal_requirement_service.update_requirement(root.id, active=False)
+
     def test_first_child_gets_parent_code_suffix_one(self) -> None:
         parent = legal_requirement_service.create_requirement(
             title="Řízení VTZ",

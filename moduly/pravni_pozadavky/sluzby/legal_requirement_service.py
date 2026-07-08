@@ -400,6 +400,8 @@ class LegalRequirementService:
         requirement.compliance_status = self._normalize_compliance_status(compliance_status)
         requirement.processing_status = self._normalize_processing_status(processing_status)
         requirement.note = note.strip()
+        if not active and requirement.active:
+            self._validate_can_deactivate_requirement(requirement_id)
         requirement.active = active
         if parent_requirement_id is not _UNSET_PARENT_REQUIREMENT_ID:
             requirement.parent_requirement_id = parent_requirement_id
@@ -412,6 +414,8 @@ class LegalRequirementService:
         requirement = self.repository.get_by_id(requirement_id)
         if requirement is None:
             return None
+        if requirement.active:
+            self._validate_can_deactivate_requirement(requirement_id)
         requirement.active = False
         return self.repository.update(requirement)
 
@@ -612,6 +616,15 @@ class LegalRequirementService:
             raise ValueError("Neplatná odpovědná role.")
         if responsibility_role_service.get_by_id(role_id) is None:
             raise ValueError("Odpovědná role nebyla nalezena.")
+
+    def _validate_can_deactivate_requirement(self, requirement_id: int) -> None:
+        children = self.list_children(requirement_id)
+        if not children:
+            return
+        raise ValueError(
+            "Proces nelze deaktivovat, protože má aktivní podřízené procesy. "
+            "Nejdříve deaktivujte nebo přesuňte podřízené procesy.",
+        )
 
     def _validate_parent_requirement_id(
         self,
