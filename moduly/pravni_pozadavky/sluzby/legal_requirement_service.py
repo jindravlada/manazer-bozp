@@ -20,6 +20,7 @@ from moduly.pravni_pozadavky.constants import (
     VALID_PROCESSING_STATUSES,
     format_process_code,
     is_valid_process_code,
+    parse_process_code,
     parse_process_code_number,
     process_code_sort_key,
 )
@@ -286,7 +287,10 @@ class LegalRequirementService:
         self._validate_responsible_role_id(responsible_role_id)
         self._validate_parent_requirement_id(parent_requirement_id)
 
-        resolved_process_code = self._resolve_process_code_for_create(process_code)
+        resolved_process_code = self._resolve_process_code_for_create(
+            process_code,
+            parent_requirement_id=parent_requirement_id,
+        )
 
         requirement = LegalRequirement(
             title=title.strip(),
@@ -535,6 +539,27 @@ class LegalRequirementService:
             "sanctions": sanctions_deleted,
         }
 
+    def allocate_child_process_code(self, parent_requirement_id: int) -> str:
+        parent = self.repository.get_by_id(parent_requirement_id)
+        if parent is None:
+            raise ValueError("Nadřazený proces nebyl nalezen.")
+
+        parent_code = (parent.process_code or "").strip()
+        parent_parts = parse_process_code(parent_code)
+        if parent_parts is None or parent_parts.child is not None:
+            raise ValueError("Nadřazený proces nemá platný kořenový kód.")
+
+        max_child_number = 0
+        for requirement in self.repository.get_all():
+            if requirement.parent_requirement_id != parent_requirement_id:
+                continue
+            parts = parse_process_code(requirement.process_code or "")
+            if parts is None or parts.child is None:
+                continue
+            max_child_number = max(max_child_number, parts.child)
+
+        return f"{parent_code}.{max_child_number + 1}"
+
     def _allocate_process_code(self) -> str:
         max_number = 0
         for requirement in self.repository.get_all():
@@ -543,15 +568,31 @@ class LegalRequirementService:
                 max_number = max(max_number, number)
         return format_process_code(max_number + 1)
 
-    def _resolve_process_code_for_create(self, process_code: str | None) -> str:
+    def _resolve_process_code_for_create(
+        self,
+        process_code: str | None,
+        *,
+        parent_requirement_id: int | None = None,
+    ) -> str:
         requested_code = (process_code or "").strip()
         if not requested_code:
+            if parent_requirement_id is not None:
+                return self.allocate_child_process_code(parent_requirement_id)
             return self._allocate_process_code()
         if not is_valid_process_code(requested_code):
             raise ValueError("Kód procesu má neplatný formát.")
-        if self.get_by_process_code(requested_code, active_only=False) is not None:
+        if self._process_code_is_taken(requested_code):
             raise ValueError("Kód procesu je již použit.")
         return requested_code
+
+    def _process_code_is_taken(self, process_code: str) -> bool:
+        code = (process_code or "").strip()
+        if not code:
+            return False
+        for requirement in self.repository.get_all():
+            if (requirement.process_code or "").strip() == code:
+                return True
+        return False
 
     def _person_name(self, person_id: int | None) -> str:
         if person_id is None:

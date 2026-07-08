@@ -226,6 +226,110 @@ class LegalRequirementHierarchyTestCase(unittest.TestCase):
                 parent_requirement_id=merged_source.id,
             )
 
+    def test_first_child_gets_parent_code_suffix_one(self) -> None:
+        parent = legal_requirement_service.create_requirement(
+            title="Řízení VTZ",
+            process_code="P-015",
+        )
+
+        child = legal_requirement_service.create_requirement(
+            title="Elektrická zařízení",
+            parent_requirement_id=parent.id,
+        )
+
+        self.assertEqual(child.process_code, "P-015.1")
+        self.assertEqual(
+            legal_requirement_service.allocate_child_process_code(parent.id),
+            "P-015.2",
+        )
+
+    def test_second_child_gets_next_child_code(self) -> None:
+        parent = legal_requirement_service.create_requirement(
+            title="Řízení VTZ",
+            process_code="P-015",
+        )
+        legal_requirement_service.create_requirement(
+            title="Elektrická zařízení",
+            parent_requirement_id=parent.id,
+        )
+
+        second_child = legal_requirement_service.create_requirement(
+            title="Plynová zařízení",
+            parent_requirement_id=parent.id,
+        )
+
+        self.assertEqual(second_child.process_code, "P-015.2")
+
+    def test_archived_child_does_not_reuse_child_number(self) -> None:
+        parent = legal_requirement_service.create_requirement(
+            title="Řízení VTZ",
+            process_code="P-015",
+        )
+        archived_child = legal_requirement_service.create_requirement(
+            title="Elektrická zařízení",
+            parent_requirement_id=parent.id,
+        )
+        legal_requirement_service.archive_requirement(archived_child.id)
+
+        next_child = legal_requirement_service.create_requirement(
+            title="Plynová zařízení",
+            parent_requirement_id=parent.id,
+        )
+
+        self.assertEqual(archived_child.process_code, "P-015.1")
+        self.assertEqual(next_child.process_code, "P-015.2")
+
+    def test_child_code_uses_max_existing_child_number(self) -> None:
+        parent = legal_requirement_service.create_requirement(
+            title="Řízení VTZ",
+            process_code="P-015",
+        )
+        legal_requirement_service.create_requirement(
+            title="Elektrická zařízení",
+            process_code="P-015.1",
+            parent_requirement_id=parent.id,
+        )
+        legal_requirement_service.create_requirement(
+            title="Tlaková zařízení",
+            process_code="P-015.3",
+            parent_requirement_id=parent.id,
+        )
+
+        next_child = legal_requirement_service.create_requirement(
+            title="Zdvihací zařízení",
+            parent_requirement_id=parent.id,
+        )
+
+        self.assertEqual(next_child.process_code, "P-015.4")
+
+    def test_root_process_code_allocation_unchanged(self) -> None:
+        first = legal_requirement_service.create_requirement(title="První kořen")
+        second = legal_requirement_service.create_requirement(title="Druhý kořen")
+
+        self.assertEqual(first.process_code, "P-001")
+        self.assertEqual(second.process_code, "P-002")
+
+    def test_explicit_child_process_code_is_respected(self) -> None:
+        parent = legal_requirement_service.create_requirement(
+            title="Řízení VTZ",
+            process_code="P-015",
+        )
+
+        child = legal_requirement_service.create_requirement(
+            title="Elektrická zařízení",
+            process_code="P-015.9",
+            parent_requirement_id=parent.id,
+        )
+
+        self.assertEqual(child.process_code, "P-015.9")
+
+        with self.assertRaisesRegex(ValueError, "již použit"):
+            legal_requirement_service.create_requirement(
+                title="Duplicitní kód",
+                process_code="P-015.9",
+                parent_requirement_id=parent.id,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
