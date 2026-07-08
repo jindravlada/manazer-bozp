@@ -487,6 +487,40 @@ def _ensure_legal_requirement_columns() -> None:
         _migrate_legal_requirement_process_codes()
     if "merged_into_requirement_id" not in columns:
         _add_column("legal_requirements", "merged_into_requirement_id INTEGER")
+    if "parent_requirement_id" not in columns:
+        _add_column(
+            "legal_requirements",
+            "parent_requirement_id INTEGER REFERENCES legal_requirements(id)",
+        )
+    _ensure_legal_requirement_parent_index()
+
+
+def _table_indexes(table_name: str) -> set[str]:
+    with _db_engine().connect() as connection:
+        indexes = connection.execute(text(f"PRAGMA index_list({table_name})")).fetchall()
+        return {index[1] for index in indexes}
+
+
+def _ensure_index(index_name: str, create_sql: str) -> None:
+    with _db_engine().connect() as connection:
+        connection.execute(text(create_sql))
+        connection.commit()
+
+
+def _ensure_legal_requirement_parent_index() -> None:
+    columns = _table_columns("legal_requirements")
+    if not columns or "parent_requirement_id" not in columns:
+        return
+    index_name = "ix_legal_requirements_parent_requirement_id"
+    if index_name in _table_indexes("legal_requirements"):
+        return
+    _ensure_index(
+        index_name,
+        (
+            "CREATE INDEX ix_legal_requirements_parent_requirement_id "
+            "ON legal_requirements(parent_requirement_id)"
+        ),
+    )
 
 
 def _migrate_legal_requirement_process_codes() -> None:

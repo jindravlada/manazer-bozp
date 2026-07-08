@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 from datetime import date, datetime
 
-from sqlalchemy import Boolean, Date, DateTime, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database.base import Base
 from moduly.pravni_pozadavky.constants import DEFAULT_PROCESSING_STATUS
@@ -46,6 +48,21 @@ class LegalRequirement(Base):
 
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     merged_into_requirement_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    parent_requirement_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("legal_requirements.id"),
+        nullable=True,
+    )
+
+    parent: Mapped[LegalRequirement | None] = relationship(
+        remote_side="LegalRequirement.id",
+        back_populates="children",
+        foreign_keys=[parent_requirement_id],
+    )
+    children: Mapped[list[LegalRequirement]] = relationship(
+        back_populates="parent",
+        foreign_keys=[parent_requirement_id],
+    )
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(
