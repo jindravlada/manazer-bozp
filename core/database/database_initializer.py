@@ -90,6 +90,8 @@ def initialize_database() -> None:
     _ensure_legal_requirement_columns()
     _ensure_legal_requirement_sources_table()
     _ensure_legal_change_columns()
+    _ensure_legal_document_columns()
+    _migrate_legal_document_types()
     _normalize_task_status_values()
     _normalize_accident_legacy_values()
 
@@ -628,6 +630,35 @@ def _ensure_legal_change_columns() -> None:
         return
     if "legal_check_run_id" not in columns:
         _add_column("legal_changes", "legal_check_run_id INTEGER")
+
+
+def _ensure_legal_document_columns() -> None:
+    columns = _table_columns("legal_documents")
+    if not columns:
+        return
+    if "included_in_processes" not in columns:
+        _add_column("legal_documents", "included_in_processes BOOLEAN DEFAULT 0")
+
+
+def _migrate_legal_document_types() -> None:
+    columns = _table_columns("legal_documents")
+    if not columns or "document_type" not in columns:
+        return
+
+    from moduly.pravni_pozadavky.legal_document_type_utils import detect_document_type_from_text
+
+    with _db_engine().connect() as connection:
+        rows = connection.execute(
+            text("SELECT id, title, document_type FROM legal_documents"),
+        ).fetchall()
+        for document_id, title, current_type in rows:
+            detected_type = detect_document_type_from_text(title or "")
+            if detected_type != (current_type or "").strip():
+                connection.execute(
+                    text("UPDATE legal_documents SET document_type = :document_type WHERE id = :id"),
+                    {"document_type": detected_type, "id": document_id},
+                )
+        connection.commit()
 
 
 def _normalize_task_status_values() -> None:

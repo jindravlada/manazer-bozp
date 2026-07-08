@@ -1,6 +1,6 @@
 from datetime import date
 
-from moduly.pravni_pozadavky.constants import VALID_DOCUMENT_TYPES
+from moduly.pravni_pozadavky.legal_document_type_utils import normalize_document_type
 from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
 from moduly.pravni_pozadavky.repository.legal_document_repository import LegalDocumentRepository
 
@@ -31,6 +31,7 @@ class LegalDocumentService:
         local_file_path: str = "",
         note: str = "",
         active: bool = True,
+        included_in_processes: bool = False,
     ) -> LegalDocument:
         normalized_type = self._normalize_document_type(document_type)
         normalized_title = title.strip()
@@ -51,6 +52,7 @@ class LegalDocumentService:
             local_file_path=local_file_path.strip(),
             note=note.strip(),
             active=active,
+            included_in_processes=included_in_processes,
         )
         return self.repository.create(document)
 
@@ -71,6 +73,7 @@ class LegalDocumentService:
         local_file_path: str = "",
         note: str = "",
         active: bool = True,
+        included_in_processes: bool = False,
     ) -> LegalDocument | None:
         document = self.repository.get_by_id(document_id)
         if document is None:
@@ -93,6 +96,7 @@ class LegalDocumentService:
         document.local_file_path = local_file_path.strip()
         document.note = note.strip()
         document.active = active
+        document.included_in_processes = included_in_processes
         return self.repository.update(document)
 
     def deactivate(self, document_id: int) -> LegalDocument | None:
@@ -110,10 +114,7 @@ class LegalDocumentService:
         return self.repository.update(document)
 
     def _normalize_document_type(self, value: str) -> str:
-        normalized = (value or "").strip()
-        if normalized not in VALID_DOCUMENT_TYPES:
-            raise ValueError("Typ právního předpisu je povinný.")
-        return normalized
+        return normalize_document_type(value)
 
 
 legal_document_service = LegalDocumentService()

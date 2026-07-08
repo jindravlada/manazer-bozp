@@ -29,6 +29,7 @@ class LegalDocument(Base):
     note: Mapped[str] = mapped_column(Text, default="")
 
     active: Mapped[bool] = mapped_column(Boolean, default=True)
+    included_in_processes: Mapped[bool] = mapped_column(Boolean, default=False)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(

@@ -28,6 +28,8 @@ with patch.object(Path, "home", return_value=_TMP):
         DOCUMENT_TYPE_ZAKON,
         FILTER_ACTIVE_ONLY,
         FILTER_ALL_RECORDS,
+        FILTER_INCLUDED_IN_PROCESSES_NO,
+        FILTER_INCLUDED_IN_PROCESSES_YES,
         FILTER_INACTIVE_ONLY,
     )
     from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
@@ -54,13 +56,14 @@ class PravniPredpisyTabFilterTestCase(unittest.TestCase):
             session.execute(delete(LegalDocument))
             session.commit()
 
-    def _create_document(self, *, title: str, active: bool = True):
+    def _create_document(self, *, title: str, active: bool = True, included_in_processes: bool = False):
         document = legal_document_service.create(
             document_type=DOCUMENT_TYPE_ZAKON,
             title=title,
             number="262/2006 Sb." if title == "Zákoník práce" else "390/2021 Sb.",
             year=2006 if title == "Zákoník práce" else 2021,
             short_title="ZP" if title == "Zákoník práce" else "Test",
+            included_in_processes=included_in_processes,
         )
         if not active:
             legal_document_service.deactivate(document.id)
@@ -125,6 +128,32 @@ class PravniPredpisyTabFilterTestCase(unittest.TestCase):
         titles = self._titles_in_table(tab)
         self.assertEqual(titles, ["Zákoník práce"])
         self.assertIn("Zobrazeno: 1 / 2", tab.text_filter.count_label.text())
+
+    def test_included_in_processes_filter_shows_only_yes(self) -> None:
+        self._create_document(title="V procesech", included_in_processes=True)
+        self._create_document(title="Mimo procesy", included_in_processes=False)
+
+        tab = PravniPredpisyTab()
+        tab.active_filter.setCurrentText(FILTER_ALL_RECORDS)
+        tab.included_in_processes_filter.setCurrentText(FILTER_INCLUDED_IN_PROCESSES_YES)
+        tab.refresh()
+
+        self.assertEqual(self._titles_in_table(tab), ["V procesech"])
+
+    def test_included_in_processes_filter_shows_only_no(self) -> None:
+        self._create_document(title="V procesech", included_in_processes=True)
+        self._create_document(title="Mimo procesy", included_in_processes=False)
+
+        tab = PravniPredpisyTab()
+        tab.active_filter.setCurrentText(FILTER_ALL_RECORDS)
+        tab.included_in_processes_filter.setCurrentText(FILTER_INCLUDED_IN_PROCESSES_NO)
+        tab.refresh()
+
+        self.assertEqual(self._titles_in_table(tab), ["Mimo procesy"])
+
+    def test_internet_import_button_removed(self) -> None:
+        tab = PravniPredpisyTab()
+        self.assertFalse(hasattr(tab, "import_internet_btn"))
 
 
 if __name__ == "__main__":

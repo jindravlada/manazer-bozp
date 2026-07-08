@@ -15,11 +15,15 @@ def _format_date(value) -> str:
     return str(value)
 
 
+def _format_included_in_processes(value: bool) -> str:
+    return "ANO" if value else "NE"
+
+
 class LegalDocumentTable(QTableWidget):
     def __init__(self):
         super().__init__()
 
-        self.setColumnCount(8)
+        self.setColumnCount(9)
         self.setHorizontalHeaderLabels([
             "ID",
             "Typ",
@@ -28,6 +32,7 @@ class LegalDocumentTable(QTableWidget):
             "Název",
             "Zkratka",
             "Účinnost od",
+            "Zahrnuto v procesech",
             "Aktivní",
         ])
 
@@ -44,14 +49,15 @@ class LegalDocumentTable(QTableWidget):
         header = self.horizontalHeader()
         header.setStretchLastSection(False)
         header.setSectionResizeMode(4, QHeaderView.Stretch)
-        for column in (1, 2, 3, 5, 6, 7):
+        for column in (1, 2, 3, 5, 6, 7, 8):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
         self.setColumnWidth(1, 130)
         self.setColumnWidth(2, 100)
         self.setColumnWidth(3, 60)
         self.setColumnWidth(5, 120)
         self.setColumnWidth(6, 110)
-        self.setColumnWidth(7, 80)
+        self.setColumnWidth(7, 150)
+        self.setColumnWidth(8, 80)
 
     def load_documents(self, documents) -> None:
         self.setRowCount(len(documents))
@@ -68,7 +74,8 @@ class LegalDocumentTable(QTableWidget):
             self._set_item(row, 4, document.title)
             self._set_item(row, 5, document.short_title)
             self._set_item(row, 6, _format_date(document.effective_from or document.valid_from))
-            self._set_item(row, 7, "Ano" if document.active else "Ne")
+            self._set_item(row, 7, _format_included_in_processes(document.included_in_processes))
+            self._set_item(row, 8, "Ano" if document.active else "Ne")
 
             if not document.active:
                 brush = QBrush(QColor("#f0f0f0"))

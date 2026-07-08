@@ -72,6 +72,22 @@ class LegalDocumentServiceTestCase(unittest.TestCase):
         self.assertIsNotNone(document.id)
         self.assertEqual(document.title, "Zákoník práce")
         self.assertTrue(document.active)
+        self.assertFalse(document.included_in_processes)
+
+    def test_update_legal_document_included_in_processes(self) -> None:
+        document = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_ZAKON,
+            title="Předpis k úpravě",
+        )
+        updated = legal_document_service.update(
+            document.id,
+            document_type=DOCUMENT_TYPE_ZAKON,
+            title="Předpis k úpravě",
+            included_in_processes=True,
+        )
+
+        assert updated is not None
+        self.assertTrue(updated.included_in_processes)
 
     def test_update_legal_document(self) -> None:
         document = legal_document_service.create(

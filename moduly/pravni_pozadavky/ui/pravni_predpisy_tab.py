@@ -13,8 +13,11 @@ from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from moduly.pravni_pozadavky.constants import (
     DEFAULT_DOCUMENT_ACTIVE_FILTER,
+    DEFAULT_INCLUDED_IN_PROCESSES_FILTER,
     FILTER_ACTIVE_ONLY,
     FILTER_ALL_RECORDS,
+    FILTER_INCLUDED_IN_PROCESSES_NO,
+    FILTER_INCLUDED_IN_PROCESSES_YES,
     FILTER_INACTIVE_ONLY,
 )
 from moduly.pravni_pozadavky.import_export.legal_document_json_export_service import (
@@ -34,9 +37,6 @@ from moduly.pravni_pozadavky.ui.legal_document_dialog import LegalDocumentDialog
 from moduly.pravni_pozadavky.ui.legal_document_bulk_internet_import_dialog import (
     LegalDocumentBulkInternetImportDialog,
 )
-from moduly.pravni_pozadavky.ui.legal_document_internet_import_dialog import (
-    LegalDocumentInternetImportDialog,
-)
 from moduly.pravni_pozadavky.ui.legal_document_txt_import_dialog import LegalDocumentTxtImportDialog
 from moduly.pravni_pozadavky.ui.legal_document_table import LegalDocumentTable
 
@@ -53,7 +53,6 @@ class PravniPredpisyTab(QWidget):
         self.new_btn = QPushButton("Nový")
         self.import_btn = QPushButton("Import JSON")
         self.import_txt_btn = QPushButton("Import TXT")
-        self.import_internet_btn = QPushButton("Import Internet")
         self.import_bulk_internet_btn = QPushButton("Hromadný import")
         self.export_btn = QPushButton("Export JSON")
         self.edit_btn = QPushButton("Upravit")
@@ -65,10 +64,16 @@ class PravniPredpisyTab(QWidget):
             FILTER_ALL_RECORDS,
         ])
         self.active_filter.setCurrentText(DEFAULT_DOCUMENT_ACTIVE_FILTER)
+        self.included_in_processes_filter = QComboBox()
+        self.included_in_processes_filter.addItems([
+            FILTER_ALL_RECORDS,
+            FILTER_INCLUDED_IN_PROCESSES_YES,
+            FILTER_INCLUDED_IN_PROCESSES_NO,
+        ])
+        self.included_in_processes_filter.setCurrentText(DEFAULT_INCLUDED_IN_PROCESSES_FILTER)
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.import_btn)
         toolbar.addWidget(self.import_txt_btn)
-        toolbar.addWidget(self.import_internet_btn)
         toolbar.addWidget(self.import_bulk_internet_btn)
         toolbar.addWidget(self.export_btn)
         toolbar.addWidget(self.edit_btn)
@@ -76,6 +81,8 @@ class PravniPredpisyTab(QWidget):
         toolbar.addStretch()
         toolbar.addWidget(QLabel("Záznamy:"))
         toolbar.addWidget(self.active_filter)
+        toolbar.addWidget(QLabel("V procesech:"))
+        toolbar.addWidget(self.included_in_processes_filter)
 
         self.table = LegalDocumentTable()
         self.text_filter = FilterBar(self.table, placeholder="🔍 Hledat předpis...")
@@ -87,7 +94,6 @@ class PravniPredpisyTab(QWidget):
         self.new_btn.clicked.connect(self.new_document)
         self.import_btn.clicked.connect(self.import_json_document)
         self.import_txt_btn.clicked.connect(self.import_txt_document)
-        self.import_internet_btn.clicked.connect(self.import_internet_document)
         self.import_bulk_internet_btn.clicked.connect(self.import_bulk_internet_documents)
         self.export_btn.clicked.connect(self.export_json_document)
         self.edit_btn.clicked.connect(self.edit_selected_document)
@@ -95,6 +101,7 @@ class PravniPredpisyTab(QWidget):
         self.table.doubleClicked.connect(self.edit_selected_document)
         self.table.itemSelectionChanged.connect(self._update_action_buttons)
         self.active_filter.currentIndexChanged.connect(self.refresh)
+        self.included_in_processes_filter.currentIndexChanged.connect(self.refresh)
 
         self.refresh()
 
@@ -108,9 +115,15 @@ class PravniPredpisyTab(QWidget):
     def _filter_documents(self, documents):
         active_mode = self.active_filter.currentText()
         if active_mode == FILTER_ACTIVE_ONLY:
-            return [document for document in documents if document.active]
-        if active_mode == FILTER_INACTIVE_ONLY:
-            return [document for document in documents if not document.active]
+            documents = [document for document in documents if document.active]
+        elif active_mode == FILTER_INACTIVE_ONLY:
+            documents = [document for document in documents if not document.active]
+
+        included_mode = self.included_in_processes_filter.currentText()
+        if included_mode == FILTER_INCLUDED_IN_PROCESSES_YES:
+            return [document for document in documents if document.included_in_processes]
+        if included_mode == FILTER_INCLUDED_IN_PROCESSES_NO:
+            return [document for document in documents if not document.included_in_processes]
         return documents
 
     def _selected_document(self):
@@ -190,28 +203,6 @@ class PravniPredpisyTab(QWidget):
         QMessageBox.information(
             self,
             "Import TXT",
-            (
-                f"Import dokončen.\n\n"
-                f"Předpis: {document_title}\n"
-                f"Verze: {version_name}\n"
-                f"Počet částí: {result.section_count}"
-            ),
-        )
-        self.refresh()
-
-    def import_internet_document(self) -> None:
-        dialog = LegalDocumentInternetImportDialog(self)
-        if not exec_maximized(dialog) or dialog.import_result is None:
-            return
-
-        result = dialog.import_result
-        document = legal_document_service.get_by_id(result.document_id)
-        version = legal_document_version_service.get_by_id(result.version_id)
-        document_title = document.title if document is not None else f"Předpis #{result.document_id}"
-        version_name = version.version_name if version is not None else f"Verze #{result.version_id}"
-        QMessageBox.information(
-            self,
-            "Import Internet",
             (
                 f"Import dokončen.\n\n"
                 f"Předpis: {document_title}\n"

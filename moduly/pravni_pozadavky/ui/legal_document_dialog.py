@@ -62,6 +62,9 @@ class LegalDocumentDialog(QDialog):
         self.local_file_path = QLineEdit()
         self.note = QTextEdit()
         self.note.setMinimumHeight(70)
+        self.included_in_processes = QComboBox()
+        self.included_in_processes.addItem("NE", False)
+        self.included_in_processes.addItem("ANO", True)
 
         form.addRow("Typ předpisu:", self.document_type)
         form.addRow("Číslo:", self.number)
@@ -74,6 +77,7 @@ class LegalDocumentDialog(QDialog):
         form.addRow("Účinnost do:", self.effective_to)
         form.addRow("Zdroj URL:", self.source_url)
         form.addRow("Lokální soubor:", self.local_file_path)
+        form.addRow("Zahrnuto v procesech:", self.included_in_processes)
         form.addRow("Poznámka:", self.note)
         return tab
 
@@ -92,6 +96,8 @@ class LegalDocumentDialog(QDialog):
         self.source_url.setText(document.source_url)
         self.local_file_path.setText(document.local_file_path)
         self.note.setPlainText(document.note)
+        included_index = self.included_in_processes.findData(document.included_in_processes)
+        self.included_in_processes.setCurrentIndex(included_index if included_index >= 0 else 0)
 
     def get_data(self) -> dict:
         document_type = self.document_type.currentData() or ""
@@ -111,6 +117,7 @@ class LegalDocumentDialog(QDialog):
             "source_url": self.source_url.text().strip(),
             "local_file_path": self.local_file_path.text().strip(),
             "note": self.note.toPlainText().strip(),
+            "included_in_processes": bool(self.included_in_processes.currentData()),
         }
 
     def accept(self) -> None:

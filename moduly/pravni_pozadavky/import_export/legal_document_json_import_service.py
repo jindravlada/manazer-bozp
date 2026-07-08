@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_LABELS, VALID_DOCUMENT_TYPES
+from moduly.pravni_pozadavky.legal_document_type_utils import normalize_document_type
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
 from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
     legal_document_version_service,
@@ -106,7 +106,7 @@ class LegalDocumentJsonImportService:
             raise ValueError("Sekce version musí být objekt.")
 
         document = legal_document_service.create(
-            document_type=self._normalize_document_type(document_data.get("document_type")),
+            document_type=normalize_document_type(document_data.get("document_type")),
             title=self._required_text(document_data.get("title"), "Název předpisu je povinný."),
             number=self._optional_text(document_data.get("number")),
             year=self._optional_int(document_data.get("year")),
@@ -118,6 +118,7 @@ class LegalDocumentJsonImportService:
             source_url=self._optional_text(document_data.get("source_url")),
             local_file_path=self._optional_text(document_data.get("local_file_path")),
             note=self._optional_text(document_data.get("note")),
+            included_in_processes=False,
         )
 
         version = legal_document_version_service.create(
@@ -217,20 +218,6 @@ class LegalDocumentJsonImportService:
             version_id=version.id,
             section_count=section_count,
         )
-
-    def _normalize_document_type(self, value) -> str:
-        normalized = (str(value or "")).strip().lower()
-        if not normalized:
-            raise ValueError("Typ předpisu je povinný.")
-
-        if normalized in VALID_DOCUMENT_TYPES:
-            return normalized
-
-        by_label = {label.lower(): key for key, label in DOCUMENT_TYPE_LABELS.items()}
-        if normalized in by_label:
-            return by_label[normalized]
-
-        raise ValueError(f"Neplatný typ předpisu: {value}")
 
     def _required_text(self, value, message: str) -> str:
         text = self._optional_text(value)

@@ -65,6 +65,7 @@ class LegalDocumentJsonImportTestCase(unittest.TestCase):
         self.assertEqual(document.title, "Nařízení vlády č. 390/2021 Sb.")
         self.assertEqual(document.number, "390")
         self.assertEqual(document.year, 2021)
+        self.assertFalse(document.included_in_processes)
 
     def test_import_creates_version(self) -> None:
         result = legal_document_json_import_service.import_from_file(self.sample_path)
