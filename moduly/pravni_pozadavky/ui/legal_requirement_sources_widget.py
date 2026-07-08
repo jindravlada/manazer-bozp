@@ -46,7 +46,8 @@ class LegalRequirementSourcesWidget(QWidget):
         self.tree.setHeaderHidden(True)
         self.tree.setSelectionMode(QTreeWidget.SelectionMode.SingleSelection)
         self.tree.setEditTriggers(QTreeWidget.EditTrigger.NoEditTriggers)
-        layout.addWidget(self.tree)
+        self.tree.setMinimumHeight(300)
+        layout.addWidget(self.tree, 1)
 
         self.add_btn.clicked.connect(self._add_source)
         self.remove_btn.clicked.connect(self._remove_selected)

@@ -9,10 +9,10 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QScrollArea,
     QSplitter,
     QTabWidget,
     QTextEdit,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -61,7 +61,7 @@ class LegalRequirementDialog(QDialog):
         self._last_document_id: int | None = None
 
         self.setWindowTitle("Právní požadavek" if requirement is None else "Upravit řídicí proces")
-        configure_resizable_form_dialog(self, width=1100, height=720, min_width=900, min_height=520)
+        configure_resizable_form_dialog(self, width=1100, height=780, min_width=900, min_height=600)
 
         layout = QVBoxLayout(self)
 
@@ -116,11 +116,25 @@ class LegalRequirementDialog(QDialog):
         self.legal_section = QComboBox()
         self.legal_section.setVisible(False)
         self.sources_widget = LegalRequirementSourcesWidget()
+        self.sources_widget.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
         self.area = QLineEdit()
         self.requirement_summary = QTextEdit()
-        self.requirement_summary.setMinimumHeight(80)
+        self.requirement_summary.setMinimumHeight(48)
+        self.requirement_summary.setMaximumHeight(64)
+        self.requirement_summary.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
         self.organization_impact = QTextEdit()
-        self.organization_impact.setMinimumHeight(80)
+        self.organization_impact.setMinimumHeight(48)
+        self.organization_impact.setMaximumHeight(64)
+        self.organization_impact.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
         self.responsible_person = ThpWorkerSelector()
         self.responsible_role = ResponsibilityRoleSelector()
         self.periodicity = QComboBox()
@@ -140,18 +154,19 @@ class LegalRequirementDialog(QDialog):
         identification_form = QFormLayout(identification_group)
         identification_form.addRow("Kód procesu:", self.process_code)
         identification_form.addRow("Řídicí proces:", self.process_title)
-        left_layout.addWidget(identification_group)
+        left_layout.addWidget(identification_group, 0)
 
         sources_group = QGroupBox("Právní podklady")
         sources_layout = QVBoxLayout(sources_group)
-        sources_layout.addWidget(self.sources_widget)
-        left_layout.addWidget(sources_group)
+        sources_layout.setContentsMargins(8, 8, 8, 8)
+        sources_layout.addWidget(self.sources_widget, 1)
+        left_layout.addWidget(sources_group, 1)
 
         process_group = QGroupBox("Řízení procesu")
         process_form = QFormLayout(process_group)
         process_form.addRow("Způsob plnění:", self.requirement_summary)
         process_form.addRow("Dopad na organizaci:", self.organization_impact)
-        left_layout.addWidget(process_group)
+        left_layout.addWidget(process_group, 0)
 
         management_group = QGroupBox("Správa procesu")
         management_form = QFormLayout(management_group)
@@ -163,19 +178,14 @@ class LegalRequirementDialog(QDialog):
         management_form.addRow("Stav plnění:", self.compliance_status)
         management_form.addRow("Poznámka:", self.note)
         management_form.addRow("", self.active_checkbox)
-        left_layout.addWidget(management_group)
+        left_layout.addWidget(management_group, 0)
 
-        left_layout.addStretch()
+        left_widget.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
 
         self.regulation_name.document_changed.connect(self._on_regulation_name_changed)
         self.regulation_number.textChanged.connect(self._on_regulation_number_changed)
         self.legal_section.currentIndexChanged.connect(self._on_legal_section_changed)
         self.sources_widget.tree.itemSelectionChanged.connect(self._on_source_selection_changed)
-
-        left_scroll = QScrollArea()
-        left_scroll.setWidgetResizable(True)
-        left_scroll.setFrameShape(QScrollArea.Shape.NoFrame)
-        left_scroll.setWidget(left_widget)
 
         provision_text_group = QGroupBox("Znění právního podkladu")
         provision_text_layout = QVBoxLayout(provision_text_group)
@@ -192,7 +202,7 @@ class LegalRequirementDialog(QDialog):
         provision_text_layout.addWidget(self.provision_text_view, 1)
 
         splitter = QSplitter(Qt.Orientation.Horizontal)
-        splitter.addWidget(left_scroll)
+        splitter.addWidget(left_widget)
         splitter.addWidget(provision_text_group)
         splitter.setStretchFactor(0, 3)
         splitter.setStretchFactor(1, 2)
