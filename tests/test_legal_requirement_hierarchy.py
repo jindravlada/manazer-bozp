@@ -112,6 +112,120 @@ class LegalRequirementHierarchyTestCase(unittest.TestCase):
             self.assertIsNotNone(loaded_child.parent)
             self.assertEqual(loaded_child.parent.id, parent.id)
 
+    def test_list_roots_returns_only_active_root_processes(self) -> None:
+        root_a = legal_requirement_service.create_requirement(
+            title="Kořen A",
+            process_code="P-015",
+        )
+        root_b = legal_requirement_service.create_requirement(
+            title="Kořen B",
+            process_code="P-016",
+        )
+        legal_requirement_service.create_requirement(
+            title="Podřízený",
+            process_code="P-015.1",
+            parent_requirement_id=root_a.id,
+        )
+        archived_root = legal_requirement_service.create_requirement(
+            title="Archivovaný kořen",
+            process_code="P-017",
+        )
+        legal_requirement_service.archive_requirement(archived_root.id)
+
+        roots = legal_requirement_service.list_roots()
+
+        self.assertEqual([item.id for item in roots], [root_a.id, root_b.id])
+
+    def test_list_children_returns_only_active_children_of_parent(self) -> None:
+        parent = legal_requirement_service.create_requirement(
+            title="Kořen",
+            process_code="P-015",
+        )
+        child_a = legal_requirement_service.create_requirement(
+            title="Elektrická",
+            process_code="P-015.1",
+            parent_requirement_id=parent.id,
+        )
+        child_b = legal_requirement_service.create_requirement(
+            title="Plynová",
+            process_code="P-015.2",
+            parent_requirement_id=parent.id,
+        )
+        archived_child = legal_requirement_service.create_requirement(
+            title="Tlaková",
+            process_code="P-015.3",
+            parent_requirement_id=parent.id,
+        )
+        legal_requirement_service.archive_requirement(archived_child.id)
+
+        children = legal_requirement_service.list_children(parent.id)
+
+        self.assertEqual([item.id for item in children], [child_a.id, child_b.id])
+
+    def test_cannot_set_parent_to_self(self) -> None:
+        process = legal_requirement_service.create_requirement(
+            title="Kořen",
+            process_code="P-015",
+        )
+
+        with self.assertRaisesRegex(ValueError, "sám sobě"):
+            legal_requirement_service.update_requirement(
+                process.id,
+                parent_requirement_id=process.id,
+            )
+
+    def test_cannot_create_depth_two_hierarchy(self) -> None:
+        root = legal_requirement_service.create_requirement(
+            title="Kořen",
+            process_code="P-015",
+        )
+        child = legal_requirement_service.create_requirement(
+            title="Podřízený",
+            process_code="P-015.1",
+            parent_requirement_id=root.id,
+        )
+
+        with self.assertRaisesRegex(ValueError, "kořenový proces"):
+            legal_requirement_service.create_requirement(
+                title="Vnuk",
+                process_code="P-016",
+                parent_requirement_id=child.id,
+            )
+
+    def test_cannot_use_inactive_or_merged_parent(self) -> None:
+        inactive_parent = legal_requirement_service.create_requirement(
+            title="Neaktivní rodič",
+            process_code="P-020",
+        )
+        legal_requirement_service.archive_requirement(inactive_parent.id)
+
+        with self.assertRaisesRegex(ValueError, "není aktivní"):
+            legal_requirement_service.create_requirement(
+                title="Dítě neaktivního",
+                process_code="P-020.1",
+                parent_requirement_id=inactive_parent.id,
+            )
+
+        merge_target = legal_requirement_service.create_requirement(
+            title="Cíl sloučení",
+            process_code="P-021",
+        )
+        merged_source = legal_requirement_service.create_requirement(
+            title="Zdroj sloučení",
+            process_code="P-022",
+        )
+        legal_requirement_service.merge_process_requirements(
+            merged_source.id,
+            merge_target.id,
+        )
+
+        with self.assertRaisesRegex(ValueError, "Sloučený proces"):
+            legal_requirement_service.create_requirement(
+                title="Dítě sloučeného",
+                process_code="P-022.1",
+                parent_requirement_id=merged_source.id,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

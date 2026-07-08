@@ -21,6 +21,7 @@ from moduly.pravni_pozadavky.constants import (
     format_process_code,
     is_valid_process_code,
     parse_process_code_number,
+    process_code_sort_key,
 )
 from moduly.ukoly.modely.task import Task
 from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
@@ -38,6 +39,9 @@ from moduly.pravni_pozadavky.repository.legal_requirement_source_repository impo
     LegalRequirementSourceRepository,
 )
 from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
+
+
+_UNSET_PARENT_REQUIREMENT_ID = object()
 
 
 def _add_months(value: date, months: int) -> date:
@@ -78,6 +82,22 @@ class LegalRequirementService:
 
     def get_all(self, *, active_only: bool | None = None) -> list[LegalRequirement]:
         return self.repository.get_all(active_only=active_only)
+
+    def list_roots(self) -> list[LegalRequirement]:
+        roots = [
+            requirement
+            for requirement in self.repository.get_all(active_only=True)
+            if requirement.parent_requirement_id is None
+        ]
+        return sorted(roots, key=process_code_sort_key)
+
+    def list_children(self, parent_requirement_id: int) -> list[LegalRequirement]:
+        children = [
+            requirement
+            for requirement in self.repository.get_all(active_only=True)
+            if requirement.parent_requirement_id == parent_requirement_id
+        ]
+        return sorted(children, key=process_code_sort_key)
 
     def list_active_processes(self) -> list[LegalRequirement]:
         from core.utils.czech_sort import czech_sorted
@@ -249,6 +269,7 @@ class LegalRequirementService:
         processing_status: str = DEFAULT_PROCESSING_STATUS,
         note: str = "",
         active: bool = True,
+        parent_requirement_id: int | None = None,
     ) -> LegalRequirement:
         resolved_source_ids = self._resolve_source_section_ids(
             source_section_ids=source_section_ids,
@@ -263,6 +284,7 @@ class LegalRequirementService:
         self._validate_legal_section_id(legal_section_id)
         self._validate_source_section_ids(resolved_source_ids)
         self._validate_responsible_role_id(responsible_role_id)
+        self._validate_parent_requirement_id(parent_requirement_id)
 
         resolved_process_code = self._resolve_process_code_for_create(process_code)
 
@@ -289,6 +311,7 @@ class LegalRequirementService:
             processing_status=self._normalize_processing_status(processing_status),
             note=note.strip(),
             active=active,
+            parent_requirement_id=parent_requirement_id,
         )
         requirement = self.repository.add(requirement)
         if resolved_source_ids:
@@ -321,10 +344,17 @@ class LegalRequirementService:
         processing_status: str = DEFAULT_PROCESSING_STATUS,
         note: str = "",
         active: bool = True,
+        parent_requirement_id: int | None | object = _UNSET_PARENT_REQUIREMENT_ID,
     ) -> LegalRequirement | None:
         requirement = self.repository.get_by_id(requirement_id)
         if requirement is None:
             return None
+
+        if parent_requirement_id is not _UNSET_PARENT_REQUIREMENT_ID:
+            self._validate_parent_requirement_id(
+                parent_requirement_id,
+                requirement_id=requirement_id,
+            )
 
         resolved_source_ids = (
             self._resolve_source_section_ids(
@@ -367,6 +397,8 @@ class LegalRequirementService:
         requirement.processing_status = self._normalize_processing_status(processing_status)
         requirement.note = note.strip()
         requirement.active = active
+        if parent_requirement_id is not _UNSET_PARENT_REQUIREMENT_ID:
+            requirement.parent_requirement_id = parent_requirement_id
         requirement = self.repository.update(requirement)
         if resolved_source_ids is not None:
             self.source_repository.replace_for_requirement(requirement_id, resolved_source_ids)
@@ -539,6 +571,33 @@ class LegalRequirementService:
             raise ValueError("Neplatná odpovědná role.")
         if responsibility_role_service.get_by_id(role_id) is None:
             raise ValueError("Odpovědná role nebyla nalezena.")
+
+    def _validate_parent_requirement_id(
+        self,
+        parent_requirement_id: int | None,
+        *,
+        requirement_id: int | None = None,
+    ) -> None:
+        if parent_requirement_id is None:
+            return
+        if not isinstance(parent_requirement_id, int) or parent_requirement_id <= 0:
+            raise ValueError("Neplatný nadřazený proces.")
+        if requirement_id is not None and parent_requirement_id == requirement_id:
+            raise ValueError("Proces nemůže být nadřazený sám sobě.")
+        if requirement_id is not None and self.list_children(requirement_id):
+            raise ValueError(
+                "Proces s podřízenými procesy nemůže mít nadřazený proces.",
+            )
+
+        parent = self.repository.get_by_id(parent_requirement_id)
+        if parent is None:
+            raise ValueError("Nadřazený proces nebyl nalezen.")
+        if parent.merged_into_requirement_id is not None:
+            raise ValueError("Sloučený proces nelze použít jako nadřazený.")
+        if not parent.active:
+            raise ValueError("Nadřazený proces není aktivní.")
+        if parent.parent_requirement_id is not None:
+            raise ValueError("Podřízený proces může mít jen kořenový proces jako rodiče.")
 
     def _normalize_periodicity(self, value: str) -> str:
         normalized = (value or "").strip()
