@@ -217,6 +217,17 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         self.assertNotIn("Číslo předpisu:", labels)
         self.assertNotIn("Ustanovení:", labels)
         self.assertEqual(dialog.tabs.tabText(0), "Řídicí proces")
+        self.assertEqual(dialog.tabs.tabText(2), "Vazby procesu")
+
+    def test_dialog_without_sources_prompts_to_select_source(self) -> None:
+        from moduly.pravni_pozadavky.ui.legal_requirement_sources_widget import _NO_SOURCE_SELECTED_TEXT
+
+        dialog = LegalRequirementDialog()
+        dialog.sources_widget.table.clearSelection()
+        dialog._display_section_text(None)
+
+        self.assertEqual(dialog.provision_text_view.toPlainText(), _NO_SOURCE_SELECTED_TEXT)
+        self.assertEqual(dialog.provision_text_header.text(), "")
 
     def test_edit_dialog_shows_process_title(self) -> None:
         from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
@@ -257,6 +268,10 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
 
         self.assertTrue(dialog.provision_text_view.isReadOnly())
         self.assertEqual(
+            dialog.provision_text_header.text(),
+            "262/2006 Sb.\n§ 101 odst. 2",
+        )
+        self.assertEqual(
             dialog.provision_text_view.toPlainText(),
             "Text odstavce 2 pro zobrazení.",
         )
@@ -276,6 +291,7 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         dialog.sources_widget._append_row(second_section.id)
         dialog.sources_widget.table.selectRow(1)
 
+        self.assertEqual(dialog.provision_text_header.text(), "262/2006 Sb.\n§ 200")
         self.assertEqual(
             dialog.provision_text_view.toPlainText(),
             "Druhý právní podklad.",
@@ -292,6 +308,7 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         dialog.sources_widget._append_row(empty_section.id)
         dialog.sources_widget.table.selectRow(2)
 
+        self.assertEqual(dialog.provision_text_header.text(), "262/2006 Sb.\n§ 201")
         self.assertEqual(dialog.provision_text_view.toPlainText(), _MISSING_SECTION_TEXT)
 
 

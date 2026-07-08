@@ -22,6 +22,7 @@ from moduly.pravni_pozadavky.ui.legal_requirement_source_add_dialog import (
 )
 
 _SECTION_ID_ROLE = Qt.ItemDataRole.UserRole
+_NO_SOURCE_SELECTED_TEXT = "Nejprve vyberte právní podklad."
 _MISSING_SECTION_TEXT = "Znění ustanovení není k dispozici."
 
 

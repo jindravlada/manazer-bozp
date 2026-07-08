@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QFormLayout,
+    QFrame,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -32,6 +33,7 @@ from moduly.pravni_pozadavky.constants import (
     VALID_COMPLIANCE_STATUSES,
     VALID_PERIODICITIES,
     legal_requirement_merged_target_label,
+    legal_document_regulation_number,
     legal_section_provision_label,
 )
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
@@ -42,6 +44,7 @@ from moduly.pravni_pozadavky.ui.legal_requirement_sanctions_tab import LegalRequ
 from moduly.pravni_pozadavky.ui.legal_requirement_sources_widget import (
     LegalRequirementSourcesWidget,
     _MISSING_SECTION_TEXT,
+    _NO_SOURCE_SELECTED_TEXT,
 )
 
 
@@ -69,7 +72,7 @@ class LegalRequirementDialog(QDialog):
             ENTITY_LEGAL_REQUIREMENT,
             requirement.id if requirement is not None else None,
         )
-        self.tabs.addTab(wrap_in_scroll_area(self.links_widget), "Vazby")
+        self.tabs.addTab(wrap_in_scroll_area(self.links_widget), "Vazby procesu")
         layout.addWidget(self.tabs, 1)
         add_save_cancel_footer(layout, self)
 
@@ -161,10 +164,17 @@ class LegalRequirementDialog(QDialog):
 
         provision_text_group = QGroupBox("Znění právního podkladu")
         provision_text_layout = QVBoxLayout(provision_text_group)
+        self.provision_text_header = QLabel()
+        self.provision_text_header.setWordWrap(True)
+        self.provision_text_separator = QFrame()
+        self.provision_text_separator.setFrameShape(QFrame.Shape.HLine)
+        self.provision_text_separator.setFrameShadow(QFrame.Shadow.Sunken)
         self.provision_text_view = QTextEdit()
         self.provision_text_view.setReadOnly(True)
         self.provision_text_view.setMinimumWidth(320)
-        provision_text_layout.addWidget(self.provision_text_view)
+        provision_text_layout.addWidget(self.provision_text_header)
+        provision_text_layout.addWidget(self.provision_text_separator)
+        provision_text_layout.addWidget(self.provision_text_view, 1)
 
         splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.addWidget(left_scroll)
@@ -256,8 +266,16 @@ class LegalRequirementDialog(QDialog):
 
     def _display_section_text(self, section_id: int | None) -> None:
         if section_id is None:
-            self.provision_text_view.setPlainText(_MISSING_SECTION_TEXT)
+            self.provision_text_header.clear()
+            self.provision_text_header.setVisible(False)
+            self.provision_text_separator.setVisible(False)
+            self.provision_text_view.setPlainText(_NO_SOURCE_SELECTED_TEXT)
             return
+
+        header = self._provision_header_for_section(section_id)
+        self.provision_text_header.setText(header)
+        self.provision_text_header.setVisible(bool(header))
+        self.provision_text_separator.setVisible(bool(header))
 
         section = legal_section_service.get_by_id(section_id)
         if section is None or not (section.text or "").strip():
@@ -265,6 +283,22 @@ class LegalRequirementDialog(QDialog):
             return
 
         self.provision_text_view.setPlainText(section.text.strip())
+
+    def _provision_header_for_section(self, section_id: int) -> str:
+        section = legal_section_service.get_by_id(section_id)
+        if section is None:
+            return ""
+
+        document = legal_document_service.get_by_id(section.legal_document_id)
+        regulation_number = legal_document_regulation_number(document) if document is not None else ""
+        sections_by_id = legal_section_service.build_sections_map([section])
+        provision_label = legal_section_provision_label(section, sections_by_id=sections_by_id)
+        if not provision_label:
+            provision_label = f"Ustanovení #{section.id}"
+
+        if regulation_number and provision_label:
+            return f"{regulation_number}\n{provision_label}"
+        return regulation_number or provision_label
 
     def _current_legal_document_id(self) -> int | None:
         return self.regulation_name.current_document_id()
