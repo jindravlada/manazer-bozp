@@ -19,6 +19,7 @@ from moduly.pravni_pozadavky.constants import (
     VALID_PERIODICITIES,
     VALID_PROCESSING_STATUSES,
     format_process_code,
+    is_valid_process_code,
     parse_process_code_number,
 )
 from moduly.ukoly.modely.task import Task
@@ -122,6 +123,39 @@ class LegalRequirementService:
     def get_by_id(self, requirement_id: int) -> LegalRequirement | None:
         return self.repository.get_by_id(requirement_id)
 
+    def get_by_process_code(
+        self,
+        process_code: str,
+        *,
+        active_only: bool = True,
+    ) -> LegalRequirement | None:
+        code = (process_code or "").strip()
+        if not code:
+            return None
+        for requirement in self.repository.get_all(active_only=active_only):
+            if (requirement.process_code or "").strip() == code:
+                return requirement
+        return None
+
+    def patch_import_metadata(
+        self,
+        requirement_id: int,
+        *,
+        requirement_summary: str | None = None,
+        note: str | None = None,
+        processing_status: str | None = None,
+    ) -> LegalRequirement | None:
+        requirement = self.repository.get_by_id(requirement_id)
+        if requirement is None:
+            return None
+        if requirement_summary is not None:
+            requirement.requirement_summary = requirement_summary.strip()
+        if note is not None:
+            requirement.note = note.strip()
+        if processing_status is not None:
+            requirement.processing_status = self._normalize_processing_status(processing_status)
+        return self.repository.update(requirement)
+
     def get_checks(self, requirement_id: int) -> list[LegalRequirementCheck]:
         return self.check_repository.get_by_requirement_id(requirement_id)
 
@@ -195,6 +229,7 @@ class LegalRequirementService:
         self,
         *,
         title: str = "",
+        process_code: str | None = None,
         regulation_name: str = "",
         regulation_number: str = "",
         provision: str = "",
@@ -229,9 +264,11 @@ class LegalRequirementService:
         self._validate_source_section_ids(resolved_source_ids)
         self._validate_responsible_role_id(responsible_role_id)
 
+        resolved_process_code = self._resolve_process_code_for_create(process_code)
+
         requirement = LegalRequirement(
             title=title.strip(),
-            process_code=self._allocate_process_code(),
+            process_code=resolved_process_code,
             regulation_name=regulation_name.strip(),
             regulation_number=regulation_number.strip(),
             provision=provision.strip(),
@@ -473,6 +510,16 @@ class LegalRequirementService:
             if number is not None:
                 max_number = max(max_number, number)
         return format_process_code(max_number + 1)
+
+    def _resolve_process_code_for_create(self, process_code: str | None) -> str:
+        requested_code = (process_code or "").strip()
+        if not requested_code:
+            return self._allocate_process_code()
+        if not is_valid_process_code(requested_code):
+            raise ValueError("Kód procesu má neplatný formát.")
+        if self.get_by_process_code(requested_code, active_only=False) is not None:
+            raise ValueError("Kód procesu je již použit.")
+        return requested_code
 
     def _person_name(self, person_id: int | None) -> str:
         if person_id is None:

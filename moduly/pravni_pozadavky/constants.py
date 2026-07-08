@@ -1,4 +1,5 @@
 import re
+from typing import NamedTuple
 
 COMPLIANCE_SPLNENO = "splneno"
 COMPLIANCE_CASTECNE_SPLNENO = "castecne_splneno"
@@ -171,25 +172,46 @@ def _strip_section_title_suffix(label: str) -> str:
     return label.strip()
 
 
-_PROCESS_CODE_RE = re.compile(r"^P-(\d+)$", re.IGNORECASE)
+_PROCESS_CODE_RE = re.compile(r"^P-(\d+)(?:\.(\d+))?$", re.IGNORECASE)
+
+
+class ProcessCodeParts(NamedTuple):
+    root: int
+    child: int | None = None
 
 
 def format_process_code(number: int) -> str:
     return f"P-{number:03d}"
 
 
-def parse_process_code_number(code: str) -> int | None:
+def parse_process_code(code: str) -> ProcessCodeParts | None:
     match = _PROCESS_CODE_RE.match((code or "").strip())
     if match is None:
         return None
-    return int(match.group(1))
+    child_text = match.group(2)
+    return ProcessCodeParts(
+        root=int(match.group(1)),
+        child=int(child_text) if child_text is not None else None,
+    )
+
+
+def is_valid_process_code(code: str) -> bool:
+    return parse_process_code(code) is not None
+
+
+def parse_process_code_number(code: str) -> int | None:
+    parts = parse_process_code(code)
+    if parts is None:
+        return None
+    return parts.root
 
 
 def process_code_sort_key(requirement) -> tuple:
-    number = parse_process_code_number(getattr(requirement, "process_code", "") or "")
-    if number is not None:
-        return (0, number)
-    return (1, (getattr(requirement, "process_code", "") or "").strip().lower())
+    code = (getattr(requirement, "process_code", "") or "").strip()
+    parts = parse_process_code(code)
+    if parts is not None:
+        return (0, parts.root, parts.child or 0)
+    return (1, code.lower())
 
 
 def legal_requirement_merged_target_label(target) -> str:
