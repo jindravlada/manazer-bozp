@@ -112,6 +112,35 @@ class LegalSectionDisplayTextServiceTestCase(unittest.TestCase):
             composed,
         )
         self.assertEqual(composed.count("\n\n"), 3)
+        self.assertNotIn("(K § 37 zákona)", composed)
+
+    def test_compose_paragraph_uses_title_when_text_and_subtree_are_empty(self) -> None:
+        document = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_VYHLASKA,
+            title="Vyhláška č. 180/2015 Sb.",
+            number="180",
+            year=2015,
+            short_title="V180",
+        )
+        version = self._create_version(document.id)
+        paragraph = legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="6",
+            title=(
+                "Na mladistvé zaměstnankyně, které jsou těhotné, kojící nebo matky do konce "
+                "devátého měsíce po porodu, se vedle zákazů stanovených v § 2, 3 nebo 4 "
+                "vztahují též zákazy stanovené v § 5 odst. 1 až 3; ustanovení § 5 odst. 4 "
+                "se nepoužije."
+            ),
+            sort_order=1,
+        )
+
+        composed = legal_section_display_text_service.compose(paragraph.id)
+
+        self.assertTrue(composed.startswith("§ 6\n\n"))
+        self.assertIn("Na mladistvé zaměstnankyně, které jsou těhotné", composed)
 
     def test_compose_attachment_text_from_own_node(self) -> None:
         document = self._create_document_432()

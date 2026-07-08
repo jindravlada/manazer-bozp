@@ -39,16 +39,22 @@ class LegalSectionDisplayTextService:
 
     def _compose_paragraph(self, section: LegalSection, own_text: str) -> str:
         child_blocks = self._compose_children_blocks(section.id, depth=0)
-        if not own_text and not child_blocks:
+        title_text = (section.title or "").strip()
+
+        content_blocks: list[str] = []
+        if own_text:
+            content_blocks.append(own_text)
+        content_blocks.extend(child_blocks)
+        if not content_blocks and title_text:
+            content_blocks.append(title_text)
+        if not content_blocks:
             return ""
 
         blocks: list[str] = []
         paragraph = (section.paragraph or "").strip()
         if paragraph:
             blocks.append(f"§ {paragraph}")
-        if own_text:
-            blocks.append(own_text)
-        blocks.extend(child_blocks)
+        blocks.extend(content_blocks)
         return self._join_blocks(blocks)
 
     def _compose_children_blocks(self, parent_section_id: int, *, depth: int) -> list[str]:
