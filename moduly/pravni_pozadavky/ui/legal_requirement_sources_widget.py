@@ -22,6 +22,7 @@ from moduly.pravni_pozadavky.ui.legal_requirement_source_add_dialog import (
 )
 
 _SECTION_ID_ROLE = Qt.ItemDataRole.UserRole
+_MISSING_SECTION_TEXT = "Znění ustanovení není k dispozici."
 
 
 class LegalRequirementSourcesWidget(QWidget):
@@ -58,17 +59,36 @@ class LegalRequirementSourcesWidget(QWidget):
         self.table.setRowCount(0)
         for section_id in section_ids:
             self._append_row(section_id)
+        if self.table.rowCount() > 0:
+            self.table.selectRow(0)
+        else:
+            self.table.clearSelection()
 
     def get_section_ids(self) -> list[int]:
         section_ids: list[int] = []
         for row in range(self.table.rowCount()):
-            item = self.table.item(row, 0)
-            if item is None:
-                continue
-            section_id = item.data(_SECTION_ID_ROLE)
-            if isinstance(section_id, int) and section_id not in section_ids:
+            section_id = self.section_id_for_row(row)
+            if section_id is not None and section_id not in section_ids:
                 section_ids.append(section_id)
         return section_ids
+
+    def section_id_for_row(self, row: int) -> int | None:
+        if row < 0:
+            return None
+        item = self.table.item(row, 0)
+        if item is None:
+            return None
+        section_id = item.data(_SECTION_ID_ROLE)
+        return section_id if isinstance(section_id, int) else None
+
+    def selected_section_id(self) -> int | None:
+        return self.section_id_for_row(self.table.currentRow())
+
+    def select_first_row(self) -> None:
+        if self.table.rowCount() > 0:
+            self.table.selectRow(0)
+        else:
+            self.table.clearSelection()
 
     def _append_row(self, section_id: int) -> None:
         section = legal_section_service.get_by_id(section_id)
@@ -92,6 +112,8 @@ class LegalRequirementSourcesWidget(QWidget):
         provision_item = QTableWidgetItem(provision_label)
         self.table.setItem(row, 0, document_item)
         self.table.setItem(row, 1, provision_item)
+        if self.table.rowCount() == 1:
+            self.table.selectRow(0)
 
     def _add_source(self) -> None:
         dialog = LegalRequirementSourceAddDialog(

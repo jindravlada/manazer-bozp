@@ -1,11 +1,15 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDialog,
     QFormLayout,
     QGroupBox,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
+    QScrollArea,
+    QSplitter,
     QTabWidget,
     QTextEdit,
     QVBoxLayout,
@@ -35,7 +39,10 @@ from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requi
 from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
 from moduly.pravni_pozadavky.ui.legal_document_selector import LegalDocumentNameSelector
 from moduly.pravni_pozadavky.ui.legal_requirement_sanctions_tab import LegalRequirementSanctionsTab
-from moduly.pravni_pozadavky.ui.legal_requirement_sources_widget import LegalRequirementSourcesWidget
+from moduly.pravni_pozadavky.ui.legal_requirement_sources_widget import (
+    LegalRequirementSourcesWidget,
+    _MISSING_SECTION_TEXT,
+)
 
 
 class LegalRequirementDialog(QDialog):
@@ -48,12 +55,12 @@ class LegalRequirementDialog(QDialog):
         self._last_document_id: int | None = None
 
         self.setWindowTitle("Právní požadavek" if requirement is None else "Upravit řídicí proces")
-        configure_resizable_form_dialog(self, width=760, height=680, min_width=560, min_height=480)
+        configure_resizable_form_dialog(self, width=1100, height=720, min_width=900, min_height=520)
 
         layout = QVBoxLayout(self)
 
         self.tabs = QTabWidget()
-        self.tabs.addTab(wrap_in_scroll_area(self._main_tab()), "Řídicí proces")
+        self.tabs.addTab(self._main_tab(), "Řídicí proces")
         self.sanctions_tab = LegalRequirementSanctionsTab(
             requirement.id if requirement is not None else None,
         )
@@ -77,7 +84,11 @@ class LegalRequirementDialog(QDialog):
 
     def _main_tab(self) -> QWidget:
         tab = QWidget()
-        form = QFormLayout(tab)
+        root_layout = QHBoxLayout(tab)
+        root_layout.setContentsMargins(0, 0, 0, 0)
+
+        left_widget = QWidget()
+        form = QFormLayout(left_widget)
 
         self.merged_into_label = QLabel()
         self.merged_into_label.setWordWrap(True)
@@ -141,6 +152,28 @@ class LegalRequirementDialog(QDialog):
         self.regulation_name.document_changed.connect(self._on_regulation_name_changed)
         self.regulation_number.textChanged.connect(self._on_regulation_number_changed)
         self.legal_section.currentIndexChanged.connect(self._on_legal_section_changed)
+        self.sources_widget.table.itemSelectionChanged.connect(self._on_source_selection_changed)
+
+        left_scroll = QScrollArea()
+        left_scroll.setWidgetResizable(True)
+        left_scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        left_scroll.setWidget(left_widget)
+
+        provision_text_group = QGroupBox("Znění právního podkladu")
+        provision_text_layout = QVBoxLayout(provision_text_group)
+        self.provision_text_view = QTextEdit()
+        self.provision_text_view.setReadOnly(True)
+        self.provision_text_view.setMinimumWidth(320)
+        provision_text_layout.addWidget(self.provision_text_view)
+
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+        splitter.addWidget(left_scroll)
+        splitter.addWidget(provision_text_group)
+        splitter.setStretchFactor(0, 3)
+        splitter.setStretchFactor(1, 2)
+        root_layout.addWidget(splitter)
+
+        self._display_section_text(self.sources_widget.selected_section_id())
         return tab
 
     def _load_requirement(self, requirement) -> None:
@@ -188,6 +221,7 @@ class LegalRequirementDialog(QDialog):
             requirement.id,
         )
         self.sources_widget.load_section_ids(source_section_ids)
+        self._refresh_provision_text_panel()
 
     def _load_draft(self, draft) -> None:
         self.process_code.setText("Přidělí se automaticky při uložení")
@@ -210,6 +244,27 @@ class LegalRequirementDialog(QDialog):
             self.sources_widget.load_section_ids([draft.source_section_id])
         else:
             self.sources_widget.load_section_ids([])
+        self._refresh_provision_text_panel()
+
+    def _on_source_selection_changed(self) -> None:
+        self._display_section_text(self.sources_widget.selected_section_id())
+
+    def _refresh_provision_text_panel(self) -> None:
+        if self.sources_widget.table.rowCount() > 0:
+            self.sources_widget.select_first_row()
+        self._display_section_text(self.sources_widget.selected_section_id())
+
+    def _display_section_text(self, section_id: int | None) -> None:
+        if section_id is None:
+            self.provision_text_view.setPlainText(_MISSING_SECTION_TEXT)
+            return
+
+        section = legal_section_service.get_by_id(section_id)
+        if section is None or not (section.text or "").strip():
+            self.provision_text_view.setPlainText(_MISSING_SECTION_TEXT)
+            return
+
+        self.provision_text_view.setPlainText(section.text.strip())
 
     def _current_legal_document_id(self) -> int | None:
         return self.regulation_name.current_document_id()

@@ -239,6 +239,61 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         self.assertEqual(dialog.windowTitle(), "Upravit řídicí proces")
         self.assertEqual(dialog.process_title.text(), "Řízení systému BOZP")
 
+    def test_dialog_shows_provision_text_for_selected_source(self) -> None:
+        from moduly.pravni_pozadavky.ui.legal_requirement_sources_widget import _MISSING_SECTION_TEXT
+
+        _document, subsection = self._create_subsection_101_odst_2()
+        legal_section_service.update(
+            subsection.id,
+            legal_document_id=subsection.legal_document_id,
+            legal_document_version_id=subsection.legal_document_version_id,
+            section_type=subsection.section_type,
+            parent_section_id=subsection.parent_section_id,
+            section_number=subsection.section_number,
+            text="Text odstavce 2 pro zobrazení.",
+        )
+        draft = legal_requirement_creation_service.create_from_section(subsection.id)
+        dialog = LegalRequirementDialog(draft=draft)
+
+        self.assertTrue(dialog.provision_text_view.isReadOnly())
+        self.assertEqual(
+            dialog.provision_text_view.toPlainText(),
+            "Text odstavce 2 pro zobrazení.",
+        )
+
+        version = legal_document_version_service.create(
+            legal_document_id=_document.id,
+            version_name="Verze B",
+        )
+        second_section = legal_section_service.create(
+            legal_document_id=_document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="200",
+            text="Druhý právní podklad.",
+            sort_order=1,
+        )
+        dialog.sources_widget._append_row(second_section.id)
+        dialog.sources_widget.table.selectRow(1)
+
+        self.assertEqual(
+            dialog.provision_text_view.toPlainText(),
+            "Druhý právní podklad.",
+        )
+
+        empty_section = legal_section_service.create(
+            legal_document_id=_document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="201",
+            text="   ",
+            sort_order=2,
+        )
+        dialog.sources_widget._append_row(empty_section.id)
+        dialog.sources_widget.table.selectRow(2)
+
+        self.assertEqual(dialog.provision_text_view.toPlainText(), _MISSING_SECTION_TEXT)
+
 
 if __name__ == "__main__":
     unittest.main()
