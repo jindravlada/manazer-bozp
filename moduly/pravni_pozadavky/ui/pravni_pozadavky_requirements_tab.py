@@ -17,11 +17,15 @@ from core.widgets.table_utils import configure_table_columns
 from moduly.pravni_pozadavky.constants import (
     COMPLIANCE_STATUS_LABELS,
     DEFAULT_ACTIVE_FILTER,
+    DEFAULT_PROCESS_LEVEL_FILTER,
     FILTER_ACTIVE_ONLY,
     FILTER_ALL_RECORDS,
     FILTER_ARCHIVED_ONLY,
     FILTER_AREA_VSE,
     FILTER_PERSON_VSE,
+    FILTER_PROCESS_LEVEL_ALL,
+    FILTER_PROCESS_LEVEL_CHILDREN,
+    FILTER_PROCESS_LEVEL_ROOTS,
     FILTER_STATUS_VSE,
     process_code_sort_key,
 )
@@ -59,12 +63,19 @@ class PravniPozadavkyRequirementsTab(QWidget):
         self.status_filter = QComboBox()
         self.person_filter = QComboBox()
         self.active_filter = QComboBox()
+        self.level_filter = QComboBox()
         self.active_filter.addItems([
             FILTER_ACTIVE_ONLY,
             FILTER_ARCHIVED_ONLY,
             FILTER_ALL_RECORDS,
         ])
         self.active_filter.setCurrentText(DEFAULT_ACTIVE_FILTER)
+        self.level_filter.addItems([
+            FILTER_PROCESS_LEVEL_ROOTS,
+            FILTER_PROCESS_LEVEL_ALL,
+            FILTER_PROCESS_LEVEL_CHILDREN,
+        ])
+        self.level_filter.setCurrentText(DEFAULT_PROCESS_LEVEL_FILTER)
 
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.import_json_btn)
@@ -82,6 +93,8 @@ class PravniPozadavkyRequirementsTab(QWidget):
         toolbar.addWidget(self.person_filter)
         toolbar.addWidget(QLabel("Záznamy:"))
         toolbar.addWidget(self.active_filter)
+        toolbar.addWidget(QLabel("Úroveň procesu:"))
+        toolbar.addWidget(self.level_filter)
 
         self.table = LegalRequirementTable()
         configure_table_columns(self.table, "legal_requirements")
@@ -103,6 +116,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
         self.status_filter.currentIndexChanged.connect(self.refresh)
         self.person_filter.currentIndexChanged.connect(self.refresh)
         self.active_filter.currentIndexChanged.connect(self.refresh)
+        self.level_filter.currentIndexChanged.connect(self.refresh)
 
         self.refresh()
 
@@ -128,6 +142,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
         self.status_filter.setCurrentIndex(0)
         self.person_filter.setCurrentIndex(0)
         self.active_filter.setCurrentText(DEFAULT_ACTIVE_FILTER)
+        self.level_filter.setCurrentText(DEFAULT_PROCESS_LEVEL_FILTER)
         self.text_filter.clear()
         self.refresh()
         if requirement_id is not None:
@@ -188,6 +203,16 @@ class PravniPozadavkyRequirementsTab(QWidget):
         person = self.person_filter.currentText()
         if person != FILTER_PERSON_VSE:
             requirements = [item for item in requirements if item.responsible_person_name == person]
+
+        level = self.level_filter.currentText()
+        if level == FILTER_PROCESS_LEVEL_ROOTS:
+            requirements = [
+                item for item in requirements if item.parent_requirement_id is None
+            ]
+        elif level == FILTER_PROCESS_LEVEL_CHILDREN:
+            requirements = [
+                item for item in requirements if item.parent_requirement_id is not None
+            ]
 
         return requirements
 

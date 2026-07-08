@@ -59,9 +59,14 @@ class LegalRequirementTableDisplayTestCase(unittest.TestCase):
         cls._app = QApplication.instance() or QApplication([])
 
     def setUp(self) -> None:
-        for requirement in legal_requirement_service.get_all():
-            requirement.active = False
-            legal_requirement_service.repository.update(requirement)
+        from sqlalchemy import delete
+
+        from core.database.session import get_session
+        from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
+
+        with get_session() as session:
+            session.execute(delete(LegalRequirement))
+            session.commit()
 
     def _create_hierarchy_with_letter(self):
         document = legal_document_service.create(
@@ -204,6 +209,7 @@ class LegalRequirementTableDisplayTestCase(unittest.TestCase):
         self.assertEqual(table.item(0, COL_SUMMARY).text(), "Zajistit systém řízení BOZP")
 
     def test_refresh_sorts_by_process_code(self) -> None:
+        from moduly.pravni_pozadavky.constants import process_code_sort_key
         from moduly.pravni_pozadavky.ui.legal_requirement_table import COL_CODE
 
         third = legal_requirement_service.create_requirement(
@@ -226,12 +232,119 @@ class LegalRequirementTableDisplayTestCase(unittest.TestCase):
             tab.table.item(row, COL_CODE).text()
             for row in range(tab.table.rowCount())
         ]
+        self.assertEqual(process_codes, ["P-001", "P-002", "P-003"])
+
+    def test_level_filter_defaults_to_root_processes(self) -> None:
+        from moduly.pravni_pozadavky.constants import DEFAULT_PROCESS_LEVEL_FILTER
+        from moduly.pravni_pozadavky.ui.legal_requirement_table import COL_CODE
+
+        root = legal_requirement_service.create_requirement(
+            title="Řízení VTZ",
+            process_code="P-015",
+        )
+        legal_requirement_service.create_requirement(
+            title="Elektrická zařízení",
+            parent_requirement_id=root.id,
+        )
+
+        tab = PravniPozadavkyRequirementsTab()
+
+        self.assertEqual(tab.level_filter.currentText(), DEFAULT_PROCESS_LEVEL_FILTER)
+        tab.refresh()
+
+        process_codes = [
+            tab.table.item(row, COL_CODE).text()
+            for row in range(tab.table.rowCount())
+        ]
+        self.assertEqual(process_codes, ["P-015"])
+
+    def test_level_filter_all_shows_roots_and_children(self) -> None:
+        from moduly.pravni_pozadavky.constants import (
+            FILTER_PROCESS_LEVEL_ALL,
+            process_code_sort_key,
+        )
+        from moduly.pravni_pozadavky.ui.legal_requirement_table import COL_CODE
+
+        root = legal_requirement_service.create_requirement(
+            title="Řízení VTZ",
+            process_code="P-015",
+        )
+        child = legal_requirement_service.create_requirement(
+            title="Elektrická zařízení",
+            parent_requirement_id=root.id,
+        )
+
+        tab = PravniPozadavkyRequirementsTab()
+        tab.level_filter.setCurrentText(FILTER_PROCESS_LEVEL_ALL)
+        tab.refresh()
+
+        process_codes = [
+            tab.table.item(row, COL_CODE).text()
+            for row in range(tab.table.rowCount())
+        ]
         self.assertEqual(
             process_codes,
-            sorted(
-                [first.process_code, second.process_code, third.process_code],
-                key=lambda code: int(code.split("-")[1]),
-            ),
+            [
+                item.process_code
+                for item in sorted([root, child], key=process_code_sort_key)
+            ],
+        )
+
+    def test_level_filter_children_shows_only_child_processes(self) -> None:
+        from moduly.pravni_pozadavky.constants import FILTER_PROCESS_LEVEL_CHILDREN
+        from moduly.pravni_pozadavky.ui.legal_requirement_table import COL_CODE
+
+        root = legal_requirement_service.create_requirement(
+            title="Řízení VTZ",
+            process_code="P-015",
+        )
+        child = legal_requirement_service.create_requirement(
+            title="Elektrická zařízení",
+            parent_requirement_id=root.id,
+        )
+
+        tab = PravniPozadavkyRequirementsTab()
+        tab.level_filter.setCurrentText(FILTER_PROCESS_LEVEL_CHILDREN)
+        tab.refresh()
+
+        process_codes = [
+            tab.table.item(row, COL_CODE).text()
+            for row in range(tab.table.rowCount())
+        ]
+        self.assertEqual(process_codes, [child.process_code])
+
+    def test_level_filter_all_sorts_hierarchical_process_codes(self) -> None:
+        from moduly.pravni_pozadavky.constants import FILTER_PROCESS_LEVEL_ALL
+        from moduly.pravni_pozadavky.ui.legal_requirement_table import COL_CODE
+
+        legal_requirement_service.create_requirement(
+            title="Kořen B",
+            process_code="P-016",
+        )
+        root_a = legal_requirement_service.create_requirement(
+            title="Kořen A",
+            process_code="P-015",
+        )
+        legal_requirement_service.create_requirement(
+            title="Druhé dítě",
+            parent_requirement_id=root_a.id,
+        )
+        legal_requirement_service.create_requirement(
+            title="První dítě",
+            parent_requirement_id=root_a.id,
+        )
+
+        tab = PravniPozadavkyRequirementsTab()
+        tab.level_filter.setCurrentText(FILTER_PROCESS_LEVEL_ALL)
+        tab.refresh()
+
+        process_codes = [
+            tab.table.item(row, COL_CODE).text()
+            for row in range(tab.table.rowCount())
+        ]
+        self.assertEqual(
+            process_codes,
+            ["P-015", "P-015.1", "P-015.2", "P-016"],
         )
 
     def test_text_filter_searches_process_and_fulfillment(self) -> None:
@@ -273,9 +386,14 @@ class PravniPozadavkyRequirementsTabSelectionTestCase(unittest.TestCase):
         cls._app = QApplication.instance() or QApplication([])
 
     def setUp(self) -> None:
-        for requirement in legal_requirement_service.get_all():
-            requirement.active = False
-            legal_requirement_service.repository.update(requirement)
+        from sqlalchemy import delete
+
+        from core.database.session import get_session
+        from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
+
+        with get_session() as session:
+            session.execute(delete(LegalRequirement))
+            session.commit()
 
     def _create_requirement(self):
         return legal_requirement_service.create_requirement(
