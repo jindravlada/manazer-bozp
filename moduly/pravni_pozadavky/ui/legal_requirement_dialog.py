@@ -47,13 +47,13 @@ class LegalRequirementDialog(QDialog):
         self._syncing_document_fields = False
         self._last_document_id: int | None = None
 
-        self.setWindowTitle("Právní požadavek" if requirement is None else "Upravit požadavek")
+        self.setWindowTitle("Právní požadavek" if requirement is None else "Upravit řídicí proces")
         configure_resizable_form_dialog(self, width=760, height=680, min_width=560, min_height=480)
 
         layout = QVBoxLayout(self)
 
         self.tabs = QTabWidget()
-        self.tabs.addTab(wrap_in_scroll_area(self._main_tab()), "Požadavek")
+        self.tabs.addTab(wrap_in_scroll_area(self._main_tab()), "Řídicí proces")
         self.sanctions_tab = LegalRequirementSanctionsTab(
             requirement.id if requirement is not None else None,
         )
@@ -88,6 +88,9 @@ class LegalRequirementDialog(QDialog):
         self.process_code.setReadOnly(True)
 
         self.regulation_name = LegalDocumentNameSelector()
+        self.regulation_name.setVisible(False)
+        self.process_title = QLineEdit()
+        self.process_title.setReadOnly(True)
         self.regulation_number = QLineEdit()
         self.provision = QLineEdit()
         self.legal_section = QComboBox()
@@ -114,9 +117,9 @@ class LegalRequirementDialog(QDialog):
 
         form.addRow(self.merged_into_label)
         form.addRow("Kód procesu:", self.process_code)
-        form.addRow("Název předpisu:", self.regulation_name)
-        form.addRow("Číslo předpisu:", self.regulation_number)
-        form.addRow("Ustanovení:", self.provision)
+        form.addRow("Řídicí proces:", self.process_title)
+        form.addRow("Hlavní právní předpis:", self.regulation_number)
+        form.addRow("Hlavní právní podklad:", self.provision)
         form.addRow("Ustanovení předpisu:", self.legal_section)
         form.addRow("Právní podklady:", self.sources_widget)
         form.addRow("Způsob plnění:", self.requirement_summary)
@@ -142,6 +145,7 @@ class LegalRequirementDialog(QDialog):
 
     def _load_requirement(self, requirement) -> None:
         self.process_code.setText(requirement.process_code or "")
+        self.process_title.setText(requirement.title or "")
         if requirement.merged_into_requirement_id is not None:
             target = legal_requirement_service.get_by_id(requirement.merged_into_requirement_id)
             if target is not None:
@@ -187,6 +191,7 @@ class LegalRequirementDialog(QDialog):
 
     def _load_draft(self, draft) -> None:
         self.process_code.setText("Přidělí se automaticky při uložení")
+        self.process_title.clear()
         self.merged_into_label.setVisible(False)
         self.regulation_name.reload(selected_id=draft.legal_document_id)
         self._last_document_id = draft.legal_document_id

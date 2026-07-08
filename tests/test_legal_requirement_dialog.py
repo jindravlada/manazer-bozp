@@ -206,6 +206,39 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         self.assertNotIn("Stručný požadavek:", labels)
         self.assertEqual(dialog.requirement_summary.toolTip(), "")
 
+    def test_dialog_uses_process_terminology_labels(self) -> None:
+        dialog = LegalRequirementDialog()
+        labels = self._form_labels(dialog)
+
+        self.assertIn("Řídicí proces:", labels)
+        self.assertIn("Hlavní právní předpis:", labels)
+        self.assertIn("Hlavní právní podklad:", labels)
+        self.assertNotIn("Název předpisu:", labels)
+        self.assertNotIn("Číslo předpisu:", labels)
+        self.assertNotIn("Ustanovení:", labels)
+        self.assertEqual(dialog.tabs.tabText(0), "Řídicí proces")
+
+    def test_edit_dialog_shows_process_title(self) -> None:
+        from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
+
+        _document, subsection = self._create_subsection_101_odst_2()
+        draft = legal_requirement_creation_service.create_from_section(subsection.id)
+        requirement = legal_requirement_service.create_requirement(
+            title="Řízení systému BOZP",
+            regulation_name=draft.regulation_name,
+            regulation_number=draft.regulation_number,
+            provision=draft.provision,
+            legal_document_id=draft.legal_document_id,
+            legal_section_id=draft.legal_section_id,
+            source_section_id=draft.source_section_id,
+            source_section_ids=[draft.source_section_id],
+        )
+
+        dialog = LegalRequirementDialog(requirement=requirement)
+
+        self.assertEqual(dialog.windowTitle(), "Upravit řídicí proces")
+        self.assertEqual(dialog.process_title.text(), "Řízení systému BOZP")
+
 
 if __name__ == "__main__":
     unittest.main()
