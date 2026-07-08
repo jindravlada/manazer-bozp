@@ -211,8 +211,9 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         labels = self._form_labels(dialog)
 
         self.assertIn("Řídicí proces:", labels)
-        self.assertIn("Hlavní právní předpis:", labels)
-        self.assertIn("Hlavní právní podklad:", labels)
+        self.assertNotIn("Hlavní právní předpis:", labels)
+        self.assertNotIn("Hlavní právní podklad:", labels)
+        self.assertNotIn("Ustanovení předpisu:", labels)
         self.assertNotIn("Název předpisu:", labels)
         self.assertNotIn("Číslo předpisu:", labels)
         self.assertNotIn("Ustanovení:", labels)
