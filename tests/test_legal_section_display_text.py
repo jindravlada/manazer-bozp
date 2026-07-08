@@ -142,6 +142,51 @@ class LegalSectionDisplayTextServiceTestCase(unittest.TestCase):
         self.assertTrue(composed.startswith("§ 6\n\n"))
         self.assertIn("Na mladistvé zaměstnankyně, které jsou těhotné", composed)
 
+    def test_compose_paragraph_shows_intro_title_before_children_like_180_section_4(self) -> None:
+        document = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_VYHLASKA,
+            title="Vyhláška č. 180/2015 Sb.",
+            number="180",
+            year=2015,
+            short_title="V180",
+        )
+        version = self._create_version(document.id)
+        paragraph = legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="4",
+            title=(
+                "Zaměstnankyním-matkám do konce devátého měsíce po porodu jsou zakázány "
+                "práce a pracoviště uvedené"
+            ),
+            sort_order=1,
+        )
+        for index, letter in enumerate("abcd", start=2):
+            legal_section_service.create(
+                legal_document_id=document.id,
+                legal_document_version_id=version.id,
+                section_type=SECTION_LETTER,
+                parent_section_id=paragraph.id,
+                item_letter=letter,
+                text=f"odkaz v písmenu {letter}",
+                sort_order=index,
+            )
+
+        composed = legal_section_display_text_service.compose(paragraph.id)
+
+        self.assertTrue(composed.startswith("§ 4\n\n"))
+        self.assertIn(
+            "Zaměstnankyním-matkám do konce devátého měsíce po porodu jsou zakázány "
+            "práce a pracoviště uvedené",
+            composed,
+        )
+        self.assertIn("a) odkaz v písmenu a", composed)
+        self.assertIn("d) odkaz v písmenu d", composed)
+        title_pos = composed.index("Zaměstnankyním-matkám")
+        letter_a_pos = composed.index("a) odkaz")
+        self.assertLess(title_pos, letter_a_pos)
+
     def test_compose_attachment_text_from_own_node(self) -> None:
         document = self._create_document_432()
         version = self._create_version(document.id)

@@ -10,6 +10,7 @@ from moduly.pravni_pozadavky.modely.legal_section import LegalSection
 from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
 
 _NUMBERED_POINT_RE = re.compile(r"^\d+\.\s*")
+_TECHNICAL_PARAGRAPH_TITLE_PREFIX = "(K §"
 
 
 class LegalSectionDisplayTextService:
@@ -39,14 +40,14 @@ class LegalSectionDisplayTextService:
 
     def _compose_paragraph(self, section: LegalSection, own_text: str) -> str:
         child_blocks = self._compose_children_blocks(section.id, depth=0)
-        title_text = (section.title or "").strip()
+        intro_title = self._paragraph_intro_title(section)
 
         content_blocks: list[str] = []
         if own_text:
             content_blocks.append(own_text)
+        elif intro_title:
+            content_blocks.append(intro_title)
         content_blocks.extend(child_blocks)
-        if not content_blocks and title_text:
-            content_blocks.append(title_text)
         if not content_blocks:
             return ""
 
@@ -56,6 +57,12 @@ class LegalSectionDisplayTextService:
             blocks.append(f"§ {paragraph}")
         blocks.extend(content_blocks)
         return self._join_blocks(blocks)
+
+    def _paragraph_intro_title(self, section: LegalSection) -> str:
+        title = (section.title or "").strip()
+        if not title or title.startswith(_TECHNICAL_PARAGRAPH_TITLE_PREFIX):
+            return ""
+        return title
 
     def _compose_children_blocks(self, parent_section_id: int, *, depth: int) -> list[str]:
         blocks: list[str] = []
