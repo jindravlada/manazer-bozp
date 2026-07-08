@@ -114,13 +114,15 @@ class LegalRequirementResponsibleRoleWidgetTestCase(unittest.TestCase):
         cls._app = QApplication.instance() or QApplication([])
 
     def test_dialog_shows_responsibility_group(self) -> None:
-        from PySide6.QtWidgets import QGroupBox
+        from PySide6.QtWidgets import QGroupBox, QLabel
 
         from moduly.pravni_pozadavky.ui.legal_requirement_dialog import LegalRequirementDialog
 
         dialog = LegalRequirementDialog()
         groups = [widget.title() for widget in dialog.findChildren(QGroupBox)]
-        self.assertIn("Odpovědnost", groups)
+        self.assertIn("Správa procesu", groups)
+        labels = [label.text().strip() for label in dialog.findChildren(QLabel)]
+        self.assertIn("Odpovědnost:", labels)
 
     def test_workbench_editor_shows_responsibility_group(self) -> None:
         from PySide6.QtWidgets import QGroupBox

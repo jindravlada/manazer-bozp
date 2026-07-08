@@ -193,10 +193,12 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         self.assertNotIn(first_document.id, [dialog.get_data()["legal_document_id"]])
 
     def test_dialog_shows_pravni_podklady_label(self) -> None:
+        from PySide6.QtWidgets import QGroupBox
+
         dialog = LegalRequirementDialog()
-        labels = self._form_labels(dialog)
-        self.assertIn("Právní podklady:", labels)
-        self.assertNotIn("Vychází z:", labels)
+        groups = [widget.title() for widget in dialog.findChildren(QGroupBox)]
+        self.assertIn("Právní podklady", groups)
+        self.assertNotIn("Vychází z:", self._form_labels(dialog))
 
     def test_dialog_shows_zpusob_plneni_label(self) -> None:
         dialog = LegalRequirementDialog()
@@ -207,10 +209,18 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         self.assertEqual(dialog.requirement_summary.toolTip(), "")
 
     def test_dialog_uses_process_terminology_labels(self) -> None:
+        from PySide6.QtWidgets import QGroupBox
+
         dialog = LegalRequirementDialog()
         labels = self._form_labels(dialog)
+        groups = [widget.title() for widget in dialog.findChildren(QGroupBox)]
 
         self.assertIn("Řídicí proces:", labels)
+        self.assertIn("Identifikace procesu", groups)
+        self.assertIn("Právní podklady", groups)
+        self.assertIn("Řízení procesu", groups)
+        self.assertIn("Správa procesu", groups)
+        self.assertIn("Odpovědnost:", labels)
         self.assertNotIn("Hlavní právní předpis:", labels)
         self.assertNotIn("Hlavní právní podklad:", labels)
         self.assertNotIn("Ustanovení předpisu:", labels)
