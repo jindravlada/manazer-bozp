@@ -38,6 +38,9 @@ from moduly.pravni_pozadavky.constants import (
 )
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
 from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
+from moduly.pravni_pozadavky.sluzby.legal_section_display_text_service import (
+    legal_section_display_text_service,
+)
 from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
 from moduly.pravni_pozadavky.ui.legal_document_selector import LegalDocumentNameSelector
 from moduly.pravni_pozadavky.ui.legal_requirement_sanctions_tab import LegalRequirementSanctionsTab
@@ -277,12 +280,12 @@ class LegalRequirementDialog(QDialog):
         self.provision_text_header.setVisible(bool(header))
         self.provision_text_separator.setVisible(bool(header))
 
-        section = legal_section_service.get_by_id(section_id)
-        if section is None or not (section.text or "").strip():
+        display_text = legal_section_display_text_service.compose(section_id)
+        if not display_text:
             self.provision_text_view.setPlainText(_MISSING_SECTION_TEXT)
             return
 
-        self.provision_text_view.setPlainText(section.text.strip())
+        self.provision_text_view.setPlainText(display_text)
 
     def _provision_header_for_section(self, section_id: int) -> str:
         section = legal_section_service.get_by_id(section_id)

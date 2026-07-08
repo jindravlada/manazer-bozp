@@ -312,6 +312,85 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         self.assertEqual(dialog.provision_text_header.text(), "262/2006 Sb.\n§ 201")
         self.assertEqual(dialog.provision_text_view.toPlainText(), _MISSING_SECTION_TEXT)
 
+    def test_dialog_composes_paragraph_text_from_subsections(self) -> None:
+        from moduly.pravni_pozadavky.constants import (
+            DOCUMENT_TYPE_VYHLASKA,
+            SECTION_ATTACHMENT,
+            SECTION_PARAGRAPH,
+            SECTION_SUBSECTION,
+        )
+        from moduly.pravni_pozadavky.ui.legal_requirement_sources_widget import _MISSING_SECTION_TEXT
+
+        document = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_VYHLASKA,
+            title="Vyhláška č. 432/2003 Sb.",
+            number="432",
+            year=2003,
+            short_title="V432",
+        )
+        version = legal_document_version_service.create(
+            legal_document_id=document.id,
+            version_name="Aktuální znění",
+        )
+        paragraph = legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="2",
+            title="(K § 37 zákona)",
+            sort_order=1,
+        )
+        for index, text in enumerate(
+            [
+                "Zařazení práce do kategorie vyjadřuje souhrnné hodnocení.",
+                "Při zařazování prací do kategorií se stanoví kategorie.",
+            ],
+            start=1,
+        ):
+            legal_section_service.create(
+                legal_document_id=document.id,
+                legal_document_version_id=version.id,
+                section_type=SECTION_SUBSECTION,
+                parent_section_id=paragraph.id,
+                section_number=str(index),
+                text=text,
+                sort_order=index,
+            )
+        attachment = legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_ATTACHMENT,
+            section_number="1",
+            title="Příloha č. 1 k vyhlášce č. 432/2003 Sb.",
+            text="Kritéria kategorizace prací",
+            sort_order=10,
+        )
+        empty_paragraph = legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="99",
+            sort_order=11,
+        )
+
+        dialog = LegalRequirementDialog()
+        dialog.sources_widget.load_section_ids([paragraph.id, attachment.id, empty_paragraph.id])
+
+        self.assertIn(
+            "(1) Zařazení práce do kategorie vyjadřuje souhrnné hodnocení.",
+            dialog.provision_text_view.toPlainText(),
+        )
+        self.assertIn(
+            "(2) Při zařazování prací do kategorií se stanoví kategorie.",
+            dialog.provision_text_view.toPlainText(),
+        )
+
+        dialog.sources_widget.select_section_at_index(1)
+        self.assertEqual(dialog.provision_text_view.toPlainText(), "Kritéria kategorizace prací")
+
+        dialog.sources_widget.select_section_at_index(2)
+        self.assertEqual(dialog.provision_text_view.toPlainText(), _MISSING_SECTION_TEXT)
+
 
 if __name__ == "__main__":
     unittest.main()
