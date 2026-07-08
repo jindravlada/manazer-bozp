@@ -1,11 +1,10 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QHBoxLayout,
-    QHeaderView,
     QMessageBox,
     QPushButton,
-    QTableWidget,
-    QTableWidgetItem,
+    QTreeWidget,
+    QTreeWidgetItem,
     QVBoxLayout,
     QWidget,
 )
@@ -22,6 +21,7 @@ from moduly.pravni_pozadavky.ui.legal_requirement_source_add_dialog import (
 )
 
 _SECTION_ID_ROLE = Qt.ItemDataRole.UserRole
+_DOCUMENT_ID_ROLE = Qt.ItemDataRole.UserRole + 1
 _NO_SOURCE_SELECTED_TEXT = "Nejprve vyberte právní podklad."
 _MISSING_SECTION_TEXT = "Znění ustanovení není k dispozici."
 
@@ -42,79 +42,119 @@ class LegalRequirementSourcesWidget(QWidget):
         toolbar.addStretch()
         layout.addLayout(toolbar)
 
-        self.table = QTableWidget()
-        self.table.setColumnCount(2)
-        self.table.setHorizontalHeaderLabels(["Předpis", "Ustanovení"])
-        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
-        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        layout.addWidget(self.table)
+        self.tree = QTreeWidget()
+        self.tree.setHeaderHidden(True)
+        self.tree.setSelectionMode(QTreeWidget.SelectionMode.SingleSelection)
+        self.tree.setEditTriggers(QTreeWidget.EditTrigger.NoEditTriggers)
+        layout.addWidget(self.tree)
 
         self.add_btn.clicked.connect(self._add_source)
         self.remove_btn.clicked.connect(self._remove_selected)
-        self.table.itemSelectionChanged.connect(self._update_buttons)
+        self.tree.itemSelectionChanged.connect(self._update_buttons)
+        self.tree.itemClicked.connect(self._on_item_clicked)
 
     def load_section_ids(self, section_ids: list[int]) -> None:
-        self.table.setRowCount(0)
+        self.tree.clear()
+        document_order: list[int] = []
+        sections_by_document: dict[int, list[int]] = {}
+
         for section_id in section_ids:
-            self._append_row(section_id)
-        if self.table.rowCount() > 0:
-            self.table.selectRow(0)
-        else:
-            self.table.clearSelection()
+            section = legal_section_service.get_by_id(section_id)
+            if section is None:
+                continue
+            document_id = section.legal_document_id
+            if document_id not in sections_by_document:
+                document_order.append(document_id)
+                sections_by_document[document_id] = []
+            if section_id not in sections_by_document[document_id]:
+                sections_by_document[document_id].append(section_id)
+
+        for document_id in document_order:
+            root = self._find_or_create_document_root(document_id)
+            for section_id in sections_by_document[document_id]:
+                self._append_section_item(root, section_id)
+
+        self.tree.expandAll()
+        self.select_first_row()
 
     def get_section_ids(self) -> list[int]:
         section_ids: list[int] = []
-        for row in range(self.table.rowCount()):
-            section_id = self.section_id_for_row(row)
-            if section_id is not None and section_id not in section_ids:
+        for item in self._section_items_in_order():
+            section_id = item.data(0, _SECTION_ID_ROLE)
+            if isinstance(section_id, int) and section_id not in section_ids:
                 section_ids.append(section_id)
         return section_ids
 
-    def section_id_for_row(self, row: int) -> int | None:
-        if row < 0:
+    def selected_section_id(self) -> int | None:
+        item = self.tree.currentItem()
+        if item is None or self._is_root_item(item):
             return None
-        item = self.table.item(row, 0)
-        if item is None:
-            return None
-        section_id = item.data(_SECTION_ID_ROLE)
+        section_id = item.data(0, _SECTION_ID_ROLE)
         return section_id if isinstance(section_id, int) else None
 
-    def selected_section_id(self) -> int | None:
-        return self.section_id_for_row(self.table.currentRow())
-
     def select_first_row(self) -> None:
-        if self.table.rowCount() > 0:
-            self.table.selectRow(0)
+        first_section = self._first_section_item()
+        if first_section is not None:
+            self.tree.setCurrentItem(first_section)
         else:
-            self.table.clearSelection()
+            self.tree.clearSelection()
 
-    def _append_row(self, section_id: int) -> None:
+    def select_section_at_index(self, index: int) -> None:
+        items = self._section_items_in_order()
+        if 0 <= index < len(items):
+            self.tree.setCurrentItem(items[index])
+        else:
+            self.tree.clearSelection()
+
+    def _document_tree_label(self, document) -> str:
+        regulation_number = legal_document_regulation_number(document)
+        title = (document.title or "").strip()
+        if title:
+            return f"{regulation_number} – {title}"
+        return regulation_number
+
+    def _find_or_create_document_root(self, document_id: int) -> QTreeWidgetItem:
+        for index in range(self.tree.topLevelItemCount()):
+            root = self.tree.topLevelItem(index)
+            if root is not None and root.data(0, _DOCUMENT_ID_ROLE) == document_id:
+                return root
+
+        document = legal_document_service.get_by_id(document_id)
+        label = self._document_tree_label(document) if document is not None else f"Předpis #{document_id}"
+        root = QTreeWidgetItem([label])
+        root.setData(0, _DOCUMENT_ID_ROLE, document_id)
+        self.tree.addTopLevelItem(root)
+        return root
+
+    def _append_section_item(self, root: QTreeWidgetItem, section_id: int) -> QTreeWidgetItem | None:
         section = legal_section_service.get_by_id(section_id)
         if section is None:
-            return
+            return None
 
-        document = legal_document_service.get_by_id(section.legal_document_id)
         sections_by_id = legal_section_service.build_sections_map([section])
-        document_label = ""
-        if document is not None:
-            title = (document.title or "").strip()
-            document_label = title or legal_document_regulation_number(document)
         provision_label = legal_section_provision_label(section, sections_by_id=sections_by_id)
         if not provision_label:
             provision_label = f"Ustanovení #{section.id}"
 
-        row = self.table.rowCount()
-        self.table.insertRow(row)
-        document_item = QTableWidgetItem(document_label)
-        document_item.setData(_SECTION_ID_ROLE, section_id)
-        provision_item = QTableWidgetItem(provision_label)
-        self.table.setItem(row, 0, document_item)
-        self.table.setItem(row, 1, provision_item)
-        if self.table.rowCount() == 1:
-            self.table.selectRow(0)
+        item = QTreeWidgetItem([provision_label])
+        item.setData(0, _SECTION_ID_ROLE, section_id)
+        root.addChild(item)
+        return item
+
+    def _append_section(self, section_id: int) -> None:
+        section = legal_section_service.get_by_id(section_id)
+        if section is None:
+            return
+
+        root = self._find_or_create_document_root(section.legal_document_id)
+        self._append_section_item(root, section_id)
+        root.setExpanded(True)
+
+        items = self._section_items_in_order()
+        for item in items:
+            if item.data(0, _SECTION_ID_ROLE) == section_id:
+                self.tree.setCurrentItem(item)
+                break
 
     def _add_source(self) -> None:
         dialog = LegalRequirementSourceAddDialog(
@@ -134,14 +174,45 @@ class LegalRequirementSourcesWidget(QWidget):
                 "Toto ustanovení je již přidáno.",
             )
             return
-        self._append_row(section_id)
+        self._append_section(section_id)
 
     def _remove_selected(self) -> None:
-        row = self.table.currentRow()
-        if row < 0:
+        item = self.tree.currentItem()
+        if item is None or self._is_root_item(item):
             return
-        self.table.removeRow(row)
+
+        parent = item.parent()
+        index = parent.indexOfChild(item)
+        parent.takeChild(index)
+        if parent.childCount() == 0:
+            root_index = self.tree.indexOfTopLevelItem(parent)
+            if root_index >= 0:
+                self.tree.takeTopLevelItem(root_index)
         self._update_buttons()
 
+    def _on_item_clicked(self, item: QTreeWidgetItem, _column: int) -> None:
+        if self._is_root_item(item):
+            item.setExpanded(not item.isExpanded())
+
+    def _is_root_item(self, item: QTreeWidgetItem | None) -> bool:
+        return item is not None and item.parent() is None
+
+    def _section_items_in_order(self) -> list[QTreeWidgetItem]:
+        items: list[QTreeWidgetItem] = []
+        for root_index in range(self.tree.topLevelItemCount()):
+            root = self.tree.topLevelItem(root_index)
+            if root is None:
+                continue
+            for child_index in range(root.childCount()):
+                child = root.child(child_index)
+                if child is not None:
+                    items.append(child)
+        return items
+
+    def _first_section_item(self) -> QTreeWidgetItem | None:
+        items = self._section_items_in_order()
+        return items[0] if items else None
+
     def _update_buttons(self) -> None:
-        self.remove_btn.setEnabled(self.table.currentRow() >= 0)
+        item = self.tree.currentItem()
+        self.remove_btn.setEnabled(item is not None and not self._is_root_item(item))

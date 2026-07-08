@@ -155,7 +155,7 @@ class LegalRequirementDialog(QDialog):
         self.regulation_name.document_changed.connect(self._on_regulation_name_changed)
         self.regulation_number.textChanged.connect(self._on_regulation_number_changed)
         self.legal_section.currentIndexChanged.connect(self._on_legal_section_changed)
-        self.sources_widget.table.itemSelectionChanged.connect(self._on_source_selection_changed)
+        self.sources_widget.tree.itemSelectionChanged.connect(self._on_source_selection_changed)
 
         left_scroll = QScrollArea()
         left_scroll.setWidgetResizable(True)
@@ -260,7 +260,7 @@ class LegalRequirementDialog(QDialog):
         self._display_section_text(self.sources_widget.selected_section_id())
 
     def _refresh_provision_text_panel(self) -> None:
-        if self.sources_widget.table.rowCount() > 0:
+        if self.sources_widget.get_section_ids():
             self.sources_widget.select_first_row()
         self._display_section_text(self.sources_widget.selected_section_id())
 

@@ -223,7 +223,7 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         from moduly.pravni_pozadavky.ui.legal_requirement_sources_widget import _NO_SOURCE_SELECTED_TEXT
 
         dialog = LegalRequirementDialog()
-        dialog.sources_widget.table.clearSelection()
+        dialog.sources_widget.tree.clearSelection()
         dialog._display_section_text(None)
 
         self.assertEqual(dialog.provision_text_view.toPlainText(), _NO_SOURCE_SELECTED_TEXT)
@@ -288,8 +288,8 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
             text="Druhý právní podklad.",
             sort_order=1,
         )
-        dialog.sources_widget._append_row(second_section.id)
-        dialog.sources_widget.table.selectRow(1)
+        dialog.sources_widget._append_section(second_section.id)
+        dialog.sources_widget.select_section_at_index(1)
 
         self.assertEqual(dialog.provision_text_header.text(), "262/2006 Sb.\n§ 200")
         self.assertEqual(
@@ -305,8 +305,8 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
             text="   ",
             sort_order=2,
         )
-        dialog.sources_widget._append_row(empty_section.id)
-        dialog.sources_widget.table.selectRow(2)
+        dialog.sources_widget._append_section(empty_section.id)
+        dialog.sources_widget.select_section_at_index(2)
 
         self.assertEqual(dialog.provision_text_header.text(), "262/2006 Sb.\n§ 201")
         self.assertEqual(dialog.provision_text_view.toPlainText(), _MISSING_SECTION_TEXT)
