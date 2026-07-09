@@ -27,8 +27,8 @@ from moduly.pravni_pozadavky.sluzby.legal_change_section_service import (
     legal_change_section_service,
 )
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
-from moduly.pravni_pozadavky.ui.legal_change_impacted_processes_table import (
-    LegalChangeImpactedProcessesTable,
+from moduly.pravni_pozadavky.ui.legal_change_impacted_processes_widget import (
+    LegalChangeImpactedProcessesWidget,
 )
 from moduly.pravni_pozadavky.ui.legal_change_sections_table import LegalChangeSectionsTable
 
@@ -109,9 +109,9 @@ class LegalChangeDetailDialog(QDialog):
         processes_layout = QVBoxLayout(processes_group)
         processes = legal_change_impacted_process_service.list_processes_for_change(self.change.id)
         if processes:
-            processes_table = LegalChangeImpactedProcessesTable()
-            processes_table.load_processes(processes)
-            processes_layout.addWidget(processes_table)
+            processes_widget = LegalChangeImpactedProcessesWidget()
+            processes_widget.load_processes(processes)
+            processes_layout.addWidget(processes_widget)
         else:
             empty_processes_label = QLabel(
                 "Toto ustanovení zatím není přiřazeno k žádnému řídicímu procesu.",

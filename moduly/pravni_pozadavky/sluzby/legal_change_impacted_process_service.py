@@ -29,9 +29,30 @@ _PROVISION_LABEL_RE = re.compile(r"\s+")
 
 
 @dataclass(frozen=True)
+class ImpactedProcessLegalSource:
+    section_id: int
+    label: str
+    is_changed: bool
+
+
+@dataclass(frozen=True)
 class ImpactedControlProcess:
+    requirement_id: int
     process_code: str
     process_name: str
+    legal_sources: tuple[ImpactedProcessLegalSource, ...]
+
+    @property
+    def display_title(self) -> str:
+        code = (self.process_code or "").strip()
+        name = (self.process_name or "").strip()
+        if code and name:
+            return f"{code} {name}"
+        if code:
+            return code
+        if name:
+            return name
+        return f"Proces #{self.requirement_id}"
 
 
 class LegalChangeImpactedProcessService:
@@ -48,27 +69,36 @@ class LegalChangeImpactedProcessService:
         if not change_sections:
             return []
 
-        section_ids = self._resolve_section_ids(change, change_sections)
-        if not section_ids:
+        sections, sections_by_id = self._load_sections_for_change(change)
+        changed_section_ids = set(self._resolve_section_ids(change, change_sections, sections))
+        if not changed_section_ids:
             return []
 
-        requirements = self._find_requirements_for_sections(section_ids)
-        return self._build_process_list(requirements)
+        requirements = self._find_requirements_for_sections(sorted(changed_section_ids))
+        return self._build_process_list(
+            requirements,
+            changed_section_ids=changed_section_ids,
+            sections_by_id=sections_by_id,
+        )
 
-    def _resolve_section_ids(self, change, change_sections) -> list[int]:
+    def _load_sections_for_change(self, change) -> tuple[list, dict]:
         version_id = change.legal_document_version_id
         if version_id is None:
             version = legal_document_version_service.get_current_version(change.legal_document_id)
             version_id = version.id if version is not None else None
-        if version_id is None:
-            return []
 
-        sections = legal_section_service.list_by_version(version_id, include_inactive=False)
+        sections: list = []
+        if version_id is not None:
+            sections = legal_section_service.list_by_version(version_id, include_inactive=False)
         if not sections:
             sections = legal_section_service.list_by_document(
                 change.legal_document_id,
                 include_inactive=False,
             )
+        sections_by_id = {section.id: section for section in sections}
+        return sections, sections_by_id
+
+    def _resolve_section_ids(self, change, change_sections, sections: list) -> list[int]:
         if not sections:
             return []
 
@@ -119,6 +149,9 @@ class LegalChangeImpactedProcessService:
     def _build_process_list(
         self,
         requirements: list[LegalRequirement],
+        *,
+        changed_section_ids: set[int],
+        sections_by_id: dict,
     ) -> list[ImpactedControlProcess]:
         processes: list[ImpactedControlProcess] = []
         seen_ids: set[int] = set()
@@ -127,13 +160,52 @@ class LegalChangeImpactedProcessService:
             if requirement.id in seen_ids:
                 continue
             seen_ids.add(requirement.id)
+            legal_sources = tuple(
+                self._build_legal_sources(
+                    requirement.id,
+                    changed_section_ids=changed_section_ids,
+                    sections_by_id=sections_by_id,
+                ),
+            )
             processes.append(
                 ImpactedControlProcess(
+                    requirement_id=requirement.id,
                     process_code=(requirement.process_code or "").strip(),
                     process_name=legal_requirement_process_label(requirement),
+                    legal_sources=legal_sources,
                 ),
             )
         return processes
+
+    def _build_legal_sources(
+        self,
+        requirement_id: int,
+        *,
+        changed_section_ids: set[int],
+        sections_by_id: dict,
+    ) -> list[ImpactedProcessLegalSource]:
+        sources: list[ImpactedProcessLegalSource] = []
+        for link in self.source_repository.list_by_requirement(requirement_id):
+            section = sections_by_id.get(link.legal_section_id)
+            if section is None:
+                section = legal_section_service.get_by_id(link.legal_section_id)
+            if section is None or not section.active:
+                continue
+            local_sections_by_id = sections_by_id
+            if section.id not in local_sections_by_id:
+                local_sections_by_id = {**sections_by_id, section.id: section}
+            label = legal_section_structure_compare_service.build_section_log_label(
+                section,
+                sections_by_id=local_sections_by_id,
+            )
+            sources.append(
+                ImpactedProcessLegalSource(
+                    section_id=section.id,
+                    label=label,
+                    is_changed=section.id in changed_section_ids,
+                ),
+            )
+        return sources
 
     def _labels_match(self, left: str, right: str) -> bool:
         return self._normalize_provision_label(left) == self._normalize_provision_label(right)

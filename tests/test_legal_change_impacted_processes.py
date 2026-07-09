@@ -149,6 +149,41 @@ class LegalChangeImpactedProcessServiceTestCase(unittest.TestCase):
             },
         )
 
+    def test_lists_legal_sources_and_marks_changed_sections(self) -> None:
+        document, version, paragraph, subsection = self._create_document_with_subsection()
+        paragraph_101 = legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="101",
+            title="§ 101",
+            sort_order=0,
+        )
+        process = legal_requirement_service.create_requirement(
+            title="Řízení rizik",
+            process_code="P-005",
+            source_section_ids=[paragraph.id, paragraph_101.id],
+        )
+        change = self._create_change(document, version)
+        legal_change_section_service.add_sections_to_change(
+            change.id,
+            SectionStructureCompareResult(
+                changed=[SectionStructureEntry("§:104", "§104", "fp1")],
+            ),
+        )
+
+        processes = legal_change_impacted_process_service.list_processes_for_change(change.id)
+
+        self.assertEqual(len(processes), 1)
+        self.assertEqual(processes[0].process_code, process.process_code)
+        self.assertEqual(len(processes[0].legal_sources), 2)
+        changed = [source for source in processes[0].legal_sources if source.is_changed]
+        unchanged = [source for source in processes[0].legal_sources if not source.is_changed]
+        self.assertEqual(len(changed), 1)
+        self.assertEqual(changed[0].label, "§104")
+        self.assertEqual(len(unchanged), 1)
+        self.assertEqual(unchanged[0].label, "§101")
+
     def test_returns_empty_when_no_linked_processes(self) -> None:
         document, version, _, _subsection = self._create_document_with_subsection()
         change = self._create_change(document, version)
