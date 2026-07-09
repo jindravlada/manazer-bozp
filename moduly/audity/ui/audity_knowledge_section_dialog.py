@@ -2,6 +2,7 @@
 
 from PySide6.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QDialog,
     QFormLayout,
     QLineEdit,
@@ -11,7 +12,12 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
+from moduly.audity.constants import KNOWLEDGE_EDITOR_SECTION_CONTROL_PROCESS_LABEL
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
+from moduly.audity.ui.audit_knowledge_control_process_combo import (
+    populate_control_process_combo,
+    selected_control_process_id,
+)
 
 
 class AudityKnowledgeSectionDialog(QDialog):
@@ -42,6 +48,9 @@ class AudityKnowledgeSectionDialog(QDialog):
         self._nazev_edit = QLineEdit()
         self._nazev_edit.textChanged.connect(self._update_generated_id_preview)
 
+        self._control_process_combo = QComboBox()
+        populate_control_process_combo(self._control_process_combo, None)
+
         self._popis_edit = QTextEdit()
         self._popis_edit.setMinimumHeight(80)
 
@@ -58,6 +67,7 @@ class AudityKnowledgeSectionDialog(QDialog):
 
         form.addRow("Identifikátor:", self._id_edit)
         form.addRow("Název:", self._nazev_edit)
+        form.addRow(KNOWLEDGE_EDITOR_SECTION_CONTROL_PROCESS_LABEL, self._control_process_combo)
         form.addRow("Popis:", self._popis_edit)
         form.addRow("Cíl ověření:", self._cil_overeni_edit)
         form.addRow("Pořadí:", self._poradi_spin)
@@ -92,4 +102,5 @@ class AudityKnowledgeSectionDialog(QDialog):
             "cil_overeni": self._cil_overeni_edit.toPlainText().strip(),
             "poradi": self._poradi_spin.value(),
             "aktivni": self._aktivni_check.isChecked(),
+            "legal_requirement_id": selected_control_process_id(self._control_process_combo),
         }

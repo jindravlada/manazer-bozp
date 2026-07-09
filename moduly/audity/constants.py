@@ -364,6 +364,8 @@ KNOWLEDGE_EDITOR_EDIT_PLACEHOLDER = (
 KNOWLEDGE_EDITOR_SELECT_PROCESS_HINT = (
     "Vyberte řídicí proces nebo oblast ověření ve stromu vlevo."
 )
+KNOWLEDGE_EDITOR_SECTION_CONTROL_PROCESS_LABEL = "Řídicí proces:"
+KNOWLEDGE_EDITOR_SECTION_CONTROL_PROCESS_EMPTY = "—"
 KNOWLEDGE_EDITOR_ASSERTIONS_PLACEHOLDER = (
     "Auditní tvrzení budou editovatelná v další verzi."
 )

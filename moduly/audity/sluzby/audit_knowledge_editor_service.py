@@ -12,6 +12,7 @@ from pathlib import Path
 from core.services.editable_catalog_service import editable_catalog_service
 from core.services.storage_service import storage_service
 from moduly.audity.constants import KNOWLEDGE_EDITOR_SECTION_EDITABLE_LIST_FIELDS
+from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 from moduly.audity.sluzby.audit_knowledge_validator import (
     PROCESY_BASENAME,
@@ -322,9 +323,50 @@ class AuditKnowledgeEditorService:
         updated["cil_overeni"] = str(metadata.get("cil_overeni") or "").strip()
         updated["poradi"] = poradi
         updated["aktivni"] = bool(metadata.get("aktivni", True))
+        if "legal_requirement_id" in metadata:
+            legal_requirement_id, link_errors = self._resolve_legal_requirement_id(
+                metadata.get("legal_requirement_id"),
+                existing_id=existing.get("legal_requirement_id"),
+            )
+            if link_errors:
+                return link_errors
+            if legal_requirement_id is not None:
+                updated["legal_requirement_id"] = legal_requirement_id
+            else:
+                updated.pop("legal_requirement_id", None)
         parent_list[index] = updated
 
         return self.save_user_json(relative_path, data)
+
+    @staticmethod
+    def normalize_legal_requirement_id(value) -> int | None:
+        if value is None or value == "":
+            return None
+        try:
+            requirement_id = int(value)
+        except (TypeError, ValueError):
+            return None
+        if requirement_id <= 0:
+            return None
+        return requirement_id
+
+    def _resolve_legal_requirement_id(
+        self,
+        value,
+        *,
+        existing_id=None,
+    ) -> tuple[int | None, list[str]]:
+        requirement_id = self.normalize_legal_requirement_id(value)
+        if requirement_id is None:
+            return None, []
+
+        existing_normalized = self.normalize_legal_requirement_id(existing_id)
+        requirement = legal_requirement_service.get_by_id(requirement_id)
+        if requirement is None:
+            return None, ["Vybraný řídicí proces nebyl nalezen."]
+        if not requirement.active and requirement_id != existing_normalized:
+            return None, ["Vybraný řídicí proces není aktivní."]
+        return requirement_id, []
 
     @staticmethod
     def build_new_section(
@@ -335,6 +377,7 @@ class AuditKnowledgeEditorService:
         cil_overeni: str,
         poradi: int,
         aktivni: bool,
+        legal_requirement_id: int | None = None,
     ) -> dict:
         section = {
             "id": section_id,
@@ -344,6 +387,8 @@ class AuditKnowledgeEditorService:
             "poradi": poradi,
             "aktivni": aktivni,
         }
+        if legal_requirement_id is not None:
+            section["legal_requirement_id"] = legal_requirement_id
         for field in _NEW_SECTION_EMPTY_LIST_FIELDS:
             section[field] = []
         return section
@@ -401,6 +446,12 @@ class AuditKnowledgeEditorService:
         if section_id in existing_ids:
             return None, [f"Identifikátor '{section_id}' již existuje."]
 
+        legal_requirement_id, link_errors = self._resolve_legal_requirement_id(
+            payload.get("legal_requirement_id"),
+        )
+        if link_errors:
+            return None, link_errors
+
         new_section = self.build_new_section(
             section_id=section_id,
             nazev=nazev,
@@ -408,6 +459,7 @@ class AuditKnowledgeEditorService:
             cil_overeni=str(payload.get("cil_overeni") or "").strip(),
             poradi=poradi,
             aktivni=bool(payload.get("aktivni", True)),
+            legal_requirement_id=legal_requirement_id,
         )
         sections.append(new_section)
         data["sekce"] = sections

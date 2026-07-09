@@ -3,6 +3,7 @@
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QFormLayout,
     QLabel,
     QLineEdit,
@@ -12,6 +13,13 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
     QWidget,
+)
+
+from moduly.audity.constants import KNOWLEDGE_EDITOR_SECTION_CONTROL_PROCESS_LABEL
+from moduly.audity.sluzby.audit_knowledge_editor_service import audit_knowledge_editor_service
+from moduly.audity.ui.audit_knowledge_control_process_combo import (
+    populate_control_process_combo,
+    selected_control_process_id,
 )
 
 from moduly.audity.constants import (
@@ -60,6 +68,7 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
 
         self._id_label = QLabel()
         self._nazev_edit = QLineEdit()
+        self._control_process_combo = QComboBox()
         self._popis_edit = QTextEdit()
         self._popis_edit.setMinimumHeight(90)
         self._cil_overeni_edit = QTextEdit()
@@ -71,6 +80,7 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
 
         form.addRow("Identifikátor:", self._id_label)
         form.addRow("Název:", self._nazev_edit)
+        form.addRow(KNOWLEDGE_EDITOR_SECTION_CONTROL_PROCESS_LABEL, self._control_process_combo)
         form.addRow("Popis:", self._popis_edit)
         form.addRow("Cíl ověření:", self._cil_overeni_edit)
         form.addRow("Pořadí:", self._poradi_spin)
@@ -118,6 +128,9 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
             widget.textChanged.connect(lambda *_args: self.content_modified.emit())
         self._poradi_spin.valueChanged.connect(lambda *_args: self.content_modified.emit())
         self._aktivni_check.toggled.connect(lambda *_args: self.content_modified.emit())
+        self._control_process_combo.currentIndexChanged.connect(
+            lambda *_args: self.content_modified.emit(),
+        )
 
         child_widgets = [
             self._assertions_widget,
@@ -154,6 +167,12 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
 
             self._id_label.setText(section_id)
             self._nazev_edit.setText(str(section.get("nazev") or ""))
+            populate_control_process_combo(
+                self._control_process_combo,
+                audit_knowledge_editor_service.normalize_legal_requirement_id(
+                    section.get("legal_requirement_id"),
+                ),
+            )
             self._popis_edit.setPlainText(str(section.get("popis") or ""))
             self._cil_overeni_edit.setPlainText(str(section.get("cil_overeni") or ""))
             self._poradi_spin.setValue(int(section.get("poradi") or 0))
@@ -190,6 +209,7 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
             self._section_id = ""
             self._id_label.clear()
             self._nazev_edit.clear()
+            populate_control_process_combo(self._control_process_combo, None)
             self._popis_edit.clear()
             self._cil_overeni_edit.clear()
             self._poradi_spin.setValue(0)
@@ -208,6 +228,7 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
             widget.blockSignals(blocked)
         self._poradi_spin.blockSignals(blocked)
         self._aktivni_check.blockSignals(blocked)
+        self._control_process_combo.blockSignals(blocked)
 
     def section_metadata(self) -> dict:
         return {
@@ -216,4 +237,5 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
             "cil_overeni": self._cil_overeni_edit.toPlainText().strip(),
             "poradi": self._poradi_spin.value(),
             "aktivni": self._aktivni_check.isChecked(),
+            "legal_requirement_id": selected_control_process_id(self._control_process_combo),
         }
