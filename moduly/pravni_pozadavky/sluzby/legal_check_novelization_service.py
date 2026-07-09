@@ -44,6 +44,10 @@ class LegalCheckNovelizationService:
         if remote_version is None:
             return None
 
+        if not self._has_reference_state(stored_version):
+            self._update_reference_checksum(stored_version, remote_version)
+            return None
+
         if not self._has_newer_version(stored_version, remote_version):
             return None
 
@@ -158,6 +162,12 @@ class LegalCheckNovelizationService:
             return match.group(1), int(match.group(2))
 
         return None, year
+
+    def _has_reference_state(self, stored_version: LegalDocumentVersion) -> bool:
+        stored_slice_id, stored_checksum = legal_document_esbirka_client.parse_version_checksum(
+            stored_version.checksum,
+        )
+        return stored_slice_id is not None and stored_checksum is not None
 
     def _has_newer_version(
         self,
