@@ -1,7 +1,6 @@
-import re
-import unicodedata
 from dataclasses import dataclass
 
+from moduly.audity.sluzby.audit_knowledge_editor_service import audit_knowledge_editor_service
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 from moduly.pravni_pozadavky.constants import process_code_sort_key
 from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
@@ -9,8 +8,6 @@ from moduly.pravni_pozadavky.sluzby.legal_change_impacted_process_service import
     ImpactedControlProcess,
     legal_change_impacted_process_service,
 )
-
-_LABEL_RE = re.compile(r"\s+")
 
 
 @dataclass(frozen=True)
@@ -74,15 +71,7 @@ class LegalChangeImpactedAssertionService:
         self,
         process: ImpactedControlProcess,
     ) -> list[ImpactedAuditAssertion]:
-        audit_process = self._resolve_audit_process(process.process_name)
-        if audit_process is None or not audit_process.has_knowledge_file:
-            return []
-
-        knowledge = audit_knowledge_service.load_process_knowledge(audit_process)
-        if knowledge is None:
-            return []
-
-        raw_assertions = self._collect_assertions_from_sections(knowledge.get("sekce") or [])
+        raw_assertions = self._collect_assertions_for_requirement(process.requirement_id)
         assertions: list[ImpactedAuditAssertion] = []
         for raw in raw_assertions:
             text = str(raw.get("text") or raw.get("nazev") or "").strip()
@@ -105,26 +94,34 @@ class LegalChangeImpactedAssertionService:
             )
         return assertions
 
-    def _resolve_audit_process(self, process_name: str):
-        normalized = self._normalize_label(process_name)
-        if not normalized:
-            return None
-
-        for process in audit_knowledge_service.get_processes(include_inactive=False, ensure=True):
-            if self._normalize_label(process.nazev) == normalized:
-                return process
-
-            if not process.has_knowledge_file:
+    def _collect_assertions_for_requirement(self, requirement_id: int) -> list[dict]:
+        collected: list[dict] = []
+        for audit_process in audit_knowledge_service.get_processes(
+            include_inactive=False,
+            ensure=True,
+        ):
+            if not audit_process.has_knowledge_file:
                 continue
-            knowledge = audit_knowledge_service.load_process_knowledge(process, ensure=False)
+            knowledge = audit_knowledge_service.load_process_knowledge(
+                audit_process,
+                ensure=False,
+            )
             if knowledge is None:
                 continue
-            knowledge_name = str(knowledge.get("nazev") or "").strip()
-            if self._normalize_label(knowledge_name) == normalized:
-                return process
-        return None
+            collected.extend(
+                self._collect_assertions_from_linked_sections(
+                    knowledge.get("sekce") or [],
+                    requirement_id=requirement_id,
+                ),
+            )
+        return collected
 
-    def _collect_assertions_from_sections(self, sections: list) -> list[dict]:
+    def _collect_assertions_from_linked_sections(
+        self,
+        sections: list,
+        *,
+        requirement_id: int,
+    ) -> list[dict]:
         collected: list[dict] = []
         for section in sections:
             if not isinstance(section, dict):
@@ -132,13 +129,24 @@ class LegalChangeImpactedAssertionService:
             if not section.get("aktivni", True):
                 continue
 
-            raw_items = section.get("auditni_tvrzeni") or []
-            active_items = audit_knowledge_service.get_active_items(raw_items)
-            collected.extend(audit_knowledge_service.normalize_auditni_tvrzeni(active_items))
+            section_requirement_id = audit_knowledge_editor_service.normalize_legal_requirement_id(
+                section.get("legal_requirement_id"),
+            )
+            if section_requirement_id == requirement_id:
+                raw_items = section.get("auditni_tvrzeni") or []
+                active_items = audit_knowledge_service.get_active_items(raw_items)
+                collected.extend(
+                    audit_knowledge_service.normalize_auditni_tvrzeni(active_items),
+                )
 
             nested = section.get("sekce") or []
             if nested:
-                collected.extend(self._collect_assertions_from_sections(nested))
+                collected.extend(
+                    self._collect_assertions_from_linked_sections(
+                        nested,
+                        requirement_id=requirement_id,
+                    ),
+                )
         return collected
 
     def _process_sort_key(self, process: ImpactedControlProcess) -> tuple:
@@ -151,14 +159,6 @@ class LegalChangeImpactedAssertionService:
             process_code=process_code,
         )
         return process_code_sort_key(requirement)
-
-    def _normalize_label(self, label: str) -> str:
-        normalized = unicodedata.normalize("NFKD", (label or "").strip().casefold())
-        ascii_text = "".join(
-            character for character in normalized if not unicodedata.combining(character)
-        )
-        ascii_text = _LABEL_RE.sub(" ", ascii_text)
-        return ascii_text.strip()
 
 
 legal_change_impacted_assertion_service = LegalChangeImpactedAssertionService()
