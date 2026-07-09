@@ -70,8 +70,67 @@ class LegalCheckNovelizationService:
             evaluated=False,
             note=f"{NOVELIZATION_REMOTE_CHECKSUM_NOTE_PREFIX}{remote_checksum}",
         )
+        self._compare_and_log_structure_changes(
+            document,
+            stored_version,
+            check_run_id=check_run_id,
+        )
         self._update_reference_checksum(stored_version, remote_version)
         return change
+
+    def _compare_and_log_structure_changes(
+        self,
+        document: LegalDocument,
+        stored_version: LegalDocumentVersion,
+        *,
+        check_run_id: int,
+    ):
+        number, year = self._resolve_number_and_year(document)
+        if number is None or year is None:
+            return None
+
+        try:
+            html = legal_document_esbirka_client.fetch_full_text_html(
+                year=year,
+                number=number,
+            )
+            title = legal_document_esbirka_client.extract_title(html)
+            raw_text = legal_document_esbirka_client.html_to_text(html)
+            from moduly.pravni_pozadavky.parser.legal_document_parser import legal_document_parser
+            from moduly.pravni_pozadavky.sluzby.legal_section_structure_compare_service import (
+                legal_section_structure_compare_service,
+            )
+
+            parsed = legal_document_parser.parse_text(
+                raw_text,
+                document_type=document.document_type,
+                number=number,
+                year=year,
+                title=title,
+                short_title=document.short_title or "",
+            )
+        except (ValueError, OSError):
+            return None
+
+        stored_sections = legal_section_service.list_by_version(
+            stored_version.id,
+            include_inactive=False,
+        )
+        result = legal_section_structure_compare_service.compare(
+            stored_sections=stored_sections,
+            parsed_sections=parsed.sections,
+        )
+        log_text = legal_section_structure_compare_service.format_check_run_log(
+            document=document,
+            result=result,
+        )
+        if log_text:
+            from moduly.pravni_pozadavky.sluzby.legal_check_run_service import (
+                legal_check_run_service,
+            )
+
+            legal_check_run_service.append_note(check_run_id, log_text)
+        return result
 
     def _fetch_remote_version(self, document: LegalDocument):
         number, year = self._resolve_number_and_year(document)

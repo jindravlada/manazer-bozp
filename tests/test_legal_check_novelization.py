@@ -139,6 +139,10 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
             legal_document_esbirka_client,
             "fetch_version_info",
             return_value=self.remote_version,
+        ), patch.object(
+            legal_document_esbirka_client,
+            "fetch_full_text_html",
+            return_value=self.fixture_html,
         ):
             change = legal_check_novelization_service.check_document(
                 document,
@@ -155,6 +159,50 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
         self.assertEqual(change.published_at, date(2021, 10, 11))
         self.assertIn("Aktuální znění", change.description)
         self.assertIn(self.remote_version.version_label, change.description)
+
+    def test_novelization_logs_structure_changes_to_check_run(self) -> None:
+        document, version = self._create_document_with_version(
+            checksum=legal_document_esbirka_client.build_version_checksum(
+                slice_id="111111",
+                text_checksum="old-checksum",
+            ),
+        )
+        legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_PARAGRAPH,
+            section_number="",
+            paragraph="1",
+            title="§ 1",
+            text="Původní znění",
+            sort_order=1,
+        )
+        run = legal_check_run_service._begin_automatic_check(date(2024, 1, 1), date(2024, 1, 31))
+
+        with patch.object(
+            legal_document_esbirka_client,
+            "fetch_version_info",
+            return_value=self.remote_version,
+        ), patch.object(
+            legal_document_esbirka_client,
+            "fetch_full_text_html",
+            return_value=self.fixture_html,
+        ):
+            change = legal_check_novelization_service.check_document(
+                document,
+                check_run_id=run.id,
+            )
+
+        assert change is not None
+        updated_run = legal_check_run_service.get_by_id(run.id)
+        assert updated_run is not None
+        self.assertIn("390/2021 Sb.", updated_run.note)
+        self.assertTrue(
+            "Změněná ustanovení:" in updated_run.note
+            or "Nová ustanovení:" in updated_run.note
+            or "Zrušená ustanovení:" in updated_run.note
+            or "Novelizace bez změny struktury ustanovení." in updated_run.note,
+        )
 
     def test_run_automatic_check_counts_created_changes(self) -> None:
         document, _version = self._create_document_with_version(

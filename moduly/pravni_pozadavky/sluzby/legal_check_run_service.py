@@ -46,6 +46,17 @@ class LegalCheckRunService:
     def get_by_id(self, run_id: int) -> LegalCheckRun | None:
         return self.repository.get_by_id(run_id)
 
+    def append_note(self, run_id: int, text: str) -> LegalCheckRun | None:
+        run = self.repository.get_by_id(run_id)
+        if run is None:
+            return None
+        addition = (text or "").strip()
+        if not addition:
+            return run
+        existing = (run.note or "").strip()
+        run.note = f"{existing}\n\n{addition}" if existing else addition
+        return self.repository.update(run)
+
     def get_last_completed_run(self) -> LegalCheckRun | None:
         return self.repository.get_last_completed()
 
