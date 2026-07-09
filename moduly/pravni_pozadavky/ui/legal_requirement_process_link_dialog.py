@@ -3,12 +3,20 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QFormLayout,
+    QLabel,
+    QLineEdit,
     QMessageBox,
     QTextEdit,
     QVBoxLayout,
 )
 
-from core.shared.constants import ENTITY_LEGAL_REQUIREMENT, LINK_TYPE_LABELS, VALID_LINK_TYPES
+from core.shared.constants import (
+    ENTITY_LEGAL_REQUIREMENT,
+    ENTITY_TYPE_LABELS,
+    LINK_TYPE_LABELS,
+    VALID_LINK_ENTITY_TYPES,
+    VALID_LINK_TYPES,
+)
 from core.widgets.dialog_utils import add_save_cancel_footer, configure_resizable_form_dialog
 from moduly.pravni_pozadavky.constants import legal_requirement_merged_target_label
 from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
@@ -28,26 +36,64 @@ class LegalRequirementProcessLinkDialog(QDialog):
         layout = QVBoxLayout(self)
         form = QFormLayout()
 
+        self.target_type = QComboBox()
+        for key in sorted(VALID_LINK_ENTITY_TYPES, key=lambda item: ENTITY_TYPE_LABELS.get(item, item)):
+            self.target_type.addItem(_entity_type_label(key), key)
+
+        self.target_id = QLineEdit()
+        self.target_id.setPlaceholderText("Číselné ID cílového objektu")
         self.target_process = QComboBox()
+        self._target_id_label = QLabel("Cílové ID:")
+        self._target_process_label = QLabel("Cílový proces:")
         self.link_type = QComboBox()
         for key in sorted(VALID_LINK_TYPES, key=lambda item: LINK_TYPE_LABELS[item]):
             self.link_type.addItem(LINK_TYPE_LABELS[key], key)
         self.note = QTextEdit()
         self.note.setMinimumHeight(80)
 
-        form.addRow("Cílový proces:", self.target_process)
+        form.addRow("Cílový typ entity:", self.target_type)
+        form.addRow(self._target_id_label, self.target_id)
+        form.addRow(self._target_process_label, self.target_process)
         form.addRow("Typ vazby:", self.link_type)
         form.addRow("Poznámka:", self.note)
 
         layout.addLayout(form)
         add_save_cancel_footer(layout, self)
 
-        selected_id = link.target_id if link is not None else None
-        self._populate_target_process_combo(selected_id)
+        self.target_type.currentIndexChanged.connect(self._update_target_widget)
+        self._update_target_widget()
+
         if link is not None:
-            index = self.link_type.findData(link.link_type)
-            self.link_type.setCurrentIndex(index if index >= 0 else 0)
-            self.note.setPlainText(link.note)
+            self._load_link(link)
+
+    def _load_link(self, link) -> None:
+        index = self.target_type.findData(link.target_type)
+        self.target_type.setCurrentIndex(index if index >= 0 else 0)
+        if link.target_type == ENTITY_LEGAL_REQUIREMENT:
+            self._populate_target_process_combo(link.target_id)
+        else:
+            self.target_id.setText(str(link.target_id))
+        index = self.link_type.findData(link.link_type)
+        self.link_type.setCurrentIndex(index if index >= 0 else 0)
+        self.note.setPlainText(link.note)
+
+    def _is_process_target(self) -> bool:
+        return self.target_type.currentData() == ENTITY_LEGAL_REQUIREMENT
+
+    def _update_target_widget(self) -> None:
+        use_process = self._is_process_target()
+        self._target_id_label.setVisible(not use_process)
+        self.target_id.setVisible(not use_process)
+        self._target_process_label.setVisible(use_process)
+        self.target_process.setVisible(use_process)
+        if use_process:
+            selected_id = None
+            if self.link is not None and self.link.target_type == ENTITY_LEGAL_REQUIREMENT:
+                selected_id = self.link.target_id
+            process_id = self.target_process.currentData(Qt.ItemDataRole.UserRole)
+            if process_id is not None:
+                selected_id = process_id
+            self._populate_target_process_combo(selected_id)
 
     def _populate_target_process_combo(self, selected_id: int | None) -> None:
         self.target_process.blockSignals(True)
@@ -83,22 +129,38 @@ class LegalRequirementProcessLinkDialog(QDialog):
             self.target_process.blockSignals(False)
 
     def get_data(self) -> dict:
-        target_id = self.target_process.currentData(Qt.ItemDataRole.UserRole)
+        target_type = self.target_type.currentData() or ""
         link_type = self.link_type.currentData() or ""
+        if target_type == ENTITY_LEGAL_REQUIREMENT:
+            target_id_value = self.target_process.currentData(Qt.ItemDataRole.UserRole)
+            target_id = int(target_id_value) if target_id_value is not None else 0
+        else:
+            target_id_text = self.target_id.text().strip()
+            target_id = int(target_id_text) if target_id_text else 0
 
         return {
-            "target_type": ENTITY_LEGAL_REQUIREMENT,
-            "target_id": int(target_id) if target_id is not None else 0,
+            "target_type": target_type,
+            "target_id": target_id,
             "link_type": link_type,
             "note": self.note.toPlainText().strip(),
         }
 
     def accept(self) -> None:
         data = self.get_data()
+        if data["target_type"] not in VALID_LINK_ENTITY_TYPES:
+            QMessageBox.warning(self, "Vazba procesu", "Vyberte cílový typ entity.")
+            return
         if data["target_id"] <= 0:
-            QMessageBox.warning(self, "Vazba procesu", "Vyberte cílový proces.")
+            if data["target_type"] == ENTITY_LEGAL_REQUIREMENT:
+                QMessageBox.warning(self, "Vazba procesu", "Vyberte cílový proces.")
+            else:
+                QMessageBox.warning(self, "Vazba procesu", "Zadejte platné cílové ID.")
             return
         if data["link_type"] not in VALID_LINK_TYPES:
             QMessageBox.warning(self, "Vazba procesu", "Vyberte typ vazby.")
             return
         super().accept()
+
+
+def _entity_type_label(entity_type: str) -> str:
+    return ENTITY_TYPE_LABELS.get(entity_type, entity_type)

@@ -33,6 +33,8 @@ class LegalRequirementCheckDialog(QDialog):
         super().__init__(parent)
         self.requirement = requirement
         self.created_task = None
+        self._syncing_next_check = False
+        self._next_check_manual_override = False
 
         self.setWindowTitle("Ověřit plnění")
         configure_resizable_form_dialog(self, width=620, height=420, min_width=480, min_height=320)
@@ -59,8 +61,9 @@ class LegalRequirementCheckDialog(QDialog):
         add_save_cancel_footer(layout, self)
 
         self.result.currentIndexChanged.connect(self._update_task_checkbox)
-        self.check_date.dateChanged.connect(self._suggest_next_check_date)
-        self._suggest_next_check_date()
+        self.check_date.dateChanged.connect(self._on_check_date_changed)
+        self.next_check_date.dateChanged.connect(self._on_next_check_manually_changed)
+        self._suggest_next_check_date(force=True)
         self._update_task_checkbox()
 
     def _selected_result(self) -> str:
@@ -76,19 +79,36 @@ class LegalRequirementCheckDialog(QDialog):
         if not enabled:
             self.create_task_checkbox.setChecked(False)
 
-    def _suggest_next_check_date(self) -> None:
+    def _on_check_date_changed(self) -> None:
+        self._suggest_next_check_date(force=True)
+
+    def _on_next_check_manually_changed(self) -> None:
+        if self._syncing_next_check:
+            return
+        self._next_check_manual_override = True
+
+    def _suggest_next_check_date(self, *, force: bool = False) -> None:
         if self.requirement is None:
             return
-        if self.next_check_date.has_date():
+        if not force and self._next_check_manual_override:
             return
 
         check_date = self._check_date_value()
-        suggested = calculate_next_verification_date(
-            check_date,
-            self.requirement.verification_periodicity,
-        )
-        if suggested is not None:
+        periodicity = self.requirement.verification_periodicity
+        if not periodicity:
+            return
+
+        suggested = calculate_next_verification_date(check_date, periodicity)
+        if suggested is None:
+            return
+
+        self._syncing_next_check = True
+        try:
             self.next_check_date.set_date_value(suggested)
+            if force:
+                self._next_check_manual_override = False
+        finally:
+            self._syncing_next_check = False
 
     def _check_date_value(self) -> date:
         iso = self.check_date.get_date_iso()

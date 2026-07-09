@@ -45,6 +45,7 @@ class LegalRequirementMergeTestCase(unittest.TestCase):
         from sqlalchemy import delete
 
         from core.database.session import get_session
+        from core.shared.modely.entity_link import EntityLink
         from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
         from moduly.pravni_pozadavky.modely.legal_document_version import LegalDocumentVersion
         from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
@@ -52,6 +53,7 @@ class LegalRequirementMergeTestCase(unittest.TestCase):
         from moduly.pravni_pozadavky.modely.legal_section import LegalSection
 
         with get_session() as session:
+            session.execute(delete(EntityLink))
             session.execute(delete(LegalRequirementSource))
             session.execute(delete(LegalRequirement))
             session.execute(delete(LegalSection))
@@ -172,6 +174,49 @@ class LegalRequirementMergeTestCase(unittest.TestCase):
         active_codes = [item.process_code for item in active_processes]
         self.assertIn(target.process_code, active_codes)
         self.assertNotIn(source.process_code, active_codes)
+
+    def test_merge_deduplicates_entity_link_already_on_target(self) -> None:
+        document = self._create_document()
+        version = self._create_version(document)
+        sections = self._create_subsections(document, version, 1)
+
+        target = legal_requirement_service.create_requirement(
+            title="Prevence rizik",
+            legal_document_id=document.id,
+            legal_section_id=sections[0].id,
+            source_section_id=sections[0].id,
+            requirement_summary="Cílový proces",
+        )
+        source = legal_requirement_service.create_requirement(
+            title="Kontrola dokumentace",
+            legal_document_id=document.id,
+            legal_section_id=sections[0].id,
+            source_section_id=sections[0].id,
+            requirement_summary="Zdrojový proces",
+        )
+        entity_link_service.create(
+            source_type=ENTITY_LEGAL_REQUIREMENT,
+            source_id=target.id,
+            target_type=ENTITY_RISK,
+            target_id=42,
+            link_type=LINK_LEGAL_BASIS,
+            note="Vazba na cíli",
+        )
+        entity_link_service.create(
+            source_type=ENTITY_LEGAL_REQUIREMENT,
+            source_id=source.id,
+            target_type=ENTITY_RISK,
+            target_id=42,
+            link_type=LINK_LEGAL_BASIS,
+            note="Vazba P-004",
+        )
+
+        legal_requirement_service.merge_process_requirements(source.id, target.id)
+
+        links = entity_link_service.list_for_source(ENTITY_LEGAL_REQUIREMENT, target.id)
+        self.assertEqual(len(links), 1)
+        self.assertEqual(links[0].target_id, 42)
+        self.assertEqual(links[0].note, "Vazba na cíli")
 
     def test_merge_does_not_create_duplicate_sources(self) -> None:
         document = self._create_document()

@@ -60,6 +60,15 @@ with patch.object(Path, "home", return_value=_TMP):
 
 class LegalRequirementServiceTestCase(unittest.TestCase):
     def setUp(self) -> None:
+        from sqlalchemy import delete
+
+        from core.database.session import get_session
+        from core.shared.modely.entity_link import EntityLink
+
+        with get_session() as session:
+            session.execute(delete(EntityLink))
+            session.commit()
+
         for requirement in legal_requirement_service.get_all():
             requirement.active = False
             legal_requirement_service.repository.update(requirement)

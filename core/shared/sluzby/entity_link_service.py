@@ -170,6 +170,7 @@ class EntityLinkService:
                 target_type=link.target_type,
                 target_id=link.target_id,
                 link_type=link.link_type,
+                exclude_id=link.id,
             )
             if duplicate is not None:
                 self.repository.delete(link.id)
@@ -189,6 +190,7 @@ class EntityLinkService:
                 target_type=normalized_type,
                 target_id=to_id,
                 link_type=link.link_type,
+                exclude_id=link.id,
             )
             if duplicate is not None:
                 self.repository.delete(link.id)
