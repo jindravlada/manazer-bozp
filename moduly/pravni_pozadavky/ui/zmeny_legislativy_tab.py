@@ -100,8 +100,13 @@ class ZmenyLegislativyTab(QWidget):
         if change is None:
             QMessageBox.information(self, "Zjištěné změny", "Vyberte změnu.")
             return
-        QMessageBox.information(
-            self,
-            "Zjištěné změny",
-            "Označení jako vyhodnocené bude dostupné v další fázi.",
-        )
+        if change.evaluated:
+            QMessageBox.information(
+                self,
+                "Zjištěné změny",
+                "Změna je již označena jako vyhodnocená.",
+            )
+            return
+
+        legal_change_service.mark_evaluated(change.id)
+        self.refresh()
