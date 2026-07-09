@@ -3,10 +3,12 @@ from PySide6.QtWidgets import (
     QDialog,
     QFileDialog,
     QComboBox,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QMessageBox,
     QPushButton,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -57,16 +59,30 @@ class PravniPozadavkyRequirementsTab(QWidget):
 
         layout = QVBoxLayout(self)
         toolbar = QHBoxLayout()
+        toolbar.setSpacing(8)
 
-        self.new_btn = QPushButton("Nový požadavek")
-        self.import_json_btn = QPushButton("Import požadavků JSON")
-        self.export_registry_btn = QPushButton("Export konfigurace registru")
-        self.restore_registry_btn = QPushButton("Obnovit registr")
+        self.new_btn = QPushButton("Nový proces")
         self.edit_btn = QPushButton("Upravit")
-        self.merge_btn = QPushButton("Sloučit procesy")
         self.archive_btn = QPushButton("Archivovat")
+        self.import_json_btn = QPushButton("Import předpisů")
+        self.export_registry_btn = QPushButton("Export registru")
+        self.restore_registry_btn = QPushButton("Obnovit registr")
         self.verify_btn = QPushButton("Ověřit plnění")
         self.task_btn = QPushButton("Vytvořit úkol")
+        self.merge_btn = QPushButton("Sloučit proces")
+
+        for button in (
+            self.new_btn,
+            self.edit_btn,
+            self.archive_btn,
+            self.import_json_btn,
+            self.export_registry_btn,
+            self.restore_registry_btn,
+            self.verify_btn,
+            self.task_btn,
+            self.merge_btn,
+        ):
+            button.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
 
         self.area_filter = QComboBox()
         self.status_filter = QComboBox()
@@ -87,14 +103,17 @@ class PravniPozadavkyRequirementsTab(QWidget):
         self.level_filter.setCurrentText(DEFAULT_PROCESS_LEVEL_FILTER)
 
         toolbar.addWidget(self.new_btn)
+        toolbar.addWidget(self.edit_btn)
+        toolbar.addWidget(self.archive_btn)
+        toolbar.addWidget(self._create_toolbar_separator())
         toolbar.addWidget(self.import_json_btn)
         toolbar.addWidget(self.export_registry_btn)
         toolbar.addWidget(self.restore_registry_btn)
-        toolbar.addWidget(self.edit_btn)
-        toolbar.addWidget(self.merge_btn)
-        toolbar.addWidget(self.archive_btn)
+        toolbar.addWidget(self._create_toolbar_separator())
         toolbar.addWidget(self.verify_btn)
         toolbar.addWidget(self.task_btn)
+        toolbar.addWidget(self._create_toolbar_separator())
+        toolbar.addWidget(self.merge_btn)
         toolbar.addStretch()
         toolbar.addWidget(QLabel("Oblast:"))
         toolbar.addWidget(self.area_filter)
@@ -132,6 +151,13 @@ class PravniPozadavkyRequirementsTab(QWidget):
         self.level_filter.currentIndexChanged.connect(self.refresh)
 
         self.refresh()
+
+    def _create_toolbar_separator(self) -> QFrame:
+        separator = QFrame()
+        separator.setFrameShape(QFrame.VLine)
+        separator.setFrameShadow(QFrame.Sunken)
+        separator.setFixedHeight(24)
+        return separator
 
     def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)
