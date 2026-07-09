@@ -62,6 +62,20 @@ class LegalSectionStructureCompareService:
 
         return result
 
+    def build_section_key_index(self, sections: list) -> dict[str, int]:
+        by_id = {section.id: section for section in sections}
+        index: dict[str, int] = {}
+        for section in sections:
+            chain = self._stored_chain(section, by_id)
+            identity_key = "/".join(self._identity_segment(item) for item in chain)
+            index[identity_key] = section.id
+        return index
+
+    def build_section_log_label(self, section, *, sections_by_id: dict | None = None) -> str:
+        by_id = sections_by_id or {section.id: section}
+        chain = self._stored_chain(section, by_id)
+        return self._log_label(chain)
+
     def format_check_run_summary(self, *, document, result: SectionStructureCompareResult) -> str:
         doc_number = legal_document_regulation_number(document)
         if not result.has_structural_changes:

@@ -20,10 +20,16 @@ from moduly.pravni_pozadavky.constants import (
     NOVELIZATION_REMOTE_CHECKSUM_NOTE_PREFIX,
     legal_document_display_label,
 )
+from moduly.pravni_pozadavky.sluzby.legal_change_impacted_process_service import (
+    legal_change_impacted_process_service,
+)
 from moduly.pravni_pozadavky.sluzby.legal_change_section_service import (
     legal_change_section_service,
 )
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
+from moduly.pravni_pozadavky.ui.legal_change_impacted_processes_table import (
+    LegalChangeImpactedProcessesTable,
+)
 from moduly.pravni_pozadavky.ui.legal_change_sections_table import LegalChangeSectionsTable
 
 
@@ -98,6 +104,21 @@ class LegalChangeDetailDialog(QDialog):
             empty_label.setWordWrap(True)
             sections_layout.addWidget(empty_label)
         root.addWidget(sections_group)
+
+        processes_group = QGroupBox("Dotčené řídicí procesy")
+        processes_layout = QVBoxLayout(processes_group)
+        processes = legal_change_impacted_process_service.list_processes_for_change(self.change.id)
+        if processes:
+            processes_table = LegalChangeImpactedProcessesTable()
+            processes_table.load_processes(processes)
+            processes_layout.addWidget(processes_table)
+        else:
+            empty_processes_label = QLabel(
+                "Toto ustanovení zatím není přiřazeno k žádnému řídicímu procesu.",
+            )
+            empty_processes_label.setWordWrap(True)
+            processes_layout.addWidget(empty_processes_label)
+        root.addWidget(processes_group)
 
         return content
 
