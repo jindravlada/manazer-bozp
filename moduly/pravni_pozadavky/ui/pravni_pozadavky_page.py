@@ -22,10 +22,10 @@ class PravniPozadavkyPage(QWidget):
         self.changes_tab = ZmenyLegislativyTab()
         self.check_runs_tab = KontrolyLegislativyTab()
 
-        self.tabs.addTab(self.requirements_tab, "Požadavky")
+        self.tabs.addTab(self.requirements_tab, "Řídicí procesy")
         self.tabs.addTab(self.documents_tab, "Právní předpisy")
-        self.tabs.addTab(self.changes_tab, "Změny legislativy")
-        self.tabs.addTab(self.check_runs_tab, "Kontroly legislativy")
+        self.tabs.addTab(self.check_runs_tab, "Kontroly změn")
+        self.tabs.addTab(self.changes_tab, "Zjištěné změny")
         layout.addWidget(self.tabs)
 
     def on_requirement_created(self, requirement_id: int | None = None) -> None:

@@ -14,7 +14,7 @@ from moduly.pravni_pozadavky.ui.legal_check_run_table import LegalCheckRunTable
 
 
 class KontrolyLegislativyTab(QWidget):
-    """Záložka evidence kontrolních běhů legislativy."""
+    """Záložka evidence kontrolních běhů změn legislativy."""
 
     def __init__(self):
         super().__init__()
@@ -22,16 +22,12 @@ class KontrolyLegislativyTab(QWidget):
         layout = QVBoxLayout(self)
         toolbar = QHBoxLayout()
 
-        self.new_btn = QPushButton("Nová kontrola")
-        self.edit_btn = QPushButton("Upravit")
+        self.perform_check_btn = QPushButton("Provést kontrolu")
+        self.open_btn = QPushButton("Otevřít")
         self.toggle_btn = QPushButton("Deaktivovat")
-        self.start_btn = QPushButton("Zahájit")
-        self.complete_btn = QPushButton("Dokončit")
-        toolbar.addWidget(self.new_btn)
-        toolbar.addWidget(self.edit_btn)
+        toolbar.addWidget(self.perform_check_btn)
+        toolbar.addWidget(self.open_btn)
         toolbar.addWidget(self.toggle_btn)
-        toolbar.addWidget(self.start_btn)
-        toolbar.addWidget(self.complete_btn)
         toolbar.addStretch()
 
         self.table = LegalCheckRunTable()
@@ -41,12 +37,10 @@ class KontrolyLegislativyTab(QWidget):
         layout.addWidget(self.text_filter)
         layout.addWidget(self.table)
 
-        self.new_btn.clicked.connect(self.new_run)
-        self.edit_btn.clicked.connect(self.edit_selected_run)
+        self.perform_check_btn.clicked.connect(self.perform_check)
+        self.open_btn.clicked.connect(self.open_selected_run)
         self.toggle_btn.clicked.connect(self.toggle_selected_run)
-        self.start_btn.clicked.connect(self.start_selected_run)
-        self.complete_btn.clicked.connect(self.complete_selected_run)
-        self.table.doubleClicked.connect(self.edit_selected_run)
+        self.table.doubleClicked.connect(self.open_selected_run)
         self.table.itemSelectionChanged.connect(self._update_action_buttons)
 
         self.refresh()
@@ -70,21 +64,17 @@ class KontrolyLegislativyTab(QWidget):
             return
         self.toggle_btn.setText("Obnovit" if not run.active else "Deaktivovat")
 
-    def new_run(self) -> None:
-        dialog = LegalCheckRunDialog(self)
-        if not exec_maximized(dialog):
-            return
-        try:
-            legal_check_run_service.create(**dialog.get_data())
-        except ValueError as exc:
-            QMessageBox.warning(self, "Kontroly legislativy", str(exc))
-            return
-        self.refresh()
+    def perform_check(self) -> None:
+        QMessageBox.information(
+            self,
+            "Kontroly změn",
+            "Provést kontrolu bude dostupné ve fázi 58.",
+        )
 
-    def edit_selected_run(self) -> None:
+    def open_selected_run(self) -> None:
         run = self._selected_run()
         if run is None:
-            QMessageBox.information(self, "Kontroly legislativy", "Vyberte kontrolu.")
+            QMessageBox.information(self, "Kontroly změn", "Vyberte kontrolu.")
             return
 
         dialog = LegalCheckRunDialog(self, run=run)
@@ -97,14 +87,14 @@ class KontrolyLegislativyTab(QWidget):
                 **dialog.get_data(),
             )
         except ValueError as exc:
-            QMessageBox.warning(self, "Kontroly legislativy", str(exc))
+            QMessageBox.warning(self, "Kontroly změn", str(exc))
             return
         self.refresh()
 
     def toggle_selected_run(self) -> None:
         run = self._selected_run()
         if run is None:
-            QMessageBox.information(self, "Kontroly legislativy", "Vyberte kontrolu.")
+            QMessageBox.information(self, "Kontroly změn", "Vyberte kontrolu.")
             return
 
         if run.active:
@@ -121,20 +111,4 @@ class KontrolyLegislativyTab(QWidget):
             return
 
         legal_check_run_service.restore(run.id)
-        self.refresh()
-
-    def start_selected_run(self) -> None:
-        run = self._selected_run()
-        if run is None:
-            QMessageBox.information(self, "Kontroly legislativy", "Vyberte kontrolu.")
-            return
-        legal_check_run_service.start_run(run.id)
-        self.refresh()
-
-    def complete_selected_run(self) -> None:
-        run = self._selected_run()
-        if run is None:
-            QMessageBox.information(self, "Kontroly legislativy", "Vyberte kontrolu.")
-            return
-        legal_check_run_service.complete_run(run.id)
         self.refresh()
