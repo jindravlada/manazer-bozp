@@ -44,6 +44,9 @@ from moduly.pravni_pozadavky.sluzby.legal_requirement_task_service import (
 )
 from moduly.pravni_pozadavky.ui.legal_requirement_check_dialog import LegalRequirementCheckDialog
 from moduly.pravni_pozadavky.ui.legal_requirement_dialog import LegalRequirementDialog
+from moduly.pravni_pozadavky.ui.legal_requirement_json_import_dialog import (
+    LegalRequirementJsonImportDialog,
+)
 from moduly.pravni_pozadavky.ui.legal_registry_diagnostic_dialog import (
     LegalRegistryDiagnosticDialog,
 )
@@ -66,6 +69,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
         self.new_btn = QPushButton("Nový proces")
         self.edit_btn = QPushButton("Upravit")
         self.archive_btn = QPushButton("Archivovat")
+        self.import_json_btn = QPushButton("Import procesů")
         self.merge_btn = QPushButton("Sloučit proces")
         self.verify_btn = QPushButton("Ověřit plnění")
         self.task_btn = QPushButton("Vytvořit úkol")
@@ -77,6 +81,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
             self.new_btn,
             self.edit_btn,
             self.archive_btn,
+            self.import_json_btn,
             self.merge_btn,
             self.verify_btn,
             self.task_btn,
@@ -107,6 +112,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
         actions_toolbar.addWidget(self.new_btn)
         actions_toolbar.addWidget(self.edit_btn)
         actions_toolbar.addWidget(self.archive_btn)
+        actions_toolbar.addWidget(self.import_json_btn)
         actions_toolbar.addWidget(self._create_toolbar_separator())
         actions_toolbar.addWidget(self.merge_btn)
         actions_toolbar.addWidget(self._create_toolbar_separator())
@@ -140,6 +146,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
         layout.addWidget(self.table)
 
         self.new_btn.clicked.connect(self.new_requirement)
+        self.import_json_btn.clicked.connect(self.import_requirements_json)
         self.backup_registry_btn.clicked.connect(self.export_registry_configuration)
         self.restore_registry_btn.clicked.connect(self.restore_registry_configuration)
         self.diagnostic_registry_btn.clicked.connect(self.show_registry_diagnostic)
@@ -266,6 +273,21 @@ class PravniPozadavkyRequirementsTab(QWidget):
             return None
         item = self.table.item(selected[0].row(), 0)
         return int(item.text()) if item else None
+
+    def import_requirements_json(self) -> None:
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Import požadavků z JSON",
+            "",
+            "JSON soubory (*.json);;Všechny soubory (*)",
+        )
+        if not file_path:
+            return
+
+        dialog = LegalRequirementJsonImportDialog(self, file_path=file_path)
+        exec_maximized(dialog)
+        if dialog.import_summary is not None:
+            self.refresh()
 
     def show_registry_diagnostic(self) -> None:
         dialog = LegalRegistryDiagnosticDialog(self)
