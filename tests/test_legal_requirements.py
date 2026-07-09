@@ -186,6 +186,26 @@ class LegalRequirementServiceTestCase(unittest.TestCase):
         )
         self.assertEqual(explicit, date(2026, 12, 31))
 
+    def test_create_and_update_process_inputs_outputs(self) -> None:
+        requirement = legal_requirement_service.create_requirement(
+            title="Systém řízení BOZP",
+            requirement_summary="Test",
+            process_inputs="Dokumentace BOZP",
+            process_outputs="Aktualizovaný registr rizik",
+        )
+
+        self.assertEqual(requirement.process_inputs, "Dokumentace BOZP")
+        self.assertEqual(requirement.process_outputs, "Aktualizovaný registr rizik")
+
+        updated = legal_requirement_service.update_requirement(
+            requirement.id,
+            process_inputs="Školení zaměstnanců",
+            process_outputs="Záznam o školení",
+        )
+        assert updated is not None
+        self.assertEqual(updated.process_inputs, "Školení zaměstnanců")
+        self.assertEqual(updated.process_outputs, "Záznam o školení")
+
     def test_create_task_from_requirement_links_source(self) -> None:
         requirement = self._create_requirement(compliance_status=COMPLIANCE_NESPLNENO)
 

@@ -269,6 +269,46 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
     def test_new_dialog_uses_ridici_proces_window_title(self) -> None:
         dialog = LegalRequirementDialog()
         self.assertEqual(dialog.windowTitle(), "Řídicí proces")
+
+    def test_dialog_calculates_next_verification_from_periodicity(self) -> None:
+        from datetime import date
+
+        from moduly.pravni_pozadavky.constants import PERIODICITY_NA_POZADANI, PERIODICITY_ROCNE
+
+        dialog = LegalRequirementDialog()
+        dialog.periodicity.setCurrentIndex(dialog.periodicity.findData(PERIODICITY_ROCNE))
+        dialog.last_verification.set_date_value(date(2026, 7, 9))
+
+        self.assertEqual(dialog.next_verification.get_date(), date(2027, 7, 9))
+
+        dialog.next_verification.set_date_value(date(2028, 1, 1))
+        dialog.last_verification.set_date_value(date(2026, 1, 1))
+        self.assertEqual(dialog.next_verification.get_date(), date(2027, 1, 1))
+
+        dialog.periodicity.setCurrentIndex(dialog.periodicity.findData(PERIODICITY_NA_POZADANI))
+        dialog.last_verification.set_date_value(date(2026, 7, 9))
+        self.assertEqual(dialog.next_verification.get_date(), date(2027, 1, 1))
+
+    def test_dialog_loads_and_saves_process_inputs_outputs(self) -> None:
+        from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
+
+        requirement = legal_requirement_service.create_requirement(
+            title="Školení BOZP",
+            requirement_summary="Test",
+            process_inputs="Seznam zaměstnanců",
+            process_outputs="Potvrzení o školení",
+        )
+
+        dialog = LegalRequirementDialog(requirement=requirement)
+
+        self.assertFalse(dialog.process_inputs_view.isReadOnly())
+        self.assertFalse(dialog.process_outputs_view.isReadOnly())
+        self.assertEqual(dialog.process_inputs_view.toPlainText(), "Seznam zaměstnanců")
+        self.assertEqual(dialog.process_outputs_view.toPlainText(), "Potvrzení o školení")
+        self.assertEqual(dialog.get_data()["process_inputs"], "Seznam zaměstnanců")
+        self.assertEqual(dialog.get_data()["process_outputs"], "Potvrzení o školení")
+
+    def test_dialog_shows_provision_text_for_selected_source(self) -> None:
         from moduly.pravni_pozadavky.ui.legal_requirement_sources_widget import _MISSING_SECTION_TEXT
 
         _document, subsection = self._create_subsection_101_odst_2()

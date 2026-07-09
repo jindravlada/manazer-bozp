@@ -495,6 +495,10 @@ def _ensure_legal_requirement_columns() -> None:
             "legal_requirements",
             "parent_requirement_id INTEGER REFERENCES legal_requirements(id)",
         )
+    if "process_inputs" not in columns:
+        _add_column("legal_requirements", "process_inputs TEXT DEFAULT ''")
+    if "process_outputs" not in columns:
+        _add_column("legal_requirements", "process_outputs TEXT DEFAULT ''")
     _ensure_legal_requirement_parent_index()
 
 

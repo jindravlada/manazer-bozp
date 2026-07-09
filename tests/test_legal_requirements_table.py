@@ -477,5 +477,50 @@ class PravniPozadavkyRequirementsTabSelectionTestCase(unittest.TestCase):
         self.assertEqual(tab.table.item(selected_row, 0).text(), str(requirement.id))
 
 
+class PravniPozadavkyRequirementsTabOwnerFilterTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        cls._app = QApplication.instance() or QApplication([])
+
+    def setUp(self) -> None:
+        from sqlalchemy import delete
+
+        from core.database.session import get_session
+        from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
+
+        with get_session() as session:
+            session.execute(delete(LegalRequirement))
+            session.commit()
+
+    def test_owner_filter_limits_processes_by_role(self) -> None:
+        from moduly.nastaveni.sluzby.responsibility_role_service import responsibility_role_service
+
+        roles = {
+            role.name: role
+            for role in responsibility_role_service.get_all(include_inactive=False)
+        }
+        owner_a = roles["Vedoucí provozu"]
+        owner_b = roles["OZO BOZP"]
+
+        legal_requirement_service.create_requirement(
+            title="Proces A",
+            requirement_summary="A",
+            responsible_role_id=owner_a.id,
+        )
+        legal_requirement_service.create_requirement(
+            title="Proces B",
+            requirement_summary="B",
+            responsible_role_id=owner_b.id,
+        )
+
+        tab = PravniPozadavkyRequirementsTab()
+        self.assertEqual(tab.table.rowCount(), 2)
+
+        tab.owner_filter.setCurrentIndex(tab.owner_filter.findText(owner_a.name))
+        self.assertEqual(tab.table.rowCount(), 1)
+        self.assertEqual(tab.table.item(0, COL_PROCESS).text(), "Proces A")
+
+
 if __name__ == "__main__":
     unittest.main()

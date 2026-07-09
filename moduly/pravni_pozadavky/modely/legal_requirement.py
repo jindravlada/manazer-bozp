@@ -29,6 +29,8 @@ class LegalRequirement(Base):
 
     requirement_summary: Mapped[str] = mapped_column(Text, default="")
     organization_impact: Mapped[str] = mapped_column(Text, default="")
+    process_inputs: Mapped[str] = mapped_column(Text, default="")
+    process_outputs: Mapped[str] = mapped_column(Text, default="")
 
     responsible_person_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     responsible_person_name: Mapped[str] = mapped_column(String(150), default="")

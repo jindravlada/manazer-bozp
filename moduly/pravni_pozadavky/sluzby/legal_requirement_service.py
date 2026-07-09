@@ -260,6 +260,8 @@ class LegalRequirementService:
         source_section_ids: list[int] | None = None,
         requirement_summary: str = "",
         organization_impact: str = "",
+        process_inputs: str = "",
+        process_outputs: str = "",
         responsible_person_id: int | None = None,
         responsible_role_id: int | None = None,
         verification_periodicity: str = "",
@@ -303,6 +305,8 @@ class LegalRequirementService:
             source_section_id=source_section_id,
             requirement_summary=requirement_summary.strip(),
             organization_impact=organization_impact.strip(),
+            process_inputs=process_inputs.strip(),
+            process_outputs=process_outputs.strip(),
             responsible_person_id=responsible_person_id,
             responsible_person_name=self._person_name(responsible_person_id),
             responsible_role_id=responsible_role_id,
@@ -338,6 +342,8 @@ class LegalRequirementService:
         source_section_ids: list[int] | None = None,
         requirement_summary: str = "",
         organization_impact: str = "",
+        process_inputs: str = "",
+        process_outputs: str = "",
         responsible_person_id: int | None = None,
         responsible_role_id: int | None = None,
         verification_periodicity: str = "",
@@ -389,6 +395,8 @@ class LegalRequirementService:
         requirement.source_section_id = source_section_id
         requirement.requirement_summary = requirement_summary.strip()
         requirement.organization_impact = organization_impact.strip()
+        requirement.process_inputs = process_inputs.strip()
+        requirement.process_outputs = process_outputs.strip()
         requirement.responsible_person_id = responsible_person_id
         requirement.responsible_person_name = self._person_name(responsible_person_id)
         requirement.responsible_role_id = responsible_role_id

@@ -36,7 +36,10 @@ from moduly.pravni_pozadavky.constants import (
     legal_section_provision_label,
 )
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
-from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
+from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
+    calculate_next_verification_date,
+    legal_requirement_service,
+)
 from moduly.pravni_pozadavky.sluzby.legal_section_display_text_service import (
     legal_section_display_text_service,
 )
@@ -62,6 +65,8 @@ class LegalRequirementDialog(QDialog):
         self._syncing_document_fields = False
         self._last_document_id: int | None = None
         self._loaded_responsible_person_id: int | None = None
+        self._syncing_next_verification = False
+        self._next_verification_manual_override = False
 
         self.setWindowTitle("Řídicí proces" if requirement is None else "Upravit řídicí proces")
         configure_resizable_form_dialog(self, width=1100, height=780, min_width=900, min_height=600)
@@ -226,13 +231,13 @@ class LegalRequirementDialog(QDialog):
         provision_text_layout.addWidget(self.provision_text_view, 1)
 
         self.process_inputs_view = QTextEdit()
-        self.process_inputs_view.setReadOnly(True)
+        self.process_inputs_view.setMinimumHeight(70)
         inputs_group = QGroupBox("Vstupy procesu")
         inputs_layout = QVBoxLayout(inputs_group)
         inputs_layout.addWidget(self.process_inputs_view)
 
         self.process_outputs_view = QTextEdit()
-        self.process_outputs_view.setReadOnly(True)
+        self.process_outputs_view.setMinimumHeight(70)
         outputs_group = QGroupBox("Výstupy procesu")
         outputs_layout = QVBoxLayout(outputs_group)
         outputs_layout.addWidget(self.process_outputs_view)
@@ -248,6 +253,10 @@ class LegalRequirementDialog(QDialog):
         splitter.setStretchFactor(0, 3)
         splitter.setStretchFactor(1, 2)
         root_layout.addWidget(splitter)
+
+        self.periodicity.currentIndexChanged.connect(self._on_verification_schedule_changed)
+        self.last_verification.dateChanged.connect(self._on_verification_schedule_changed)
+        self.next_verification.dateChanged.connect(self._on_next_verification_manually_changed)
 
         self._display_section_text(self.sources_widget.selected_section_id())
         return tab
@@ -307,13 +316,18 @@ class LegalRequirementDialog(QDialog):
         self.area.setText(requirement.area)
         self.requirement_summary.setPlainText(requirement.requirement_summary)
         self.organization_impact.setPlainText(requirement.organization_impact)
+        self.process_inputs_view.setPlainText(requirement.process_inputs)
+        self.process_outputs_view.setPlainText(requirement.process_outputs)
         self.responsible_role.set_role_id(
             requirement.responsible_role_id,
             requirement.responsible_role_name,
         )
         self._set_combo_value(self.periodicity, requirement.verification_periodicity)
-        self.last_verification.set_date_value(requirement.last_verification_date)
-        self.next_verification.set_date_value(requirement.next_verification_date)
+        self._load_verification_dates(
+            last_verification_date=requirement.last_verification_date,
+            next_verification_date=requirement.next_verification_date,
+            periodicity=requirement.verification_periodicity,
+        )
         self._set_combo_value(self.compliance_status, requirement.compliance_status)
         self.note.setPlainText(requirement.note)
         self.active_checkbox.setChecked(requirement.active)
@@ -517,6 +531,71 @@ class LegalRequirementDialog(QDialog):
         index = combo.findData(value)
         combo.setCurrentIndex(index if index >= 0 else 0)
 
+    def _load_verification_dates(
+        self,
+        *,
+        last_verification_date,
+        next_verification_date,
+        periodicity: str,
+    ) -> None:
+        self._syncing_next_verification = True
+        try:
+            self.last_verification.set_date_value(last_verification_date)
+            self.next_verification.set_date_value(next_verification_date)
+        finally:
+            self._syncing_next_verification = False
+        self._next_verification_manual_override = self._is_manual_next_verification(
+            last_verification_date,
+            periodicity,
+            next_verification_date,
+        )
+
+    def _is_manual_next_verification(
+        self,
+        last_verification_date,
+        periodicity: str,
+        next_verification_date,
+    ) -> bool:
+        if next_verification_date is None:
+            return False
+        if last_verification_date is None or not periodicity:
+            return True
+        suggested = calculate_next_verification_date(last_verification_date, periodicity)
+        if suggested is None:
+            return True
+        return next_verification_date != suggested
+
+    def _on_verification_schedule_changed(self) -> None:
+        if self._syncing_next_verification:
+            return
+        self._apply_suggested_next_verification(force=True)
+
+    def _on_next_verification_manually_changed(self) -> None:
+        if self._syncing_next_verification:
+            return
+        self._next_verification_manual_override = True
+
+    def _apply_suggested_next_verification(self, *, force: bool = False) -> None:
+        if not force and self._next_verification_manual_override:
+            return
+
+        last_verification_date = self.last_verification.get_date()
+        periodicity = self.periodicity.currentData() or ""
+        if last_verification_date is None or not periodicity:
+            return
+
+        suggested = calculate_next_verification_date(last_verification_date, periodicity)
+        if suggested is None:
+            return
+
+        self._syncing_next_verification = True
+        try:
+            self.next_verification.set_date_value(suggested)
+            if force:
+                self._next_verification_manual_override = False
+        finally:
+            self._syncing_next_verification = False
+
     def get_data(self) -> dict:
         periodicity = self.periodicity.currentData() or ""
         compliance_status = self.compliance_status.currentData() or ""
@@ -537,6 +616,8 @@ class LegalRequirementDialog(QDialog):
             "area": self.area.text().strip(),
             "requirement_summary": self.requirement_summary.toPlainText().strip(),
             "organization_impact": self.organization_impact.toPlainText().strip(),
+            "process_inputs": self.process_inputs_view.toPlainText().strip(),
+            "process_outputs": self.process_outputs_view.toPlainText().strip(),
             "responsible_person_id": self._loaded_responsible_person_id,
             "responsible_role_id": self.responsible_role.current_role_id(),
             "verification_periodicity": periodicity,
