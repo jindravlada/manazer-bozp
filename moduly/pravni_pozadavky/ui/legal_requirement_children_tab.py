@@ -43,15 +43,18 @@ class LegalRequirementChildrenTab(QWidget):
         self.table.load_children(children)
 
     def create_child_process(self) -> None:
-        try:
-            child = legal_requirement_service.create_requirement(
-                parent_requirement_id=self.requirement_id,
-            )
-        except ValueError as exc:
-            QMessageBox.warning(self, "Podřízené procesy", str(exc))
-            return
+        from moduly.pravni_pozadavky.ui.legal_requirement_dialog import LegalRequirementDialog
 
-        self._open_child_editor(child.id)
+        dialog = LegalRequirementDialog(self, parent_requirement_id=self.requirement_id)
+        if exec_maximized(dialog):
+            try:
+                legal_requirement_service.create_requirement(
+                    parent_requirement_id=self.requirement_id,
+                    **dialog.get_data(),
+                )
+            except ValueError as exc:
+                QMessageBox.warning(self, "Podřízené procesy", str(exc))
+                return
         self.refresh()
 
     def open_selected_child(self) -> None:

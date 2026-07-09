@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QSplitter,
     QTabWidget,
     QTextEdit,
@@ -58,10 +59,11 @@ from moduly.pravni_pozadavky.ui.legal_requirement_sources_widget import (
 
 
 class LegalRequirementDialog(QDialog):
-    def __init__(self, parent=None, requirement=None, draft=None):
+    def __init__(self, parent=None, requirement=None, draft=None, parent_requirement_id=None):
         super().__init__(parent)
         self.requirement = requirement
         self.draft = draft
+        self._new_child_parent_id = parent_requirement_id
         self._processing_status: str | None = None
         self._syncing_document_fields = False
         self._last_document_id: int | None = None
@@ -69,7 +71,13 @@ class LegalRequirementDialog(QDialog):
         self._syncing_next_verification = False
         self._next_verification_manual_override = False
 
-        self.setWindowTitle("Řídicí proces" if requirement is None else "Upravit řídicí proces")
+        if requirement is None and parent_requirement_id is not None:
+            window_title = "Nový podřízený proces"
+        elif requirement is None:
+            window_title = "Řídicí proces"
+        else:
+            window_title = "Upravit řídicí proces"
+        self.setWindowTitle(window_title)
         configure_resizable_form_dialog(self, width=1100, height=780, min_width=900, min_height=600)
 
         layout = QVBoxLayout(self)
@@ -95,6 +103,8 @@ class LegalRequirementDialog(QDialog):
             self._load_requirement(requirement)
         elif draft is not None:
             self._load_draft(draft)
+        elif parent_requirement_id is not None:
+            self._load_new_child(parent_requirement_id)
         else:
             self.active_checkbox.setChecked(True)
             self._populate_legal_sections()
@@ -285,6 +295,27 @@ class LegalRequirementDialog(QDialog):
             return
 
         self._set_parent_process_display(legal_requirement_merged_target_label(parent))
+
+    def _load_new_child(self, parent_requirement_id: int) -> None:
+        parent = legal_requirement_service.get_by_id(parent_requirement_id)
+        if parent is not None:
+            self._set_parent_process_display(legal_requirement_merged_target_label(parent))
+        else:
+            self._set_parent_process_display(None)
+        self.process_title.setReadOnly(False)
+        self.process_title.clear()
+        self.active_checkbox.setChecked(True)
+        self._populate_legal_sections()
+
+    def accept(self) -> None:
+        if not self.process_title.isReadOnly() and not self.process_title.text().strip():
+            QMessageBox.warning(
+                self,
+                "Řídicí proces",
+                "Název řídicího procesu musí být vyplněn.",
+            )
+            return
+        super().accept()
 
     def _load_requirement(self, requirement) -> None:
         self._loaded_responsible_person_id = requirement.responsible_person_id
@@ -606,6 +637,7 @@ class LegalRequirementDialog(QDialog):
 
         source_section_ids = self.sources_widget.get_section_ids()
         return {
+            "title": self.process_title.text().strip(),
             "regulation_name": self.regulation_name.currentText().strip(),
             "regulation_number": self.regulation_number.text().strip(),
             "provision": self.provision.text().strip(),

@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication, QLabel
+from PySide6.QtWidgets import QApplication, QDialog, QLabel
 
 _TMP = Path(tempfile.mkdtemp())
 
@@ -551,9 +551,45 @@ class LegalRequirementDialogChildrenTabTestCase(unittest.TestCase):
         self.assertEqual(dialog.children_tab.table.item(0, COL_TITLE).text(), "Elektrická zařízení")
         self.assertEqual(dialog.children_tab.table.item(0, COL_ACTIVE).text(), "Ano")
 
-    def test_new_child_process_creates_child_and_opens_editor(self) -> None:
-        from unittest.mock import patch
+    def test_new_child_process_dialog_title_editable(self) -> None:
+        from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
+            legal_requirement_service,
+        )
 
+        root = legal_requirement_service.create_requirement(
+            title="Řízení VTZ",
+            process_code="P-015",
+        )
+
+        dialog = LegalRequirementDialog(parent_requirement_id=root.id)
+
+        self.assertFalse(dialog.process_title.isReadOnly())
+        self.assertEqual(dialog.windowTitle(), "Nový podřízený proces")
+        self.assertEqual(
+            dialog.parent_process_label.text(),
+            "P-015 – Řízení VTZ",
+        )
+
+    def test_new_child_process_requires_title(self) -> None:
+        from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
+            legal_requirement_service,
+        )
+
+        root = legal_requirement_service.create_requirement(
+            title="Řízení VTZ",
+            process_code="P-015",
+        )
+        dialog = LegalRequirementDialog(parent_requirement_id=root.id)
+
+        with patch(
+            "moduly.pravni_pozadavky.ui.legal_requirement_dialog.QMessageBox.warning"
+        ) as warning:
+            dialog.accept()
+
+        warning.assert_called_once()
+        self.assertEqual(dialog.result(), QDialog.DialogCode.Rejected)
+
+    def test_cancel_new_child_process_does_not_create_record(self) -> None:
         from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
             legal_requirement_service,
         )
@@ -571,9 +607,35 @@ class LegalRequirementDialogChildrenTabTestCase(unittest.TestCase):
             dialog.children_tab.create_child_process()
 
         children = legal_requirement_service.list_children(root.id)
+        self.assertEqual(len(children), 0)
+
+    def test_save_new_child_process_creates_child_with_parent_and_code(self) -> None:
+        from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
+            legal_requirement_service,
+        )
+
+        root = legal_requirement_service.create_requirement(
+            title="Řízení VTZ",
+            process_code="P-015",
+        )
+        dialog = LegalRequirementDialog(requirement=root)
+
+        def accept_child_editor(child_dialog) -> int:
+            child_dialog.process_title.setText("Elektrická zařízení")
+            child_dialog.accept()
+            return QDialog.DialogCode.Accepted
+
+        with patch(
+            "moduly.pravni_pozadavky.ui.legal_requirement_children_tab.exec_maximized",
+            side_effect=accept_child_editor,
+        ):
+            dialog.children_tab.create_child_process()
+
+        children = legal_requirement_service.list_children(root.id)
         self.assertEqual(len(children), 1)
         self.assertEqual(children[0].process_code, "P-015.1")
         self.assertEqual(children[0].parent_requirement_id, root.id)
+        self.assertEqual(children[0].title, "Elektrická zařízení")
 
     def test_open_child_process_opens_editor_for_selected_child(self) -> None:
         from unittest.mock import patch
