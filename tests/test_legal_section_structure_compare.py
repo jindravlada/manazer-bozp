@@ -205,6 +205,35 @@ class LegalSectionStructureCompareServiceTestCase(unittest.TestCase):
         self.assertIn("§102", log_text)
         self.assertNotIn("Novelizace bez změny struktury ustanovení.", log_text)
 
+    def test_format_check_run_summary(self) -> None:
+        document = type(
+            "DocumentStub",
+            (),
+            {"number": "262/2006 Sb.", "year": 2006},
+        )()
+        result = legal_section_structure_compare_service.compare(
+            stored_sections=[
+                _SectionStub(section_id=1, section_type=SECTION_PARAGRAPH, paragraph="102"),
+            ],
+            parsed_sections=[
+                ParsedLegalSection(
+                    section_type=SECTION_PARAGRAPH,
+                    paragraph="102",
+                    sort_order=1,
+                ),
+            ],
+        )
+
+        summary = legal_section_structure_compare_service.format_check_run_summary(
+            document=document,
+            result=result,
+        )
+
+        self.assertEqual(
+            summary,
+            "262/2006 Sb. – novelizace bez změny struktury ustanovení.",
+        )
+
     def test_format_check_run_log_without_structural_changes(self) -> None:
         document = type(
             "DocumentStub",

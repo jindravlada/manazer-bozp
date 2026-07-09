@@ -62,6 +62,20 @@ class LegalSectionStructureCompareService:
 
         return result
 
+    def format_check_run_summary(self, *, document, result: SectionStructureCompareResult) -> str:
+        doc_number = legal_document_regulation_number(document)
+        if not result.has_structural_changes:
+            return f"{doc_number} – novelizace bez změny struktury ustanovení."
+
+        parts: list[str] = []
+        if result.changed:
+            parts.append(f"{len(result.changed)} změněná")
+        if result.new:
+            parts.append(f"{len(result.new)} nová")
+        if result.removed:
+            parts.append(f"{len(result.removed)} zrušená")
+        return f"{doc_number} – {', '.join(parts)} ustanovení."
+
     def format_check_run_log(self, *, document, result: SectionStructureCompareResult) -> str:
         lines = [legal_document_regulation_number(document), ""]
         if not result.has_structural_changes:

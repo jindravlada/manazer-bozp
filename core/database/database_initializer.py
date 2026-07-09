@@ -60,6 +60,7 @@ def initialize_database() -> None:
     )
     from moduly.pravni_pozadavky.modely.legal_section import LegalSection  # noqa: F401
     from moduly.pravni_pozadavky.modely.legal_change import LegalChange  # noqa: F401
+    from moduly.pravni_pozadavky.modely.legal_change_section import LegalChangeSection  # noqa: F401
     from moduly.pravni_pozadavky.modely.legal_check_run import LegalCheckRun  # noqa: F401
     from core.shared.modely.entity_link import EntityLink  # noqa: F401
     from core.shared.modely.control_result import ControlResult  # noqa: F401
@@ -90,6 +91,7 @@ def initialize_database() -> None:
     _ensure_legal_requirement_columns()
     _ensure_legal_requirement_sources_table()
     _ensure_legal_change_columns()
+    _ensure_legal_change_sections_table()
     _ensure_legal_document_columns()
     _ensure_legal_check_run_columns()
     _migrate_legal_document_types()
@@ -665,6 +667,14 @@ def _ensure_legal_change_columns() -> None:
         return
     if "legal_check_run_id" not in columns:
         _add_column("legal_changes", "legal_check_run_id INTEGER")
+
+
+def _ensure_legal_change_sections_table() -> None:
+    columns = _table_columns("legal_change_sections")
+    if not columns:
+        from moduly.pravni_pozadavky.modely.legal_change_section import LegalChangeSection
+
+        LegalChangeSection.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_legal_check_run_columns() -> None:

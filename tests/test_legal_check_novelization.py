@@ -27,6 +27,9 @@ with patch.object(Path, "home", return_value=_TMP):
 
     from moduly.pravni_pozadavky.constants import (
         CHANGE_NOVELIZATION,
+        CHANGE_SECTION_ADDED,
+        CHANGE_SECTION_MODIFIED,
+        CHANGE_SECTION_REMOVED,
         CHECK_RUN_COMPLETED,
         DOCUMENT_TYPE_ZAKON,
         NOVELIZATION_REMOTE_CHECKSUM_NOTE_PREFIX,
@@ -35,6 +38,9 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.pravni_pozadavky.import_export.legal_document_esbirka_client import (
         ESbirkaVersionInfo,
         legal_document_esbirka_client,
+    )
+    from moduly.pravni_pozadavky.sluzby.legal_change_section_service import (
+        legal_change_section_service,
     )
     from moduly.pravni_pozadavky.sluzby.legal_change_service import legal_change_service
     from moduly.pravni_pozadavky.sluzby.legal_check_novelization_service import (
@@ -46,6 +52,9 @@ with patch.object(Path, "home", return_value=_TMP):
         legal_document_version_service,
     )
     from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
+    from moduly.pravni_pozadavky.sluzby.legal_section_structure_compare_service import (
+        SectionStructureCompareResult,
+    )
 
 
 class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
@@ -54,12 +63,14 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
 
         from core.database.session import get_session
         from moduly.pravni_pozadavky.modely.legal_change import LegalChange
+        from moduly.pravni_pozadavky.modely.legal_change_section import LegalChangeSection
         from moduly.pravni_pozadavky.modely.legal_check_run import LegalCheckRun
         from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
         from moduly.pravni_pozadavky.modely.legal_document_version import LegalDocumentVersion
         from moduly.pravni_pozadavky.modely.legal_section import LegalSection
 
         with get_session() as session:
+            session.execute(delete(LegalChangeSection))
             session.execute(delete(LegalChange))
             session.execute(delete(LegalCheckRun))
             session.execute(delete(LegalSection))
@@ -160,7 +171,7 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
         self.assertIn("Aktuální znění", change.description)
         self.assertIn(self.remote_version.version_label, change.description)
 
-    def test_novelization_logs_structure_changes_to_check_run(self) -> None:
+    def test_novelization_saves_changed_sections_to_legal_change(self) -> None:
         document, version = self._create_document_with_version(
             checksum=legal_document_esbirka_client.build_version_checksum(
                 slice_id="111111",
@@ -194,15 +205,51 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
             )
 
         assert change is not None
+        sections = legal_change_section_service.list_sections_for_change(change.id)
+        self.assertGreater(len(sections), 0)
+        change_types = {section.change_type for section in sections}
+        self.assertTrue(
+            change_types.intersection(
+                {
+                    CHANGE_SECTION_ADDED,
+                    CHANGE_SECTION_REMOVED,
+                    CHANGE_SECTION_MODIFIED,
+                },
+            ),
+        )
         updated_run = legal_check_run_service.get_by_id(run.id)
         assert updated_run is not None
         self.assertIn("390/2021 Sb.", updated_run.note)
-        self.assertTrue(
-            "Změněná ustanovení:" in updated_run.note
-            or "Nová ustanovení:" in updated_run.note
-            or "Zrušená ustanovení:" in updated_run.note
-            or "Novelizace bez změny struktury ustanovení." in updated_run.note,
+        self.assertNotIn("Změněná ustanovení:", updated_run.note)
+
+    def test_novelization_without_structural_diff_creates_change_without_sections(self) -> None:
+        document, version = self._create_document_with_version(
+            checksum=legal_document_esbirka_client.build_version_checksum(
+                slice_id="111111",
+                text_checksum="old-checksum",
+            ),
         )
+        run = legal_check_run_service._begin_automatic_check(date(2024, 1, 1), date(2024, 1, 31))
+
+        with patch.object(
+            legal_document_esbirka_client,
+            "fetch_version_info",
+            return_value=self.remote_version,
+        ), patch.object(
+            legal_check_novelization_service,
+            "_compare_structure_changes",
+            return_value=SectionStructureCompareResult(),
+        ):
+            change = legal_check_novelization_service.check_document(
+                document,
+                check_run_id=run.id,
+            )
+
+        assert change is not None
+        self.assertEqual(legal_change_section_service.list_sections_for_change(change.id), [])
+        updated_run = legal_check_run_service.get_by_id(run.id)
+        assert updated_run is not None
+        self.assertIn("novelizace bez změny struktury ustanovení", updated_run.note)
 
     def test_run_automatic_check_counts_created_changes(self) -> None:
         document, _version = self._create_document_with_version(
