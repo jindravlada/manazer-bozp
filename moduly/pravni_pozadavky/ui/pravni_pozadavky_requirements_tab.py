@@ -44,25 +44,11 @@ from moduly.pravni_pozadavky.sluzby.legal_requirement_task_service import (
 )
 from moduly.pravni_pozadavky.ui.legal_requirement_check_dialog import LegalRequirementCheckDialog
 from moduly.pravni_pozadavky.ui.legal_requirement_dialog import LegalRequirementDialog
-from moduly.pravni_pozadavky.ui.legal_document_bulk_internet_import_dialog import (
-    LegalDocumentBulkInternetImportDialog,
-)
 from moduly.pravni_pozadavky.ui.legal_registry_diagnostic_dialog import (
     LegalRegistryDiagnosticDialog,
 )
 from moduly.pravni_pozadavky.ui.legal_requirement_merge_dialog import LegalRequirementMergeDialog
 from moduly.pravni_pozadavky.ui.legal_requirement_table import LegalRequirementTable
-
-
-def _find_pravni_pozadavky_page(widget):
-    from moduly.pravni_pozadavky.ui.pravni_pozadavky_page import PravniPozadavkyPage
-
-    current = widget
-    while current is not None:
-        if isinstance(current, PravniPozadavkyPage):
-            return current
-        current = current.parentWidget()
-    return None
 
 
 class PravniPozadavkyRequirementsTab(QWidget):
@@ -72,31 +58,31 @@ class PravniPozadavkyRequirementsTab(QWidget):
         super().__init__()
 
         layout = QVBoxLayout(self)
-        toolbar = QHBoxLayout()
-        toolbar.setSpacing(8)
+        actions_toolbar = QHBoxLayout()
+        actions_toolbar.setSpacing(8)
+        filters_toolbar = QHBoxLayout()
+        filters_toolbar.setSpacing(8)
 
         self.new_btn = QPushButton("Nový proces")
         self.edit_btn = QPushButton("Upravit")
         self.archive_btn = QPushButton("Archivovat")
-        self.import_json_btn = QPushButton("Import předpisů")
-        self.export_registry_btn = QPushButton("Export registru")
-        self.restore_registry_btn = QPushButton("Obnovit registr")
-        self.diagnostic_registry_btn = QPushButton("Diagnostika registru")
+        self.merge_btn = QPushButton("Sloučit proces")
         self.verify_btn = QPushButton("Ověřit plnění")
         self.task_btn = QPushButton("Vytvořit úkol")
-        self.merge_btn = QPushButton("Sloučit proces")
+        self.backup_registry_btn = QPushButton("Záloha registru")
+        self.restore_registry_btn = QPushButton("Obnovit registr")
+        self.diagnostic_registry_btn = QPushButton("Diagnostika registru")
 
         for button in (
             self.new_btn,
             self.edit_btn,
             self.archive_btn,
-            self.import_json_btn,
-            self.export_registry_btn,
-            self.restore_registry_btn,
-            self.diagnostic_registry_btn,
+            self.merge_btn,
             self.verify_btn,
             self.task_btn,
-            self.merge_btn,
+            self.backup_registry_btn,
+            self.restore_registry_btn,
+            self.diagnostic_registry_btn,
         ):
             button.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
 
@@ -118,42 +104,43 @@ class PravniPozadavkyRequirementsTab(QWidget):
         ])
         self.level_filter.setCurrentText(DEFAULT_PROCESS_LEVEL_FILTER)
 
-        toolbar.addWidget(self.new_btn)
-        toolbar.addWidget(self.edit_btn)
-        toolbar.addWidget(self.archive_btn)
-        toolbar.addWidget(self._create_toolbar_separator())
-        toolbar.addWidget(self.import_json_btn)
-        toolbar.addWidget(self.export_registry_btn)
-        toolbar.addWidget(self.restore_registry_btn)
-        toolbar.addWidget(self.diagnostic_registry_btn)
-        toolbar.addWidget(self._create_toolbar_separator())
-        toolbar.addWidget(self.verify_btn)
-        toolbar.addWidget(self.task_btn)
-        toolbar.addWidget(self._create_toolbar_separator())
-        toolbar.addWidget(self.merge_btn)
-        toolbar.addStretch()
-        toolbar.addWidget(QLabel("Oblast:"))
-        toolbar.addWidget(self.area_filter)
-        toolbar.addWidget(QLabel("Stav:"))
-        toolbar.addWidget(self.status_filter)
-        toolbar.addWidget(QLabel("Osoba:"))
-        toolbar.addWidget(self.person_filter)
-        toolbar.addWidget(QLabel("Záznamy:"))
-        toolbar.addWidget(self.active_filter)
-        toolbar.addWidget(QLabel("Úroveň procesu:"))
-        toolbar.addWidget(self.level_filter)
+        actions_toolbar.addWidget(self.new_btn)
+        actions_toolbar.addWidget(self.edit_btn)
+        actions_toolbar.addWidget(self.archive_btn)
+        actions_toolbar.addWidget(self._create_toolbar_separator())
+        actions_toolbar.addWidget(self.merge_btn)
+        actions_toolbar.addWidget(self._create_toolbar_separator())
+        actions_toolbar.addWidget(self.verify_btn)
+        actions_toolbar.addWidget(self.task_btn)
+        actions_toolbar.addWidget(self._create_toolbar_separator())
+        actions_toolbar.addWidget(self.backup_registry_btn)
+        actions_toolbar.addWidget(self.restore_registry_btn)
+        actions_toolbar.addWidget(self.diagnostic_registry_btn)
+        actions_toolbar.addStretch()
+
+        filters_toolbar.addWidget(QLabel("Oblast:"))
+        filters_toolbar.addWidget(self.area_filter)
+        filters_toolbar.addWidget(QLabel("Stav:"))
+        filters_toolbar.addWidget(self.status_filter)
+        filters_toolbar.addWidget(QLabel("Osoba:"))
+        filters_toolbar.addWidget(self.person_filter)
+        filters_toolbar.addWidget(QLabel("Záznamy:"))
+        filters_toolbar.addWidget(self.active_filter)
+        filters_toolbar.addWidget(QLabel("Úroveň procesu:"))
+        filters_toolbar.addWidget(self.level_filter)
+        filters_toolbar.addStretch()
 
         self.table = LegalRequirementTable()
         configure_table_columns(self.table, "legal_requirements")
         self.text_filter = FilterBar(self.table, placeholder="🔍 Hledat proces...")
 
-        layout.addLayout(toolbar)
+        layout.addLayout(actions_toolbar)
+        layout.addLayout(filters_toolbar)
         layout.addWidget(self.text_filter)
         layout.addWidget(self.table)
 
         self.new_btn.clicked.connect(self.new_requirement)
-        self.import_json_btn.clicked.connect(self.import_predpisy)
-        self.export_registry_btn.clicked.connect(self.export_registry_configuration)
+        self.backup_registry_btn.clicked.connect(self.export_registry_configuration)
         self.restore_registry_btn.clicked.connect(self.restore_registry_configuration)
         self.diagnostic_registry_btn.clicked.connect(self.show_registry_diagnostic)
         self.edit_btn.clicked.connect(self.edit_selected_requirement)
@@ -280,17 +267,6 @@ class PravniPozadavkyRequirementsTab(QWidget):
         item = self.table.item(selected[0].row(), 0)
         return int(item.text()) if item else None
 
-    def import_predpisy(self) -> None:
-        dialog = LegalDocumentBulkInternetImportDialog(self)
-        exec_maximized(dialog)
-        if dialog.import_summary is None:
-            return
-
-        self.refresh()
-        page = _find_pravni_pozadavky_page(self)
-        if page is not None:
-            page.documents_tab.refresh()
-
     def show_registry_diagnostic(self) -> None:
         dialog = LegalRegistryDiagnosticDialog(self)
         exec_maximized(dialog)
@@ -300,7 +276,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
         default_path = str(storage_service.exports_dir / default_name)
         file_path, _ = QFileDialog.getSaveFileName(
             self,
-            "Export konfigurace registru právních požadavků",
+            "Záloha registru právních požadavků",
             default_path,
             "JSON soubory (*.json);;Všechny soubory (*)",
         )
@@ -310,14 +286,14 @@ class PravniPozadavkyRequirementsTab(QWidget):
         try:
             result = legal_registry_export_service.export_to_file(file_path)
         except ValueError as exc:
-            QMessageBox.warning(self, "Export registru", str(exc))
+            QMessageBox.warning(self, "Záloha registru", str(exc))
             return
 
         QMessageBox.information(
             self,
-            "Export registru",
+            "Záloha registru",
             (
-                "Export dokončen.\n\n"
+                "Záloha dokončena.\n\n"
                 f"Soubor:\n{result.file_path}\n\n"
                 f"Právní předpisy: {result.document_count}\n"
                 f"Verze předpisů: {result.version_count}\n"

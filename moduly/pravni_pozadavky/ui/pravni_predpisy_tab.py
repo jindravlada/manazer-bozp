@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QMessageBox,
     QPushButton,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -48,15 +49,30 @@ class PravniPredpisyTab(QWidget):
         super().__init__()
 
         layout = QVBoxLayout(self)
-        toolbar = QHBoxLayout()
+        actions_toolbar = QHBoxLayout()
+        actions_toolbar.setSpacing(8)
+        filters_toolbar = QHBoxLayout()
+        filters_toolbar.setSpacing(8)
 
         self.new_btn = QPushButton("Nový")
-        self.import_btn = QPushButton("Import JSON")
-        self.import_txt_btn = QPushButton("Import TXT")
-        self.import_bulk_internet_btn = QPushButton("Import z internetu")
-        self.export_btn = QPushButton("Export JSON")
         self.edit_btn = QPushButton("Upravit")
+        self.import_bulk_internet_btn = QPushButton("Import z internetu")
+        self.import_txt_btn = QPushButton("Import TXT")
+        self.import_btn = QPushButton("Import JSON")
+        self.export_btn = QPushButton("Export JSON")
         self.toggle_btn = QPushButton("Deaktivovat")
+
+        for button in (
+            self.new_btn,
+            self.edit_btn,
+            self.import_bulk_internet_btn,
+            self.import_txt_btn,
+            self.import_btn,
+            self.export_btn,
+            self.toggle_btn,
+        ):
+            button.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+
         self.active_filter = QComboBox()
         self.active_filter.addItems([
             FILTER_ACTIVE_ONLY,
@@ -71,23 +87,27 @@ class PravniPredpisyTab(QWidget):
             FILTER_INCLUDED_IN_PROCESSES_NO,
         ])
         self.included_in_processes_filter.setCurrentText(DEFAULT_INCLUDED_IN_PROCESSES_FILTER)
-        toolbar.addWidget(self.new_btn)
-        toolbar.addWidget(self.edit_btn)
-        toolbar.addWidget(self.import_bulk_internet_btn)
-        toolbar.addWidget(self.import_txt_btn)
-        toolbar.addWidget(self.import_btn)
-        toolbar.addWidget(self.export_btn)
-        toolbar.addWidget(self.toggle_btn)
-        toolbar.addStretch()
-        toolbar.addWidget(QLabel("Záznamy:"))
-        toolbar.addWidget(self.active_filter)
-        toolbar.addWidget(QLabel("V procesech:"))
-        toolbar.addWidget(self.included_in_processes_filter)
+
+        actions_toolbar.addWidget(self.new_btn)
+        actions_toolbar.addWidget(self.edit_btn)
+        actions_toolbar.addWidget(self.import_bulk_internet_btn)
+        actions_toolbar.addWidget(self.import_txt_btn)
+        actions_toolbar.addWidget(self.import_btn)
+        actions_toolbar.addWidget(self.export_btn)
+        actions_toolbar.addWidget(self.toggle_btn)
+        actions_toolbar.addStretch()
+
+        filters_toolbar.addWidget(QLabel("Záznamy:"))
+        filters_toolbar.addWidget(self.active_filter)
+        filters_toolbar.addWidget(QLabel("V procesech:"))
+        filters_toolbar.addWidget(self.included_in_processes_filter)
+        filters_toolbar.addStretch()
 
         self.table = LegalDocumentTable()
         self.text_filter = FilterBar(self.table, placeholder="🔍 Hledat předpis...")
 
-        layout.addLayout(toolbar)
+        layout.addLayout(actions_toolbar)
+        layout.addLayout(filters_toolbar)
         layout.addWidget(self.text_filter)
         layout.addWidget(self.table)
 
