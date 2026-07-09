@@ -14,7 +14,7 @@ from core.shared.constants import (
     VALID_LINK_ENTITY_TYPES,
     VALID_LINK_TYPES,
 )
-from core.widgets.dialog_utils import configure_resizable_form_dialog, create_save_cancel_box
+from core.widgets.dialog_utils import add_save_cancel_footer, configure_resizable_form_dialog
 
 
 class EntityLinkDialog(QDialog):
@@ -47,7 +47,7 @@ class EntityLinkDialog(QDialog):
         form.addRow("Poznámka:", self.note)
 
         layout.addLayout(form)
-        layout.addWidget(create_save_cancel_box(self))
+        add_save_cancel_footer(layout, self)
 
         if link is not None:
             self._load_link(link)

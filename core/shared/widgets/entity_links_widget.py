@@ -18,10 +18,17 @@ from core.widgets.dialog_utils import exec_maximized
 
 
 class EntityLinksWidget(QWidget):
-    def __init__(self, source_type: str, source_id: int | None = None, parent=None):
+    def __init__(
+        self,
+        source_type: str,
+        source_id: int | None = None,
+        parent=None,
+        link_dialog_class=None,
+    ):
         super().__init__(parent)
         self.source_type = source_type
         self.source_id = source_id
+        self.link_dialog_class = link_dialog_class or EntityLinkDialog
 
         layout = QVBoxLayout(self)
 
@@ -126,11 +133,19 @@ class EntityLinksWidget(QWidget):
             return
         self.toggle_btn.setText("Obnovit" if not link.active else "Deaktivovat")
 
+    def _create_link_dialog(self, link=None):
+        kwargs = {}
+        if link is not None:
+            kwargs["link"] = link
+        if self.link_dialog_class is not EntityLinkDialog:
+            kwargs["source_id"] = self.source_id
+        return self.link_dialog_class(self, **kwargs)
+
     def add_link(self) -> None:
         if self.source_id is None:
             return
 
-        dialog = EntityLinkDialog(self)
+        dialog = self._create_link_dialog()
         if not exec_maximized(dialog):
             return
 
@@ -152,7 +167,7 @@ class EntityLinksWidget(QWidget):
             QMessageBox.information(self, "Vazby", "Vyberte vazbu.")
             return
 
-        dialog = EntityLinkDialog(self, link=link)
+        dialog = self._create_link_dialog(link=link)
         if not exec_maximized(dialog):
             return
 

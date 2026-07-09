@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.date_edit import DateEdit
-from core.widgets.dialog_utils import configure_resizable_form_dialog, create_save_cancel_box
+from core.widgets.dialog_utils import add_save_cancel_footer, configure_resizable_form_dialog
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.pravni_pozadavky.constants import (
     COMPLIANCE_CASTECNE_SPLNENO,
@@ -56,7 +56,7 @@ class LegalRequirementCheckDialog(QDialog):
         form.addRow("", self.create_task_checkbox)
 
         layout.addLayout(form)
-        layout.addWidget(create_save_cancel_box(self))
+        add_save_cancel_footer(layout, self)
 
         self.result.currentIndexChanged.connect(self._update_task_checkbox)
         self.check_date.dateChanged.connect(self._suggest_next_check_date)

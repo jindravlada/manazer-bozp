@@ -18,8 +18,8 @@ COL_PROCESS = 2
 COL_SUMMARY = 3
 COL_RESPONSIBLE = 4
 COL_STATUS = 5
-COL_LAST_CHECK = 6
-COL_NEXT_CHECK = 7
+COL_NEXT_CHECK = 6
+COL_LAST_CHECK = 7
 COL_PERIODICITY = 8
 COLUMN_COUNT = 9
 
@@ -44,8 +44,8 @@ class LegalRequirementTable(QTableWidget):
             "Způsob plnění",
             "Vlastník procesu",
             "Stav plnění",
-            "Poslední ověření",
             "Další ověření",
+            "Poslední ověření",
             "Periodicita",
         ])
 
@@ -67,8 +67,8 @@ class LegalRequirementTable(QTableWidget):
             COL_CODE,
             COL_RESPONSIBLE,
             COL_STATUS,
-            COL_LAST_CHECK,
             COL_NEXT_CHECK,
+            COL_LAST_CHECK,
             COL_PERIODICITY,
         ):
             header.setSectionResizeMode(column, QHeaderView.Fixed)

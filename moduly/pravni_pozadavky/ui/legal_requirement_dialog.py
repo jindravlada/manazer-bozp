@@ -45,10 +45,13 @@ from moduly.pravni_pozadavky.sluzby.legal_section_display_text_service import (
 )
 from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
 from moduly.pravni_pozadavky.ui.legal_document_selector import LegalDocumentNameSelector
-from moduly.pravni_pozadavky.ui.legal_requirement_sanctions_tab import LegalRequirementSanctionsTab
+from moduly.pravni_pozadavky.ui.legal_requirement_process_link_dialog import (
+    LegalRequirementProcessLinkDialog,
+)
 from moduly.pravni_pozadavky.ui.legal_requirement_children_tab import (
     LegalRequirementChildrenTab,
 )
+from moduly.pravni_pozadavky.ui.legal_requirement_sanctions_tab import LegalRequirementSanctionsTab
 from moduly.pravni_pozadavky.ui.legal_requirement_sources_widget import (
     LegalRequirementSourcesWidget,
     _MISSING_SECTION_TEXT,
@@ -86,6 +89,7 @@ class LegalRequirementDialog(QDialog):
         self.links_widget = EntityLinksWidget(
             ENTITY_LEGAL_REQUIREMENT,
             requirement.id if requirement is not None else None,
+            link_dialog_class=LegalRequirementProcessLinkDialog,
         )
         self.tabs.addTab(wrap_in_scroll_area(self.links_widget), "Vazby procesu")
         layout.addWidget(self.tabs, 1)
