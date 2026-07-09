@@ -5,6 +5,7 @@ from PySide6.QtGui import QColor, QBrush
 from PySide6.QtWidgets import QHeaderView, QTableWidget, QTableWidgetItem
 
 from core.widgets.table_utils import create_preview_table_item
+from core.widgets.text_preview import DEFAULT_TEXT_PREVIEW_LENGTH
 from moduly.pravni_pozadavky.constants import (
     COMPLIANCE_STATUS_LABELS,
     PERIODICITY_LABELS,
@@ -22,6 +23,7 @@ COL_NEXT_CHECK = 6
 COL_LAST_CHECK = 7
 COL_PERIODICITY = 8
 COLUMN_COUNT = 9
+PROCESS_NAME_PREVIEW_LENGTH = 40
 
 
 def _format_date(value) -> str:
@@ -61,10 +63,10 @@ class LegalRequirementTable(QTableWidget):
 
         header = self.horizontalHeader()
         header.setStretchLastSection(False)
-        header.setSectionResizeMode(COL_PROCESS, QHeaderView.Stretch)
         header.setSectionResizeMode(COL_SUMMARY, QHeaderView.Fixed)
         for column in (
             COL_CODE,
+            COL_PROCESS,
             COL_RESPONSIBLE,
             COL_STATUS,
             COL_NEXT_CHECK,
@@ -86,7 +88,12 @@ class LegalRequirementTable(QTableWidget):
         for row, requirement in enumerate(requirements):
             self._set_item(row, COL_ID, str(requirement.id))
             self._set_item(row, COL_CODE, requirement.process_code)
-            self._set_item(row, COL_PROCESS, legal_requirement_process_label(requirement))
+            self._set_preview_item(
+                row,
+                COL_PROCESS,
+                legal_requirement_process_label(requirement),
+                max_length=PROCESS_NAME_PREVIEW_LENGTH,
+            )
             self._set_preview_item(row, COL_SUMMARY, requirement.requirement_summary)
             self._set_item(row, COL_RESPONSIBLE, legal_requirement_responsible_label(requirement))
             self._set_item(
@@ -115,8 +122,15 @@ class LegalRequirementTable(QTableWidget):
         item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         self.setItem(row, column, item)
 
-    def _set_preview_item(self, row: int, column: int, text: str) -> None:
-        self.setItem(row, column, create_preview_table_item(text))
+    def _set_preview_item(
+        self,
+        row: int,
+        column: int,
+        text: str,
+        *,
+        max_length: int = DEFAULT_TEXT_PREVIEW_LENGTH,
+    ) -> None:
+        self.setItem(row, column, create_preview_table_item(text, max_length=max_length))
 
     def _apply_row_style(self, row: int, requirement, today: date) -> None:
         if not requirement.active:

@@ -203,22 +203,22 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         )
 
         widths = {
-            COL_CODE: 80,
-            COL_PROCESS: 180,
-            COL_SUMMARY: 240,
-            COL_RESPONSIBLE: 175,
-            COL_STATUS: 130,
-            COL_NEXT_CHECK: 115,
-            COL_LAST_CHECK: 115,
-            COL_PERIODICITY: 125,
+            COL_CODE: 72,
+            COL_PROCESS: 200,
+            COL_SUMMARY: 280,
+            COL_RESPONSIBLE: 200,
+            COL_STATUS: 120,
+            COL_NEXT_CHECK: 110,
+            COL_LAST_CHECK: 110,
+            COL_PERIODICITY: 120,
         }
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
-        header.setSectionResizeMode(COL_PROCESS, QHeaderView.Stretch)
         header.setSectionResizeMode(COL_SUMMARY, QHeaderView.Fixed)
         for column in (
             COL_CODE,
+            COL_PROCESS,
             COL_RESPONSIBLE,
             COL_STATUS,
             COL_NEXT_CHECK,

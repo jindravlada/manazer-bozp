@@ -41,9 +41,15 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
     from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
     from moduly.pravni_pozadavky.ui.legal_requirement_table import (
+        COL_CODE,
+        COL_LAST_CHECK,
+        COL_NEXT_CHECK,
+        COL_PERIODICITY,
         COL_PROCESS,
         COL_RESPONSIBLE,
+        COL_STATUS,
         COL_SUMMARY,
+        PROCESS_NAME_PREVIEW_LENGTH,
         LegalRequirementTable,
     )
     from moduly.pravni_pozadavky.ui.pravni_pozadavky_page import PravniPozadavkyPage
@@ -232,6 +238,44 @@ class LegalRequirementTableDisplayTestCase(unittest.TestCase):
         )
         self.assertIn("Zaměstnavatel stanoví", summary_item.toolTip())
         self.assertIn("prováděcích předpisů", summary_item.toolTip())
+
+    def test_table_truncates_long_process_title_and_shows_tooltip(self) -> None:
+        from core.widgets.text_preview import TEXT_PREVIEW_SUFFIX
+
+        full_title = (
+            "Řízení vyhrazených technických zařízení v energetických a průmyslových provozech"
+        )
+        requirement = legal_requirement_service.create_requirement(
+            title=full_title,
+            requirement_summary="Test",
+        )
+
+        table = LegalRequirementTable()
+        table.load_requirements([requirement])
+
+        process_item = table.item(0, COL_PROCESS)
+        assert process_item is not None
+        self.assertEqual(
+            process_item.text(),
+            f"{full_title[:PROCESS_NAME_PREVIEW_LENGTH]}{TEXT_PREVIEW_SUFFIX}",
+        )
+        self.assertIn("Řízení vyhrazených technických zařízení", process_item.toolTip())
+        self.assertIn("průmyslových provozech", process_item.toolTip())
+
+    def test_table_column_widths_are_balanced(self) -> None:
+        from core.widgets.table_utils import configure_table_columns
+
+        table = LegalRequirementTable()
+        configure_table_columns(table, "legal_requirements")
+
+        self.assertEqual(table.columnWidth(COL_CODE), 72)
+        self.assertEqual(table.columnWidth(COL_PROCESS), 200)
+        self.assertEqual(table.columnWidth(COL_SUMMARY), 280)
+        self.assertEqual(table.columnWidth(COL_RESPONSIBLE), 200)
+        self.assertEqual(table.columnWidth(COL_STATUS), 120)
+        self.assertEqual(table.columnWidth(COL_NEXT_CHECK), 110)
+        self.assertEqual(table.columnWidth(COL_LAST_CHECK), 110)
+        self.assertEqual(table.columnWidth(COL_PERIODICITY), 120)
 
     def test_refresh_sorts_by_process_code(self) -> None:
         from moduly.pravni_pozadavky.constants import process_code_sort_key
@@ -494,7 +538,9 @@ class PravniPozadavkyRequirementsTabOwnerFilterTestCase(unittest.TestCase):
             session.commit()
 
     def test_owner_filter_limits_processes_by_role(self) -> None:
+        from core.widgets.search_combo_box import SearchComboBox
         from moduly.nastaveni.sluzby.responsibility_role_service import responsibility_role_service
+        from moduly.pravni_pozadavky.constants import FILTER_OWNER_VSE
 
         roles = {
             role.name: role
@@ -515,9 +561,14 @@ class PravniPozadavkyRequirementsTabOwnerFilterTestCase(unittest.TestCase):
         )
 
         tab = PravniPozadavkyRequirementsTab()
+        self.assertFalse(hasattr(tab, "area_filter"))
+        self.assertIsInstance(tab.owner_filter, SearchComboBox)
+        self.assertTrue(tab.owner_filter.isEditable())
+        self.assertEqual(tab.owner_filter.itemText(0), FILTER_OWNER_VSE)
         self.assertEqual(tab.table.rowCount(), 2)
 
-        tab.owner_filter.setCurrentIndex(tab.owner_filter.findText(owner_a.name))
+        tab.owner_filter.set_value(owner_a.name)
+        tab.refresh()
         self.assertEqual(tab.table.rowCount(), 1)
         self.assertEqual(tab.table.item(0, COL_PROCESS).text(), "Proces A")
 

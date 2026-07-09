@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 from core.utils.czech_sort import czech_sorted
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
+from core.widgets.search_combo_box import SearchComboBox
 from core.widgets.table_utils import configure_table_columns
 from core.services.storage_service import storage_service
 from moduly.pravni_pozadavky.constants import (
@@ -25,7 +26,6 @@ from moduly.pravni_pozadavky.constants import (
     FILTER_ACTIVE_ONLY,
     FILTER_ALL_RECORDS,
     FILTER_ARCHIVED_ONLY,
-    FILTER_AREA_VSE,
     FILTER_OWNER_VSE,
     FILTER_PROCESS_LEVEL_ALL,
     FILTER_PROCESS_LEVEL_CHILDREN,
@@ -93,9 +93,8 @@ class PravniPozadavkyRequirementsTab(QWidget):
         ):
             button.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
 
-        self.area_filter = QComboBox()
         self.status_filter = QComboBox()
-        self.owner_filter = QComboBox()
+        self.owner_filter = SearchComboBox()
         self.active_filter = QComboBox()
         self.level_filter = QComboBox()
         self.active_filter.addItems([
@@ -126,8 +125,6 @@ class PravniPozadavkyRequirementsTab(QWidget):
         actions_toolbar.addWidget(self.diagnostic_registry_btn)
         actions_toolbar.addStretch()
 
-        filters_toolbar.addWidget(QLabel("Oblast:"))
-        filters_toolbar.addWidget(self.area_filter)
         filters_toolbar.addWidget(QLabel("Stav:"))
         filters_toolbar.addWidget(self.status_filter)
         filters_toolbar.addWidget(QLabel("Vlastník procesu:"))
@@ -158,9 +155,9 @@ class PravniPozadavkyRequirementsTab(QWidget):
         self.verify_btn.clicked.connect(self.verify_selected_requirement)
         self.task_btn.clicked.connect(self.create_task_for_selected)
         self.table.doubleClicked.connect(self.edit_selected_requirement)
-        self.area_filter.currentIndexChanged.connect(self.refresh)
         self.status_filter.currentIndexChanged.connect(self.refresh)
         self.owner_filter.currentIndexChanged.connect(self.refresh)
+        self.owner_filter.activated.connect(lambda _index: self.refresh())
         self.active_filter.currentIndexChanged.connect(self.refresh)
         self.level_filter.currentIndexChanged.connect(self.refresh)
 
@@ -191,9 +188,8 @@ class PravniPozadavkyRequirementsTab(QWidget):
         self.text_filter.update_count()
 
     def show_created_requirement(self, requirement_id: int | None = None) -> None:
-        self.area_filter.setCurrentIndex(0)
         self.status_filter.setCurrentIndex(0)
-        self.owner_filter.setCurrentIndex(0)
+        self.owner_filter.set_value(FILTER_OWNER_VSE)
         self.active_filter.setCurrentText(DEFAULT_ACTIVE_FILTER)
         self.level_filter.setCurrentText(DEFAULT_PROCESS_LEVEL_FILTER)
         self.text_filter.clear()
@@ -211,7 +207,6 @@ class PravniPozadavkyRequirementsTab(QWidget):
 
     def _populate_filter_options(self) -> None:
         requirements = legal_requirement_service.get_all()
-        areas = sorted({item.area.strip() for item in requirements if item.area.strip()})
         owner_names = {
             role.name.strip()
             for role in responsibility_role_service.get_all(include_inactive=False)
@@ -222,17 +217,22 @@ class PravniPozadavkyRequirementsTab(QWidget):
             if role_name:
                 owner_names.add(role_name)
 
-        self._repopulate_combo(self.area_filter, FILTER_AREA_VSE, areas)
         self._repopulate_combo(
             self.status_filter,
             FILTER_STATUS_VSE,
             [COMPLIANCE_STATUS_LABELS[key] for key in sorted(COMPLIANCE_STATUS_LABELS)],
         )
-        self._repopulate_combo(
-            self.owner_filter,
-            FILTER_OWNER_VSE,
-            czech_sorted(owner_names),
-        )
+        self._repopulate_owner_filter(czech_sorted(owner_names))
+
+    def _repopulate_owner_filter(self, values: list[str]) -> None:
+        current = self.owner_filter.value()
+        self.owner_filter.blockSignals(True)
+        self.owner_filter.set_items([FILTER_OWNER_VSE, *values])
+        if current == FILTER_OWNER_VSE or current in values:
+            self.owner_filter.set_value(current)
+        else:
+            self.owner_filter.set_value(FILTER_OWNER_VSE)
+        self.owner_filter.blockSignals(False)
 
     def _repopulate_combo(self, combo: QComboBox, all_label: str, values: list[str]) -> None:
         current = combo.currentText()
@@ -251,10 +251,6 @@ class PravniPozadavkyRequirementsTab(QWidget):
         elif active_mode == FILTER_ARCHIVED_ONLY:
             requirements = [item for item in requirements if not item.active]
 
-        area = self.area_filter.currentText()
-        if area != FILTER_AREA_VSE:
-            requirements = [item for item in requirements if item.area == area]
-
         status_label = self.status_filter.currentText()
         if status_label != FILTER_STATUS_VSE:
             status_keys = [
@@ -263,7 +259,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
             if status_keys:
                 requirements = [item for item in requirements if item.compliance_status == status_keys[0]]
 
-        owner = self.owner_filter.currentText()
+        owner = self.owner_filter.value()
         if owner != FILTER_OWNER_VSE:
             requirements = [item for item in requirements if item.responsible_role_name == owner]
 
