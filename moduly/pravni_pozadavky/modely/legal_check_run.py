@@ -19,6 +19,10 @@ class LegalCheckRun(Base):
     checked_by: Mapped[str] = mapped_column(String(150), default="")
     status: Mapped[str] = mapped_column(String(30), default="new")
     note: Mapped[str] = mapped_column(Text, default="")
+    error_message: Mapped[str] = mapped_column(Text, default="")
+    started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    documents_checked_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    changes_found_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)

@@ -1,8 +1,12 @@
 from dataclasses import dataclass
 from datetime import date, datetime
 
+from core.services.app_runtime_service import application_started_at
 from moduly.pravni_pozadavky.constants import (
+    CHECK_RUN_CANCELLED,
     CHECK_RUN_COMPLETED,
+    CHECK_RUN_CRASH_RECOVERY_MESSAGE,
+    CHECK_RUN_ERROR,
     CHECK_RUN_IN_PROGRESS,
     CHECK_RUN_NEW,
     DEFAULT_CHECK_RUN_STATUS,
@@ -19,10 +23,6 @@ from moduly.pravni_pozadavky.sluzby.legal_check_run_callbacks import (
     CheckStatusCallback,
 )
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
-
-
-class CheckRunCancelledError(Exception):
-    """Kontrola změn byla zrušena před dokončením."""
 
 
 @dataclass(frozen=True)
@@ -53,6 +53,22 @@ class LegalCheckRunService:
             return run.checked_at.date()
         return run.period_to
 
+    def recover_stale_in_progress_runs(
+        self,
+        *,
+        app_started_at: datetime | None = None,
+    ) -> list[LegalCheckRun]:
+        threshold = app_started_at or application_started_at()
+        recovered: list[LegalCheckRun] = []
+        for run in self.repository.list_in_progress():
+            start_time = run.started_at or run.created_at
+            if start_time >= threshold:
+                continue
+            updated = self._mark_error(run.id, CHECK_RUN_CRASH_RECOVERY_MESSAGE)
+            if updated is not None:
+                recovered.append(updated)
+        return recovered
+
     def run_automatic_check(
         self,
         *,
@@ -67,34 +83,85 @@ class LegalCheckRunService:
         if period_from > normalized_period_to:
             raise ValueError("Datum začátku kontroly nesmí být později než datum konce.")
 
-        self._notify_status(on_status, "Připravuji kontrolu…")
-        if self._check_cancelled(is_cancelled):
-            raise CheckRunCancelledError()
-
-        documents = legal_document_service.list_all(include_inactive=False)
-        total = len(documents)
-        for index, document in enumerate(documents, start=1):
+        run = self._begin_automatic_check(period_from, normalized_period_to)
+        try:
+            self._notify_status(on_status, "Připravuji kontrolu…")
             if self._check_cancelled(is_cancelled):
-                raise CheckRunCancelledError()
-            label = legal_document_display_label(document)
-            self._notify_progress(on_progress, index, total, label)
-            self._process_document_placeholder(document)
+                run = self._mark_cancelled(run.id)
+                return self._build_result(run)
 
-        if self._check_cancelled(is_cancelled):
-            raise CheckRunCancelledError()
+            documents = legal_document_service.list_all(include_inactive=False)
+            total = len(documents)
+            for index, document in enumerate(documents, start=1):
+                if self._check_cancelled(is_cancelled):
+                    run = self._mark_cancelled(run.id)
+                    return self._build_result(run)
+                label = legal_document_display_label(document)
+                self._notify_progress(on_progress, index, total, label)
+                self._process_document_placeholder(document)
 
+            if self._check_cancelled(is_cancelled):
+                run = self._mark_cancelled(run.id)
+                return self._build_result(run)
+
+            run = self._mark_completed(run.id, documents_checked_count=total, changes_found_count=0)
+            return self._build_result(run)
+        except ValueError:
+            raise
+        except Exception as exc:
+            self._mark_error(run.id, str(exc))
+            raise
+
+    def _begin_automatic_check(self, period_from: date, period_to: date) -> LegalCheckRun:
         now = datetime.now()
-        run = self.create(
-            title=f"Kontrola změn {normalized_period_to.strftime('%d.%m.%Y')}",
+        return self.create(
+            title=f"Kontrola změn {period_to.strftime('%d.%m.%Y')}",
             period_from=period_from,
-            period_to=normalized_period_to,
-            checked_at=now,
-            status=CHECK_RUN_COMPLETED,
+            period_to=period_to,
+            started_at=now,
+            status=CHECK_RUN_IN_PROGRESS,
         )
+
+    def _mark_completed(
+        self,
+        run_id: int,
+        *,
+        documents_checked_count: int,
+        changes_found_count: int,
+    ) -> LegalCheckRun:
+        run = self.repository.get_by_id(run_id)
+        if run is None:
+            raise ValueError("Kontrola změn nebyla nalezena.")
+        run.status = CHECK_RUN_COMPLETED
+        run.checked_at = datetime.now()
+        run.documents_checked_count = documents_checked_count
+        run.changes_found_count = changes_found_count
+        run.error_message = ""
+        return self.repository.update(run)
+
+    def _mark_cancelled(self, run_id: int) -> LegalCheckRun:
+        run = self.repository.get_by_id(run_id)
+        if run is None:
+            raise ValueError("Kontrola změn nebyla nalezena.")
+        run.status = CHECK_RUN_CANCELLED
+        run.checked_at = datetime.now()
+        run.error_message = ""
+        return self.repository.update(run)
+
+    def _mark_error(self, run_id: int, message: str) -> LegalCheckRun | None:
+        run = self.repository.get_by_id(run_id)
+        if run is None:
+            return None
+        run.status = CHECK_RUN_ERROR
+        run.checked_at = datetime.now()
+        run.error_message = message.strip()
+        return self.repository.update(run)
+
+    def _build_result(self, run: LegalCheckRun) -> AutomaticCheckRunResult:
         return AutomaticCheckRunResult(
             run=run,
-            documents_checked_count=total,
-            changes_count=0,
+            documents_checked_count=run.documents_checked_count or 0,
+            changes_count=run.changes_found_count or 0,
         )
 
     def _process_document_placeholder(self, document) -> None:
@@ -129,8 +196,12 @@ class LegalCheckRunService:
         period_to: date,
         checked_at: datetime | None = None,
         checked_by: str = "",
+        started_at: datetime | None = None,
         status: str = DEFAULT_CHECK_RUN_STATUS,
         note: str = "",
+        error_message: str = "",
+        documents_checked_count: int | None = None,
+        changes_found_count: int | None = None,
         active: bool = True,
     ) -> LegalCheckRun:
         normalized_title = title.strip()
@@ -145,8 +216,12 @@ class LegalCheckRunService:
             period_to=period_to,
             checked_at=checked_at,
             checked_by=checked_by.strip(),
+            started_at=started_at,
             status=normalized_status,
             note=note.strip(),
+            error_message=error_message.strip(),
+            documents_checked_count=documents_checked_count,
+            changes_found_count=changes_found_count,
             active=active,
         )
         return self.repository.create(run)
@@ -160,8 +235,12 @@ class LegalCheckRunService:
         period_to: date,
         checked_at: datetime | None = None,
         checked_by: str = "",
+        started_at: datetime | None = None,
         status: str = DEFAULT_CHECK_RUN_STATUS,
         note: str = "",
+        error_message: str = "",
+        documents_checked_count: int | None = None,
+        changes_found_count: int | None = None,
         active: bool = True,
     ) -> LegalCheckRun | None:
         run = self.repository.get_by_id(run_id)
@@ -178,8 +257,12 @@ class LegalCheckRunService:
         run.period_to = period_to
         run.checked_at = checked_at
         run.checked_by = checked_by.strip()
+        run.started_at = started_at
         run.status = self._normalize_status(status)
         run.note = note.strip()
+        run.error_message = error_message.strip()
+        run.documents_checked_count = documents_checked_count
+        run.changes_found_count = changes_found_count
         run.active = active
         return self.repository.update(run)
 
@@ -194,8 +277,8 @@ class LegalCheckRunService:
         if run is None:
             return None
         run.status = CHECK_RUN_IN_PROGRESS
-        if run.checked_at is None:
-            run.checked_at = datetime.now()
+        if run.started_at is None:
+            run.started_at = datetime.now()
         return self.repository.update(run)
 
     def complete_run(self, run_id: int) -> LegalCheckRun | None:

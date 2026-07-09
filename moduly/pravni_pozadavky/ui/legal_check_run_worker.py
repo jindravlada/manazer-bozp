@@ -2,10 +2,8 @@ from datetime import date
 
 from PySide6.QtCore import QObject, QThread, Signal
 
-from moduly.pravni_pozadavky.sluzby.legal_check_run_service import (
-    CheckRunCancelledError,
-    legal_check_run_service,
-)
+from moduly.pravni_pozadavky.constants import CHECK_RUN_CANCELLED, CHECK_RUN_COMPLETED
+from moduly.pravni_pozadavky.sluzby.legal_check_run_service import legal_check_run_service
 
 
 class LegalCheckRunWorker(QObject):
@@ -35,14 +33,21 @@ class LegalCheckRunWorker(QObject):
                 on_progress=self.progress.emit,
                 is_cancelled=self._is_cancelled,
             )
-        except CheckRunCancelledError:
-            self.cancelled.emit()
-            return
         except ValueError as exc:
             self.failed.emit(str(exc))
             return
+        except Exception as exc:
+            self.failed.emit(str(exc))
+            return
 
-        self.finished.emit(result)
+        if result.run.status == CHECK_RUN_CANCELLED:
+            self.cancelled.emit()
+            return
+        if result.run.status == CHECK_RUN_COMPLETED:
+            self.finished.emit(result)
+            return
+
+        self.failed.emit("Kontrola změn skončila v neočekávaném stavu.")
 
     def request_cancel(self) -> None:
         self._cancel_requested = True

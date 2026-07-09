@@ -67,6 +67,9 @@ class LegalCheckRunDialog(QDialog):
             self.status.addItem(CHECK_RUN_STATUS_LABELS[key], key)
         self.note = QTextEdit()
         self.note.setMinimumHeight(70)
+        self.error_message = QLabel()
+        self.error_message.setWordWrap(True)
+        self.error_message.hide()
 
         form.addRow("Název:", self.title)
         form.addRow("Období od:", self.period_from)
@@ -74,6 +77,7 @@ class LegalCheckRunDialog(QDialog):
         form.addRow("Datum kontroly:", self.checked_at)
         form.addRow("Kontroloval:", self.checked_by)
         form.addRow("Stav:", self.status)
+        form.addRow("Chyba:", self.error_message)
         form.addRow("Poznámka:", self.note)
         return tab
 
@@ -86,6 +90,13 @@ class LegalCheckRunDialog(QDialog):
         self.checked_by.setText(run.checked_by)
         self._set_combo_value(self.status, run.status)
         self.note.setPlainText(run.note)
+        error_message = (run.error_message or "").strip()
+        if error_message:
+            self.error_message.setText(error_message)
+            self.error_message.show()
+        else:
+            self.error_message.clear()
+            self.error_message.hide()
 
     def _set_combo_value(self, combo: QComboBox, value) -> None:
         index = combo.findData(value)
@@ -108,6 +119,12 @@ class LegalCheckRunDialog(QDialog):
             "checked_by": self.checked_by.text().strip(),
             "status": status,
             "note": self.note.toPlainText().strip(),
+            "error_message": self.run.error_message if self.run is not None else "",
+            "started_at": self.run.started_at if self.run is not None else None,
+            "documents_checked_count": (
+                self.run.documents_checked_count if self.run is not None else None
+            ),
+            "changes_found_count": self.run.changes_found_count if self.run is not None else None,
         }
 
     def accept(self) -> None:

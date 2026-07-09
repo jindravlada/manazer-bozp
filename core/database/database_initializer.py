@@ -91,6 +91,7 @@ def initialize_database() -> None:
     _ensure_legal_requirement_sources_table()
     _ensure_legal_change_columns()
     _ensure_legal_document_columns()
+    _ensure_legal_check_run_columns()
     _migrate_legal_document_types()
     _normalize_task_status_values()
     _normalize_accident_legacy_values()
@@ -664,6 +665,20 @@ def _ensure_legal_change_columns() -> None:
         return
     if "legal_check_run_id" not in columns:
         _add_column("legal_changes", "legal_check_run_id INTEGER")
+
+
+def _ensure_legal_check_run_columns() -> None:
+    columns = _table_columns("legal_check_runs")
+    if not columns:
+        return
+    if "started_at" not in columns:
+        _add_column("legal_check_runs", "started_at DATETIME")
+    if "documents_checked_count" not in columns:
+        _add_column("legal_check_runs", "documents_checked_count INTEGER")
+    if "changes_found_count" not in columns:
+        _add_column("legal_check_runs", "changes_found_count INTEGER")
+    if "error_message" not in columns:
+        _add_column("legal_check_runs", 'error_message TEXT DEFAULT ""')
 
 
 def _ensure_legal_document_columns() -> None:

@@ -396,20 +396,30 @@ CHANGE_TYPE_LABELS: dict[str, str] = {
 CHECK_RUN_NEW = "new"
 CHECK_RUN_IN_PROGRESS = "in_progress"
 CHECK_RUN_COMPLETED = "completed"
+CHECK_RUN_ERROR = "error"
+CHECK_RUN_CANCELLED = "cancelled"
 
 VALID_CHECK_RUN_STATUSES = frozenset(
     {
         CHECK_RUN_NEW,
         CHECK_RUN_IN_PROGRESS,
         CHECK_RUN_COMPLETED,
+        CHECK_RUN_ERROR,
+        CHECK_RUN_CANCELLED,
     }
 )
 
 CHECK_RUN_STATUS_LABELS: dict[str, str] = {
-    CHECK_RUN_NEW: "Nová",
+    CHECK_RUN_NEW: "Připravena",
     CHECK_RUN_IN_PROGRESS: "Probíhá",
     CHECK_RUN_COMPLETED: "Dokončená",
+    CHECK_RUN_ERROR: "Chyba",
+    CHECK_RUN_CANCELLED: "Zrušená",
 }
+
+CHECK_RUN_CRASH_RECOVERY_MESSAGE = (
+    "Kontrola nebyla dokončena – pravděpodobně došlo k ukončení programu během kontroly."
+)
 
 DEFAULT_CHECK_RUN_STATUS = CHECK_RUN_NEW
 

@@ -1,5 +1,6 @@
 from datetime import date
 
+from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QMessageBox,
@@ -10,6 +11,7 @@ from PySide6.QtWidgets import (
 
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
+from moduly.pravni_pozadavky.constants import CHECK_RUN_COMPLETED
 from moduly.pravni_pozadavky.sluzby.legal_check_run_service import legal_check_run_service
 from moduly.pravni_pozadavky.ui.legal_check_first_run_dialog import LegalCheckFirstRunDialog
 from moduly.pravni_pozadavky.ui.legal_check_progress_dialog import LegalCheckProgressDialog
@@ -47,7 +49,16 @@ class KontrolyLegislativyTab(QWidget):
         self.table.doubleClicked.connect(self.open_selected_run)
         self.table.itemSelectionChanged.connect(self._update_action_buttons)
 
+        self._recover_stale_runs()
         self.refresh()
+
+    def showEvent(self, event: QShowEvent) -> None:
+        self._recover_stale_runs()
+        self.refresh()
+        super().showEvent(event)
+
+    def _recover_stale_runs(self) -> None:
+        legal_check_run_service.recover_stale_in_progress_runs()
 
     def refresh(self) -> None:
         runs = legal_check_run_service.list_all(include_inactive=True)
@@ -84,14 +95,12 @@ class KontrolyLegislativyTab(QWidget):
             period_from=period_from,
             period_to=period_to,
         )
-        if not progress_dialog.exec():
-            return
-
+        progress_dialog.exec()
         result = progress_dialog.result_data()
-        if result is None:
+        self.refresh()
+        if result is None or result.run.status != CHECK_RUN_COMPLETED:
             return
 
-        self.refresh()
         QMessageBox.information(
             self,
             "Kontroly změn",

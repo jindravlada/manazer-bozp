@@ -1,7 +1,7 @@
 import importlib
 import tempfile
 import unittest
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -21,9 +21,16 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
+    from core.services.app_runtime_service import mark_application_started
+
+    mark_application_started()
+
     from moduly.pravni_pozadavky.constants import (
         CHANGE_NEW,
+        CHECK_RUN_CANCELLED,
         CHECK_RUN_COMPLETED,
+        CHECK_RUN_CRASH_RECOVERY_MESSAGE,
+        CHECK_RUN_ERROR,
         CHECK_RUN_IN_PROGRESS,
         CHECK_RUN_NEW,
         DOCUMENT_TYPE_ZAKON,
@@ -32,10 +39,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.pravni_pozadavky.sluzby.legal_check_run_export_context_service import (
         legal_check_run_export_context_service,
     )
-    from moduly.pravni_pozadavky.sluzby.legal_check_run_service import (
-        CheckRunCancelledError,
-        legal_check_run_service,
-    )
+    from moduly.pravni_pozadavky.sluzby.legal_check_run_service import legal_check_run_service
     from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
 
 
@@ -53,6 +57,8 @@ class LegalCheckRunServiceTestCase(unittest.TestCase):
             session.execute(delete(LegalCheckRun))
             session.execute(delete(LegalDocument))
             session.commit()
+
+        mark_application_started()
 
     def _create_document(self):
         return legal_document_service.create(
@@ -125,7 +131,7 @@ class LegalCheckRunServiceTestCase(unittest.TestCase):
         started = legal_check_run_service.start_run(run.id)
         assert started is not None
         self.assertEqual(started.status, CHECK_RUN_IN_PROGRESS)
-        self.assertIsNotNone(started.checked_at)
+        self.assertIsNotNone(started.started_at)
 
     def test_complete_run(self) -> None:
         run = self._create_run()
@@ -204,6 +210,29 @@ class LegalCheckRunServiceTestCase(unittest.TestCase):
         assert last_completed is not None
         self.assertEqual(last_completed.id, newer.id)
 
+    def test_get_last_completed_ignores_cancelled_and_error(self) -> None:
+        completed = self._create_run(title="Dokončená")
+        legal_check_run_service.complete_run(completed.id)
+        legal_check_run_service.create(
+            title="Zrušená",
+            period_from=date(2024, 1, 1),
+            period_to=date(2024, 1, 31),
+            status=CHECK_RUN_CANCELLED,
+            checked_at=datetime.now(),
+        )
+        legal_check_run_service.create(
+            title="Chybná",
+            period_from=date(2024, 2, 1),
+            period_to=date(2024, 2, 28),
+            status=CHECK_RUN_ERROR,
+            checked_at=datetime.now(),
+            error_message="Selhání",
+        )
+
+        last_completed = legal_check_run_service.get_last_completed_run()
+        assert last_completed is not None
+        self.assertEqual(last_completed.id, completed.id)
+
     def test_get_run_completion_date_uses_checked_at(self) -> None:
         run = self._create_run()
         completed = legal_check_run_service.complete_run(run.id)
@@ -230,7 +259,10 @@ class LegalCheckRunServiceTestCase(unittest.TestCase):
         self.assertEqual(result.run.status, CHECK_RUN_COMPLETED)
         self.assertEqual(result.run.period_from, date(2024, 1, 1))
         self.assertEqual(result.run.period_to, date(2024, 6, 30))
+        self.assertIsNotNone(result.run.started_at)
         self.assertIsNotNone(result.run.checked_at)
+        self.assertEqual(result.run.documents_checked_count, 2)
+        self.assertEqual(result.run.changes_found_count, 0)
         self.assertEqual(result.documents_checked_count, 2)
         self.assertEqual(result.changes_count, 0)
 
@@ -259,16 +291,70 @@ class LegalCheckRunServiceTestCase(unittest.TestCase):
         self.assertEqual(progress_calls, [(1, 1, document.short_title or document.title)])
         self.assertEqual(result.documents_checked_count, 1)
 
-    def test_run_automatic_check_cancelled_does_not_create_run(self) -> None:
+    def test_run_automatic_check_cancelled_marks_run_cancelled(self) -> None:
         self._create_document()
 
-        with self.assertRaises(CheckRunCancelledError):
-            legal_check_run_service.run_automatic_check(
-                period_from=date(2024, 1, 1),
-                is_cancelled=lambda: True,
-            )
+        result = legal_check_run_service.run_automatic_check(
+            period_from=date(2024, 1, 1),
+            is_cancelled=lambda: True,
+        )
 
-        self.assertEqual(legal_check_run_service.list_all(include_inactive=True), [])
+        self.assertEqual(result.run.status, CHECK_RUN_CANCELLED)
+        self.assertIsNotNone(result.run.checked_at)
+        runs = legal_check_run_service.list_all(include_inactive=True)
+        self.assertEqual(len(runs), 1)
+        self.assertEqual(runs[0].status, CHECK_RUN_CANCELLED)
+
+    def test_run_automatic_check_error_marks_run(self) -> None:
+        self._create_document()
+        original = legal_check_run_service._process_document_placeholder
+
+        def boom(document) -> None:
+            raise RuntimeError("Simulovaná chyba")
+
+        legal_check_run_service._process_document_placeholder = boom
+        try:
+            with self.assertRaises(RuntimeError):
+                legal_check_run_service.run_automatic_check(
+                    period_from=date(2024, 1, 1),
+                )
+        finally:
+            legal_check_run_service._process_document_placeholder = original
+
+        runs = legal_check_run_service.list_all(include_inactive=True)
+        self.assertEqual(len(runs), 1)
+        self.assertEqual(runs[0].status, CHECK_RUN_ERROR)
+        self.assertEqual(runs[0].error_message, "Simulovaná chyba")
+
+    def test_recover_stale_in_progress_run(self) -> None:
+        run = legal_check_run_service.create(
+            title="Zaseklá kontrola",
+            period_from=date(2024, 1, 1),
+            period_to=date(2024, 1, 31),
+            started_at=datetime(2020, 1, 1, 10, 0, 0),
+            status=CHECK_RUN_IN_PROGRESS,
+        )
+        mark_application_started()
+
+        recovered = legal_check_run_service.recover_stale_in_progress_runs()
+        self.assertEqual(len(recovered), 1)
+        self.assertEqual(recovered[0].id, run.id)
+        self.assertEqual(recovered[0].status, CHECK_RUN_ERROR)
+        self.assertEqual(recovered[0].error_message, CHECK_RUN_CRASH_RECOVERY_MESSAGE)
+
+    def test_recover_keeps_current_session_in_progress(self) -> None:
+        mark_application_started()
+        run = legal_check_run_service._begin_automatic_check(
+            date(2024, 1, 1),
+            date(2024, 1, 31),
+        )
+
+        recovered = legal_check_run_service.recover_stale_in_progress_runs()
+        self.assertEqual(recovered, [])
+
+        fresh = legal_check_run_service.get_by_id(run.id)
+        assert fresh is not None
+        self.assertEqual(fresh.status, CHECK_RUN_IN_PROGRESS)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 from sqlalchemy import select
 
 from core.database.session import get_session
-from moduly.pravni_pozadavky.constants import CHECK_RUN_COMPLETED
+from moduly.pravni_pozadavky.constants import CHECK_RUN_COMPLETED, CHECK_RUN_IN_PROGRESS
 from moduly.pravni_pozadavky.modely.legal_check_run import LegalCheckRun
 
 
@@ -32,6 +32,14 @@ class LegalCheckRunRepository:
                 .limit(1)
             )
             return session.scalar(stmt)
+
+    def list_in_progress(self) -> list[LegalCheckRun]:
+        with get_session() as session:
+            stmt = (
+                self._ordered(select(LegalCheckRun))
+                .where(LegalCheckRun.status == CHECK_RUN_IN_PROGRESS)
+            )
+            return list(session.scalars(stmt))
 
     def create(self, run: LegalCheckRun) -> LegalCheckRun:
         with get_session() as session:
