@@ -41,7 +41,7 @@ class LegalRequirementTable(QTableWidget):
             "Kód",
             "Proces",
             "Způsob plnění",
-            "Odpovědná osoba / funkce",
+            "Vlastník procesu",
             "Stav plnění",
             "Poslední ověření",
             "Další ověření",
