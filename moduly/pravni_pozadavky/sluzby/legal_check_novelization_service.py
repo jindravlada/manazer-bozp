@@ -18,6 +18,18 @@ _NUMBER_YEAR_RE = re.compile(r"^(\d+)/(\d{4})$")
 
 
 class LegalCheckNovelizationService:
+    def initialize_reference_state(self, document: LegalDocument) -> bool:
+        stored_version = legal_document_version_service.get_current_version(document.id)
+        if stored_version is None:
+            return False
+
+        remote_version = self._fetch_remote_version(document)
+        if remote_version is None:
+            return False
+
+        self._update_reference_checksum(stored_version, remote_version)
+        return True
+
     def check_document(
         self,
         document: LegalDocument,

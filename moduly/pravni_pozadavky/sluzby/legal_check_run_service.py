@@ -30,6 +30,7 @@ class AutomaticCheckRunResult:
     run: LegalCheckRun
     documents_checked_count: int
     changes_count: int
+    is_first_check: bool = False
 
 
 class LegalCheckRunService:
@@ -47,6 +48,9 @@ class LegalCheckRunService:
 
     def get_last_completed_run(self) -> LegalCheckRun | None:
         return self.repository.get_last_completed()
+
+    def is_first_automatic_check(self) -> bool:
+        return self.get_last_completed_run() is None
 
     def get_run_completion_date(self, run: LegalCheckRun) -> date:
         if run.checked_at is not None:
@@ -84,11 +88,12 @@ class LegalCheckRunService:
             raise ValueError("Datum začátku kontroly nesmí být později než datum konce.")
 
         run = self._begin_automatic_check(period_from, normalized_period_to)
+        is_first_check = self.is_first_automatic_check()
         try:
             self._notify_status(on_status, "Připravuji kontrolu…")
             if self._check_cancelled(is_cancelled):
                 run = self._mark_cancelled(run.id)
-                return self._build_result(run)
+                return self._build_result(run, is_first_check=is_first_check)
 
             documents = legal_document_service.list_all(include_inactive=False)
             total = len(documents)
@@ -99,29 +104,35 @@ class LegalCheckRunService:
             for index, document in enumerate(documents, start=1):
                 if self._check_cancelled(is_cancelled):
                     run = self._mark_cancelled(run.id)
-                    return self._build_result(run)
+                    return self._build_result(run, is_first_check=is_first_check)
                 label = legal_document_display_label(document)
                 self._notify_progress(on_progress, index, total, label)
-                legal_check_novelization_service.check_document(
-                    document,
-                    check_run_id=run.id,
-                )
+                if is_first_check:
+                    legal_check_novelization_service.initialize_reference_state(document)
+                else:
+                    legal_check_novelization_service.check_document(
+                        document,
+                        check_run_id=run.id,
+                    )
 
             if self._check_cancelled(is_cancelled):
                 run = self._mark_cancelled(run.id)
-                return self._build_result(run)
+                return self._build_result(run, is_first_check=is_first_check)
 
-            from moduly.pravni_pozadavky.sluzby.legal_change_service import legal_change_service
+            if is_first_check:
+                changes_count = 0
+            else:
+                from moduly.pravni_pozadavky.sluzby.legal_change_service import legal_change_service
 
-            changes_count = len(
-                legal_change_service.list_by_check_run(run.id, include_inactive=False),
-            )
+                changes_count = len(
+                    legal_change_service.list_by_check_run(run.id, include_inactive=False),
+                )
             run = self._mark_completed(
                 run.id,
                 documents_checked_count=total,
                 changes_found_count=changes_count,
             )
-            return self._build_result(run)
+            return self._build_result(run, is_first_check=is_first_check)
         except ValueError:
             raise
         except Exception as exc:
@@ -173,11 +184,17 @@ class LegalCheckRunService:
         run.error_message = message.strip()
         return self.repository.update(run)
 
-    def _build_result(self, run: LegalCheckRun) -> AutomaticCheckRunResult:
+    def _build_result(
+        self,
+        run: LegalCheckRun,
+        *,
+        is_first_check: bool = False,
+    ) -> AutomaticCheckRunResult:
         return AutomaticCheckRunResult(
             run=run,
             documents_checked_count=run.documents_checked_count or 0,
             changes_count=run.changes_found_count or 0,
+            is_first_check=is_first_check,
         )
 
     def _check_cancelled(self, is_cancelled: CancelCheckCallback | None) -> bool:

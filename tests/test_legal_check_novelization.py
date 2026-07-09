@@ -27,6 +27,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
     from moduly.pravni_pozadavky.constants import (
         CHANGE_NOVELIZATION,
+        CHECK_RUN_COMPLETED,
         DOCUMENT_TYPE_ZAKON,
         NOVELIZATION_REMOTE_CHECKSUM_NOTE_PREFIX,
         SECTION_PARAGRAPH,
@@ -162,6 +163,14 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
                 text_checksum="old-checksum",
             ),
         )
+        legal_check_run_service.create(
+            title="První kontrola",
+            period_from=date(2024, 1, 1),
+            period_to=date(2024, 1, 31),
+            status=CHECK_RUN_COMPLETED,
+            documents_checked_count=1,
+            changes_found_count=0,
+        )
 
         with patch.object(
             legal_document_esbirka_client,
@@ -169,10 +178,11 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
             return_value=self.remote_version,
         ):
             result = legal_check_run_service.run_automatic_check(
-                period_from=date(2024, 1, 1),
-                period_to=date(2024, 1, 31),
+                period_from=date(2024, 2, 1),
+                period_to=date(2024, 2, 28),
             )
 
+        self.assertFalse(result.is_first_check)
         self.assertEqual(result.changes_count, 1)
         self.assertEqual(result.run.changes_found_count, 1)
         changes = legal_change_service.list_by_check_run(result.run.id)
@@ -238,11 +248,13 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
                 period_to=date(2024, 2, 28),
             )
 
-        self.assertEqual(result1.changes_count, 1)
-        self.assertEqual(result1.run.changes_found_count, 1)
+        self.assertEqual(result1.changes_count, 0)
+        self.assertTrue(result1.is_first_check)
+        self.assertEqual(result1.run.changes_found_count, 0)
+        self.assertFalse(result2.is_first_check)
         self.assertEqual(result2.changes_count, 0)
         self.assertEqual(result2.run.changes_found_count, 0)
-        self.assertEqual(len(legal_change_service.list_by_document(document.id)), 1)
+        self.assertEqual(len(legal_change_service.list_by_document(document.id)), 0)
         updated_version = legal_document_version_service.get_by_id(version.id)
         assert updated_version is not None
         self.assertEqual(
@@ -294,6 +306,90 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
         updated_version = legal_document_version_service.get_by_id(version.id)
         assert updated_version is not None
         self.assertEqual(updated_version.checksum, remote_checksum)
+
+    def test_first_check_initializes_reference_without_changes(self) -> None:
+        document, version = self._create_document_with_version(
+            checksum=legal_document_esbirka_client.build_version_checksum(
+                slice_id="111111",
+                text_checksum="old-checksum",
+            ),
+        )
+
+        with patch.object(
+            legal_document_esbirka_client,
+            "fetch_version_info",
+            return_value=self.remote_version,
+        ):
+            result = legal_check_run_service.run_automatic_check(
+                period_from=date(2024, 1, 1),
+                period_to=date(2024, 1, 31),
+            )
+
+        self.assertTrue(result.is_first_check)
+        self.assertEqual(result.changes_count, 0)
+        self.assertEqual(result.run.status, CHECK_RUN_COMPLETED)
+        self.assertEqual(result.run.changes_found_count, 0)
+        self.assertEqual(legal_change_service.list_by_document(document.id), [])
+        updated_version = legal_document_version_service.get_by_id(version.id)
+        assert updated_version is not None
+        self.assertEqual(
+            updated_version.checksum,
+            legal_document_esbirka_client.build_version_checksum(
+                slice_id=self.remote_version.slice_id,
+                text_checksum=self.remote_version.text_checksum,
+            ),
+        )
+
+    def test_second_automatic_check_detects_novelization_after_reference_init(self) -> None:
+        document, version = self._create_document_with_version(
+            checksum=legal_document_esbirka_client.build_version_checksum(
+                slice_id="111111",
+                text_checksum="old-checksum",
+            ),
+        )
+
+        with patch.object(
+            legal_document_esbirka_client,
+            "fetch_version_info",
+            return_value=self.remote_version,
+        ):
+            first_result = legal_check_run_service.run_automatic_check(
+                period_from=date(2024, 1, 1),
+                period_to=date(2024, 1, 31),
+            )
+            newer_remote = ESbirkaVersionInfo(
+                doc_id=self.remote_version.doc_id,
+                slice_id="999999",
+                source_url=self.remote_version.source_url,
+                publication_date=self.remote_version.publication_date,
+                text_checksum="newer-checksum",
+                version_label="e-Sbírka 999999",
+            )
+            with patch.object(
+                legal_document_esbirka_client,
+                "fetch_version_info",
+                return_value=newer_remote,
+            ):
+                second_result = legal_check_run_service.run_automatic_check(
+                    period_from=date(2024, 2, 1),
+                    period_to=date(2024, 2, 28),
+                )
+
+        self.assertTrue(first_result.is_first_check)
+        self.assertEqual(first_result.changes_count, 0)
+        self.assertFalse(second_result.is_first_check)
+        self.assertEqual(second_result.changes_count, 1)
+        changes = legal_change_service.list_by_document(document.id)
+        self.assertEqual(len(changes), 1)
+        updated_version = legal_document_version_service.get_by_id(version.id)
+        assert updated_version is not None
+        self.assertEqual(
+            updated_version.checksum,
+            legal_document_esbirka_client.build_version_checksum(
+                slice_id=newer_remote.slice_id,
+                text_checksum=newer_remote.text_checksum,
+            ),
+        )
 
 
 if __name__ == "__main__":

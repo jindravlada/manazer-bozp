@@ -268,6 +268,7 @@ class LegalCheckRunServiceTestCase(unittest.TestCase):
         self.assertEqual(result.run.changes_found_count, 0)
         self.assertEqual(result.documents_checked_count, 2)
         self.assertEqual(result.changes_count, 0)
+        self.assertTrue(result.is_first_check)
 
     def test_run_automatic_check_defaults_period_to_today(self) -> None:
         result = legal_check_run_service.run_automatic_check(
@@ -276,6 +277,7 @@ class LegalCheckRunServiceTestCase(unittest.TestCase):
 
         self.assertEqual(result.run.period_to, date.today())
         self.assertEqual(result.changes_count, 0)
+        self.assertTrue(result.is_first_check)
 
     def test_run_automatic_check_reports_progress(self) -> None:
         document = self._create_document()
@@ -310,6 +312,14 @@ class LegalCheckRunServiceTestCase(unittest.TestCase):
 
     def test_run_automatic_check_error_marks_run(self) -> None:
         self._create_document()
+        legal_check_run_service.create(
+            title="První kontrola",
+            period_from=date(2024, 1, 1),
+            period_to=date(2024, 1, 31),
+            status=CHECK_RUN_COMPLETED,
+            documents_checked_count=1,
+            changes_found_count=0,
+        )
         original = legal_check_novelization_service.check_document
 
         def boom(document, *, check_run_id: int):
@@ -325,9 +335,9 @@ class LegalCheckRunServiceTestCase(unittest.TestCase):
             legal_check_novelization_service.check_document = original
 
         runs = legal_check_run_service.list_all(include_inactive=True)
-        self.assertEqual(len(runs), 1)
-        self.assertEqual(runs[0].status, CHECK_RUN_ERROR)
-        self.assertEqual(runs[0].error_message, "Simulovaná chyba")
+        self.assertEqual(len(runs), 2)
+        failed_run = next(run for run in runs if run.status == CHECK_RUN_ERROR)
+        self.assertEqual(failed_run.error_message, "Simulovaná chyba")
 
     def test_recover_stale_in_progress_run(self) -> None:
         run = legal_check_run_service.create(

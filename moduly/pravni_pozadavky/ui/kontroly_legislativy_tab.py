@@ -112,14 +112,24 @@ class KontrolyLegislativyTab(QWidget):
         if result is None or result.run.status != CHECK_RUN_COMPLETED:
             return
 
-        if result is None or result.run.status != CHECK_RUN_COMPLETED:
-            return
-
         if result.changes_count > 0:
             page = _find_pravni_pozadavky_page(self)
             if page is not None:
                 page.changes_tab.refresh()
                 page.tabs.setCurrentWidget(page.changes_tab)
+
+        if result.is_first_check:
+            QMessageBox.information(
+                self,
+                "Kontroly změn",
+                (
+                    "První kontrola legislativy byla dokončena.\n\n"
+                    f"Kontrolováno předpisů: {result.documents_checked_count}\n\n"
+                    "Byl vytvořen výchozí referenční stav pro sledování budoucích změn.\n\n"
+                    "Budoucí kontroly již budou vyhledávat pouze skutečné změny legislativy."
+                ),
+            )
+            return
 
         QMessageBox.information(
             self,
