@@ -208,6 +208,31 @@ class LegalRequirementTableDisplayTestCase(unittest.TestCase):
         self.assertEqual(table.item(0, COL_PROCESS).text(), "Systém řízení BOZP")
         self.assertEqual(table.item(0, COL_SUMMARY).text(), "Zajistit systém řízení BOZP")
 
+    def test_table_truncates_long_fulfillment_text_and_shows_tooltip(self) -> None:
+        from core.widgets.text_preview import DEFAULT_TEXT_PREVIEW_LENGTH, TEXT_PREVIEW_SUFFIX
+
+        full_text = (
+            "Zaměstnavatel stanoví a udržuje systém řízení bezpečnosti a ochrany zdraví při práci "
+            "v souladu s požadavky zákona a prováděcích předpisů pro všechna pracoviště organizace."
+        )
+        requirement = legal_requirement_service.create_requirement(
+            title="Systém řízení BOZP",
+            regulation_name="Zákoník práce",
+            requirement_summary=full_text,
+        )
+
+        table = LegalRequirementTable()
+        table.load_requirements([requirement])
+
+        summary_item = table.item(0, COL_SUMMARY)
+        assert summary_item is not None
+        self.assertEqual(
+            summary_item.text(),
+            f"{full_text[:DEFAULT_TEXT_PREVIEW_LENGTH]}{TEXT_PREVIEW_SUFFIX}",
+        )
+        self.assertIn("Zaměstnavatel stanoví", summary_item.toolTip())
+        self.assertIn("prováděcích předpisů", summary_item.toolTip())
+
     def test_refresh_sorts_by_process_code(self) -> None:
         from moduly.pravni_pozadavky.constants import process_code_sort_key
         from moduly.pravni_pozadavky.ui.legal_requirement_table import COL_CODE

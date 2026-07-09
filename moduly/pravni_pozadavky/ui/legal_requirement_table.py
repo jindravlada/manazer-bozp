@@ -4,6 +4,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QBrush
 from PySide6.QtWidgets import QHeaderView, QTableWidget, QTableWidgetItem
 
+from core.widgets.table_utils import create_preview_table_item
 from moduly.pravni_pozadavky.constants import (
     COMPLIANCE_STATUS_LABELS,
     PERIODICITY_LABELS,
@@ -60,10 +61,10 @@ class LegalRequirementTable(QTableWidget):
 
         header = self.horizontalHeader()
         header.setStretchLastSection(False)
-        header.setSectionResizeMode(COL_SUMMARY, QHeaderView.Stretch)
+        header.setSectionResizeMode(COL_PROCESS, QHeaderView.Stretch)
+        header.setSectionResizeMode(COL_SUMMARY, QHeaderView.Fixed)
         for column in (
             COL_CODE,
-            COL_PROCESS,
             COL_RESPONSIBLE,
             COL_STATUS,
             COL_LAST_CHECK,
@@ -86,7 +87,7 @@ class LegalRequirementTable(QTableWidget):
             self._set_item(row, COL_ID, str(requirement.id))
             self._set_item(row, COL_CODE, requirement.process_code)
             self._set_item(row, COL_PROCESS, legal_requirement_process_label(requirement))
-            self._set_item(row, COL_SUMMARY, requirement.requirement_summary)
+            self._set_preview_item(row, COL_SUMMARY, requirement.requirement_summary)
             self._set_item(row, COL_RESPONSIBLE, legal_requirement_responsible_label(requirement))
             self._set_item(
                 row,
@@ -113,6 +114,9 @@ class LegalRequirementTable(QTableWidget):
         item = QTableWidgetItem(text or "")
         item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         self.setItem(row, column, item)
+
+    def _set_preview_item(self, row: int, column: int, text: str) -> None:
+        self.setItem(row, column, create_preview_table_item(text))
 
     def _apply_row_style(self, row: int, requirement, today: date) -> None:
         if not requirement.active:

@@ -1,4 +1,21 @@
-from PySide6.QtWidgets import QHeaderView, QTableWidget
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QHeaderView, QTableWidget, QTableWidgetItem
+
+from core.widgets.info_tooltip import set_widget_tooltip
+from core.widgets.text_preview import DEFAULT_TEXT_PREVIEW_LENGTH, truncate_text_preview
+
+
+def create_preview_table_item(
+    text: str,
+    *,
+    max_length: int = DEFAULT_TEXT_PREVIEW_LENGTH,
+) -> QTableWidgetItem:
+    full_text = text or ""
+    item = QTableWidgetItem(truncate_text_preview(full_text, max_length=max_length))
+    item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+    if full_text.strip():
+        set_widget_tooltip(item, full_text)
+    return item
 
 
 def configure_table_columns(table: QTableWidget, profile: str) -> None:
@@ -187,8 +204,8 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
 
         widths = {
             COL_CODE: 80,
-            COL_PROCESS: 220,
-            COL_SUMMARY: 320,
+            COL_PROCESS: 260,
+            COL_SUMMARY: 220,
             COL_RESPONSIBLE: 170,
             COL_STATUS: 130,
             COL_LAST_CHECK: 110,
@@ -198,10 +215,10 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
-        header.setSectionResizeMode(COL_SUMMARY, QHeaderView.Stretch)
+        header.setSectionResizeMode(COL_PROCESS, QHeaderView.Stretch)
+        header.setSectionResizeMode(COL_SUMMARY, QHeaderView.Fixed)
         for column in (
             COL_CODE,
-            COL_PROCESS,
             COL_RESPONSIBLE,
             COL_STATUS,
             COL_LAST_CHECK,
