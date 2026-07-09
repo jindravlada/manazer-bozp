@@ -20,6 +20,9 @@ from moduly.pravni_pozadavky.constants import (
     NOVELIZATION_REMOTE_CHECKSUM_NOTE_PREFIX,
     legal_document_display_label,
 )
+from moduly.pravni_pozadavky.sluzby.legal_change_impacted_assertion_service import (
+    legal_change_impacted_assertion_service,
+)
 from moduly.pravni_pozadavky.sluzby.legal_change_impacted_process_service import (
     legal_change_impacted_process_service,
 )
@@ -27,6 +30,9 @@ from moduly.pravni_pozadavky.sluzby.legal_change_section_service import (
     legal_change_section_service,
 )
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
+from moduly.pravni_pozadavky.ui.legal_change_impacted_assertions_table import (
+    LegalChangeImpactedAssertionsTable,
+)
 from moduly.pravni_pozadavky.ui.legal_change_impacted_processes_widget import (
     LegalChangeImpactedProcessesWidget,
 )
@@ -119,6 +125,23 @@ class LegalChangeDetailDialog(QDialog):
             empty_processes_label.setWordWrap(True)
             processes_layout.addWidget(empty_processes_label)
         root.addWidget(processes_group)
+
+        assertions_group = QGroupBox("Dotčená auditní tvrzení")
+        assertions_layout = QVBoxLayout(assertions_group)
+        assertions = legal_change_impacted_assertion_service.list_assertions_for_change(
+            self.change.id,
+        )
+        if assertions:
+            assertions_table = LegalChangeImpactedAssertionsTable()
+            assertions_table.load_assertions(assertions)
+            assertions_layout.addWidget(assertions_table)
+        else:
+            empty_assertions_label = QLabel(
+                "Ke změně nejsou navázána žádná auditní tvrzení.",
+            )
+            empty_assertions_label.setWordWrap(True)
+            assertions_layout.addWidget(empty_assertions_label)
+        root.addWidget(assertions_group)
 
         return content
 
