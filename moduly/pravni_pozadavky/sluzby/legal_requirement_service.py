@@ -101,13 +101,12 @@ class LegalRequirementService:
         return sorted(children, key=process_code_sort_key)
 
     def list_active_processes(self) -> list[LegalRequirement]:
-        from core.utils.czech_sort import czech_sorted
-
-        processes = self.repository.get_all(active_only=True)
-        return czech_sorted(
-            processes,
-            key=lambda item: item.title or item.regulation_name or "",
-        )
+        processes = [
+            requirement
+            for requirement in self.repository.get_all(active_only=True)
+            if requirement.merged_into_requirement_id is None
+        ]
+        return sorted(processes, key=process_code_sort_key)
 
     def attach_source_section(
         self,
