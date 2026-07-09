@@ -265,6 +265,39 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
 
         self.assertEqual(dialog.windowTitle(), "Upravit řídicí proces")
         self.assertEqual(dialog.process_title.text(), "Řízení systému BOZP")
+        self.assertFalse(dialog.process_title.isReadOnly())
+
+    def test_edit_root_process_title_updates_record(self) -> None:
+        from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
+
+        requirement = legal_requirement_service.create_requirement(
+            title="Řízení systému BOZP",
+        )
+        dialog = LegalRequirementDialog(requirement=requirement)
+        dialog.process_title.setText("Řízení BOZP a PO")
+
+        legal_requirement_service.update_requirement(requirement.id, **dialog.get_data())
+
+        reloaded = legal_requirement_service.get_by_id(requirement.id)
+        self.assertIsNotNone(reloaded)
+        self.assertEqual(reloaded.title, "Řízení BOZP a PO")
+
+    def test_empty_process_title_cannot_be_accepted(self) -> None:
+        from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
+
+        requirement = legal_requirement_service.create_requirement(
+            title="Řízení systému BOZP",
+        )
+        dialog = LegalRequirementDialog(requirement=requirement)
+        dialog.process_title.clear()
+
+        with patch(
+            "moduly.pravni_pozadavky.ui.legal_requirement_dialog.QMessageBox.warning"
+        ) as warning:
+            dialog.accept()
+
+        warning.assert_called_once()
+        self.assertEqual(dialog.result(), QDialog.DialogCode.Rejected)
 
     def test_new_dialog_uses_ridici_proces_window_title(self) -> None:
         dialog = LegalRequirementDialog()
@@ -484,6 +517,30 @@ class LegalRequirementDialogChildrenTabTestCase(unittest.TestCase):
         self.assertIn("Podřízené procesy", self._tab_names(dialog))
         self.assertIsNotNone(dialog.children_tab)
         self.assertEqual(dialog.parent_process_label.text(), "")
+
+    def test_edit_child_process_title_updates_record(self) -> None:
+        from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
+            legal_requirement_service,
+        )
+
+        root = legal_requirement_service.create_requirement(
+            title="Řízení VTZ",
+            process_code="P-015",
+        )
+        child = legal_requirement_service.create_requirement(
+            title="Elektrická zařízení",
+            parent_requirement_id=root.id,
+        )
+        dialog = LegalRequirementDialog(requirement=child)
+
+        self.assertFalse(dialog.process_title.isReadOnly())
+        dialog.process_title.setText("Elektrická zařízení – revize")
+
+        legal_requirement_service.update_requirement(child.id, **dialog.get_data())
+
+        reloaded = legal_requirement_service.get_by_id(child.id)
+        self.assertIsNotNone(reloaded)
+        self.assertEqual(reloaded.title, "Elektrická zařízení – revize")
 
     def test_child_process_dialog_shows_parent_process_label(self) -> None:
         from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (

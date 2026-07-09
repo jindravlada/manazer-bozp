@@ -126,7 +126,6 @@ class LegalRequirementDialog(QDialog):
         self.regulation_name = LegalDocumentNameSelector()
         self.regulation_name.setVisible(False)
         self.process_title = QLineEdit()
-        self.process_title.setReadOnly(True)
         self.regulation_number = QLineEdit()
         self.regulation_number.setVisible(False)
         self.provision = QLineEdit()
@@ -302,13 +301,12 @@ class LegalRequirementDialog(QDialog):
             self._set_parent_process_display(legal_requirement_merged_target_label(parent))
         else:
             self._set_parent_process_display(None)
-        self.process_title.setReadOnly(False)
         self.process_title.clear()
         self.active_checkbox.setChecked(True)
         self._populate_legal_sections()
 
     def accept(self) -> None:
-        if not self.process_title.isReadOnly() and not self.process_title.text().strip():
+        if not self.process_title.text().strip():
             QMessageBox.warning(
                 self,
                 "Řídicí proces",
