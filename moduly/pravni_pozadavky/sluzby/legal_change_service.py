@@ -62,6 +62,19 @@ class LegalChangeService:
             include_inactive=include_inactive,
         )
 
+    def find_unevaluated_novelization(
+        self,
+        document_id: int,
+        *,
+        remote_checksum: str,
+        note_prefix: str,
+    ) -> LegalChange | None:
+        return self.repository.find_unevaluated_novelization(
+            document_id,
+            remote_checksum=remote_checksum,
+            note_prefix=note_prefix,
+        )
+
     def get_by_id(self, change_id: int) -> LegalChange | None:
         return self.repository.get_by_id(change_id)
 

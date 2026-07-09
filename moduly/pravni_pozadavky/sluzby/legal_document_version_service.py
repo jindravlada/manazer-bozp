@@ -106,6 +106,13 @@ class LegalDocumentVersionService:
         version.active = active
         return self.repository.update(version)
 
+    def update_checksum(self, version_id: int, checksum: str) -> LegalDocumentVersion | None:
+        version = self.repository.get_by_id(version_id)
+        if version is None:
+            return None
+        version.checksum = checksum.strip()
+        return self.repository.update(version)
+
     def deactivate(self, version_id: int) -> LegalDocumentVersion | None:
         version = self.repository.get_by_id(version_id)
         if version is None:

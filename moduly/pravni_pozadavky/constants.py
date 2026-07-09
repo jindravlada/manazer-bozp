@@ -376,6 +376,7 @@ CHANGE_UPDATED = "updated"
 CHANGE_REPEALED = "repealed"
 CHANGE_OTHER = "other"
 CHANGE_NOVELIZATION = "novelization"
+NOVELIZATION_REMOTE_CHECKSUM_NOTE_PREFIX = "esbirka-ref:"
 
 VALID_CHANGE_TYPES = frozenset(
     {

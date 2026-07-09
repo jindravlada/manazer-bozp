@@ -1,8 +1,9 @@
 import hashlib
 import re
 
-from moduly.pravni_pozadavky.constants import CHANGE_NOVELIZATION
+from moduly.pravni_pozadavky.constants import CHANGE_NOVELIZATION, NOVELIZATION_REMOTE_CHECKSUM_NOTE_PREFIX
 from moduly.pravni_pozadavky.import_export.legal_document_esbirka_client import (
+    ESbirkaVersionInfo,
     legal_document_esbirka_client,
 )
 from moduly.pravni_pozadavky.modely.legal_change import LegalChange
@@ -34,9 +35,19 @@ class LegalCheckNovelizationService:
         if not self._has_newer_version(stored_version, remote_version):
             return None
 
+        remote_checksum = self._build_remote_checksum(remote_version)
+
         from moduly.pravni_pozadavky.sluzby.legal_change_service import legal_change_service
 
-        return legal_change_service.create(
+        if legal_change_service.find_unevaluated_novelization(
+            document.id,
+            remote_checksum=remote_checksum,
+            note_prefix=NOVELIZATION_REMOTE_CHECKSUM_NOTE_PREFIX,
+        ) is not None:
+            self._update_reference_checksum(stored_version, remote_version)
+            return None
+
+        change = legal_change_service.create(
             legal_document_id=document.id,
             legal_document_version_id=stored_version.id,
             legal_check_run_id=check_run_id,
@@ -45,7 +56,10 @@ class LegalCheckNovelizationService:
             description=self._build_description(stored_version, remote_version.version_label),
             published_at=remote_version.publication_date,
             evaluated=False,
+            note=f"{NOVELIZATION_REMOTE_CHECKSUM_NOTE_PREFIX}{remote_checksum}",
         )
+        self._update_reference_checksum(stored_version, remote_version)
+        return change
 
     def _fetch_remote_version(self, document: LegalDocument):
         number, year = self._resolve_number_and_year(document)
@@ -75,7 +89,7 @@ class LegalCheckNovelizationService:
     def _has_newer_version(
         self,
         stored_version: LegalDocumentVersion,
-        remote_version,
+        remote_version: ESbirkaVersionInfo,
     ) -> bool:
         stored_slice_id, stored_checksum = legal_document_esbirka_client.parse_version_checksum(
             stored_version.checksum,
@@ -87,6 +101,22 @@ class LegalCheckNovelizationService:
             return True
 
         return stored_checksum != remote_version.text_checksum
+
+    def _build_remote_checksum(self, remote_version: ESbirkaVersionInfo) -> str:
+        return legal_document_esbirka_client.build_version_checksum(
+            slice_id=remote_version.slice_id,
+            text_checksum=remote_version.text_checksum,
+        )
+
+    def _update_reference_checksum(
+        self,
+        stored_version: LegalDocumentVersion,
+        remote_version: ESbirkaVersionInfo,
+    ) -> None:
+        legal_document_version_service.update_checksum(
+            stored_version.id,
+            self._build_remote_checksum(remote_version),
+        )
 
     def _compute_stored_text_checksum(self, version_id: int) -> str:
         sections = legal_section_service.list_by_version(version_id, include_inactive=False)

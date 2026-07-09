@@ -1,6 +1,7 @@
 from sqlalchemy import select
 
 from core.database.session import get_session
+from moduly.pravni_pozadavky.constants import CHANGE_NOVELIZATION
 from moduly.pravni_pozadavky.modely.legal_change import LegalChange
 
 
@@ -73,6 +74,23 @@ class LegalChangeRepository:
             if not include_inactive:
                 stmt = stmt.where(LegalChange.active.is_(True))
             return list(session.scalars(stmt))
+
+    def find_unevaluated_novelization(
+        self,
+        document_id: int,
+        *,
+        remote_checksum: str,
+        note_prefix: str,
+    ) -> LegalChange | None:
+        with get_session() as session:
+            stmt = select(LegalChange).where(
+                LegalChange.legal_document_id == document_id,
+                LegalChange.change_type == CHANGE_NOVELIZATION,
+                LegalChange.evaluated.is_(False),
+                LegalChange.active.is_(True),
+                LegalChange.note == f"{note_prefix}{remote_checksum}",
+            )
+            return session.scalar(stmt)
 
     def get_by_id(self, change_id: int) -> LegalChange | None:
         with get_session() as session:
