@@ -24,7 +24,6 @@ from core.widgets.dialog_utils import (
 )
 from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.responsibility_role_selector import ResponsibilityRoleSelector
-from core.widgets.thp_worker_selector import ThpWorkerSelector
 from core.shared.constants import ENTITY_LEGAL_REQUIREMENT
 from core.shared.widgets.entity_links_widget import EntityLinksWidget
 from moduly.pravni_pozadavky.constants import (
@@ -62,14 +61,15 @@ class LegalRequirementDialog(QDialog):
         self._processing_status: str | None = None
         self._syncing_document_fields = False
         self._last_document_id: int | None = None
+        self._loaded_responsible_person_id: int | None = None
 
-        self.setWindowTitle("Právní požadavek" if requirement is None else "Upravit řídicí proces")
+        self.setWindowTitle("Řídicí proces" if requirement is None else "Upravit řídicí proces")
         configure_resizable_form_dialog(self, width=1100, height=780, min_width=900, min_height=600)
 
         layout = QVBoxLayout(self)
 
         self.tabs = QTabWidget()
-        self.tabs.addTab(self._main_tab(), "Řídicí proces")
+        self.tabs.addTab(wrap_in_scroll_area(self._main_tab()), "Řídicí proces")
         self.children_tab: LegalRequirementChildrenTab | None = None
         if self._should_show_children_tab():
             self.children_tab = LegalRequirementChildrenTab(requirement.id)
@@ -92,7 +92,6 @@ class LegalRequirementDialog(QDialog):
             self._load_draft(draft)
         else:
             self.active_checkbox.setChecked(True)
-            self.process_code.setText("Přidělí se automaticky při uložení")
             self._populate_legal_sections()
 
     def _main_tab(self) -> QWidget:
@@ -105,8 +104,6 @@ class LegalRequirementDialog(QDialog):
         self.merged_into_label.setObjectName("InfoText")
         self.merged_into_label.setVisible(False)
 
-        self.process_code = QLineEdit()
-        self.process_code.setReadOnly(True)
         self.parent_process_caption = QLabel("Nadřazený proces:")
         self.parent_process_label = QLabel()
         self.parent_process_label.setWordWrap(True)
@@ -141,7 +138,6 @@ class LegalRequirementDialog(QDialog):
             QSizePolicy.Policy.Expanding,
             QSizePolicy.Policy.Fixed,
         )
-        self.responsible_person = ThpWorkerSelector()
         self.responsible_role = ResponsibilityRoleSelector()
         self.periodicity = QComboBox()
         self.periodicity.addItem("", "")
@@ -163,7 +159,6 @@ class LegalRequirementDialog(QDialog):
 
         identification_group = QGroupBox("Identifikace procesu")
         identification_form = QFormLayout(identification_group)
-        identification_form.addRow("Kód procesu:", self.process_code)
         identification_form.addRow(self.parent_process_caption, self.parent_process_label)
         title_row = QWidget()
         title_row_layout = QHBoxLayout(title_row)
@@ -184,7 +179,7 @@ class LegalRequirementDialog(QDialog):
         sources_layout.addWidget(self.sources_widget, 1)
         left_layout.addWidget(sources_group, 1)
 
-        process_group = QGroupBox("Řízení procesu")
+        process_group = QGroupBox("Popis procesu")
         process_form = QFormLayout(process_group)
         process_form.addRow("Způsob plnění:", self.requirement_summary)
         process_form.addRow("Metodika plnění:", self.organization_impact)
@@ -192,8 +187,7 @@ class LegalRequirementDialog(QDialog):
 
         management_group = QGroupBox("Správa procesu")
         management_form = QFormLayout(management_group)
-        management_form.addRow("Odpovědnost:", self.responsible_person)
-        management_form.addRow("Funkce / role:", self.responsible_role)
+        management_form.addRow("Vlastník procesu:", self.responsible_role)
         management_form.addRow("Periodicita ověření:", self.periodicity)
         management_form.addRow("Poslední ověření:", self.last_verification)
         management_form.addRow("Další ověření:", self.next_verification)
@@ -213,6 +207,10 @@ class LegalRequirementDialog(QDialog):
         self.legal_section.currentIndexChanged.connect(self._on_legal_section_changed)
         self.sources_widget.tree.itemSelectionChanged.connect(self._on_source_selection_changed)
 
+        right_widget = QWidget()
+        right_layout = QVBoxLayout(right_widget)
+        right_layout.setContentsMargins(0, 0, 0, 0)
+
         provision_text_group = QGroupBox("Znění právního podkladu")
         provision_text_layout = QVBoxLayout(provision_text_group)
         self.provision_text_header = QLabel()
@@ -227,9 +225,26 @@ class LegalRequirementDialog(QDialog):
         provision_text_layout.addWidget(self.provision_text_separator)
         provision_text_layout.addWidget(self.provision_text_view, 1)
 
+        self.process_inputs_view = QTextEdit()
+        self.process_inputs_view.setReadOnly(True)
+        inputs_group = QGroupBox("Vstupy procesu")
+        inputs_layout = QVBoxLayout(inputs_group)
+        inputs_layout.addWidget(self.process_inputs_view)
+
+        self.process_outputs_view = QTextEdit()
+        self.process_outputs_view.setReadOnly(True)
+        outputs_group = QGroupBox("Výstupy procesu")
+        outputs_layout = QVBoxLayout(outputs_group)
+        outputs_layout.addWidget(self.process_outputs_view)
+
+        right_layout.addWidget(provision_text_group, 2)
+        right_layout.addWidget(inputs_group, 1)
+        right_layout.addWidget(outputs_group, 1)
+        right_widget.setMinimumWidth(320)
+
         splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.addWidget(left_widget)
-        splitter.addWidget(provision_text_group)
+        splitter.addWidget(right_widget)
         splitter.setStretchFactor(0, 3)
         splitter.setStretchFactor(1, 2)
         root_layout.addWidget(splitter)
@@ -263,7 +278,7 @@ class LegalRequirementDialog(QDialog):
         self._set_parent_process_display(legal_requirement_merged_target_label(parent))
 
     def _load_requirement(self, requirement) -> None:
-        self.process_code.setText(requirement.process_code or "")
+        self._loaded_responsible_person_id = requirement.responsible_person_id
         self.process_title.setText(requirement.title or "")
         self._load_parent_process_display(requirement)
         if requirement.merged_into_requirement_id is not None:
@@ -292,7 +307,6 @@ class LegalRequirementDialog(QDialog):
         self.area.setText(requirement.area)
         self.requirement_summary.setPlainText(requirement.requirement_summary)
         self.organization_impact.setPlainText(requirement.organization_impact)
-        self.responsible_person.set_person_id(requirement.responsible_person_id)
         self.responsible_role.set_role_id(
             requirement.responsible_role_id,
             requirement.responsible_role_name,
@@ -311,7 +325,7 @@ class LegalRequirementDialog(QDialog):
         self._refresh_provision_text_panel()
 
     def _load_draft(self, draft) -> None:
-        self.process_code.setText("Přidělí se automaticky při uložení")
+        self._loaded_responsible_person_id = None
         self.process_title.clear()
         self._set_parent_process_display(None)
         self.merged_into_label.setVisible(False)
@@ -523,7 +537,7 @@ class LegalRequirementDialog(QDialog):
             "area": self.area.text().strip(),
             "requirement_summary": self.requirement_summary.toPlainText().strip(),
             "organization_impact": self.organization_impact.toPlainText().strip(),
-            "responsible_person_id": self.responsible_person.current_person_id(),
+            "responsible_person_id": self._loaded_responsible_person_id,
             "responsible_role_id": self.responsible_role.current_role_id(),
             "verification_periodicity": periodicity,
             "last_verification_date": self.last_verification.get_date(),

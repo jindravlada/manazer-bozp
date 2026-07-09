@@ -122,7 +122,9 @@ class LegalRequirementResponsibleRoleWidgetTestCase(unittest.TestCase):
         groups = [widget.title() for widget in dialog.findChildren(QGroupBox)]
         self.assertIn("Správa procesu", groups)
         labels = [label.text().strip() for label in dialog.findChildren(QLabel)]
-        self.assertIn("Odpovědnost:", labels)
+        self.assertIn("Vlastník procesu:", labels)
+        self.assertNotIn("Odpovědnost:", labels)
+        self.assertNotIn("Funkce / role:", labels)
 
     def test_workbench_editor_shows_responsibility_group(self) -> None:
         from PySide6.QtWidgets import QGroupBox

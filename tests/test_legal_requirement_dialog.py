@@ -218,9 +218,14 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         self.assertIn("Řídicí proces:", labels)
         self.assertIn("Identifikace procesu", groups)
         self.assertIn("Právní podklady", groups)
-        self.assertIn("Řízení procesu", groups)
+        self.assertIn("Popis procesu", groups)
         self.assertIn("Správa procesu", groups)
-        self.assertIn("Odpovědnost:", labels)
+        self.assertIn("Vstupy procesu", groups)
+        self.assertIn("Výstupy procesu", groups)
+        self.assertIn("Vlastník procesu:", labels)
+        self.assertNotIn("Kód procesu:", labels)
+        self.assertNotIn("Odpovědnost:", labels)
+        self.assertNotIn("Funkce / role:", labels)
         self.assertNotIn("Hlavní právní předpis:", labels)
         self.assertNotIn("Hlavní právní podklad:", labels)
         self.assertNotIn("Ustanovení předpisu:", labels)
@@ -261,7 +266,9 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         self.assertEqual(dialog.windowTitle(), "Upravit řídicí proces")
         self.assertEqual(dialog.process_title.text(), "Řízení systému BOZP")
 
-    def test_dialog_shows_provision_text_for_selected_source(self) -> None:
+    def test_new_dialog_uses_ridici_proces_window_title(self) -> None:
+        dialog = LegalRequirementDialog()
+        self.assertEqual(dialog.windowTitle(), "Řídicí proces")
         from moduly.pravni_pozadavky.ui.legal_requirement_sources_widget import _MISSING_SECTION_TEXT
 
         _document, subsection = self._create_subsection_101_odst_2()
