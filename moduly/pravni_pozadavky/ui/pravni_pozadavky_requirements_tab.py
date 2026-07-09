@@ -33,6 +33,9 @@ from moduly.pravni_pozadavky.constants import (
 from moduly.pravni_pozadavky.import_export.legal_registry_export_service import (
     legal_registry_export_service,
 )
+from moduly.pravni_pozadavky.import_export.legal_registry_import_service import (
+    legal_registry_import_service,
+)
 from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
 from moduly.pravni_pozadavky.sluzby.legal_requirement_task_service import (
     legal_requirement_task_service,
@@ -58,6 +61,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
         self.new_btn = QPushButton("Nový požadavek")
         self.import_json_btn = QPushButton("Import požadavků JSON")
         self.export_registry_btn = QPushButton("Export konfigurace registru")
+        self.restore_registry_btn = QPushButton("Obnovit registr")
         self.edit_btn = QPushButton("Upravit")
         self.merge_btn = QPushButton("Sloučit procesy")
         self.archive_btn = QPushButton("Archivovat")
@@ -85,6 +89,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.import_json_btn)
         toolbar.addWidget(self.export_registry_btn)
+        toolbar.addWidget(self.restore_registry_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.merge_btn)
         toolbar.addWidget(self.archive_btn)
@@ -113,6 +118,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
         self.new_btn.clicked.connect(self.new_requirement)
         self.import_json_btn.clicked.connect(self.import_requirements_json)
         self.export_registry_btn.clicked.connect(self.export_registry_configuration)
+        self.restore_registry_btn.clicked.connect(self.restore_registry_configuration)
         self.edit_btn.clicked.connect(self.edit_selected_requirement)
         self.merge_btn.clicked.connect(self.merge_processes)
         self.archive_btn.clicked.connect(self.archive_selected_requirement)
@@ -269,13 +275,65 @@ class PravniPozadavkyRequirementsTab(QWidget):
             (
                 "Export dokončen.\n\n"
                 f"Soubor:\n{result.file_path}\n\n"
-                f"Řídicí procesy: {result.requirement_count}\n"
-                f"Právní podklady: {result.source_count}\n"
                 f"Právní předpisy: {result.document_count}\n"
                 f"Verze předpisů: {result.version_count}\n"
-                f"Ustanovení: {result.section_count}"
+                f"Ustanovení: {result.section_count}\n"
+                f"Řídicí procesy: {result.requirement_count}\n"
+                f"Právní podklady procesů: {result.source_count}\n"
+                f"Sankce: {result.sanction_count}\n"
+                f"Kontroly změn: {result.check_run_count}\n"
+                f"Zjištěné změny: {result.change_count}\n"
+                f"Změněná ustanovení: {result.change_section_count}"
             ),
         )
+
+    def restore_registry_configuration(self) -> None:
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Obnovit registr právních požadavků",
+            str(storage_service.exports_dir),
+            "JSON soubory (*.json);;Všechny soubory (*)",
+        )
+        if not file_path:
+            return
+
+        confirmed = QMessageBox.warning(
+            self,
+            "Obnovit registr",
+            (
+                "Obnova registru právních požadavků nahradí aktuální data registru.\n"
+                "Ostatní moduly Manažera BOZP zůstanou beze změny.\n\n"
+                "Pokračovat?"
+            ),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if confirmed != QMessageBox.StandardButton.Yes:
+            return
+
+        try:
+            result = legal_registry_import_service.import_from_file(file_path)
+        except ValueError as exc:
+            QMessageBox.warning(self, "Obnovit registr", str(exc))
+            return
+
+        QMessageBox.information(
+            self,
+            "Obnovit registr",
+            (
+                "Obnova dokončena.\n\n"
+                f"Právní předpisy: {result.document_count}\n"
+                f"Verze předpisů: {result.version_count}\n"
+                f"Ustanovení: {result.section_count}\n"
+                f"Řídicí procesy: {result.requirement_count}\n"
+                f"Právní podklady procesů: {result.source_count}\n"
+                f"Sankce: {result.sanction_count}\n"
+                f"Kontroly změn: {result.check_run_count}\n"
+                f"Zjištěné změny: {result.change_count}\n"
+                f"Změněná ustanovení: {result.change_section_count}"
+            ),
+        )
+        self.refresh()
 
     def new_requirement(self) -> None:
         dialog = LegalRequirementDialog(self)

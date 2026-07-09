@@ -1,14 +1,24 @@
 import json
 from dataclasses import dataclass
 from datetime import date, datetime
+from decimal import Decimal
 from pathlib import Path
 
 from moduly.pravni_pozadavky.constants import process_code_sort_key
+from moduly.pravni_pozadavky.modely.legal_change import LegalChange
+from moduly.pravni_pozadavky.modely.legal_change_section import LegalChangeSection
+from moduly.pravni_pozadavky.modely.legal_check_run import LegalCheckRun
 from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
 from moduly.pravni_pozadavky.modely.legal_document_version import LegalDocumentVersion
 from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
+from moduly.pravni_pozadavky.modely.legal_requirement_sanction import LegalRequirementSanction
 from moduly.pravni_pozadavky.modely.legal_requirement_source import LegalRequirementSource
 from moduly.pravni_pozadavky.modely.legal_section import LegalSection
+from moduly.pravni_pozadavky.repository.legal_change_repository import LegalChangeRepository
+from moduly.pravni_pozadavky.repository.legal_change_section_repository import (
+    LegalChangeSectionRepository,
+)
+from moduly.pravni_pozadavky.repository.legal_check_run_repository import LegalCheckRunRepository
 from moduly.pravni_pozadavky.repository.legal_document_repository import LegalDocumentRepository
 from moduly.pravni_pozadavky.repository.legal_document_version_repository import (
     LegalDocumentVersionRepository,
@@ -16,32 +26,43 @@ from moduly.pravni_pozadavky.repository.legal_document_version_repository import
 from moduly.pravni_pozadavky.repository.legal_requirement_repository import (
     LegalRequirementRepository,
 )
+from moduly.pravni_pozadavky.repository.legal_requirement_sanction_repository import (
+    LegalRequirementSanctionRepository,
+)
 from moduly.pravni_pozadavky.repository.legal_requirement_source_repository import (
     LegalRequirementSourceRepository,
 )
 from moduly.pravni_pozadavky.repository.legal_section_repository import LegalSectionRepository
 
-EXPORT_VERSION = 1
+EXPORT_VERSION = 2
 APPLICATION_NAME = "Manažer BOZP 3.0"
 
 
 @dataclass(frozen=True)
 class LegalRegistryExportResult:
     file_path: Path
-    requirement_count: int
-    source_count: int
     document_count: int
     version_count: int
     section_count: int
+    requirement_count: int
+    source_count: int
+    sanction_count: int
+    check_run_count: int
+    change_count: int
+    change_section_count: int
 
 
 class LegalRegistryExportService:
     def __init__(self):
         self.requirement_repository = LegalRequirementRepository()
         self.source_repository = LegalRequirementSourceRepository()
+        self.sanction_repository = LegalRequirementSanctionRepository()
         self.document_repository = LegalDocumentRepository()
         self.version_repository = LegalDocumentVersionRepository()
         self.section_repository = LegalSectionRepository()
+        self.check_run_repository = LegalCheckRunRepository()
+        self.change_repository = LegalChangeRepository()
+        self.change_section_repository = LegalChangeSectionRepository()
 
     def build_default_filename(self, *, created_at: datetime | None = None) -> str:
         timestamp = (created_at or datetime.now()).strftime("%Y%m%d_%H%M%S")
@@ -49,23 +70,37 @@ class LegalRegistryExportService:
 
     def build_data(self, *, created_at: datetime | None = None) -> dict:
         created_at = created_at or datetime.now()
-        requirements = self.requirement_repository.get_all(active_only=True)
-        requirements = sorted(requirements, key=process_code_sort_key)
-        sources = self.source_repository.list_for_active_requirements()
-        documents = self.document_repository.list_all(include_inactive=False)
-        versions = self.version_repository.list_all(include_inactive=False)
-        sections = self.section_repository.list_active()
+        documents = self.document_repository.list_all(include_inactive=True)
+        versions = self.version_repository.list_all(include_inactive=True)
+        sections = self.section_repository.list_all()
+        requirements = sorted(
+            self.requirement_repository.get_all(active_only=None),
+            key=process_code_sort_key,
+        )
+        sources = self.source_repository.list_all()
+        sanctions = self.sanction_repository.list_all()
+        check_runs = self.check_run_repository.list_all(include_inactive=True)
+        changes = self.change_repository.list_all(include_inactive=True)
+        change_sections = self.change_section_repository.list_all()
 
-        return {
+        payload = {
             "export_version": EXPORT_VERSION,
             "created_at": self._serialize_datetime(created_at),
             "application": APPLICATION_NAME,
-            "requirements": [self._serialize_requirement(item) for item in requirements],
-            "sources": [self._serialize_source(item) for item in sources],
             "documents": [self._serialize_document(item) for item in documents],
             "versions": [self._serialize_version(item) for item in versions],
             "sections": [self._serialize_section(item) for item in sections],
+            "requirements": [self._serialize_requirement(item) for item in requirements],
+            "sources": [self._serialize_source(item) for item in sources],
+            "sanctions": [self._serialize_sanction(item) for item in sanctions],
+            "check_runs": [self._serialize_check_run(item) for item in check_runs],
+            "changes": [self._serialize_change(item) for item in changes],
+            "change_sections": [
+                self._serialize_change_section(item) for item in change_sections
+            ],
         }
+        payload["record_counts"] = self._build_record_counts(payload)
+        return payload
 
     def export_to_file(self, path: str | Path) -> LegalRegistryExportResult:
         created_at = datetime.now()
@@ -80,14 +115,32 @@ class LegalRegistryExportService:
         except OSError as exc:
             raise ValueError("Exportovaný soubor nelze zapsat.") from exc
 
+        counts = data["record_counts"]
         return LegalRegistryExportResult(
             file_path=file_path,
-            requirement_count=len(data["requirements"]),
-            source_count=len(data["sources"]),
-            document_count=len(data["documents"]),
-            version_count=len(data["versions"]),
-            section_count=len(data["sections"]),
+            document_count=counts["documents"],
+            version_count=counts["versions"],
+            section_count=counts["sections"],
+            requirement_count=counts["requirements"],
+            source_count=counts["sources"],
+            sanction_count=counts["sanctions"],
+            check_run_count=counts["check_runs"],
+            change_count=counts["changes"],
+            change_section_count=counts["change_sections"],
         )
+
+    def _build_record_counts(self, payload: dict) -> dict[str, int]:
+        return {
+            "documents": len(payload["documents"]),
+            "versions": len(payload["versions"]),
+            "sections": len(payload["sections"]),
+            "requirements": len(payload["requirements"]),
+            "sources": len(payload["sources"]),
+            "sanctions": len(payload["sanctions"]),
+            "check_runs": len(payload["check_runs"]),
+            "changes": len(payload["changes"]),
+            "change_sections": len(payload["change_sections"]),
+        }
 
     def _serialize_requirement(self, requirement: LegalRequirement) -> dict:
         return {
@@ -127,6 +180,21 @@ class LegalRegistryExportService:
             "legal_section_id": source.legal_section_id,
             "sort_order": source.sort_order,
             "created_at": self._serialize_datetime(source.created_at),
+        }
+
+    def _serialize_sanction(self, sanction: LegalRequirementSanction) -> dict:
+        return {
+            "id": sanction.id,
+            "requirement_id": sanction.requirement_id,
+            "authority": self._text(sanction.authority),
+            "legal_reference": self._text(sanction.legal_reference),
+            "description": self._text(sanction.description),
+            "max_amount": self._serialize_decimal(sanction.max_amount),
+            "currency": self._text(sanction.currency),
+            "note": self._text(sanction.note),
+            "active": sanction.active,
+            "created_at": self._serialize_datetime(sanction.created_at),
+            "updated_at": self._serialize_datetime(sanction.updated_at),
         }
 
     def _serialize_document(self, document: LegalDocument) -> dict:
@@ -188,10 +256,66 @@ class LegalRegistryExportService:
             "updated_at": self._serialize_datetime(section.updated_at),
         }
 
+    def _serialize_check_run(self, run: LegalCheckRun) -> dict:
+        return {
+            "id": run.id,
+            "title": self._text(run.title),
+            "period_from": self._serialize_date(run.period_from),
+            "period_to": self._serialize_date(run.period_to),
+            "checked_at": self._serialize_datetime(run.checked_at),
+            "checked_by": self._text(run.checked_by),
+            "status": self._text(run.status),
+            "note": self._text(run.note),
+            "error_message": self._text(run.error_message),
+            "started_at": self._serialize_datetime(run.started_at),
+            "documents_checked_count": run.documents_checked_count,
+            "changes_found_count": run.changes_found_count,
+            "active": run.active,
+            "created_at": self._serialize_datetime(run.created_at),
+            "updated_at": self._serialize_datetime(run.updated_at),
+        }
+
+    def _serialize_change(self, change: LegalChange) -> dict:
+        return {
+            "id": change.id,
+            "legal_document_id": change.legal_document_id,
+            "legal_document_version_id": change.legal_document_version_id,
+            "legal_section_id": change.legal_section_id,
+            "legal_check_run_id": change.legal_check_run_id,
+            "change_type": self._text(change.change_type),
+            "title": self._text(change.title),
+            "description": self._text(change.description),
+            "published_at": self._serialize_date(change.published_at),
+            "effective_from": self._serialize_date(change.effective_from),
+            "evaluated": change.evaluated,
+            "evaluated_at": self._serialize_datetime(change.evaluated_at),
+            "evaluated_by": self._text(change.evaluated_by),
+            "note": self._text(change.note),
+            "active": change.active,
+            "created_at": self._serialize_datetime(change.created_at),
+            "updated_at": self._serialize_datetime(change.updated_at),
+        }
+
+    def _serialize_change_section(self, section: LegalChangeSection) -> dict:
+        return {
+            "id": section.id,
+            "legal_change_id": section.legal_change_id,
+            "section_key": self._text(section.section_key),
+            "section_label": self._text(section.section_label),
+            "change_type": self._text(section.change_type),
+            "note": section.note,
+            "created_at": self._serialize_datetime(section.created_at),
+        }
+
     def _text(self, value) -> str:
         if value is None:
             return ""
         return str(value).strip()
+
+    def _serialize_decimal(self, value: Decimal | None) -> str | None:
+        if value is None:
+            return None
+        return format(value, "f")
 
     def _serialize_date(self, value: date | None) -> str | None:
         if value is None:

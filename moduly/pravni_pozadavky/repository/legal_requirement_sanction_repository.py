@@ -5,6 +5,14 @@ from moduly.pravni_pozadavky.modely.legal_requirement_sanction import LegalRequi
 
 
 class LegalRequirementSanctionRepository:
+    def list_all(self) -> list[LegalRequirementSanction]:
+        with get_session() as session:
+            stmt = select(LegalRequirementSanction).order_by(
+                LegalRequirementSanction.requirement_id,
+                LegalRequirementSanction.id,
+            )
+            return list(session.scalars(stmt))
+
     def list_by_requirement(
         self,
         requirement_id: int,

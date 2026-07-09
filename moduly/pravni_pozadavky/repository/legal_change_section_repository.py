@@ -5,6 +5,14 @@ from moduly.pravni_pozadavky.modely.legal_change_section import LegalChangeSecti
 
 
 class LegalChangeSectionRepository:
+    def list_all(self) -> list[LegalChangeSection]:
+        with get_session() as session:
+            stmt = select(LegalChangeSection).order_by(
+                LegalChangeSection.legal_change_id,
+                LegalChangeSection.id,
+            )
+            return list(session.scalars(stmt))
+
     def list_by_change(self, legal_change_id: int) -> list[LegalChangeSection]:
         with get_session() as session:
             stmt = (

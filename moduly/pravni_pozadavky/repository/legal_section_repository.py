@@ -5,6 +5,15 @@ from moduly.pravni_pozadavky.modely.legal_section import LegalSection
 
 
 class LegalSectionRepository:
+    def list_all(self) -> list[LegalSection]:
+        with get_session() as session:
+            stmt = select(LegalSection).order_by(
+                LegalSection.legal_document_id,
+                LegalSection.sort_order,
+                LegalSection.id,
+            )
+            return list(session.scalars(stmt))
+
     def list_by_document(
         self,
         document_id: int,

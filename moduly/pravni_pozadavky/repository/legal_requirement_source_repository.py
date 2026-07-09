@@ -6,6 +6,15 @@ from moduly.pravni_pozadavky.modely.legal_requirement_source import LegalRequire
 
 
 class LegalRequirementSourceRepository:
+    def list_all(self) -> list[LegalRequirementSource]:
+        with get_session() as session:
+            stmt = select(LegalRequirementSource).order_by(
+                LegalRequirementSource.requirement_id,
+                LegalRequirementSource.sort_order,
+                LegalRequirementSource.id,
+            )
+            return list(session.scalars(stmt))
+
     def list_for_active_requirements(self) -> list[LegalRequirementSource]:
         with get_session() as session:
             stmt = (
