@@ -39,6 +39,9 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.pravni_pozadavky.sluzby.legal_check_run_export_context_service import (
         legal_check_run_export_context_service,
     )
+    from moduly.pravni_pozadavky.sluzby.legal_check_novelization_service import (
+        legal_check_novelization_service,
+    )
     from moduly.pravni_pozadavky.sluzby.legal_check_run_service import legal_check_run_service
     from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
 
@@ -307,19 +310,19 @@ class LegalCheckRunServiceTestCase(unittest.TestCase):
 
     def test_run_automatic_check_error_marks_run(self) -> None:
         self._create_document()
-        original = legal_check_run_service._process_document_placeholder
+        original = legal_check_novelization_service.check_document
 
-        def boom(document) -> None:
+        def boom(document, *, check_run_id: int):
             raise RuntimeError("Simulovaná chyba")
 
-        legal_check_run_service._process_document_placeholder = boom
+        legal_check_novelization_service.check_document = boom
         try:
             with self.assertRaises(RuntimeError):
                 legal_check_run_service.run_automatic_check(
                     period_from=date(2024, 1, 1),
                 )
         finally:
-            legal_check_run_service._process_document_placeholder = original
+            legal_check_novelization_service.check_document = original
 
         runs = legal_check_run_service.list_all(include_inactive=True)
         self.assertEqual(len(runs), 1)

@@ -19,6 +19,17 @@ from moduly.pravni_pozadavky.ui.legal_check_run_dialog import LegalCheckRunDialo
 from moduly.pravni_pozadavky.ui.legal_check_run_table import LegalCheckRunTable
 
 
+def _find_pravni_pozadavky_page(widget):
+    from moduly.pravni_pozadavky.ui.pravni_pozadavky_page import PravniPozadavkyPage
+
+    current = widget
+    while current is not None:
+        if isinstance(current, PravniPozadavkyPage):
+            return current
+        current = current.parentWidget()
+    return None
+
+
 class KontrolyLegislativyTab(QWidget):
     """Záložka evidence kontrolních běhů změn legislativy."""
 
@@ -101,13 +112,27 @@ class KontrolyLegislativyTab(QWidget):
         if result is None or result.run.status != CHECK_RUN_COMPLETED:
             return
 
+        if result is None or result.run.status != CHECK_RUN_COMPLETED:
+            return
+
+        if result.changes_count > 0:
+            page = _find_pravni_pozadavky_page(self)
+            if page is not None:
+                page.changes_tab.refresh()
+                page.tabs.setCurrentWidget(page.changes_tab)
+
         QMessageBox.information(
             self,
             "Kontroly změn",
             (
                 "Kontrola změn dokončena.\n"
                 f"Kontrolováno předpisů: {result.documents_checked_count}\n"
-                f"Zjištěné změny: {result.changes_count}"
+                f"Nalezené změny: {result.changes_count}"
+                + (
+                    "\n\nPřejděte na záložku Zjištěné změny."
+                    if result.changes_count > 0
+                    else ""
+                )
             ),
         )
 

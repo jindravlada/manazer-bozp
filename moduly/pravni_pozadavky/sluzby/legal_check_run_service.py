@@ -92,19 +92,35 @@ class LegalCheckRunService:
 
             documents = legal_document_service.list_all(include_inactive=False)
             total = len(documents)
+            from moduly.pravni_pozadavky.sluzby.legal_check_novelization_service import (
+                legal_check_novelization_service,
+            )
+
             for index, document in enumerate(documents, start=1):
                 if self._check_cancelled(is_cancelled):
                     run = self._mark_cancelled(run.id)
                     return self._build_result(run)
                 label = legal_document_display_label(document)
                 self._notify_progress(on_progress, index, total, label)
-                self._process_document_placeholder(document)
+                legal_check_novelization_service.check_document(
+                    document,
+                    check_run_id=run.id,
+                )
 
             if self._check_cancelled(is_cancelled):
                 run = self._mark_cancelled(run.id)
                 return self._build_result(run)
 
-            run = self._mark_completed(run.id, documents_checked_count=total, changes_found_count=0)
+            from moduly.pravni_pozadavky.sluzby.legal_change_service import legal_change_service
+
+            changes_count = len(
+                legal_change_service.list_by_check_run(run.id, include_inactive=False),
+            )
+            run = self._mark_completed(
+                run.id,
+                documents_checked_count=total,
+                changes_found_count=changes_count,
+            )
             return self._build_result(run)
         except ValueError:
             raise
@@ -163,9 +179,6 @@ class LegalCheckRunService:
             documents_checked_count=run.documents_checked_count or 0,
             changes_count=run.changes_found_count or 0,
         )
-
-    def _process_document_placeholder(self, document) -> None:
-        return None
 
     def _check_cancelled(self, is_cancelled: CancelCheckCallback | None) -> bool:
         return is_cancelled is not None and is_cancelled()

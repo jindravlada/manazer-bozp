@@ -25,6 +25,10 @@ class LegalDocumentVersionService:
     def get_by_id(self, version_id: int) -> LegalDocumentVersion | None:
         return self.repository.get_by_id(version_id)
 
+    def get_current_version(self, document_id: int) -> LegalDocumentVersion | None:
+        versions = self.list_by_document(document_id, include_inactive=False)
+        return versions[0] if versions else None
+
     def create(
         self,
         *,

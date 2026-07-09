@@ -375,6 +375,7 @@ CHANGE_NEW = "new"
 CHANGE_UPDATED = "updated"
 CHANGE_REPEALED = "repealed"
 CHANGE_OTHER = "other"
+CHANGE_NOVELIZATION = "novelization"
 
 VALID_CHANGE_TYPES = frozenset(
     {
@@ -382,6 +383,7 @@ VALID_CHANGE_TYPES = frozenset(
         CHANGE_UPDATED,
         CHANGE_REPEALED,
         CHANGE_OTHER,
+        CHANGE_NOVELIZATION,
     }
 )
 
@@ -390,6 +392,7 @@ CHANGE_TYPE_LABELS: dict[str, str] = {
     CHANGE_UPDATED: "Změna",
     CHANGE_REPEALED: "Zrušení",
     CHANGE_OTHER: "Jiné",
+    CHANGE_NOVELIZATION: "Novelizace předpisu",
 }
 
 

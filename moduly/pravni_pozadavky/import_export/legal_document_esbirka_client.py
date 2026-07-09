@@ -1,11 +1,15 @@
+import hashlib
 import os
 import re
+from dataclasses import dataclass
+from datetime import date
 from html import unescape
 from pathlib import Path
 
 import requests
 
 ESBIRKA_BASE_URL = "https://www.esbirka.cz/cs"
+ESBIRKA_VERSION_CHECKSUM_PREFIX = "esbirka:"
 _REQUEST_TIMEOUT = 60
 _FRAGS_START = '<div class="Frags">'
 _FRAGS_ARTICLE_END = "</article>"
@@ -27,9 +31,115 @@ _LETTER_MARKER_RE = re.compile(
 )
 _SUBSECTION_MARKER_RE = re.compile(r"<var>\(\d+\)</var>")
 _DEBUG_TXT_ENV = "LEGAL_DOCUMENT_ESBIRKA_DEBUG_TXT"
+_H1_META_RE = re.compile(
+    r'<h1[^>]*data-docid="([^"]*)"[^>]*data-sliceid="([^"]*)"',
+    re.IGNORECASE,
+)
+_PUBLICATION_DATE_RE = re.compile(
+    r"ze dne (\d{1,2})\.\s*([a-záčďéěíňóřšťúůýž]+)\s+(\d{4})",
+    re.IGNORECASE,
+)
+_CZECH_MONTHS = {
+    "ledna": 1,
+    "února": 2,
+    "unora": 2,
+    "března": 3,
+    "brezna": 3,
+    "dubna": 4,
+    "května": 5,
+    "kvetna": 5,
+    "června": 6,
+    "cervna": 6,
+    "července": 7,
+    "cervence": 7,
+    "srpna": 8,
+    "září": 9,
+    "zari": 9,
+    "října": 10,
+    "rijna": 10,
+    "listopadu": 11,
+    "prosince": 12,
+}
+
+
+@dataclass(frozen=True)
+class ESbirkaVersionInfo:
+    doc_id: str
+    slice_id: str
+    source_url: str
+    publication_date: date | None
+    text_checksum: str
+    version_label: str
 
 
 class LegalDocumentESbirkaClient:
+    def fetch_version_info(self, *, year: int, number: str) -> ESbirkaVersionInfo:
+        html = self.fetch_full_text_html(year=year, number=number)
+        return self.extract_version_info(
+            html,
+            year=year,
+            number=number,
+        )
+
+    def extract_version_info(
+        self,
+        html: str,
+        *,
+        year: int,
+        number: str,
+    ) -> ESbirkaVersionInfo:
+        doc_id, slice_id = self._extract_version_ids(html)
+        source_url = self.build_url(year=year, number=number)
+        raw_text = self.html_to_text(html)
+        return ESbirkaVersionInfo(
+            doc_id=doc_id,
+            slice_id=slice_id,
+            source_url=source_url,
+            publication_date=self._extract_publication_date(html),
+            text_checksum=self.compute_text_checksum(raw_text),
+            version_label=f"e-Sbírka {slice_id}",
+        )
+
+    def compute_text_checksum(self, text: str) -> str:
+        normalized = (text or "").replace("\r\n", "\n").replace("\r", "\n")
+        return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
+    def build_version_checksum(self, *, slice_id: str, text_checksum: str) -> str:
+        return f"{ESBIRKA_VERSION_CHECKSUM_PREFIX}{slice_id}:{text_checksum}"
+
+    def parse_version_checksum(self, checksum: str) -> tuple[str | None, str | None]:
+        normalized = (checksum or "").strip()
+        if not normalized.startswith(ESBIRKA_VERSION_CHECKSUM_PREFIX):
+            return None, None
+        payload = normalized[len(ESBIRKA_VERSION_CHECKSUM_PREFIX):]
+        slice_id, separator, text_checksum = payload.partition(":")
+        if not separator:
+            return None, None
+        return slice_id or None, text_checksum or None
+
+    def _extract_version_ids(self, html: str) -> tuple[str, str]:
+        match = _H1_META_RE.search(html)
+        if match is None:
+            raise ValueError("Neočekávaný formát stránky.")
+        doc_id = match.group(1).strip()
+        slice_id = match.group(2).strip()
+        if not doc_id or not slice_id:
+            raise ValueError("Neočekávaný formát stránky.")
+        return doc_id, slice_id
+
+    def _extract_publication_date(self, html: str) -> date | None:
+        frags_html = self._extract_frags_html(html)
+        match = _PUBLICATION_DATE_RE.search(frags_html)
+        if match is None:
+            return None
+        day = int(match.group(1))
+        month_name = match.group(2).casefold().replace("ů", "u")
+        month = _CZECH_MONTHS.get(month_name)
+        if month is None:
+            return None
+        year = int(match.group(3))
+        return date(year, month, day)
+
     def build_url(self, *, year: int, number: str) -> str:
         normalized_number = (number or "").strip()
         if not normalized_number:
