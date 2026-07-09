@@ -12,6 +12,7 @@ from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from moduly.pravni_pozadavky.sluzby.legal_check_run_service import legal_check_run_service
 from moduly.pravni_pozadavky.ui.legal_check_first_run_dialog import LegalCheckFirstRunDialog
+from moduly.pravni_pozadavky.ui.legal_check_progress_dialog import LegalCheckProgressDialog
 from moduly.pravni_pozadavky.ui.legal_check_run_dialog import LegalCheckRunDialog
 from moduly.pravni_pozadavky.ui.legal_check_run_table import LegalCheckRunTable
 
@@ -78,13 +79,16 @@ class KontrolyLegislativyTab(QWidget):
                 return
             period_from = dialog.get_period_from()
 
-        try:
-            result = legal_check_run_service.run_automatic_check(
-                period_from=period_from,
-                period_to=period_to,
-            )
-        except ValueError as exc:
-            QMessageBox.warning(self, "Kontroly změn", str(exc))
+        progress_dialog = LegalCheckProgressDialog(
+            self,
+            period_from=period_from,
+            period_to=period_to,
+        )
+        if not progress_dialog.exec():
+            return
+
+        result = progress_dialog.result_data()
+        if result is None:
             return
 
         self.refresh()

@@ -7,12 +7,22 @@ from moduly.pravni_pozadavky.constants import (
     CHECK_RUN_NEW,
     DEFAULT_CHECK_RUN_STATUS,
     VALID_CHECK_RUN_STATUSES,
+    legal_document_display_label,
 )
 from moduly.pravni_pozadavky.modely.legal_check_run import LegalCheckRun
 from moduly.pravni_pozadavky.repository.legal_check_run_repository import (
     LegalCheckRunRepository,
 )
+from moduly.pravni_pozadavky.sluzby.legal_check_run_callbacks import (
+    CancelCheckCallback,
+    CheckProgressCallback,
+    CheckStatusCallback,
+)
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
+
+
+class CheckRunCancelledError(Exception):
+    """Kontrola změn byla zrušena před dokončením."""
 
 
 @dataclass(frozen=True)
@@ -48,15 +58,31 @@ class LegalCheckRunService:
         *,
         period_from: date,
         period_to: date | None = None,
+        on_status: CheckStatusCallback | None = None,
+        on_progress: CheckProgressCallback | None = None,
+        is_cancelled: CancelCheckCallback | None = None,
     ) -> AutomaticCheckRunResult:
         normalized_period_to = period_to or date.today()
         self._validate_period(period_from, normalized_period_to)
         if period_from > normalized_period_to:
             raise ValueError("Datum začátku kontroly nesmí být později než datum konce.")
 
-        documents_checked_count = len(
-            legal_document_service.list_all(include_inactive=False),
-        )
+        self._notify_status(on_status, "Připravuji kontrolu…")
+        if self._check_cancelled(is_cancelled):
+            raise CheckRunCancelledError()
+
+        documents = legal_document_service.list_all(include_inactive=False)
+        total = len(documents)
+        for index, document in enumerate(documents, start=1):
+            if self._check_cancelled(is_cancelled):
+                raise CheckRunCancelledError()
+            label = legal_document_display_label(document)
+            self._notify_progress(on_progress, index, total, label)
+            self._process_document_placeholder(document)
+
+        if self._check_cancelled(is_cancelled):
+            raise CheckRunCancelledError()
+
         now = datetime.now()
         run = self.create(
             title=f"Kontrola změn {normalized_period_to.strftime('%d.%m.%Y')}",
@@ -67,9 +93,33 @@ class LegalCheckRunService:
         )
         return AutomaticCheckRunResult(
             run=run,
-            documents_checked_count=documents_checked_count,
+            documents_checked_count=total,
             changes_count=0,
         )
+
+    def _process_document_placeholder(self, document) -> None:
+        return None
+
+    def _check_cancelled(self, is_cancelled: CancelCheckCallback | None) -> bool:
+        return is_cancelled is not None and is_cancelled()
+
+    def _notify_status(
+        self,
+        on_status: CheckStatusCallback | None,
+        message: str,
+    ) -> None:
+        if on_status is not None:
+            on_status(message)
+
+    def _notify_progress(
+        self,
+        on_progress: CheckProgressCallback | None,
+        current: int,
+        total: int,
+        label: str,
+    ) -> None:
+        if on_progress is not None:
+            on_progress(current, total, label)
 
     def create(
         self,

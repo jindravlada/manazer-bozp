@@ -32,7 +32,10 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.pravni_pozadavky.sluzby.legal_check_run_export_context_service import (
         legal_check_run_export_context_service,
     )
-    from moduly.pravni_pozadavky.sluzby.legal_check_run_service import legal_check_run_service
+    from moduly.pravni_pozadavky.sluzby.legal_check_run_service import (
+        CheckRunCancelledError,
+        legal_check_run_service,
+    )
     from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
 
 
@@ -238,6 +241,34 @@ class LegalCheckRunServiceTestCase(unittest.TestCase):
 
         self.assertEqual(result.run.period_to, date.today())
         self.assertEqual(result.changes_count, 0)
+
+    def test_run_automatic_check_reports_progress(self) -> None:
+        document = self._create_document()
+        status_messages: list[str] = []
+        progress_calls: list[tuple[int, int, str]] = []
+
+        result = legal_check_run_service.run_automatic_check(
+            period_from=date(2024, 1, 1),
+            on_status=status_messages.append,
+            on_progress=lambda current, total, label: progress_calls.append(
+                (current, total, label),
+            ),
+        )
+
+        self.assertEqual(status_messages[0], "Připravuji kontrolu…")
+        self.assertEqual(progress_calls, [(1, 1, document.short_title or document.title)])
+        self.assertEqual(result.documents_checked_count, 1)
+
+    def test_run_automatic_check_cancelled_does_not_create_run(self) -> None:
+        self._create_document()
+
+        with self.assertRaises(CheckRunCancelledError):
+            legal_check_run_service.run_automatic_check(
+                period_from=date(2024, 1, 1),
+                is_cancelled=lambda: True,
+            )
+
+        self.assertEqual(legal_check_run_service.list_all(include_inactive=True), [])
 
 
 if __name__ == "__main__":
