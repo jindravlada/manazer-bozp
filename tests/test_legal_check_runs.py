@@ -187,6 +187,58 @@ class LegalCheckRunServiceTestCase(unittest.TestCase):
         self.assertEqual(row.evaluated_count, 2)
         self.assertEqual(row.unevaluated_count, 1)
 
+    def test_get_last_completed_run(self) -> None:
+        older = self._create_run(title="Starší kontrola")
+        legal_check_run_service.complete_run(older.id)
+        newer = self._create_run(
+            title="Novější kontrola",
+            period_from=date(2024, 7, 1),
+            period_to=date(2024, 9, 30),
+        )
+        legal_check_run_service.complete_run(newer.id)
+
+        last_completed = legal_check_run_service.get_last_completed_run()
+        assert last_completed is not None
+        self.assertEqual(last_completed.id, newer.id)
+
+    def test_get_run_completion_date_uses_checked_at(self) -> None:
+        run = self._create_run()
+        completed = legal_check_run_service.complete_run(run.id)
+        assert completed is not None
+        assert completed.checked_at is not None
+
+        completion_date = legal_check_run_service.get_run_completion_date(completed)
+        self.assertEqual(completion_date, completed.checked_at.date())
+
+    def test_run_automatic_check_creates_completed_run(self) -> None:
+        self._create_document()
+        legal_document_service.create(
+            document_type=DOCUMENT_TYPE_ZAKON,
+            title="Zákon o BOZP",
+            number="309/2006 Sb.",
+            year=2006,
+        )
+
+        result = legal_check_run_service.run_automatic_check(
+            period_from=date(2024, 1, 1),
+            period_to=date(2024, 6, 30),
+        )
+
+        self.assertEqual(result.run.status, CHECK_RUN_COMPLETED)
+        self.assertEqual(result.run.period_from, date(2024, 1, 1))
+        self.assertEqual(result.run.period_to, date(2024, 6, 30))
+        self.assertIsNotNone(result.run.checked_at)
+        self.assertEqual(result.documents_checked_count, 2)
+        self.assertEqual(result.changes_count, 0)
+
+    def test_run_automatic_check_defaults_period_to_today(self) -> None:
+        result = legal_check_run_service.run_automatic_check(
+            period_from=date.today(),
+        )
+
+        self.assertEqual(result.run.period_to, date.today())
+        self.assertEqual(result.changes_count, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import date, datetime
 
 from moduly.pravni_pozadavky.constants import (
@@ -11,6 +12,14 @@ from moduly.pravni_pozadavky.modely.legal_check_run import LegalCheckRun
 from moduly.pravni_pozadavky.repository.legal_check_run_repository import (
     LegalCheckRunRepository,
 )
+from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
+
+
+@dataclass(frozen=True)
+class AutomaticCheckRunResult:
+    run: LegalCheckRun
+    documents_checked_count: int
+    changes_count: int
 
 
 class LegalCheckRunService:
@@ -25,6 +34,42 @@ class LegalCheckRunService:
 
     def get_by_id(self, run_id: int) -> LegalCheckRun | None:
         return self.repository.get_by_id(run_id)
+
+    def get_last_completed_run(self) -> LegalCheckRun | None:
+        return self.repository.get_last_completed()
+
+    def get_run_completion_date(self, run: LegalCheckRun) -> date:
+        if run.checked_at is not None:
+            return run.checked_at.date()
+        return run.period_to
+
+    def run_automatic_check(
+        self,
+        *,
+        period_from: date,
+        period_to: date | None = None,
+    ) -> AutomaticCheckRunResult:
+        normalized_period_to = period_to or date.today()
+        self._validate_period(period_from, normalized_period_to)
+        if period_from > normalized_period_to:
+            raise ValueError("Datum začátku kontroly nesmí být později než datum konce.")
+
+        documents_checked_count = len(
+            legal_document_service.list_all(include_inactive=False),
+        )
+        now = datetime.now()
+        run = self.create(
+            title=f"Kontrola změn {normalized_period_to.strftime('%d.%m.%Y')}",
+            period_from=period_from,
+            period_to=normalized_period_to,
+            checked_at=now,
+            status=CHECK_RUN_COMPLETED,
+        )
+        return AutomaticCheckRunResult(
+            run=run,
+            documents_checked_count=documents_checked_count,
+            changes_count=0,
+        )
 
     def create(
         self,

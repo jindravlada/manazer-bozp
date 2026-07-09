@@ -1,6 +1,7 @@
 from sqlalchemy import select
 
 from core.database.session import get_session
+from moduly.pravni_pozadavky.constants import CHECK_RUN_COMPLETED
 from moduly.pravni_pozadavky.modely.legal_check_run import LegalCheckRun
 
 
@@ -21,6 +22,16 @@ class LegalCheckRunRepository:
     def get_by_id(self, run_id: int) -> LegalCheckRun | None:
         with get_session() as session:
             return session.get(LegalCheckRun, run_id)
+
+    def get_last_completed(self) -> LegalCheckRun | None:
+        with get_session() as session:
+            stmt = (
+                self._ordered(select(LegalCheckRun))
+                .where(LegalCheckRun.active.is_(True))
+                .where(LegalCheckRun.status == CHECK_RUN_COMPLETED)
+                .limit(1)
+            )
+            return session.scalar(stmt)
 
     def create(self, run: LegalCheckRun) -> LegalCheckRun:
         with get_session() as session:

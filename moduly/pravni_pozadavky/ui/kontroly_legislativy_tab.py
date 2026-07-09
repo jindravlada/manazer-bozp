@@ -1,3 +1,5 @@
+from datetime import date
+
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QMessageBox,
@@ -9,6 +11,7 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from moduly.pravni_pozadavky.sluzby.legal_check_run_service import legal_check_run_service
+from moduly.pravni_pozadavky.ui.legal_check_first_run_dialog import LegalCheckFirstRunDialog
 from moduly.pravni_pozadavky.ui.legal_check_run_dialog import LegalCheckRunDialog
 from moduly.pravni_pozadavky.ui.legal_check_run_table import LegalCheckRunTable
 
@@ -65,10 +68,34 @@ class KontrolyLegislativyTab(QWidget):
         self.toggle_btn.setText("Obnovit" if not run.active else "Deaktivovat")
 
     def perform_check(self) -> None:
+        period_to = date.today()
+        last_completed = legal_check_run_service.get_last_completed_run()
+        if last_completed is not None:
+            period_from = legal_check_run_service.get_run_completion_date(last_completed)
+        else:
+            dialog = LegalCheckFirstRunDialog(self)
+            if not exec_maximized(dialog):
+                return
+            period_from = dialog.get_period_from()
+
+        try:
+            result = legal_check_run_service.run_automatic_check(
+                period_from=period_from,
+                period_to=period_to,
+            )
+        except ValueError as exc:
+            QMessageBox.warning(self, "Kontroly změn", str(exc))
+            return
+
+        self.refresh()
         QMessageBox.information(
             self,
             "Kontroly změn",
-            "Provést kontrolu bude dostupné ve fázi 58.",
+            (
+                "Kontrola změn dokončena.\n"
+                f"Kontrolováno předpisů: {result.documents_checked_count}\n"
+                f"Zjištěné změny: {result.changes_count}"
+            ),
         )
 
     def open_selected_run(self) -> None:
