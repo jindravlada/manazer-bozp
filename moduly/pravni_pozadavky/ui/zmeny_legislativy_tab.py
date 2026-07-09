@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from moduly.pravni_pozadavky.sluzby.legal_change_service import legal_change_service
-from moduly.pravni_pozadavky.ui.legal_change_dialog import LegalChangeDialog
+from moduly.pravni_pozadavky.ui.legal_change_detail_dialog import LegalChangeDetailDialog
 from moduly.pravni_pozadavky.ui.legal_change_table import LegalChangeTable
 
 
@@ -70,19 +70,8 @@ class ZmenyLegislativyTab(QWidget):
             QMessageBox.information(self, "Zjištěné změny", "Vyberte změnu.")
             return
 
-        dialog = LegalChangeDialog(self, change=change)
-        if not exec_maximized(dialog):
-            return
-        try:
-            legal_change_service.update(
-                change.id,
-                active=change.active,
-                **dialog.get_data(),
-            )
-        except ValueError as exc:
-            QMessageBox.warning(self, "Zjištěné změny", str(exc))
-            return
-        self.refresh()
+        dialog = LegalChangeDetailDialog(self, change=change)
+        exec_maximized(dialog)
 
     def toggle_selected_change(self) -> None:
         change = self._selected_change()

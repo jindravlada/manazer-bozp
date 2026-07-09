@@ -390,6 +390,12 @@ VALID_CHANGE_SECTION_TYPES = frozenset(
     }
 )
 
+CHANGE_SECTION_TYPE_LABELS: dict[str, str] = {
+    CHANGE_SECTION_ADDED: "Nové",
+    CHANGE_SECTION_REMOVED: "Zrušené",
+    CHANGE_SECTION_MODIFIED: "Změněné",
+}
+
 VALID_CHANGE_TYPES = frozenset(
     {
         CHANGE_NEW,
