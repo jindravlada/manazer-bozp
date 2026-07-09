@@ -5,6 +5,18 @@ from moduly.pravni_pozadavky.modely.legal_document_version import LegalDocumentV
 
 
 class LegalDocumentVersionRepository:
+    def list_all(self, *, include_inactive: bool = False) -> list[LegalDocumentVersion]:
+        with get_session() as session:
+            stmt = select(LegalDocumentVersion).order_by(
+                LegalDocumentVersion.legal_document_id,
+                LegalDocumentVersion.active.desc(),
+                LegalDocumentVersion.effective_from.desc(),
+                LegalDocumentVersion.id,
+            )
+            if not include_inactive:
+                stmt = stmt.where(LegalDocumentVersion.active.is_(True))
+            return list(session.scalars(stmt))
+
     def list_by_document(
         self,
         document_id: int,

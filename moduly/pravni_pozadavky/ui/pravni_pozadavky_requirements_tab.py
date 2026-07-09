@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
+from core.services.storage_service import storage_service
 from moduly.pravni_pozadavky.constants import (
     COMPLIANCE_STATUS_LABELS,
     DEFAULT_ACTIVE_FILTER,
@@ -28,6 +29,9 @@ from moduly.pravni_pozadavky.constants import (
     FILTER_PROCESS_LEVEL_ROOTS,
     FILTER_STATUS_VSE,
     process_code_sort_key,
+)
+from moduly.pravni_pozadavky.import_export.legal_registry_export_service import (
+    legal_registry_export_service,
 )
 from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
 from moduly.pravni_pozadavky.sluzby.legal_requirement_task_service import (
@@ -53,6 +57,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
 
         self.new_btn = QPushButton("Nový požadavek")
         self.import_json_btn = QPushButton("Import požadavků JSON")
+        self.export_registry_btn = QPushButton("Export konfigurace registru")
         self.edit_btn = QPushButton("Upravit")
         self.merge_btn = QPushButton("Sloučit procesy")
         self.archive_btn = QPushButton("Archivovat")
@@ -79,6 +84,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
 
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.import_json_btn)
+        toolbar.addWidget(self.export_registry_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.merge_btn)
         toolbar.addWidget(self.archive_btn)
@@ -106,6 +112,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
 
         self.new_btn.clicked.connect(self.new_requirement)
         self.import_json_btn.clicked.connect(self.import_requirements_json)
+        self.export_registry_btn.clicked.connect(self.export_registry_configuration)
         self.edit_btn.clicked.connect(self.edit_selected_requirement)
         self.merge_btn.clicked.connect(self.merge_processes)
         self.archive_btn.clicked.connect(self.archive_selected_requirement)
@@ -237,6 +244,38 @@ class PravniPozadavkyRequirementsTab(QWidget):
         exec_maximized(dialog)
         if dialog.import_summary is not None:
             self.refresh()
+
+    def export_registry_configuration(self) -> None:
+        default_name = legal_registry_export_service.build_default_filename()
+        default_path = str(storage_service.exports_dir / default_name)
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export konfigurace registru právních požadavků",
+            default_path,
+            "JSON soubory (*.json);;Všechny soubory (*)",
+        )
+        if not file_path:
+            return
+
+        try:
+            result = legal_registry_export_service.export_to_file(file_path)
+        except ValueError as exc:
+            QMessageBox.warning(self, "Export registru", str(exc))
+            return
+
+        QMessageBox.information(
+            self,
+            "Export registru",
+            (
+                "Export dokončen.\n\n"
+                f"Soubor:\n{result.file_path}\n\n"
+                f"Řídicí procesy: {result.requirement_count}\n"
+                f"Právní podklady: {result.source_count}\n"
+                f"Právní předpisy: {result.document_count}\n"
+                f"Verze předpisů: {result.version_count}\n"
+                f"Ustanovení: {result.section_count}"
+            ),
+        )
 
     def new_requirement(self) -> None:
         dialog = LegalRequirementDialog(self)
