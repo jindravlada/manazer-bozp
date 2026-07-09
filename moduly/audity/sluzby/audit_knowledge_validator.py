@@ -58,6 +58,34 @@ SECTION_REQUIRED_FIELDS = (
 LIST_ITEM_FIELDS = ("id", "nazev", "poradi", "aktivni")
 ASSERTION_FIELDS = ("id", "text", "popis", "poradi", "aktivni", "zavaznost")
 
+PROCESS_LEGACY_OPTIONAL_LIST_FIELDS = (
+    "sekce",
+    "vazby_procesy",
+    "pozadavky_norem",
+)
+
+SECTION_LEGACY_OPTIONAL_LIST_FIELDS = (
+    "sekce",
+    "postup_kontroly",
+    "auditni_tvrzeni",
+    "kontrolni_body",
+    "navodne_otazky",
+    "objektivni_dukazy",
+    "doporucene_rozhovory",
+    "pozorovani_v_provozu",
+    "typicke_neshody",
+    "typicke_zavady",
+    "pkz",
+    "pozorovani",
+    "vazby_procesy",
+    "pozadavky_normy",
+    "poznamky_auditora",
+    "referencni_fotografie",
+    "doporucene_postupy",
+    "legislativa",
+    "historie",
+)
+
 
 def default_audity_dir() -> Path:
     return editable_catalog_service.bundled_dir() / "audity"
@@ -69,6 +97,31 @@ def load_json_file(path: Path) -> dict:
     if not isinstance(payload, dict):
         raise ValueError(f"Kořen JSON musí být objekt: {path}")
     return payload
+
+
+def _normalize_section_legacy_lists(section: dict) -> None:
+    if not isinstance(section, dict):
+        return
+
+    for field in SECTION_LEGACY_OPTIONAL_LIST_FIELDS:
+        if field not in section:
+            section[field] = []
+
+    for nested in section.get("sekce") or []:
+        _normalize_section_legacy_lists(nested)
+
+
+def normalize_legacy_knowledge_data(data: dict) -> None:
+    """Doplní chybějící volitelná listová pole prázdným seznamem (starší JSON)."""
+    if not isinstance(data, dict):
+        return
+
+    for field in PROCESS_LEGACY_OPTIONAL_LIST_FIELDS:
+        if field not in data:
+            data[field] = []
+
+    for section in data.get("sekce") or []:
+        _normalize_section_legacy_lists(section)
 
 
 def _validate_ids(items: list, *, path: str, errors: list[str]) -> None:
@@ -171,6 +224,8 @@ def validate_knowledge_data(data: dict, *, source_name: str) -> list[str]:
 
     if not isinstance(data, dict):
         return [f"{source_name}: kořen musí být objekt"]
+
+    normalize_legacy_knowledge_data(data)
 
     for field in PROCESS_REQUIRED_FIELDS:
         if field not in data:

@@ -28,7 +28,9 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.audity.sluzby.audit_knowledge_validator import (
         default_audity_dir,
+        normalize_legacy_knowledge_data,
         validate_all_catalogs,
+        validate_knowledge_data,
     )
 
 
@@ -110,6 +112,101 @@ class AudityKnowledgeEditorTestCase(unittest.TestCase):
         )
         self.assertEqual(len(errors), 1)
         self.assertIn("b", errors[0])
+
+    def test_normalize_legacy_knowledge_data_fills_missing_section_lists(self) -> None:
+        data = {
+            "verze": 1,
+            "id": "planovani_bozp",
+            "nazev": "Test",
+            "popis": "",
+            "ucel_procesu": "",
+            "proc_je_dulezity": "",
+            "ocekavany_vystup": "",
+            "poradi": 1,
+            "aktivni": True,
+            "sekce": [
+                {
+                    "id": "cile_politika",
+                    "nazev": "Cíle a politika",
+                    "popis": "",
+                    "cil_overeni": "",
+                    "poradi": 1,
+                    "aktivni": True,
+                }
+            ],
+        }
+
+        normalize_legacy_knowledge_data(data)
+
+        section = data["sekce"][0]
+        for field in (
+            "navodne_otazky",
+            "auditni_tvrzeni",
+            "objektivni_dukazy",
+            "doporucene_rozhovory",
+            "pozorovani_v_provozu",
+            "typicke_neshody",
+            "pkz",
+            "pozorovani",
+            "vazby_procesy",
+            "pozadavky_normy",
+            "postup_kontroly",
+            "referencni_fotografie",
+        ):
+            with self.subTest(field=field):
+                self.assertEqual(section[field], [])
+
+        errors = validate_knowledge_data(data, source_name="planovani_bozp.json")
+        self.assertEqual(errors, [])
+
+    def test_save_section_metadata_accepts_legacy_section_without_list_fields(self) -> None:
+        audit_knowledge_editor_service.ensure_user_catalogs()
+        relative_path = "audity/planovani_bozp.json"
+        path = audit_knowledge_editor_service.resolve_user_path(relative_path)
+
+        with path.open(encoding="utf-8") as handle:
+            original = json.load(handle)
+
+        try:
+            legacy = json.loads(json.dumps(original))
+            section = next(
+                item
+                for item in legacy.get("sekce") or []
+                if item.get("id") == "cile_politika"
+            )
+            for field in (
+                "navodne_otazky",
+                "auditni_tvrzeni",
+                "objektivni_dukazy",
+                "doporucene_rozhovory",
+                "pozorovani_v_provozu",
+                "typicke_neshody",
+                "pkz",
+                "pozorovani",
+                "vazby_procesy",
+                "pozadavky_normy",
+                "postup_kontroly",
+                "referencni_fotografie",
+            ):
+                section.pop(field, None)
+
+            errors = audit_knowledge_editor_service.save_user_json(relative_path, legacy)
+            self.assertEqual(errors, [])
+
+            with path.open(encoding="utf-8") as handle:
+                saved = json.load(handle)
+            saved_section = next(
+                item
+                for item in saved.get("sekce") or []
+                if item.get("id") == "cile_politika"
+            )
+            self.assertEqual(saved_section.get("navodne_otazky"), [])
+            self.assertEqual(saved_section.get("auditni_tvrzeni"), [])
+        finally:
+            path.write_text(
+                json.dumps(original, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
 
     def test_save_user_json_creates_backup_and_writes_atomically(self) -> None:
         audit_knowledge_editor_service.ensure_user_catalogs()

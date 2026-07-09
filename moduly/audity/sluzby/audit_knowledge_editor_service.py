@@ -18,6 +18,7 @@ from moduly.audity.sluzby.audit_knowledge_validator import (
     PROCESY_BASENAME,
     VALID_ZAVAZNOST,
     load_json_file,
+    normalize_legacy_knowledge_data,
     validate_all_catalogs,
     validate_knowledge_data,
     validate_knowledge_file,
@@ -109,7 +110,10 @@ class AuditKnowledgeEditorService:
         if not path.is_file():
             return None, f"Soubor neexistuje: {path.name}"
         try:
-            return load_json_file(path), None
+            data = load_json_file(path)
+            if path.name != PROCESY_BASENAME:
+                normalize_legacy_knowledge_data(data)
+            return data, None
         except (OSError, json.JSONDecodeError, ValueError) as exc:
             return None, f"{path.name}: {exc}"
 
@@ -244,6 +248,9 @@ class AuditKnowledgeEditorService:
     ) -> list[str]:
         path = self.resolve_user_path(relative_path)
         self.assert_user_writable_path(path)
+
+        if path.name != PROCESY_BASENAME:
+            normalize_legacy_knowledge_data(data)
 
         if not skip_validation:
             errors = self.validate_user_file(relative_path, data)
