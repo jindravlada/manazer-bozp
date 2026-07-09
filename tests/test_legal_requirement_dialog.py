@@ -233,7 +233,7 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         self.assertNotIn("Číslo předpisu:", labels)
         self.assertNotIn("Ustanovení:", labels)
         self.assertEqual(dialog.tabs.tabText(0), "Řídicí proces")
-        self.assertEqual(dialog.tabs.tabText(2), "Vazby procesu")
+        self.assertEqual(dialog.tabs.tabText(2), "Vazby a použití")
 
     def test_dialog_without_sources_prompts_to_select_source(self) -> None:
         from moduly.pravni_pozadavky.ui.legal_requirement_sources_widget import _NO_SOURCE_SELECTED_TEXT

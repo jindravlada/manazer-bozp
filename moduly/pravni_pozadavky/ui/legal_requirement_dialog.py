@@ -24,8 +24,9 @@ from core.widgets.dialog_utils import (
 )
 from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.responsibility_role_selector import ResponsibilityRoleSelector
-from core.shared.constants import ENTITY_LEGAL_REQUIREMENT
-from core.shared.widgets.entity_links_widget import EntityLinksWidget
+from moduly.pravni_pozadavky.ui.legal_requirement_links_and_usage_widget import (
+    LegalRequirementLinksAndUsageWidget,
+)
 from moduly.pravni_pozadavky.constants import (
     COMPLIANCE_STATUS_LABELS,
     PERIODICITY_LABELS,
@@ -45,9 +46,6 @@ from moduly.pravni_pozadavky.sluzby.legal_section_display_text_service import (
 )
 from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
 from moduly.pravni_pozadavky.ui.legal_document_selector import LegalDocumentNameSelector
-from moduly.pravni_pozadavky.ui.legal_requirement_process_link_dialog import (
-    LegalRequirementProcessLinkDialog,
-)
 from moduly.pravni_pozadavky.ui.legal_requirement_children_tab import (
     LegalRequirementChildrenTab,
 )
@@ -86,12 +84,10 @@ class LegalRequirementDialog(QDialog):
             requirement.id if requirement is not None else None,
         )
         self.tabs.addTab(wrap_in_scroll_area(self.sanctions_tab), "Sankce")
-        self.links_widget = EntityLinksWidget(
-            ENTITY_LEGAL_REQUIREMENT,
+        self.links_widget = LegalRequirementLinksAndUsageWidget(
             requirement.id if requirement is not None else None,
-            link_dialog_class=LegalRequirementProcessLinkDialog,
         )
-        self.tabs.addTab(wrap_in_scroll_area(self.links_widget), "Vazby procesu")
+        self.tabs.addTab(wrap_in_scroll_area(self.links_widget), "Vazby a použití")
         layout.addWidget(self.tabs, 1)
         add_save_cancel_footer(layout, self)
 
