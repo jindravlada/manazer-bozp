@@ -6,6 +6,7 @@ from moduly.pravni_pozadavky.import_export.legal_document_bulk_internet_import_p
     parse_bulk_import_line,
 )
 from moduly.pravni_pozadavky.import_export.legal_document_internet_import_service import (
+    ImportCancelledError,
     legal_document_internet_import_service,
 )
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
@@ -17,6 +18,8 @@ BULK_IMPORT_STATUS_SKIPPED = "Přeskočeno"
 DUPLICATE_SKIP_MESSAGE = "Předpis již existuje"
 
 BulkProgressCallback = Callable[[int, int, str], None]
+BulkStatusCallback = Callable[[str], None]
+BulkCancelledCallback = Callable[[], bool]
 
 
 @dataclass(frozen=True)
@@ -44,12 +47,17 @@ class LegalDocumentBulkInternetImportService:
         text: str,
         *,
         on_progress: BulkProgressCallback | None = None,
+        on_status: BulkStatusCallback | None = None,
+        is_cancelled: BulkCancelledCallback | None = None,
     ) -> BulkInternetImportSummary:
         lines = [line for line in (text or "").splitlines() if line.strip()]
         rows: list[BulkInternetImportRowResult] = []
         total = len(lines)
 
         for index, line in enumerate(lines, start=1):
+            if self._is_cancelled(is_cancelled):
+                break
+
             regulation_label = line.strip()
             try:
                 parsed = parse_bulk_import_line(line)
@@ -91,6 +99,8 @@ class LegalDocumentBulkInternetImportService:
                     document_type=parsed.document_type,
                     number=parsed.number,
                     year=parsed.year,
+                    on_status=on_status,
+                    is_cancelled=is_cancelled,
                 )
                 document = legal_document_service.get_by_id(result.document_id)
                 title = document.title if document is not None else ""
@@ -104,6 +114,8 @@ class LegalDocumentBulkInternetImportService:
                         source_line=parsed.source_line,
                     ),
                 )
+            except ImportCancelledError:
+                break
             except ValueError as exc:
                 rows.append(
                     BulkInternetImportRowResult(
@@ -146,6 +158,9 @@ class LegalDocumentBulkInternetImportService:
     ) -> None:
         if on_progress is not None:
             on_progress(current, total, label)
+
+    def _is_cancelled(self, is_cancelled: BulkCancelledCallback | None) -> bool:
+        return is_cancelled is not None and is_cancelled()
 
 
 legal_document_bulk_internet_import_service = LegalDocumentBulkInternetImportService()

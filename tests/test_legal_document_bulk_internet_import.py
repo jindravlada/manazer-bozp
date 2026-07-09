@@ -173,6 +173,54 @@ class BulkInternetImportServiceTestCase(unittest.TestCase):
         self.assertGreater(summary.rows[2].section_count or 0, 0)
         self.assertTrue(summary.rows[2].title)
 
+    def test_bulk_import_reports_progress_and_status(self) -> None:
+        progress_events: list[tuple[int, int, str]] = []
+        status_events: list[str] = []
+
+        with patch.object(
+            legal_document_esbirka_client,
+            "fetch_full_text_html",
+            side_effect=self._fetch_side_effect,
+        ):
+            summary = legal_document_bulk_internet_import_service.import_lines(
+                "262/2006\n",
+                on_progress=lambda current, total, label: progress_events.append(
+                    (current, total, label),
+                ),
+                on_status=status_events.append,
+            )
+
+        self.assertEqual(summary.ok_count, 1)
+        self.assertEqual(progress_events, [(1, 1, "262/2006 Sb.")])
+        self.assertIn("Stahuji...", status_events)
+        self.assertIn("Parsuji...", status_events)
+        self.assertIn("Ukládám...", status_events)
+        self.assertIn("Hotovo.", status_events)
+
+    def test_bulk_import_honours_cancel_between_items(self) -> None:
+        cancelled_after = {"value": 0}
+
+        def is_cancelled() -> bool:
+            return cancelled_after["value"] >= 1
+
+        with patch.object(
+            legal_document_esbirka_client,
+            "fetch_full_text_html",
+            side_effect=self._fetch_side_effect,
+        ):
+            summary = legal_document_bulk_internet_import_service.import_lines(
+                "262/2006\n390/2021\n",
+                on_progress=lambda current, _total, _label: cancelled_after.__setitem__(
+                    "value",
+                    current,
+                ),
+                is_cancelled=is_cancelled,
+            )
+
+        self.assertEqual(summary.total, 2)
+        self.assertEqual(summary.ok_count, 1)
+        self.assertEqual(len(summary.rows), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,6 +1,5 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QApplication,
     QDialog,
     QHBoxLayout,
     QHeaderView,
@@ -16,7 +15,9 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import configure_resizable_form_dialog
 from moduly.pravni_pozadavky.import_export.legal_document_bulk_internet_import_service import (
     BulkInternetImportSummary,
-    legal_document_bulk_internet_import_service,
+)
+from moduly.pravni_pozadavky.ui.legal_predpis_import_progress_dialog import (
+    LegalPredpisImportProgressDialog,
 )
 
 _COL_REGULATION = 0
@@ -26,12 +27,21 @@ _COL_SECTION_COUNT = 3
 _COL_ERROR = 4
 
 
+def format_predpis_import_summary(summary: BulkInternetImportSummary) -> str:
+    return (
+        "Import dokončen.\n\n"
+        f"Importováno předpisů: {summary.ok_count}\n"
+        f"Přeskočeno: {summary.skipped_count}\n"
+        f"Chyby: {summary.error_count}"
+    )
+
+
 class LegalDocumentBulkInternetImportDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.import_summary: BulkInternetImportSummary | None = None
 
-        self.setWindowTitle("Hromadný import právních předpisů z internetu")
+        self.setWindowTitle("Import právních předpisů")
         configure_resizable_form_dialog(self, width=900, height=640, min_width=720, min_height=480)
 
         layout = QVBoxLayout(self)
@@ -79,11 +89,6 @@ class LegalDocumentBulkInternetImportDialog(QDialog):
         self.summary_label.hide()
         layout.addWidget(self.summary_label)
 
-        self.status_label = QLabel("")
-        self.status_label.setWordWrap(True)
-        self.status_label.hide()
-        layout.addWidget(self.status_label)
-
         buttons = QHBoxLayout()
         buttons.addStretch()
         self.import_btn = QPushButton("Importovat")
@@ -98,7 +103,7 @@ class LegalDocumentBulkInternetImportDialog(QDialog):
     def _run_import(self) -> None:
         text = self.input_text.toPlainText()
         if not any(line.strip() for line in text.splitlines()):
-            QMessageBox.warning(self, "Hromadný import", "Zadejte alespoň jeden předpis.")
+            QMessageBox.warning(self, "Import právních předpisů", "Zadejte alespoň jeden předpis.")
             return
 
         self._set_import_in_progress(True)
@@ -106,15 +111,21 @@ class LegalDocumentBulkInternetImportDialog(QDialog):
         self.summary_label.hide()
         self.summary_label.clear()
 
-        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
-        try:
-            summary = legal_document_bulk_internet_import_service.import_lines(
-                text,
-                on_progress=self._update_progress,
-            )
-        finally:
-            self._set_import_in_progress(False)
-            QApplication.restoreOverrideCursor()
+        progress_dialog = LegalPredpisImportProgressDialog(self, import_text=text)
+        progress_dialog.exec()
+
+        self._set_import_in_progress(False)
+
+        if progress_dialog.was_cancelled():
+            partial_summary = progress_dialog.summary()
+            if partial_summary is not None and partial_summary.rows:
+                self.import_summary = partial_summary
+                self._load_results(partial_summary)
+            return
+
+        summary = progress_dialog.summary()
+        if summary is None:
+            return
 
         self.import_summary = summary
         self._load_results(summary)
@@ -131,15 +142,10 @@ class LegalDocumentBulkInternetImportDialog(QDialog):
             self._set_item(row_index, _COL_ERROR, row.error)
 
     def _show_summary(self, summary: BulkInternetImportSummary) -> None:
-        message = (
-            f"Celkem: {summary.total}\n"
-            f"OK: {summary.ok_count}\n"
-            f"Chyby: {summary.error_count}\n"
-            f"Přeskočeno: {summary.skipped_count}"
-        )
+        message = format_predpis_import_summary(summary)
         self.summary_label.setText(message)
         self.summary_label.show()
-        QMessageBox.information(self, "Hromadný import", f"Import dokončen.\n\n{message}")
+        QMessageBox.information(self, "Import právních předpisů", message)
 
     def _set_item(self, row: int, column: int, text: str) -> None:
         item = QTableWidgetItem(text or "")
@@ -149,11 +155,3 @@ class LegalDocumentBulkInternetImportDialog(QDialog):
     def _set_import_in_progress(self, active: bool) -> None:
         self.input_text.setEnabled(not active)
         self.import_btn.setEnabled(not active)
-        if not active:
-            self.status_label.hide()
-            self.status_label.clear()
-
-    def _update_progress(self, current: int, total: int, label: str) -> None:
-        self.status_label.setText(f"Zpracovávám {current}/{total}: {label}")
-        self.status_label.show()
-        QApplication.processEvents()

@@ -189,6 +189,7 @@ class LegalDocumentInternetImportTestCase(unittest.TestCase):
         assert document is not None
         self.assertEqual(document.number, "390")
         self.assertEqual(document.year, 2021)
+        self.assertEqual(document.document_type, "narizeni_vlady")
 
     def test_fetch_not_found_raises_value_error(self) -> None:
         with patch("requests.get") as get_mock:
@@ -233,8 +234,8 @@ class LegalDocumentInternetImportTestCase(unittest.TestCase):
             [
                 "Vyhledávám předpis...",
                 "Stahuji...",
-                "Převádím...",
-                "Importuji...",
+                "Parsuji...",
+                "Ukládám...",
                 "Hotovo.",
             ],
         )
@@ -376,14 +377,16 @@ class LegalDocumentInternetImportTestCase(unittest.TestCase):
         ]
         self.assertGreaterEqual(len(paragraph_two_letters), 7)
 
-    def test_import_without_document_type_raises_value_error(self) -> None:
-        with self.assertRaises(ValueError) as context:
-            legal_document_internet_import_service.import_from_internet(
-                document_type="",
-                number="262",
-                year=2006,
-            )
-        self.assertIn("typ", str(context.exception).lower())
+    def test_internet_import_detects_document_type_from_title_even_if_explicit_is_wrong(self) -> None:
+        result = self._import_via_internet_mock(
+            self.fixture_390,
+            document_type="zakon",
+            number="390",
+            year=2021,
+        )
+        document = legal_document_service.get_by_id(result.document_id)
+        assert document is not None
+        self.assertEqual(document.document_type, "narizeni_vlady")
 
     def _clear_database(self) -> None:
         from sqlalchemy import delete

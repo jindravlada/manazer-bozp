@@ -44,11 +44,22 @@ from moduly.pravni_pozadavky.sluzby.legal_requirement_task_service import (
 )
 from moduly.pravni_pozadavky.ui.legal_requirement_check_dialog import LegalRequirementCheckDialog
 from moduly.pravni_pozadavky.ui.legal_requirement_dialog import LegalRequirementDialog
-from moduly.pravni_pozadavky.ui.legal_requirement_json_import_dialog import (
-    LegalRequirementJsonImportDialog,
+from moduly.pravni_pozadavky.ui.legal_document_bulk_internet_import_dialog import (
+    LegalDocumentBulkInternetImportDialog,
 )
 from moduly.pravni_pozadavky.ui.legal_requirement_merge_dialog import LegalRequirementMergeDialog
 from moduly.pravni_pozadavky.ui.legal_requirement_table import LegalRequirementTable
+
+
+def _find_pravni_pozadavky_page(widget):
+    from moduly.pravni_pozadavky.ui.pravni_pozadavky_page import PravniPozadavkyPage
+
+    current = widget
+    while current is not None:
+        if isinstance(current, PravniPozadavkyPage):
+            return current
+        current = current.parentWidget()
+    return None
 
 
 class PravniPozadavkyRequirementsTab(QWidget):
@@ -135,7 +146,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
         layout.addWidget(self.table)
 
         self.new_btn.clicked.connect(self.new_requirement)
-        self.import_json_btn.clicked.connect(self.import_requirements_json)
+        self.import_json_btn.clicked.connect(self.import_predpisy)
         self.export_registry_btn.clicked.connect(self.export_registry_configuration)
         self.restore_registry_btn.clicked.connect(self.restore_registry_configuration)
         self.edit_btn.clicked.connect(self.edit_selected_requirement)
@@ -262,20 +273,16 @@ class PravniPozadavkyRequirementsTab(QWidget):
         item = self.table.item(selected[0].row(), 0)
         return int(item.text()) if item else None
 
-    def import_requirements_json(self) -> None:
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Import požadavků z JSON",
-            "",
-            "JSON soubory (*.json);;Všechny soubory (*)",
-        )
-        if not file_path:
+    def import_predpisy(self) -> None:
+        dialog = LegalDocumentBulkInternetImportDialog(self)
+        exec_maximized(dialog)
+        if dialog.import_summary is None:
             return
 
-        dialog = LegalRequirementJsonImportDialog(self, file_path=file_path)
-        exec_maximized(dialog)
-        if dialog.import_summary is not None:
-            self.refresh()
+        self.refresh()
+        page = _find_pravni_pozadavky_page(self)
+        if page is not None:
+            page.documents_tab.refresh()
 
     def export_registry_configuration(self) -> None:
         default_name = legal_registry_export_service.build_default_filename()
