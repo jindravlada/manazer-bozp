@@ -223,6 +223,15 @@ class DataManagementSettingsService:
         payload["last_diagnostic"] = result
         self._save(payload)
 
+    def get_last_attachment_diagnostic(self) -> dict | None:
+        payload = self._load().get("last_attachment_diagnostic")
+        return dict(payload) if isinstance(payload, dict) else None
+
+    def save_last_attachment_diagnostic(self, result: dict) -> None:
+        payload = self._load()
+        payload["last_attachment_diagnostic"] = result
+        self._save(payload)
+
     def get_last_codebooks_export(self) -> CodebooksExportRecord | None:
         return CodebooksExportRecord.from_dict(self._load().get("last_codebooks_export"))
 

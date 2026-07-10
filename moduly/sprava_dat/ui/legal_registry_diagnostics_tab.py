@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
 from moduly.pravni_pozadavky.ui.legal_registry_diagnostic_actions import (
     show_legal_registry_diagnostic,
 )
+from moduly.sprava_dat.ui.attachment_diagnostic_actions import show_attachment_diagnostic
 from moduly.sprava_dat.sluzby.data_management_settings_service import (
     data_management_settings_service,
 )
@@ -62,6 +63,27 @@ class LegalRegistryDiagnosticsTab(QWidget):
 
         layout.addWidget(group)
 
+        attachment_group = QGroupBox("Kontrola příloh a fotografií")
+        apply_card_group_style(attachment_group)
+        attachment_layout = QVBoxLayout(attachment_group)
+
+        attachment_description = QLabel(
+            "Zkontroluje přílohy, fotografie kontrolních bodů a související adresáře. "
+            "Žádné soubory nemění ani nemazá."
+        )
+        attachment_description.setWordWrap(True)
+        attachment_layout.addWidget(attachment_description)
+
+        self.run_attachment_button = QPushButton("Kontrola příloh")
+        self.run_attachment_button.clicked.connect(self._run_attachment_diagnostic)
+        attachment_layout.addWidget(self.run_attachment_button)
+
+        self.last_attachment_result_label = QLabel()
+        self.last_attachment_result_label.setWordWrap(True)
+        attachment_layout.addWidget(self.last_attachment_result_label)
+
+        layout.addWidget(attachment_group)
+
         developer_group = QGroupBox("Vývojářské operace")
         apply_card_group_style(developer_group)
         developer_layout = QVBoxLayout(developer_group)
@@ -87,16 +109,29 @@ class LegalRegistryDiagnosticsTab(QWidget):
         diagnostic = data_management_settings_service.get_last_diagnostic()
         if diagnostic is None:
             self.last_result_label.setText("Diagnostika zatím nebyla spuštěna.")
-            return
+        else:
+            self.last_result_label.setText(
+                "Poslední diagnostika:\n"
+                f"• datum a čas: {data_management_settings_service.format_timestamp(diagnostic.get('created_at', ''))}\n"
+                f"• výsledek: {diagnostic.get('summary', '—')}"
+            )
 
-        self.last_result_label.setText(
-            "Poslední diagnostika:\n"
-            f"• datum a čas: {data_management_settings_service.format_timestamp(diagnostic.get('created_at', ''))}\n"
-            f"• výsledek: {diagnostic.get('summary', '—')}"
-        )
+        attachment_diagnostic = data_management_settings_service.get_last_attachment_diagnostic()
+        if attachment_diagnostic is None:
+            self.last_attachment_result_label.setText("Kontrola příloh zatím nebyla spuštěna.")
+        else:
+            self.last_attachment_result_label.setText(
+                "Poslední kontrola příloh:\n"
+                f"• datum a čas: {data_management_settings_service.format_timestamp(attachment_diagnostic.get('created_at', ''))}\n"
+                f"• výsledek: {attachment_diagnostic.get('summary', '—')}"
+            )
 
     def _run_diagnostic(self) -> None:
         show_legal_registry_diagnostic(self)
+        self.refresh()
+
+    def _run_attachment_diagnostic(self) -> None:
+        show_attachment_diagnostic(self)
         self.refresh()
 
     def _delete_all_process_requirements(self) -> None:

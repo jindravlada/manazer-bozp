@@ -55,6 +55,7 @@ class BackupService:
         return [
             "databaze",
             "prilohy",
+            "control_results",
             "templates",
             "export",
             "konfigurace",

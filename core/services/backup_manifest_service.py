@@ -5,6 +5,9 @@ from pathlib import Path
 from sqlalchemy import func, select
 
 from core.database.session import get_session
+from core.services.attachment_backup_diagnostic_service import (
+    attachment_backup_diagnostic_service,
+)
 from core.services.backup_service import BACKUP_TYPE_FULL, backup_service
 from core.services.editable_catalog_service import editable_catalog_service
 from core.services.storage_service import storage_service
@@ -28,13 +31,75 @@ class BackupManifestService:
         """Položky skutečně zahrnuté do celkové zálohy pracovního prostoru."""
         return [
             "databáze aplikace",
+            "přílohy (prilohy/)",
+            "fotografie kontrolních bodů (control_results/)",
             "globální číselníky",
             "modulové číselníky",
             "auditní metodiky",
             "metodiky prověrek",
+            "referenční fotografie metodik",
+            "generované exporty",
             "uživatelské šablony",
             "uživatelská nastavení",
         ]
+
+    def _workspace_attachment_fields(self) -> dict:
+        diagnostic = attachment_backup_diagnostic_service.diagnose_workspace()
+
+        reference_photo_files = 0
+        export_files_count = 0
+        for directory in diagnostic.directories:
+            if directory.relative_path == "export":
+                export_files_count = directory.file_count
+            elif directory.relative_path.endswith("fotografie"):
+                reference_photo_files += directory.file_count
+
+        return {
+            "attachments_db_count": diagnostic.attachments_db_count,
+            "attachment_files_found": diagnostic.attachment_files_found,
+            "attachment_files_missing": diagnostic.attachment_files_missing,
+            "attachment_orphan_files": diagnostic.attachment_orphan_files,
+            "control_result_photo_db_count": diagnostic.control_result_photo_db_count,
+            "control_result_photos_found": diagnostic.control_result_photos_found,
+            "control_result_photos_missing": diagnostic.control_result_photos_missing,
+            "reference_photo_files": reference_photo_files,
+            "export_files_count": export_files_count,
+        }
+
+    def _evaluate_backup_health(self, workspace_fields: dict, *, technical_ok: bool) -> dict:
+        warnings: list[str] = []
+        missing_attachments = int(workspace_fields.get("attachment_files_missing") or 0)
+        missing_photos = int(workspace_fields.get("control_result_photos_missing") or 0)
+        orphan_files = int(workspace_fields.get("attachment_orphan_files") or 0)
+
+        if missing_attachments:
+            warnings.append(
+                "Záloha byla vytvořena, ale "
+                f"{missing_attachments} evidovaných příloh nebylo na disku nalezeno."
+            )
+        if missing_photos:
+            warnings.append(
+                "Záloha byla vytvořena, ale "
+                f"{missing_photos} evidovaných fotografií kontrolních bodů nebylo na disku nalezeno."
+            )
+        if orphan_files:
+            warnings.append(
+                f"Ve složce prilohy/ jsou {orphan_files} soubory bez odpovídajícího DB záznamu "
+                "(zahrnuty do zálohy)."
+            )
+
+        if not technical_ok:
+            health = "failed"
+        elif missing_attachments or missing_photos:
+            health = "warning"
+        else:
+            health = "ok"
+
+        return {
+            "backup_health": health,
+            "attachment_warnings": warnings,
+            "attachments_complete": missing_attachments == 0 and missing_photos == 0,
+        }
 
     def _is_audit_methodology(self, relative_path: str) -> bool:
         parts = Path(relative_path).parts
@@ -154,10 +219,19 @@ class BackupManifestService:
             "proverky_methodologies": 0,
             "verified": False,
             "verification_errors": [],
+            "backup_health": "failed",
+            "attachment_warnings": [],
+            "attachments_complete": False,
         }
 
+        names: list[str] = []
         if not manifest["zip_exists"]:
             manifest["verification_errors"].append("ZIP soubor neexistuje.")
+            if backup_type == BACKUP_TYPE_FULL:
+                manifest.update(self._workspace_attachment_fields())
+                manifest.update(
+                    self._evaluate_backup_health(manifest, technical_ok=False)
+                )
             return manifest
 
         try:
@@ -181,6 +255,13 @@ class BackupManifestService:
                 catalog_counts = self._count_paths(self._zip_catalog_paths(names))
                 manifest.update(catalog_counts)
 
+                if backup_type == BACKUP_TYPE_FULL:
+                    control_result_names = [
+                        name for name in names if name.startswith("control_results/")
+                    ]
+                    manifest["control_results_included"] = bool(control_result_names)
+                    manifest["control_result_files_in_zip"] = len(control_result_names)
+
                 if backup_service.VERSION_FILE in names:
                     try:
                         version_info = json.loads(
@@ -202,13 +283,19 @@ class BackupManifestService:
         manifest["workspace_database_path"] = str(storage_service.database_path.resolve())
         manifest["editable_catalogs_registered"] = len(editable_catalog_service.registered_paths())
 
-        manifest["verified"] = (
+        technical_ok = (
             manifest["zip_exists"]
             and manifest["zip_readable"]
             and manifest["zip_crc_ok"]
             and manifest["database_included"]
             and not manifest["verification_errors"]
         )
+
+        if backup_type == BACKUP_TYPE_FULL:
+            manifest.update(self._workspace_attachment_fields())
+            manifest.update(self._evaluate_backup_health(manifest, technical_ok=technical_ok))
+
+        manifest["verified"] = technical_ok
         return manifest
 
     def workspace_snapshot(self) -> dict:

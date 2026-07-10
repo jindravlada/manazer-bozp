@@ -61,11 +61,21 @@ class FullBackupWorkflowService:
         )
         data_management_settings_service.save_last_backup(record)
 
-        QMessageBox.information(
-            parent,
-            "Kompletní záloha programu",
-            f"Záloha byla vytvořena a ověřena:\n{result_path}",
-        )
+        warnings = manifest.get("attachment_warnings") or []
+        if manifest.get("backup_health") == "warning":
+            QMessageBox.warning(
+                parent,
+                "Kompletní záloha programu",
+                "Záloha byla vytvořena s upozorněním:\n"
+                f"{result_path}\n\n"
+                + "\n".join(warnings),
+            )
+        else:
+            QMessageBox.information(
+                parent,
+                "Kompletní záloha programu",
+                f"Záloha byla vytvořena a ověřena:\n{result_path}",
+            )
         return True
 
     def restore_full_backup(self, parent: QWidget) -> bool:

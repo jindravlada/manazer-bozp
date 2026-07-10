@@ -1,36 +1,22 @@
-import importlib
 import os
 import stat
 import tempfile
 import unittest
 import zipfile
 from pathlib import Path
-from unittest.mock import patch
+
+from tests.attachment_backup_test_env import (
+    BACKUP_TYPE_FULL,
+    attachment_backup_diagnostic_service,
+    attachment_service,
+    backup_manifest_service,
+    backup_service,
+    session_module,
+    storage_service,
+)
+
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
-_TMP = Path(tempfile.mkdtemp(dir=_PROJECT_ROOT))
-
-with patch.object(Path, "home", return_value=_TMP):
-    import core.services.storage_service as storage_module
-
-    importlib.reload(storage_module)
-    storage_module.storage_service.ensure_structure()
-
-    import core.database.session as session_module
-
-    importlib.reload(session_module)
-
-    from core.database.database_initializer import initialize_database
-
-    initialize_database()
-
-    from core.services.attachment_backup_diagnostic_service import (
-        attachment_backup_diagnostic_service,
-    )
-    from core.services.attachment_service import attachment_service
-    from core.services.backup_manifest_service import backup_manifest_service
-    from core.services.backup_service import BACKUP_TYPE_FULL, backup_service
-    from core.services.storage_service import storage_service
 
 
 def _ensure_workspace_writable() -> None:
@@ -66,17 +52,17 @@ class AttachmentWorkspaceDiagnosticPhase92aTestCase(unittest.TestCase):
         self._ensure_db_writable()
         attachments_dir = storage_service.attachments_dir
         if attachments_dir.exists():
-            for path in attachments_dir.rglob("*"):
-                if path.is_file():
-                    path.unlink()
+            import shutil
+
+            shutil.rmtree(attachments_dir)
+        storage_service.attachments_dir.mkdir(parents=True, exist_ok=True)
 
         from sqlalchemy import delete
 
-        from core.database.session import get_session
         from core.models.attachment import Attachment
 
         try:
-            with get_session() as session:
+            with session_module.get_session() as session:
                 session.execute(delete(Attachment))
                 session.commit()
         except Exception:
@@ -129,17 +115,17 @@ class AttachmentFullBackupPhase92aTestCase(unittest.TestCase):
         self._ensure_db_writable()
         attachments_dir = storage_service.attachments_dir
         if attachments_dir.exists():
-            for path in attachments_dir.rglob("*"):
-                if path.is_file():
-                    path.unlink()
+            import shutil
+
+            shutil.rmtree(attachments_dir)
+        storage_service.attachments_dir.mkdir(parents=True, exist_ok=True)
 
         from sqlalchemy import delete
 
-        from core.database.session import get_session
         from core.models.attachment import Attachment
 
         try:
-            with get_session() as session:
+            with session_module.get_session() as session:
                 session.execute(delete(Attachment))
                 session.commit()
         except Exception:
@@ -172,11 +158,12 @@ class AttachmentFullBackupPhase92aTestCase(unittest.TestCase):
         self.assertTrue(coverage.integrity_verified)
         self.assertGreaterEqual(coverage.attachment_files_in_zip, 1)
         self.assertIn("prilohy", coverage.version_obsah)
-        self.assertFalse(coverage.manifest_reports_attachment_count)
+        self.assertTrue(coverage.manifest_reports_attachment_count)
 
         manifest = backup_manifest_service.build_manifest(backup_path)
         self.assertTrue(manifest.get("verified"))
-        self.assertNotIn("attachment_count", manifest)
+        self.assertIn("attachments_db_count", manifest)
+        self.assertEqual(manifest.get("backup_health"), "ok")
 
     def test_restore_returns_missing_attachment_file(self) -> None:
         attachment = self._create_attachment()
@@ -211,14 +198,10 @@ class AttachmentFullBackupPhase92aTestCase(unittest.TestCase):
 
         self.assertTrue(summary["conclusions"]["attachments_fully_backed_up"])
         self.assertTrue(summary["conclusions"]["attachments_fully_restorable"])
-        self.assertFalse(summary["backup"]["manifest_reports_attachment_count"])
-        self.assertIn(
-            "Manifest integrity neobsahuje počet ani kontrolu příloh.",
+        self.assertTrue(summary["backup"]["manifest_reports_attachment_count"])
+        self.assertNotIn(
+            "Manifest integrity neobsahuje počty příloh a fotografií.",
             summary["conclusions"]["gaps"],
-        )
-        self.assertIn(
-            "backup_manifest_service",
-            summary["conclusions"]["smallest_safe_fix_suggestion"],
         )
         self.assertGreaterEqual(len(summary["conclusions"]["covered_attachment_types"]), 3)
 

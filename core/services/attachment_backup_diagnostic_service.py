@@ -161,7 +161,7 @@ class AttachmentBackupDiagnosticService:
 
                 manifest = backup_service.verify_backup_integrity(source, backup_type=BACKUP_TYPE_FULL)
                 result.integrity_verified = bool(manifest.get("verified"))
-                result.manifest_reports_attachment_count = "attachment_count" in manifest
+                result.manifest_reports_attachment_count = "attachments_db_count" in manifest
         except (OSError, zipfile.BadZipFile):
             return result
 
@@ -217,7 +217,7 @@ class AttachmentBackupDiagnosticService:
         if workspace.attachment_orphan_files:
             gaps.append("Ve složce prilohy/ jsou soubory bez odpovídajícího DB záznamu.")
         if not backup.manifest_reports_attachment_count:
-            gaps.append("Manifest integrity neobsahuje počet ani kontrolu příloh.")
+            gaps.append("Manifest integrity neobsahuje počty příloh a fotografií.")
         if "control_results" not in backup.version_obsah:
             gaps.append("VERSION.json obsah neuvádí explicitně adresář control_results/.")
         if workspace.attachment_absolute_stored_paths:
@@ -306,6 +306,44 @@ class AttachmentBackupDiagnosticService:
                 )
             )
         return overview
+
+    def format_workspace_report(self, diagnostic: AttachmentBackupDiagnostic | None = None) -> str:
+        data = diagnostic or self.diagnose_workspace()
+        lines = [
+            "Kontrola příloh a fotografií",
+            "=" * 40,
+            f"Kořen workspace: {data.workspace_root}",
+            f"Režim ukládání: {data.storage_mode}",
+            "",
+            "Přílohy (tabulka attachments)",
+            f"  Evidované v DB: {data.attachments_db_count}",
+            f"  Nalezené soubory: {data.attachment_files_found}",
+            f"  Chybějící soubory: {data.attachment_files_missing}",
+            f"  Osiřelé soubory v prilohy/: {data.attachment_orphan_files}",
+            "",
+            "Fotografie kontrolních bodů (control_results)",
+            f"  Evidované v DB: {data.control_result_photo_db_count}",
+            f"  Nalezené: {data.control_result_photos_found}",
+            f"  Chybějící: {data.control_result_photos_missing}",
+            "",
+            "Používané adresáře:",
+        ]
+
+        for directory in data.directories:
+            lines.append(
+                f"  {directory.relative_path}: {directory.file_count} souborů"
+            )
+            lines.append(f"    {directory.absolute_path}")
+
+        if data.missing_attachment_samples:
+            lines.extend(["", "Ukázky chybějících příloh:"])
+            lines.extend(f"  - {item}" for item in data.missing_attachment_samples)
+
+        if data.orphan_file_samples:
+            lines.extend(["", "Ukázky osiřelých souborů:"])
+            lines.extend(f"  - {item}" for item in data.orphan_file_samples)
+
+        return "\n".join(lines)
 
 
 attachment_backup_diagnostic_service = AttachmentBackupDiagnosticService()

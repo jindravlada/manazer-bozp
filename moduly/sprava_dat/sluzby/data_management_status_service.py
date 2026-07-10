@@ -20,6 +20,11 @@ class DataManagementStatusService:
         else:
             if not backup.manifest.get("verified"):
                 warnings.append("Poslední kompletní záloha nebyla ověřena.")
+            elif backup.manifest.get("backup_health") == "warning":
+                warnings.append("Poslední záloha neobsahuje všechny evidované přílohy.")
+                for item in backup.manifest.get("attachment_warnings") or []:
+                    if item not in warnings:
+                        warnings.append(item)
             if not data_management_settings_service.file_exists(backup.path):
                 warnings.append("Soubor poslední kompletní zálohy nebyl nalezen.")
 
@@ -65,6 +70,8 @@ class DataManagementStatusService:
             return "neověřena"
         if not data_management_settings_service.file_exists(backup.path):
             return "soubor nenalezen"
+        if backup.manifest.get("backup_health") == "warning":
+            return "vytvořena s upozorněním"
         return "ověřena"
 
     def restore_status_text(self) -> str:
