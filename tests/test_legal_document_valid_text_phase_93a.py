@@ -41,9 +41,7 @@ with patch.object(Path, "home", return_value=_TMP):
         legal_document_version_service,
     )
     from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
-    from moduly.pravni_pozadavky.ui.legal_document_valid_text_tab import (
-        LegalDocumentValidTextTab,
-    )
+    from moduly.pravni_pozadavky.ui.legal_document_valid_text_tab import LegalDocumentValidTextTab
     from moduly.pravni_pozadavky.ui.legal_document_version_dialog import (
         LegalDocumentVersionDialog,
     )
@@ -249,12 +247,12 @@ class LegalDocumentValidTextTabPhase93aTestCase(unittest.TestCase):
             tab._find_next()
             self.assertIn("§ 7", tab.text_browser.textCursor().block().text())
 
-    def test_version_dialog_contains_valid_text_tab_after_provisions(self) -> None:
+    def test_version_dialog_does_not_contain_valid_text_tab(self) -> None:
         dialog = LegalDocumentVersionDialog(version=self.version)
         labels = [dialog.tabs.tabText(index) for index in range(dialog.tabs.count())]
 
-        self.assertEqual(labels, ["Verze", "Ustanovení", "📖 Platné znění", "Pracovní režim"])
-        self.assertIsInstance(dialog.valid_text_tab, LegalDocumentValidTextTab)
+        self.assertEqual(labels, ["Verze", "Ustanovení", "Pracovní režim"])
+        self.assertNotIn("📖 Platné znění", labels)
 
 
 if __name__ == "__main__":

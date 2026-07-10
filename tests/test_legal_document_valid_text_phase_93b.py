@@ -271,13 +271,12 @@ class LegalDocumentValidTextPhase93bTestCase(unittest.TestCase):
         dialog.close()
         dialog._runner.wait()
 
-    def test_version_dialog_valid_text_tab_still_works(self) -> None:
+    def test_version_dialog_does_not_contain_valid_text_tab(self) -> None:
         dialog = LegalDocumentVersionDialog(version=self.version)
-        dialog.valid_text_tab.refresh()
+        labels = [dialog.tabs.tabText(index) for index in range(dialog.tabs.count())]
 
-        plain = dialog.valid_text_tab.text_browser.toPlainText()
-        self.assertIn("§ 12", plain)
-        self.assertIn("Bezpečnost práce musí být zajištěna.", plain)
+        self.assertEqual(labels, ["Verze", "Ustanovení", "Pracovní režim"])
+        self.assertNotIn("📖 Platné znění", labels)
 
 
 if __name__ == "__main__":
