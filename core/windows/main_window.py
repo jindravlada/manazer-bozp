@@ -22,6 +22,8 @@ from PySide6.QtWidgets import (
 
 from core.modules.module_manager import ModuleManager
 from core.navigation.source_navigator import source_navigator
+from core.version import app_brand_label, app_display_name
+from core.windows.about_dialog import AboutDialog
 from core.search import global_search_service
 from core.search.global_search_result import GlobalSearchResult
 from core.search.ui.global_search_dialog import GlobalSearchDialog
@@ -32,7 +34,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Manažer BOZP 3.0")
+        self.setWindowTitle(app_display_name())
         self.resize(1280, 800)
 
         self.module_manager = ModuleManager()
@@ -140,7 +142,7 @@ class MainWindow(QMainWindow):
         frame.setFixedWidth(250)
 
         layout = QVBoxLayout(frame)
-        layout.addWidget(QLabel("<b>Manažer BOZP 3.0</b>"))
+        layout.addWidget(QLabel(app_brand_label()))
         layout.addSpacing(10)
 
         self._add_sidebar_button(layout, "🏠 Pracovní plocha", "dashboard")
@@ -188,7 +190,15 @@ class MainWindow(QMainWindow):
                 settings_module.enabled,
             )
 
+        about_button = QPushButton("O programu")
+        about_button.setMinimumHeight(34)
+        about_button.clicked.connect(self._show_about_dialog)
+        layout.addWidget(about_button)
+
         return frame
+
+    def _show_about_dialog(self) -> None:
+        AboutDialog(self).exec()
 
     def _add_sidebar_button(self, layout, text: str, key: str, enabled: bool = True):
         button = QPushButton(text)

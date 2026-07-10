@@ -69,13 +69,14 @@ docker run --rm \
       main.py
 
     echo "== Připravuji AppDir =="
+    APP_DISPLAY_NAME="$(python3 -c "from core.version import app_display_name; print(app_display_name())")"
     mkdir -p AppDir/usr/bin
     cp -r dist/ManazerBOZP/* AppDir/usr/bin/
 
     cat > AppDir/ManazerBOZP.desktop <<EOF
 [Desktop Entry]
 Type=Application
-Name=Manažer BOZP
+Name=${APP_DISPLAY_NAME}
 Exec=ManazerBOZP
 Icon=manazer-bozp
 Categories=Office;

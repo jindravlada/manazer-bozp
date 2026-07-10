@@ -9,6 +9,8 @@ cd "$PROJECT_DIR"
 
 echo "== Manažer BOZP release build =="
 
+APP_DISPLAY_NAME="$(python3 -c "from core.version import app_display_name; print(app_display_name())")"
+
 if [ ! -d ".venv" ]; then
   echo "Chybí .venv"
   exit 1
@@ -44,7 +46,7 @@ cp -r "dist/$APP_NAME/"* AppDir/usr/bin/
 cat > AppDir/ManazerBOZP.desktop <<DESKTOP
 [Desktop Entry]
 Type=Application
-Name=Manažer BOZP
+Name=${APP_DISPLAY_NAME}
 Exec=$APP_NAME
 Icon=manazer-bozp
 Categories=Office;

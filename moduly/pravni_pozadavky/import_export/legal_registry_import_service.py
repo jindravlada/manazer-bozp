@@ -7,10 +7,8 @@ from pathlib import Path
 from sqlalchemy import delete, text
 
 from core.database.session import get_session
-from moduly.pravni_pozadavky.import_export.legal_registry_export_service import (
-    APPLICATION_NAME,
-    EXPORT_VERSION,
-)
+from core.version import app_display_name, is_compatible_application_name
+from moduly.pravni_pozadavky.import_export.legal_registry_export_service import EXPORT_VERSION
 from moduly.pravni_pozadavky.modely.legal_change import LegalChange
 from moduly.pravni_pozadavky.modely.legal_change_section import LegalChangeSection
 from moduly.pravni_pozadavky.modely.legal_check_run import LegalCheckRun
@@ -109,8 +107,10 @@ class LegalRegistryImportService:
             raise ValueError("Soubor zálohy registru má nepodporovanou verzi exportu.")
 
         application = self._text(data.get("application"))
-        if application and application != APPLICATION_NAME:
-            raise ValueError("Soubor zálohy registru nepochází z Manažer BOZP 3.0.")
+        if application and not is_compatible_application_name(application):
+            raise ValueError(
+                f"Soubor zálohy registru nepochází z {app_display_name()}."
+            )
 
         for key in (
             "documents",

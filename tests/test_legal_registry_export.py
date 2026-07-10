@@ -31,8 +31,8 @@ with patch.object(Path, "home", return_value=_TMP):
         PROCESSING_APPROVED,
         SECTION_PARAGRAPH,
     )
+    from core.version import app_display_name
     from moduly.pravni_pozadavky.import_export.legal_registry_export_service import (
-        APPLICATION_NAME,
         EXPORT_VERSION,
         legal_registry_export_service,
     )
@@ -262,7 +262,7 @@ class LegalRegistryBackupRestoreTestCase(unittest.TestCase):
         data = legal_registry_export_service.build_data(created_at=datetime(2026, 7, 9, 12, 36, 0))
 
         self.assertEqual(data["export_version"], EXPORT_VERSION)
-        self.assertEqual(data["application"], APPLICATION_NAME)
+        self.assertEqual(data["application"], app_display_name())
         self.assertEqual(
             data["record_counts"],
             {

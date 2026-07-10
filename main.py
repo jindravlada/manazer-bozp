@@ -8,6 +8,7 @@ from core.settings.settings_manager import settings
 from core.theme import theme
 from core.theme.app_style import apply_app_style
 from core.resources.app_icon import load_app_icon
+from core.version import APP_NAME, APP_VERSION, app_display_name
 from core.windows.main_window import MainWindow
 
 
@@ -18,6 +19,9 @@ def main():
     theme.load(settings.get("theme", "default"))
 
     app = QApplication(sys.argv)
+    app.setApplicationName(APP_NAME)
+    app.setApplicationVersion(APP_VERSION)
+    app.setApplicationDisplayName(app_display_name())
     apply_app_style(app)
 
     app_icon = load_app_icon()

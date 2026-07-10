@@ -34,8 +34,9 @@ from moduly.pravni_pozadavky.repository.legal_requirement_source_repository impo
 )
 from moduly.pravni_pozadavky.repository.legal_section_repository import LegalSectionRepository
 
+from core.version import app_display_name
+
 EXPORT_VERSION = 2
-APPLICATION_NAME = "Manažer BOZP 3.0"
 
 
 @dataclass(frozen=True)
@@ -86,7 +87,7 @@ class LegalRegistryExportService:
         payload = {
             "export_version": EXPORT_VERSION,
             "created_at": self._serialize_datetime(created_at),
-            "application": APPLICATION_NAME,
+            "application": app_display_name(),
             "documents": [self._serialize_document(item) for item in documents],
             "versions": [self._serialize_version(item) for item in versions],
             "sections": [self._serialize_section(item) for item in sections],

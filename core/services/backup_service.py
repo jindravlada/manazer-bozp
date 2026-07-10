@@ -7,6 +7,7 @@ from pathlib import Path
 
 from core.services.editable_catalog_service import editable_catalog_service
 from core.services.storage_service import storage_service
+from core.version import APP_NAME, APP_VERSION
 
 
 BACKUP_TYPE_FULL = "celkova"
@@ -73,8 +74,8 @@ class BackupService:
         ]
 
         return {
-            "program": "Manažer BOZP",
-            "verze": "3.0",
+            "program": APP_NAME,
+            "verze": APP_VERSION,
             "typ": "zaloha-pracovniho-prostoru",
             "typ_zalohy": backup_type,
             "vytvoreno": datetime.now().isoformat(timespec="seconds"),

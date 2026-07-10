@@ -1,9 +1,7 @@
 import json
 from pathlib import Path
 
-from moduly.pravni_pozadavky.import_export.legal_registry_export_service import (
-    APPLICATION_NAME,
-)
+from core.version import app_display_name, is_compatible_application_name
 
 _REGISTRY_EXPORT_VERSIONS = {1, 2}
 
@@ -81,9 +79,9 @@ class LegalRegistryManifestService:
             manifest["verification_errors"].append("Exportní soubor má nepodporovanou verzi.")
 
         application = str(payload.get("application") or "").strip()
-        if application and application != APPLICATION_NAME:
+        if application and not is_compatible_application_name(application):
             manifest["verification_errors"].append(
-                "Exportní soubor nepochází z Manažer BOZP 3.0."
+                f"Exportní soubor nepochází z {app_display_name()}."
             )
 
         record_counts = payload.get("record_counts")

@@ -38,10 +38,7 @@ from core.dashboard import (
 
 
 class DashboardPage(QWidget):
-    """
-    Pracovní plocha Manažer BOZP 3.0.
-    Dashboard je složený z menších widgetů.
-    """
+    """Pracovní plocha Manažer BOZP – dashboard složený z menších widgetů."""
 
     def __init__(
         self,
