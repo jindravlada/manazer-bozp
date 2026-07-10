@@ -1,15 +1,17 @@
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QGroupBox,
     QLabel,
-    QScrollArea,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
 
-SECTION_BACKUP = "Zálohování"
-SECTION_TRANSFER = "Přenos dat a konfigurace"
-SECTION_DIAGNOSTICS = "Diagnostika"
+from moduly.sprava_dat.ui.backup_tab import BackupTab
+
+TAB_BACKUP = "Zálohování"
+TAB_TRANSFER = "Přenos dat"
+TAB_CODEBOOKS = "Číselníky"
+TAB_DIAGNOSTICS = "Diagnostika"
 
 
 class SpravaDatPage(QWidget):
@@ -18,17 +20,9 @@ class SpravaDatPage(QWidget):
     def __init__(self):
         super().__init__()
 
-        root_layout = QVBoxLayout(self)
-        root_layout.setContentsMargins(0, 0, 0, 0)
-
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QScrollArea.Shape.NoFrame)
-
-        content = QWidget()
-        layout = QVBoxLayout(content)
+        layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(16)
+        layout.setSpacing(12)
 
         title = QLabel("Správa dat")
         title_font = QFont(title.font())
@@ -37,35 +31,43 @@ class SpravaDatPage(QWidget):
         title.setFont(title_font)
         layout.addWidget(title)
 
-        layout.addWidget(self._backup_section())
-        layout.addWidget(self._transfer_section())
-        layout.addWidget(self._diagnostics_section())
-        layout.addStretch()
+        self.tabs = QTabWidget()
+        self.backup_tab = BackupTab()
+        self.tabs.addTab(self.backup_tab, TAB_BACKUP)
+        self.tabs.addTab(self._transfer_tab(), TAB_TRANSFER)
+        self.tabs.addTab(self._codebooks_tab(), TAB_CODEBOOKS)
+        self.tabs.addTab(self._diagnostics_tab(), TAB_DIAGNOSTICS)
+        layout.addWidget(self.tabs)
 
-        scroll.setWidget(content)
-        root_layout.addWidget(scroll)
-
-    def _backup_section(self) -> QGroupBox:
-        group = QGroupBox(SECTION_BACKUP)
-        group_layout = QVBoxLayout(group)
-        group_layout.addWidget(QLabel("Kompletní záloha programu"))
-        group_layout.addWidget(QLabel("Obnova kompletní zálohy"))
-        return group
-
-    def _transfer_section(self) -> QGroupBox:
-        group = QGroupBox(SECTION_TRANSFER)
-        group_layout = QVBoxLayout(group)
+    def _transfer_tab(self) -> QWidget:
+        tab = QWidget()
+        tab_layout = QVBoxLayout(tab)
+        tab_layout.setContentsMargins(12, 12, 12, 12)
         for item in (
-            "Číselníky",
             "Registr právních požadavků",
             "Metodiky auditů",
             "Metodiky prověrek",
         ):
-            group_layout.addWidget(QLabel(f"• {item}"))
-        return group
+            tab_layout.addWidget(QLabel(f"• {item}"))
+        tab_layout.addStretch()
+        return tab
 
-    def _diagnostics_section(self) -> QGroupBox:
-        group = QGroupBox(SECTION_DIAGNOSTICS)
-        group_layout = QVBoxLayout(group)
-        group_layout.addWidget(QLabel("Diagnostika registru právních požadavků"))
-        return group
+    def _codebooks_tab(self) -> QWidget:
+        tab = QWidget()
+        tab_layout = QVBoxLayout(tab)
+        tab_layout.setContentsMargins(12, 12, 12, 12)
+        tab_layout.addWidget(QLabel("• Číselníky"))
+        tab_layout.addStretch()
+        return tab
+
+    def _diagnostics_tab(self) -> QWidget:
+        tab = QWidget()
+        tab_layout = QVBoxLayout(tab)
+        tab_layout.setContentsMargins(12, 12, 12, 12)
+        tab_layout.addWidget(QLabel("Diagnostika registru právních požadavků"))
+        tab_layout.addStretch()
+        return tab
+
+    def refresh(self) -> None:
+        self.tabs.setCurrentIndex(0)
+        self.backup_tab.refresh()

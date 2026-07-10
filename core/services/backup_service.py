@@ -205,6 +205,82 @@ class BackupService:
         name = f"pred-obnovou-{backup_type}-{self._timestamp()}.zip"
         return self.create_backup(storage_service.backups_dir / name, backup_type=backup_type)
 
+    def verify_backup_integrity(
+        self,
+        source_path: str | Path,
+        *,
+        backup_type: str = BACKUP_TYPE_FULL,
+    ) -> dict:
+        from core.services.backup_manifest_service import backup_manifest_service
+
+        return backup_manifest_service.build_manifest(
+            source_path,
+            backup_type=backup_type,
+            include_database_counts=True,
+        )
+
+    def _execute_restore(self, source_path: str | Path, restore_type: str) -> None:
+        source = Path(source_path)
+        if not source.exists():
+            raise FileNotFoundError(source)
+
+        info = self.read_backup_info(source)
+        self._validate_restore_type(info, restore_type)
+
+        storage_service.ensure_structure()
+
+        base = storage_service.base
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            with zipfile.ZipFile(source, "r") as zf:
+                zf.extractall(tmp)
+
+            if restore_type == BACKUP_TYPE_FULL:
+                items = [item for item in tmp.iterdir() if item.name != self.VERSION_FILE]
+            else:
+                dirs = self._content_for_type(restore_type)
+                items = [tmp / name for name in dirs if (tmp / name).exists()]
+
+            for item in items:
+                self._replace_item(item, base / item.name)
+
+        storage_service.ensure_structure()
+
+    def restore_backup_with_verified_safety(
+        self,
+        source_path: str | Path,
+        restore_type: str = BACKUP_TYPE_FULL,
+    ) -> dict:
+        """Vytvoří ověřenou bezpečnostní zálohu a teprve potom spustí obnovu."""
+        if restore_type not in BACKUP_TYPE_RESTORE_LABELS:
+            raise ValueError(f"Neznámý typ obnovy: {restore_type}")
+
+        source = Path(source_path)
+        if not source.exists():
+            raise FileNotFoundError(source)
+
+        info = self.read_backup_info(source)
+        self._validate_restore_type(info, restore_type)
+
+        safety_path = self._create_safety_backup(restore_type)
+        safety_manifest = self.verify_backup_integrity(safety_path, backup_type=restore_type)
+        if not safety_manifest.get("verified"):
+            errors = safety_manifest.get("verification_errors") or ["Neznámá chyba ověření."]
+            raise ValueError(
+                "Bezpečnostní záloha se nepodařila ověřit. Obnova nebyla spuštěna.\n\n"
+                + "\n".join(errors)
+            )
+
+        self._execute_restore(source, restore_type)
+
+        return {
+            "restored_path": str(source.resolve()),
+            "restored_at": datetime.now().isoformat(timespec="seconds"),
+            "safety_backup_path": str(safety_path.resolve()),
+            "safety_backup_manifest": safety_manifest,
+            "integrity_check": self.verify_backup_integrity(source, backup_type=restore_type),
+        }
+
     def _replace_item(self, source: Path, target: Path) -> None:
         if target.exists():
             if target.is_dir():
@@ -239,23 +315,7 @@ class BackupService:
 
         storage_service.ensure_structure()
         self._create_safety_backup(restore_type)
-
-        base = storage_service.base
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            tmp = Path(tmp_dir)
-            with zipfile.ZipFile(source, "r") as zf:
-                zf.extractall(tmp)
-
-            if restore_type == BACKUP_TYPE_FULL:
-                items = [item for item in tmp.iterdir() if item.name != self.VERSION_FILE]
-            else:
-                dirs = self._content_for_type(restore_type)
-                items = [tmp / name for name in dirs if (tmp / name).exists()]
-
-            for item in items:
-                self._replace_item(item, base / item.name)
-
-        storage_service.ensure_structure()
+        self._execute_restore(source, restore_type)
 
     def requires_restart_after_restore(self, restore_type: str) -> bool:
         return restore_type in (BACKUP_TYPE_FULL, BACKUP_TYPE_DATABASE)

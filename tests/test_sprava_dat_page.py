@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QLabel, QFrame, QGroupBox, QPushButton
+from PySide6.QtWidgets import QLabel, QFrame, QPushButton, QTabWidget
 
 _TMP = Path(tempfile.mkdtemp())
 
@@ -25,9 +25,10 @@ with patch.object(Path, "home", return_value=_TMP):
 
     from core.windows.main_window import MainWindow
     from moduly.sprava_dat.ui.sprava_dat_page import (
-        SECTION_BACKUP,
-        SECTION_DIAGNOSTICS,
-        SECTION_TRANSFER,
+        TAB_BACKUP,
+        TAB_CODEBOOKS,
+        TAB_DIAGNOSTICS,
+        TAB_TRANSFER,
         SpravaDatPage,
     )
 
@@ -40,14 +41,21 @@ class SpravaDatPageTestCase(unittest.TestCase):
 
         cls._app = QApplication.instance() or QApplication([])
 
-    def test_page_contains_three_sections(self) -> None:
+    def test_page_contains_four_tabs(self) -> None:
         page = SpravaDatPage()
-
-        section_titles = [group.title() for group in page.findChildren(QGroupBox)]
+        tabs = page.findChild(QTabWidget)
+        self.assertIsNotNone(tabs)
+        assert tabs is not None
         self.assertEqual(
-            section_titles,
-            [SECTION_BACKUP, SECTION_TRANSFER, SECTION_DIAGNOSTICS],
+            [tabs.tabText(index) for index in range(tabs.count())],
+            [TAB_BACKUP, TAB_TRANSFER, TAB_CODEBOOKS, TAB_DIAGNOSTICS],
         )
+
+    def test_page_opens_on_backup_tab(self) -> None:
+        page = SpravaDatPage()
+        tabs = page.findChild(QTabWidget)
+        assert tabs is not None
+        self.assertEqual(tabs.tabText(tabs.currentIndex()), TAB_BACKUP)
 
     def test_page_title_is_sprava_dat(self) -> None:
         page = SpravaDatPage()
