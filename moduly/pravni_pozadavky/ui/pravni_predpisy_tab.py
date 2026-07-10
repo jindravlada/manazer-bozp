@@ -35,6 +35,9 @@ from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
     legal_document_version_service,
 )
 from moduly.pravni_pozadavky.ui.legal_document_dialog import LegalDocumentDialog
+from moduly.pravni_pozadavky.ui.legal_document_valid_text_dialog import (
+    LegalDocumentValidTextDialog,
+)
 from moduly.pravni_pozadavky.ui.legal_document_bulk_internet_import_dialog import (
     LegalDocumentBulkInternetImportDialog,
 )
@@ -56,6 +59,7 @@ class PravniPredpisyTab(QWidget):
 
         self.new_btn = QPushButton("Nový")
         self.edit_btn = QPushButton("Upravit")
+        self.valid_text_btn = QPushButton("Platné znění")
         self.import_bulk_internet_btn = QPushButton("Import z internetu")
         self.import_txt_btn = QPushButton("Import TXT")
         self.import_btn = QPushButton("Import JSON")
@@ -65,6 +69,7 @@ class PravniPredpisyTab(QWidget):
         for button in (
             self.new_btn,
             self.edit_btn,
+            self.valid_text_btn,
             self.import_bulk_internet_btn,
             self.import_txt_btn,
             self.import_btn,
@@ -90,6 +95,7 @@ class PravniPredpisyTab(QWidget):
 
         actions_toolbar.addWidget(self.new_btn)
         actions_toolbar.addWidget(self.edit_btn)
+        actions_toolbar.addWidget(self.valid_text_btn)
         actions_toolbar.addWidget(self.import_bulk_internet_btn)
         actions_toolbar.addWidget(self.import_txt_btn)
         actions_toolbar.addWidget(self.import_btn)
@@ -117,6 +123,7 @@ class PravniPredpisyTab(QWidget):
         self.import_bulk_internet_btn.clicked.connect(self.import_bulk_internet_documents)
         self.export_btn.clicked.connect(self.export_json_document)
         self.edit_btn.clicked.connect(self.edit_selected_document)
+        self.valid_text_btn.clicked.connect(self.open_valid_text)
         self.toggle_btn.clicked.connect(self.toggle_selected_document)
         self.table.doubleClicked.connect(self.edit_selected_document)
         self.table.itemSelectionChanged.connect(self._update_action_buttons)
@@ -269,6 +276,28 @@ class PravniPredpisyTab(QWidget):
                 f"Částí:\n{result.section_count}"
             ),
         )
+
+    def open_valid_text(self) -> None:
+        document = self._selected_document()
+        if document is None:
+            QMessageBox.information(self, "Právní předpisy", "Vyberte právní předpis.")
+            return
+
+        version = legal_document_version_service.get_current_version(document.id)
+        if version is None:
+            QMessageBox.information(
+                self,
+                "Právní předpisy",
+                "Právní předpis nemá dostupné aktuální znění.",
+            )
+            return
+
+        dialog = LegalDocumentValidTextDialog(
+            self,
+            document=document,
+            version_id=version.id,
+        )
+        exec_maximized(dialog)
 
     def edit_selected_document(self) -> None:
         document = self._selected_document()

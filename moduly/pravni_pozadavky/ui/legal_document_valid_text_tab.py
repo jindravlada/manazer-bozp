@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 )
 
 from moduly.pravni_pozadavky.sluzby.legal_document_valid_text_service import (
+    ValidTextDocument,
     legal_document_valid_text_service,
 )
 
@@ -63,6 +64,24 @@ class LegalDocumentValidTextTab(QWidget):
         )
         layout.addWidget(self.text_browser, 1)
 
+    @property
+    def is_loaded(self) -> bool:
+        return self._loaded
+
+    def set_search_enabled(self, enabled: bool) -> None:
+        self.search_input.setEnabled(enabled)
+        self.find_button.setEnabled(enabled)
+        self.case_sensitive_checkbox.setEnabled(enabled)
+        self.whole_word_checkbox.setEnabled(enabled)
+
+    def apply_document(self, document: ValidTextDocument) -> None:
+        self._paragraph_anchors = dict(document.paragraph_anchors)
+        if not document.html.strip():
+            self.text_browser.setHtml("<p><i>Verze zatím neobsahuje žádná ustanovení.</i></p>")
+        else:
+            self.text_browser.setHtml(document.html)
+        self._loaded = True
+
     def refresh(self) -> None:
         if self.version_id is None:
             self._loaded = False
@@ -79,12 +98,7 @@ class LegalDocumentValidTextTab(QWidget):
             return
 
         document = legal_document_valid_text_service.compose_version(self.version_id)
-        self._paragraph_anchors = dict(document.paragraph_anchors)
-        if not document.html.strip():
-            self.text_browser.setHtml("<p><i>Verze zatím neobsahuje žádná ustanovení.</i></p>")
-        else:
-            self.text_browser.setHtml(document.html)
-        self._loaded = True
+        self.apply_document(document)
 
     def _find_flags(self) -> QTextDocument.FindFlag:
         flags = QTextDocument.FindFlag(0)
