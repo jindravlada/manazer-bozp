@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QScrollArea,
     QSplitter,
+    QStyle,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -23,6 +24,7 @@ from PySide6.QtWidgets import (
 from core.services.backup_service import BACKUP_TYPE_FULL
 from core.services.file_location_service import open_path_in_file_manager
 from core.services.storage_service import storage_service
+from moduly.sprava_dat.sluzby.codebook_capabilities import capabilities_for
 from moduly.sprava_dat.sluzby.codebook_catalog_service import (
     MODULE_ORDER,
     CodebookEntry,
@@ -198,8 +200,32 @@ class CodebooksTab(QWidget):
 
         self.import_button = QPushButton("Import")
         self.import_button.clicked.connect(self._import_selected)
-        self.import_button.setEnabled(False)
+        self.import_button.setVisible(False)
         buttons.addWidget(self.import_button)
+
+        self.import_info_widget = QWidget()
+        import_info_layout = QHBoxLayout(self.import_info_widget)
+        import_info_layout.setContentsMargins(0, 0, 0, 0)
+        import_info_layout.setSpacing(8)
+
+        self.import_info_icon = QLabel()
+        self.import_info_icon.setAlignment(Qt.AlignmentFlag.AlignTop)
+        import_info_layout.addWidget(self.import_info_icon)
+
+        import_info_text = QVBoxLayout()
+        import_info_text.setContentsMargins(0, 0, 0, 0)
+        import_info_text.setSpacing(2)
+        self.import_info_headline = QLabel()
+        self.import_info_headline.setWordWrap(True)
+        self.import_info_headline.setStyleSheet("font-weight: 600;")
+        import_info_text.addWidget(self.import_info_headline)
+        self.import_info_reason = QLabel()
+        self.import_info_reason.setWordWrap(True)
+        import_info_text.addWidget(self.import_info_reason)
+        import_info_layout.addLayout(import_info_text, stretch=1)
+
+        self.import_info_widget.setVisible(False)
+        buttons.addWidget(self.import_info_widget, stretch=1)
 
         self.export_group_button = QPushButton("Exportovat skupinu")
         self.export_group_button.clicked.connect(self._export_group)
@@ -377,7 +403,7 @@ class CodebooksTab(QWidget):
         self.detail_modified.setText("")
         self.detail_list.setText("")
         self.export_button.setEnabled(False)
-        self.import_button.setEnabled(False)
+        self._update_import_action(None)
         self.export_group_button.setEnabled(False)
         self.import_group_button.setEnabled(False)
         self.open_single_export_button.setEnabled(False)
@@ -400,10 +426,35 @@ class CodebooksTab(QWidget):
         )
 
         self.export_button.setEnabled(False)
-        self.import_button.setEnabled(False)
+        self._update_import_action(None)
         self.export_group_button.setEnabled(bool(exportable))
         all_importable = bool(entries) and len(importable) == len(entries)
         self.import_group_button.setEnabled(all_importable and bool(importable))
+
+    def _update_import_action(self, entry: CodebookEntry | None) -> None:
+        if entry is None:
+            self.import_button.setVisible(False)
+            self.import_info_widget.setVisible(False)
+            return
+
+        capabilities = capabilities_for(entry)
+        if capabilities.shows_import_action:
+            self.import_button.setVisible(True)
+            self.import_button.setEnabled(True)
+            self.import_info_widget.setVisible(False)
+            return
+
+        if capabilities.shows_import_info:
+            icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MessageBoxInformation)
+            self.import_info_icon.setPixmap(icon.pixmap(20, 20))
+            self.import_info_headline.setText(capabilities.import_unavailable_headline)
+            self.import_info_reason.setText(capabilities.import_unavailable_reason)
+            self.import_button.setVisible(False)
+            self.import_info_widget.setVisible(True)
+            return
+
+        self.import_button.setVisible(False)
+        self.import_info_widget.setVisible(False)
 
     def _show_entry_details(self, entry: CodebookEntry) -> None:
         self.detail_title.setText(entry.name)
@@ -420,7 +471,7 @@ class CodebooksTab(QWidget):
         self.detail_modified.setText(f"Datum poslední změny: {modified}")
         self.detail_list.setText("")
         self.export_button.setEnabled(entry.exportable)
-        self.import_button.setEnabled(entry.importable)
+        self._update_import_action(entry)
         self.export_group_button.setEnabled(False)
         self.import_group_button.setEnabled(False)
 
