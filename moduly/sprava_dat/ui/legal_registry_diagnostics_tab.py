@@ -15,6 +15,9 @@ from moduly.pravni_pozadavky.ui.legal_registry_diagnostic_actions import (
 from moduly.sprava_dat.sluzby.data_management_settings_service import (
     data_management_settings_service,
 )
+from moduly.sprava_dat.ui.process_requirements_developer_actions import (
+    confirm_and_delete_all_process_requirements,
+)
 from moduly.sprava_dat.ui.ui_styles import apply_card_group_style
 
 
@@ -58,6 +61,23 @@ class LegalRegistryDiagnosticsTab(QWidget):
         group_layout.addWidget(self.last_result_label)
 
         layout.addWidget(group)
+
+        developer_group = QGroupBox("Vývojářské operace")
+        apply_card_group_style(developer_group)
+        developer_layout = QVBoxLayout(developer_group)
+
+        developer_info = QLabel(
+            "Nebezpečné servisní operace určené pouze pro vývoj a testování. "
+            "Běžný uživatel by je neměl spouštět."
+        )
+        developer_info.setWordWrap(True)
+        developer_layout.addWidget(developer_info)
+
+        self.delete_processes_button = QPushButton("Smazat všechny řídicí procesy")
+        self.delete_processes_button.clicked.connect(self._delete_all_process_requirements)
+        developer_layout.addWidget(self.delete_processes_button)
+
+        layout.addWidget(developer_group)
         layout.addStretch()
 
         scroll.setWidget(content)
@@ -78,3 +98,6 @@ class LegalRegistryDiagnosticsTab(QWidget):
     def _run_diagnostic(self) -> None:
         show_legal_registry_diagnostic(self)
         self.refresh()
+
+    def _delete_all_process_requirements(self) -> None:
+        confirm_and_delete_all_process_requirements(self)

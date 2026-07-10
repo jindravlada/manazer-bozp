@@ -12,7 +12,6 @@ from core.widgets.table_utils import configure_table_columns
 from moduly.nastaveni.sluzby.person_service import person_service
 from moduly.nastaveni.sluzby.responsibility_role_service import responsibility_role_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
-from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
 from moduly.nastaveni.ui.person_dialog import PersonDialog
 from moduly.nastaveni.ui.responsibility_role_dialog import ResponsibilityRoleDialog
 from moduly.nastaveni.ui.thp_worker_dialog import ThpWorkerDialog
@@ -31,7 +30,6 @@ class NastaveniPage(QWidget):
         self.tabs.addTab(self._workplaces_tab(), "Pracoviště")
         self.tabs.addTab(self._responsibility_roles_tab(), "Funkce / role")
         self.tabs.addTab(self._employer_tab(), "Zaměstnavatel")
-        self.tabs.addTab(self._maintenance_tab(), "Údržba")
 
         layout.addWidget(self.tabs)
         self.refresh()
@@ -71,31 +69,6 @@ class NastaveniPage(QWidget):
         layout.addLayout(form)
         layout.addLayout(buttons)
         layout.addWidget(note)
-        layout.addStretch()
-
-        return tab
-
-    def _maintenance_tab(self):
-        tab = QWidget()
-        layout = QVBoxLayout(tab)
-
-        info = QLabel(
-            "Údržbové operace nad daty aplikace. Používejte pouze pokud víte, co děláte.",
-        )
-        info.setWordWrap(True)
-
-        requirements_info = QLabel(
-            "Vymazání odstraní všechny procesní požadavky včetně právních podkladů, "
-            "ověření plnění a sankcí. Právní předpisy a jejich struktura zůstanou zachovány.",
-        )
-        requirements_info.setWordWrap(True)
-
-        delete_requirements_button = QPushButton("Vymazat všechny procesní požadavky")
-        delete_requirements_button.clicked.connect(self.delete_all_process_requirements)
-
-        layout.addWidget(info)
-        layout.addWidget(requirements_info)
-        layout.addWidget(delete_requirements_button)
         layout.addStretch()
 
         return tab
@@ -791,28 +764,3 @@ class NastaveniPage(QWidget):
         configure_table_columns(self.responsibility_role_table, "responsibility_roles")
         self.responsibility_role_text_filter.update_count()
         self.update_responsibility_role_buttons()
-
-    def delete_all_process_requirements(self):
-        answer = QMessageBox.warning(
-            self,
-            "Vymazat procesní požadavky",
-            "Opravdu vymazat všechny procesní požadavky?\n\n"
-            "Smažou se požadavky, právní podklady, ověření plnění a sankce.\n"
-            "Právní předpisy a jejich struktura zůstanou zachovány.\n\n"
-            "Tuto akci nelze vrátit.",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No,
-        )
-        if answer != QMessageBox.Yes:
-            return
-
-        counts = legal_requirement_service.delete_all_process_requirements()
-        QMessageBox.information(
-            self,
-            "Procesní požadavky",
-            "Procesní požadavky byly vymazány.\n\n"
-            f"Požadavky: {counts['requirements']}\n"
-            f"Právní podklady: {counts['sources']}\n"
-            f"Ověření plnění: {counts['checks']}\n"
-            f"Sankce: {counts['sanctions']}",
-        )
