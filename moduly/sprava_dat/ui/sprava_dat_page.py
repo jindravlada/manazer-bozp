@@ -8,11 +8,15 @@ from PySide6.QtWidgets import (
 
 from moduly.sprava_dat.ui.backup_tab import BackupTab
 from moduly.sprava_dat.ui.legal_registry_transfer_tab import LegalRegistryTransferTab
-
-TAB_BACKUP = "Zálohování"
-TAB_TRANSFER = "Přenos dat"
-TAB_CODEBOOKS = "Číselníky"
-TAB_DIAGNOSTICS = "Diagnostika"
+from moduly.sprava_dat.ui.summary_tab import SummaryTab
+from moduly.sprava_dat.ui.tab_constants import (
+    TAB_BACKUP,
+    TAB_CODEBOOKS,
+    TAB_DIAGNOSTICS,
+    TAB_ORDER,
+    TAB_SUMMARY,
+    TAB_TRANSFER,
+)
 
 
 class SpravaDatPage(QWidget):
@@ -33,9 +37,12 @@ class SpravaDatPage(QWidget):
         layout.addWidget(title)
 
         self.tabs = QTabWidget()
+        self.summary_tab = SummaryTab(navigate_callback=self.navigate_to_tab)
         self.backup_tab = BackupTab()
-        self.tabs.addTab(self.backup_tab, TAB_BACKUP)
         self.transfer_tab = LegalRegistryTransferTab()
+
+        self.tabs.addTab(self.summary_tab, TAB_SUMMARY)
+        self.tabs.addTab(self.backup_tab, TAB_BACKUP)
         self.tabs.addTab(self.transfer_tab, TAB_TRANSFER)
         self.tabs.addTab(self._codebooks_tab(), TAB_CODEBOOKS)
         self.tabs.addTab(self._diagnostics_tab(), TAB_DIAGNOSTICS)
@@ -57,7 +64,13 @@ class SpravaDatPage(QWidget):
         tab_layout.addStretch()
         return tab
 
+    def navigate_to_tab(self, tab_key: str) -> None:
+        if tab_key not in TAB_ORDER:
+            return
+        self.tabs.setCurrentIndex(TAB_ORDER.index(tab_key))
+
     def refresh(self) -> None:
-        self.tabs.setCurrentIndex(0)
+        self.tabs.setCurrentIndex(TAB_ORDER.index(TAB_SUMMARY))
+        self.summary_tab.refresh()
         self.backup_tab.refresh()
         self.transfer_tab.refresh()

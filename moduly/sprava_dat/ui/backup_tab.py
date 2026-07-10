@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QScrollArea,
+    QSplitter,
     QVBoxLayout,
     QWidget,
 )
@@ -24,10 +25,14 @@ from moduly.sprava_dat.sluzby.data_management_settings_service import (
     BackupRecord,
     data_management_settings_service,
 )
+from moduly.sprava_dat.ui.manifest_presenter import rows_from_backup_manifest, rows_from_integrity_manifest
+from moduly.sprava_dat.ui.manifest_table_widget import ManifestTableWidget
 
 
 class BackupTab(QWidget):
     """Záložka kompletní zálohy a obnovy."""
+
+    _MIN_PANEL_WIDTH = 280
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -54,93 +59,176 @@ class BackupTab(QWidget):
         scroll.setWidget(content)
         root_layout.addWidget(scroll)
 
+    def _create_split_panel(self) -> tuple[QWidget, QWidget, QSplitter]:
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+
+        left = QWidget()
+        left.setMinimumWidth(self._MIN_PANEL_WIDTH)
+        left_layout = QVBoxLayout(left)
+        left_layout.setContentsMargins(0, 0, 8, 0)
+
+        right = QWidget()
+        right.setMinimumWidth(self._MIN_PANEL_WIDTH)
+        right_layout = QVBoxLayout(right)
+        right_layout.setContentsMargins(8, 0, 0, 0)
+
+        splitter.addWidget(left)
+        splitter.addWidget(right)
+        splitter.setStretchFactor(0, 1)
+        splitter.setStretchFactor(1, 1)
+        splitter.setSizes([500, 500])
+
+        return left, right, splitter
+
+    def _wrap_manifest_panel(self, title: str, table: ManifestTableWidget, placeholder: QLabel) -> QWidget:
+        panel = QWidget()
+        layout = QVBoxLayout(panel)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        frame = QFrame()
+        frame.setFrameShape(QFrame.Shape.StyledPanel)
+        frame_layout = QVBoxLayout(frame)
+        heading = QLabel(title)
+        heading.setStyleSheet("font-weight: 600;")
+        frame_layout.addWidget(heading)
+        frame_layout.addWidget(placeholder)
+        frame_layout.addWidget(table)
+        layout.addWidget(frame)
+        return panel
+
     def _create_backup_card(self) -> QGroupBox:
         group = QGroupBox("Kompletní záloha programu")
         layout = QVBoxLayout(group)
-        layout.setSpacing(10)
+
+        left, right, splitter = self._create_split_panel()
+        left_layout = left.layout()
+        assert left_layout is not None
+        right_layout = right.layout()
+        assert right_layout is not None
 
         description = QLabel(
             "Vytvoří úplnou zálohu uživatelských dat Manažera BOZP pro obnovu po havárii "
             "nebo přenos na jiné zařízení."
         )
         description.setWordWrap(True)
-        layout.addWidget(description)
+        left_layout.addWidget(description)
 
         contents_label = QLabel("Záloha obsahuje:")
-        layout.addWidget(contents_label)
+        left_layout.addWidget(contents_label)
         for item in backup_manifest_service.full_backup_content_labels():
-            layout.addWidget(QLabel(f"• {item}"))
+            left_layout.addWidget(QLabel(f"• {item}"))
 
         self.create_backup_button = QPushButton("Vytvořit kompletní zálohu")
         self.create_backup_button.clicked.connect(self._create_full_backup)
-        layout.addWidget(self.create_backup_button)
+        left_layout.addWidget(self.create_backup_button)
 
         self.last_backup_label = QLabel()
         self.last_backup_label.setWordWrap(True)
-        layout.addWidget(self.last_backup_label)
+        left_layout.addWidget(self.last_backup_label)
 
         self.open_last_backup_button = QPushButton("Otevřít umístění")
         self.open_last_backup_button.clicked.connect(self._open_last_backup_location)
-        layout.addWidget(self.open_last_backup_button)
+        left_layout.addWidget(self.open_last_backup_button)
+        left_layout.addStretch()
 
-        manifest_title = QLabel("Manifest poslední zálohy:")
-        manifest_title.setStyleSheet("font-weight: 600;")
-        layout.addWidget(manifest_title)
+        self.backup_manifest_placeholder = QLabel(
+            "Manifest bude dostupný po vytvoření první zálohy."
+        )
+        self.backup_manifest_placeholder.setWordWrap(True)
+        self.backup_manifest_table = ManifestTableWidget()
+        right_layout.addWidget(
+            self._wrap_manifest_panel(
+                "Manifest poslední zálohy",
+                self.backup_manifest_table,
+                self.backup_manifest_placeholder,
+            )
+        )
 
-        self.manifest_label = QLabel()
-        self.manifest_label.setWordWrap(True)
-        self.manifest_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        layout.addWidget(self.manifest_label)
-
+        layout.addWidget(splitter)
         return group
 
     def _create_restore_card(self) -> QGroupBox:
         group = QGroupBox("Obnova kompletní zálohy")
         layout = QVBoxLayout(group)
-        layout.setSpacing(10)
+
+        left, right, splitter = self._create_split_panel()
+        left_layout = left.layout()
+        assert left_layout is not None
+        right_layout = right.layout()
+        assert right_layout is not None
 
         description = QLabel(
             "Obnoví databázi, číselníky, metodiky a další uživatelská data ze zvolené kompletní zálohy."
         )
         description.setWordWrap(True)
-        layout.addWidget(description)
+        left_layout.addWidget(description)
 
         safety_note = QLabel(
             "Před obnovou bude automaticky vytvořena bezpečnostní záloha aktuálního stavu."
         )
         safety_note.setWordWrap(True)
-        layout.addWidget(safety_note)
+        left_layout.addWidget(safety_note)
 
         self.restore_backup_button = QPushButton("Obnovit kompletní zálohu")
         self.restore_backup_button.clicked.connect(self._restore_full_backup)
-        layout.addWidget(self.restore_backup_button)
+        left_layout.addWidget(self.restore_backup_button)
 
         pre_restore_title = QLabel("Poslední záloha před obnovou:")
         pre_restore_title.setStyleSheet("font-weight: 600;")
-        layout.addWidget(pre_restore_title)
+        left_layout.addWidget(pre_restore_title)
 
         self.pre_restore_label = QLabel()
         self.pre_restore_label.setWordWrap(True)
-        layout.addWidget(self.pre_restore_label)
+        left_layout.addWidget(self.pre_restore_label)
 
         self.open_pre_restore_button = QPushButton("Otevřít umístění")
         self.open_pre_restore_button.clicked.connect(self._open_pre_restore_location)
-        layout.addWidget(self.open_pre_restore_button)
+        left_layout.addWidget(self.open_pre_restore_button)
 
         restore_result_title = QLabel("Poslední obnova:")
         restore_result_title.setStyleSheet("font-weight: 600;")
-        layout.addWidget(restore_result_title)
+        left_layout.addWidget(restore_result_title)
 
         self.restore_result_label = QLabel()
         self.restore_result_label.setWordWrap(True)
-        layout.addWidget(self.restore_result_label)
+        left_layout.addWidget(self.restore_result_label)
+        left_layout.addStretch()
 
+        self.safety_manifest_placeholder = QLabel(
+            "Manifest bezpečnostní zálohy bude dostupný po první obnově."
+        )
+        self.safety_manifest_placeholder.setWordWrap(True)
+        self.safety_manifest_table = ManifestTableWidget()
+
+        self.integrity_manifest_placeholder = QLabel(
+            "Výsledek kontroly integrity bude dostupný po první obnově."
+        )
+        self.integrity_manifest_placeholder.setWordWrap(True)
+        self.integrity_manifest_table = ManifestTableWidget()
+
+        right_layout.addWidget(
+            self._wrap_manifest_panel(
+                "Manifest bezpečnostní zálohy před obnovou",
+                self.safety_manifest_table,
+                self.safety_manifest_placeholder,
+            )
+        )
+        right_layout.addWidget(
+            self._wrap_manifest_panel(
+                "Kontrola integrity poslední obnovy",
+                self.integrity_manifest_table,
+                self.integrity_manifest_placeholder,
+            )
+        )
+
+        layout.addWidget(splitter)
         return group
 
     def refresh(self) -> None:
         self._update_last_backup_display()
         self._update_pre_restore_display()
         self._update_restore_result_display()
+        self._update_restore_manifests()
 
     def _create_full_backup(self) -> None:
         default_path = str(backup_service.default_backup_path(BACKUP_TYPE_FULL))
@@ -214,10 +302,10 @@ class BackupTab(QWidget):
                 "Před obnovou bude automaticky vytvořena bezpečnostní záloha aktuálního stavu.\n\n"
                 "Pokračovat?"
             ),
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
         )
-        if answer != QMessageBox.Yes:
+        if answer != QMessageBox.StandardButton.Yes:
             return
 
         try:
@@ -292,7 +380,9 @@ class BackupTab(QWidget):
         if record is None:
             self.last_backup_label.setText("Poslední záloha: nebyla vytvořena.")
             self.open_last_backup_button.setEnabled(False)
-            self.manifest_label.setText("—")
+            self.backup_manifest_placeholder.setVisible(True)
+            self.backup_manifest_table.setVisible(False)
+            self.backup_manifest_table.setRowCount(0)
             return
 
         file_name = Path(record.path).name
@@ -307,7 +397,11 @@ class BackupTab(QWidget):
             f"• cesta: {record.path}{missing_note}"
         )
         self.open_last_backup_button.setEnabled(True)
-        self.manifest_label.setText(self._format_manifest(record.manifest))
+        self._populate_manifest_table(
+            self.backup_manifest_table,
+            self.backup_manifest_placeholder,
+            rows_from_backup_manifest(record.manifest),
+        )
 
     def _update_pre_restore_display(self) -> None:
         record = data_management_settings_service.get_last_pre_restore_backup()
@@ -343,27 +437,43 @@ class BackupTab(QWidget):
             f"• kontrola integrity: {integrity_status}"
         )
 
-    def _format_manifest(self, manifest: dict | None) -> str:
-        if not manifest:
-            return "—"
+    def _update_restore_manifests(self) -> None:
+        pre_restore = data_management_settings_service.get_last_pre_restore_backup()
+        restore = data_management_settings_service.get_last_restore_result()
 
-        db_counts = manifest.get("database_counts") or {}
-        lines = [
-            f"• cesta k databázi: {manifest.get('workspace_database_path', manifest.get('database_path', '—'))}",
-            f"• databáze v záloze: {'ano' if manifest.get('database_included') else 'ne'}",
-            f"• ZIP lze otevřít: {'ano' if manifest.get('zip_readable') else 'ne'}",
-            f"• kontrolní součty ZIPu: {'v pořádku' if manifest.get('zip_crc_ok') else 'chyba'}",
-            f"• počet souborů v záloze: {manifest.get('file_count', 0)}",
-            f"• globální číselníky: {manifest.get('global_catalogs', 0)}",
-            f"• modulové číselníky: {manifest.get('module_catalogs', 0)}",
-            f"• auditní metodiky: {manifest.get('audit_methodologies', 0)}",
-            f"• metodiky prověrek: {manifest.get('proverky_methodologies', 0)}",
-            f"• právní předpisy: {db_counts.get('legal_documents', 0)}",
-            f"• řídicí procesy: {db_counts.get('control_processes', 0)}",
-            f"• úkoly: {db_counts.get('tasks', 0)}",
-            f"• pracovní úrazy: {db_counts.get('accidents', 0)}",
-            f"• audity: {db_counts.get('audits', 0)}",
-            f"• prověrky: {db_counts.get('inspections', 0)}",
-            f"• ověření zálohy: {'úspěšné' if manifest.get('verified') else 'neúspěšné'}",
-        ]
-        return "\n".join(lines)
+        safety_rows = rows_from_backup_manifest(pre_restore.manifest if pre_restore else None)
+        self._populate_manifest_table(
+            self.safety_manifest_table,
+            self.safety_manifest_placeholder,
+            safety_rows,
+            empty_text="Manifest bezpečnostní zálohy bude dostupný po první obnově.",
+        )
+
+        integrity_rows = rows_from_integrity_manifest(
+            (restore or {}).get("integrity_check") if restore else None
+        )
+        self._populate_manifest_table(
+            self.integrity_manifest_table,
+            self.integrity_manifest_placeholder,
+            integrity_rows,
+            empty_text="Výsledek kontroly integrity bude dostupný po první obnově.",
+        )
+
+    @staticmethod
+    def _populate_manifest_table(
+        table: ManifestTableWidget,
+        placeholder: QLabel,
+        rows: list[tuple[str, str, str]],
+        *,
+        empty_text: str | None = None,
+    ) -> None:
+        if not rows:
+            placeholder.setText(empty_text or "Manifest není k dispozici.")
+            placeholder.setVisible(True)
+            table.setVisible(False)
+            table.setRowCount(0)
+            return
+
+        placeholder.setVisible(False)
+        table.setVisible(True)
+        table.set_rows(rows)

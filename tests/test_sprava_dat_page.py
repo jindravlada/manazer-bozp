@@ -24,12 +24,14 @@ with patch.object(Path, "home", return_value=_TMP):
     initialize_database()
 
     from core.windows.main_window import MainWindow
-    from moduly.sprava_dat.ui.sprava_dat_page import (
+    from moduly.sprava_dat.ui.sprava_dat_page import SpravaDatPage
+    from moduly.sprava_dat.ui.tab_constants import (
         TAB_BACKUP,
         TAB_CODEBOOKS,
         TAB_DIAGNOSTICS,
+        TAB_ORDER,
+        TAB_SUMMARY,
         TAB_TRANSFER,
-        SpravaDatPage,
     )
 
 
@@ -41,21 +43,21 @@ class SpravaDatPageTestCase(unittest.TestCase):
 
         cls._app = QApplication.instance() or QApplication([])
 
-    def test_page_contains_four_tabs(self) -> None:
+    def test_page_contains_five_tabs(self) -> None:
         page = SpravaDatPage()
         tabs = page.findChild(QTabWidget)
         self.assertIsNotNone(tabs)
         assert tabs is not None
         self.assertEqual(
             [tabs.tabText(index) for index in range(tabs.count())],
-            [TAB_BACKUP, TAB_TRANSFER, TAB_CODEBOOKS, TAB_DIAGNOSTICS],
+            list(TAB_ORDER),
         )
 
-    def test_page_opens_on_backup_tab(self) -> None:
+    def test_page_opens_on_summary_tab(self) -> None:
         page = SpravaDatPage()
         tabs = page.findChild(QTabWidget)
         assert tabs is not None
-        self.assertEqual(tabs.tabText(tabs.currentIndex()), TAB_BACKUP)
+        self.assertEqual(tabs.tabText(tabs.currentIndex()), TAB_SUMMARY)
 
     def test_page_title_is_sprava_dat(self) -> None:
         page = SpravaDatPage()

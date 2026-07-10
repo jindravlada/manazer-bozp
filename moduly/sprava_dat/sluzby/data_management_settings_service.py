@@ -152,6 +152,15 @@ class DataManagementSettingsService:
         payload["last_registry_import"] = record.to_dict()
         self._save(payload)
 
+    def get_last_diagnostic(self) -> dict | None:
+        payload = self._load().get("last_diagnostic")
+        return dict(payload) if isinstance(payload, dict) else None
+
+    def save_last_diagnostic(self, result: dict) -> None:
+        payload = self._load()
+        payload["last_diagnostic"] = result
+        self._save(payload)
+
     @staticmethod
     def format_timestamp(value: str) -> str:
         if not value:

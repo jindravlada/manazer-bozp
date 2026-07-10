@@ -32,7 +32,8 @@ with patch.object(Path, "home", return_value=_TMP):
         data_management_settings_service,
     )
     from moduly.sprava_dat.ui.backup_tab import BackupTab
-    from moduly.sprava_dat.ui.sprava_dat_page import TAB_BACKUP, SpravaDatPage
+    from moduly.sprava_dat.ui.sprava_dat_page import SpravaDatPage
+    from moduly.sprava_dat.ui.tab_constants import TAB_BACKUP, TAB_SUMMARY
 
 
 class BackupManifestServiceTestCase(unittest.TestCase):
@@ -215,16 +216,16 @@ class SpravaDatPageBackupTestCase(unittest.TestCase):
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         cls._app = QApplication.instance() or QApplication([])
 
-    def test_page_opens_on_backup_tab(self) -> None:
+    def test_page_opens_on_summary_tab(self) -> None:
         page = SpravaDatPage()
         tabs = page.findChild(QTabWidget)
         self.assertIsNotNone(tabs)
         assert tabs is not None
-        self.assertEqual(tabs.tabText(tabs.currentIndex()), TAB_BACKUP)
+        self.assertEqual(tabs.tabText(tabs.currentIndex()), TAB_SUMMARY)
 
         page.refresh()
         self.assertEqual(tabs.currentIndex(), 0)
-        self.assertEqual(tabs.tabText(0), TAB_BACKUP)
+        self.assertEqual(tabs.tabText(0), TAB_SUMMARY)
 
 
 class FileLocationServiceTestCase(unittest.TestCase):
