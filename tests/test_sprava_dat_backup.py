@@ -235,11 +235,13 @@ class FileLocationServiceTestCase(unittest.TestCase):
         cls._app = QApplication.instance() or QApplication([])
 
     def test_open_path_in_file_manager_warns_when_missing(self) -> None:
-        missing = storage_module.storage_service.backups_dir / "missing.zip"
+        missing = storage_module.storage_service.backups_dir / "missing-dir" / "missing.zip"
         with patch("core.services.file_location_service.QMessageBox.warning") as mock_warning:
-            opened = open_path_in_file_manager(missing)
+            with patch("core.services.file_location_service.QMessageBox.question") as mock_question:
+                opened = open_path_in_file_manager(missing)
         self.assertFalse(opened)
         mock_warning.assert_called_once()
+        mock_question.assert_not_called()
 
 
 if __name__ == "__main__":
