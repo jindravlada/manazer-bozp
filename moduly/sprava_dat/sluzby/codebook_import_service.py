@@ -3,10 +3,18 @@ from __future__ import annotations
 import json
 import shutil
 import zipfile
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
+from typing import Any
 
+from sqlalchemy.exc import SQLAlchemyError
+
+from moduly.nastaveni.modely.employer import Employer
+from moduly.nastaveni.modely.person import Person
+from moduly.nastaveni.modely.responsibility_role import ResponsibilityRole
+from moduly.nastaveni.modely.thp_worker import ThpWorker
+from moduly.nastaveni.modely.workplace import Workplace
 from moduly.nastaveni.sluzby.person_service import person_service
 from moduly.nastaveni.sluzby.responsibility_role_service import responsibility_role_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
@@ -14,11 +22,11 @@ from moduly.sprava_dat.sluzby.codebook_catalog_service import (
     CodebookEntry,
     codebook_catalog_service,
 )
-from moduly.sprava_dat.sluzby.codebook_manifest_service import (
-    MANIFEST_FILENAME,
-    ZIP_PREFIX_CISELNIKY,
-    ZIP_PREFIX_DATABASE,
-    codebook_manifest_service,
+from moduly.sprava_dat.sluzby.codebook_manifest_service import codebook_manifest_service
+from moduly.sprava_dat.sluzby.codebook_record_normalizer import (
+    CodebookRecordNormalizationError,
+    ensure_database_session_rollback,
+    normalize_database_record,
 )
 
 
@@ -41,6 +49,14 @@ class CodebookImportSummary:
 
 class CodebookImportService:
     """Import jednotlivých číselníků a hromadného ZIP balíčku."""
+
+    _DATABASE_CODEBOOK_MODELS: dict[str, type] = {
+        "db:workplaces": Workplace,
+        "db:thp_workers": ThpWorker,
+        "db:employer": Employer,
+        "db:responsibility_roles": ResponsibilityRole,
+        "db:persons": Person,
+    }
 
     def import_codebook(self, entry: CodebookEntry, source_path: Path | str) -> CodebookImportSummary:
         summary = CodebookImportSummary()
@@ -181,62 +197,81 @@ class CodebookImportService:
         if not isinstance(records, list):
             raise ValueError("Export neobsahuje platný seznam záznamů.")
 
-        if entry.codebook_id == "db:workplaces":
-            for record in records:
-                settings_service.save_workplace(**record)
-            summary.updated.append(entry.name)
+        importer = self._database_record_importer(entry)
+        if importer is None:
+            summary.skipped.append(f"{entry.name}: import databázového číselníku není podporován.")
             return
+
+        model_class = self._DATABASE_CODEBOOK_MODELS.get(entry.codebook_id)
+        if model_class is None:
+            summary.skipped.append(f"{entry.name}: import databázového číselníku není podporován.")
+            return
+
+        updated_count = 0
+        for index, record in enumerate(records, start=1):
+            if not isinstance(record, dict):
+                summary.errors.append(f"{entry.name}: záznam {index} není platný objekt.")
+                continue
+
+            try:
+                normalized = normalize_database_record(
+                    model_class,
+                    record,
+                    codebook_name=entry.name,
+                )
+                importer(normalized)
+                updated_count += 1
+            except CodebookRecordNormalizationError as exc:
+                ensure_database_session_rollback()
+                summary.errors.append(str(exc))
+            except (ValueError, SQLAlchemyError) as exc:
+                ensure_database_session_rollback()
+                summary.errors.append(f"{entry.name}: záznam {index}: {exc}")
+
+        if updated_count:
+            summary.updated.append(entry.name)
+
+    def _database_record_importer(self, entry: CodebookEntry) -> Callable[[dict[str, Any]], None] | None:
+        if entry.codebook_id == "db:workplaces":
+            return lambda record: settings_service.save_workplace(**record)
 
         if entry.codebook_id == "db:thp_workers":
-            for record in records:
-                settings_service.save_worker(**record)
-            summary.updated.append(entry.name)
-            return
+            return lambda record: settings_service.save_worker(**record)
 
         if entry.codebook_id == "db:employer":
-            for record in records:
-                settings_service.save_employer(**record)
-            summary.updated.append(entry.name)
-            return
+            return lambda record: settings_service.save_employer(**record)
 
         if entry.codebook_id == "db:responsibility_roles":
-            for record in records:
-                role_id = record.get("id")
-                if role_id:
-                    updated = responsibility_role_service.update_role(
-                        role_id,
-                        name=str(record.get("name") or ""),
-                        description=str(record.get("description") or ""),
-                        active=bool(record.get("active", True)),
-                    )
-                    if updated is None:
-                        responsibility_role_service.create_role(
-                            name=str(record.get("name") or ""),
-                            description=str(record.get("description") or ""),
-                            active=bool(record.get("active", True)),
-                        )
-                else:
-                    responsibility_role_service.create_role(
-                        name=str(record.get("name") or ""),
-                        description=str(record.get("description") or ""),
-                        active=bool(record.get("active", True)),
-                    )
-            summary.updated.append(entry.name)
-            return
+            return self._import_responsibility_role_record
 
         if entry.codebook_id == "db:persons":
-            for record in records:
-                person_id = record.get("id")
-                if person_id:
-                    updated = person_service.update_person(person_id, **self._person_kwargs(record))
-                    if updated is None:
-                        person_service.create_person(**self._person_kwargs(record))
-                else:
-                    person_service.create_person(**self._person_kwargs(record))
-            summary.updated.append(entry.name)
-            return
+            return self._import_person_record
 
-        summary.skipped.append(f"{entry.name}: import databázového číselníku není podporován.")
+        return None
+
+    def _import_responsibility_role_record(self, record: dict[str, Any]) -> None:
+        role_id = record.get("id")
+        kwargs = {
+            "name": str(record.get("name") or ""),
+            "description": str(record.get("description") or ""),
+            "active": bool(record.get("active", True)),
+        }
+        if role_id:
+            updated = responsibility_role_service.update_role(role_id, **kwargs)
+            if updated is None:
+                responsibility_role_service.create_role(**kwargs)
+            return
+        responsibility_role_service.create_role(**kwargs)
+
+    def _import_person_record(self, record: dict[str, Any]) -> None:
+        person_id = record.get("id")
+        kwargs = self._person_kwargs(record)
+        if person_id:
+            updated = person_service.update_person(person_id, **kwargs)
+            if updated is None:
+                person_service.create_person(**kwargs)
+            return
+        person_service.create_person(**kwargs)
 
     @staticmethod
     def _person_kwargs(record: dict) -> dict:
