@@ -205,7 +205,6 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         widths = {
             COL_CODE: 72,
             COL_PROCESS: 200,
-            COL_SUMMARY: 280,
             COL_RESPONSIBLE: 200,
             COL_STATUS: 120,
             COL_NEXT_CHECK: 110,
@@ -215,16 +214,8 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
-        header.setSectionResizeMode(COL_SUMMARY, QHeaderView.Fixed)
-        for column in (
-            COL_CODE,
-            COL_PROCESS,
-            COL_RESPONSIBLE,
-            COL_STATUS,
-            COL_NEXT_CHECK,
-            COL_LAST_CHECK,
-            COL_PERIODICITY,
-        ):
+        header.setSectionResizeMode(COL_SUMMARY, QHeaderView.Stretch)
+        for column in widths:
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 
     elif profile == "controls_year_matrix":

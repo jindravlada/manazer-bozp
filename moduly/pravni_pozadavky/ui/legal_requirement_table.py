@@ -63,7 +63,7 @@ class LegalRequirementTable(QTableWidget):
 
         header = self.horizontalHeader()
         header.setStretchLastSection(False)
-        header.setSectionResizeMode(COL_SUMMARY, QHeaderView.Fixed)
+        header.setSectionResizeMode(COL_SUMMARY, QHeaderView.Stretch)
         for column in (
             COL_CODE,
             COL_PROCESS,

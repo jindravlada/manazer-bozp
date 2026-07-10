@@ -263,18 +263,47 @@ class LegalRequirementTableDisplayTestCase(unittest.TestCase):
         self.assertIn("průmyslových provozech", process_item.toolTip())
 
     def test_table_column_widths_are_balanced(self) -> None:
+        from PySide6.QtWidgets import QHeaderView
+
         from core.widgets.table_utils import configure_table_columns
 
         table = LegalRequirementTable()
         configure_table_columns(table, "legal_requirements")
+        header = table.horizontalHeader()
 
-        self.assertEqual(table.columnWidth(COL_CODE), 72)
+        fixed_widths = {
+            COL_CODE: 72,
+            COL_PROCESS: 200,
+            COL_RESPONSIBLE: 200,
+            COL_STATUS: 120,
+            COL_NEXT_CHECK: 110,
+            COL_LAST_CHECK: 110,
+            COL_PERIODICITY: 120,
+        }
+        for column, width in fixed_widths.items():
+            self.assertEqual(table.columnWidth(column), width)
+            self.assertEqual(header.sectionResizeMode(column), QHeaderView.ResizeMode.Fixed)
+
+        self.assertEqual(header.sectionResizeMode(COL_SUMMARY), QHeaderView.ResizeMode.Stretch)
+
+    def test_summary_column_stretches_with_table_width(self) -> None:
+        from core.widgets.table_utils import configure_table_columns
+
+        table = LegalRequirementTable()
+        configure_table_columns(table, "legal_requirements")
+        table.show()
+        self._app.processEvents()
+
+        table.resize(1600, 400)
+        self._app.processEvents()
+        summary_width_wide = table.columnWidth(COL_SUMMARY)
+
+        table.resize(1200, 400)
+        self._app.processEvents()
+        summary_width_narrow = table.columnWidth(COL_SUMMARY)
+
+        self.assertGreater(summary_width_wide, summary_width_narrow)
         self.assertEqual(table.columnWidth(COL_PROCESS), 200)
-        self.assertEqual(table.columnWidth(COL_SUMMARY), 280)
-        self.assertEqual(table.columnWidth(COL_RESPONSIBLE), 200)
-        self.assertEqual(table.columnWidth(COL_STATUS), 120)
-        self.assertEqual(table.columnWidth(COL_NEXT_CHECK), 110)
-        self.assertEqual(table.columnWidth(COL_LAST_CHECK), 110)
         self.assertEqual(table.columnWidth(COL_PERIODICITY), 120)
 
     def test_refresh_sorts_by_process_code(self) -> None:
