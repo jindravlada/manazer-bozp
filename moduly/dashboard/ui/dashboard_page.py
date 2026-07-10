@@ -1,13 +1,11 @@
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
-    QApplication,
-    QFileDialog,
+    QDialog,
     QFrame,
     QGridLayout,
     QHBoxLayout,
     QLabel,
-    QMenu,
     QMessageBox,
     QPushButton,
     QScrollArea,
@@ -16,14 +14,15 @@ from PySide6.QtWidgets import (
 )
 
 from core.resources.app_icon import load_app_icon
-from core.services.backup_service import (
-    BACKUP_TYPE_CATALOGS_TEMPLATES,
-    BACKUP_TYPE_DATABASE,
-    BACKUP_TYPE_FULL,
-    BACKUP_TYPE_LABELS,
-    BACKUP_TYPE_RESTORE_LABELS,
-    backup_service,
+from moduly.dashboard.ui.complete_backup_dialog import (
+    ACTION_CANCEL,
+    ACTION_GO_TO_SPRAVA_DAT,
+    ACTION_PROCEED,
+    CompleteBackupConfirmDialog,
+    CompleteRestoreConfirmDialog,
 )
+from moduly.sprava_dat.sluzby.full_backup_workflow_service import full_backup_workflow_service
+from moduly.sprava_dat.ui.tab_constants import TAB_BACKUP
 
 from core.dashboard import (
     AccidentsWidget,
@@ -52,6 +51,8 @@ class DashboardPage(QWidget):
         open_search_callback=None,
         open_kontroly_callback=None,
         open_kniha_urazu_callback=None,
+        open_sprava_dat_callback=None,
+        refresh_sprava_dat_callback=None,
     ) -> None:
         super().__init__()
         self.open_tasks_callback = open_tasks_callback
@@ -60,6 +61,8 @@ class DashboardPage(QWidget):
         self.open_search_callback = open_search_callback
         self.open_kontroly_callback = open_kontroly_callback
         self.open_kniha_urazu_callback = open_kniha_urazu_callback
+        self.open_sprava_dat_callback = open_sprava_dat_callback
+        self.refresh_sprava_dat_callback = refresh_sprava_dat_callback
 
         self.setStyleSheet("""
             QFrame#HeaderCard,
@@ -274,9 +277,9 @@ class DashboardPage(QWidget):
             elif text == "📋 Kontrola":
                 button.clicked.connect(self.show_kontroly_info)
             elif text == "💾 Záloha":
-                self._setup_backup_menu(button)
+                button.clicked.connect(self._show_backup_dialog)
             elif text == "♻ Obnova":
-                self._setup_restore_menu(button)
+                button.clicked.connect(self._show_restore_dialog)
 
             layout.addWidget(button)
 
@@ -286,107 +289,41 @@ class DashboardPage(QWidget):
     def show_kontroly_info(self):
         QMessageBox.information(self, "Kontroly", "Modul Kontroly zatím není aktivní.")
 
-    def _setup_backup_menu(self, button: QPushButton) -> None:
-        menu = QMenu(button)
-        for backup_type in (BACKUP_TYPE_FULL, BACKUP_TYPE_DATABASE, BACKUP_TYPE_CATALOGS_TEMPLATES):
-            action = menu.addAction(BACKUP_TYPE_LABELS[backup_type])
-            action.triggered.connect(
-                lambda _checked=False, t=backup_type: self.create_backup(t)
-            )
-        button.setMenu(menu)
-
-    def _setup_restore_menu(self, button: QPushButton) -> None:
-        menu = QMenu(button)
-        for restore_type in (BACKUP_TYPE_FULL, BACKUP_TYPE_DATABASE, BACKUP_TYPE_CATALOGS_TEMPLATES):
-            action = menu.addAction(BACKUP_TYPE_RESTORE_LABELS[restore_type])
-            action.triggered.connect(
-                lambda _checked=False, t=restore_type: self.restore_backup(t)
-            )
-        button.setMenu(menu)
-
-    def create_backup(self, backup_type: str = BACKUP_TYPE_FULL):
-        label = BACKUP_TYPE_LABELS[backup_type]
-        default_path = str(backup_service.default_backup_path(backup_type))
-        file_path, _ = QFileDialog.getSaveFileName(
-            self,
-            f"Uložit – {label}",
-            default_path,
-            "ZIP záloha (*.zip)",
-        )
-        if not file_path:
-            return
-        if not file_path.lower().endswith(".zip"):
-            file_path += ".zip"
-
-        try:
-            result = backup_service.create_backup(file_path, backup_type=backup_type)
-        except Exception as exc:
-            QMessageBox.critical(self, label, f"Zálohu se nepodařilo vytvořit.\n\n{exc}")
+    def _show_backup_dialog(self) -> None:
+        dialog = CompleteBackupConfirmDialog(self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
             return
 
-        QMessageBox.information(self, label, f"Záloha byla vytvořena:\n{result}")
+        if dialog.action == ACTION_CANCEL:
+            return
+        if dialog.action == ACTION_GO_TO_SPRAVA_DAT:
+            self._open_sprava_dat(TAB_BACKUP)
+            return
+        if dialog.action == ACTION_PROCEED:
+            if full_backup_workflow_service.create_full_backup(self):
+                self._refresh_sprava_dat_status()
 
-    def _restore_confirmation_text(self, restore_type: str) -> str:
-        safety = "Před obnovou bude automaticky vytvořena bezpečnostní záloha aktuálního stavu.\n\n"
-        if restore_type == BACKUP_TYPE_FULL:
-            return (
-                "Obnova přepíše celé pracovní prostředí: databázi, přílohy, exporty, "
-                "šablony a editovatelné číselníky.\n"
-                f"{safety}Pokračovat?"
-            )
-        if restore_type == BACKUP_TYPE_DATABASE:
-            return (
-                "Obnova přepíše pouze databázi. Číselníky a šablony zůstanou beze změny.\n"
-                f"{safety}Pokračovat?"
-            )
-        return (
-            "Obnova přepíše editovatelné číselníky a uživatelské šablony. "
-            "Databáze zůstane beze změny.\n"
-            f"{safety}Pokračovat?"
-        )
-
-    def restore_backup(self, restore_type: str = BACKUP_TYPE_FULL):
-        label = BACKUP_TYPE_RESTORE_LABELS[restore_type]
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            f"Vybrat – {label}",
-            str(backup_service.default_backup_path().parent),
-            "ZIP záloha (*.zip)",
-        )
-        if not file_path:
+    def _show_restore_dialog(self) -> None:
+        dialog = CompleteRestoreConfirmDialog(self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
             return
 
-        answer = QMessageBox.question(
-            self,
-            label,
-            self._restore_confirmation_text(restore_type),
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No,
-        )
-        if answer != QMessageBox.Yes:
+        if dialog.action == ACTION_CANCEL:
             return
-
-        try:
-            backup_service.restore_backup(file_path, restore_type=restore_type)
-        except Exception as exc:
-            QMessageBox.critical(self, label, f"Obnovu se nepodařilo dokončit.\n\n{exc}")
+        if dialog.action == ACTION_GO_TO_SPRAVA_DAT:
+            self._open_sprava_dat(TAB_BACKUP)
             return
+        if dialog.action == ACTION_PROCEED:
+            if full_backup_workflow_service.restore_full_backup(self):
+                self._refresh_sprava_dat_status()
 
-        if backup_service.requires_restart_after_restore(restore_type):
-            QMessageBox.information(
-                self,
-                label,
-                "Data byla obnovena. Aplikace se nyní ukončí. "
-                "Po novém spuštění se načtou obnovená data.",
-            )
-            QApplication.quit()
-            return
+    def _open_sprava_dat(self, tab_key: str) -> None:
+        if callable(self.open_sprava_dat_callback):
+            self.open_sprava_dat_callback(tab_key)
 
-        QMessageBox.information(
-            self,
-            label,
-            "Číselníky a šablony byly obnoveny. Databáze zůstala beze změny.",
-        )
+    def _refresh_sprava_dat_status(self) -> None:
+        if callable(self.refresh_sprava_dat_callback):
+            self.refresh_sprava_dat_callback()
 
     def _placeholder_panel(self, title: str, text: str) -> QFrame:
         panel = QFrame()

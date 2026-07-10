@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
 from core.modules.module_manager import ModuleManager
 from core.navigation.source_navigator import source_navigator
 from core.search import global_search_service
+from core.search.global_search_result import GlobalSearchResult
 from core.search.ui.global_search_dialog import GlobalSearchDialog
 
 
@@ -123,6 +124,8 @@ class MainWindow(QMainWindow):
                 open_search_callback=self._focus_search,
                 open_kontroly_callback=self._open_kontroly,
                 open_kniha_urazu_callback=self._open_kniha_urazu,
+                open_sprava_dat_callback=self._open_sprava_dat,
+                refresh_sprava_dat_callback=self._refresh_sprava_dat_status,
             )
 
         if module.key == "kniha_urazu":
@@ -254,6 +257,17 @@ class MainWindow(QMainWindow):
     def _open_kniha_urazu(self):
         self._show("kniha_urazu")
 
+    def _open_sprava_dat(self, tab_key: str | None = None) -> None:
+        self._show("sprava_dat")
+        page = self._page_widgets.get("sprava_dat")
+        if page is not None and tab_key:
+            page.navigate_to_tab(tab_key)
+
+    def _refresh_sprava_dat_status(self) -> None:
+        page = self._page_widgets.get("sprava_dat")
+        if page is not None and hasattr(page, "refresh_backup_status"):
+            page.refresh_backup_status()
+
     def _open_mu_from_accident(self, accident_id: int):
         self._show("vysetrovani_mu")
         page = self._page_widgets.get("vysetrovani_mu")
@@ -274,11 +288,18 @@ class MainWindow(QMainWindow):
         dialog = GlobalSearchDialog(
             parent=self,
             search_service=global_search_service,
-            host=self,
             initial_query=self.search_edit.text().strip(),
         )
         if dialog.exec() == QDialog.DialogCode.Accepted:
+            result = dialog.selected_result
+            if result is not None:
+                self._open_global_search_result(result)
+
+    def _open_global_search_result(self, result: GlobalSearchResult) -> None:
+        if global_search_service.open_result(result, self):
             self.statusBar().showMessage("Globální vyhledávání: výsledek otevřen")
+        else:
+            self.statusBar().showMessage("Globální vyhledávání: výsledek nelze otevřít")
 
     def _update_global_search(self, text: str):
         if self._completer_row_from_text(text) is not None:

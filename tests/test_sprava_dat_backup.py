@@ -107,10 +107,10 @@ class BackupTabTestCase(unittest.TestCase):
         target = storage_module.storage_service.backups_dir / "sprava-dat-test.zip"
 
         with patch(
-            "moduly.sprava_dat.ui.backup_tab.QFileDialog.getSaveFileName",
+            "moduly.sprava_dat.sluzby.full_backup_workflow_service.QFileDialog.getSaveFileName",
             return_value=(str(target), ""),
         ):
-            with patch("moduly.sprava_dat.ui.backup_tab.QMessageBox.information"):
+            with patch("moduly.sprava_dat.sluzby.full_backup_workflow_service.QMessageBox.information"):
                 self.tab._create_full_backup()
 
         record = data_management_settings_service.get_last_backup()
@@ -126,18 +126,18 @@ class BackupTabTestCase(unittest.TestCase):
         target = storage_module.storage_service.backups_dir / "invalid-backup.zip"
 
         with patch(
-            "moduly.sprava_dat.ui.backup_tab.QFileDialog.getSaveFileName",
+            "moduly.sprava_dat.sluzby.full_backup_workflow_service.QFileDialog.getSaveFileName",
             return_value=(str(target), ""),
         ):
             with patch(
-                "moduly.sprava_dat.ui.backup_tab.backup_service.create_backup",
+                "moduly.sprava_dat.sluzby.full_backup_workflow_service.backup_service.create_backup",
                 return_value=target,
             ):
                 with patch(
-                    "moduly.sprava_dat.ui.backup_tab.backup_service.verify_backup_integrity",
+                    "moduly.sprava_dat.sluzby.full_backup_workflow_service.backup_service.verify_backup_integrity",
                     return_value={"verified": False, "verification_errors": ["test"]},
                 ):
-                    with patch("moduly.sprava_dat.ui.backup_tab.QMessageBox.critical"):
+                    with patch("moduly.sprava_dat.sluzby.full_backup_workflow_service.QMessageBox.critical"):
                         self.tab._create_full_backup()
 
         self.assertIsNone(data_management_settings_service.get_last_backup())
@@ -165,14 +165,14 @@ class BackupTabTestCase(unittest.TestCase):
         source = backup_service.create_backup(backup_type=BACKUP_TYPE_FULL)
 
         with patch(
-            "moduly.sprava_dat.ui.backup_tab.QFileDialog.getOpenFileName",
+            "moduly.sprava_dat.sluzby.full_backup_workflow_service.QFileDialog.getOpenFileName",
             return_value=(str(source), ""),
         ):
             with patch(
-                "moduly.sprava_dat.ui.backup_tab.QMessageBox.question",
+                "moduly.sprava_dat.sluzby.full_backup_workflow_service.QMessageBox.question",
                 return_value=QMessageBox.StandardButton.Yes,
             ):
-                with patch("moduly.sprava_dat.ui.backup_tab.QMessageBox.information"):
+                with patch("moduly.sprava_dat.sluzby.full_backup_workflow_service.QMessageBox.information"):
                     with patch("PySide6.QtWidgets.QApplication.quit"):
                         self.tab._restore_full_backup()
 
@@ -192,18 +192,18 @@ class BackupTabTestCase(unittest.TestCase):
         source = backup_service.create_backup(backup_type=BACKUP_TYPE_FULL)
 
         with patch(
-            "moduly.sprava_dat.ui.backup_tab.QFileDialog.getOpenFileName",
+            "moduly.sprava_dat.sluzby.full_backup_workflow_service.QFileDialog.getOpenFileName",
             return_value=(str(source), ""),
         ):
             with patch(
-                "moduly.sprava_dat.ui.backup_tab.QMessageBox.question",
+                "moduly.sprava_dat.sluzby.full_backup_workflow_service.QMessageBox.question",
                 return_value=QMessageBox.StandardButton.Yes,
             ):
                 with patch(
-                    "moduly.sprava_dat.ui.backup_tab.backup_service.restore_backup_with_verified_safety",
+                    "moduly.sprava_dat.sluzby.full_backup_workflow_service.backup_service.restore_backup_with_verified_safety",
                     side_effect=ValueError("Bezpečnostní záloha se nepodařila ověřit."),
                 ):
-                    with patch("moduly.sprava_dat.ui.backup_tab.QMessageBox.critical") as mock_critical:
+                    with patch("moduly.sprava_dat.sluzby.full_backup_workflow_service.QMessageBox.critical") as mock_critical:
                         self.tab._restore_full_backup()
 
         mock_critical.assert_called_once()

@@ -5,7 +5,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
 from moduly.sprava_dat.ui.backup_tab import BackupTab
 from moduly.sprava_dat.ui.codebooks_tab import CodebooksTab
 from moduly.sprava_dat.ui.legal_registry_diagnostics_tab import LegalRegistryDiagnosticsTab
@@ -57,10 +56,13 @@ class SpravaDatPage(QWidget):
             return
         self.tabs.setCurrentIndex(TAB_ORDER.index(tab_key))
 
-    def refresh(self) -> None:
-        self.tabs.setCurrentIndex(TAB_ORDER.index(TAB_SUMMARY))
+    def refresh_backup_status(self) -> None:
         self.summary_tab.refresh()
         self.backup_tab.refresh()
+
+    def refresh(self) -> None:
+        self.tabs.setCurrentIndex(TAB_ORDER.index(TAB_SUMMARY))
+        self.refresh_backup_status()
         self.transfer_tab.refresh()
         self.codebooks_tab.refresh()
         self.diagnostics_tab.refresh()

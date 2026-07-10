@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime
 from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QFileDialog,
     QFrame,
     QGroupBox,
     QHBoxLayout,
@@ -19,12 +17,9 @@ from PySide6.QtWidgets import (
 )
 
 from core.services.backup_manifest_service import backup_manifest_service
-from core.services.backup_service import BACKUP_TYPE_FULL, backup_service
 from core.services.file_location_service import open_path_in_file_manager
-from moduly.sprava_dat.sluzby.data_management_settings_service import (
-    BackupRecord,
-    data_management_settings_service,
-)
+from moduly.sprava_dat.sluzby.data_management_settings_service import data_management_settings_service
+from moduly.sprava_dat.sluzby.full_backup_workflow_service import full_backup_workflow_service
 from moduly.sprava_dat.ui.manifest_presenter import rows_from_backup_manifest, rows_from_integrity_manifest
 from moduly.sprava_dat.ui.manifest_table_widget import ManifestTableWidget
 from moduly.sprava_dat.ui.ui_styles import CONTENT_OVERVIEW_EMPTY, apply_card_group_style
@@ -234,131 +229,12 @@ class BackupTab(QWidget):
         self._update_restore_manifests()
 
     def _create_full_backup(self) -> None:
-        default_path = str(backup_service.default_backup_path(BACKUP_TYPE_FULL))
-        file_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Uložit – Celková záloha",
-            default_path,
-            "ZIP záloha (*.zip)",
-        )
-        if not file_path:
-            return
-        if not file_path.lower().endswith(".zip"):
-            file_path += ".zip"
-
-        try:
-            result_path = backup_service.create_backup(file_path, backup_type=BACKUP_TYPE_FULL)
-            manifest = backup_service.verify_backup_integrity(result_path, backup_type=BACKUP_TYPE_FULL)
-        except Exception as exc:
-            QMessageBox.critical(
-                self,
-                "Kompletní záloha programu",
-                f"Zálohu se nepodařilo vytvořit.\n\n{exc}",
-            )
-            return
-
-        if not manifest.get("verified"):
-            errors = manifest.get("verification_errors") or ["Záloha neprošla ověřením."]
-            try:
-                Path(result_path).unlink(missing_ok=True)
-            except OSError:
-                pass
-            QMessageBox.critical(
-                self,
-                "Kompletní záloha programu",
-                "Záloha byla vytvořena, ale neprošla ověřením a nebude uložena jako úspěšná.\n\n"
-                + "\n".join(errors),
-            )
-            return
-
-        record = BackupRecord(
-            created_at=datetime.now().isoformat(timespec="seconds"),
-            path=str(Path(result_path).resolve()),
-            manifest=manifest,
-            backup_type=BACKUP_TYPE_FULL,
-        )
-        data_management_settings_service.save_last_backup(record)
-        self.refresh()
-
-        QMessageBox.information(
-            self,
-            "Kompletní záloha programu",
-            f"Záloha byla vytvořena a ověřena:\n{result_path}",
-        )
+        if full_backup_workflow_service.create_full_backup(self):
+            self.refresh()
 
     def _restore_full_backup(self) -> None:
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Vybrat – Celková obnova",
-            str(backup_service.default_backup_path().parent),
-            "ZIP záloha (*.zip)",
-        )
-        if not file_path:
-            return
-
-        answer = QMessageBox.question(
-            self,
-            "Obnova kompletní zálohy",
-            (
-                "Obnova přepíše celé pracovní prostředí: databázi, přílohy, exporty, "
-                "šablony a editovatelné číselníky.\n\n"
-                "Před obnovou bude automaticky vytvořena bezpečnostní záloha aktuálního stavu.\n\n"
-                "Pokračovat?"
-            ),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No,
-        )
-        if answer != QMessageBox.StandardButton.Yes:
-            return
-
-        try:
-            result = backup_service.restore_backup_with_verified_safety(
-                file_path,
-                restore_type=BACKUP_TYPE_FULL,
-            )
-        except Exception as exc:
-            QMessageBox.critical(
-                self,
-                "Obnova kompletní zálohy",
-                f"Obnovu se nepodařilo dokončit.\n\n{exc}",
-            )
-            return
-
-        safety_manifest = result.get("safety_backup_manifest") or {}
-        safety_record = BackupRecord(
-            created_at=datetime.now().isoformat(timespec="seconds"),
-            path=str(result.get("safety_backup_path") or ""),
-            manifest=safety_manifest,
-            backup_type=BACKUP_TYPE_FULL,
-        )
-        data_management_settings_service.save_last_pre_restore_backup(safety_record)
-        data_management_settings_service.save_last_restore_result(result)
-        self.refresh()
-
-        integrity = result.get("integrity_check") or {}
-        integrity_status = "úspěšná" if integrity.get("verified") else "neúspěšná"
-
-        QMessageBox.information(
-            self,
-            "Obnova kompletní zálohy",
-            (
-                f"Obnovena záloha:\n{result.get('restored_path')}\n\n"
-                f"Bezpečnostní záloha původního stavu:\n{result.get('safety_backup_path')}\n\n"
-                f"Čas obnovy: {data_management_settings_service.format_timestamp(result.get('restored_at', ''))}\n"
-                f"Kontrola integrity: {integrity_status}"
-            ),
-        )
-
-        if backup_service.requires_restart_after_restore(BACKUP_TYPE_FULL):
-            from PySide6.QtWidgets import QApplication
-
-            QMessageBox.information(
-                self,
-                "Obnova kompletní zálohy",
-                "Data byla obnovena. Aplikace se nyní ukončí. "
-                "Po novém spuštění se načtou obnovená data.",
-            )
-            QApplication.quit()
+        if full_backup_workflow_service.restore_full_backup(self):
+            self.refresh()
 
     def _open_last_backup_location(self) -> None:
         record = data_management_settings_service.get_last_backup()
