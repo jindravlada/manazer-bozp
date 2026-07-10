@@ -82,6 +82,7 @@ AppDir/
 *.AppImage
 linuxdeploy-x86_64.AppImage
 squashfs-root/
+/tmp[a-z0-9_]*/
 
 # PyInstaller
 *.spec

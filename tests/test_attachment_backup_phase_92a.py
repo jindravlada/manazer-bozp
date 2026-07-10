@@ -16,9 +16,6 @@ from tests.attachment_backup_test_env import (
 )
 
 
-_PROJECT_ROOT = Path(__file__).resolve().parents[1]
-
-
 def _ensure_workspace_writable() -> None:
     """Po obnově zálohy může být SQLite jen pro čtení – obnoví oprávnění a uzavře pool."""
     db_path = storage_service.database_path
@@ -39,11 +36,13 @@ def _ensure_workspace_writable() -> None:
 
 class AttachmentWorkspaceDiagnosticPhase92aTestCase(unittest.TestCase):
     def setUp(self) -> None:
-        self._source_dir = Path(tempfile.mkdtemp(dir=_PROJECT_ROOT))
+        self._source_temp = tempfile.TemporaryDirectory()
+        self._source_dir = Path(self._source_temp.name)
         self._cleanup_attachments()
 
     def tearDown(self) -> None:
         self._cleanup_attachments()
+        self._source_temp.cleanup()
 
     def _ensure_db_writable(self) -> None:
         _ensure_workspace_writable()
@@ -102,11 +101,13 @@ class AttachmentWorkspaceDiagnosticPhase92aTestCase(unittest.TestCase):
 
 class AttachmentFullBackupPhase92aTestCase(unittest.TestCase):
     def setUp(self) -> None:
-        self._source_dir = Path(tempfile.mkdtemp(dir=_PROJECT_ROOT))
+        self._source_temp = tempfile.TemporaryDirectory()
+        self._source_dir = Path(self._source_temp.name)
         self._cleanup_attachments()
 
     def tearDown(self) -> None:
         self._cleanup_attachments()
+        self._source_temp.cleanup()
 
     def _ensure_db_writable(self) -> None:
         _ensure_workspace_writable()

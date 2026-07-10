@@ -126,9 +126,12 @@ EOF
     chmod +x linuxdeploy-x86_64.AppImage
 
     echo "== Rozbaluji linuxdeploy bez FUSE =="
-    rm -rf squashfs-root
-    ./linuxdeploy-x86_64.AppImage --appimage-extract >/dev/null
-    LINUXDEPLOY="./squashfs-root/AppRun"
+    LINUXDEPLOY_WORKDIR="$(mktemp -d)"
+    (
+      cd "$LINUXDEPLOY_WORKDIR"
+      /src/linuxdeploy-x86_64.AppImage --appimage-extract >/dev/null
+    )
+    LINUXDEPLOY="$LINUXDEPLOY_WORKDIR/squashfs-root/AppRun"
 
     echo "== Tvořím AppImage =="
     "$LINUXDEPLOY" \
@@ -155,6 +158,8 @@ EOF
 
     echo "== HOTOVO =="
     ls -lh ManagerBOZP-oldlinux.AppImage
+
+    rm -rf "$LINUXDEPLOY_WORKDIR" /src/squashfs-root
   '
 
 echo

@@ -47,9 +47,6 @@ def _ensure_workspace_writable() -> None:
     session_module.engine.dispose()
 
 
-_PROJECT_ROOT = Path(__file__).resolve().parents[1]
-
-
 class AttachmentBackupPhase92bTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -57,7 +54,8 @@ class AttachmentBackupPhase92bTestCase(unittest.TestCase):
         cls._app = QApplication.instance() or QApplication([])
 
     def setUp(self) -> None:
-        self._source_dir = Path(tempfile.mkdtemp(dir=_PROJECT_ROOT))
+        self._source_temp = tempfile.TemporaryDirectory()
+        self._source_dir = Path(self._source_temp.name)
         settings_path = data_management_settings_service.settings_path()
         if settings_path.exists():
             settings_path.unlink()
@@ -65,6 +63,7 @@ class AttachmentBackupPhase92bTestCase(unittest.TestCase):
 
     def tearDown(self) -> None:
         self._cleanup_attachments()
+        self._source_temp.cleanup()
 
     def _cleanup_attachments(self) -> None:
         _ensure_workspace_writable()

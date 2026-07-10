@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import importlib
-import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-_PROJECT_ROOT = Path(__file__).resolve().parents[1]
-TMP = Path(tempfile.mkdtemp(dir=_PROJECT_ROOT))
+from tests.temp_dir_helpers import create_tracked_temp_dir
+
+TMP = create_tracked_temp_dir()
 
 _patch = patch.object(Path, "home", return_value=TMP)
 _patch.start()

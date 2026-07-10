@@ -23,13 +23,30 @@ if ! command -v pyinstaller >/dev/null 2>&1; then
   exit 1
 fi
 
-if [ ! -x "squashfs-root/AppRun" ]; then
-  echo "Chybí linuxdeploy: squashfs-root/AppRun"
+LINUXDEPLOY_APPIMAGE="$PROJECT_DIR/linuxdeploy-x86_64.AppImage"
+if [ ! -f "$LINUXDEPLOY_APPIMAGE" ]; then
+  echo "Chybí linuxdeploy-x86_64.AppImage"
+  exit 1
+fi
+
+LINUXDEPLOY_WORKDIR="$(mktemp -d)"
+cleanup_linuxdeploy_workdir() {
+  rm -rf "$LINUXDEPLOY_WORKDIR"
+}
+trap cleanup_linuxdeploy_workdir EXIT
+
+(
+  cd "$LINUXDEPLOY_WORKDIR"
+  "$LINUXDEPLOY_APPIMAGE" --appimage-extract >/dev/null
+)
+
+if [ ! -x "$LINUXDEPLOY_WORKDIR/squashfs-root/AppRun" ]; then
+  echo "linuxdeploy se nepodařilo rozbalit."
   exit 1
 fi
 
 echo "== Čištění =="
-rm -rf build dist AppDir
+rm -rf build dist AppDir squashfs-root
 rm -f "$OUTPUT_NAME" Mana_er_BOZP*.AppImage ManazerBOZP*.AppImage Manažer_BOZP*.AppImage
 
 echo "== PyInstaller =="
@@ -66,7 +83,7 @@ cat > AppDir/usr/share/icons/hicolor/scalable/apps/manazer-bozp.svg <<'SVG'
 SVG
 
 echo "== AppImage =="
-./squashfs-root/AppRun \
+"$LINUXDEPLOY_WORKDIR/squashfs-root/AppRun" \
   --appdir AppDir \
   --desktop-file AppDir/usr/share/applications/ManazerBOZP.desktop \
   --icon-file AppDir/usr/share/icons/hicolor/scalable/apps/manazer-bozp.svg \
