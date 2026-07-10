@@ -6,6 +6,7 @@ from moduly.audity.module import get_module_definition as audity_module
 from moduly.proverky.module import get_module_definition as proverky_module
 from moduly.vysetrovani_mu.module import get_module_definition as vysetrovani_mu_module
 from moduly.pravni_pozadavky.module import get_module_definition as pravni_pozadavky_module
+from moduly.sprava_dat.module import get_module_definition as sprava_dat_module
 from moduly.nastaveni.module import get_module_definition as nastaveni_module
 
 
@@ -20,6 +21,7 @@ class ModuleManager:
             proverky_module(),
             pravni_pozadavky_module(),
             vysetrovani_mu_module(),
+            sprava_dat_module(),
             nastaveni_module(),
         ]
 

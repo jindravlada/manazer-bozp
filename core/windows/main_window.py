@@ -167,6 +167,15 @@ class MainWindow(QMainWindow):
         layout.addSpacing(8)
         self._add_separator(layout)
 
+        sprava_dat_module = modules.get("sprava_dat")
+        if sprava_dat_module is not None:
+            self._add_sidebar_button(
+                layout,
+                sprava_dat_module.name,
+                sprava_dat_module.key,
+                sprava_dat_module.enabled,
+            )
+
         settings_module = modules.get("nastaveni")
         if settings_module is not None:
             self._add_sidebar_button(
