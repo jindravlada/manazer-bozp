@@ -49,8 +49,8 @@ with patch.object(Path, "home", return_value=_TMP):
 
 class LegalRegistryManifestServiceTestCase(unittest.TestCase):
     def test_included_and_excluded_lists_are_visible_constants(self) -> None:
-        self.assertIn("právní předpisy", legal_registry_manifest_service.INCLUDED_ITEMS)
-        self.assertIn("auditní metodiky", legal_registry_manifest_service.EXCLUDED_ITEMS)
+        self.assertIn("Právní předpisy", legal_registry_manifest_service.INCLUDED_ITEMS)
+        self.assertIn("Auditní metodiky", legal_registry_manifest_service.EXCLUDED_ITEMS)
         self.assertIn("ID řídicích procesů", legal_registry_manifest_service.LINKS_WARNING)
 
     def test_manifest_matches_record_counts(self) -> None:
@@ -130,8 +130,8 @@ class LegalRegistryTransferTabTestCase(unittest.TestCase):
         all_text = "\n".join(label.text() for label in self.tab.findChildren(QLabel))
         self.assertIn("Obsahuje:", all_text)
         self.assertIn("Neobsahuje:", all_text)
-        self.assertIn("právní předpisy", all_text)
-        self.assertIn("auditní metodiky", all_text)
+        self.assertIn("✔ Právní předpisy", all_text)
+        self.assertIn("✖ Auditní metodiky", all_text)
         self.assertIn("Import registru zachovává původní ID řídicích procesů.", all_text)
 
     def test_export_uses_existing_service_and_persists(self) -> None:

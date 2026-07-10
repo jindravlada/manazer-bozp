@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
 
 from core.widgets.dialog_utils import configure_resizable_form_dialog
 from moduly.pravni_pozadavky.sluzby.legal_registry_diagnostic_service import (
+    LegalRegistryDiagnosticResult,
     legal_registry_diagnostic_service,
 )
 
@@ -16,7 +17,7 @@ from moduly.pravni_pozadavky.sluzby.legal_registry_diagnostic_service import (
 class LegalRegistryDiagnosticDialog(QDialog):
     """Dialog s výsledky diagnostiky registru právních požadavků."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, *, result: LegalRegistryDiagnosticResult | None = None):
         super().__init__(parent)
 
         self.setWindowTitle("Diagnostika registru")
@@ -40,5 +41,7 @@ class LegalRegistryDiagnosticDialog(QDialog):
         buttons.addWidget(close_btn)
         layout.addLayout(buttons)
 
-        result = legal_registry_diagnostic_service.run()
-        self.report_view.setPlainText(legal_registry_diagnostic_service.format_report(result))
+        diagnostic_result = result or legal_registry_diagnostic_service.run()
+        self.report_view.setPlainText(
+            legal_registry_diagnostic_service.format_report(diagnostic_result)
+        )

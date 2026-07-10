@@ -12,32 +12,33 @@ class LegalRegistryManifestService:
     """Ověření exportního JSON registru a sestavení manifestu."""
 
     INCLUDED_ITEMS: tuple[str, ...] = (
-        "právní předpisy",
-        "verze předpisů",
-        "ustanovení",
-        "řídicí procesy",
-        "právní podklady procesů",
-        "sankce",
-        "kontroly změn",
-        "zjištěné změny",
-        "změněná ustanovení",
+        "Právní předpisy",
+        "Verze předpisů",
+        "Ustanovení",
+        "Řídicí procesy",
+        "Právní podklady procesů",
+        "Sankce",
+        "Kontroly změn",
+        "Zjištěné změny",
+        "Změněná ustanovení",
     )
 
     EXCLUDED_ITEMS: tuple[str, ...] = (
-        "auditní metodiky",
-        "vazby auditních oblastí na procesy",
-        "metodiky prověrek",
-        "rizika",
-        "úkoly mimo registr",
-        "ostatní data aplikace",
+        "Auditní metodiky",
+        "Metodiky prověrek",
+        "Registr rizik",
+        "Ostatní databáze programu",
     )
 
     LINKS_WARNING = (
         "Import registru zachovává původní ID řídicích procesů.\n\n"
-        "Pro zachování vazeb auditních oblastí na řídicí procesy je nutné přenést "
-        "také odpovídající auditní metodiky.\n\n"
-        "Pokud budou metodiky chybět, řídicí procesy se obnoví, ale jejich použití "
-        "v auditech se nezobrazí."
+        "Pokud nejsou přeneseny auditní metodiky, budou procesy existovat, "
+        "ale jejich použití v auditech nebude obnoveno.\n\n"
+        "Po importu auditních metodik se vazby automaticky obnoví."
+    )
+
+    DESCRIPTION = (
+        "Slouží k přenosu Registru právních požadavků mezi dvěma instalacemi Manažera BOZP."
     )
 
     COUNT_LABELS: tuple[tuple[str, str], ...] = (
@@ -122,6 +123,22 @@ class LegalRegistryManifestService:
         for key, label in self.COUNT_LABELS:
             lines.append(f"{label}: {record_counts.get(key, 0)}")
         return "\n".join(lines)
+
+    def rows_from_record_counts(
+        self,
+        record_counts: dict | None,
+        *,
+        verified: bool = True,
+    ) -> list[tuple[str, str, str]]:
+        if not record_counts:
+            return []
+
+        status = "V pořádku" if verified else "Problém"
+        dash = "—"
+        return [
+            (label, str(record_counts.get(key, 0)), status if verified else dash)
+            for key, label in self.COUNT_LABELS
+        ]
 
     def import_result_to_counts(self, result) -> dict[str, int]:
         return {

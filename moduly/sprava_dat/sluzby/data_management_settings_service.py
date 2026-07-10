@@ -152,6 +152,14 @@ class DataManagementSettingsService:
         payload["last_registry_import"] = record.to_dict()
         self._save(payload)
 
+    def get_last_registry_pre_import_backup(self) -> BackupRecord | None:
+        return BackupRecord.from_dict(self._load().get("last_registry_pre_import_backup"))
+
+    def save_last_registry_pre_import_backup(self, record: BackupRecord) -> None:
+        payload = self._load()
+        payload["last_registry_pre_import_backup"] = record.to_dict()
+        self._save(payload)
+
     def get_last_diagnostic(self) -> dict | None:
         payload = self._load().get("last_diagnostic")
         return dict(payload) if isinstance(payload, dict) else None

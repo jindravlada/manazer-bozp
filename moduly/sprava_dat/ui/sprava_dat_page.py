@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
 )
 
 from moduly.sprava_dat.ui.backup_tab import BackupTab
+from moduly.sprava_dat.ui.legal_registry_diagnostics_tab import LegalRegistryDiagnosticsTab
 from moduly.sprava_dat.ui.legal_registry_transfer_tab import LegalRegistryTransferTab
 from moduly.sprava_dat.ui.summary_tab import SummaryTab
 from moduly.sprava_dat.ui.tab_constants import (
@@ -40,12 +41,13 @@ class SpravaDatPage(QWidget):
         self.summary_tab = SummaryTab(navigate_callback=self.navigate_to_tab)
         self.backup_tab = BackupTab()
         self.transfer_tab = LegalRegistryTransferTab()
+        self.diagnostics_tab = LegalRegistryDiagnosticsTab()
 
         self.tabs.addTab(self.summary_tab, TAB_SUMMARY)
         self.tabs.addTab(self.backup_tab, TAB_BACKUP)
         self.tabs.addTab(self.transfer_tab, TAB_TRANSFER)
         self.tabs.addTab(self._codebooks_tab(), TAB_CODEBOOKS)
-        self.tabs.addTab(self._diagnostics_tab(), TAB_DIAGNOSTICS)
+        self.tabs.addTab(self.diagnostics_tab, TAB_DIAGNOSTICS)
         layout.addWidget(self.tabs)
 
     def _codebooks_tab(self) -> QWidget:
@@ -53,14 +55,6 @@ class SpravaDatPage(QWidget):
         tab_layout = QVBoxLayout(tab)
         tab_layout.setContentsMargins(12, 12, 12, 12)
         tab_layout.addWidget(QLabel("• Číselníky"))
-        tab_layout.addStretch()
-        return tab
-
-    def _diagnostics_tab(self) -> QWidget:
-        tab = QWidget()
-        tab_layout = QVBoxLayout(tab)
-        tab_layout.setContentsMargins(12, 12, 12, 12)
-        tab_layout.addWidget(QLabel("Diagnostika registru právních požadavků"))
         tab_layout.addStretch()
         return tab
 
@@ -74,3 +68,4 @@ class SpravaDatPage(QWidget):
         self.summary_tab.refresh()
         self.backup_tab.refresh()
         self.transfer_tab.refresh()
+        self.diagnostics_tab.refresh()

@@ -6,21 +6,25 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QFileDialog,
+    QFrame,
     QGroupBox,
     QLabel,
     QMessageBox,
     QPushButton,
     QScrollArea,
+    QSplitter,
     QVBoxLayout,
     QWidget,
 )
 
+from core.services.backup_service import BACKUP_TYPE_FULL
 from core.services.file_location_service import open_path_in_file_manager
 from core.services.storage_service import storage_service
 from moduly.pravni_pozadavky.import_export.legal_registry_export_service import (
     legal_registry_export_service,
 )
 from moduly.sprava_dat.sluzby.data_management_settings_service import (
+    BackupRecord,
     RegistryExportRecord,
     RegistryImportRecord,
     data_management_settings_service,
@@ -31,10 +35,13 @@ from moduly.sprava_dat.sluzby.legal_registry_manifest_service import (
 from moduly.sprava_dat.sluzby.legal_registry_transfer_service import (
     legal_registry_transfer_service,
 )
+from moduly.sprava_dat.ui.manifest_table_widget import ManifestTableWidget
 
 
 class LegalRegistryTransferTab(QWidget):
     """Záložka přenosu Registru právních požadavků."""
+
+    _MIN_PANEL_WIDTH = 280
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -59,78 +66,172 @@ class LegalRegistryTransferTab(QWidget):
         scroll.setWidget(content)
         root_layout.addWidget(scroll)
 
+    def _create_split_panel(self) -> tuple[QWidget, QWidget, QSplitter]:
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+
+        left = QWidget()
+        left.setMinimumWidth(self._MIN_PANEL_WIDTH)
+        left_layout = QVBoxLayout(left)
+        left_layout.setContentsMargins(0, 0, 8, 0)
+
+        right = QWidget()
+        right.setMinimumWidth(self._MIN_PANEL_WIDTH)
+        right_layout = QVBoxLayout(right)
+        right_layout.setContentsMargins(8, 0, 0, 0)
+
+        splitter.addWidget(left)
+        splitter.addWidget(right)
+        splitter.setStretchFactor(0, 1)
+        splitter.setStretchFactor(1, 1)
+        splitter.setSizes([500, 500])
+
+        return left, right, splitter
+
+    def _wrap_manifest_panel(
+        self,
+        title: str,
+        table: ManifestTableWidget,
+        placeholder: QLabel,
+    ) -> QWidget:
+        panel = QWidget()
+        layout = QVBoxLayout(panel)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        frame = QFrame()
+        frame.setFrameShape(QFrame.Shape.StyledPanel)
+        frame_layout = QVBoxLayout(frame)
+        heading = QLabel(title)
+        heading.setStyleSheet("font-weight: 600;")
+        frame_layout.addWidget(heading)
+        frame_layout.addWidget(placeholder)
+        frame_layout.addWidget(table)
+        layout.addWidget(frame)
+        return panel
+
+    @staticmethod
+    def _populate_manifest_table(
+        table: ManifestTableWidget,
+        placeholder: QLabel,
+        rows: list[tuple[str, str, str]],
+        *,
+        empty_text: str | None = None,
+    ) -> None:
+        if not rows:
+            placeholder.setText(empty_text or "Manifest není k dispozici.")
+            placeholder.setVisible(True)
+            table.setVisible(False)
+            table.setRowCount(0)
+            return
+
+        placeholder.setVisible(False)
+        table.setVisible(True)
+        table.set_rows(rows)
+
     def _create_registry_card(self) -> QGroupBox:
         group = QGroupBox("Registr právních požadavků")
         layout = QVBoxLayout(group)
-        layout.setSpacing(10)
+        layout.setSpacing(12)
 
-        description = QLabel(
-            "Slouží k přenosu registru mezi dvěma instalacemi Manažera BOZP."
-        )
+        description = QLabel(legal_registry_manifest_service.DESCRIPTION)
         description.setWordWrap(True)
         layout.addWidget(description)
 
         includes_label = QLabel("Obsahuje:")
         layout.addWidget(includes_label)
         for item in legal_registry_manifest_service.INCLUDED_ITEMS:
-            layout.addWidget(QLabel(f"• {item}"))
+            layout.addWidget(QLabel(f"✔ {item}"))
 
         excludes_label = QLabel("Neobsahuje:")
         layout.addWidget(excludes_label)
         for item in legal_registry_manifest_service.EXCLUDED_ITEMS:
-            layout.addWidget(QLabel(f"• {item}"))
+            layout.addWidget(QLabel(f"✖ {item}"))
 
         warning = QLabel(legal_registry_manifest_service.LINKS_WARNING)
         warning.setWordWrap(True)
         warning.setStyleSheet("color: #8a4b00;")
         layout.addWidget(warning)
 
-        export_title = QLabel("Export registru")
-        export_title.setStyleSheet("font-weight: 600;")
-        layout.addWidget(export_title)
+        layout.addWidget(self._create_export_section())
+        layout.addWidget(self._create_import_section())
+        return group
+
+    def _create_export_section(self) -> QGroupBox:
+        section = QGroupBox("Export registru")
+        layout = QVBoxLayout(section)
+
+        left, right, splitter = self._create_split_panel()
+        left_layout = left.layout()
+        assert left_layout is not None
+        right_layout = right.layout()
+        assert right_layout is not None
 
         self.export_button = QPushButton("Exportovat registr")
         self.export_button.clicked.connect(self._export_registry)
-        layout.addWidget(self.export_button)
+        left_layout.addWidget(self.export_button)
 
         self.last_export_label = QLabel()
         self.last_export_label.setWordWrap(True)
-        layout.addWidget(self.last_export_label)
+        left_layout.addWidget(self.last_export_label)
 
-        export_manifest_title = QLabel("Manifest posledního exportu:")
-        export_manifest_title.setStyleSheet("font-weight: 600;")
-        layout.addWidget(export_manifest_title)
-
-        self.export_manifest_label = QLabel()
-        self.export_manifest_label.setWordWrap(True)
-        self.export_manifest_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        layout.addWidget(self.export_manifest_label)
-
-        self.open_export_button = QPushButton("Otevřít umístění exportu")
+        self.open_export_button = QPushButton("Otevřít umístění")
         self.open_export_button.clicked.connect(self._open_export_location)
-        layout.addWidget(self.open_export_button)
+        left_layout.addWidget(self.open_export_button)
+        left_layout.addStretch()
 
-        import_title = QLabel("Import registru")
-        import_title.setStyleSheet("font-weight: 600;")
-        layout.addWidget(import_title)
+        self.export_manifest_placeholder = QLabel(
+            "Manifest bude dostupný po vytvoření prvního exportu."
+        )
+        self.export_manifest_placeholder.setWordWrap(True)
+        self.export_manifest_table = ManifestTableWidget()
+        right_layout.addWidget(
+            self._wrap_manifest_panel(
+                "Manifest exportu",
+                self.export_manifest_table,
+                self.export_manifest_placeholder,
+            )
+        )
+
+        layout.addWidget(splitter)
+        return section
+
+    def _create_import_section(self) -> QGroupBox:
+        section = QGroupBox("Import registru")
+        layout = QVBoxLayout(section)
+
+        left, right, splitter = self._create_split_panel()
+        left_layout = left.layout()
+        assert left_layout is not None
+        right_layout = right.layout()
+        assert right_layout is not None
 
         self.import_button = QPushButton("Importovat registr")
         self.import_button.clicked.connect(self._import_registry)
-        layout.addWidget(self.import_button)
-
-        last_import_title = QLabel("Poslední import registru:")
-        last_import_title.setStyleSheet("font-weight: 600;")
-        layout.addWidget(last_import_title)
+        left_layout.addWidget(self.import_button)
 
         self.last_import_label = QLabel()
         self.last_import_label.setWordWrap(True)
-        layout.addWidget(self.last_import_label)
+        left_layout.addWidget(self.last_import_label)
 
         self.open_safety_backup_button = QPushButton("Otevřít bezpečnostní zálohu před importem")
         self.open_safety_backup_button.clicked.connect(self._open_safety_backup_location)
-        layout.addWidget(self.open_safety_backup_button)
+        left_layout.addWidget(self.open_safety_backup_button)
+        left_layout.addStretch()
 
-        return group
+        self.import_manifest_placeholder = QLabel(
+            "Manifest importu bude dostupný po prvním importu."
+        )
+        self.import_manifest_placeholder.setWordWrap(True)
+        self.import_manifest_table = ManifestTableWidget()
+        right_layout.addWidget(
+            self._wrap_manifest_panel(
+                "Výsledek posledního importu",
+                self.import_manifest_table,
+                self.import_manifest_placeholder,
+            )
+        )
+
+        layout.addWidget(splitter)
+        return section
 
     def refresh(self) -> None:
         self._update_last_export_display()
@@ -215,6 +316,15 @@ class LegalRegistryTransferTab(QWidget):
             QMessageBox.critical(self, "Import registru", f"Import se nepodařilo dokončit.\n\n{exc}")
             return
 
+        safety_manifest = result.get("safety_backup_manifest") or {}
+        data_management_settings_service.save_last_registry_pre_import_backup(
+            BackupRecord(
+                created_at=datetime.now().isoformat(timespec="seconds"),
+                path=str(result.get("safety_backup_path") or ""),
+                manifest=safety_manifest,
+                backup_type=BACKUP_TYPE_FULL,
+            )
+        )
         record = RegistryImportRecord(
             created_at=result.get("imported_at") or datetime.now().isoformat(timespec="seconds"),
             source_path=result.get("source_path") or str(Path(file_path).resolve()),
@@ -244,8 +354,12 @@ class LegalRegistryTransferTab(QWidget):
         open_path_in_file_manager(record.path, parent=self, title="Umístění exportu")
 
     def _open_safety_backup_location(self) -> None:
-        record = data_management_settings_service.get_last_registry_import()
-        if record is None or not record.safety_backup_path:
+        pre_import = data_management_settings_service.get_last_registry_pre_import_backup()
+        path = pre_import.path if pre_import is not None else ""
+        if not path:
+            record = data_management_settings_service.get_last_registry_import()
+            path = record.safety_backup_path if record is not None else ""
+        if not path:
             QMessageBox.information(
                 self,
                 "Umístění",
@@ -253,7 +367,7 @@ class LegalRegistryTransferTab(QWidget):
             )
             return
         open_path_in_file_manager(
-            record.safety_backup_path,
+            path,
             parent=self,
             title="Bezpečnostní záloha před importem",
         )
@@ -262,8 +376,13 @@ class LegalRegistryTransferTab(QWidget):
         record = data_management_settings_service.get_last_registry_export()
         if record is None:
             self.last_export_label.setText("Poslední export registru: nebyl vytvořen.")
-            self.export_manifest_label.setText("—")
             self.open_export_button.setEnabled(False)
+            self._populate_manifest_table(
+                self.export_manifest_table,
+                self.export_manifest_placeholder,
+                [],
+                empty_text="Manifest bude dostupný po vytvoření prvního exportu.",
+            )
             return
 
         file_name = Path(record.path).name
@@ -277,18 +396,27 @@ class LegalRegistryTransferTab(QWidget):
             f"• soubor: {file_name}\n"
             f"• cesta: {record.path}{missing_note}"
         )
-        self.export_manifest_label.setText(
-            legal_registry_manifest_service.format_counts_manifest(
-                record.manifest.get("record_counts")
-            )
-        )
         self.open_export_button.setEnabled(True)
+        self._populate_manifest_table(
+            self.export_manifest_table,
+            self.export_manifest_placeholder,
+            legal_registry_manifest_service.rows_from_record_counts(
+                record.manifest.get("record_counts"),
+                verified=bool(record.manifest.get("verified")),
+            ),
+        )
 
     def _update_last_import_display(self) -> None:
         record = data_management_settings_service.get_last_registry_import()
         if record is None:
-            self.last_import_label.setText("—")
+            self.last_import_label.setText("Poslední import registru: nebyl proveden.")
             self.open_safety_backup_button.setEnabled(False)
+            self._populate_manifest_table(
+                self.import_manifest_table,
+                self.import_manifest_placeholder,
+                [],
+                empty_text="Manifest importu bude dostupný po prvním importu.",
+            )
             return
 
         import_result = record.import_result or {}
@@ -302,8 +430,13 @@ class LegalRegistryTransferTab(QWidget):
         self.last_import_label.setText(
             "Poslední import registru:\n"
             f"• datum a čas: {data_management_settings_service.format_timestamp(record.created_at)}\n"
-            f"• zdrojový soubor: {record.source_path}\n"
+            f"• importovaný soubor: {record.source_path}\n"
             f"• bezpečnostní záloha: {record.safety_backup_path}{safety_missing}\n"
-            f"• výsledek importu:\n{legal_registry_manifest_service.format_counts_manifest(counts)}"
+            f"• výsledek importu: {legal_registry_manifest_service.format_counts_manifest(counts).replace(chr(10), ', ')}"
         )
         self.open_safety_backup_button.setEnabled(bool(record.safety_backup_path))
+        self._populate_manifest_table(
+            self.import_manifest_table,
+            self.import_manifest_placeholder,
+            legal_registry_manifest_service.rows_from_record_counts(counts, verified=True),
+        )
