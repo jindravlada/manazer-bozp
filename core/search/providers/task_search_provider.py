@@ -1,8 +1,8 @@
 """Poskytovatel globálního vyhledávání pro modul Úkoly."""
 
 from core.search.constants import SOURCE_TYPE_TASK
+from core.search.global_search_result import GlobalSearchResult
 from core.search.search_provider import SearchProvider
-from core.search.search_result import SearchResult
 from core.search.search_utils import contains_query
 from core.shared.task_source_display import task_source_label, task_source_short_label
 from moduly.ukoly.sluzby.task_service import task_service
@@ -17,8 +17,8 @@ class TaskSearchProvider(SearchProvider):
     module_key = "ukoly"
     module_label = "Úkoly"
 
-    def search(self, query: str, *, limit: int) -> list[SearchResult]:
-        results: list[SearchResult] = []
+    def search(self, query: str, *, limit: int) -> list[GlobalSearchResult]:
+        results: list[GlobalSearchResult] = []
 
         for task in task_service.get_all_tasks():
             source_label = task_source_label(task)
@@ -45,14 +45,29 @@ class TaskSearchProvider(SearchProvider):
                 subtitle = f"{subtitle} | {source_short}"
 
             results.append(
-                SearchResult(
-                    source_type=SOURCE_TYPE_TASK,
-                    source_id=task.id,
+                GlobalSearchResult(
+                    entity_type=SOURCE_TYPE_TASK,
+                    entity_id=task.id,
                     title=title or "—",
                     subtitle=subtitle,
                     description=(description[:120] if description else ""),
+                    search_text=" ".join(
+                        value
+                        for value in (
+                            title,
+                            description,
+                            task.responsible_person,
+                            task.workplace_name,
+                            source_label,
+                            source_short,
+                            task.note,
+                            task.computed_status,
+                        )
+                        if value
+                    ),
+                    sort_key=(-priority, title.casefold(), task.id),
                     module_key=self.module_key,
-                    module_label=self.module_label,
+                    group_label=self.module_label,
                     priority=priority,
                     metadata={
                         "status": task.computed_status,
@@ -62,7 +77,7 @@ class TaskSearchProvider(SearchProvider):
             )
 
         results.sort(
-            key=lambda item: (-item.priority, item.title.casefold(), item.source_id)
+            key=lambda item: item.sort_key or (-item.priority, item.title.casefold(), item.entity_id)
         )
         return results[:limit]
 

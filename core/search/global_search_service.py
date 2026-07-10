@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import logging
 
-from core.search.constants import DEFAULT_SEARCH_LIMIT, MIN_QUERY_LENGTH
+from core.search.constants import DEFAULT_SEARCH_LIMIT, GROUP_SORT_ORDER, MIN_QUERY_LENGTH
 from core.search.search_provider import SearchProvider
-from core.search.search_result import SearchResult
+from core.search.global_search_result import GlobalSearchResult
 from core.search.search_result_opener import SearchResultOpener
 from core.search.search_utils import normalize_query
 
@@ -27,12 +27,12 @@ class GlobalSearchService:
     def providers(self) -> tuple[SearchProvider, ...]:
         return tuple(self._providers)
 
-    def search(self, text: str, *, limit: int = DEFAULT_SEARCH_LIMIT) -> list[SearchResult]:
+    def search(self, text: str, *, limit: int = DEFAULT_SEARCH_LIMIT) -> list[GlobalSearchResult]:
         query = normalize_query(text)
         if len(query) < MIN_QUERY_LENGTH:
             return []
 
-        merged: list[SearchResult] = []
+        merged: list[GlobalSearchResult] = []
         for provider in self._providers:
             try:
                 merged.extend(provider.search(query, limit=limit))
@@ -43,26 +43,27 @@ class GlobalSearchService:
                 )
 
         deduplicated = self._deduplicate(merged)
-        deduplicated.sort(
-            key=lambda result: (
-                -result.priority,
-                result.module_label.casefold(),
-                result.title.casefold(),
-            )
-        )
+        deduplicated.sort(key=self._result_sort_key)
         return deduplicated[:limit]
 
-    def open_result(self, result: SearchResult, host) -> bool:
+    def open_result(self, result: GlobalSearchResult, host) -> bool:
         return self._result_opener.open(result, host)
 
-    def can_open_result(self, result: SearchResult) -> bool:
+    def can_open_result(self, result: GlobalSearchResult) -> bool:
         return self._result_opener.can_open(result)
 
     @staticmethod
-    def _deduplicate(results: list[SearchResult]) -> list[SearchResult]:
-        best: dict[tuple[str, int], SearchResult] = {}
+    def _result_sort_key(result: GlobalSearchResult) -> tuple:
+        group_order = GROUP_SORT_ORDER.get(result.group_label, 99)
+        if result.sort_key:
+            return (group_order, *result.sort_key)
+        return (group_order, -result.priority, result.title.casefold(), result.entity_id)
+
+    @staticmethod
+    def _deduplicate(results: list[GlobalSearchResult]) -> list[GlobalSearchResult]:
+        best: dict[tuple[str, int], GlobalSearchResult] = {}
         for result in results:
-            key = (result.source_type, result.source_id)
+            key = (result.entity_type, result.entity_id)
             existing = best.get(key)
             if existing is None or result.priority > existing.priority:
                 best[key] = result

@@ -60,6 +60,7 @@ class MainWindowGlobalSearchTestCase(unittest.TestCase):
             parent=self.window,
             search_service=global_search_service,
             host=self.window,
+            initial_query="",
         )
 
     def test_dialog_has_focus_in_search_field(self) -> None:
@@ -79,9 +80,7 @@ class MainWindowGlobalSearchTestCase(unittest.TestCase):
         )
         dialog._search_edit.setText("integrace")
 
-        match = next(
-            item for item in dialog.result_items() if item.source_id == task.id
-        )
+        match = next(item for item in dialog.result_items() if item.entity_id == task.id)
         ukoly_page = self.window._page_widgets["ukoly"]
 
         with patch.object(ukoly_page, "open_task") as mock_open_task:

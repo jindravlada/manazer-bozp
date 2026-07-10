@@ -31,3 +31,11 @@ class PravniPozadavkyPage(QWidget):
     def on_requirement_created(self, requirement_id: int | None = None) -> None:
         self.tabs.setCurrentWidget(self.requirements_tab)
         self.requirements_tab.show_created_requirement(requirement_id)
+
+    def open_requirement(self, requirement_id: int) -> None:
+        self.tabs.setCurrentWidget(self.requirements_tab)
+        self.requirements_tab.open_requirement(requirement_id)
+
+    def open_document(self, document_id: int) -> None:
+        self.tabs.setCurrentWidget(self.documents_tab)
+        self.documents_tab.open_document(document_id)

@@ -276,6 +276,33 @@ class PravniPredpisyTab(QWidget):
             QMessageBox.information(self, "Právní předpisy", "Vyberte právní předpis.")
             return
 
+        self._open_document_editor(document.id)
+
+    def open_document(self, document_id: int) -> None:
+        document = legal_document_service.get_by_id(document_id)
+        if document is None:
+            QMessageBox.warning(self, "Právní předpisy", "Právní předpis nebyl nalezen.")
+            self.refresh()
+            return
+
+        self._select_document(document_id)
+        self._open_document_editor(document_id)
+
+    def _select_document(self, document_id: int) -> None:
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 0)
+            if item is not None and item.text() == str(document_id):
+                self.table.selectRow(row)
+                self.table.scrollToItem(item)
+                break
+
+    def _open_document_editor(self, document_id: int) -> None:
+        document = legal_document_service.get_by_id(document_id)
+        if document is None:
+            QMessageBox.warning(self, "Právní předpisy", "Právní předpis nebyl nalezen.")
+            self.refresh()
+            return
+
         dialog = LegalDocumentDialog(self, document=document)
         if not exec_maximized(dialog):
             return

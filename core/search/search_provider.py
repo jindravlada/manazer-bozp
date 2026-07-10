@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 
-from core.search.search_result import SearchResult
+from core.search.global_search_result import GlobalSearchResult
 
 
 class SearchProvider(ABC):
@@ -11,5 +11,5 @@ class SearchProvider(ABC):
     module_label: str
 
     @abstractmethod
-    def search(self, query: str, *, limit: int) -> list[SearchResult]:
+    def search(self, query: str, *, limit: int) -> list[GlobalSearchResult]:
         """Vyhledá záznamy odpovídající dotazu."""

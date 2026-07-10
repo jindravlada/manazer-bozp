@@ -7,7 +7,7 @@ from moduly.audity.sluzby.audit_service import audit_service
 
 from core.search.constants import SOURCE_TYPE_AUDIT
 from core.search.search_provider import SearchProvider
-from core.search.search_result import SearchResult
+from core.search.global_search_result import GlobalSearchResult
 from core.search.search_utils import contains_query
 
 _PRIORITY_TITLE_MATCH = 100
@@ -20,8 +20,8 @@ class AuditSearchProvider(SearchProvider):
     module_key = "audity"
     module_label = "Audity"
 
-    def search(self, query: str, *, limit: int) -> list[SearchResult]:
-        results: list[SearchResult] = []
+    def search(self, query: str, *, limit: int) -> list[GlobalSearchResult]:
+        results: list[GlobalSearchResult] = []
 
         for audit in audit_service.get_all():
             number = audit.number or ""
@@ -57,21 +57,22 @@ class AuditSearchProvider(SearchProvider):
             description = note or conclusion
 
             results.append(
-                SearchResult(
-                    source_type=SOURCE_TYPE_AUDIT,
-                    source_id=audit.id,
+                GlobalSearchResult(
+                    entity_type=SOURCE_TYPE_AUDIT,
+                    entity_id=audit.id,
                     title=title,
                     subtitle=subtitle,
                     description=description[:120],
+                    sort_key=(-priority, title.casefold(), audit.id),
                     module_key=self.module_key,
-                    module_label=self.module_label,
+                    group_label=self.module_label,
                     priority=priority,
                     metadata={"status": status},
                 )
             )
 
         results.sort(
-            key=lambda item: (-item.priority, item.title.casefold(), item.source_id)
+            key=lambda item: item.sort_key or (-item.priority, item.title.casefold(), item.entity_id)
         )
         return results[:limit]
 

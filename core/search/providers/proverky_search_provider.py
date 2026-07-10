@@ -6,7 +6,7 @@ from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_servi
 
 from core.search.constants import SOURCE_TYPE_INSPECTION
 from core.search.search_provider import SearchProvider
-from core.search.search_result import SearchResult
+from core.search.global_search_result import GlobalSearchResult
 from core.search.search_utils import contains_query
 
 _PRIORITY_TITLE_MATCH = 100
@@ -19,8 +19,8 @@ class ProverkySearchProvider(SearchProvider):
     module_key = "proverky"
     module_label = "Prověrky BOZP"
 
-    def search(self, query: str, *, limit: int) -> list[SearchResult]:
-        results: list[SearchResult] = []
+    def search(self, query: str, *, limit: int) -> list[GlobalSearchResult]:
+        results: list[GlobalSearchResult] = []
 
         for inspection in bozp_inspection_service.get_all():
             number = inspection.number or ""
@@ -57,21 +57,22 @@ class ProverkySearchProvider(SearchProvider):
             description = name or conclusion
 
             results.append(
-                SearchResult(
-                    source_type=SOURCE_TYPE_INSPECTION,
-                    source_id=inspection.id,
+                GlobalSearchResult(
+                    entity_type=SOURCE_TYPE_INSPECTION,
+                    entity_id=inspection.id,
                     title=title,
                     subtitle=subtitle,
                     description=description[:120],
+                    sort_key=(-priority, title.casefold(), inspection.id),
                     module_key=self.module_key,
-                    module_label=self.module_label,
+                    group_label=self.module_label,
                     priority=priority,
                     metadata={"status": status},
                 )
             )
 
         results.sort(
-            key=lambda item: (-item.priority, item.title.casefold(), item.source_id)
+            key=lambda item: item.sort_key or (-item.priority, item.title.casefold(), item.entity_id)
         )
         return results[:limit]
 

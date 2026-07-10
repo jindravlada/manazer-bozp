@@ -25,6 +25,7 @@ with patch.object(Path, "home", return_value=_TMP):
     initialize_database()
 
     from core.search.constants import SOURCE_TYPE_TASK
+    from core.search.global_search_result import GlobalSearchResult
     from core.search.global_search_service import GlobalSearchService
     from core.search.search_result import SearchResult
     from core.search.ui.global_search_dialog import GlobalSearchDialog
@@ -35,15 +36,17 @@ class GlobalSearchDialogTestCase(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls._app = QApplication.instance() or QApplication([])
 
-    def _sample_result(self, *, source_id: int = 1, title: str = "Kontrola OOPP") -> SearchResult:
-        return SearchResult(
-            source_type=SOURCE_TYPE_TASK,
-            source_id=source_id,
+    def _sample_result(self, *, entity_id: int = 1, title: str = "Kontrola OOPP") -> GlobalSearchResult:
+        from core.search.global_search_result import GlobalSearchResult
+
+        return GlobalSearchResult(
+            entity_type=SOURCE_TYPE_TASK,
+            entity_id=entity_id,
             title=title,
             subtitle="Aktivní | Novák",
             description="Doplnit OOPP",
             module_key="ukoly",
-            module_label="Úkoly",
+            group_label="Úkoly",
             priority=100,
         )
 
@@ -76,8 +79,8 @@ class GlobalSearchDialogTestCase(unittest.TestCase):
     def test_results_are_displayed(self) -> None:
         service = MagicMock(spec=GlobalSearchService)
         service.search.return_value = [
-            self._sample_result(source_id=1, title="Kontrola OOPP"),
-            self._sample_result(source_id=2, title="Revize hydrantů"),
+            self._sample_result(entity_id=1, title="Kontrola OOPP"),
+            self._sample_result(entity_id=2, title="Revize hydrantů"),
         ]
         dialog = GlobalSearchDialog(search_service=service)
 
@@ -113,7 +116,7 @@ class GlobalSearchDialogTestCase(unittest.TestCase):
     def _first_result_item(self, dialog: GlobalSearchDialog) -> QListWidgetItem:
         for row in range(dialog._results_list.count()):
             item = dialog._results_list.item(row)
-            if item is not None and isinstance(item.data(Qt.ItemDataRole.UserRole), SearchResult):
+            if item is not None and isinstance(item.data(Qt.ItemDataRole.UserRole), GlobalSearchResult):
                 return item
         raise AssertionError("No result item found in dialog list")
 

@@ -33,6 +33,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from core.search.providers.proverky_search_provider import ProverkySearchProvider
     from core.search.providers.task_search_provider import TaskSearchProvider
     from core.search.search_provider import SearchProvider
+    from core.search.global_search_result import GlobalSearchResult
     from core.search.search_result import SearchResult
     from moduly.audity.sluzby.audit_service import audit_service
     from moduly.kniha_urazu.sluzby.accident_service import accident_service
@@ -45,7 +46,7 @@ class _BrokenProvider(SearchProvider):
     module_key = "broken"
     module_label = "Broken"
 
-    def search(self, query: str, *, limit: int) -> list[SearchResult]:
+    def search(self, query: str, *, limit: int) -> list[GlobalSearchResult]:
         raise RuntimeError("provider failure")
 
 
@@ -54,29 +55,29 @@ class _StaticProvider(SearchProvider):
     module_key = "static"
     module_label = "Static"
 
-    def __init__(self, results: list[SearchResult]) -> None:
+    def __init__(self, results: list[GlobalSearchResult]) -> None:
         self._results = results
 
-    def search(self, query: str, *, limit: int) -> list[SearchResult]:
+    def search(self, query: str, *, limit: int) -> list[GlobalSearchResult]:
         return self._results[:limit]
 
 
 class SearchResultTestCase(unittest.TestCase):
     def test_search_result_can_be_created(self) -> None:
-        result = SearchResult(
-            source_type=SOURCE_TYPE_TASK,
-            source_id=1,
+        result = GlobalSearchResult(
+            entity_type=SOURCE_TYPE_TASK,
+            entity_id=1,
             title="Kontrola OOPP",
             subtitle="Aktivní | Novák",
             description="Doplnit OOPP",
             module_key="ukoly",
-            module_label="Úkoly",
+            group_label="Úkoly",
             priority=100,
             metadata={"status": "Aktivní"},
         )
 
-        self.assertEqual(result.source_type, "task")
-        self.assertEqual(result.source_id, 1)
+        self.assertEqual(result.entity_type, "task")
+        self.assertEqual(result.entity_id, 1)
         self.assertIn("Kontrola OOPP", result.display)
         self.assertEqual(result.record_type, "task")
         self.assertEqual(result.record_id, 1)
@@ -115,12 +116,12 @@ class GlobalSearchServiceTestCase(unittest.TestCase):
         handler = MagicMock(return_value=True)
         opener.register(SOURCE_TYPE_TASK, handler)
         service = GlobalSearchService(result_opener=opener)
-        result = SearchResult(
-            source_type=SOURCE_TYPE_TASK,
-            source_id=1,
+        result = GlobalSearchResult(
+            entity_type=SOURCE_TYPE_TASK,
+            entity_id=1,
             title="Test",
             module_key="ukoly",
-            module_label="Úkoly",
+            group_label="Úkoly",
         )
         host = MagicMock()
 
@@ -129,12 +130,12 @@ class GlobalSearchServiceTestCase(unittest.TestCase):
 
     def test_open_result_returns_false_for_unknown_source_type(self) -> None:
         service = GlobalSearchService()
-        result = SearchResult(
-            source_type="audit",
-            source_id=1,
+        result = GlobalSearchResult(
+            entity_type="audit",
+            entity_id=1,
             title="Audit",
             module_key="audity",
-            module_label="Audity",
+            group_label="Audity",
         )
 
         self.assertFalse(service.open_result(result, host=None))
@@ -147,12 +148,12 @@ class GlobalSearchServiceTestCase(unittest.TestCase):
         task = task_service.create_task(title="Globální test úkolu")
         opener = build_default_search_result_opener()
         service = GlobalSearchService(result_opener=opener)
-        result = SearchResult(
-            source_type=SOURCE_TYPE_TASK,
-            source_id=task.id,
+        result = GlobalSearchResult(
+            entity_type=SOURCE_TYPE_TASK,
+            entity_id=task.id,
             title=task.title,
             module_key="ukoly",
-            module_label="Úkoly",
+            group_label="Úkoly",
         )
 
         host = MagicMock()
@@ -168,20 +169,20 @@ class GlobalSearchServiceTestCase(unittest.TestCase):
 
     def test_deduplicates_by_source_type_and_id(self) -> None:
         service = GlobalSearchService()
-        duplicate = SearchResult(
-            source_type=SOURCE_TYPE_TASK,
-            source_id=7,
+        duplicate = GlobalSearchResult(
+            entity_type=SOURCE_TYPE_TASK,
+            entity_id=7,
             title="A",
             module_key="ukoly",
-            module_label="Úkoly",
+            group_label="Úkoly",
             priority=10,
         )
-        better = SearchResult(
-            source_type=SOURCE_TYPE_TASK,
-            source_id=7,
+        better = GlobalSearchResult(
+            entity_type=SOURCE_TYPE_TASK,
+            entity_id=7,
             title="A",
             module_key="ukoly",
-            module_label="Úkoly",
+            group_label="Úkoly",
             priority=90,
         )
         service.register_provider(_StaticProvider([duplicate, better]))
@@ -196,28 +197,28 @@ class GlobalSearchServiceTestCase(unittest.TestCase):
         service.register_provider(
             _StaticProvider(
                 [
-                    SearchResult(
-                        source_type=SOURCE_TYPE_TASK,
-                        source_id=1,
+                    GlobalSearchResult(
+                        entity_type=SOURCE_TYPE_TASK,
+                        entity_id=1,
                         title="Beta",
                         module_key="ukoly",
-                        module_label="Úkoly",
+                        group_label="Úkoly",
                         priority=50,
                     ),
-                    SearchResult(
-                        source_type=SOURCE_TYPE_TASK,
-                        source_id=2,
+                    GlobalSearchResult(
+                        entity_type=SOURCE_TYPE_TASK,
+                        entity_id=2,
                         title="Alfa",
                         module_key="ukoly",
-                        module_label="Úkoly",
+                        group_label="Úkoly",
                         priority=100,
                     ),
-                    SearchResult(
-                        source_type=SOURCE_TYPE_TASK,
-                        source_id=3,
+                    GlobalSearchResult(
+                        entity_type=SOURCE_TYPE_TASK,
+                        entity_id=3,
                         title="Gama",
                         module_key="ukoly",
-                        module_label="Úkoly",
+                        group_label="Úkoly",
                         priority=50,
                     ),
                 ]
@@ -226,19 +227,19 @@ class GlobalSearchServiceTestCase(unittest.TestCase):
 
         results = service.search("aa", limit=10)
 
-        self.assertEqual([item.source_id for item in results], [2, 1, 3])
+        self.assertEqual([item.entity_id for item in results], [2, 1, 3])
 
     def test_limit_is_applied(self) -> None:
         service = GlobalSearchService()
         service.register_provider(
             _StaticProvider(
                 [
-                    SearchResult(
-                        source_type=SOURCE_TYPE_TASK,
-                        source_id=index,
+                    GlobalSearchResult(
+                        entity_type=SOURCE_TYPE_TASK,
+                        entity_id=index,
                         title=f"Úkol {index}",
                         module_key="ukoly",
-                        module_label="Úkoly",
+                        group_label="Úkoly",
                         priority=index,
                     )
                     for index in range(5)
@@ -256,12 +257,12 @@ class GlobalSearchServiceTestCase(unittest.TestCase):
         service.register_provider(
             _StaticProvider(
                 [
-                    SearchResult(
-                        source_type=SOURCE_TYPE_TASK,
-                        source_id=1,
+                    GlobalSearchResult(
+                        entity_type=SOURCE_TYPE_TASK,
+                        entity_id=1,
                         title="Zachovaný úkol",
                         module_key="ukoly",
-                        module_label="Úkoly",
+                        group_label="Úkoly",
                         priority=10,
                     )
                 ]
@@ -451,12 +452,12 @@ class SearchResultOpenerIntegrationTestCase(unittest.TestCase):
         )
         opener = build_default_search_result_opener()
         service = GlobalSearchService(result_opener=opener)
-        result = SearchResult(
-            source_type=SOURCE_TYPE_AUDIT,
-            source_id=audit.id,
+        result = GlobalSearchResult(
+            entity_type=SOURCE_TYPE_AUDIT,
+            entity_id=audit.id,
             title=audit.number,
             module_key="audity",
-            module_label="Audity",
+            group_label="Audity",
         )
 
         host = MagicMock()
@@ -483,12 +484,12 @@ class SearchResultOpenerIntegrationTestCase(unittest.TestCase):
         )
         opener = build_default_search_result_opener()
         service = GlobalSearchService(result_opener=opener)
-        result = SearchResult(
-            source_type=SOURCE_TYPE_INSPECTION,
-            source_id=inspection.id,
+        result = GlobalSearchResult(
+            entity_type=SOURCE_TYPE_INSPECTION,
+            entity_id=inspection.id,
             title=inspection.number,
             module_key="proverky",
-            module_label="Prověrky BOZP",
+            group_label="Prověrky BOZP",
         )
 
         host = MagicMock()
@@ -514,12 +515,12 @@ class SearchResultOpenerIntegrationTestCase(unittest.TestCase):
         )
         opener = build_default_search_result_opener()
         service = GlobalSearchService(result_opener=opener)
-        result = SearchResult(
-            source_type=SOURCE_TYPE_ACCIDENT,
-            source_id=accident.id,
+        result = GlobalSearchResult(
+            entity_type=SOURCE_TYPE_ACCIDENT,
+            entity_id=accident.id,
             title=accident.number,
             module_key="kniha_urazu",
-            module_label="Kniha úrazů",
+            group_label="Kniha úrazů",
         )
 
         host = MagicMock()

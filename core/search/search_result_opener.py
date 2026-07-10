@@ -5,11 +5,11 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 
-from core.search.search_result import SearchResult
+from core.search.global_search_result import GlobalSearchResult
 
 logger = logging.getLogger(__name__)
 
-OpenHandler = Callable[[object, SearchResult], bool]
+OpenHandler = Callable[[object, GlobalSearchResult], bool]
 
 
 class SearchResultOpener:
@@ -19,11 +19,11 @@ class SearchResultOpener:
     def register(self, source_type: str, handler: OpenHandler) -> None:
         self._handlers[source_type] = handler
 
-    def can_open(self, result: SearchResult) -> bool:
-        return result.source_type in self._handlers
+    def can_open(self, result: GlobalSearchResult) -> bool:
+        return result.entity_type in self._handlers
 
-    def open(self, result: SearchResult, host) -> bool:
-        handler = self._handlers.get(result.source_type)
+    def open(self, result: GlobalSearchResult, host) -> bool:
+        handler = self._handlers.get(result.entity_type)
         if handler is None:
             return False
 
@@ -32,7 +32,7 @@ class SearchResultOpener:
         except Exception:
             logger.exception(
                 "Failed to open search result %s/%s",
-                result.source_type,
-                result.source_id,
+                result.entity_type,
+                result.entity_id,
             )
             return False

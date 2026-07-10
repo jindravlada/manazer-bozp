@@ -80,6 +80,7 @@ class MainWindow(QMainWindow):
 
         self.search_edit.setCompleter(self.search_completer)
         self.search_edit.textChanged.connect(self._update_global_search)
+        self.search_edit.returnPressed.connect(self._open_global_search_from_field)
         self.search_completer.activated[str].connect(self._open_search_result)
 
         toolbar.addWidget(self.search_edit)
@@ -255,11 +256,17 @@ class MainWindow(QMainWindow):
         if self.search_edit.text():
             self.search_edit.selectAll()
 
+    def _open_global_search_from_field(self) -> None:
+        if not self.search_edit.text().strip():
+            return
+        self._open_global_search_dialog()
+
     def _open_global_search_dialog(self) -> None:
         dialog = GlobalSearchDialog(
             parent=self,
             search_service=global_search_service,
             host=self,
+            initial_query=self.search_edit.text().strip(),
         )
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.statusBar().showMessage("Globální vyhledávání: výsledek otevřen")
