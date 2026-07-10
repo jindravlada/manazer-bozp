@@ -39,7 +39,10 @@ from moduly.sprava_dat.sluzby.data_management_settings_service import (
     data_management_settings_service,
 )
 from moduly.sprava_dat.ui.manifest_table_widget import ManifestTableWidget
+from moduly.sprava_dat.ui.ui_styles import CONTENT_OVERVIEW_EMPTY, apply_card_group_style
 
+
+GROUP_PREFIX = "group:"
 
 class CodebooksTab(QWidget):
     """Záložka centrální správy číselníků."""
@@ -49,6 +52,7 @@ class CodebooksTab(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._selected_entry: CodebookEntry | None = None
+        self._selected_group: str | None = None
         self._last_single_export_path: str = ""
         self._build_ui()
         self.refresh()
@@ -124,7 +128,7 @@ class CodebooksTab(QWidget):
         empty_text: str | None = None,
     ) -> None:
         if not rows:
-            placeholder.setText(empty_text or "Manifest není k dispozici.")
+            placeholder.setText(empty_text or CONTENT_OVERVIEW_EMPTY)
             placeholder.setVisible(True)
             table.setVisible(False)
             table.setRowCount(0)
@@ -136,6 +140,7 @@ class CodebooksTab(QWidget):
 
     def _create_catalog_card(self) -> QGroupBox:
         group = QGroupBox("Přehled číselníků")
+        apply_card_group_style(group)
         layout = QVBoxLayout(group)
 
         left, right, splitter = self._create_split_panel()
@@ -145,7 +150,7 @@ class CodebooksTab(QWidget):
         assert right_layout is not None
 
         description = QLabel(
-            "Centrální přehled všech číselníků Manažera BOZP. Vyberte číselník vlevo "
+            "Centrální přehled všech číselníků Manažera BOZP. Vyberte skupinu nebo číselník vlevo "
             "a zobrazí se informace, export a import."
         )
         description.setWordWrap(True)
@@ -156,7 +161,7 @@ class CodebooksTab(QWidget):
         self.catalog_tree.currentItemChanged.connect(self._on_catalog_selection_changed)
         left_layout.addWidget(self.catalog_tree)
 
-        self.detail_title = QLabel("Vyberte číselník")
+        self.detail_title = QLabel("Vyberte skupinu nebo číselník")
         self.detail_title.setStyleSheet("font-weight: 600; font-size: 14px;")
         right_layout.addWidget(self.detail_title)
 
@@ -181,6 +186,10 @@ class CodebooksTab(QWidget):
         self.detail_modified = QLabel()
         right_layout.addWidget(self.detail_modified)
 
+        self.detail_list = QLabel()
+        self.detail_list.setWordWrap(True)
+        right_layout.addWidget(self.detail_list)
+
         buttons = QHBoxLayout()
         self.export_button = QPushButton("Export")
         self.export_button.clicked.connect(self._export_selected)
@@ -191,17 +200,27 @@ class CodebooksTab(QWidget):
         self.import_button.clicked.connect(self._import_selected)
         self.import_button.setEnabled(False)
         buttons.addWidget(self.import_button)
+
+        self.export_group_button = QPushButton("Exportovat skupinu")
+        self.export_group_button.clicked.connect(self._export_group)
+        self.export_group_button.setEnabled(False)
+        buttons.addWidget(self.export_group_button)
+
+        self.import_group_button = QPushButton("Importovat skupinu")
+        self.import_group_button.clicked.connect(self._import_group)
+        self.import_group_button.setEnabled(False)
+        buttons.addWidget(self.import_group_button)
         buttons.addStretch()
         right_layout.addLayout(buttons)
 
         self.single_manifest_placeholder = QLabel(
-            "Manifest exportu bude dostupný po exportu vybraného číselníku."
+            "Přehled obsahu exportu bude dostupný po exportu vybrané položky."
         )
         self.single_manifest_placeholder.setWordWrap(True)
         self.single_manifest_table = ManifestTableWidget()
         right_layout.addWidget(
             self._wrap_manifest_panel(
-                "Manifest exportu",
+                "Přehled obsahu exportu",
                 self.single_manifest_table,
                 self.single_manifest_placeholder,
             )
@@ -218,6 +237,7 @@ class CodebooksTab(QWidget):
 
     def _create_bulk_card(self) -> QGroupBox:
         group = QGroupBox("Hromadný export a import")
+        apply_card_group_style(group)
         layout = QVBoxLayout(group)
 
         left, right, splitter = self._create_split_panel()
@@ -248,13 +268,13 @@ class CodebooksTab(QWidget):
         left_layout.addStretch()
 
         self.bulk_manifest_placeholder = QLabel(
-            "Manifest hromadného exportu bude dostupný po prvním exportu."
+            "Přehled obsahu hromadného exportu bude dostupný po prvním exportu."
         )
         self.bulk_manifest_placeholder.setWordWrap(True)
         self.bulk_manifest_table = ManifestTableWidget()
         right_layout.addWidget(
             self._wrap_manifest_panel(
-                "Manifest hromadného exportu",
+                "Přehled obsahu hromadného exportu",
                 self.bulk_manifest_table,
                 self.bulk_manifest_placeholder,
             )
@@ -267,11 +287,18 @@ class CodebooksTab(QWidget):
     def refresh(self) -> None:
         self._reload_catalog_tree()
         self._update_bulk_sections()
-        if self._selected_entry is not None:
+        if self._selected_group is not None:
+            self._show_group_details(self._selected_group)
+        elif self._selected_entry is not None:
             self._show_entry_details(self._selected_entry)
 
     def _reload_catalog_tree(self) -> None:
-        current_id = self._selected_entry.codebook_id if self._selected_entry else ""
+        current_id = ""
+        if self._selected_group is not None:
+            current_id = f"{GROUP_PREFIX}{self._selected_group}"
+        elif self._selected_entry is not None:
+            current_id = self._selected_entry.codebook_id
+
         self.catalog_tree.clear()
         grouped = codebook_catalog_service.grouped_codebooks()
 
@@ -284,8 +311,13 @@ class CodebooksTab(QWidget):
                 continue
 
             group_item = QTreeWidgetItem([module])
-            group_item.setFlags(group_item.flags() & ~Qt.ItemFlag.ItemIsSelectable)
+            group_item.setData(0, Qt.ItemDataRole.UserRole, f"{GROUP_PREFIX}{module}")
             self.catalog_tree.addTopLevelItem(group_item)
+
+            if first_item is None:
+                first_item = group_item
+            if current_id == f"{GROUP_PREFIX}{module}":
+                restore_item = group_item
 
             for entry in sorted(entries, key=lambda item: item.name.lower()):
                 child = QTreeWidgetItem([entry.name])
@@ -310,33 +342,68 @@ class CodebooksTab(QWidget):
     ) -> None:
         if current is None:
             self._selected_entry = None
+            self._selected_group = None
             self._clear_entry_details()
             return
 
-        codebook_id = current.data(0, Qt.ItemDataRole.UserRole)
-        if not codebook_id:
+        item_id = str(current.data(0, Qt.ItemDataRole.UserRole) or "")
+        if item_id.startswith(GROUP_PREFIX):
+            self._selected_group = item_id[len(GROUP_PREFIX) :]
             self._selected_entry = None
+            self._show_group_details(self._selected_group)
+            return
+
+        if not item_id:
+            self._selected_entry = None
+            self._selected_group = None
             self._clear_entry_details()
             return
 
-        entry = codebook_catalog_service.get_by_id(str(codebook_id))
+        entry = codebook_catalog_service.get_by_id(item_id)
         self._selected_entry = entry
+        self._selected_group = None
         if entry is None:
             self._clear_entry_details()
             return
         self._show_entry_details(entry)
 
     def _clear_entry_details(self) -> None:
-        self.detail_title.setText("Vyberte číselník")
+        self.detail_title.setText("Vyberte skupinu nebo číselník")
         self.detail_name.setText("")
         self.detail_module.setText("")
         self.detail_count.setText("")
         self.detail_storage.setText("")
         self.detail_path.setText("")
         self.detail_modified.setText("")
+        self.detail_list.setText("")
         self.export_button.setEnabled(False)
         self.import_button.setEnabled(False)
+        self.export_group_button.setEnabled(False)
+        self.import_group_button.setEnabled(False)
         self.open_single_export_button.setEnabled(False)
+
+    def _show_group_details(self, module: str) -> None:
+        entries = codebook_catalog_service.list_group_entries(module)
+        exportable = [entry for entry in entries if entry.exportable]
+        importable = [entry for entry in entries if entry.importable]
+        total_items = sum(entry.item_count for entry in entries)
+
+        self.detail_title.setText(module)
+        self.detail_name.setText(f"Skupina: {module}")
+        self.detail_module.setText(f"Počet číselníků ve skupině: {len(entries)}")
+        self.detail_count.setText(f"Celkový počet položek: {total_items}")
+        self.detail_storage.setText("")
+        self.detail_path.setText("")
+        self.detail_modified.setText("")
+        self.detail_list.setText(
+            "Zahrnuté číselníky:\n" + "\n".join(f"• {entry.name}" for entry in entries)
+        )
+
+        self.export_button.setEnabled(False)
+        self.import_button.setEnabled(False)
+        self.export_group_button.setEnabled(bool(exportable))
+        all_importable = bool(entries) and len(importable) == len(entries)
+        self.import_group_button.setEnabled(all_importable and bool(importable))
 
     def _show_entry_details(self, entry: CodebookEntry) -> None:
         self.detail_title.setText(entry.name)
@@ -351,8 +418,83 @@ class CodebooksTab(QWidget):
             else "—"
         )
         self.detail_modified.setText(f"Datum poslední změny: {modified}")
+        self.detail_list.setText("")
         self.export_button.setEnabled(entry.exportable)
         self.import_button.setEnabled(entry.importable)
+        self.export_group_button.setEnabled(False)
+        self.import_group_button.setEnabled(False)
+
+    def _export_group(self) -> None:
+        if self._selected_group is None:
+            return
+
+        module = self._selected_group
+        default_path = codebook_export_service.default_group_export_path(module)
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            f"Export skupiny – {module}",
+            str(default_path),
+            "ZIP archivy (*.zip)",
+        )
+        if not file_path:
+            return
+
+        try:
+            result = codebook_export_service.export_group_codebooks(module, file_path)
+        except (OSError, ValueError) as exc:
+            QMessageBox.critical(self, "Export skupiny", str(exc))
+            return
+
+        self._last_single_export_path = str(result.path)
+        self._populate_manifest_table(
+            self.single_manifest_table,
+            self.single_manifest_placeholder,
+            codebook_manifest_service.rows_from_bulk_manifest(result.manifest),
+        )
+        self.open_single_export_button.setEnabled(True)
+        QMessageBox.information(
+            self,
+            "Export skupiny",
+            f"Skupina „{module}“ byla exportována.\n\nSoubor: {result.path.name}",
+        )
+
+    def _import_group(self) -> None:
+        if self._selected_group is None:
+            return
+
+        module = self._selected_group
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            f"Import skupiny – {module}",
+            str(storage_service.imports_dir),
+            "ZIP archivy (*.zip)",
+        )
+        if not file_path:
+            return
+
+        confirm = QMessageBox.question(
+            self,
+            "Import skupiny",
+            "Před importem bude vytvořena kompletní bezpečnostní záloha.\n\n"
+            "Vestavěné a nepodporované číselníky budou přeskočeny.\n\n"
+            "Pokračovat?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if confirm != QMessageBox.StandardButton.Yes:
+            return
+
+        try:
+            result = codebook_transfer_service.import_group_with_verified_safety(module, file_path)
+        except ValueError as exc:
+            QMessageBox.critical(self, "Import skupiny", str(exc))
+            return
+        except OSError as exc:
+            QMessageBox.critical(self, "Import skupiny", str(exc))
+            return
+
+        self._show_import_summary_dict(result["import_result"], title=f"Import skupiny – {module}")
+        self.refresh()
 
     def _export_selected(self) -> None:
         if self._selected_entry is None:

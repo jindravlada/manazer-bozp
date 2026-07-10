@@ -3,12 +3,14 @@ from __future__ import annotations
 from collections.abc import Callable
 from pathlib import Path
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
     QLabel,
     QPushButton,
     QScrollArea,
+    QSplitter,
     QVBoxLayout,
     QWidget,
 )
@@ -22,6 +24,7 @@ from moduly.sprava_dat.sluzby.data_management_status_service import (
     data_management_status_service,
 )
 from moduly.sprava_dat.ui.manifest_presenter import STATUS_ATTENTION, STATUS_OK
+from moduly.sprava_dat.ui.ui_styles import apply_card_group_style
 from moduly.sprava_dat.ui.tab_constants import (
     TAB_BACKUP,
     TAB_CODEBOOKS,
@@ -68,8 +71,7 @@ class SummaryTab(QWidget):
         self.warnings_label.setWordWrap(True)
         layout.addWidget(self.warnings_label)
 
-        layout.addWidget(self._create_backup_section())
-        layout.addWidget(self._create_restore_section())
+        layout.addWidget(self._create_backup_restore_row())
         layout.addWidget(self._create_registry_section())
         layout.addWidget(self._create_codebooks_section())
         layout.addWidget(self._create_diagnostics_section())
@@ -78,8 +80,24 @@ class SummaryTab(QWidget):
         scroll.setWidget(content)
         root_layout.addWidget(scroll)
 
+    def _create_backup_restore_row(self) -> QWidget:
+        row = QWidget()
+        row.setObjectName("summaryBackupRestoreRow")
+        row_layout = QHBoxLayout(row)
+        row_layout.setContentsMargins(0, 0, 0, 0)
+        row_layout.setSpacing(16)
+
+        backup_group = self._create_backup_section()
+        restore_group = self._create_restore_section()
+        backup_group.setMinimumWidth(280)
+        restore_group.setMinimumWidth(280)
+        row_layout.addWidget(backup_group, 1)
+        row_layout.addWidget(restore_group, 1)
+        return row
+
     def _create_backup_section(self) -> QGroupBox:
         group = QGroupBox("Kompletní záloha")
+        apply_card_group_style(group)
         layout = QVBoxLayout(group)
         self.backup_summary_label = QLabel()
         self.backup_summary_label.setWordWrap(True)
@@ -96,6 +114,7 @@ class SummaryTab(QWidget):
 
     def _create_restore_section(self) -> QGroupBox:
         group = QGroupBox("Obnova kompletní zálohy")
+        apply_card_group_style(group)
         layout = QVBoxLayout(group)
         self.restore_summary_label = QLabel()
         self.restore_summary_label.setWordWrap(True)
@@ -112,6 +131,7 @@ class SummaryTab(QWidget):
 
     def _create_registry_section(self) -> QGroupBox:
         group = QGroupBox("Registr právních požadavků")
+        apply_card_group_style(group)
         layout = QVBoxLayout(group)
         self.registry_summary_label = QLabel()
         self.registry_summary_label.setWordWrap(True)
@@ -128,6 +148,7 @@ class SummaryTab(QWidget):
 
     def _create_codebooks_section(self) -> QGroupBox:
         group = QGroupBox("Číselníky")
+        apply_card_group_style(group)
         layout = QVBoxLayout(group)
         self.codebooks_summary_label = QLabel()
         self.codebooks_summary_label.setWordWrap(True)
@@ -144,6 +165,7 @@ class SummaryTab(QWidget):
 
     def _create_diagnostics_section(self) -> QGroupBox:
         group = QGroupBox("Diagnostika")
+        apply_card_group_style(group)
         layout = QVBoxLayout(group)
         self.diagnostics_summary_label = QLabel()
         self.diagnostics_summary_label.setWordWrap(True)

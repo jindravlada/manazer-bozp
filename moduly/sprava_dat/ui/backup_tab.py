@@ -27,6 +27,7 @@ from moduly.sprava_dat.sluzby.data_management_settings_service import (
 )
 from moduly.sprava_dat.ui.manifest_presenter import rows_from_backup_manifest, rows_from_integrity_manifest
 from moduly.sprava_dat.ui.manifest_table_widget import ManifestTableWidget
+from moduly.sprava_dat.ui.ui_styles import CONTENT_OVERVIEW_EMPTY, apply_card_group_style
 
 
 class BackupTab(QWidget):
@@ -98,6 +99,7 @@ class BackupTab(QWidget):
 
     def _create_backup_card(self) -> QGroupBox:
         group = QGroupBox("Kompletní záloha programu")
+        apply_card_group_style(group)
         layout = QVBoxLayout(group)
 
         left, right, splitter = self._create_split_panel()
@@ -132,13 +134,13 @@ class BackupTab(QWidget):
         left_layout.addStretch()
 
         self.backup_manifest_placeholder = QLabel(
-            "Manifest bude dostupný po vytvoření první zálohy."
+            "Přehled obsahu bude dostupný po vytvoření první zálohy."
         )
         self.backup_manifest_placeholder.setWordWrap(True)
         self.backup_manifest_table = ManifestTableWidget()
         right_layout.addWidget(
             self._wrap_manifest_panel(
-                "Manifest poslední zálohy",
+                "Přehled obsahu poslední zálohy",
                 self.backup_manifest_table,
                 self.backup_manifest_placeholder,
             )
@@ -149,6 +151,7 @@ class BackupTab(QWidget):
 
     def _create_restore_card(self) -> QGroupBox:
         group = QGroupBox("Obnova kompletní zálohy")
+        apply_card_group_style(group)
         layout = QVBoxLayout(group)
 
         left, right, splitter = self._create_split_panel()
@@ -195,7 +198,7 @@ class BackupTab(QWidget):
         left_layout.addStretch()
 
         self.safety_manifest_placeholder = QLabel(
-            "Manifest bezpečnostní zálohy bude dostupný po první obnově."
+            "Přehled obsahu bezpečnostní zálohy bude dostupný po první obnově."
         )
         self.safety_manifest_placeholder.setWordWrap(True)
         self.safety_manifest_table = ManifestTableWidget()
@@ -208,7 +211,7 @@ class BackupTab(QWidget):
 
         right_layout.addWidget(
             self._wrap_manifest_panel(
-                "Manifest bezpečnostní zálohy před obnovou",
+                "Přehled obsahu bezpečnostní zálohy před obnovou",
                 self.safety_manifest_table,
                 self.safety_manifest_placeholder,
             )
@@ -446,7 +449,7 @@ class BackupTab(QWidget):
             self.safety_manifest_table,
             self.safety_manifest_placeholder,
             safety_rows,
-            empty_text="Manifest bezpečnostní zálohy bude dostupný po první obnově.",
+            empty_text="Přehled obsahu bezpečnostní zálohy bude dostupný po první obnově.",
         )
 
         integrity_rows = rows_from_integrity_manifest(
@@ -468,7 +471,7 @@ class BackupTab(QWidget):
         empty_text: str | None = None,
     ) -> None:
         if not rows:
-            placeholder.setText(empty_text or "Manifest není k dispozici.")
+            placeholder.setText(empty_text or CONTENT_OVERVIEW_EMPTY)
             placeholder.setVisible(True)
             table.setVisible(False)
             table.setRowCount(0)

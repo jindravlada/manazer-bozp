@@ -30,6 +30,9 @@ MODULE_RIDICI = "Řídicí procesy"
 MODULE_VYSETROVANI_MU = "Vyšetřování MU"
 MODULE_OTHER = "Další moduly"
 
+# Pozůstatky odstraněného modulu Týmy – nezobrazovat v katalogu Správy dat.
+_EXCLUDED_WORKSPACE_JSON_STEMS = frozenset({"role_v_tymu", "typy_tymu"})
+
 MODULE_ORDER = (
     MODULE_GLOBAL,
     MODULE_KNIHA_URAZU,
@@ -138,6 +141,9 @@ class CodebookCatalogService:
         for entry in self.list_codebooks():
             grouped.setdefault(entry.module, []).append(entry)
         return {module: grouped[module] for module in MODULE_ORDER if grouped[module]}
+
+    def list_group_entries(self, module: str) -> list[CodebookEntry]:
+        return list(self.grouped_codebooks().get(module) or [])
 
     def get_by_id(self, codebook_id: str) -> CodebookEntry | None:
         for entry in self.list_codebooks():
@@ -269,6 +275,8 @@ class CodebookCatalogService:
 
         for path in sorted(ciselniky_dir.rglob("*.json")):
             if not path.is_file() or path.name.startswith("_"):
+                continue
+            if path.stem in _EXCLUDED_WORKSPACE_JSON_STEMS:
                 continue
 
             relative = path.relative_to(ciselniky_dir).as_posix()

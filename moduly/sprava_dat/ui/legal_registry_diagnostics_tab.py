@@ -15,6 +15,7 @@ from moduly.pravni_pozadavky.ui.legal_registry_diagnostic_actions import (
 from moduly.sprava_dat.sluzby.data_management_settings_service import (
     data_management_settings_service,
 )
+from moduly.sprava_dat.ui.ui_styles import apply_card_group_style
 
 
 class LegalRegistryDiagnosticsTab(QWidget):
@@ -39,6 +40,7 @@ class LegalRegistryDiagnosticsTab(QWidget):
         layout.setSpacing(16)
 
         group = QGroupBox("Diagnostika registru právních požadavků")
+        apply_card_group_style(group)
         group_layout = QVBoxLayout(group)
 
         description = QLabel(

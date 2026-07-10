@@ -58,6 +58,12 @@ class CodebookExportService:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
         return storage_service.exports_dir / f"ciselniky-vse-{timestamp}.zip"
 
+    def default_group_export_path(self, module: str) -> Path:
+        storage_service.ensure_structure()
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+        safe_name = self._safe_filename(module)
+        return storage_service.exports_dir / f"ciselniky-skupina-{safe_name}-{timestamp}.zip"
+
     def export_codebook(self, entry: CodebookEntry, target_path: Path | str) -> CodebookExportResult:
         target = Path(target_path)
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -137,6 +143,57 @@ class CodebookExportService:
             path=target,
             entries=manifest_entries,
         )
+        verified = codebook_manifest_service.verify_bulk_export(target)
+        manifest["verified"] = verified.get("verified", False)
+        manifest["verification_errors"] = verified.get("verification_errors", [])
+        return CodebookExportResult(
+            path=target.resolve(),
+            manifest=manifest,
+            item_count=len(manifest_entries),
+        )
+
+    def export_group_codebooks(self, module: str, target_path: Path | str) -> CodebookExportResult:
+        target = Path(target_path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        entries = [
+            entry
+            for entry in codebook_catalog_service.list_group_entries(module)
+            if entry.exportable
+        ]
+        if not entries:
+            raise ValueError(f"Skupina „{module}“ neobsahuje exportovatelné číselníky.")
+
+        manifest_entries: list[dict] = []
+        with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+            for entry in entries:
+                try:
+                    zip_path, item_count = self._write_entry_to_zip(zf, entry)
+                except (OSError, ValueError):
+                    continue
+
+                row = codebook_manifest_service.entry_manifest_row(entry)
+                row["path_in_zip"] = zip_path
+                row["item_count"] = item_count
+                row["module"] = module
+                manifest_entries.append(row)
+
+            bulk_manifest = {
+                "export_version": EXPORT_VERSION,
+                "application": APPLICATION_NAME,
+                "exported_at": datetime.now().isoformat(timespec="seconds"),
+                "group_module": module,
+                "codebooks": manifest_entries,
+            }
+            zf.writestr(
+                MANIFEST_FILENAME,
+                json.dumps(bulk_manifest, ensure_ascii=False, indent=2) + "\n",
+            )
+
+        manifest = codebook_manifest_service.build_bulk_export_manifest(
+            path=target,
+            entries=manifest_entries,
+        )
+        manifest["group_module"] = module
         verified = codebook_manifest_service.verify_bulk_export(target)
         manifest["verified"] = verified.get("verified", False)
         manifest["verification_errors"] = verified.get("verification_errors", [])

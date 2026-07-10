@@ -39,5 +39,17 @@ class CodebookTransferService:
             "import_result": summary.to_dict(),
         }
 
+    def import_group_with_verified_safety(self, module: str, source_path: str | Path) -> dict:
+        safety_path, safety_manifest = self.create_verified_safety_backup()
+        summary = codebook_import_service.import_group_codebooks(module, source_path)
+        return {
+            "imported_at": datetime.now().isoformat(timespec="seconds"),
+            "source_path": str(Path(source_path).resolve()),
+            "group_module": module,
+            "safety_backup_path": str(safety_path.resolve()),
+            "safety_backup_manifest": safety_manifest,
+            "import_result": summary.to_dict(),
+        }
+
 
 codebook_transfer_service = CodebookTransferService()

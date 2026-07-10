@@ -128,8 +128,8 @@ class LegalRegistryTransferTabTestCase(unittest.TestCase):
 
     def test_card_lists_included_and_excluded_content(self) -> None:
         all_text = "\n".join(label.text() for label in self.tab.findChildren(QLabel))
-        self.assertIn("Obsahuje:", all_text)
-        self.assertIn("Neobsahuje:", all_text)
+        self.assertIn("Obsahuje", all_text)
+        self.assertIn("Neobsahuje", all_text)
         self.assertIn("✔ Právní předpisy", all_text)
         self.assertIn("✖ Auditní metodiky", all_text)
         self.assertIn("Import registru zachovává původní ID řídicích procesů.", all_text)

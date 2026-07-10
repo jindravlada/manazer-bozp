@@ -120,6 +120,57 @@ class CodebookImportService:
 
         return summary
 
+    def import_group_codebooks(self, module: str, source_path: Path | str) -> CodebookImportSummary:
+        source = Path(source_path)
+        summary = CodebookImportSummary()
+
+        if not source.is_file():
+            summary.errors.append("ZIP soubor neexistuje.")
+            return summary
+
+        manifest = codebook_manifest_service.verify_bulk_export(source)
+        if not manifest.get("verified"):
+            for error in manifest.get("verification_errors") or []:
+                summary.errors.append(error)
+            return summary
+
+        group_entries = {
+            entry.codebook_id: entry
+            for entry in codebook_catalog_service.list_group_entries(module)
+        }
+
+        with zipfile.ZipFile(source, "r") as zf:
+            for item in manifest.get("codebooks") or []:
+                if not isinstance(item, dict):
+                    continue
+                codebook_id = str(item.get("codebook_id") or "")
+                entry = group_entries.get(codebook_id)
+                if entry is None:
+                    summary.skipped.append(f"Mimo skupinu: {codebook_id}")
+                    continue
+
+                zip_inner_path = str(item.get("path_in_zip") or "")
+                if not zip_inner_path or zip_inner_path not in zf.namelist():
+                    summary.errors.append(f"{entry.name}: soubor v ZIP chybí.")
+                    continue
+
+                temp_dir = source.parent / ".codebook-import-temp"
+                temp_dir.mkdir(parents=True, exist_ok=True)
+                temp_file = temp_dir / Path(zip_inner_path).name
+                temp_file.write_bytes(zf.read(zip_inner_path))
+
+                part = self.import_codebook(entry, temp_file)
+                summary.updated.extend(part.updated)
+                summary.skipped.extend(part.skipped)
+                summary.errors.extend(part.errors)
+
+                try:
+                    temp_file.unlink(missing_ok=True)
+                except OSError:
+                    pass
+
+        return summary
+
     def _import_database_payload(
         self,
         entry: CodebookEntry,
