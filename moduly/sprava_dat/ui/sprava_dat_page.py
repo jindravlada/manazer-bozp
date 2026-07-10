@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
 )
 
 from moduly.sprava_dat.ui.backup_tab import BackupTab
+from moduly.sprava_dat.ui.legal_registry_transfer_tab import LegalRegistryTransferTab
 
 TAB_BACKUP = "Zálohování"
 TAB_TRANSFER = "Přenos dat"
@@ -34,23 +35,11 @@ class SpravaDatPage(QWidget):
         self.tabs = QTabWidget()
         self.backup_tab = BackupTab()
         self.tabs.addTab(self.backup_tab, TAB_BACKUP)
-        self.tabs.addTab(self._transfer_tab(), TAB_TRANSFER)
+        self.transfer_tab = LegalRegistryTransferTab()
+        self.tabs.addTab(self.transfer_tab, TAB_TRANSFER)
         self.tabs.addTab(self._codebooks_tab(), TAB_CODEBOOKS)
         self.tabs.addTab(self._diagnostics_tab(), TAB_DIAGNOSTICS)
         layout.addWidget(self.tabs)
-
-    def _transfer_tab(self) -> QWidget:
-        tab = QWidget()
-        tab_layout = QVBoxLayout(tab)
-        tab_layout.setContentsMargins(12, 12, 12, 12)
-        for item in (
-            "Registr právních požadavků",
-            "Metodiky auditů",
-            "Metodiky prověrek",
-        ):
-            tab_layout.addWidget(QLabel(f"• {item}"))
-        tab_layout.addStretch()
-        return tab
 
     def _codebooks_tab(self) -> QWidget:
         tab = QWidget()
@@ -71,3 +60,4 @@ class SpravaDatPage(QWidget):
     def refresh(self) -> None:
         self.tabs.setCurrentIndex(0)
         self.backup_tab.refresh()
+        self.transfer_tab.refresh()
