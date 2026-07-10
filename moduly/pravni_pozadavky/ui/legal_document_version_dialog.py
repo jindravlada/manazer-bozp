@@ -16,6 +16,7 @@ from core.widgets.dialog_utils import (
 )
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.pravni_pozadavky.ui.legal_document_sections_tab import LegalDocumentSectionsTab
+from moduly.pravni_pozadavky.ui.legal_document_valid_text_tab import LegalDocumentValidTextTab
 from moduly.pravni_pozadavky.ui.legal_document_workbench_tab import LegalDocumentWorkbenchTab
 
 
@@ -38,17 +39,28 @@ class LegalDocumentVersionDialog(QDialog):
             document_id=resolved_document_id,
             version_id=version.id if version is not None else None,
         )
-        self.tabs.addTab(wrap_in_scroll_area(self.sections_tab), "Struktura")
+        self.tabs.addTab(wrap_in_scroll_area(self.sections_tab), "Ustanovení")
+        self.valid_text_tab = LegalDocumentValidTextTab(
+            document_id=resolved_document_id,
+            version_id=version.id if version is not None else None,
+        )
+        self.tabs.addTab(self.valid_text_tab, "📖 Platné znění")
         self.workbench_tab = LegalDocumentWorkbenchTab(
             document_id=resolved_document_id,
             version_id=version.id if version is not None else None,
         )
         self.tabs.addTab(self.workbench_tab, "Pracovní režim")
+        self.tabs.currentChanged.connect(self._on_tab_changed)
         layout.addWidget(self.tabs, 1)
         add_save_cancel_footer(layout, self)
 
         if version is not None:
             self._load_version(version)
+            self.valid_text_tab.refresh()
+
+    def _on_tab_changed(self, index: int) -> None:
+        if self.tabs.widget(index) is self.valid_text_tab:
+            self.valid_text_tab.refresh()
 
     def _main_tab(self) -> QWidget:
         tab = QWidget()
