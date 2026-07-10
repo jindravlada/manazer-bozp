@@ -45,7 +45,6 @@ class DashboardPage(QWidget):
         open_tasks_callback=None,
         open_task_by_id_callback=None,
         open_accidents_callback=None,
-        open_search_callback=None,
         open_kontroly_callback=None,
         open_kniha_urazu_callback=None,
         open_sprava_dat_callback=None,
@@ -55,7 +54,6 @@ class DashboardPage(QWidget):
         self.open_tasks_callback = open_tasks_callback
         self.open_task_by_id_callback = open_task_by_id_callback
         self.open_accidents_callback = open_accidents_callback
-        self.open_search_callback = open_search_callback
         self.open_kontroly_callback = open_kontroly_callback
         self.open_kniha_urazu_callback = open_kniha_urazu_callback
         self.open_sprava_dat_callback = open_sprava_dat_callback
@@ -253,7 +251,6 @@ class DashboardPage(QWidget):
             ("+ Úraz", True),
             ("✓ Úkol", True),
             ("📋 Kontrola", True),
-            ("🔎 Hledat", True),
             ("💾 Záloha", True),
             ("♻ Obnova", True),
         ]
@@ -267,8 +264,6 @@ class DashboardPage(QWidget):
                 button.clicked.connect(self.open_accidents_callback)
             elif text == "✓ Úkol" and self.open_tasks_callback:
                 button.clicked.connect(self.open_tasks_callback)
-            elif text == "🔎 Hledat" and self.open_search_callback:
-                button.clicked.connect(self.open_search_callback)
             elif text == "📋 Kontrola" and self.open_kontroly_callback:
                 button.clicked.connect(self.open_kontroly_callback)
             elif text == "📋 Kontrola":

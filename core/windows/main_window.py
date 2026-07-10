@@ -123,7 +123,6 @@ class MainWindow(QMainWindow):
                 open_tasks_callback=self._open_new_task,
                 open_task_by_id_callback=self._open_task_by_id,
                 open_accidents_callback=self._open_new_accident,
-                open_search_callback=self._focus_search,
                 open_kontroly_callback=self._open_kontroly,
                 open_kniha_urazu_callback=self._open_kniha_urazu,
                 open_sprava_dat_callback=self._open_sprava_dat,
@@ -283,11 +282,6 @@ class MainWindow(QMainWindow):
         page = self._page_widgets.get("vysetrovani_mu")
         if page is not None:
             page.open_from_accident(accident_id)
-
-    def _focus_search(self):
-        self.search_edit.setFocus()
-        if self.search_edit.text():
-            self.search_edit.selectAll()
 
     def _open_global_search_from_field(self) -> None:
         if not self.search_edit.text().strip():
