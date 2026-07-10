@@ -44,6 +44,17 @@ class DataManagementStatusService:
         if diagnostic is None:
             warnings.append("Diagnostika registru zatím nebyla spuštěna.")
 
+        codebooks_export = data_management_settings_service.get_last_codebooks_export()
+        if codebooks_export and not codebooks_export.manifest.get("verified"):
+            warnings.append("Poslední export číselníků nebyl ověřen.")
+        if codebooks_export and not data_management_settings_service.file_exists(codebooks_export.path):
+            warnings.append("Soubor posledního exportu číselníků nebyl nalezen.")
+
+        codebooks_import = data_management_settings_service.get_last_codebooks_import()
+        if codebooks_import and codebooks_import.safety_backup_path:
+            if not data_management_settings_service.file_exists(codebooks_import.safety_backup_path):
+                warnings.append("Bezpečnostní záloha před importem číselníků nebyla nalezena.")
+
         return warnings
 
     def backup_status_text(self) -> str:
@@ -68,6 +79,18 @@ class DataManagementStatusService:
     def registry_status_text(self) -> str:
         export = data_management_settings_service.get_last_registry_export()
         import_record = data_management_settings_service.get_last_registry_import()
+        if export is None and import_record is None:
+            return "dosud neprovedena"
+        if export and not data_management_settings_service.file_exists(export.path):
+            return "poslední export – soubor nenalezen"
+        if import_record and import_record.safety_backup_path:
+            if not data_management_settings_service.file_exists(import_record.safety_backup_path):
+                return "poslední import – chybí bezpečnostní záloha"
+        return "v pořádku"
+
+    def codebooks_status_text(self) -> str:
+        export = data_management_settings_service.get_last_codebooks_export()
+        import_record = data_management_settings_service.get_last_codebooks_import()
         if export is None and import_record is None:
             return "dosud neprovedena"
         if export and not data_management_settings_service.file_exists(export.path):

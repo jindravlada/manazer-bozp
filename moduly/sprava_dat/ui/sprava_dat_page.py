@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
 )
 
 from moduly.sprava_dat.ui.backup_tab import BackupTab
+from moduly.sprava_dat.ui.codebooks_tab import CodebooksTab
 from moduly.sprava_dat.ui.legal_registry_diagnostics_tab import LegalRegistryDiagnosticsTab
 from moduly.sprava_dat.ui.legal_registry_transfer_tab import LegalRegistryTransferTab
 from moduly.sprava_dat.ui.summary_tab import SummaryTab
@@ -41,22 +42,15 @@ class SpravaDatPage(QWidget):
         self.summary_tab = SummaryTab(navigate_callback=self.navigate_to_tab)
         self.backup_tab = BackupTab()
         self.transfer_tab = LegalRegistryTransferTab()
+        self.codebooks_tab = CodebooksTab()
         self.diagnostics_tab = LegalRegistryDiagnosticsTab()
 
         self.tabs.addTab(self.summary_tab, TAB_SUMMARY)
         self.tabs.addTab(self.backup_tab, TAB_BACKUP)
         self.tabs.addTab(self.transfer_tab, TAB_TRANSFER)
-        self.tabs.addTab(self._codebooks_tab(), TAB_CODEBOOKS)
+        self.tabs.addTab(self.codebooks_tab, TAB_CODEBOOKS)
         self.tabs.addTab(self.diagnostics_tab, TAB_DIAGNOSTICS)
         layout.addWidget(self.tabs)
-
-    def _codebooks_tab(self) -> QWidget:
-        tab = QWidget()
-        tab_layout = QVBoxLayout(tab)
-        tab_layout.setContentsMargins(12, 12, 12, 12)
-        tab_layout.addWidget(QLabel("• Číselníky"))
-        tab_layout.addStretch()
-        return tab
 
     def navigate_to_tab(self, tab_key: str) -> None:
         if tab_key not in TAB_ORDER:
@@ -68,4 +62,5 @@ class SpravaDatPage(QWidget):
         self.summary_tab.refresh()
         self.backup_tab.refresh()
         self.transfer_tab.refresh()
+        self.codebooks_tab.refresh()
         self.diagnostics_tab.refresh()

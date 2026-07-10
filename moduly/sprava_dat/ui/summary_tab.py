@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.services.file_location_service import open_path_in_file_manager
+from moduly.sprava_dat.sluzby.codebook_catalog_service import codebook_catalog_service
 from moduly.sprava_dat.sluzby.data_management_settings_service import (
     data_management_settings_service,
 )
@@ -128,8 +129,14 @@ class SummaryTab(QWidget):
     def _create_codebooks_section(self) -> QGroupBox:
         group = QGroupBox("Číselníky")
         layout = QVBoxLayout(group)
-        layout.addWidget(QLabel("Správa číselníků zatím nebyla nastavena."))
+        self.codebooks_summary_label = QLabel()
+        self.codebooks_summary_label.setWordWrap(True)
+        layout.addWidget(self.codebooks_summary_label)
+
         buttons = QHBoxLayout()
+        self.open_codebooks_button = QPushButton("Otevřít umístění")
+        self.open_codebooks_button.clicked.connect(self._open_codebooks_location)
+        buttons.addWidget(self.open_codebooks_button)
         buttons.addWidget(self._nav_button("Přejít na Číselníky", TAB_CODEBOOKS))
         buttons.addStretch()
         layout.addLayout(buttons)
@@ -169,6 +176,7 @@ class SummaryTab(QWidget):
         self._update_backup_section()
         self._update_restore_section()
         self._update_registry_section()
+        self._update_codebooks_section()
         self._update_diagnostics_section()
 
     def _update_backup_section(self) -> None:
@@ -236,6 +244,30 @@ class SummaryTab(QWidget):
         has_location = export is not None and bool(export.path)
         self.open_registry_button.setEnabled(has_location)
 
+    def _update_codebooks_section(self) -> None:
+        export = data_management_settings_service.get_last_codebooks_export()
+        import_record = data_management_settings_service.get_last_codebooks_import()
+        status = data_management_status_service.codebooks_status_text()
+        count = codebook_catalog_service.count_all()
+
+        export_time = (
+            data_management_settings_service.format_timestamp(export.created_at)
+            if export is not None
+            else "—"
+        )
+        import_time = (
+            data_management_settings_service.format_timestamp(import_record.created_at)
+            if import_record is not None
+            else "—"
+        )
+        self.codebooks_summary_label.setText(
+            f"Poslední export: {export_time}\n"
+            f"Poslední import: {import_time}\n"
+            f"Počet evidovaných číselníků: {count}\n"
+            f"Stav poslední operace: {status}"
+        )
+        self.open_codebooks_button.setEnabled(export is not None and bool(export.path))
+
     def _update_diagnostics_section(self) -> None:
         diagnostic = data_management_settings_service.get_last_diagnostic()
         if diagnostic is None:
@@ -268,3 +300,9 @@ class SummaryTab(QWidget):
         if export is None or not export.path:
             return
         open_path_in_file_manager(export.path, parent=self, title="Umístění exportu")
+
+    def _open_codebooks_location(self) -> None:
+        export = data_management_settings_service.get_last_codebooks_export()
+        if export is None or not export.path:
+            return
+        open_path_in_file_manager(export.path, parent=self, title="Umístění exportu číselníků")
