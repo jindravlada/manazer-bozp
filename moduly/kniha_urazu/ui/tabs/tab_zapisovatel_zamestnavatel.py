@@ -1,3 +1,5 @@
+from datetime import date
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QWidget,
@@ -23,6 +25,12 @@ from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.thp_worker_selector import ThpWorkerSelector
 from moduly.nastaveni.sluzby.settings_service import settings_service
 
+SITUACE_OPTIONS = [
+    "",
+    "Úraz cizího zaměstnance na našem pracovišti",
+    "Úraz našeho zaměstnance na cizím pracovišti",
+]
+
 
 class TabZapisovatelZamestnavatel(QWidget):
     def __init__(self, parent=None):
@@ -32,6 +40,7 @@ class TabZapisovatelZamestnavatel(QWidget):
         form = QFormLayout()
 
         self.datum_zapisu = NullableDateEdit()
+        self.datum_zapisu.set_date_value(date.today())
 
         self.zapisovatel = ThpWorkerSelector()
         self.zapisovatel.setEditable(True)
@@ -77,12 +86,7 @@ class TabZapisovatelZamestnavatel(QWidget):
         dozor_layout.addStretch()
 
         self.dalsi_zamestnavatel_typ = QComboBox()
-        self.dalsi_zamestnavatel_typ.addItems([
-            "",
-            "Úraz cizího zaměstnance na našem pracovišti",
-            "Úraz našeho zaměstnance na cizím pracovišti",
-            "Jiné",
-        ])
+        self._set_situace_options()
 
         ico_layout = QHBoxLayout()
         self.dalsi_zamestnavatel_ico = QLineEdit()
@@ -119,7 +123,7 @@ class TabZapisovatelZamestnavatel(QWidget):
         form.addRow("IČO:", ico_layout)
         form.addRow("Název:", self.dalsi_zamestnavatel_nazev)
         form.addRow("Adresa:", self.dalsi_zamestnavatel_adresa)
-        form.addRow("Hlavní/ekonomická činnost:", self.dalsi_zamestnavatel_cinnost)
+        form.addRow("Hlavní ekonomická činnost:", self.dalsi_zamestnavatel_cinnost)
         form.addRow("Poznámka:", self.dalsi_zamestnavatel_poznamka)
 
         layout.addLayout(form)
@@ -164,6 +168,31 @@ class TabZapisovatelZamestnavatel(QWidget):
         self.podatel_email.setText(person.email or "")
         self.podatel_telefon.setText(person.phone or "")
 
+    def _set_situace_options(self, selected: str = "") -> None:
+        selected = selected or ""
+        items = list(SITUACE_OPTIONS)
+        if selected and selected not in items:
+            items.append(selected)
+
+        current = self.dalsi_zamestnavatel_typ.currentText()
+        self.dalsi_zamestnavatel_typ.blockSignals(True)
+        self.dalsi_zamestnavatel_typ.clear()
+        self.dalsi_zamestnavatel_typ.addItems(items)
+        if selected:
+            self.dalsi_zamestnavatel_typ.setCurrentText(selected)
+        elif current in items:
+            self.dalsi_zamestnavatel_typ.setCurrentText(current)
+        else:
+            self.dalsi_zamestnavatel_typ.setCurrentIndex(0)
+        self.dalsi_zamestnavatel_typ.blockSignals(False)
+
+    def _set_cz_nace_value(self, selector: CodeSelector, raw_value: str) -> None:
+        raw = (raw_value or "").strip()
+        if not raw:
+            selector.set_value("")
+            return
+        selector.set_value(cz_nace_service.get_display(raw))
+
     def load_employer_from_settings(self):
         employer = settings_service.get_employer()
         if employer is None:
@@ -183,7 +212,7 @@ class TabZapisovatelZamestnavatel(QWidget):
             or getattr(employer, "main_activity", "")
             or ""
         )
-        self.hlavni_cinnost_zamestnavatele.set_value(nace)
+        self._set_cz_nace_value(self.hlavni_cinnost_zamestnavatele, nace)
 
     def load_dalsi_from_ares(self):
         ico = self.dalsi_zamestnavatel_ico.text().strip()
@@ -207,10 +236,10 @@ class TabZapisovatelZamestnavatel(QWidget):
 
         nace_list = data.get("nace_list") or []
         if nace_list:
-            self.dalsi_zamestnavatel_cinnost.set_values(czech_sorted(nace_list))
-            self.dalsi_zamestnavatel_cinnost.set_value(data.get("nace", nace_list[0]))
+            # Zachovat plný číselník; ARES vrací už display hodnoty.
+            self._set_cz_nace_value(self.dalsi_zamestnavatel_cinnost, data.get("nace", nace_list[0]))
         else:
-            self.dalsi_zamestnavatel_cinnost.set_value(data.get("nace", ""))
+            self._set_cz_nace_value(self.dalsi_zamestnavatel_cinnost, data.get("nace", ""))
 
     def get_vrchni_dozor(self) -> str:
         if self.vrchni_dozor_oip.isChecked():
@@ -263,13 +292,15 @@ class TabZapisovatelZamestnavatel(QWidget):
         self.load_employer_from_settings()
         self.set_vrchni_dozor(accident.vrchni_dozor)
 
-        self.dalsi_zamestnavatel_typ.setCurrentText(accident.dalsi_zamestnavatel_typ or "")
+        self._set_situace_options(accident.dalsi_zamestnavatel_typ or "")
         self.dalsi_zamestnavatel_nazev.setText(accident.dalsi_zamestnavatel_nazev or "")
         self.dalsi_zamestnavatel_ico.setText(accident.dalsi_zamestnavatel_ico or "")
         self.dalsi_zamestnavatel_adresa.setPlainText(accident.dalsi_zamestnavatel_adresa or "")
-        self.dalsi_zamestnavatel_cinnost.set_value(accident.dalsi_zamestnavatel_cinnost or "")
+        self._set_cz_nace_value(
+            self.dalsi_zamestnavatel_cinnost,
+            accident.dalsi_zamestnavatel_cinnost or "",
+        )
         self.dalsi_zamestnavatel_poznamka.setPlainText(accident.dalsi_zamestnavatel_poznamka or "")
-
 
     def validate(self):
         errors=[]

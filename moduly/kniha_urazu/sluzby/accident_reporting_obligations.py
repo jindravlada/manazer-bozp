@@ -104,8 +104,14 @@ def requires_police_obligation(accident: AccidentLike | None) -> bool:
 def pn_calendar_days(accident: AccidentLike | None) -> int | None:
     if accident is None:
         return None
-    dpn_od = getattr(accident, "dpn_od", None)
-    dpn_do = getattr(accident, "dpn_do", None)
+    return dpn_calendar_days(
+        getattr(accident, "dpn_od", None),
+        getattr(accident, "dpn_do", None),
+    )
+
+
+def dpn_calendar_days(dpn_od: date | None, dpn_do: date | None) -> int | None:
+    """Počet kalendářních dnů DPN včetně prvního i posledního dne."""
     if dpn_od and dpn_do:
         return (dpn_do - dpn_od).days + 1
     return None

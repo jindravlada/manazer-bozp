@@ -1,6 +1,5 @@
 from PySide6.QtWidgets import (
     QButtonGroup,
-    QComboBox,
     QFrame,
     QFormLayout,
     QHBoxLayout,
@@ -15,6 +14,7 @@ from PySide6.QtWidgets import (
 from core.widgets.code_selector import CodeSelector
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.kniha_urazu.services.ciselnik_service import kniha_urazu_ciselnik_service
+from moduly.kniha_urazu.sluzby.accident_reporting_obligations import dpn_calendar_days
 
 
 REQUIRED_STYLE = "border: 2px solid #d32f2f; background: #fff6f6;"
@@ -77,6 +77,12 @@ class TabZamestnanec(QWidget):
 
         self.dpn_od = NullableDateEdit()
         self.dpn_do = NullableDateEdit()
+        self.dpn_od.dateChanged.connect(self._refresh_dpn_duration)
+        self.dpn_do.dateChanged.connect(self._refresh_dpn_duration)
+
+        self.dpn_duration_label = QLabel()
+        self.dpn_duration_label.setObjectName("InfoText")
+        self._refresh_dpn_duration()
 
         self._required_widgets = {
             "Jméno a příjmení": self.jmeno_prijmeni,
@@ -104,6 +110,7 @@ class TabZamestnanec(QWidget):
         self._add_required_row(form, "Druh vykonávané práce:", self.druh_vykonavane_prace)
         form.addRow("DPN následkem úrazu od:", self.dpn_od)
         form.addRow("DPN následkem úrazu do:", self.dpn_do)
+        form.addRow("", self.dpn_duration_label)
 
         layout.addLayout(form)
         layout.addStretch()
@@ -111,6 +118,14 @@ class TabZamestnanec(QWidget):
     def _add_required_row(self, form: QFormLayout, label_text: str, widget_or_layout):
         label = QLabel(f"<b>{label_text}</b>")
         form.addRow(label, widget_or_layout)
+
+    def _refresh_dpn_duration(self) -> None:
+        days = dpn_calendar_days(self.dpn_od.get_date(), self.dpn_do.get_date())
+        if days is None:
+            text = "—"
+        else:
+            text = f"{days} dní"
+        self.dpn_duration_label.setText(f"Pracovní neschopnost celkem: {text}")
 
     def _pohlavi(self) -> str:
         if self.pohlavi_muz.isChecked():
@@ -203,3 +218,4 @@ class TabZamestnanec(QWidget):
         self.druh_vykonavane_prace.set_value(accident.druh_vykonavane_prace or "")
         self.dpn_od.set_date_value(accident.dpn_od)
         self.dpn_do.set_date_value(accident.dpn_do)
+        self._refresh_dpn_duration()
