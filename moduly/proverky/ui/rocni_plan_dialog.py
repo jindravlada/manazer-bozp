@@ -7,18 +7,26 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
     QLabel,
+    QMessageBox,
+    QPushButton,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
 )
 
-from core.widgets.dialog_utils import create_close_box
+from core.widgets.dialog_utils import create_close_box, exec_maximized
 from moduly.proverky.constants import PLANNED_MONTH_NAMES, PLANNED_MONTH_NOT_SET_LABEL
+from moduly.proverky.sluzby.bozp_inspection_commission_service import (
+    bozp_inspection_commission_service,
+)
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
+from moduly.proverky.ui.bozp_inspection_dialog import BozpInspectionDialog
+
+_ROLE_INSPECTION_ID = Qt.ItemDataRole.UserRole
 
 
 class RocniPlanDialog(QDialog):
-    """Přehled prověrek BOZP za vybraný rok."""
+    """Přehled prověrek BOZP za vybraný rok (Plán kontrol)."""
 
     _TABLE_COLUMNS = (
         "Měsíc",
@@ -63,9 +71,18 @@ class RocniPlanDialog(QDialog):
         self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
         layout.addWidget(self.table)
 
+        actions = QHBoxLayout()
+        self.open_btn = QPushButton("Otevřít")
+        self.open_btn.clicked.connect(self.open_selected_inspection)
+        actions.addWidget(self.open_btn)
+        actions.addStretch()
+        layout.addLayout(actions)
+
         buttons = create_close_box(self)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
+
+        self.table.doubleClicked.connect(self._on_row_double_clicked)
 
         self._populate_year_combo()
         self.year_combo.setCurrentText(str(self._year))
@@ -106,6 +123,8 @@ class RocniPlanDialog(QDialog):
             ]
             for column, value in enumerate(values):
                 item = QTableWidgetItem(value)
+                if column == 0:
+                    item.setData(_ROLE_INSPECTION_ID, inspection.id)
                 if column == 1:
                     item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
                 self.table.setItem(row, column, item)
@@ -117,6 +136,82 @@ class RocniPlanDialog(QDialog):
             self.summary_label.setText(f"Pro rok {year} je evidována 1 prověrka.")
         else:
             self.summary_label.setText(f"Pro rok {year} jsou evidovány {count} prověrky.")
+
+    def _selected_inspection_id(self) -> int | None:
+        selected = self.table.selectionModel().selectedRows()
+        if not selected:
+            return None
+        return self._inspection_id_at_row(selected[0].row())
+
+    def _inspection_id_at_row(self, row: int) -> int | None:
+        if row < 0 or row >= self.table.rowCount():
+            return None
+        item = self.table.item(row, 0)
+        if item is None:
+            return None
+        value = item.data(_ROLE_INSPECTION_ID)
+        if value is None:
+            return None
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
+    def _on_row_double_clicked(self, index) -> None:
+        """Dvojklik: vybere řádek a otevře stejnou cestou jako tlačítko Otevřít."""
+        if index is None or not index.isValid():
+            return
+        row = index.row()
+        if self._inspection_id_at_row(row) is None:
+            return
+        self.table.selectRow(row)
+        self.open_selected_inspection()
+
+    def open_selected_inspection(self) -> None:
+        """Sdílená akce pro tlačítko Otevřít i dvojklik."""
+        inspection_id = self._selected_inspection_id()
+        if inspection_id is None:
+            # Jen při volání z tlačítka (dvojklik bez ID sem nedojde).
+            if self.sender() is self.open_btn:
+                QMessageBox.information(self, self.windowTitle(), "Vyberte prověrku.")
+            return
+        self.open_inspection(inspection_id)
+
+    def open_inspection(self, inspection_id: int) -> None:
+        inspection = bozp_inspection_service.get_by_id(inspection_id)
+        if inspection is None:
+            QMessageBox.warning(self, self.windowTitle(), "Prověrka nebyla nalezena.")
+            self._load_year(self._year)
+            return
+
+        dialog = BozpInspectionDialog(self, inspection=inspection)
+        if exec_maximized(dialog):
+            data = dialog.get_data()
+            payload = self._prepare_spis_data(data)
+            bozp_inspection_service.update_inspection(inspection_id, **payload)
+            members = data.get("commission_members")
+            if members is not None:
+                bozp_inspection_commission_service.save_members(inspection_id, members)
+
+        # Po zavření editoru vždy obnovit plán (termín, stav, pracoviště…).
+        self._load_year(self._year)
+        parent = self.parent()
+        if parent is not None and hasattr(parent, "refresh"):
+            parent.refresh()
+
+    @staticmethod
+    def _prepare_spis_data(data: dict) -> dict:
+        payload = {key: value for key, value in data.items() if key != "commission_members"}
+        workplace_id = payload.get("workplace_id")
+        if workplace_id is None:
+            workplace_id = bozp_inspection_service.resolve_workplace_id_by_name(
+                payload.get("workplace_name", "")
+            )
+            payload["workplace_id"] = workplace_id
+        payload["workplace_name"] = bozp_inspection_service.resolve_workplace_name(
+            workplace_id
+        )
+        return payload
 
     @staticmethod
     def _format_month(inspection) -> str:
