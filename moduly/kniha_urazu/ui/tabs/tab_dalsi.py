@@ -10,6 +10,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from moduly.kniha_urazu.sluzby.breath_alcohol import (
+    breath_alcohol_for_display,
+    normalize_breath_alcohol_storage,
+    sanitize_breath_alcohol_input,
+)
+
 
 REQUIRED_STYLE = "border: 2px solid #d32f2f; background: #fff6f6;"
 NORMAL_STYLE = ""
@@ -45,7 +51,17 @@ class TabDalsiUdaje(QWidget):
         alkohol_result_layout.addStretch()
 
         self.mnozstvi_alkohol = QLineEdit()
-        self.mnozstvi_alkohol.setPlaceholderText("Množství v promile ‰")
+        self.mnozstvi_alkohol.setPlaceholderText("např. 0,24")
+        self.mnozstvi_alkohol.textChanged.connect(self._on_mnozstvi_alkohol_changed)
+
+        self.mnozstvi_alkohol_unit = QLabel("‰")
+        self.mnozstvi_alkohol_row = QWidget()
+        mnozstvi_layout = QHBoxLayout(self.mnozstvi_alkohol_row)
+        mnozstvi_layout.setContentsMargins(0, 0, 0, 0)
+        mnozstvi_layout.setSpacing(6)
+        mnozstvi_layout.addWidget(self.mnozstvi_alkohol, 1)
+        mnozstvi_layout.addWidget(self.mnozstvi_alkohol_unit, 0)
+        mnozstvi_layout.addStretch(1)
 
         self.kontrola_alkohol_duvod_neprovedeni = QLineEdit()
         self.kontrola_alkohol_duvod_neprovedeni.setPlaceholderText("Zadejte důvod neprovedení kontroly")
@@ -93,7 +109,7 @@ class TabDalsiUdaje(QWidget):
 
         self._add_required_row(form, "Kontrola přítomnosti alkoholu:", alkohol_layout)
         form.addRow("Výsledek kontroly alkoholu:", alkohol_result_layout)
-        form.addRow("Množství v promile (‰):", self.mnozstvi_alkohol)
+        form.addRow("Výsledek dechové zkoušky:", self.mnozstvi_alkohol_row)
         form.addRow("Důvod neprovedení kontroly alkoholu:", self.kontrola_alkohol_duvod_neprovedeni)
 
         form.addRow("Kontrola návykových látek:", nl_layout)
@@ -125,6 +141,16 @@ class TabDalsiUdaje(QWidget):
         label = QLabel(f"<b>{label_text}</b>")
         form.addRow(label, widget_or_layout)
 
+    def _on_mnozstvi_alkohol_changed(self, text: str) -> None:
+        cleaned = sanitize_breath_alcohol_input(text)
+        if cleaned == text:
+            return
+        cursor = self.mnozstvi_alkohol.cursorPosition()
+        self.mnozstvi_alkohol.blockSignals(True)
+        self.mnozstvi_alkohol.setText(cleaned)
+        self.mnozstvi_alkohol.setCursorPosition(min(cursor, len(cleaned)))
+        self.mnozstvi_alkohol.blockSignals(False)
+
     def _radio_value(self, yes_button: QRadioButton, no_button: QRadioButton) -> str:
         if yes_button.isChecked():
             return "ANO"
@@ -155,7 +181,7 @@ class TabDalsiUdaje(QWidget):
 
         self.vysledek_kontroly_alkohol_pozitivni.setVisible(alkohol == "ANO")
         self.vysledek_kontroly_alkohol_negativni.setVisible(alkohol == "ANO")
-        self.mnozstvi_alkohol.setVisible(alkohol == "ANO" and alkohol_pozitivni)
+        self.mnozstvi_alkohol_row.setVisible(alkohol == "ANO" and alkohol_pozitivni)
         self.kontrola_alkohol_duvod_neprovedeni.setVisible(alkohol == "NE")
 
         nl = self._radio_value(self.kontrola_navykove_latky_ano, self.kontrola_navykove_latky_ne)
@@ -203,7 +229,7 @@ class TabDalsiUdaje(QWidget):
             "kontrola_alkohol": self._radio_value(self.kontrola_alkohol_ano, self.kontrola_alkohol_ne),
             "kontrola_alkohol_duvod_neprovedeni": self.kontrola_alkohol_duvod_neprovedeni.text().strip(),
             "vysledek_kontroly_alkohol": self._radio_result(self.vysledek_kontroly_alkohol_pozitivni, self.vysledek_kontroly_alkohol_negativni),
-            "mnozstvi_alkohol": self.mnozstvi_alkohol.text().strip(),
+            "mnozstvi_alkohol": normalize_breath_alcohol_storage(self.mnozstvi_alkohol.text()),
             "kontrola_navykove_latky": self._radio_value(self.kontrola_navykove_latky_ano, self.kontrola_navykove_latky_ne),
             "kontrola_navykove_latky_duvod_neprovedeni": self.kontrola_navykove_latky_duvod_neprovedeni.text().strip(),
             "vysledek_kontroly_navykove_latky": self._radio_result(self.vysledek_kontroly_navykove_latky_pozitivni, self.vysledek_kontroly_navykove_latky_negativni),
@@ -216,7 +242,7 @@ class TabDalsiUdaje(QWidget):
         self._set_radio_value(accident.kontrola_alkohol, self.kontrola_alkohol_ano, self.kontrola_alkohol_ne)
         self.kontrola_alkohol_duvod_neprovedeni.setText(accident.kontrola_alkohol_duvod_neprovedeni or "")
         self._set_radio_result(accident.vysledek_kontroly_alkohol, self.vysledek_kontroly_alkohol_pozitivni, self.vysledek_kontroly_alkohol_negativni)
-        self.mnozstvi_alkohol.setText(accident.mnozstvi_alkohol or "")
+        self.mnozstvi_alkohol.setText(breath_alcohol_for_display(accident.mnozstvi_alkohol or ""))
 
         self._set_radio_value(accident.kontrola_navykove_latky, self.kontrola_navykove_latky_ano, self.kontrola_navykove_latky_ne, default_no=True)
         self.kontrola_navykove_latky_duvod_neprovedeni.setText(accident.kontrola_navykove_latky_duvod_neprovedeni or "")

@@ -77,6 +77,11 @@ class VypisUrazuService:
     def _accident_attr(self, accident, name, default=""):
         return getattr(accident, name, default) or default
 
+    def _format_mnozstvi_alkohol(self, value) -> str:
+        from moduly.kniha_urazu.sluzby.breath_alcohol import format_breath_alcohol_for_export
+
+        return format_breath_alcohol_for_export(str(value or ""))
+
     def _blank_if_empty(self, value) -> str:
         text = str(value or "").strip()
         return text
@@ -234,7 +239,9 @@ class VypisUrazuService:
             "stanovisko_bozp": stanovisko,
             "kontrola_alkohol": self._accident_attr(accident, "kontrola_alkohol"),
             "vysledek_kontroly_alkohol": self._accident_attr(accident, "vysledek_kontroly_alkohol"),
-            "mnozstvi_alkohol": self._accident_attr(accident, "mnozstvi_alkohol"),
+            "mnozstvi_alkohol": self._format_mnozstvi_alkohol(
+                self._accident_attr(accident, "mnozstvi_alkohol")
+            ),
             "kontrola_alkohol_duvod_neprovedeni": self._text_block(self._accident_attr(accident, "kontrola_alkohol_duvod_neprovedeni")),
             "kontrola_navykove_latky": self._accident_attr(accident, "kontrola_navykove_latky"),
             "vysledek_kontroly_navykove_latky": self._accident_attr(accident, "vysledek_kontroly_navykove_latky"),
