@@ -109,7 +109,7 @@ class TabDalsiUdaje(QWidget):
 
         self._add_required_row(form, "Kontrola přítomnosti alkoholu:", alkohol_layout)
         form.addRow("Výsledek kontroly alkoholu:", alkohol_result_layout)
-        form.addRow("Výsledek dechové zkoušky:", self.mnozstvi_alkohol_row)
+        form.addRow("Množství:", self.mnozstvi_alkohol_row)
         form.addRow("Důvod neprovedení kontroly alkoholu:", self.kontrola_alkohol_duvod_neprovedeni)
 
         form.addRow("Kontrola návykových látek:", nl_layout)

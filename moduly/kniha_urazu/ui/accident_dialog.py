@@ -26,6 +26,11 @@ from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     is_accident_date_in_future,
     is_record_date_before_accident,
 )
+from moduly.kniha_urazu.sluzby.breath_alcohol import (
+    EXTREME_BREATH_ALCOHOL_CONFIRM_MESSAGE,
+    EXTREME_BREATH_ALCOHOL_CONFIRM_TITLE,
+    is_extreme_breath_alcohol,
+)
 from moduly.kniha_urazu.ui.tabs.tab_dalsi import TabDalsiUdaje
 from moduly.kniha_urazu.ui.tabs.tab_pracoviste import TabPracoviste
 from moduly.kniha_urazu.ui.tabs.tab_svedci import TabSvedci
@@ -123,7 +128,34 @@ class AccidentDialog(QDialog):
         if not self._validate_date_rules():
             return
 
+        if not self._confirm_extreme_breath_alcohol():
+            return
+
         super().accept()
+
+    def _confirm_extreme_breath_alcohol(self) -> bool:
+        value = self.tab_dalsi_widget.get_data().get("mnozstvi_alkohol", "")
+        if not is_extreme_breath_alcohol(value):
+            return True
+
+        self._focus_tab_containing(self.tab_dalsi_widget)
+        self.tab_dalsi_widget.mnozstvi_alkohol.setFocus()
+
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Warning)
+        box.setWindowTitle(EXTREME_BREATH_ALCOHOL_CONFIRM_TITLE)
+        box.setText(EXTREME_BREATH_ALCOHOL_CONFIRM_MESSAGE)
+        box.setStandardButtons(
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        box.setDefaultButton(QMessageBox.StandardButton.No)
+        yes_button = box.button(QMessageBox.StandardButton.Yes)
+        no_button = box.button(QMessageBox.StandardButton.No)
+        if yes_button is not None:
+            yes_button.setText("Ano")
+        if no_button is not None:
+            no_button.setText("Ne")
+        return box.exec() == QMessageBox.StandardButton.Yes
 
     def _validate_date_rules(self) -> bool:
         accident_date = self.tab_uraz_widget.get_accident_date()

@@ -1,10 +1,19 @@
-"""Normalizace výsledku dechové zkoušky (promile)."""
+"""Normalizace množství alkoholu v promile."""
 
 from __future__ import annotations
 
 import re
 
 _UNIT_RE = re.compile(r"[‰%]")
+
+EXTREME_BREATH_ALCOHOL_LIMIT = 4.0
+
+EXTREME_BREATH_ALCOHOL_CONFIRM_TITLE = "Pozor"
+EXTREME_BREATH_ALCOHOL_CONFIRM_MESSAGE = (
+    "Zadaná hodnota alkoholu je velmi vysoká.\n\n"
+    "Ověřte prosím, že nedošlo k překlepu.\n\n"
+    "Opravdu chcete tuto hodnotu uložit?"
+)
 
 
 def sanitize_breath_alcohol_input(text: str) -> str:
@@ -33,6 +42,28 @@ def normalize_breath_alcohol_storage(text: str) -> str:
 def breath_alcohol_for_display(text: str) -> str:
     """Zobrazení ve formuláři (staré záznamy s ‰ se očistí)."""
     return normalize_breath_alcohol_storage(text)
+
+
+def parse_breath_alcohol_number(text: str) -> float | None:
+    normalized = normalize_breath_alcohol_storage(text)
+    if not normalized:
+        return None
+    try:
+        return float(normalized.replace(",", "."))
+    except ValueError:
+        return None
+
+
+def is_extreme_breath_alcohol(
+    text: str,
+    *,
+    limit: float = EXTREME_BREATH_ALCOHOL_LIMIT,
+) -> bool:
+    """True pokud je hodnota větší než limit (výchozí 4,00 ‰)."""
+    value = parse_breath_alcohol_number(text)
+    if value is None:
+        return False
+    return value > limit
 
 
 def format_breath_alcohol_for_export(text: str) -> str:
