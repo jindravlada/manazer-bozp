@@ -36,6 +36,7 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.kniha_urazu.ui.setreni.accident_findings_widget import AccidentFindingsWidget
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
+    OBLIGATION_OO_OHLASENI,
     SECTION_ODESLANI,
     SECTION_OHLASENI,
     SECTION_PREDANI,
@@ -463,9 +464,14 @@ class SetreniDialog(QDialog):
         return ""
 
     def _set_radio_choice(self, box, value):
+        buttons = box.findChildren(QRadioButton)
         if not value:
+            for child in buttons:
+                child.setAutoExclusive(False)
+                child.setChecked(False)
+                child.setAutoExclusive(True)
             return
-        for child in box.findChildren(QRadioButton):
+        for child in buttons:
             if child.text() == value:
                 child.setChecked(True)
                 return
@@ -2768,11 +2774,9 @@ class SetreniDialog(QDialog):
         if not oznameni_date:
             return
 
-        # Ohlášení úrazu – datum se automaticky rovná datu oznámení úrazu zaměstnavateli
-        # a lhůta je datum oznámení + 1 pracovní den.
+        # Ohlášení: pouze dopočítat lhůty. Datum/čas/způsob ohlášení
+        # vyplňuje uživatel až po skutečném provedení (ne označovat jako odesláno).
         for row in getattr(self, "admin_ohlaseni_rows", []):
-            if row.get("datum") is not None:
-                self._set_date_widget(row["datum"], oznameni_date)
             if row.get("lhuta") is not None:
                 deadline = self._admin_default_deadline(row)
                 if deadline:
@@ -2873,17 +2877,14 @@ class SetreniDialog(QDialog):
 
         if "Portál SÚIP" in nazev or "Vyhotovení Záznamu" in nazev or "OIP / OBÚ" in nazev:
             zpusoby = ["Portál SÚIP", "Datová schránka", "Jiný způsob"]
-            default_zpusob = "Portál SÚIP"
         elif (
             "Odborová organizace" in nazev
             or "Postižený zaměstnanec" in nazev
             or "Rodinní příslušníci" in nazev
         ):
             zpusoby = ["Osobně", "E-mail", "Datová schránka", "Listinná podoba", "Jiný způsob"]
-            default_zpusob = "Osobně"
         else:
             zpusoby = ["Datová schránka", "E-mail", "Listinná podoba", "Jiný způsob"]
-            default_zpusob = "Datová schránka"
 
         row = {
             "key": key or data.get("key", ""),
@@ -2923,7 +2924,17 @@ class SetreniDialog(QDialog):
         if data.get("datum"):
             self._set_date_widget(row["datum"], data.get("datum"))
 
-        self._set_radio_choice(row["zpusob"], data.get("zpusob", default_zpusob))
+        # Způsob nevybírat automaticky – potvrzuje ho uživatel až po provedení.
+        self._set_radio_choice(row["zpusob"], data.get("zpusob") or "")
+
+        # Osobní předání u ohlášení OO: ponechat v UI, ale aktuálně nepřípustné.
+        if (
+            row.get("key") == OBLIGATION_OO_OHLASENI
+            or ("Odborová organizace" in nazev and "ohlášení" in nazev)
+        ):
+            for child in row["zpusob"].findChildren(QRadioButton):
+                if child.text() == "Osobně":
+                    child.setEnabled(False)
 
         # Kooperativa: bez lhůty a bez doplňkových checkboxů, pouze datum/čas odeslání.
 
