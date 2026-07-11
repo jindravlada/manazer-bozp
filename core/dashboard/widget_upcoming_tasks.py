@@ -9,6 +9,7 @@ from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QHBoxLayout,
+    QHeaderView,
     QLabel,
     QPushButton,
     QTableWidget,
@@ -66,10 +67,13 @@ class UpcomingTasksWidget(DashboardPanel):
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.setAlternatingRowColors(True)
         self.table.verticalHeader().setVisible(False)
-        self.table.horizontalHeader().setStretchLastSection(True)
+        header = self.table.horizontalHeader()
+        header.setStretchLastSection(False)
+        header.setSectionResizeMode(COL_TITLE, QHeaderView.ResizeMode.Stretch)
         self.table.setColumnWidth(COL_TYPE, 80)
         self.table.setColumnWidth(COL_DUE, 90)
         self.table.setColumnWidth(COL_PRIORITY, 80)
+        self.table.setColumnWidth(COL_SOURCE, 90)
         self.table.doubleClicked.connect(self._open_selected)
         self.table.itemSelectionChanged.connect(self._update_open_button)
 

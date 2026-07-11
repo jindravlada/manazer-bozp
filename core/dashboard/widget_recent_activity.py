@@ -17,7 +17,7 @@ class RecentActivityWidget(DashboardPanel):
         tasks.sort(key=lambda task: task.updated_at, reverse=True)
 
         lines = []
-        for task in tasks[:5]:
+        for task in tasks[:3]:
             stamp = task.updated_at.strftime("%d.%m.%Y %H:%M") if task.updated_at else ""
             lines.append(f"<b>{stamp}</b><br>{task.title}<br><span style='color:#666;'>{task.computed_status}</span><br>")
 

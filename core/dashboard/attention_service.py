@@ -53,7 +53,7 @@ def build_sort_key(
 
 def _task_source_label(task) -> str:
     label = (task_source_short_label(task) or "").strip()
-    if not label or label in ("—", "Ručně"):
+    if not label or label == "—":
         return ""
     return label
 
@@ -86,7 +86,7 @@ def _from_tasks(today: date) -> list[AttentionItem]:
     return items
 
 
-def _audit_title(audit) -> str:
+def audit_title(audit) -> str:
     place = (audit.workplace_name or "").strip()
     if place:
         return f"Audit – {place}"
@@ -99,26 +99,34 @@ def _audit_title(audit) -> str:
     return f"Audit #{audit.id}"
 
 
+def audit_attention_due_date(audit) -> date | None:
+    """Termín pro pozornost: po zahájení Datum zahájení, jinak plánovaný termín."""
+    if audit.started_at is not None:
+        return audit.started_at
+    return audit.audit_date
+
+
 def _from_audits(today: date) -> list[AttentionItem]:
     items: list[AttentionItem] = []
     for audit in audit_service.get_all():
         if audit.status == AUDIT_STATUS_DOKONCENO or audit.finished_at is not None:
             continue
-        if audit.audit_date is None:
+        due_date = audit_attention_due_date(audit)
+        if due_date is None:
             continue
-        title = _audit_title(audit)
+        title = audit_title(audit)
         items.append(
             AttentionItem(
                 item_type=ITEM_TYPE_AUDIT,
                 entity_id=audit.id,
                 title=title,
-                due_date=audit.audit_date,
+                due_date=due_date,
                 source_label=SOURCE_LABEL_AUDIT,
                 status=audit.status or "",
                 priority="",
                 open_metadata={"item_type": ITEM_TYPE_AUDIT, "entity_id": audit.id},
                 sort_key=build_sort_key(
-                    audit.audit_date,
+                    due_date,
                     title=title,
                     today=today,
                 ),
@@ -127,7 +135,7 @@ def _from_audits(today: date) -> list[AttentionItem]:
     return items
 
 
-def _inspection_title(inspection) -> str:
+def inspection_title(inspection) -> str:
     place = (inspection.workplace_name or "").strip()
     if place:
         return f"Prověrka BOZP – {place}"
@@ -140,6 +148,13 @@ def _inspection_title(inspection) -> str:
     return f"Prověrka BOZP #{inspection.id}"
 
 
+def inspection_attention_due_date(inspection) -> date | None:
+    """Termín pro pozornost: po zahájení Datum zahájení, jinak plánovaný termín."""
+    if inspection.started_at is not None:
+        return inspection.started_at
+    return inspection.inspection_date
+
+
 def _from_inspections(today: date) -> list[AttentionItem]:
     items: list[AttentionItem] = []
     for inspection in bozp_inspection_service.get_all():
@@ -148,15 +163,16 @@ def _from_inspections(today: date) -> list[AttentionItem]:
             or inspection.finished_at is not None
         ):
             continue
-        if inspection.inspection_date is None:
+        due_date = inspection_attention_due_date(inspection)
+        if due_date is None:
             continue
-        title = _inspection_title(inspection)
+        title = inspection_title(inspection)
         items.append(
             AttentionItem(
                 item_type=ITEM_TYPE_BOZP_INSPECTION,
                 entity_id=inspection.id,
                 title=title,
-                due_date=inspection.inspection_date,
+                due_date=due_date,
                 source_label=SOURCE_LABEL_INSPECTION,
                 status=inspection.status or "",
                 priority="",
@@ -165,7 +181,7 @@ def _from_inspections(today: date) -> list[AttentionItem]:
                     "entity_id": inspection.id,
                 },
                 sort_key=build_sort_key(
-                    inspection.inspection_date,
+                    due_date,
                     title=title,
                     today=today,
                 ),

@@ -151,8 +151,10 @@ class DashboardPage(QWidget):
         self.stats.setFixedHeight(130)
         self.controls.setMinimumHeight(220)
         self.accidents.setFixedHeight(170)
-        self.upcoming.setMinimumHeight(260)
-        self.activity.setMinimumHeight(220)
+        # 97a: vyšší panel pozornosti (~+30 %), nižší Poslední aktivita (~3 položky).
+        self.upcoming.setMinimumHeight(340)
+        self.activity.setMinimumHeight(140)
+        self.activity.setMaximumHeight(160)
 
         right_column = QWidget()
         right_layout = QVBoxLayout(right_column)
