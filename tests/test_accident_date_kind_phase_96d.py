@@ -121,17 +121,11 @@ class AccidentDateKindPhase96dTestCase(unittest.TestCase):
         self.assertIn("zahájení šetření", warning)
 
     def test_serious_and_fatal_kind_info_lines(self) -> None:
-        tab = TabUraz()
-        tab.druh_urazu.set_value(KIND_SERIOUS)
         self.assertEqual(accident_kind_info_message(KIND_SERIOUS), SERIOUS_KIND_INFO)
-        self.assertFalse(tab.druh_urazu_info_label.isHidden())
-        self.assertEqual(tab.druh_urazu_info_label.text(), SERIOUS_KIND_INFO)
-
-        tab.druh_urazu.set_value(KIND_FATAL)
-        self.assertEqual(tab.druh_urazu_info_label.text(), FATAL_KIND_INFO)
-
-        tab.druh_urazu.set_value(KIND_PN)
-        self.assertTrue(tab.druh_urazu_info_label.isHidden())
+        self.assertEqual(accident_kind_info_message(KIND_FATAL), FATAL_KIND_INFO)
+        self.assertIsNone(accident_kind_info_message(KIND_PN))
+        self.assertNotIn("ℹ", SERIOUS_KIND_INFO)
+        self.assertNotIn("ℹ", FATAL_KIND_INFO)
 
     def test_fixing_values_clears_warnings(self) -> None:
         tab = TabUraz()
@@ -139,12 +133,6 @@ class AccidentDateKindPhase96dTestCase(unittest.TestCase):
         self.assertFalse(tab.accident_date_delay_warning.isHidden())
         tab.accident_date.set_date_iso((date.today() - timedelta(days=3)).isoformat())
         self.assertTrue(tab.accident_date_delay_warning.isHidden())
-
-        tab.druh_urazu.set_value(KIND_FATAL)
-        self.assertFalse(tab.druh_urazu_info_label.isHidden())
-        tab.druh_urazu.set_value("")
-        self.assertTrue(tab.druh_urazu_info_label.isHidden())
-
     def test_historical_record_can_be_opened_and_saved(self) -> None:
         old_day = date(2024, 6, 1)
         accident = SimpleNamespace(

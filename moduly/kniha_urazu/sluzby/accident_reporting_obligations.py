@@ -155,8 +155,8 @@ INVESTIGATION_BEFORE_ACCIDENT_WARNING = (
     "⚠ Datum zahájení šetření je dřívější než datum pracovního úrazu. "
     "Ověřte správnost údajů."
 )
-SERIOUS_KIND_INFO = "ℹ Podle zadaných údajů se jedná o závažný pracovní úraz."
-FATAL_KIND_INFO = "ℹ Podle zadaných údajů se jedná o smrtelný pracovní úraz."
+SERIOUS_KIND_INFO = "Jedná se o závažný pracovní úraz."
+FATAL_KIND_INFO = "Jedná se o smrtelný pracovní úraz."
 
 _ACCIDENT_DATE_DELAY_DAYS = 14
 
