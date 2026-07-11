@@ -14,7 +14,11 @@ from PySide6.QtWidgets import (
 from core.widgets.code_selector import CodeSelector
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.kniha_urazu.services.ciselnik_service import kniha_urazu_ciselnik_service
-from moduly.kniha_urazu.sluzby.accident_reporting_obligations import dpn_calendar_days
+from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
+    DPN_KIND_MISMATCH_MESSAGE,
+    dpn_calendar_days,
+    is_dpn_kind_mismatch,
+)
 
 
 REQUIRED_STYLE = "border: 2px solid #d32f2f; background: #fff6f6;"
@@ -80,8 +84,17 @@ class TabZamestnanec(QWidget):
         self.dpn_od.dateChanged.connect(self._refresh_dpn_duration)
         self.dpn_do.dateChanged.connect(self._refresh_dpn_duration)
 
+        self._current_druh_urazu = ""
+
         self.dpn_duration_label = QLabel()
         self.dpn_duration_label.setObjectName("InfoText")
+
+        self.dpn_kind_warning_label = QLabel()
+        self.dpn_kind_warning_label.setObjectName("WarningText")
+        self.dpn_kind_warning_label.setWordWrap(True)
+        self.dpn_kind_warning_label.setStyleSheet("color: #b45309;")
+        self.dpn_kind_warning_label.setVisible(False)
+
         self._refresh_dpn_duration()
 
         self._required_widgets = {
@@ -111,6 +124,7 @@ class TabZamestnanec(QWidget):
         form.addRow("DPN následkem úrazu od:", self.dpn_od)
         form.addRow("DPN následkem úrazu do:", self.dpn_do)
         form.addRow("", self.dpn_duration_label)
+        form.addRow("", self.dpn_kind_warning_label)
 
         layout.addLayout(form)
         layout.addStretch()
@@ -126,6 +140,18 @@ class TabZamestnanec(QWidget):
         else:
             text = f"{days} dní"
         self.dpn_duration_label.setText(f"Pracovní neschopnost celkem: {text}")
+        self.refresh_dpn_kind_warning()
+
+    def refresh_dpn_kind_warning(self, druh_urazu: str | None = None) -> None:
+        if druh_urazu is not None:
+            self._current_druh_urazu = druh_urazu
+        days = dpn_calendar_days(self.dpn_od.get_date(), self.dpn_do.get_date())
+        if is_dpn_kind_mismatch(self._current_druh_urazu, days):
+            self.dpn_kind_warning_label.setText(DPN_KIND_MISMATCH_MESSAGE)
+            self.dpn_kind_warning_label.setVisible(True)
+        else:
+            self.dpn_kind_warning_label.clear()
+            self.dpn_kind_warning_label.setVisible(False)
 
     def _pohlavi(self) -> str:
         if self.pohlavi_muz.isChecked():
@@ -219,3 +245,4 @@ class TabZamestnanec(QWidget):
         self.dpn_od.set_date_value(accident.dpn_od)
         self.dpn_do.set_date_value(accident.dpn_do)
         self._refresh_dpn_duration()
+        self.refresh_dpn_kind_warning(getattr(accident, "druh_urazu", "") or "")

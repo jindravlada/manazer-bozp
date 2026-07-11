@@ -117,6 +117,32 @@ def dpn_calendar_days(dpn_od: date | None, dpn_do: date | None) -> int | None:
     return None
 
 
+DPN_KIND_MISMATCH_MESSAGE = (
+    "⚠ Druh pracovního úrazu pravděpodobně neodpovídá délce pracovní neschopnosti."
+)
+
+
+def is_dpn_up_to_3_kind(druh_urazu: str) -> bool:
+    text = (druh_urazu or "").lower()
+    return "nepřesahující 3" in text or "nepresahujici 3" in text
+
+
+def is_dpn_over_3_kind(druh_urazu: str) -> bool:
+    text = (druh_urazu or "").lower()
+    return "delší než 3" in text or "delsi nez 3" in text or "nad 3" in text
+
+
+def is_dpn_kind_mismatch(druh_urazu: str, days: int | None) -> bool:
+    """True, pokud zvolený druh úrazu neodpovídá délce DPN (pouze vizuální kontrola)."""
+    if days is None:
+        return False
+    if is_dpn_up_to_3_kind(druh_urazu) and days > 3:
+        return True
+    if is_dpn_over_3_kind(druh_urazu) and days <= 3:
+        return True
+    return False
+
+
 def has_pn(accident: AccidentLike | None) -> bool:
     if accident is None:
         return False

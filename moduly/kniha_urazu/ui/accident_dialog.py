@@ -262,13 +262,20 @@ class AccidentDialog(QDialog):
         return tab
 
     def _connect_logic(self):
-        pass
+        self.tab_uraz_widget.druh_urazu.currentTextChanged.connect(self._refresh_dpn_kind_warning)
+        self.tab_zamestnanec_widget.dpn_od.dateChanged.connect(self._refresh_dpn_kind_warning)
+        self.tab_zamestnanec_widget.dpn_do.dateChanged.connect(self._refresh_dpn_kind_warning)
 
     def _workplace_changed(self):
         pass
 
     def _refresh_logic(self):
-        pass
+        self._refresh_dpn_kind_warning()
+
+    def _refresh_dpn_kind_warning(self, *_args) -> None:
+        self.tab_zamestnanec_widget.refresh_dpn_kind_warning(
+            self.tab_uraz_widget.druh_urazu.value()
+        )
 
     def _load(self, accident):
         self.tab_podatel_widget.load_data(accident)
@@ -282,6 +289,8 @@ class AccidentDialog(QDialog):
             if not hasattr(self, name) or not hasattr(accident, name):
                 continue
             self._set_widget_value(getattr(self, name), getattr(accident, name))
+
+        self._refresh_dpn_kind_warning()
 
 
     def _field_names(self):
