@@ -122,6 +122,7 @@ class MainWindow(QMainWindow):
             return DashboardPage(
                 open_tasks_callback=self._open_new_task,
                 open_task_by_id_callback=self._open_task_by_id,
+                open_attention_callback=self._open_attention_item,
                 open_accidents_callback=self._open_new_accident,
                 open_kontroly_callback=self._open_kontroly,
                 open_kniha_urazu_callback=self._open_kniha_urazu,
@@ -251,6 +252,44 @@ class MainWindow(QMainWindow):
             if data["title"]:
                 task_service.update_task(task_id=task_id, **data)
 
+        if dashboard is not None and hasattr(dashboard, "refresh"):
+            dashboard.refresh()
+
+    def _open_attention_item(self, item) -> None:
+        from core.dashboard.attention_item import (
+            ITEM_TYPE_AUDIT,
+            ITEM_TYPE_BOZP_INSPECTION,
+            ITEM_TYPE_TASK,
+        )
+
+        item_type = getattr(item, "item_type", None)
+        entity_id = getattr(item, "entity_id", None)
+        if item_type == ITEM_TYPE_TASK and entity_id is not None:
+            self._open_task_by_id(entity_id)
+            return
+        if item_type == ITEM_TYPE_AUDIT and entity_id is not None:
+            self._open_audit_by_id(entity_id)
+            return
+        if item_type == ITEM_TYPE_BOZP_INSPECTION and entity_id is not None:
+            self._open_inspection_by_id(entity_id)
+
+    def _open_audit_by_id(self, audit_id: int) -> None:
+        self._show("audity")
+        page = self._page_widgets.get("audity")
+        if page is not None and hasattr(page, "open_audit"):
+            page.open_audit(audit_id)
+
+        dashboard = self._page_widgets.get("dashboard")
+        if dashboard is not None and hasattr(dashboard, "refresh"):
+            dashboard.refresh()
+
+    def _open_inspection_by_id(self, inspection_id: int) -> None:
+        self._show("proverky")
+        page = self._page_widgets.get("proverky")
+        if page is not None and hasattr(page, "open_inspection"):
+            page.open_inspection(inspection_id)
+
+        dashboard = self._page_widgets.get("dashboard")
         if dashboard is not None and hasattr(dashboard, "refresh"):
             dashboard.refresh()
 

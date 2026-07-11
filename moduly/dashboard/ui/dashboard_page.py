@@ -43,6 +43,7 @@ class DashboardPage(QWidget):
         self,
         open_tasks_callback=None,
         open_task_by_id_callback=None,
+        open_attention_callback=None,
         open_accidents_callback=None,
         open_kontroly_callback=None,
         open_kniha_urazu_callback=None,
@@ -52,6 +53,7 @@ class DashboardPage(QWidget):
         super().__init__()
         self.open_tasks_callback = open_tasks_callback
         self.open_task_by_id_callback = open_task_by_id_callback
+        self.open_attention_callback = open_attention_callback
         self.open_accidents_callback = open_accidents_callback
         self.open_kontroly_callback = open_kontroly_callback
         self.open_kniha_urazu_callback = open_kniha_urazu_callback
@@ -136,6 +138,7 @@ class DashboardPage(QWidget):
         self.upcoming = UpcomingTasksWidget(
             open_tasks_callback=self.open_tasks_callback,
             open_task_callback=self.open_task_by_id_callback,
+            open_attention_callback=self.open_attention_callback,
         )
         self.calendar = CalendarPlaceholderWidget()
         self.activity = RecentActivityWidget()
