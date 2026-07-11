@@ -20,6 +20,12 @@ from core.widgets.dialog_utils import create_save_cancel_box, configure_resizabl
 from core.widgets.date_edit import DateEdit
 from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.workplace_selector import WorkplaceSelector
+from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
+    ACCIDENT_DATE_FUTURE_MESSAGE,
+    RECORD_DATE_BEFORE_ACCIDENT_MESSAGE,
+    is_accident_date_in_future,
+    is_record_date_before_accident,
+)
 from moduly.kniha_urazu.ui.tabs.tab_dalsi import TabDalsiUdaje
 from moduly.kniha_urazu.ui.tabs.tab_pracoviste import TabPracoviste
 from moduly.kniha_urazu.ui.tabs.tab_svedci import TabSvedci
@@ -114,7 +120,44 @@ class AccidentDialog(QDialog):
                 )
                 return
 
+        if not self._validate_date_rules():
+            return
+
         super().accept()
+
+    def _validate_date_rules(self) -> bool:
+        accident_date = self.tab_uraz_widget.get_accident_date()
+        if is_accident_date_in_future(accident_date):
+            self._focus_tab_containing(self.tab_uraz_widget)
+            self.tab_uraz_widget.accident_date.setFocus()
+            QMessageBox.warning(
+                self,
+                "Nelze uložit pracovní úraz",
+                ACCIDENT_DATE_FUTURE_MESSAGE,
+            )
+            return False
+
+        datum_zapisu = self.tab_podatel_widget.datum_zapisu.get_date()
+        if is_record_date_before_accident(datum_zapisu, accident_date):
+            self._focus_tab_containing(self.tab_podatel_widget)
+            self.tab_podatel_widget.datum_zapisu.setFocus()
+            QMessageBox.warning(
+                self,
+                "Nelze uložit pracovní úraz",
+                RECORD_DATE_BEFORE_ACCIDENT_MESSAGE,
+            )
+            return False
+
+        return True
+
+    def _focus_tab_containing(self, inner_widget: QWidget) -> None:
+        current = inner_widget
+        while current is not None:
+            index = self.tabs.indexOf(current)
+            if index >= 0:
+                self.tabs.setCurrentIndex(index)
+                return
+            current = current.parentWidget()
 
     def _line(self):
         return QLineEdit()
@@ -271,6 +314,7 @@ class AccidentDialog(QDialog):
 
     def _refresh_logic(self):
         self._refresh_dpn_kind_warning()
+        self.tab_uraz_widget.refresh_date_and_kind_hints()
 
     def _refresh_dpn_kind_warning(self, *_args) -> None:
         self.tab_zamestnanec_widget.refresh_dpn_kind_warning(
@@ -291,6 +335,7 @@ class AccidentDialog(QDialog):
             self._set_widget_value(getattr(self, name), getattr(accident, name))
 
         self._refresh_dpn_kind_warning()
+        self.tab_uraz_widget.refresh_date_and_kind_hints()
 
 
     def _field_names(self):

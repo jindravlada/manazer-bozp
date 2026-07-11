@@ -143,6 +143,64 @@ def is_dpn_kind_mismatch(druh_urazu: str, days: int | None) -> bool:
     return False
 
 
+ACCIDENT_DATE_FUTURE_MESSAGE = "Datum pracovního úrazu nemůže být v budoucnosti."
+RECORD_DATE_BEFORE_ACCIDENT_MESSAGE = (
+    "Datum zápisu nemůže být dřívější než datum pracovního úrazu."
+)
+ACCIDENT_DATE_DELAY_WARNING = (
+    "⚠ Úraz je zadáván se zpožděním delším než 14 dní. "
+    "Ověřte správnost data a splnění zákonných lhůt."
+)
+INVESTIGATION_BEFORE_ACCIDENT_WARNING = (
+    "⚠ Datum zahájení šetření je dřívější než datum pracovního úrazu. "
+    "Ověřte správnost údajů."
+)
+SERIOUS_KIND_INFO = "ℹ Podle zadaných údajů se jedná o závažný pracovní úraz."
+FATAL_KIND_INFO = "ℹ Podle zadaných údajů se jedná o smrtelný pracovní úraz."
+
+_ACCIDENT_DATE_DELAY_DAYS = 14
+
+
+def is_accident_date_in_future(accident_date: date | None, *, today: date | None = None) -> bool:
+    if accident_date is None:
+        return False
+    return accident_date > (today or date.today())
+
+
+def is_accident_date_delayed(accident_date: date | None, *, today: date | None = None) -> bool:
+    if accident_date is None:
+        return False
+    reference = today or date.today()
+    return (reference - accident_date).days > _ACCIDENT_DATE_DELAY_DAYS
+
+
+def is_record_date_before_accident(
+    datum_zapisu: date | None,
+    accident_date: date | None,
+) -> bool:
+    if datum_zapisu is None or accident_date is None:
+        return False
+    return datum_zapisu < accident_date
+
+
+def is_investigation_before_accident(
+    investigation_date: date | None,
+    accident_date: date | None,
+) -> bool:
+    if investigation_date is None or accident_date is None:
+        return False
+    return investigation_date < accident_date
+
+
+def accident_kind_info_message(druh_urazu: str) -> str | None:
+    text = (druh_urazu or "").lower()
+    if "smrt" in text:
+        return FATAL_KIND_INFO
+    if "závaž" in text or "zavaz" in text:
+        return SERIOUS_KIND_INFO
+    return None
+
+
 def has_pn(accident: AccidentLike | None) -> bool:
     if accident is None:
         return False

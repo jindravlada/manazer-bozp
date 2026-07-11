@@ -40,8 +40,10 @@ from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     SECTION_OHLASENI,
     SECTION_PREDANI,
     SECTION_ZAZNAM,
+    INVESTIGATION_BEFORE_ACCIDENT_WARNING,
     all_obligation_definitions,
     is_fatal_accident,
+    is_investigation_before_accident,
     is_row_relevant,
     is_serious_or_fatal_accident,
     has_pn_over_3_days,
@@ -483,6 +485,18 @@ class SetreniDialog(QDialog):
             widget.set_date_iso(value)
         elif hasattr(widget, "set_date_value"):
             widget.set_date_value(value)
+
+    def _refresh_admin_zahajeni_warning(self, *_args) -> None:
+        if not hasattr(self, "admin_zahajeni_warning"):
+            return
+        investigation_date = self._date_value(self.admin_zahajeni) if hasattr(self, "admin_zahajeni") else None
+        accident_date = getattr(self.accident, "accident_date", None) if self.accident is not None else None
+        if is_investigation_before_accident(investigation_date, accident_date):
+            self.admin_zahajeni_warning.setText(INVESTIGATION_BEFORE_ACCIDENT_WARNING)
+            self.admin_zahajeni_warning.setVisible(True)
+        else:
+            self.admin_zahajeni_warning.clear()
+            self.admin_zahajeni_warning.setVisible(False)
 
     def _slug(self, text):
         text = text.replace(":", "").strip()
@@ -2796,10 +2810,16 @@ class SetreniDialog(QDialog):
         if not saved.get("admin_setreni_funkce"):
             self._refresh_admin_setreni_funkce()
         self.admin_zahajeni = self._new_date_edit()
+        self.admin_zahajeni_warning = QLabel()
+        self.admin_zahajeni_warning.setObjectName("WarningText")
+        self.admin_zahajeni_warning.setWordWrap(True)
+        self.admin_zahajeni_warning.setStyleSheet("color: #b45309;")
+        self.admin_zahajeni_warning.setVisible(False)
         if saved.get("admin_zahajeni"):
             self._set_date_widget(self.admin_zahajeni, saved.get("admin_zahajeni"))
         elif self.accident is not None and getattr(self.accident, "accident_date", None):
             self._set_date_widget(self.admin_zahajeni, self.accident.accident_date)
+        self.admin_zahajeni.dateChanged.connect(self._refresh_admin_zahajeni_warning)
         self.admin_duvod_pozde = QLineEdit(saved.get("admin_duvod_pozde", ""))
         self.admin_duvod_pozde.setPlaceholderText("Stručný důvod pozdějšího zahájení šetření.")
         self.admin_ukonceni = self._new_date_edit()
@@ -3087,8 +3107,10 @@ class SetreniDialog(QDialog):
         form.addRow("Šetření provedl – jméno:", self.admin_setreni_jmeno)
         form.addRow("Šetření provedl – funkce:", self.admin_setreni_funkce)
         form.addRow("Datum zahájení šetření:", self.admin_zahajeni)
+        form.addRow("", self.admin_zahajeni_warning)
         form.addRow("Důvod pozdějšího zahájení:", self.admin_duvod_pozde)
         layout.addLayout(form)
+        self._refresh_admin_zahajeni_warning()
 
         info = QLabel(
             "Zobrazují se pouze povinnosti, které podle zadaných údajů z karty úrazu skutečně vznikají. "

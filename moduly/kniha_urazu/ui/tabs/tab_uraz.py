@@ -2,7 +2,6 @@ from datetime import date
 
 from PySide6.QtWidgets import (
     QButtonGroup,
-    QComboBox,
     QFormLayout,
     QHBoxLayout,
     QLabel,
@@ -18,6 +17,11 @@ from core.widgets.code_selector import CodeSelector
 from core.widgets.date_edit import DateEdit
 from core.widgets.multi_code_selector import MultiCodeSelector
 from moduly.kniha_urazu.services.ciselnik_service import kniha_urazu_ciselnik_service
+from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
+    ACCIDENT_DATE_DELAY_WARNING,
+    accident_kind_info_message,
+    is_accident_date_delayed,
+)
 
 
 REQUIRED_STYLE = "border: 2px solid #d32f2f; background: #fff6f6;"
@@ -38,6 +42,13 @@ class TabUraz(QWidget):
             "závažný pracovní úraz (hospitalizace více než 5 po sobě jdoucích dnů)",
             "smrtelný",
         ])
+        self.druh_urazu.currentTextChanged.connect(self._refresh_kind_info)
+
+        self.druh_urazu_info_label = QLabel()
+        self.druh_urazu_info_label.setObjectName("InfoText")
+        self.druh_urazu_info_label.setWordWrap(True)
+        self.druh_urazu_info_label.setStyleSheet("color: #1d4ed8;")
+        self.druh_urazu_info_label.setVisible(False)
 
         self.podezreni_trestny_cin_ano = QRadioButton("ANO")
         self.podezreni_trestny_cin_ne = QRadioButton("NE")
@@ -52,6 +63,14 @@ class TabUraz(QWidget):
         tc_layout.addStretch()
 
         self.accident_date = DateEdit()
+        self.accident_date.dateChanged.connect(self._refresh_accident_date_delay_warning)
+
+        self.accident_date_delay_warning = QLabel()
+        self.accident_date_delay_warning.setObjectName("WarningText")
+        self.accident_date_delay_warning.setWordWrap(True)
+        self.accident_date_delay_warning.setStyleSheet("color: #b45309;")
+        self.accident_date_delay_warning.setVisible(False)
+
         self.accident_time = QLineEdit()
         self.accident_time.setPlaceholderText("HH:MM")
 
@@ -98,8 +117,10 @@ class TabUraz(QWidget):
         }
 
         self._add_required_row(form, "Druh úrazu:", self.druh_urazu)
+        form.addRow("", self.druh_urazu_info_label)
         form.addRow("Podezření na trestný čin:", tc_layout)
         self._add_required_row(form, "Datum úrazu:", self.accident_date)
+        form.addRow("", self.accident_date_delay_warning)
         self._add_required_row(form, "Čas úrazu:", self.accident_time)
         self._add_required_row(form, "Druh zranění:", self.druh_zraneni)
         self._add_required_row(form, "Zraněná část těla:", self.zranena_cast_tela)
@@ -112,9 +133,37 @@ class TabUraz(QWidget):
         layout.addLayout(form)
         layout.addStretch()
 
+        self._refresh_kind_info()
+        self._refresh_accident_date_delay_warning()
+
     def _add_required_row(self, form: QFormLayout, label_text: str, widget_or_layout):
         label = QLabel(f"<b>{label_text}</b>")
         form.addRow(label, widget_or_layout)
+
+    def get_accident_date(self) -> date:
+        qdate = self.accident_date.date()
+        return date(qdate.year(), qdate.month(), qdate.day())
+
+    def _refresh_kind_info(self, *_args) -> None:
+        message = accident_kind_info_message(self.druh_urazu.value())
+        if message:
+            self.druh_urazu_info_label.setText(message)
+            self.druh_urazu_info_label.setVisible(True)
+        else:
+            self.druh_urazu_info_label.clear()
+            self.druh_urazu_info_label.setVisible(False)
+
+    def _refresh_accident_date_delay_warning(self, *_args) -> None:
+        if is_accident_date_delayed(self.get_accident_date()):
+            self.accident_date_delay_warning.setText(ACCIDENT_DATE_DELAY_WARNING)
+            self.accident_date_delay_warning.setVisible(True)
+        else:
+            self.accident_date_delay_warning.clear()
+            self.accident_date_delay_warning.setVisible(False)
+
+    def refresh_date_and_kind_hints(self) -> None:
+        self._refresh_kind_info()
+        self._refresh_accident_date_delay_warning()
 
     def _radio_value(self, yes_button: QRadioButton, no_button: QRadioButton) -> str:
         if yes_button.isChecked():
@@ -188,12 +237,10 @@ class TabUraz(QWidget):
         return text
 
     def get_data(self) -> dict:
-        qdate = self.accident_date.date()
-
         return {
             "druh_urazu": self.druh_urazu.value(),
             "podezreni_trestny_cin": self._radio_value(self.podezreni_trestny_cin_ano, self.podezreni_trestny_cin_ne),
-            "accident_date": date(qdate.year(), qdate.month(), qdate.day()),
+            "accident_date": self.get_accident_date(),
             "accident_time": self._format_time_value(self.accident_time.text()),
             "druh_zraneni": self.druh_zraneni.value(),
             "zranena_cast_tela": self.zranena_cast_tela.value(),
@@ -220,3 +267,4 @@ class TabUraz(QWidget):
         self.cinnost_pri_urazu.set_value(accident.cinnost_pri_urazu or "")
         self.misto_urazu.setPlainText(accident.misto_urazu or "")
         self.popis_urazoveho_deje.setPlainText(accident.popis_urazoveho_deje or "")
+        self.refresh_date_and_kind_hints()
