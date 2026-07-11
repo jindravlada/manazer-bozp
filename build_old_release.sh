@@ -29,6 +29,9 @@ EOF
 echo "== Stavím Docker image =="
 docker build -t "$IMAGE_NAME" -f "$PROJECT_DIR/Dockerfile.oldlinux" "$PROJECT_DIR"
 
+echo "== Odstraňuji případný starý kontejner =="
+docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+
 echo "== Spouštím build uvnitř Ubuntu 22.04 =="
 docker run --rm \
   --name "$CONTAINER_NAME" \
@@ -66,6 +69,8 @@ docker run --rm \
       --name ManazerBOZP \
       --add-data "moduly:moduly" \
       --add-data "core:core" \
+      --add-data "ciselniky:ciselniky" \
+      --add-data "zdroje:zdroje" \
       main.py
 
     echo "== Připravuji AppDir =="

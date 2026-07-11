@@ -1,0 +1,18 @@
+"""Cesty k distribuovaným datům aplikace (vývoj i PyInstaller/AppImage)."""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+
+def project_root() -> Path:
+    """Kořen balíčku aplikace.
+
+    Ve vývoji: kořen repozitáře.
+    Ve frozen buildu: ``sys._MEIPASS`` (typicky ``_internal``), kde leží
+    ``moduly/``, ``core/``, ``ciselniky/`` a další přibalená data.
+    """
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS)
+    return Path(__file__).resolve().parents[1]

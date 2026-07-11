@@ -3,6 +3,8 @@ import platform
 import shutil
 from pathlib import Path
 
+from core.paths import project_root
+
 
 class StorageService:
     """
@@ -12,7 +14,7 @@ class StorageService:
         ~/.local/share/manazer-bozp
 
     Windows:
-        %LOCALAPPDATA%\manazer-bozp
+        %LOCALAPPDATA%\\manazer-bozp
     """
 
     APP_NAME = "manazer-bozp"
@@ -37,6 +39,7 @@ class StorageService:
         self.templates_dir.mkdir(parents=True, exist_ok=True)
         self.config_dir.mkdir(parents=True, exist_ok=True)
         self.ciselniky_dir.mkdir(parents=True, exist_ok=True)
+        self.control_results_dir.mkdir(parents=True, exist_ok=True)
 
         self.ensure_default_templates()
         self.ensure_editable_catalogs()
@@ -73,7 +76,6 @@ class StorageService:
     def templates_dir(self) -> Path:
         return self.base / "templates"
 
-
     def template_file(self, *parts: str) -> Path:
         """Vrátí cestu k uživatelské šabloně v ~/.local/share/manazer-bozp/templates."""
         return self.templates_dir.joinpath(*parts)
@@ -100,6 +102,10 @@ class StorageService:
     def ciselniky_dir(self) -> Path:
         return self.base / "ciselniky"
 
+    @property
+    def control_results_dir(self) -> Path:
+        return self.base / "control_results"
+
     def ensure_editable_catalogs(self) -> None:
         from core.services.editable_catalog_service import editable_catalog_service
 
@@ -107,14 +113,14 @@ class StorageService:
 
     def bundled_templates_dir(self) -> Path:
         """Výchozí šablony modulu Kniha úrazů dodané s aplikací / AppImage."""
-        return Path(__file__).resolve().parents[2] / "moduly" / "kniha_urazu" / "templates"
+        return project_root() / "moduly" / "kniha_urazu" / "templates"
 
     def bundled_template_roots(self) -> list[Path]:
-        project_root = Path(__file__).resolve().parents[2]
+        root = project_root()
         return [
-            project_root / "moduly" / "kniha_urazu" / "templates",
-            project_root / "moduly" / "proverky" / "templates",
-            project_root / "moduly" / "audity" / "templates",
+            root / "moduly" / "kniha_urazu" / "templates",
+            root / "moduly" / "proverky" / "templates",
+            root / "moduly" / "audity" / "templates",
         ]
 
     def ensure_default_templates(self) -> None:

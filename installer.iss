@@ -45,6 +45,7 @@ Name: "{localappdata}\manazer-bozp\logy"
 Name: "{localappdata}\manazer-bozp\prilohy"
 Name: "{localappdata}\manazer-bozp\templates"
 Name: "{localappdata}\manazer-bozp\zalohy"
+Name: "{localappdata}\manazer-bozp\control_results"
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

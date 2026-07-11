@@ -45,6 +45,12 @@ class AuditProcessesWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
+        self._catalog_error_label = QLabel()
+        self._catalog_error_label.setObjectName("WarningText")
+        self._catalog_error_label.setWordWrap(True)
+        self._catalog_error_label.setVisible(False)
+        layout.addWidget(self._catalog_error_label)
+
         main_splitter = QSplitter()
 
         self.tree_panel = QWidget()
@@ -55,6 +61,7 @@ class AuditProcessesWidget(QWidget):
         self.knowledge_tree = AuditKnowledgeTreeWidget()
         self.knowledge_tree.criterion_selected.connect(self._on_criterion_selected)
         self.knowledge_tree.process_selected.connect(self._on_process_selected)
+        self.knowledge_tree.catalog_error.connect(self._show_catalog_error)
         tree_layout.addWidget(self.knowledge_tree, 1)
 
         self.tree_panel.setMinimumWidth(PROCESS_PANEL_LEFT_WIDTH)
@@ -131,6 +138,13 @@ class AuditProcessesWidget(QWidget):
 
         self.reload_processes()
 
+    def _show_catalog_error(self, message: str) -> None:
+        self._catalog_error_label.setText(message)
+        self._catalog_error_label.setVisible(True)
+
+    def _clear_catalog_error(self) -> None:
+        self._catalog_error_label.clear()
+        self._catalog_error_label.setVisible(False)
     def set_audit_id(self, audit_id: int | None) -> None:
         self.knowledge_widget.set_audit_id(audit_id)
 
@@ -172,7 +186,10 @@ class AuditProcessesWidget(QWidget):
         self.refresh_findings_display()
 
     def reload_processes(self) -> None:
+        self._clear_catalog_error()
         self.knowledge_tree.reload_tree(process_ids=self._planned_process_ids)
+        if self.knowledge_tree.catalog_error_message:
+            self._show_catalog_error(self.knowledge_tree.catalog_error_message)
         self._show_hint()
 
     def _build_hint_page(self) -> QWidget:

@@ -54,6 +54,8 @@ pyinstaller --onedir --windowed \
   --name "$APP_NAME" \
   --add-data "moduly:moduly" \
   --add-data "core:core" \
+  --add-data "ciselniky:ciselniky" \
+  --add-data "zdroje:zdroje" \
   main.py
 
 echo "== AppDir =="

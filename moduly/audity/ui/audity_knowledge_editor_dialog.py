@@ -82,11 +82,18 @@ class AudityKnowledgeEditorDialog(QDialog):
         hint_label.setWordWrap(True)
         root.addWidget(hint_label)
 
+        self._catalog_error_label = QLabel()
+        self._catalog_error_label.setObjectName("WarningText")
+        self._catalog_error_label.setWordWrap(True)
+        self._catalog_error_label.setVisible(False)
+        root.addWidget(self._catalog_error_label)
+
         main_splitter = QSplitter()
 
         self.knowledge_tree = AuditKnowledgeTreeWidget()
         self.knowledge_tree.criterion_selected.connect(self._on_criterion_selected)
         self.knowledge_tree.process_selected.connect(self._on_process_selected)
+        self.knowledge_tree.catalog_error.connect(self._show_catalog_error)
 
         tree_panel = QWidget()
         tree_layout = QVBoxLayout(tree_panel)
@@ -177,6 +184,8 @@ class AudityKnowledgeEditorDialog(QDialog):
         root.addWidget(footer_host, 0)
 
         self.knowledge_tree.reload_tree(include_inactive=True)
+        if self.knowledge_tree.catalog_error_message:
+            self._show_catalog_error(self.knowledge_tree.catalog_error_message)
         if self._initial_process_id:
             self._apply_initial_context(
                 self._initial_process_id,
@@ -184,6 +193,10 @@ class AudityKnowledgeEditorDialog(QDialog):
             )
         else:
             self._show_hint()
+
+    def _show_catalog_error(self, message: str) -> None:
+        self._catalog_error_label.setText(message)
+        self._catalog_error_label.setVisible(True)
 
     def _can_save_current(self) -> bool:
         index = self.content_stack.currentIndex()

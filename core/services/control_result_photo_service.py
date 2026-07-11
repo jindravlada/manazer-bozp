@@ -9,7 +9,7 @@ class ControlResultPhotoService:
     """Optimalizace a ukládání fotografií kontrolních bodů."""
 
     def storage_root(self) -> Path:
-        path = storage_service.base / "control_results"
+        path = storage_service.control_results_dir
         path.mkdir(parents=True, exist_ok=True)
         return path
 

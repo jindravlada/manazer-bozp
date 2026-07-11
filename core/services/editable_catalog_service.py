@@ -3,6 +3,8 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
+from core.paths import project_root as resolve_project_root
+
 
 @dataclass(frozen=True)
 class EditableCatalog:
@@ -18,9 +20,11 @@ _BASE_EDITABLE_CATALOGS: tuple[EditableCatalog, ...] = (
     EditableCatalog("audity/procesy.json"),
 )
 
+_SKIP_SEED_NAMES = frozenset({".gitkeep", "README.md"})
 
-def _load_audity_knowledge_catalogs(project_root: Path) -> tuple[EditableCatalog, ...]:
-    procesy_path = project_root / "ciselniky" / "audity" / "procesy.json"
+
+def _load_audity_knowledge_catalogs(root: Path) -> tuple[EditableCatalog, ...]:
+    procesy_path = root / "ciselniky" / "audity" / "procesy.json"
     if not procesy_path.is_file():
         return ()
 
@@ -48,8 +52,7 @@ def _load_audity_knowledge_catalogs(project_root: Path) -> tuple[EditableCatalog
 
 
 def _build_editable_catalogs() -> tuple[EditableCatalog, ...]:
-    project_root = Path(__file__).resolve().parents[2]
-    return _BASE_EDITABLE_CATALOGS + _load_audity_knowledge_catalogs(project_root)
+    return _BASE_EDITABLE_CATALOGS + _load_audity_knowledge_catalogs(resolve_project_root())
 
 
 # Registr editovatelných číselníků – pro nový číselník stačí přidat položku zde.
@@ -62,7 +65,7 @@ class EditableCatalogService:
     CISELNIKY_DIR_NAME = "ciselniky"
 
     def project_root(self) -> Path:
-        return Path(__file__).resolve().parents[2]
+        return resolve_project_root()
 
     def bundled_dir(self) -> Path:
         return self.project_root() / self.CISELNIKY_DIR_NAME
@@ -77,9 +80,31 @@ class EditableCatalogService:
         return tuple(catalog.relative_path for catalog in EDITABLE_CATALOGS)
 
     def ensure_all(self, user_dir: Path) -> None:
+        """Doplní chybějící distribuované číselníky; existující soubory nepřepisuje."""
         user_dir.mkdir(parents=True, exist_ok=True)
+        self.ensure_bundled_defaults(user_dir)
         for catalog in EDITABLE_CATALOGS:
             self.ensure_catalog(user_dir, catalog.relative_path)
+
+    def ensure_bundled_defaults(self, user_dir: Path) -> None:
+        """Zkopíruje všechny soubory z distribuovaných ``ciselniky/``, pokud v cíli chybí."""
+        bundled = self.bundled_dir()
+        if not bundled.is_dir():
+            return
+
+        for source in bundled.rglob("*"):
+            if not source.is_file():
+                continue
+            if source.name in _SKIP_SEED_NAMES:
+                continue
+
+            relative = source.relative_to(bundled)
+            target = user_dir / relative
+            if target.exists():
+                continue
+
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
 
     def ensure_catalog(self, user_dir: Path, relative_path: str) -> Path:
         target = self.user_path(user_dir, relative_path)

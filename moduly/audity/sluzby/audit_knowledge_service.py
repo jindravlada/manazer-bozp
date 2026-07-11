@@ -16,6 +16,10 @@ from moduly.audity.constants import (
 )
 from moduly.audity.sluzby.audit_knowledge_validator import SECTION_REQUIRED_FIELDS
 
+
+class AuditCatalogError(Exception):
+    """Povinný číselník auditů chybí nebo jej nelze načíst."""
+
 _SKIP_SECTION_BACKFILL_FIELDS = frozenset(
     {
         "auditni_tvrzeni",
@@ -275,7 +279,7 @@ class AuditKnowledgeService:
     ) -> list[AuditProcessDefinition]:
         if ensure:
             self.ensure_catalogs()
-        payload = self._load_json(self.audity_dir / "procesy.json")
+        payload = self._load_processes_catalog()
         raw_processes = payload.get("procesy") or []
 
         processes: list[AuditProcessDefinition] = []
@@ -291,6 +295,25 @@ class AuditKnowledgeService:
 
         processes.sort(key=lambda item: (item.poradi, item.nazev.lower()))
         return processes
+
+    def _load_processes_catalog(self) -> dict:
+        path = self.audity_dir / "procesy.json"
+        if not path.is_file():
+            raise AuditCatalogError(
+                "Chybí povinný číselník auditů:\n"
+                f"{path}\n\n"
+                "Soubor se při startu aplikace kopíruje z distribuovaných dat. "
+                "Zkontrolujte instalaci (AppImage musí obsahovat adresář ciselniky/) "
+                "nebo obnovte výchozí číselníky."
+            )
+        try:
+            return self._load_json(path)
+        except (OSError, json.JSONDecodeError, ValueError) as exc:
+            raise AuditCatalogError(
+                "Číselník auditů nelze načíst:\n"
+                f"{path}\n\n"
+                f"Detail: {exc}"
+            ) from exc
 
     def get_process_by_id(
         self,

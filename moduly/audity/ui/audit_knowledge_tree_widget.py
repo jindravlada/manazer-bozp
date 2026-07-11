@@ -7,6 +7,7 @@ from moduly.audity.constants import PROCESS_PANEL_LEFT_WIDTH
 from moduly.audity.sluzby.audit_knowledge_service import (
     KNOWLEDGE_NODE_PROCESS,
     KNOWLEDGE_NODE_SECTION,
+    AuditCatalogError,
     KnowledgeTreeNode,
     audit_knowledge_service,
 )
@@ -15,6 +16,7 @@ from moduly.audity.sluzby.audit_knowledge_service import (
 class AuditKnowledgeTreeWidget(QTreeWidget):
     criterion_selected = Signal(object)
     process_selected = Signal(object)
+    catalog_error = Signal(str)
 
     _ROLE_NODE_TYPE = Qt.ItemDataRole.UserRole
     _ROLE_NODE_ID = Qt.ItemDataRole.UserRole + 1
@@ -24,6 +26,7 @@ class AuditKnowledgeTreeWidget(QTreeWidget):
 
         self._roots: list[KnowledgeTreeNode] = []
         self._nodes_by_item: dict[int, KnowledgeTreeNode] = {}
+        self._catalog_error: str | None = None
 
         self.setHeaderHidden(True)
         self.setAlternatingRowColors(True)
@@ -31,6 +34,10 @@ class AuditKnowledgeTreeWidget(QTreeWidget):
         self.setIndentation(22)
         self.setExpandsOnDoubleClick(True)
         self.currentItemChanged.connect(self._on_current_item_changed)
+
+    @property
+    def catalog_error_message(self) -> str | None:
+        return self._catalog_error
 
     def reload_tree(
         self,
@@ -41,10 +48,17 @@ class AuditKnowledgeTreeWidget(QTreeWidget):
     ) -> None:
         self._include_inactive = include_inactive
         self._process_filter = process_ids
-        self._roots = audit_knowledge_service.get_knowledge_tree(
-            include_inactive=include_inactive,
-            ensure=ensure,
-        )
+        self._catalog_error = None
+        try:
+            self._roots = audit_knowledge_service.get_knowledge_tree(
+                include_inactive=include_inactive,
+                ensure=ensure,
+            )
+        except AuditCatalogError as exc:
+            self._roots = []
+            self._catalog_error = str(exc)
+            self.catalog_error.emit(self._catalog_error)
+
         self.blockSignals(True)
         self.clear()
         self._nodes_by_item.clear()
