@@ -137,7 +137,7 @@ class TabPracoviste(QWidget):
 
     def _is_empty(self, widget) -> bool:
         if isinstance(widget, WorkplaceSelector):
-            return widget.current_workplace_id() is None
+            return not widget.display_text()
         if isinstance(widget, CodeSelector):
             return not widget.value().strip()
         if isinstance(widget, MultiCodeSelector):
@@ -198,7 +198,7 @@ class TabPracoviste(QWidget):
             self.ekonomicka_cinnost_subjektu.set_value(data.get("nace", ""))
 
     def get_data(self) -> dict:
-        workplace_name = self.workplace.currentText().strip()
+        workplace_name = self.workplace.display_text()
 
         return {
             "workplace_id": self.workplace.current_workplace_id(),
@@ -219,7 +219,10 @@ class TabPracoviste(QWidget):
         }
 
     def load_data(self, accident):
-        self.workplace.set_workplace_id(accident.workplace_id)
+        self.workplace.set_workplace(
+            accident.workplace_id,
+            accident.workplace_name or accident.pracoviste or "",
+        )
         self.charakteristika_pracoviste.set_value(accident.charakteristika_pracoviste or "")
         self.zdroj_urazu.set_value(accident.zdroj_urazu or "")
         self.pricina_urazu.set_value(accident.pricina_urazu or "")

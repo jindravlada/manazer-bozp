@@ -108,16 +108,24 @@ class AccidentService:
 
     def _enrich_workplace(self, data: dict):
         workplace_id = data.get("workplace_id")
-        workplace_name = ""
+        incoming_name = (
+            str(data.get("workplace_name") or data.get("pracoviste") or "").strip()
+        )
 
         if workplace_id:
             workplace = settings_service.get_workplace_by_id(workplace_id)
-            workplace_name = workplace.name if workplace else ""
+            workplace_name = workplace.name if workplace else incoming_name
+            data["workplace_id"] = workplace_id
+            data["workplace_name"] = workplace_name
+            if workplace_name and not str(data.get("pracoviste") or "").strip():
+                data["pracoviste"] = workplace_name
+            return
 
-        data["workplace_name"] = workplace_name
-
-        if workplace_name and not data.get("pracoviste"):
-            data["pracoviste"] = workplace_name
+        # Vlastní text mimo číselník – uložit jen na úraz, nepřidávat do nastavení.
+        data["workplace_id"] = None
+        data["workplace_name"] = incoming_name
+        if incoming_name and not str(data.get("pracoviste") or "").strip():
+            data["pracoviste"] = incoming_name
 
     def _make_number(self, accident_id: int, year: int) -> str:
         return f"{accident_id}/{year}"
