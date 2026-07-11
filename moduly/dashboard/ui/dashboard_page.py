@@ -6,7 +6,6 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QLabel,
-    QMessageBox,
     QPushButton,
     QScrollArea,
     QVBoxLayout,
@@ -146,7 +145,6 @@ class DashboardPage(QWidget):
 
         # Pevné výšky u panelů, které nemají roztahovat celou pracovní plochu.
         self.today.setFixedHeight(170)
-        self.calendar.setFixedHeight(280)
         self.stats.setFixedHeight(130)
         self.controls.setMinimumHeight(220)
         self.accidents.setFixedHeight(170)
@@ -250,7 +248,6 @@ class DashboardPage(QWidget):
         buttons = [
             ("+ Úraz", True),
             ("✓ Úkol", True),
-            ("📋 Kontrola", True),
             ("💾 Záloha", True),
             ("♻ Obnova", True),
         ]
@@ -264,10 +261,6 @@ class DashboardPage(QWidget):
                 button.clicked.connect(self.open_accidents_callback)
             elif text == "✓ Úkol" and self.open_tasks_callback:
                 button.clicked.connect(self.open_tasks_callback)
-            elif text == "📋 Kontrola" and self.open_kontroly_callback:
-                button.clicked.connect(self.open_kontroly_callback)
-            elif text == "📋 Kontrola":
-                button.clicked.connect(self.show_kontroly_info)
             elif text == "💾 Záloha":
                 button.clicked.connect(self._show_backup_dialog)
             elif text == "♻ Obnova":
@@ -277,9 +270,6 @@ class DashboardPage(QWidget):
 
         layout.addStretch()
         return panel
-
-    def show_kontroly_info(self):
-        QMessageBox.information(self, "Kontroly", "Modul Kontroly zatím není aktivní.")
 
     def _show_backup_dialog(self) -> None:
         dialog = CompleteBackupConfirmDialog(self)

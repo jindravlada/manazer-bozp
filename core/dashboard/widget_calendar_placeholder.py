@@ -7,6 +7,14 @@ from PySide6.QtWidgets import QCalendarWidget, QSizePolicy
 from core.dashboard.widget_base import DashboardPanel
 from moduly.ukoly.sluzby.task_service import task_service
 
+# Kompaktní, ale čitelný kalendář – pevná šířka, aby neroztahoval Dashboard.
+_CALENDAR_WIDTH = 480
+_CALENDAR_HEIGHT = 300
+_PANEL_HEIGHT = 360
+_DAY_FONT_POINT_SIZE = 12
+_DAY_NUMBER_HEIGHT = 18
+_WEEK_ROW_MIN_HEIGHT = 38
+
 
 class TaskCalendarWidget(QCalendarWidget):
     def __init__(self):
@@ -17,40 +25,41 @@ class TaskCalendarWidget(QCalendarWidget):
         self.setVerticalHeaderFormat(QCalendarWidget.NoVerticalHeader)
         self.setHorizontalHeaderFormat(QCalendarWidget.ShortDayNames)
         self.setSelectedDate(QDate.currentDate())
-        self.setFixedSize(620, 220)
+        self.setFixedSize(_CALENDAR_WIDTH, _CALENDAR_HEIGHT)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        self.setStyleSheet("""
-            QCalendarWidget#TaskCalendarWidget {
+        self.setStyleSheet(f"""
+            QCalendarWidget#TaskCalendarWidget {{
                 background-color: #ffffff;
                 border: none;
-            }
-            QCalendarWidget#TaskCalendarWidget QWidget#qt_calendar_navigationbar {
-                min-height: 26px;
-                max-height: 26px;
-            }
-            QCalendarWidget#TaskCalendarWidget QHeaderView::section {
-                padding: 0px;
+            }}
+            QCalendarWidget#TaskCalendarWidget QWidget#qt_calendar_navigationbar {{
+                min-height: 32px;
+                max-height: 32px;
+            }}
+            QCalendarWidget#TaskCalendarWidget QHeaderView::section {{
+                padding: 2px 0px;
                 border: none;
                 background-color: #ffffff;
                 color: #6b7280;
-                font-size: 11px;
-            }
-            QCalendarWidget#TaskCalendarWidget QTableView {
+                font-size: 12px;
+            }}
+            QCalendarWidget#TaskCalendarWidget QTableView {{
                 gridline-color: transparent;
                 border: none;
                 background-color: #ffffff;
                 alternate-background-color: #ffffff;
                 outline: 0;
-            }
-            QCalendarWidget#TaskCalendarWidget QTableView::item {
+            }}
+            QCalendarWidget#TaskCalendarWidget QTableView::item {{
                 border: none;
-                padding: 0px;
-            }
-            QCalendarWidget#TaskCalendarWidget QAbstractItemView:enabled {
+                padding: 1px 0px;
+                min-height: {_WEEK_ROW_MIN_HEIGHT}px;
+            }}
+            QCalendarWidget#TaskCalendarWidget QAbstractItemView:enabled {{
                 selection-background-color: transparent;
                 selection-color: #111827;
-                font-size: 11px;
-            }
+                font-size: {_DAY_FONT_POINT_SIZE}px;
+            }}
         """)
         self._apply_formats()
 
@@ -64,7 +73,7 @@ class TaskCalendarWidget(QCalendarWidget):
         self.updateCells()
 
     def paintCell(self, painter: QPainter, rect: QRect, qdate: QDate):
-        inset_y = 1
+        inset_y = 2
         cell = QRect(
             rect.left(),
             rect.top() + inset_y,
@@ -84,7 +93,7 @@ class TaskCalendarWidget(QCalendarWidget):
             or qdate.year() != self.yearShown()
         )
         font = painter.font()
-        font.setPointSize(10)
+        font.setPointSize(_DAY_FONT_POINT_SIZE)
         font.setBold(qdate == QDate.currentDate())
         painter.setFont(font)
 
@@ -95,10 +104,10 @@ class TaskCalendarWidget(QCalendarWidget):
         else:
             painter.setPen(QColor("#374151"))
 
-        day_rect = QRect(cell.left(), cell.top() + 1, cell.width(), 12)
+        day_rect = QRect(cell.left(), cell.top() + 2, cell.width(), _DAY_NUMBER_HEIGHT)
         painter.drawText(
             day_rect,
-            int(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop),
+            int(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter),
             str(qdate.day()),
         )
 
@@ -122,7 +131,7 @@ class TaskCalendarWidget(QCalendarWidget):
         spacing = 4
         total = len(colors) * radius * 2 + max(0, len(colors) - 1) * spacing
         x = cell.center().x() - total // 2
-        y = day_rect.bottom() + 2
+        y = day_rect.bottom() + 3
         y = min(y, cell.bottom() - radius * 2 - 1)
         for color in colors[:4]:
             painter.setBrush(color)
@@ -138,8 +147,9 @@ class CalendarPlaceholderWidget(DashboardPanel):
 
         self.calendar = TaskCalendarWidget()
         self.layout.addWidget(self.calendar, 0, Qt.AlignHCenter)
-        self.setFixedHeight(280)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.setFixedHeight(_PANEL_HEIGHT)
+        self.setMinimumHeight(_PANEL_HEIGHT)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         self.refresh()
 
     def refresh(self):

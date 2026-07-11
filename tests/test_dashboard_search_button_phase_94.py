@@ -51,7 +51,7 @@ class DashboardSearchButtonPhase94TestCase(unittest.TestCase):
 
         self.assertEqual(
             quick_buttons,
-            ["+ Úraz", "✓ Úkol", "📋 Kontrola", "💾 Záloha", "♻ Obnova"],
+            ["+ Úraz", "✓ Úkol", "💾 Záloha", "♻ Obnova"],
         )
 
     def test_dashboard_page_has_no_open_search_callback(self) -> None:

@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QLabel
 
 _TMP = Path(tempfile.mkdtemp())
 
@@ -25,8 +25,9 @@ with patch.object(Path, "home", return_value=_TMP):
     initialize_database()
 
     from core.version import (
+        APP_AUTHOR,
+        APP_COPYRIGHT,
         APP_VERSION,
-        app_about_text,
         app_display_name,
         installer_output_basename,
     )
@@ -51,8 +52,10 @@ class VersionPhase89TestCase(unittest.TestCase):
     def test_about_dialog_shows_central_version(self) -> None:
         dialog = AboutDialog()
         self.assertIn("3.1.0", dialog.windowTitle())
-        label = dialog.findChild(type(dialog.layout().itemAt(0).widget()))
-        self.assertEqual(label.text(), app_about_text())
+        labels = {label.text() for label in dialog.findChildren(QLabel)}
+        self.assertIn(app_display_name(), labels)
+        self.assertIn(APP_AUTHOR, labels)
+        self.assertIn(APP_COPYRIGHT, labels)
 
     def test_generate_version_info_uses_central_version(self) -> None:
         project_root = Path(__file__).resolve().parents[1]
