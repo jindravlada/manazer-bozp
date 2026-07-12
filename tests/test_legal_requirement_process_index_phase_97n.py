@@ -47,6 +47,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.pravni_pozadavky.ui.legal_requirement_process_index_widget import (
         LegalRequirementProcessIndexWidget,
     )
+    from moduly.ukoly.modely.task import Task
 
 
 class LegalRequirementProcessIndexPhase97nTestCase(unittest.TestCase):
@@ -56,6 +57,7 @@ class LegalRequirementProcessIndexPhase97nTestCase(unittest.TestCase):
 
     def setUp(self) -> None:
         with get_session() as session:
+            session.execute(delete(Task))
             session.execute(delete(LegalRequirementSource))
             session.execute(delete(LegalRequirement))
             session.commit()

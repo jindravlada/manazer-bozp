@@ -138,9 +138,35 @@ PROCESS_INDEX_LEGAL_SCORE_EXCLUDED: frozenset[str] = frozenset(
     }
 )
 
+# Skóre úkolů — „Aktivní po termínu“ není computed_status, jen rozlišení při výpočtu.
+PROCESS_INDEX_TASK_ACTIVE_OVERDUE_CODE = "aktivni_po_terminu"
+PROCESS_INDEX_TASK_ACTIVE_OVERDUE_LABEL = "Aktivní po termínu"
+
+PROCESS_INDEX_TASK_SCORE_POINTS: dict[str, int] = {
+    TASK_STATUS_DONE: 100,
+    TASK_STATUS_WAITING_CHECK: 90,
+    TASK_STATUS_ACTIVE: 50,
+    PROCESS_INDEX_TASK_ACTIVE_OVERDUE_CODE: 0,
+}
+
+PROCESS_INDEX_TASK_SCORE_EXCLUDED: frozenset[str] = frozenset(
+    {
+        TASK_STATUS_CANCELED,
+    }
+)
+
+PROCESS_INDEX_TASK_STATUS_LABELS: dict[str, str] = {
+    TASK_STATUS_DONE: TASK_STATUS_DONE,
+    TASK_STATUS_WAITING_CHECK: TASK_STATUS_WAITING_CHECK,
+    TASK_STATUS_ACTIVE: TASK_STATUS_ACTIVE,
+    PROCESS_INDEX_TASK_ACTIVE_OVERDUE_CODE: PROCESS_INDEX_TASK_ACTIVE_OVERDUE_LABEL,
+    TASK_STATUS_CANCELED: TASK_STATUS_CANCELED,
+}
+
 PROCESS_INDEX_AREA_AUDITY = "audity"
 PROCESS_INDEX_AREA_PROVERKY = "proverky"
 PROCESS_INDEX_AREA_PRAVNI_POZADAVKY = "pravni_pozadavky"
+PROCESS_INDEX_AREA_UKOLY = "ukoly"
 
 
 @dataclass(frozen=True)
@@ -253,6 +279,7 @@ class LegalRequirementProcessTaskStatus:
     task_count: int
     open_count: int = 0
     overdue_open_count: int = 0
+    active_overdue_count: int = 0
     nearest_due_date: date | None = None
     status_counts: tuple[ProcessStatusResultCount, ...] = ()
 
@@ -488,6 +515,7 @@ class LegalRequirementProcessStatusService:
         status_totals: dict[str, int] = {label: 0 for label in _TASK_STATUS_ORDER}
         open_count = 0
         overdue_open_count = 0
+        active_overdue_count = 0
         nearest_due: date | None = None
         today = date.today()
 
@@ -497,6 +525,10 @@ class LegalRequirementProcessStatusService:
                 status_totals[status] = 0
             status_totals[status] += 1
 
+            past_due = self._is_task_past_due(task, today=today)
+            if status == TASK_STATUS_ACTIVE and past_due:
+                active_overdue_count += 1
+
             if status not in _OPEN_TASK_STATUSES:
                 continue
 
@@ -504,7 +536,7 @@ class LegalRequirementProcessStatusService:
             due_date = task.due_date
             if due_date is None:
                 continue
-            if due_date < today:
+            if past_due:
                 overdue_open_count += 1
             if nearest_due is None or due_date < nearest_due:
                 nearest_due = due_date
@@ -532,15 +564,22 @@ class LegalRequirementProcessStatusService:
             task_count=len(tasks),
             open_count=open_count,
             overdue_open_count=overdue_open_count,
+            active_overdue_count=active_overdue_count,
             nearest_due_date=nearest_due,
             status_counts=status_counts,
         )
+
+    @staticmethod
+    def _is_task_past_due(task, *, today: date) -> bool:
+        """Stejná logika jako modul Úkoly: termín splnění je dřívější než dnes."""
+        due_date = task.due_date
+        return due_date is not None and due_date < today
 
     def get_process_index_breakdown(
         self,
         requirement_id: int | None = None,
     ) -> ProcessIndexBreakdown:
-        """Vrátí rozpad oblastí Indexu procesu (váhy pevné; skóre Audity/Prověrky/PP)."""
+        """Vrátí rozpad oblastí Indexu procesu (váhy pevné; skóre čtyř oblastí)."""
         scored_areas = {
             PROCESS_INDEX_AREA_AUDITY: self._compute_audit_area_score(requirement_id),
             PROCESS_INDEX_AREA_PROVERKY: self._compute_inspection_area_score(
@@ -549,6 +588,7 @@ class LegalRequirementProcessStatusService:
             PROCESS_INDEX_AREA_PRAVNI_POZADAVKY: self._compute_legal_requirements_area_score(
                 requirement_id,
             ),
+            PROCESS_INDEX_AREA_UKOLY: self._compute_task_area_score(requirement_id),
         }
 
         areas: list[ProcessIndexAreaBreakdown] = []
@@ -653,6 +693,67 @@ class LegalRequirementProcessStatusService:
                 "(všechny jsou nerelevantní nebo bez vyhodnocení)."
             ),
             total_count=legal_status.requirement_count,
+        )
+
+    def _compute_task_area_score(
+        self,
+        requirement_id: int | None,
+    ) -> tuple[float | None, ProcessIndexAreaScoreDetail | None]:
+        """Skóre oblasti Úkoly z přímých úkolů řídicího procesu (0–100, nebo None)."""
+        if requirement_id is None:
+            return None, None
+
+        task_status = self.get_task_status(requirement_id)
+        by_label = {
+            item.result_label: item.count for item in task_status.status_counts
+        }
+        active_total = by_label.get(TASK_STATUS_ACTIVE, 0)
+        active_overdue = task_status.active_overdue_count
+        active_ontime = max(0, active_total - active_overdue)
+
+        result_counts = (
+            ProcessStatusResultCount(
+                result_code=TASK_STATUS_ACTIVE,
+                result_label=TASK_STATUS_ACTIVE,
+                count=active_ontime,
+            ),
+            ProcessStatusResultCount(
+                result_code=PROCESS_INDEX_TASK_ACTIVE_OVERDUE_CODE,
+                result_label=PROCESS_INDEX_TASK_ACTIVE_OVERDUE_LABEL,
+                count=active_overdue,
+            ),
+            ProcessStatusResultCount(
+                result_code=TASK_STATUS_WAITING_CHECK,
+                result_label=TASK_STATUS_WAITING_CHECK,
+                count=by_label.get(TASK_STATUS_WAITING_CHECK, 0),
+            ),
+            ProcessStatusResultCount(
+                result_code=TASK_STATUS_DONE,
+                result_label=TASK_STATUS_DONE,
+                count=by_label.get(TASK_STATUS_DONE, 0),
+            ),
+            ProcessStatusResultCount(
+                result_code=TASK_STATUS_CANCELED,
+                result_label=TASK_STATUS_CANCELED,
+                count=by_label.get(TASK_STATUS_CANCELED, 0),
+            ),
+        )
+
+        return self._score_from_result_counts(
+            result_counts=result_counts,
+            empty_message=task_status.empty_message,
+            source_entity_id=None,
+            source_entity_date=None,
+            source_entity_label="",
+            score_points=PROCESS_INDEX_TASK_SCORE_POINTS,
+            excluded=PROCESS_INDEX_TASK_SCORE_EXCLUDED,
+            status_labels=PROCESS_INDEX_TASK_STATUS_LABELS,
+            entity_kind_label="Úkoly",
+            no_countable_summary=(
+                "K procesu nejsou žádné započitatelné úkoly "
+                "(všechny jsou zrušené)."
+            ),
+            total_count=task_status.task_count,
         )
 
     @staticmethod
