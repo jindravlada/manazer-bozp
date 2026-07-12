@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication, QLabel
+from PySide6.QtWidgets import QApplication, QGroupBox, QLabel
 from sqlalchemy import delete
 
 _TMP = Path(tempfile.mkdtemp())
@@ -96,7 +96,9 @@ class LegalRequirementProcessIndexPhase97qTestCase(unittest.TestCase):
             texts,
         )
         self.assertTrue(any(text.startswith("• Splněno: 100 b.") for text in texts))
-        self.assertTrue(any("Výpočet:" == text for text in texts))
+        self.assertTrue(
+            any(group.title() == "Výpočet" for group in widget.detail_panel.findChildren(QGroupBox))
+        )
         self.assertNotIn(PROCESS_INDEX_DETAIL_PROMPT, texts)
 
     def test_switching_row_updates_detail(self) -> None:
@@ -116,7 +118,10 @@ class LegalRequirementProcessIndexPhase97qTestCase(unittest.TestCase):
         self.assertTrue(
             any("Proces nemá přiřazena žádná auditní tvrzení." in text for text in texts)
             or any("podklady výpočtu" in text for text in texts)
-            or any("Výpočet:" == text for text in texts)
+            or any(
+                group.title() == "Výpočet"
+                for group in widget.detail_panel.findChildren(QGroupBox)
+            )
         )
 
 

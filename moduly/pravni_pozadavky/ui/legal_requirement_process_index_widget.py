@@ -5,6 +5,7 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
+    QGroupBox,
     QHeaderView,
     QLabel,
     QTableWidget,
@@ -91,7 +92,7 @@ class LegalRequirementProcessIndexWidget(QWidget):
         self.detail_panel = QWidget()
         self.detail_layout = QVBoxLayout(self.detail_panel)
         self.detail_layout.setContentsMargins(0, 0, 0, 0)
-        self.detail_layout.setSpacing(2)
+        self.detail_layout.setSpacing(8)
         layout.addWidget(self.detail_panel, 1)
 
         self.refresh()
@@ -187,50 +188,86 @@ class LegalRequirementProcessIndexWidget(QWidget):
         self.detail_layout.addWidget(prompt)
         self.detail_layout.addStretch()
 
-    def _add_detail_line(self, text: str, *, bold: bool = False) -> None:
+    def _add_line(self, layout: QVBoxLayout, text: str) -> None:
         label = QLabel(text)
         label.setWordWrap(True)
-        if bold:
-            font = QFont(label.font())
-            font.setBold(True)
-            label.setFont(font)
-        self.detail_layout.addWidget(label)
+        layout.addWidget(label)
+
+    def _make_group(self, title: str, lines: list[str]) -> QGroupBox | None:
+        if not lines:
+            return None
+        group = QGroupBox(title)
+        group_layout = QVBoxLayout(group)
+        group_layout.setContentsMargins(8, 8, 8, 8)
+        group_layout.setSpacing(2)
+        for line in lines:
+            self._add_line(group_layout, line)
+        return group
 
     def _render_area_detail(self, area: ProcessIndexAreaBreakdown) -> None:
         self._clear_detail_panel()
-        self._add_detail_line(area.area_label, bold=True)
-        self._add_detail_line(f"Metodická váha: {area.weight_percent} %")
-        self._add_detail_line(f"Skóre: {_format_index_number(area.score)} %")
-        self._add_detail_line(f"Přínos: {_format_index_number(area.contribution)}")
+
+        area_heading = QLabel(area.area_label)
+        area_font = QFont(area_heading.font())
+        area_font.setBold(True)
+        area_heading.setFont(area_font)
+        self.detail_layout.addWidget(area_heading)
+
+        result_group = self._make_group(
+            "Výsledek",
+            [
+                f"Skóre: {_format_index_number(area.score)} %",
+                f"Přínos: {_format_index_number(area.contribution)}",
+                f"Metodická váha: {area.weight_percent} %",
+            ],
+        )
+        if result_group is not None:
+            self.detail_layout.addWidget(result_group)
 
         detail = area.score_detail
         if detail is None:
-            self._add_detail_line("Pro tuto oblast zatím nejsou k dispozici podklady výpočtu.")
+            self._add_line(
+                self.detail_layout,
+                "Pro tuto oblast zatím nejsou k dispozici podklady výpočtu.",
+            )
             self.detail_layout.addStretch()
             return
 
+        source_lines: list[str] = []
         if detail.source_entity_label:
-            self._add_detail_line(f"Zdroj: {detail.source_entity_label}")
+            source_lines.append(f"Zdroj: {detail.source_entity_label}")
         if detail.source_entity_date is not None:
-            self._add_detail_line(
+            source_lines.append(
                 f"Datum: {detail.source_entity_date.strftime('%d.%m.%Y')}"
             )
         if detail.total_count is not None:
-            self._add_detail_line(f"Počet položek: {detail.total_count}")
-        self._add_detail_line(f"Započitatelných hodnocení: {detail.countable_count}")
+            source_lines.append(f"Počet položek: {detail.total_count}")
+        source_lines.append(f"Započitatelných hodnocení: {detail.countable_count}")
+        source_group = self._make_group("Zdroj dat", source_lines)
+        if source_group is not None:
+            self.detail_layout.addWidget(source_group)
 
-        if detail.result_counts:
-            self._add_detail_line("Počty podle stavů:", bold=True)
-            for item in detail.result_counts:
-                self._add_detail_line(f"• {item.result_label}: {item.count}")
+        status_lines = [
+            f"• {item.result_label}: {item.count}"
+            for item in detail.result_counts
+        ]
+        status_group = self._make_group("Počty podle stavů", status_lines)
+        if status_group is not None:
+            self.detail_layout.addWidget(status_group)
 
-        if detail.point_mappings:
-            self._add_detail_line("Bodové hodnoty:", bold=True)
-            for mapping in detail.point_mappings:
-                self._add_detail_line(f"• {mapping.result_label}: {mapping.points} b.")
+        points_lines = [
+            f"• {mapping.result_label}: {mapping.points} b."
+            for mapping in detail.point_mappings
+        ]
+        points_group = self._make_group("Bodové hodnocení", points_lines)
+        if points_group is not None:
+            self.detail_layout.addWidget(points_group)
 
-        if detail.calculation_summary:
-            self._add_detail_line("Výpočet:", bold=True)
-            self._add_detail_line(detail.calculation_summary)
+        calculation_lines = (
+            [detail.calculation_summary] if detail.calculation_summary else []
+        )
+        calculation_group = self._make_group("Výpočet", calculation_lines)
+        if calculation_group is not None:
+            self.detail_layout.addWidget(calculation_group)
 
         self.detail_layout.addStretch()
