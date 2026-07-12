@@ -171,6 +171,8 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         area_id: str,
         section_id: str,
         embedded: bool = False,
+        section_data: dict | None = None,
+        initially_modified: bool = False,
     ):
         super().__init__(parent)
 
@@ -183,7 +185,10 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         self._reference_lists: set[QListWidget] = set()
         self._sections_by_list: dict[QListWidget, _CollapsibleSection] = {}
 
-        section = proverky_knowledge_service.get_section(area_id, section_id)
+        if section_data is not None:
+            section = deepcopy(section_data)
+        else:
+            section = proverky_knowledge_service.get_section(area_id, section_id)
         if section is None:
             raise ValueError(f"Sekce {section_id} v oblasti {area_id} neexistuje.")
 
@@ -279,6 +284,8 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         self._control_process_combo.currentIndexChanged.connect(
             lambda *_args: self._mark_modified()
         )
+        if initially_modified:
+            self._mark_modified()
 
     @property
     def area_id(self) -> str:
@@ -299,6 +306,30 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         self._mark_saved()
         self.content_saved.emit()
         return True
+
+    def capture_draft(self) -> dict:
+        """Snímek aktuálního stavu sekce pro odložené uložení v paměti."""
+        payload = deepcopy(self._section)
+        payload["nazev"] = self._nazev_edit.text().strip()
+        payload["popis"] = self._popis_edit.toPlainText().strip()
+        payload["aktivni"] = self._aktivni_check.isChecked()
+        payload["legal_requirement_id"] = selected_control_process_id(
+            self._control_process_combo
+        )
+
+        for _title, field_name in EDITABLE_SECTION_PROCEDURE_FIELDS:
+            list_widget = self._lists_by_field[field_name]
+            payload[field_name] = self._collect_procedure_steps(list_widget)
+
+        for _title, field_name in EDITABLE_SECTION_REFERENCE_FIELDS:
+            list_widget = self._lists_by_field[field_name]
+            payload[field_name] = self._collect_reference_photos(list_widget)
+
+        for _title, field_name in EDITABLE_SECTION_LIST_FIELDS:
+            list_widget = self._lists_by_field[field_name]
+            payload[field_name] = self._collect_list_items(list_widget, field_name)
+
+        return payload
 
     def _mark_modified(self) -> None:
         self._modified = True

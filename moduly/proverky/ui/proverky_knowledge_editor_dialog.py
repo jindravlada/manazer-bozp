@@ -7,7 +7,6 @@ from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QDialog,
     QFrame,
-    QHBoxLayout,
     QLabel,
     QMessageBox,
     QSizePolicy,
@@ -61,6 +60,7 @@ class ProverkyKnowledgeEditorDialog(QDialog):
         self._current_section_id = ""
         self._modified = False
         self._section_editor: ProverkyKnowledgeSectionEditDialog | None = None
+        self._drafts: dict[tuple[str, str], dict] = {}
 
         proverky_knowledge_service.ensure_catalogs()
 
@@ -166,28 +166,99 @@ class ProverkyKnowledgeEditorDialog(QDialog):
     def _update_action_buttons(self) -> None:
         enabled = self._can_save_current()
         self._apply_btn.setEnabled(enabled)
-        self._save_close_btn.setEnabled(enabled)
+        self._save_close_btn.setEnabled(enabled or self._has_unsaved_changes())
 
     def _mark_modified(self) -> None:
         self._modified = True
         show_unsaved_status(self._status_label)
+        self._update_action_buttons()
 
     def _mark_saved(self) -> None:
         self._modified = False
         if self._section_editor is not None:
             self._section_editor._mark_saved()
 
+    def _has_unsaved_changes(self) -> bool:
+        if self._drafts:
+            return True
+        if self._section_editor is not None and self._section_editor.is_modified:
+            return True
+        return False
+
+    def _refresh_dirty_status(self) -> None:
+        if self._has_unsaved_changes():
+            self._modified = True
+            show_unsaved_status(self._status_label)
+        else:
+            self._modified = False
+        self._update_action_buttons()
+
+    def _stash_current_section_draft(self) -> None:
+        if self._section_editor is None or not self._section_editor.is_modified:
+            return
+        key = (self._section_editor.area_id, self._section_editor.section_id)
+        self._drafts[key] = self._section_editor.capture_draft()
+        self._modified = True
+
+    def _discard_all_drafts(self) -> None:
+        self._drafts.clear()
+        self._mark_saved()
+        clear_save_status(self._status_label)
+        self._update_action_buttons()
+
+    def _persist_draft(self, area_id: str, section_id: str, payload: dict) -> bool:
+        if not str(payload.get("nazev") or "").strip():
+            QMessageBox.warning(
+                self,
+                self.windowTitle(),
+                f"Sekce „{section_id}“: název sekce je povinný.",
+            )
+            return False
+        saved, errors = proverky_knowledge_service.save_section(
+            area_id,
+            section_id,
+            payload,
+        )
+        if errors:
+            QMessageBox.warning(self, self.windowTitle(), "\n".join(errors))
+            return False
+        return bool(saved)
+
+    def _save_all_pending(self) -> bool:
+        self._stash_current_section_draft()
+        pending = list(self._drafts.items())
+        if not pending and self._section_editor is not None:
+            if not self._section_editor.persist_changes():
+                return False
+            self._mark_saved()
+            return True
+
+        for (area_id, section_id), payload in pending:
+            if not self._persist_draft(area_id, section_id, payload):
+                return False
+
+        self._drafts.clear()
+        if self._section_editor is not None:
+            area_id = self._section_editor.area_id
+            section_id = self._section_editor.section_id
+            self._reload_section_editor(area_id, section_id, mark_clean=True)
+        else:
+            self._mark_saved()
+        return True
+
     def _apply_changes(self) -> None:
         if self._save_current():
-            self._mark_saved()
-            show_save_status(self._status_label)
+            if self._has_unsaved_changes():
+                show_unsaved_status(self._status_label)
+            else:
+                show_save_status(self._status_label)
 
     def _save_and_close(self) -> None:
-        if not self._can_save_current():
+        if not self._has_unsaved_changes() and not self._can_save_current():
             self._modified = False
             self.accept()
             return
-        if self._save_current():
+        if self._save_all_pending():
             self._mark_saved()
             self.accept()
 
@@ -196,22 +267,18 @@ class ProverkyKnowledgeEditorDialog(QDialog):
             super().reject()
 
     def _confirm_close(self) -> bool:
-        if not self._modified and (
-            self._section_editor is None or not self._section_editor.is_modified
-        ):
+        if not self._has_unsaved_changes():
             return True
 
         decision = confirm_close_with_unsaved_changes(self, title=self.windowTitle())
         if decision == "cancel":
             return False
         if decision == "save":
-            if not self._can_save_current():
-                return False
-            if not self._save_current():
+            if not self._save_all_pending():
                 return False
             self._mark_saved()
         else:
-            self._mark_saved()
+            self._discard_all_drafts()
         return True
 
     def closeEvent(self, event: QCloseEvent) -> None:
@@ -225,8 +292,7 @@ class ProverkyKnowledgeEditorDialog(QDialog):
             super().reject()
 
     def _show_hint(self, *, message: str | None = None) -> None:
-        clear_save_status(self._status_label)
-        self._mark_saved()
+        self._stash_current_section_draft()
         self._current_area_id = ""
         self._current_section_id = ""
         self._clear_section_editor()
@@ -234,7 +300,9 @@ class ProverkyKnowledgeEditorDialog(QDialog):
         self._empty_state_label.setText(message or KNOWLEDGE_EDITOR_SELECT_SECTION_HINT)
         self._empty_state_label.setVisible(True)
         self._editor_host.setVisible(False)
-        self._update_action_buttons()
+        self._refresh_dirty_status()
+        if not self._has_unsaved_changes():
+            clear_save_status(self._status_label)
 
     def _clear_section_editor(self) -> None:
         if self._section_editor is None:
@@ -244,38 +312,46 @@ class ProverkyKnowledgeEditorDialog(QDialog):
         self._section_editor = None
 
     def _on_area_selected(self, node: KnowledgeTreeNode) -> None:
-        if not self._prepare_selection_change():
-            self._restore_tree_selection()
-            return
-        self._show_hint(
-            message=(
-                f"Oblast „{node.label}“ — vyberte sekci ve stromu pro editaci metodiky."
-            )
-        )
+        self._stash_current_section_draft()
+        self._clear_section_editor()
         self._current_area_id = node.area_id
+        self._current_section_id = ""
         self.center_title_label.setText(node.label)
+        self._empty_state_label.setText(
+            f"Oblast „{node.label}“ — vyberte sekci ve stromu pro editaci metodiky."
+        )
+        self._empty_state_label.setVisible(True)
+        self._editor_host.setVisible(False)
+        self._refresh_dirty_status()
+        if not self._has_unsaved_changes():
+            clear_save_status(self._status_label)
+        self._update_action_buttons()
 
     def _on_section_selected(self, node: KnowledgeTreeNode | None) -> None:
         if node is None:
             return
-        if not self._prepare_selection_change():
-            self._restore_tree_selection()
-            return
 
-        clear_save_status(self._status_label)
+        self._stash_current_section_draft()
+
         section = node.section
         if section is None:
             self._show_hint()
             return
 
+        draft_key = (node.area_id, node.node_id)
+        draft = self._drafts.pop(draft_key, None)
         try:
             editor = ProverkyKnowledgeSectionEditDialog(
                 self,
                 area_id=node.area_id,
                 section_id=node.node_id,
                 embedded=True,
+                section_data=draft,
+                initially_modified=draft is not None,
             )
         except ValueError as exc:
+            if draft is not None:
+                self._drafts[draft_key] = draft
             QMessageBox.warning(self, self.windowTitle(), str(exc))
             self._show_hint()
             return
@@ -288,61 +364,31 @@ class ProverkyKnowledgeEditorDialog(QDialog):
 
         self._current_area_id = node.area_id
         self._current_section_id = node.node_id
-        self._mark_saved()
         self.center_title_label.setText(f"{node.area_label} → {node.label}")
         self._empty_state_label.setVisible(False)
         self._editor_host.setVisible(True)
+        self._refresh_dirty_status()
+        if not self._has_unsaved_changes():
+            clear_save_status(self._status_label)
         self._update_action_buttons()
 
     def _on_section_content_saved(self) -> None:
-        self._mark_saved()
-        show_save_status(self._status_label)
+        key = None
+        if self._section_editor is not None:
+            key = (self._section_editor.area_id, self._section_editor.section_id)
+        if key is not None:
+            self._drafts.pop(key, None)
+        self._refresh_dirty_status()
+        if not self._has_unsaved_changes():
+            show_save_status(self._status_label)
 
-    def _prepare_selection_change(self) -> bool:
-        if self._section_editor is None:
-            return True
-        if not self._section_editor.is_modified and not self._modified:
-            return True
-        decision = confirm_close_with_unsaved_changes(self, title=self.windowTitle())
-        if decision == "cancel":
-            return False
-        if decision == "save":
-            if not self._save_current():
-                return False
-            self._mark_saved()
-            return True
-        self._mark_saved()
-        return True
-
-    def _restore_tree_selection(self) -> None:
-        if self._current_area_id and self._current_section_id:
-            self.knowledge_tree.blockSignals(True)
-            try:
-                self.knowledge_tree.select_node(
-                    self._current_area_id,
-                    self._current_section_id,
-                )
-            finally:
-                self.knowledge_tree.blockSignals(False)
-
-    def _save_current(self) -> bool:
-        if self._section_editor is None:
-            return False
-        area_id = self._section_editor.area_id
-        section_id = self._section_editor.section_id
-        if not self._section_editor.persist_changes():
-            return False
-
-        self.knowledge_tree.reload_tree(include_inactive=True)
-        self.knowledge_tree.blockSignals(True)
-        try:
-            if not self.knowledge_tree.select_node(area_id, section_id):
-                self._show_hint()
-                return False
-        finally:
-            self.knowledge_tree.blockSignals(False)
-
-        # Znovu načíst editor se uloženými daty (včetně řídicího procesu).
+    def _reload_section_editor(
+        self,
+        area_id: str,
+        section_id: str,
+        *,
+        mark_clean: bool,
+    ) -> bool:
         try:
             editor = ProverkyKnowledgeSectionEditDialog(
                 self,
@@ -351,7 +397,7 @@ class ProverkyKnowledgeEditorDialog(QDialog):
                 embedded=True,
             )
         except ValueError:
-            return True
+            return False
 
         self._clear_section_editor()
         self._section_editor = editor
@@ -367,5 +413,31 @@ class ProverkyKnowledgeEditorDialog(QDialog):
         self.center_title_label.setText(f"{area_label} → {section_label}")
         self._empty_state_label.setVisible(False)
         self._editor_host.setVisible(True)
+        if mark_clean:
+            self._mark_saved()
+        self._refresh_dirty_status()
         self._update_action_buttons()
+        return True
+
+    def _save_current(self) -> bool:
+        if self._section_editor is None:
+            return False
+        area_id = self._section_editor.area_id
+        section_id = self._section_editor.section_id
+        if not self._section_editor.persist_changes():
+            return False
+
+        self._drafts.pop((area_id, section_id), None)
+
+        self.knowledge_tree.reload_tree(include_inactive=True)
+        self.knowledge_tree.blockSignals(True)
+        try:
+            if not self.knowledge_tree.select_node(area_id, section_id):
+                self._show_hint()
+                return False
+        finally:
+            self.knowledge_tree.blockSignals(False)
+
+        if not self._reload_section_editor(area_id, section_id, mark_clean=True):
+            return True
         return True

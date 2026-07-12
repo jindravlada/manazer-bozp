@@ -22,6 +22,9 @@ KNOWLEDGE_EDITOR_CLOSE_LABEL = "Zavřít"
 KNOWLEDGE_EDITOR_SAVED_MESSAGE = "✓ Uloženo."
 KNOWLEDGE_EDITOR_UNSAVED_MESSAGE = "● Neuložené změny"
 KNOWLEDGE_EDITOR_UNSAVED_PROMPT = "Uložit změny před zavřením?"
+KNOWLEDGE_EDITOR_SAVE_LABEL = "Uložit"
+KNOWLEDGE_EDITOR_DISCARD_LABEL = "Neukládat"
+KNOWLEDGE_EDITOR_CANCEL_LABEL = "Zrušit"
 
 
 def _standard_icon(pixmap: QStyle.StandardPixmap) -> QIcon:
@@ -97,16 +100,25 @@ def confirm_close_with_unsaved_changes(parent: QWidget, *, title: str) -> str:
     message.setText(KNOWLEDGE_EDITOR_UNSAVED_PROMPT)
     message.setIcon(QMessageBox.Icon.Question)
 
-    yes_btn = message.addButton("Ano", QMessageBox.ButtonRole.YesRole)
-    no_btn = message.addButton("Ne", QMessageBox.ButtonRole.NoRole)
-    cancel_btn = message.addButton("Storno", QMessageBox.ButtonRole.RejectRole)
+    save_btn = message.addButton(
+        KNOWLEDGE_EDITOR_SAVE_LABEL,
+        QMessageBox.ButtonRole.AcceptRole,
+    )
+    discard_btn = message.addButton(
+        KNOWLEDGE_EDITOR_DISCARD_LABEL,
+        QMessageBox.ButtonRole.DestructiveRole,
+    )
+    cancel_btn = message.addButton(
+        KNOWLEDGE_EDITOR_CANCEL_LABEL,
+        QMessageBox.ButtonRole.RejectRole,
+    )
     message.setDefaultButton(cancel_btn)
 
     message.exec()
     clicked = message.clickedButton()
-    if clicked is yes_btn:
+    if clicked is save_btn:
         return "save"
-    if clicked is no_btn:
+    if clicked is discard_btn:
         return "discard"
     return "cancel"
 

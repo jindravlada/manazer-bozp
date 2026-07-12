@@ -70,6 +70,9 @@ class AudityKnowledgeEditorDialog(QDialog):
         self._current_process_id = ""
         self._current_section_id = ""
         self._modified = False
+        self._current_dirty = False
+        self._process_drafts: dict[str, dict] = {}
+        self._section_drafts: dict[tuple[str, str], dict] = {}
 
         audit_knowledge_editor_service.ensure_user_catalogs()
 
@@ -209,30 +212,138 @@ class AudityKnowledgeEditorDialog(QDialog):
     def _update_action_buttons(self) -> None:
         enabled = self._can_save_current()
         self._apply_btn.setEnabled(enabled)
-        self._save_close_btn.setEnabled(enabled)
+        self._save_close_btn.setEnabled(enabled or self._has_unsaved_changes())
 
     def _mark_modified(self) -> None:
         self._modified = True
+        self._current_dirty = True
         show_unsaved_status(self._status_label)
+        self._update_action_buttons()
 
     def _mark_saved(self) -> None:
         self._modified = False
+        self._current_dirty = False
+
+    def _has_unsaved_changes(self) -> bool:
+        return (
+            self._current_dirty
+            or bool(self._process_drafts)
+            or bool(self._section_drafts)
+        )
+
+    def _refresh_dirty_status(self) -> None:
+        if self._has_unsaved_changes():
+            self._modified = True
+            show_unsaved_status(self._status_label)
+        else:
+            self._modified = False
+            self._current_dirty = False
+        self._update_action_buttons()
+
+    def _stash_current_editor(self) -> None:
+        if not self._current_dirty:
+            return
+        index = self.content_stack.currentIndex()
+        if index == self._PAGE_PROCESS and self.process_editor.has_process():
+            self._process_drafts[self.process_editor.process_id] = (
+                self.process_editor.process_metadata()
+            )
+        elif index == self._PAGE_SECTION and self.section_editor.has_section():
+            key = (self.section_editor.process_id, self.section_editor.section_id)
+            self._section_drafts[key] = self.section_editor.section_metadata()
+        self._current_dirty = False
+        self._modified = True
+
+    def _discard_all_drafts(self) -> None:
+        self._process_drafts.clear()
+        self._section_drafts.clear()
+        self._mark_saved()
+        clear_save_status(self._status_label)
+        self._update_action_buttons()
+
+    def _save_all_pending(self) -> bool:
+        self._stash_current_editor()
+        for process_id, metadata in list(self._process_drafts.items()):
+            errors = audit_knowledge_editor_service.save_process_metadata(
+                process_id,
+                metadata,
+            )
+            if errors:
+                self._clear_save_status()
+                QMessageBox.warning(self, self.windowTitle(), "\n".join(errors))
+                return False
+            self._process_drafts.pop(process_id, None)
+
+        for (process_id, section_id), metadata in list(self._section_drafts.items()):
+            errors = audit_knowledge_editor_service.save_section_metadata(
+                process_id,
+                section_id,
+                metadata,
+            )
+            if errors:
+                self._clear_save_status()
+                QMessageBox.warning(self, self.windowTitle(), "\n".join(errors))
+                return False
+            self._section_drafts.pop((process_id, section_id), None)
+
+        # Obnovit aktuálně zobrazenou položku z disku (bez signálů stromu).
+        if self.content_stack.isVisible():
+            if (
+                self.content_stack.currentIndex() == self._PAGE_PROCESS
+                and self.process_editor.has_process()
+            ):
+                process_id = self.process_editor.process_id
+                refreshed = audit_knowledge_service.get_process_metadata(
+                    process_id,
+                    ensure=False,
+                )
+                if refreshed is not None:
+                    self.process_editor.load_process(
+                        process_id=process_id,
+                        metadata=refreshed,
+                    )
+            elif (
+                self.content_stack.currentIndex() == self._PAGE_SECTION
+                and self.section_editor.has_section()
+            ):
+                process_id = self.section_editor.process_id
+                section_id = self.section_editor.section_id
+                refreshed = audit_knowledge_service.get_criterion(
+                    process_id,
+                    section_id,
+                    ensure=False,
+                )
+                if refreshed is not None:
+                    self.section_editor.load_section(
+                        process_id=process_id,
+                        section_id=section_id,
+                        section=refreshed,
+                    )
+
+        self._mark_saved()
+        return True
 
     def _on_section_content_saved(self) -> None:
-        self._mark_saved()
-        show_save_status(self._status_label)
+        # Seznamy v sekci se ukládají okamžitě; metadata může zůstat dirty.
+        self._refresh_dirty_status()
+        if not self._has_unsaved_changes():
+            show_save_status(self._status_label)
 
     def _apply_changes(self) -> None:
         if self._save_current():
-            self._mark_saved()
-            show_save_status(self._status_label)
+            self._current_dirty = False
+            self._refresh_dirty_status()
+            if not self._has_unsaved_changes():
+                show_save_status(self._status_label)
+            else:
+                show_unsaved_status(self._status_label)
 
     def _save_and_close(self) -> None:
-        if not self._can_save_current():
+        if not self._has_unsaved_changes() and not self._can_save_current():
             self._modified = False
             self.accept()
             return
-        if self._save_current():
+        if self._save_all_pending():
             self._mark_saved()
             self.accept()
 
@@ -241,20 +352,18 @@ class AudityKnowledgeEditorDialog(QDialog):
             super().reject()
 
     def _confirm_close(self) -> bool:
-        if not self._modified:
+        if not self._has_unsaved_changes():
             return True
 
         decision = confirm_close_with_unsaved_changes(self, title=self.windowTitle())
         if decision == "cancel":
             return False
         if decision == "save":
-            if not self._can_save_current():
-                return False
-            if not self._save_current():
+            if not self._save_all_pending():
                 return False
             self._mark_saved()
         else:
-            self._mark_saved()
+            self._discard_all_drafts()
         return True
 
     def closeEvent(self, event: QCloseEvent) -> None:
@@ -290,11 +399,9 @@ class AudityKnowledgeEditorDialog(QDialog):
         clear_save_status(self._status_label)
 
     def _show_hint(self, *, message: str | None = None) -> None:
-        self._clear_save_status()
-        self._mark_saved()
+        self._stash_current_editor()
         self._current_process_id = ""
         self._current_section_id = ""
-        self._update_action_buttons()
         self.process_editor.clear_process()
         self.section_editor.clear_section()
         self.center_title_label.setText(self.windowTitle())
@@ -305,17 +412,23 @@ class AudityKnowledgeEditorDialog(QDialog):
         )
         self._empty_state_label.setVisible(True)
         self.content_stack.setVisible(False)
+        self._refresh_dirty_status()
+        if not self._has_unsaved_changes():
+            self._clear_save_status()
 
     def _on_process_selected(self, node: KnowledgeTreeNode) -> None:
-        self._clear_save_status()
+        self._stash_current_editor()
         self._current_process_id = node.process_id
         self._current_section_id = ""
         self.section_editor.clear_section()
 
-        metadata = audit_knowledge_service.get_process_metadata(
-            node.process_id,
-            ensure=False,
-        )
+        draft = self._process_drafts.pop(node.process_id, None)
+        metadata = draft
+        if metadata is None:
+            metadata = audit_knowledge_service.get_process_metadata(
+                node.process_id,
+                ensure=False,
+            )
         if metadata is None:
             self._update_action_buttons()
             self.process_editor.clear_process()
@@ -327,17 +440,20 @@ class AudityKnowledgeEditorDialog(QDialog):
             process_id=node.process_id,
             metadata=metadata,
         )
-        self._mark_saved()
+        self._current_dirty = draft is not None
         self.center_title_label.setText(str(metadata.get("nazev") or node.process_label))
         self.center_description_label.setVisible(False)
         self._show_content_page(self._PAGE_PROCESS)
+        self._refresh_dirty_status()
+        if not self._has_unsaved_changes():
+            self._clear_save_status()
         self._update_action_buttons()
 
     def _on_criterion_selected(self, node: KnowledgeTreeNode | None) -> None:
         if node is None:
             return
 
-        self._clear_save_status()
+        self._stash_current_editor()
         criterion = node.section
         if criterion is None:
             self._show_hint()
@@ -347,7 +463,6 @@ class AudityKnowledgeEditorDialog(QDialog):
         self._current_section_id = node.node_id
         self.process_editor.clear_process()
 
-        section_label = str(criterion.get("nazev") or "").strip()
         process_def = audit_knowledge_service.get_process_by_id(node.process_id, ensure=False)
         process_label = process_def.nazev if process_def else node.process_label
 
@@ -359,15 +474,26 @@ class AudityKnowledgeEditorDialog(QDialog):
         if fresh_section is None:
             fresh_section = criterion
 
+        draft_key = (node.process_id, node.node_id)
+        draft = self._section_drafts.pop(draft_key, None)
+        if draft is not None:
+            fresh_section = dict(fresh_section)
+            fresh_section.update(draft)
+
+        section_label = str(fresh_section.get("nazev") or "").strip()
+
         self.section_editor.load_section(
             process_id=node.process_id,
             section_id=node.node_id,
             section=fresh_section,
         )
-        self._mark_saved()
+        self._current_dirty = draft is not None
         self.center_title_label.setText(f"{process_label} → {section_label}")
         self.center_description_label.setVisible(False)
         self._show_content_page(self._PAGE_SECTION)
+        self._refresh_dirty_status()
+        if not self._has_unsaved_changes():
+            self._clear_save_status()
         self._update_action_buttons()
 
     def _save_current(self) -> bool:
@@ -395,6 +521,9 @@ class AudityKnowledgeEditorDialog(QDialog):
             )
             return False
 
+        self._process_drafts.pop(process_id, None)
+        self._current_dirty = False
+
         self.knowledge_tree.reload_tree(include_inactive=True, ensure=False)
         self.knowledge_tree.blockSignals(True)
         try:
@@ -415,6 +544,7 @@ class AudityKnowledgeEditorDialog(QDialog):
         return True
 
     def _add_section(self) -> None:
+        self._stash_current_editor()
         if not self.process_editor.has_process():
             return
 
@@ -496,6 +626,9 @@ class AudityKnowledgeEditorDialog(QDialog):
             return False
 
         self.knowledge_tree.reload_tree(include_inactive=True, ensure=False)
+        self._section_drafts.pop((process_id, section_id), None)
+        self._current_dirty = False
+
         self.knowledge_tree.blockSignals(True)
         try:
             if not self.knowledge_tree.select_node(process_id, section_id):
@@ -527,6 +660,7 @@ class AudityKnowledgeEditorDialog(QDialog):
         return True
 
     def _add_process(self) -> None:
+        self._stash_current_editor()
         existing_ids = audit_knowledge_editor_service.collect_process_ids()
         default_poradi = audit_knowledge_editor_service.suggest_next_process_poradi()
 
