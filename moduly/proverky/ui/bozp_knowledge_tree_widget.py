@@ -48,6 +48,8 @@ class BozpKnowledgeTreeWidget(QTreeWidget):
 
         self.blockSignals(False)
         self.clearSelection()
+        self.setCurrentItem(None)
+        self.scrollToTop()
         self.section_selected.emit(None)
 
     def select_node(self, area_id: str, section_id: str | None = None) -> bool:

@@ -42,6 +42,7 @@ from moduly.proverky.constants import (
     KNOWLEDGE_EDITOR_DEFAULT_AREA_ID,
     KNOWLEDGE_EDITOR_DEFAULT_SECTION_ID,
     KNOWLEDGE_EDITOR_SECTION_CONTROL_PROCESS_EMPTY,
+    KNOWLEDGE_EDITOR_SELECT_SECTION_HINT,
 )
 from moduly.proverky.sluzby.proverky_knowledge_service import proverky_knowledge_service
 from moduly.proverky.ui.proverky_knowledge_editor_dialog import ProverkyKnowledgeEditorDialog
@@ -136,6 +137,19 @@ class ProverkyKnowledgeEditorPhase97cTestCase(unittest.TestCase):
         self.assertTrue(splitters)
         self.assertIsNotNone(dialog.knowledge_tree)
         self.assertIsNotNone(dialog._editor_host)
+
+    def test_editor_opens_without_automatic_selection(self) -> None:
+        dialog = ProverkyKnowledgeEditorDialog()
+
+        self.assertIsNone(dialog.knowledge_tree.currentItem())
+        self.assertEqual(dialog.knowledge_tree.selectedItems(), [])
+        self.assertIsNone(dialog._section_editor)
+        self.assertTrue(dialog._empty_state_label.isVisibleTo(dialog))
+        self.assertIn(
+            KNOWLEDGE_EDITOR_SELECT_SECTION_HINT,
+            dialog._empty_state_label.text(),
+        )
+        self.assertFalse(dialog._editor_host.isVisibleTo(dialog))
 
     def test_tree_selection_loads_section(self) -> None:
         dialog = ProverkyKnowledgeEditorDialog(

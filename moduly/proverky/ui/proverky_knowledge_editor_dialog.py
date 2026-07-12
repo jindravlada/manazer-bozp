@@ -26,8 +26,6 @@ from core.widgets.knowledge_editor_actions import (
 )
 from moduly.proverky.constants import (
     AREA_PANEL_LEFT_WIDTH,
-    KNOWLEDGE_EDITOR_DEFAULT_AREA_ID,
-    KNOWLEDGE_EDITOR_DEFAULT_SECTION_ID,
     KNOWLEDGE_EDITOR_SELECT_SECTION_HINT,
     KNOWLEDGE_EDITOR_USER_COPY_HINT,
     KNOWLEDGE_EDITOR_WINDOW_TITLE,
@@ -152,16 +150,8 @@ class ProverkyKnowledgeEditorDialog(QDialog):
                 self._initial_area_id,
                 self._initial_section_id or None,
             )
-        elif not self._select_defaults():
+        else:
             self._show_hint()
-
-    def _select_defaults(self) -> bool:
-        if self.knowledge_tree.select_node(
-            KNOWLEDGE_EDITOR_DEFAULT_AREA_ID,
-            KNOWLEDGE_EDITOR_DEFAULT_SECTION_ID,
-        ):
-            return True
-        return self.knowledge_tree.select_node(KNOWLEDGE_EDITOR_DEFAULT_AREA_ID)
 
     def _apply_initial_context(self, area_id: str, section_id: str | None) -> None:
         if section_id and self.knowledge_tree.select_node(area_id, section_id):
