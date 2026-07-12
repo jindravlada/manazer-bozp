@@ -1,4 +1,4 @@
-"""Aktuální stav řídicího procesu podle výsledků auditů a prověrek."""
+"""Aktuální stav řídicího procesu podle auditů, prověrek a právních požadavků."""
 
 from __future__ import annotations
 
@@ -20,6 +20,14 @@ from core.shared.sluzby.finding_service import finding_service
 from moduly.audity.sluzby.audit_knowledge_editor_service import audit_knowledge_editor_service
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 from moduly.audity.sluzby.audit_service import audit_service
+from moduly.pravni_pozadavky.constants import (
+    COMPLIANCE_CASTECNE_SPLNENO,
+    COMPLIANCE_NENI_RELEVANTNI,
+    COMPLIANCE_NESPLNENO,
+    COMPLIANCE_SPLNENO,
+    COMPLIANCE_STATUS_LABELS,
+)
+from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 from moduly.proverky.sluzby.proverky_knowledge_service import proverky_knowledge_service
 
@@ -30,6 +38,17 @@ PROCESS_STATUS_NO_INSPECTION_QUESTIONS = (
 )
 PROCESS_STATUS_NOT_INSPECTED = (
     "Proces dosud nebyl ověřen žádnou dokončenou prověrkou."
+)
+PROCESS_STATUS_NO_LEGAL_REQUIREMENTS = (
+    "K procesu nejsou přiřazeny žádné aktivní právní požadavky."
+)
+PROCESS_STATUS_UNEVALUATED_LABEL = "Bez vyhodnocení"
+
+_COMPLIANCE_STATUS_ORDER = (
+    COMPLIANCE_SPLNENO,
+    COMPLIANCE_CASTECNE_SPLNENO,
+    COMPLIANCE_NESPLNENO,
+    COMPLIANCE_NENI_RELEVANTNI,
 )
 
 _OPEN_FINDING_STATUSES = frozenset(
@@ -127,6 +146,20 @@ class LegalRequirementProcessInspectionStatus:
             entity_id=self.last_inspection_id,
             fallback_prefix="Prověrka",
         )
+
+
+@dataclass(frozen=True)
+class LegalRequirementProcessLegalStatus:
+    """Souhrn aktivních podřízených právních požadavků řídicího procesu."""
+
+    requirement_count: int
+    status_counts: tuple[ProcessStatusResultCount, ...] = ()
+
+    @property
+    def empty_message(self) -> str | None:
+        if self.requirement_count <= 0:
+            return PROCESS_STATUS_NO_LEGAL_REQUIREMENTS
+        return None
 
 
 def _format_entity_label(
@@ -257,6 +290,42 @@ class LegalRequirementProcessStatusService:
             result_counts=counts,
             findings_total=findings_total,
             findings_open=findings_open,
+        )
+
+    def get_legal_requirements_status(
+        self,
+        requirement_id: int,
+    ) -> LegalRequirementProcessLegalStatus:
+        children = legal_requirement_service.list_children(requirement_id)
+        if not children:
+            return LegalRequirementProcessLegalStatus(requirement_count=0)
+
+        counts: dict[str, int] = {code: 0 for code in _COMPLIANCE_STATUS_ORDER}
+        unevaluated = 0
+        for child in children:
+            code = str(child.compliance_status or "").strip()
+            if code in counts:
+                counts[code] += 1
+            else:
+                unevaluated += 1
+
+        status_counts = tuple(
+            ProcessStatusResultCount(
+                result_code=code,
+                result_label=COMPLIANCE_STATUS_LABELS[code],
+                count=counts[code],
+            )
+            for code in _COMPLIANCE_STATUS_ORDER
+        ) + (
+            ProcessStatusResultCount(
+                result_code="",
+                result_label=PROCESS_STATUS_UNEVALUATED_LABEL,
+                count=unevaluated,
+            ),
+        )
+        return LegalRequirementProcessLegalStatus(
+            requirement_count=len(children),
+            status_counts=status_counts,
         )
 
     def _list_linked_assertions(self, requirement_id: int) -> list[LinkedAuditAssertionRef]:

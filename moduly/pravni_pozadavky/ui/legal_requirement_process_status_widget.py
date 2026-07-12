@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 from moduly.pravni_pozadavky.sluzby.legal_requirement_process_status_service import (
     LegalRequirementProcessAuditStatus,
     LegalRequirementProcessInspectionStatus,
+    LegalRequirementProcessLegalStatus,
     legal_requirement_process_status_service,
 )
 
@@ -55,6 +56,11 @@ class LegalRequirementProcessStatusWidget(QWidget):
             self.requirement_id,
         )
         self._render_inspection_section(inspection_status)
+
+        legal_status = legal_requirement_process_status_service.get_legal_requirements_status(
+            self.requirement_id,
+        )
+        self._render_legal_requirements_section(legal_status)
 
         self._layout.addStretch()
 
@@ -106,6 +112,20 @@ class LegalRequirementProcessStatusWidget(QWidget):
         self._layout.addWidget(
             QLabel(f"Z toho otevřená zjištění: {status.findings_open}"),
         )
+
+    def _render_legal_requirements_section(
+        self,
+        status: LegalRequirementProcessLegalStatus,
+    ) -> None:
+        self._add_section_heading("Právní požadavky")
+        empty_message = status.empty_message
+        if empty_message:
+            self._layout.addWidget(QLabel(empty_message))
+            return
+
+        self._layout.addWidget(QLabel(f"Celkem: {status.requirement_count}"))
+        for item in status.status_counts:
+            self._layout.addWidget(QLabel(f"• {item.result_label}: {item.count}"))
 
     def _add_section_heading(self, title: str) -> None:
         section_heading = QLabel(title)
