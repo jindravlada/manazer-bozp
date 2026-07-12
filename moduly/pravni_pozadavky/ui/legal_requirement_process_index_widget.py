@@ -20,6 +20,12 @@ from moduly.pravni_pozadavky.sluzby.legal_requirement_process_status_service imp
 )
 
 
+def _format_index_number(value: float | None) -> str:
+    if value is None:
+        return PROCESS_INDEX_PLACEHOLDER
+    return f"{value:.1f}".replace(".", ",")
+
+
 class LegalRequirementProcessIndexWidget(QWidget):
     def __init__(self, requirement_id: int | None = None, parent=None):
         super().__init__(parent)
@@ -83,28 +89,18 @@ class LegalRequirementProcessIndexWidget(QWidget):
         index_text = (
             PROCESS_INDEX_PLACEHOLDER
             if breakdown.index_value is None
-            else str(breakdown.index_value)
+            else _format_index_number(breakdown.index_value)
         )
         self.index_label.setText(f"Index procesu:\n{index_text}")
 
     def _fill_table(self, breakdown: ProcessIndexBreakdown) -> None:
         self.table.setRowCount(len(breakdown.areas))
         for row, area in enumerate(breakdown.areas):
-            score_text = (
-                PROCESS_INDEX_PLACEHOLDER
-                if area.score is None
-                else str(area.score)
-            )
-            contribution_text = (
-                PROCESS_INDEX_PLACEHOLDER
-                if area.contribution is None
-                else str(area.contribution)
-            )
             values = (
                 area.area_label,
                 str(area.weight_percent),
-                score_text,
-                contribution_text,
+                _format_index_number(area.score),
+                _format_index_number(area.contribution),
             )
             for column, value in enumerate(values):
                 item = QTableWidgetItem(value)

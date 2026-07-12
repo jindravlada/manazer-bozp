@@ -8,6 +8,10 @@ from datetime import date
 from core.shared.constants import (
     CONTROL_RESULT_LABELS,
     CONTROL_RESULT_NEKONTROLOVANO,
+    CONTROL_RESULT_NELZE_POSOUDIT,
+    CONTROL_RESULT_NEVYHOVUJE,
+    CONTROL_RESULT_VYHOVUJE,
+    CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
     ENTITY_AUDITY,
     ENTITY_LEGAL_REQUIREMENT,
     ENTITY_PROVERKY,
@@ -89,6 +93,23 @@ PROCESS_INDEX_AREA_WEIGHTS: tuple[tuple[str, str, int], ...] = (
 )
 
 PROCESS_INDEX_PLACEHOLDER = "—"
+
+# Bodové hodnoty stavů pro skóre oblasti Audity (0–100).
+PROCESS_INDEX_AUDIT_SCORE_POINTS: dict[str, int] = {
+    CONTROL_RESULT_VYHOVUJE: 100,
+    CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM: 75,
+    CONTROL_RESULT_NEVYHOVUJE: 0,
+}
+
+# Stavy mimo průměr: Nehodnoceno + Nelze posoudit (není bodové hodnocení).
+PROCESS_INDEX_AUDIT_SCORE_EXCLUDED: frozenset[str] = frozenset(
+    {
+        CONTROL_RESULT_NEKONTROLOVANO,
+        CONTROL_RESULT_NELZE_POSOUDIT,
+    }
+)
+
+PROCESS_INDEX_AREA_AUDITY = "audity"
 
 
 @dataclass(frozen=True)
@@ -212,6 +233,28 @@ class LegalRequirementProcessTaskStatus:
 
 
 @dataclass(frozen=True)
+class ProcessIndexScorePointMapping:
+    """Bodová hodnota jednoho stavu hodnocení pro výpočet skóre oblasti."""
+
+    result_code: str
+    result_label: str
+    points: int
+
+
+@dataclass(frozen=True)
+class ProcessIndexAreaScoreDetail:
+    """Transparentní podklady výpočtu skóre oblasti (pro budoucí detail)."""
+
+    countable_count: int
+    result_counts: tuple[ProcessStatusResultCount, ...]
+    point_mappings: tuple[ProcessIndexScorePointMapping, ...]
+    source_entity_id: int | None = None
+    source_entity_date: date | None = None
+    source_entity_label: str = ""
+    calculation_summary: str = ""
+
+
+@dataclass(frozen=True)
 class ProcessIndexAreaBreakdown:
     """Jedna oblast rozpadu budoucího Indexu procesu."""
 
@@ -220,6 +263,7 @@ class ProcessIndexAreaBreakdown:
     weight_percent: int
     score: float | None = None
     contribution: float | None = None
+    score_detail: ProcessIndexAreaScoreDetail | None = None
 
 
 @dataclass(frozen=True)
@@ -464,23 +508,114 @@ class LegalRequirementProcessStatusService:
         self,
         requirement_id: int | None = None,
     ) -> ProcessIndexBreakdown:
-        """Vrátí rozpad oblastí Indexu procesu (váhy pevné, skóre zatím prázdné)."""
-        _ = requirement_id  # výpočet skóre přijde v další fázi
-        areas = tuple(
-            ProcessIndexAreaBreakdown(
-                area_id=area_id,
-                area_label=area_label,
-                weight_percent=weight_percent,
-                score=None,
-                contribution=None,
+        """Vrátí rozpad oblastí Indexu procesu (váhy pevné; skóre Audity z agregace)."""
+        audit_score, audit_detail = self._compute_audit_area_score(requirement_id)
+
+        areas: list[ProcessIndexAreaBreakdown] = []
+        for area_id, area_label, weight_percent in PROCESS_INDEX_AREA_WEIGHTS:
+            score: float | None = None
+            contribution: float | None = None
+            score_detail: ProcessIndexAreaScoreDetail | None = None
+            if area_id == PROCESS_INDEX_AREA_AUDITY:
+                score = audit_score
+                score_detail = audit_detail
+                if score is not None:
+                    contribution = score * weight_percent / 100.0
+            areas.append(
+                ProcessIndexAreaBreakdown(
+                    area_id=area_id,
+                    area_label=area_label,
+                    weight_percent=weight_percent,
+                    score=score,
+                    contribution=contribution,
+                    score_detail=score_detail,
+                )
             )
-            for area_id, area_label, weight_percent in PROCESS_INDEX_AREA_WEIGHTS
-        )
+
         total_weight = sum(item.weight_percent for item in areas)
         return ProcessIndexBreakdown(
-            areas=areas,
+            areas=tuple(areas),
             total_weight_percent=total_weight,
             index_value=None,
+        )
+
+    def _compute_audit_area_score(
+        self,
+        requirement_id: int | None,
+    ) -> tuple[float | None, ProcessIndexAreaScoreDetail | None]:
+        """Skóre oblasti Audity z posledního dokončeného auditu (0–100, nebo None)."""
+        point_mappings = tuple(
+            ProcessIndexScorePointMapping(
+                result_code=code,
+                result_label=CONTROL_RESULT_LABELS.get(code, code),
+                points=points,
+            )
+            for code, points in PROCESS_INDEX_AUDIT_SCORE_POINTS.items()
+        )
+
+        if requirement_id is None:
+            return None, None
+
+        audit_status = self.get_audit_status(requirement_id)
+        if audit_status.empty_message is not None:
+            return None, ProcessIndexAreaScoreDetail(
+                countable_count=0,
+                result_counts=audit_status.result_counts,
+                point_mappings=point_mappings,
+                source_entity_id=audit_status.last_audit_id,
+                source_entity_date=audit_status.last_audit_date,
+                source_entity_label=audit_status.last_audit_label,
+                calculation_summary=audit_status.empty_message,
+            )
+
+        countable_total = 0
+        points_sum = 0
+        countable_parts: list[str] = []
+        for item in audit_status.result_counts:
+            if item.result_code in PROCESS_INDEX_AUDIT_SCORE_EXCLUDED:
+                continue
+            if item.result_code not in PROCESS_INDEX_AUDIT_SCORE_POINTS:
+                # Neznámý stav — nezapočítávat, dokud nebude explicitně namapován.
+                continue
+            if item.count <= 0:
+                continue
+            points = PROCESS_INDEX_AUDIT_SCORE_POINTS[item.result_code]
+            countable_total += item.count
+            points_sum += item.count * points
+            countable_parts.append(
+                f"{item.count}× {item.result_label} ({points} b.)"
+            )
+
+        if countable_total <= 0:
+            summary = (
+                "V posledním relevantním auditu není žádné započitatelné hodnocení tvrzení."
+            )
+            return None, ProcessIndexAreaScoreDetail(
+                countable_count=0,
+                result_counts=audit_status.result_counts,
+                point_mappings=point_mappings,
+                source_entity_id=audit_status.last_audit_id,
+                source_entity_date=audit_status.last_audit_date,
+                source_entity_label=audit_status.last_audit_label,
+                calculation_summary=summary,
+            )
+
+        raw_score = points_sum / countable_total
+        score = max(0.0, min(100.0, raw_score))
+        parts_text = ", ".join(countable_parts)
+        summary = (
+            f"Audit {audit_status.last_audit_label}"
+            f"{f' ({audit_status.last_audit_date.isoformat()})' if audit_status.last_audit_date else ''}: "
+            f"({parts_text}) / {countable_total} = {score:.1f} %"
+        )
+        return score, ProcessIndexAreaScoreDetail(
+            countable_count=countable_total,
+            result_counts=audit_status.result_counts,
+            point_mappings=point_mappings,
+            source_entity_id=audit_status.last_audit_id,
+            source_entity_date=audit_status.last_audit_date,
+            source_entity_label=audit_status.last_audit_label,
+            calculation_summary=summary,
         )
 
     def _list_linked_assertions(self, requirement_id: int) -> list[LinkedAuditAssertionRef]:
