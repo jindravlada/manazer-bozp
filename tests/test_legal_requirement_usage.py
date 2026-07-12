@@ -148,6 +148,8 @@ class LegalRequirementUsageServiceTestCase(unittest.TestCase):
         self.assertIn("262/2006 Sb. § 102", labels)
         self.assertEqual(usage.audit_areas, ())
         self.assertEqual(usage.audit_assertions, ())
+        self.assertEqual(usage.inspection_areas, ())
+        self.assertEqual(usage.inspection_questions, ())
 
     def test_lists_audit_areas_and_assertions_linked_by_legal_requirement_id(self) -> None:
         requirement = legal_requirement_service.create_requirement(
@@ -176,6 +178,144 @@ class LegalRequirementUsageServiceTestCase(unittest.TestCase):
         self.assertEqual(usage.legal_provisions, ())
         self.assertEqual(usage.audit_areas, ())
         self.assertEqual(usage.audit_assertions, ())
+        self.assertEqual(usage.inspection_areas, ())
+        self.assertEqual(usage.inspection_questions, ())
+        self.assertEqual(usage.warnings, ())
+
+
+class LegalRequirementProverkyUsageTestCase(unittest.TestCase):
+    """Fáze 97d – automatické použití procesu v metodikách prověrek."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        from PySide6.QtWidgets import QApplication
+
+        cls._app = QApplication.instance() or QApplication([])
+
+    def setUp(self) -> None:
+        from sqlalchemy import delete
+
+        from core.database.session import get_session
+        from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
+        from moduly.pravni_pozadavky.modely.legal_requirement_source import LegalRequirementSource
+        from moduly.proverky.sluzby.proverky_knowledge_service import proverky_knowledge_service
+
+        import core.services.editable_catalog_service as editable_catalog_module
+        import moduly.proverky.sluzby.proverky_knowledge_service as proverky_module
+
+        importlib.reload(editable_catalog_module)
+        importlib.reload(proverky_module)
+
+        self._proverky = proverky_module.proverky_knowledge_service
+        self._proverky.ensure_catalogs()
+
+        area = self._proverky.get_area_by_id("prvni_pomoc")
+        self.assertIsNotNone(area)
+        self._area_id = area.id
+        self._path = self._proverky.proverky_dir / area.soubor_znalosti
+        bundled = editable_catalog_service.bundled_path(f"proverky/{area.soubor_znalosti}")
+        shutil.copy2(bundled, self._path)
+        with self._path.open(encoding="utf-8") as handle:
+            self._original = json.load(handle)
+
+        sections = self._proverky.list_sections(self._area_id, include_inactive=True)
+        self.assertGreaterEqual(len(sections), 1)
+        self._section_id = str(sections[0].get("id") or "")
+        self._second_section_id = None
+        for section in sections[1:]:
+            section_id = str(section.get("id") or "").strip()
+            if section_id:
+                self._second_section_id = section_id
+                break
+
+        with get_session() as session:
+            session.execute(delete(LegalRequirementSource))
+            session.execute(delete(LegalRequirement))
+            session.commit()
+
+        self._requirement = legal_requirement_service.create_requirement(
+            title="Řízení rizik",
+            process_code="P-005",
+        )
+
+    def tearDown(self) -> None:
+        self._path.write_text(
+            json.dumps(self._original, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
+    def _link_section(self, section_id: str, requirement_id: int) -> None:
+        section = self._proverky.get_section(self._area_id, section_id)
+        self.assertIsNotNone(section)
+        payload = dict(section)
+        payload["legal_requirement_id"] = requirement_id
+        ok, errors = self._proverky.save_section(self._area_id, section_id, payload)
+        self.assertTrue(ok, msg="; ".join(errors))
+
+    def test_linked_inspection_section_and_questions_are_listed(self) -> None:
+        self._link_section(self._section_id, self._requirement.id)
+
+        usage = legal_requirement_usage_service.get_usage(self._requirement.id)
+
+        self.assertEqual(len(usage.inspection_areas), 1)
+        self.assertIn("Prověrky BOZP", usage.inspection_areas[0].display_label)
+        self.assertIn(
+            usage.inspection_areas[0].section_name,
+            usage.inspection_areas[0].display_label,
+        )
+        self.assertGreater(len(usage.inspection_questions), 0)
+        self.assertTrue(all(item.text for item in usage.inspection_questions))
+
+    def test_unlinked_section_is_not_listed(self) -> None:
+        usage = legal_requirement_usage_service.get_usage(self._requirement.id)
+        self.assertEqual(usage.inspection_areas, ())
+        self.assertEqual(usage.inspection_questions, ())
+
+    def test_multiple_sections_can_share_one_process(self) -> None:
+        self._link_section(self._section_id, self._requirement.id)
+        if self._second_section_id:
+            self._link_section(self._second_section_id, self._requirement.id)
+
+        usage = legal_requirement_usage_service.get_usage(self._requirement.id)
+        self.assertGreaterEqual(len(usage.inspection_areas), 1)
+        if self._second_section_id:
+            self.assertEqual(len(usage.inspection_areas), 2)
+
+    def test_older_json_without_legal_requirement_id_works(self) -> None:
+        section = self._proverky.get_section(self._area_id, self._section_id)
+        self.assertIsNotNone(section)
+        self.assertNotIn("legal_requirement_id", section)
+
+        usage = legal_requirement_usage_service.get_usage(self._requirement.id)
+        self.assertEqual(usage.inspection_areas, ())
+        self.assertEqual(usage.inspection_questions, ())
+        self.assertEqual(usage.warnings, ())
+
+    def test_corrupted_proverky_json_does_not_break_usage(self) -> None:
+        self._link_section(self._section_id, self._requirement.id)
+        self._path.write_text("{ not-valid-json", encoding="utf-8")
+
+        usage = legal_requirement_usage_service.get_usage(self._requirement.id)
+
+        self.assertEqual(usage.inspection_areas, ())
+        self.assertEqual(usage.inspection_questions, ())
+        self.assertTrue(usage.warnings)
+        self.assertTrue(any("nelze načíst" in item for item in usage.warnings))
+        # Ostatní části (prázdné auditní vazby) zůstávají dostupné.
+        self.assertEqual(usage.audit_areas, ())
+
+    def test_empty_state_shows_zadne_in_widget(self) -> None:
+        from PySide6.QtWidgets import QLabel
+
+        from moduly.pravni_pozadavky.ui.legal_requirement_automatic_usage_widget import (
+            LegalRequirementAutomaticUsageWidget,
+        )
+
+        widget = LegalRequirementAutomaticUsageWidget(self._requirement.id)
+        labels = [label.text() for label in widget.findChildren(QLabel)]
+        self.assertIn("Oblasti prověrek", labels)
+        self.assertIn("Kontrolní otázky prověrek", labels)
+        self.assertGreaterEqual(labels.count("žádné"), 2)
 
 
 if __name__ == "__main__":

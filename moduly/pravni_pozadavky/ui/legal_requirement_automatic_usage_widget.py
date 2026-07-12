@@ -41,6 +41,13 @@ class LegalRequirementAutomaticUsageWidget(QWidget):
             return
 
         usage = legal_requirement_usage_service.get_usage(self.requirement_id)
+
+        for warning in usage.warnings:
+            warning_label = QLabel(warning)
+            warning_label.setObjectName("WarningText")
+            warning_label.setWordWrap(True)
+            self._layout.addWidget(warning_label)
+
         self._add_usage_section(
             "Právní podklady",
             [item.label for item in usage.legal_provisions],
@@ -52,6 +59,14 @@ class LegalRequirementAutomaticUsageWidget(QWidget):
         self._add_usage_section(
             "Auditní tvrzení",
             [item.text for item in usage.audit_assertions],
+        )
+        self._add_usage_section(
+            "Oblasti prověrek",
+            [item.display_label for item in usage.inspection_areas],
+        )
+        self._add_usage_section(
+            "Kontrolní otázky prověrek",
+            [item.text for item in usage.inspection_questions],
         )
         self._layout.addStretch()
 
