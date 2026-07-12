@@ -43,6 +43,7 @@ from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_s
 
 
 _UNSET_PARENT_REQUIREMENT_ID = object()
+_UNSET_PROCESS_CODE = object()
 
 
 def _add_months(value: date, months: int) -> date:
@@ -332,6 +333,7 @@ class LegalRequirementService:
         requirement_id: int,
         *,
         title: str | None = None,
+        process_code: str | object = _UNSET_PROCESS_CODE,
         regulation_name: str = "",
         regulation_number: str = "",
         provision: str = "",
@@ -383,6 +385,11 @@ class LegalRequirementService:
         else:
             self._validate_source_section_id(source_section_id)
         self._validate_responsible_role_id(responsible_role_id)
+        if process_code is not _UNSET_PROCESS_CODE:
+            requirement.process_code = self._resolve_process_code_for_update(
+                str(process_code or ""),
+                requirement_id=requirement_id,
+            )
 
         if title is not None:
             requirement.title = title.strip()
@@ -593,15 +600,41 @@ class LegalRequirementService:
         if not is_valid_process_code(requested_code):
             raise ValueError("Kód procesu má neplatný formát.")
         if self._process_code_is_taken(requested_code):
-            raise ValueError("Kód procesu je již použit.")
+            raise ValueError(
+                f'Proces s kódem „{requested_code}“ již existuje. Zvolte jiný kód.'
+            )
         return requested_code
 
-    def _process_code_is_taken(self, process_code: str) -> bool:
-        code = (process_code or "").strip()
+    def _resolve_process_code_for_update(
+        self,
+        process_code: str,
+        *,
+        requirement_id: int,
+    ) -> str:
+        requested_code = (process_code or "").strip()
+        if not requested_code:
+            raise ValueError("Kód procesu nesmí být prázdný.")
+        if not is_valid_process_code(requested_code):
+            raise ValueError("Kód procesu má neplatný formát.")
+        if self._process_code_is_taken(requested_code, exclude_id=requirement_id):
+            raise ValueError(
+                f'Proces s kódem „{requested_code}“ již existuje. Zvolte jiný kód.'
+            )
+        return requested_code
+
+    def _process_code_is_taken(
+        self,
+        process_code: str,
+        *,
+        exclude_id: int | None = None,
+    ) -> bool:
+        code = (process_code or "").strip().casefold()
         if not code:
             return False
         for requirement in self.repository.get_all():
-            if (requirement.process_code or "").strip() == code:
+            if exclude_id is not None and requirement.id == exclude_id:
+                continue
+            if (requirement.process_code or "").strip().casefold() == code:
                 return True
         return False
 

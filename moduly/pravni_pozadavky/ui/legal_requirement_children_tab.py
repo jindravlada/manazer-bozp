@@ -77,4 +77,8 @@ class LegalRequirementChildrenTab(QWidget):
 
         dialog = LegalRequirementDialog(self, requirement=requirement)
         if exec_maximized(dialog):
-            legal_requirement_service.update_requirement(requirement_id, **dialog.get_data())
+            try:
+                legal_requirement_service.update_requirement(requirement_id, **dialog.get_data())
+            except ValueError as exc:
+                QMessageBox.warning(self, "Podřízené procesy", str(exc))
+                return

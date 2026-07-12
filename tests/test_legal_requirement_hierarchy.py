@@ -365,7 +365,7 @@ class LegalRequirementHierarchyTestCase(unittest.TestCase):
 
         self.assertEqual(child.process_code, "P-015.9")
 
-        with self.assertRaisesRegex(ValueError, "již použit"):
+        with self.assertRaisesRegex(ValueError, "již existuje"):
             legal_requirement_service.create_requirement(
                 title="Duplicitní kód",
                 process_code="P-015.9",

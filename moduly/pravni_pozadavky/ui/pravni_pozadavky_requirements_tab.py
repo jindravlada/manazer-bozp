@@ -379,7 +379,11 @@ class PravniPozadavkyRequirementsTab(QWidget):
     def new_requirement(self) -> None:
         dialog = LegalRequirementDialog(self)
         if exec_maximized(dialog):
-            requirement = legal_requirement_service.create_requirement(**dialog.get_data())
+            try:
+                requirement = legal_requirement_service.create_requirement(**dialog.get_data())
+            except ValueError as exc:
+                QMessageBox.warning(self, "Právní požadavky", str(exc))
+                return
             self.show_created_requirement(requirement.id)
 
     def edit_selected_requirement(self) -> None:

@@ -28,10 +28,16 @@ with patch.object(Path, "home", return_value=_TMP):
         process_code_sort_key,
     )
     from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
+    from moduly.pravni_pozadavky.ui.legal_requirement_dialog import LegalRequirementDialog
     from moduly.pravni_pozadavky.ui.legal_requirement_table import COL_CODE, LegalRequirementTable
+    from PySide6.QtWidgets import QApplication
 
 
 class LegalRequirementProcessCodeTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls._app = QApplication.instance() or QApplication([])
+
     def setUp(self) -> None:
         from sqlalchemy import delete
 
@@ -188,6 +194,60 @@ class LegalRequirementProcessCodeTestCase(unittest.TestCase):
         self.assertTrue(is_valid_process_code("P-015"))
         self.assertTrue(is_valid_process_code("P-015.2"))
         self.assertFalse(is_valid_process_code("P-015.1.2"))
+
+    def test_update_process_code_rejects_duplicate_case_insensitive(self) -> None:
+        first = legal_requirement_service.create_requirement(
+            title="První",
+            process_code="P-002",
+        )
+        second = legal_requirement_service.create_requirement(
+            title="Druhý",
+            process_code="P-003",
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            r'Proces s kódem „p-002“ již existuje\. Zvolte jiný kód\.',
+        ):
+            legal_requirement_service.update_requirement(
+                second.id,
+                title=second.title,
+                process_code="  p-002  ",
+            )
+
+        updated = legal_requirement_service.update_requirement(
+            first.id,
+            title=first.title,
+            process_code="P-002",
+        )
+        self.assertIsNotNone(updated)
+        self.assertEqual(updated.process_code, "P-002")
+
+        renamed = legal_requirement_service.update_requirement(
+            second.id,
+            title=second.title,
+            process_code="P-010",
+        )
+        self.assertEqual(renamed.process_code, "P-010")
+
+    def test_update_process_code_rejects_empty(self) -> None:
+        requirement = legal_requirement_service.create_requirement(title="Proces")
+        with self.assertRaisesRegex(ValueError, "nesmí být prázdný"):
+            legal_requirement_service.update_requirement(
+                requirement.id,
+                title=requirement.title,
+                process_code="   ",
+            )
+
+    def test_dialog_loads_and_returns_process_code(self) -> None:
+        requirement = legal_requirement_service.create_requirement(
+            title="Proces",
+            process_code="P-007",
+        )
+        dialog = LegalRequirementDialog(requirement=requirement)
+        self.assertEqual(dialog.process_code.text(), "P-007")
+        dialog.process_code.setText(" P-008 ")
+        self.assertEqual(dialog.get_data()["process_code"], "P-008")
 
 
 if __name__ == "__main__":

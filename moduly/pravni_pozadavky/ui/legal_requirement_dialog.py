@@ -139,6 +139,8 @@ class LegalRequirementDialog(QDialog):
 
         self.regulation_name = LegalDocumentNameSelector()
         self.regulation_name.setVisible(False)
+        self.process_code = QLineEdit()
+        self.process_code.setPlaceholderText("např. P-001")
         self.process_title = QLineEdit()
         self.regulation_number = QLineEdit()
         self.regulation_number.setVisible(False)
@@ -188,6 +190,7 @@ class LegalRequirementDialog(QDialog):
         identification_group = QGroupBox("Identifikace procesu")
         identification_form = QFormLayout(identification_group)
         identification_form.addRow(self.parent_process_caption, self.parent_process_label)
+        identification_form.addRow("Kód procesu:", self.process_code)
         title_row = QWidget()
         title_row_layout = QHBoxLayout(title_row)
         title_row_layout.setContentsMargins(0, 0, 0, 0)
@@ -315,6 +318,7 @@ class LegalRequirementDialog(QDialog):
             self._set_parent_process_display(legal_requirement_merged_target_label(parent))
         else:
             self._set_parent_process_display(None)
+        self.process_code.clear()
         self.process_title.clear()
         self.active_checkbox.setChecked(True)
         self._populate_legal_sections()
@@ -327,10 +331,18 @@ class LegalRequirementDialog(QDialog):
                 "Název řídicího procesu musí být vyplněn.",
             )
             return
+        if self.requirement is not None and not self.process_code.text().strip():
+            QMessageBox.warning(
+                self,
+                "Řídicí proces",
+                "Kód procesu nesmí být prázdný.",
+            )
+            return
         super().accept()
 
     def _load_requirement(self, requirement) -> None:
         self._loaded_responsible_person_id = requirement.responsible_person_id
+        self.process_code.setText(requirement.process_code or "")
         self.process_title.setText(requirement.title or "")
         self._load_parent_process_display(requirement)
         if requirement.merged_into_requirement_id is not None:
@@ -383,6 +395,7 @@ class LegalRequirementDialog(QDialog):
 
     def _load_draft(self, draft) -> None:
         self._loaded_responsible_person_id = None
+        self.process_code.clear()
         self.process_title.clear()
         self._set_parent_process_display(None)
         self.merged_into_label.setVisible(False)
@@ -650,6 +663,7 @@ class LegalRequirementDialog(QDialog):
         source_section_ids = self.sources_widget.get_section_ids()
         return {
             "title": self.process_title.text().strip(),
+            "process_code": self.process_code.text().strip(),
             "regulation_name": self.regulation_name.currentText().strip(),
             "regulation_number": self.regulation_number.text().strip(),
             "provision": self.provision.text().strip(),

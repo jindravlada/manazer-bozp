@@ -223,7 +223,7 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         self.assertIn("Vstupy procesu", groups)
         self.assertIn("Výstupy procesu", groups)
         self.assertIn("Vlastník procesu:", labels)
-        self.assertNotIn("Kód procesu:", labels)
+        self.assertIn("Kód procesu:", labels)
         self.assertNotIn("Odpovědnost:", labels)
         self.assertNotIn("Funkce / role:", labels)
         self.assertNotIn("Hlavní právní předpis:", labels)
