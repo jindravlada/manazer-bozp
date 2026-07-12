@@ -232,14 +232,32 @@ class ProverkyKnowledgeService:
                 return area
         return None
 
-    def get_knowledge_tree(self) -> list[KnowledgeTreeNode]:
+    def get_knowledge_tree(self, *, include_inactive: bool = False) -> list[KnowledgeTreeNode]:
         roots: list[KnowledgeTreeNode] = []
-        for area in self.get_areas():
+        for area in self.get_areas(include_inactive=include_inactive):
             children: tuple[KnowledgeTreeNode, ...] = ()
             if area.has_knowledge_file:
                 knowledge = self.load_area_knowledge(area)
                 if knowledge:
-                    children = self._build_section_nodes(area, self.get_active_sections(knowledge))
+                    if include_inactive:
+                        sections = [
+                            section
+                            for section in (knowledge.get("sekce") or [])
+                            if isinstance(section, dict)
+                        ]
+                        sections.sort(
+                            key=lambda item: (
+                                int(item.get("poradi") or 0),
+                                str(item.get("nazev") or "").casefold(),
+                            )
+                        )
+                    else:
+                        sections = self.get_active_sections(knowledge)
+                    children = self._build_section_nodes(
+                        area,
+                        sections,
+                        include_inactive=include_inactive,
+                    )
 
             roots.append(
                 KnowledgeTreeNode(
@@ -274,11 +292,33 @@ class ProverkyKnowledgeService:
         self,
         area: InspectionAreaDefinition,
         sections: list[dict],
+        *,
+        include_inactive: bool = False,
     ) -> tuple[KnowledgeTreeNode, ...]:
         nodes: list[KnowledgeTreeNode] = []
         for section in sections:
-            nested = self.get_active_sections(section) if section.get("sekce") else []
-            child_nodes = self._build_section_nodes(area, nested) if nested else ()
+            raw_nested = section.get("sekce") or []
+            if include_inactive:
+                nested = [item for item in raw_nested if isinstance(item, dict)]
+                nested.sort(
+                    key=lambda item: (
+                        int(item.get("poradi") or 0),
+                        str(item.get("nazev") or "").casefold(),
+                    )
+                )
+            elif raw_nested:
+                nested = self.get_active_sections(section)
+            else:
+                nested = []
+            child_nodes = (
+                self._build_section_nodes(
+                    area,
+                    nested,
+                    include_inactive=include_inactive,
+                )
+                if nested
+                else ()
+            )
             nodes.append(
                 KnowledgeTreeNode(
                     node_type=KNOWLEDGE_NODE_SECTION,
@@ -569,18 +609,58 @@ class ProverkyKnowledgeService:
         _parent_list, index = found
         return deepcopy(_parent_list[index])
 
-    def save_section(self, area_id: str, section_id: str, section_data: dict) -> bool:
+    @staticmethod
+    def normalize_legal_requirement_id(value) -> int | None:
+        if value is None or value == "":
+            return None
+        try:
+            requirement_id = int(value)
+        except (TypeError, ValueError):
+            return None
+        if requirement_id <= 0:
+            return None
+        return requirement_id
+
+    def resolve_legal_requirement_id(
+        self,
+        value,
+        *,
+        existing_id=None,
+    ) -> tuple[int | None, list[str]]:
+        """Ověří vazbu na řídicí proces (stejná pravidla jako auditní metodika)."""
+        from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
+            legal_requirement_service,
+        )
+
+        requirement_id = self.normalize_legal_requirement_id(value)
+        if requirement_id is None:
+            return None, []
+
+        existing_normalized = self.normalize_legal_requirement_id(existing_id)
+        requirement = legal_requirement_service.get_by_id(requirement_id)
+        if requirement is None:
+            return None, ["Vybraný řídicí proces nebyl nalezen."]
+        if not requirement.active and requirement_id != existing_normalized:
+            return None, ["Vybraný řídicí proces není aktivní."]
+        return requirement_id, []
+
+    def save_section(
+        self,
+        area_id: str,
+        section_id: str,
+        section_data: dict,
+    ) -> tuple[bool, list[str]]:
         area = self.get_area_by_id(area_id)
         if area is None or not area.has_knowledge_file:
-            return False
+            return False, ["Oblast nebyla nalezena."]
 
         knowledge = self.load_area_knowledge(area)
         if knowledge is None:
-            return False
+            return False, ["Soubor znalostí nelze načíst."]
 
         found = self._find_section_in_sections(knowledge.get("sekce") or [], section_id)
         if found is None:
-            return False
+            return False, [f"Sekce '{section_id}' nebyla nalezena."]
 
         parent_list, index = found
         existing = parent_list[index]
@@ -589,8 +669,23 @@ class ProverkyKnowledgeService:
         updated["id"] = section_id
         updated["historie"] = existing.get("historie") or []
         updated["sekce"] = existing.get("sekce") or []
+
+        if "legal_requirement_id" in section_data:
+            legal_requirement_id, link_errors = self.resolve_legal_requirement_id(
+                section_data.get("legal_requirement_id"),
+                existing_id=existing.get("legal_requirement_id"),
+            )
+            if link_errors:
+                return False, link_errors
+            if legal_requirement_id is not None:
+                updated["legal_requirement_id"] = legal_requirement_id
+            else:
+                updated.pop("legal_requirement_id", None)
+
         parent_list[index] = updated
-        return self._save_knowledge(area, knowledge)
+        if not self._save_knowledge(area, knowledge):
+            return False, ["Uložení sekce se nezdařilo."]
+        return True, []
 
     def generate_item_id(self, nazev: str, existing_ids: set[str]) -> str:
         base = self._slugify(nazev) or "polozka"

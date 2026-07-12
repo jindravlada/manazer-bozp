@@ -1,7 +1,7 @@
 from copy import deepcopy
 from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -29,12 +29,20 @@ from core.widgets.knowledge_editor_actions import (
     show_save_status,
     show_unsaved_status,
 )
-from moduly.proverky.constants import CONTROL_POINT_SEVERITY_OPTIONS, REFERENCE_PHOTO_FILTER
+from moduly.proverky.constants import (
+    CONTROL_POINT_SEVERITY_OPTIONS,
+    KNOWLEDGE_EDITOR_SECTION_CONTROL_PROCESS_LABEL,
+    REFERENCE_PHOTO_FILTER,
+)
 from moduly.proverky.sluzby.proverky_knowledge_service import (
     EDITABLE_SECTION_LIST_FIELDS,
     EDITABLE_SECTION_PROCEDURE_FIELDS,
     EDITABLE_SECTION_REFERENCE_FIELDS,
     proverky_knowledge_service,
+)
+from moduly.audity.ui.audit_knowledge_control_process_combo import (
+    populate_control_process_combo,
+    selected_control_process_id,
 )
 from moduly.proverky.sluzby.proverky_reference_photo_service import proverky_reference_photo_service
 from moduly.proverky.ui.proverky_knowledge_list_item_dialog import ProverkyKnowledgeListItemDialog
@@ -153,17 +161,22 @@ class _CollapsibleSection(QWidget):
 class ProverkyKnowledgeSectionEditDialog(QDialog):
     """Editor znalostní karty sekce prověrky."""
 
+    content_modified = Signal()
+    content_saved = Signal()
+
     def __init__(
         self,
         parent=None,
         *,
         area_id: str,
         section_id: str,
+        embedded: bool = False,
     ):
         super().__init__(parent)
 
         self._area_id = area_id
         self._section_id = section_id
+        self._embedded = embedded
         self._lists_by_field: dict[str, QListWidget] = {}
         self._field_by_list: dict[QListWidget, str] = {}
         self._procedure_lists: set[QListWidget] = set()
@@ -181,7 +194,10 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         section_label = str(section.get("nazev") or section_id)
 
         self.setWindowTitle(f"Editor znalostí – {area_label} → {section_label}")
-        self.resize(760, 820)
+        if not embedded:
+            self.resize(760, 820)
+        else:
+            self.setWindowFlags(Qt.WindowType.Widget)
 
         root_layout = QVBoxLayout(self)
         root_layout.setContentsMargins(12, 12, 12, 12)
@@ -210,8 +226,17 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         self._aktivni_check = QCheckBox("Sekce je aktivní")
         self._aktivni_check.setChecked(bool(section.get("aktivni", True)))
 
+        self._control_process_combo = QComboBox()
+        populate_control_process_combo(
+            self._control_process_combo,
+            proverky_knowledge_service.normalize_legal_requirement_id(
+                section.get("legal_requirement_id"),
+            ),
+        )
+
         header_form.addRow("Identifikátor:", self._id_label)
         header_form.addRow("Název sekce:", self._nazev_edit)
+        header_form.addRow(KNOWLEDGE_EDITOR_SECTION_CONTROL_PROCESS_LABEL, self._control_process_combo)
         header_form.addRow("Popis:", self._popis_edit)
         header_form.addRow("", self._aktivni_check)
         scroll_layout.addLayout(header_form)
@@ -232,22 +257,53 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         scroll_layout.addStretch()
         root_layout.addWidget(scroll, stretch=1)
 
-        footer, self._apply_btn, self._save_close_btn, self._close_btn, self._status_label = (
-            create_knowledge_editor_footer(
-                on_apply=self._apply_changes,
-                on_save_close=self._save_and_close,
-                on_close=self._request_close,
+        self._apply_btn = None
+        self._save_close_btn = None
+        self._close_btn = None
+        self._status_label = QLabel()
+        self._status_label.setObjectName("InfoText")
+
+        if not embedded:
+            footer, self._apply_btn, self._save_close_btn, self._close_btn, self._status_label = (
+                create_knowledge_editor_footer(
+                    on_apply=self._apply_changes,
+                    on_save_close=self._save_and_close,
+                    on_close=self._request_close,
+                )
             )
-        )
-        root_layout.addLayout(footer)
+            root_layout.addLayout(footer)
 
         self._nazev_edit.textChanged.connect(lambda *_args: self._mark_modified())
         self._popis_edit.textChanged.connect(lambda *_args: self._mark_modified())
         self._aktivni_check.toggled.connect(lambda *_args: self._mark_modified())
+        self._control_process_combo.currentIndexChanged.connect(
+            lambda *_args: self._mark_modified()
+        )
+
+    @property
+    def area_id(self) -> str:
+        return self._area_id
+
+    @property
+    def section_id(self) -> str:
+        return self._section_id
+
+    @property
+    def is_modified(self) -> bool:
+        return self._modified
+
+    def persist_changes(self) -> bool:
+        """Veřejné uložení pro vložený režim v hlavním editoru."""
+        if not self._persist_section_changes():
+            return False
+        self._mark_saved()
+        self.content_saved.emit()
+        return True
 
     def _mark_modified(self) -> None:
         self._modified = True
         show_unsaved_status(self._status_label)
+        self.content_modified.emit()
 
     def _mark_saved(self) -> None:
         self._modified = False
@@ -498,13 +554,20 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         if payload is None:
             return False
 
-        saved = proverky_knowledge_service.save_section(
+        saved, errors = proverky_knowledge_service.save_section(
             self._area_id,
             self._section_id,
             payload,
         )
+        if errors:
+            clear_save_status(self._status_label)
+            QMessageBox.warning(self, self.windowTitle(), "\n".join(errors))
+            return False
         if saved:
             self._section = payload
+            # Po úspěšném uložení smazané vazby v paměti držet bez klíče.
+            if payload.get("legal_requirement_id") is None:
+                self._section.pop("legal_requirement_id", None)
         return saved
 
     def _refresh_section_count(self, list_widget: QListWidget) -> None:
@@ -836,6 +899,9 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         payload["nazev"] = nazev
         payload["popis"] = self._popis_edit.toPlainText().strip()
         payload["aktivni"] = self._aktivni_check.isChecked()
+        payload["legal_requirement_id"] = selected_control_process_id(
+            self._control_process_combo
+        )
 
         for _title, field_name in EDITABLE_SECTION_PROCEDURE_FIELDS:
             list_widget = self._lists_by_field[field_name]

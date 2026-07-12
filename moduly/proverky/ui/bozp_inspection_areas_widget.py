@@ -26,9 +26,6 @@ from moduly.proverky.ui.bozp_area_knowledge_widget import BozpAreaKnowledgeWidge
 from moduly.proverky.ui.bozp_knowledge_tree_widget import BozpKnowledgeTreeWidget
 from moduly.proverky.ui.proverky_control_procedure_dialog import ProverkyControlProcedureDialog
 from moduly.proverky.ui.proverky_knowledge_editor_dialog import ProverkyKnowledgeEditorDialog
-from moduly.proverky.ui.proverky_knowledge_section_edit_dialog import (
-    ProverkyKnowledgeSectionEditDialog,
-)
 
 
 class BozpInspectionAreasWidget(QWidget):
@@ -142,16 +139,11 @@ class BozpInspectionAreasWidget(QWidget):
 
     def _open_knowledge_editor_from_card(self) -> None:
         if self._current_area_id and self._current_section_id:
-            try:
-                dialog = ProverkyKnowledgeSectionEditDialog(
-                    self,
-                    area_id=self._current_area_id,
-                    section_id=self._current_section_id,
-                )
-            except ValueError as exc:
-                QMessageBox.warning(self, KNOWLEDGE_EDIT_FROM_CARD_LABEL, str(exc))
-                return
-
+            dialog = ProverkyKnowledgeEditorDialog(
+                self,
+                area_id=self._current_area_id,
+                section_id=self._current_section_id,
+            )
             if exec_maximized(dialog) == QDialog.DialogCode.Accepted:
                 self._refresh_after_knowledge_edit()
             return

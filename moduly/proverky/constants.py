@@ -131,6 +131,16 @@ CONTROL_POINT_HISTORY_WORKPLACE_NO_WORKPLACE = "Pro zobrazení historie vyberte 
 CONTROL_POINT_SHARED_EXPERIENCES_EMPTY = "Zatím bez sdílených zkušeností."
 
 KNOWLEDGE_EDITOR_BUTTON_LABEL = "Editor znalostí"
+KNOWLEDGE_EDITOR_WINDOW_TITLE = "Editor znalostí prověrek"
+KNOWLEDGE_EDITOR_USER_COPY_HINT = (
+    "Upravujete uživatelskou kopii metodiky v "
+    "~/.local/share/manazer-bozp/ciselniky/proverky/."
+)
+KNOWLEDGE_EDITOR_SELECT_SECTION_HINT = (
+    "Vyberte oblast nebo sekci metodiky ve stromu vlevo."
+)
+KNOWLEDGE_EDITOR_SECTION_CONTROL_PROCESS_LABEL = "Řídicí proces:"
+KNOWLEDGE_EDITOR_SECTION_CONTROL_PROCESS_EMPTY = "—"
 KNOWLEDGE_EDIT_FROM_CARD_LABEL = "✏ Upravit znalosti"
 KNOWLEDGE_POSTUP_KONTROLY_TITLE = "Postup kontroly"
 KNOWLEDGE_CONTROL_PROCEDURE_BUTTON_LABEL = "📋 Doporučený postup kontroly"

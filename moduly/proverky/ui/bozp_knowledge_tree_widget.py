@@ -32,8 +32,10 @@ class BozpKnowledgeTreeWidget(QTreeWidget):
         self.setExpandsOnDoubleClick(True)
         self.currentItemChanged.connect(self._on_current_item_changed)
 
-    def reload_tree(self) -> None:
-        self._roots = proverky_knowledge_service.get_knowledge_tree()
+    def reload_tree(self, *, include_inactive: bool = False) -> None:
+        self._roots = proverky_knowledge_service.get_knowledge_tree(
+            include_inactive=include_inactive,
+        )
         self.blockSignals(True)
         self.clear()
         self._nodes_by_item.clear()
