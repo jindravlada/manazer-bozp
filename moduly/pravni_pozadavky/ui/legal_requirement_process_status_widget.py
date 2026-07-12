@@ -1,4 +1,4 @@
-"""Read-only záložka Stav procesu — aktuální výsledky auditů řídicího procesu."""
+"""Read-only záložka Stav procesu — výsledky auditů a prověrek řídicího procesu."""
 
 from __future__ import annotations
 
@@ -6,6 +6,8 @@ from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from moduly.pravni_pozadavky.sluzby.legal_requirement_process_status_service import (
+    LegalRequirementProcessAuditStatus,
+    LegalRequirementProcessInspectionStatus,
     legal_requirement_process_status_service,
 )
 
@@ -44,13 +46,23 @@ class LegalRequirementProcessStatusWidget(QWidget):
             self._layout.addStretch()
             return
 
-        status = legal_requirement_process_status_service.get_audit_status(self.requirement_id)
-        self._add_section_heading("Audity")
+        audit_status = legal_requirement_process_status_service.get_audit_status(
+            self.requirement_id,
+        )
+        self._render_audit_section(audit_status)
 
+        inspection_status = legal_requirement_process_status_service.get_inspection_status(
+            self.requirement_id,
+        )
+        self._render_inspection_section(inspection_status)
+
+        self._layout.addStretch()
+
+    def _render_audit_section(self, status: LegalRequirementProcessAuditStatus) -> None:
+        self._add_section_heading("Audity")
         empty_message = status.empty_message
         if empty_message:
             self._layout.addWidget(QLabel(empty_message))
-            self._layout.addStretch()
             return
 
         date_text = (
@@ -63,12 +75,37 @@ class LegalRequirementProcessStatusWidget(QWidget):
         self._layout.addWidget(
             QLabel(f"Hodnocená auditní tvrzení procesu: {status.evaluated_count}"),
         )
-
         self._add_section_heading("Výsledky hodnocení")
         for item in status.result_counts:
             self._layout.addWidget(QLabel(f"• {item.result_label}: {item.count}"))
 
-        self._layout.addStretch()
+    def _render_inspection_section(
+        self,
+        status: LegalRequirementProcessInspectionStatus,
+    ) -> None:
+        self._add_section_heading("Prověrky")
+        empty_message = status.empty_message
+        if empty_message:
+            self._layout.addWidget(QLabel(empty_message))
+            return
+
+        date_text = (
+            status.last_inspection_date.strftime("%d.%m.%Y")
+            if status.last_inspection_date is not None
+            else "—"
+        )
+        self._layout.addWidget(QLabel(f"Poslední dokončená prověrka: {date_text}"))
+        self._layout.addWidget(QLabel(f"Prověrka: {status.last_inspection_label or '—'}"))
+        self._layout.addWidget(
+            QLabel(f"Hodnocené kontrolní otázky procesu: {status.evaluated_count}"),
+        )
+        self._add_section_heading("Výsledky hodnocení")
+        for item in status.result_counts:
+            self._layout.addWidget(QLabel(f"• {item.result_label}: {item.count}"))
+        self._layout.addWidget(QLabel(f"Zjištění z otázek procesu: {status.findings_total}"))
+        self._layout.addWidget(
+            QLabel(f"Z toho otevřená zjištění: {status.findings_open}"),
+        )
 
     def _add_section_heading(self, title: str) -> None:
         section_heading = QLabel(title)

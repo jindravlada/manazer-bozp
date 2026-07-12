@@ -1,4 +1,4 @@
-"""Aktuální stav řídicího procesu podle existujících výsledků auditů."""
+"""Aktuální stav řídicího procesu podle výsledků auditů a prověrek."""
 
 from __future__ import annotations
 
@@ -9,16 +9,35 @@ from core.shared.constants import (
     CONTROL_RESULT_LABELS,
     CONTROL_RESULT_NEKONTROLOVANO,
     ENTITY_AUDITY,
+    ENTITY_PROVERKY,
+    FINDING_STATUS_OTEVRENE,
+    FINDING_STATUS_V_PROCESU,
     VALID_CONTROL_RESULTS,
 )
 from core.shared.control_result_display import CONTROL_RESULT_OPTIONS
 from core.shared.sluzby.control_result_service import control_result_service
+from core.shared.sluzby.finding_service import finding_service
 from moduly.audity.sluzby.audit_knowledge_editor_service import audit_knowledge_editor_service
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 from moduly.audity.sluzby.audit_service import audit_service
+from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
+from moduly.proverky.sluzby.proverky_knowledge_service import proverky_knowledge_service
 
 PROCESS_STATUS_NO_ASSERTIONS = "Proces nemá přiřazena žádná auditní tvrzení."
 PROCESS_STATUS_NOT_AUDITED = "Proces dosud nebyl ověřen dokončeným auditem."
+PROCESS_STATUS_NO_INSPECTION_QUESTIONS = (
+    "Proces nemá přiřazeny žádné kontrolní otázky prověrek."
+)
+PROCESS_STATUS_NOT_INSPECTED = (
+    "Proces dosud nebyl ověřen žádnou dokončenou prověrkou."
+)
+
+_OPEN_FINDING_STATUSES = frozenset(
+    {
+        FINDING_STATUS_OTEVRENE,
+        FINDING_STATUS_V_PROCESU,
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -29,6 +48,16 @@ class LinkedAuditAssertionRef:
     section_name: str
     assertion_id: str
     assertion_text: str
+
+
+@dataclass(frozen=True)
+class LinkedInspectionQuestionRef:
+    area_id: str
+    area_name: str
+    section_id: str
+    section_name: str
+    question_id: str
+    question_text: str
 
 
 @dataclass(frozen=True)
@@ -60,17 +89,64 @@ class LegalRequirementProcessAuditStatus:
 
     @property
     def last_audit_label(self) -> str:
-        number = (self.last_audit_number or "").strip()
-        title = (self.last_audit_title or "").strip()
-        if number and title and number != title:
-            return f"{number} — {title}"
-        if number:
-            return number
-        if title:
-            return title
-        if self.last_audit_id is not None:
-            return f"Audit {self.last_audit_id}"
-        return ""
+        return _format_entity_label(
+            number=self.last_audit_number,
+            title=self.last_audit_title,
+            entity_id=self.last_audit_id,
+            fallback_prefix="Audit",
+        )
+
+
+@dataclass(frozen=True)
+class LegalRequirementProcessInspectionStatus:
+    """Souhrn poslední dokončené prověrky pro řídicí proces."""
+
+    question_count: int
+    last_inspection_id: int | None = None
+    last_inspection_date: date | None = None
+    last_inspection_number: str = ""
+    last_inspection_title: str = ""
+    evaluated_count: int = 0
+    result_counts: tuple[ProcessStatusResultCount, ...] = ()
+    findings_total: int = 0
+    findings_open: int = 0
+
+    @property
+    def empty_message(self) -> str | None:
+        if self.question_count <= 0:
+            return PROCESS_STATUS_NO_INSPECTION_QUESTIONS
+        if self.last_inspection_id is None:
+            return PROCESS_STATUS_NOT_INSPECTED
+        return None
+
+    @property
+    def last_inspection_label(self) -> str:
+        return _format_entity_label(
+            number=self.last_inspection_number,
+            title=self.last_inspection_title,
+            entity_id=self.last_inspection_id,
+            fallback_prefix="Prověrka",
+        )
+
+
+def _format_entity_label(
+    *,
+    number: str,
+    title: str,
+    entity_id: int | None,
+    fallback_prefix: str,
+) -> str:
+    number = (number or "").strip()
+    title = (title or "").strip()
+    if number and title and number != title:
+        return f"{number} — {title}"
+    if number:
+        return number
+    if title:
+        return title
+    if entity_id is not None:
+        return f"{fallback_prefix} {entity_id}"
+    return ""
 
 
 class LegalRequirementProcessStatusService:
@@ -86,17 +162,22 @@ class LegalRequirementProcessStatusService:
         }
         assertion_ids = {item.assertion_id for item in assertions if item.assertion_id}
 
-        last_audit = self._find_last_completed_audit_with_evaluation(
-            assertion_keys=assertion_keys,
-            assertion_ids=assertion_ids,
+        last_audit = self._find_last_completed_entity_with_evaluation(
+            entities=audit_service.get_all(),
+            entity_type=ENTITY_AUDITY,
+            keys=assertion_keys,
+            control_point_ids=assertion_ids,
+            finished_at_attr="finished_at",
+            secondary_date_attr="audit_date",
         )
         if last_audit is None:
             return LegalRequirementProcessAuditStatus(assertion_count=len(assertions))
 
-        matching_results = self._matching_results_for_audit(
-            audit_id=last_audit.id,
-            assertion_keys=assertion_keys,
-            assertion_ids=assertion_ids,
+        matching_results = self._matching_results_for_entity(
+            entity_type=ENTITY_AUDITY,
+            entity_id=last_audit.id,
+            keys=assertion_keys,
+            control_point_ids=assertion_ids,
         )
         counts = self._count_results(matching_results)
         evaluated_count = sum(
@@ -113,6 +194,69 @@ class LegalRequirementProcessStatusService:
             last_audit_title=str(last_audit.title or "").strip(),
             evaluated_count=evaluated_count,
             result_counts=counts,
+        )
+
+    def get_inspection_status(
+        self,
+        requirement_id: int,
+    ) -> LegalRequirementProcessInspectionStatus:
+        questions = self._list_linked_inspection_questions(requirement_id)
+        if not questions:
+            return LegalRequirementProcessInspectionStatus(question_count=0)
+
+        question_keys = {
+            (item.area_id, item.section_id, item.question_id)
+            for item in questions
+            if item.question_id
+        }
+        question_ids = {item.question_id for item in questions if item.question_id}
+        label_keys = {
+            (item.area_name, item.section_name, item.question_id)
+            for item in questions
+            if item.question_id
+        }
+
+        last_inspection = self._find_last_completed_entity_with_evaluation(
+            entities=bozp_inspection_service.get_all(),
+            entity_type=ENTITY_PROVERKY,
+            keys=question_keys,
+            control_point_ids=question_ids,
+            finished_at_attr="finished_at",
+            secondary_date_attr="inspection_date",
+        )
+        if last_inspection is None:
+            return LegalRequirementProcessInspectionStatus(question_count=len(questions))
+
+        matching_results = self._matching_results_for_entity(
+            entity_type=ENTITY_PROVERKY,
+            entity_id=last_inspection.id,
+            keys=question_keys,
+            control_point_ids=question_ids,
+        )
+        counts = self._count_results(matching_results)
+        evaluated_count = sum(
+            item.count
+            for item in counts
+            if item.result_code != CONTROL_RESULT_NEKONTROLOVANO
+        )
+        findings_total, findings_open = self._count_findings_for_questions(
+            inspection_id=last_inspection.id,
+            label_keys=label_keys,
+            question_ids=question_ids,
+        )
+
+        return LegalRequirementProcessInspectionStatus(
+            question_count=len(questions),
+            last_inspection_id=last_inspection.id,
+            last_inspection_date=(
+                last_inspection.finished_at or last_inspection.inspection_date
+            ),
+            last_inspection_number=str(last_inspection.number or "").strip(),
+            last_inspection_title=str(last_inspection.title or "").strip(),
+            evaluated_count=evaluated_count,
+            result_counts=counts,
+            findings_total=findings_total,
+            findings_open=findings_open,
         )
 
     def _list_linked_assertions(self, requirement_id: int) -> list[LinkedAuditAssertionRef]:
@@ -135,7 +279,7 @@ class LegalRequirementProcessStatusService:
                 or audit_process.id
             )
             collected.extend(
-                self._collect_from_sections(
+                self._collect_assertions_from_sections(
                     knowledge.get("sekce") or [],
                     requirement_id=requirement_id,
                     process_id=audit_process.id,
@@ -144,7 +288,7 @@ class LegalRequirementProcessStatusService:
             )
         return collected
 
-    def _collect_from_sections(
+    def _collect_assertions_from_sections(
         self,
         sections: list,
         *,
@@ -186,7 +330,7 @@ class LegalRequirementProcessStatusService:
             nested = section.get("sekce") or []
             if nested:
                 collected.extend(
-                    self._collect_from_sections(
+                    self._collect_assertions_from_sections(
                         nested,
                         requirement_id=requirement_id,
                         process_id=process_id,
@@ -195,72 +339,183 @@ class LegalRequirementProcessStatusService:
                 )
         return collected
 
-    def _find_last_completed_audit_with_evaluation(
+    def _list_linked_inspection_questions(
+        self,
+        requirement_id: int,
+    ) -> list[LinkedInspectionQuestionRef]:
+        collected: list[LinkedInspectionQuestionRef] = []
+        try:
+            areas = proverky_knowledge_service.get_areas(include_inactive=False)
+        except Exception:
+            return collected
+
+        for area in areas:
+            if not area.has_knowledge_file:
+                continue
+            try:
+                knowledge = proverky_knowledge_service.load_area_knowledge(area)
+            except Exception:
+                continue
+            if knowledge is None:
+                continue
+
+            area_name = str(knowledge.get("nazev") or area.nazev or "").strip() or area.id
+            collected.extend(
+                self._collect_questions_from_sections(
+                    knowledge.get("sekce") or [],
+                    requirement_id=requirement_id,
+                    area_id=area.id,
+                    area_name=area_name,
+                ),
+            )
+        return collected
+
+    def _collect_questions_from_sections(
+        self,
+        sections: list,
+        *,
+        requirement_id: int,
+        area_id: str,
+        area_name: str,
+    ) -> list[LinkedInspectionQuestionRef]:
+        collected: list[LinkedInspectionQuestionRef] = []
+        for section in sections:
+            if not isinstance(section, dict):
+                continue
+            if not section.get("aktivni", True):
+                continue
+
+            section_id = str(section.get("id") or "").strip()
+            section_name = str(section.get("nazev") or section_id).strip()
+            section_requirement_id = proverky_knowledge_service.normalize_legal_requirement_id(
+                section.get("legal_requirement_id"),
+            )
+            if section_requirement_id == requirement_id:
+                raw_items = section.get("kontrolni_body") or []
+                active_items = proverky_knowledge_service.get_active_items(raw_items)
+                for item in proverky_knowledge_service.normalize_kontrolni_body(active_items):
+                    question_id = str(item.get("id") or "").strip()
+                    text = str(item.get("nazev") or "").strip()
+                    if not question_id or not text:
+                        continue
+                    collected.append(
+                        LinkedInspectionQuestionRef(
+                            area_id=area_id,
+                            area_name=area_name,
+                            section_id=section_id,
+                            section_name=section_name,
+                            question_id=question_id,
+                            question_text=text,
+                        ),
+                    )
+
+            nested = section.get("sekce") or []
+            if nested:
+                collected.extend(
+                    self._collect_questions_from_sections(
+                        nested,
+                        requirement_id=requirement_id,
+                        area_id=area_id,
+                        area_name=area_name,
+                    ),
+                )
+        return collected
+
+    def _find_last_completed_entity_with_evaluation(
         self,
         *,
-        assertion_keys: set[tuple[str, str, str]],
-        assertion_ids: set[str],
+        entities: list,
+        entity_type: str,
+        keys: set[tuple[str, str, str]],
+        control_point_ids: set[str],
+        finished_at_attr: str,
+        secondary_date_attr: str,
     ):
         best = None
         best_key: tuple[date, date, int] | None = None
 
-        for audit in audit_service.get_all():
-            if audit.finished_at is None:
+        for entity in entities:
+            finished_at = getattr(entity, finished_at_attr, None)
+            if finished_at is None:
                 continue
-            matching = self._matching_results_for_audit(
-                audit_id=audit.id,
-                assertion_keys=assertion_keys,
-                assertion_ids=assertion_ids,
+            matching = self._matching_results_for_entity(
+                entity_type=entity_type,
+                entity_id=entity.id,
+                keys=keys,
+                control_point_ids=control_point_ids,
             )
             if not any(row.result != CONTROL_RESULT_NEKONTROLOVANO for row in matching):
                 continue
 
-            sort_key = (
-                audit.finished_at,
-                audit.audit_date or audit.finished_at,
-                audit.id,
-            )
+            secondary = getattr(entity, secondary_date_attr, None) or finished_at
+            sort_key = (finished_at, secondary, entity.id)
             if best_key is None or sort_key > best_key:
-                best = audit
+                best = entity
                 best_key = sort_key
 
         return best
 
-    def _matching_results_for_audit(
+    def _matching_results_for_entity(
         self,
         *,
-        audit_id: int,
-        assertion_keys: set[tuple[str, str, str]],
-        assertion_ids: set[str],
+        entity_type: str,
+        entity_id: int,
+        keys: set[tuple[str, str, str]],
+        control_point_ids: set[str],
     ) -> list:
         matching = []
-        for row in control_result_service.get_for_entity(ENTITY_AUDITY, audit_id):
-            if self._result_matches_linked_assertion(
+        for row in control_result_service.get_for_entity(entity_type, entity_id):
+            if self._result_matches_linked_control_point(
                 row,
-                assertion_keys=assertion_keys,
-                assertion_ids=assertion_ids,
+                keys=keys,
+                control_point_ids=control_point_ids,
             ):
                 matching.append(row)
         return matching
 
     @staticmethod
-    def _result_matches_linked_assertion(
+    def _result_matches_linked_control_point(
         row,
         *,
-        assertion_keys: set[tuple[str, str, str]],
-        assertion_ids: set[str],
+        keys: set[tuple[str, str, str]],
+        control_point_ids: set[str],
     ) -> bool:
         control_point_id = str(row.source_control_point_id or "").strip()
-        if not control_point_id or control_point_id not in assertion_ids:
+        if not control_point_id or control_point_id not in control_point_ids:
             return False
 
         area_id = str(row.source_area_id or "").strip()
         section_id = str(row.source_section_id or "").strip()
         if area_id and section_id:
-            return (area_id, section_id, control_point_id) in assertion_keys
+            return (area_id, section_id, control_point_id) in keys
 
-        # Starší záznamy bez ID oblasti/sekce: stačí shoda ID tvrzení.
+        # Starší záznamy bez ID oblasti/sekce: stačí shoda ID bodu.
         return True
+
+    def _count_findings_for_questions(
+        self,
+        *,
+        inspection_id: int,
+        label_keys: set[tuple[str, str, str]],
+        question_ids: set[str],
+    ) -> tuple[int, int]:
+        total = 0
+        open_count = 0
+        for finding in finding_service.get_for_entity(ENTITY_PROVERKY, inspection_id):
+            control_point_id = str(finding.source_control_point_id or "").strip()
+            if not control_point_id or control_point_id not in question_ids:
+                continue
+
+            area_label = str(finding.source_area_label or "").strip()
+            section_label = str(finding.source_section_label or "").strip()
+            if area_label and section_label:
+                if (area_label, section_label, control_point_id) not in label_keys:
+                    continue
+
+            total += 1
+            if str(finding.status or "").strip() in _OPEN_FINDING_STATUSES:
+                open_count += 1
+        return total, open_count
 
     def _count_results(self, results: list) -> tuple[ProcessStatusResultCount, ...]:
         counts: dict[str, int] = {code: 0 for code, _label in CONTROL_RESULT_OPTIONS}
