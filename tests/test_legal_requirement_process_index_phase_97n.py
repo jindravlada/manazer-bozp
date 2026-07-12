@@ -140,7 +140,8 @@ class LegalRequirementProcessIndexPhase97nTestCase(unittest.TestCase):
 
         self.assertEqual(legal.score, 80.0)
         self.assertEqual(legal.contribution, 20.0)
-        self.assertIsNone(breakdown.index_value)
+        self.assertEqual(breakdown.index_value, 80.0)
+        self.assertEqual(breakdown.data_coverage_percent, 25)
         self.assertIsNotNone(legal.score_detail)
         self.assertEqual(legal.score_detail.total_count, 7)
         self.assertEqual(legal.score_detail.countable_count, 5)
@@ -234,7 +235,8 @@ class LegalRequirementProcessIndexPhase97nTestCase(unittest.TestCase):
         self.assertEqual(widget.table.item(2, 2).text(), "75,0")
         self.assertEqual(widget.table.item(2, 3).text(), "18,8")
         self.assertEqual(widget.table.item(3, 2).text(), PROCESS_INDEX_PLACEHOLDER)
-        self.assertIn(PROCESS_INDEX_PLACEHOLDER, widget.index_label.text())
+        self.assertIn("75,0 %", widget.index_label.text())
+        self.assertEqual(widget.coverage_label.text(), "Pokrytí dat: 25 %")
 
 
 if __name__ == "__main__":

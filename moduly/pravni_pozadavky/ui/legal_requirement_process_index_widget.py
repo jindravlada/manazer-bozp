@@ -1,4 +1,4 @@
-"""Read-only záložka Index procesu — rozpad oblastí a vah."""
+"""Read-only záložka Index procesu — rozpad oblastí a výsledný index."""
 
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ class LegalRequirementProcessIndexWidget(QWidget):
         layout.addWidget(heading)
 
         intro = QLabel(
-            "Rozpad oblastí, ze kterých se bude skládat budoucí Index procesu."
+            "Rozpad oblastí Indexu procesu a výsledný index podle dostupných dat."
         )
         intro.setObjectName("InfoText")
         intro.setWordWrap(True)
@@ -70,8 +70,10 @@ class LegalRequirementProcessIndexWidget(QWidget):
         index_font = QFont(self.index_label.font())
         index_font.setBold(True)
         self.index_label.setFont(index_font)
+        self.coverage_label = QLabel()
         footer_layout.addWidget(self.total_weight_label)
         footer_layout.addWidget(self.index_label)
+        footer_layout.addWidget(self.coverage_label)
         layout.addWidget(footer)
 
         self.refresh()
@@ -86,12 +88,15 @@ class LegalRequirementProcessIndexWidget(QWidget):
         )
         self._fill_table(breakdown)
         self.total_weight_label.setText(f"Součet vah: {breakdown.total_weight_percent} %")
-        index_text = (
-            PROCESS_INDEX_PLACEHOLDER
-            if breakdown.index_value is None
-            else _format_index_number(breakdown.index_value)
+        if breakdown.index_value is None:
+            self.index_label.setText(f"Index procesu:\n{PROCESS_INDEX_PLACEHOLDER}")
+        else:
+            self.index_label.setText(
+                f"Index procesu:\n{_format_index_number(breakdown.index_value)} %"
+            )
+        self.coverage_label.setText(
+            f"Pokrytí dat: {breakdown.data_coverage_percent} %"
         )
-        self.index_label.setText(f"Index procesu:\n{index_text}")
 
     def _fill_table(self, breakdown: ProcessIndexBreakdown) -> None:
         self.table.setRowCount(len(breakdown.areas))

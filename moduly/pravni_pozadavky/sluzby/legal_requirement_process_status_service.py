@@ -327,11 +327,16 @@ class ProcessIndexAreaBreakdown:
 
 @dataclass(frozen=True)
 class ProcessIndexBreakdown:
-    """Rozpad Indexu procesu — váhy nyní, skóre a index později."""
+    """Rozpad a celkový Index procesu z dílčích oblastí."""
 
     areas: tuple[ProcessIndexAreaBreakdown, ...]
     total_weight_percent: int
     index_value: float | None = None
+    data_coverage_percent: int = 0
+    available_weight_percent: int = 0
+    included_area_ids: tuple[str, ...] = ()
+    excluded_area_ids: tuple[str, ...] = ()
+    index_calculation_summary: str = ""
 
 
 def _format_entity_label(
@@ -612,10 +617,77 @@ class LegalRequirementProcessStatusService:
             )
 
         total_weight = sum(item.weight_percent for item in areas)
+        index_value, coverage, available_weight, included, excluded, summary = (
+            self._compute_total_process_index(tuple(areas))
+        )
         return ProcessIndexBreakdown(
             areas=tuple(areas),
             total_weight_percent=total_weight,
-            index_value=None,
+            index_value=index_value,
+            data_coverage_percent=coverage,
+            available_weight_percent=available_weight,
+            included_area_ids=included,
+            excluded_area_ids=excluded,
+            index_calculation_summary=summary,
+        )
+
+    @staticmethod
+    def _compute_total_process_index(
+        areas: tuple[ProcessIndexAreaBreakdown, ...],
+    ) -> tuple[float | None, int, int, tuple[str, ...], tuple[str, ...], str]:
+        """Spočítá Index procesu; chybějící oblasti normalizuje poměrně na 100 %."""
+        included: list[ProcessIndexAreaBreakdown] = []
+        excluded: list[ProcessIndexAreaBreakdown] = []
+        for area in areas:
+            if area.score is None:
+                excluded.append(area)
+            else:
+                included.append(area)
+
+        included_ids = tuple(item.area_id for item in included)
+        excluded_ids = tuple(item.area_id for item in excluded)
+        available_weight = sum(item.weight_percent for item in included)
+        coverage = available_weight
+
+        if available_weight <= 0:
+            return (
+                None,
+                0,
+                0,
+                included_ids,
+                excluded_ids,
+                "Index procesu nelze spočítat — žádná oblast nemá platné skóre.",
+            )
+
+        weighted_sum = 0.0
+        for item in included:
+            assert item.score is not None
+            weighted_sum += item.score * item.weight_percent
+        index_value = weighted_sum / available_weight
+        index_value = max(0.0, min(100.0, index_value))
+
+        parts = [
+            f"{item.area_label} {item.score:.1f} × {item.weight_percent}"
+            for item in included
+        ]
+        if excluded:
+            skipped = ", ".join(item.area_label for item in excluded)
+            summary = (
+                f"({' + '.join(parts)}) / {available_weight} = {index_value:.1f} % "
+                f"(vynecháno bez dat: {skipped}; pokrytí {coverage} %)"
+            )
+        else:
+            summary = (
+                f"({' + '.join(parts)}) / {available_weight} = {index_value:.1f} % "
+                f"(pokrytí {coverage} %)"
+            )
+        return (
+            index_value,
+            coverage,
+            available_weight,
+            included_ids,
+            excluded_ids,
+            summary,
         )
 
     def _compute_audit_area_score(

@@ -194,7 +194,8 @@ class LegalRequirementProcessIndexPhase97lTestCase(unittest.TestCase):
 
         self.assertEqual(audity.score, 75.0)
         self.assertEqual(audity.contribution, 22.5)
-        self.assertIsNone(breakdown.index_value)
+        self.assertEqual(breakdown.index_value, 75.0)
+        self.assertEqual(breakdown.data_coverage_percent, 30)
         self.assertIsNotNone(audity.score_detail)
         self.assertEqual(audity.score_detail.countable_count, 5)
         self.assertEqual(audity.score_detail.source_entity_id, audit.id)
@@ -279,7 +280,8 @@ class LegalRequirementProcessIndexPhase97lTestCase(unittest.TestCase):
         self.assertEqual(widget.table.item(0, 2).text(), "75,0")
         self.assertEqual(widget.table.item(0, 3).text(), "22,5")
         self.assertEqual(widget.table.item(1, 2).text(), PROCESS_INDEX_PLACEHOLDER)
-        self.assertIn(PROCESS_INDEX_PLACEHOLDER, widget.index_label.text())
+        self.assertIn("75,0 %", widget.index_label.text())
+        self.assertEqual(widget.coverage_label.text(), "Pokrytí dat: 30 %")
 
 
 if __name__ == "__main__":
