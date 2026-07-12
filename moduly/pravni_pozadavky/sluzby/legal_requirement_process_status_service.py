@@ -1,4 +1,4 @@
-"""Aktuální stav řídicího procesu podle auditů, prověrek a právních požadavků."""
+"""Aktuální stav řídicího procesu podle auditů, prověrek, právních požadavků a úkolů."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from core.shared.constants import (
     CONTROL_RESULT_LABELS,
     CONTROL_RESULT_NEKONTROLOVANO,
     ENTITY_AUDITY,
+    ENTITY_LEGAL_REQUIREMENT,
     ENTITY_PROVERKY,
     FINDING_STATUS_OTEVRENE,
     FINDING_STATUS_V_PROCESU,
@@ -30,6 +31,7 @@ from moduly.pravni_pozadavky.constants import (
 from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 from moduly.proverky.sluzby.proverky_knowledge_service import proverky_knowledge_service
+from moduly.ukoly.sluzby.task_service import task_service
 
 PROCESS_STATUS_NO_ASSERTIONS = "Proces nemá přiřazena žádná auditní tvrzení."
 PROCESS_STATUS_NOT_AUDITED = "Proces dosud nebyl ověřen dokončeným auditem."
@@ -43,6 +45,25 @@ PROCESS_STATUS_NO_LEGAL_REQUIREMENTS = (
     "K procesu nejsou přiřazeny žádné aktivní právní požadavky."
 )
 PROCESS_STATUS_UNEVALUATED_LABEL = "Bez vyhodnocení"
+PROCESS_STATUS_NO_TASKS = "K procesu nejsou přiřazeny žádné aktivní úkoly."
+
+TASK_STATUS_ACTIVE = "Aktivní"
+TASK_STATUS_WAITING_CHECK = "Splněno - čeká na kontrolu"
+TASK_STATUS_DONE = "Ukončeno"
+TASK_STATUS_CANCELED = "Zrušeno"
+
+_OPEN_TASK_STATUSES = frozenset(
+    {
+        TASK_STATUS_ACTIVE,
+        TASK_STATUS_WAITING_CHECK,
+    }
+)
+_TASK_STATUS_ORDER = (
+    TASK_STATUS_ACTIVE,
+    TASK_STATUS_WAITING_CHECK,
+    TASK_STATUS_DONE,
+    TASK_STATUS_CANCELED,
+)
 
 _COMPLIANCE_STATUS_ORDER = (
     COMPLIANCE_SPLNENO,
@@ -159,6 +180,23 @@ class LegalRequirementProcessLegalStatus:
     def empty_message(self) -> str | None:
         if self.requirement_count <= 0:
             return PROCESS_STATUS_NO_LEGAL_REQUIREMENTS
+        return None
+
+
+@dataclass(frozen=True)
+class LegalRequirementProcessTaskStatus:
+    """Souhrn úkolů přímo navázaných na řídicí proces."""
+
+    task_count: int
+    open_count: int = 0
+    overdue_open_count: int = 0
+    nearest_due_date: date | None = None
+    status_counts: tuple[ProcessStatusResultCount, ...] = ()
+
+    @property
+    def empty_message(self) -> str | None:
+        if self.task_count <= 0:
+            return PROCESS_STATUS_NO_TASKS
         return None
 
 
@@ -325,6 +363,69 @@ class LegalRequirementProcessStatusService:
         )
         return LegalRequirementProcessLegalStatus(
             requirement_count=len(children),
+            status_counts=status_counts,
+        )
+
+    def get_task_status(self, requirement_id: int) -> LegalRequirementProcessTaskStatus:
+        tasks = [
+            task
+            for task in task_service.get_all_tasks()
+            if (
+                str(task.source_module or "").strip() == ENTITY_LEGAL_REQUIREMENT
+                and task.source_record_id == requirement_id
+            )
+        ]
+        if not tasks:
+            return LegalRequirementProcessTaskStatus(task_count=0)
+
+        status_totals: dict[str, int] = {label: 0 for label in _TASK_STATUS_ORDER}
+        open_count = 0
+        overdue_open_count = 0
+        nearest_due: date | None = None
+        today = date.today()
+
+        for task in tasks:
+            status = str(task.computed_status or "").strip() or TASK_STATUS_ACTIVE
+            if status not in status_totals:
+                status_totals[status] = 0
+            status_totals[status] += 1
+
+            if status not in _OPEN_TASK_STATUSES:
+                continue
+
+            open_count += 1
+            due_date = task.due_date
+            if due_date is None:
+                continue
+            if due_date < today:
+                overdue_open_count += 1
+            if nearest_due is None or due_date < nearest_due:
+                nearest_due = due_date
+
+        status_counts = tuple(
+            ProcessStatusResultCount(
+                result_code=label,
+                result_label=label,
+                count=status_totals.get(label, 0),
+            )
+            for label in _TASK_STATUS_ORDER
+        )
+        for label, count in status_totals.items():
+            if label in _TASK_STATUS_ORDER:
+                continue
+            status_counts = status_counts + (
+                ProcessStatusResultCount(
+                    result_code=label,
+                    result_label=label,
+                    count=count,
+                ),
+            )
+
+        return LegalRequirementProcessTaskStatus(
+            task_count=len(tasks),
+            open_count=open_count,
+            overdue_open_count=overdue_open_count,
+            nearest_due_date=nearest_due,
             status_counts=status_counts,
         )
 

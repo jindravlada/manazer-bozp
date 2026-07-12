@@ -9,6 +9,7 @@ from moduly.pravni_pozadavky.sluzby.legal_requirement_process_status_service imp
     LegalRequirementProcessAuditStatus,
     LegalRequirementProcessInspectionStatus,
     LegalRequirementProcessLegalStatus,
+    LegalRequirementProcessTaskStatus,
     legal_requirement_process_status_service,
 )
 
@@ -61,6 +62,11 @@ class LegalRequirementProcessStatusWidget(QWidget):
             self.requirement_id,
         )
         self._render_legal_requirements_section(legal_status)
+
+        task_status = legal_requirement_process_status_service.get_task_status(
+            self.requirement_id,
+        )
+        self._render_task_section(task_status)
 
         self._layout.addStretch()
 
@@ -126,6 +132,26 @@ class LegalRequirementProcessStatusWidget(QWidget):
         self._layout.addWidget(QLabel(f"Celkem: {status.requirement_count}"))
         for item in status.status_counts:
             self._layout.addWidget(QLabel(f"• {item.result_label}: {item.count}"))
+
+    def _render_task_section(self, status: LegalRequirementProcessTaskStatus) -> None:
+        self._add_section_heading("Úkoly")
+        empty_message = status.empty_message
+        if empty_message:
+            self._layout.addWidget(QLabel(empty_message))
+            return
+
+        self._layout.addWidget(QLabel(f"Celkem: {status.task_count}"))
+        self._layout.addWidget(QLabel(f"Otevřené: {status.open_count}"))
+        for item in status.status_counts:
+            self._layout.addWidget(QLabel(f"• {item.result_label}: {item.count}"))
+        self._layout.addWidget(
+            QLabel(f"Otevřené po termínu: {status.overdue_open_count}"),
+        )
+        if status.nearest_due_date is not None:
+            due_text = status.nearest_due_date.strftime("%d.%m.%Y")
+        else:
+            due_text = "—"
+        self._layout.addWidget(QLabel(f"Nejbližší termín otevřeného úkolu: {due_text}"))
 
     def _add_section_heading(self, title: str) -> None:
         section_heading = QLabel(title)
