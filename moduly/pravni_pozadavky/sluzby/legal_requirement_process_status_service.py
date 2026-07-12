@@ -79,6 +79,17 @@ _OPEN_FINDING_STATUSES = frozenset(
     }
 )
 
+# Váhy Indexu procesu (%) — součet aktivních oblastí musí být 100.
+# Další oblasti (rizika, školení, …) se doplní zde bez změny UI.
+PROCESS_INDEX_AREA_WEIGHTS: tuple[tuple[str, str, int], ...] = (
+    ("audity", "Audity", 30),
+    ("proverky", "Prověrky", 30),
+    ("pravni_pozadavky", "Právní požadavky", 25),
+    ("ukoly", "Úkoly", 15),
+)
+
+PROCESS_INDEX_PLACEHOLDER = "—"
+
 
 @dataclass(frozen=True)
 class LinkedAuditAssertionRef:
@@ -198,6 +209,26 @@ class LegalRequirementProcessTaskStatus:
         if self.task_count <= 0:
             return PROCESS_STATUS_NO_TASKS
         return None
+
+
+@dataclass(frozen=True)
+class ProcessIndexAreaBreakdown:
+    """Jedna oblast rozpadu budoucího Indexu procesu."""
+
+    area_id: str
+    area_label: str
+    weight_percent: int
+    score: float | None = None
+    contribution: float | None = None
+
+
+@dataclass(frozen=True)
+class ProcessIndexBreakdown:
+    """Rozpad Indexu procesu — váhy nyní, skóre a index později."""
+
+    areas: tuple[ProcessIndexAreaBreakdown, ...]
+    total_weight_percent: int
+    index_value: float | None = None
 
 
 def _format_entity_label(
@@ -427,6 +458,29 @@ class LegalRequirementProcessStatusService:
             overdue_open_count=overdue_open_count,
             nearest_due_date=nearest_due,
             status_counts=status_counts,
+        )
+
+    def get_process_index_breakdown(
+        self,
+        requirement_id: int | None = None,
+    ) -> ProcessIndexBreakdown:
+        """Vrátí rozpad oblastí Indexu procesu (váhy pevné, skóre zatím prázdné)."""
+        _ = requirement_id  # výpočet skóre přijde v další fázi
+        areas = tuple(
+            ProcessIndexAreaBreakdown(
+                area_id=area_id,
+                area_label=area_label,
+                weight_percent=weight_percent,
+                score=None,
+                contribution=None,
+            )
+            for area_id, area_label, weight_percent in PROCESS_INDEX_AREA_WEIGHTS
+        )
+        total_weight = sum(item.weight_percent for item in areas)
+        return ProcessIndexBreakdown(
+            areas=areas,
+            total_weight_percent=total_weight,
+            index_value=None,
         )
 
     def _list_linked_assertions(self, requirement_id: int) -> list[LinkedAuditAssertionRef]:

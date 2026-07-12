@@ -31,6 +31,9 @@ from moduly.pravni_pozadavky.ui.legal_requirement_links_and_usage_widget import 
 from moduly.pravni_pozadavky.ui.legal_requirement_process_status_widget import (
     LegalRequirementProcessStatusWidget,
 )
+from moduly.pravni_pozadavky.ui.legal_requirement_process_index_widget import (
+    LegalRequirementProcessIndexWidget,
+)
 from moduly.pravni_pozadavky.constants import (
     COMPLIANCE_STATUS_LABELS,
     PERIODICITY_LABELS,
@@ -103,6 +106,10 @@ class LegalRequirementDialog(QDialog):
             requirement.id if requirement is not None else None,
         )
         self.tabs.addTab(wrap_in_scroll_area(self.process_status_widget), "Stav procesu")
+        self.process_index_widget = LegalRequirementProcessIndexWidget(
+            requirement.id if requirement is not None else None,
+        )
+        self.tabs.addTab(wrap_in_scroll_area(self.process_index_widget), "Index procesu")
         layout.addWidget(self.tabs, 1)
         add_save_cancel_footer(layout, self)
 
