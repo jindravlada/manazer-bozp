@@ -28,6 +28,9 @@ from core.widgets.responsibility_role_selector import ResponsibilityRoleSelector
 from moduly.pravni_pozadavky.ui.legal_requirement_links_and_usage_widget import (
     LegalRequirementLinksAndUsageWidget,
 )
+from moduly.pravni_pozadavky.ui.legal_requirement_process_status_widget import (
+    LegalRequirementProcessStatusWidget,
+)
 from moduly.pravni_pozadavky.constants import (
     COMPLIANCE_STATUS_LABELS,
     PERIODICITY_LABELS,
@@ -96,6 +99,10 @@ class LegalRequirementDialog(QDialog):
             requirement.id if requirement is not None else None,
         )
         self.tabs.addTab(wrap_in_scroll_area(self.links_widget), "Vazby a použití")
+        self.process_status_widget = LegalRequirementProcessStatusWidget(
+            requirement.id if requirement is not None else None,
+        )
+        self.tabs.addTab(wrap_in_scroll_area(self.process_status_widget), "Stav procesu")
         layout.addWidget(self.tabs, 1)
         add_save_cancel_footer(layout, self)
 
