@@ -14,7 +14,7 @@ _TECHNICAL_PARAGRAPH_TITLE_PREFIX = "(K §"
 
 
 class LegalSectionDisplayTextService:
-    def compose(self, section_id: int) -> str:
+    def compose(self, section_id: int, *, include_root_provision_label: bool = True) -> str:
         section = legal_section_service.get_by_id(section_id)
         if section is None:
             return ""
@@ -30,7 +30,11 @@ class LegalSectionDisplayTextService:
             return own_text
 
         if section_type == SECTION_PARAGRAPH:
-            return self._compose_paragraph(section, own_text)
+            return self._compose_paragraph(
+                section,
+                own_text,
+                include_root_provision_label=include_root_provision_label,
+            )
 
         blocks: list[str] = []
         if own_text:
@@ -38,7 +42,13 @@ class LegalSectionDisplayTextService:
         blocks.extend(self._compose_children_blocks(section_id, depth=0))
         return self._join_blocks(blocks)
 
-    def _compose_paragraph(self, section: LegalSection, own_text: str) -> str:
+    def _compose_paragraph(
+        self,
+        section: LegalSection,
+        own_text: str,
+        *,
+        include_root_provision_label: bool = True,
+    ) -> str:
         child_blocks = self._compose_children_blocks(section.id, depth=0)
         intro_title = self._paragraph_intro_title(section)
 
@@ -53,7 +63,7 @@ class LegalSectionDisplayTextService:
 
         blocks: list[str] = []
         paragraph = (section.paragraph or "").strip()
-        if paragraph:
+        if include_root_provision_label and paragraph:
             blocks.append(f"§ {paragraph}")
         blocks.extend(content_blocks)
         return self._join_blocks(blocks)

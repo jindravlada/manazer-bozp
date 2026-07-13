@@ -466,11 +466,12 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         dialog = LegalRequirementDialog()
         dialog.sources_widget.load_section_ids([paragraph.id, attachment.id, empty_paragraph.id])
 
+        self.assertEqual(dialog.provision_text_header.text(), "432/2003 Sb.\n§ 2")
         self.assertIn(
             "(1) Zařazení práce do kategorie vyjadřuje souhrnné hodnocení.",
             dialog.provision_text_view.toPlainText(),
         )
-        self.assertTrue(dialog.provision_text_view.toPlainText().startswith("§ 2\n\n"))
+        self.assertFalse(dialog.provision_text_view.toPlainText().startswith("§ 2"))
         self.assertIn(
             "(2) Při zařazování prací do kategorií se stanoví kategorie.",
             dialog.provision_text_view.toPlainText(),

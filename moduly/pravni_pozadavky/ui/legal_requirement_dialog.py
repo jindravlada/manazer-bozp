@@ -439,7 +439,10 @@ class LegalRequirementDialog(QDialog):
         self.provision_text_header.setVisible(bool(header))
         self.provision_text_separator.setVisible(bool(header))
 
-        display_text = legal_section_display_text_service.compose(section_id)
+        display_text = legal_section_display_text_service.compose(
+            section_id,
+            include_root_provision_label=False,
+        )
         if not display_text:
             self.provision_text_view.setPlainText(_MISSING_SECTION_TEXT)
             return
