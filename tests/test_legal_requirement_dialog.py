@@ -364,7 +364,7 @@ class LegalRequirementDialogFromSectionTestCase(unittest.TestCase):
         )
         self.assertEqual(
             dialog.provision_text_view.toPlainText(),
-            "Text odstavce 2 pro zobrazení.",
+            "Předmět\n\nText odstavce 2 pro zobrazení.",
         )
 
         version = legal_document_version_service.create(

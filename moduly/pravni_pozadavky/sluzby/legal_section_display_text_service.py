@@ -14,7 +14,13 @@ _TECHNICAL_PARAGRAPH_TITLE_PREFIX = "(K §"
 
 
 class LegalSectionDisplayTextService:
-    def compose(self, section_id: int, *, include_root_provision_label: bool = True) -> str:
+    def compose(
+        self,
+        section_id: int,
+        *,
+        include_root_provision_label: bool = True,
+        include_ancestor_context: bool = False,
+    ) -> str:
         section = legal_section_service.get_by_id(section_id)
         if section is None:
             return ""
@@ -22,6 +28,12 @@ class LegalSectionDisplayTextService:
         section_type = (section.section_type or "").strip()
         if section_type == SECTION_ATTACHMENT:
             return (section.text or "").strip()
+
+        if include_ancestor_context:
+            return self._compose_selected_with_ancestors(
+                section,
+                include_root_provision_label=include_root_provision_label,
+            )
 
         own_text = (section.text or "").strip()
         has_descendants_with_text = self._subtree_has_text(section_id, skip_own_text=True)
@@ -41,6 +53,67 @@ class LegalSectionDisplayTextService:
             blocks.append(own_text)
         blocks.extend(self._compose_children_blocks(section_id, depth=0))
         return self._join_blocks(blocks)
+
+    def _compose_selected_with_ancestors(
+        self,
+        section: LegalSection,
+        *,
+        include_root_provision_label: bool,
+    ) -> str:
+        section_type = (section.section_type or "").strip()
+        if section_type == SECTION_PARAGRAPH:
+            return self._compose_paragraph(
+                section,
+                (section.text or "").strip(),
+                include_root_provision_label=include_root_provision_label,
+            )
+
+        blocks: list[str] = []
+        for ancestor in self._ancestor_chain(section):
+            intro = self._ancestor_context_block(ancestor)
+            if intro:
+                blocks.append(intro)
+
+        selected_body = self._selected_section_body(section)
+        if selected_body:
+            blocks.append(selected_body)
+
+        return self._join_blocks(blocks)
+
+    def _ancestor_chain(self, section: LegalSection) -> list[LegalSection]:
+        chain: list[LegalSection] = []
+        current = section
+        visited: set[int] = set()
+        while current.parent_section_id is not None and current.parent_section_id not in visited:
+            visited.add(current.parent_section_id)
+            parent = legal_section_service.get_by_id(current.parent_section_id)
+            if parent is None:
+                break
+            chain.insert(0, parent)
+            current = parent
+        return chain
+
+    def _ancestor_context_block(self, section: LegalSection) -> str:
+        section_type = (section.section_type or "").strip()
+        if section_type == SECTION_PARAGRAPH:
+            return self._paragraph_context_text(section)
+        if section_type == SECTION_SUBSECTION:
+            return (section.text or "").strip()
+        return ""
+
+    def _paragraph_context_text(self, section: LegalSection) -> str:
+        intro = self._paragraph_intro_title(section)
+        if intro:
+            return intro
+        return (section.text or "").strip()
+
+    def _selected_section_body(self, section: LegalSection) -> str:
+        section_type = (section.section_type or "").strip()
+        if section_type in {SECTION_SUBSECTION, SECTION_LETTER}:
+            return (section.text or "").strip()
+        if section_type == SECTION_PARAGRAPH:
+            return self._paragraph_context_text(section)
+        return (section.text or "").strip()
 
     def _compose_paragraph(
         self,

@@ -152,12 +152,16 @@ class LegalRequirementProvisionLabelPhase98aTestCase(unittest.TestCase):
         self.assertIn("(1) Text prvního odstavce.", paragraph_body)
 
         subsection_body = self._dialog_body_for(self._subsection.id)
+        self.assertIn("Zaměstnankyním-matkám jsou zakázány práce uvedené", subsection_body)
         self.assertIn("Text prvního odstavce.", subsection_body)
-        self.assertIn("c) Text písmene c).", subsection_body)
+        self.assertNotIn("Text písmene c).", subsection_body)
         self.assertFalse(subsection_body.startswith("§ 4"))
 
         letter_body = self._dialog_body_for(self._letter.id)
-        self.assertEqual(letter_body, "Text písmene c).")
+        self.assertIn("Zaměstnankyním-matkám jsou zakázány práce uvedené", letter_body)
+        self.assertIn("Text prvního odstavce.", letter_body)
+        self.assertIn("Text písmene c).", letter_body)
+        self.assertFalse(letter_body.startswith("§ 4"))
 
     def test_compose_without_root_label_keeps_valid_text_format(self) -> None:
         composed_with_label = legal_section_display_text_service.compose(self._paragraph.id)

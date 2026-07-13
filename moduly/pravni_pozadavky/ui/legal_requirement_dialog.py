@@ -442,6 +442,7 @@ class LegalRequirementDialog(QDialog):
         display_text = legal_section_display_text_service.compose(
             section_id,
             include_root_provision_label=False,
+            include_ancestor_context=True,
         )
         if not display_text:
             self.provision_text_view.setPlainText(_MISSING_SECTION_TEXT)
