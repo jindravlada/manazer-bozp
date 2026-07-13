@@ -132,16 +132,23 @@ class LegalRequirementSourceRepository:
             seen.add(section_id)
             unique_section_ids.append(section_id)
 
-        self.delete_by_requirement(requirement_id)
-        created: list[LegalRequirementSource] = []
-        for index, section_id in enumerate(unique_section_ids, start=1):
-            created.append(
-                self.create(
-                    LegalRequirementSource(
-                        requirement_id=requirement_id,
-                        legal_section_id=section_id,
-                        sort_order=index,
-                    ),
-                ),
+        with get_session() as session:
+            stmt = select(LegalRequirementSource).where(
+                LegalRequirementSource.requirement_id == requirement_id,
             )
-        return created
+            for source in session.scalars(stmt):
+                session.delete(source)
+
+            created: list[LegalRequirementSource] = []
+            for index, section_id in enumerate(unique_section_ids, start=1):
+                source = LegalRequirementSource(
+                    requirement_id=requirement_id,
+                    legal_section_id=section_id,
+                    sort_order=index,
+                )
+                session.add(source)
+                created.append(source)
+            session.commit()
+            for source in created:
+                session.refresh(source)
+            return created

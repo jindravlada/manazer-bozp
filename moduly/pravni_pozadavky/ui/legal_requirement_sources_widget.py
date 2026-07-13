@@ -1,7 +1,6 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QHBoxLayout,
-    QMessageBox,
     QPushButton,
     QTreeWidget,
     QTreeWidgetItem,
@@ -165,17 +164,14 @@ class LegalRequirementSourcesWidget(QWidget):
         if exec_maximized(dialog) != LegalRequirementSourceAddDialog.DialogCode.Accepted:
             return
 
-        section_id = dialog.selected_section_id()
-        if section_id is None:
-            return
-        if section_id in self.get_section_ids():
-            QMessageBox.information(
-                self,
-                "Právní podklad",
-                "Toto ustanovení je již přidáno.",
-            )
-            return
-        self._append_section(section_id)
+        added = False
+        for section_id in dialog.selected_section_ids():
+            if section_id in self.get_section_ids():
+                continue
+            self._append_section(section_id)
+            added = True
+        if added:
+            self.select_first_row()
 
     def _remove_selected(self) -> None:
         item = self.tree.currentItem()

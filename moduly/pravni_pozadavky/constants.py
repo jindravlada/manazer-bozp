@@ -172,6 +172,34 @@ def legal_document_display_label(document) -> str:
     return (getattr(document, "title", "") or "").strip()
 
 
+def legal_document_list_label(document) -> str:
+    regulation_number = legal_document_regulation_number(document)
+    title = (getattr(document, "title", "") or "").strip()
+    if regulation_number and title:
+        return f"{regulation_number} – {title}"
+    if title:
+        return title
+    if regulation_number:
+        return regulation_number
+    document_id = getattr(document, "id", None)
+    return f"Předpis #{document_id}" if document_id is not None else "Předpis"
+
+
+def legal_document_matches_search(document, query: str) -> bool:
+    normalized = (query or "").strip().casefold()
+    if not normalized:
+        return True
+    for value in (
+        getattr(document, "title", ""),
+        getattr(document, "short_title", ""),
+        getattr(document, "number", ""),
+        legal_document_regulation_number(document),
+    ):
+        if normalized in (value or "").strip().casefold():
+            return True
+    return False
+
+
 def _strip_section_title_suffix(label: str) -> str:
     if " – " in label:
         return label.split(" – ", 1)[0].strip()

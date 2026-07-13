@@ -1,5 +1,6 @@
 from datetime import date
 
+from moduly.pravni_pozadavky.constants import legal_document_matches_search
 from moduly.pravni_pozadavky.legal_document_type_utils import normalize_document_type
 from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
 from moduly.pravni_pozadavky.repository.legal_document_repository import LegalDocumentRepository
@@ -11,6 +12,22 @@ class LegalDocumentService:
 
     def list_all(self, *, include_inactive: bool = False) -> list[LegalDocument]:
         return self.repository.list_all(include_inactive=include_inactive)
+
+    def list_matching(
+        self,
+        query: str = "",
+        *,
+        include_inactive: bool = False,
+    ) -> list[LegalDocument]:
+        documents = self.list_all(include_inactive=include_inactive)
+        normalized = (query or "").strip()
+        if not normalized:
+            return documents
+        return [
+            document
+            for document in documents
+            if legal_document_matches_search(document, normalized)
+        ]
 
     def get_by_id(self, document_id: int) -> LegalDocument | None:
         return self.repository.get_by_id(document_id)

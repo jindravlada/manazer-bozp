@@ -141,6 +141,48 @@ class LegalRequirementService:
             requirement = self.repository.update(requirement)
         return requirement
 
+    def append_source_sections(
+        self,
+        requirement_id: int,
+        section_ids: list[int],
+    ) -> LegalRequirement:
+        """Přidá vazby na ustanovení bez duplicit; stávající vazby nemění."""
+        requirement = self.repository.get_by_id(requirement_id)
+        if requirement is None:
+            raise ValueError("Proces nebyl nalezen.")
+        if not requirement.active:
+            raise ValueError("Proces není aktivní.")
+
+        existing = self.list_source_section_ids_for_requirement(requirement_id)
+        seen = set(existing)
+        to_add: list[int] = []
+
+        for section_id in section_ids:
+            if section_id in seen:
+                continue
+            self._validate_source_section_id(section_id)
+            other = self.get_by_source_section_id(section_id)
+            if other is not None and other.id != requirement_id:
+                raise ValueError(
+                    f"Ustanovení #{section_id} je již přiřazeno jinému procesu.",
+                )
+            to_add.append(section_id)
+            seen.add(section_id)
+
+        if not to_add:
+            return requirement
+
+        merged = [*existing, *to_add]
+        self.source_repository.replace_for_requirement(requirement_id, merged)
+
+        requirement = self.repository.get_by_id(requirement_id)
+        if requirement is None:
+            raise ValueError("Proces nebyl nalezen.")
+        if requirement.source_section_id is None:
+            requirement.source_section_id = merged[0]
+            requirement = self.repository.update(requirement)
+        return requirement
+
     def get_by_id(self, requirement_id: int) -> LegalRequirement | None:
         return self.repository.get_by_id(requirement_id)
 
