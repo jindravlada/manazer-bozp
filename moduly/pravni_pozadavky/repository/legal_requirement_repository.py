@@ -23,6 +23,17 @@ class LegalRequirementRepository:
         with get_session() as session:
             return session.get(LegalRequirement, requirement_id)
 
+    def list_by_ids(self, requirement_ids: list[int]) -> list[LegalRequirement]:
+        if not requirement_ids:
+            return []
+        with get_session() as session:
+            stmt = (
+                select(LegalRequirement)
+                .where(LegalRequirement.id.in_(requirement_ids))
+                .order_by(LegalRequirement.id)
+            )
+            return list(session.scalars(stmt))
+
     def list_source_section_ids(self, *, section_ids: list[int] | None = None) -> set[int]:
         with get_session() as session:
             stmt = select(LegalRequirement.source_section_id).where(

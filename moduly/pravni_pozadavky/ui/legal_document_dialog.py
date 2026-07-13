@@ -18,6 +18,7 @@ from core.widgets.dialog_utils import (
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_LABELS, VALID_DOCUMENT_TYPES
 from moduly.pravni_pozadavky.ui.legal_document_versions_tab import LegalDocumentVersionsTab
+from moduly.pravni_pozadavky.ui.legal_document_process_usage_tab import LegalDocumentProcessUsageTab
 
 
 class LegalDocumentDialog(QDialog):
@@ -36,6 +37,9 @@ class LegalDocumentDialog(QDialog):
             document.id if document is not None else None,
         )
         self.tabs.addTab(wrap_in_scroll_area(self.versions_tab), "Verze")
+        if document is not None:
+            self.process_usage_tab = LegalDocumentProcessUsageTab(document_id=document.id)
+            self.tabs.addTab(wrap_in_scroll_area(self.process_usage_tab), "Použití v procesech")
         layout.addWidget(self.tabs, 1)
         add_save_cancel_footer(layout, self)
 
