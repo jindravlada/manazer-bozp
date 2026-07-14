@@ -225,3 +225,14 @@ Dávkový export AI podle zdrojů analýzy:
 - více dávek → hlavní ZIP (`davka_00N.zip` + `prehled_davek.txt`)
 - jedna společná konzultace a mapa exportních ID pro celý export
 
+## Fáze R12
+
+Odstranění entity Nebezpečí (`IdentifiedHazard`):
+
+- pracovní postup: Analýza pracoviště → Nežádoucí události → Posouzení → Opatření
+- `HazardEvent` navázán přímo na `HazardInventoryItem` (`inventory_item_id`)
+- migrace převede stávající vazby Událost→Nebezpečí→Zdroj na Událost→Zdroj a odstraní tabulku `identified_hazards`
+- odstraněna záložka Nebezpečí a tlačítka identifikace/editace nebezpečí
+- u položek analýzy se zobrazuje počet nežádoucích událostí
+- AI export/import bez úrovně `HAZARD-###` (strom ITEM → EVENT → ASSESSMENT)
+

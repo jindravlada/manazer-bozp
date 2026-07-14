@@ -27,11 +27,11 @@ from moduly.rizeni_rizik.constants import (
     WORKPLACE_ANALYSIS_SELECT_ITEM,
     format_inventory_item_display_name,
 )
+from moduly.rizeni_rizik.sluzby.hazard_event_service import hazard_event_service
 from moduly.rizeni_rizik.sluzby.hazard_inventory_relation_service import (
     HazardInventoryRelationError,
     hazard_inventory_relation_service,
 )
-from moduly.rizeni_rizik.sluzby.identified_hazard_service import identified_hazard_service
 from moduly.rizeni_rizik.ui.hazard_inventory_relation_dialog import HazardInventoryRelationDialog
 
 
@@ -125,14 +125,14 @@ class HazardInventoryAnalysisWidget(QWidget):
         relation_count = hazard_inventory_relation_service.count_active_for_source(
             self._source_item.id
         )
-        hazard_count = identified_hazard_service.count_active_for_inventory_item(
+        event_count = hazard_event_service.count_active_for_inventory_item(
             self._source_item.id
         )
         self.header_label.setText(
             format_inventory_item_display_name(
                 self._source_item.name,
                 relation_count=relation_count,
-                hazard_count=hazard_count,
+                event_count=event_count,
             )
         )
         description = self._source_item.description.strip() or "—"

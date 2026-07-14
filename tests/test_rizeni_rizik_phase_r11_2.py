@@ -63,7 +63,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem
     from moduly.rizeni_rizik.modely.hazard_required_measure import HazardRequiredMeasure
     from moduly.rizeni_rizik.modely.hazard_risk_assessment import HazardRiskAssessment
-    from moduly.rizeni_rizik.modely.identified_hazard import IdentifiedHazard
     from moduly.rizeni_rizik.sluzby.hazard_event_service import hazard_event_service
     from moduly.rizeni_rizik.sluzby.hazard_existing_measure_service import (
         hazard_existing_measure_service,
@@ -84,14 +83,11 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import (
         hazard_risk_assessment_service,
     )
-    from moduly.rizeni_rizik.sluzby.identified_hazard_service import (
-        identified_hazard_service,
-    )
     from moduly.rizeni_rizik.ui.hazard_identification_dialog import HazardIdentificationDialog
 
 
 SAMPLE_RESPONSE = """\
-Oblast: Nebezpečí
+Oblast: Nežádoucí událost
 Návrh: Přimáčknutí mezi vozy
 Rodič: ITEM-001
 Zdůvodnění:
@@ -125,7 +121,6 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
             session.execute(delete(HazardExistingMeasure))
             session.execute(delete(HazardRiskAssessment))
             session.execute(delete(HazardEvent))
-            session.execute(delete(IdentifiedHazard))
             session.execute(delete(HazardInventoryItem))
             session.execute(delete(HazardIdentification))
             session.commit()
@@ -159,14 +154,9 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         )
         hazard_inventory_item_service.deactivate_item(inactive_item.id)
 
-        self.hazard = identified_hazard_service.create_hazard(
-            hazard_identification_id=self.identification.id,
-            inventory_item_id=self.item.id,
-            name="Pohyb kolejového vozidla",
-        )
         self.event = hazard_event_service.create_event(
             hazard_identification_id=self.identification.id,
-            identified_hazard_id=self.hazard.id,
+            inventory_item_id=self.item.id,
             name="Sražení s osobou",
         )
         self.assessment = hazard_risk_assessment_service.create_assessment(
@@ -238,7 +228,7 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         )
         self.assertIn("Lokomotiva", content.data_text)
         self.assertNotIn("Neaktivní zařízení", content.data_text)
-        self.assertIn("Pohyb kolejového vozidla", content.data_text)
+        self.assertIn("Sražení s osobou", content.data_text)
 
     def test_zip_contains_hierarchical_export_files(self) -> None:
         target = self.export_dir / "balicek.zip"
@@ -251,7 +241,8 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
             schema = json.loads(zf.read("schema_odpovedi.json").decode("utf-8"))
         self.assertIn("Jsi zkušený odborník BOZP", prompt)
         self.assertIn("ITEM-001", data)
-        self.assertIn("HAZARD-001", data)
+        self.assertIn("EVENT-001", data)
+        self.assertNotIn("HAZARD-001", data)
         self.assertEqual(zadani["schema_version"], "1.1")
         self.assertEqual(zadani["export_scope"], "full")
         self.assertEqual(zadani["batch_number"], 1)
@@ -301,9 +292,9 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         item = tree[0]
         self.assertEqual(item["export_id"], "ITEM-001")
         self.assertEqual(item["name"], "Lokomotiva")
-        self.assertEqual(item["hazards"][0]["export_id"], "HAZARD-001")
-        self.assertEqual(item["hazards"][0]["events"][0]["export_id"], "EVENT-001")
-        assessment = item["hazards"][0]["events"][0]["assessments"][0]
+        self.assertNotIn("hazards", item)
+        self.assertEqual(item["events"][0]["export_id"], "EVENT-001")
+        assessment = item["events"][0]["assessments"][0]
         self.assertEqual(assessment["export_id"], "ASSESSMENT-001")
         self.assertEqual(assessment["exposed_group"], "Posunovač")
         self.assertEqual(assessment["existing_measures"][0]["description"], "Výstražný signál")
@@ -315,8 +306,7 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
             options=AiPeerReviewExportOptions(),
         )
         self.assertIn("Zdroj analýzy [ITEM-001]", content.data_text)
-        self.assertIn("Nebezpečí", content.data_text)
-        self.assertIn("[HAZARD-001]", content.data_text)
+        self.assertNotIn("HAZARD-001", content.data_text)
         self.assertIn("Událost", content.data_text)
         self.assertIn("[EVENT-001]", content.data_text)
         self.assertIn("Posouzení", content.data_text)
@@ -342,7 +332,8 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
             self.assertNotIn(forbidden, dumped)
         # Stabilní exportní ID mají být přítomna
         self.assertIn("ITEM-001", dumped)
-        self.assertIn("HAZARD-001", dumped)
+        self.assertIn("EVENT-001", dumped)
+        self.assertNotIn("HAZARD-001", dumped)
 
     def test_responsible_person_excluded_by_default(self) -> None:
         content = self.provider.build_export_content(
@@ -396,7 +387,7 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
     def test_parse_response_format(self) -> None:
         proposals = parse_ai_peer_review_response(SAMPLE_RESPONSE)
         self.assertEqual(len(proposals), 2)
-        self.assertEqual(proposals[0].area, "Nebezpečí")
+        self.assertEqual(proposals[0].area, "Nežádoucí událost")
         self.assertEqual(proposals[0].name, "Přimáčknutí mezi vozy")
         self.assertEqual(proposals[0].parent_export_id, "ITEM-001")
         self.assertIn("spojování", proposals[0].reasoning)
@@ -413,8 +404,8 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         accepted = [proposals[0]]
         rejected = [proposals[1]]
 
-        before_hazards = len(
-            identified_hazard_service.get_for_identification(
+        before_events = len(
+            hazard_event_service.get_for_identification(
                 self.identification.id,
                 include_inactive=False,
             )
@@ -434,15 +425,15 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         self.assertEqual(updated.unassigned_count, 0)
         self.assertIn("Přimáčknutí mezi vozy", updated.response_text)
 
-        after_hazards = identified_hazard_service.get_for_identification(
+        after_events = hazard_event_service.get_for_identification(
             self.identification.id,
             include_inactive=False,
         )
-        self.assertEqual(len(after_hazards), before_hazards + 1)
+        self.assertEqual(len(after_events), before_events + 1)
         linked = next(
-            row for row in after_hazards if row.hazard.name == "Přimáčknutí mezi vozy"
+            row for row in after_events if row.event.name == "Přimáčknutí mezi vozy"
         )
-        self.assertEqual(linked.hazard.inventory_item_id, self.item.id)
+        self.assertEqual(linked.event.inventory_item_id, self.item.id)
 
     def test_import_missing_parent_becomes_unassigned(self) -> None:
         target = self.export_dir / "unassigned.zip"
@@ -452,13 +443,13 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
             target,
         )
         proposal = AiProposal(
-            area="Nebezpečí",
-            name="Orphan hazard",
+            area="Nežádoucí událost",
+            name="Orphan event",
             reasoning="Bez platného rodiče",
             parent_export_id="ITEM-999",
         )
-        before_hazards = len(
-            identified_hazard_service.get_for_identification(
+        before_events = len(
+            hazard_event_service.get_for_identification(
                 self.identification.id,
                 include_inactive=False,
             )
@@ -474,19 +465,19 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         )
         self.assertEqual(updated.accepted_count, 0)
         self.assertEqual(updated.unassigned_count, 1)
-        after_hazards = identified_hazard_service.get_for_identification(
+        after_events = hazard_event_service.get_for_identification(
             self.identification.id,
             include_inactive=False,
         )
-        self.assertEqual(len(after_hazards), before_hazards)
+        self.assertEqual(len(after_events), before_events)
         unassigned = ai_peer_review_service.get_unassigned_for_review(export_result.review.id)
         self.assertEqual(len(unassigned), 1)
-        self.assertEqual(unassigned[0].name, "Orphan hazard")
+        self.assertEqual(unassigned[0].name, "Orphan event")
         self.assertEqual(unassigned[0].parent_export_id, "ITEM-999")
         self.assertEqual(UNASSIGNED_PROPOSAL_STATUS_LABEL, "Nezařazený návrh")
 
     def test_import_never_attaches_to_first_item(self) -> None:
-        """Bez parent_export_id se nebezpečí nesmí přilepit k prvnímu zdroji."""
+        """Bez parent_export_id se událost nesmí přilepit k prvnímu zdroji."""
         target = self.export_dir / "no_fallback.zip"
         export_result = ai_peer_review_service.export_package(
             self.provider,
@@ -494,13 +485,13 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
             target,
         )
         proposal = AiProposal(
-            area="Nebezpečí",
+            area="Nežádoucí událost",
             name="Bez rodiče",
             reasoning="Nesmí použít první položku",
             parent_export_id=None,
         )
         before = len(
-            identified_hazard_service.get_for_identification(
+            hazard_event_service.get_for_identification(
                 self.identification.id,
                 include_inactive=False,
             )
@@ -516,7 +507,7 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         )
         self.assertEqual(updated.accepted_count, 0)
         self.assertEqual(updated.unassigned_count, 1)
-        after = identified_hazard_service.get_for_identification(
+        after = hazard_event_service.get_for_identification(
             self.identification.id,
             include_inactive=False,
         )
@@ -532,7 +523,7 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         mapping = json.loads(result.review.export_id_map_json)
         self.assertEqual(mapping["ITEM-001"]["kind"], "item")
         self.assertEqual(mapping["ITEM-001"]["id"], self.item.id)
-        self.assertEqual(mapping["HAZARD-001"]["id"], self.hazard.id)
+        self.assertNotIn("HAZARD-001", mapping)
         self.assertEqual(mapping["EVENT-001"]["id"], self.event.id)
         self.assertEqual(mapping["ASSESSMENT-001"]["id"], self.assessment.id)
 
@@ -540,7 +531,7 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         dialog = HazardIdentificationDialog(identification=self.identification)
         labels = [dialog.tabs.tabText(index) for index in range(dialog.tabs.count())]
         self.assertIn(AI_PEER_REVIEW_TAB_TITLE, labels)
-        self.assertTrue(dialog.tabs.isTabEnabled(5))
+        self.assertTrue(dialog.tabs.isTabEnabled(4))
         self.assertTrue(dialog.ai_peer_review_widget.export_btn.isEnabled())
         self.assertTrue(dialog.ai_peer_review_widget.import_btn.isEnabled())
 

@@ -68,18 +68,17 @@ Proveď odborné oponentní posouzení poskytnutých podkladů.
 
 Podklady jsou hierarchické:
 
-Analýza pracoviště → Nebezpečí → Nežádoucí události → Posouzení
+Analýza pracoviště → Nežádoucí události → Posouzení
 → Existující opatření → Potřebná opatření
 
-Každý objekt má stabilní exportní ID (ITEM-…, HAZARD-…, EVENT-…, ASSESSMENT-…).
+Každý objekt má stabilní exportní ID (ITEM-…, EVENT-…, ASSESSMENT-…).
 Při návrhu doplnění uveď rodiče pomocí tohoto ID (pole Rodič).
 
 Na základě svých odborných znalostí navrhni pouze položky, které mohly být opomenuty.
 
 Posuzuj zejména:
 
-- zdroje nebezpečí
-- nebezpečí
+- zdroje analýzy / zdroje nebezpečí
 - nežádoucí události
 - rizika
 - ohrožené osoby
@@ -155,7 +154,7 @@ AI_PEER_REVIEW_RESPONSE_SCHEMA = {
                 "area": {
                     "type": "string",
                     "description": (
-                        "Oblast návrhu, např. Analýza pracoviště, Nebezpečí, "
+                        "Oblast návrhu, např. Analýza pracoviště, "
                         "Nežádoucí událost, Ohrožená skupina, Existující opatření, "
                         "Potřebné opatření."
                     ),
@@ -168,7 +167,7 @@ AI_PEER_REVIEW_RESPONSE_SCHEMA = {
                     "type": ["string", "null"],
                     "description": (
                         "Exportní ID rodiče v hierarchii "
-                        "(ITEM-… / HAZARD-… / EVENT-… / ASSESSMENT-…), "
+                        "(ITEM-… / EVENT-… / ASSESSMENT-…), "
                         "nebo null u nové položky analýzy pracoviště."
                     ),
                 },

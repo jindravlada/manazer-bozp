@@ -10,7 +10,7 @@ class HazardEvent(Base):
     __tablename__ = "hazard_events"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    identified_hazard_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    inventory_item_id: Mapped[int] = mapped_column(Integer, nullable=False)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str] = mapped_column(Text, default="")
     note: Mapped[str] = mapped_column(Text, default="")

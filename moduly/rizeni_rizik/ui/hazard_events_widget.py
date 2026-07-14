@@ -12,7 +12,6 @@ from PySide6.QtWidgets import (
 from core.widgets.table_utils import configure_table_columns
 from moduly.rizeni_rizik.constants import (
     EVENT_COL_ACTIVE,
-    EVENT_COL_HAZARD,
     EVENT_COL_ID,
     EVENT_COL_INVENTORY_ITEM,
     EVENT_COL_NAME,
@@ -99,7 +98,7 @@ class HazardEventsWidget(QWidget):
     def add_event(
         self,
         *,
-        default_identified_hazard_id: int | None = None,
+        default_inventory_item_id: int | None = None,
     ) -> bool:
         if not self._ensure_editable():
             return False
@@ -107,7 +106,7 @@ class HazardEventsWidget(QWidget):
         dialog = HazardEventDialog(
             self,
             hazard_identification_id=self._identification_id,
-            default_identified_hazard_id=default_identified_hazard_id,
+            default_inventory_item_id=default_inventory_item_id,
         )
         if dialog.exec():
             self.refresh()
@@ -261,7 +260,6 @@ class HazardEventsWidget(QWidget):
                 assessment_count=assessment_counts.get(event.id, 0),
             )
             self.table.setItem(row_index, EVENT_COL_NAME, QTableWidgetItem(display_name))
-            self.table.setItem(row_index, EVENT_COL_HAZARD, QTableWidgetItem(row.hazard_name))
             self.table.setItem(
                 row_index,
                 EVENT_COL_INVENTORY_ITEM,

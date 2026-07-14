@@ -36,11 +36,10 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.constants import (
         HAZARD_IDENTIFICATION_STATUS_IN_PROGRESS,
         HAZARD_IDENTIFICATION_TABS,
-    TAB_BASICS,
-    TAB_EVENTS,
-    TAB_HAZARDS,
-    TAB_INVENTORY,
-)
+        TAB_BASICS,
+        TAB_EVENTS,
+        TAB_INVENTORY,
+    )
     from moduly.rizeni_rizik.modely.hazard_identification import HazardIdentification
     from moduly.rizeni_rizik.sluzby.hazard_identification_service import (
         HazardIdentificationError,
@@ -156,8 +155,7 @@ class RizeniRizikEditorPhaseR01bTestCase(unittest.TestCase):
         dialog = HazardIdentificationDialog()
         self.assertEqual(dialog.tabs.tabText(0), TAB_BASICS)
         self.assertEqual(dialog.tabs.tabText(1), TAB_INVENTORY)
-        self.assertEqual(dialog.tabs.tabText(2), TAB_HAZARDS)
-        self.assertEqual(dialog.tabs.tabText(3), TAB_EVENTS)
+        self.assertEqual(dialog.tabs.tabText(2), TAB_EVENTS)
         self.assertTrue(dialog.tabs.isTabEnabled(0))
         self.assertFalse(dialog.tabs.isTabEnabled(1))
         for index in range(2, dialog.tabs.count()):

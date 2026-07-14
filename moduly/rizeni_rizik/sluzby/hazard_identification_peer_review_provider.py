@@ -43,8 +43,6 @@ from moduly.rizeni_rizik.constants import (
     HAZARD_INVENTORY_CATEGORY_LABELS,
     HAZARD_INVENTORY_CATEGORY_OTHER,
     HAZARD_INVENTORY_RELATION_TYPE_LABELS,
-    IDENTIFIED_HAZARD_SOURCE_AI,
-    IDENTIFIED_HAZARD_SOURCE_LABELS,
     RISK_ASSESSMENT_STATUS_LABELS,
     RISK_SEVERITY_MODERATE,
     format_risk_severity_label,
@@ -74,10 +72,6 @@ from moduly.rizeni_rizik.sluzby.hazard_required_measure_service import (
 from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import (
     HazardRiskAssessmentError,
     hazard_risk_assessment_service,
-)
-from moduly.rizeni_rizik.sluzby.identified_hazard_service import (
-    IdentifiedHazardError,
-    identified_hazard_service,
 )
 
 SOURCE_TYPE_HAZARD_IDENTIFICATION = "hazard_identification"
@@ -252,7 +246,6 @@ class HazardIdentificationPeerReviewProvider:
                 outcome = self._apply_one(source_id, proposal, export_id_map)
             except (
                 HazardInventoryItemError,
-                IdentifiedHazardError,
                 HazardEventError,
                 HazardRiskAssessmentError,
                 HazardExistingMeasureError,
@@ -325,25 +318,16 @@ class HazardIdentificationPeerReviewProvider:
             )
             return "applied"
 
+        # Entita Nebezpečí odstraněna (R12) – návrhy v této oblasti nezařazovat.
         if self._area_matches(area, ("nebezpeč", "nebezpec")):
-            if parent is None or parent.get("kind") != "item":
-                return "unassigned"
-            identified_hazard_service.create_hazard(
-                hazard_identification_id=source_id,
-                inventory_item_id=int(parent["id"]),
-                name=proposal.name,
-                description=proposal.reasoning,
-                note=note,
-                source_type=IDENTIFIED_HAZARD_SOURCE_AI,
-            )
-            return "applied"
+            return "unassigned"
 
         if self._area_matches(area, ("událost", "udalost", "nežádouc", "nezadouc")):
-            if parent is None or parent.get("kind") != "hazard":
+            if parent is None or parent.get("kind") != "item":
                 return "unassigned"
             hazard_event_service.create_event(
                 hazard_identification_id=source_id,
-                identified_hazard_id=int(parent["id"]),
+                inventory_item_id=int(parent["id"]),
                 name=proposal.name,
                 description=proposal.reasoning,
                 note=note,
@@ -437,27 +421,23 @@ class HazardIdentificationPeerReviewProvider:
 
     @staticmethod
     def _count_nodes(workplace_analysis: list[dict]) -> dict[str, int]:
-        hazards = 0
         events = 0
         assessments = 0
         existing_measures = 0
         required_measures = 0
         for item_node in workplace_analysis:
-            for hazard_node in item_node.get("hazards") or []:
-                hazards += 1
-                for event_node in hazard_node.get("events") or []:
-                    events += 1
-                    for assessment_node in event_node.get("assessments") or []:
-                        assessments += 1
-                        existing_measures += len(
-                            assessment_node.get("existing_measures") or []
-                        )
-                        required_measures += len(
-                            assessment_node.get("required_measures") or []
-                        )
+            for event_node in item_node.get("events") or []:
+                events += 1
+                for assessment_node in event_node.get("assessments") or []:
+                    assessments += 1
+                    existing_measures += len(
+                        assessment_node.get("existing_measures") or []
+                    )
+                    required_measures += len(
+                        assessment_node.get("required_measures") or []
+                    )
         return {
             "items": len(workplace_analysis),
-            "hazards": hazards,
             "events": events,
             "assessments": assessments,
             "existing_measures": existing_measures,
@@ -494,42 +474,19 @@ class HazardIdentificationPeerReviewProvider:
                 continue
             relations_by_source.setdefault(relation.source_item_id, []).append(relation)
 
-        hazard_rows = identified_hazard_service.get_for_identification(
-            identification.id,
-            include_inactive=False,
-        )
-        hazard_rows = [
-            row for row in hazard_rows if row.hazard.inventory_item_id in item_ids
-        ]
-        # Stabilní pořadí exportních ID: podle pořadí zdrojů, potom pořadí nebezpečí.
-        hazards_by_item: dict[int, list] = {}
-        for row in hazard_rows:
-            hazards_by_item.setdefault(row.hazard.inventory_item_id, []).append(row)
-        ordered_hazard_rows = []
-        for item in items:
-            ordered_hazard_rows.extend(hazards_by_item.get(item.id, []))
-        hazard_export_ids = {
-            row.hazard.id: f"HAZARD-{index:03d}"
-            for index, row in enumerate(ordered_hazard_rows, start=1)
-        }
-        for hazard_id, export_id in hazard_export_ids.items():
-            export_id_map[export_id] = {"kind": "hazard", "id": hazard_id}
-
         event_rows = hazard_event_service.get_for_identification(
             identification.id,
             include_inactive=False,
         )
         event_rows = [
-            row
-            for row in event_rows
-            if row.event.identified_hazard_id in hazard_export_ids
+            row for row in event_rows if row.event.inventory_item_id in item_ids
         ]
-        events_by_hazard: dict[int, list] = {}
+        events_by_item: dict[int, list] = {}
         for row in event_rows:
-            events_by_hazard.setdefault(row.event.identified_hazard_id, []).append(row)
+            events_by_item.setdefault(row.event.inventory_item_id, []).append(row)
         ordered_event_rows = []
-        for hazard_row in ordered_hazard_rows:
-            ordered_event_rows.extend(events_by_hazard.get(hazard_row.hazard.id, []))
+        for item in items:
+            ordered_event_rows.extend(events_by_item.get(item.id, []))
         event_export_ids = {
             row.event.id: f"EVENT-{index:03d}"
             for index, row in enumerate(ordered_event_rows, start=1)
@@ -601,79 +558,62 @@ class HazardIdentificationPeerReviewProvider:
                 for relation in relations_by_source.get(item.id, [])
             ]
 
-            hazard_nodes = []
-            for hazard_row in hazards_by_item.get(item.id, []):
-                event_nodes = []
-                for event_row in events_by_hazard.get(hazard_row.hazard.id, []):
-                    assessment_nodes = []
-                    for export_id, assessment_row in assessments_by_event_mapped.get(
-                        event_row.event.id,
-                        [],
-                    ):
-                        assessment = assessment_row.assessment
-                        existing_measures = [
-                            {
-                                "description": measure.description,
-                                "note": measure.note or "",
-                            }
-                            for measure in hazard_existing_measure_service.get_for_assessment(
-                                assessment.id,
-                                include_inactive=False,
-                            )
-                        ]
-                        required_measures = [
-                            {
-                                "description": measure.description,
-                                "note": measure.note or "",
-                            }
-                            for measure in hazard_required_measure_service.get_for_assessment(
-                                assessment.id,
-                                include_inactive=False,
-                            )
-                        ]
-                        assessment_nodes.append(
-                            {
-                                "export_id": export_id,
-                                "exposed_group": assessment.exposed_group,
-                                "consequence": assessment.consequence or "",
-                                "severity": assessment.severity,
-                                "severity_label": format_risk_severity_label(
-                                    assessment.severity
-                                ),
-                                "conclusion": assessment.conclusion or "",
-                                "assessment_status": assessment.assessment_status,
-                                "assessment_status_label": RISK_ASSESSMENT_STATUS_LABELS.get(
-                                    assessment.assessment_status,
-                                    assessment.assessment_status,
-                                ),
-                                "note": assessment.note or "",
-                                "existing_measures": existing_measures,
-                                "required_measures": required_measures,
-                            }
-                        )
-
-                    event_nodes.append(
+            event_nodes = []
+            for event_row in events_by_item.get(item.id, []):
+                assessment_nodes = []
+                for export_id, assessment_row in assessments_by_event_mapped.get(
+                    event_row.event.id,
+                    [],
+                ):
+                    assessment = assessment_row.assessment
+                    existing_measures = [
                         {
-                            "export_id": event_export_ids[event_row.event.id],
-                            "name": event_row.event.name,
-                            "description": event_row.event.description or "",
-                            "note": event_row.event.note or "",
-                            "assessments": assessment_nodes,
+                            "description": measure.description,
+                            "note": measure.note or "",
+                        }
+                        for measure in hazard_existing_measure_service.get_for_assessment(
+                            assessment.id,
+                            include_inactive=False,
+                        )
+                    ]
+                    required_measures = [
+                        {
+                            "description": measure.description,
+                            "note": measure.note or "",
+                        }
+                        for measure in hazard_required_measure_service.get_for_assessment(
+                            assessment.id,
+                            include_inactive=False,
+                        )
+                    ]
+                    assessment_nodes.append(
+                        {
+                            "export_id": export_id,
+                            "exposed_group": assessment.exposed_group,
+                            "consequence": assessment.consequence or "",
+                            "severity": assessment.severity,
+                            "severity_label": format_risk_severity_label(
+                                assessment.severity
+                            ),
+                            "conclusion": assessment.conclusion or "",
+                            "assessment_status": assessment.assessment_status,
+                            "assessment_status_label": RISK_ASSESSMENT_STATUS_LABELS.get(
+                                assessment.assessment_status,
+                                assessment.assessment_status,
+                            ),
+                            "note": assessment.note or "",
+                            "existing_measures": existing_measures,
+                            "required_measures": required_measures,
                         }
                     )
 
-                hazard_nodes.append(
+                event_nodes.append(
                     {
-                        "export_id": hazard_export_ids[hazard_row.hazard.id],
-                        "name": hazard_row.hazard.name,
-                        "description": hazard_row.hazard.description or "",
-                        "note": hazard_row.hazard.note or "",
-                        "source_type": hazard_row.hazard.source_type,
-                        "source_type_label": IDENTIFIED_HAZARD_SOURCE_LABELS.get(
-                            hazard_row.hazard.source_type,
-                            hazard_row.hazard.source_type,
-                        ),
-                        "events": event_nodes,
+                        "export_id": event_export_ids[event_row.event.id],
+                        "name": event_row.event.name,
+                        "description": event_row.event.description or "",
+                        "note": event_row.event.note or "",
+                        "assessments": assessment_nodes,
                     }
                 )
 
@@ -689,7 +629,7 @@ class HazardIdentificationPeerReviewProvider:
                     "name": item.name,
                     "description": item.description or "",
                     "relations": related,
-                    "hazards": hazard_nodes,
+                    "events": event_nodes,
                 }
             )
 
@@ -730,7 +670,6 @@ class HazardIdentificationPeerReviewProvider:
             "workplace_analysis": hierarchy["workplace_analysis"],
             "hierarchy": [
                 "workplace_analysis_item",
-                "hazard",
                 "event",
                 "assessment",
                 "existing_measures",
@@ -744,7 +683,7 @@ class HazardIdentificationPeerReviewProvider:
                 "rules": [
                     "Nehodnotit závažnost rizik.",
                     "Neměnit existující položky.",
-                    "U návrhů uvádět parent_export_id (ITEM/HAZARD/EVENT/ASSESSMENT).",
+                    "U návrhů uvádět parent_export_id (ITEM/EVENT/ASSESSMENT).",
                     "Ke každému návrhu uvést stručné odborné zdůvodnění.",
                 ],
             },
@@ -774,7 +713,7 @@ class HazardIdentificationPeerReviewProvider:
         lines.append("HIERARCHIE")
         lines.append("-" * 40)
         lines.append(
-            "Analýza pracoviště → Nebezpečí → Nežádoucí události → Posouzení "
+            "Analýza pracoviště → Nežádoucí události → Posouzení "
             "→ Existující opatření → Potřebná opatření"
         )
         lines.append("")
@@ -797,73 +736,61 @@ class HazardIdentificationPeerReviewProvider:
                     f"{relation['target_name']} [{relation['target_export_id']}]"
                 )
 
-            if not item["hazards"]:
-                lines.append("    Nebezpečí: (žádná)")
-            for hazard in item["hazards"]:
+            if not item["events"]:
+                lines.append("    Událost: (žádná)")
+            for event in item["events"]:
                 lines.append("")
-                lines.append("    Nebezpečí")
-                lines.append(f"        [{hazard['export_id']}] {hazard['name']}")
-                lines.append(f"            Původ: {hazard['source_type_label']}")
-                if hazard["description"]:
-                    lines.append(f"            Popis: {hazard['description']}")
-                if hazard["note"]:
-                    lines.append(f"            Poznámka: {hazard['note']}")
+                lines.append("    Událost")
+                lines.append(f"        [{event['export_id']}] {event['name']}")
+                if event["description"]:
+                    lines.append(f"            Popis: {event['description']}")
+                if event["note"]:
+                    lines.append(f"            Poznámka: {event['note']}")
 
-                if not hazard["events"]:
-                    lines.append("            Událost: (žádná)")
-                for event in hazard["events"]:
+                if not event["assessments"]:
+                    lines.append("            Posouzení: (žádné)")
+                for assessment in event["assessments"]:
                     lines.append("")
-                    lines.append("            Událost")
-                    lines.append(f"                [{event['export_id']}] {event['name']}")
-                    if event["description"]:
-                        lines.append(f"                    Popis: {event['description']}")
-                    if event["note"]:
-                        lines.append(f"                    Poznámka: {event['note']}")
+                    lines.append("            Posouzení")
+                    lines.append(
+                        f"                [{assessment['export_id']}] "
+                        f"{assessment['exposed_group']}"
+                    )
+                    lines.append(
+                        "                    Možný následek: "
+                        f"{assessment['consequence'] or '—'}"
+                    )
+                    lines.append(
+                        "                    Závažnost: "
+                        f"{assessment['severity_label']}"
+                    )
+                    lines.append(
+                        "                    Stav: "
+                        f"{assessment['assessment_status_label']}"
+                    )
+                    if assessment["conclusion"]:
+                        lines.append(
+                            "                    Závěr: "
+                            f"{assessment['conclusion']}"
+                        )
 
-                    if not event["assessments"]:
-                        lines.append("                    Posouzení: (žádné)")
-                    for assessment in event["assessments"]:
-                        lines.append("")
-                        lines.append("                    Posouzení")
-                        lines.append(
-                            f"                        [{assessment['export_id']}] "
-                            f"{assessment['exposed_group']}"
-                        )
-                        lines.append(
-                            "                            Možný následek: "
-                            f"{assessment['consequence'] or '—'}"
-                        )
-                        lines.append(
-                            "                            Závažnost: "
-                            f"{assessment['severity_label']}"
-                        )
-                        lines.append(
-                            "                            Stav: "
-                            f"{assessment['assessment_status_label']}"
-                        )
-                        if assessment["conclusion"]:
+                    lines.append("                    Existující opatření")
+                    if assessment["existing_measures"]:
+                        for measure in assessment["existing_measures"]:
                             lines.append(
-                                "                            Závěr: "
-                                f"{assessment['conclusion']}"
+                                f"                        - {measure['description']}"
                             )
+                    else:
+                        lines.append("                        (žádná)")
 
-                        lines.append("                            Existující opatření")
-                        if assessment["existing_measures"]:
-                            for measure in assessment["existing_measures"]:
-                                lines.append(
-                                    f"                                - {measure['description']}"
-                                )
-                        else:
-                            lines.append("                                (žádná)")
-
-                        lines.append("                            Potřebná opatření")
-                        if assessment["required_measures"]:
-                            for measure in assessment["required_measures"]:
-                                lines.append(
-                                    f"                                - {measure['description']}"
-                                )
-                        else:
-                            lines.append("                                (žádná)")
+                    lines.append("                    Potřebná opatření")
+                    if assessment["required_measures"]:
+                        for measure in assessment["required_measures"]:
+                            lines.append(
+                                f"                        - {measure['description']}"
+                            )
+                    else:
+                        lines.append("                        (žádná)")
             lines.append("")
 
         return "\n".join(lines)
@@ -879,7 +806,6 @@ class HazardIdentificationPeerReviewProvider:
         counts = hierarchy["counts"]
         summary_lines = [
             f"Položky analýzy: {counts['items']}",
-            f"Nebezpečí: {counts['hazards']}",
             f"Nežádoucí události: {counts['events']}",
             f"Posouzení rizik: {counts['assessments']}",
             f"Existující opatření: {counts['existing_measures']}",
@@ -896,7 +822,7 @@ class HazardIdentificationPeerReviewProvider:
                 "",
                 *summary_lines,
                 "",
-                "Hierarchie: Analýza → Nebezpečí → Události → Posouzení → Opatření",
+                "Hierarchie: Analýza → Události → Posouzení → Opatření",
                 "",
                 "Soubor slouží pouze pro orientaci uživatele.",
                 "",

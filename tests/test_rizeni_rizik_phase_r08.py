@@ -42,7 +42,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.modely.hazard_identification import HazardIdentification
     from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem
     from moduly.rizeni_rizik.modely.hazard_risk_assessment import HazardRiskAssessment
-    from moduly.rizeni_rizik.modely.identified_hazard import IdentifiedHazard
     from moduly.rizeni_rizik.sluzby.hazard_event_service import hazard_event_service
     from moduly.rizeni_rizik.sluzby.hazard_existing_measure_service import (
         HazardExistingMeasureError,
@@ -56,9 +55,6 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import (
         hazard_risk_assessment_service,
-    )
-    from moduly.rizeni_rizik.sluzby.identified_hazard_service import (
-        identified_hazard_service,
     )
     from moduly.rizeni_rizik.ui.hazard_existing_measures_widget import HazardExistingMeasuresWidget
     from moduly.rizeni_rizik.ui.hazard_risk_assessments_widget import HazardRiskAssessmentsWidget
@@ -84,7 +80,6 @@ class HazardExistingMeasurePhaseR08TestCase(unittest.TestCase):
             session.execute(delete(HazardExistingMeasure))
             session.execute(delete(HazardRiskAssessment))
             session.execute(delete(HazardEvent))
-            session.execute(delete(IdentifiedHazard))
             session.execute(delete(HazardInventoryItem))
             session.execute(delete(HazardIdentification))
             session.commit()
@@ -117,24 +112,14 @@ class HazardExistingMeasurePhaseR08TestCase(unittest.TestCase):
             category=HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
             name="Jiná lokomotiva",
         )
-        hazard = identified_hazard_service.create_hazard(
-            hazard_identification_id=self.identification.id,
-            inventory_item_id=lokomotiva.id,
-            name="Pohyb kolejového vozidla",
-        )
-        other_hazard = identified_hazard_service.create_hazard(
-            hazard_identification_id=self.other_identification.id,
-            inventory_item_id=other_lokomotiva.id,
-            name="Jiné nebezpečí",
-        )
         event = hazard_event_service.create_event(
             hazard_identification_id=self.identification.id,
-            identified_hazard_id=hazard.id,
+            inventory_item_id=lokomotiva.id,
             name="Sražení s osobou",
         )
         other_event = hazard_event_service.create_event(
             hazard_identification_id=self.other_identification.id,
-            identified_hazard_id=other_hazard.id,
+            inventory_item_id=other_lokomotiva.id,
             name="Jiná událost",
         )
         self.assessment_a = hazard_risk_assessment_service.create_assessment(

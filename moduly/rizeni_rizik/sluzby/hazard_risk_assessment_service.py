@@ -18,7 +18,9 @@ from moduly.rizeni_rizik.sluzby.hazard_event_service import (
     HazardEventRow,
     hazard_event_service,
 )
-from moduly.rizeni_rizik.sluzby.identified_hazard_service import identified_hazard_service
+from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import (
+    hazard_inventory_item_service,
+)
 
 
 class HazardRiskAssessmentError(ValueError):
@@ -33,7 +35,7 @@ def normalize_exposed_group(group: str) -> str:
 class HazardRiskAssessmentRow:
     assessment: HazardRiskAssessment
     event_name: str
-    hazard_name: str
+    inventory_item_name: str
     severity_label: str
     status_label: str
 
@@ -231,7 +233,7 @@ class HazardRiskAssessmentService:
             return HazardRiskAssessmentRow(
                 assessment=assessment,
                 event_name="—",
-                hazard_name="—",
+                inventory_item_name="—",
                 severity_label=format_risk_severity_label(assessment.severity),
                 status_label=format_risk_assessment_status_label(assessment.assessment_status),
             )
@@ -239,7 +241,7 @@ class HazardRiskAssessmentService:
         return HazardRiskAssessmentRow(
             assessment=assessment,
             event_name=event_row.event.name,
-            hazard_name=event_row.hazard_name,
+            inventory_item_name=event_row.inventory_item_name,
             severity_label=format_risk_severity_label(assessment.severity),
             status_label=format_risk_assessment_status_label(assessment.assessment_status),
         )
@@ -247,8 +249,8 @@ class HazardRiskAssessmentService:
     def _sort_rows(self, rows: list[HazardRiskAssessmentRow]) -> list[HazardRiskAssessmentRow]:
         def sort_key(row: HazardRiskAssessmentRow) -> tuple:
             return (
+                row.inventory_item_name.casefold(),
                 row.event_name.casefold(),
-                row.hazard_name.casefold(),
                 row.assessment.exposed_group.casefold(),
             )
 
@@ -305,10 +307,10 @@ class HazardRiskAssessmentService:
         if event is None:
             raise HazardRiskAssessmentError("Nežádoucí událost neexistuje.")
 
-        hazard = identified_hazard_service.get_by_id(event.identified_hazard_id)
-        if hazard is None:
+        item = hazard_inventory_item_service.get_by_id(event.inventory_item_id)
+        if item is None:
             raise HazardRiskAssessmentError("Nežádoucí událost neexistuje.")
-        if hazard.hazard_identification_id != hazard_identification_id:
+        if item.hazard_identification_id != hazard_identification_id:
             raise HazardRiskAssessmentError(
                 "Nežádoucí událost musí patřit ke stejné identifikaci."
             )

@@ -37,7 +37,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.modely.hazard_event import HazardEvent
     from moduly.rizeni_rizik.modely.hazard_identification import HazardIdentification
     from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem
-    from moduly.rizeni_rizik.modely.identified_hazard import IdentifiedHazard
     from moduly.rizeni_rizik.sluzby.hazard_event_service import (
         HazardEventError,
         hazard_event_service,
@@ -47,9 +46,6 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import (
         hazard_inventory_item_service,
-    )
-    from moduly.rizeni_rizik.sluzby.identified_hazard_service import (
-        identified_hazard_service,
     )
     from moduly.rizeni_rizik.ui.hazard_event_dialog import HazardEventDialog
     from moduly.rizeni_rizik.ui.hazard_events_widget import HazardEventsWidget
@@ -70,7 +66,6 @@ class HazardEventPhaseR05TestCase(unittest.TestCase):
 
         with get_session() as session:
             session.execute(delete(HazardEvent))
-            session.execute(delete(IdentifiedHazard))
             session.execute(delete(HazardInventoryItem))
             session.execute(delete(HazardIdentification))
             session.commit()
@@ -93,81 +88,76 @@ class HazardEventPhaseR05TestCase(unittest.TestCase):
             workplace_id=workplace.id,
         )
 
-        self.lokomotiva = hazard_inventory_item_service.create_item(
+        self.item_a = hazard_inventory_item_service.create_item(
             hazard_identification_id=self.identification.id,
             category=HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
             name="Lokomotiva",
         )
-        self.hazard_a = identified_hazard_service.create_hazard(
+        self.item_b = hazard_inventory_item_service.create_item(
             hazard_identification_id=self.identification.id,
-            inventory_item_id=self.lokomotiva.id,
-            name="Pohyb kolejového vozidla",
-        )
-        self.hazard_b = identified_hazard_service.create_hazard(
-            hazard_identification_id=self.identification.id,
-            inventory_item_id=self.lokomotiva.id,
-            name="Kontakt s horkým povrchem",
+            category=HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
+            name="Vagon",
         )
 
     def test_hazard_events_table_exists(self) -> None:
         columns = _table_columns("hazard_events")
-        self.assertIn("identified_hazard_id", columns)
+        self.assertIn("inventory_item_id", columns)
         self.assertIn("sort_order", columns)
 
     def test_create_event(self) -> None:
         event = hazard_event_service.create_event(
             hazard_identification_id=self.identification.id,
-            identified_hazard_id=self.hazard_a.id,
+            inventory_item_id=self.item_a.id,
             name="Sražení s osobou",
             description="Popis události",
         )
-        self.assertEqual(event.identified_hazard_id, self.hazard_a.id)
+        self.assertEqual(event.inventory_item_id, self.item_a.id)
         self.assertTrue(event.active)
 
     def test_reject_empty_name(self) -> None:
         with self.assertRaises(HazardEventError):
             hazard_event_service.create_event(
                 hazard_identification_id=self.identification.id,
-                identified_hazard_id=self.hazard_a.id,
+                inventory_item_id=self.item_a.id,
                 name="   ",
             )
 
-    def test_reject_active_duplicate_within_hazard(self) -> None:
+    def test_reject_active_duplicate_within_inventory_item(self) -> None:
         hazard_event_service.create_event(
             hazard_identification_id=self.identification.id,
-            identified_hazard_id=self.hazard_a.id,
+            inventory_item_id=self.item_a.id,
             name="Sražení s osobou",
         )
         with self.assertRaises(HazardEventError):
             hazard_event_service.create_event(
                 hazard_identification_id=self.identification.id,
-                identified_hazard_id=self.hazard_a.id,
+                inventory_item_id=self.item_a.id,
                 name="  sražení s osobou ",
             )
 
-    def test_allow_same_name_on_different_hazard(self) -> None:
+    def test_allow_same_name_on_different_inventory_item(self) -> None:
         hazard_event_service.create_event(
             hazard_identification_id=self.identification.id,
-            identified_hazard_id=self.hazard_a.id,
+            inventory_item_id=self.item_a.id,
             name="Sražení s osobou",
         )
         event = hazard_event_service.create_event(
             hazard_identification_id=self.identification.id,
-            identified_hazard_id=self.hazard_b.id,
+            inventory_item_id=self.item_b.id,
             name="Sražení s osobou",
         )
-        self.assertEqual(event.identified_hazard_id, self.hazard_b.id)
+        self.assertEqual(event.inventory_item_id, self.item_b.id)
 
     def test_update_event(self) -> None:
         event = hazard_event_service.create_event(
             hazard_identification_id=self.identification.id,
-            identified_hazard_id=self.hazard_a.id,
+            inventory_item_id=self.item_a.id,
             name="Sražení s osobou",
         )
         updated = hazard_event_service.update_event(
             event.id,
             hazard_identification_id=self.identification.id,
-            identified_hazard_id=self.hazard_a.id,
+            inventory_item_id=self.item_a.id,
             name="Sražení s osobou",
             description="Aktualizovaný popis",
             note="Poznámka",
@@ -180,7 +170,7 @@ class HazardEventPhaseR05TestCase(unittest.TestCase):
     def test_activate_and_deactivate_event(self) -> None:
         event = hazard_event_service.create_event(
             hazard_identification_id=self.identification.id,
-            identified_hazard_id=self.hazard_a.id,
+            inventory_item_id=self.item_a.id,
             name="Sražení s osobou",
         )
         self.assertTrue(hazard_event_service.deactivate_event(event.id))
@@ -193,63 +183,60 @@ class HazardEventPhaseR05TestCase(unittest.TestCase):
         assert reloaded is not None
         self.assertTrue(reloaded.active)
 
-    def test_reject_hazard_from_other_identification(self) -> None:
+    def test_reject_inventory_item_from_other_identification(self) -> None:
         other_item = hazard_inventory_item_service.create_item(
             hazard_identification_id=self.other_identification.id,
             category=HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
             name="Jiná lokomotiva",
         )
-        other_hazard = identified_hazard_service.create_hazard(
-            hazard_identification_id=self.other_identification.id,
-            inventory_item_id=other_item.id,
-            name="Jiné nebezpečí",
-        )
         with self.assertRaises(HazardEventError):
             hazard_event_service.create_event(
                 hazard_identification_id=self.identification.id,
-                identified_hazard_id=other_hazard.id,
+                inventory_item_id=other_item.id,
                 name="Neplatná událost",
             )
 
-    def test_active_event_counts_for_hazard(self) -> None:
+    def test_active_event_counts_for_inventory_item(self) -> None:
         hazard_event_service.create_event(
             hazard_identification_id=self.identification.id,
-            identified_hazard_id=self.hazard_a.id,
+            inventory_item_id=self.item_a.id,
             name="Sražení s osobou",
         )
         hazard_event_service.create_event(
             hazard_identification_id=self.identification.id,
-            identified_hazard_id=self.hazard_a.id,
+            inventory_item_id=self.item_a.id,
             name="Vykolejení",
         )
         inactive = hazard_event_service.create_event(
             hazard_identification_id=self.identification.id,
-            identified_hazard_id=self.hazard_a.id,
+            inventory_item_id=self.item_a.id,
             name="Požár",
         )
         hazard_event_service.deactivate_event(inactive.id)
 
-        counts = hazard_event_service.count_active_by_hazards(self.identification.id)
-        self.assertEqual(counts[self.hazard_a.id], 2)
+        counts = hazard_event_service.count_active_by_inventory_items(
+            self.identification.id
+        )
+        self.assertEqual(counts[self.item_a.id], 2)
         self.assertEqual(
-            hazard_event_service.count_active_for_hazard(self.hazard_a.id),
+            hazard_event_service.count_active_for_inventory_item(self.item_a.id),
             2,
         )
 
-    def test_create_event_from_hazard_context(self) -> None:
+    def test_create_event_from_inventory_item_context(self) -> None:
         dialog = HazardEventDialog(
             None,
             hazard_identification_id=self.identification.id,
-            default_identified_hazard_id=self.hazard_a.id,
+            default_inventory_item_id=self.item_a.id,
         )
-        self.assertEqual(dialog.hazard.currentData(), self.hazard_a.id)
+        self.assertEqual(dialog.inventory_item.currentData(), self.item_a.id)
         dialog.name.setText("Náraz do překážky")
         dialog.accept()
 
         rows = hazard_event_service.get_for_identification(self.identification.id)
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0].event.name, "Náraz do překážky")
-        self.assertEqual(rows[0].hazard_name, "Pohyb kolejového vozidla")
+        self.assertEqual(rows[0].inventory_item_name, "Lokomotiva")
 
     def test_read_only_events_for_completed_identification(self) -> None:
         completed = hazard_identification_service.update_identification(

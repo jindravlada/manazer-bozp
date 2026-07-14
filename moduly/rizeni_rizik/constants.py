@@ -46,7 +46,6 @@ TABLE_HEADERS = [
 
 TAB_BASICS = "Základní údaje"
 TAB_INVENTORY = "Analýza pracoviště"
-TAB_HAZARDS = "Nebezpečí"
 TAB_EVENTS = "Nežádoucí události"
 TAB_RISK_ASSESSMENT = "Posouzení rizik"
 TAB_AI_PEER_REVIEW = "Oponentní posouzení AI"
@@ -56,11 +55,12 @@ TAB_HISTORY = "Historie"
 
 # Zpětná kompatibilita se starším názvem záložky.
 TAB_AI_CONSULTATION = TAB_AI_PEER_REVIEW
+# Odstraněno v R12 (entita Nebezpečí).
+TAB_HAZARDS = "Nebezpečí"
 
 HAZARD_IDENTIFICATION_TABS = (
     TAB_BASICS,
     TAB_INVENTORY,
-    TAB_HAZARDS,
     TAB_EVENTS,
     TAB_RISK_ASSESSMENT,
     TAB_AI_PEER_REVIEW,
@@ -207,103 +207,28 @@ def is_identification_inventory_read_only(status: str) -> bool:
     return status in READ_ONLY_IDENTIFICATION_STATUSES
 
 
-IDENTIFIED_HAZARD_SOURCE_MANUAL = "manual"
-IDENTIFIED_HAZARD_SOURCE_LIBRARY = "library"
-IDENTIFIED_HAZARD_SOURCE_AI = "ai"
-IDENTIFIED_HAZARD_SOURCE_AUDIT = "audit"
-IDENTIFIED_HAZARD_SOURCE_INSPECTION = "inspection"
-IDENTIFIED_HAZARD_SOURCE_ACCIDENT = "accident"
-IDENTIFIED_HAZARD_SOURCE_LEGAL_CHANGE = "legal_change"
-IDENTIFIED_HAZARD_SOURCE_OTHER = "other"
-
-IDENTIFIED_HAZARD_SOURCE_TYPES = (
-    IDENTIFIED_HAZARD_SOURCE_MANUAL,
-    IDENTIFIED_HAZARD_SOURCE_LIBRARY,
-    IDENTIFIED_HAZARD_SOURCE_AI,
-    IDENTIFIED_HAZARD_SOURCE_AUDIT,
-    IDENTIFIED_HAZARD_SOURCE_INSPECTION,
-    IDENTIFIED_HAZARD_SOURCE_ACCIDENT,
-    IDENTIFIED_HAZARD_SOURCE_LEGAL_CHANGE,
-    IDENTIFIED_HAZARD_SOURCE_OTHER,
-)
-
-DEFAULT_IDENTIFIED_HAZARD_SOURCE = IDENTIFIED_HAZARD_SOURCE_MANUAL
-
-IDENTIFIED_HAZARD_SOURCE_LABELS = {
-    IDENTIFIED_HAZARD_SOURCE_MANUAL: "Ručně",
-    IDENTIFIED_HAZARD_SOURCE_LIBRARY: "Firemní knihovna",
-    IDENTIFIED_HAZARD_SOURCE_AI: "Návrh AI",
-    IDENTIFIED_HAZARD_SOURCE_AUDIT: "Audit",
-    IDENTIFIED_HAZARD_SOURCE_INSPECTION: "Prověrka",
-    IDENTIFIED_HAZARD_SOURCE_ACCIDENT: "Pracovní úraz",
-    IDENTIFIED_HAZARD_SOURCE_LEGAL_CHANGE: "Změna legislativy",
-    IDENTIFIED_HAZARD_SOURCE_OTHER: "Jiný zdroj",
-}
-
-HAZARDS_INTRO_TEXT = (
-    "Evidujte nebezpečí zjištěná u jednotlivých položek analýzy pracoviště. "
-    "V této fázi se ještě neposuzuje míra rizika ani se neurčují opatření."
-)
-
-IDENTIFIED_HAZARD_DIALOG_TITLE = "Nebezpečí"
-
-HAZARD_COL_ID = 0
-HAZARD_COL_NAME = 1
-HAZARD_COL_INVENTORY_ITEM = 2
-HAZARD_COL_INVENTORY_CATEGORY = 3
-HAZARD_COL_SOURCE = 4
-HAZARD_COL_ACTIVE = 5
-HAZARD_COLUMN_COUNT = 6
-
-HAZARD_TABLE_HEADERS = [
-    "ID",
-    "Nebezpečí",
-    "Zdrojová položka analýzy",
-    "Kategorie položky analýzy",
-    "Původ",
-    "Aktivní",
-]
-
-
-def is_identification_hazards_read_only(status: str) -> bool:
-    return status in READ_ONLY_IDENTIFICATION_STATUSES
-
-
-def is_identification_hazards_read_only(status: str) -> bool:
-    return status in READ_ONLY_IDENTIFICATION_STATUSES
-
-
 def is_identification_events_read_only(status: str) -> bool:
     return status in READ_ONLY_IDENTIFICATION_STATUSES
 
 
 EVENTS_INTRO_TEXT = (
-    "Popište konkrétní nežádoucí události, které mohou vzniknout z jednotlivých nebezpečí."
+    "Popište konkrétní nežádoucí události příslušné k jednotlivým zdrojům analýzy pracoviště."
 )
 
 HAZARD_EVENT_DIALOG_TITLE = "Nežádoucí událost"
 
 EVENT_COL_ID = 0
 EVENT_COL_NAME = 1
-EVENT_COL_HAZARD = 2
-EVENT_COL_INVENTORY_ITEM = 3
-EVENT_COL_ACTIVE = 4
-EVENT_COLUMN_COUNT = 5
+EVENT_COL_INVENTORY_ITEM = 2
+EVENT_COL_ACTIVE = 3
+EVENT_COLUMN_COUNT = 4
 
 EVENT_TABLE_HEADERS = [
     "ID",
     "Nežádoucí událost",
-    "Nebezpečí",
-    "Zdrojová položka analýzy",
+    "Zdroj analýzy",
     "Aktivní",
 ]
-
-
-def format_hazard_display_name(name: str, *, event_count: int = 0) -> str:
-    if not event_count:
-        return name
-    suffix = "událost" if event_count == 1 else "události"
-    return f"{name} — {event_count} {suffix}"
 
 
 def format_event_display_name(name: str, *, assessment_count: int = 0) -> str:
@@ -405,7 +330,7 @@ def format_risk_severity_label(severity: str) -> str:
 RISK_ASSESSMENT_COL_ID = 0
 RISK_ASSESSMENT_COL_EXPOSED_GROUP = 1
 RISK_ASSESSMENT_COL_EVENT = 2
-RISK_ASSESSMENT_COL_HAZARD = 3
+RISK_ASSESSMENT_COL_INVENTORY_ITEM = 3
 RISK_ASSESSMENT_COL_CONSEQUENCE = 4
 RISK_ASSESSMENT_COL_SEVERITY = 5
 RISK_ASSESSMENT_COL_STATUS = 6
@@ -417,7 +342,7 @@ RISK_ASSESSMENT_TABLE_HEADERS = [
     "ID",
     "Ohrožená skupina",
     "Nežádoucí událost",
-    "Nebezpečí",
+    "Zdroj analýzy",
     "Možný následek",
     "Závažnost",
     "Stav posouzení",
@@ -478,14 +403,15 @@ def format_inventory_item_display_name(
     name: str,
     *,
     relation_count: int = 0,
-    hazard_count: int = 0,
+    event_count: int = 0,
 ) -> str:
     parts = [name]
     if relation_count:
         suffix = "souvislost" if relation_count == 1 else "souvislostí"
         parts.append(f"{relation_count} {suffix}")
-    if hazard_count:
-        parts.append(f"{hazard_count} nebezpečí")
+    if event_count:
+        suffix = "událost" if event_count == 1 else "událostí"
+        parts.append(f"{event_count} {suffix}")
     if len(parts) == 1:
         return name
     return f"{parts[0]} — " + " — ".join(parts[1:])

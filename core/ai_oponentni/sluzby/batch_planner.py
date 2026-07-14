@@ -45,14 +45,12 @@ class ExportBatchPlan:
 
 def count_hierarchy_objects(item_node: dict) -> int:
     total = 1
-    for hazard in item_node.get("hazards") or []:
+    for event in item_node.get("events") or []:
         total += 1
-        for event in hazard.get("events") or []:
+        for assessment in event.get("assessments") or []:
             total += 1
-            for assessment in event.get("assessments") or []:
-                total += 1
-                total += len(assessment.get("existing_measures") or [])
-                total += len(assessment.get("required_measures") or [])
+            total += len(assessment.get("existing_measures") or [])
+            total += len(assessment.get("required_measures") or [])
     return total
 
 

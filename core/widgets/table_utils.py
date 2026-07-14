@@ -216,14 +216,12 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
     elif profile == "hazard_events":
         from moduly.rizeni_rizik.constants import (
             EVENT_COL_ACTIVE,
-            EVENT_COL_HAZARD,
             EVENT_COL_INVENTORY_ITEM,
             EVENT_COL_NAME,
         )
 
         widths = {
             EVENT_COL_NAME: 220,
-            EVENT_COL_HAZARD: 200,
             EVENT_COL_INVENTORY_ITEM: 200,
             EVENT_COL_ACTIVE: 80,
         }
@@ -231,7 +229,7 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
         header.setSectionResizeMode(EVENT_COL_NAME, QHeaderView.Stretch)
-        for column in (EVENT_COL_HAZARD, EVENT_COL_INVENTORY_ITEM, EVENT_COL_ACTIVE):
+        for column in (EVENT_COL_INVENTORY_ITEM, EVENT_COL_ACTIVE):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 
     elif profile == "hazard_risk_assessments":
@@ -241,7 +239,7 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             RISK_ASSESSMENT_COL_CONSEQUENCE,
             RISK_ASSESSMENT_COL_EVENT,
             RISK_ASSESSMENT_COL_EXPOSED_GROUP,
-            RISK_ASSESSMENT_COL_HAZARD,
+            RISK_ASSESSMENT_COL_INVENTORY_ITEM,
             RISK_ASSESSMENT_COL_SEVERITY,
             RISK_ASSESSMENT_COL_STATUS,
         )
@@ -249,7 +247,7 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         widths = {
             RISK_ASSESSMENT_COL_EXPOSED_GROUP: 160,
             RISK_ASSESSMENT_COL_EVENT: 180,
-            RISK_ASSESSMENT_COL_HAZARD: 160,
+            RISK_ASSESSMENT_COL_INVENTORY_ITEM: 160,
             RISK_ASSESSMENT_COL_CONSEQUENCE: 220,
             RISK_ASSESSMENT_COL_SEVERITY: 120,
             RISK_ASSESSMENT_COL_STATUS: 120,
@@ -263,7 +261,7 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         for column in (
             RISK_ASSESSMENT_COL_EXPOSED_GROUP,
             RISK_ASSESSMENT_COL_EVENT,
-            RISK_ASSESSMENT_COL_HAZARD,
+            RISK_ASSESSMENT_COL_INVENTORY_ITEM,
             RISK_ASSESSMENT_COL_SEVERITY,
             RISK_ASSESSMENT_COL_STATUS,
             RISK_ASSESSMENT_COL_COMPLETED_AT,
@@ -334,34 +332,6 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             AI_PEER_REVIEW_COL_MODEL,
             AI_PEER_REVIEW_COL_ACCEPTED,
             AI_PEER_REVIEW_COL_REJECTED,
-        ):
-            header.setSectionResizeMode(column, QHeaderView.Fixed)
-
-    elif profile == "identified_hazards":
-        from moduly.rizeni_rizik.constants import (
-            HAZARD_COL_ACTIVE,
-            HAZARD_COL_INVENTORY_CATEGORY,
-            HAZARD_COL_INVENTORY_ITEM,
-            HAZARD_COL_NAME,
-            HAZARD_COL_SOURCE,
-        )
-
-        widths = {
-            HAZARD_COL_NAME: 200,
-            HAZARD_COL_INVENTORY_ITEM: 200,
-            HAZARD_COL_INVENTORY_CATEGORY: 160,
-            HAZARD_COL_SOURCE: 140,
-            HAZARD_COL_ACTIVE: 80,
-        }
-        for column, width in widths.items():
-            table.setColumnWidth(column, width)
-        table.setColumnHidden(0, True)
-        header.setSectionResizeMode(HAZARD_COL_NAME, QHeaderView.Stretch)
-        for column in (
-            HAZARD_COL_INVENTORY_ITEM,
-            HAZARD_COL_INVENTORY_CATEGORY,
-            HAZARD_COL_SOURCE,
-            HAZARD_COL_ACTIVE,
         ):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 

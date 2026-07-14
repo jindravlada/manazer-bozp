@@ -5,8 +5,10 @@ from moduly.rizeni_rizik.repository.hazard_required_measure_repository import (
     HazardRequiredMeasureRepository,
 )
 from moduly.rizeni_rizik.sluzby.hazard_event_service import hazard_event_service
+from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import (
+    hazard_inventory_item_service,
+)
 from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import hazard_risk_assessment_service
-from moduly.rizeni_rizik.sluzby.identified_hazard_service import identified_hazard_service
 
 
 class HazardRequiredMeasureError(ValueError):
@@ -151,10 +153,10 @@ class HazardRequiredMeasureService:
         if event is None:
             raise HazardRequiredMeasureError("Posouzení rizika neexistuje.")
 
-        hazard = identified_hazard_service.get_by_id(event.identified_hazard_id)
-        if hazard is None:
+        item = hazard_inventory_item_service.get_by_id(event.inventory_item_id)
+        if item is None:
             raise HazardRequiredMeasureError("Posouzení rizika neexistuje.")
-        if hazard.hazard_identification_id != hazard_identification_id:
+        if item.hazard_identification_id != hazard_identification_id:
             raise HazardRequiredMeasureError(
                 "Posouzení rizika musí patřit ke stejné identifikaci."
             )

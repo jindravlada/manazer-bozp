@@ -2,12 +2,15 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from core.utils.czech_sort import czech_sorted
-from moduly.rizeni_rizik.constants import HAZARD_INVENTORY_CATEGORIES
+from moduly.rizeni_rizik.constants import (
+    HAZARD_INVENTORY_CATEGORIES,
+    HAZARD_INVENTORY_CATEGORY_LABELS,
+)
 from moduly.rizeni_rizik.modely.hazard_event import HazardEvent
+from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem
 from moduly.rizeni_rizik.repository.hazard_event_repository import HazardEventRepository
-from moduly.rizeni_rizik.sluzby.identified_hazard_service import (
-    IdentifiedHazardRow,
-    identified_hazard_service,
+from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import (
+    hazard_inventory_item_service,
 )
 
 
@@ -22,7 +25,6 @@ def normalize_event_name(name: str) -> str:
 @dataclass
 class HazardEventRow:
     event: HazardEvent
-    hazard_name: str
     inventory_item_name: str
     inventory_item_category: str
     inventory_item_category_label: str
@@ -42,14 +44,14 @@ class HazardEventService:
             hazard_identification_id,
             include_inactive=include_inactive,
         )
-        hazard_rows = {
-            row.hazard.id: row
-            for row in identified_hazard_service.get_for_identification(
+        items = {
+            item.id: item
+            for item in hazard_inventory_item_service.get_for_identification(
                 hazard_identification_id,
                 include_inactive=True,
             )
         }
-        rows = [self._to_row(event, hazard_rows) for event in events]
+        rows = [self._to_row(event, items) for event in events]
         return self._sort_rows(rows)
 
     def get_by_id(self, event_id: int | None) -> HazardEvent | None:
@@ -57,20 +59,23 @@ class HazardEventService:
             return None
         return self.repository.get_by_id(event_id)
 
-    def count_active_for_hazard(self, identified_hazard_id: int) -> int:
-        return self.repository.count_active_for_hazard(identified_hazard_id)
+    def count_active_for_inventory_item(self, inventory_item_id: int) -> int:
+        return self.repository.count_active_for_inventory_item(inventory_item_id)
 
-    def count_active_by_hazards(self, hazard_identification_id: int) -> dict[int, int]:
+    def count_active_by_inventory_items(self, hazard_identification_id: int) -> dict[int, int]:
         counts: dict[int, int] = {}
         for event in self.repository.get_for_identification(
             hazard_identification_id,
             include_inactive=False,
         ):
-            counts[event.identified_hazard_id] = counts.get(event.identified_hazard_id, 0) + 1
+            counts[event.inventory_item_id] = counts.get(event.inventory_item_id, 0) + 1
         return counts
 
-    def get_hazard_candidates(self, hazard_identification_id: int) -> list[IdentifiedHazardRow]:
-        return identified_hazard_service.get_for_identification(
+    def get_inventory_item_candidates(
+        self,
+        hazard_identification_id: int,
+    ) -> list[HazardInventoryItem]:
+        return hazard_inventory_item_service.get_for_identification(
             hazard_identification_id,
             include_inactive=False,
         )
@@ -79,7 +84,7 @@ class HazardEventService:
         self,
         *,
         hazard_identification_id: int,
-        identified_hazard_id: int,
+        inventory_item_id: int,
         name: str,
         description: str = "",
         note: str = "",
@@ -89,21 +94,21 @@ class HazardEventService:
         if not normalized_name:
             raise HazardEventError("Název události je povinný.")
 
-        self._validate_hazard(hazard_identification_id, identified_hazard_id)
+        self._validate_inventory_item(hazard_identification_id, inventory_item_id)
         self._validate_unique_active_name(
-            identified_hazard_id,
+            inventory_item_id,
             name=normalized_name,
             exclude_event_id=None,
             active=active,
         )
 
         event = HazardEvent(
-            identified_hazard_id=identified_hazard_id,
+            inventory_item_id=inventory_item_id,
             name=normalized_name,
             description=description.strip(),
             note=note.strip(),
             active=active,
-            sort_order=self.repository.next_sort_order(identified_hazard_id),
+            sort_order=self.repository.next_sort_order(inventory_item_id),
         )
         return self.repository.add(event)
 
@@ -112,7 +117,7 @@ class HazardEventService:
         event_id: int,
         *,
         hazard_identification_id: int,
-        identified_hazard_id: int,
+        inventory_item_id: int,
         name: str,
         description: str = "",
         note: str = "",
@@ -126,15 +131,15 @@ class HazardEventService:
         if not normalized_name:
             raise HazardEventError("Název události je povinný.")
 
-        self._validate_hazard(hazard_identification_id, identified_hazard_id)
+        self._validate_inventory_item(hazard_identification_id, inventory_item_id)
         self._validate_unique_active_name(
-            identified_hazard_id,
+            inventory_item_id,
             name=normalized_name,
             exclude_event_id=event_id,
             active=active,
         )
 
-        event.identified_hazard_id = identified_hazard_id
+        event.inventory_item_id = inventory_item_id
         event.name = normalized_name
         event.description = description.strip()
         event.note = note.strip()
@@ -148,7 +153,7 @@ class HazardEventService:
             return False
 
         self._validate_unique_active_name(
-            event.identified_hazard_id,
+            event.inventory_item_id,
             name=event.name,
             exclude_event_id=event_id,
             active=True,
@@ -170,13 +175,12 @@ class HazardEventService:
     def _to_row(
         self,
         event: HazardEvent,
-        hazard_rows: dict[int, IdentifiedHazardRow],
+        items: dict[int, HazardInventoryItem],
     ) -> HazardEventRow:
-        hazard_row = hazard_rows.get(event.identified_hazard_id)
-        if hazard_row is None:
+        item = items.get(event.inventory_item_id)
+        if item is None:
             return HazardEventRow(
                 event=event,
-                hazard_name="—",
                 inventory_item_name="—",
                 inventory_item_category="",
                 inventory_item_category_label="—",
@@ -184,10 +188,12 @@ class HazardEventService:
 
         return HazardEventRow(
             event=event,
-            hazard_name=hazard_row.hazard.name,
-            inventory_item_name=hazard_row.inventory_item_name,
-            inventory_item_category=hazard_row.inventory_item_category,
-            inventory_item_category_label=hazard_row.inventory_item_category_label,
+            inventory_item_name=item.name,
+            inventory_item_category=item.category,
+            inventory_item_category_label=HAZARD_INVENTORY_CATEGORY_LABELS.get(
+                item.category,
+                item.category,
+            ),
         )
 
     def _sort_rows(self, rows: list[HazardEventRow]) -> list[HazardEventRow]:
@@ -203,28 +209,27 @@ class HazardEventService:
             return (
                 category_index,
                 row.inventory_item_name.casefold(),
-                row.hazard_name.casefold(),
                 row.event.name.casefold(),
             )
 
         return czech_sorted(rows, key=sort_key)
 
-    def _validate_hazard(
+    def _validate_inventory_item(
         self,
         hazard_identification_id: int,
-        identified_hazard_id: int,
+        inventory_item_id: int,
     ) -> None:
-        hazard = identified_hazard_service.get_by_id(identified_hazard_id)
-        if hazard is None:
-            raise HazardEventError("Nebezpečí neexistuje.")
-        if hazard.hazard_identification_id != hazard_identification_id:
-            raise HazardEventError("Nebezpečí musí patřit ke stejné identifikaci.")
-        if not hazard.active:
-            raise HazardEventError("Lze vybrat pouze aktivní nebezpečí.")
+        item = hazard_inventory_item_service.get_by_id(inventory_item_id)
+        if item is None:
+            raise HazardEventError("Zdroj analýzy neexistuje.")
+        if item.hazard_identification_id != hazard_identification_id:
+            raise HazardEventError("Zdroj analýzy musí patřit ke stejné identifikaci.")
+        if not item.active:
+            raise HazardEventError("Lze vybrat pouze aktivní zdroj analýzy.")
 
     def _validate_unique_active_name(
         self,
-        identified_hazard_id: int,
+        inventory_item_id: int,
         *,
         name: str,
         exclude_event_id: int | None,
@@ -234,8 +239,8 @@ class HazardEventService:
             return
 
         normalized = normalize_event_name(name)
-        for event in self.repository.get_for_identified_hazard(
-            identified_hazard_id,
+        for event in self.repository.get_for_inventory_item(
+            inventory_item_id,
             include_inactive=True,
         ):
             if event.id == exclude_event_id:
@@ -244,7 +249,7 @@ class HazardEventService:
                 continue
             if normalize_event_name(event.name) == normalized:
                 raise HazardEventError(
-                    f"U vybraného nebezpečí již existuje aktivní nežádoucí událost "
+                    f"U vybraného zdroje analýzy již existuje aktivní nežádoucí událost "
                     f"s názvem „{name.strip()}“."
                 )
 

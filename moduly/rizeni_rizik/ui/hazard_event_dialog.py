@@ -11,7 +11,10 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
-from moduly.rizeni_rizik.constants import HAZARD_EVENT_DIALOG_TITLE
+from moduly.rizeni_rizik.constants import (
+    HAZARD_EVENT_DIALOG_TITLE,
+    HAZARD_INVENTORY_CATEGORY_LABELS,
+)
 from moduly.rizeni_rizik.sluzby.hazard_event_service import (
     HazardEventError,
     hazard_event_service,
@@ -25,7 +28,7 @@ class HazardEventDialog(QDialog):
         *,
         hazard_identification_id: int,
         event=None,
-        default_identified_hazard_id: int | None = None,
+        default_inventory_item_id: int | None = None,
         read_only: bool = False,
     ):
         super().__init__(parent)
@@ -40,8 +43,8 @@ class HazardEventDialog(QDialog):
         layout = QVBoxLayout(self)
         form = QFormLayout()
 
-        self.hazard = QComboBox()
-        self._populate_hazards(default_identified_hazard_id)
+        self.inventory_item = QComboBox()
+        self._populate_inventory_items(default_inventory_item_id)
 
         self.name = QLineEdit()
         self.description = QPlainTextEdit()
@@ -51,7 +54,7 @@ class HazardEventDialog(QDialog):
         self.active_checkbox = QCheckBox("Aktivní")
         self.active_checkbox.setChecked(True)
 
-        form.addRow("Nebezpečí *:", self.hazard)
+        form.addRow("Zdroj analýzy *:", self.inventory_item)
         form.addRow("Název události *:", self.name)
         form.addRow("Popis:", self.description)
         form.addRow("Poznámka:", self.note)
@@ -65,36 +68,39 @@ class HazardEventDialog(QDialog):
         layout.addWidget(buttons)
 
         if event is not None:
-            index = self.hazard.findData(event.identified_hazard_id)
+            index = self.inventory_item.findData(event.inventory_item_id)
             if index >= 0:
-                self.hazard.setCurrentIndex(index)
+                self.inventory_item.setCurrentIndex(index)
             self.name.setText(event.name)
             self.description.setPlainText(event.description or "")
             self.note.setPlainText(event.note or "")
             self.active_checkbox.setChecked(bool(event.active))
 
         if read_only:
-            self.hazard.setEnabled(False)
+            self.inventory_item.setEnabled(False)
             self.name.setReadOnly(True)
             self.description.setReadOnly(True)
             self.note.setReadOnly(True)
             self.active_checkbox.setEnabled(False)
             buttons.button(QDialogButtonBox.StandardButton.Save).setEnabled(False)
 
-    def _populate_hazards(self, default_identified_hazard_id: int | None) -> None:
-        rows = hazard_event_service.get_hazard_candidates(self.hazard_identification_id)
-        self.hazard.clear()
-        for row in rows:
-            label = (
-                f"{row.hazard.name} "
-                f"({row.inventory_item_category_label} — {row.inventory_item_name})"
+    def _populate_inventory_items(self, default_inventory_item_id: int | None) -> None:
+        items = hazard_event_service.get_inventory_item_candidates(
+            self.hazard_identification_id
+        )
+        self.inventory_item.clear()
+        for item in items:
+            category_label = HAZARD_INVENTORY_CATEGORY_LABELS.get(
+                item.category,
+                item.category,
             )
-            self.hazard.addItem(label, row.hazard.id)
+            label = f"{item.name} ({category_label})"
+            self.inventory_item.addItem(label, item.id)
 
-        if default_identified_hazard_id is not None:
-            index = self.hazard.findData(default_identified_hazard_id)
+        if default_inventory_item_id is not None:
+            index = self.inventory_item.findData(default_inventory_item_id)
             if index >= 0:
-                self.hazard.setCurrentIndex(index)
+                self.inventory_item.setCurrentIndex(index)
 
     def accept(self) -> None:
         if self.read_only:
@@ -121,7 +127,7 @@ class HazardEventDialog(QDialog):
 
     def get_data(self) -> dict:
         return {
-            "identified_hazard_id": self.hazard.currentData(),
+            "inventory_item_id": self.inventory_item.currentData(),
             "name": self.name.text().strip(),
             "description": self.description.toPlainText().strip(),
             "note": self.note.toPlainText().strip(),

@@ -12,17 +12,19 @@ class HazardRiskAssessmentRepository:
         include_inactive: bool = True,
     ) -> list[HazardRiskAssessment]:
         from moduly.rizeni_rizik.modely.hazard_event import HazardEvent
-        from moduly.rizeni_rizik.modely.identified_hazard import IdentifiedHazard
+        from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem
 
         with get_session() as session:
             stmt = (
                 select(HazardRiskAssessment)
                 .join(HazardEvent, HazardRiskAssessment.hazard_event_id == HazardEvent.id)
                 .join(
-                    IdentifiedHazard,
-                    HazardEvent.identified_hazard_id == IdentifiedHazard.id,
+                    HazardInventoryItem,
+                    HazardEvent.inventory_item_id == HazardInventoryItem.id,
                 )
-                .where(IdentifiedHazard.hazard_identification_id == hazard_identification_id)
+                .where(
+                    HazardInventoryItem.hazard_identification_id == hazard_identification_id
+                )
             )
             if not include_inactive:
                 stmt = stmt.where(HazardRiskAssessment.active == True)  # noqa: E712

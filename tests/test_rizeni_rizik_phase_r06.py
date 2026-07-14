@@ -39,7 +39,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.modely.hazard_identification import HazardIdentification
     from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem
     from moduly.rizeni_rizik.modely.hazard_risk_assessment import HazardRiskAssessment
-    from moduly.rizeni_rizik.modely.identified_hazard import IdentifiedHazard
     from moduly.rizeni_rizik.sluzby.hazard_event_service import hazard_event_service
     from moduly.rizeni_rizik.sluzby.hazard_identification_service import (
         hazard_identification_service,
@@ -50,9 +49,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import (
         HazardRiskAssessmentError,
         hazard_risk_assessment_service,
-    )
-    from moduly.rizeni_rizik.sluzby.identified_hazard_service import (
-        identified_hazard_service,
     )
     from moduly.rizeni_rizik.ui.hazard_events_widget import HazardEventsWidget
     from moduly.rizeni_rizik.ui.hazard_risk_assessment_dialog import HazardRiskAssessmentDialog
@@ -78,7 +74,6 @@ class HazardRiskAssessmentPhaseR06TestCase(unittest.TestCase):
         with get_session() as session:
             session.execute(delete(HazardRiskAssessment))
             session.execute(delete(HazardEvent))
-            session.execute(delete(IdentifiedHazard))
             session.execute(delete(HazardInventoryItem))
             session.execute(delete(HazardIdentification))
             session.commit()
@@ -101,29 +96,24 @@ class HazardRiskAssessmentPhaseR06TestCase(unittest.TestCase):
             workplace_id=workplace.id,
         )
 
-        self.lokomotiva = hazard_inventory_item_service.create_item(
+        self.item_a = hazard_inventory_item_service.create_item(
             hazard_identification_id=self.identification.id,
             category=HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
             name="Lokomotiva",
         )
-        self.hazard_a = identified_hazard_service.create_hazard(
+        self.item_b = hazard_inventory_item_service.create_item(
             hazard_identification_id=self.identification.id,
-            inventory_item_id=self.lokomotiva.id,
-            name="Pohyb kolejového vozidla",
-        )
-        self.hazard_b = identified_hazard_service.create_hazard(
-            hazard_identification_id=self.identification.id,
-            inventory_item_id=self.lokomotiva.id,
-            name="Kontakt s horkým povrchem",
+            category=HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
+            name="Vagon",
         )
         self.event_a = hazard_event_service.create_event(
             hazard_identification_id=self.identification.id,
-            identified_hazard_id=self.hazard_a.id,
+            inventory_item_id=self.item_a.id,
             name="Sražení s osobou",
         )
         self.event_b = hazard_event_service.create_event(
             hazard_identification_id=self.identification.id,
-            identified_hazard_id=self.hazard_b.id,
+            inventory_item_id=self.item_b.id,
             name="Sražení s osobou",
         )
 
@@ -237,14 +227,9 @@ class HazardRiskAssessmentPhaseR06TestCase(unittest.TestCase):
             category=HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
             name="Jiná lokomotiva",
         )
-        other_hazard = identified_hazard_service.create_hazard(
-            hazard_identification_id=self.other_identification.id,
-            inventory_item_id=other_item.id,
-            name="Jiné nebezpečí",
-        )
         other_event = hazard_event_service.create_event(
             hazard_identification_id=self.other_identification.id,
-            identified_hazard_id=other_hazard.id,
+            inventory_item_id=other_item.id,
             name="Jiná událost",
         )
         with self.assertRaises(HazardRiskAssessmentError):

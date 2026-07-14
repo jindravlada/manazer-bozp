@@ -135,7 +135,7 @@ class HazardRiskAssessmentDialog(QDialog):
         )
         self.event.clear()
         for row in rows:
-            label = f"{row.event.name} ({row.hazard_name})"
+            label = f"{row.event.name} ({row.inventory_item_name})"
             self.event.addItem(label, row.event.id)
 
         if default_hazard_event_id is not None:

@@ -61,7 +61,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem
     from moduly.rizeni_rizik.modely.hazard_required_measure import HazardRequiredMeasure
     from moduly.rizeni_rizik.modely.hazard_risk_assessment import HazardRiskAssessment
-    from moduly.rizeni_rizik.modely.identified_hazard import IdentifiedHazard
+    from moduly.rizeni_rizik.sluzby.hazard_event_service import hazard_event_service
     from moduly.rizeni_rizik.sluzby.hazard_identification_peer_review_provider import (
         SOURCE_TYPE_HAZARD_IDENTIFICATION,
         hazard_identification_peer_review_provider,
@@ -71,9 +71,6 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import (
         hazard_inventory_item_service,
-    )
-    from moduly.rizeni_rizik.sluzby.identified_hazard_service import (
-        identified_hazard_service,
     )
 
 
@@ -116,7 +113,7 @@ class BatchPlannerUnitTestCase(unittest.TestCase):
         big_node = {
             "export_id": "ITEM-001",
             "name": "Velký",
-            "hazards": [{"events": []} for _ in range(250)],
+            "events": [{"assessments": []} for _ in range(250)],
         }
         self.assertEqual(count_hierarchy_objects(big_node), 251)
         branches = [
@@ -132,7 +129,7 @@ class BatchPlannerUnitTestCase(unittest.TestCase):
         self.assertEqual(len(plans), 2)
         self.assertEqual(plans[0].source_count, 1)
         self.assertTrue(plans[0].recommended_limit_exceeded)
-        self.assertEqual(plans[0].branches[0].node["hazards"].__len__(), 250)
+        self.assertEqual(plans[0].branches[0].node["events"].__len__(), 250)
         self.assertFalse(plans[1].recommended_limit_exceeded)
 
     def test_named_limit_constants(self) -> None:
@@ -161,7 +158,6 @@ class AiPeerReviewPhaseR117TestCase(unittest.TestCase):
             session.execute(delete(HazardExistingMeasure))
             session.execute(delete(HazardRiskAssessment))
             session.execute(delete(HazardEvent))
-            session.execute(delete(IdentifiedHazard))
             session.execute(delete(HazardInventoryItem))
             session.execute(delete(HazardIdentification))
             session.commit()
@@ -311,10 +307,10 @@ class AiPeerReviewPhaseR117TestCase(unittest.TestCase):
             category=HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
             name="Kořen",
         )
-        hazard = identified_hazard_service.create_hazard(
+        event = hazard_event_service.create_event(
             hazard_identification_id=self.identification.id,
             inventory_item_id=item.id,
-            name="Nebezpečí větve",
+            name="Událost větve",
         )
         # doplnit dalších 10 prázdných zdrojů → dvě dávky, větev musí zůstat beze změny
         self._create_items(10)
@@ -328,20 +324,21 @@ class AiPeerReviewPhaseR117TestCase(unittest.TestCase):
             for node in batch.zadani_json["workplace_analysis"]:
                 if node["name"] == "Kořen":
                     found = node
-                    self.assertEqual(len(node["hazards"]), 1)
-                    self.assertEqual(node["hazards"][0]["name"], "Nebezpečí větve")
+                    self.assertNotIn("hazards", node)
+                    self.assertEqual(len(node["events"]), 1)
+                    self.assertEqual(node["events"][0]["name"], "Událost větve")
         self.assertIsNotNone(found)
-        hazard_names = [
-            hazard["name"]
+        event_names = [
+            event_node["name"]
             for batch in content.batches
             for node in batch.zadani_json["workplace_analysis"]
-            for hazard in node["hazards"]
+            for event_node in node["events"]
         ]
-        self.assertEqual(hazard_names.count("Nebezpečí větve"), 1)
+        self.assertEqual(event_names.count("Událost větve"), 1)
         self.assertEqual(content.export_id_map[found["export_id"]]["id"], item.id)
         self.assertEqual(
-            content.export_id_map[found["hazards"][0]["export_id"]]["id"],
-            hazard.id,
+            content.export_id_map[found["events"][0]["export_id"]]["id"],
+            event.id,
         )
 
     def test_oversized_branch_exported_alone(self) -> None:
@@ -351,10 +348,10 @@ class AiPeerReviewPhaseR117TestCase(unittest.TestCase):
             name="Nadlimitní",
         )
         for index in range(AI_PEER_REVIEW_MAX_OBJECTS_PER_BATCH):
-            identified_hazard_service.create_hazard(
+            hazard_event_service.create_event(
                 hazard_identification_id=self.identification.id,
                 inventory_item_id=item.id,
-                name=f"H{index}",
+                name=f"E{index}",
             )
         small = hazard_inventory_item_service.create_item(
             hazard_identification_id=self.identification.id,

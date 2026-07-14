@@ -33,7 +33,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.constants import (
         EVENT_TABLE_HEADERS,
         HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
-        HAZARD_TABLE_HEADERS,
         INVENTORY_INTRO_TEXT,
         INVENTORY_ITEM_DIALOG_TITLE,
         TAB_INVENTORY,
@@ -48,7 +47,6 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.rizeni_rizik.ui.hazard_inventory_widget import HazardInventoryWidget
     from moduly.rizeni_rizik.ui.hazard_events_widget import HazardEventsWidget
-    from moduly.rizeni_rizik.ui.identified_hazards_widget import IdentifiedHazardsWidget
 
 
 class WorkplaceAnalysisTerminologyPhaseR05aTestCase(unittest.TestCase):
@@ -91,11 +89,10 @@ class WorkplaceAnalysisTerminologyPhaseR05aTestCase(unittest.TestCase):
         self.assertIn("podmínky prostředí", INVENTORY_INTRO_TEXT)
         self.assertNotIn("Inventura", INVENTORY_INTRO_TEXT)
 
-    def test_hazard_and_event_table_headers(self) -> None:
-        self.assertIn("Zdrojová položka analýzy", HAZARD_TABLE_HEADERS)
-        self.assertNotIn("Zdrojová položka inventury", HAZARD_TABLE_HEADERS)
-        self.assertIn("Zdrojová položka analýzy", EVENT_TABLE_HEADERS)
+    def test_event_table_headers(self) -> None:
+        self.assertIn("Zdroj analýzy", EVENT_TABLE_HEADERS)
         self.assertNotIn("Zdrojová položka inventury", EVENT_TABLE_HEADERS)
+        self.assertNotIn("Zdrojová položka analýzy", EVENT_TABLE_HEADERS)
 
     def test_inventory_widget_shows_new_intro(self) -> None:
         widget = HazardInventoryWidget()
@@ -109,17 +106,7 @@ class WorkplaceAnalysisTerminologyPhaseR05aTestCase(unittest.TestCase):
         dialog = HazardIdentificationDialog(identification=self.identification)
         self.assertEqual(dialog.tabs.tabText(1), TAB_INVENTORY)
 
-    def test_hazards_and_events_widgets_use_updated_headers(self) -> None:
-        hazards_widget = IdentifiedHazardsWidget()
-        hazards_widget.set_identification(self.identification.id, read_only=False)
-        self.assertEqual(
-            [
-                hazards_widget.table.horizontalHeaderItem(column).text()
-                for column in range(hazards_widget.table.columnCount())
-            ],
-            HAZARD_TABLE_HEADERS,
-        )
-
+    def test_events_widget_uses_updated_headers(self) -> None:
         events_widget = HazardEventsWidget()
         events_widget.set_identification(self.identification.id, read_only=False)
         self.assertEqual(

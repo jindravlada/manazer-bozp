@@ -17,8 +17,8 @@ from moduly.rizeni_rizik.constants import (
     RISK_ASSESSMENT_COL_CONSEQUENCE,
     RISK_ASSESSMENT_COL_EVENT,
     RISK_ASSESSMENT_COL_EXPOSED_GROUP,
-    RISK_ASSESSMENT_COL_HAZARD,
     RISK_ASSESSMENT_COL_ID,
+    RISK_ASSESSMENT_COL_INVENTORY_ITEM,
     RISK_ASSESSMENT_COL_SEVERITY,
     RISK_ASSESSMENT_COL_STATUS,
     RISK_ASSESSMENT_COLUMN_COUNT,
@@ -309,8 +309,8 @@ class HazardRiskAssessmentsWidget(QWidget):
             )
             self.table.setItem(
                 row_index,
-                RISK_ASSESSMENT_COL_HAZARD,
-                QTableWidgetItem(row.hazard_name),
+                RISK_ASSESSMENT_COL_INVENTORY_ITEM,
+                QTableWidgetItem(row.inventory_item_name),
             )
             self.table.setItem(
                 row_index,

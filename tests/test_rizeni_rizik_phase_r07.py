@@ -48,7 +48,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.modely.hazard_identification import HazardIdentification
     from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem
     from moduly.rizeni_rizik.modely.hazard_risk_assessment import HazardRiskAssessment
-    from moduly.rizeni_rizik.modely.identified_hazard import IdentifiedHazard
     from moduly.rizeni_rizik.sluzby.hazard_event_service import hazard_event_service
     from moduly.rizeni_rizik.sluzby.hazard_identification_service import (
         hazard_identification_service,
@@ -59,9 +58,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import (
         HazardRiskAssessmentError,
         hazard_risk_assessment_service,
-    )
-    from moduly.rizeni_rizik.sluzby.identified_hazard_service import (
-        identified_hazard_service,
     )
     from moduly.rizeni_rizik.ui.hazard_risk_assessment_dialog import HazardRiskAssessmentDialog
     from moduly.rizeni_rizik.ui.hazard_risk_assessments_widget import HazardRiskAssessmentsWidget
@@ -86,7 +82,6 @@ class HazardRiskAssessmentPhaseR07TestCase(unittest.TestCase):
         with get_session() as session:
             session.execute(delete(HazardRiskAssessment))
             session.execute(delete(HazardEvent))
-            session.execute(delete(IdentifiedHazard))
             session.execute(delete(HazardInventoryItem))
             session.execute(delete(HazardIdentification))
             session.commit()
@@ -110,14 +105,9 @@ class HazardRiskAssessmentPhaseR07TestCase(unittest.TestCase):
             category=HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
             name="Lokomotiva",
         )
-        hazard = identified_hazard_service.create_hazard(
-            hazard_identification_id=self.identification.id,
-            inventory_item_id=lokomotiva.id,
-            name="Pohyb kolejového vozidla",
-        )
         self.event = hazard_event_service.create_event(
             hazard_identification_id=self.identification.id,
-            identified_hazard_id=hazard.id,
+            inventory_item_id=lokomotiva.id,
             name="Sražení s osobou",
         )
 

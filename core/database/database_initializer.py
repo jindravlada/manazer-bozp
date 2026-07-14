@@ -67,7 +67,6 @@ def initialize_database() -> None:
     from moduly.rizeni_rizik.modely.hazard_identification import HazardIdentification  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_inventory_relation import HazardInventoryRelation  # noqa: F401
-    from moduly.rizeni_rizik.modely.identified_hazard import IdentifiedHazard  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_event import HazardEvent  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_risk_assessment import HazardRiskAssessment  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_existing_measure import HazardExistingMeasure  # noqa: F401
@@ -111,8 +110,8 @@ def initialize_database() -> None:
     _ensure_hazard_identifications_table()
     _ensure_hazard_inventory_items_table()
     _ensure_hazard_inventory_relations_table()
-    _ensure_identified_hazards_table()
     _ensure_hazard_events_table()
+    _migrate_hazard_events_drop_identified_hazards()
     _ensure_hazard_risk_assessments_table()
     _ensure_hazard_existing_measures_table()
     _ensure_hazard_required_measures_table()
@@ -794,20 +793,107 @@ def _ensure_hazard_inventory_relations_table() -> None:
         HazardInventoryRelation.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
-def _ensure_identified_hazards_table() -> None:
-    columns = _table_columns("identified_hazards")
-    if not columns:
-        from moduly.rizeni_rizik.modely.identified_hazard import IdentifiedHazard
-
-        IdentifiedHazard.__table__.create(bind=_db_engine(), checkfirst=True)
-
-
 def _ensure_hazard_events_table() -> None:
     columns = _table_columns("hazard_events")
     if not columns:
         from moduly.rizeni_rizik.modely.hazard_event import HazardEvent
 
         HazardEvent.__table__.create(bind=_db_engine(), checkfirst=True)
+
+
+def _migrate_hazard_events_drop_identified_hazards() -> None:
+    """R12: Událost → přímo Zdroj analýzy; odstranění tabulky identified_hazards."""
+    event_columns = _table_columns("hazard_events")
+    if not event_columns:
+        return
+
+    hazard_columns = _table_columns("identified_hazards")
+    needs_event_rebuild = "identified_hazard_id" in event_columns or (
+        "inventory_item_id" not in event_columns
+    )
+
+    if needs_event_rebuild:
+        with _db_engine().connect() as connection:
+            if "inventory_item_id" not in event_columns:
+                connection.execute(
+                    text(
+                        "ALTER TABLE hazard_events "
+                        "ADD COLUMN inventory_item_id INTEGER NOT NULL DEFAULT 0"
+                    )
+                )
+                connection.commit()
+
+            if "identified_hazard_id" in _table_columns("hazard_events") and hazard_columns:
+                connection.execute(
+                    text(
+                        """
+                        UPDATE hazard_events
+                        SET inventory_item_id = (
+                            SELECT identified_hazards.inventory_item_id
+                            FROM identified_hazards
+                            WHERE identified_hazards.id = hazard_events.identified_hazard_id
+                        )
+                        WHERE identified_hazard_id IS NOT NULL
+                        """
+                    )
+                )
+                connection.commit()
+
+            connection.execute(
+                text(
+                    """
+                    CREATE TABLE hazard_events_new (
+                        id INTEGER PRIMARY KEY,
+                        inventory_item_id INTEGER NOT NULL,
+                        name VARCHAR(200) NOT NULL,
+                        description TEXT DEFAULT '',
+                        note TEXT DEFAULT '',
+                        active BOOLEAN DEFAULT 1,
+                        sort_order INTEGER NOT NULL DEFAULT 0,
+                        created_at DATETIME,
+                        updated_at DATETIME
+                    )
+                    """
+                )
+            )
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO hazard_events_new (
+                        id,
+                        inventory_item_id,
+                        name,
+                        description,
+                        note,
+                        active,
+                        sort_order,
+                        created_at,
+                        updated_at
+                    )
+                    SELECT
+                        id,
+                        inventory_item_id,
+                        name,
+                        description,
+                        note,
+                        active,
+                        sort_order,
+                        created_at,
+                        updated_at
+                    FROM hazard_events
+                    """
+                )
+            )
+            connection.execute(text("DROP TABLE hazard_events"))
+            connection.execute(
+                text("ALTER TABLE hazard_events_new RENAME TO hazard_events")
+            )
+            connection.commit()
+
+    if hazard_columns:
+        with _db_engine().connect() as connection:
+            connection.execute(text("DROP TABLE identified_hazards"))
+            connection.commit()
 
 
 def _ensure_hazard_risk_assessments_table() -> None:
