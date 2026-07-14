@@ -140,7 +140,17 @@ class RizeniRizikModulePhaseR01aTestCase(unittest.TestCase):
         self.assertEqual(page.table.item(0, 5).text(), "Jan Novák")
 
     def test_create_identification_uses_default_status(self) -> None:
-        created = hazard_identification_service.create_identification(title="Identifikace A")
+        operation = settings_service.save_workplace(name="Provoz test")
+        workplace = settings_service.save_workplace(
+            name="Pracoviště test",
+            item_type="workplace",
+            parent_id=operation.id,
+        )
+        created = hazard_identification_service.create_identification(
+            title="Identifikace A",
+            operation_id=operation.id,
+            workplace_id=workplace.id,
+        )
         self.assertEqual(created.status, HAZARD_IDENTIFICATION_STATUS_DRAFT)
 
 

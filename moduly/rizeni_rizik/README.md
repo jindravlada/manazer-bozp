@@ -60,3 +60,11 @@ Stránka `RizeniRizikPage` zobrazuje tabulku se sloupci:
 Řazení: datum zahájení sestupně.
 
 Tlačítka Nová identifikace / Upravit / Aktivovat / Deaktivovat jsou připravena, ale zatím nejsou funkční.
+
+## Fáze R01b
+
+Editor identifikace (`HazardIdentificationDialog`):
+
+- záložky dle metodiky modulu, funkční pouze **Základní údaje**
+- dynamické nabídky Pracoviště / Část pracoviště podle hierarchie provozů
+- založení, editace, uložení, načtení, aktivace a deaktivace bez fyzického mazání

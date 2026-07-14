@@ -43,3 +43,23 @@ TABLE_HEADERS = [
     "Odpovědná osoba",
     "Stav",
 ]
+
+TAB_BASICS = "Základní údaje"
+TAB_INVENTORY = "Inventura"
+TAB_HAZARDS = "Nebezpečí"
+TAB_RISK_ASSESSMENT = "Posouzení rizik"
+TAB_MEASURES = "Opatření"
+TAB_PUBLICATION = "Publikace"
+TAB_HISTORY = "Historie"
+
+HAZARD_IDENTIFICATION_TABS = (
+    TAB_BASICS,
+    TAB_INVENTORY,
+    TAB_HAZARDS,
+    TAB_RISK_ASSESSMENT,
+    TAB_MEASURES,
+    TAB_PUBLICATION,
+    TAB_HISTORY,
+)
+
+DIALOG_WINDOW_TITLE = "Identifikace nebezpečí"

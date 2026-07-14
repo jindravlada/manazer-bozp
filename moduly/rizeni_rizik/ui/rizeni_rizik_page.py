@@ -1,8 +1,11 @@
-from PySide6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QMessageBox, QPushButton, QVBoxLayout, QWidget
 
+from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
+from moduly.rizeni_rizik.constants import DIALOG_WINDOW_TITLE
 from moduly.rizeni_rizik.sluzby.hazard_identification_service import hazard_identification_service
+from moduly.rizeni_rizik.ui.hazard_identification_dialog import HazardIdentificationDialog
 from moduly.rizeni_rizik.ui.hazard_identification_table import HazardIdentificationTable
 
 
@@ -32,7 +35,80 @@ class RizeniRizikPage(QWidget):
         layout.addWidget(self.text_filter)
         layout.addWidget(self.table)
 
+        self.new_btn.clicked.connect(self.new_identification)
+        self.edit_btn.clicked.connect(self.edit_selected_identification)
+        self.activate_btn.clicked.connect(self.activate_selected_identification)
+        self.deactivate_btn.clicked.connect(self.deactivate_selected_identification)
+        self.table.doubleClicked.connect(self.edit_selected_identification)
+
         self.refresh()
+
+    def new_identification(self) -> None:
+        dialog = HazardIdentificationDialog(self)
+        if exec_maximized(dialog):
+            self.refresh()
+
+    def edit_selected_identification(self) -> None:
+        identification_id = self.table.selected_identification_id()
+        if identification_id is None:
+            QMessageBox.information(self, DIALOG_WINDOW_TITLE, "Vyberte identifikaci.")
+            return
+
+        identification = hazard_identification_service.get_by_id(identification_id)
+        if identification is None:
+            QMessageBox.warning(self, DIALOG_WINDOW_TITLE, "Identifikace nebyla nalezena.")
+            self.refresh()
+            return
+
+        dialog = HazardIdentificationDialog(self, identification=identification)
+        if exec_maximized(dialog):
+            self.refresh()
+
+    def activate_selected_identification(self) -> None:
+        identification = self._selected_identification()
+        if identification is None:
+            QMessageBox.information(self, DIALOG_WINDOW_TITLE, "Vyberte identifikaci.")
+            return
+        if identification.active:
+            QMessageBox.information(self, DIALOG_WINDOW_TITLE, "Identifikace je již aktivní.")
+            return
+
+        answer = QMessageBox.question(
+            self,
+            "Aktivovat",
+            f"Opravdu aktivovat identifikaci {identification.title}?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer == QMessageBox.Yes:
+            hazard_identification_service.activate(identification.id)
+            self.refresh()
+
+    def deactivate_selected_identification(self) -> None:
+        identification = self._selected_identification()
+        if identification is None:
+            QMessageBox.information(self, DIALOG_WINDOW_TITLE, "Vyberte identifikaci.")
+            return
+        if not identification.active:
+            QMessageBox.information(self, DIALOG_WINDOW_TITLE, "Identifikace je již neaktivní.")
+            return
+
+        answer = QMessageBox.question(
+            self,
+            "Deaktivovat",
+            f"Opravdu deaktivovat identifikaci {identification.title}?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer == QMessageBox.Yes:
+            hazard_identification_service.deactivate(identification.id)
+            self.refresh()
+
+    def _selected_identification(self):
+        identification_id = self.table.selected_identification_id()
+        if identification_id is None:
+            return None
+        return hazard_identification_service.get_by_id(identification_id)
 
     def refresh(self) -> None:
         identifications = hazard_identification_service.get_all(include_inactive=True)
