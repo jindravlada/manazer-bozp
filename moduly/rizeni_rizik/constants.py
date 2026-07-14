@@ -312,15 +312,26 @@ def format_risk_assessment_display_name(
     exposed_group: str,
     *,
     existing_measure_count: int = 0,
+    required_measure_count: int = 0,
 ) -> str:
-    if not existing_measure_count:
+    parts = [exposed_group]
+    if existing_measure_count:
+        suffix = (
+            "existující opatření"
+            if existing_measure_count == 1
+            else "existujících opatření"
+        )
+        parts.append(f"{existing_measure_count} {suffix}")
+    if required_measure_count:
+        suffix = (
+            "potřebné opatření"
+            if required_measure_count == 1
+            else "potřebná opatření"
+        )
+        parts.append(f"{required_measure_count} {suffix}")
+    if len(parts) == 1:
         return exposed_group
-    suffix = (
-        "existující opatření"
-        if existing_measure_count == 1
-        else "existujících opatření"
-    )
-    return f"{exposed_group} — {existing_measure_count} {suffix}"
+    return " — ".join(parts)
 
 
 RISK_ASSESSMENTS_INTRO_TEXT = (
@@ -412,6 +423,18 @@ EXISTING_MEASURE_COL_ACTIVE = 3
 EXISTING_MEASURE_COLUMN_COUNT = 4
 
 EXISTING_MEASURE_TABLE_HEADERS = ["ID", "Opatření", "Poznámka", "Aktivní"]
+
+REQUIRED_MEASURES_TITLE = "Potřebná další opatření"
+HAZARD_REQUIRED_MEASURE_DIALOG_TITLE = "Potřebné opatření"
+REQUIRED_MEASURE_SELECT_ASSESSMENT = "Vyberte posouzení rizika."
+
+REQUIRED_MEASURE_COL_ID = 0
+REQUIRED_MEASURE_COL_DESCRIPTION = 1
+REQUIRED_MEASURE_COL_NOTE = 2
+REQUIRED_MEASURE_COL_ACTIVE = 3
+REQUIRED_MEASURE_COLUMN_COUNT = 4
+
+REQUIRED_MEASURE_TABLE_HEADERS = ["ID", "Opatření", "Poznámka", "Aktivní"]
 
 
 def format_inventory_item_display_name(

@@ -71,6 +71,7 @@ def initialize_database() -> None:
     from moduly.rizeni_rizik.modely.hazard_event import HazardEvent  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_risk_assessment import HazardRiskAssessment  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_existing_measure import HazardExistingMeasure  # noqa: F401
+    from moduly.rizeni_rizik.modely.hazard_required_measure import HazardRequiredMeasure  # noqa: F401
 
     create_database()
     _ensure_thp_worker_title_columns()
@@ -109,6 +110,7 @@ def initialize_database() -> None:
     _ensure_hazard_events_table()
     _ensure_hazard_risk_assessments_table()
     _ensure_hazard_existing_measures_table()
+    _ensure_hazard_required_measures_table()
     _migrate_legal_document_types()
     _normalize_task_status_values()
     _normalize_accident_legacy_values()
@@ -819,6 +821,14 @@ def _ensure_hazard_existing_measures_table() -> None:
         from moduly.rizeni_rizik.modely.hazard_existing_measure import HazardExistingMeasure
 
         HazardExistingMeasure.__table__.create(bind=_db_engine(), checkfirst=True)
+
+
+def _ensure_hazard_required_measures_table() -> None:
+    columns = _table_columns("hazard_required_measures")
+    if not columns:
+        from moduly.rizeni_rizik.modely.hazard_required_measure import HazardRequiredMeasure
+
+        HazardRequiredMeasure.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_responsibility_roles_table() -> None:

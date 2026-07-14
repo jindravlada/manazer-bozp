@@ -27,11 +27,15 @@ from moduly.rizeni_rizik.constants import (
 from moduly.rizeni_rizik.sluzby.hazard_existing_measure_service import (
     hazard_existing_measure_service,
 )
+from moduly.rizeni_rizik.sluzby.hazard_required_measure_service import (
+    hazard_required_measure_service,
+)
 from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import (
     HazardRiskAssessmentError,
     hazard_risk_assessment_service,
 )
 from moduly.rizeni_rizik.ui.hazard_existing_measures_widget import HazardExistingMeasuresWidget
+from moduly.rizeni_rizik.ui.hazard_required_measures_widget import HazardRequiredMeasuresWidget
 from moduly.rizeni_rizik.ui.hazard_risk_assessment_dialog import HazardRiskAssessmentDialog
 
 
@@ -77,6 +81,11 @@ class HazardRiskAssessmentsWidget(QWidget):
         )
         layout.addWidget(self.existing_measures_widget, 1)
 
+        self.required_measures_widget = HazardRequiredMeasuresWidget(
+            on_changed=self._on_required_measures_changed
+        )
+        layout.addWidget(self.required_measures_widget, 1)
+
         self.add_btn.clicked.connect(self.add_assessment)
         self.edit_btn.clicked.connect(self.edit_selected_assessment)
         self.activate_btn.clicked.connect(self.activate_selected_assessment)
@@ -101,11 +110,16 @@ class HazardRiskAssessmentsWidget(QWidget):
             identification_id=identification_id,
             read_only=read_only,
         )
+        self.required_measures_widget.set_assessment(
+            None,
+            identification_id=identification_id,
+            read_only=read_only,
+        )
         self.refresh()
 
     def refresh(self) -> None:
         self._load_table()
-        self._sync_existing_measures_selection()
+        self._sync_measures_selection()
 
     def add_assessment(
         self,
@@ -197,16 +211,24 @@ class HazardRiskAssessmentsWidget(QWidget):
     def _on_existing_measures_changed(self) -> None:
         self._load_table()
 
+    def _on_required_measures_changed(self) -> None:
+        self._load_table()
+
     def _on_selection_changed(self) -> None:
         assessment = self._selected_assessment()
         self._selected_assessment_id = assessment.id if assessment is not None else None
-        self._sync_existing_measures_selection()
+        self._sync_measures_selection()
 
-    def _sync_existing_measures_selection(self) -> None:
+    def _sync_measures_selection(self) -> None:
         assessment = None
         if self._selected_assessment_id is not None:
             assessment = hazard_risk_assessment_service.get_by_id(self._selected_assessment_id)
         self.existing_measures_widget.set_assessment(
+            assessment,
+            identification_id=self._identification_id,
+            read_only=self._read_only,
+        )
+        self.required_measures_widget.set_assessment(
             assessment,
             identification_id=self._identification_id,
             read_only=self._read_only,
@@ -241,7 +263,10 @@ class HazardRiskAssessmentsWidget(QWidget):
             self.table.blockSignals(False)
             return
 
-        measure_counts = hazard_existing_measure_service.count_active_by_assessments(
+        existing_measure_counts = hazard_existing_measure_service.count_active_by_assessments(
+            self._identification_id
+        )
+        required_measure_counts = hazard_required_measure_service.count_active_by_assessments(
             self._identification_id
         )
         rows = hazard_risk_assessment_service.get_for_identification(
@@ -259,7 +284,8 @@ class HazardRiskAssessmentsWidget(QWidget):
             )
             display_name = format_risk_assessment_display_name(
                 assessment.exposed_group,
-                existing_measure_count=measure_counts.get(assessment.id, 0),
+                existing_measure_count=existing_measure_counts.get(assessment.id, 0),
+                required_measure_count=required_measure_counts.get(assessment.id, 0),
             )
             self.table.setItem(
                 row_index,

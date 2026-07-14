@@ -147,3 +147,12 @@ Existující opatření u posouzení rizika:
 - sekce Existující opatření po výběru posouzení v záložce Posouzení rizik
 - samostatné ukládání opatření, počty aktivních opatření u posouzení
 - režim pouze pro čtení u dokončené nebo archivované identifikace
+
+## Fáze R09
+
+Potřebná další opatření u posouzení rizika:
+
+- model `HazardRequiredMeasure` v tabulce `hazard_required_measures`
+- sekce Potřebná další opatření pod existujícími opatřeními v záložce Posouzení rizik
+- samostatné ukládání opatření, počty aktivních potřebných opatření u posouzení
+- režim pouze pro čtení u dokončené nebo archivované identifikace
