@@ -14,6 +14,17 @@ class AiProposal:
     name: str
     reasoning: str
     parent_export_id: str | None = None
+    proposal_id: str | None = None
+
+
+@dataclass
+class AiPeerReviewParseResult:
+    """Výsledek parsování odpovědi AI (JSON nebo text)."""
+
+    proposals: list[AiProposal]
+    format_label: str
+    skipped_count: int = 0
+    skip_reasons: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -114,6 +125,10 @@ class AiPeerReviewProvider(Protocol):
     source_type: str
 
     def can_export(self, source_id: int | None) -> bool:
+        ...
+
+    def get_source_label(self, source_id: int) -> str:
+        """Lidský identifikátor zdroje (např. číslo identifikace) pro validaci importu."""
         ...
 
     def get_export_source_choices(self, source_id: int) -> list[AiExportSourceChoice]:

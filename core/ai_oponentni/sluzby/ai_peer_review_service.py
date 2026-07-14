@@ -9,7 +9,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from core.ai_oponentni.constants import AI_PEER_REVIEW_ZIP_FILES
+from core.ai_oponentni.constants import (
+    AI_PEER_REVIEW_PARSE_NO_PROPOSALS,
+    AI_PEER_REVIEW_ZIP_FILES,
+)
 from core.ai_oponentni.modely.ai_peer_review import AiPeerReview, AiPeerReviewBatch
 from core.ai_oponentni.repository.ai_peer_review_batch_repository import (
     AiPeerReviewBatchRepository,
@@ -18,11 +21,15 @@ from core.ai_oponentni.repository.ai_peer_review_repository import AiPeerReviewR
 from core.ai_oponentni.repository.ai_unassigned_proposal_repository import (
     AiUnassignedProposalRepository,
 )
-from core.ai_oponentni.sluzby.response_parser import parse_ai_peer_review_response
+from core.ai_oponentni.sluzby.response_parser import (
+    AiPeerReviewParseError,
+    parse_ai_peer_review_response,
+)
 from core.ai_oponentni.types import (
     AiPeerReviewBatchContent,
     AiPeerReviewExportContent,
     AiPeerReviewExportOptions,
+    AiPeerReviewParseResult,
     AiPeerReviewProvider,
     AiProposal,
 )
@@ -257,14 +264,24 @@ class AiPeerReviewService:
                         f"Dávka {batch_name} neobsahuje očekávané soubory."
                     )
 
-    def parse_response(self, response_text: str) -> list[AiProposal]:
-        proposals = parse_ai_peer_review_response(response_text)
-        if not proposals:
-            raise AiPeerReviewError(
-                "V odpovědi AI se nepodařilo najít žádný návrh "
-                "ve formátu Oblast / Návrh / Zdůvodnění."
+    def parse_response(
+        self,
+        response_text: str,
+        *,
+        expected_source_identification_number: str | None = None,
+    ) -> AiPeerReviewParseResult:
+        try:
+            result = parse_ai_peer_review_response(
+                response_text,
+                expected_source_identification_number=(
+                    expected_source_identification_number
+                ),
             )
-        return proposals
+        except AiPeerReviewParseError as error:
+            raise AiPeerReviewError(str(error)) from error
+        if not result.proposals:
+            raise AiPeerReviewError(AI_PEER_REVIEW_PARSE_NO_PROPOSALS)
+        return result
 
     def finalize_import(
         self,

@@ -234,7 +234,8 @@ class AiPeerReviewResponseDialog(QDialog):
         layout.addWidget(QLabel("Odpověď AI:"))
         self.response = QPlainTextEdit()
         self.response.setPlaceholderText(
-            "Vložte text odpovědi AI ve formátu Oblast / Návrh / Zdůvodnění."
+            "Vložte odpověď AI ve formátu JSON 1.1 (dle schema_odpovedi.json) "
+            "nebo textovém formátu Oblast / Návrh / Zdůvodnění."
         )
         layout.addWidget(self.response)
 
@@ -255,7 +256,8 @@ class AiPeerReviewResponseDialog(QDialog):
             self,
             "Načíst odpověď AI",
             "",
-            "Textové soubory (*.txt *.md);;Všechny soubory (*)",
+            "Odpovědi AI (*.json *.txt *.md);;JSON (*.json);;Text (*.txt *.md);;"
+            "Všechny soubory (*)",
         )
         if not path:
             return
@@ -454,14 +456,35 @@ class AiPeerReviewWidget(QWidget):
             return False
 
         try:
-            proposals = ai_peer_review_service.parse_response(response_text)
+            expected_number = self._provider.get_source_label(self._source_id)
+            parse_result = ai_peer_review_service.parse_response(
+                response_text,
+                expected_source_identification_number=expected_number or None,
+            )
         except AiPeerReviewError as error:
             QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
             return False
 
+        if parse_result.skipped_count:
+            reasons = "\n".join(
+                f"- {reason}" for reason in parse_result.skip_reasons[:12]
+            )
+            extra = ""
+            if len(parse_result.skip_reasons) > 12:
+                extra = f"\n… a dalších {len(parse_result.skip_reasons) - 12}."
+            QMessageBox.information(
+                self,
+                AI_PEER_REVIEW_DIALOG_TITLE,
+                (
+                    f"Načteno platných návrhů: {len(parse_result.proposals)}\n"
+                    f"Přeskočeno neplatných návrhů: {parse_result.skipped_count}\n\n"
+                    f"{reasons}{extra}"
+                ),
+            )
+
         import_dialog = AiPeerReviewImportDialog(
             self,
-            proposals=proposals,
+            proposals=parse_result.proposals,
             ai_model=ai_model,
         )
         if not import_dialog.exec():
@@ -490,6 +513,7 @@ class AiPeerReviewWidget(QWidget):
             self,
             AI_PEER_REVIEW_DIALOG_TITLE,
             (
+                f"Formát odpovědi: {parse_result.format_label}\n"
                 f"Převzato: {len(accepted)}\n"
                 f"Zamítnuto: {len(rejected)}"
             ),

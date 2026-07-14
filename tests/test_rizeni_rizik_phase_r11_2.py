@@ -390,7 +390,9 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         )
 
     def test_parse_response_format(self) -> None:
-        proposals = parse_ai_peer_review_response(SAMPLE_RESPONSE)
+        result = parse_ai_peer_review_response(SAMPLE_RESPONSE)
+        proposals = result.proposals
+        self.assertEqual(result.format_label, "Textový formát")
         self.assertEqual(len(proposals), 2)
         self.assertEqual(proposals[0].area, "Nežádoucí událost")
         self.assertEqual(proposals[0].name, "Přimáčknutí mezi vozy")
@@ -405,7 +407,7 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
             self.identification.id,
             target,
         )
-        proposals = ai_peer_review_service.parse_response(SAMPLE_RESPONSE)
+        proposals = ai_peer_review_service.parse_response(SAMPLE_RESPONSE).proposals
         accepted = [proposals[0]]
         rejected = [proposals[1]]
 

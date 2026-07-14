@@ -112,6 +112,13 @@ AI_PEER_REVIEW_ZIP_FILES = (
 AI_PEER_REVIEW_SCHEMA_VERSION = "1.1"
 AI_PEER_REVIEW_EXPORT_TYPE = "hazard_identification_ai_peer_review"
 
+AI_PEER_REVIEW_FORMAT_JSON_1_1 = "JSON 1.1"
+AI_PEER_REVIEW_FORMAT_TEXT = "Textový formát"
+AI_PEER_REVIEW_PARSE_NO_PROPOSALS = (
+    "V odpovědi AI se nepodařilo najít žádný platný návrh "
+    "ve podporovaném JSON ani textovém formátu."
+)
+
 # Dávkový export (R11.7)
 AI_PEER_REVIEW_EXPORT_SCOPE_FULL = "full"
 AI_PEER_REVIEW_EXPORT_SCOPE_SELECTED = "selected"

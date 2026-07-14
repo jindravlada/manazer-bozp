@@ -238,6 +238,15 @@ Odstranění jména odpovědné osoby z AI exportu:
 - export (`zadani.json`, `data.txt`, `pokyn_pro_AI.txt`, `prehled.txt`) neobsahuje osobní údaje
 - atribut `include_responsible_person` odstraněn z exportních options
 
+## Fáze R11.10
+
+Import odpovědi AI ve formátu JSON:
+
+- nejdříve pokus o parse JSON dle `schema_odpovedi.json` (verze 1.1), pak fallback na textový formát
+- validace identifikace, schématu a povinných polí; neplatné návrhy se přeskakují se souhrnem
+- dialog načtení přijímá `.json` i `.txt`; souhrn importu uvádí použitý parser
+- workflow přijetí / zamítnutí a apply podle exportních ID beze změny
+
 ## Fáze R12
 
 Odstranění entity Nebezpečí (`IdentifiedHazard`):

@@ -92,6 +92,12 @@ class HazardIdentificationPeerReviewProvider:
             return False
         return hazard_identification_service.get_by_id(source_id) is not None
 
+    def get_source_label(self, source_id: int) -> str:
+        identification = hazard_identification_service.get_by_id(source_id)
+        if identification is None:
+            return ""
+        return identification.identification_number or ""
+
     def get_export_source_choices(self, source_id: int) -> list[AiExportSourceChoice]:
         items = hazard_inventory_item_service.get_for_identification(
             source_id,
