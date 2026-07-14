@@ -156,3 +156,13 @@ Potřebná další opatření u posouzení rizika:
 - sekce Potřebná další opatření pod existujícími opatřeními v záložce Posouzení rizik
 - samostatné ukládání opatření, počty aktivních potřebných opatření u posouzení
 - režim pouze pro čtení u dokončené nebo archivované identifikace
+
+## Fáze R10
+
+Dokončení posouzení rizika:
+
+- pole `assessment_status`, `conclusion` a `completed_at` u modelu `HazardRiskAssessment`
+- stavy Rozpracováno / Dokončeno, validace úplnosti před dokončením
+- sloupce Stav posouzení a Dokončeno dne v záložce Posouzení rizik
+- souhrn počtu rozpracovaných a dokončených aktivních posouzení
+- režim pouze pro čtení stavu a závěru u dokončené nebo archivované identifikace

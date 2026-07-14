@@ -13,15 +13,18 @@ from core.widgets.table_utils import configure_table_columns
 from moduly.rizeni_rizik.constants import (
     HAZARD_RISK_ASSESSMENT_DIALOG_TITLE,
     RISK_ASSESSMENT_COL_ACTIVE,
+    RISK_ASSESSMENT_COL_COMPLETED_AT,
     RISK_ASSESSMENT_COL_CONSEQUENCE,
     RISK_ASSESSMENT_COL_EVENT,
     RISK_ASSESSMENT_COL_EXPOSED_GROUP,
     RISK_ASSESSMENT_COL_HAZARD,
     RISK_ASSESSMENT_COL_ID,
     RISK_ASSESSMENT_COL_SEVERITY,
+    RISK_ASSESSMENT_COL_STATUS,
     RISK_ASSESSMENT_COLUMN_COUNT,
     RISK_ASSESSMENTS_INTRO_TEXT,
     RISK_ASSESSMENT_TABLE_HEADERS,
+    format_risk_assessment_completed_at,
     format_risk_assessment_display_name,
 )
 from moduly.rizeni_rizik.sluzby.hazard_existing_measure_service import (
@@ -52,6 +55,10 @@ class HazardRiskAssessmentsWidget(QWidget):
         intro = QLabel(RISK_ASSESSMENTS_INTRO_TEXT)
         intro.setWordWrap(True)
         layout.addWidget(intro)
+
+        self.summary_label = QLabel()
+        self.summary_label.setWordWrap(True)
+        layout.addWidget(self.summary_label)
 
         toolbar = QHBoxLayout()
         self.add_btn = QPushButton("Přidat")
@@ -260,9 +267,11 @@ class HazardRiskAssessmentsWidget(QWidget):
         self.table.blockSignals(True)
         self.table.setRowCount(0)
         if self._identification_id is None:
+            self.summary_label.setText("")
             self.table.blockSignals(False)
             return
 
+        self._update_summary()
         existing_measure_counts = hazard_existing_measure_service.count_active_by_assessments(
             self._identification_id
         )
@@ -284,6 +293,7 @@ class HazardRiskAssessmentsWidget(QWidget):
             )
             display_name = format_risk_assessment_display_name(
                 assessment.exposed_group,
+                assessment_status_label=row.status_label,
                 existing_measure_count=existing_measure_counts.get(assessment.id, 0),
                 required_measure_count=required_measure_counts.get(assessment.id, 0),
             )
@@ -314,6 +324,16 @@ class HazardRiskAssessmentsWidget(QWidget):
             )
             self.table.setItem(
                 row_index,
+                RISK_ASSESSMENT_COL_STATUS,
+                QTableWidgetItem(row.status_label),
+            )
+            self.table.setItem(
+                row_index,
+                RISK_ASSESSMENT_COL_COMPLETED_AT,
+                QTableWidgetItem(format_risk_assessment_completed_at(assessment.completed_at)),
+            )
+            self.table.setItem(
+                row_index,
                 RISK_ASSESSMENT_COL_ACTIVE,
                 QTableWidgetItem("Ano" if assessment.active else "Ne"),
             )
@@ -324,6 +344,16 @@ class HazardRiskAssessmentsWidget(QWidget):
         if selected_row >= 0:
             self.table.selectRow(selected_row)
         self.table.blockSignals(False)
+
+    def _update_summary(self) -> None:
+        summary = hazard_risk_assessment_service.get_active_status_summary(
+            self._identification_id
+        )
+        self.summary_label.setText(
+            f"Posouzení celkem: {summary['total']} | "
+            f"Rozpracovaná: {summary['draft']} | "
+            f"Dokončená: {summary['completed']}"
+        )
 
     def _selected_assessment(self):
         selected = self.table.selectionModel().selectedRows()

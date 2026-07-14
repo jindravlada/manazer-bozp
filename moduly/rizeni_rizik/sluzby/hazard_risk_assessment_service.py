@@ -2,7 +2,14 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from core.utils.czech_sort import czech_sorted
-from moduly.rizeni_rizik.constants import RISK_SEVERITIES, format_risk_severity_label
+from moduly.rizeni_rizik.constants import (
+    DEFAULT_RISK_ASSESSMENT_STATUS,
+    RISK_ASSESSMENT_STATUS_COMPLETED,
+    RISK_ASSESSMENT_STATUSES,
+    RISK_SEVERITIES,
+    format_risk_assessment_status_label,
+    format_risk_severity_label,
+)
 from moduly.rizeni_rizik.modely.hazard_risk_assessment import HazardRiskAssessment
 from moduly.rizeni_rizik.repository.hazard_risk_assessment_repository import (
     HazardRiskAssessmentRepository,
@@ -28,6 +35,7 @@ class HazardRiskAssessmentRow:
     event_name: str
     hazard_name: str
     severity_label: str
+    status_label: str
 
 
 class HazardRiskAssessmentService:
@@ -71,6 +79,23 @@ class HazardRiskAssessmentService:
             counts[assessment.hazard_event_id] = counts.get(assessment.hazard_event_id, 0) + 1
         return counts
 
+    def get_active_status_summary(self, hazard_identification_id: int) -> dict[str, int]:
+        total = draft_count = completed_count = 0
+        for assessment in self.repository.get_for_identification(
+            hazard_identification_id,
+            include_inactive=False,
+        ):
+            total += 1
+            if assessment.assessment_status == RISK_ASSESSMENT_STATUS_COMPLETED:
+                completed_count += 1
+            else:
+                draft_count += 1
+        return {
+            "total": total,
+            "draft": draft_count,
+            "completed": completed_count,
+        }
+
     def get_event_candidates(self, hazard_identification_id: int) -> list[HazardEventRow]:
         return hazard_event_service.get_for_identification(
             hazard_identification_id,
@@ -86,6 +111,8 @@ class HazardRiskAssessmentService:
         consequence: str,
         severity: str,
         note: str = "",
+        assessment_status: str = DEFAULT_RISK_ASSESSMENT_STATUS,
+        conclusion: str = "",
         active: bool = True,
     ) -> HazardRiskAssessment:
         normalized_group = self._validate_exposed_group(exposed_group)
@@ -106,7 +133,17 @@ class HazardRiskAssessmentService:
             consequence=normalized_consequence,
             severity=normalized_severity,
             note=note.strip(),
+            conclusion=conclusion.strip(),
             active=active,
+        )
+        self._apply_assessment_status(
+            assessment,
+            assessment_status=assessment_status,
+            hazard_identification_id=hazard_identification_id,
+            hazard_event_id=hazard_event_id,
+            exposed_group=normalized_group,
+            consequence=normalized_consequence,
+            severity=normalized_severity,
         )
         return self.repository.add(assessment)
 
@@ -120,6 +157,8 @@ class HazardRiskAssessmentService:
         consequence: str,
         severity: str,
         note: str = "",
+        assessment_status: str = DEFAULT_RISK_ASSESSMENT_STATUS,
+        conclusion: str = "",
         active: bool = True,
     ) -> HazardRiskAssessment | None:
         assessment = self.repository.get_by_id(assessment_id)
@@ -143,7 +182,17 @@ class HazardRiskAssessmentService:
         assessment.consequence = normalized_consequence
         assessment.severity = normalized_severity
         assessment.note = note.strip()
+        assessment.conclusion = conclusion.strip()
         assessment.active = active
+        self._apply_assessment_status(
+            assessment,
+            assessment_status=assessment_status,
+            hazard_identification_id=hazard_identification_id,
+            hazard_event_id=hazard_event_id,
+            exposed_group=normalized_group,
+            consequence=normalized_consequence,
+            severity=normalized_severity,
+        )
         assessment.updated_at = datetime.now()
         return self.repository.update(assessment)
 
@@ -184,6 +233,7 @@ class HazardRiskAssessmentService:
                 event_name="—",
                 hazard_name="—",
                 severity_label=format_risk_severity_label(assessment.severity),
+                status_label=format_risk_assessment_status_label(assessment.assessment_status),
             )
 
         return HazardRiskAssessmentRow(
@@ -191,6 +241,7 @@ class HazardRiskAssessmentService:
             event_name=event_row.event.name,
             hazard_name=event_row.hazard_name,
             severity_label=format_risk_severity_label(assessment.severity),
+            status_label=format_risk_assessment_status_label(assessment.assessment_status),
         )
 
     def _sort_rows(self, rows: list[HazardRiskAssessmentRow]) -> list[HazardRiskAssessmentRow]:
@@ -219,6 +270,31 @@ class HazardRiskAssessmentService:
         if severity not in RISK_SEVERITIES:
             raise HazardRiskAssessmentError("Neplatná závažnost následku.")
         return severity
+
+    def _apply_assessment_status(
+        self,
+        assessment: HazardRiskAssessment,
+        *,
+        assessment_status: str,
+        hazard_identification_id: int,
+        hazard_event_id: int,
+        exposed_group: str,
+        consequence: str,
+        severity: str,
+    ) -> None:
+        if assessment_status not in RISK_ASSESSMENT_STATUSES:
+            raise HazardRiskAssessmentError("Neplatný stav posouzení.")
+
+        if assessment_status == RISK_ASSESSMENT_STATUS_COMPLETED:
+            self._validate_event(hazard_identification_id, hazard_event_id)
+            self._validate_exposed_group(exposed_group)
+            self._validate_consequence(consequence)
+            self._validate_severity(severity)
+            assessment.completed_at = datetime.now()
+        else:
+            assessment.completed_at = None
+
+        assessment.assessment_status = assessment_status
 
     def _validate_event(
         self,

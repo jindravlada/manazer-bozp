@@ -13,8 +13,13 @@ from PySide6.QtWidgets import (
 
 from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.rizeni_rizik.constants import (
+    DEFAULT_RISK_ASSESSMENT_STATUS,
     DEFAULT_RISK_SEVERITY,
     HAZARD_RISK_ASSESSMENT_DIALOG_TITLE,
+    RISK_ASSESSMENT_STATUS_COMPLETED,
+    RISK_ASSESSMENT_STATUS_DRAFT,
+    RISK_ASSESSMENT_STATUSES,
+    RISK_ASSESSMENT_STATUS_LABELS,
     RISK_SEVERITIES,
     RISK_SEVERITY_DESCRIPTIONS,
     RISK_SEVERITY_LABELS,
@@ -42,7 +47,7 @@ class HazardRiskAssessmentDialog(QDialog):
         self.read_only = read_only
 
         self.setWindowTitle(HAZARD_RISK_ASSESSMENT_DIALOG_TITLE)
-        self.resize(620, 520)
+        self.resize(620, 560)
 
         layout = QVBoxLayout(self)
         form = QFormLayout()
@@ -59,6 +64,11 @@ class HazardRiskAssessmentDialog(QDialog):
         self.severity_description = QLabel()
         self.severity_description.setWordWrap(True)
         self.severity.currentIndexChanged.connect(self._update_severity_description)
+        self.assessment_status = QComboBox()
+        for status in RISK_ASSESSMENT_STATUSES:
+            self.assessment_status.addItem(RISK_ASSESSMENT_STATUS_LABELS[status], status)
+        self.conclusion = QPlainTextEdit()
+        self.conclusion.setMinimumHeight(80)
         self.note = QPlainTextEdit()
         self.note.setMinimumHeight(60)
         self.active_checkbox = QCheckBox("Aktivní")
@@ -69,6 +79,8 @@ class HazardRiskAssessmentDialog(QDialog):
         form.addRow("Možný následek *:", self.consequence)
         form.addRow("Závažnost následku *:", self.severity)
         form.addRow("", self.severity_description)
+        form.addRow("Stav posouzení:", self.assessment_status)
+        form.addRow("Závěr posouzení:", self.conclusion)
         form.addRow("Poznámka:", self.note)
         form.addRow("", self.active_checkbox)
 
@@ -88,12 +100,21 @@ class HazardRiskAssessmentDialog(QDialog):
             severity_index = self.severity.findData(assessment.severity)
             if severity_index >= 0:
                 self.severity.setCurrentIndex(severity_index)
+            status_index = self.assessment_status.findData(assessment.assessment_status)
+            if status_index >= 0:
+                self.assessment_status.setCurrentIndex(status_index)
+            self.conclusion.setPlainText(assessment.conclusion or "")
             self.note.setPlainText(assessment.note or "")
             self.active_checkbox.setChecked(bool(assessment.active))
         else:
             default_index = self.severity.findData(DEFAULT_RISK_SEVERITY)
             if default_index >= 0:
                 self.severity.setCurrentIndex(default_index)
+            default_status_index = self.assessment_status.findData(
+                DEFAULT_RISK_ASSESSMENT_STATUS
+            )
+            if default_status_index >= 0:
+                self.assessment_status.setCurrentIndex(default_status_index)
 
         self._update_severity_description()
 
@@ -102,6 +123,8 @@ class HazardRiskAssessmentDialog(QDialog):
             self.exposed_group.setReadOnly(True)
             self.consequence.setReadOnly(True)
             self.severity.setEnabled(False)
+            self.assessment_status.setEnabled(False)
+            self.conclusion.setReadOnly(True)
             self.note.setReadOnly(True)
             self.active_checkbox.setEnabled(False)
             buttons.button(QDialogButtonBox.StandardButton.Save).setEnabled(False)
@@ -131,6 +154,41 @@ class HazardRiskAssessmentDialog(QDialog):
             return
 
         data = self.get_data()
+        old_status = (
+            self.risk_assessment.assessment_status
+            if self.risk_assessment is not None
+            else DEFAULT_RISK_ASSESSMENT_STATUS
+        )
+        new_status = data["assessment_status"]
+
+        if (
+            new_status == RISK_ASSESSMENT_STATUS_COMPLETED
+            and old_status != RISK_ASSESSMENT_STATUS_COMPLETED
+        ):
+            reply = QMessageBox.question(
+                self,
+                HAZARD_RISK_ASSESSMENT_DIALOG_TITLE,
+                "Označit toto posouzení jako dokončené?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                return
+
+        if (
+            new_status == RISK_ASSESSMENT_STATUS_DRAFT
+            and old_status == RISK_ASSESSMENT_STATUS_COMPLETED
+        ):
+            reply = QMessageBox.question(
+                self,
+                HAZARD_RISK_ASSESSMENT_DIALOG_TITLE,
+                "Vrátit posouzení do stavu Rozpracováno?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                return
+
         try:
             if self.risk_assessment is None:
                 hazard_risk_assessment_service.create_assessment(
@@ -154,6 +212,8 @@ class HazardRiskAssessmentDialog(QDialog):
             "exposed_group": self.exposed_group.text().strip(),
             "consequence": self.consequence.toPlainText().strip(),
             "severity": self.severity.currentData(),
+            "assessment_status": self.assessment_status.currentData(),
+            "conclusion": self.conclusion.toPlainText().strip(),
             "note": self.note.toPlainText().strip(),
             "active": self.active_checkbox.isChecked(),
         }

@@ -813,6 +813,15 @@ def _ensure_hazard_risk_assessments_table() -> None:
         _add_column("hazard_risk_assessments", "consequence TEXT DEFAULT '' NOT NULL")
     if "severity" not in columns:
         _add_column("hazard_risk_assessments", "severity VARCHAR(32) DEFAULT '' NOT NULL")
+    if "assessment_status" not in columns:
+        _add_column(
+            "hazard_risk_assessments",
+            "assessment_status VARCHAR(32) DEFAULT 'draft' NOT NULL",
+        )
+    if "conclusion" not in columns:
+        _add_column("hazard_risk_assessments", "conclusion TEXT DEFAULT '' NOT NULL")
+    if "completed_at" not in columns:
+        _add_column("hazard_risk_assessments", "completed_at DATETIME")
 
 
 def _ensure_hazard_existing_measures_table() -> None:

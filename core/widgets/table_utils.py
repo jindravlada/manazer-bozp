@@ -237,11 +237,13 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
     elif profile == "hazard_risk_assessments":
         from moduly.rizeni_rizik.constants import (
             RISK_ASSESSMENT_COL_ACTIVE,
+            RISK_ASSESSMENT_COL_COMPLETED_AT,
             RISK_ASSESSMENT_COL_CONSEQUENCE,
             RISK_ASSESSMENT_COL_EVENT,
             RISK_ASSESSMENT_COL_EXPOSED_GROUP,
             RISK_ASSESSMENT_COL_HAZARD,
             RISK_ASSESSMENT_COL_SEVERITY,
+            RISK_ASSESSMENT_COL_STATUS,
         )
 
         widths = {
@@ -250,6 +252,8 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             RISK_ASSESSMENT_COL_HAZARD: 160,
             RISK_ASSESSMENT_COL_CONSEQUENCE: 220,
             RISK_ASSESSMENT_COL_SEVERITY: 120,
+            RISK_ASSESSMENT_COL_STATUS: 120,
+            RISK_ASSESSMENT_COL_COMPLETED_AT: 110,
             RISK_ASSESSMENT_COL_ACTIVE: 80,
         }
         for column, width in widths.items():
@@ -261,6 +265,8 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             RISK_ASSESSMENT_COL_EVENT,
             RISK_ASSESSMENT_COL_HAZARD,
             RISK_ASSESSMENT_COL_SEVERITY,
+            RISK_ASSESSMENT_COL_STATUS,
+            RISK_ASSESSMENT_COL_COMPLETED_AT,
             RISK_ASSESSMENT_COL_ACTIVE,
         ):
             header.setSectionResizeMode(column, QHeaderView.Fixed)

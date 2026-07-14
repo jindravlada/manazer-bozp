@@ -311,10 +311,13 @@ def format_event_display_name(name: str, *, assessment_count: int = 0) -> str:
 def format_risk_assessment_display_name(
     exposed_group: str,
     *,
+    assessment_status_label: str | None = None,
     existing_measure_count: int = 0,
     required_measure_count: int = 0,
 ) -> str:
     parts = [exposed_group]
+    if assessment_status_label:
+        parts.append(assessment_status_label)
     if existing_measure_count:
         suffix = (
             "existující opatření"
@@ -332,6 +335,12 @@ def format_risk_assessment_display_name(
     if len(parts) == 1:
         return exposed_group
     return " — ".join(parts)
+
+
+def format_risk_assessment_completed_at(value) -> str:
+    if value is None:
+        return ""
+    return value.strftime("%d.%m.%Y")
 
 
 RISK_ASSESSMENTS_INTRO_TEXT = (
@@ -394,8 +403,10 @@ RISK_ASSESSMENT_COL_EVENT = 2
 RISK_ASSESSMENT_COL_HAZARD = 3
 RISK_ASSESSMENT_COL_CONSEQUENCE = 4
 RISK_ASSESSMENT_COL_SEVERITY = 5
-RISK_ASSESSMENT_COL_ACTIVE = 6
-RISK_ASSESSMENT_COLUMN_COUNT = 7
+RISK_ASSESSMENT_COL_STATUS = 6
+RISK_ASSESSMENT_COL_COMPLETED_AT = 7
+RISK_ASSESSMENT_COL_ACTIVE = 8
+RISK_ASSESSMENT_COLUMN_COUNT = 9
 
 RISK_ASSESSMENT_TABLE_HEADERS = [
     "ID",
@@ -404,8 +415,29 @@ RISK_ASSESSMENT_TABLE_HEADERS = [
     "Nebezpečí",
     "Možný následek",
     "Závažnost",
+    "Stav posouzení",
+    "Dokončeno dne",
     "Aktivní",
 ]
+
+RISK_ASSESSMENT_STATUS_DRAFT = "draft"
+RISK_ASSESSMENT_STATUS_COMPLETED = "completed"
+
+RISK_ASSESSMENT_STATUSES = (
+    RISK_ASSESSMENT_STATUS_DRAFT,
+    RISK_ASSESSMENT_STATUS_COMPLETED,
+)
+
+DEFAULT_RISK_ASSESSMENT_STATUS = RISK_ASSESSMENT_STATUS_DRAFT
+
+RISK_ASSESSMENT_STATUS_LABELS = {
+    RISK_ASSESSMENT_STATUS_DRAFT: "Rozpracováno",
+    RISK_ASSESSMENT_STATUS_COMPLETED: "Dokončeno",
+}
+
+
+def format_risk_assessment_status_label(status: str) -> str:
+    return RISK_ASSESSMENT_STATUS_LABELS.get(status, status or "—")
 
 
 def is_identification_risk_assessment_read_only(status: str) -> bool:
