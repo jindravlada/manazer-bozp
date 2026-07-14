@@ -24,11 +24,17 @@ AI_PEER_REVIEW_ZIP_FILES = (
 AI_PEER_REVIEW_SCHEMA_VERSION = "1.1"
 AI_PEER_REVIEW_EXPORT_TYPE = "hazard_identification_ai_peer_review"
 
-# Příprava dávkového exportu (R11.5) – zatím vždy jedna dávka „full“.
+# Dávkový export (R11.7)
 AI_PEER_REVIEW_EXPORT_SCOPE_FULL = "full"
+AI_PEER_REVIEW_EXPORT_SCOPE_SELECTED = "selected"
 AI_PEER_REVIEW_DEFAULT_EXPORT_SCOPE = AI_PEER_REVIEW_EXPORT_SCOPE_FULL
 AI_PEER_REVIEW_DEFAULT_BATCH_NUMBER = 1
 AI_PEER_REVIEW_DEFAULT_BATCH_COUNT = 1
+AI_PEER_REVIEW_MAX_SOURCES_PER_BATCH = 10
+AI_PEER_REVIEW_MAX_OBJECTS_PER_BATCH = 200
+
+AI_PEER_REVIEW_SCOPE_FULL_LABEL = "Celá identifikace – automaticky rozdělit do dávek"
+AI_PEER_REVIEW_SCOPE_SELECTED_LABEL = "Pouze vybrané zdroje analýzy"
 
 # Příprava změnového exportu (R11.6) – zatím vždy režim „full“.
 AI_PEER_REVIEW_CHANGE_MODE_FULL = "full"

@@ -214,3 +214,14 @@ Příprava změnového exportu:
 - objekt `change_tracking` v `zadani.json`: `mode`, `base_export`, `changed_objects`
 - výchozí: `full` / `null` / `[]` (logika změnového exportu se neimplementuje)
 
+## Fáze R11.7
+
+Dávkový export AI podle zdrojů analýzy:
+
+- dávka = celé hierarchické větve vybraných zdrojů (větev se nerozděluje)
+- limity: max. 10 zdrojů / 200 objektů na dávku (pojmenované konstanty)
+- nadlimitní jediná větev → samostatná dávka + `recommended_limit_exceeded`
+- dialog rozsahu: celá identifikace (výchozí) / vybrané zdroje
+- více dávek → hlavní ZIP (`davka_00N.zip` + `prehled_davek.txt`)
+- jedna společná konzultace a mapa exportních ID pro celý export
+

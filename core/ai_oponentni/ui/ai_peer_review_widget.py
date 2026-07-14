@@ -1,7 +1,9 @@
 from datetime import datetime
 from pathlib import Path
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QButtonGroup,
     QCheckBox,
     QDialog,
     QDialogButtonBox,
@@ -11,9 +13,12 @@ from PySide6.QtWidgets import (
     QInputDialog,
     QLabel,
     QLineEdit,
+    QListWidget,
+    QListWidgetItem,
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
+    QRadioButton,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -30,28 +35,65 @@ from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_COLUMN_COUNT,
     AI_PEER_REVIEW_DIALOG_TITLE,
     AI_PEER_REVIEW_EXPORT_BUTTON,
+    AI_PEER_REVIEW_EXPORT_SCOPE_FULL,
+    AI_PEER_REVIEW_EXPORT_SCOPE_SELECTED,
     AI_PEER_REVIEW_IMPORT_BUTTON,
     AI_PEER_REVIEW_INCLUDE_RESPONSIBLE_PERSON,
     AI_PEER_REVIEW_INTRO_TEXT,
+    AI_PEER_REVIEW_SCOPE_FULL_LABEL,
+    AI_PEER_REVIEW_SCOPE_SELECTED_LABEL,
     AI_PEER_REVIEW_TABLE_HEADERS,
 )
 from core.ai_oponentni.sluzby.ai_peer_review_service import (
     AiPeerReviewError,
     ai_peer_review_service,
 )
-from core.ai_oponentni.types import AiPeerReviewExportOptions, AiPeerReviewProvider
+from core.ai_oponentni.types import (
+    AiExportSourceChoice,
+    AiPeerReviewExportOptions,
+    AiPeerReviewProvider,
+)
 from core.ai_oponentni.ui.import_proposals_dialog import AiPeerReviewImportDialog
 from core.widgets.dialog_utils import create_save_cancel_box
 from core.widgets.table_utils import configure_table_columns
 
 
 class AiPeerReviewExportOptionsDialog(QDialog):
-    def __init__(self, parent=None, *, show_responsible_person: bool = False):
+    def __init__(
+        self,
+        parent=None,
+        *,
+        show_responsible_person: bool = False,
+        source_choices: list[AiExportSourceChoice] | None = None,
+    ):
         super().__init__(parent)
         self.setWindowTitle(AI_PEER_REVIEW_DIALOG_TITLE)
-        self.resize(440, 140)
+        self.resize(520, 420)
 
         layout = QVBoxLayout(self)
+        layout.addWidget(QLabel("Rozsah exportu:"))
+
+        self.scope_full = QRadioButton(AI_PEER_REVIEW_SCOPE_FULL_LABEL)
+        self.scope_selected = QRadioButton(AI_PEER_REVIEW_SCOPE_SELECTED_LABEL)
+        self.scope_full.setChecked(True)
+        self._scope_group = QButtonGroup(self)
+        self._scope_group.addButton(self.scope_full)
+        self._scope_group.addButton(self.scope_selected)
+        layout.addWidget(self.scope_full)
+        layout.addWidget(self.scope_selected)
+
+        layout.addWidget(QLabel("Aktivní zdroje analýzy:"))
+        self.source_list = QListWidget()
+        self.source_list.setSelectionMode(QListWidget.SelectionMode.MultiSelection)
+        for choice in source_choices or []:
+            label = choice.label
+            if choice.category_label:
+                label = f"{choice.category_label}: {choice.label}"
+            item = QListWidgetItem(label)
+            item.setData(Qt.ItemDataRole.UserRole, choice.id)
+            self.source_list.addItem(item)
+        layout.addWidget(self.source_list)
+
         form = QFormLayout()
         self.include_responsible_person = QCheckBox(AI_PEER_REVIEW_INCLUDE_RESPONSIBLE_PERSON)
         self.include_responsible_person.setChecked(False)
@@ -61,17 +103,46 @@ class AiPeerReviewExportOptionsDialog(QDialog):
             self.include_responsible_person.hide()
         layout.addLayout(form)
 
+        self.scope_full.toggled.connect(self._update_source_list_enabled)
+        self._update_source_list_enabled()
+
         buttons = create_save_cancel_box(self)
         save_button = buttons.button(QDialogButtonBox.StandardButton.Save)
         if save_button is not None:
             save_button.setText("Pokračovat")
-        buttons.accepted.connect(self.accept)
+        buttons.accepted.connect(self._accept_if_valid)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
+    def _update_source_list_enabled(self) -> None:
+        enabled = self.scope_selected.isChecked()
+        self.source_list.setEnabled(enabled)
+
+    def _accept_if_valid(self) -> None:
+        if self.scope_selected.isChecked() and not self.source_list.selectedItems():
+            QMessageBox.warning(
+                self,
+                AI_PEER_REVIEW_DIALOG_TITLE,
+                "Vyberte alespoň jeden zdroj analýzy.",
+            )
+            return
+        self.accept()
+
     def get_options(self) -> AiPeerReviewExportOptions:
+        if self.scope_selected.isChecked():
+            selected_ids = [
+                int(item.data(Qt.ItemDataRole.UserRole))
+                for item in self.source_list.selectedItems()
+            ]
+            return AiPeerReviewExportOptions(
+                include_responsible_person=self.include_responsible_person.isChecked(),
+                export_scope=AI_PEER_REVIEW_EXPORT_SCOPE_SELECTED,
+                selected_source_ids=selected_ids,
+            )
         return AiPeerReviewExportOptions(
             include_responsible_person=self.include_responsible_person.isChecked(),
+            export_scope=AI_PEER_REVIEW_EXPORT_SCOPE_FULL,
+            selected_source_ids=None,
         )
 
 
@@ -194,9 +265,16 @@ class AiPeerReviewWidget(QWidget):
             )
             return False
 
+        try:
+            source_choices = self._provider.get_export_source_choices(self._source_id)
+        except Exception as error:  # pragma: no cover - defensive
+            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+            return False
+
         options_dialog = AiPeerReviewExportOptionsDialog(
             self,
             show_responsible_person=self._show_responsible_person_option,
+            source_choices=source_choices,
         )
         if not options_dialog.exec():
             return False

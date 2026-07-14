@@ -72,7 +72,10 @@ def initialize_database() -> None:
     from moduly.rizeni_rizik.modely.hazard_risk_assessment import HazardRiskAssessment  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_existing_measure import HazardExistingMeasure  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_required_measure import HazardRequiredMeasure  # noqa: F401
-    from core.ai_oponentni.modely.ai_peer_review import AiPeerReview  # noqa: F401
+    from core.ai_oponentni.modely.ai_peer_review import (  # noqa: F401
+        AiPeerReview,
+        AiPeerReviewBatch,
+    )
     from core.ai_oponentni.modely.ai_unassigned_proposal import AiUnassignedProposal  # noqa: F401
 
     create_database()
@@ -114,6 +117,7 @@ def initialize_database() -> None:
     _ensure_hazard_existing_measures_table()
     _ensure_hazard_required_measures_table()
     _ensure_ai_peer_reviews_table()
+    _ensure_ai_peer_review_batches_table()
     _ensure_ai_unassigned_proposals_table()
     _migrate_legal_document_types()
     _normalize_task_status_values()
@@ -855,6 +859,22 @@ def _ensure_ai_peer_reviews_table() -> None:
         _add_column("ai_peer_reviews", "export_id_map_json TEXT DEFAULT '{}' NOT NULL")
     if "unassigned_count" not in columns:
         _add_column("ai_peer_reviews", "unassigned_count INTEGER DEFAULT 0 NOT NULL")
+    if "export_scope" not in columns:
+        _add_column("ai_peer_reviews", "export_scope VARCHAR(32) DEFAULT 'full' NOT NULL")
+    if "batch_count" not in columns:
+        _add_column("ai_peer_reviews", "batch_count INTEGER DEFAULT 1 NOT NULL")
+    if "selected_source_count" not in columns:
+        _add_column("ai_peer_reviews", "selected_source_count INTEGER DEFAULT 0 NOT NULL")
+    if "total_object_count" not in columns:
+        _add_column("ai_peer_reviews", "total_object_count INTEGER DEFAULT 0 NOT NULL")
+
+
+def _ensure_ai_peer_review_batches_table() -> None:
+    columns = _table_columns("ai_peer_review_batches")
+    if not columns:
+        from core.ai_oponentni.modely.ai_peer_review import AiPeerReviewBatch
+
+        AiPeerReviewBatch.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_ai_unassigned_proposals_table() -> None:

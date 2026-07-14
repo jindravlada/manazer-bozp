@@ -32,7 +32,7 @@ with patch.object(Path, "home", return_value=_TMP):
         AI_PEER_REVIEW_ZIP_FILES,
         DEFAULT_AI_PEER_REVIEW_PROMPT,
     )
-    from core.ai_oponentni.modely.ai_peer_review import AiPeerReview
+    from core.ai_oponentni.modely.ai_peer_review import AiPeerReview, AiPeerReviewBatch
     from core.ai_oponentni.modely.ai_unassigned_proposal import (
         UNASSIGNED_PROPOSAL_STATUS_LABEL,
         AiUnassignedProposal,
@@ -119,6 +119,7 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
 
         with get_session() as session:
             session.execute(delete(AiUnassignedProposal))
+            session.execute(delete(AiPeerReviewBatch))
             session.execute(delete(AiPeerReview))
             session.execute(delete(HazardRequiredMeasure))
             session.execute(delete(HazardExistingMeasure))
@@ -199,10 +200,17 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         self.assertIn("rejected_count", columns)
         self.assertIn("export_id_map_json", columns)
         self.assertIn("unassigned_count", columns)
+        self.assertIn("export_scope", columns)
+        self.assertIn("batch_count", columns)
+        self.assertIn("selected_source_count", columns)
+        self.assertIn("total_object_count", columns)
         unassigned_columns = _table_columns("ai_unassigned_proposals")
         self.assertIn("ai_peer_review_id", unassigned_columns)
         self.assertIn("parent_export_id", unassigned_columns)
         self.assertIn("status", unassigned_columns)
+        batch_columns = _table_columns("ai_peer_review_batches")
+        self.assertIn("ai_peer_review_id", batch_columns)
+        self.assertIn("batch_number", batch_columns)
 
     def test_export_saved_identification(self) -> None:
         target = self.export_dir / "export.zip"
@@ -263,6 +271,9 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         self.assertEqual(content.zadani_json["export_scope"], "full")
         self.assertEqual(content.zadani_json["batch_number"], 1)
         self.assertEqual(content.zadani_json["batch_count"], 1)
+        self.assertEqual(content.zadani_json["source_count"], 1)
+        self.assertGreaterEqual(content.zadani_json["object_count"], 1)
+        self.assertFalse(content.zadani_json["recommended_limit_exceeded"])
 
     def test_change_tracking_metadata_defaults(self) -> None:
         content = self.provider.build_export_content(
@@ -546,6 +557,7 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
     def test_options_dialog_default_unchecked(self) -> None:
         dialog = AiPeerReviewExportOptionsDialog(show_responsible_person=True)
         self.assertFalse(dialog.include_responsible_person.isChecked())
+        self.assertTrue(dialog.scope_full.isChecked())
 
     def test_provider_is_generic_source_type(self) -> None:
         self.assertEqual(self.provider.source_type, "hazard_identification")

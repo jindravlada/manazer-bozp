@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import json
 import zipfile
 from dataclasses import dataclass
@@ -9,13 +10,18 @@ from datetime import datetime
 from pathlib import Path
 
 from core.ai_oponentni.constants import AI_PEER_REVIEW_ZIP_FILES
-from core.ai_oponentni.modely.ai_peer_review import AiPeerReview
+from core.ai_oponentni.modely.ai_peer_review import AiPeerReview, AiPeerReviewBatch
+from core.ai_oponentni.repository.ai_peer_review_batch_repository import (
+    AiPeerReviewBatchRepository,
+)
 from core.ai_oponentni.repository.ai_peer_review_repository import AiPeerReviewRepository
 from core.ai_oponentni.repository.ai_unassigned_proposal_repository import (
     AiUnassignedProposalRepository,
 )
 from core.ai_oponentni.sluzby.response_parser import parse_ai_peer_review_response
 from core.ai_oponentni.types import (
+    AiPeerReviewBatchContent,
+    AiPeerReviewExportContent,
     AiPeerReviewExportOptions,
     AiPeerReviewProvider,
     AiProposal,
@@ -31,11 +37,13 @@ class AiPeerReviewExportResult:
     review: AiPeerReview
     file_path: Path
     summary_lines: list[str]
+    batch_count: int = 1
 
 
 class AiPeerReviewService:
     def __init__(self):
         self.repository = AiPeerReviewRepository()
+        self.batch_repository = AiPeerReviewBatchRepository()
         self.unassigned_repository = AiUnassignedProposalRepository()
 
     def get_for_source(self, source_type: str, source_id: int) -> list[AiPeerReview]:
@@ -45,6 +53,9 @@ class AiPeerReviewService:
         if not review_id:
             return None
         return self.repository.get_by_id(review_id)
+
+    def get_batches_for_review(self, review_id: int) -> list[AiPeerReviewBatch]:
+        return self.batch_repository.get_for_review(review_id)
 
     def get_unassigned_for_review(self, review_id: int):
         return self.unassigned_repository.get_for_review(review_id)
@@ -57,7 +68,7 @@ class AiPeerReviewService:
             .replace(" ", "_")
             .replace(":", "-")
         )
-        return f"AI_oponentni_{safe}_{stamp}.zip"
+        return f"AI_oponentura_{safe}_{stamp}.zip"
 
     def export_package(
         self,
@@ -74,28 +85,22 @@ class AiPeerReviewService:
 
         export_options = options or AiPeerReviewExportOptions()
         content = provider.build_export_content(source_id, options=export_options)
-        if content.zadani_json is None or content.schema_json is None:
+        if not content.batches:
             raise AiPeerReviewError(
-                "Doménový poskytovatel musí dodat zadani.json a schema_odpovedi.json."
+                "Identifikace neobsahuje žádný aktivní zdroj analýzy. Export nelze vytvořit."
             )
+        for batch in content.batches:
+            if not batch.zadani_json or not batch.schema_json:
+                raise AiPeerReviewError(
+                    "Doménový poskytovatel musí dodat zadani.json a schema_odpovedi.json."
+                )
 
         exported_at = datetime.now()
         target = Path(target_path)
         target.parent.mkdir(parents=True, exist_ok=True)
 
         try:
-            with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-                zf.writestr("pokyn_pro_AI.txt", content.prompt_text.rstrip() + "\n")
-                zf.writestr("data.txt", content.data_text.rstrip() + "\n")
-                zf.writestr("prehled.txt", content.overview_text.rstrip() + "\n")
-                zf.writestr(
-                    "zadani.json",
-                    json.dumps(content.zadani_json, ensure_ascii=False, indent=2) + "\n",
-                )
-                zf.writestr(
-                    "schema_odpovedi.json",
-                    json.dumps(content.schema_json, ensure_ascii=False, indent=2) + "\n",
-                )
+            self._write_export_archive(target, content)
         except OSError as error:
             target.unlink(missing_ok=True)
             raise AiPeerReviewError(
@@ -103,16 +108,12 @@ class AiPeerReviewService:
             ) from error
 
         try:
-            with zipfile.ZipFile(target, "r") as zf:
-                names = set(zf.namelist())
-        except zipfile.BadZipFile as error:
+            self._validate_written_archive(target, content)
+        except AiPeerReviewError:
             target.unlink(missing_ok=True)
-            raise AiPeerReviewError("Vytvořený exportní ZIP je neplatný.") from error
+            raise
 
-        if names != set(AI_PEER_REVIEW_ZIP_FILES):
-            target.unlink(missing_ok=True)
-            raise AiPeerReviewError("Exportní balíček neobsahuje očekávané soubory.")
-
+        prompt_for_record = content.batches[0].prompt_text
         try:
             review = AiPeerReview(
                 source_type=provider.source_type,
@@ -123,23 +124,138 @@ class AiPeerReviewService:
                     content.export_id_map or {},
                     ensure_ascii=False,
                 ),
+                export_scope=content.export_scope,
+                batch_count=content.batch_count,
+                selected_source_count=content.selected_source_count,
+                total_object_count=content.total_object_count,
                 ai_model="",
-                prompt_text=content.prompt_text,
+                prompt_text=prompt_for_record,
                 response_text="",
                 accepted_count=0,
                 rejected_count=0,
                 unassigned_count=0,
             )
             saved = self.repository.add(review)
+            batch_rows = [
+                AiPeerReviewBatch(
+                    ai_peer_review_id=saved.id,
+                    batch_number=batch.batch_number,
+                    source_count=batch.source_count,
+                    object_count=batch.object_count,
+                    filename=batch.filename
+                    or self._batch_inner_filename(batch.batch_number, content.batch_count),
+                    recommended_limit_exceeded=batch.recommended_limit_exceeded,
+                )
+                for batch in content.batches
+            ]
+            self.batch_repository.add_many(batch_rows)
         except Exception:
             target.unlink(missing_ok=True)
             raise
 
+        summary_lines = list(content.summary_lines)
+        if content.batch_count > 1:
+            summary_lines = [
+                f"Počet dávek: {content.batch_count}",
+                f"Celkem objektů: {content.total_object_count}",
+                *summary_lines,
+            ]
+
         return AiPeerReviewExportResult(
             review=saved,
             file_path=target,
-            summary_lines=list(content.summary_lines),
+            summary_lines=summary_lines,
+            batch_count=content.batch_count,
         )
+
+    def _batch_inner_filename(self, batch_number: int, batch_count: int) -> str:
+        if batch_count <= 1:
+            return ""
+        return f"davka_{batch_number:03d}.zip"
+
+    def _write_batch_bytes(self, batch: AiPeerReviewBatchContent) -> bytes:
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr("pokyn_pro_AI.txt", batch.prompt_text.rstrip() + "\n")
+            zf.writestr("data.txt", batch.data_text.rstrip() + "\n")
+            zf.writestr("prehled.txt", batch.overview_text.rstrip() + "\n")
+            zf.writestr(
+                "zadani.json",
+                json.dumps(batch.zadani_json, ensure_ascii=False, indent=2) + "\n",
+            )
+            zf.writestr(
+                "schema_odpovedi.json",
+                json.dumps(batch.schema_json, ensure_ascii=False, indent=2) + "\n",
+            )
+        return buffer.getvalue()
+
+    def _write_export_archive(
+        self,
+        target: Path,
+        content: AiPeerReviewExportContent,
+    ) -> None:
+        if content.batch_count == 1:
+            batch = content.batches[0]
+            batch.filename = target.name
+            with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr("pokyn_pro_AI.txt", batch.prompt_text.rstrip() + "\n")
+                zf.writestr("data.txt", batch.data_text.rstrip() + "\n")
+                zf.writestr("prehled.txt", batch.overview_text.rstrip() + "\n")
+                zf.writestr(
+                    "zadani.json",
+                    json.dumps(batch.zadani_json, ensure_ascii=False, indent=2) + "\n",
+                )
+                zf.writestr(
+                    "schema_odpovedi.json",
+                    json.dumps(batch.schema_json, ensure_ascii=False, indent=2) + "\n",
+                )
+            return
+
+        with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_DEFLATED) as outer:
+            for batch in content.batches:
+                filename = f"davka_{batch.batch_number:03d}.zip"
+                batch.filename = filename
+                outer.writestr(filename, self._write_batch_bytes(batch))
+            overview = content.batches_overview_text or ""
+            outer.writestr("prehled_davek.txt", overview.rstrip() + "\n")
+
+    def _validate_written_archive(
+        self,
+        target: Path,
+        content: AiPeerReviewExportContent,
+    ) -> None:
+        try:
+            with zipfile.ZipFile(target, "r") as zf:
+                names = set(zf.namelist())
+        except zipfile.BadZipFile as error:
+            raise AiPeerReviewError("Vytvořený exportní ZIP je neplatný.") from error
+
+        if content.batch_count == 1:
+            if names != set(AI_PEER_REVIEW_ZIP_FILES):
+                raise AiPeerReviewError(
+                    "Exportní balíček neobsahuje očekávané soubory."
+                )
+            return
+
+        expected = {f"davka_{n:03d}.zip" for n in range(1, content.batch_count + 1)}
+        expected.add("prehled_davek.txt")
+        if names != expected:
+            raise AiPeerReviewError(
+                "Exportní balíček s dávkami neobsahuje očekávané soubory."
+            )
+        with zipfile.ZipFile(target, "r") as outer:
+            for batch_name in sorted(expected - {"prehled_davek.txt"}):
+                try:
+                    with zipfile.ZipFile(io.BytesIO(outer.read(batch_name)), "r") as inner:
+                        inner_names = set(inner.namelist())
+                except zipfile.BadZipFile as error:
+                    raise AiPeerReviewError(
+                        f"Vnitřní dávka {batch_name} je neplatný ZIP."
+                    ) from error
+                if inner_names != set(AI_PEER_REVIEW_ZIP_FILES):
+                    raise AiPeerReviewError(
+                        f"Dávka {batch_name} neobsahuje očekávané soubory."
+                    )
 
     def parse_response(self, response_text: str) -> list[AiProposal]:
         proposals = parse_ai_peer_review_response(response_text)
