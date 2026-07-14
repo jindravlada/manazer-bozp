@@ -191,3 +191,82 @@ def inventory_relation_target_category(relation_type: str) -> str | None:
 
 def is_identification_inventory_read_only(status: str) -> bool:
     return status in READ_ONLY_IDENTIFICATION_STATUSES
+
+
+IDENTIFIED_HAZARD_SOURCE_MANUAL = "manual"
+IDENTIFIED_HAZARD_SOURCE_LIBRARY = "library"
+IDENTIFIED_HAZARD_SOURCE_AI = "ai"
+IDENTIFIED_HAZARD_SOURCE_AUDIT = "audit"
+IDENTIFIED_HAZARD_SOURCE_INSPECTION = "inspection"
+IDENTIFIED_HAZARD_SOURCE_ACCIDENT = "accident"
+IDENTIFIED_HAZARD_SOURCE_LEGAL_CHANGE = "legal_change"
+IDENTIFIED_HAZARD_SOURCE_OTHER = "other"
+
+IDENTIFIED_HAZARD_SOURCE_TYPES = (
+    IDENTIFIED_HAZARD_SOURCE_MANUAL,
+    IDENTIFIED_HAZARD_SOURCE_LIBRARY,
+    IDENTIFIED_HAZARD_SOURCE_AI,
+    IDENTIFIED_HAZARD_SOURCE_AUDIT,
+    IDENTIFIED_HAZARD_SOURCE_INSPECTION,
+    IDENTIFIED_HAZARD_SOURCE_ACCIDENT,
+    IDENTIFIED_HAZARD_SOURCE_LEGAL_CHANGE,
+    IDENTIFIED_HAZARD_SOURCE_OTHER,
+)
+
+DEFAULT_IDENTIFIED_HAZARD_SOURCE = IDENTIFIED_HAZARD_SOURCE_MANUAL
+
+IDENTIFIED_HAZARD_SOURCE_LABELS = {
+    IDENTIFIED_HAZARD_SOURCE_MANUAL: "Ručně",
+    IDENTIFIED_HAZARD_SOURCE_LIBRARY: "Firemní knihovna",
+    IDENTIFIED_HAZARD_SOURCE_AI: "Návrh AI",
+    IDENTIFIED_HAZARD_SOURCE_AUDIT: "Audit",
+    IDENTIFIED_HAZARD_SOURCE_INSPECTION: "Prověrka",
+    IDENTIFIED_HAZARD_SOURCE_ACCIDENT: "Pracovní úraz",
+    IDENTIFIED_HAZARD_SOURCE_LEGAL_CHANGE: "Změna legislativy",
+    IDENTIFIED_HAZARD_SOURCE_OTHER: "Jiný zdroj",
+}
+
+HAZARDS_INTRO_TEXT = (
+    "Evidujte nebezpečí zjištěná u jednotlivých položek inventury. "
+    "V této fázi se ještě neposuzuje míra rizika ani se neurčují opatření."
+)
+
+IDENTIFIED_HAZARD_DIALOG_TITLE = "Nebezpečí"
+
+HAZARD_COL_ID = 0
+HAZARD_COL_NAME = 1
+HAZARD_COL_INVENTORY_ITEM = 2
+HAZARD_COL_INVENTORY_CATEGORY = 3
+HAZARD_COL_SOURCE = 4
+HAZARD_COL_ACTIVE = 5
+HAZARD_COLUMN_COUNT = 6
+
+HAZARD_TABLE_HEADERS = [
+    "ID",
+    "Nebezpečí",
+    "Zdrojová položka inventury",
+    "Kategorie inventury",
+    "Původ",
+    "Aktivní",
+]
+
+
+def is_identification_hazards_read_only(status: str) -> bool:
+    return status in READ_ONLY_IDENTIFICATION_STATUSES
+
+
+def format_inventory_item_display_name(
+    name: str,
+    *,
+    relation_count: int = 0,
+    hazard_count: int = 0,
+) -> str:
+    parts = [name]
+    if relation_count:
+        suffix = "souvislost" if relation_count == 1 else "souvislostí"
+        parts.append(f"{relation_count} {suffix}")
+    if hazard_count:
+        parts.append(f"{hazard_count} nebezpečí")
+    if len(parts) == 1:
+        return name
+    return f"{parts[0]} — " + " — ".join(parts[1:])

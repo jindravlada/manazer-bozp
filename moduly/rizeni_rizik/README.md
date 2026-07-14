@@ -86,3 +86,21 @@ Analýza inventury v záložce Inventura:
 - sekce Analýza položky se souvislostmi podle typu a kategorie
 - samostatné ukládání vazeb, počty aktivních souvislostí u položek
 - režim pouze pro čtení u dokončené nebo archivované identifikace
+
+## Fáze R04
+
+Evidence nebezpečí v záložce Nebezpečí:
+
+- model `IdentifiedHazard` v tabulce `identified_hazards`
+- ruční evidence nebezpečí navázaných na položky inventury
+- akce Identifikovat nebezpečí v inventuře, počty aktivních nebezpečí u položek
+- režim pouze pro čtení u dokončené nebo archivované identifikace
+
+## Fáze R04
+
+Evidence nebezpečí v záložce Nebezpečí:
+
+- model `IdentifiedHazard` v tabulce `identified_hazards`
+- ruční evidence nebezpečí navázaných na položky inventury
+- akce Identifikovat nebezpečí v inventuře, počty aktivních nebezpečí u položek
+- režim pouze pro čtení u dokončené nebo archivované identifikace

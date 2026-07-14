@@ -23,11 +23,13 @@ from moduly.rizeni_rizik.constants import (
     RELATION_COL_TYPE,
     RELATION_COLUMN_COUNT,
     RELATION_TABLE_HEADERS,
+    format_inventory_item_display_name,
 )
 from moduly.rizeni_rizik.sluzby.hazard_inventory_relation_service import (
     HazardInventoryRelationError,
     hazard_inventory_relation_service,
 )
+from moduly.rizeni_rizik.sluzby.identified_hazard_service import identified_hazard_service
 from moduly.rizeni_rizik.ui.hazard_inventory_relation_dialog import HazardInventoryRelationDialog
 
 
@@ -121,9 +123,15 @@ class HazardInventoryAnalysisWidget(QWidget):
         relation_count = hazard_inventory_relation_service.count_active_for_source(
             self._source_item.id
         )
-        suffix = "souvislost" if relation_count == 1 else "souvislostí"
+        hazard_count = identified_hazard_service.count_active_for_inventory_item(
+            self._source_item.id
+        )
         self.header_label.setText(
-            f"{self._source_item.name} — {relation_count} {suffix}"
+            format_inventory_item_display_name(
+                self._source_item.name,
+                relation_count=relation_count,
+                hazard_count=hazard_count,
+            )
         )
         description = self._source_item.description.strip() or "—"
         self.detail_label.setText(f"Kategorie: {category_label}\nPopis: {description}")

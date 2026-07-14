@@ -25,16 +25,21 @@ from moduly.rizeni_rizik.constants import (
     INVENTORY_INTRO_TEXT,
     INVENTORY_ITEM_DIALOG_TITLE,
     INVENTORY_TABLE_HEADERS,
+    format_inventory_item_display_name,
 )
 from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import hazard_inventory_item_service
 from moduly.rizeni_rizik.sluzby.hazard_inventory_relation_service import hazard_inventory_relation_service
+from moduly.rizeni_rizik.sluzby.identified_hazard_service import identified_hazard_service
 from moduly.rizeni_rizik.ui.hazard_inventory_analysis_widget import HazardInventoryAnalysisWidget
 from moduly.rizeni_rizik.ui.hazard_inventory_item_dialog import HazardInventoryItemDialog
+from moduly.rizeni_rizik.ui.identified_hazard_dialog import IdentifiedHazardDialog
 
 
 class HazardInventoryWidget(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, on_hazard_saved=None):
         super().__init__(parent)
+
+        self._on_hazard_saved = on_hazard_saved
 
         self._identification_id: int | None = None
         self._read_only = False
@@ -52,10 +57,12 @@ class HazardInventoryWidget(QWidget):
         self.edit_btn = QPushButton("Upravit")
         self.activate_btn = QPushButton("Aktivovat")
         self.deactivate_btn = QPushButton("Deaktivovat")
+        self.identify_hazard_btn = QPushButton("Identifikovat nebezpečí")
         self.toolbar.addWidget(self.add_btn)
         self.toolbar.addWidget(self.edit_btn)
         self.toolbar.addWidget(self.activate_btn)
         self.toolbar.addWidget(self.deactivate_btn)
+        self.toolbar.addWidget(self.identify_hazard_btn)
         self.toolbar.addStretch()
         layout.addLayout(self.toolbar)
 
@@ -92,6 +99,7 @@ class HazardInventoryWidget(QWidget):
         self.edit_btn.clicked.connect(self.edit_selected_item)
         self.activate_btn.clicked.connect(self.activate_selected_item)
         self.deactivate_btn.clicked.connect(self.deactivate_selected_item)
+        self.identify_hazard_btn.clicked.connect(self.identify_hazard_for_selected_item)
         self.category_list.currentRowChanged.connect(self._on_category_changed)
         self.table.itemSelectionChanged.connect(self._on_item_selection_changed)
         self.table.doubleClicked.connect(self.edit_selected_item)
@@ -184,6 +192,32 @@ class HazardInventoryWidget(QWidget):
         hazard_inventory_item_service.deactivate_item(item.id)
         self.refresh()
 
+    def identify_hazard_for_selected_item(self) -> None:
+        if not self._ensure_editable():
+            return
+
+        item = self._selected_item()
+        if item is None:
+            QMessageBox.information(
+                self,
+                INVENTORY_ITEM_DIALOG_TITLE,
+                "Vyberte položku inventury.",
+            )
+            return
+
+        dialog = IdentifiedHazardDialog(
+            self,
+            hazard_identification_id=self._identification_id,
+            default_inventory_item_id=item.id,
+        )
+        if dialog.exec():
+            self._notify_hazard_saved()
+            self.refresh()
+
+    def _notify_hazard_saved(self) -> None:
+        if self._on_hazard_saved is not None:
+            self._on_hazard_saved()
+
     def _ensure_editable(self) -> bool:
         if self._identification_id is None:
             QMessageBox.information(
@@ -202,7 +236,13 @@ class HazardInventoryWidget(QWidget):
         return True
 
     def _set_actions_enabled(self, enabled: bool) -> None:
-        for button in (self.add_btn, self.edit_btn, self.activate_btn, self.deactivate_btn):
+        for button in (
+            self.add_btn,
+            self.edit_btn,
+            self.activate_btn,
+            self.deactivate_btn,
+            self.identify_hazard_btn,
+        ):
             button.setEnabled(enabled)
 
     def _populate_categories(self) -> None:
@@ -235,6 +275,9 @@ class HazardInventoryWidget(QWidget):
         relation_counts = hazard_inventory_relation_service.count_active_by_source_items(
             self._identification_id
         )
+        hazard_counts = identified_hazard_service.count_active_by_inventory_items(
+            self._identification_id
+        )
         items = hazard_inventory_item_service.get_by_category(
             self._identification_id,
             self._current_category,
@@ -244,12 +287,11 @@ class HazardInventoryWidget(QWidget):
         selected_row = -1
         for row, item in enumerate(items):
             self.table.setItem(row, INVENTORY_COL_ID, QTableWidgetItem(str(item.id)))
-            relation_count = relation_counts.get(item.id, 0)
-            if relation_count:
-                suffix = "souvislost" if relation_count == 1 else "souvislostí"
-                display_name = f"{item.name} — {relation_count} {suffix}"
-            else:
-                display_name = item.name
+            display_name = format_inventory_item_display_name(
+                item.name,
+                relation_count=relation_counts.get(item.id, 0),
+                hazard_count=hazard_counts.get(item.id, 0),
+            )
             self.table.setItem(row, INVENTORY_COL_NAME, QTableWidgetItem(display_name))
             self.table.setItem(
                 row,
