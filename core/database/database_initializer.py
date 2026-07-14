@@ -71,6 +71,9 @@ def initialize_database() -> None:
     from moduly.rizeni_rizik.modely.hazard_risk_assessment import HazardRiskAssessment  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_existing_measure import HazardExistingMeasure  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_required_measure import HazardRequiredMeasure  # noqa: F401
+    from moduly.rizeni_rizik.modely.hazard_identification_photo import (  # noqa: F401
+        HazardIdentificationPhoto,
+    )
     from core.ai_oponentni.modely.ai_peer_review import (  # noqa: F401
         AiPeerReview,
         AiPeerReviewBatch,
@@ -115,6 +118,7 @@ def initialize_database() -> None:
     _ensure_hazard_risk_assessments_table()
     _ensure_hazard_existing_measures_table()
     _ensure_hazard_required_measures_table()
+    _ensure_hazard_identification_photos_table()
     _ensure_ai_peer_reviews_table()
     _ensure_ai_peer_review_batches_table()
     _ensure_ai_unassigned_proposals_table()
@@ -932,6 +936,16 @@ def _ensure_hazard_required_measures_table() -> None:
         from moduly.rizeni_rizik.modely.hazard_required_measure import HazardRequiredMeasure
 
         HazardRequiredMeasure.__table__.create(bind=_db_engine(), checkfirst=True)
+
+
+def _ensure_hazard_identification_photos_table() -> None:
+    columns = _table_columns("hazard_identification_photos")
+    if not columns:
+        from moduly.rizeni_rizik.modely.hazard_identification_photo import (
+            HazardIdentificationPhoto,
+        )
+
+        HazardIdentificationPhoto.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_ai_peer_reviews_table() -> None:

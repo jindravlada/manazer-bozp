@@ -236,3 +236,13 @@ Odstranění entity Nebezpečí (`IdentifiedHazard`):
 - u položek analýzy se zobrazuje počet nežádoucích událostí
 - AI export/import bez úrovně `HAZARD-###` (strom ITEM → EVENT → ASSESSMENT)
 
+## Fáze R13
+
+Fotodokumentace identifikace:
+
+- záložka **Fotodokumentace** hned po Základních údajích
+- model `HazardIdentificationPhoto` (metadata + relativní cesta, bez BLOB)
+- soubory v `prilohy/rizeni_rizik/<číslo identifikace>/fotografie/`
+- formáty JPG/JPEG/PNG/WEBP, automatická optimalizace ≤ 1 MB (EXIF orientace, bez metadat)
+- náhled, otevření, aktivace/deaktivace; bez mazání a bez exportu do AI
+

@@ -307,6 +307,34 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         for column in (REQUIRED_MEASURE_COL_NOTE, REQUIRED_MEASURE_COL_ACTIVE):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 
+    elif profile == "hazard_identification_photos":
+        from moduly.rizeni_rizik.constants import (
+            PHOTO_COL_ACTIVE,
+            PHOTO_COL_CAPTION,
+            PHOTO_COL_SIZE,
+            PHOTO_COL_TAKEN_AT,
+            PHOTO_COL_THUMBNAIL,
+        )
+
+        widths = {
+            PHOTO_COL_THUMBNAIL: 110,
+            PHOTO_COL_CAPTION: 220,
+            PHOTO_COL_TAKEN_AT: 120,
+            PHOTO_COL_SIZE: 90,
+            PHOTO_COL_ACTIVE: 80,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        header.setSectionResizeMode(PHOTO_COL_CAPTION, QHeaderView.Stretch)
+        for column in (
+            PHOTO_COL_THUMBNAIL,
+            PHOTO_COL_TAKEN_AT,
+            PHOTO_COL_SIZE,
+            PHOTO_COL_ACTIVE,
+        ):
+            header.setSectionResizeMode(column, QHeaderView.Fixed)
+
     elif profile == "ai_peer_reviews":
         from core.ai_oponentni.constants import (
             AI_PEER_REVIEW_COL_ACCEPTED,

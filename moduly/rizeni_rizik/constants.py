@@ -45,6 +45,7 @@ TABLE_HEADERS = [
 ]
 
 TAB_BASICS = "Základní údaje"
+TAB_PHOTOS = "Fotodokumentace"
 TAB_INVENTORY = "Analýza pracoviště"
 TAB_EVENTS = "Nežádoucí události"
 TAB_RISK_ASSESSMENT = "Posouzení rizik"
@@ -60,6 +61,7 @@ TAB_HAZARDS = "Nebezpečí"
 
 HAZARD_IDENTIFICATION_TABS = (
     TAB_BASICS,
+    TAB_PHOTOS,
     TAB_INVENTORY,
     TAB_EVENTS,
     TAB_RISK_ASSESSMENT,
@@ -205,6 +207,48 @@ WORKPLACE_ANALYSIS_READ_ONLY_MESSAGE = (
 
 def is_identification_inventory_read_only(status: str) -> bool:
     return status in READ_ONLY_IDENTIFICATION_STATUSES
+
+
+PHOTOS_INTRO_TEXT = (
+    "Tato fotodokumentace zachycuje skutečný stav pracoviště v době provádění "
+    "identifikace rizik. Slouží jako pracovní podklad i jako důkaz, že identifikace "
+    "byla provedena na místě."
+)
+
+HAZARD_PHOTO_DIALOG_TITLE = "Fotografie identifikace"
+HAZARD_PHOTO_MISSING_FILE_MESSAGE = (
+    "Soubor fotografie nebyl nalezen. Záznam zůstává v evidenci, "
+    "ale náhled nelze zobrazit."
+)
+
+PHOTO_COL_ID = 0
+PHOTO_COL_THUMBNAIL = 1
+PHOTO_COL_CAPTION = 2
+PHOTO_COL_TAKEN_AT = 3
+PHOTO_COL_SIZE = 4
+PHOTO_COL_ACTIVE = 5
+PHOTO_COLUMN_COUNT = 6
+
+PHOTO_TABLE_HEADERS = [
+    "ID",
+    "Náhled",
+    "Popis",
+    "Datum pořízení",
+    "Velikost",
+    "Aktivní",
+]
+
+
+def is_identification_photos_read_only(status: str) -> bool:
+    return status in READ_ONLY_IDENTIFICATION_STATUSES
+
+
+def format_photo_file_size(size_bytes: int) -> str:
+    if size_bytes < 1024:
+        return f"{size_bytes} B"
+    if size_bytes < 1024 * 1024:
+        return f"{size_bytes / 1024:.1f} KB"
+    return f"{size_bytes / (1024 * 1024):.2f} MB"
 
 
 def is_identification_events_read_only(status: str) -> bool:

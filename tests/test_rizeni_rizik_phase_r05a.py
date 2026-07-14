@@ -104,7 +104,7 @@ class WorkplaceAnalysisTerminologyPhaseR05aTestCase(unittest.TestCase):
         from moduly.rizeni_rizik.ui.hazard_identification_dialog import HazardIdentificationDialog
 
         dialog = HazardIdentificationDialog(identification=self.identification)
-        self.assertEqual(dialog.tabs.tabText(1), TAB_INVENTORY)
+        self.assertEqual(dialog.tabs.tabText(2), TAB_INVENTORY)
 
     def test_events_widget_uses_updated_headers(self) -> None:
         events_widget = HazardEventsWidget()
