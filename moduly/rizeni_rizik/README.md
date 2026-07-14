@@ -138,3 +138,12 @@ Rozšíření posouzení rizika o následek a závažnost:
 - pět úrovní závažnosti se slovní popisem v dialogu
 - sloupce Možný následek a Závažnost v záložce Posouzení rizik
 - validace povinných polí bez změny pravidel duplicity ohrožené skupiny
+
+## Fáze R08
+
+Existující opatření u posouzení rizika:
+
+- model `HazardExistingMeasure` v tabulce `hazard_existing_measures`
+- sekce Existující opatření po výběru posouzení v záložce Posouzení rizik
+- samostatné ukládání opatření, počty aktivních opatření u posouzení
+- režim pouze pro čtení u dokončené nebo archivované identifikace

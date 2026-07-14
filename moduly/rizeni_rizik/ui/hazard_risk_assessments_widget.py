@@ -22,11 +22,16 @@ from moduly.rizeni_rizik.constants import (
     RISK_ASSESSMENT_COLUMN_COUNT,
     RISK_ASSESSMENTS_INTRO_TEXT,
     RISK_ASSESSMENT_TABLE_HEADERS,
+    format_risk_assessment_display_name,
+)
+from moduly.rizeni_rizik.sluzby.hazard_existing_measure_service import (
+    hazard_existing_measure_service,
 )
 from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import (
     HazardRiskAssessmentError,
     hazard_risk_assessment_service,
 )
+from moduly.rizeni_rizik.ui.hazard_existing_measures_widget import HazardExistingMeasuresWidget
 from moduly.rizeni_rizik.ui.hazard_risk_assessment_dialog import HazardRiskAssessmentDialog
 
 
@@ -36,6 +41,7 @@ class HazardRiskAssessmentsWidget(QWidget):
 
         self._identification_id: int | None = None
         self._read_only = False
+        self._selected_assessment_id: int | None = None
 
         layout = QVBoxLayout(self)
 
@@ -64,12 +70,18 @@ class HazardRiskAssessmentsWidget(QWidget):
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setAlternatingRowColors(True)
         configure_table_columns(self.table, "hazard_risk_assessments")
-        layout.addWidget(self.table, 1)
+        layout.addWidget(self.table, 2)
+
+        self.existing_measures_widget = HazardExistingMeasuresWidget(
+            on_changed=self._on_existing_measures_changed
+        )
+        layout.addWidget(self.existing_measures_widget, 1)
 
         self.add_btn.clicked.connect(self.add_assessment)
         self.edit_btn.clicked.connect(self.edit_selected_assessment)
         self.activate_btn.clicked.connect(self.activate_selected_assessment)
         self.deactivate_btn.clicked.connect(self.deactivate_selected_assessment)
+        self.table.itemSelectionChanged.connect(self._on_selection_changed)
         self.table.doubleClicked.connect(self.edit_selected_assessment)
 
         self.set_identification(None, read_only=False)
@@ -82,11 +94,18 @@ class HazardRiskAssessmentsWidget(QWidget):
     ) -> None:
         self._identification_id = identification_id
         self._read_only = read_only
+        self._selected_assessment_id = None
         self._set_actions_enabled(not read_only and identification_id is not None)
+        self.existing_measures_widget.set_assessment(
+            None,
+            identification_id=identification_id,
+            read_only=read_only,
+        )
         self.refresh()
 
     def refresh(self) -> None:
         self._load_table()
+        self._sync_existing_measures_selection()
 
     def add_assessment(
         self,
@@ -175,6 +194,24 @@ class HazardRiskAssessmentsWidget(QWidget):
         hazard_risk_assessment_service.deactivate_assessment(assessment.id)
         self.refresh()
 
+    def _on_existing_measures_changed(self) -> None:
+        self._load_table()
+
+    def _on_selection_changed(self) -> None:
+        assessment = self._selected_assessment()
+        self._selected_assessment_id = assessment.id if assessment is not None else None
+        self._sync_existing_measures_selection()
+
+    def _sync_existing_measures_selection(self) -> None:
+        assessment = None
+        if self._selected_assessment_id is not None:
+            assessment = hazard_risk_assessment_service.get_by_id(self._selected_assessment_id)
+        self.existing_measures_widget.set_assessment(
+            assessment,
+            identification_id=self._identification_id,
+            read_only=self._read_only,
+        )
+
     def _ensure_editable(self) -> bool:
         if self._identification_id is None:
             QMessageBox.information(
@@ -198,15 +235,21 @@ class HazardRiskAssessmentsWidget(QWidget):
             button.setEnabled(enabled)
 
     def _load_table(self) -> None:
+        self.table.blockSignals(True)
         self.table.setRowCount(0)
         if self._identification_id is None:
+            self.table.blockSignals(False)
             return
 
+        measure_counts = hazard_existing_measure_service.count_active_by_assessments(
+            self._identification_id
+        )
         rows = hazard_risk_assessment_service.get_for_identification(
             self._identification_id,
             include_inactive=True,
         )
         self.table.setRowCount(len(rows))
+        selected_row = -1
         for row_index, row in enumerate(rows):
             assessment = row.assessment
             self.table.setItem(
@@ -214,10 +257,14 @@ class HazardRiskAssessmentsWidget(QWidget):
                 RISK_ASSESSMENT_COL_ID,
                 QTableWidgetItem(str(assessment.id)),
             )
+            display_name = format_risk_assessment_display_name(
+                assessment.exposed_group,
+                existing_measure_count=measure_counts.get(assessment.id, 0),
+            )
             self.table.setItem(
                 row_index,
                 RISK_ASSESSMENT_COL_EXPOSED_GROUP,
-                QTableWidgetItem(assessment.exposed_group),
+                QTableWidgetItem(display_name),
             )
             self.table.setItem(
                 row_index,
@@ -244,7 +291,13 @@ class HazardRiskAssessmentsWidget(QWidget):
                 RISK_ASSESSMENT_COL_ACTIVE,
                 QTableWidgetItem("Ano" if assessment.active else "Ne"),
             )
+            if self._selected_assessment_id == assessment.id:
+                selected_row = row_index
+
         configure_table_columns(self.table, "hazard_risk_assessments")
+        if selected_row >= 0:
+            self.table.selectRow(selected_row)
+        self.table.blockSignals(False)
 
     def _selected_assessment(self):
         selected = self.table.selectionModel().selectedRows()

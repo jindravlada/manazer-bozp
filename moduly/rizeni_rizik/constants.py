@@ -308,6 +308,21 @@ def format_event_display_name(name: str, *, assessment_count: int = 0) -> str:
     return f"{name} — {assessment_count} {suffix}"
 
 
+def format_risk_assessment_display_name(
+    exposed_group: str,
+    *,
+    existing_measure_count: int = 0,
+) -> str:
+    if not existing_measure_count:
+        return exposed_group
+    suffix = (
+        "existující opatření"
+        if existing_measure_count == 1
+        else "existujících opatření"
+    )
+    return f"{exposed_group} — {existing_measure_count} {suffix}"
+
+
 RISK_ASSESSMENTS_INTRO_TEXT = (
     "Určete, které skupiny osob mohou být vystaveny jednotlivým nežádoucím událostem "
     "a popište možný následek včetně jeho závažnosti."
@@ -384,6 +399,19 @@ RISK_ASSESSMENT_TABLE_HEADERS = [
 
 def is_identification_risk_assessment_read_only(status: str) -> bool:
     return status in READ_ONLY_IDENTIFICATION_STATUSES
+
+
+EXISTING_MEASURES_TITLE = "Existující opatření"
+HAZARD_EXISTING_MEASURE_DIALOG_TITLE = "Existující opatření"
+EXISTING_MEASURE_SELECT_ASSESSMENT = "Vyberte posouzení rizika."
+
+EXISTING_MEASURE_COL_ID = 0
+EXISTING_MEASURE_COL_DESCRIPTION = 1
+EXISTING_MEASURE_COL_NOTE = 2
+EXISTING_MEASURE_COL_ACTIVE = 3
+EXISTING_MEASURE_COLUMN_COUNT = 4
+
+EXISTING_MEASURE_TABLE_HEADERS = ["ID", "Opatření", "Poznámka", "Aktivní"]
 
 
 def format_inventory_item_display_name(

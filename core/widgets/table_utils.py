@@ -265,6 +265,25 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         ):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 
+    elif profile == "hazard_existing_measures":
+        from moduly.rizeni_rizik.constants import (
+            EXISTING_MEASURE_COL_ACTIVE,
+            EXISTING_MEASURE_COL_DESCRIPTION,
+            EXISTING_MEASURE_COL_NOTE,
+        )
+
+        widths = {
+            EXISTING_MEASURE_COL_DESCRIPTION: 260,
+            EXISTING_MEASURE_COL_NOTE: 220,
+            EXISTING_MEASURE_COL_ACTIVE: 80,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        header.setSectionResizeMode(EXISTING_MEASURE_COL_DESCRIPTION, QHeaderView.Stretch)
+        for column in (EXISTING_MEASURE_COL_NOTE, EXISTING_MEASURE_COL_ACTIVE):
+            header.setSectionResizeMode(column, QHeaderView.Fixed)
+
     elif profile == "identified_hazards":
         from moduly.rizeni_rizik.constants import (
             HAZARD_COL_ACTIVE,
