@@ -200,3 +200,10 @@ Bezpečný hierarchický import AI:
 - zákaz fallbacku „připojit k prvnímu“
 - UI pro nezařazené návrhy zatím není
 
+## Fáze R11.5
+
+Příprava dávkového exportu:
+
+- metadata v `zadani.json`: `export_scope`, `batch_number`, `batch_count`
+- zatím vždy `full` / `1` / `1` (dávkování se neimplementuje)
+

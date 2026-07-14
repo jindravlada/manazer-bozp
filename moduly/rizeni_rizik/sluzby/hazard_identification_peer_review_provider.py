@@ -5,6 +5,9 @@ from __future__ import annotations
 from datetime import datetime
 
 from core.ai_oponentni.constants import (
+    AI_PEER_REVIEW_DEFAULT_BATCH_COUNT,
+    AI_PEER_REVIEW_DEFAULT_BATCH_NUMBER,
+    AI_PEER_REVIEW_DEFAULT_EXPORT_SCOPE,
     AI_PEER_REVIEW_EXPORT_TYPE,
     AI_PEER_REVIEW_RESPONSE_SCHEMA,
     AI_PEER_REVIEW_SCHEMA_VERSION,
@@ -108,6 +111,9 @@ class HazardIdentificationPeerReviewProvider:
             zadani_json=zadani_json,
             schema_json=AI_PEER_REVIEW_RESPONSE_SCHEMA,
             export_id_map=hierarchy["export_id_map"],
+            export_scope=AI_PEER_REVIEW_DEFAULT_EXPORT_SCOPE,
+            batch_number=AI_PEER_REVIEW_DEFAULT_BATCH_NUMBER,
+            batch_count=AI_PEER_REVIEW_DEFAULT_BATCH_COUNT,
         )
 
     def apply_proposals(
@@ -511,6 +517,9 @@ class HazardIdentificationPeerReviewProvider:
         return {
             "schema_version": AI_PEER_REVIEW_SCHEMA_VERSION,
             "export_type": AI_PEER_REVIEW_EXPORT_TYPE,
+            "export_scope": AI_PEER_REVIEW_DEFAULT_EXPORT_SCOPE,
+            "batch_number": AI_PEER_REVIEW_DEFAULT_BATCH_NUMBER,
+            "batch_count": AI_PEER_REVIEW_DEFAULT_BATCH_COUNT,
             "exported_at": datetime.now().isoformat(timespec="seconds"),
             "application_version": APP_VERSION,
             "identification": hierarchy["identification"],

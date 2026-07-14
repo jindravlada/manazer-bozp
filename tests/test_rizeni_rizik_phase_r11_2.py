@@ -245,8 +245,24 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         self.assertIn("ITEM-001", data)
         self.assertIn("HAZARD-001", data)
         self.assertEqual(zadani["schema_version"], "1.1")
+        self.assertEqual(zadani["export_scope"], "full")
+        self.assertEqual(zadani["batch_number"], 1)
+        self.assertEqual(zadani["batch_count"], 1)
         self.assertEqual(schema["schema_version"], "1.1")
         self.assertIn("parent_export_id", schema["$defs"]["proposal"]["properties"])
+
+    def test_batch_export_metadata_defaults(self) -> None:
+        content = self.provider.build_export_content(
+            self.identification.id,
+            options=AiPeerReviewExportOptions(),
+        )
+        self.assertEqual(content.export_scope, "full")
+        self.assertEqual(content.batch_number, 1)
+        self.assertEqual(content.batch_count, 1)
+        assert content.zadani_json is not None
+        self.assertEqual(content.zadani_json["export_scope"], "full")
+        self.assertEqual(content.zadani_json["batch_number"], 1)
+        self.assertEqual(content.zadani_json["batch_count"], 1)
 
     def test_hierarchical_zadani_json(self) -> None:
         content = self.provider.build_export_content(

@@ -27,6 +27,9 @@ class AiPeerReviewExportContent:
     schema_json: dict | None = None
     # export_id -> {"kind": "item"|"hazard"|"event"|"assessment", "id": <db_id>}
     export_id_map: dict[str, dict] = field(default_factory=dict)
+    export_scope: str = "full"
+    batch_number: int = 1
+    batch_count: int = 1
 
 
 @dataclass
