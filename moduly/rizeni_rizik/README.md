@@ -68,3 +68,12 @@ Editor identifikace (`HazardIdentificationDialog`):
 - záložky dle metodiky modulu, funkční pouze **Základní údaje**
 - dynamické nabídky Pracoviště / Část pracoviště podle hierarchie provozů
 - založení, editace, uložení, načtení, aktivace a deaktivace bez fyzického mazání
+
+## Fáze R02
+
+Záložka **Inventura** (`HazardInventoryWidget`):
+
+- model `HazardInventoryItem` v tabulce `hazard_inventory_items`
+- přehled podle 9 kategorií s počtem aktivních položek
+- samostatné ukládání položek inventury bez zavírání editoru identifikace
+- u dokončené nebo archivované identifikace pouze režim pro čtení

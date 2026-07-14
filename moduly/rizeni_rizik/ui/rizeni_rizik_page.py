@@ -45,8 +45,8 @@ class RizeniRizikPage(QWidget):
 
     def new_identification(self) -> None:
         dialog = HazardIdentificationDialog(self)
-        if exec_maximized(dialog):
-            self.refresh()
+        exec_maximized(dialog)
+        self.refresh()
 
     def edit_selected_identification(self) -> None:
         identification_id = self.table.selected_identification_id()
@@ -61,8 +61,8 @@ class RizeniRizikPage(QWidget):
             return
 
         dialog = HazardIdentificationDialog(self, identification=identification)
-        if exec_maximized(dialog):
-            self.refresh()
+        exec_maximized(dialog)
+        self.refresh()
 
     def activate_selected_identification(self) -> None:
         identification = self._selected_identification()

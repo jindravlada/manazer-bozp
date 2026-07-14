@@ -190,6 +190,25 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             header.setSectionResizeMode(column, QHeaderView.Fixed)
         header.setSectionResizeMode(7, QHeaderView.Stretch)
 
+    elif profile == "hazard_inventory_items":
+        from moduly.rizeni_rizik.constants import (
+            INVENTORY_COL_ACTIVE,
+            INVENTORY_COL_DESCRIPTION,
+            INVENTORY_COL_NAME,
+        )
+
+        widths = {
+            INVENTORY_COL_NAME: 220,
+            INVENTORY_COL_DESCRIPTION: 360,
+            INVENTORY_COL_ACTIVE: 80,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        header.setSectionResizeMode(INVENTORY_COL_DESCRIPTION, QHeaderView.Stretch)
+        for column in (INVENTORY_COL_NAME, INVENTORY_COL_ACTIVE):
+            header.setSectionResizeMode(column, QHeaderView.Fixed)
+
     elif profile == "hazard_identifications":
         from moduly.rizeni_rizik.constants import (
             COL_OPERATION,

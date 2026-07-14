@@ -35,9 +35,10 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.rizeni_rizik.constants import (
         HAZARD_IDENTIFICATION_STATUS_IN_PROGRESS,
-        HAZARD_IDENTIFICATION_TABS,
-        TAB_BASICS,
-    )
+    HAZARD_IDENTIFICATION_TABS,
+    TAB_BASICS,
+    TAB_INVENTORY,
+)
     from moduly.rizeni_rizik.modely.hazard_identification import HazardIdentification
     from moduly.rizeni_rizik.sluzby.hazard_identification_service import (
         HazardIdentificationError,
@@ -151,8 +152,10 @@ class RizeniRizikEditorPhaseR01bTestCase(unittest.TestCase):
 
         dialog = HazardIdentificationDialog()
         self.assertEqual(dialog.tabs.tabText(0), TAB_BASICS)
+        self.assertEqual(dialog.tabs.tabText(1), TAB_INVENTORY)
         self.assertTrue(dialog.tabs.isTabEnabled(0))
-        for index in range(1, dialog.tabs.count()):
+        self.assertFalse(dialog.tabs.isTabEnabled(1))
+        for index in range(2, dialog.tabs.count()):
             self.assertFalse(dialog.tabs.isTabEnabled(index))
         self.assertEqual(
             [dialog.tabs.tabText(index) for index in range(dialog.tabs.count())],
@@ -176,6 +179,8 @@ class RizeniRizikEditorPhaseR01bTestCase(unittest.TestCase):
                 dialog.basics_widget.workplace,
                 self.workplace_a1.id,
             )
+            with patch("moduly.rizeni_rizik.ui.hazard_identification_dialog.QMessageBox.information"):
+                dialog._save_basics()
             dialog.accept()
             return True
 
@@ -195,6 +200,8 @@ class RizeniRizikEditorPhaseR01bTestCase(unittest.TestCase):
 
         def _accept(dialog):
             dialog.basics_widget.title.setText("Upraveno ze stránky")
+            with patch("moduly.rizeni_rizik.ui.hazard_identification_dialog.QMessageBox.information"):
+                dialog._save_basics()
             dialog.accept()
             return True
 
