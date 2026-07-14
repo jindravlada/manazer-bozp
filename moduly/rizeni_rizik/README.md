@@ -250,3 +250,14 @@ Odstranění Souvislostí z analýzy pracoviště:
 - AI export bez polí a textů o souvislostech (`zadani.json` / `data.txt`)
 - návrhy AI v oblasti Souvislostí se nezařazují
 
+## Fáze R15
+
+Sloučení Analýzy pracoviště a Nežádoucích událostí:
+
+- záložka **Nežádoucí události** odstraněna z dialogu identifikace
+- datový model `HazardEvent` beze změny
+- v Analýze pracoviště: kategorie | položky (nahoře) | události vybrané položky (dole)
+- automatické filtrování událostí podle výběru položky, předvyplnění zdroje při založení
+- tabulka událostí bez sloupce Zdroj analýzy; počty událostí u položek
+- Posouzení rizik beze změny
+

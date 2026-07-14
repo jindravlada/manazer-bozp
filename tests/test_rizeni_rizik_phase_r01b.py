@@ -40,6 +40,7 @@ with patch.object(Path, "home", return_value=_TMP):
         TAB_EVENTS,
         TAB_INVENTORY,
         TAB_PHOTOS,
+        TAB_RISK_ASSESSMENT,
     )
     from moduly.rizeni_rizik.modely.hazard_identification import HazardIdentification
     from moduly.rizeni_rizik.sluzby.hazard_identification_service import (
@@ -157,7 +158,10 @@ class RizeniRizikEditorPhaseR01bTestCase(unittest.TestCase):
         self.assertEqual(dialog.tabs.tabText(0), TAB_BASICS)
         self.assertEqual(dialog.tabs.tabText(1), TAB_PHOTOS)
         self.assertEqual(dialog.tabs.tabText(2), TAB_INVENTORY)
-        self.assertEqual(dialog.tabs.tabText(3), TAB_EVENTS)
+        self.assertEqual(dialog.tabs.tabText(3), TAB_RISK_ASSESSMENT)
+        self.assertNotIn(TAB_EVENTS, [
+            dialog.tabs.tabText(index) for index in range(dialog.tabs.count())
+        ])
         self.assertTrue(dialog.tabs.isTabEnabled(0))
         self.assertFalse(dialog.tabs.isTabEnabled(1))
         for index in range(2, dialog.tabs.count()):

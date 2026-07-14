@@ -7,11 +7,9 @@ from moduly.rizeni_rizik.constants import (
     DIALOG_WINDOW_TITLE,
     HAZARD_IDENTIFICATION_TABS,
     TAB_BASICS,
-    TAB_EVENTS,
     TAB_INVENTORY,
     TAB_PHOTOS,
     TAB_RISK_ASSESSMENT,
-    is_identification_events_read_only,
     is_identification_inventory_read_only,
     is_identification_photos_read_only,
     is_identification_risk_assessment_read_only,
@@ -23,7 +21,6 @@ from moduly.rizeni_rizik.sluzby.hazard_identification_service import (
     HazardIdentificationError,
     hazard_identification_service,
 )
-from moduly.rizeni_rizik.ui.hazard_events_widget import HazardEventsWidget
 from moduly.rizeni_rizik.ui.hazard_identification_basics_widget import (
     HazardIdentificationBasicsWidget,
 )
@@ -49,7 +46,6 @@ class HazardIdentificationDialog(QDialog):
         self.basics_widget = HazardIdentificationBasicsWidget()
         self.photos_widget = HazardIdentificationPhotosWidget()
         self.risk_assessments_widget = HazardRiskAssessmentsWidget()
-        self.events_widget = HazardEventsWidget(on_assessment_saved=self._on_assessment_saved)
         self.inventory_widget = HazardInventoryWidget(on_event_saved=self._on_event_saved)
         self.ai_peer_review_widget = AiPeerReviewWidget(
             provider=hazard_identification_peer_review_provider,
@@ -59,11 +55,10 @@ class HazardIdentificationDialog(QDialog):
         self.tabs.addTab(self.basics_widget, TAB_BASICS)
         self.tabs.addTab(self.photos_widget, TAB_PHOTOS)
         self.tabs.addTab(self.inventory_widget, TAB_INVENTORY)
-        self.tabs.addTab(self.events_widget, TAB_EVENTS)
         self.tabs.addTab(self.risk_assessments_widget, TAB_RISK_ASSESSMENT)
         self.tabs.addTab(self.ai_peer_review_widget, AI_PEER_REVIEW_TAB_TITLE)
 
-        for tab_label in HAZARD_IDENTIFICATION_TABS[6:]:
+        for tab_label in HAZARD_IDENTIFICATION_TABS[5:]:
             placeholder = QWidget()
             placeholder_layout = QVBoxLayout(placeholder)
             placeholder_layout.addWidget(QLabel("Obsah bude doplněn v další fázi."))
@@ -85,12 +80,10 @@ class HazardIdentificationDialog(QDialog):
         self.basics_widget.load_identification(identification)
         self._sync_photos_context()
         self._sync_inventory_context()
-        self._sync_events_context()
         self._sync_risk_assessment_context()
         self._sync_ai_peer_review_context()
         self._update_photos_tab_enabled()
         self._update_inventory_tab_enabled()
-        self._update_events_tab_enabled()
         self._update_risk_assessment_tab_enabled()
         self._update_ai_peer_review_tab_enabled()
 
@@ -100,14 +93,11 @@ class HazardIdentificationDialog(QDialog):
     def _update_inventory_tab_enabled(self) -> None:
         self.tabs.setTabEnabled(2, self.identification is not None)
 
-    def _update_events_tab_enabled(self) -> None:
+    def _update_risk_assessment_tab_enabled(self) -> None:
         self.tabs.setTabEnabled(3, self.identification is not None)
 
-    def _update_risk_assessment_tab_enabled(self) -> None:
-        self.tabs.setTabEnabled(4, self.identification is not None)
-
     def _update_ai_peer_review_tab_enabled(self) -> None:
-        self.tabs.setTabEnabled(5, self.identification is not None)
+        self.tabs.setTabEnabled(4, self.identification is not None)
 
     def _sync_photos_context(self) -> None:
         identification_id = self.identification.id if self.identification is not None else None
@@ -125,14 +115,6 @@ class HazardIdentificationDialog(QDialog):
             read_only=is_identification_inventory_read_only(status),
         )
 
-    def _sync_events_context(self) -> None:
-        identification_id = self.identification.id if self.identification is not None else None
-        status = self.identification.status if self.identification is not None else ""
-        self.events_widget.set_identification(
-            identification_id,
-            read_only=is_identification_events_read_only(status),
-        )
-
     def _sync_risk_assessment_context(self) -> None:
         identification_id = self.identification.id if self.identification is not None else None
         status = self.identification.status if self.identification is not None else ""
@@ -146,16 +128,10 @@ class HazardIdentificationDialog(QDialog):
         self.ai_peer_review_widget.set_source(identification_id)
 
     def _on_event_saved(self) -> None:
-        self.events_widget.refresh()
-        self.inventory_widget.refresh()
-
-    def _on_assessment_saved(self) -> None:
         self.risk_assessments_widget.refresh()
-        self.events_widget.refresh()
 
     def _on_peer_review_applied(self) -> None:
         self.inventory_widget.refresh()
-        self.events_widget.refresh()
         self.risk_assessments_widget.refresh()
 
     def _save_basics(self) -> None:
@@ -177,12 +153,10 @@ class HazardIdentificationDialog(QDialog):
 
         self._update_photos_tab_enabled()
         self._update_inventory_tab_enabled()
-        self._update_events_tab_enabled()
         self._update_risk_assessment_tab_enabled()
         self._update_ai_peer_review_tab_enabled()
         self._sync_photos_context()
         self._sync_inventory_context()
-        self._sync_events_context()
         self._sync_risk_assessment_context()
         self._sync_ai_peer_review_context()
         self.basics_widget.load_identification(self.identification)

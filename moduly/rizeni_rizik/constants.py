@@ -47,7 +47,7 @@ TABLE_HEADERS = [
 TAB_BASICS = "Základní údaje"
 TAB_PHOTOS = "Fotodokumentace"
 TAB_INVENTORY = "Analýza pracoviště"
-TAB_EVENTS = "Nežádoucí události"
+TAB_EVENTS = "Nežádoucí události"  # odstraněno z dialogu ve fázi R15 (UI sloučeno do Analýzy)
 TAB_RISK_ASSESSMENT = "Posouzení rizik"
 TAB_AI_PEER_REVIEW = "Oponentní posouzení AI"
 TAB_MEASURES = "Opatření"
@@ -63,7 +63,6 @@ HAZARD_IDENTIFICATION_TABS = (
     TAB_BASICS,
     TAB_PHOTOS,
     TAB_INVENTORY,
-    TAB_EVENTS,
     TAB_RISK_ASSESSMENT,
     TAB_AI_PEER_REVIEW,
     TAB_MEASURES,
@@ -202,6 +201,17 @@ EVENT_TABLE_HEADERS = [
     "Zdroj analýzy",
     "Aktivní",
 ]
+
+# Tabulka událostí v záložce Analýza pracoviště (bez sloupce Zdroj analýzy).
+ITEM_EVENT_COL_ID = 0
+ITEM_EVENT_COL_NAME = 1
+ITEM_EVENT_COL_ACTIVE = 2
+ITEM_EVENT_COLUMN_COUNT = 3
+ITEM_EVENT_TABLE_HEADERS = ["ID", "Nežádoucí událost", "Aktivní"]
+
+ITEM_EVENTS_SELECT_ITEM = "Vyberte položku analýzy pracoviště."
+ITEM_EVENTS_SELECT_EVENT = "Vyberte nežádoucí událost."
+ITEM_EVENTS_SECTION_TITLE = "Nežádoucí události vybrané položky"
 
 
 def format_event_display_name(name: str, *, assessment_count: int = 0) -> str:

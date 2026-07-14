@@ -35,6 +35,8 @@ with patch.object(Path, "home", return_value=_TMP):
         HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
         INVENTORY_INTRO_TEXT,
         INVENTORY_ITEM_DIALOG_TITLE,
+        ITEM_EVENT_TABLE_HEADERS,
+        TAB_EVENTS,
         TAB_INVENTORY,
     )
     from moduly.rizeni_rizik.modely.hazard_identification import HazardIdentification
@@ -46,7 +48,6 @@ with patch.object(Path, "home", return_value=_TMP):
         hazard_inventory_item_service,
     )
     from moduly.rizeni_rizik.ui.hazard_inventory_widget import HazardInventoryWidget
-    from moduly.rizeni_rizik.ui.hazard_events_widget import HazardEventsWidget
 
 
 class WorkplaceAnalysisTerminologyPhaseR05aTestCase(unittest.TestCase):
@@ -105,17 +106,21 @@ class WorkplaceAnalysisTerminologyPhaseR05aTestCase(unittest.TestCase):
 
         dialog = HazardIdentificationDialog(identification=self.identification)
         self.assertEqual(dialog.tabs.tabText(2), TAB_INVENTORY)
+        labels = [dialog.tabs.tabText(index) for index in range(dialog.tabs.count())]
+        self.assertNotIn(TAB_EVENTS, labels)
 
-    def test_events_widget_uses_updated_headers(self) -> None:
-        events_widget = HazardEventsWidget()
-        events_widget.set_identification(self.identification.id, read_only=False)
+    def test_inventory_events_table_headers(self) -> None:
+        widget = HazardInventoryWidget()
+        widget.set_identification(self.identification.id, read_only=False)
         self.assertEqual(
             [
-                events_widget.table.horizontalHeaderItem(column).text()
-                for column in range(events_widget.table.columnCount())
+                widget.events_table.horizontalHeaderItem(column).text()
+                for column in range(widget.events_table.columnCount())
             ],
-            EVENT_TABLE_HEADERS,
+            ITEM_EVENT_TABLE_HEADERS,
         )
+        self.assertNotIn("Zdroj analýzy", ITEM_EVENT_TABLE_HEADERS)
+        self.assertIn("Zdroj analýzy", EVENT_TABLE_HEADERS)
 
     def test_inventory_item_service_still_works(self) -> None:
         item = hazard_inventory_item_service.create_item(

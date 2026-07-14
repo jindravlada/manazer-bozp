@@ -50,7 +50,7 @@ with patch.object(Path, "home", return_value=_TMP):
         HazardRiskAssessmentError,
         hazard_risk_assessment_service,
     )
-    from moduly.rizeni_rizik.ui.hazard_events_widget import HazardEventsWidget
+    from moduly.rizeni_rizik.ui.hazard_inventory_widget import HazardInventoryWidget
     from moduly.rizeni_rizik.ui.hazard_risk_assessment_dialog import HazardRiskAssessmentDialog
     from moduly.rizeni_rizik.ui.hazard_risk_assessments_widget import HazardRiskAssessmentsWidget
 
@@ -288,7 +288,7 @@ class HazardRiskAssessmentPhaseR06TestCase(unittest.TestCase):
         self.assertEqual(rows[0].assessment.exposed_group, "Elektrikář")
         self.assertEqual(rows[0].event_name, "Sražení s osobou")
 
-    def test_events_widget_shows_assessment_count(self) -> None:
+    def test_inventory_events_show_assessment_count(self) -> None:
         hazard_risk_assessment_service.create_assessment(
             hazard_identification_id=self.identification.id,
             hazard_event_id=self.event_a.id,
@@ -304,19 +304,21 @@ class HazardRiskAssessmentPhaseR06TestCase(unittest.TestCase):
             severity=RISK_SEVERITY_MODERATE,
         )
 
-        widget = HazardEventsWidget()
+        widget = HazardInventoryWidget()
         widget.set_identification(self.identification.id, read_only=False)
-        self.assertEqual(widget.table.rowCount(), 2)
-        from moduly.rizeni_rizik.constants import EVENT_COL_ID, EVENT_COL_NAME
+        widget._selected_item_id = self.item_a.id
+        widget.refresh()
+        from moduly.rizeni_rizik.constants import ITEM_EVENT_COL_ID, ITEM_EVENT_COL_NAME
 
         event_name_by_id = {}
-        for row_index in range(widget.table.rowCount()):
-            id_item = widget.table.item(row_index, EVENT_COL_ID)
-            name_item = widget.table.item(row_index, EVENT_COL_NAME)
+        for row_index in range(widget.events_table.rowCount()):
+            id_item = widget.events_table.item(row_index, ITEM_EVENT_COL_ID)
+            name_item = widget.events_table.item(row_index, ITEM_EVENT_COL_NAME)
             assert id_item is not None and name_item is not None
             event_name_by_id[int(id_item.text())] = name_item.text()
+        self.assertEqual(len(event_name_by_id), 1)
         self.assertIn("2 posouzení", event_name_by_id[self.event_a.id])
-        self.assertNotIn("posouzení", event_name_by_id[self.event_b.id])
+        self.assertNotIn(self.event_b.id, event_name_by_id)
 
     def test_read_only_assessments_for_completed_identification(self) -> None:
         completed = hazard_identification_service.update_identification(
@@ -334,9 +336,9 @@ class HazardRiskAssessmentPhaseR06TestCase(unittest.TestCase):
         self.assertFalse(widget.activate_btn.isEnabled())
         self.assertFalse(widget.deactivate_btn.isEnabled())
 
-        events_widget = HazardEventsWidget()
-        events_widget.set_identification(completed.id, read_only=True)
-        self.assertFalse(events_widget.assess_risk_btn.isEnabled())
+        inventory = HazardInventoryWidget()
+        inventory.set_identification(completed.id, read_only=True)
+        self.assertFalse(inventory.add_event_btn.isEnabled())
 
 
 if __name__ == "__main__":

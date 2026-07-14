@@ -48,7 +48,7 @@ with patch.object(Path, "home", return_value=_TMP):
         hazard_inventory_item_service,
     )
     from moduly.rizeni_rizik.ui.hazard_event_dialog import HazardEventDialog
-    from moduly.rizeni_rizik.ui.hazard_events_widget import HazardEventsWidget
+    from moduly.rizeni_rizik.ui.hazard_inventory_widget import HazardInventoryWidget
 
 
 class HazardEventPhaseR05TestCase(unittest.TestCase):
@@ -247,12 +247,16 @@ class HazardEventPhaseR05TestCase(unittest.TestCase):
         )
         assert completed is not None
 
-        widget = HazardEventsWidget()
+        widget = HazardInventoryWidget()
         widget.set_identification(completed.id, read_only=True)
         self.assertFalse(widget.add_btn.isEnabled())
         self.assertFalse(widget.edit_btn.isEnabled())
         self.assertFalse(widget.activate_btn.isEnabled())
         self.assertFalse(widget.deactivate_btn.isEnabled())
+        self.assertFalse(widget.add_event_btn.isEnabled())
+        self.assertFalse(widget.edit_event_btn.isEnabled())
+        self.assertFalse(widget.activate_event_btn.isEnabled())
+        self.assertFalse(widget.deactivate_event_btn.isEnabled())
 
 
 if __name__ == "__main__":

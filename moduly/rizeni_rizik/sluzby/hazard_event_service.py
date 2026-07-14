@@ -54,6 +54,17 @@ class HazardEventService:
         rows = [self._to_row(event, items) for event in events]
         return self._sort_rows(rows)
 
+    def get_for_inventory_item(
+        self,
+        inventory_item_id: int,
+        *,
+        include_inactive: bool = True,
+    ) -> list[HazardEvent]:
+        return self.repository.get_for_inventory_item(
+            inventory_item_id,
+            include_inactive=include_inactive,
+        )
+
     def get_by_id(self, event_id: int | None) -> HazardEvent | None:
         if not event_id:
             return None

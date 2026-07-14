@@ -291,7 +291,7 @@ class HazardIdentificationPhotosR13TestCase(unittest.TestCase):
         dialog = HazardIdentificationDialog(identification=self.identification)
         self.assertEqual(dialog.tabs.tabText(1), TAB_PHOTOS)
         self.assertTrue(dialog.tabs.isTabEnabled(1))
-        self.assertTrue(dialog.tabs.isTabEnabled(5))  # AI
+        self.assertTrue(dialog.tabs.isTabEnabled(4))  # AI
         self.assertIs(dialog.tabs.widget(1), dialog.photos_widget)
 
 

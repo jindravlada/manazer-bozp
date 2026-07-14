@@ -171,15 +171,15 @@ class HazardInventoryRelationsRemovalR14TestCase(unittest.TestCase):
 
         self.assertTrue(hasattr(widget, "category_list"))
         self.assertTrue(hasattr(widget, "table"))
-        self.assertTrue(hasattr(widget, "add_event_btn"))
-        self.assertEqual(widget.add_event_btn.text(), "Přidat nežádoucí událost")
-        self.assertFalse(hasattr(widget, "analysis_panel"))
-        self.assertFalse(hasattr(widget, "relation_table"))
         self.assertEqual(
             [widget.add_btn.text(), widget.edit_btn.text(), widget.activate_btn.text(),
-             widget.deactivate_btn.text(), widget.add_event_btn.text()],
-            ["Přidat", "Upravit", "Aktivovat", "Deaktivovat", "Přidat nežádoucí událost"],
+             widget.deactivate_btn.text()],
+            ["Přidat", "Upravit", "Aktivovat", "Deaktivovat"],
         )
+        self.assertEqual(widget.add_event_btn.text(), "Přidat událost")
+        self.assertTrue(hasattr(widget, "events_table"))
+        self.assertFalse(hasattr(widget, "analysis_panel"))
+        self.assertFalse(hasattr(widget, "relation_table"))
 
         hazard_event_service.create_event(
             hazard_identification_id=self.identification.id,

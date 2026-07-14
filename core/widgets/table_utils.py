@@ -209,6 +209,22 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         for column in (EVENT_COL_INVENTORY_ITEM, EVENT_COL_ACTIVE):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 
+    elif profile == "hazard_inventory_item_events":
+        from moduly.rizeni_rizik.constants import (
+            ITEM_EVENT_COL_ACTIVE,
+            ITEM_EVENT_COL_NAME,
+        )
+
+        widths = {
+            ITEM_EVENT_COL_NAME: 320,
+            ITEM_EVENT_COL_ACTIVE: 80,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        header.setSectionResizeMode(ITEM_EVENT_COL_NAME, QHeaderView.Stretch)
+        header.setSectionResizeMode(ITEM_EVENT_COL_ACTIVE, QHeaderView.Fixed)
+
     elif profile == "hazard_risk_assessments":
         from moduly.rizeni_rizik.constants import (
             RISK_ASSESSMENT_COL_ACTIVE,

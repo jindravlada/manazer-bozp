@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 
 from core.widgets.table_utils import configure_table_columns, create_preview_table_item
 from moduly.rizeni_rizik.constants import (
+    HAZARD_EVENT_DIALOG_TITLE,
     HAZARD_INVENTORY_CATEGORIES,
     HAZARD_INVENTORY_CATEGORY_LABELS,
     INVENTORY_COL_ACTIVE,
@@ -25,12 +26,25 @@ from moduly.rizeni_rizik.constants import (
     INVENTORY_INTRO_TEXT,
     INVENTORY_ITEM_DIALOG_TITLE,
     INVENTORY_TABLE_HEADERS,
+    ITEM_EVENT_COL_ACTIVE,
+    ITEM_EVENT_COL_ID,
+    ITEM_EVENT_COL_NAME,
+    ITEM_EVENT_COLUMN_COUNT,
+    ITEM_EVENT_TABLE_HEADERS,
+    ITEM_EVENTS_SECTION_TITLE,
+    ITEM_EVENTS_SELECT_EVENT,
+    ITEM_EVENTS_SELECT_ITEM,
     WORKPLACE_ANALYSIS_READ_ONLY_MESSAGE,
     WORKPLACE_ANALYSIS_SELECT_ITEM,
+    format_event_display_name,
     format_inventory_item_display_name,
 )
-from moduly.rizeni_rizik.sluzby.hazard_event_service import hazard_event_service
+from moduly.rizeni_rizik.sluzby.hazard_event_service import (
+    HazardEventError,
+    hazard_event_service,
+)
 from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import hazard_inventory_item_service
+from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import hazard_risk_assessment_service
 from moduly.rizeni_rizik.ui.hazard_event_dialog import HazardEventDialog
 from moduly.rizeni_rizik.ui.hazard_inventory_item_dialog import HazardInventoryItemDialog
 
@@ -45,6 +59,7 @@ class HazardInventoryWidget(QWidget):
         self._read_only = False
         self._current_category = HAZARD_INVENTORY_CATEGORIES[0]
         self._selected_item_id: int | None = None
+        self._selected_event_id: int | None = None
 
         layout = QVBoxLayout(self)
 
@@ -57,20 +72,20 @@ class HazardInventoryWidget(QWidget):
         self.edit_btn = QPushButton("Upravit")
         self.activate_btn = QPushButton("Aktivovat")
         self.deactivate_btn = QPushButton("Deaktivovat")
-        self.add_event_btn = QPushButton("Přidat nežádoucí událost")
         self.toolbar.addWidget(self.add_btn)
         self.toolbar.addWidget(self.edit_btn)
         self.toolbar.addWidget(self.activate_btn)
         self.toolbar.addWidget(self.deactivate_btn)
-        self.toolbar.addWidget(self.add_event_btn)
         self.toolbar.addStretch()
         layout.addLayout(self.toolbar)
 
-        splitter = QSplitter(Qt.Orientation.Horizontal)
+        main_splitter = QSplitter(Qt.Orientation.Horizontal)
 
         self.category_list = QListWidget()
         self.category_list.setMinimumWidth(240)
-        splitter.addWidget(self.category_list)
+        main_splitter.addWidget(self.category_list)
+
+        right_splitter = QSplitter(Qt.Orientation.Vertical)
 
         self.table = QTableWidget()
         self.table.setColumnCount(INVENTORY_COLUMN_COUNT)
@@ -81,19 +96,57 @@ class HazardInventoryWidget(QWidget):
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setAlternatingRowColors(True)
         configure_table_columns(self.table, "hazard_inventory_items")
-        splitter.addWidget(self.table)
-        splitter.setStretchFactor(1, 1)
+        right_splitter.addWidget(self.table)
 
-        layout.addWidget(splitter, 1)
+        events_panel = QWidget()
+        events_layout = QVBoxLayout(events_panel)
+        events_layout.setContentsMargins(0, 0, 0, 0)
+        events_layout.addWidget(QLabel(ITEM_EVENTS_SECTION_TITLE))
+
+        self.events_toolbar = QHBoxLayout()
+        self.add_event_btn = QPushButton("Přidat událost")
+        self.edit_event_btn = QPushButton("Upravit")
+        self.activate_event_btn = QPushButton("Aktivovat")
+        self.deactivate_event_btn = QPushButton("Deaktivovat")
+        self.events_toolbar.addWidget(self.add_event_btn)
+        self.events_toolbar.addWidget(self.edit_event_btn)
+        self.events_toolbar.addWidget(self.activate_event_btn)
+        self.events_toolbar.addWidget(self.deactivate_event_btn)
+        self.events_toolbar.addStretch()
+        events_layout.addLayout(self.events_toolbar)
+
+        self.events_table = QTableWidget()
+        self.events_table.setColumnCount(ITEM_EVENT_COLUMN_COUNT)
+        self.events_table.setHorizontalHeaderLabels(ITEM_EVENT_TABLE_HEADERS)
+        self.events_table.setColumnHidden(ITEM_EVENT_COL_ID, True)
+        self.events_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.events_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.events_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.events_table.setAlternatingRowColors(True)
+        configure_table_columns(self.events_table, "hazard_inventory_item_events")
+        events_layout.addWidget(self.events_table, 1)
+
+        right_splitter.addWidget(events_panel)
+        right_splitter.setStretchFactor(0, 3)
+        right_splitter.setStretchFactor(1, 2)
+
+        main_splitter.addWidget(right_splitter)
+        main_splitter.setStretchFactor(1, 1)
+        layout.addWidget(main_splitter, 1)
 
         self.add_btn.clicked.connect(self.add_item)
         self.edit_btn.clicked.connect(self.edit_selected_item)
         self.activate_btn.clicked.connect(self.activate_selected_item)
         self.deactivate_btn.clicked.connect(self.deactivate_selected_item)
         self.add_event_btn.clicked.connect(self.add_event_for_selected_item)
+        self.edit_event_btn.clicked.connect(self.edit_selected_event)
+        self.activate_event_btn.clicked.connect(self.activate_selected_event)
+        self.deactivate_event_btn.clicked.connect(self.deactivate_selected_event)
         self.category_list.currentRowChanged.connect(self._on_category_changed)
         self.table.itemSelectionChanged.connect(self._on_item_selection_changed)
         self.table.doubleClicked.connect(self.edit_selected_item)
+        self.events_table.itemSelectionChanged.connect(self._on_event_selection_changed)
+        self.events_table.doubleClicked.connect(self.edit_selected_event)
 
         self._populate_categories()
         self.set_identification(None, read_only=False)
@@ -107,12 +160,16 @@ class HazardInventoryWidget(QWidget):
         self._identification_id = identification_id
         self._read_only = read_only
         self._selected_item_id = None
-        self._set_actions_enabled(not read_only and identification_id is not None)
+        self._selected_event_id = None
+        editable = not read_only and identification_id is not None
+        self._set_item_actions_enabled(editable)
+        self._set_event_actions_enabled(False)
         self.refresh()
 
     def refresh(self) -> None:
         self._populate_categories()
         self._load_table()
+        self._load_events_table()
 
     def add_item(self) -> None:
         if not self._ensure_editable():
@@ -185,8 +242,8 @@ class HazardInventoryWidget(QWidget):
         if item is None:
             QMessageBox.information(
                 self,
-                INVENTORY_ITEM_DIALOG_TITLE,
-                WORKPLACE_ANALYSIS_SELECT_ITEM,
+                HAZARD_EVENT_DIALOG_TITLE,
+                ITEM_EVENTS_SELECT_ITEM,
             )
             return
 
@@ -198,6 +255,78 @@ class HazardInventoryWidget(QWidget):
         if dialog.exec():
             self._notify_event_saved()
             self.refresh()
+
+    def edit_selected_event(self) -> None:
+        event = self._selected_event()
+        if event is None:
+            QMessageBox.information(
+                self,
+                HAZARD_EVENT_DIALOG_TITLE,
+                ITEM_EVENTS_SELECT_EVENT,
+            )
+            return
+
+        dialog = HazardEventDialog(
+            self,
+            hazard_identification_id=self._identification_id,
+            event=event,
+            read_only=self._read_only,
+        )
+        if dialog.exec():
+            self._notify_event_saved()
+            self.refresh()
+
+    def activate_selected_event(self) -> None:
+        if not self._ensure_editable():
+            return
+
+        event = self._selected_event()
+        if event is None:
+            QMessageBox.information(
+                self,
+                HAZARD_EVENT_DIALOG_TITLE,
+                ITEM_EVENTS_SELECT_EVENT,
+            )
+            return
+        if event.active:
+            QMessageBox.information(
+                self,
+                HAZARD_EVENT_DIALOG_TITLE,
+                "Nežádoucí událost je již aktivní.",
+            )
+            return
+
+        try:
+            hazard_event_service.activate_event(event.id)
+        except HazardEventError as error:
+            QMessageBox.warning(self, HAZARD_EVENT_DIALOG_TITLE, str(error))
+            return
+        self._notify_event_saved()
+        self.refresh()
+
+    def deactivate_selected_event(self) -> None:
+        if not self._ensure_editable():
+            return
+
+        event = self._selected_event()
+        if event is None:
+            QMessageBox.information(
+                self,
+                HAZARD_EVENT_DIALOG_TITLE,
+                ITEM_EVENTS_SELECT_EVENT,
+            )
+            return
+        if not event.active:
+            QMessageBox.information(
+                self,
+                HAZARD_EVENT_DIALOG_TITLE,
+                "Nežádoucí událost je již neaktivní.",
+            )
+            return
+
+        hazard_event_service.deactivate_event(event.id)
+        self._notify_event_saved()
+        self.refresh()
 
     def _notify_event_saved(self) -> None:
         if self._on_event_saved is not None:
@@ -220,13 +349,21 @@ class HazardInventoryWidget(QWidget):
             return False
         return True
 
-    def _set_actions_enabled(self, enabled: bool) -> None:
+    def _set_item_actions_enabled(self, enabled: bool) -> None:
         for button in (
             self.add_btn,
             self.edit_btn,
             self.activate_btn,
             self.deactivate_btn,
+        ):
+            button.setEnabled(enabled)
+
+    def _set_event_actions_enabled(self, enabled: bool) -> None:
+        for button in (
             self.add_event_btn,
+            self.edit_event_btn,
+            self.activate_event_btn,
+            self.deactivate_event_btn,
         ):
             button.setEnabled(enabled)
 
@@ -255,6 +392,7 @@ class HazardInventoryWidget(QWidget):
         self.table.setRowCount(0)
         if self._identification_id is None:
             self.table.blockSignals(False)
+            self._update_event_actions_for_selection()
             return
 
         event_counts = hazard_event_service.count_active_by_inventory_items(
@@ -290,7 +428,67 @@ class HazardInventoryWidget(QWidget):
         configure_table_columns(self.table, "hazard_inventory_items")
         if selected_row >= 0:
             self.table.selectRow(selected_row)
+        else:
+            self._selected_item_id = None
+            self._selected_event_id = None
         self.table.blockSignals(False)
+        self._update_event_actions_for_selection()
+
+    def _load_events_table(self) -> None:
+        self.events_table.blockSignals(True)
+        self.events_table.setRowCount(0)
+
+        if self._identification_id is None or self._selected_item_id is None:
+            self.events_table.blockSignals(False)
+            self._update_event_actions_for_selection()
+            return
+
+        assessment_counts = hazard_risk_assessment_service.count_active_by_events(
+            self._identification_id
+        )
+        events = hazard_event_service.get_for_inventory_item(
+            self._selected_item_id,
+            include_inactive=True,
+        )
+        self.events_table.setRowCount(len(events))
+        selected_row = -1
+        for row_index, event in enumerate(events):
+            self.events_table.setItem(
+                row_index,
+                ITEM_EVENT_COL_ID,
+                QTableWidgetItem(str(event.id)),
+            )
+            display_name = format_event_display_name(
+                event.name,
+                assessment_count=assessment_counts.get(event.id, 0),
+            )
+            self.events_table.setItem(
+                row_index,
+                ITEM_EVENT_COL_NAME,
+                QTableWidgetItem(display_name),
+            )
+            self.events_table.setItem(
+                row_index,
+                ITEM_EVENT_COL_ACTIVE,
+                QTableWidgetItem("Ano" if event.active else "Ne"),
+            )
+            if self._selected_event_id == event.id:
+                selected_row = row_index
+
+        configure_table_columns(self.events_table, "hazard_inventory_item_events")
+        if selected_row >= 0:
+            self.events_table.selectRow(selected_row)
+        else:
+            self._selected_event_id = None
+        self.events_table.blockSignals(False)
+
+    def _update_event_actions_for_selection(self) -> None:
+        editable = (
+            not self._read_only
+            and self._identification_id is not None
+            and self._selected_item_id is not None
+        )
+        self._set_event_actions_enabled(editable)
 
     def _on_category_changed(self, row: int) -> None:
         item = self.category_list.item(row)
@@ -300,11 +498,23 @@ class HazardInventoryWidget(QWidget):
         if category:
             self._current_category = category
             self._selected_item_id = None
+            self._selected_event_id = None
             self._load_table()
+            self._load_events_table()
 
     def _on_item_selection_changed(self) -> None:
         item = self._selected_item()
-        self._selected_item_id = item.id if item is not None else None
+        new_id = item.id if item is not None else None
+        if new_id == self._selected_item_id:
+            return
+        self._selected_item_id = new_id
+        self._selected_event_id = None
+        self._load_events_table()
+        self._update_event_actions_for_selection()
+
+    def _on_event_selection_changed(self) -> None:
+        event = self._selected_event()
+        self._selected_event_id = event.id if event is not None else None
 
     def _selected_item(self):
         selected = self.table.selectionModel().selectedRows()
@@ -314,3 +524,12 @@ class HazardInventoryWidget(QWidget):
         if id_item is None:
             return None
         return hazard_inventory_item_service.get_by_id(int(id_item.text()))
+
+    def _selected_event(self):
+        selected = self.events_table.selectionModel().selectedRows()
+        if not selected:
+            return None
+        id_item = self.events_table.item(selected[0].row(), ITEM_EVENT_COL_ID)
+        if id_item is None:
+            return None
+        return hazard_event_service.get_by_id(int(id_item.text()))
