@@ -804,6 +804,11 @@ def _ensure_hazard_risk_assessments_table() -> None:
         from moduly.rizeni_rizik.modely.hazard_risk_assessment import HazardRiskAssessment
 
         HazardRiskAssessment.__table__.create(bind=_db_engine(), checkfirst=True)
+        return
+    if "consequence" not in columns:
+        _add_column("hazard_risk_assessments", "consequence TEXT DEFAULT '' NOT NULL")
+    if "severity" not in columns:
+        _add_column("hazard_risk_assessments", "severity VARCHAR(32) DEFAULT '' NOT NULL")
 
 
 def _ensure_responsibility_roles_table() -> None:

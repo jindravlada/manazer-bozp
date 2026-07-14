@@ -129,3 +129,12 @@ Posouzení rizik v záložce Posouzení rizik:
 - evidence ohrožených skupin osob navázaných na nežádoucí události
 - akce Posoudit riziko v záložce Nežádoucí události, počty aktivních posouzení u událostí
 - režim pouze pro čtení u dokončené nebo archivované identifikace
+
+## Fáze R07
+
+Rozšíření posouzení rizika o následek a závažnost:
+
+- pole `consequence` a `severity` v modelu `HazardRiskAssessment`
+- pět úrovní závažnosti se slovní popisem v dialogu
+- sloupce Možný následek a Závažnost v záložce Posouzení rizik
+- validace povinných polí bez změny pravidel duplicity ohrožené skupiny

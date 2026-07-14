@@ -309,23 +309,75 @@ def format_event_display_name(name: str, *, assessment_count: int = 0) -> str:
 
 
 RISK_ASSESSMENTS_INTRO_TEXT = (
-    "Určete, které skupiny osob mohou být vystaveny jednotlivým nežádoucím událostem."
+    "Určete, které skupiny osob mohou být vystaveny jednotlivým nežádoucím událostem "
+    "a popište možný následek včetně jeho závažnosti."
 )
 
 HAZARD_RISK_ASSESSMENT_DIALOG_TITLE = "Posouzení rizika"
+
+RISK_SEVERITY_NEGLIGIBLE = "negligible"
+RISK_SEVERITY_MINOR = "minor"
+RISK_SEVERITY_MODERATE = "moderate"
+RISK_SEVERITY_SERIOUS = "serious"
+RISK_SEVERITY_CRITICAL = "critical"
+
+RISK_SEVERITIES = (
+    RISK_SEVERITY_NEGLIGIBLE,
+    RISK_SEVERITY_MINOR,
+    RISK_SEVERITY_MODERATE,
+    RISK_SEVERITY_SERIOUS,
+    RISK_SEVERITY_CRITICAL,
+)
+
+DEFAULT_RISK_SEVERITY = RISK_SEVERITY_MODERATE
+
+RISK_SEVERITY_LABELS = {
+    RISK_SEVERITY_NEGLIGIBLE: "Zanedbatelný",
+    RISK_SEVERITY_MINOR: "Lehký",
+    RISK_SEVERITY_MODERATE: "Závažný",
+    RISK_SEVERITY_SERIOUS: "Velmi závažný",
+    RISK_SEVERITY_CRITICAL: "Kritický",
+}
+
+RISK_SEVERITY_DESCRIPTIONS = {
+    RISK_SEVERITY_NEGLIGIBLE: (
+        "Bez zranění nebo pouze přechodné drobné obtíže bez potřeby odborného ošetření."
+    ),
+    RISK_SEVERITY_MINOR: (
+        "Lehké zranění nebo zdravotní obtíže bez pracovní neschopnosti."
+    ),
+    RISK_SEVERITY_MODERATE: (
+        "Zranění nebo poškození zdraví s pracovní neschopností."
+    ),
+    RISK_SEVERITY_SERIOUS: (
+        "Těžké zranění, hospitalizace, trvalé následky nebo nemoc z povolání."
+    ),
+    RISK_SEVERITY_CRITICAL: (
+        "Smrtelné zranění nebo událost s možností postižení více osob."
+    ),
+}
+
+
+def format_risk_severity_label(severity: str) -> str:
+    return RISK_SEVERITY_LABELS.get(severity, severity or "—")
+
 
 RISK_ASSESSMENT_COL_ID = 0
 RISK_ASSESSMENT_COL_EXPOSED_GROUP = 1
 RISK_ASSESSMENT_COL_EVENT = 2
 RISK_ASSESSMENT_COL_HAZARD = 3
-RISK_ASSESSMENT_COL_ACTIVE = 4
-RISK_ASSESSMENT_COLUMN_COUNT = 5
+RISK_ASSESSMENT_COL_CONSEQUENCE = 4
+RISK_ASSESSMENT_COL_SEVERITY = 5
+RISK_ASSESSMENT_COL_ACTIVE = 6
+RISK_ASSESSMENT_COLUMN_COUNT = 7
 
 RISK_ASSESSMENT_TABLE_HEADERS = [
     "ID",
     "Ohrožená skupina",
     "Nežádoucí událost",
     "Nebezpečí",
+    "Možný následek",
+    "Závažnost",
     "Aktivní",
 ]
 

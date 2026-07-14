@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QFormLayout,
+    QLabel,
     QLineEdit,
     QMessageBox,
     QPlainTextEdit,
@@ -11,7 +12,13 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
-from moduly.rizeni_rizik.constants import HAZARD_RISK_ASSESSMENT_DIALOG_TITLE
+from moduly.rizeni_rizik.constants import (
+    DEFAULT_RISK_SEVERITY,
+    HAZARD_RISK_ASSESSMENT_DIALOG_TITLE,
+    RISK_SEVERITIES,
+    RISK_SEVERITY_DESCRIPTIONS,
+    RISK_SEVERITY_LABELS,
+)
 from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import (
     HazardRiskAssessmentError,
     hazard_risk_assessment_service,
@@ -35,7 +42,7 @@ class HazardRiskAssessmentDialog(QDialog):
         self.read_only = read_only
 
         self.setWindowTitle(HAZARD_RISK_ASSESSMENT_DIALOG_TITLE)
-        self.resize(560, 360)
+        self.resize(620, 520)
 
         layout = QVBoxLayout(self)
         form = QFormLayout()
@@ -44,13 +51,24 @@ class HazardRiskAssessmentDialog(QDialog):
         self._populate_events(default_hazard_event_id)
 
         self.exposed_group = QLineEdit()
+        self.consequence = QPlainTextEdit()
+        self.consequence.setMinimumHeight(80)
+        self.severity = QComboBox()
+        for severity in RISK_SEVERITIES:
+            self.severity.addItem(RISK_SEVERITY_LABELS[severity], severity)
+        self.severity_description = QLabel()
+        self.severity_description.setWordWrap(True)
+        self.severity.currentIndexChanged.connect(self._update_severity_description)
         self.note = QPlainTextEdit()
-        self.note.setMinimumHeight(80)
+        self.note.setMinimumHeight(60)
         self.active_checkbox = QCheckBox("Aktivní")
         self.active_checkbox.setChecked(True)
 
         form.addRow("Nežádoucí událost *:", self.event)
         form.addRow("Ohrožená skupina *:", self.exposed_group)
+        form.addRow("Možný následek *:", self.consequence)
+        form.addRow("Závažnost následku *:", self.severity)
+        form.addRow("", self.severity_description)
         form.addRow("Poznámka:", self.note)
         form.addRow("", self.active_checkbox)
 
@@ -66,12 +84,24 @@ class HazardRiskAssessmentDialog(QDialog):
             if index >= 0:
                 self.event.setCurrentIndex(index)
             self.exposed_group.setText(assessment.exposed_group)
+            self.consequence.setPlainText(assessment.consequence or "")
+            severity_index = self.severity.findData(assessment.severity)
+            if severity_index >= 0:
+                self.severity.setCurrentIndex(severity_index)
             self.note.setPlainText(assessment.note or "")
             self.active_checkbox.setChecked(bool(assessment.active))
+        else:
+            default_index = self.severity.findData(DEFAULT_RISK_SEVERITY)
+            if default_index >= 0:
+                self.severity.setCurrentIndex(default_index)
+
+        self._update_severity_description()
 
         if read_only:
             self.event.setEnabled(False)
             self.exposed_group.setReadOnly(True)
+            self.consequence.setReadOnly(True)
+            self.severity.setEnabled(False)
             self.note.setReadOnly(True)
             self.active_checkbox.setEnabled(False)
             buttons.button(QDialogButtonBox.StandardButton.Save).setEnabled(False)
@@ -89,6 +119,11 @@ class HazardRiskAssessmentDialog(QDialog):
             index = self.event.findData(default_hazard_event_id)
             if index >= 0:
                 self.event.setCurrentIndex(index)
+
+    def _update_severity_description(self) -> None:
+        severity = self.severity.currentData()
+        description = RISK_SEVERITY_DESCRIPTIONS.get(severity, "")
+        self.severity_description.setText(description)
 
     def accept(self) -> None:
         if self.read_only:
@@ -117,6 +152,8 @@ class HazardRiskAssessmentDialog(QDialog):
         return {
             "hazard_event_id": self.event.currentData(),
             "exposed_group": self.exposed_group.text().strip(),
+            "consequence": self.consequence.toPlainText().strip(),
+            "severity": self.severity.currentData(),
             "note": self.note.toPlainText().strip(),
             "active": self.active_checkbox.isChecked(),
         }

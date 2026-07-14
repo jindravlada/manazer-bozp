@@ -13,10 +13,12 @@ from core.widgets.table_utils import configure_table_columns
 from moduly.rizeni_rizik.constants import (
     HAZARD_RISK_ASSESSMENT_DIALOG_TITLE,
     RISK_ASSESSMENT_COL_ACTIVE,
+    RISK_ASSESSMENT_COL_CONSEQUENCE,
     RISK_ASSESSMENT_COL_EVENT,
     RISK_ASSESSMENT_COL_EXPOSED_GROUP,
     RISK_ASSESSMENT_COL_HAZARD,
     RISK_ASSESSMENT_COL_ID,
+    RISK_ASSESSMENT_COL_SEVERITY,
     RISK_ASSESSMENT_COLUMN_COUNT,
     RISK_ASSESSMENTS_INTRO_TEXT,
     RISK_ASSESSMENT_TABLE_HEADERS,
@@ -226,6 +228,16 @@ class HazardRiskAssessmentsWidget(QWidget):
                 row_index,
                 RISK_ASSESSMENT_COL_HAZARD,
                 QTableWidgetItem(row.hazard_name),
+            )
+            self.table.setItem(
+                row_index,
+                RISK_ASSESSMENT_COL_CONSEQUENCE,
+                QTableWidgetItem(assessment.consequence),
+            )
+            self.table.setItem(
+                row_index,
+                RISK_ASSESSMENT_COL_SEVERITY,
+                QTableWidgetItem(row.severity_label),
             )
             self.table.setItem(
                 row_index,

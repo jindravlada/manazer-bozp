@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from core.utils.czech_sort import czech_sorted
+from moduly.rizeni_rizik.constants import RISK_SEVERITIES, format_risk_severity_label
 from moduly.rizeni_rizik.modely.hazard_risk_assessment import HazardRiskAssessment
 from moduly.rizeni_rizik.repository.hazard_risk_assessment_repository import (
     HazardRiskAssessmentRepository,
@@ -26,6 +27,7 @@ class HazardRiskAssessmentRow:
     assessment: HazardRiskAssessment
     event_name: str
     hazard_name: str
+    severity_label: str
 
 
 class HazardRiskAssessmentService:
@@ -81,12 +83,14 @@ class HazardRiskAssessmentService:
         hazard_identification_id: int,
         hazard_event_id: int,
         exposed_group: str,
+        consequence: str,
+        severity: str,
         note: str = "",
         active: bool = True,
     ) -> HazardRiskAssessment:
-        normalized_group = exposed_group.strip()
-        if not normalized_group:
-            raise HazardRiskAssessmentError("Ohrožená skupina je povinná.")
+        normalized_group = self._validate_exposed_group(exposed_group)
+        normalized_consequence = self._validate_consequence(consequence)
+        normalized_severity = self._validate_severity(severity)
 
         self._validate_event(hazard_identification_id, hazard_event_id)
         self._validate_unique_active_group(
@@ -99,6 +103,8 @@ class HazardRiskAssessmentService:
         assessment = HazardRiskAssessment(
             hazard_event_id=hazard_event_id,
             exposed_group=normalized_group,
+            consequence=normalized_consequence,
+            severity=normalized_severity,
             note=note.strip(),
             active=active,
         )
@@ -111,6 +117,8 @@ class HazardRiskAssessmentService:
         hazard_identification_id: int,
         hazard_event_id: int,
         exposed_group: str,
+        consequence: str,
+        severity: str,
         note: str = "",
         active: bool = True,
     ) -> HazardRiskAssessment | None:
@@ -118,9 +126,9 @@ class HazardRiskAssessmentService:
         if assessment is None:
             return None
 
-        normalized_group = exposed_group.strip()
-        if not normalized_group:
-            raise HazardRiskAssessmentError("Ohrožená skupina je povinná.")
+        normalized_group = self._validate_exposed_group(exposed_group)
+        normalized_consequence = self._validate_consequence(consequence)
+        normalized_severity = self._validate_severity(severity)
 
         self._validate_event(hazard_identification_id, hazard_event_id)
         self._validate_unique_active_group(
@@ -132,6 +140,8 @@ class HazardRiskAssessmentService:
 
         assessment.hazard_event_id = hazard_event_id
         assessment.exposed_group = normalized_group
+        assessment.consequence = normalized_consequence
+        assessment.severity = normalized_severity
         assessment.note = note.strip()
         assessment.active = active
         assessment.updated_at = datetime.now()
@@ -173,12 +183,14 @@ class HazardRiskAssessmentService:
                 assessment=assessment,
                 event_name="—",
                 hazard_name="—",
+                severity_label=format_risk_severity_label(assessment.severity),
             )
 
         return HazardRiskAssessmentRow(
             assessment=assessment,
             event_name=event_row.event.name,
             hazard_name=event_row.hazard_name,
+            severity_label=format_risk_severity_label(assessment.severity),
         )
 
     def _sort_rows(self, rows: list[HazardRiskAssessmentRow]) -> list[HazardRiskAssessmentRow]:
@@ -190,6 +202,23 @@ class HazardRiskAssessmentService:
             )
 
         return czech_sorted(rows, key=sort_key)
+
+    def _validate_exposed_group(self, exposed_group: str) -> str:
+        normalized_group = exposed_group.strip()
+        if not normalized_group:
+            raise HazardRiskAssessmentError("Ohrožená skupina je povinná.")
+        return normalized_group
+
+    def _validate_consequence(self, consequence: str) -> str:
+        normalized_consequence = consequence.strip()
+        if not normalized_consequence:
+            raise HazardRiskAssessmentError("Možný následek je povinný.")
+        return normalized_consequence
+
+    def _validate_severity(self, severity: str) -> str:
+        if severity not in RISK_SEVERITIES:
+            raise HazardRiskAssessmentError("Neplatná závažnost následku.")
+        return severity
 
     def _validate_event(
         self,
