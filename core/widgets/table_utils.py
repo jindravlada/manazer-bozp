@@ -190,6 +190,31 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             header.setSectionResizeMode(column, QHeaderView.Fixed)
         header.setSectionResizeMode(7, QHeaderView.Stretch)
 
+    elif profile == "hazard_identifications":
+        from moduly.rizeni_rizik.constants import (
+            COL_OPERATION,
+            COL_RESPONSIBLE_PERSON,
+            COL_STARTED_AT,
+            COL_STATUS,
+            COL_TITLE,
+            COL_WORKPLACE,
+        )
+
+        widths = {
+            COL_TITLE: 280,
+            COL_OPERATION: 180,
+            COL_WORKPLACE: 180,
+            COL_STARTED_AT: 120,
+            COL_RESPONSIBLE_PERSON: 180,
+            COL_STATUS: 120,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        header.setSectionResizeMode(COL_TITLE, QHeaderView.Stretch)
+        for column in widths:
+            header.setSectionResizeMode(column, QHeaderView.Fixed)
+
     elif profile == "legal_requirements":
         from moduly.pravni_pozadavky.ui.legal_requirement_table import (
             COL_CODE,

@@ -64,6 +64,7 @@ def initialize_database() -> None:
     from moduly.pravni_pozadavky.modely.legal_check_run import LegalCheckRun  # noqa: F401
     from core.shared.modely.entity_link import EntityLink  # noqa: F401
     from core.shared.modely.control_result import ControlResult  # noqa: F401
+    from moduly.rizeni_rizik.modely.hazard_identification import HazardIdentification  # noqa: F401
 
     create_database()
     _ensure_thp_worker_title_columns()
@@ -95,6 +96,7 @@ def initialize_database() -> None:
     _ensure_legal_change_sections_table()
     _ensure_legal_document_columns()
     _ensure_legal_check_run_columns()
+    _ensure_hazard_identifications_table()
     _migrate_legal_document_types()
     _normalize_task_status_values()
     _normalize_accident_legacy_values()
@@ -607,6 +609,14 @@ def _migrate_legal_requirement_titles() -> None:
             ),
         )
         connection.commit()
+
+
+def _ensure_hazard_identifications_table() -> None:
+    columns = _table_columns("hazard_identifications")
+    if not columns:
+        from moduly.rizeni_rizik.modely.hazard_identification import HazardIdentification
+
+        HazardIdentification.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_responsibility_roles_table() -> None:
