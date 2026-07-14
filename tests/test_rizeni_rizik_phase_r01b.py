@@ -35,10 +35,10 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.rizeni_rizik.constants import (
         HAZARD_IDENTIFICATION_STATUS_IN_PROGRESS,
-    HAZARD_IDENTIFICATION_TABS,
-    TAB_BASICS,
-    TAB_INVENTORY,
-)
+        HAZARD_IDENTIFICATION_TABS,
+        TAB_BASICS,
+        TAB_INVENTORY,
+    )
     from moduly.rizeni_rizik.modely.hazard_identification import HazardIdentification
     from moduly.rizeni_rizik.sluzby.hazard_identification_service import (
         HazardIdentificationError,
@@ -95,7 +95,6 @@ class RizeniRizikEditorPhaseR01bTestCase(unittest.TestCase):
 
     def _create_sample(self):
         return hazard_identification_service.create_identification(
-            title="Identifikace A",
             operation_id=self.operation_a.id,
             workplace_id=self.workplace_a1.id,
             workplace_part_id=self.part_a1.id,
@@ -107,7 +106,7 @@ class RizeniRizikEditorPhaseR01bTestCase(unittest.TestCase):
 
     def test_create_identification_via_service(self) -> None:
         created = self._create_sample()
-        self.assertEqual(created.title, "Identifikace A")
+        self.assertRegex(created.identification_number, r"^\d{4}-\d{4}$")
         self.assertEqual(created.operation_id, self.operation_a.id)
         self.assertEqual(created.workplace_id, self.workplace_a1.id)
         self.assertEqual(created.workplace_part_id, self.part_a1.id)
@@ -118,14 +117,13 @@ class RizeniRizikEditorPhaseR01bTestCase(unittest.TestCase):
         created = self._create_sample()
         updated = hazard_identification_service.update_identification(
             created.id,
-            title="Identifikace upravená",
             operation_id=self.operation_a.id,
             workplace_id=self.workplace_a2.id,
             workplace_part_id=None,
             note="Nová poznámka",
         )
         assert updated is not None
-        self.assertEqual(updated.title, "Identifikace upravená")
+        self.assertEqual(updated.identification_number, created.identification_number)
         self.assertEqual(updated.workplace_id, self.workplace_a2.id)
         self.assertIsNone(updated.workplace_part_id)
         self.assertEqual(updated.note, "Nová poznámka")
@@ -136,7 +134,10 @@ class RizeniRizikEditorPhaseR01bTestCase(unittest.TestCase):
         created = self._create_sample()
         dialog = HazardIdentificationDialog(identification=created)
 
-        self.assertEqual(dialog.basics_widget.title.text(), "Identifikace A")
+        self.assertEqual(
+            dialog.basics_widget.identification_number_label.text(),
+            created.identification_number,
+        )
         self.assertEqual(dialog.basics_widget.operation.currentData(), self.operation_a.id)
         self.assertEqual(dialog.basics_widget.workplace.currentData(), self.workplace_a1.id)
         self.assertEqual(dialog.basics_widget.workplace_part.currentData(), self.part_a1.id)
@@ -167,9 +168,9 @@ class RizeniRizikEditorPhaseR01bTestCase(unittest.TestCase):
         from moduly.rizeni_rizik.ui.rizeni_rizik_page import RizeniRizikPage
 
         page = RizeniRizikPage()
+        saved_number = {"value": ""}
 
         def _accept(dialog):
-            dialog.basics_widget.title.setText("Nová z dialogu")
             dialog.basics_widget._select_combo_value(
                 dialog.basics_widget.operation,
                 self.operation_a.id,
@@ -181,6 +182,7 @@ class RizeniRizikEditorPhaseR01bTestCase(unittest.TestCase):
             )
             with patch("moduly.rizeni_rizik.ui.hazard_identification_dialog.QMessageBox.information"):
                 dialog._save_basics()
+            saved_number["value"] = dialog.identification.identification_number
             dialog.accept()
             return True
 
@@ -188,7 +190,7 @@ class RizeniRizikEditorPhaseR01bTestCase(unittest.TestCase):
         page.new_identification()
 
         self.assertEqual(page.table.rowCount(), 1)
-        self.assertEqual(page.table.item(0, 1).text(), "Nová z dialogu")
+        self.assertEqual(page.table.item(0, 1).text(), saved_number["value"])
 
     @patch("moduly.rizeni_rizik.ui.rizeni_rizik_page.exec_maximized")
     def test_edit_identification_from_page(self, mock_exec) -> None:
@@ -199,7 +201,7 @@ class RizeniRizikEditorPhaseR01bTestCase(unittest.TestCase):
         page.table.selectRow(0)
 
         def _accept(dialog):
-            dialog.basics_widget.title.setText("Upraveno ze stránky")
+            dialog.basics_widget.note.setPlainText("Upraveno ze stránky")
             with patch("moduly.rizeni_rizik.ui.hazard_identification_dialog.QMessageBox.information"):
                 dialog._save_basics()
             dialog.accept()
@@ -210,7 +212,7 @@ class RizeniRizikEditorPhaseR01bTestCase(unittest.TestCase):
 
         reloaded = hazard_identification_service.get_by_id(created.id)
         assert reloaded is not None
-        self.assertEqual(reloaded.title, "Upraveno ze stránky")
+        self.assertEqual(reloaded.note, "Upraveno ze stránky")
 
     def test_activate_and_deactivate(self) -> None:
         created = self._create_sample()
@@ -251,7 +253,6 @@ class RizeniRizikEditorPhaseR01bTestCase(unittest.TestCase):
     def test_reject_invalid_workplace_combination(self) -> None:
         with self.assertRaises(HazardIdentificationError):
             hazard_identification_service.create_identification(
-                title="Neplatná",
                 operation_id=self.operation_a.id,
                 workplace_id=self.workplace_b1.id,
             )

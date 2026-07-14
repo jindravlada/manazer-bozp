@@ -76,7 +76,7 @@ class RizeniRizikPage(QWidget):
         answer = QMessageBox.question(
             self,
             "Aktivovat",
-            f"Opravdu aktivovat identifikaci {identification.title}?",
+            f"Opravdu aktivovat identifikaci {identification.identification_number}?",
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )
@@ -96,7 +96,7 @@ class RizeniRizikPage(QWidget):
         answer = QMessageBox.question(
             self,
             "Deaktivovat",
-            f"Opravdu deaktivovat identifikaci {identification.title}?",
+            f"Opravdu deaktivovat identifikaci {identification.identification_number}?",
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )

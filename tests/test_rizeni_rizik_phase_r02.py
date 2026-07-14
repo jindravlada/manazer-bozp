@@ -79,12 +79,10 @@ class HazardInventoryPhaseR02TestCase(unittest.TestCase):
             parent_id=operation.id,
         )
         self.identification_a = hazard_identification_service.create_identification(
-            title="Identifikace A",
             operation_id=operation.id,
             workplace_id=workplace.id,
         )
         self.identification_b = hazard_identification_service.create_identification(
-            title="Identifikace B",
             operation_id=operation.id,
             workplace_id=workplace.id,
         )
@@ -258,7 +256,6 @@ class HazardInventoryPhaseR02TestCase(unittest.TestCase):
 
         completed = hazard_identification_service.update_identification(
             self.identification_a.id,
-            title=self.identification_a.title,
             operation_id=self.identification_a.operation_id,
             workplace_id=self.identification_a.workplace_id,
             status=HAZARD_IDENTIFICATION_STATUS_COMPLETED,

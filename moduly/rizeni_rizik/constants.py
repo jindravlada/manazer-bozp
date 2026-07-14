@@ -26,7 +26,7 @@ HAZARD_IDENTIFICATION_STATUS_LABELS = {
 }
 
 COL_ID = 0
-COL_TITLE = 1
+COL_IDENTIFICATION = 1
 COL_OPERATION = 2
 COL_WORKPLACE = 3
 COL_STARTED_AT = 4
@@ -36,7 +36,7 @@ COLUMN_COUNT = 7
 
 TABLE_HEADERS = [
     "ID",
-    "Název",
+    "Identifikace",
     "Provoz",
     "Pracoviště",
     "Datum zahájení",

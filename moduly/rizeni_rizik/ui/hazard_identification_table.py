@@ -3,11 +3,11 @@ from PySide6.QtWidgets import QTableWidget, QTableWidgetItem
 
 from moduly.rizeni_rizik.constants import (
     COL_ID,
+    COL_IDENTIFICATION,
     COL_OPERATION,
     COL_RESPONSIBLE_PERSON,
     COL_STARTED_AT,
     COL_STATUS,
-    COL_TITLE,
     COL_WORKPLACE,
     COLUMN_COUNT,
     HAZARD_IDENTIFICATION_STATUS_LABELS,
@@ -31,7 +31,7 @@ class HazardIdentificationTable(QTableWidget):
         self.setRowCount(len(identifications))
         for row, identification in enumerate(identifications):
             self.setItem(row, COL_ID, QTableWidgetItem(str(identification.id)))
-            self.setItem(row, COL_TITLE, QTableWidgetItem(identification.title))
+            self.setItem(row, COL_IDENTIFICATION, QTableWidgetItem(identification.identification_number))
             self.setItem(row, COL_OPERATION, QTableWidgetItem(identification.operation_name))
             self.setItem(row, COL_WORKPLACE, QTableWidgetItem(identification.workplace_name))
             started_text = (

@@ -111,6 +111,7 @@ class HazardIdentificationDialog(QDialog):
         self._update_hazards_tab_enabled()
         self._sync_inventory_context()
         self._sync_hazards_context()
+        self.basics_widget.load_identification(self.identification)
         QMessageBox.information(self, DIALOG_WINDOW_TITLE, "Základní údaje byly uloženy.")
 
     def get_data(self) -> dict:

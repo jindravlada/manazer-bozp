@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QComboBox, QFormLayout, QLineEdit, QPlainTextEdit, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QComboBox, QFormLayout, QLabel, QPlainTextEdit, QVBoxLayout, QWidget
 
 from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.person_selector import PersonSelector
@@ -16,7 +16,7 @@ class HazardIdentificationBasicsWidget(QWidget):
         layout = QVBoxLayout(self)
         form = QFormLayout()
 
-        self.title = QLineEdit()
+        self.identification_number_label = QLabel("—")
         self.operation = QComboBox()
         self.workplace = QComboBox()
         self.workplace_part = QComboBox()
@@ -29,7 +29,7 @@ class HazardIdentificationBasicsWidget(QWidget):
         for status in HAZARD_IDENTIFICATION_STATUSES:
             self.status.addItem(HAZARD_IDENTIFICATION_STATUS_LABELS[status], status)
 
-        form.addRow("Název *:", self.title)
+        form.addRow("Identifikace:", self.identification_number_label)
         form.addRow("Provoz *:", self.operation)
         form.addRow("Pracoviště *:", self.workplace)
         form.addRow("Část pracoviště:", self.workplace_part)
@@ -60,14 +60,14 @@ class HazardIdentificationBasicsWidget(QWidget):
         )
 
         if identification is None:
-            self.title.clear()
+            self.identification_number_label.setText("—")
             self.responsible_person.set_person_id(None)
             self.started_at.clear_date()
             self.status.setCurrentIndex(0)
             self.note.clear()
             return
 
-        self.title.setText(identification.title)
+        self.identification_number_label.setText(identification.identification_number)
         self._select_combo_value(self.operation, identification.operation_id)
         self._reload_workplaces(
             identification.operation_id,
@@ -88,7 +88,6 @@ class HazardIdentificationBasicsWidget(QWidget):
         workplace_part_id = self.workplace_part.currentData()
         responsible_person_id = self._current_person_id()
         return {
-            "title": self.title.text().strip(),
             "operation_id": self.operation.currentData(),
             "workplace_id": self.workplace.currentData(),
             "workplace_part_id": workplace_part_id,

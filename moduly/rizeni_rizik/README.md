@@ -33,7 +33,7 @@ moduly/rizeni_rizik/
 
 | Pole | Typ | Poznámka |
 |------|-----|----------|
-| `title` | string | Název identifikace |
+| `identification_number` | string | Automaticky přidělené číslo (RRRR-0001) |
 | `operation_id` | int | Provoz |
 | `workplace_id` | int | Pracoviště |
 | `workplace_part_id` | int, nullable | Část pracoviště |
@@ -50,7 +50,7 @@ Denormalizovaná jména (`operation_name`, `workplace_name`, …) se ukládají 
 
 Stránka `RizeniRizikPage` zobrazuje tabulku se sloupci:
 
-- Název
+- Identifikace
 - Provoz
 - Pracoviště
 - Datum zahájení
@@ -96,11 +96,10 @@ Evidence nebezpečí v záložce Nebezpečí:
 - akce Identifikovat nebezpečí v inventuře, počty aktivních nebezpečí u položek
 - režim pouze pro čtení u dokončené nebo archivované identifikace
 
-## Fáze R04
+## Fáze R04a
 
-Evidence nebezpečí v záložce Nebezpečí:
+Identifikace bez názvu:
 
-- model `IdentifiedHazard` v tabulce `identified_hazards`
-- ruční evidence nebezpečí navázaných na položky inventury
-- akce Identifikovat nebezpečí v inventuře, počty aktivních nebezpečí u položek
-- režim pouze pro čtení u dokončené nebo archivované identifikace
+- pole `title` nahrazeno automatickým `identification_number` ve formátu RRRR-0001
+- migrace stávajících záznamů a odstranění sloupce `title`
+- editor zobrazuje read-only číslo identifikace

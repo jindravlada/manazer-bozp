@@ -69,7 +69,7 @@ class RizeniRizikModulePhaseR01aTestCase(unittest.TestCase):
     def test_hazard_identifications_table_exists(self) -> None:
         columns = _table_columns("hazard_identifications")
         self.assertIn("id", columns)
-        self.assertIn("title", columns)
+        self.assertIn("identification_number", columns)
         self.assertIn("operation_id", columns)
         self.assertIn("workplace_id", columns)
         self.assertIn("workplace_part_id", columns)
@@ -116,14 +116,12 @@ class RizeniRizikModulePhaseR01aTestCase(unittest.TestCase):
         person = person_service.create_person(first_name="Jan", last_name="Novák")
 
         hazard_identification_service.create_identification(
-            title="Starší",
             operation_id=operation.id,
             workplace_id=workplace.id,
             responsible_person_id=person.id,
             started_at=date(2026, 1, 10),
         )
-        hazard_identification_service.create_identification(
-            title="Novější",
+        newer = hazard_identification_service.create_identification(
             operation_id=operation.id,
             workplace_id=workplace.id,
             responsible_person_id=person.id,
@@ -134,8 +132,8 @@ class RizeniRizikModulePhaseR01aTestCase(unittest.TestCase):
 
         page = RizeniRizikPage()
         self.assertEqual(page.table.rowCount(), 2)
-        self.assertEqual(page.table.item(0, 1).text(), "Novější")
-        self.assertEqual(page.table.item(1, 1).text(), "Starší")
+        self.assertEqual(page.table.item(0, 1).text(), newer.identification_number)
+        self.assertNotEqual(page.table.item(0, 1).text(), page.table.item(1, 1).text())
         self.assertEqual(page.table.item(0, 6).text(), "Koncept")
         self.assertEqual(page.table.item(0, 5).text(), "Jan Novák")
 
@@ -147,11 +145,11 @@ class RizeniRizikModulePhaseR01aTestCase(unittest.TestCase):
             parent_id=operation.id,
         )
         created = hazard_identification_service.create_identification(
-            title="Identifikace A",
             operation_id=operation.id,
             workplace_id=workplace.id,
         )
         self.assertEqual(created.status, HAZARD_IDENTIFICATION_STATUS_DRAFT)
+        self.assertRegex(created.identification_number, r"^\d{4}-\d{4}$")
 
 
 if __name__ == "__main__":

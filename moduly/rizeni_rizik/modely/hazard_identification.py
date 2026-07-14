@@ -11,7 +11,7 @@ class HazardIdentification(Base):
     __tablename__ = "hazard_identifications"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    title: Mapped[str] = mapped_column(String(250), nullable=False)
+    identification_number: Mapped[str] = mapped_column(String(20), nullable=False)
 
     operation_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     operation_name: Mapped[str] = mapped_column(String(150), default="")

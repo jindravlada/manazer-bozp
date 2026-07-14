@@ -111,7 +111,6 @@ class HazardIdentificationService:
     def create_identification(
         self,
         *,
-        title: str,
         operation_id: int | None = None,
         workplace_id: int | None = None,
         workplace_part_id: int | None = None,
@@ -121,9 +120,6 @@ class HazardIdentificationService:
         note: str = "",
         active: bool = True,
     ) -> HazardIdentification:
-        normalized_title = title.strip()
-        if not normalized_title:
-            raise HazardIdentificationError("Název je povinný.")
         if status not in HAZARD_IDENTIFICATION_STATUSES:
             raise HazardIdentificationError("Neplatný stav identifikace.")
 
@@ -134,7 +130,7 @@ class HazardIdentificationService:
         )
 
         identification = HazardIdentification(
-            title=normalized_title,
+            identification_number=self.repository.allocate_next_number(),
             operation_id=operation_id,
             operation_name=self._workplace_name(operation_id),
             workplace_id=workplace_id,
@@ -159,10 +155,6 @@ class HazardIdentificationService:
         if identification is None:
             return None
 
-        title = str(data.get("title", identification.title)).strip()
-        if not title:
-            raise HazardIdentificationError("Název je povinný.")
-
         operation_id = data.get("operation_id", identification.operation_id)
         workplace_id = data.get("workplace_id", identification.workplace_id)
         workplace_part_id = data.get("workplace_part_id", identification.workplace_part_id)
@@ -176,7 +168,6 @@ class HazardIdentificationService:
             workplace_part_id=workplace_part_id,
         )
 
-        identification.title = title
         identification.operation_id = operation_id
         identification.operation_name = self._workplace_name(operation_id)
         identification.workplace_id = workplace_id

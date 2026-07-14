@@ -623,6 +623,143 @@ def _ensure_hazard_identifications_table() -> None:
         from moduly.rizeni_rizik.modely.hazard_identification import HazardIdentification
 
         HazardIdentification.__table__.create(bind=_db_engine(), checkfirst=True)
+        return
+
+    if "identification_number" not in columns:
+        _add_column(
+            "hazard_identifications",
+            "identification_number VARCHAR(20) DEFAULT '' NOT NULL",
+        )
+
+    _migrate_hazard_identification_numbers()
+
+    columns = _table_columns("hazard_identifications")
+    if "title" in columns:
+        _remove_hazard_identification_title_column()
+
+
+def _migrate_hazard_identification_numbers() -> None:
+    columns = _table_columns("hazard_identifications")
+    if "identification_number" not in columns:
+        return
+
+    from datetime import datetime
+
+    from sqlalchemy import or_, select
+
+    from core.database.session import get_session
+    from moduly.rizeni_rizik.modely.hazard_identification import HazardIdentification
+
+    year_counters: dict[int, int] = {}
+    with get_session() as session:
+        for number in session.scalars(select(HazardIdentification.identification_number)):
+            if not number or "-" not in number:
+                continue
+            try:
+                year_str, suffix = number.split("-", 1)
+                year = int(year_str)
+                year_counters[year] = max(year_counters.get(year, 0), int(suffix))
+            except ValueError:
+                continue
+
+    with get_session() as session:
+        stmt = (
+            select(HazardIdentification)
+            .where(
+                or_(
+                    HazardIdentification.identification_number == "",
+                    HazardIdentification.identification_number.is_(None),
+                )
+            )
+            .order_by(HazardIdentification.created_at, HazardIdentification.id)
+        )
+        records = list(session.scalars(stmt))
+        for record in records:
+            year = record.created_at.year if record.created_at else datetime.now().year
+            year_counters[year] = year_counters.get(year, 0) + 1
+            record.identification_number = f"{year}-{year_counters[year]:04d}"
+            session.merge(record)
+        if records:
+            session.commit()
+
+
+def _remove_hazard_identification_title_column() -> None:
+    columns = _table_columns("hazard_identifications")
+    if "title" not in columns:
+        return
+
+    with _db_engine().connect() as connection:
+        connection.execute(
+            text(
+                """
+                CREATE TABLE hazard_identifications_new (
+                    id INTEGER PRIMARY KEY,
+                    identification_number VARCHAR(20) NOT NULL,
+                    operation_id INTEGER,
+                    operation_name VARCHAR(150) DEFAULT '',
+                    workplace_id INTEGER,
+                    workplace_name VARCHAR(150) DEFAULT '',
+                    workplace_part_id INTEGER,
+                    workplace_part_name VARCHAR(150) DEFAULT '',
+                    responsible_person_id INTEGER,
+                    responsible_person_name VARCHAR(150) DEFAULT '',
+                    started_at DATE,
+                    status VARCHAR(30) NOT NULL DEFAULT 'draft',
+                    note TEXT DEFAULT '',
+                    active BOOLEAN DEFAULT 1,
+                    created_at DATETIME,
+                    updated_at DATETIME
+                )
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                INSERT INTO hazard_identifications_new (
+                    id,
+                    identification_number,
+                    operation_id,
+                    operation_name,
+                    workplace_id,
+                    workplace_name,
+                    workplace_part_id,
+                    workplace_part_name,
+                    responsible_person_id,
+                    responsible_person_name,
+                    started_at,
+                    status,
+                    note,
+                    active,
+                    created_at,
+                    updated_at
+                )
+                SELECT
+                    id,
+                    identification_number,
+                    operation_id,
+                    operation_name,
+                    workplace_id,
+                    workplace_name,
+                    workplace_part_id,
+                    workplace_part_name,
+                    responsible_person_id,
+                    responsible_person_name,
+                    started_at,
+                    status,
+                    note,
+                    active,
+                    created_at,
+                    updated_at
+                FROM hazard_identifications
+                """
+            )
+        )
+        connection.execute(text("DROP TABLE hazard_identifications"))
+        connection.execute(
+            text("ALTER TABLE hazard_identifications_new RENAME TO hazard_identifications")
+        )
+        connection.commit()
 
 
 def _ensure_hazard_inventory_items_table() -> None:
