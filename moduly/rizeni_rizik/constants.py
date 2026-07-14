@@ -49,6 +49,7 @@ TAB_INVENTORY = "Analýza pracoviště"
 TAB_HAZARDS = "Nebezpečí"
 TAB_EVENTS = "Nežádoucí události"
 TAB_RISK_ASSESSMENT = "Posouzení rizik"
+TAB_AI_CONSULTATION = "Konzultace s AI"
 TAB_MEASURES = "Opatření"
 TAB_PUBLICATION = "Publikace"
 TAB_HISTORY = "Historie"
@@ -59,6 +60,7 @@ HAZARD_IDENTIFICATION_TABS = (
     TAB_HAZARDS,
     TAB_EVENTS,
     TAB_RISK_ASSESSMENT,
+    TAB_AI_CONSULTATION,
     TAB_MEASURES,
     TAB_PUBLICATION,
     TAB_HISTORY,
@@ -484,3 +486,57 @@ def format_inventory_item_display_name(
     if len(parts) == 1:
         return name
     return f"{parts[0]} — " + " — ".join(parts[1:])
+
+
+AI_CONSULTATION_SCHEMA_VERSION = "1.0"
+AI_CONSULTATION_EXPORT_TYPE = "hazard_identification_ai_consultation"
+
+AI_CONSULTATION_INTRO_TEXT = (
+    "Export vytvoří strukturované podklady pro konzultaci s externí AI. "
+    "AI může navrhnout chybějící položky, ale konečné odborné rozhodnutí vždy provádí uživatel."
+)
+
+AI_CONSULTATION_EXPORT_BUTTON = "Exportovat podklady pro AI"
+AI_CONSULTATION_DIALOG_TITLE = "Export podkladů pro AI"
+AI_CONSULTATION_INCLUDE_RESPONSIBLE_PERSON = "Zahrnout jméno odpovědné osoby"
+
+AI_EXPORT_COL_ID = 0
+AI_EXPORT_COL_EXPORTED_AT = 1
+AI_EXPORT_COL_SCHEMA_VERSION = 2
+AI_EXPORT_COL_FILENAME = 3
+AI_EXPORT_COL_ITEM_COUNT = 4
+AI_EXPORT_COL_HAZARD_COUNT = 5
+AI_EXPORT_COL_EVENT_COUNT = 6
+AI_EXPORT_COL_ASSESSMENT_COUNT = 7
+AI_EXPORT_COLUMN_COUNT = 8
+
+AI_EXPORT_TABLE_HEADERS = [
+    "ID",
+    "Datum a čas",
+    "Verze schématu",
+    "Název souboru",
+    "Počet položek analýzy",
+    "Počet nebezpečí",
+    "Počet událostí",
+    "Počet posouzení",
+]
+
+AI_CONSULTATION_ZIP_FILES = (
+    "zadani.json",
+    "pokyn_pro_AI.txt",
+    "schema_odpovedi.json",
+    "prehled.txt",
+)
+
+AI_CONSULTATION_PROPOSAL_TYPES = (
+    "workplace_analysis_item",
+    "hazard",
+    "event",
+    "exposed_group",
+    "consequence",
+    "existing_measure",
+    "required_measure",
+    "legal_link",
+)
+
+AI_CONSULTATION_CONFIDENCE_LEVELS = ("low", "medium", "high")

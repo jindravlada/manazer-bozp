@@ -166,3 +166,14 @@ Dokončení posouzení rizika:
 - sloupce Stav posouzení a Dokončeno dne v záložce Posouzení rizik
 - souhrn počtu rozpracovaných a dokončených aktivních posouzení
 - režim pouze pro čtení stavu a závěru u dokončené nebo archivované identifikace
+
+## Fáze R11
+
+Export podkladů pro konzultaci s AI:
+
+- záložka **Konzultace s AI** v editoru identifikace
+- model `HazardAiExport` a evidence vytvořených exportů
+- ZIP balíček: `zadani.json`, `pokyn_pro_AI.txt`, `schema_odpovedi.json`, `prehled.txt`
+- export pouze aktivních záznamů přes stabilní exportní ID (bez interních DB ID)
+- volitelné zahrnutí jména odpovědné osoby (výchozí vypnuto)
+- bez přímé komunikace s AI a bez importu návrhů (R12)
