@@ -80,12 +80,7 @@ Záložka **Analýza pracoviště** (`HazardInventoryWidget`):
 
 ## Fáze R03
 
-Souvislosti v záložce Analýza pracoviště:
-
-- model `HazardInventoryRelation` v tabulce `hazard_inventory_relations`
-- sekce Analýza položky se souvislostmi podle typu a kategorie
-- samostatné ukládání vazeb, počty aktivních souvislostí u položek
-- režim pouze pro čtení u dokončené nebo archivované identifikace
+*(Odstraněno ve fázi R14 – evidence Souvislostí mezi položkami analýzy.)*
 
 ## Fáze R04
 
@@ -245,4 +240,13 @@ Fotodokumentace identifikace:
 - soubory v `prilohy/rizeni_rizik/<číslo identifikace>/fotografie/`
 - formáty JPG/JPEG/PNG/WEBP, automatická optimalizace ≤ 1 MB (EXIF orientace, bez metadat)
 - náhled, otevření, aktivace/deaktivace; bez mazání a bez exportu do AI
+
+## Fáze R14
+
+Odstranění Souvislostí z analýzy pracoviště:
+
+- tabulka `hazard_inventory_relations` odstraněna migrací (pouze DROP, bez převodů)
+- záložka Analýza pracoviště: jen kategorie, seznam položek a akce (včetně Přidat nežádoucí událost)
+- AI export bez polí a textů o souvislostech (`zadani.json` / `data.txt`)
+- návrhy AI v oblasti Souvislostí se nezařazují
 

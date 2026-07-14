@@ -31,9 +31,7 @@ from moduly.rizeni_rizik.constants import (
 )
 from moduly.rizeni_rizik.sluzby.hazard_event_service import hazard_event_service
 from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import hazard_inventory_item_service
-from moduly.rizeni_rizik.sluzby.hazard_inventory_relation_service import hazard_inventory_relation_service
 from moduly.rizeni_rizik.ui.hazard_event_dialog import HazardEventDialog
-from moduly.rizeni_rizik.ui.hazard_inventory_analysis_widget import HazardInventoryAnalysisWidget
 from moduly.rizeni_rizik.ui.hazard_inventory_item_dialog import HazardInventoryItemDialog
 
 
@@ -74,10 +72,6 @@ class HazardInventoryWidget(QWidget):
         self.category_list.setMinimumWidth(240)
         splitter.addWidget(self.category_list)
 
-        right_host = QWidget()
-        right_layout = QVBoxLayout(right_host)
-        right_layout.setContentsMargins(0, 0, 0, 0)
-
         self.table = QTableWidget()
         self.table.setColumnCount(INVENTORY_COLUMN_COUNT)
         self.table.setHorizontalHeaderLabels(INVENTORY_TABLE_HEADERS)
@@ -87,12 +81,7 @@ class HazardInventoryWidget(QWidget):
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setAlternatingRowColors(True)
         configure_table_columns(self.table, "hazard_inventory_items")
-        right_layout.addWidget(self.table, 2)
-
-        self.analysis_widget = HazardInventoryAnalysisWidget(on_changed=self._load_table)
-        right_layout.addWidget(self.analysis_widget, 3)
-
-        splitter.addWidget(right_host)
+        splitter.addWidget(self.table)
         splitter.setStretchFactor(1, 1)
 
         layout.addWidget(splitter, 1)
@@ -119,17 +108,11 @@ class HazardInventoryWidget(QWidget):
         self._read_only = read_only
         self._selected_item_id = None
         self._set_actions_enabled(not read_only and identification_id is not None)
-        self.analysis_widget.set_source_item(
-            None,
-            identification_id=identification_id,
-            read_only=read_only,
-        )
         self.refresh()
 
     def refresh(self) -> None:
         self._populate_categories()
         self._load_table()
-        self._sync_analysis_selection()
 
     def add_item(self) -> None:
         if not self._ensure_editable():
@@ -274,9 +257,6 @@ class HazardInventoryWidget(QWidget):
             self.table.blockSignals(False)
             return
 
-        relation_counts = hazard_inventory_relation_service.count_active_by_source_items(
-            self._identification_id
-        )
         event_counts = hazard_event_service.count_active_by_inventory_items(
             self._identification_id
         )
@@ -291,7 +271,6 @@ class HazardInventoryWidget(QWidget):
             self.table.setItem(row, INVENTORY_COL_ID, QTableWidgetItem(str(item.id)))
             display_name = format_inventory_item_display_name(
                 item.name,
-                relation_count=relation_counts.get(item.id, 0),
                 event_count=event_counts.get(item.id, 0),
             )
             self.table.setItem(row, INVENTORY_COL_NAME, QTableWidgetItem(display_name))
@@ -322,20 +301,10 @@ class HazardInventoryWidget(QWidget):
             self._current_category = category
             self._selected_item_id = None
             self._load_table()
-            self._sync_analysis_selection()
 
     def _on_item_selection_changed(self) -> None:
         item = self._selected_item()
         self._selected_item_id = item.id if item is not None else None
-        self._sync_analysis_selection()
-
-    def _sync_analysis_selection(self) -> None:
-        item = self._selected_item()
-        self.analysis_widget.set_source_item(
-            item,
-            identification_id=self._identification_id,
-            read_only=self._read_only,
-        )
 
     def _selected_item(self):
         selected = self.table.selectionModel().selectedRows()
@@ -345,7 +314,3 @@ class HazardInventoryWidget(QWidget):
         if id_item is None:
             return None
         return hazard_inventory_item_service.get_by_id(int(id_item.text()))
-
-    def refresh_analysis_and_counts(self) -> None:
-        self._load_table()
-        self.analysis_widget.refresh()

@@ -42,7 +42,6 @@ from moduly.rizeni_rizik.constants import (
     HAZARD_INVENTORY_CATEGORIES,
     HAZARD_INVENTORY_CATEGORY_LABELS,
     HAZARD_INVENTORY_CATEGORY_OTHER,
-    HAZARD_INVENTORY_RELATION_TYPE_LABELS,
     RISK_ASSESSMENT_STATUS_LABELS,
     RISK_SEVERITY_MODERATE,
     format_risk_severity_label,
@@ -62,9 +61,6 @@ from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import (
     HazardInventoryItemError,
     hazard_inventory_item_service,
 )
-from moduly.rizeni_rizik.sluzby.hazard_inventory_relation_service import (
-    HazardInventoryRelationService,
-)
 from moduly.rizeni_rizik.sluzby.hazard_required_measure_service import (
     HazardRequiredMeasureError,
     hazard_required_measure_service,
@@ -79,9 +75,6 @@ SOURCE_TYPE_HAZARD_IDENTIFICATION = "hazard_identification"
 
 class HazardIdentificationPeerReviewProvider:
     source_type = SOURCE_TYPE_HAZARD_IDENTIFICATION
-
-    def __init__(self):
-        self._relation_service = HazardInventoryRelationService()
 
     def can_export(self, source_id: int | None) -> bool:
         if not source_id:
@@ -322,6 +315,10 @@ class HazardIdentificationPeerReviewProvider:
         if self._area_matches(area, ("nebezpeč", "nebezpec")):
             return "unassigned"
 
+        # Souvislosti odstraněny (R14) – návrhy v této oblasti nezařazovat.
+        if self._area_matches(area, ("souvislost", "souvislosti")):
+            return "unassigned"
+
         if self._area_matches(area, ("událost", "udalost", "nežádouc", "nezadouc")):
             if parent is None or parent.get("kind") != "item":
                 return "unassigned"
@@ -455,24 +452,10 @@ class HazardIdentificationPeerReviewProvider:
         item_export_ids = {
             item.id: f"ITEM-{index:03d}" for index, item in enumerate(items, start=1)
         }
-        item_names = {item.id: item.name for item in items}
         export_id_map: dict[str, dict] = {
             export_id: {"kind": "item", "id": item_id}
             for item_id, export_id in item_export_ids.items()
         }
-
-        relations = self._relation_service.repository.get_for_identification(
-            identification.id,
-            include_inactive=False,
-        )
-        relations_by_source: dict[int, list] = {}
-        for relation in relations:
-            if (
-                relation.source_item_id not in item_export_ids
-                or relation.target_item_id not in item_export_ids
-            ):
-                continue
-            relations_by_source.setdefault(relation.source_item_id, []).append(relation)
 
         event_rows = hazard_event_service.get_for_identification(
             identification.id,
@@ -544,20 +527,6 @@ class HazardIdentificationPeerReviewProvider:
 
         workplace_analysis = []
         for item in items:
-            related = [
-                {
-                    "relation_type": relation.relation_type,
-                    "relation_type_label": HAZARD_INVENTORY_RELATION_TYPE_LABELS.get(
-                        relation.relation_type,
-                        relation.relation_type,
-                    ),
-                    "target_export_id": item_export_ids[relation.target_item_id],
-                    "target_name": item_names[relation.target_item_id],
-                    "note": relation.note or "",
-                }
-                for relation in relations_by_source.get(item.id, [])
-            ]
-
             event_nodes = []
             for event_row in events_by_item.get(item.id, []):
                 assessment_nodes = []
@@ -628,7 +597,6 @@ class HazardIdentificationPeerReviewProvider:
                     ),
                     "name": item.name,
                     "description": item.description or "",
-                    "relations": related,
                     "events": event_nodes,
                 }
             )
@@ -730,11 +698,6 @@ class HazardIdentificationPeerReviewProvider:
             lines.append(f"    Kategorie: {item['category_label']}")
             if item["description"]:
                 lines.append(f"    Popis: {item['description']}")
-            for relation in item["relations"]:
-                lines.append(
-                    f"    Souvislost: {relation['relation_type_label']} → "
-                    f"{relation['target_name']} [{relation['target_export_id']}]"
-                )
 
             if not item["events"]:
                 lines.append("    Událost: (žádná)")

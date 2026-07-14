@@ -66,7 +66,6 @@ def initialize_database() -> None:
     from core.shared.modely.control_result import ControlResult  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_identification import HazardIdentification  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem  # noqa: F401
-    from moduly.rizeni_rizik.modely.hazard_inventory_relation import HazardInventoryRelation  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_event import HazardEvent  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_risk_assessment import HazardRiskAssessment  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_existing_measure import HazardExistingMeasure  # noqa: F401
@@ -112,7 +111,7 @@ def initialize_database() -> None:
     _ensure_legal_check_run_columns()
     _ensure_hazard_identifications_table()
     _ensure_hazard_inventory_items_table()
-    _ensure_hazard_inventory_relations_table()
+    _migrate_drop_hazard_inventory_relations()
     _ensure_hazard_events_table()
     _migrate_hazard_events_drop_identified_hazards()
     _ensure_hazard_risk_assessments_table()
@@ -789,12 +788,13 @@ def _ensure_hazard_inventory_items_table() -> None:
         HazardInventoryItem.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
-def _ensure_hazard_inventory_relations_table() -> None:
-    columns = _table_columns("hazard_inventory_relations")
-    if not columns:
-        from moduly.rizeni_rizik.modely.hazard_inventory_relation import HazardInventoryRelation
-
-        HazardInventoryRelation.__table__.create(bind=_db_engine(), checkfirst=True)
+def _migrate_drop_hazard_inventory_relations() -> None:
+    """R14: odstranění evidence Souvislostí – pouze DROP tabulky, bez převodů."""
+    if not _table_columns("hazard_inventory_relations"):
+        return
+    with _db_engine().connect() as connection:
+        connection.execute(text("DROP TABLE IF EXISTS hazard_inventory_relations"))
+        connection.commit()
 
 
 def _ensure_hazard_events_table() -> None:

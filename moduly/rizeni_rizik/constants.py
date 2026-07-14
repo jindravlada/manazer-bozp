@@ -127,77 +127,6 @@ INVENTORY_COLUMN_COUNT = 4
 
 INVENTORY_TABLE_HEADERS = ["ID", "Název", "Popis", "Aktivní"]
 
-HAZARD_INVENTORY_RELATION_ACTIVITY = "activity"
-HAZARD_INVENTORY_RELATION_ENERGY = "energy"
-HAZARD_INVENTORY_RELATION_SUBSTANCE = "substance"
-HAZARD_INVENTORY_RELATION_PERSON = "person"
-HAZARD_INVENTORY_RELATION_ENVIRONMENT = "environment"
-HAZARD_INVENTORY_RELATION_TRANSPORT = "transport"
-HAZARD_INVENTORY_RELATION_STRUCTURE = "structure"
-HAZARD_INVENTORY_RELATION_EQUIPMENT = "equipment"
-HAZARD_INVENTORY_RELATION_OTHER = "other"
-
-HAZARD_INVENTORY_RELATION_TYPES = (
-    HAZARD_INVENTORY_RELATION_ACTIVITY,
-    HAZARD_INVENTORY_RELATION_ENERGY,
-    HAZARD_INVENTORY_RELATION_SUBSTANCE,
-    HAZARD_INVENTORY_RELATION_PERSON,
-    HAZARD_INVENTORY_RELATION_ENVIRONMENT,
-    HAZARD_INVENTORY_RELATION_TRANSPORT,
-    HAZARD_INVENTORY_RELATION_STRUCTURE,
-    HAZARD_INVENTORY_RELATION_EQUIPMENT,
-    HAZARD_INVENTORY_RELATION_OTHER,
-)
-
-HAZARD_INVENTORY_RELATION_TYPE_LABELS = {
-    HAZARD_INVENTORY_RELATION_ACTIVITY: "Související činnost",
-    HAZARD_INVENTORY_RELATION_ENERGY: "Související energie",
-    HAZARD_INVENTORY_RELATION_SUBSTANCE: "Související látka nebo materiál",
-    HAZARD_INVENTORY_RELATION_PERSON: "Ohrožená / přítomná osoba",
-    HAZARD_INVENTORY_RELATION_ENVIRONMENT: "Podmínka prostředí",
-    HAZARD_INVENTORY_RELATION_TRANSPORT: "Související doprava",
-    HAZARD_INVENTORY_RELATION_STRUCTURE: "Související prostor nebo konstrukce",
-    HAZARD_INVENTORY_RELATION_EQUIPMENT: "Související zařízení",
-    HAZARD_INVENTORY_RELATION_OTHER: "Jiná souvislost",
-}
-
-HAZARD_INVENTORY_RELATION_TARGET_CATEGORY = {
-    HAZARD_INVENTORY_RELATION_ACTIVITY: HAZARD_INVENTORY_CATEGORY_ACTIVITY,
-    HAZARD_INVENTORY_RELATION_ENERGY: HAZARD_INVENTORY_CATEGORY_ENERGY,
-    HAZARD_INVENTORY_RELATION_SUBSTANCE: HAZARD_INVENTORY_CATEGORY_SUBSTANCE,
-    HAZARD_INVENTORY_RELATION_PERSON: HAZARD_INVENTORY_CATEGORY_PERSON,
-    HAZARD_INVENTORY_RELATION_ENVIRONMENT: HAZARD_INVENTORY_CATEGORY_ENVIRONMENT,
-    HAZARD_INVENTORY_RELATION_TRANSPORT: HAZARD_INVENTORY_CATEGORY_TRANSPORT,
-    HAZARD_INVENTORY_RELATION_STRUCTURE: HAZARD_INVENTORY_CATEGORY_STRUCTURE,
-    HAZARD_INVENTORY_RELATION_EQUIPMENT: HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
-    HAZARD_INVENTORY_RELATION_OTHER: HAZARD_INVENTORY_CATEGORY_OTHER,
-}
-
-INVENTORY_ANALYSIS_TITLE = "Analýza položky"
-INVENTORY_RELATION_DIALOG_TITLE = "Souvislost analýzy pracoviště"
-
-RELATION_COL_ID = 0
-RELATION_COL_TYPE = 1
-RELATION_COL_CATEGORY = 2
-RELATION_COL_NAME = 3
-RELATION_COL_NOTE = 4
-RELATION_COL_ACTIVE = 5
-RELATION_COLUMN_COUNT = 6
-
-RELATION_TABLE_HEADERS = [
-    "ID",
-    "Typ souvislosti",
-    "Kategorie",
-    "Název",
-    "Poznámka",
-    "Aktivní",
-]
-
-
-def inventory_relation_target_category(relation_type: str) -> str | None:
-    return HAZARD_INVENTORY_RELATION_TARGET_CATEGORY.get(relation_type)
-
-
 WORKPLACE_ANALYSIS_SELECT_ITEM = "Vyberte položku analýzy pracoviště."
 
 WORKPLACE_ANALYSIS_READ_ONLY_MESSAGE = (
@@ -446,16 +375,9 @@ REQUIRED_MEASURE_TABLE_HEADERS = ["ID", "Opatření", "Poznámka", "Aktivní"]
 def format_inventory_item_display_name(
     name: str,
     *,
-    relation_count: int = 0,
     event_count: int = 0,
 ) -> str:
-    parts = [name]
-    if relation_count:
-        suffix = "souvislost" if relation_count == 1 else "souvislostí"
-        parts.append(f"{relation_count} {suffix}")
-    if event_count:
-        suffix = "událost" if event_count == 1 else "událostí"
-        parts.append(f"{event_count} {suffix}")
-    if len(parts) == 1:
+    if not event_count:
         return name
-    return f"{parts[0]} — " + " — ".join(parts[1:])
+    suffix = "událost" if event_count == 1 else "událostí"
+    return f"{name} — {event_count} {suffix}"
