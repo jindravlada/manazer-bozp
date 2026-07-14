@@ -207,3 +207,10 @@ Příprava dávkového exportu:
 - metadata v `zadani.json`: `export_scope`, `batch_number`, `batch_count`
 - zatím vždy `full` / `1` / `1` (dávkování se neimplementuje)
 
+## Fáze R11.6
+
+Příprava změnového exportu:
+
+- objekt `change_tracking` v `zadani.json`: `mode`, `base_export`, `changed_objects`
+- výchozí: `full` / `null` / `[]` (logika změnového exportu se neimplementuje)
+

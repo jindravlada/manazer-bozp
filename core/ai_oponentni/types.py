@@ -30,6 +30,13 @@ class AiPeerReviewExportContent:
     export_scope: str = "full"
     batch_number: int = 1
     batch_count: int = 1
+    change_tracking: dict = field(
+        default_factory=lambda: {
+            "mode": "full",
+            "base_export": None,
+            "changed_objects": [],
+        }
+    )
 
 
 @dataclass

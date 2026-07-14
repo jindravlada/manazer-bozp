@@ -264,6 +264,21 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         self.assertEqual(content.zadani_json["batch_number"], 1)
         self.assertEqual(content.zadani_json["batch_count"], 1)
 
+    def test_change_tracking_metadata_defaults(self) -> None:
+        content = self.provider.build_export_content(
+            self.identification.id,
+            options=AiPeerReviewExportOptions(),
+        )
+        self.assertEqual(
+            content.change_tracking,
+            {"mode": "full", "base_export": None, "changed_objects": []},
+        )
+        assert content.zadani_json is not None
+        self.assertEqual(
+            content.zadani_json["change_tracking"],
+            {"mode": "full", "base_export": None, "changed_objects": []},
+        )
+
     def test_hierarchical_zadani_json(self) -> None:
         content = self.provider.build_export_content(
             self.identification.id,

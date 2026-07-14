@@ -7,6 +7,7 @@ from datetime import datetime
 from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_DEFAULT_BATCH_COUNT,
     AI_PEER_REVIEW_DEFAULT_BATCH_NUMBER,
+    AI_PEER_REVIEW_DEFAULT_CHANGE_TRACKING,
     AI_PEER_REVIEW_DEFAULT_EXPORT_SCOPE,
     AI_PEER_REVIEW_EXPORT_TYPE,
     AI_PEER_REVIEW_RESPONSE_SCHEMA,
@@ -114,6 +115,7 @@ class HazardIdentificationPeerReviewProvider:
             export_scope=AI_PEER_REVIEW_DEFAULT_EXPORT_SCOPE,
             batch_number=AI_PEER_REVIEW_DEFAULT_BATCH_NUMBER,
             batch_count=AI_PEER_REVIEW_DEFAULT_BATCH_COUNT,
+            change_tracking=dict(AI_PEER_REVIEW_DEFAULT_CHANGE_TRACKING),
         )
 
     def apply_proposals(
@@ -520,6 +522,7 @@ class HazardIdentificationPeerReviewProvider:
             "export_scope": AI_PEER_REVIEW_DEFAULT_EXPORT_SCOPE,
             "batch_number": AI_PEER_REVIEW_DEFAULT_BATCH_NUMBER,
             "batch_count": AI_PEER_REVIEW_DEFAULT_BATCH_COUNT,
+            "change_tracking": dict(AI_PEER_REVIEW_DEFAULT_CHANGE_TRACKING),
             "exported_at": datetime.now().isoformat(timespec="seconds"),
             "application_version": APP_VERSION,
             "identification": hierarchy["identification"],
