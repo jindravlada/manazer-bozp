@@ -301,6 +301,39 @@ def format_hazard_display_name(name: str, *, event_count: int = 0) -> str:
     return f"{name} — {event_count} {suffix}"
 
 
+def format_event_display_name(name: str, *, assessment_count: int = 0) -> str:
+    if not assessment_count:
+        return name
+    suffix = "posouzení" if assessment_count == 1 else "posouzení"
+    return f"{name} — {assessment_count} {suffix}"
+
+
+RISK_ASSESSMENTS_INTRO_TEXT = (
+    "Určete, které skupiny osob mohou být vystaveny jednotlivým nežádoucím událostem."
+)
+
+HAZARD_RISK_ASSESSMENT_DIALOG_TITLE = "Posouzení rizika"
+
+RISK_ASSESSMENT_COL_ID = 0
+RISK_ASSESSMENT_COL_EXPOSED_GROUP = 1
+RISK_ASSESSMENT_COL_EVENT = 2
+RISK_ASSESSMENT_COL_HAZARD = 3
+RISK_ASSESSMENT_COL_ACTIVE = 4
+RISK_ASSESSMENT_COLUMN_COUNT = 5
+
+RISK_ASSESSMENT_TABLE_HEADERS = [
+    "ID",
+    "Ohrožená skupina",
+    "Nežádoucí událost",
+    "Nebezpečí",
+    "Aktivní",
+]
+
+
+def is_identification_risk_assessment_read_only(status: str) -> bool:
+    return status in READ_ONLY_IDENTIFICATION_STATUSES
+
+
 def format_inventory_item_display_name(
     name: str,
     *,

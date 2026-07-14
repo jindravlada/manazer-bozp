@@ -120,3 +120,12 @@ Přejmenování uživatelské terminologie:
 - záložka **Inventura** přejmenována na **Analýza pracoviště**
 - uživatelské texty používají termín položka analýzy / analýza pracoviště
 - interní názvy modelů, tabulek a služeb zůstávají beze změny
+
+## Fáze R06
+
+Posouzení rizik v záložce Posouzení rizik:
+
+- model `HazardRiskAssessment` v tabulce `hazard_risk_assessments`
+- evidence ohrožených skupin osob navázaných na nežádoucí události
+- akce Posoudit riziko v záložce Nežádoucí události, počty aktivních posouzení u událostí
+- režim pouze pro čtení u dokončené nebo archivované identifikace
