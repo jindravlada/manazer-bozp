@@ -440,6 +440,9 @@ class AiPeerReviewPhaseR117TestCase(unittest.TestCase):
         self.assertFalse(dialog.source_list.isEnabled())
         options = dialog.get_options()
         self.assertEqual(options.export_scope, AI_PEER_REVIEW_EXPORT_SCOPE_FULL)
+        self.assertEqual(options.opponent_role, "experienced_safety_technician")
+        self.assertTrue(options.objectives)
+        self.assertEqual(options.focus_areas, [])
 
 
 if __name__ == "__main__":

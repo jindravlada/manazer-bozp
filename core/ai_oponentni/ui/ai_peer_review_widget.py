@@ -5,10 +5,12 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QButtonGroup,
     QCheckBox,
+    QComboBox,
     QDialog,
     QDialogButtonBox,
     QFileDialog,
     QFormLayout,
+    QGroupBox,
     QHBoxLayout,
     QInputDialog,
     QLabel,
@@ -19,6 +21,7 @@ from PySide6.QtWidgets import (
     QPlainTextEdit,
     QPushButton,
     QRadioButton,
+    QScrollArea,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -33,13 +36,21 @@ from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_COL_MODEL,
     AI_PEER_REVIEW_COL_REJECTED,
     AI_PEER_REVIEW_COLUMN_COUNT,
+    AI_PEER_REVIEW_DEFAULT_OBJECTIVES,
+    AI_PEER_REVIEW_DEFAULT_ROLE,
     AI_PEER_REVIEW_DIALOG_TITLE,
     AI_PEER_REVIEW_EXPORT_BUTTON,
     AI_PEER_REVIEW_EXPORT_SCOPE_FULL,
     AI_PEER_REVIEW_EXPORT_SCOPE_SELECTED,
+    AI_PEER_REVIEW_FOCUS_AREA_LABELS,
+    AI_PEER_REVIEW_FOCUS_AREAS,
     AI_PEER_REVIEW_IMPORT_BUTTON,
     AI_PEER_REVIEW_INCLUDE_RESPONSIBLE_PERSON,
     AI_PEER_REVIEW_INTRO_TEXT,
+    AI_PEER_REVIEW_OBJECTIVE_LABELS,
+    AI_PEER_REVIEW_OBJECTIVES,
+    AI_PEER_REVIEW_ROLE_LABELS,
+    AI_PEER_REVIEW_ROLES,
     AI_PEER_REVIEW_SCOPE_FULL_LABEL,
     AI_PEER_REVIEW_SCOPE_SELECTED_LABEL,
     AI_PEER_REVIEW_TABLE_HEADERS,
@@ -68,9 +79,52 @@ class AiPeerReviewExportOptionsDialog(QDialog):
     ):
         super().__init__(parent)
         self.setWindowTitle(AI_PEER_REVIEW_DIALOG_TITLE)
-        self.resize(520, 420)
+        self.resize(620, 680)
 
-        layout = QVBoxLayout(self)
+        root = QVBoxLayout(self)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        content = QWidget()
+        layout = QVBoxLayout(content)
+
+        layout.addWidget(QLabel("Role odborného oponenta:"))
+        self.opponent_role = QComboBox()
+        for role_id in AI_PEER_REVIEW_ROLES:
+            self.opponent_role.addItem(AI_PEER_REVIEW_ROLE_LABELS[role_id], role_id)
+        default_index = self.opponent_role.findData(AI_PEER_REVIEW_DEFAULT_ROLE)
+        if default_index >= 0:
+            self.opponent_role.setCurrentIndex(default_index)
+        layout.addWidget(self.opponent_role)
+
+        objectives_box = QGroupBox("Cíl oponentury")
+        objectives_layout = QVBoxLayout(objectives_box)
+        self._objective_checks: dict[str, QCheckBox] = {}
+        for objective_id in AI_PEER_REVIEW_OBJECTIVES:
+            checkbox = QCheckBox(AI_PEER_REVIEW_OBJECTIVE_LABELS[objective_id])
+            checkbox.setChecked(objective_id in AI_PEER_REVIEW_DEFAULT_OBJECTIVES)
+            self._objective_checks[objective_id] = checkbox
+            objectives_layout.addWidget(checkbox)
+        layout.addWidget(objectives_box)
+
+        focus_box = QGroupBox("Doplňující zaměření (volitelné)")
+        focus_layout = QVBoxLayout(focus_box)
+        self._focus_checks: dict[str, QCheckBox] = {}
+        for focus_id in AI_PEER_REVIEW_FOCUS_AREAS:
+            checkbox = QCheckBox(AI_PEER_REVIEW_FOCUS_AREA_LABELS[focus_id])
+            checkbox.setChecked(False)
+            self._focus_checks[focus_id] = checkbox
+            focus_layout.addWidget(checkbox)
+        layout.addWidget(focus_box)
+
+        layout.addWidget(QLabel("Charakteristika pracoviště (volitelné):"))
+        self.workplace_characteristics = QPlainTextEdit()
+        self.workplace_characteristics.setPlaceholderText(
+            "Např. Dílna oprav kolejových vozidel. Probíhá údržba, svařování, "
+            "obrábění, manipulace portálovým jeřábem a posun kolejových vozidel."
+        )
+        self.workplace_characteristics.setMinimumHeight(90)
+        layout.addWidget(self.workplace_characteristics)
+
         layout.addWidget(QLabel("Rozsah exportu:"))
 
         self.scope_full = QRadioButton(AI_PEER_REVIEW_SCOPE_FULL_LABEL)
@@ -106,13 +160,16 @@ class AiPeerReviewExportOptionsDialog(QDialog):
         self.scope_full.toggled.connect(self._update_source_list_enabled)
         self._update_source_list_enabled()
 
+        scroll.setWidget(content)
+        root.addWidget(scroll, 1)
+
         buttons = create_save_cancel_box(self)
         save_button = buttons.button(QDialogButtonBox.StandardButton.Save)
         if save_button is not None:
             save_button.setText("Pokračovat")
         buttons.accepted.connect(self._accept_if_valid)
         buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        root.addWidget(buttons)
 
     def _update_source_list_enabled(self) -> None:
         enabled = self.scope_selected.isChecked()
@@ -126,23 +183,50 @@ class AiPeerReviewExportOptionsDialog(QDialog):
                 "Vyberte alespoň jeden zdroj analýzy.",
             )
             return
+        if not any(box.isChecked() for box in self._objective_checks.values()):
+            QMessageBox.warning(
+                self,
+                AI_PEER_REVIEW_DIALOG_TITLE,
+                "Vyberte alespoň jeden cíl oponentury.",
+            )
+            return
         self.accept()
 
     def get_options(self) -> AiPeerReviewExportOptions:
+        objectives = [
+            objective_id
+            for objective_id, checkbox in self._objective_checks.items()
+            if checkbox.isChecked()
+        ]
+        focus_areas = [
+            focus_id
+            for focus_id, checkbox in self._focus_checks.items()
+            if checkbox.isChecked()
+        ]
+        characteristics = self.workplace_characteristics.toPlainText().strip()
+        role = self.opponent_role.currentData() or AI_PEER_REVIEW_DEFAULT_ROLE
+
+        common = {
+            "include_responsible_person": self.include_responsible_person.isChecked(),
+            "opponent_role": role,
+            "objectives": objectives,
+            "focus_areas": focus_areas,
+            "workplace_characteristics": characteristics,
+        }
         if self.scope_selected.isChecked():
             selected_ids = [
                 int(item.data(Qt.ItemDataRole.UserRole))
                 for item in self.source_list.selectedItems()
             ]
             return AiPeerReviewExportOptions(
-                include_responsible_person=self.include_responsible_person.isChecked(),
                 export_scope=AI_PEER_REVIEW_EXPORT_SCOPE_SELECTED,
                 selected_source_ids=selected_ids,
+                **common,
             )
         return AiPeerReviewExportOptions(
-            include_responsible_person=self.include_responsible_person.isChecked(),
             export_scope=AI_PEER_REVIEW_EXPORT_SCOPE_FULL,
             selected_source_ids=None,
+            **common,
         )
 
 

@@ -9,11 +9,14 @@ from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_EXPORT_SCOPE_FULL,
     AI_PEER_REVIEW_EXPORT_SCOPE_SELECTED,
     AI_PEER_REVIEW_EXPORT_TYPE,
+    AI_PEER_REVIEW_FOCUS_AREA_LABELS,
+    AI_PEER_REVIEW_IDENTIFICATION_KIND_FIRST,
+    AI_PEER_REVIEW_IDENTIFICATION_KIND_REVISION,
     AI_PEER_REVIEW_MAX_OBJECTS_PER_BATCH,
     AI_PEER_REVIEW_MAX_SOURCES_PER_BATCH,
+    AI_PEER_REVIEW_OBJECTIVE_LABELS,
     AI_PEER_REVIEW_RESPONSE_SCHEMA,
     AI_PEER_REVIEW_SCHEMA_VERSION,
-    DEFAULT_AI_PEER_REVIEW_PROMPT,
 )
 from core.ai_oponentni.modely.ai_unassigned_proposal import (
     UNASSIGNED_PROPOSAL_STATUS,
@@ -27,6 +30,13 @@ from core.ai_oponentni.sluzby.batch_planner import (
     ExportBranch,
     count_hierarchy_objects,
     plan_export_batches,
+)
+from core.ai_oponentni.sluzby.prompt_builder import (
+    build_ai_peer_review_prompt,
+    normalize_focus_areas,
+    normalize_objectives,
+    normalize_opponent_role,
+    opponent_role_label,
 )
 from core.ai_oponentni.types import (
     AiExportSourceChoice,
@@ -42,6 +52,7 @@ from moduly.rizeni_rizik.constants import (
     HAZARD_INVENTORY_CATEGORIES,
     HAZARD_INVENTORY_CATEGORY_LABELS,
     HAZARD_INVENTORY_CATEGORY_OTHER,
+    RISK_ASSESSMENT_STATUS_COMPLETED,
     RISK_ASSESSMENT_STATUS_LABELS,
     RISK_SEVERITY_MODERATE,
     format_risk_severity_label,
@@ -147,6 +158,17 @@ class HazardIdentificationPeerReviewProvider:
             items=items,
             include_responsible_person=options.include_responsible_person,
         )
+        briefing = self._build_peer_review_briefing(identification, options)
+        prompt_text = build_ai_peer_review_prompt(
+            role=briefing["opponent_role"],
+            objectives=briefing["objectives"],
+            focus_areas=briefing["focus_areas"],
+            workplace_characteristics=briefing["workplace_characteristics"],
+            identification_kind_note=briefing["identification_context"]["kind_note"],
+            risk_assessment_note=briefing["identification_context"][
+                "risk_assessment_note"
+            ],
+        )
         branches = [
             ExportBranch(
                 source_id=item_node["_source_id"],
@@ -184,6 +206,7 @@ class HazardIdentificationPeerReviewProvider:
                 object_count=plan.object_count,
                 recommended_limit_exceeded=plan.recommended_limit_exceeded,
                 change_tracking=change_tracking,
+                briefing=briefing,
             )
             batches.append(
                 AiPeerReviewBatchContent(
@@ -192,7 +215,7 @@ class HazardIdentificationPeerReviewProvider:
                     object_count=plan.object_count,
                     recommended_limit_exceeded=plan.recommended_limit_exceeded,
                     source_names=list(plan.source_names),
-                    prompt_text=DEFAULT_AI_PEER_REVIEW_PROMPT,
+                    prompt_text=prompt_text,
                     data_text=data_text,
                     overview_text=overview_text,
                     summary_lines=summary_lines,
@@ -621,6 +644,7 @@ class HazardIdentificationPeerReviewProvider:
         object_count: int,
         recommended_limit_exceeded: bool,
         change_tracking: dict,
+        briefing: dict,
     ) -> dict:
         return {
             "schema_version": AI_PEER_REVIEW_SCHEMA_VERSION,
@@ -634,6 +658,20 @@ class HazardIdentificationPeerReviewProvider:
             "change_tracking": dict(change_tracking),
             "exported_at": datetime.now().isoformat(timespec="seconds"),
             "application_version": APP_VERSION,
+            "opponent_role": briefing["opponent_role"],
+            "opponent_role_label": briefing["opponent_role_label"],
+            "peer_review_objectives": list(briefing["objectives"]),
+            "peer_review_objective_labels": [
+                AI_PEER_REVIEW_OBJECTIVE_LABELS[item_id]
+                for item_id in briefing["objectives"]
+            ],
+            "peer_review_focus_areas": list(briefing["focus_areas"]),
+            "peer_review_focus_area_labels": [
+                AI_PEER_REVIEW_FOCUS_AREA_LABELS[item_id]
+                for item_id in briefing["focus_areas"]
+            ],
+            "workplace_characteristics": briefing["workplace_characteristics"],
+            "identification_context": dict(briefing["identification_context"]),
             "identification": hierarchy["identification"],
             "workplace_analysis": hierarchy["workplace_analysis"],
             "hierarchy": [
@@ -648,14 +686,95 @@ class HazardIdentificationPeerReviewProvider:
                     "Proveď oponentní posouzení hierarchické identifikace rizik "
                     "a navrhni možné opomenuté položky."
                 ),
+                "opponent_role": briefing["opponent_role"],
+                "opponent_role_label": briefing["opponent_role_label"],
+                "objectives": list(briefing["objectives"]),
+                "focus_areas": list(briefing["focus_areas"]),
                 "rules": [
                     "Nehodnotit závažnost rizik.",
                     "Neměnit existující položky.",
                     "U návrhů uvádět parent_export_id (ITEM/EVENT/ASSESSMENT).",
                     "Ke každému návrhu uvést stručné odborné zdůvodnění.",
+                    "Posuzovat podle aktuálně platných právních předpisů ČR v oblasti BOZP.",
                 ],
             },
         }
+
+    def _build_peer_review_briefing(
+        self,
+        identification,
+        options: AiPeerReviewExportOptions,
+    ) -> dict:
+        role = normalize_opponent_role(options.opponent_role)
+        objectives = normalize_objectives(options.objectives)
+        focus_areas = normalize_focus_areas(options.focus_areas)
+        characteristics = " ".join(
+            (options.workplace_characteristics or "").split()
+        ).strip()
+        kind, kind_note, risk_status, risk_note = self._derive_identification_context(
+            identification
+        )
+        return {
+            "opponent_role": role,
+            "opponent_role_label": opponent_role_label(role),
+            "objectives": objectives,
+            "focus_areas": focus_areas,
+            "workplace_characteristics": characteristics,
+            "identification_context": {
+                "kind": kind,
+                "kind_note": kind_note,
+                "risk_assessment_status": risk_status,
+                "risk_assessment_note": risk_note,
+            },
+        }
+
+    def _derive_identification_context(self, identification) -> tuple[str, str, str, str]:
+        assessment_rows = hazard_risk_assessment_service.get_for_identification(
+            identification.id,
+            include_inactive=False,
+        )
+        total = len(assessment_rows)
+        completed = sum(
+            1
+            for row in assessment_rows
+            if row.assessment.assessment_status == RISK_ASSESSMENT_STATUS_COMPLETED
+        )
+        if total == 0:
+            risk_status = "none"
+            risk_note = "Posouzení rizik zatím nebyla provedena."
+        elif completed == 0:
+            risk_status = "in_progress"
+            risk_note = (
+                "Posouzení rizik jsou rozpracována, dosud nebylo žádné dokončeno."
+            )
+        elif completed == total:
+            risk_status = "completed"
+            risk_note = "Všechna aktivní posouzení rizik jsou označena jako dokončená."
+        else:
+            risk_status = "partial"
+            risk_note = (
+                f"Dokončeno {completed} z {total} aktivních posouzení rizik."
+            )
+
+        older_exists = False
+        if identification.workplace_id is not None:
+            for other in hazard_identification_service.get_all(include_inactive=True):
+                if other.id == identification.id:
+                    continue
+                if other.workplace_id != identification.workplace_id:
+                    continue
+                if other.id < identification.id:
+                    older_exists = True
+                    break
+
+        if older_exists:
+            kind = AI_PEER_REVIEW_IDENTIFICATION_KIND_REVISION
+            kind_note = "Jde o revizi existující identifikace na tomto pracovišti."
+        else:
+            kind = AI_PEER_REVIEW_IDENTIFICATION_KIND_FIRST
+            kind_note = "Jde o první identifikaci rizik na tomto pracovišti."
+
+        return kind, kind_note, risk_status, risk_note
 
     def _hierarchy_to_data_text(self, hierarchy: dict) -> str:
         identification = hierarchy["identification"]

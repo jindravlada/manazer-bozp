@@ -30,7 +30,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from core.ai_oponentni.constants import (
         AI_PEER_REVIEW_TAB_TITLE,
         AI_PEER_REVIEW_ZIP_FILES,
-        DEFAULT_AI_PEER_REVIEW_PROMPT,
     )
     from core.ai_oponentni.modely.ai_peer_review import AiPeerReview, AiPeerReviewBatch
     from core.ai_oponentni.modely.ai_unassigned_proposal import (
@@ -211,7 +210,11 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         )
         self.assertTrue(target.exists())
         self.assertEqual(result.review.source_type, SOURCE_TYPE_HAZARD_IDENTIFICATION)
-        self.assertIn("Jsi zkušený odborník BOZP", result.review.prompt_text)
+        self.assertIn("Zkušený bezpečnostní technik", result.review.prompt_text)
+        self.assertIn(
+            "Posuzuj podle aktuálně platných právních předpisů České republiky",
+            result.review.prompt_text,
+        )
 
     def test_reject_unsaved_identification(self) -> None:
         with self.assertRaises(AiPeerReviewError):
@@ -239,7 +242,8 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
             data = zf.read("data.txt").decode("utf-8")
             zadani = json.loads(zf.read("zadani.json").decode("utf-8"))
             schema = json.loads(zf.read("schema_odpovedi.json").decode("utf-8"))
-        self.assertIn("Jsi zkušený odborník BOZP", prompt)
+        self.assertIn("Zkušený bezpečnostní technik", prompt)
+        self.assertIn("ROLE ODBORNÉHO OPONENTA", prompt)
         self.assertIn("ITEM-001", data)
         self.assertIn("EVENT-001", data)
         self.assertNotIn("HAZARD-001", data)
@@ -362,7 +366,8 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         )
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0].id, result.review.id)
-        self.assertEqual(rows[0].prompt_text.strip(), DEFAULT_AI_PEER_REVIEW_PROMPT.strip())
+        self.assertIn("Zkušený bezpečnostní technik", rows[0].prompt_text)
+        self.assertIn("Posouzení rizik", rows[0].prompt_text)
 
     def test_no_db_record_on_failed_export(self) -> None:
         target = self.export_dir / "selhani.zip"

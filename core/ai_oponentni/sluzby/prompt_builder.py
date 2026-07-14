@@ -1,0 +1,168 @@
+"""Sestavení pokynu pro AI oponentní posouzení (R11.8)."""
+
+from __future__ import annotations
+
+from collections.abc import Iterable, Sequence
+
+from core.ai_oponentni.constants import (
+    AI_PEER_REVIEW_DEFAULT_OBJECTIVES,
+    AI_PEER_REVIEW_DEFAULT_ROLE,
+    AI_PEER_REVIEW_FOCUS_AREA_LABELS,
+    AI_PEER_REVIEW_FOCUS_AREAS,
+    AI_PEER_REVIEW_OBJECTIVE_LABELS,
+    AI_PEER_REVIEW_OBJECTIVES,
+    AI_PEER_REVIEW_ROLE_LABELS,
+    AI_PEER_REVIEW_ROLES,
+)
+
+
+def normalize_opponent_role(role: str | None) -> str:
+    value = (role or "").strip()
+    if value in AI_PEER_REVIEW_ROLES:
+        return value
+    return AI_PEER_REVIEW_DEFAULT_ROLE
+
+
+def normalize_objectives(objectives: Iterable[str] | None) -> list[str]:
+    if objectives is None:
+        return list(AI_PEER_REVIEW_DEFAULT_OBJECTIVES)
+    allowed = set(AI_PEER_REVIEW_OBJECTIVES)
+    result = [key for key in AI_PEER_REVIEW_OBJECTIVES if key in objectives and key in allowed]
+    return result if result else list(AI_PEER_REVIEW_DEFAULT_OBJECTIVES)
+
+
+def normalize_focus_areas(focus_areas: Iterable[str] | None) -> list[str]:
+    if not focus_areas:
+        return []
+    allowed = set(AI_PEER_REVIEW_FOCUS_AREAS)
+    return [key for key in AI_PEER_REVIEW_FOCUS_AREAS if key in focus_areas and key in allowed]
+
+
+def opponent_role_label(role: str | None) -> str:
+    normalized = normalize_opponent_role(role)
+    return AI_PEER_REVIEW_ROLE_LABELS[normalized]
+
+
+def build_ai_peer_review_prompt(
+    *,
+    role: str | None = None,
+    objectives: Sequence[str] | None = None,
+    focus_areas: Sequence[str] | None = None,
+    workplace_characteristics: str = "",
+    identification_kind_note: str = "",
+    risk_assessment_note: str = "",
+) -> str:
+    """Sestaví obsah souboru pokyn_pro_AI.txt."""
+    role_id = normalize_opponent_role(role)
+    role_label = AI_PEER_REVIEW_ROLE_LABELS[role_id]
+    objective_ids = normalize_objectives(objectives)
+    focus_ids = normalize_focus_areas(focus_areas)
+    characteristics = " ".join((workplace_characteristics or "").split()).strip()
+
+    lines: list[str] = []
+    lines.append("ROLE ODBORNÉHO OPONENTA")
+    lines.append("-" * 40)
+    lines.append(f"Jsi: {role_label}.")
+    lines.append(
+        "Proveď odborné oponentní posouzení poskytnutých podkladů přesně z této "
+        "odborné pozice. Drž se jejího úhlu pohledu, zkušeností a typických "
+        "priorit, aniž bys měnil strukturu odpovědi."
+    )
+    lines.append("")
+
+    lines.append("KONTEXT IDENTIFIKACE")
+    lines.append("-" * 40)
+    if characteristics:
+        lines.append(f"Charakteristika pracoviště: {characteristics}")
+    else:
+        lines.append(
+            "Charakteristika pracoviště nebyla samostatně zadána – "
+            "vycházej pouze z exportovaných podkladů."
+        )
+    if identification_kind_note:
+        lines.append(identification_kind_note)
+    if risk_assessment_note:
+        lines.append(risk_assessment_note)
+    lines.append("")
+
+    lines.append("PRÁVNÍ RÁMEC")
+    lines.append("-" * 40)
+    lines.append(
+        "Posuzuj podle aktuálně platných právních předpisů České republiky "
+        "v oblasti BOZP."
+    )
+    lines.append("")
+
+    lines.append("CÍL OPONENTURY")
+    lines.append("-" * 40)
+    lines.append("Zaměř se zejména na:")
+    for objective_id in objective_ids:
+        lines.append(f"- {AI_PEER_REVIEW_OBJECTIVE_LABELS[objective_id]}")
+    if focus_ids:
+        lines.append("")
+        lines.append("Doplňující zaměření:")
+        for focus_id in focus_ids:
+            lines.append(f"- {AI_PEER_REVIEW_FOCUS_AREA_LABELS[focus_id]}")
+    lines.append("")
+
+    lines.append("STRUKTURA PODKLADŮ")
+    lines.append("-" * 40)
+    lines.append(
+        "Podklady jsou hierarchické:\n"
+        "\n"
+        "Analýza pracoviště → Nežádoucí události → Posouzení\n"
+        "→ Existující opatření → Potřebná opatření\n"
+        "\n"
+        "Každý objekt má stabilní exportní ID (ITEM-…, EVENT-…, ASSESSMENT-…).\n"
+        "Při návrhu doplnění uveď rodiče pomocí tohoto ID (pole Rodič)."
+    )
+    lines.append("")
+
+    lines.append("PRAVIDLA")
+    lines.append("-" * 40)
+    rules = [
+        "Nehodnoť závažnost rizik.",
+        "Neměň existující položky.",
+        "Neopakuj již existující položky z exportu.",
+        "Nenavrhuj zjevně nereálné scénáře.",
+        "Nevymýšlej technologie, zařízení ani činnosti, které nejsou z exportu "
+        "ani z charakteristiky pracoviště patrné.",
+        "Respektuj skutečný charakter pracoviště.",
+        "Ke každému návrhu napiš stručné odborné zdůvodnění.",
+        "Právní předpisy uváděj pouze jako návrh k odbornému ověření, "
+        "nikoli jako závazný právní výklad.",
+        "Nevydávej návrhy za úplné ani definitivní.",
+        "Odpověď strukturoj podle schema_odpovedi.json "
+        "(nebo použij textový formát níže).",
+    ]
+    for rule in rules:
+        lines.append(f"- {rule}")
+    lines.append("")
+
+    lines.append("OTÁZKY K POSOUZENÍ")
+    lines.append("-" * 40)
+    questions = [
+        "Jsou v analýze všechny významné zdroje?",
+        "Chybí některé běžné nežádoucí události?",
+        "Chybí některé skupiny ohrožených osob?",
+        "Chybí některá běžná opatření?",
+        "Chybí některé důležité právní požadavky?",
+        "Na co se při podobných pracovištích nejčastěji zapomíná?",
+    ]
+    for question in questions:
+        lines.append(f"- {question}")
+    lines.append("")
+
+    lines.append("FORMÁT ODPOVĚDI")
+    lines.append("-" * 40)
+    lines.append(
+        "Formát odpovědi (použij přesně tuto strukturu u každého návrhu):\n"
+        "\n"
+        "Oblast: <název oblasti>\n"
+        "Návrh: <navržená položka>\n"
+        "Rodič: <exportní ID rodiče, nebo —>\n"
+        "Zdůvodnění: <stručné odborné zdůvodnění>\n"
+        "\n"
+        "Odděl jednotlivé návrhy prázdným řádkem."
+    )
+    return "\n".join(lines).rstrip() + "\n"

@@ -13,6 +13,95 @@ AI_PEER_REVIEW_IMPORT_BUTTON = "Načíst odpověď AI"
 AI_PEER_REVIEW_DIALOG_TITLE = "Oponentní posouzení AI"
 AI_PEER_REVIEW_INCLUDE_RESPONSIBLE_PERSON = "Zahrnout jméno odpovědné osoby"
 
+# Role odborného oponenta (R11.8)
+AI_PEER_REVIEW_ROLE_QUICK = "quick_check"
+AI_PEER_REVIEW_ROLE_SAFETY_TECHNICIAN = "experienced_safety_technician"
+AI_PEER_REVIEW_ROLE_OIP_INSPECTOR = "oip_inspector"
+AI_PEER_REVIEW_ROLE_ISO_AUDITOR = "iso_45001_auditor"
+AI_PEER_REVIEW_ROLE_MAINTENANCE = "maintenance_technician"
+AI_PEER_REVIEW_ROLE_ACCIDENT_INVESTIGATOR = "accident_investigator"
+AI_PEER_REVIEW_ROLE_DEVILS_ADVOCATE = "devils_advocate"
+
+AI_PEER_REVIEW_DEFAULT_ROLE = AI_PEER_REVIEW_ROLE_SAFETY_TECHNICIAN
+
+AI_PEER_REVIEW_ROLES = (
+    AI_PEER_REVIEW_ROLE_QUICK,
+    AI_PEER_REVIEW_ROLE_SAFETY_TECHNICIAN,
+    AI_PEER_REVIEW_ROLE_OIP_INSPECTOR,
+    AI_PEER_REVIEW_ROLE_ISO_AUDITOR,
+    AI_PEER_REVIEW_ROLE_MAINTENANCE,
+    AI_PEER_REVIEW_ROLE_ACCIDENT_INVESTIGATOR,
+    AI_PEER_REVIEW_ROLE_DEVILS_ADVOCATE,
+)
+
+AI_PEER_REVIEW_ROLE_LABELS = {
+    AI_PEER_REVIEW_ROLE_QUICK: "Rychlá kontrola",
+    AI_PEER_REVIEW_ROLE_SAFETY_TECHNICIAN: "Zkušený bezpečnostní technik",
+    AI_PEER_REVIEW_ROLE_OIP_INSPECTOR: "Inspektor OIP",
+    AI_PEER_REVIEW_ROLE_ISO_AUDITOR: "Auditor ISO 45001",
+    AI_PEER_REVIEW_ROLE_MAINTENANCE: "Technik údržby",
+    AI_PEER_REVIEW_ROLE_ACCIDENT_INVESTIGATOR: "Vyšetřovatel pracovního úrazu",
+    AI_PEER_REVIEW_ROLE_DEVILS_ADVOCATE: "Ďáblův advokát",
+}
+
+# Hlavní cíle oponentury (výchozí: všechny zapnuté)
+AI_PEER_REVIEW_OBJECTIVE_MISSING_SOURCES = "missing_analysis_sources"
+AI_PEER_REVIEW_OBJECTIVE_MISSING_EVENTS = "missing_undesired_events"
+AI_PEER_REVIEW_OBJECTIVE_MISSING_GROUPS = "missing_exposed_groups"
+AI_PEER_REVIEW_OBJECTIVE_EXISTING_MEASURES = "propose_existing_measures"
+AI_PEER_REVIEW_OBJECTIVE_REQUIRED_MEASURES = "propose_required_measures"
+AI_PEER_REVIEW_OBJECTIVE_LEGAL_REQUIREMENTS = "propose_legal_requirements"
+AI_PEER_REVIEW_OBJECTIVE_COMPLETENESS = "verify_identification_completeness"
+
+AI_PEER_REVIEW_OBJECTIVES = (
+    AI_PEER_REVIEW_OBJECTIVE_MISSING_SOURCES,
+    AI_PEER_REVIEW_OBJECTIVE_MISSING_EVENTS,
+    AI_PEER_REVIEW_OBJECTIVE_MISSING_GROUPS,
+    AI_PEER_REVIEW_OBJECTIVE_EXISTING_MEASURES,
+    AI_PEER_REVIEW_OBJECTIVE_REQUIRED_MEASURES,
+    AI_PEER_REVIEW_OBJECTIVE_LEGAL_REQUIREMENTS,
+    AI_PEER_REVIEW_OBJECTIVE_COMPLETENESS,
+)
+
+AI_PEER_REVIEW_DEFAULT_OBJECTIVES = AI_PEER_REVIEW_OBJECTIVES
+
+AI_PEER_REVIEW_OBJECTIVE_LABELS = {
+    AI_PEER_REVIEW_OBJECTIVE_MISSING_SOURCES: "Hledat chybějící zdroje analýzy",
+    AI_PEER_REVIEW_OBJECTIVE_MISSING_EVENTS: "Hledat chybějící nežádoucí události",
+    AI_PEER_REVIEW_OBJECTIVE_MISSING_GROUPS: "Hledat chybějící ohrožené skupiny",
+    AI_PEER_REVIEW_OBJECTIVE_EXISTING_MEASURES: (
+        "Navrhnout existující opatření k ověření"
+    ),
+    AI_PEER_REVIEW_OBJECTIVE_REQUIRED_MEASURES: "Navrhnout další potřebná opatření",
+    AI_PEER_REVIEW_OBJECTIVE_LEGAL_REQUIREMENTS: (
+        "Navrhnout související právní požadavky"
+    ),
+    AI_PEER_REVIEW_OBJECTIVE_COMPLETENESS: "Ověřit úplnost identifikace",
+}
+
+# Doplňující zaměření (výchozí: vypnuto)
+AI_PEER_REVIEW_FOCUS_EMERGENCY = "emergency_situations"
+AI_PEER_REVIEW_FOCUS_MAINTENANCE = "maintenance"
+AI_PEER_REVIEW_FOCUS_CONTRACTORS = "contractors"
+AI_PEER_REVIEW_FOCUS_VISITORS = "visitors"
+
+AI_PEER_REVIEW_FOCUS_AREAS = (
+    AI_PEER_REVIEW_FOCUS_EMERGENCY,
+    AI_PEER_REVIEW_FOCUS_MAINTENANCE,
+    AI_PEER_REVIEW_FOCUS_CONTRACTORS,
+    AI_PEER_REVIEW_FOCUS_VISITORS,
+)
+
+AI_PEER_REVIEW_FOCUS_AREA_LABELS = {
+    AI_PEER_REVIEW_FOCUS_EMERGENCY: "Zaměřit se na mimořádné situace",
+    AI_PEER_REVIEW_FOCUS_MAINTENANCE: "Zaměřit se na údržbu",
+    AI_PEER_REVIEW_FOCUS_CONTRACTORS: "Zaměřit se na dodavatele",
+    AI_PEER_REVIEW_FOCUS_VISITORS: "Zaměřit se na návštěvy",
+}
+
+AI_PEER_REVIEW_IDENTIFICATION_KIND_FIRST = "first"
+AI_PEER_REVIEW_IDENTIFICATION_KIND_REVISION = "revision"
+
 AI_PEER_REVIEW_ZIP_FILES = (
     "pokyn_pro_AI.txt",
     "data.txt",
@@ -61,49 +150,11 @@ AI_PEER_REVIEW_TABLE_HEADERS = [
     "Soubor",
 ]
 
-DEFAULT_AI_PEER_REVIEW_PROMPT = """\
-Jsi zkušený odborník BOZP.
-
-Proveď odborné oponentní posouzení poskytnutých podkladů.
-
-Podklady jsou hierarchické:
-
-Analýza pracoviště → Nežádoucí události → Posouzení
-→ Existující opatření → Potřebná opatření
-
-Každý objekt má stabilní exportní ID (ITEM-…, EVENT-…, ASSESSMENT-…).
-Při návrhu doplnění uveď rodiče pomocí tohoto ID (pole Rodič).
-
-Na základě svých odborných znalostí navrhni pouze položky, které mohly být opomenuty.
-
-Posuzuj zejména:
-
-- zdroje analýzy / zdroje nebezpečí
-- nežádoucí události
-- rizika
-- ohrožené osoby
-- ochranná opatření
-- organizační opatření
-- OOPP
-- technické bariéry
-
-Pravidla:
-
-- Nehodnoť závažnost rizik.
-- Neměň existující položky.
-- Nevydávej návrhy za úplné ani definitivní.
-- Ke každému návrhu napiš stručné odborné zdůvodnění.
-- Odpověď strukturoj podle schema_odpovedi.json (nebo použij textový formát níže).
-
-Formát odpovědi (použij přesně tuto strukturu u každého návrhu):
-
-Oblast: <název oblasti>
-Návrh: <navržená položka>
-Rodič: <exportní ID rodiče, nebo —>
-Zdůvodnění: <stručné odborné zdůvodnění>
-
-Odděl jednotlivé návrhy prázdným řádkem.
-"""
+# Zachováno pro zpětnou kompatibilitu importů; obsah se sestavuje dynamicky (R11.8).
+DEFAULT_AI_PEER_REVIEW_PROMPT = (
+    "Jsi zkušený bezpečnostní technik.\n"
+    "Proveď odborné oponentní posouzení poskytnutých podkladů.\n"
+)
 
 AI_PEER_REVIEW_RESPONSE_SCHEMA = {
     "schema_version": "1.1",

@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Protocol
 
+from core.ai_oponentni.constants import AI_PEER_REVIEW_DEFAULT_ROLE
+
 
 @dataclass
 class AiProposal:
@@ -101,6 +103,10 @@ class AiPeerReviewExportOptions:
     include_responsible_person: bool = False
     export_scope: str = "full"
     selected_source_ids: list[int] | None = None
+    opponent_role: str = AI_PEER_REVIEW_DEFAULT_ROLE
+    objectives: list[str] | None = None
+    focus_areas: list[str] | None = None
+    workplace_characteristics: str = ""
 
 
 class AiPeerReviewProvider(Protocol):

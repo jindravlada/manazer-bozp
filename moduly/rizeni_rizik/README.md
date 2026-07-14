@@ -220,6 +220,16 @@ Dávkový export AI podle zdrojů analýzy:
 - více dávek → hlavní ZIP (`davka_00N.zip` + `prehled_davek.txt`)
 - jedna společná konzultace a mapa exportních ID pro celý export
 
+## Fáze R11.8
+
+Zkvalitnění zadání pro AI oponenturu:
+
+- exportní dialog: role oponenta, cíle oponentury, volitelná zaměření, charakteristika pracoviště
+- `pokyn_pro_AI.txt` sestaven dynamicky (role, kontext, právní rámec, pravidla, otázky)
+- `zadani.json` rozšířen o metadata oponentury (bez změny hierarchy dat)
+- stav identifikace: první / revize, stav posouzení rizik
+- import, schéma odpovědi a workflow beze změny
+
 ## Fáze R12
 
 Odstranění entity Nebezpečí (`IdentifiedHazard`):
