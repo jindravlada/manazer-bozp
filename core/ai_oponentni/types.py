@@ -11,6 +11,7 @@ class AiProposal:
     area: str
     name: str
     reasoning: str
+    parent_export_id: str | None = None
 
 
 @dataclass
@@ -22,6 +23,8 @@ class AiPeerReviewExportContent:
     data_text: str
     overview_text: str
     summary_lines: list[str] = field(default_factory=list)
+    zadani_json: dict | None = None
+    schema_json: dict | None = None
 
 
 @dataclass

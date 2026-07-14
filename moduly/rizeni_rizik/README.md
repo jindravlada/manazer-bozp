@@ -179,8 +179,15 @@ Export podkladů pro konzultaci s AI (původní varianta):
 Přestavba na obecný modul **Oponentní posouzení AI** (`core/ai_oponentni`):
 
 - AI jako nezávislý odborný konzultant BOZP (ne jako doplňování databáze)
-- čitelný export: `pokyn_pro_AI.txt`, `data.txt`, `prehled.txt` (bez exportních ID a schema odpovědi)
 - načtení odpovědi AI a ruční převzetí / zamítnutí návrhů
 - evidence konzultací (datum, model AI, prompt, odpověď, počty převzatých/zamítnutých)
 - doménový adaptér pro identifikaci nebezpečí; stejný mechanismus půjde použít i v jiných modulech
+
+## Fáze R11.3
+
+Hierarchický export AI:
+
+- strom: Analýza pracoviště → Nebezpečí → Události → Posouzení → Opatření
+- stabilní exportní ID (`ITEM-001`, `HAZARD-001`, `EVENT-001`, `ASSESSMENT-001`)
+- ZIP: `pokyn_pro_AI.txt`, `data.txt`, `prehled.txt`, `zadani.json`, `schema_odpovedi.json`
 

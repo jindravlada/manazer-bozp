@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import json
 import os
 import tempfile
 import unittest
@@ -88,11 +89,13 @@ with patch.object(Path, "home", return_value=_TMP):
 SAMPLE_RESPONSE = """\
 Oblast: Nebezpečí
 Návrh: Přimáčknutí mezi vozy
+Rodič: ITEM-001
 Zdůvodnění:
 Typické riziko při spojování a rozpojování kolejových vozidel.
 
 Oblast: OOPP
 Návrh: Ochranná obuv s ocelovou špicí
+Rodič: ASSESSMENT-001
 Zdůvodnění: Ochrana nohou při manipulaci s spojovacím materiálem.
 """
 
@@ -218,45 +221,75 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         self.assertNotIn("Neaktivní zařízení", content.data_text)
         self.assertIn("Pohyb kolejového vozidla", content.data_text)
 
-    def test_zip_contains_three_readable_files(self) -> None:
+    def test_zip_contains_hierarchical_export_files(self) -> None:
         target = self.export_dir / "balicek.zip"
         ai_peer_review_service.export_package(self.provider, self.identification.id, target)
         with zipfile.ZipFile(target, "r") as zf:
             self.assertEqual(set(zf.namelist()), set(AI_PEER_REVIEW_ZIP_FILES))
             prompt = zf.read("pokyn_pro_AI.txt").decode("utf-8")
             data = zf.read("data.txt").decode("utf-8")
+            zadani = json.loads(zf.read("zadani.json").decode("utf-8"))
+            schema = json.loads(zf.read("schema_odpovedi.json").decode("utf-8"))
         self.assertIn("Jsi zkušený odborník BOZP", prompt)
-        self.assertNotIn("ITEM-001", data)
-        self.assertNotIn("schema_odpovedi", "".join(AI_PEER_REVIEW_ZIP_FILES))
+        self.assertIn("ITEM-001", data)
+        self.assertIn("HAZARD-001", data)
+        self.assertEqual(zadani["schema_version"], "1.1")
+        self.assertEqual(schema["schema_version"], "1.1")
+        self.assertIn("parent_export_id", schema["$defs"]["proposal"]["properties"])
 
-    def test_no_export_ids_or_schema_json(self) -> None:
-        target = self.export_dir / "citelne.zip"
-        ai_peer_review_service.export_package(self.provider, self.identification.id, target)
-        with zipfile.ZipFile(target, "r") as zf:
-            names = zf.namelist()
-            data = zf.read("data.txt").decode("utf-8")
-        self.assertNotIn("zadani.json", names)
-        self.assertNotIn("schema_odpovedi.json", names)
-        self.assertNotIn("ITEM-", data)
-        self.assertNotIn("HAZARD-", data)
-        self.assertNotIn("confidence", data.casefold())
+    def test_hierarchical_zadani_json(self) -> None:
+        content = self.provider.build_export_content(
+            self.identification.id,
+            options=AiPeerReviewExportOptions(),
+        )
+        assert content.zadani_json is not None
+        tree = content.zadani_json["workplace_analysis"]
+        self.assertEqual(len(tree), 1)
+        item = tree[0]
+        self.assertEqual(item["export_id"], "ITEM-001")
+        self.assertEqual(item["name"], "Lokomotiva")
+        self.assertEqual(item["hazards"][0]["export_id"], "HAZARD-001")
+        self.assertEqual(item["hazards"][0]["events"][0]["export_id"], "EVENT-001")
+        assessment = item["hazards"][0]["events"][0]["assessments"][0]
+        self.assertEqual(assessment["export_id"], "ASSESSMENT-001")
+        self.assertEqual(assessment["exposed_group"], "Posunovač")
+        self.assertEqual(assessment["existing_measures"][0]["description"], "Výstražný signál")
+        self.assertEqual(assessment["required_measures"][0]["description"], "Instalace zábran")
+
+    def test_hierarchical_data_txt_nesting(self) -> None:
+        content = self.provider.build_export_content(
+            self.identification.id,
+            options=AiPeerReviewExportOptions(),
+        )
+        self.assertIn("Zdroj analýzy [ITEM-001]", content.data_text)
+        self.assertIn("Nebezpečí", content.data_text)
+        self.assertIn("[HAZARD-001]", content.data_text)
+        self.assertIn("Událost", content.data_text)
+        self.assertIn("[EVENT-001]", content.data_text)
+        self.assertIn("Posouzení", content.data_text)
+        self.assertIn("[ASSESSMENT-001]", content.data_text)
+        self.assertIn("Existující opatření", content.data_text)
+        self.assertIn("Potřebná opatření", content.data_text)
+        # Neaktivní položka nesmí být v hierarchii
+        self.assertNotIn("Neaktivní zařízení", content.data_text)
 
     def test_no_internal_database_ids_in_export(self) -> None:
         content = self.provider.build_export_content(
             self.identification.id,
             options=AiPeerReviewExportOptions(),
         )
-        lowered = content.data_text.casefold()
+        dumped = json.dumps(content.zadani_json, ensure_ascii=False)
         for forbidden in (
             "hazard_identification_id",
             "inventory_item_id",
             "identified_hazard_id",
             "hazard_event_id",
-            "export_id",
-            "item-001",
-            "hazard-001",
+            "hazard_risk_assessment_id",
         ):
-            self.assertNotIn(forbidden, lowered)
+            self.assertNotIn(forbidden, dumped)
+        # Stabilní exportní ID mají být přítomna
+        self.assertIn("ITEM-001", dumped)
+        self.assertIn("HAZARD-001", dumped)
 
     def test_responsible_person_excluded_by_default(self) -> None:
         content = self.provider.build_export_content(
@@ -312,7 +345,9 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         self.assertEqual(len(proposals), 2)
         self.assertEqual(proposals[0].area, "Nebezpečí")
         self.assertEqual(proposals[0].name, "Přimáčknutí mezi vozy")
+        self.assertEqual(proposals[0].parent_export_id, "ITEM-001")
         self.assertIn("spojování", proposals[0].reasoning)
+        self.assertEqual(proposals[1].parent_export_id, "ASSESSMENT-001")
 
     def test_import_accept_reject_and_apply(self) -> None:
         target = self.export_dir / "import.zip"

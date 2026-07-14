@@ -17,7 +17,12 @@ AI_PEER_REVIEW_ZIP_FILES = (
     "pokyn_pro_AI.txt",
     "data.txt",
     "prehled.txt",
+    "zadani.json",
+    "schema_odpovedi.json",
 )
+
+AI_PEER_REVIEW_SCHEMA_VERSION = "1.1"
+AI_PEER_REVIEW_EXPORT_TYPE = "hazard_identification_ai_peer_review"
 
 AI_PEER_REVIEW_COL_ID = 0
 AI_PEER_REVIEW_COL_DATE = 1
@@ -41,6 +46,14 @@ Jsi zkušený odborník BOZP.
 
 Proveď odborné oponentní posouzení poskytnutých podkladů.
 
+Podklady jsou hierarchické:
+
+Analýza pracoviště → Nebezpečí → Nežádoucí události → Posouzení
+→ Existující opatření → Potřebná opatření
+
+Každý objekt má stabilní exportní ID (ITEM-…, HAZARD-…, EVENT-…, ASSESSMENT-…).
+Při návrhu doplnění uveď rodiče pomocí tohoto ID (pole Rodič).
+
 Na základě svých odborných znalostí navrhni pouze položky, které mohly být opomenuty.
 
 Posuzuj zejména:
@@ -61,12 +74,89 @@ Pravidla:
 - Neměň existující položky.
 - Nevydávej návrhy za úplné ani definitivní.
 - Ke každému návrhu napiš stručné odborné zdůvodnění.
+- Odpověď strukturoj podle schema_odpovedi.json (nebo použij textový formát níže).
 
 Formát odpovědi (použij přesně tuto strukturu u každého návrhu):
 
 Oblast: <název oblasti>
 Návrh: <navržená položka>
+Rodič: <exportní ID rodiče, nebo —>
 Zdůvodnění: <stručné odborné zdůvodnění>
 
 Odděl jednotlivé návrhy prázdným řádkem.
 """
+
+AI_PEER_REVIEW_RESPONSE_SCHEMA = {
+    "schema_version": "1.1",
+    "description": (
+        "Očekávaný formát odpovědi AI pro oponentní posouzení. "
+        "Návrhy se vážou na hierarchická exportní ID z zadani.json."
+    ),
+    "type": "object",
+    "required": [
+        "schema_version",
+        "source_identification_number",
+        "generated_at",
+        "proposals",
+    ],
+    "properties": {
+        "schema_version": {
+            "type": "string",
+            "const": "1.1",
+        },
+        "source_identification_number": {
+            "type": "string",
+            "description": "Číslo identifikace z zadani.json.",
+        },
+        "generated_at": {
+            "type": "string",
+            "format": "date-time",
+        },
+        "proposals": {
+            "type": "array",
+            "items": {"$ref": "#/$defs/proposal"},
+        },
+    },
+    "$defs": {
+        "proposal": {
+            "type": "object",
+            "required": [
+                "proposal_id",
+                "area",
+                "name",
+                "parent_export_id",
+                "reasoning",
+            ],
+            "properties": {
+                "proposal_id": {
+                    "type": "string",
+                    "description": "Stabilní identifikátor návrhu v rámci odpovědi.",
+                },
+                "area": {
+                    "type": "string",
+                    "description": (
+                        "Oblast návrhu, např. Analýza pracoviště, Nebezpečí, "
+                        "Nežádoucí událost, Ohrožená skupina, Existující opatření, "
+                        "Potřebné opatření."
+                    ),
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Navržená položka.",
+                },
+                "parent_export_id": {
+                    "type": ["string", "null"],
+                    "description": (
+                        "Exportní ID rodiče v hierarchii "
+                        "(ITEM-… / HAZARD-… / EVENT-… / ASSESSMENT-…), "
+                        "nebo null u nové položky analýzy pracoviště."
+                    ),
+                },
+                "reasoning": {
+                    "type": "string",
+                    "description": "Stručné odborné zdůvodnění.",
+                },
+            },
+        },
+    },
+}

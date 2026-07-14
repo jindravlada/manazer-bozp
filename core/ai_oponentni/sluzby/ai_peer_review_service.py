@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import zipfile
 from dataclasses import dataclass
 from datetime import datetime
@@ -66,6 +67,11 @@ class AiPeerReviewService:
 
         export_options = options or AiPeerReviewExportOptions()
         content = provider.build_export_content(source_id, options=export_options)
+        if content.zadani_json is None or content.schema_json is None:
+            raise AiPeerReviewError(
+                "Doménový poskytovatel musí dodat zadani.json a schema_odpovedi.json."
+            )
+
         exported_at = datetime.now()
         target = Path(target_path)
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -75,6 +81,14 @@ class AiPeerReviewService:
                 zf.writestr("pokyn_pro_AI.txt", content.prompt_text.rstrip() + "\n")
                 zf.writestr("data.txt", content.data_text.rstrip() + "\n")
                 zf.writestr("prehled.txt", content.overview_text.rstrip() + "\n")
+                zf.writestr(
+                    "zadani.json",
+                    json.dumps(content.zadani_json, ensure_ascii=False, indent=2) + "\n",
+                )
+                zf.writestr(
+                    "schema_odpovedi.json",
+                    json.dumps(content.schema_json, ensure_ascii=False, indent=2) + "\n",
+                )
         except OSError as error:
             target.unlink(missing_ok=True)
             raise AiPeerReviewError(
