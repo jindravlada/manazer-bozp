@@ -169,11 +169,18 @@ Dokončení posouzení rizika:
 
 ## Fáze R11
 
-Export podkladů pro konzultaci s AI:
+Export podkladů pro konzultaci s AI (původní varianta):
 
-- záložka **Konzultace s AI** v editoru identifikace
-- model `HazardAiExport` a evidence vytvořených exportů
-- ZIP balíček: `zadani.json`, `pokyn_pro_AI.txt`, `schema_odpovedi.json`, `prehled.txt`
-- export pouze aktivních záznamů přes stabilní exportní ID (bez interních DB ID)
-- volitelné zahrnutí jména odpovědné osoby (výchozí vypnuto)
-- bez přímé komunikace s AI a bez importu návrhů (R12)
+- záložka Konzultace s AI, model `HazardAiExport`
+- ZIP s `zadani.json` a schématem odpovědi
+
+## Fáze R11.2
+
+Přestavba na obecný modul **Oponentní posouzení AI** (`core/ai_oponentni`):
+
+- AI jako nezávislý odborný konzultant BOZP (ne jako doplňování databáze)
+- čitelný export: `pokyn_pro_AI.txt`, `data.txt`, `prehled.txt` (bez exportních ID a schema odpovědi)
+- načtení odpovědi AI a ruční převzetí / zamítnutí návrhů
+- evidence konzultací (datum, model AI, prompt, odpověď, počty převzatých/zamítnutých)
+- doménový adaptér pro identifikaci nebezpečí; stejný mechanismus půjde použít i v jiných modulech
+

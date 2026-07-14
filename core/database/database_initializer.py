@@ -72,7 +72,7 @@ def initialize_database() -> None:
     from moduly.rizeni_rizik.modely.hazard_risk_assessment import HazardRiskAssessment  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_existing_measure import HazardExistingMeasure  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_required_measure import HazardRequiredMeasure  # noqa: F401
-    from moduly.rizeni_rizik.modely.hazard_ai_export import HazardAiExport  # noqa: F401
+    from core.ai_oponentni.modely.ai_peer_review import AiPeerReview  # noqa: F401
 
     create_database()
     _ensure_thp_worker_title_columns()
@@ -112,7 +112,7 @@ def initialize_database() -> None:
     _ensure_hazard_risk_assessments_table()
     _ensure_hazard_existing_measures_table()
     _ensure_hazard_required_measures_table()
-    _ensure_hazard_ai_exports_table()
+    _ensure_ai_peer_reviews_table()
     _migrate_legal_document_types()
     _normalize_task_status_values()
     _normalize_accident_legacy_values()
@@ -842,12 +842,12 @@ def _ensure_hazard_required_measures_table() -> None:
         HazardRequiredMeasure.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
-def _ensure_hazard_ai_exports_table() -> None:
-    columns = _table_columns("hazard_ai_exports")
+def _ensure_ai_peer_reviews_table() -> None:
+    columns = _table_columns("ai_peer_reviews")
     if not columns:
-        from moduly.rizeni_rizik.modely.hazard_ai_export import HazardAiExport
+        from core.ai_oponentni.modely.ai_peer_review import AiPeerReview
 
-        HazardAiExport.__table__.create(bind=_db_engine(), checkfirst=True)
+        AiPeerReview.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_responsibility_roles_table() -> None:

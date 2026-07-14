@@ -1,10 +1,11 @@
 from PySide6.QtWidgets import QDialog, QDialogButtonBox, QLabel, QMessageBox, QTabWidget, QVBoxLayout, QWidget
 
+from core.ai_oponentni.constants import AI_PEER_REVIEW_TAB_TITLE
+from core.ai_oponentni.ui.ai_peer_review_widget import AiPeerReviewWidget
 from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.rizeni_rizik.constants import (
     DIALOG_WINDOW_TITLE,
     HAZARD_IDENTIFICATION_TABS,
-    TAB_AI_CONSULTATION,
     TAB_BASICS,
     TAB_EVENTS,
     TAB_HAZARDS,
@@ -15,11 +16,13 @@ from moduly.rizeni_rizik.constants import (
     is_identification_inventory_read_only,
     is_identification_risk_assessment_read_only,
 )
+from moduly.rizeni_rizik.sluzby.hazard_identification_peer_review_provider import (
+    hazard_identification_peer_review_provider,
+)
 from moduly.rizeni_rizik.sluzby.hazard_identification_service import (
     HazardIdentificationError,
     hazard_identification_service,
 )
-from moduly.rizeni_rizik.ui.hazard_ai_consultation_widget import HazardAiConsultationWidget
 from moduly.rizeni_rizik.ui.hazard_events_widget import HazardEventsWidget
 from moduly.rizeni_rizik.ui.hazard_identification_basics_widget import (
     HazardIdentificationBasicsWidget,
@@ -46,13 +49,17 @@ class HazardIdentificationDialog(QDialog):
         self.events_widget = HazardEventsWidget(on_assessment_saved=self._on_assessment_saved)
         self.hazards_widget = IdentifiedHazardsWidget(on_event_saved=self._on_event_saved)
         self.inventory_widget = HazardInventoryWidget(on_hazard_saved=self._on_hazard_saved)
-        self.ai_consultation_widget = HazardAiConsultationWidget()
+        self.ai_peer_review_widget = AiPeerReviewWidget(
+            provider=hazard_identification_peer_review_provider,
+            show_responsible_person_option=True,
+            on_proposals_applied=self._on_peer_review_applied,
+        )
         self.tabs.addTab(self.basics_widget, TAB_BASICS)
         self.tabs.addTab(self.inventory_widget, TAB_INVENTORY)
         self.tabs.addTab(self.hazards_widget, TAB_HAZARDS)
         self.tabs.addTab(self.events_widget, TAB_EVENTS)
         self.tabs.addTab(self.risk_assessments_widget, TAB_RISK_ASSESSMENT)
-        self.tabs.addTab(self.ai_consultation_widget, TAB_AI_CONSULTATION)
+        self.tabs.addTab(self.ai_peer_review_widget, AI_PEER_REVIEW_TAB_TITLE)
 
         for tab_label in HAZARD_IDENTIFICATION_TABS[6:]:
             placeholder = QWidget()
@@ -78,12 +85,12 @@ class HazardIdentificationDialog(QDialog):
         self._sync_hazards_context()
         self._sync_events_context()
         self._sync_risk_assessment_context()
-        self._sync_ai_consultation_context()
+        self._sync_ai_peer_review_context()
         self._update_inventory_tab_enabled()
         self._update_hazards_tab_enabled()
         self._update_events_tab_enabled()
         self._update_risk_assessment_tab_enabled()
-        self._update_ai_consultation_tab_enabled()
+        self._update_ai_peer_review_tab_enabled()
 
     def _update_inventory_tab_enabled(self) -> None:
         self.tabs.setTabEnabled(1, self.identification is not None)
@@ -97,7 +104,7 @@ class HazardIdentificationDialog(QDialog):
     def _update_risk_assessment_tab_enabled(self) -> None:
         self.tabs.setTabEnabled(4, self.identification is not None)
 
-    def _update_ai_consultation_tab_enabled(self) -> None:
+    def _update_ai_peer_review_tab_enabled(self) -> None:
         self.tabs.setTabEnabled(5, self.identification is not None)
 
     def _sync_inventory_context(self) -> None:
@@ -132,9 +139,9 @@ class HazardIdentificationDialog(QDialog):
             read_only=is_identification_risk_assessment_read_only(status),
         )
 
-    def _sync_ai_consultation_context(self) -> None:
+    def _sync_ai_peer_review_context(self) -> None:
         identification_id = self.identification.id if self.identification is not None else None
-        self.ai_consultation_widget.set_identification(identification_id)
+        self.ai_peer_review_widget.set_source(identification_id)
 
     def _on_hazard_saved(self) -> None:
         self.hazards_widget.refresh()
@@ -146,6 +153,12 @@ class HazardIdentificationDialog(QDialog):
     def _on_assessment_saved(self) -> None:
         self.risk_assessments_widget.refresh()
         self.events_widget.refresh()
+
+    def _on_peer_review_applied(self) -> None:
+        self.inventory_widget.refresh()
+        self.hazards_widget.refresh()
+        self.events_widget.refresh()
+        self.risk_assessments_widget.refresh()
 
     def _save_basics(self) -> None:
         data = self.basics_widget.get_data()
@@ -168,12 +181,12 @@ class HazardIdentificationDialog(QDialog):
         self._update_hazards_tab_enabled()
         self._update_events_tab_enabled()
         self._update_risk_assessment_tab_enabled()
-        self._update_ai_consultation_tab_enabled()
+        self._update_ai_peer_review_tab_enabled()
         self._sync_inventory_context()
         self._sync_hazards_context()
         self._sync_events_context()
         self._sync_risk_assessment_context()
-        self._sync_ai_consultation_context()
+        self._sync_ai_peer_review_context()
         self.basics_widget.load_identification(self.identification)
         QMessageBox.information(self, DIALOG_WINDOW_TITLE, "Základní údaje byly uloženy.")
 

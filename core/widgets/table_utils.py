@@ -309,37 +309,31 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         for column in (REQUIRED_MEASURE_COL_NOTE, REQUIRED_MEASURE_COL_ACTIVE):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 
-    elif profile == "hazard_ai_exports":
-        from moduly.rizeni_rizik.constants import (
-            AI_EXPORT_COL_ASSESSMENT_COUNT,
-            AI_EXPORT_COL_EVENT_COUNT,
-            AI_EXPORT_COL_EXPORTED_AT,
-            AI_EXPORT_COL_FILENAME,
-            AI_EXPORT_COL_HAZARD_COUNT,
-            AI_EXPORT_COL_ITEM_COUNT,
-            AI_EXPORT_COL_SCHEMA_VERSION,
+    elif profile == "ai_peer_reviews":
+        from core.ai_oponentni.constants import (
+            AI_PEER_REVIEW_COL_ACCEPTED,
+            AI_PEER_REVIEW_COL_DATE,
+            AI_PEER_REVIEW_COL_FILENAME,
+            AI_PEER_REVIEW_COL_MODEL,
+            AI_PEER_REVIEW_COL_REJECTED,
         )
 
         widths = {
-            AI_EXPORT_COL_EXPORTED_AT: 130,
-            AI_EXPORT_COL_SCHEMA_VERSION: 100,
-            AI_EXPORT_COL_FILENAME: 260,
-            AI_EXPORT_COL_ITEM_COUNT: 120,
-            AI_EXPORT_COL_HAZARD_COUNT: 110,
-            AI_EXPORT_COL_EVENT_COUNT: 110,
-            AI_EXPORT_COL_ASSESSMENT_COUNT: 110,
+            AI_PEER_REVIEW_COL_DATE: 130,
+            AI_PEER_REVIEW_COL_MODEL: 140,
+            AI_PEER_REVIEW_COL_ACCEPTED: 90,
+            AI_PEER_REVIEW_COL_REJECTED: 90,
+            AI_PEER_REVIEW_COL_FILENAME: 260,
         }
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
-        header.setSectionResizeMode(AI_EXPORT_COL_FILENAME, QHeaderView.Stretch)
+        header.setSectionResizeMode(AI_PEER_REVIEW_COL_FILENAME, QHeaderView.Stretch)
         for column in (
-            AI_EXPORT_COL_EXPORTED_AT,
-            AI_EXPORT_COL_SCHEMA_VERSION,
-            AI_EXPORT_COL_ITEM_COUNT,
-            AI_EXPORT_COL_HAZARD_COUNT,
-            AI_EXPORT_COL_EVENT_COUNT,
-            AI_EXPORT_COL_ASSESSMENT_COUNT,
+            AI_PEER_REVIEW_COL_DATE,
+            AI_PEER_REVIEW_COL_MODEL,
+            AI_PEER_REVIEW_COL_ACCEPTED,
+            AI_PEER_REVIEW_COL_REJECTED,
         ):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 
