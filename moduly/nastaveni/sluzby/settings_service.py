@@ -1,7 +1,15 @@
+from moduly.nastaveni.constants.workplace_hierarchy_constants import (
+    WORKPLACE_ITEM_TYPE_OPERATION,
+)
 from moduly.nastaveni.modely.employer import Employer
 from moduly.nastaveni.modely.thp_worker import ThpWorker
 from moduly.nastaveni.modely.workplace import Workplace
 from moduly.nastaveni.repository.settings_repository import SettingsRepository
+from moduly.nastaveni.sluzby.workplace_hierarchy_service import (
+    WorkplaceHierarchyError,
+    workplace_hierarchy_service,
+    workplace_item_type_label,
+)
 
 
 class SettingsService:
@@ -70,17 +78,62 @@ class SettingsService:
         self.repository.save_worker(worker)
         return True
 
-    # Pracoviště
+    # Provozy a pracoviště
     def get_workplaces(self, include_inactive: bool = False) -> list[Workplace]:
-        return self.repository.get_workplaces(include_inactive=include_inactive)
+        workplaces = self.repository.get_workplaces(include_inactive=include_inactive)
+        return workplace_hierarchy_service.sort_for_tree(workplaces)
 
     def get_workplace_by_id(self, workplace_id: int | None) -> Workplace | None:
         if not workplace_id:
             return None
         return self.repository.get_workplace_by_id(workplace_id)
 
+    def get_workplace_parent_candidates(
+        self,
+        *,
+        item_type: str,
+        current_id: int | None = None,
+        active_only: bool = True,
+    ) -> list[Workplace]:
+        workplaces = self.repository.get_workplaces(include_inactive=True)
+        return workplace_hierarchy_service.parent_candidates(
+            workplaces,
+            item_type=item_type,
+            current_id=current_id,
+            active_only=active_only,
+        )
+
+    def get_active_workplace_children(self, workplace_id: int) -> list[Workplace]:
+        workplaces = self.repository.get_workplaces(include_inactive=True)
+        return workplace_hierarchy_service.active_children(workplaces, workplace_id)
+
     def save_workplace(self, **data) -> Workplace:
         workplace_id = data.pop("id", None)
+        name = str(data.get("name", "")).strip()
+        if not name:
+            raise WorkplaceHierarchyError("Název je povinný.")
+
+        item_type = str(data.get("item_type") or WORKPLACE_ITEM_TYPE_OPERATION).strip()
+        parent_id = data.get("parent_id")
+        if parent_id in ("", 0):
+            parent_id = None
+
+        all_workplaces = self.repository.get_workplaces(include_inactive=True)
+        workplace_hierarchy_service.validate(
+            all_workplaces,
+            workplace_id=workplace_id,
+            item_type=item_type,
+            parent_id=parent_id,
+        )
+
+        if item_type == WORKPLACE_ITEM_TYPE_OPERATION:
+            parent_id = None
+            data["parent_id"] = None
+        else:
+            data["parent_id"] = parent_id
+
+        data["name"] = name
+        data["item_type"] = item_type
 
         if workplace_id:
             workplace = self.repository.get_workplace_by_id(workplace_id)
@@ -112,6 +165,10 @@ class SettingsService:
         workplace.active = True
         self.repository.save_workplace(workplace)
         return True
+
+    @staticmethod
+    def workplace_item_type_label(item_type: str) -> str:
+        return workplace_item_type_label(item_type)
 
 
 settings_service = SettingsService()

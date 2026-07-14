@@ -76,7 +76,7 @@ class CodebookCatalogService:
     _PROVERKY_REGISTRY = "proverky/oblasti.json"
 
     _GLOBAL_DB_CODEBOOKS: tuple[tuple[str, str, str], ...] = (
-        ("db:workplaces", "Pracoviště", "workplaces"),
+        ("db:workplaces", "Provozy a pracoviště", "workplaces"),
         ("db:thp_workers", "THP pracovníci", "thp_workers"),
         ("db:employer", "Zaměstnavatel", "employers"),
         ("db:responsibility_roles", "Funkce / role", "responsibility_roles"),

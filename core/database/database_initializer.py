@@ -83,6 +83,7 @@ def initialize_database() -> None:
     _ensure_audit_process_maturity_snapshot_table()
     _ensure_audit_program_final_report_table()
     _ensure_workplace_audit_columns()
+    _ensure_workplace_hierarchy_columns()
     _ensure_responsibility_roles_table()
     _ensure_audit_program_columns()
     _ensure_audit_program_workplace_columns()
@@ -424,6 +425,24 @@ def _ensure_workplace_audit_columns() -> None:
     for column_name, column_sql in additions.items():
         if column_name not in columns:
             _add_column("workplaces", column_sql)
+
+
+def _ensure_workplace_hierarchy_columns() -> None:
+    columns = _table_columns("workplaces")
+    if not columns:
+        return
+    if "parent_id" not in columns:
+        _add_column("workplaces", "parent_id INTEGER")
+    if "item_type" not in columns:
+        _add_column("workplaces", "item_type VARCHAR(32) DEFAULT 'operation' NOT NULL")
+    with _db_engine().connect() as connection:
+        connection.execute(
+            text(
+                "UPDATE workplaces SET item_type = 'operation' "
+                "WHERE item_type IS NULL OR TRIM(item_type) = ''"
+            )
+        )
+        connection.commit()
 
 
 def _ensure_audit_program_columns() -> None:

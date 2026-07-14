@@ -59,7 +59,10 @@ class SettingsRepository:
 
             workplaces = list(session.scalars(stmt))
 
-        return czech_sorted(workplaces, key=lambda workplace: workplace.name)
+        return workplaces
+
+    def get_all_workplaces(self, include_inactive: bool = False) -> list[Workplace]:
+        return self.get_workplaces(include_inactive=include_inactive)
 
     def get_workplace_by_id(self, workplace_id: int) -> Workplace | None:
         with get_session() as session:

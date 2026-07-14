@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTabWidget,
     QTableWidget, QTableWidgetItem, QLabel, QMessageBox, QComboBox, QCompleter,
-    QFormLayout, QLineEdit
+    QFormLayout, QLineEdit, QTreeWidget, QTreeWidgetItem, QTreeWidgetItemIterator,
 )
 from PySide6.QtCore import Qt
 
@@ -11,7 +11,13 @@ from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
 from moduly.nastaveni.sluzby.person_service import person_service
 from moduly.nastaveni.sluzby.responsibility_role_service import responsibility_role_service
+from moduly.nastaveni.constants.workplace_hierarchy_constants import (
+    WORKPLACE_ITEM_TYPE_OPERATION,
+    WORKPLACE_ITEM_TYPE_WORKPLACE,
+    WORKPLACE_ITEM_TYPE_WORKPLACE_PART,
+)
 from moduly.nastaveni.sluzby.settings_service import settings_service
+from moduly.nastaveni.sluzby.workplace_hierarchy_service import WorkplaceHierarchyError
 from moduly.nastaveni.ui.person_dialog import PersonDialog
 from moduly.nastaveni.ui.responsibility_role_dialog import ResponsibilityRoleDialog
 from moduly.nastaveni.ui.thp_worker_dialog import ThpWorkerDialog
@@ -27,7 +33,7 @@ class NastaveniPage(QWidget):
 
         self.tabs.addTab(self._workers_tab(), "THP pracovníci")
         self.tabs.addTab(self._persons_tab(), "Osoby")
-        self.tabs.addTab(self._workplaces_tab(), "Pracoviště")
+        self.tabs.addTab(self._workplaces_tab(), "Provozy a pracoviště")
         self.tabs.addTab(self._responsibility_roles_tab(), "Funkce / role")
         self.tabs.addTab(self._employer_tab(), "Zaměstnavatel")
 
@@ -197,8 +203,14 @@ class NastaveniPage(QWidget):
 
         toolbar = QHBoxLayout()
 
-        add_button = QPushButton("Přidat pracoviště")
-        add_button.clicked.connect(self.add_workplace)
+        self.workplace_add_operation_button = QPushButton("Nový provoz")
+        self.workplace_add_operation_button.clicked.connect(self.add_workplace_operation)
+
+        self.workplace_add_workplace_button = QPushButton("Nové pracoviště")
+        self.workplace_add_workplace_button.clicked.connect(self.add_workplace_item)
+
+        self.workplace_add_part_button = QPushButton("Nová část pracoviště")
+        self.workplace_add_part_button.clicked.connect(self.add_workplace_part)
 
         edit_button = QPushButton("Upravit")
         edit_button.clicked.connect(self.edit_selected_workplace)
@@ -210,30 +222,37 @@ class NastaveniPage(QWidget):
         self.workplace_filter.addItems(["Aktivní", "Všechna"])
         self.workplace_filter.currentIndexChanged.connect(self.refresh_workplaces)
 
-        toolbar.addWidget(add_button)
+        toolbar.addWidget(self.workplace_add_operation_button)
+        toolbar.addWidget(self.workplace_add_workplace_button)
+        toolbar.addWidget(self.workplace_add_part_button)
         toolbar.addWidget(edit_button)
         toolbar.addWidget(self.workplace_active_toggle_button)
         toolbar.addStretch()
         toolbar.addWidget(QLabel("Zobrazit:"))
         toolbar.addWidget(self.workplace_filter)
 
-        self.workplace_table = QTableWidget()
-        self.workplace_table.setColumnCount(5)
-        self.workplace_table.setHorizontalHeaderLabels(
-            ["ID", "Název", "Adresa", "Poznámka", "Aktivní"]
-        )
-        self.workplace_table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.workplace_table.setSelectionMode(QTableWidget.SingleSelection)
-        self.workplace_table.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.workplace_table.doubleClicked.connect(self.edit_selected_workplace)
-        self.workplace_table.itemSelectionChanged.connect(self.update_workplace_buttons)
-        configure_table_columns(self.workplace_table, "workplaces")
+        self.workplace_tree = QTreeWidget()
+        self.workplace_tree.setColumnCount(3)
+        self.workplace_tree.setHeaderLabels(["Název", "Typ", "Aktivní"])
+        self.workplace_tree.setSelectionBehavior(QTreeWidget.SelectRows)
+        self.workplace_tree.setSelectionMode(QTreeWidget.SingleSelection)
+        self.workplace_tree.setEditTriggers(QTreeWidget.NoEditTriggers)
+        self.workplace_tree.setRootIsDecorated(True)
+        self.workplace_tree.setUniformRowHeights(True)
+        self.workplace_tree.itemDoubleClicked.connect(self._on_workplace_item_double_clicked)
+        self.workplace_tree.itemSelectionChanged.connect(self.update_workplace_buttons)
 
-        self.workplace_text_filter = FilterBar(self.workplace_table)
+        filter_row = QHBoxLayout()
+        self.workplace_search_edit = QLineEdit()
+        self.workplace_search_edit.setPlaceholderText("🔍 Hledat...")
+        self.workplace_count_label = QLabel("Zobrazeno: 0 / 0")
+        self.workplace_search_edit.textChanged.connect(self._apply_workplace_tree_filter)
+        filter_row.addWidget(self.workplace_search_edit, 1)
+        filter_row.addWidget(self.workplace_count_label)
 
         layout.addLayout(toolbar)
-        layout.addWidget(self.workplace_text_filter)
-        layout.addWidget(self.workplace_table)
+        layout.addLayout(filter_row)
+        layout.addWidget(self.workplace_tree)
 
         return tab
 
@@ -487,83 +506,153 @@ class NastaveniPage(QWidget):
 
         self.active_toggle_button.setText("Deaktivovat" if worker.active else "Aktivovat")
 
-    def add_workplace(self):
-        dialog = WorkplaceDialog(self)
+    def add_workplace_operation(self):
+        self._open_workplace_dialog(
+            default_item_type=WORKPLACE_ITEM_TYPE_OPERATION,
+        )
+
+    def add_workplace_item(self):
+        selected = self._selected_workplace()
+        default_parent_id = None
+        if selected is not None and selected.item_type == WORKPLACE_ITEM_TYPE_OPERATION:
+            default_parent_id = selected.id
+        self._open_workplace_dialog(
+            default_item_type=WORKPLACE_ITEM_TYPE_WORKPLACE,
+            default_parent_id=default_parent_id,
+        )
+
+    def add_workplace_part(self):
+        selected = self._selected_workplace()
+        default_parent_id = None
+        if selected is not None:
+            if selected.item_type == WORKPLACE_ITEM_TYPE_WORKPLACE:
+                default_parent_id = selected.id
+            elif selected.item_type == WORKPLACE_ITEM_TYPE_WORKPLACE_PART and selected.parent_id:
+                default_parent_id = selected.parent_id
+        self._open_workplace_dialog(
+            default_item_type=WORKPLACE_ITEM_TYPE_WORKPLACE_PART,
+            default_parent_id=default_parent_id,
+        )
+
+    def _open_workplace_dialog(
+        self,
+        *,
+        workplace=None,
+        default_item_type: str | None = None,
+        default_parent_id: int | None = None,
+    ) -> None:
+        dialog = WorkplaceDialog(
+            self,
+            workplace=workplace,
+            default_item_type=default_item_type,
+            default_parent_id=default_parent_id,
+        )
         if dialog.exec():
             data = dialog.get_data()
-            if data["name"]:
-                settings_service.save_workplace(**data)
-                self.refresh_workplaces()
+            if not data["name"]:
+                return
+            try:
+                if workplace is not None:
+                    settings_service.save_workplace(id=workplace.id, **data)
+                else:
+                    settings_service.save_workplace(**data)
+            except WorkplaceHierarchyError as error:
+                QMessageBox.warning(self, "Provozy a pracoviště", str(error))
+                return
+            self.refresh_workplaces()
 
     def _selected_workplace_id(self) -> int | None:
-        selected = self.workplace_table.selectionModel().selectedRows()
-        if not selected:
+        item = self.workplace_tree.currentItem()
+        if item is None:
             return None
+        workplace_id = item.data(0, Qt.ItemDataRole.UserRole)
+        return int(workplace_id) if workplace_id else None
 
-        item = self.workplace_table.item(selected[0].row(), 0)
-        return int(item.text()) if item else None
+    def _selected_workplace(self):
+        workplace_id = self._selected_workplace_id()
+        if workplace_id is None:
+            return None
+        return settings_service.get_workplace_by_id(workplace_id)
+
+    def _on_workplace_item_double_clicked(self, item: QTreeWidgetItem, _column: int) -> None:
+        workplace_id = item.data(0, Qt.ItemDataRole.UserRole)
+        if workplace_id:
+            self.edit_selected_workplace()
 
     def edit_selected_workplace(self):
-        workplace_id = self._selected_workplace_id()
-        if workplace_id is None:
-            QMessageBox.information(self, "Pracoviště", "Vyberte pracoviště.")
-            return
-
-        workplace = settings_service.get_workplace_by_id(workplace_id)
+        workplace = self._selected_workplace()
         if workplace is None:
-            QMessageBox.warning(self, "Pracoviště", "Pracoviště nebylo nalezeno.")
-            self.refresh_workplaces()
+            QMessageBox.information(self, "Provozy a pracoviště", "Vyberte položku.")
             return
 
-        dialog = WorkplaceDialog(self, workplace=workplace)
-        if dialog.exec():
-            data = dialog.get_data()
-            if data["name"]:
-                settings_service.save_workplace(id=workplace_id, **data)
-                self.refresh_workplaces()
+        self._open_workplace_dialog(workplace=workplace)
 
     def toggle_selected_workplace_active(self):
-        workplace_id = self._selected_workplace_id()
-        if workplace_id is None:
-            QMessageBox.information(self, "Pracoviště", "Vyberte pracoviště.")
-            return
-
-        workplace = settings_service.get_workplace_by_id(workplace_id)
+        workplace = self._selected_workplace()
         if workplace is None:
-            QMessageBox.warning(self, "Pracoviště", "Pracoviště nebylo nalezeno.")
-            self.refresh_workplaces()
+            QMessageBox.information(self, "Provozy a pracoviště", "Vyberte položku.")
             return
 
         if workplace.active:
-            text = f"Opravdu deaktivovat pracoviště {workplace.name}?"
-            title = "Deaktivovat pracoviště"
+            active_children = settings_service.get_active_workplace_children(workplace.id)
+            if active_children:
+                QMessageBox.warning(
+                    self,
+                    "Provozy a pracoviště",
+                    (
+                        f"Položka {workplace.name} má {len(active_children)} aktivních "
+                        "podřízených položek. Deaktivace nadřazené položky je "
+                        "automaticky neovlivní."
+                    ),
+                )
+            text = f"Opravdu deaktivovat položku {workplace.name}?"
+            title = "Deaktivovat"
             new_state = False
         else:
-            text = f"Opravdu znovu aktivovat pracoviště {workplace.name}?"
-            title = "Aktivovat pracoviště"
+            text = f"Opravdu znovu aktivovat položku {workplace.name}?"
+            title = "Aktivovat"
             new_state = True
 
         answer = QMessageBox.question(self, title, text, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
 
         if answer == QMessageBox.Yes:
             if new_state:
-                settings_service.activate_workplace(workplace_id)
+                settings_service.activate_workplace(workplace.id)
             else:
-                settings_service.deactivate_workplace(workplace_id)
+                settings_service.deactivate_workplace(workplace.id)
             self.refresh_workplaces()
 
     def update_workplace_buttons(self):
-        workplace_id = self._selected_workplace_id()
-        if workplace_id is None:
-            self.workplace_active_toggle_button.setText("Deaktivovat / Aktivovat")
-            return
-
-        workplace = settings_service.get_workplace_by_id(workplace_id)
+        workplace = self._selected_workplace()
         if workplace is None:
             self.workplace_active_toggle_button.setText("Deaktivovat / Aktivovat")
             return
 
         self.workplace_active_toggle_button.setText("Deaktivovat" if workplace.active else "Aktivovat")
+
+    def _apply_workplace_tree_filter(self) -> None:
+        text = self.workplace_search_edit.text().strip().lower()
+        total = 0
+        visible = 0
+
+        def walk(item: QTreeWidgetItem) -> bool:
+            nonlocal total, visible
+            total += 1
+            row_text = " ".join(item.text(column) for column in range(item.columnCount())).lower()
+            child_match = False
+            for index in range(item.childCount()):
+                if walk(item.child(index)):
+                    child_match = True
+            match = (text in row_text if text else True) or child_match
+            item.setHidden(not match)
+            if match:
+                visible += 1
+            return match
+
+        for index in range(self.workplace_tree.topLevelItemCount()):
+            walk(self.workplace_tree.topLevelItem(index))
+
+        self.workplace_count_label.setText(f"Zobrazeno: {visible} / {total}")
 
     def add_responsibility_role(self):
         dialog = ResponsibilityRoleDialog(self)
@@ -734,16 +823,53 @@ class NastaveniPage(QWidget):
         include_inactive = self.workplace_filter.currentText() == "Všechna"
         workplaces = settings_service.get_workplaces(include_inactive=include_inactive)
 
-        self.workplace_table.setRowCount(len(workplaces))
-        for row, workplace in enumerate(workplaces):
-            self.workplace_table.setItem(row, 0, QTableWidgetItem(str(workplace.id)))
-            self.workplace_table.setItem(row, 1, QTableWidgetItem(workplace.name))
-            self.workplace_table.setItem(row, 2, QTableWidgetItem(workplace.address))
-            self.workplace_table.setItem(row, 3, QTableWidgetItem(workplace.note))
-            self.workplace_table.setItem(row, 4, QTableWidgetItem("Ano" if workplace.active else "Ne"))
+        expanded_ids = set()
+        iterator = QTreeWidgetItemIterator(self.workplace_tree)
+        while iterator.value():
+            item = iterator.value()
+            if item.isExpanded():
+                workplace_id = item.data(0, Qt.ItemDataRole.UserRole)
+                if workplace_id:
+                    expanded_ids.add(int(workplace_id))
+            iterator += 1
 
-        configure_table_columns(self.workplace_table, "workplaces")
-        self.workplace_text_filter.update_count()
+        selected_id = self._selected_workplace_id()
+        self.workplace_tree.clear()
+
+        by_id: dict[int, QTreeWidgetItem] = {}
+        for workplace in workplaces:
+            item = QTreeWidgetItem(
+                [
+                    workplace.name,
+                    settings_service.workplace_item_type_label(workplace.item_type),
+                    "Ano" if workplace.active else "Ne",
+                ]
+            )
+            item.setData(0, Qt.ItemDataRole.UserRole, workplace.id)
+            by_id[workplace.id] = item
+
+        roots: list[QTreeWidgetItem] = []
+        for workplace in workplaces:
+            item = by_id[workplace.id]
+            if workplace.parent_id and workplace.parent_id in by_id:
+                by_id[workplace.parent_id].addChild(item)
+            else:
+                roots.append(item)
+
+        for root in roots:
+            self.workplace_tree.addTopLevelItem(root)
+
+        for workplace_id, item in by_id.items():
+            if workplace_id in expanded_ids:
+                item.setExpanded(True)
+
+        if selected_id is not None and selected_id in by_id:
+            self.workplace_tree.setCurrentItem(by_id[selected_id])
+
+        for column in range(self.workplace_tree.columnCount()):
+            self.workplace_tree.resizeColumnToContents(column)
+
+        self._apply_workplace_tree_filter()
         self.update_workplace_buttons()
 
     def refresh_responsibility_roles(self):
