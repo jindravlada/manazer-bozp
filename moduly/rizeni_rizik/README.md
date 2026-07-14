@@ -103,3 +103,12 @@ Identifikace bez názvu:
 - pole `title` nahrazeno automatickým `identification_number` ve formátu RRRR-0001
 - migrace stávajících záznamů a odstranění sloupce `title`
 - editor zobrazuje read-only číslo identifikace
+
+## Fáze R05
+
+Nežádoucí události v záložce Nežádoucí události:
+
+- model `HazardEvent` v tabulce `hazard_events`
+- události navázané na identifikovaná nebezpečí
+- akce Přidat nežádoucí událost v záložce Nebezpečí, počty aktivních událostí u nebezpečí
+- režim pouze pro čtení u dokončené nebo archivované identifikace

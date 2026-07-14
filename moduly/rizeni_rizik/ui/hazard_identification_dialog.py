@@ -5,8 +5,10 @@ from moduly.rizeni_rizik.constants import (
     DIALOG_WINDOW_TITLE,
     HAZARD_IDENTIFICATION_TABS,
     TAB_BASICS,
+    TAB_EVENTS,
     TAB_HAZARDS,
     TAB_INVENTORY,
+    is_identification_events_read_only,
     is_identification_hazards_read_only,
     is_identification_inventory_read_only,
 )
@@ -14,6 +16,7 @@ from moduly.rizeni_rizik.sluzby.hazard_identification_service import (
     HazardIdentificationError,
     hazard_identification_service,
 )
+from moduly.rizeni_rizik.ui.hazard_events_widget import HazardEventsWidget
 from moduly.rizeni_rizik.ui.hazard_identification_basics_widget import (
     HazardIdentificationBasicsWidget,
 )
@@ -34,13 +37,15 @@ class HazardIdentificationDialog(QDialog):
 
         self.tabs = QTabWidget()
         self.basics_widget = HazardIdentificationBasicsWidget()
-        self.hazards_widget = IdentifiedHazardsWidget()
+        self.events_widget = HazardEventsWidget()
+        self.hazards_widget = IdentifiedHazardsWidget(on_event_saved=self._on_event_saved)
         self.inventory_widget = HazardInventoryWidget(on_hazard_saved=self._on_hazard_saved)
         self.tabs.addTab(self.basics_widget, TAB_BASICS)
         self.tabs.addTab(self.inventory_widget, TAB_INVENTORY)
         self.tabs.addTab(self.hazards_widget, TAB_HAZARDS)
+        self.tabs.addTab(self.events_widget, TAB_EVENTS)
 
-        for tab_label in HAZARD_IDENTIFICATION_TABS[3:]:
+        for tab_label in HAZARD_IDENTIFICATION_TABS[4:]:
             placeholder = QWidget()
             placeholder_layout = QVBoxLayout(placeholder)
             placeholder_layout.addWidget(QLabel("Obsah bude doplněn v další fázi."))
@@ -62,14 +67,19 @@ class HazardIdentificationDialog(QDialog):
         self.basics_widget.load_identification(identification)
         self._sync_inventory_context()
         self._sync_hazards_context()
+        self._sync_events_context()
         self._update_inventory_tab_enabled()
         self._update_hazards_tab_enabled()
+        self._update_events_tab_enabled()
 
     def _update_inventory_tab_enabled(self) -> None:
         self.tabs.setTabEnabled(1, self.identification is not None)
 
     def _update_hazards_tab_enabled(self) -> None:
         self.tabs.setTabEnabled(2, self.identification is not None)
+
+    def _update_events_tab_enabled(self) -> None:
+        self.tabs.setTabEnabled(3, self.identification is not None)
 
     def _sync_inventory_context(self) -> None:
         identification_id = self.identification.id if self.identification is not None else None
@@ -87,7 +97,19 @@ class HazardIdentificationDialog(QDialog):
             read_only=is_identification_hazards_read_only(status),
         )
 
+    def _sync_events_context(self) -> None:
+        identification_id = self.identification.id if self.identification is not None else None
+        status = self.identification.status if self.identification is not None else ""
+        self.events_widget.set_identification(
+            identification_id,
+            read_only=is_identification_events_read_only(status),
+        )
+
     def _on_hazard_saved(self) -> None:
+        self.hazards_widget.refresh()
+
+    def _on_event_saved(self) -> None:
+        self.events_widget.refresh()
         self.hazards_widget.refresh()
 
     def _save_basics(self) -> None:
@@ -109,8 +131,10 @@ class HazardIdentificationDialog(QDialog):
 
         self._update_inventory_tab_enabled()
         self._update_hazards_tab_enabled()
+        self._update_events_tab_enabled()
         self._sync_inventory_context()
         self._sync_hazards_context()
+        self._sync_events_context()
         self.basics_widget.load_identification(self.identification)
         QMessageBox.information(self, DIALOG_WINDOW_TITLE, "Základní údaje byly uloženy.")
 

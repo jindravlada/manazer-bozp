@@ -47,6 +47,7 @@ TABLE_HEADERS = [
 TAB_BASICS = "Základní údaje"
 TAB_INVENTORY = "Inventura"
 TAB_HAZARDS = "Nebezpečí"
+TAB_EVENTS = "Nežádoucí události"
 TAB_RISK_ASSESSMENT = "Posouzení rizik"
 TAB_MEASURES = "Opatření"
 TAB_PUBLICATION = "Publikace"
@@ -56,6 +57,7 @@ HAZARD_IDENTIFICATION_TABS = (
     TAB_BASICS,
     TAB_INVENTORY,
     TAB_HAZARDS,
+    TAB_EVENTS,
     TAB_RISK_ASSESSMENT,
     TAB_MEASURES,
     TAB_PUBLICATION,
@@ -253,6 +255,43 @@ HAZARD_TABLE_HEADERS = [
 
 def is_identification_hazards_read_only(status: str) -> bool:
     return status in READ_ONLY_IDENTIFICATION_STATUSES
+
+
+def is_identification_hazards_read_only(status: str) -> bool:
+    return status in READ_ONLY_IDENTIFICATION_STATUSES
+
+
+def is_identification_events_read_only(status: str) -> bool:
+    return status in READ_ONLY_IDENTIFICATION_STATUSES
+
+
+EVENTS_INTRO_TEXT = (
+    "Popište konkrétní nežádoucí události, které mohou vzniknout z jednotlivých nebezpečí."
+)
+
+HAZARD_EVENT_DIALOG_TITLE = "Nežádoucí událost"
+
+EVENT_COL_ID = 0
+EVENT_COL_NAME = 1
+EVENT_COL_HAZARD = 2
+EVENT_COL_INVENTORY_ITEM = 3
+EVENT_COL_ACTIVE = 4
+EVENT_COLUMN_COUNT = 5
+
+EVENT_TABLE_HEADERS = [
+    "ID",
+    "Nežádoucí událost",
+    "Nebezpečí",
+    "Zdrojová položka inventury",
+    "Aktivní",
+]
+
+
+def format_hazard_display_name(name: str, *, event_count: int = 0) -> str:
+    if not event_count:
+        return name
+    suffix = "událost" if event_count == 1 else "události"
+    return f"{name} — {event_count} {suffix}"
 
 
 def format_inventory_item_display_name(

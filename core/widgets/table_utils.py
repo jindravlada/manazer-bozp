@@ -213,6 +213,27 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         for column in (RELATION_COL_TYPE, RELATION_COL_CATEGORY, RELATION_COL_NAME, RELATION_COL_ACTIVE):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 
+    elif profile == "hazard_events":
+        from moduly.rizeni_rizik.constants import (
+            EVENT_COL_ACTIVE,
+            EVENT_COL_HAZARD,
+            EVENT_COL_INVENTORY_ITEM,
+            EVENT_COL_NAME,
+        )
+
+        widths = {
+            EVENT_COL_NAME: 220,
+            EVENT_COL_HAZARD: 200,
+            EVENT_COL_INVENTORY_ITEM: 200,
+            EVENT_COL_ACTIVE: 80,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        header.setSectionResizeMode(EVENT_COL_NAME, QHeaderView.Stretch)
+        for column in (EVENT_COL_HAZARD, EVENT_COL_INVENTORY_ITEM, EVENT_COL_ACTIVE):
+            header.setSectionResizeMode(column, QHeaderView.Fixed)
+
     elif profile == "identified_hazards":
         from moduly.rizeni_rizik.constants import (
             HAZARD_COL_ACTIVE,
