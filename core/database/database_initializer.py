@@ -66,6 +66,7 @@ def initialize_database() -> None:
     from core.shared.modely.control_result import ControlResult  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_identification import HazardIdentification  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem  # noqa: F401
+    from moduly.rizeni_rizik.modely.hazard_inventory_relation import HazardInventoryRelation  # noqa: F401
 
     create_database()
     _ensure_thp_worker_title_columns()
@@ -99,6 +100,7 @@ def initialize_database() -> None:
     _ensure_legal_check_run_columns()
     _ensure_hazard_identifications_table()
     _ensure_hazard_inventory_items_table()
+    _ensure_hazard_inventory_relations_table()
     _migrate_legal_document_types()
     _normalize_task_status_values()
     _normalize_accident_legacy_values()
@@ -627,6 +629,14 @@ def _ensure_hazard_inventory_items_table() -> None:
         from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem
 
         HazardInventoryItem.__table__.create(bind=_db_engine(), checkfirst=True)
+
+
+def _ensure_hazard_inventory_relations_table() -> None:
+    columns = _table_columns("hazard_inventory_relations")
+    if not columns:
+        from moduly.rizeni_rizik.modely.hazard_inventory_relation import HazardInventoryRelation
+
+        HazardInventoryRelation.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_responsibility_roles_table() -> None:

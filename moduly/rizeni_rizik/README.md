@@ -77,3 +77,12 @@ Záložka **Inventura** (`HazardInventoryWidget`):
 - přehled podle 9 kategorií s počtem aktivních položek
 - samostatné ukládání položek inventury bez zavírání editoru identifikace
 - u dokončené nebo archivované identifikace pouze režim pro čtení
+
+## Fáze R03
+
+Analýza inventury v záložce Inventura:
+
+- model `HazardInventoryRelation` v tabulce `hazard_inventory_relations`
+- sekce Analýza položky se souvislostmi podle typu a kategorie
+- samostatné ukládání vazeb, počty aktivních souvislostí u položek
+- režim pouze pro čtení u dokončené nebo archivované identifikace
