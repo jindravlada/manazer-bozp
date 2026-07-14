@@ -33,6 +33,10 @@ with patch.object(Path, "home", return_value=_TMP):
         DEFAULT_AI_PEER_REVIEW_PROMPT,
     )
     from core.ai_oponentni.modely.ai_peer_review import AiPeerReview
+    from core.ai_oponentni.modely.ai_unassigned_proposal import (
+        UNASSIGNED_PROPOSAL_STATUS_LABEL,
+        AiUnassignedProposal,
+    )
     from core.ai_oponentni.sluzby.ai_peer_review_service import (
         AiPeerReviewError,
         ai_peer_review_service,
@@ -114,6 +118,7 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         from core.database.session import get_session
 
         with get_session() as session:
+            session.execute(delete(AiUnassignedProposal))
             session.execute(delete(AiPeerReview))
             session.execute(delete(HazardRequiredMeasure))
             session.execute(delete(HazardExistingMeasure))
@@ -192,6 +197,12 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         self.assertIn("ai_model", columns)
         self.assertIn("accepted_count", columns)
         self.assertIn("rejected_count", columns)
+        self.assertIn("export_id_map_json", columns)
+        self.assertIn("unassigned_count", columns)
+        unassigned_columns = _table_columns("ai_unassigned_proposals")
+        self.assertIn("ai_peer_review_id", unassigned_columns)
+        self.assertIn("parent_export_id", unassigned_columns)
+        self.assertIn("status", unassigned_columns)
 
     def test_export_saved_identification(self) -> None:
         target = self.export_dir / "export.zip"
@@ -378,6 +389,7 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         self.assertEqual(updated.ai_model, "ChatGPT")
         self.assertEqual(updated.accepted_count, 1)
         self.assertEqual(updated.rejected_count, 1)
+        self.assertEqual(updated.unassigned_count, 0)
         self.assertIn("Přimáčknutí mezi vozy", updated.response_text)
 
         after_hazards = identified_hazard_service.get_for_identification(
@@ -385,7 +397,102 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
             include_inactive=False,
         )
         self.assertEqual(len(after_hazards), before_hazards + 1)
-        self.assertTrue(any(row.hazard.name == "Přimáčknutí mezi vozy" for row in after_hazards))
+        linked = next(
+            row for row in after_hazards if row.hazard.name == "Přimáčknutí mezi vozy"
+        )
+        self.assertEqual(linked.hazard.inventory_item_id, self.item.id)
+
+    def test_import_missing_parent_becomes_unassigned(self) -> None:
+        target = self.export_dir / "unassigned.zip"
+        export_result = ai_peer_review_service.export_package(
+            self.provider,
+            self.identification.id,
+            target,
+        )
+        proposal = AiProposal(
+            area="Nebezpečí",
+            name="Orphan hazard",
+            reasoning="Bez platného rodiče",
+            parent_export_id="ITEM-999",
+        )
+        before_hazards = len(
+            identified_hazard_service.get_for_identification(
+                self.identification.id,
+                include_inactive=False,
+            )
+        )
+        updated = ai_peer_review_service.finalize_import(
+            provider=self.provider,
+            source_id=self.identification.id,
+            review_id=export_result.review.id,
+            response_text="test",
+            ai_model="Claude",
+            accepted=[proposal],
+            rejected=[],
+        )
+        self.assertEqual(updated.accepted_count, 0)
+        self.assertEqual(updated.unassigned_count, 1)
+        after_hazards = identified_hazard_service.get_for_identification(
+            self.identification.id,
+            include_inactive=False,
+        )
+        self.assertEqual(len(after_hazards), before_hazards)
+        unassigned = ai_peer_review_service.get_unassigned_for_review(export_result.review.id)
+        self.assertEqual(len(unassigned), 1)
+        self.assertEqual(unassigned[0].name, "Orphan hazard")
+        self.assertEqual(unassigned[0].parent_export_id, "ITEM-999")
+        self.assertEqual(UNASSIGNED_PROPOSAL_STATUS_LABEL, "Nezařazený návrh")
+
+    def test_import_never_attaches_to_first_item(self) -> None:
+        """Bez parent_export_id se nebezpečí nesmí přilepit k prvnímu zdroji."""
+        target = self.export_dir / "no_fallback.zip"
+        export_result = ai_peer_review_service.export_package(
+            self.provider,
+            self.identification.id,
+            target,
+        )
+        proposal = AiProposal(
+            area="Nebezpečí",
+            name="Bez rodiče",
+            reasoning="Nesmí použít první položku",
+            parent_export_id=None,
+        )
+        before = len(
+            identified_hazard_service.get_for_identification(
+                self.identification.id,
+                include_inactive=False,
+            )
+        )
+        updated = ai_peer_review_service.finalize_import(
+            provider=self.provider,
+            source_id=self.identification.id,
+            review_id=export_result.review.id,
+            response_text="test",
+            ai_model="X",
+            accepted=[proposal],
+            rejected=[],
+        )
+        self.assertEqual(updated.accepted_count, 0)
+        self.assertEqual(updated.unassigned_count, 1)
+        after = identified_hazard_service.get_for_identification(
+            self.identification.id,
+            include_inactive=False,
+        )
+        self.assertEqual(len(after), before)
+
+    def test_export_stores_id_map(self) -> None:
+        target = self.export_dir / "idmap.zip"
+        result = ai_peer_review_service.export_package(
+            self.provider,
+            self.identification.id,
+            target,
+        )
+        mapping = json.loads(result.review.export_id_map_json)
+        self.assertEqual(mapping["ITEM-001"]["kind"], "item")
+        self.assertEqual(mapping["ITEM-001"]["id"], self.item.id)
+        self.assertEqual(mapping["HAZARD-001"]["id"], self.hazard.id)
+        self.assertEqual(mapping["EVENT-001"]["id"], self.event.id)
+        self.assertEqual(mapping["ASSESSMENT-001"]["id"], self.assessment.id)
 
     def test_dialog_has_peer_review_tab(self) -> None:
         dialog = HazardIdentificationDialog(identification=self.identification)

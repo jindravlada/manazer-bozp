@@ -10,8 +10,16 @@ from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_SCHEMA_VERSION,
     DEFAULT_AI_PEER_REVIEW_PROMPT,
 )
+from core.ai_oponentni.modely.ai_unassigned_proposal import (
+    UNASSIGNED_PROPOSAL_STATUS,
+    AiUnassignedProposal,
+)
+from core.ai_oponentni.repository.ai_unassigned_proposal_repository import (
+    AiUnassignedProposalRepository,
+)
 from core.ai_oponentni.sluzby.ai_peer_review_service import AiPeerReviewError
 from core.ai_oponentni.types import (
+    AiPeerReviewApplyResult,
     AiPeerReviewExportContent,
     AiPeerReviewExportOptions,
     AiProposal,
@@ -99,18 +107,26 @@ class HazardIdentificationPeerReviewProvider:
             summary_lines=summary_lines,
             zadani_json=zadani_json,
             schema_json=AI_PEER_REVIEW_RESPONSE_SCHEMA,
+            export_id_map=hierarchy["export_id_map"],
         )
 
-    def apply_proposals(self, source_id: int, proposals: list[AiProposal]) -> int:
+    def apply_proposals(
+        self,
+        source_id: int,
+        proposals: list[AiProposal],
+        *,
+        review_id: int,
+        export_id_map: dict[str, dict],
+    ) -> AiPeerReviewApplyResult:
         identification = hazard_identification_service.get_by_id(source_id)
         if identification is None:
             raise AiPeerReviewError("Identifikace nebezpečí neexistuje.")
 
         applied = 0
+        unassigned_models: list[AiUnassignedProposal] = []
         for proposal in proposals:
             try:
-                if self._apply_one(source_id, proposal):
-                    applied += 1
+                outcome = self._apply_one(source_id, proposal, export_id_map)
             except (
                 HazardInventoryItemError,
                 IdentifiedHazardError,
@@ -120,13 +136,44 @@ class HazardIdentificationPeerReviewProvider:
                 HazardRequiredMeasureError,
                 ValueError,
             ):
-                continue
-        return applied
+                outcome = "unassigned"
+            if outcome == "applied":
+                applied += 1
+            else:
+                unassigned_models.append(
+                    AiUnassignedProposal(
+                        ai_peer_review_id=review_id,
+                        source_type=self.source_type,
+                        source_id=source_id,
+                        area=proposal.area or "",
+                        name=proposal.name,
+                        reasoning=proposal.reasoning or "",
+                        parent_export_id=proposal.parent_export_id or "",
+                        status=UNASSIGNED_PROPOSAL_STATUS,
+                    )
+                )
 
-    def _apply_one(self, source_id: int, proposal: AiProposal) -> bool:
-        area = proposal.area.casefold()
+        if unassigned_models:
+            AiUnassignedProposalRepository().add_many(unassigned_models)
+
+        return AiPeerReviewApplyResult(
+            applied_count=applied,
+            unassigned_count=len(unassigned_models),
+        )
+
+    def _apply_one(
+        self,
+        source_id: int,
+        proposal: AiProposal,
+        export_id_map: dict[str, dict],
+    ) -> str:
+        """Vrátí 'applied' nebo 'unassigned'. Nikdy nepřipojuje k prvnímu nalezenému."""
+        area = (proposal.area or "").casefold()
         note = f"Návrh z AI oponentního posouzení.\n{proposal.reasoning}".strip()
+        parent_id = (proposal.parent_export_id or "").strip()
+        parent = export_id_map.get(parent_id) if parent_id else None
 
+        # Nová položka analýzy pracoviště – kořen, rodič není povinný.
         if self._area_matches(
             area,
             (
@@ -141,51 +188,71 @@ class HazardIdentificationPeerReviewProvider:
                 "polozka",
             ),
         ):
+            if parent_id and parent is None:
+                return "unassigned"
+            if parent_id and parent is not None and parent.get("kind") != "item":
+                # Rodič uveden, ale není položka analýzy – nezařazeno
+                # (nová položka nemá rodiče v této hierarchii)
+                pass
             hazard_inventory_item_service.create_item(
                 hazard_identification_id=source_id,
                 category=HAZARD_INVENTORY_CATEGORY_OTHER,
                 name=proposal.name,
                 description=note,
             )
-            return True
+            return "applied"
 
         if self._area_matches(area, ("nebezpeč", "nebezpec")):
-            item = self._ensure_anchor_item(source_id)
+            if parent is None or parent.get("kind") != "item":
+                return "unassigned"
             identified_hazard_service.create_hazard(
                 hazard_identification_id=source_id,
-                inventory_item_id=item.id,
+                inventory_item_id=int(parent["id"]),
                 name=proposal.name,
                 description=proposal.reasoning,
                 note=note,
                 source_type=IDENTIFIED_HAZARD_SOURCE_AI,
             )
-            return True
+            return "applied"
 
         if self._area_matches(area, ("událost", "udalost", "nežádouc", "nezadouc")):
-            hazard = self._ensure_anchor_hazard(source_id)
+            if parent is None or parent.get("kind") != "hazard":
+                return "unassigned"
             hazard_event_service.create_event(
                 hazard_identification_id=source_id,
-                identified_hazard_id=hazard.id,
+                identified_hazard_id=int(parent["id"]),
                 name=proposal.name,
                 description=proposal.reasoning,
                 note=note,
             )
-            return True
+            return "applied"
 
         if self._area_matches(
             area,
             ("ohrožen", "ohrozen", "osob", "skupin", "rizik", "posouzen"),
         ):
-            event = self._ensure_anchor_event(source_id)
+            if parent is None or parent.get("kind") != "event":
+                return "unassigned"
             hazard_risk_assessment_service.create_assessment(
                 hazard_identification_id=source_id,
-                hazard_event_id=event.id,
+                hazard_event_id=int(parent["id"]),
                 exposed_group=proposal.name,
                 consequence=proposal.reasoning or "Dle návrhu AI",
                 severity=RISK_SEVERITY_MODERATE,
                 note=note,
             )
-            return True
+            return "applied"
+
+        if self._area_matches(area, ("potřeb", "potreb", "dalš", "dals")):
+            if parent is None or parent.get("kind") != "assessment":
+                return "unassigned"
+            hazard_required_measure_service.create_measure(
+                hazard_identification_id=source_id,
+                hazard_risk_assessment_id=int(parent["id"]),
+                description=proposal.name,
+                note=note,
+            )
+            return "applied"
 
         if self._area_matches(
             area,
@@ -199,108 +266,26 @@ class HazardIdentificationPeerReviewProvider:
                 "bariér",
                 "barier",
                 "technick",
+                "opatřen",
+                "opatren",
             ),
         ):
-            assessment = self._ensure_anchor_assessment(source_id)
-            if self._area_matches(area, ("potřeb", "potreb", "dalš", "dals")):
-                hazard_required_measure_service.create_measure(
-                    hazard_identification_id=source_id,
-                    hazard_risk_assessment_id=assessment.id,
-                    description=proposal.name,
-                    note=note,
-                )
-            else:
-                hazard_existing_measure_service.create_measure(
-                    hazard_identification_id=source_id,
-                    hazard_risk_assessment_id=assessment.id,
-                    description=proposal.name,
-                    note=note,
-                )
-            return True
-
-        if self._area_matches(area, ("potřeb", "potreb", "opatřen", "opatren")):
-            assessment = self._ensure_anchor_assessment(source_id)
-            hazard_required_measure_service.create_measure(
+            if parent is None or parent.get("kind") != "assessment":
+                return "unassigned"
+            hazard_existing_measure_service.create_measure(
                 hazard_identification_id=source_id,
-                hazard_risk_assessment_id=assessment.id,
+                hazard_risk_assessment_id=int(parent["id"]),
                 description=proposal.name,
                 note=note,
             )
-            return True
+            return "applied"
 
-        hazard_inventory_item_service.create_item(
-            hazard_identification_id=source_id,
-            category=HAZARD_INVENTORY_CATEGORY_OTHER,
-            name=proposal.name,
-            description=note,
-        )
-        return True
+        # Neznámá oblast bez jednoznačného rodiče → nezařazené
+        return "unassigned"
 
     @staticmethod
     def _area_matches(area: str, needles: tuple[str, ...]) -> bool:
         return any(needle in area for needle in needles)
-
-    def _ensure_anchor_item(self, source_id: int):
-        items = hazard_inventory_item_service.get_for_identification(
-            source_id,
-            include_inactive=False,
-        )
-        if items:
-            return items[0]
-        return hazard_inventory_item_service.create_item(
-            hazard_identification_id=source_id,
-            category=HAZARD_INVENTORY_CATEGORY_OTHER,
-            name="Podklady z AI oponentního posouzení",
-            description="Automaticky vytvořená položka jako kotva pro návrhy AI.",
-        )
-
-    def _ensure_anchor_hazard(self, source_id: int):
-        rows = identified_hazard_service.get_for_identification(
-            source_id,
-            include_inactive=False,
-        )
-        if rows:
-            return rows[0].hazard
-        item = self._ensure_anchor_item(source_id)
-        return identified_hazard_service.create_hazard(
-            hazard_identification_id=source_id,
-            inventory_item_id=item.id,
-            name="Podklady z AI oponentního posouzení",
-            note="Automaticky vytvořené nebezpečí jako kotva pro návrhy AI.",
-            source_type=IDENTIFIED_HAZARD_SOURCE_AI,
-        )
-
-    def _ensure_anchor_event(self, source_id: int):
-        rows = hazard_event_service.get_for_identification(
-            source_id,
-            include_inactive=False,
-        )
-        if rows:
-            return rows[0].event
-        hazard = self._ensure_anchor_hazard(source_id)
-        return hazard_event_service.create_event(
-            hazard_identification_id=source_id,
-            identified_hazard_id=hazard.id,
-            name="Podklady z AI oponentního posouzení",
-            note="Automaticky vytvořená událost jako kotva pro návrhy AI.",
-        )
-
-    def _ensure_anchor_assessment(self, source_id: int):
-        rows = hazard_risk_assessment_service.get_for_identification(
-            source_id,
-            include_inactive=False,
-        )
-        if rows:
-            return rows[0].assessment
-        event = self._ensure_anchor_event(source_id)
-        return hazard_risk_assessment_service.create_assessment(
-            hazard_identification_id=source_id,
-            hazard_event_id=event.id,
-            exposed_group="Obecná ohrožená skupina",
-            consequence="Dle návrhu AI",
-            severity=RISK_SEVERITY_MODERATE,
-            note="Automaticky vytvořené posouzení jako kotva pro návrhy AI.",
-        )
 
     def _build_hierarchy(self, identification, *, include_responsible_person: bool) -> dict:
         items = hazard_inventory_item_service.get_for_identification(
@@ -311,6 +296,10 @@ class HazardIdentificationPeerReviewProvider:
             item.id: f"ITEM-{index:03d}" for index, item in enumerate(items, start=1)
         }
         item_names = {item.id: item.name for item in items}
+        export_id_map: dict[str, dict] = {
+            export_id: {"kind": "item", "id": item_id}
+            for item_id, export_id in item_export_ids.items()
+        }
 
         relations = self._relation_service.repository.get_for_identification(
             identification.id,
@@ -333,6 +322,8 @@ class HazardIdentificationPeerReviewProvider:
             row.hazard.id: f"HAZARD-{index:03d}"
             for index, row in enumerate(hazard_rows, start=1)
         }
+        for hazard_id, export_id in hazard_export_ids.items():
+            export_id_map[export_id] = {"kind": "hazard", "id": hazard_id}
         hazards_by_item: dict[int, list] = {}
         for row in hazard_rows:
             hazards_by_item.setdefault(row.hazard.inventory_item_id, []).append(row)
@@ -345,6 +336,8 @@ class HazardIdentificationPeerReviewProvider:
             row.event.id: f"EVENT-{index:03d}"
             for index, row in enumerate(event_rows, start=1)
         }
+        for event_id, export_id in event_export_ids.items():
+            export_id_map[export_id] = {"kind": "event", "id": event_id}
         events_by_hazard: dict[int, list] = {}
         for row in event_rows:
             events_by_hazard.setdefault(row.event.identified_hazard_id, []).append(row)
@@ -355,8 +348,10 @@ class HazardIdentificationPeerReviewProvider:
         )
         assessments_by_event: dict[int, list] = {}
         for index, row in enumerate(assessment_rows, start=1):
+            export_id = f"ASSESSMENT-{index:03d}"
+            export_id_map[export_id] = {"kind": "assessment", "id": row.assessment.id}
             assessments_by_event.setdefault(row.assessment.hazard_event_id, []).append(
-                (f"ASSESSMENT-{index:03d}", row)
+                (export_id, row)
             )
 
         identification_block = {
@@ -489,6 +484,7 @@ class HazardIdentificationPeerReviewProvider:
         return {
             "identification": identification_block,
             "workplace_analysis": workplace_analysis,
+            "export_id_map": export_id_map,
             "counts": {
                 "items": len(items),
                 "hazards": len(hazard_rows),

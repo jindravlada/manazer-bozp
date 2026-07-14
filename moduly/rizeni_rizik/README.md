@@ -191,3 +191,12 @@ Hierarchický export AI:
 - stabilní exportní ID (`ITEM-001`, `HAZARD-001`, `EVENT-001`, `ASSESSMENT-001`)
 - ZIP: `pokyn_pro_AI.txt`, `data.txt`, `prehled.txt`, `zadani.json`, `schema_odpovedi.json`
 
+## Fáze R11.4
+
+Bezpečný hierarchický import AI:
+
+- import výhradně podle exportních ID z mapy uložené při exportu
+- chybějící / neplatný rodič → model `AiUnassignedProposal` (Nezařazený návrh)
+- zákaz fallbacku „připojit k prvnímu“
+- UI pro nezařazené návrhy zatím není
+

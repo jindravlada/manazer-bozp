@@ -11,6 +11,9 @@ from pathlib import Path
 from core.ai_oponentni.constants import AI_PEER_REVIEW_ZIP_FILES
 from core.ai_oponentni.modely.ai_peer_review import AiPeerReview
 from core.ai_oponentni.repository.ai_peer_review_repository import AiPeerReviewRepository
+from core.ai_oponentni.repository.ai_unassigned_proposal_repository import (
+    AiUnassignedProposalRepository,
+)
 from core.ai_oponentni.sluzby.response_parser import parse_ai_peer_review_response
 from core.ai_oponentni.types import (
     AiPeerReviewExportOptions,
@@ -33,6 +36,7 @@ class AiPeerReviewExportResult:
 class AiPeerReviewService:
     def __init__(self):
         self.repository = AiPeerReviewRepository()
+        self.unassigned_repository = AiUnassignedProposalRepository()
 
     def get_for_source(self, source_type: str, source_id: int) -> list[AiPeerReview]:
         return self.repository.get_for_source(source_type, source_id)
@@ -41,6 +45,9 @@ class AiPeerReviewService:
         if not review_id:
             return None
         return self.repository.get_by_id(review_id)
+
+    def get_unassigned_for_review(self, review_id: int):
+        return self.unassigned_repository.get_for_review(review_id)
 
     def default_export_filename(self, source_label: str, exported_at: datetime) -> str:
         stamp = exported_at.strftime("%Y-%m-%d_%H%M")
@@ -112,11 +119,16 @@ class AiPeerReviewService:
                 source_id=source_id,
                 exported_at=exported_at,
                 export_file_path=str(target.resolve()),
+                export_id_map_json=json.dumps(
+                    content.export_id_map or {},
+                    ensure_ascii=False,
+                ),
                 ai_model="",
                 prompt_text=content.prompt_text,
                 response_text="",
                 accepted_count=0,
                 rejected_count=0,
+                unassigned_count=0,
             )
             saved = self.repository.add(review)
         except Exception:
@@ -155,14 +167,30 @@ class AiPeerReviewService:
         if review.source_type != provider.source_type or review.source_id != source_id:
             raise AiPeerReviewError("Konzultace nepatří k aktuálnímu záznamu.")
 
+        try:
+            export_id_map = json.loads(review.export_id_map_json or "{}")
+        except json.JSONDecodeError:
+            export_id_map = {}
+        if not isinstance(export_id_map, dict):
+            export_id_map = {}
+
         applied = 0
+        unassigned = 0
         if accepted:
-            applied = provider.apply_proposals(source_id, accepted)
+            result = provider.apply_proposals(
+                source_id,
+                accepted,
+                review_id=review_id,
+                export_id_map=export_id_map,
+            )
+            applied = result.applied_count
+            unassigned = result.unassigned_count
 
         review.ai_model = (ai_model or "").strip()
         review.response_text = response_text.strip()
         review.accepted_count = applied
         review.rejected_count = len(rejected)
+        review.unassigned_count = unassigned
         return self.repository.update(review)
 
 

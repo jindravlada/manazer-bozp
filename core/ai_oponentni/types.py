@@ -25,6 +25,14 @@ class AiPeerReviewExportContent:
     summary_lines: list[str] = field(default_factory=list)
     zadani_json: dict | None = None
     schema_json: dict | None = None
+    # export_id -> {"kind": "item"|"hazard"|"event"|"assessment", "id": <db_id>}
+    export_id_map: dict[str, dict] = field(default_factory=dict)
+
+
+@dataclass
+class AiPeerReviewApplyResult:
+    applied_count: int = 0
+    unassigned_count: int = 0
 
 
 @dataclass
@@ -48,6 +56,16 @@ class AiPeerReviewProvider(Protocol):
     ) -> AiPeerReviewExportContent:
         ...
 
-    def apply_proposals(self, source_id: int, proposals: list[AiProposal]) -> int:
-        """Zapsat převzaté návrhy do evidence. Vrátí počet úspěšně převzatých."""
+    def apply_proposals(
+        self,
+        source_id: int,
+        proposals: list[AiProposal],
+        *,
+        review_id: int,
+        export_id_map: dict[str, dict],
+    ) -> AiPeerReviewApplyResult:
+        """
+        Zapsat převzaté návrhy výhradně podle exportních ID rodičů.
+        Bez platného rodiče návrh nezařazovat (nepoužívat „připojit k prvnímu“).
+        """
         ...
