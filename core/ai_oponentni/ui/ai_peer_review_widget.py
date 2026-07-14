@@ -45,7 +45,6 @@ from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_FOCUS_AREA_LABELS,
     AI_PEER_REVIEW_FOCUS_AREAS,
     AI_PEER_REVIEW_IMPORT_BUTTON,
-    AI_PEER_REVIEW_INCLUDE_RESPONSIBLE_PERSON,
     AI_PEER_REVIEW_INTRO_TEXT,
     AI_PEER_REVIEW_OBJECTIVE_LABELS,
     AI_PEER_REVIEW_OBJECTIVES,
@@ -74,7 +73,6 @@ class AiPeerReviewExportOptionsDialog(QDialog):
         self,
         parent=None,
         *,
-        show_responsible_person: bool = False,
         source_choices: list[AiExportSourceChoice] | None = None,
     ):
         super().__init__(parent)
@@ -148,15 +146,6 @@ class AiPeerReviewExportOptionsDialog(QDialog):
             self.source_list.addItem(item)
         layout.addWidget(self.source_list)
 
-        form = QFormLayout()
-        self.include_responsible_person = QCheckBox(AI_PEER_REVIEW_INCLUDE_RESPONSIBLE_PERSON)
-        self.include_responsible_person.setChecked(False)
-        if show_responsible_person:
-            form.addRow("", self.include_responsible_person)
-        else:
-            self.include_responsible_person.hide()
-        layout.addLayout(form)
-
         self.scope_full.toggled.connect(self._update_source_list_enabled)
         self._update_source_list_enabled()
 
@@ -207,7 +196,6 @@ class AiPeerReviewExportOptionsDialog(QDialog):
         role = self.opponent_role.currentData() or AI_PEER_REVIEW_DEFAULT_ROLE
 
         common = {
-            "include_responsible_person": self.include_responsible_person.isChecked(),
             "opponent_role": role,
             "objectives": objectives,
             "focus_areas": focus_areas,
@@ -291,13 +279,11 @@ class AiPeerReviewWidget(QWidget):
         parent=None,
         *,
         provider: AiPeerReviewProvider,
-        show_responsible_person_option: bool = False,
         on_proposals_applied=None,
     ):
         super().__init__(parent)
         self._provider = provider
         self._source_id: int | None = None
-        self._show_responsible_person_option = show_responsible_person_option
         self._on_proposals_applied = on_proposals_applied
 
         layout = QVBoxLayout(self)
@@ -357,7 +343,6 @@ class AiPeerReviewWidget(QWidget):
 
         options_dialog = AiPeerReviewExportOptionsDialog(
             self,
-            show_responsible_person=self._show_responsible_person_option,
             source_choices=source_choices,
         )
         if not options_dialog.exec():

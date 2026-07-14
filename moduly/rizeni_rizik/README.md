@@ -230,6 +230,14 @@ Zkvalitnění zadání pro AI oponenturu:
 - stav identifikace: první / revize, stav posouzení rizik
 - import, schéma odpovědi a workflow beze změny
 
+## Fáze R11.9
+
+Odstranění jména odpovědné osoby z AI exportu:
+
+- z exportního dialogu odstraněna volba „Zahrnout jméno odpovědné osoby“
+- export (`zadani.json`, `data.txt`, `pokyn_pro_AI.txt`, `prehled.txt`) neobsahuje osobní údaje
+- atribut `include_responsible_person` odstraněn z exportních options
+
 ## Fáze R12
 
 Odstranění entity Nebezpečí (`IdentifiedHazard`):

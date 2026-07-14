@@ -432,7 +432,6 @@ class AiPeerReviewPhaseR117TestCase(unittest.TestCase):
 
     def test_options_dialog_defaults_to_full_scope(self) -> None:
         dialog = AiPeerReviewExportOptionsDialog(
-            show_responsible_person=True,
             source_choices=[],
         )
         self.assertTrue(dialog.scope_full.isChecked())

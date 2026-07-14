@@ -100,7 +100,6 @@ class AiPeerReviewApplyResult:
 
 @dataclass
 class AiPeerReviewExportOptions:
-    include_responsible_person: bool = False
     export_scope: str = "full"
     selected_source_ids: list[int] | None = None
     opponent_role: str = AI_PEER_REVIEW_DEFAULT_ROLE

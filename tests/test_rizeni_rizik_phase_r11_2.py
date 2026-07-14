@@ -339,19 +339,19 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         self.assertIn("EVENT-001", dumped)
         self.assertNotIn("HAZARD-001", dumped)
 
-    def test_responsible_person_excluded_by_default(self) -> None:
+    def test_responsible_person_never_exported(self) -> None:
         content = self.provider.build_export_content(
             self.identification.id,
-            options=AiPeerReviewExportOptions(include_responsible_person=False),
+            options=AiPeerReviewExportOptions(),
         )
         self.assertNotIn("Odpovědná osoba:", content.data_text)
-
-    def test_responsible_person_optional_include(self) -> None:
-        content = self.provider.build_export_content(
-            self.identification.id,
-            options=AiPeerReviewExportOptions(include_responsible_person=True),
+        self.assertNotIn("Novák", content.data_text)
+        self.assertNotIn("Novák", content.prompt_text)
+        self.assertNotIn(
+            "responsible_person",
+            json.dumps(content.batches[0].zadani_json, ensure_ascii=False),
         )
-        self.assertIn("Novák", content.data_text)
+        self.assertNotIn("include_responsible_person", content.batches[0].zadani_json)
 
     def test_creates_peer_review_record(self) -> None:
         target = self.export_dir / "evidence.zip"
@@ -545,15 +545,18 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         ai_peer_review_service.export_package(self.provider, self.identification.id, target)
         widget = AiPeerReviewWidget(
             provider=self.provider,
-            show_responsible_person_option=True,
         )
         widget.set_source(self.identification.id)
         self.assertEqual(widget.table.rowCount(), 1)
 
-    def test_options_dialog_default_unchecked(self) -> None:
-        dialog = AiPeerReviewExportOptionsDialog(show_responsible_person=True)
-        self.assertFalse(dialog.include_responsible_person.isChecked())
+    def test_options_dialog_defaults(self) -> None:
+        dialog = AiPeerReviewExportOptionsDialog()
         self.assertTrue(dialog.scope_full.isChecked())
+        self.assertFalse(hasattr(dialog, "include_responsible_person"))
+        self.assertNotIn(
+            "odpovědné osoby",
+            dialog.windowTitle().casefold(),
+        )
 
     def test_provider_is_generic_source_type(self) -> None:
         self.assertEqual(self.provider.source_type, "hazard_identification")

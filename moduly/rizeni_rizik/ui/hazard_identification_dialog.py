@@ -49,7 +49,6 @@ class HazardIdentificationDialog(QDialog):
         self.inventory_widget = HazardInventoryWidget(on_event_saved=self._on_event_saved)
         self.ai_peer_review_widget = AiPeerReviewWidget(
             provider=hazard_identification_peer_review_provider,
-            show_responsible_person_option=True,
             on_proposals_applied=self._on_peer_review_applied,
         )
         self.tabs.addTab(self.basics_widget, TAB_BASICS)

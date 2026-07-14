@@ -125,13 +125,15 @@ class AiPeerReviewPromptPhaseR118TestCase(unittest.TestCase):
         self.export_dir = Path(tempfile.mkdtemp())
 
     def test_dialog_defaults_role_and_objectives(self) -> None:
-        dialog = AiPeerReviewExportOptionsDialog(show_responsible_person=True)
+        dialog = AiPeerReviewExportOptionsDialog()
         self.assertEqual(dialog.opponent_role.currentData(), AI_PEER_REVIEW_DEFAULT_ROLE)
         options = dialog.get_options()
         self.assertEqual(options.opponent_role, AI_PEER_REVIEW_DEFAULT_ROLE)
         self.assertEqual(set(options.objectives or []), set(AI_PEER_REVIEW_DEFAULT_OBJECTIVES))
         self.assertEqual(options.focus_areas, [])
         self.assertEqual(options.workplace_characteristics, "")
+        self.assertFalse(hasattr(dialog, "include_responsible_person"))
+        self.assertFalse(hasattr(options, "include_responsible_person"))
 
     def test_options_store_role_objectives_and_characteristics(self) -> None:
         content = self.provider.build_export_content(

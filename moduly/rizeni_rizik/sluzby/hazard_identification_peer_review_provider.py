@@ -156,7 +156,6 @@ class HazardIdentificationPeerReviewProvider:
         built = self._build_hierarchy(
             identification,
             items=items,
-            include_responsible_person=options.include_responsible_person,
         )
         briefing = self._build_peer_review_briefing(identification, options)
         prompt_text = build_ai_peer_review_prompt(
@@ -469,7 +468,6 @@ class HazardIdentificationPeerReviewProvider:
         identification,
         *,
         items: list,
-        include_responsible_person: bool,
     ) -> dict:
         item_ids = {item.id for item in items}
         item_export_ids = {
@@ -543,10 +541,6 @@ class HazardIdentificationPeerReviewProvider:
             ),
             "note": identification.note or "",
         }
-        if include_responsible_person:
-            identification_block["responsible_person"] = (
-                identification.responsible_person_name or ""
-            )
 
         workplace_analysis = []
         for item in items:
@@ -792,8 +786,6 @@ class HazardIdentificationPeerReviewProvider:
             lines.append(f"Datum zahájení: {identification['started_at']}")
         else:
             lines.append("Datum zahájení: —")
-        if "responsible_person" in identification:
-            lines.append(f"Odpovědná osoba: {identification['responsible_person'] or '—'}")
         lines.append(f"Stav: {identification['status_label']}")
         lines.append(f"Poznámka: {identification['note'] or '—'}")
         lines.append("")
