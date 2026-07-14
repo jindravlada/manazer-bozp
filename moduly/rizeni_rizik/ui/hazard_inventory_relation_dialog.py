@@ -65,9 +65,9 @@ class HazardInventoryRelationDialog(QDialog):
         self.active_checkbox = QCheckBox("Aktivní")
         self.active_checkbox.setChecked(True)
 
-        form.addRow("Zdrojová položka:", self.source_display)
+        form.addRow("Zdrojová položka analýzy:", self.source_display)
         form.addRow("Typ souvislosti *:", self.relation_type)
-        form.addRow("Související položka *:", self.target_item)
+        form.addRow("Související položka analýzy *:", self.target_item)
         form.addRow("Poznámka:", self.note)
         form.addRow("", self.active_checkbox)
 

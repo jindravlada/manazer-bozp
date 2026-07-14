@@ -23,6 +23,8 @@ from moduly.rizeni_rizik.constants import (
     RELATION_COL_TYPE,
     RELATION_COLUMN_COUNT,
     RELATION_TABLE_HEADERS,
+    WORKPLACE_ANALYSIS_READ_ONLY_MESSAGE,
+    WORKPLACE_ANALYSIS_SELECT_ITEM,
     format_inventory_item_display_name,
 )
 from moduly.rizeni_rizik.sluzby.hazard_inventory_relation_service import (
@@ -49,7 +51,7 @@ class HazardInventoryAnalysisWidget(QWidget):
         group = QGroupBox(INVENTORY_ANALYSIS_TITLE)
         group_layout = QVBoxLayout(group)
 
-        self.header_label = QLabel("Vyberte položku inventury.")
+        self.header_label = QLabel(WORKPLACE_ANALYSIS_SELECT_ITEM)
         self.header_label.setWordWrap(True)
         group_layout.addWidget(self.header_label)
 
@@ -111,7 +113,7 @@ class HazardInventoryAnalysisWidget(QWidget):
 
     def refresh(self) -> None:
         if self._source_item is None:
-            self.header_label.setText("Vyberte položku inventury.")
+            self.header_label.setText(WORKPLACE_ANALYSIS_SELECT_ITEM)
             self.detail_label.setText("")
             self.table.setRowCount(0)
             return
@@ -229,7 +231,7 @@ class HazardInventoryAnalysisWidget(QWidget):
             QMessageBox.information(
                 self,
                 INVENTORY_RELATION_DIALOG_TITLE,
-                "Analýza je u dokončené nebo archivované identifikace pouze pro čtení.",
+                WORKPLACE_ANALYSIS_READ_ONLY_MESSAGE,
             )
             return False
         return True

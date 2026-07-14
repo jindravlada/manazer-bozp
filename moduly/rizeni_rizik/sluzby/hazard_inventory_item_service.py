@@ -156,7 +156,7 @@ class HazardInventoryItemService:
 
     def _validate_category(self, category: str) -> None:
         if category not in HAZARD_INVENTORY_CATEGORIES:
-            raise HazardInventoryItemError("Neplatná kategorie inventury.")
+            raise HazardInventoryItemError("Neplatná kategorie položky analýzy.")
 
     def _validate_unique_active_name(
         self,

@@ -224,13 +224,13 @@ class IdentifiedHazardService:
     ) -> None:
         item = hazard_inventory_item_service.get_by_id(inventory_item_id)
         if item is None:
-            raise IdentifiedHazardError("Položka inventury neexistuje.")
+            raise IdentifiedHazardError("Položka analýzy pracoviště neexistuje.")
         if item.hazard_identification_id != hazard_identification_id:
             raise IdentifiedHazardError(
-                "Položka inventury musí patřit ke stejné identifikaci."
+                "Položka analýzy pracoviště musí patřit ke stejné identifikaci."
             )
         if not item.active:
-            raise IdentifiedHazardError("Lze vybrat pouze aktivní položku inventury.")
+            raise IdentifiedHazardError("Lze vybrat pouze aktivní položku analýzy pracoviště.")
 
     def _validate_unique_active_name(
         self,
@@ -257,7 +257,7 @@ class IdentifiedHazardService:
                 continue
             if normalize_hazard_name(hazard.name) == normalized:
                 raise IdentifiedHazardError(
-                    f"U vybrané položky inventury již existuje aktivní nebezpečí "
+                    f"U vybrané položky analýzy pracoviště již existuje aktivní nebezpečí "
                     f"s názvem „{name.strip()}“."
                 )
 

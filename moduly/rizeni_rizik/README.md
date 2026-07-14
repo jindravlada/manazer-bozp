@@ -71,16 +71,16 @@ Editor identifikace (`HazardIdentificationDialog`):
 
 ## Fáze R02
 
-Záložka **Inventura** (`HazardInventoryWidget`):
+Záložka **Analýza pracoviště** (`HazardInventoryWidget`):
 
 - model `HazardInventoryItem` v tabulce `hazard_inventory_items`
-- přehled podle 9 kategorií s počtem aktivních položek
-- samostatné ukládání položek inventury bez zavírání editoru identifikace
+- přehled podle 9 kategorií s počtem aktivních položek analýzy
+- samostatné ukládání položek analýzy pracoviště bez zavírání editoru identifikace
 - u dokončené nebo archivované identifikace pouze režim pro čtení
 
 ## Fáze R03
 
-Analýza inventury v záložce Inventura:
+Souvislosti v záložce Analýza pracoviště:
 
 - model `HazardInventoryRelation` v tabulce `hazard_inventory_relations`
 - sekce Analýza položky se souvislostmi podle typu a kategorie
@@ -92,8 +92,8 @@ Analýza inventury v záložce Inventura:
 Evidence nebezpečí v záložce Nebezpečí:
 
 - model `IdentifiedHazard` v tabulce `identified_hazards`
-- ruční evidence nebezpečí navázaných na položky inventury
-- akce Identifikovat nebezpečí v inventuře, počty aktivních nebezpečí u položek
+- ruční evidence nebezpečí navázaných na položky analýzy pracoviště
+- akce Identifikovat nebezpečí v analýze pracoviště, počty aktivních nebezpečí u položek
 - režim pouze pro čtení u dokončené nebo archivované identifikace
 
 ## Fáze R04a
@@ -112,3 +112,11 @@ Nežádoucí události v záložce Nežádoucí události:
 - události navázané na identifikovaná nebezpečí
 - akce Přidat nežádoucí událost v záložce Nebezpečí, počty aktivních událostí u nebezpečí
 - režim pouze pro čtení u dokončené nebo archivované identifikace
+
+## Fáze R05a
+
+Přejmenování uživatelské terminologie:
+
+- záložka **Inventura** přejmenována na **Analýza pracoviště**
+- uživatelské texty používají termín položka analýzy / analýza pracoviště
+- interní názvy modelů, tabulek a služeb zůstávají beze změny

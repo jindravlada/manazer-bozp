@@ -198,12 +198,18 @@ class HazardInventoryRelationService:
         source = hazard_inventory_item_service.get_by_id(source_item_id)
         target = hazard_inventory_item_service.get_by_id(target_item_id)
         if source is None or target is None:
-            raise HazardInventoryRelationError("Zdrojová nebo cílová položka nebyla nalezena.")
+            raise HazardInventoryRelationError(
+                "Zdrojová nebo cílová položka analýzy nebyla nalezena."
+            )
 
         if source.hazard_identification_id != hazard_identification_id:
-            raise HazardInventoryRelationError("Zdrojová položka nepatří k této identifikaci.")
+            raise HazardInventoryRelationError(
+                "Zdrojová položka analýzy nepatří k této identifikaci."
+            )
         if target.hazard_identification_id != hazard_identification_id:
-            raise HazardInventoryRelationError("Cílová položka nepatří k této identifikaci.")
+            raise HazardInventoryRelationError(
+                "Cílová položka analýzy nepatří k této identifikaci."
+            )
 
         expected_category = inventory_relation_target_category(relation_type)
         if expected_category is None:
@@ -215,7 +221,7 @@ class HazardInventoryRelationService:
             )
 
         if not target.active:
-            raise HazardInventoryRelationError("Cílová položka musí být aktivní.")
+            raise HazardInventoryRelationError("Cílová položka analýzy musí být aktivní.")
 
         if not active:
             return

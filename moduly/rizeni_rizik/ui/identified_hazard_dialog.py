@@ -63,7 +63,7 @@ class IdentifiedHazardDialog(QDialog):
         self.active_checkbox = QCheckBox("Aktivní")
         self.active_checkbox.setChecked(True)
 
-        form.addRow("Položka inventury *:", self.inventory_item)
+        form.addRow("Položka analýzy pracoviště *:", self.inventory_item)
         form.addRow("Název nebezpečí *:", self.name)
         form.addRow("Popis:", self.description)
         form.addRow("Poznámka:", self.note)

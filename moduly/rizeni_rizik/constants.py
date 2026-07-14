@@ -45,7 +45,7 @@ TABLE_HEADERS = [
 ]
 
 TAB_BASICS = "Základní údaje"
-TAB_INVENTORY = "Inventura"
+TAB_INVENTORY = "Analýza pracoviště"
 TAB_HAZARDS = "Nebezpečí"
 TAB_EVENTS = "Nežádoucí události"
 TAB_RISK_ASSESSMENT = "Posouzení rizik"
@@ -67,8 +67,8 @@ HAZARD_IDENTIFICATION_TABS = (
 DIALOG_WINDOW_TITLE = "Identifikace nebezpečí"
 
 INVENTORY_INTRO_TEXT = (
-    "Zaznamenejte zařízení, činnosti, energie, látky, prostory, dopravu, osoby "
-    "a další skutečnosti, které se na pracovišti vyskytují."
+    "Popište pracoviště – zaznamenejte zařízení, činnosti, energie, látky, prostory, "
+    "dopravu, osoby, podmínky prostředí a další skutečnosti, které se zde vyskytují."
 )
 
 HAZARD_INVENTORY_CATEGORY_EQUIPMENT = "equipment"
@@ -110,7 +110,7 @@ READ_ONLY_IDENTIFICATION_STATUSES = (
     HAZARD_IDENTIFICATION_STATUS_ARCHIVED,
 )
 
-INVENTORY_ITEM_DIALOG_TITLE = "Položka inventury"
+INVENTORY_ITEM_DIALOG_TITLE = "Položka analýzy pracoviště"
 
 INVENTORY_COL_ID = 0
 INVENTORY_COL_NAME = 1
@@ -167,7 +167,7 @@ HAZARD_INVENTORY_RELATION_TARGET_CATEGORY = {
 }
 
 INVENTORY_ANALYSIS_TITLE = "Analýza položky"
-INVENTORY_RELATION_DIALOG_TITLE = "Souvislost inventury"
+INVENTORY_RELATION_DIALOG_TITLE = "Souvislost analýzy pracoviště"
 
 RELATION_COL_ID = 0
 RELATION_COL_TYPE = 1
@@ -189,6 +189,13 @@ RELATION_TABLE_HEADERS = [
 
 def inventory_relation_target_category(relation_type: str) -> str | None:
     return HAZARD_INVENTORY_RELATION_TARGET_CATEGORY.get(relation_type)
+
+
+WORKPLACE_ANALYSIS_SELECT_ITEM = "Vyberte položku analýzy pracoviště."
+
+WORKPLACE_ANALYSIS_READ_ONLY_MESSAGE = (
+    "Analýza pracoviště je u dokončené nebo archivované identifikace pouze pro čtení."
+)
 
 
 def is_identification_inventory_read_only(status: str) -> bool:
@@ -229,7 +236,7 @@ IDENTIFIED_HAZARD_SOURCE_LABELS = {
 }
 
 HAZARDS_INTRO_TEXT = (
-    "Evidujte nebezpečí zjištěná u jednotlivých položek inventury. "
+    "Evidujte nebezpečí zjištěná u jednotlivých položek analýzy pracoviště. "
     "V této fázi se ještě neposuzuje míra rizika ani se neurčují opatření."
 )
 
@@ -246,8 +253,8 @@ HAZARD_COLUMN_COUNT = 6
 HAZARD_TABLE_HEADERS = [
     "ID",
     "Nebezpečí",
-    "Zdrojová položka inventury",
-    "Kategorie inventury",
+    "Zdrojová položka analýzy",
+    "Kategorie položky analýzy",
     "Původ",
     "Aktivní",
 ]
@@ -282,7 +289,7 @@ EVENT_TABLE_HEADERS = [
     "ID",
     "Nežádoucí událost",
     "Nebezpečí",
-    "Zdrojová položka inventury",
+    "Zdrojová položka analýzy",
     "Aktivní",
 ]
 

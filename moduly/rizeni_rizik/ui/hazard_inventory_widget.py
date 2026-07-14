@@ -25,6 +25,8 @@ from moduly.rizeni_rizik.constants import (
     INVENTORY_INTRO_TEXT,
     INVENTORY_ITEM_DIALOG_TITLE,
     INVENTORY_TABLE_HEADERS,
+    WORKPLACE_ANALYSIS_READ_ONLY_MESSAGE,
+    WORKPLACE_ANALYSIS_SELECT_ITEM,
     format_inventory_item_display_name,
 )
 from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import hazard_inventory_item_service
@@ -144,7 +146,7 @@ class HazardInventoryWidget(QWidget):
     def edit_selected_item(self) -> None:
         item = self._selected_item()
         if item is None:
-            QMessageBox.information(self, INVENTORY_ITEM_DIALOG_TITLE, "Vyberte položku inventury.")
+            QMessageBox.information(self, INVENTORY_ITEM_DIALOG_TITLE, WORKPLACE_ANALYSIS_SELECT_ITEM)
             return
 
         dialog = HazardInventoryItemDialog(
@@ -162,7 +164,7 @@ class HazardInventoryWidget(QWidget):
 
         item = self._selected_item()
         if item is None:
-            QMessageBox.information(self, INVENTORY_ITEM_DIALOG_TITLE, "Vyberte položku inventury.")
+            QMessageBox.information(self, INVENTORY_ITEM_DIALOG_TITLE, WORKPLACE_ANALYSIS_SELECT_ITEM)
             return
         if item.active:
             QMessageBox.information(self, INVENTORY_ITEM_DIALOG_TITLE, "Položka je již aktivní.")
@@ -183,7 +185,7 @@ class HazardInventoryWidget(QWidget):
 
         item = self._selected_item()
         if item is None:
-            QMessageBox.information(self, INVENTORY_ITEM_DIALOG_TITLE, "Vyberte položku inventury.")
+            QMessageBox.information(self, INVENTORY_ITEM_DIALOG_TITLE, WORKPLACE_ANALYSIS_SELECT_ITEM)
             return
         if not item.active:
             QMessageBox.information(self, INVENTORY_ITEM_DIALOG_TITLE, "Položka je již neaktivní.")
@@ -201,7 +203,7 @@ class HazardInventoryWidget(QWidget):
             QMessageBox.information(
                 self,
                 INVENTORY_ITEM_DIALOG_TITLE,
-                "Vyberte položku inventury.",
+                WORKPLACE_ANALYSIS_SELECT_ITEM,
             )
             return
 
@@ -230,7 +232,7 @@ class HazardInventoryWidget(QWidget):
             QMessageBox.information(
                 self,
                 INVENTORY_ITEM_DIALOG_TITLE,
-                "Inventura je u dokončené nebo archivované identifikace pouze pro čtení.",
+                WORKPLACE_ANALYSIS_READ_ONLY_MESSAGE,
             )
             return False
         return True
