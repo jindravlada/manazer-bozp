@@ -10,6 +10,10 @@ from core.services.cz_nace_service import cz_nace_service
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
 from moduly.nastaveni.sluzby.person_service import person_service
+from moduly.nastaveni.sluzby.exposed_group_service import (
+    ExposedGroupError,
+    exposed_group_service,
+)
 from moduly.nastaveni.sluzby.responsibility_role_service import responsibility_role_service
 from moduly.nastaveni.constants.workplace_hierarchy_constants import (
     WORKPLACE_ITEM_TYPE_OPERATION,
@@ -19,6 +23,7 @@ from moduly.nastaveni.constants.workplace_hierarchy_constants import (
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.nastaveni.sluzby.workplace_hierarchy_service import WorkplaceHierarchyError
 from moduly.nastaveni.ui.person_dialog import PersonDialog
+from moduly.nastaveni.ui.exposed_group_dialog import ExposedGroupDialog
 from moduly.nastaveni.ui.responsibility_role_dialog import ResponsibilityRoleDialog
 from moduly.nastaveni.ui.thp_worker_dialog import ThpWorkerDialog
 from moduly.nastaveni.ui.workplace_dialog import WorkplaceDialog
@@ -35,6 +40,7 @@ class NastaveniPage(QWidget):
         self.tabs.addTab(self._persons_tab(), "Osoby")
         self.tabs.addTab(self._workplaces_tab(), "Provozy a pracoviště")
         self.tabs.addTab(self._responsibility_roles_tab(), "Funkce / role")
+        self.tabs.addTab(self._exposed_groups_tab(), "Ohrožené skupiny")
         self.tabs.addTab(self._employer_tab(), "Zaměstnavatel")
 
         layout.addWidget(self.tabs)
@@ -310,6 +316,53 @@ class NastaveniPage(QWidget):
         layout.addWidget(self.responsibility_role_text_filter)
         layout.addWidget(self.responsibility_role_table)
 
+        return tab
+
+    def _exposed_groups_tab(self):
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+
+        info = QLabel(
+            "Společný číselník ohrožených skupin osob pro posouzení rizik a další moduly.",
+        )
+        info.setWordWrap(True)
+
+        toolbar = QHBoxLayout()
+        add_button = QPushButton("Přidat")
+        add_button.clicked.connect(self.add_exposed_group)
+        edit_button = QPushButton("Upravit")
+        edit_button.clicked.connect(self.edit_selected_exposed_group)
+        self.exposed_group_active_toggle_button = QPushButton("Deaktivovat / Aktivovat")
+        self.exposed_group_active_toggle_button.clicked.connect(
+            self.toggle_selected_exposed_group_active,
+        )
+        self.exposed_group_filter = QComboBox()
+        self.exposed_group_filter.addItems(["Aktivní", "Všechny"])
+        self.exposed_group_filter.currentIndexChanged.connect(self.refresh_exposed_groups)
+        toolbar.addWidget(add_button)
+        toolbar.addWidget(edit_button)
+        toolbar.addWidget(self.exposed_group_active_toggle_button)
+        toolbar.addStretch()
+        toolbar.addWidget(QLabel("Zobrazit:"))
+        toolbar.addWidget(self.exposed_group_filter)
+
+        self.exposed_group_table = QTableWidget()
+        self.exposed_group_table.setColumnCount(3)
+        self.exposed_group_table.setHorizontalHeaderLabels(["Název", "Poznámka", "Aktivní"])
+        self.exposed_group_table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.exposed_group_table.setSelectionMode(QTableWidget.SingleSelection)
+        self.exposed_group_table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.exposed_group_table.doubleClicked.connect(self.edit_selected_exposed_group)
+        self.exposed_group_table.itemSelectionChanged.connect(
+            self.update_exposed_group_buttons,
+        )
+        configure_table_columns(self.exposed_group_table, "exposed_groups")
+        self.exposed_group_text_filter = FilterBar(self.exposed_group_table)
+
+        layout.addWidget(info)
+        layout.addLayout(toolbar)
+        layout.addWidget(self.exposed_group_text_filter)
+        layout.addWidget(self.exposed_group_table)
         return tab
 
     def load_from_ares(self):
@@ -760,6 +813,7 @@ class NastaveniPage(QWidget):
         self.refresh_persons()
         self.refresh_workplaces()
         self.refresh_responsibility_roles()
+        self.refresh_exposed_groups()
 
     def refresh_workers(self):
         include_inactive = self.worker_filter.currentText() == "Všichni"
@@ -890,3 +944,90 @@ class NastaveniPage(QWidget):
         configure_table_columns(self.responsibility_role_table, "responsibility_roles")
         self.responsibility_role_text_filter.update_count()
         self.update_responsibility_role_buttons()
+
+    def add_exposed_group(self):
+        dialog = ExposedGroupDialog(self)
+        if dialog.exec():
+            try:
+                data = dialog.get_data()
+                exposed_group_service.create_group(**data)
+            except ExposedGroupError as error:
+                QMessageBox.warning(self, "Ohrožené skupiny", str(error))
+                return
+            self.refresh_exposed_groups()
+
+    def _selected_exposed_group_id(self) -> int | None:
+        selected = self.exposed_group_table.selectionModel().selectedRows()
+        if not selected:
+            return None
+        item = self.exposed_group_table.item(selected[0].row(), 0)
+        return item.data(Qt.ItemDataRole.UserRole) if item is not None else None
+
+    def edit_selected_exposed_group(self):
+        group_id = self._selected_exposed_group_id()
+        if group_id is None:
+            QMessageBox.information(self, "Ohrožené skupiny", "Vyberte skupinu.")
+            return
+        group = exposed_group_service.get_by_id(group_id)
+        if group is None:
+            self.refresh_exposed_groups()
+            return
+        dialog = ExposedGroupDialog(self, group=group)
+        if dialog.exec():
+            try:
+                data = dialog.get_data()
+                exposed_group_service.update_group(group_id, **data)
+            except ExposedGroupError as error:
+                QMessageBox.warning(self, "Ohrožené skupiny", str(error))
+                return
+            self.refresh_exposed_groups()
+
+    def toggle_selected_exposed_group_active(self):
+        group_id = self._selected_exposed_group_id()
+        if group_id is None:
+            QMessageBox.information(self, "Ohrožené skupiny", "Vyberte skupinu.")
+            return
+        group = exposed_group_service.get_by_id(group_id)
+        if group is None:
+            self.refresh_exposed_groups()
+            return
+        try:
+            if group.active:
+                exposed_group_service.deactivate(group_id)
+            else:
+                exposed_group_service.activate(group_id)
+        except ExposedGroupError as error:
+            QMessageBox.warning(self, "Ohrožené skupiny", str(error))
+            return
+        self.refresh_exposed_groups()
+
+    def update_exposed_group_buttons(self):
+        group_id = self._selected_exposed_group_id()
+        if group_id is None:
+            self.exposed_group_active_toggle_button.setText("Deaktivovat / Aktivovat")
+            return
+        group = exposed_group_service.get_by_id(group_id)
+        if group is None:
+            self.exposed_group_active_toggle_button.setText("Deaktivovat / Aktivovat")
+            return
+        self.exposed_group_active_toggle_button.setText(
+            "Deaktivovat" if group.active else "Aktivovat",
+        )
+
+    def refresh_exposed_groups(self):
+        include_inactive = self.exposed_group_filter.currentText() == "Všechny"
+        groups = exposed_group_service.get_all(include_inactive=include_inactive)
+        self.exposed_group_table.setRowCount(len(groups))
+        for row, group in enumerate(groups):
+            name_item = QTableWidgetItem(group.name)
+            name_item.setData(Qt.ItemDataRole.UserRole, group.id)
+            self.exposed_group_table.setItem(row, 0, name_item)
+            self.exposed_group_table.setItem(row, 1, QTableWidgetItem(group.note or ""))
+            self.exposed_group_table.setItem(
+                row,
+                2,
+                QTableWidgetItem("Ano" if group.active else "Ne"),
+            )
+        configure_table_columns(self.exposed_group_table, "exposed_groups")
+        self.exposed_group_text_filter.update_count()
+        self.update_exposed_group_buttons()

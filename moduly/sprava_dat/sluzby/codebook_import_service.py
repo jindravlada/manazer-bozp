@@ -13,10 +13,12 @@ from sqlalchemy.exc import SQLAlchemyError
 from moduly.nastaveni.modely.employer import Employer
 from moduly.nastaveni.modely.person import Person
 from moduly.nastaveni.modely.responsibility_role import ResponsibilityRole
+from moduly.nastaveni.modely.exposed_group import ExposedGroup
 from moduly.nastaveni.modely.thp_worker import ThpWorker
 from moduly.nastaveni.modely.workplace import Workplace
 from moduly.nastaveni.sluzby.person_service import person_service
 from moduly.nastaveni.sluzby.responsibility_role_service import responsibility_role_service
+from moduly.nastaveni.sluzby.exposed_group_service import exposed_group_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.sprava_dat.sluzby.codebook_catalog_service import (
     CodebookEntry,
@@ -55,6 +57,7 @@ class CodebookImportService:
         "db:thp_workers": ThpWorker,
         "db:employer": Employer,
         "db:responsibility_roles": ResponsibilityRole,
+        "db:exposed_groups": ExposedGroup,
         "db:persons": Person,
     }
 
@@ -244,6 +247,9 @@ class CodebookImportService:
         if entry.codebook_id == "db:responsibility_roles":
             return self._import_responsibility_role_record
 
+        if entry.codebook_id == "db:exposed_groups":
+            return self._import_exposed_group_record
+
         if entry.codebook_id == "db:persons":
             return self._import_person_record
 
@@ -262,6 +268,21 @@ class CodebookImportService:
                 responsibility_role_service.create_role(**kwargs)
             return
         responsibility_role_service.create_role(**kwargs)
+
+    def _import_exposed_group_record(self, record: dict[str, Any]) -> None:
+        group_id = record.get("id")
+        kwargs = {
+            "name": str(record.get("name") or ""),
+            "note": str(record.get("note") or ""),
+            "active": bool(record.get("active", True)),
+            "sort_order": int(record.get("sort_order") or 0),
+        }
+        if group_id:
+            updated = exposed_group_service.update_group(group_id, **kwargs)
+            if updated is None:
+                exposed_group_service.create_group(**kwargs)
+            return
+        exposed_group_service.create_group(**kwargs)
 
     def _import_person_record(self, record: dict[str, Any]) -> None:
         person_id = record.get("id")

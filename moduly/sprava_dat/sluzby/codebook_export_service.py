@@ -19,6 +19,7 @@ from moduly.nastaveni.modely.thp_worker import ThpWorker
 from moduly.nastaveni.modely.workplace import Workplace
 from moduly.nastaveni.sluzby.person_service import person_service
 from moduly.nastaveni.sluzby.responsibility_role_service import responsibility_role_service
+from moduly.nastaveni.sluzby.exposed_group_service import exposed_group_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
 from moduly.sprava_dat.sluzby.codebook_catalog_service import (
@@ -271,6 +272,11 @@ class CodebookExportService:
             return [
                 self._model_to_dict(item)
                 for item in responsibility_role_service.get_all(include_inactive=True)
+            ]
+        if entry.codebook_id == "db:exposed_groups":
+            return [
+                self._model_to_dict(item)
+                for item in exposed_group_service.get_all(include_inactive=True)
             ]
         if entry.codebook_id == "db:persons":
             return [self._model_to_dict(item) for item in person_service.get_all(include_inactive=True)]

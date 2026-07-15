@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from core.utils.czech_sort import czech_sorted
+from moduly.nastaveni.sluzby.exposed_group_service import exposed_group_service
 from moduly.rizeni_rizik.constants import (
     DEFAULT_RISK_ASSESSMENT_STATUS,
     RISK_ASSESSMENT_STATUS_COMPLETED,
@@ -36,6 +37,7 @@ class HazardRiskAssessmentRow:
     assessment: HazardRiskAssessment
     event_name: str
     inventory_item_name: str
+    exposed_group_name: str
     severity_label: str
     status_label: str
 
@@ -43,6 +45,15 @@ class HazardRiskAssessmentRow:
 class HazardRiskAssessmentService:
     def __init__(self):
         self.repository = HazardRiskAssessmentRepository()
+
+    def get_exposed_group_display_name(self, assessment: HazardRiskAssessment) -> str:
+        if assessment.exposed_group_id:
+            name = exposed_group_service.display_name(assessment.exposed_group_id)
+            if name:
+                return name
+        if assessment.exposed_group:
+            return assessment.exposed_group
+        return "—"
 
     def get_for_identification(
         self,
@@ -109,7 +120,7 @@ class HazardRiskAssessmentService:
         *,
         hazard_identification_id: int,
         hazard_event_id: int,
-        exposed_group: str,
+        exposed_group_id: int,
         consequence: str,
         severity: str,
         note: str = "",
@@ -117,21 +128,22 @@ class HazardRiskAssessmentService:
         conclusion: str = "",
         active: bool = True,
     ) -> HazardRiskAssessment:
-        normalized_group = self._validate_exposed_group(exposed_group)
+        validated_group_id = self._validate_exposed_group_id(exposed_group_id)
         normalized_consequence = self._validate_consequence(consequence)
         normalized_severity = self._validate_severity(severity)
 
         self._validate_event(hazard_identification_id, hazard_event_id)
         self._validate_unique_active_group(
             hazard_event_id,
-            group=normalized_group,
+            exposed_group_id=validated_group_id,
             exclude_assessment_id=None,
             active=active,
         )
 
         assessment = HazardRiskAssessment(
             hazard_event_id=hazard_event_id,
-            exposed_group=normalized_group,
+            exposed_group_id=validated_group_id,
+            exposed_group="",
             consequence=normalized_consequence,
             severity=normalized_severity,
             note=note.strip(),
@@ -143,7 +155,7 @@ class HazardRiskAssessmentService:
             assessment_status=assessment_status,
             hazard_identification_id=hazard_identification_id,
             hazard_event_id=hazard_event_id,
-            exposed_group=normalized_group,
+            exposed_group_id=validated_group_id,
             consequence=normalized_consequence,
             severity=normalized_severity,
         )
@@ -155,7 +167,7 @@ class HazardRiskAssessmentService:
         *,
         hazard_identification_id: int,
         hazard_event_id: int,
-        exposed_group: str,
+        exposed_group_id: int,
         consequence: str,
         severity: str,
         note: str = "",
@@ -167,20 +179,20 @@ class HazardRiskAssessmentService:
         if assessment is None:
             return None
 
-        normalized_group = self._validate_exposed_group(exposed_group)
+        validated_group_id = self._validate_exposed_group_id(exposed_group_id)
         normalized_consequence = self._validate_consequence(consequence)
         normalized_severity = self._validate_severity(severity)
 
         self._validate_event(hazard_identification_id, hazard_event_id)
         self._validate_unique_active_group(
             hazard_event_id,
-            group=normalized_group,
+            exposed_group_id=validated_group_id,
             exclude_assessment_id=assessment_id,
             active=active,
         )
 
         assessment.hazard_event_id = hazard_event_id
-        assessment.exposed_group = normalized_group
+        assessment.exposed_group_id = validated_group_id
         assessment.consequence = normalized_consequence
         assessment.severity = normalized_severity
         assessment.note = note.strip()
@@ -191,7 +203,7 @@ class HazardRiskAssessmentService:
             assessment_status=assessment_status,
             hazard_identification_id=hazard_identification_id,
             hazard_event_id=hazard_event_id,
-            exposed_group=normalized_group,
+            exposed_group_id=validated_group_id,
             consequence=normalized_consequence,
             severity=normalized_severity,
         )
@@ -202,10 +214,12 @@ class HazardRiskAssessmentService:
         assessment = self.repository.get_by_id(assessment_id)
         if assessment is None:
             return False
+        if assessment.exposed_group_id is None:
+            raise HazardRiskAssessmentError("Posouzení nemá přiřazenou ohroženou skupinu.")
 
         self._validate_unique_active_group(
             assessment.hazard_event_id,
-            group=assessment.exposed_group,
+            exposed_group_id=assessment.exposed_group_id,
             exclude_assessment_id=assessment_id,
             active=True,
         )
@@ -228,12 +242,14 @@ class HazardRiskAssessmentService:
         assessment: HazardRiskAssessment,
         event_rows: dict[int, HazardEventRow],
     ) -> HazardRiskAssessmentRow:
+        exposed_group_name = self.get_exposed_group_display_name(assessment)
         event_row = event_rows.get(assessment.hazard_event_id)
         if event_row is None:
             return HazardRiskAssessmentRow(
                 assessment=assessment,
                 event_name="—",
                 inventory_item_name="—",
+                exposed_group_name=exposed_group_name,
                 severity_label=format_risk_severity_label(assessment.severity),
                 status_label=format_risk_assessment_status_label(assessment.assessment_status),
             )
@@ -242,6 +258,7 @@ class HazardRiskAssessmentService:
             assessment=assessment,
             event_name=event_row.event.name,
             inventory_item_name=event_row.inventory_item_name,
+            exposed_group_name=exposed_group_name,
             severity_label=format_risk_severity_label(assessment.severity),
             status_label=format_risk_assessment_status_label(assessment.assessment_status),
         )
@@ -251,16 +268,22 @@ class HazardRiskAssessmentService:
             return (
                 row.inventory_item_name.casefold(),
                 row.event_name.casefold(),
-                row.assessment.exposed_group.casefold(),
+                row.exposed_group_name.casefold(),
             )
 
         return czech_sorted(rows, key=sort_key)
 
-    def _validate_exposed_group(self, exposed_group: str) -> str:
-        normalized_group = exposed_group.strip()
-        if not normalized_group:
+    def _validate_exposed_group_id(self, exposed_group_id: int | None) -> int:
+        if not exposed_group_id:
             raise HazardRiskAssessmentError("Ohrožená skupina je povinná.")
-        return normalized_group
+        group = exposed_group_service.get_by_id(exposed_group_id)
+        if group is None:
+            raise HazardRiskAssessmentError("Vybraná ohrožená skupina neexistuje.")
+        if not group.active:
+            raise HazardRiskAssessmentError(
+                "Lze vybrat pouze aktivní ohroženou skupinu z číselníku."
+            )
+        return group.id
 
     def _validate_consequence(self, consequence: str) -> str:
         normalized_consequence = consequence.strip()
@@ -280,7 +303,7 @@ class HazardRiskAssessmentService:
         assessment_status: str,
         hazard_identification_id: int,
         hazard_event_id: int,
-        exposed_group: str,
+        exposed_group_id: int,
         consequence: str,
         severity: str,
     ) -> None:
@@ -289,7 +312,7 @@ class HazardRiskAssessmentService:
 
         if assessment_status == RISK_ASSESSMENT_STATUS_COMPLETED:
             self._validate_event(hazard_identification_id, hazard_event_id)
-            self._validate_exposed_group(exposed_group)
+            self._validate_exposed_group_id(exposed_group_id)
             self._validate_consequence(consequence)
             self._validate_severity(severity)
             assessment.completed_at = datetime.now()
@@ -321,23 +344,23 @@ class HazardRiskAssessmentService:
         self,
         hazard_event_id: int,
         *,
-        group: str,
+        exposed_group_id: int,
         exclude_assessment_id: int | None,
         active: bool,
     ) -> None:
         if not active:
             return
 
-        normalized = normalize_exposed_group(group)
         for assessment in self.repository.get_for_event(hazard_event_id, include_inactive=True):
             if assessment.id == exclude_assessment_id:
                 continue
             if not assessment.active:
                 continue
-            if normalize_exposed_group(assessment.exposed_group) == normalized:
+            if assessment.exposed_group_id == exposed_group_id:
+                group_name = self.get_exposed_group_display_name(assessment)
                 raise HazardRiskAssessmentError(
                     f"U vybrané nežádoucí události již existuje aktivní ohrožená skupina "
-                    f"„{group.strip()}“."
+                    f"„{group_name}“."
                 )
 
 

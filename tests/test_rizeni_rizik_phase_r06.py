@@ -25,6 +25,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
+    from tests.rizeni_rizik_test_helpers import ensure_exposed_group
     from moduly.nastaveni.constants.workplace_hierarchy_constants import (
         WORKPLACE_ITEM_TYPE_OPERATION,
         WORKPLACE_ITEM_TYPE_WORKPLACE,
@@ -128,13 +129,13 @@ class HazardRiskAssessmentPhaseR06TestCase(unittest.TestCase):
         assessment = hazard_risk_assessment_service.create_assessment(
             hazard_identification_id=self.identification.id,
             hazard_event_id=self.event_a.id,
-            exposed_group="Posunovač",
+            exposed_group_id=ensure_exposed_group("Posunovač").id,
             consequence=SAMPLE_CONSEQUENCE,
             severity=RISK_SEVERITY_MODERATE,
             note="Poznámka",
         )
         self.assertEqual(assessment.hazard_event_id, self.event_a.id)
-        self.assertEqual(assessment.exposed_group, "Posunovač")
+        self.assertEqual(hazard_risk_assessment_service.get_exposed_group_display_name(assessment), "Posunovač")
         self.assertTrue(assessment.active)
 
     def test_reject_empty_group(self) -> None:
@@ -142,7 +143,7 @@ class HazardRiskAssessmentPhaseR06TestCase(unittest.TestCase):
             hazard_risk_assessment_service.create_assessment(
                 hazard_identification_id=self.identification.id,
                 hazard_event_id=self.event_a.id,
-                exposed_group="   ",
+                exposed_group_id=0,
                 consequence=SAMPLE_CONSEQUENCE,
                 severity=RISK_SEVERITY_MODERATE,
             )
@@ -151,7 +152,7 @@ class HazardRiskAssessmentPhaseR06TestCase(unittest.TestCase):
         hazard_risk_assessment_service.create_assessment(
             hazard_identification_id=self.identification.id,
             hazard_event_id=self.event_a.id,
-            exposed_group="Posunovač",
+            exposed_group_id=ensure_exposed_group("Posunovač").id,
             consequence=SAMPLE_CONSEQUENCE,
             severity=RISK_SEVERITY_MODERATE,
         )
@@ -159,7 +160,7 @@ class HazardRiskAssessmentPhaseR06TestCase(unittest.TestCase):
             hazard_risk_assessment_service.create_assessment(
                 hazard_identification_id=self.identification.id,
                 hazard_event_id=self.event_a.id,
-                exposed_group="  posunovač ",
+                exposed_group_id=ensure_exposed_group("  posunovač ").id,
                 consequence=SAMPLE_CONSEQUENCE,
                 severity=RISK_SEVERITY_MODERATE,
             )
@@ -168,14 +169,14 @@ class HazardRiskAssessmentPhaseR06TestCase(unittest.TestCase):
         hazard_risk_assessment_service.create_assessment(
             hazard_identification_id=self.identification.id,
             hazard_event_id=self.event_a.id,
-            exposed_group="Posunovač",
+            exposed_group_id=ensure_exposed_group("Posunovač").id,
             consequence=SAMPLE_CONSEQUENCE,
             severity=RISK_SEVERITY_MODERATE,
         )
         assessment = hazard_risk_assessment_service.create_assessment(
             hazard_identification_id=self.identification.id,
             hazard_event_id=self.event_b.id,
-            exposed_group="Posunovač",
+            exposed_group_id=ensure_exposed_group("Posunovač").id,
             consequence=SAMPLE_CONSEQUENCE,
             severity=RISK_SEVERITY_MODERATE,
         )
@@ -185,7 +186,7 @@ class HazardRiskAssessmentPhaseR06TestCase(unittest.TestCase):
         assessment = hazard_risk_assessment_service.create_assessment(
             hazard_identification_id=self.identification.id,
             hazard_event_id=self.event_a.id,
-            exposed_group="Posunovač",
+            exposed_group_id=ensure_exposed_group("Posunovač").id,
             consequence=SAMPLE_CONSEQUENCE,
             severity=RISK_SEVERITY_MODERATE,
         )
@@ -193,21 +194,21 @@ class HazardRiskAssessmentPhaseR06TestCase(unittest.TestCase):
             assessment.id,
             hazard_identification_id=self.identification.id,
             hazard_event_id=self.event_a.id,
-            exposed_group="Strojvedoucí",
+            exposed_group_id=ensure_exposed_group("Strojvedoucí").id,
             consequence=SAMPLE_CONSEQUENCE,
             severity=RISK_SEVERITY_MODERATE,
             note="Aktualizovaná poznámka",
             active=True,
         )
         assert updated is not None
-        self.assertEqual(updated.exposed_group, "Strojvedoucí")
+        self.assertEqual(hazard_risk_assessment_service.get_exposed_group_display_name(updated), "Strojvedoucí")
         self.assertEqual(updated.note, "Aktualizovaná poznámka")
 
     def test_activate_and_deactivate_assessment(self) -> None:
         assessment = hazard_risk_assessment_service.create_assessment(
             hazard_identification_id=self.identification.id,
             hazard_event_id=self.event_a.id,
-            exposed_group="Posunovač",
+            exposed_group_id=ensure_exposed_group("Posunovač").id,
             consequence=SAMPLE_CONSEQUENCE,
             severity=RISK_SEVERITY_MODERATE,
         )
@@ -236,7 +237,7 @@ class HazardRiskAssessmentPhaseR06TestCase(unittest.TestCase):
             hazard_risk_assessment_service.create_assessment(
                 hazard_identification_id=self.identification.id,
                 hazard_event_id=other_event.id,
-                exposed_group="Posunovač",
+                exposed_group_id=ensure_exposed_group("Posunovač").id,
             consequence=SAMPLE_CONSEQUENCE,
             severity=RISK_SEVERITY_MODERATE,
             )
@@ -245,21 +246,21 @@ class HazardRiskAssessmentPhaseR06TestCase(unittest.TestCase):
         hazard_risk_assessment_service.create_assessment(
             hazard_identification_id=self.identification.id,
             hazard_event_id=self.event_a.id,
-            exposed_group="Posunovač",
+            exposed_group_id=ensure_exposed_group("Posunovač").id,
             consequence=SAMPLE_CONSEQUENCE,
             severity=RISK_SEVERITY_MODERATE,
         )
         hazard_risk_assessment_service.create_assessment(
             hazard_identification_id=self.identification.id,
             hazard_event_id=self.event_a.id,
-            exposed_group="Strojvedoucí",
+            exposed_group_id=ensure_exposed_group("Strojvedoucí").id,
             consequence=SAMPLE_CONSEQUENCE,
             severity=RISK_SEVERITY_MODERATE,
         )
         inactive = hazard_risk_assessment_service.create_assessment(
             hazard_identification_id=self.identification.id,
             hazard_event_id=self.event_a.id,
-            exposed_group="Údržba",
+            exposed_group_id=ensure_exposed_group("Údržba").id,
             consequence=SAMPLE_CONSEQUENCE,
             severity=RISK_SEVERITY_MODERATE,
         )
@@ -273,33 +274,36 @@ class HazardRiskAssessmentPhaseR06TestCase(unittest.TestCase):
         )
 
     def test_create_assessment_from_event_context(self) -> None:
+        group = ensure_exposed_group("Elektrikář")
         dialog = HazardRiskAssessmentDialog(
             None,
             hazard_identification_id=self.identification.id,
             default_hazard_event_id=self.event_a.id,
         )
         self.assertEqual(dialog.event.currentData(), self.event_a.id)
-        dialog.exposed_group.setText("Elektrikář")
+        index = dialog.exposed_group.findData(group.id)
+        self.assertGreaterEqual(index, 0)
+        dialog.exposed_group.setCurrentIndex(index)
         dialog.consequence.setPlainText(SAMPLE_CONSEQUENCE)
         dialog.accept()
 
         rows = hazard_risk_assessment_service.get_for_identification(self.identification.id)
         self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0].assessment.exposed_group, "Elektrikář")
+        self.assertEqual(rows[0].exposed_group_name, "Elektrikář")
         self.assertEqual(rows[0].event_name, "Sražení s osobou")
 
     def test_inventory_events_show_assessment_count(self) -> None:
         hazard_risk_assessment_service.create_assessment(
             hazard_identification_id=self.identification.id,
             hazard_event_id=self.event_a.id,
-            exposed_group="Posunovač",
+            exposed_group_id=ensure_exposed_group("Posunovač").id,
             consequence=SAMPLE_CONSEQUENCE,
             severity=RISK_SEVERITY_MODERATE,
         )
         hazard_risk_assessment_service.create_assessment(
             hazard_identification_id=self.identification.id,
             hazard_event_id=self.event_a.id,
-            exposed_group="Strojvedoucí",
+            exposed_group_id=ensure_exposed_group("Strojvedoucí").id,
             consequence=SAMPLE_CONSEQUENCE,
             severity=RISK_SEVERITY_MODERATE,
         )

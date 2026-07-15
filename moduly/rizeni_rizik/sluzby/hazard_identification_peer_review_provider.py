@@ -365,10 +365,12 @@ class HazardIdentificationPeerReviewProvider:
         ):
             if parent is None or parent.get("kind") != "event":
                 return "unassigned"
+            if proposal.exposed_group_id is None:
+                return "unassigned"
             hazard_risk_assessment_service.create_assessment(
                 hazard_identification_id=source_id,
                 hazard_event_id=int(parent["id"]),
-                exposed_group=proposal.name,
+                exposed_group_id=proposal.exposed_group_id,
                 consequence=proposal.reasoning or "Dle návrhu AI",
                 severity=RISK_SEVERITY_MODERATE,
                 note=note,
@@ -581,7 +583,9 @@ class HazardIdentificationPeerReviewProvider:
                     assessment_nodes.append(
                         {
                             "export_id": export_id,
-                            "exposed_group": assessment.exposed_group,
+                            "exposed_group": hazard_risk_assessment_service.get_exposed_group_display_name(
+                                assessment
+                            ),
                             "consequence": assessment.consequence or "",
                             "severity": assessment.severity,
                             "severity_label": format_risk_severity_label(

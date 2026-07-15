@@ -16,6 +16,7 @@ from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 from moduly.kniha_urazu.services.ciselnik_service import kniha_urazu_ciselnik_service
 from moduly.nastaveni.sluzby.person_service import person_service
 from moduly.nastaveni.sluzby.responsibility_role_service import responsibility_role_service
+from moduly.nastaveni.sluzby.exposed_group_service import exposed_group_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
 from moduly.proverky.sluzby.proverky_knowledge_service import proverky_knowledge_service
@@ -80,6 +81,7 @@ class CodebookCatalogService:
         ("db:thp_workers", "THP pracovníci", "thp_workers"),
         ("db:employer", "Zaměstnavatel", "employers"),
         ("db:responsibility_roles", "Funkce / role", "responsibility_roles"),
+        ("db:exposed_groups", "Ohrožené skupiny osob", "exposed_groups"),
         ("db:persons", "Osoby", "persons"),
     )
 
@@ -358,6 +360,8 @@ class CodebookCatalogService:
             return 1 if employer is not None else 0
         if table_name == "responsibility_roles":
             return len(responsibility_role_service.get_all(include_inactive=True))
+        if table_name == "exposed_groups":
+            return len(exposed_group_service.get_all(include_inactive=True))
         if table_name == "persons":
             return len(person_service.get_all(include_inactive=True))
         return 0
@@ -402,6 +406,7 @@ class CodebookCatalogService:
             "workplaces": settings_service.get_workplaces,
             "thp_workers": settings_service.get_workers,
             "responsibility_roles": responsibility_role_service.get_all,
+            "exposed_groups": exposed_group_service.get_all,
             "persons": person_service.get_all,
         }
         loader = models.get(table_name)

@@ -31,6 +31,7 @@ def initialize_database() -> None:
     from moduly.nastaveni.modely.person import Person  # noqa: F401
     from moduly.nastaveni.modely.workplace import Workplace  # noqa: F401
     from moduly.nastaveni.modely.responsibility_role import ResponsibilityRole  # noqa: F401
+    from moduly.nastaveni.modely.exposed_group import ExposedGroup  # noqa: F401
     from moduly.kniha_urazu.modely.accident import Accident  # noqa: F401
     from moduly.kniha_urazu.modely.investigation import AccidentInvestigation  # noqa: F401
     from moduly.vysetrovani_mu.modely.mu_investigation import MuInvestigation  # noqa: F401
@@ -99,6 +100,7 @@ def initialize_database() -> None:
     _ensure_workplace_audit_columns()
     _ensure_workplace_hierarchy_columns()
     _ensure_responsibility_roles_table()
+    _ensure_exposed_groups_table()
     _ensure_audit_program_columns()
     _ensure_audit_program_workplace_columns()
     _ensure_audit_program_link_columns()
@@ -920,6 +922,100 @@ def _ensure_hazard_risk_assessments_table() -> None:
         _add_column("hazard_risk_assessments", "conclusion TEXT DEFAULT '' NOT NULL")
     if "completed_at" not in columns:
         _add_column("hazard_risk_assessments", "completed_at DATETIME")
+    if "exposed_group_id" not in columns:
+        _add_column("hazard_risk_assessments", "exposed_group_id INTEGER")
+    _migrate_hazard_risk_assessment_exposed_group_ids()
+
+
+def _ensure_exposed_groups_table() -> None:
+    columns = _table_columns("exposed_groups")
+    if not columns:
+        from moduly.nastaveni.modely.exposed_group import ExposedGroup
+
+        ExposedGroup.__table__.create(bind=_db_engine(), checkfirst=True)
+    _seed_exposed_groups()
+
+
+def _seed_exposed_groups() -> None:
+    default_groups = [
+        "Zaměstnanci daného pracoviště",
+        "Obsluha zařízení",
+        "Údržba",
+        "Vedoucí zaměstnanci",
+        "Administrativní pracovníci",
+        "Řidiči",
+        "Chodci",
+        "Dodavatelé",
+        "Návštěvy",
+        "Veřejnost",
+        "Těhotné zaměstnankyně",
+        "Mladiství",
+        "Osoby se zdravotním omezením",
+        "Ostatní osoby",
+    ]
+    with _db_engine().connect() as connection:
+        existing_count = connection.execute(
+            text("SELECT COUNT(*) FROM exposed_groups"),
+        ).scalar_one()
+        if existing_count:
+            return
+
+        now = datetime.now()
+        for index, name in enumerate(default_groups, start=1):
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO exposed_groups
+                        (name, note, active, sort_order, created_at, updated_at)
+                    VALUES
+                        (:name, '', 1, :sort_order, :created_at, :updated_at)
+                    """,
+                ),
+                {
+                    "name": name,
+                    "sort_order": index,
+                    "created_at": now,
+                    "updated_at": now,
+                },
+            )
+        connection.commit()
+
+
+def _migrate_hazard_risk_assessment_exposed_group_ids() -> None:
+    columns = _table_columns("hazard_risk_assessments")
+    if "exposed_group_id" not in columns:
+        return
+
+    from moduly.nastaveni.sluzby.exposed_group_service import exposed_group_service
+
+    with _db_engine().connect() as connection:
+        rows = connection.execute(
+            text(
+                """
+                SELECT id, exposed_group
+                FROM hazard_risk_assessments
+                WHERE exposed_group_id IS NULL
+                  AND trim(exposed_group) != ''
+                """,
+            ),
+        ).fetchall()
+        if not rows:
+            return
+
+    for row_id, group_text in rows:
+        group = exposed_group_service.find_or_create_for_migration(str(group_text))
+        with _db_engine().connect() as connection:
+            connection.execute(
+                text(
+                    """
+                    UPDATE hazard_risk_assessments
+                    SET exposed_group_id = :group_id
+                    WHERE id = :assessment_id
+                    """,
+                ),
+                {"group_id": group.id, "assessment_id": row_id},
+            )
+            connection.commit()
 
 
 def _ensure_hazard_existing_measures_table() -> None:

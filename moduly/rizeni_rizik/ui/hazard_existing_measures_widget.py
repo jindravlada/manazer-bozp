@@ -26,6 +26,9 @@ from moduly.rizeni_rizik.sluzby.hazard_existing_measure_service import (
     HazardExistingMeasureError,
     hazard_existing_measure_service,
 )
+from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import (
+    hazard_risk_assessment_service,
+)
 from moduly.rizeni_rizik.ui.hazard_existing_measure_dialog import HazardExistingMeasureDialog
 
 
@@ -106,7 +109,9 @@ class HazardExistingMeasuresWidget(QWidget):
             self.table.setRowCount(0)
             return
 
-        self.header_label.setText(self._assessment.exposed_group)
+        self.header_label.setText(
+            hazard_risk_assessment_service.get_exposed_group_display_name(self._assessment)
+        )
         self._load_table()
 
     def add_measure(self) -> None:

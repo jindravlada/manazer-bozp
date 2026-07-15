@@ -27,6 +27,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
+    from tests.rizeni_rizik_test_helpers import ensure_exposed_group
     from core.ai_oponentni.constants import (
         AI_PEER_REVIEW_DEFAULT_OBJECTIVES,
         AI_PEER_REVIEW_DEFAULT_ROLE,
@@ -210,7 +211,7 @@ class AiPeerReviewPromptPhaseR118TestCase(unittest.TestCase):
         hazard_risk_assessment_service.create_assessment(
             hazard_identification_id=self.identification.id,
             hazard_event_id=event.id,
-            exposed_group="Jeřábník",
+            exposed_group_id=ensure_exposed_group("Jeřábník").id,
             consequence="Zranění",
             severity=RISK_SEVERITY_MODERATE,
             assessment_status=RISK_ASSESSMENT_STATUS_COMPLETED,

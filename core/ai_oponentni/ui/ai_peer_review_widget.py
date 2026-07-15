@@ -535,6 +535,12 @@ class AiPeerReviewWidget(QWidget):
             return False
 
         accepted, rejected = import_dialog.get_accepted_and_rejected()
+        from moduly.rizeni_rizik.ui.exposed_group_proposal_resolution_dialog import (
+            resolve_exposed_group_proposals,
+        )
+
+        accepted, resolution_rejected = resolve_exposed_group_proposals(self, accepted)
+        rejected.extend(resolution_rejected)
         try:
             ai_peer_review_service.finalize_import(
                 provider=self._provider,

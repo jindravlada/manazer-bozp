@@ -15,6 +15,7 @@ class AiProposal:
     reasoning: str
     parent_export_id: str | None = None
     proposal_id: str | None = None
+    exposed_group_id: int | None = None
 
 
 @dataclass

@@ -401,6 +401,14 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             if column != COL_OPERATION:
                 header.setSectionResizeMode(column, QHeaderView.Fixed)
 
+    elif profile == "exposed_groups":
+        widths = {0: 260, 1: 280, 2: 80}
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        header.setSectionResizeMode(1, QHeaderView.Stretch)
+        for column in (0, 2):
+            header.setSectionResizeMode(column, QHeaderView.Fixed)
+
     elif profile == "legal_requirements":
         from moduly.pravni_pozadavky.ui.legal_requirement_table import (
             COL_CODE,

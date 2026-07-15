@@ -292,7 +292,7 @@ class HazardRiskAssessmentsWidget(QWidget):
                 QTableWidgetItem(str(assessment.id)),
             )
             display_name = format_risk_assessment_display_name(
-                assessment.exposed_group,
+                row.exposed_group_name,
                 assessment_status_label=row.status_label,
                 existing_measure_count=existing_measure_counts.get(assessment.id, 0),
                 required_measure_count=required_measure_counts.get(assessment.id, 0),

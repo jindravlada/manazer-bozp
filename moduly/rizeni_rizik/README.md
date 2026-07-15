@@ -256,6 +256,15 @@ Import odpovědi AI ze ZIP:
 - preferované názvy: `odpoved_AI.json`, `odpoved.json`, `response.json`; při více souborech výběr uživatele
 - parsování po načtení stejné jako u R11.10 (JSON 1.1 → text)
 
+## Fáze R16
+
+Číselník ohrožených skupin osob:
+
+- společný DB číselník `exposed_groups` v Nastavení a Správě dat
+- posouzení rizika používá `exposed_group_id`; textové pole zůstává jen pro migraci
+- duplicita posouzení podle stejné události a stejné skupiny (ID)
+- AI import vyžaduje rozhodnutí uživatele při párování na číselník
+
 ## Fáze R12
 
 Odstranění entity Nebezpečí (`IdentifiedHazard`):

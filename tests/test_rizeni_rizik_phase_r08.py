@@ -25,6 +25,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
+    from tests.rizeni_rizik_test_helpers import ensure_exposed_group
     from moduly.nastaveni.constants.workplace_hierarchy_constants import (
         WORKPLACE_ITEM_TYPE_OPERATION,
         WORKPLACE_ITEM_TYPE_WORKPLACE,
@@ -125,14 +126,14 @@ class HazardExistingMeasurePhaseR08TestCase(unittest.TestCase):
         self.assessment_a = hazard_risk_assessment_service.create_assessment(
             hazard_identification_id=self.identification.id,
             hazard_event_id=event.id,
-            exposed_group="Posunovač",
+            exposed_group_id=ensure_exposed_group("Posunovač").id,
             consequence=SAMPLE_CONSEQUENCE,
             severity=RISK_SEVERITY_MODERATE,
         )
         self.assessment_b = hazard_risk_assessment_service.create_assessment(
             hazard_identification_id=self.other_identification.id,
             hazard_event_id=other_event.id,
-            exposed_group="Posunovač",
+            exposed_group_id=ensure_exposed_group("Posunovač").id,
             consequence=SAMPLE_CONSEQUENCE,
             severity=RISK_SEVERITY_MODERATE,
         )

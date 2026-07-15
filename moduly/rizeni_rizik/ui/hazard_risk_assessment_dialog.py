@@ -4,14 +4,17 @@ from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QFormLayout,
+    QHBoxLayout,
     QLabel,
-    QLineEdit,
     QMessageBox,
     QPlainTextEdit,
+    QPushButton,
     QVBoxLayout,
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
+from moduly.nastaveni.sluzby.exposed_group_service import exposed_group_service
+from moduly.nastaveni.ui.exposed_groups_management_dialog import ExposedGroupsManagementDialog
 from moduly.rizeni_rizik.constants import (
     DEFAULT_RISK_ASSESSMENT_STATUS,
     DEFAULT_RISK_SEVERITY,
@@ -55,7 +58,13 @@ class HazardRiskAssessmentDialog(QDialog):
         self.event = QComboBox()
         self._populate_events(default_hazard_event_id)
 
-        self.exposed_group = QLineEdit()
+        group_row = QHBoxLayout()
+        self.exposed_group = QComboBox()
+        self.manage_groups_btn = QPushButton("Spravovat číselník…")
+        self.manage_groups_btn.clicked.connect(self._open_groups_management)
+        group_row.addWidget(self.exposed_group, 1)
+        group_row.addWidget(self.manage_groups_btn)
+
         self.consequence = QPlainTextEdit()
         self.consequence.setMinimumHeight(80)
         self.severity = QComboBox()
@@ -75,7 +84,7 @@ class HazardRiskAssessmentDialog(QDialog):
         self.active_checkbox.setChecked(True)
 
         form.addRow("Nežádoucí událost *:", self.event)
-        form.addRow("Ohrožená skupina *:", self.exposed_group)
+        form.addRow("Ohrožená skupina *:", group_row)
         form.addRow("Možný následek *:", self.consequence)
         form.addRow("Závažnost následku *:", self.severity)
         form.addRow("", self.severity_description)
@@ -91,11 +100,13 @@ class HazardRiskAssessmentDialog(QDialog):
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
+        selected_group_id = assessment.exposed_group_id if assessment is not None else None
+        self._reload_exposed_groups(selected_group_id=selected_group_id)
+
         if assessment is not None:
             index = self.event.findData(assessment.hazard_event_id)
             if index >= 0:
                 self.event.setCurrentIndex(index)
-            self.exposed_group.setText(assessment.exposed_group)
             self.consequence.setPlainText(assessment.consequence or "")
             severity_index = self.severity.findData(assessment.severity)
             if severity_index >= 0:
@@ -120,7 +131,8 @@ class HazardRiskAssessmentDialog(QDialog):
 
         if read_only:
             self.event.setEnabled(False)
-            self.exposed_group.setReadOnly(True)
+            self.exposed_group.setEnabled(False)
+            self.manage_groups_btn.setEnabled(False)
             self.consequence.setReadOnly(True)
             self.severity.setEnabled(False)
             self.assessment_status.setEnabled(False)
@@ -128,6 +140,32 @@ class HazardRiskAssessmentDialog(QDialog):
             self.note.setReadOnly(True)
             self.active_checkbox.setEnabled(False)
             buttons.button(QDialogButtonBox.StandardButton.Save).setEnabled(False)
+
+    def _reload_exposed_groups(self, *, selected_group_id: int | None) -> None:
+        current_id = selected_group_id or self.exposed_group.currentData()
+        self.exposed_group.clear()
+        for group in exposed_group_service.get_active_all():
+            self.exposed_group.addItem(group.name, group.id)
+        if selected_group_id is not None:
+            index = self.exposed_group.findData(selected_group_id)
+            if index >= 0:
+                self.exposed_group.setCurrentIndex(index)
+            else:
+                group = exposed_group_service.get_by_id(selected_group_id)
+                if group is not None:
+                    label = f"{group.name} (neaktivní)"
+                    self.exposed_group.addItem(label, group.id)
+                    self.exposed_group.setCurrentIndex(self.exposed_group.count() - 1)
+        elif current_id is not None:
+            index = self.exposed_group.findData(current_id)
+            if index >= 0:
+                self.exposed_group.setCurrentIndex(index)
+
+    def _open_groups_management(self) -> None:
+        selected_id = self.exposed_group.currentData()
+        dialog = ExposedGroupsManagementDialog(self)
+        dialog.exec()
+        self._reload_exposed_groups(selected_group_id=selected_id)
 
     def _populate_events(self, default_hazard_event_id: int | None) -> None:
         rows = hazard_risk_assessment_service.get_event_candidates(
@@ -209,7 +247,7 @@ class HazardRiskAssessmentDialog(QDialog):
     def get_data(self) -> dict:
         return {
             "hazard_event_id": self.event.currentData(),
-            "exposed_group": self.exposed_group.text().strip(),
+            "exposed_group_id": self.exposed_group.currentData(),
             "consequence": self.consequence.toPlainText().strip(),
             "severity": self.severity.currentData(),
             "assessment_status": self.assessment_status.currentData(),
