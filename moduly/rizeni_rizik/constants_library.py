@@ -127,6 +127,17 @@ CATALOG_COMPARE_WITH_MASTER_NOT_CATALOG_ITEM = (
     "Porovnání s Masterem je dostupné pouze u zdroje převzatého z katalogu."
 )
 
+CATALOG_UPDATE_OFFER_DIALOG_TITLE = "Aktualizace z Master"
+CATALOG_UPDATE_OFFER_INTRO = "V katalogu je dostupná novější verze tohoto zdroje."
+CATALOG_UPDATE_OFFER_CHOICE_UPDATE = "Aktualizovat"
+CATALOG_UPDATE_OFFER_CHOICE_SHOW_DIFF = "Zobrazit rozdíly"
+CATALOG_UPDATE_OFFER_CHOICE_KEEP = "Ponechat"
+CATALOG_UPDATE_SUCCESS_TITLE = "Aktualizace z Master"
+CATALOG_UPDATE_SUCCESS_TEXT = (
+    "Lokální instance byla aktualizována z Master zdroje. "
+    "Verze instance: v{previous_version} → v{new_version}."
+)
+
 HAZARD_LIBRARY_COL_ID = 0
 HAZARD_LIBRARY_COL_NAME = 1
 HAZARD_LIBRARY_COL_CATEGORY = 2

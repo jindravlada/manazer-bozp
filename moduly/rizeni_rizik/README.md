@@ -341,6 +341,15 @@ Porovnání lokální instance s Master katalogem:
 - read-only přehled odchylek: `+` nová položka, `−` odebraná položka, `~` změněný text
 - porovnání proti aktuálnímu Master obsahu; bez aktualizace instance
 
+## Fáze R18e
+
+Aktualizace lokální instance z novější verze Master:
+
+- při výběru zdroje s novější verzí Master program nabídne **Aktualizovat**, **Zobrazit rozdíly** nebo **Ponechat**
+- zobrazení verze instance → Master (např. v7 ↓ v8)
+- aktualizace pouze po explicitní volbě uživatele; automatické přepsání nikdy
+- po aktualizaci se obnoví obsah z Master a `source_template_version` se srovná s aktuální verzí
+
 ## Fáze R12
 
 Odstranění entity Nebezpečí (`IdentifiedHazard`):

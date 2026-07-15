@@ -1,5 +1,6 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QDialog,
     QHBoxLayout,
     QLabel,
     QListWidget,
@@ -45,6 +46,8 @@ from moduly.rizeni_rizik.constants_library import (
     CATALOG_COMPARE_WITH_MASTER_BUTTON,
     CATALOG_COMPARE_WITH_MASTER_NOT_CATALOG_ITEM,
     CATALOG_COMPARE_WITH_MASTER_SELECT_ITEM,
+    CATALOG_UPDATE_SUCCESS_TEXT,
+    CATALOG_UPDATE_SUCCESS_TITLE,
     HAZARD_LIBRARY_APPLY_ARCHIVED_MESSAGE,
     HAZARD_LIBRARY_APPLY_TO_INVENTORY_BUTTON,
     HAZARD_LIBRARY_APPLY_TO_INVENTORY_SUCCESS_TITLE,
@@ -53,6 +56,10 @@ from moduly.rizeni_rizik.constants_library import (
     HAZARD_LIBRARY_SAVE_FROM_INVENTORY_SUCCESS_TITLE,
     HAZARD_LIBRARY_SAVE_INACTIVE_ITEM_MESSAGE,
     HAZARD_LIBRARY_SAVE_TO_LIBRARY_BUTTON,
+)
+from moduly.rizeni_rizik.sluzby.hazard_catalog_instance_update_service import (
+    HazardCatalogInstanceUpdateError,
+    hazard_catalog_instance_update_service,
 )
 from moduly.rizeni_rizik.sluzby.hazard_catalog_instance_compare_service import (
     HazardCatalogInstanceCompareError,
@@ -70,6 +77,12 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_import_service import (
     hazard_library_template_import_service,
 )
 from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import hazard_risk_assessment_service
+from moduly.rizeni_rizik.ui.hazard_catalog_instance_update_offer_dialog import (
+    CATALOG_UPDATE_CHOICE_KEEP,
+    CATALOG_UPDATE_CHOICE_SHOW_DIFF,
+    CATALOG_UPDATE_CHOICE_UPDATE,
+    HazardCatalogInstanceUpdateOfferDialog,
+)
 from moduly.rizeni_rizik.ui.hazard_catalog_instance_compare_dialog import (
     HazardCatalogInstanceCompareDialog,
 )
@@ -96,6 +109,7 @@ class HazardInventoryWidget(QWidget):
         self._current_category = HAZARD_INVENTORY_CATEGORIES[0]
         self._selected_item_id: int | None = None
         self._selected_event_id: int | None = None
+        self._dismissed_master_update_offers: set[int] = set()
 
         layout = QVBoxLayout(self)
 
@@ -208,6 +222,7 @@ class HazardInventoryWidget(QWidget):
         self._read_only = read_only
         self._selected_item_id = None
         self._selected_event_id = None
+        self._dismissed_master_update_offers.clear()
         editable = not read_only and identification_id is not None
         self._set_item_actions_enabled(editable)
         self._set_event_actions_enabled(False)
@@ -425,6 +440,51 @@ class HazardInventoryWidget(QWidget):
 
         dialog = HazardCatalogInstanceCompareDialog(self, result=result)
         dialog.exec()
+
+    def _maybe_offer_master_update(self, item) -> None:
+        if item is None:
+            return
+        if not hazard_catalog_instance_update_service.can_offer_update(
+            hazard_identification_id=self._identification_id,
+            identification_status=self._identification_status,
+            read_only=self._read_only,
+        ):
+            return
+        if item.id in self._dismissed_master_update_offers:
+            return
+
+        offer = hazard_catalog_instance_update_service.get_update_offer(item.id)
+        if offer is None:
+            return
+
+        dialog = HazardCatalogInstanceUpdateOfferDialog(self, offer=offer)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        if dialog.selected_choice == CATALOG_UPDATE_CHOICE_KEEP:
+            self._dismissed_master_update_offers.add(item.id)
+            return
+        if dialog.selected_choice == CATALOG_UPDATE_CHOICE_SHOW_DIFF:
+            self.compare_selected_item_with_master()
+            return
+        if dialog.selected_choice == CATALOG_UPDATE_CHOICE_UPDATE:
+            try:
+                result = hazard_catalog_instance_update_service.update_from_master(item.id)
+            except HazardCatalogInstanceUpdateError as error:
+                QMessageBox.warning(self, CATALOG_UPDATE_SUCCESS_TITLE, str(error))
+                return
+
+            self._dismissed_master_update_offers.discard(item.id)
+            QMessageBox.information(
+                self,
+                CATALOG_UPDATE_SUCCESS_TITLE,
+                CATALOG_UPDATE_SUCCESS_TEXT.format(
+                    previous_version=result.previous_version,
+                    new_version=result.new_version,
+                ),
+            )
+            self._notify_event_saved()
+            self.refresh()
 
     def add_event_for_selected_item(self) -> None:
         if not self._ensure_editable():
@@ -735,6 +795,7 @@ class HazardInventoryWidget(QWidget):
         self._update_event_actions_for_selection()
         self._update_save_to_library_enabled()
         self._update_compare_with_master_enabled()
+        self._maybe_offer_master_update(item)
 
     def _on_event_selection_changed(self) -> None:
         event = self._selected_event()
