@@ -98,7 +98,7 @@ class HazardCatalogInstanceUpdateService:
         offer = self.get_update_offer(inventory_item_id)
         if offer is None:
             raise HazardCatalogInstanceUpdateError(
-                "Lokální instance již odpovídá verzi Master zdroje nebo není k dispozici novější verze."
+                "Lokální instance již odpovídá revizi Master zdroje nebo není k dispozici novější revize."
             )
 
         identification = hazard_identification_service.get_by_id(item.hazard_identification_id)

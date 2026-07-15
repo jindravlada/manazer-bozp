@@ -8,6 +8,8 @@ from PySide6.QtWidgets import (
 )
 
 from moduly.rizeni_rizik.constants_library import (
+    CATALOG_UPDATE_OFFER_REVISION_INSTANCE,
+    CATALOG_UPDATE_OFFER_REVISION_MASTER,
     CATALOG_UPDATE_OFFER_CHOICE_KEEP,
     CATALOG_UPDATE_OFFER_CHOICE_SHOW_DIFF,
     CATALOG_UPDATE_OFFER_CHOICE_UPDATE,
@@ -40,9 +42,9 @@ class HazardCatalogInstanceUpdateOfferDialog(QDialog):
 
         version_label = QLabel(
             f"{offer.template_name}\n\n"
-            f"v{offer.source_template_version}\n\n"
+            f"{CATALOG_UPDATE_OFFER_REVISION_INSTANCE.format(revision=offer.source_template_version)}\n\n"
             f"↓\n\n"
-            f"v{offer.master_version}"
+            f"{CATALOG_UPDATE_OFFER_REVISION_MASTER.format(revision=offer.master_version)}"
         )
         version_label.setWordWrap(True)
         layout.addWidget(version_label)

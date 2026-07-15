@@ -13,6 +13,7 @@ from moduly.rizeni_rizik.constants import (
 from moduly.rizeni_rizik.constants_library import (
     DEFAULT_HAZARD_LIBRARY_SCOPE,
     DEFAULT_HAZARD_LIBRARY_VERSION,
+    HAZARD_LIBRARY_REVISION_REASON_MANUAL,
     HAZARD_LIBRARY_SCOPE_ALL,
     HAZARD_LIBRARY_SCOPE_LABELS,
     HAZARD_LIBRARY_SCOPE_MANUAL,
@@ -215,13 +216,28 @@ class HazardLibraryTemplateService:
     def deactivate(self, template_id: int) -> bool:
         return self.repository.deactivate(template_id)
 
-    def bump_content_version(self, template_id: int) -> HazardLibraryTemplate | None:
+    def bump_content_version(
+        self,
+        template_id: int,
+        *,
+        change_reason: str = HAZARD_LIBRARY_REVISION_REASON_MANUAL,
+    ) -> HazardLibraryTemplate | None:
         template = self.repository.get_by_id(template_id)
         if template is None:
             return None
         template.version_number += 1
         template.updated_at = datetime.now()
-        return self.repository.update(template)
+        updated = self.repository.update(template)
+        from moduly.rizeni_rizik.sluzby.hazard_library_template_revision_service import (
+            hazard_library_template_revision_service,
+        )
+
+        hazard_library_template_revision_service.record_revision(
+            updated.id,
+            revision_number=updated.version_number,
+            change_reason=change_reason,
+        )
+        return updated
 
     def is_template_content_editable(self, template_id: int) -> bool:
         template = self.repository.get_by_id(template_id)
@@ -285,7 +301,7 @@ class HazardLibraryTemplateService:
 
     def _validate_version(self, version_number: int) -> int:
         if not isinstance(version_number, int) or version_number < 1:
-            raise HazardLibraryTemplateError("Verze musí být kladné celé číslo.")
+            raise HazardLibraryTemplateError("Revize musí být kladné celé číslo.")
         return version_number
 
     def _validate_operation_ids(

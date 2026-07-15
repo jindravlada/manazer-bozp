@@ -30,6 +30,9 @@ from moduly.rizeni_rizik.constants_library import (
     DEFAULT_HAZARD_LIBRARY_VERSION,
     HAZARD_LIBRARY_DIALOG_TITLE,
     HAZARD_LIBRARY_PLACEHOLDER_TEXT,
+    HAZARD_LIBRARY_REVISION_FORM_LABEL,
+    HAZARD_LIBRARY_REVISION_READ_ONLY_TOOLTIP,
+    HAZARD_LIBRARY_REVISION_REASON_MANUAL,
     HAZARD_LIBRARY_SCOPE_ALL,
     HAZARD_LIBRARY_SCOPE_LABELS,
     HAZARD_LIBRARY_SCOPE_MANUAL,
@@ -50,6 +53,9 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_service import (
 )
 from moduly.rizeni_rizik.ui.hazard_library_template_content_widget import (
     HazardLibraryTemplateContentWidget,
+)
+from moduly.rizeni_rizik.ui.hazard_library_template_revision_history_widget import (
+    HazardLibraryTemplateRevisionHistoryWidget,
 )
 
 
@@ -82,6 +88,8 @@ class HazardLibraryTemplateDialog(QDialog):
         self.version_number = QSpinBox()
         self.version_number.setRange(1, 9999)
         self.version_number.setValue(DEFAULT_HAZARD_LIBRARY_VERSION)
+        self.version_number.setReadOnly(True)
+        self.version_number.setToolTip(HAZARD_LIBRARY_REVISION_READ_ONLY_TOOLTIP)
         self.note = QTextEdit()
         self.note.setMinimumHeight(60)
         self.active_checkbox = QCheckBox("Aktivní")
@@ -91,7 +99,7 @@ class HazardLibraryTemplateDialog(QDialog):
         form.addRow("Kategorie *:", self.category)
         form.addRow("Popis:", self.description)
         form.addRow("Rozsah použití *:", self.application_scope)
-        form.addRow("Verze:", self.version_number)
+        form.addRow(HAZARD_LIBRARY_REVISION_FORM_LABEL, self.version_number)
         form.addRow("Poznámka:", self.note)
         form.addRow("", self.active_checkbox)
 
@@ -120,16 +128,15 @@ class HazardLibraryTemplateDialog(QDialog):
             HAZARD_LIBRARY_TAB_AI_PEER_REVIEW,
         )
 
-        for tab_label in (
-            HAZARD_LIBRARY_TAB_USAGE,
-            HAZARD_LIBRARY_TAB_HISTORY,
-        ):
-            placeholder = QWidget()
-            placeholder_layout = QVBoxLayout(placeholder)
-            placeholder_layout.addWidget(QLabel(HAZARD_LIBRARY_PLACEHOLDER_TEXT))
-            placeholder_layout.addStretch()
-            index = self.tabs.addTab(placeholder, tab_label)
-            self.tabs.setTabEnabled(index, False)
+        self.history_widget = HazardLibraryTemplateRevisionHistoryWidget()
+        self.history_tab_index = self.tabs.addTab(self.history_widget, HAZARD_LIBRARY_TAB_HISTORY)
+
+        usage_placeholder = QWidget()
+        usage_placeholder_layout = QVBoxLayout(usage_placeholder)
+        usage_placeholder_layout.addWidget(QLabel(HAZARD_LIBRARY_PLACEHOLDER_TEXT))
+        usage_placeholder_layout.addStretch()
+        usage_tab_index = self.tabs.addTab(usage_placeholder, HAZARD_LIBRARY_TAB_USAGE)
+        self.tabs.setTabEnabled(usage_tab_index, False)
 
         layout.addWidget(self.tabs)
 
@@ -155,6 +162,8 @@ class HazardLibraryTemplateDialog(QDialog):
         self._update_content_tab_enabled()
         self._sync_ai_peer_review_context()
         self._update_ai_peer_review_tab_enabled()
+        self._sync_history_context()
+        self._update_history_tab_enabled()
 
     def _load_operations(self) -> None:
         self.operations_list.clear()
@@ -254,6 +263,8 @@ class HazardLibraryTemplateDialog(QDialog):
         self._sync_content_context()
         self._sync_ai_peer_review_context()
         self._update_ai_peer_review_tab_enabled()
+        self._sync_history_context()
+        self._update_history_tab_enabled()
         QMessageBox.information(self, HAZARD_LIBRARY_DIALOG_TITLE, "Základní údaje byly uloženy.")
 
     def _update_content_tab_enabled(self) -> None:
@@ -261,6 +272,13 @@ class HazardLibraryTemplateDialog(QDialog):
 
     def _update_ai_peer_review_tab_enabled(self) -> None:
         self.tabs.setTabEnabled(self.ai_peer_review_tab_index, self.template is not None)
+
+    def _update_history_tab_enabled(self) -> None:
+        self.tabs.setTabEnabled(self.history_tab_index, self.template is not None)
+
+    def _sync_history_context(self) -> None:
+        template_id = self.template.id if self.template is not None else None
+        self.history_widget.set_template_id(template_id)
 
     def _sync_ai_peer_review_context(self) -> None:
         template_id = self.template.id if self.template is not None else None
@@ -283,15 +301,21 @@ class HazardLibraryTemplateDialog(QDialog):
         if index == self.content_tab_index and self.template is not None:
             self._sync_content_context()
             self.content_widget.refresh()
+        if index == self.history_tab_index and self.template is not None:
+            self.history_widget.refresh()
 
     def _finalize_content_version(self) -> None:
         if self.template is None or not self._content_changed:
             return
-        updated = hazard_library_template_service.bump_content_version(self.template.id)
+        updated = hazard_library_template_service.bump_content_version(
+            self.template.id,
+            change_reason=HAZARD_LIBRARY_REVISION_REASON_MANUAL,
+        )
         if updated is not None:
             self.template = updated
             self.saved_template = updated
             self.version_number.setValue(updated.version_number)
+            self.history_widget.refresh()
         self._content_changed = False
 
     def closeEvent(self, event: QCloseEvent) -> None:

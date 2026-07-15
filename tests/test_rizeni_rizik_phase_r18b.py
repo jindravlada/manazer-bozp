@@ -188,7 +188,7 @@ class HazardInventoryItemSourceR18bTestCase(unittest.TestCase):
                 source_template_id=12,
                 source_template_version=3,
             ),
-            "Katalog zdrojů rizik (ID 12, verze 3)",
+            "Katalog zdrojů rizik (ID 12, revize 3)",
         )
         self.assertEqual(
             format_inventory_item_source_label(

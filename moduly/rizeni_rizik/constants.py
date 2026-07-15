@@ -128,7 +128,7 @@ def format_inventory_item_source_label(
     if source_template_id is None:
         return ""
     version = source_template_version if source_template_version is not None else "—"
-    return f"Katalog zdrojů rizik (ID {source_template_id}, verze {version})"
+    return f"Katalog zdrojů rizik (ID {source_template_id}, revize {version})"
 
 INVENTORY_COL_ID = 0
 INVENTORY_COL_NAME = 1

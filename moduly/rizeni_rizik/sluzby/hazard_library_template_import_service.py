@@ -8,6 +8,7 @@ from moduly.rizeni_rizik.constants import HAZARD_IDENTIFICATION_STATUS_ARCHIVED
 from moduly.rizeni_rizik.constants_library import (
     DEFAULT_HAZARD_LIBRARY_SCOPE,
     DEFAULT_HAZARD_LIBRARY_VERSION,
+    HAZARD_LIBRARY_REVISION_REASON_FROM_IDENTIFICATION,
     HAZARD_LIBRARY_SCOPE_SELECTED,
 )
 from moduly.rizeni_rizik.modely.hazard_library_template import HazardLibraryTemplate
@@ -267,6 +268,16 @@ class HazardLibraryTemplateImportService:
             raise
         finally:
             session.close()
+
+        from moduly.rizeni_rizik.sluzby.hazard_library_template_revision_service import (
+            hazard_library_template_revision_service,
+        )
+
+        hazard_library_template_revision_service.record_revision(
+            template.id,
+            revision_number=template.version_number,
+            change_reason=HAZARD_LIBRARY_REVISION_REASON_FROM_IDENTIFICATION,
+        )
 
         return HazardLibraryTemplateImportResult(
             template=template,

@@ -47,6 +47,9 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.modely.hazard_library_template_operation import (
         HazardLibraryTemplateOperation,
     )
+    from moduly.rizeni_rizik.modely.hazard_library_template_revision import (
+        HazardLibraryTemplateRevision,
+    )
     from moduly.rizeni_rizik.sluzby.hazard_library_template_assessment_service import (
         hazard_library_template_assessment_service,
     )
@@ -88,6 +91,7 @@ class HazardLibraryTemplateVersionR18g0TestCase(unittest.TestCase):
             session.execute(delete(HazardLibraryTemplateAssessment))
             session.execute(delete(HazardLibraryTemplateEvent))
             session.execute(delete(HazardLibraryTemplateOperation))
+            session.execute(delete(HazardLibraryTemplateRevision))
             session.execute(delete(HazardLibraryTemplate))
             session.commit()
 

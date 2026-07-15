@@ -119,7 +119,7 @@ CATALOG_COMPARE_WITH_MASTER_NO_DIFFERENCES = (
     "Lokální instance odpovídá Master zdroji (bez zaznamenaných odchylek)."
 )
 CATALOG_COMPARE_WITH_MASTER_VERSION_NOTE = (
-    "Poznámka: Master je ve verzi {master_version}, instance byla převzata ve verzi {source_version}."
+    "Poznámka: Master je v revizi {master_version}, instance byla převzata v revizi {source_version}."
 )
 CATALOG_COMPARE_WITH_MASTER_SELECT_ITEM = (
     "Vyberte zdroj analýzy převzatý z katalogu."
@@ -129,14 +129,14 @@ CATALOG_COMPARE_WITH_MASTER_NOT_CATALOG_ITEM = (
 )
 
 CATALOG_UPDATE_OFFER_DIALOG_TITLE = "Aktualizace z Master"
-CATALOG_UPDATE_OFFER_INTRO = "V katalogu je dostupná novější verze tohoto zdroje."
+CATALOG_UPDATE_OFFER_INTRO = "V katalogu je dostupná novější revize tohoto zdroje."
 CATALOG_UPDATE_OFFER_CHOICE_UPDATE = "Aktualizovat"
 CATALOG_UPDATE_OFFER_CHOICE_SHOW_DIFF = "Zobrazit rozdíly"
 CATALOG_UPDATE_OFFER_CHOICE_KEEP = "Ponechat"
 CATALOG_UPDATE_SUCCESS_TITLE = "Aktualizace z Master"
 CATALOG_UPDATE_SUCCESS_TEXT = (
     "Lokální instance byla aktualizována z Master zdroje. "
-    "Verze instance: v{previous_version} → v{new_version}."
+    "Revize instance: {previous_version} → {new_version}."
 )
 
 HAZARD_LIBRARY_COL_ID = 0
@@ -153,9 +153,42 @@ HAZARD_LIBRARY_TABLE_HEADERS = [
     "Název",
     "Kategorie",
     "Rozsah použití",
-    "Verze",
+    "Revize",
     "Počet provozů",
     "Aktivní",
 ]
+
+HAZARD_LIBRARY_REVISION_FORM_LABEL = "Revize:"
+HAZARD_LIBRARY_REVISION_READ_ONLY_TOOLTIP = (
+    "Číslo revize odborného obsahu. Zvyšuje se automaticky při uložení změn obsahu."
+)
+
+HAZARD_LIBRARY_REVISION_REASON_MANUAL = "manual_edit"
+HAZARD_LIBRARY_REVISION_REASON_FROM_IDENTIFICATION = "from_identification"
+HAZARD_LIBRARY_REVISION_REASON_AI_PROPOSALS = "ai_proposals"
+HAZARD_LIBRARY_REVISION_REASON_MASTER_UPDATE = "master_update"
+
+HAZARD_LIBRARY_REVISION_REASON_LABELS = {
+    HAZARD_LIBRARY_REVISION_REASON_MANUAL: "Ruční úprava odborného obsahu",
+    HAZARD_LIBRARY_REVISION_REASON_FROM_IDENTIFICATION: "Převzato z identifikace pracoviště",
+    HAZARD_LIBRARY_REVISION_REASON_AI_PROPOSALS: "Převzaty návrhy AI",
+    HAZARD_LIBRARY_REVISION_REASON_MASTER_UPDATE: "Aktualizace z Master",
+}
+
+HAZARD_LIBRARY_REVISION_HISTORY_COL_NUMBER = 0
+HAZARD_LIBRARY_REVISION_HISTORY_COL_CREATED_AT = 1
+HAZARD_LIBRARY_REVISION_HISTORY_COL_REASON = 2
+HAZARD_LIBRARY_REVISION_HISTORY_COLUMN_COUNT = 3
+HAZARD_LIBRARY_REVISION_HISTORY_HEADERS = [
+    "Revize",
+    "Datum a čas",
+    "Důvod změny",
+]
+HAZARD_LIBRARY_REVISION_HISTORY_EMPTY = (
+    "Zatím nejsou zaznamenány žádné revize odborného obsahu."
+)
+
+CATALOG_UPDATE_OFFER_REVISION_INSTANCE = "Revize instance: {revision}"
+CATALOG_UPDATE_OFFER_REVISION_MASTER = "Revize Master: {revision}"
 
 DEFAULT_HAZARD_LIBRARY_VERSION = 1

@@ -445,4 +445,13 @@ Oprava verzování Master zdroje rizika:
 - nový zdroj zůstává na verzi 1 i po prvotním naplnění obsahu
 - hromadné operace mají jeden explicitní bump po dokončení transakce
 
+## Fáze R18g.1
+
+Revize odborného obsahu místo verzí:
+
+- v UI katalogu se pojem **Verze** nahrazuje pojmem **Revize** (datové pole `version_number` zůstává)
+- záložka **Historie změn** eviduje revize s číslem, datem a automatickým důvodem změny
+- důvody: ruční úprava, import z identifikace, návrhy AI, aktualizace z Master
+- model `hazard_library_template_revisions` je připraven pro budoucí autora, seznam změn, komentář a obnovu
+
 ## Fáze R18g

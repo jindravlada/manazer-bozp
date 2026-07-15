@@ -424,7 +424,7 @@ class HazardCatalogSourcePeerReviewProvider:
         lines.append(f"Kategorie: {catalog_source['category_label']}")
         lines.append(f"Popis: {catalog_source['description'] or '—'}")
         lines.append(f"Rozsah použití: {catalog_source['application_scope_label']}")
-        lines.append(f"Verze: {catalog_source['version_number']}")
+        lines.append(f"Revize: {catalog_source['version_number']}")
         lines.append(f"Poznámka: {catalog_source['note'] or '—'}")
         lines.append("")
         lines.append("HIERARCHIE")
