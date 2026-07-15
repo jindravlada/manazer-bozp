@@ -309,7 +309,7 @@ class HazardInventoryWidget(QWidget):
         message = QMessageBox(self)
         message.setIcon(QMessageBox.Icon.Information)
         message.setWindowTitle(HAZARD_LIBRARY_SAVE_FROM_INVENTORY_SUCCESS_TITLE)
-        message.setText("Vzor byl úspěšně uložen do firemní knihovny.")
+        message.setText("Zdroj rizika byl úspěšně uložen do katalogu zdrojů rizik.")
         message.setInformativeText(summary)
         open_button = message.addButton(
             HAZARD_LIBRARY_OPEN_IN_LIBRARY_BUTTON,

@@ -17,6 +17,10 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
+from moduly.rizeni_rizik.constants import (
+    HAZARD_INVENTORY_CATEGORIES,
+    HAZARD_INVENTORY_CATEGORY_LABELS,
+)
 from moduly.rizeni_rizik.constants_library import (
     DEFAULT_HAZARD_LIBRARY_VERSION,
     HAZARD_LIBRARY_DIALOG_TITLE,
@@ -57,6 +61,9 @@ class HazardLibraryTemplateDialog(QDialog):
         form = QFormLayout()
 
         self.name = QLineEdit()
+        self.category = QComboBox()
+        for category in HAZARD_INVENTORY_CATEGORIES:
+            self.category.addItem(HAZARD_INVENTORY_CATEGORY_LABELS[category], category)
         self.description = QTextEdit()
         self.description.setMinimumHeight(80)
         self.application_scope = QComboBox()
@@ -71,6 +78,7 @@ class HazardLibraryTemplateDialog(QDialog):
         self.active_checkbox.setChecked(True)
 
         form.addRow("Název *:", self.name)
+        form.addRow("Kategorie *:", self.category)
         form.addRow("Popis:", self.description)
         form.addRow("Rozsah použití *:", self.application_scope)
         form.addRow("Verze:", self.version_number)
@@ -134,6 +142,9 @@ class HazardLibraryTemplateDialog(QDialog):
 
     def _load_template(self, template) -> None:
         self.name.setText(template.name)
+        category_index = self.category.findData(template.category)
+        if category_index >= 0:
+            self.category.setCurrentIndex(category_index)
         self.description.setPlainText(template.description or "")
         scope_index = self.application_scope.findData(template.application_scope)
         if scope_index >= 0:
@@ -167,6 +178,7 @@ class HazardLibraryTemplateDialog(QDialog):
     def get_data(self) -> dict:
         return {
             "name": self.name.text().strip(),
+            "category": self.category.currentData(),
             "description": self.description.toPlainText().strip(),
             "application_scope": self.application_scope.currentData(),
             "version_number": self.version_number.value(),

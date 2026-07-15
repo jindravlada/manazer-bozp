@@ -1,4 +1,4 @@
-"""Fáze R17c – uložení položky analýzy do firemní knihovny."""
+"""Fáze R17c – uložení položky analýzy do katalogu zdrojů rizik."""
 
 from __future__ import annotations
 
@@ -52,9 +52,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.modely.hazard_library_template_event import (
         HazardLibraryTemplateEvent,
     )
-    from moduly.rizeni_rizik.modely.hazard_library_template_item import (
-        HazardLibraryTemplateItem,
-    )
     from moduly.rizeni_rizik.modely.hazard_library_template_measure import (
         HazardLibraryTemplateExistingMeasure,
         HazardLibraryTemplateRequiredMeasure,
@@ -87,9 +84,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.sluzby.hazard_library_template_import_service import (
         HazardLibraryTemplateImportError,
         hazard_library_template_import_service,
-    )
-    from moduly.rizeni_rizik.sluzby.hazard_library_template_item_service import (
-        hazard_library_template_item_service,
     )
     from moduly.rizeni_rizik.sluzby.hazard_library_template_required_measure_service import (
         hazard_library_template_required_measure_service,
@@ -125,7 +119,6 @@ class HazardLibraryTemplateImportR17cTestCase(unittest.TestCase):
             session.execute(delete(HazardLibraryTemplateExistingMeasure))
             session.execute(delete(HazardLibraryTemplateAssessment))
             session.execute(delete(HazardLibraryTemplateEvent))
-            session.execute(delete(HazardLibraryTemplateItem))
             session.execute(delete(HazardLibraryTemplateOperation))
             session.execute(delete(HazardLibraryTemplate))
             session.execute(delete(HazardRequiredMeasure))
@@ -197,27 +190,24 @@ class HazardLibraryTemplateImportR17cTestCase(unittest.TestCase):
 
     def test_import_single_inventory_item(self) -> None:
         result = self._import()
-        self.assertEqual(result.item_count, 1)
-        items = hazard_library_template_item_service.get_for_template(result.template.id)
-        self.assertEqual(len(items), 1)
-        self.assertEqual(items[0].name, "Portálový jeřáb")
-        self.assertEqual(items[0].description, "Popis položky")
+        self.assertEqual(result.template.name, "Portálový jeřáb")
+        self.assertEqual(result.template.category, HAZARD_INVENTORY_CATEGORY_EQUIPMENT)
+        self.assertEqual(result.template.description, "Popis položky")
+
+    def _template_event(self, result):
+        return hazard_library_template_event_service.get_for_template(result.template.id)[0]
 
     def test_import_events(self) -> None:
         result = self._import()
         self.assertEqual(result.event_count, 1)
-        events = hazard_library_template_event_service.get_for_template_item(
-            hazard_library_template_item_service.get_for_template(result.template.id)[0].id
-        )
+        events = hazard_library_template_event_service.get_for_template(result.template.id)
         self.assertEqual(events[0].name, "Pád břemene")
         self.assertEqual(events[0].note, "Poznámka události")
 
     def test_import_assessments(self) -> None:
         result = self._import()
         self.assertEqual(result.assessment_count, 1)
-        template_event = hazard_library_template_event_service.get_for_template_item(
-            hazard_library_template_item_service.get_for_template(result.template.id)[0].id
-        )[0]
+        template_event = self._template_event(result)
         rows = hazard_library_template_assessment_service.get_for_event(template_event.id)
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0].assessment.consequence, "Těžký úraz")
@@ -227,9 +217,7 @@ class HazardLibraryTemplateImportR17cTestCase(unittest.TestCase):
         result = self._import()
         self.assertEqual(result.existing_measure_count, 1)
         assessment = hazard_library_template_assessment_service.get_for_event(
-            hazard_library_template_event_service.get_for_template_item(
-                hazard_library_template_item_service.get_for_template(result.template.id)[0].id
-            )[0].id
+            self._template_event(result).id
         )[0].assessment
         measures = hazard_library_template_existing_measure_service.get_for_assessment(
             assessment.id
@@ -240,9 +228,7 @@ class HazardLibraryTemplateImportR17cTestCase(unittest.TestCase):
         result = self._import()
         self.assertEqual(result.required_measure_count, 1)
         assessment = hazard_library_template_assessment_service.get_for_event(
-            hazard_library_template_event_service.get_for_template_item(
-                hazard_library_template_item_service.get_for_template(result.template.id)[0].id
-            )[0].id
+            self._template_event(result).id
         )[0].assessment
         measures = hazard_library_template_required_measure_service.get_for_assessment(
             assessment.id
@@ -252,18 +238,14 @@ class HazardLibraryTemplateImportR17cTestCase(unittest.TestCase):
     def test_preserve_exposed_group_id(self) -> None:
         result = self._import()
         assessment = hazard_library_template_assessment_service.get_for_event(
-            hazard_library_template_event_service.get_for_template_item(
-                hazard_library_template_item_service.get_for_template(result.template.id)[0].id
-            )[0].id
+            self._template_event(result).id
         )[0].assessment
         self.assertEqual(assessment.exposed_group_id, self.group.id)
 
     def test_template_assessment_has_no_completion_fields(self) -> None:
         result = self._import()
         assessment = hazard_library_template_assessment_service.get_for_event(
-            hazard_library_template_event_service.get_for_template_item(
-                hazard_library_template_item_service.get_for_template(result.template.id)[0].id
-            )[0].id
+            self._template_event(result).id
         )[0].assessment
         self.assertFalse(hasattr(assessment, "assessment_status"))
         self.assertFalse(hasattr(assessment, "completed_at"))
@@ -288,8 +270,8 @@ class HazardLibraryTemplateImportR17cTestCase(unittest.TestCase):
         )
         result = self._import(include_inactive=True)
         self.assertEqual(result.event_count, 2)
-        events = hazard_library_template_event_service.get_for_template_item(
-            hazard_library_template_item_service.get_for_template(result.template.id)[0].id,
+        events = hazard_library_template_event_service.get_for_template(
+            result.template.id,
             include_inactive=True,
         )
         inactive = next(event for event in events if event.name == "Neaktivní událost")
@@ -298,6 +280,7 @@ class HazardLibraryTemplateImportR17cTestCase(unittest.TestCase):
     def test_reject_duplicate_active_template_name(self) -> None:
         hazard_library_template_service.create_template(
             name="Portálový jeřáb",
+            category=HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
             application_scope=HAZARD_LIBRARY_SCOPE_MANUAL,
         )
         with self.assertRaises(HazardLibraryTemplateImportError):

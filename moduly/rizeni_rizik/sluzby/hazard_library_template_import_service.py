@@ -1,4 +1,4 @@
-"""Import položky analýzy pracoviště do firemní knihovny vzorů (R17c)."""
+"""Import položky analýzy pracoviště do katalogu zdrojů rizik (R17c, Master R17d)."""
 
 from __future__ import annotations
 
@@ -15,7 +15,6 @@ from moduly.rizeni_rizik.modely.hazard_library_template_assessment import (
     HazardLibraryTemplateAssessment,
 )
 from moduly.rizeni_rizik.modely.hazard_library_template_event import HazardLibraryTemplateEvent
-from moduly.rizeni_rizik.modely.hazard_library_template_item import HazardLibraryTemplateItem
 from moduly.rizeni_rizik.modely.hazard_library_template_measure import (
     HazardLibraryTemplateExistingMeasure,
     HazardLibraryTemplateRequiredMeasure,
@@ -53,7 +52,6 @@ class HazardLibraryTemplateImportError(ValueError):
 @dataclass
 class HazardLibraryTemplateImportResult:
     template: HazardLibraryTemplate
-    item_count: int
     event_count: int
     assessment_count: int
     existing_measure_count: int
@@ -99,7 +97,7 @@ class HazardLibraryTemplateImportService:
             raise HazardLibraryTemplateImportError("Identifikace neexistuje.")
         if identification.status == HAZARD_IDENTIFICATION_STATUS_ARCHIVED:
             raise HazardLibraryTemplateImportError(
-                "U archivované identifikace nelze ukládat položky do knihovny."
+                "U archivované identifikace nelze ukládat položky do katalogu zdrojů rizik."
             )
 
         item = hazard_inventory_item_service.get_by_id(inventory_item_id)
@@ -111,11 +109,12 @@ class HazardLibraryTemplateImportService:
             )
         if not item.active:
             raise HazardLibraryTemplateImportError(
-                "Do knihovny lze uložit pouze aktivní položku analýzy."
+                "Do katalogu lze uložit pouze aktivní položku analýzy."
             )
 
         try:
             normalized_name = self.template_service._validate_name(name)
+            validated_category = self.template_service._validate_category(item.category)
             scope = self.template_service._validate_scope(application_scope)
             validated_operation_ids = self.template_service._validate_operation_ids(
                 scope,
@@ -177,7 +176,8 @@ class HazardLibraryTemplateImportService:
         try:
             template = HazardLibraryTemplate(
                 name=normalized_name,
-                description=description.strip(),
+                category=validated_category,
+                description=description.strip() or (item.description or ""),
                 application_scope=scope,
                 version_number=DEFAULT_HAZARD_LIBRARY_VERSION,
                 note=note.strip(),
@@ -197,17 +197,6 @@ class HazardLibraryTemplateImportService:
                         )
                     )
 
-            template_item = HazardLibraryTemplateItem(
-                template_id=template.id,
-                category=item.category,
-                name=item.name,
-                description=item.description or "",
-                active=item.active if include_inactive else True,
-                sort_order=item.sort_order,
-            )
-            session.add(template_item)
-            session.flush()
-
             event_count = 0
             assessment_count = 0
             existing_measure_count = 0
@@ -215,7 +204,7 @@ class HazardLibraryTemplateImportService:
 
             for event in events:
                 template_event = HazardLibraryTemplateEvent(
-                    template_item_id=template_item.id,
+                    template_id=template.id,
                     name=event.name,
                     description=event.description or "",
                     note=event.note or "",
@@ -281,7 +270,6 @@ class HazardLibraryTemplateImportService:
 
         return HazardLibraryTemplateImportResult(
             template=template,
-            item_count=1,
             event_count=event_count,
             assessment_count=assessment_count,
             existing_measure_count=existing_measure_count,

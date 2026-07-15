@@ -10,8 +10,10 @@ from PySide6.QtWidgets import (
 
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
+from moduly.rizeni_rizik.constants import HAZARD_INVENTORY_CATEGORY_LABELS
 from moduly.rizeni_rizik.constants_library import (
     HAZARD_LIBRARY_COL_ACTIVE,
+    HAZARD_LIBRARY_COL_CATEGORY,
     HAZARD_LIBRARY_COL_ID,
     HAZARD_LIBRARY_COL_NAME,
     HAZARD_LIBRARY_COL_OPERATION_COUNT,
@@ -19,6 +21,7 @@ from moduly.rizeni_rizik.constants_library import (
     HAZARD_LIBRARY_COL_VERSION,
     HAZARD_LIBRARY_COLUMN_COUNT,
     HAZARD_LIBRARY_DIALOG_TITLE,
+    HAZARD_LIBRARY_NEW_BUTTON,
     HAZARD_LIBRARY_PAGE_TITLE,
     HAZARD_LIBRARY_TABLE_HEADERS,
 )
@@ -30,7 +33,7 @@ from moduly.rizeni_rizik.ui.hazard_library_template_dialog import HazardLibraryT
 
 
 class HazardLibraryPage(QWidget):
-    """Stránka Firemní knihovna – evidence vzorů a rozsahu použití."""
+    """Stránka Katalog zdrojů rizik – evidence Master zdrojů a rozsahu použití."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -38,7 +41,7 @@ class HazardLibraryPage(QWidget):
         layout = QVBoxLayout(self)
 
         toolbar = QHBoxLayout()
-        self.new_btn = QPushButton("Nový vzor")
+        self.new_btn = QPushButton(HAZARD_LIBRARY_NEW_BUTTON)
         self.edit_btn = QPushButton("Upravit")
         self.activate_btn = QPushButton("Aktivovat")
         self.deactivate_btn = QPushButton("Deaktivovat")
@@ -57,7 +60,7 @@ class HazardLibraryPage(QWidget):
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setAlternatingRowColors(True)
         configure_table_columns(self.table, "hazard_library_templates")
-        self.text_filter = FilterBar(self.table, placeholder="🔍 Hledat vzor...")
+        self.text_filter = FilterBar(self.table, placeholder="🔍 Hledat zdroj rizika...")
 
         layout.addLayout(toolbar)
         layout.addWidget(self.text_filter)
@@ -85,6 +88,12 @@ class HazardLibraryPage(QWidget):
                 row_index,
                 HAZARD_LIBRARY_COL_NAME,
                 QTableWidgetItem(template.name),
+            )
+            category_label = HAZARD_INVENTORY_CATEGORY_LABELS.get(template.category, template.category)
+            self.table.setItem(
+                row_index,
+                HAZARD_LIBRARY_COL_CATEGORY,
+                QTableWidgetItem(category_label),
             )
             self.table.setItem(
                 row_index,
@@ -120,7 +129,7 @@ class HazardLibraryPage(QWidget):
             QMessageBox.information(
                 self,
                 HAZARD_LIBRARY_PAGE_TITLE,
-                "Vyberte vzor.",
+                "Vyberte zdroj rizika.",
             )
             return
         dialog = HazardLibraryTemplateDialog(self, template=template)
@@ -130,10 +139,10 @@ class HazardLibraryPage(QWidget):
     def activate_selected_template(self) -> None:
         template = self._selected_template()
         if template is None:
-            QMessageBox.information(self, HAZARD_LIBRARY_PAGE_TITLE, "Vyberte vzor.")
+            QMessageBox.information(self, HAZARD_LIBRARY_PAGE_TITLE, "Vyberte zdroj rizika.")
             return
         if template.active:
-            QMessageBox.information(self, HAZARD_LIBRARY_PAGE_TITLE, "Vzor je již aktivní.")
+            QMessageBox.information(self, HAZARD_LIBRARY_PAGE_TITLE, "Zdroj rizika je již aktivní.")
             return
         try:
             hazard_library_template_service.activate(template.id)
@@ -145,10 +154,10 @@ class HazardLibraryPage(QWidget):
     def deactivate_selected_template(self) -> None:
         template = self._selected_template()
         if template is None:
-            QMessageBox.information(self, HAZARD_LIBRARY_PAGE_TITLE, "Vyberte vzor.")
+            QMessageBox.information(self, HAZARD_LIBRARY_PAGE_TITLE, "Vyberte zdroj rizika.")
             return
         if not template.active:
-            QMessageBox.information(self, HAZARD_LIBRARY_PAGE_TITLE, "Vzor je již neaktivní.")
+            QMessageBox.information(self, HAZARD_LIBRARY_PAGE_TITLE, "Zdroj rizika je již neaktivní.")
             return
         hazard_library_template_service.deactivate(template.id)
         self.refresh()

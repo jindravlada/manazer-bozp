@@ -126,8 +126,8 @@ def initialize_database() -> None:
     _ensure_hazard_identification_photos_table()
     _ensure_hazard_library_templates_table()
     _ensure_hazard_library_template_operations_table()
-    _ensure_hazard_library_template_items_table()
     _ensure_hazard_library_template_events_table()
+    _migrate_hazard_library_template_master_catalog()
     _ensure_hazard_library_template_assessments_table()
     _ensure_hazard_library_template_measures_tables()
     _ensure_ai_peer_reviews_table()
@@ -1065,6 +1065,13 @@ def _ensure_hazard_library_templates_table() -> None:
         _add_column("hazard_library_templates", "source_identification_id INTEGER")
     if "source_inventory_item_id" not in columns:
         _add_column("hazard_library_templates", "source_inventory_item_id INTEGER")
+    if "category" not in columns:
+        from moduly.rizeni_rizik.constants import HAZARD_INVENTORY_CATEGORY_EQUIPMENT
+
+        _add_column(
+            "hazard_library_templates",
+            f"category VARCHAR(32) NOT NULL DEFAULT '{HAZARD_INVENTORY_CATEGORY_EQUIPMENT}'",
+        )
 
 
 def _ensure_hazard_library_template_operations_table() -> None:
@@ -1084,14 +1091,230 @@ def _ensure_hazard_library_template_operations_table() -> None:
     )
 
 
-def _ensure_hazard_library_template_items_table() -> None:
-    columns = _table_columns("hazard_library_template_items")
-    if not columns:
-        from moduly.rizeni_rizik.modely.hazard_library_template_item import (
-            HazardLibraryTemplateItem,
+def _migrate_hazard_library_template_master_catalog() -> None:
+    """R17d: položka vzoru → přímo Master zdroj rizika; události navázány na template_id."""
+    from moduly.rizeni_rizik.constants import HAZARD_INVENTORY_CATEGORY_EQUIPMENT
+
+    template_columns = _table_columns("hazard_library_templates")
+    if not template_columns:
+        return
+
+    if "category" not in template_columns:
+        _add_column(
+            "hazard_library_templates",
+            f"category VARCHAR(32) NOT NULL DEFAULT '{HAZARD_INVENTORY_CATEGORY_EQUIPMENT}'",
         )
 
-        HazardLibraryTemplateItem.__table__.create(bind=_db_engine(), checkfirst=True)
+    item_columns = _table_columns("hazard_library_template_items")
+    item_to_template: dict[int, int] = {}
+
+    if item_columns:
+        with _db_engine().connect() as connection:
+            templates = connection.execute(
+                text("SELECT id FROM hazard_library_templates ORDER BY id")
+            ).fetchall()
+
+            for (template_id,) in templates:
+                items = connection.execute(
+                    text(
+                        """
+                        SELECT id, category, name, description, active
+                        FROM hazard_library_template_items
+                        WHERE template_id = :template_id
+                        ORDER BY sort_order, id
+                        """
+                    ),
+                    {"template_id": template_id},
+                ).fetchall()
+
+                if not items:
+                    continue
+
+                first_id, first_category, first_name, first_description, first_active = items[0]
+                connection.execute(
+                    text(
+                        """
+                        UPDATE hazard_library_templates
+                        SET category = :category,
+                            name = :name,
+                            description = :description,
+                            active = :active
+                        WHERE id = :template_id
+                        """
+                    ),
+                    {
+                        "category": first_category,
+                        "name": first_name,
+                        "description": first_description or "",
+                        "active": first_active,
+                        "template_id": template_id,
+                    },
+                )
+                item_to_template[first_id] = template_id
+
+                for item_id, category, name, description, active in items[1:]:
+                    orig = connection.execute(
+                        text(
+                            """
+                            SELECT application_scope, version_number, note,
+                                   source_identification_id, source_inventory_item_id,
+                                   created_at, updated_at
+                            FROM hazard_library_templates
+                            WHERE id = :template_id
+                            """
+                        ),
+                        {"template_id": template_id},
+                    ).fetchone()
+                    assert orig is not None
+
+                    result = connection.execute(
+                        text(
+                            """
+                            INSERT INTO hazard_library_templates (
+                                name, category, description, application_scope,
+                                version_number, active, note,
+                                source_identification_id, source_inventory_item_id,
+                                created_at, updated_at
+                            )
+                            VALUES (
+                                :name, :category, :description, :scope,
+                                :version, :active, :note,
+                                :source_identification_id, :source_inventory_item_id,
+                                :created_at, :updated_at
+                            )
+                            """
+                        ),
+                        {
+                            "name": name,
+                            "category": category,
+                            "description": description or "",
+                            "scope": orig[0],
+                            "version": orig[1],
+                            "active": active,
+                            "note": orig[2] or "",
+                            "source_identification_id": orig[3],
+                            "source_inventory_item_id": orig[4],
+                            "created_at": orig[5],
+                            "updated_at": orig[6],
+                        },
+                    )
+                    new_template_id = int(result.lastrowid)
+                    item_to_template[item_id] = new_template_id
+
+                    connection.execute(
+                        text(
+                            """
+                            INSERT INTO hazard_library_template_operations (
+                                template_id, operation_id
+                            )
+                            SELECT :new_template_id, operation_id
+                            FROM hazard_library_template_operations
+                            WHERE template_id = :template_id
+                            """
+                        ),
+                        {
+                            "new_template_id": new_template_id,
+                            "template_id": template_id,
+                        },
+                    )
+
+            connection.commit()
+
+        with _db_engine().connect() as connection:
+            connection.execute(text("DROP TABLE IF EXISTS hazard_library_template_items"))
+            connection.commit()
+
+    _migrate_hazard_library_template_events_to_template_id(item_to_template)
+
+
+def _migrate_hazard_library_template_events_to_template_id(
+    item_to_template: dict[int, int],
+) -> None:
+    event_columns = _table_columns("hazard_library_template_events")
+    if not event_columns:
+        return
+
+    if "template_id" in event_columns and "template_item_id" not in event_columns:
+        return
+
+    if "template_item_id" not in event_columns:
+        return
+
+    with _db_engine().connect() as connection:
+        if "template_id" not in event_columns:
+            connection.execute(
+                text("ALTER TABLE hazard_library_template_events ADD COLUMN template_id INTEGER")
+            )
+            connection.commit()
+
+        if item_to_template:
+            for item_id, template_id in item_to_template.items():
+                connection.execute(
+                    text(
+                        """
+                        UPDATE hazard_library_template_events
+                        SET template_id = :template_id
+                        WHERE template_item_id = :item_id
+                        """
+                    ),
+                    {"template_id": template_id, "item_id": item_id},
+                )
+        else:
+            connection.execute(
+                text(
+                    """
+                    UPDATE hazard_library_template_events
+                    SET template_id = (
+                        SELECT template_id
+                        FROM hazard_library_template_items
+                        WHERE hazard_library_template_items.id =
+                            hazard_library_template_events.template_item_id
+                    )
+                    WHERE template_id IS NULL
+                    """
+                )
+            )
+
+        connection.execute(
+            text(
+                """
+                CREATE TABLE hazard_library_template_events_new (
+                    id INTEGER PRIMARY KEY,
+                    template_id INTEGER NOT NULL,
+                    name VARCHAR(200) NOT NULL,
+                    description TEXT DEFAULT '',
+                    note TEXT DEFAULT '',
+                    active BOOLEAN DEFAULT 1,
+                    sort_order INTEGER NOT NULL DEFAULT 0,
+                    created_at DATETIME,
+                    updated_at DATETIME
+                )
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                INSERT INTO hazard_library_template_events_new (
+                    id, template_id, name, description, note, active,
+                    sort_order, created_at, updated_at
+                )
+                SELECT
+                    id, template_id, name, description, note, active,
+                    sort_order, created_at, updated_at
+                FROM hazard_library_template_events
+                WHERE template_id IS NOT NULL
+                """
+            )
+        )
+        connection.execute(text("DROP TABLE hazard_library_template_events"))
+        connection.execute(
+            text(
+                "ALTER TABLE hazard_library_template_events_new "
+                "RENAME TO hazard_library_template_events"
+            )
+        )
+        connection.commit()
 
 
 def _ensure_hazard_library_template_events_table() -> None:

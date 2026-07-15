@@ -10,7 +10,7 @@ class HazardLibraryTemplateEvent(Base):
     __tablename__ = "hazard_library_template_events"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    template_item_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    template_id: Mapped[int] = mapped_column(Integer, nullable=False)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str] = mapped_column(Text, default="")
     note: Mapped[str] = mapped_column(Text, default="")

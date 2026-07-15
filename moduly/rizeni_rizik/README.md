@@ -296,6 +296,17 @@ Uložení položky analýzy do firemní knihovny:
 - audit původu: `source_identification_id`, `source_inventory_item_id`
 - nový vzor má `version_number = 1`; bez přidání do existujícího vzoru
 
+## Fáze R17d
+
+Přechod na Master katalog zdrojů rizik:
+
+- UI: **Katalog zdrojů rizik**, **Zdroj rizika**, **Odborný obsah**, **Použití zdroje**, **Historie změn**
+- odstraněna mezivrstva `HazardLibraryTemplateItem`; `HazardLibraryTemplate` = přímo jeden Master zdroj s polem `category`
+- hierarchie: Zdroj → Událost → Posouzení → Opatření (`template_id` u událostí)
+- migrace bez ztráty dat: jedna položka → jeden zdroj, více položek → rozdělení na samostatné zdroje
+- import z analýzy ukládá přímo nový Master zdroj; akce **Uložit do katalogu zdrojů rizik…**
+- bez použití Master zdrojů v identifikaci, synchronizace a porovnání verzí
+
 ## Fáze R12
 
 Odstranění entity Nebezpečí (`IdentifiedHazard`):

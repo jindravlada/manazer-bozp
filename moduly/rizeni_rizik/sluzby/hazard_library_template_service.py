@@ -6,6 +6,10 @@ from moduly.nastaveni.constants.workplace_hierarchy_constants import (
     WORKPLACE_ITEM_TYPE_OPERATION,
 )
 from moduly.nastaveni.sluzby.settings_service import settings_service
+from moduly.rizeni_rizik.constants import (
+    HAZARD_INVENTORY_CATEGORIES,
+    HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
+)
 from moduly.rizeni_rizik.constants_library import (
     DEFAULT_HAZARD_LIBRARY_SCOPE,
     DEFAULT_HAZARD_LIBRARY_VERSION,
@@ -127,6 +131,7 @@ class HazardLibraryTemplateService:
         self,
         *,
         name: str,
+        category: str = HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
         description: str = "",
         application_scope: str = DEFAULT_HAZARD_LIBRARY_SCOPE,
         version_number: int = DEFAULT_HAZARD_LIBRARY_VERSION,
@@ -135,6 +140,7 @@ class HazardLibraryTemplateService:
         operation_ids: list[int] | None = None,
     ) -> HazardLibraryTemplate:
         normalized_name = self._validate_name(name)
+        validated_category = self._validate_category(category)
         scope = self._validate_scope(application_scope)
         version = self._validate_version(version_number)
         if active:
@@ -147,6 +153,7 @@ class HazardLibraryTemplateService:
 
         template = HazardLibraryTemplate(
             name=normalized_name,
+            category=validated_category,
             description=description.strip(),
             application_scope=scope,
             version_number=version,
@@ -162,6 +169,7 @@ class HazardLibraryTemplateService:
         template_id: int,
         *,
         name: str,
+        category: str = HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
         description: str = "",
         application_scope: str = DEFAULT_HAZARD_LIBRARY_SCOPE,
         version_number: int = DEFAULT_HAZARD_LIBRARY_VERSION,
@@ -174,6 +182,7 @@ class HazardLibraryTemplateService:
             return None
 
         normalized_name = self._validate_name(name)
+        validated_category = self._validate_category(category)
         scope = self._validate_scope(application_scope)
         version = self._validate_version(version_number)
         if active:
@@ -185,6 +194,7 @@ class HazardLibraryTemplateService:
         )
 
         template.name = normalized_name
+        template.category = validated_category
         template.description = description.strip()
         template.application_scope = scope
         template.version_number = version
@@ -260,8 +270,13 @@ class HazardLibraryTemplateService:
     def _validate_name(self, name: str) -> str:
         normalized = " ".join(name.strip().split())
         if not normalized:
-            raise HazardLibraryTemplateError("Název vzoru je povinný.")
+            raise HazardLibraryTemplateError("Název zdroje rizika je povinný.")
         return normalized
+
+    def _validate_category(self, category: str) -> str:
+        if category not in HAZARD_INVENTORY_CATEGORIES:
+            raise HazardLibraryTemplateError("Neplatná kategorie zdroje rizika.")
+        return category
 
     def _validate_scope(self, scope: str) -> str:
         if scope not in HAZARD_LIBRARY_SCOPES:
@@ -320,7 +335,7 @@ class HazardLibraryTemplateService:
                 continue
             if normalize_template_name(template.name) == normalized:
                 raise HazardLibraryTemplateError(
-                    f"Aktivní vzor „{template.name}“ již existuje."
+                    f"Aktivní zdroj rizika „{template.name}“ již existuje."
                 )
 
     def _operation_names(self, operation_ids: list[int]) -> list[str]:

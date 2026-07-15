@@ -5,15 +5,15 @@ from moduly.rizeni_rizik.modely.hazard_library_template_event import HazardLibra
 
 
 class HazardLibraryTemplateEventRepository:
-    def get_for_template_item(
+    def get_for_template(
         self,
-        template_item_id: int,
+        template_id: int,
         *,
         include_inactive: bool = True,
     ) -> list[HazardLibraryTemplateEvent]:
         with get_session() as session:
             stmt = select(HazardLibraryTemplateEvent).where(
-                HazardLibraryTemplateEvent.template_item_id == template_item_id
+                HazardLibraryTemplateEvent.template_id == template_id
             )
             if not include_inactive:
                 stmt = stmt.where(HazardLibraryTemplateEvent.active == True)  # noqa: E712
@@ -42,23 +42,23 @@ class HazardLibraryTemplateEventRepository:
             session.refresh(event)
             return event
 
-    def count_active_for_template_item(self, template_item_id: int) -> int:
+    def count_active_for_template(self, template_id: int) -> int:
         with get_session() as session:
             stmt = (
                 select(func.count())
                 .select_from(HazardLibraryTemplateEvent)
                 .where(
-                    HazardLibraryTemplateEvent.template_item_id == template_item_id,
+                    HazardLibraryTemplateEvent.template_id == template_id,
                     HazardLibraryTemplateEvent.active == True,  # noqa: E712
                 )
             )
             return int(session.scalar(stmt) or 0)
 
-    def next_sort_order(self, template_item_id: int) -> int:
+    def next_sort_order(self, template_id: int) -> int:
         with get_session() as session:
             stmt = (
                 select(HazardLibraryTemplateEvent.sort_order)
-                .where(HazardLibraryTemplateEvent.template_item_id == template_item_id)
+                .where(HazardLibraryTemplateEvent.template_id == template_id)
                 .order_by(HazardLibraryTemplateEvent.sort_order.desc())
             )
             current = session.scalar(stmt)

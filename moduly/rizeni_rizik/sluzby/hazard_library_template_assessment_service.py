@@ -65,20 +65,12 @@ class HazardLibraryTemplateAssessmentService:
         return self.repository.count_active_for_event(template_event_id)
 
     def count_active_by_events(self, template_id: int) -> dict[int, int]:
-        from moduly.rizeni_rizik.sluzby.hazard_library_template_item_service import (
-            hazard_library_template_item_service,
-        )
-
         counts: dict[int, int] = {}
-        for item in hazard_library_template_item_service.get_for_template(
+        for event in hazard_library_template_event_service.get_for_template(
             template_id,
             include_inactive=True,
         ):
-            for event in hazard_library_template_event_service.get_for_template_item(
-                item.id,
-                include_inactive=True,
-            ):
-                counts[event.id] = self.repository.count_active_for_event(event.id)
+            counts[event.id] = self.repository.count_active_for_event(event.id)
         return counts
 
     def create_assessment(
@@ -199,7 +191,7 @@ class HazardLibraryTemplateAssessmentService:
             assessment.template_event_id
         )
         if template_id is None:
-            raise HazardLibraryTemplateAssessmentError("Nežádoucí událost vzoru neexistuje.")
+            raise HazardLibraryTemplateAssessmentError("Nežádoucí událost zdroje rizika neexistuje.")
         return template_id
 
     def _to_row(self, assessment: HazardLibraryTemplateAssessment) -> HazardLibraryTemplateAssessmentRow:
@@ -241,13 +233,13 @@ class HazardLibraryTemplateAssessmentService:
     def _validate_event(self, template_id: int, template_event_id: int) -> None:
         event = hazard_library_template_event_service.get_by_id(template_event_id)
         if event is None:
-            raise HazardLibraryTemplateAssessmentError("Nežádoucí událost vzoru neexistuje.")
+            raise HazardLibraryTemplateAssessmentError("Nežádoucí událost zdroje rizika neexistuje.")
         event_template_id = hazard_library_template_event_service.get_template_id_for_event(
             event.id
         )
         if event_template_id != template_id:
             raise HazardLibraryTemplateAssessmentError(
-                "Nežádoucí událost nepatří do zvoleného vzoru."
+                "Nežádoucí událost nepatří do zvoleného zdroje rizika."
             )
 
     def _validate_unique_active_group(

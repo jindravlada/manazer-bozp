@@ -4,8 +4,8 @@ from moduly.rizeni_rizik.modely.hazard_library_template_event import HazardLibra
 from moduly.rizeni_rizik.repository.hazard_library_template_event_repository import (
     HazardLibraryTemplateEventRepository,
 )
-from moduly.rizeni_rizik.sluzby.hazard_library_template_item_service import (
-    hazard_library_template_item_service,
+from moduly.rizeni_rizik.sluzby.hazard_library_template_service import (
+    hazard_library_template_service,
 )
 from moduly.rizeni_rizik.sluzby.hazard_library_template_version import (
     bump_template_content_version,
@@ -24,14 +24,14 @@ class HazardLibraryTemplateEventService:
     def __init__(self):
         self.repository = HazardLibraryTemplateEventRepository()
 
-    def get_for_template_item(
+    def get_for_template(
         self,
-        template_item_id: int,
+        template_id: int,
         *,
         include_inactive: bool = True,
     ) -> list[HazardLibraryTemplateEvent]:
-        return self.repository.get_for_template_item(
-            template_item_id,
+        return self.repository.get_for_template(
+            template_id,
             include_inactive=include_inactive,
         )
 
@@ -40,23 +40,13 @@ class HazardLibraryTemplateEventService:
             return None
         return self.repository.get_by_id(event_id)
 
-    def count_active_for_template_item(self, template_item_id: int) -> int:
-        return self.repository.count_active_for_template_item(template_item_id)
-
-    def count_active_by_template_items(self, template_id: int) -> dict[int, int]:
-        counts: dict[int, int] = {}
-        for item in hazard_library_template_item_service.get_for_template(
-            template_id,
-            include_inactive=True,
-        ):
-            counts[item.id] = self.repository.count_active_for_template_item(item.id)
-        return counts
+    def count_active_for_template(self, template_id: int) -> int:
+        return self.repository.count_active_for_template(template_id)
 
     def create_event(
         self,
         *,
         template_id: int,
-        template_item_id: int,
         name: str,
         description: str = "",
         note: str = "",
@@ -66,21 +56,21 @@ class HazardLibraryTemplateEventService:
         if not normalized_name:
             raise HazardLibraryTemplateEventError("Název události je povinný.")
 
-        self._validate_template_item(template_id, template_item_id)
+        self._validate_template(template_id)
         self._validate_unique_active_name(
-            template_item_id,
+            template_id,
             name=normalized_name,
             exclude_event_id=None,
             active=active,
         )
 
         event = HazardLibraryTemplateEvent(
-            template_item_id=template_item_id,
+            template_id=template_id,
             name=normalized_name,
             description=description.strip(),
             note=note.strip(),
             active=active,
-            sort_order=self.repository.next_sort_order(template_item_id),
+            sort_order=self.repository.next_sort_order(template_id),
         )
         saved = self.repository.add(event)
         bump_template_content_version(template_id)
@@ -91,7 +81,6 @@ class HazardLibraryTemplateEventService:
         event_id: int,
         *,
         template_id: int,
-        template_item_id: int,
         name: str,
         description: str = "",
         note: str = "",
@@ -105,15 +94,16 @@ class HazardLibraryTemplateEventService:
         if not normalized_name:
             raise HazardLibraryTemplateEventError("Název události je povinný.")
 
-        self._validate_template_item(template_id, template_item_id)
+        self._validate_template(template_id)
+        if event.template_id != template_id:
+            raise HazardLibraryTemplateEventError("Událost nepatří do zvoleného zdroje rizika.")
         self._validate_unique_active_name(
-            template_item_id,
+            template_id,
             name=normalized_name,
             exclude_event_id=event_id,
             active=active,
         )
 
-        event.template_item_id = template_item_id
         event.name = normalized_name
         event.description = description.strip()
         event.note = note.strip()
@@ -127,9 +117,8 @@ class HazardLibraryTemplateEventService:
         event = self.repository.get_by_id(event_id)
         if event is None:
             return False
-        template_id = self._template_id_for_event(event)
         self._validate_unique_active_name(
-            event.template_item_id,
+            event.template_id,
             name=event.name,
             exclude_event_id=event_id,
             active=True,
@@ -137,40 +126,33 @@ class HazardLibraryTemplateEventService:
         event.active = True
         event.updated_at = datetime.now()
         self.repository.update(event)
-        bump_template_content_version(template_id)
+        bump_template_content_version(event.template_id)
         return True
 
     def deactivate_event(self, event_id: int) -> bool:
         event = self.repository.get_by_id(event_id)
         if event is None:
             return False
-        template_id = self._template_id_for_event(event)
         event.active = False
         event.updated_at = datetime.now()
         self.repository.update(event)
-        bump_template_content_version(template_id)
+        bump_template_content_version(event.template_id)
         return True
 
     def get_template_id_for_event(self, event_id: int) -> int | None:
         event = self.repository.get_by_id(event_id)
         if event is None:
             return None
-        return self._template_id_for_event(event)
+        return event.template_id
 
-    def _template_id_for_event(self, event: HazardLibraryTemplateEvent) -> int:
-        item = hazard_library_template_item_service.get_by_id(event.template_item_id)
-        if item is None:
-            raise HazardLibraryTemplateEventError("Položka vzoru neexistuje.")
-        return item.template_id
-
-    def _validate_template_item(self, template_id: int, template_item_id: int) -> None:
-        item = hazard_library_template_item_service.get_by_id(template_item_id)
-        if item is None or item.template_id != template_id:
-            raise HazardLibraryTemplateEventError("Položka vzoru nepatří do zvoleného vzoru.")
+    def _validate_template(self, template_id: int) -> None:
+        template = hazard_library_template_service.get_by_id(template_id)
+        if template is None:
+            raise HazardLibraryTemplateEventError("Zdroj rizika neexistuje.")
 
     def _validate_unique_active_name(
         self,
-        template_item_id: int,
+        template_id: int,
         *,
         name: str,
         exclude_event_id: int | None,
@@ -180,14 +162,14 @@ class HazardLibraryTemplateEventService:
             return
 
         normalized = normalize_template_event_name(name)
-        for event in self.get_for_template_item(template_item_id, include_inactive=True):
+        for event in self.get_for_template(template_id, include_inactive=True):
             if event.id == exclude_event_id:
                 continue
             if not event.active:
                 continue
             if normalize_template_event_name(event.name) == normalized:
                 raise HazardLibraryTemplateEventError(
-                    f"U položky vzoru již existuje aktivní událost s názvem „{name.strip()}“."
+                    f"U zdroje rizika již existuje aktivní událost s názvem „{name.strip()}“."
                 )
 
 

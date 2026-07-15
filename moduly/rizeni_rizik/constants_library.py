@@ -1,4 +1,4 @@
-"""Konstanty firemní knihovny vzorů (R17a)."""
+"""Konstanty katalogu zdrojů rizik (R17a+, Master model R17d)."""
 
 HAZARD_LIBRARY_SCOPE_ALL = "all_operations"
 HAZARD_LIBRARY_SCOPE_SELECTED = "selected_operations"
@@ -18,41 +18,29 @@ HAZARD_LIBRARY_SCOPE_LABELS = {
     HAZARD_LIBRARY_SCOPE_MANUAL: "Bez předem určeného rozsahu",
 }
 
-HAZARD_LIBRARY_PAGE_TITLE = "Firemní knihovna"
-HAZARD_LIBRARY_DIALOG_TITLE = "Vzor knihovny"
+HAZARD_LIBRARY_PAGE_TITLE = "Katalog zdrojů rizik"
+HAZARD_LIBRARY_DIALOG_TITLE = "Zdroj rizika"
+HAZARD_LIBRARY_NEW_BUTTON = "Nový zdroj rizika"
 
 HAZARD_LIBRARY_TAB_BASICS = "Základní údaje"
-HAZARD_LIBRARY_TAB_CONTENT = "Obsah vzoru"
-HAZARD_LIBRARY_TAB_USAGE = "Použití"
-HAZARD_LIBRARY_TAB_HISTORY = "Historie"
+HAZARD_LIBRARY_TAB_CONTENT = "Odborný obsah"
+HAZARD_LIBRARY_TAB_USAGE = "Použití zdroje"
+HAZARD_LIBRARY_TAB_HISTORY = "Historie změn"
 
 HAZARD_LIBRARY_PLACEHOLDER_TEXT = "Obsah bude doplněn v další fázi."
 
 HAZARD_LIBRARY_CONTENT_INTRO_TEXT = (
-    "Položky analýzy pracoviště, nežádoucí události a posouzení rizik ve vzoru. "
+    "Nežádoucí události, posouzení rizik a opatření zdroje. "
     "Obsah se zadává ručně a slouží jako opakovaně použitelný odborný podklad."
 )
 HAZARD_LIBRARY_CONTENT_READ_ONLY_MESSAGE = (
-    "Neaktivní vzor lze zobrazit pouze pro čtení."
+    "Neaktivní zdroj rizika lze zobrazit pouze pro čtení."
 )
-HAZARD_LIBRARY_ITEM_DIALOG_TITLE = "Položka vzoru"
-HAZARD_LIBRARY_EVENT_DIALOG_TITLE = "Nežádoucí událost ve vzoru"
-HAZARD_LIBRARY_ASSESSMENTS_DIALOG_TITLE = "Posouzení a opatření ve vzoru"
-HAZARD_LIBRARY_ASSESSMENT_DIALOG_TITLE = "Posouzení ve vzoru"
-HAZARD_LIBRARY_EXISTING_MEASURE_DIALOG_TITLE = "Existující opatření ve vzoru"
-HAZARD_LIBRARY_REQUIRED_MEASURE_DIALOG_TITLE = "Potřebné opatření ve vzoru"
-
-HAZARD_LIBRARY_TEMPLATE_ITEM_COL_ID = 0
-HAZARD_LIBRARY_TEMPLATE_ITEM_COL_NAME = 1
-HAZARD_LIBRARY_TEMPLATE_ITEM_COL_DESCRIPTION = 2
-HAZARD_LIBRARY_TEMPLATE_ITEM_COL_ACTIVE = 3
-HAZARD_LIBRARY_TEMPLATE_ITEM_COLUMN_COUNT = 4
-HAZARD_LIBRARY_TEMPLATE_ITEM_TABLE_HEADERS = [
-    "ID",
-    "Název",
-    "Popis",
-    "Aktivní",
-]
+HAZARD_LIBRARY_EVENT_DIALOG_TITLE = "Nežádoucí událost zdroje rizika"
+HAZARD_LIBRARY_ASSESSMENTS_DIALOG_TITLE = "Posouzení a opatření zdroje rizika"
+HAZARD_LIBRARY_ASSESSMENT_DIALOG_TITLE = "Posouzení zdroje rizika"
+HAZARD_LIBRARY_EXISTING_MEASURE_DIALOG_TITLE = "Existující opatření zdroje rizika"
+HAZARD_LIBRARY_REQUIRED_MEASURE_DIALOG_TITLE = "Potřebné opatření zdroje rizika"
 
 HAZARD_LIBRARY_TEMPLATE_EVENT_COL_ID = 0
 HAZARD_LIBRARY_TEMPLATE_EVENT_COL_NAME = 1
@@ -94,31 +82,32 @@ HAZARD_LIBRARY_TEMPLATE_EXISTING_MEASURES_TITLE = "Existující opatření"
 HAZARD_LIBRARY_TEMPLATE_REQUIRED_MEASURES_TITLE = "Potřebná další opatření"
 HAZARD_LIBRARY_TEMPLATE_SELECT_ASSESSMENT = "Vyberte posouzení pro zobrazení opatření."
 HAZARD_LIBRARY_TEMPLATE_SELECT_EVENT = "Vyberte nežádoucí událost."
-HAZARD_LIBRARY_TEMPLATE_SELECT_ITEM = "Vyberte položku vzoru."
-HAZARD_LIBRARY_TEMPLATE_EVENTS_SECTION_TITLE = "Nežádoucí události vybrané položky"
+HAZARD_LIBRARY_TEMPLATE_EVENTS_SECTION_TITLE = "Nežádoucí události"
 
-HAZARD_LIBRARY_SAVE_FROM_INVENTORY_DIALOG_TITLE = "Uložit do knihovny"
-HAZARD_LIBRARY_SAVE_FROM_INVENTORY_SUCCESS_TITLE = "Vzor uložen do knihovny"
-HAZARD_LIBRARY_SAVE_TO_LIBRARY_BUTTON = "Uložit do knihovny…"
-HAZARD_LIBRARY_OPEN_IN_LIBRARY_BUTTON = "Otevřít ve Firemní knihovně"
+HAZARD_LIBRARY_SAVE_FROM_INVENTORY_DIALOG_TITLE = "Uložit do katalogu zdrojů rizik"
+HAZARD_LIBRARY_SAVE_FROM_INVENTORY_SUCCESS_TITLE = "Zdroj rizika uložen do katalogu"
+HAZARD_LIBRARY_SAVE_TO_LIBRARY_BUTTON = "Uložit do katalogu zdrojů rizik…"
+HAZARD_LIBRARY_OPEN_IN_LIBRARY_BUTTON = "Otevřít v katalogu zdrojů rizik"
 HAZARD_LIBRARY_SAVE_INACTIVE_ITEM_MESSAGE = (
-    "Do knihovny lze uložit pouze aktivní položku analýzy pracoviště."
+    "Do katalogu lze uložit pouze aktivní položku analýzy pracoviště."
 )
 HAZARD_LIBRARY_SAVE_ARCHIVED_MESSAGE = (
-    "U archivované identifikace nelze ukládat položky do knihovny."
+    "U archivované identifikace nelze ukládat položky do katalogu zdrojů rizik."
 )
 
 HAZARD_LIBRARY_COL_ID = 0
 HAZARD_LIBRARY_COL_NAME = 1
-HAZARD_LIBRARY_COL_SCOPE = 2
-HAZARD_LIBRARY_COL_VERSION = 3
-HAZARD_LIBRARY_COL_OPERATION_COUNT = 4
-HAZARD_LIBRARY_COL_ACTIVE = 5
-HAZARD_LIBRARY_COLUMN_COUNT = 6
+HAZARD_LIBRARY_COL_CATEGORY = 2
+HAZARD_LIBRARY_COL_SCOPE = 3
+HAZARD_LIBRARY_COL_VERSION = 4
+HAZARD_LIBRARY_COL_OPERATION_COUNT = 5
+HAZARD_LIBRARY_COL_ACTIVE = 6
+HAZARD_LIBRARY_COLUMN_COUNT = 7
 
 HAZARD_LIBRARY_TABLE_HEADERS = [
     "ID",
     "Název",
+    "Kategorie",
     "Rozsah použití",
     "Verze",
     "Počet provozů",
