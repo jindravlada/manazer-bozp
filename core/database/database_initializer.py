@@ -798,6 +798,11 @@ def _ensure_hazard_inventory_items_table() -> None:
         from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem
 
         HazardInventoryItem.__table__.create(bind=_db_engine(), checkfirst=True)
+        return
+    if "source_template_id" not in columns:
+        _add_column("hazard_inventory_items", "source_template_id INTEGER")
+    if "source_template_version" not in columns:
+        _add_column("hazard_inventory_items", "source_template_version INTEGER")
 
 
 def _migrate_drop_hazard_inventory_relations() -> None:

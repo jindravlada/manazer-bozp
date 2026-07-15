@@ -316,6 +316,14 @@ Převzetí zdroje z katalogu do analýzy pracoviště:
 - plná kopie větve Zdroj → Události → Posouzení → Opatření v jedné transakci
 - bez vazby na Master, synchronizace a lokálních odchylek
 
+## Fáze R18b
+
+Evidence původu instance z katalogu:
+
+- `HazardInventoryItem.source_template_id` a `source_template_version` se vyplní při **Převzít z Katalogu**
+- verze je snímek v okamžiku převzetí (bez automatické aktualizace a porovnávání)
+- ručně založené zdroje nemají původ; v dialogu položky se původ zobrazí informativně
+
 ## Fáze R12
 
 Odstranění entity Nebezpečí (`IdentifiedHazard`):

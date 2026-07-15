@@ -17,6 +17,8 @@ class HazardInventoryItem(Base):
     description: Mapped[str] = mapped_column(Text, default="")
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    source_template_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source_template_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,

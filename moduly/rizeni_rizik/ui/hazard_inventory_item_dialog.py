@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QFormLayout,
+    QLabel,
     QLineEdit,
     QPlainTextEdit,
     QVBoxLayout,
@@ -14,6 +15,7 @@ from moduly.rizeni_rizik.constants import (
     HAZARD_INVENTORY_CATEGORIES,
     HAZARD_INVENTORY_CATEGORY_LABELS,
     INVENTORY_ITEM_DIALOG_TITLE,
+    format_inventory_item_source_label,
 )
 from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import (
     HazardInventoryItemError,
@@ -52,6 +54,8 @@ class HazardInventoryItemDialog(QDialog):
         self.description.setMinimumHeight(100)
         self.active_checkbox = QCheckBox("Aktivní")
         self.active_checkbox.setChecked(True)
+        self.source_label = QLabel()
+        self.source_label.setWordWrap(True)
 
         form.addRow("Kategorie *:", self.category)
         form.addRow("Název *:", self.name)
@@ -59,6 +63,7 @@ class HazardInventoryItemDialog(QDialog):
         form.addRow("", self.active_checkbox)
 
         layout.addLayout(form)
+        layout.addWidget(self.source_label)
 
         buttons = create_save_cancel_box(self)
         buttons.accepted.connect(self.accept)
@@ -72,6 +77,12 @@ class HazardInventoryItemDialog(QDialog):
             self.name.setText(item.name)
             self.description.setPlainText(item.description or "")
             self.active_checkbox.setChecked(bool(item.active))
+            source_text = format_inventory_item_source_label(
+                source_template_id=item.source_template_id,
+                source_template_version=item.source_template_version,
+            )
+            if source_text:
+                self.source_label.setText(f"Původ: {source_text}")
         elif default_category is not None:
             index = self.category.findData(default_category)
             if index >= 0:

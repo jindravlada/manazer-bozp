@@ -119,6 +119,17 @@ READ_ONLY_IDENTIFICATION_STATUSES = (
 
 INVENTORY_ITEM_DIALOG_TITLE = "Položka analýzy pracoviště"
 
+
+def format_inventory_item_source_label(
+    *,
+    source_template_id: int | None,
+    source_template_version: int | None,
+) -> str:
+    if source_template_id is None:
+        return ""
+    version = source_template_version if source_template_version is not None else "—"
+    return f"Katalog zdrojů rizik (ID {source_template_id}, verze {version})"
+
 INVENTORY_COL_ID = 0
 INVENTORY_COL_NAME = 1
 INVENTORY_COL_DESCRIPTION = 2

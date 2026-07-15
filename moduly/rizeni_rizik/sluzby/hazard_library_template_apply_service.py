@@ -217,6 +217,8 @@ class HazardLibraryTemplateApplyService:
                 description=template.description or "",
                 active=True,
                 sort_order=sort_order,
+                source_template_id=template.id,
+                source_template_version=template.version_number,
             )
             session.add(item)
             session.flush()
