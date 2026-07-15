@@ -286,6 +286,16 @@ Obsah firemního vzoru:
 - neaktivní vzor: obsah pouze pro čtení
 - záložky Použití a Historie zatím disabled; bez převzetí z identifikace ani použití vzoru
 
+## Fáze R17c
+
+Uložení položky analýzy do firemní knihovny:
+
+- akce **Uložit do knihovny…** u vybrané aktivní položky analýzy (kromě archivované identifikace)
+- dialog s názvem, popisem, rozsahem použití a volbou zahrnutí neaktivních záznamů
+- kopírování celé větve (položka → události → posouzení → opatření) v jedné transakci
+- audit původu: `source_identification_id`, `source_inventory_item_id`
+- nový vzor má `version_number = 1`; bez přidání do existujícího vzoru
+
 ## Fáze R12
 
 Odstranění entity Nebezpečí (`IdentifiedHazard`):

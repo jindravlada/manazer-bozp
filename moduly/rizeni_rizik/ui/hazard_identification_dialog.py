@@ -32,10 +32,11 @@ from moduly.rizeni_rizik.ui.hazard_risk_assessments_widget import HazardRiskAsse
 
 
 class HazardIdentificationDialog(QDialog):
-    def __init__(self, parent=None, identification=None):
+    def __init__(self, parent=None, identification=None, on_open_library_template=None):
         super().__init__(parent)
 
         self.identification = identification
+        self._on_open_library_template = on_open_library_template
 
         self.setWindowTitle(DIALOG_WINDOW_TITLE)
         self.resize(960, 680)
@@ -46,7 +47,10 @@ class HazardIdentificationDialog(QDialog):
         self.basics_widget = HazardIdentificationBasicsWidget()
         self.photos_widget = HazardIdentificationPhotosWidget()
         self.risk_assessments_widget = HazardRiskAssessmentsWidget()
-        self.inventory_widget = HazardInventoryWidget(on_event_saved=self._on_event_saved)
+        self.inventory_widget = HazardInventoryWidget(
+            on_event_saved=self._on_event_saved,
+            on_open_library_template=self._handle_open_library_template,
+        )
         self.ai_peer_review_widget = AiPeerReviewWidget(
             provider=hazard_identification_peer_review_provider,
             on_proposals_applied=self._on_peer_review_applied,
@@ -112,7 +116,13 @@ class HazardIdentificationDialog(QDialog):
         self.inventory_widget.set_identification(
             identification_id,
             read_only=is_identification_inventory_read_only(status),
+            identification_status=status,
         )
+
+    def _handle_open_library_template(self, template_id: int) -> None:
+        self.accept()
+        if self._on_open_library_template is not None:
+            self._on_open_library_template(template_id)
 
     def _sync_risk_assessment_context(self) -> None:
         identification_id = self.identification.id if self.identification is not None else None

@@ -36,26 +36,42 @@ from moduly.rizeni_rizik.constants import (
     ITEM_EVENTS_SELECT_ITEM,
     WORKPLACE_ANALYSIS_READ_ONLY_MESSAGE,
     WORKPLACE_ANALYSIS_SELECT_ITEM,
+    can_save_inventory_item_to_library,
     format_event_display_name,
     format_inventory_item_display_name,
+)
+from moduly.rizeni_rizik.constants_library import (
+    HAZARD_LIBRARY_OPEN_IN_LIBRARY_BUTTON,
+    HAZARD_LIBRARY_SAVE_ARCHIVED_MESSAGE,
+    HAZARD_LIBRARY_SAVE_FROM_INVENTORY_SUCCESS_TITLE,
+    HAZARD_LIBRARY_SAVE_INACTIVE_ITEM_MESSAGE,
+    HAZARD_LIBRARY_SAVE_TO_LIBRARY_BUTTON,
 )
 from moduly.rizeni_rizik.sluzby.hazard_event_service import (
     HazardEventError,
     hazard_event_service,
 )
 from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import hazard_inventory_item_service
+from moduly.rizeni_rizik.sluzby.hazard_library_template_import_service import (
+    hazard_library_template_import_service,
+)
 from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import hazard_risk_assessment_service
 from moduly.rizeni_rizik.ui.hazard_event_dialog import HazardEventDialog
 from moduly.rizeni_rizik.ui.hazard_inventory_item_dialog import HazardInventoryItemDialog
+from moduly.rizeni_rizik.ui.hazard_library_save_from_inventory_dialog import (
+    HazardLibrarySaveFromInventoryDialog,
+)
 
 
 class HazardInventoryWidget(QWidget):
-    def __init__(self, parent=None, on_event_saved=None):
+    def __init__(self, parent=None, on_event_saved=None, on_open_library_template=None):
         super().__init__(parent)
 
         self._on_event_saved = on_event_saved
+        self._on_open_library_template = on_open_library_template
 
         self._identification_id: int | None = None
+        self._identification_status = ""
         self._read_only = False
         self._current_category = HAZARD_INVENTORY_CATEGORIES[0]
         self._selected_item_id: int | None = None
@@ -72,10 +88,12 @@ class HazardInventoryWidget(QWidget):
         self.edit_btn = QPushButton("Upravit")
         self.activate_btn = QPushButton("Aktivovat")
         self.deactivate_btn = QPushButton("Deaktivovat")
+        self.save_to_library_btn = QPushButton(HAZARD_LIBRARY_SAVE_TO_LIBRARY_BUTTON)
         self.toolbar.addWidget(self.add_btn)
         self.toolbar.addWidget(self.edit_btn)
         self.toolbar.addWidget(self.activate_btn)
         self.toolbar.addWidget(self.deactivate_btn)
+        self.toolbar.addWidget(self.save_to_library_btn)
         self.toolbar.addStretch()
         layout.addLayout(self.toolbar)
 
@@ -138,6 +156,7 @@ class HazardInventoryWidget(QWidget):
         self.edit_btn.clicked.connect(self.edit_selected_item)
         self.activate_btn.clicked.connect(self.activate_selected_item)
         self.deactivate_btn.clicked.connect(self.deactivate_selected_item)
+        self.save_to_library_btn.clicked.connect(self.save_selected_item_to_library)
         self.add_event_btn.clicked.connect(self.add_event_for_selected_item)
         self.edit_event_btn.clicked.connect(self.edit_selected_event)
         self.activate_event_btn.clicked.connect(self.activate_selected_event)
@@ -149,21 +168,24 @@ class HazardInventoryWidget(QWidget):
         self.events_table.doubleClicked.connect(self.edit_selected_event)
 
         self._populate_categories()
-        self.set_identification(None, read_only=False)
+        self.set_identification(None, read_only=False, identification_status="")
 
     def set_identification(
         self,
         identification_id: int | None,
         *,
         read_only: bool,
+        identification_status: str = "",
     ) -> None:
         self._identification_id = identification_id
+        self._identification_status = identification_status
         self._read_only = read_only
         self._selected_item_id = None
         self._selected_event_id = None
         editable = not read_only and identification_id is not None
         self._set_item_actions_enabled(editable)
         self._set_event_actions_enabled(False)
+        self._update_save_to_library_enabled()
         self.refresh()
 
     def refresh(self) -> None:
@@ -233,6 +255,70 @@ class HazardInventoryWidget(QWidget):
 
         hazard_inventory_item_service.deactivate_item(item.id)
         self.refresh()
+
+    def save_selected_item_to_library(self) -> None:
+        if self._identification_id is None:
+            QMessageBox.information(
+                self,
+                INVENTORY_ITEM_DIALOG_TITLE,
+                "Nejprve uložte základní údaje identifikace.",
+            )
+            return
+        if not can_save_inventory_item_to_library(self._identification_status):
+            QMessageBox.information(
+                self,
+                HAZARD_LIBRARY_SAVE_FROM_INVENTORY_SUCCESS_TITLE,
+                HAZARD_LIBRARY_SAVE_ARCHIVED_MESSAGE,
+            )
+            return
+
+        item = self._selected_item()
+        if item is None:
+            QMessageBox.information(
+                self,
+                INVENTORY_ITEM_DIALOG_TITLE,
+                WORKPLACE_ANALYSIS_SELECT_ITEM,
+            )
+            return
+        if not item.active:
+            QMessageBox.information(
+                self,
+                HAZARD_LIBRARY_SAVE_FROM_INVENTORY_SUCCESS_TITLE,
+                HAZARD_LIBRARY_SAVE_INACTIVE_ITEM_MESSAGE,
+            )
+            return
+
+        dialog = HazardLibrarySaveFromInventoryDialog(
+            self,
+            hazard_identification_id=self._identification_id,
+            inventory_item_id=item.id,
+            default_name=item.name,
+        )
+        if not dialog.exec() or dialog.result is None:
+            return
+
+        result = dialog.result
+        summary = (
+            f"Název vzoru: {result.template.name}\n"
+            f"Položky analýzy: {result.item_count}\n"
+            f"Nežádoucí události: {result.event_count}\n"
+            f"Posouzení: {result.assessment_count}\n"
+            f"Existující opatření: {result.existing_measure_count}\n"
+            f"Potřebná opatření: {result.required_measure_count}"
+        )
+        message = QMessageBox(self)
+        message.setIcon(QMessageBox.Icon.Information)
+        message.setWindowTitle(HAZARD_LIBRARY_SAVE_FROM_INVENTORY_SUCCESS_TITLE)
+        message.setText("Vzor byl úspěšně uložen do firemní knihovny.")
+        message.setInformativeText(summary)
+        open_button = message.addButton(
+            HAZARD_LIBRARY_OPEN_IN_LIBRARY_BUTTON,
+            QMessageBox.ButtonRole.ActionRole,
+        )
+        message.addButton(QMessageBox.StandardButton.Close)
+        message.exec()
+        if message.clickedButton() == open_button and self._on_open_library_template is not None:
+            self._on_open_library_template(result.template.id)
 
     def add_event_for_selected_item(self) -> None:
         if not self._ensure_editable():
@@ -367,6 +453,15 @@ class HazardInventoryWidget(QWidget):
         ):
             button.setEnabled(enabled)
 
+    def _update_save_to_library_enabled(self) -> None:
+        item = self._selected_item()
+        enabled = hazard_library_template_import_service.can_save_inventory_item(
+            hazard_identification_id=self._identification_id,
+            identification_status=self._identification_status,
+            inventory_item_id=item.id if item is not None else None,
+        )
+        self.save_to_library_btn.setEnabled(enabled)
+
     def _populate_categories(self) -> None:
         counts = (
             hazard_inventory_item_service.count_active_by_category(self._identification_id)
@@ -433,6 +528,7 @@ class HazardInventoryWidget(QWidget):
             self._selected_event_id = None
         self.table.blockSignals(False)
         self._update_event_actions_for_selection()
+        self._update_save_to_library_enabled()
 
     def _load_events_table(self) -> None:
         self.events_table.blockSignals(True)
@@ -511,6 +607,7 @@ class HazardInventoryWidget(QWidget):
         self._selected_event_id = None
         self._load_events_table()
         self._update_event_actions_for_selection()
+        self._update_save_to_library_enabled()
 
     def _on_event_selection_changed(self) -> None:
         event = self._selected_event()

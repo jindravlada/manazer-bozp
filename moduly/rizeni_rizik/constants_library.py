@@ -97,6 +97,17 @@ HAZARD_LIBRARY_TEMPLATE_SELECT_EVENT = "Vyberte nežádoucí událost."
 HAZARD_LIBRARY_TEMPLATE_SELECT_ITEM = "Vyberte položku vzoru."
 HAZARD_LIBRARY_TEMPLATE_EVENTS_SECTION_TITLE = "Nežádoucí události vybrané položky"
 
+HAZARD_LIBRARY_SAVE_FROM_INVENTORY_DIALOG_TITLE = "Uložit do knihovny"
+HAZARD_LIBRARY_SAVE_FROM_INVENTORY_SUCCESS_TITLE = "Vzor uložen do knihovny"
+HAZARD_LIBRARY_SAVE_TO_LIBRARY_BUTTON = "Uložit do knihovny…"
+HAZARD_LIBRARY_OPEN_IN_LIBRARY_BUTTON = "Otevřít ve Firemní knihovně"
+HAZARD_LIBRARY_SAVE_INACTIVE_ITEM_MESSAGE = (
+    "Do knihovny lze uložit pouze aktivní položku analýzy pracoviště."
+)
+HAZARD_LIBRARY_SAVE_ARCHIVED_MESSAGE = (
+    "U archivované identifikace nelze ukládat položky do knihovny."
+)
+
 HAZARD_LIBRARY_COL_ID = 0
 HAZARD_LIBRARY_COL_NAME = 1
 HAZARD_LIBRARY_COL_SCOPE = 2

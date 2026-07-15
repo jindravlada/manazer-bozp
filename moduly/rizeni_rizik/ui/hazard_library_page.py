@@ -153,6 +153,15 @@ class HazardLibraryPage(QWidget):
         hazard_library_template_service.deactivate(template.id)
         self.refresh()
 
+    def open_template(self, template_id: int) -> None:
+        self.refresh()
+        for row_index in range(self.table.rowCount()):
+            id_item = self.table.item(row_index, HAZARD_LIBRARY_COL_ID)
+            if id_item is not None and int(id_item.text()) == template_id:
+                self.table.selectRow(row_index)
+                self.table.scrollToItem(id_item)
+                break
+
     def _selected_template_id(self) -> int | None:
         selected = self.table.selectionModel().selectedRows()
         if not selected:

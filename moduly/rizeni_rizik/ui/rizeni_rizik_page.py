@@ -12,8 +12,9 @@ from moduly.rizeni_rizik.ui.hazard_library_page import HazardLibraryPage
 
 
 class HazardIdentificationsTab(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, on_open_library_template=None):
         super().__init__(parent)
+        self._on_open_library_template = on_open_library_template
 
         layout = QVBoxLayout(self)
 
@@ -46,7 +47,10 @@ class HazardIdentificationsTab(QWidget):
         self.refresh()
 
     def new_identification(self) -> None:
-        dialog = HazardIdentificationDialog(self)
+        dialog = HazardIdentificationDialog(
+            self,
+            on_open_library_template=self._on_open_library_template,
+        )
         exec_maximized(dialog)
         self.refresh()
 
@@ -62,9 +66,17 @@ class HazardIdentificationsTab(QWidget):
             self.refresh()
             return
 
-        dialog = HazardIdentificationDialog(self, identification=identification)
+        dialog = HazardIdentificationDialog(
+            self,
+            identification=identification,
+            on_open_library_template=self._on_open_library_template,
+        )
         exec_maximized(dialog)
         self.refresh()
+
+    def _on_open_library_template(self, template_id: int) -> None:
+        if self._on_open_library_template is not None:
+            self._on_open_library_template(template_id)
 
     def activate_selected_identification(self) -> None:
         identification = self._selected_identification()
@@ -125,11 +137,18 @@ class RizeniRizikPage(QWidget):
 
         layout = QVBoxLayout(self)
         self.tabs = QTabWidget()
-        self.identifications_tab = HazardIdentificationsTab()
+        self.library_tab_index = 1
+        self.identifications_tab = HazardIdentificationsTab(
+            on_open_library_template=self.open_library_template,
+        )
         self.library_page = HazardLibraryPage()
         self.tabs.addTab(self.identifications_tab, "Identifikace")
         self.tabs.addTab(self.library_page, HAZARD_LIBRARY_PAGE_TITLE)
         layout.addWidget(self.tabs)
+
+    def open_library_template(self, template_id: int) -> None:
+        self.tabs.setCurrentIndex(self.library_tab_index)
+        self.library_page.open_template(template_id)
 
     def refresh(self) -> None:
         self.identifications_tab.refresh()

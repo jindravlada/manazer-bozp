@@ -18,6 +18,8 @@ class HazardLibraryTemplate(Base):
     version_number: Mapped[int] = mapped_column(Integer, default=1)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     note: Mapped[str] = mapped_column(Text, default="")
+    source_identification_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source_inventory_item_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,

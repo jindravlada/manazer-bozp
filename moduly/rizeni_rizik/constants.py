@@ -137,6 +137,11 @@ def is_identification_inventory_read_only(status: str) -> bool:
     return status in READ_ONLY_IDENTIFICATION_STATUSES
 
 
+def can_save_inventory_item_to_library(status: str) -> bool:
+    """Uložení položky analýzy do knihovny – povoleno kromě archivované identifikace."""
+    return status != HAZARD_IDENTIFICATION_STATUS_ARCHIVED
+
+
 PHOTOS_INTRO_TEXT = (
     "Tato fotodokumentace zachycuje skutečný stav pracoviště v době provádění "
     "identifikace rizik. Slouží jako pracovní podklad i jako důkaz, že identifikace "

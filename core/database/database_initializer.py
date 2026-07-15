@@ -1060,6 +1060,11 @@ def _ensure_hazard_library_templates_table() -> None:
         from moduly.rizeni_rizik.modely.hazard_library_template import HazardLibraryTemplate
 
         HazardLibraryTemplate.__table__.create(bind=_db_engine(), checkfirst=True)
+        return
+    if "source_identification_id" not in columns:
+        _add_column("hazard_library_templates", "source_identification_id INTEGER")
+    if "source_inventory_item_id" not in columns:
+        _add_column("hazard_library_templates", "source_inventory_item_id INTEGER")
 
 
 def _ensure_hazard_library_template_operations_table() -> None:
