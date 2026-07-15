@@ -76,6 +76,7 @@ INVENTORY_INTRO_TEXT = (
     "Popište pracoviště – zaznamenejte zařízení, činnosti, energie, látky, prostory, "
     "dopravu, osoby, podmínky prostředí a další skutečnosti, které se zde vyskytují."
 )
+INVENTORY_ADD_NEW_BUTTON = "Přidat nový"
 
 HAZARD_INVENTORY_CATEGORY_EQUIPMENT = "equipment"
 HAZARD_INVENTORY_CATEGORY_ACTIVITY = "activity"

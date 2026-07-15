@@ -95,6 +95,15 @@ HAZARD_LIBRARY_SAVE_ARCHIVED_MESSAGE = (
     "U archivované identifikace nelze ukládat položky do katalogu zdrojů rizik."
 )
 
+HAZARD_LIBRARY_APPLY_TO_INVENTORY_BUTTON = "Převzít z Katalogu"
+HAZARD_LIBRARY_APPLY_TO_INVENTORY_DIALOG_TITLE = "Převzít z Katalogu"
+HAZARD_LIBRARY_RECOMMENDED_SOURCES_TITLE = "Doporučené zdroje"
+HAZARD_LIBRARY_OTHER_SOURCES_TITLE = "Ostatní zdroje"
+HAZARD_LIBRARY_APPLY_TO_INVENTORY_SUCCESS_TITLE = "Zdroj převzat z katalogu"
+HAZARD_LIBRARY_APPLY_ARCHIVED_MESSAGE = (
+    "U archivované identifikace nelze převzít zdroj z katalogu."
+)
+
 HAZARD_LIBRARY_COL_ID = 0
 HAZARD_LIBRARY_COL_NAME = 1
 HAZARD_LIBRARY_COL_CATEGORY = 2

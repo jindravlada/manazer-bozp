@@ -307,6 +307,15 @@ Přechod na Master katalog zdrojů rizik:
 - import z analýzy ukládá přímo nový Master zdroj; akce **Uložit do katalogu zdrojů rizik…**
 - bez použití Master zdrojů v identifikaci, synchronizace a porovnání verzí
 
+## Fáze R18a
+
+Převzetí zdroje z katalogu do analýzy pracoviště:
+
+- tlačítka **Přidat nový** a **Převzít z Katalogu** v záložce Analýza pracoviště
+- dialog katalogu se sekcemi **Doporučené zdroje** a **Ostatní zdroje** (filtr podle kategorie a provozu identifikace)
+- plná kopie větve Zdroj → Události → Posouzení → Opatření v jedné transakci
+- bez vazby na Master, synchronizace a lokálních odchylek
+
 ## Fáze R12
 
 Odstranění entity Nebezpečí (`IdentifiedHazard`):

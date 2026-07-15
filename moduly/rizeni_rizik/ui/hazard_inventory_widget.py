@@ -18,6 +18,7 @@ from moduly.rizeni_rizik.constants import (
     HAZARD_EVENT_DIALOG_TITLE,
     HAZARD_INVENTORY_CATEGORIES,
     HAZARD_INVENTORY_CATEGORY_LABELS,
+    INVENTORY_ADD_NEW_BUTTON,
     INVENTORY_COL_ACTIVE,
     INVENTORY_COL_DESCRIPTION,
     INVENTORY_COL_ID,
@@ -41,11 +42,17 @@ from moduly.rizeni_rizik.constants import (
     format_inventory_item_display_name,
 )
 from moduly.rizeni_rizik.constants_library import (
+    HAZARD_LIBRARY_APPLY_ARCHIVED_MESSAGE,
+    HAZARD_LIBRARY_APPLY_TO_INVENTORY_BUTTON,
+    HAZARD_LIBRARY_APPLY_TO_INVENTORY_SUCCESS_TITLE,
     HAZARD_LIBRARY_OPEN_IN_LIBRARY_BUTTON,
     HAZARD_LIBRARY_SAVE_ARCHIVED_MESSAGE,
     HAZARD_LIBRARY_SAVE_FROM_INVENTORY_SUCCESS_TITLE,
     HAZARD_LIBRARY_SAVE_INACTIVE_ITEM_MESSAGE,
     HAZARD_LIBRARY_SAVE_TO_LIBRARY_BUTTON,
+)
+from moduly.rizeni_rizik.sluzby.hazard_library_template_apply_service import (
+    hazard_library_template_apply_service,
 )
 from moduly.rizeni_rizik.sluzby.hazard_event_service import (
     HazardEventError,
@@ -58,6 +65,9 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_import_service import (
 from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import hazard_risk_assessment_service
 from moduly.rizeni_rizik.ui.hazard_event_dialog import HazardEventDialog
 from moduly.rizeni_rizik.ui.hazard_inventory_item_dialog import HazardInventoryItemDialog
+from moduly.rizeni_rizik.ui.hazard_library_apply_to_inventory_dialog import (
+    HazardLibraryApplyToInventoryDialog,
+)
 from moduly.rizeni_rizik.ui.hazard_library_save_from_inventory_dialog import (
     HazardLibrarySaveFromInventoryDialog,
 )
@@ -84,12 +94,14 @@ class HazardInventoryWidget(QWidget):
         layout.addWidget(intro)
 
         self.toolbar = QHBoxLayout()
-        self.add_btn = QPushButton("Přidat")
+        self.add_btn = QPushButton(INVENTORY_ADD_NEW_BUTTON)
+        self.apply_from_library_btn = QPushButton(HAZARD_LIBRARY_APPLY_TO_INVENTORY_BUTTON)
         self.edit_btn = QPushButton("Upravit")
         self.activate_btn = QPushButton("Aktivovat")
         self.deactivate_btn = QPushButton("Deaktivovat")
         self.save_to_library_btn = QPushButton(HAZARD_LIBRARY_SAVE_TO_LIBRARY_BUTTON)
         self.toolbar.addWidget(self.add_btn)
+        self.toolbar.addWidget(self.apply_from_library_btn)
         self.toolbar.addWidget(self.edit_btn)
         self.toolbar.addWidget(self.activate_btn)
         self.toolbar.addWidget(self.deactivate_btn)
@@ -153,6 +165,7 @@ class HazardInventoryWidget(QWidget):
         layout.addWidget(main_splitter, 1)
 
         self.add_btn.clicked.connect(self.add_item)
+        self.apply_from_library_btn.clicked.connect(self.apply_from_library)
         self.edit_btn.clicked.connect(self.edit_selected_item)
         self.activate_btn.clicked.connect(self.activate_selected_item)
         self.deactivate_btn.clicked.connect(self.deactivate_selected_item)
@@ -186,6 +199,7 @@ class HazardInventoryWidget(QWidget):
         self._set_item_actions_enabled(editable)
         self._set_event_actions_enabled(False)
         self._update_save_to_library_enabled()
+        self._update_apply_from_library_enabled()
         self.refresh()
 
     def refresh(self) -> None:
@@ -204,6 +218,58 @@ class HazardInventoryWidget(QWidget):
         )
         if dialog.exec():
             self.refresh()
+
+    def apply_from_library(self) -> None:
+        if not self._ensure_editable():
+            return
+        if self._identification_id is None:
+            QMessageBox.information(
+                self,
+                INVENTORY_ITEM_DIALOG_TITLE,
+                "Nejprve uložte základní údaje identifikace.",
+            )
+            return
+        if not hazard_library_template_apply_service.can_apply_template(
+            hazard_identification_id=self._identification_id,
+            identification_status=self._identification_status,
+        ):
+            QMessageBox.information(
+                self,
+                HAZARD_LIBRARY_APPLY_TO_INVENTORY_SUCCESS_TITLE,
+                HAZARD_LIBRARY_APPLY_ARCHIVED_MESSAGE,
+            )
+            return
+
+        dialog = HazardLibraryApplyToInventoryDialog(
+            self,
+            hazard_identification_id=self._identification_id,
+            default_category=self._current_category,
+        )
+        if not dialog.exec() or dialog.result is None:
+            return
+
+        result = dialog.result
+        self._current_category = result.item.category
+        category_index = HAZARD_INVENTORY_CATEGORIES.index(self._current_category)
+        self.category_list.setCurrentRow(category_index)
+        self._selected_item_id = result.item.id
+        self._selected_event_id = None
+
+        summary = (
+            f"Název zdroje: {result.item.name}\n"
+            f"Nežádoucí události: {result.event_count}\n"
+            f"Posouzení: {result.assessment_count}\n"
+            f"Existující opatření: {result.existing_measure_count}\n"
+            f"Potřebná opatření: {result.required_measure_count}"
+        )
+        message = QMessageBox(self)
+        message.setIcon(QMessageBox.Icon.Information)
+        message.setWindowTitle(HAZARD_LIBRARY_APPLY_TO_INVENTORY_SUCCESS_TITLE)
+        message.setText("Zdroj rizika byl převzat z katalogu a vložen do analýzy pracoviště.")
+        message.setInformativeText(summary)
+        message.exec()
+        self._notify_event_saved()
+        self.refresh()
 
     def edit_selected_item(self) -> None:
         item = self._selected_item()
@@ -299,8 +365,7 @@ class HazardInventoryWidget(QWidget):
 
         result = dialog.result
         summary = (
-            f"Název vzoru: {result.template.name}\n"
-            f"Položky analýzy: {result.item_count}\n"
+            f"Název zdroje: {result.template.name}\n"
             f"Nežádoucí události: {result.event_count}\n"
             f"Posouzení: {result.assessment_count}\n"
             f"Existující opatření: {result.existing_measure_count}\n"
@@ -438,6 +503,7 @@ class HazardInventoryWidget(QWidget):
     def _set_item_actions_enabled(self, enabled: bool) -> None:
         for button in (
             self.add_btn,
+            self.apply_from_library_btn,
             self.edit_btn,
             self.activate_btn,
             self.deactivate_btn,
@@ -461,6 +527,15 @@ class HazardInventoryWidget(QWidget):
             inventory_item_id=item.id if item is not None else None,
         )
         self.save_to_library_btn.setEnabled(enabled)
+
+    def _update_apply_from_library_enabled(self) -> None:
+        enabled = hazard_library_template_apply_service.can_apply_template(
+            hazard_identification_id=self._identification_id,
+            identification_status=self._identification_status,
+        )
+        self.apply_from_library_btn.setEnabled(
+            enabled and not self._read_only and self._identification_id is not None
+        )
 
     def _populate_categories(self) -> None:
         counts = (
