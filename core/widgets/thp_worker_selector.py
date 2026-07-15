@@ -59,10 +59,15 @@ class ThpWorkerSelector(SearchComboBox):
             self.setCurrentIndex(0)
 
     def current_person_id(self):
+        data = self.currentData()
+        if isinstance(data, int):
+            return data
+
         text = self.currentText().strip()
         for i in range(self.count()):
             if self.itemText(i).strip() == text:
-                return self.itemData(i)
+                item_data = self.itemData(i)
+                return item_data if isinstance(item_data, int) else None
         return None
 
     def current_person(self):
@@ -70,10 +75,29 @@ class ThpWorkerSelector(SearchComboBox):
         return self._workers_by_id.get(person_id)
 
     def set_person_id(self, person_id):
+        if person_id is None:
+            if self.include_empty:
+                self.setCurrentIndex(0)
+            else:
+                self.setCurrentText("")
+            return
+
         index = self.findData(person_id)
         if index >= 0:
             self.setCurrentIndex(index)
-        elif self.include_empty:
+            return
+
+        worker = settings_service.get_worker_by_id(person_id)
+        if worker is not None:
+            label = worker.display_name
+            if not worker.active:
+                label = f"{label} (neaktivní)"
+            self._workers_by_id[worker.id] = worker
+            self.addItem(label, worker.id)
+            self.setCurrentIndex(self.count() - 1)
+            return
+
+        if self.include_empty:
             self.setCurrentIndex(0)
         else:
             self.setCurrentText("")

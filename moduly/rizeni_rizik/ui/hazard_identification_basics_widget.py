@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QComboBox, QFormLayout, QLabel, QPlainTextEdit, QVBoxLayout, QWidget
 
 from core.widgets.nullable_date_edit import NullableDateEdit
-from core.widgets.person_selector import PersonSelector
+from core.widgets.thp_worker_selector import ThpWorkerSelector
 from moduly.rizeni_rizik.constants import (
     HAZARD_IDENTIFICATION_STATUSES,
     HAZARD_IDENTIFICATION_STATUS_LABELS,
@@ -20,7 +20,10 @@ class HazardIdentificationBasicsWidget(QWidget):
         self.operation = QComboBox()
         self.workplace = QComboBox()
         self.workplace_part = QComboBox()
-        self.responsible_person = PersonSelector(include_empty=True, allow_add_new=False)
+        self.responsible_person = ThpWorkerSelector(
+            include_empty=True,
+            allow_custom_value=False,
+        )
         self.started_at = NullableDateEdit()
         self.status = QComboBox()
         self.note = QPlainTextEdit()
@@ -86,7 +89,7 @@ class HazardIdentificationBasicsWidget(QWidget):
 
     def get_data(self) -> dict:
         workplace_part_id = self.workplace_part.currentData()
-        responsible_person_id = self._current_person_id()
+        responsible_person_id = self.responsible_person.current_person_id()
         return {
             "operation_id": self.operation.currentData(),
             "workplace_id": self.workplace.currentData(),
@@ -96,13 +99,6 @@ class HazardIdentificationBasicsWidget(QWidget):
             "status": self.status.currentData(),
             "note": self.note.toPlainText().strip(),
         }
-
-    def _current_person_id(self) -> int | None:
-        index = self.responsible_person.currentIndex()
-        if index < 0:
-            return None
-        data = self.responsible_person.itemData(index)
-        return data if isinstance(data, int) else None
 
     def _reload_operations(self, *, preserve_id: int | None = None) -> None:
         self._populate_workplace_combo(

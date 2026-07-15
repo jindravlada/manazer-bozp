@@ -5,7 +5,6 @@ from moduly.nastaveni.constants.workplace_hierarchy_constants import (
     WORKPLACE_ITEM_TYPE_WORKPLACE,
     WORKPLACE_ITEM_TYPE_WORKPLACE_PART,
 )
-from moduly.nastaveni.sluzby.person_service import person_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.rizeni_rizik.constants import (
     DEFAULT_HAZARD_IDENTIFICATION_STATUS,
@@ -218,8 +217,8 @@ class HazardIdentificationService:
     def _person_name(person_id: int | None) -> str:
         if not person_id:
             return ""
-        person = person_service.get_by_id(person_id)
-        return person.display_name if person else ""
+        worker = settings_service.get_worker_by_id(person_id)
+        return worker.display_name if worker else ""
 
 
 hazard_identification_service = HazardIdentificationService()

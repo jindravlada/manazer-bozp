@@ -31,7 +31,6 @@ with patch.object(Path, "home", return_value=_TMP):
         WORKPLACE_ITEM_TYPE_WORKPLACE,
         WORKPLACE_ITEM_TYPE_WORKPLACE_PART,
     )
-    from moduly.nastaveni.sluzby.person_service import person_service
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.rizeni_rizik.constants import (
         HAZARD_IDENTIFICATION_STATUS_IN_PROGRESS,
@@ -94,7 +93,10 @@ class RizeniRizikEditorPhaseR01bTestCase(unittest.TestCase):
             item_type=WORKPLACE_ITEM_TYPE_WORKPLACE_PART,
             parent_id=self.workplace_a1.id,
         )
-        self.person = person_service.create_person(first_name="Jan", last_name="Novák")
+        self.person = settings_service.save_worker(
+            first_name="Jan",
+            last_name="Novák",
+        )
 
     def _create_sample(self):
         return hazard_identification_service.create_identification(

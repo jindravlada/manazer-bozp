@@ -88,11 +88,10 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
-        self._populate_exposed_groups()
+        self._populate_exposed_groups(
+            selected_group_id=assessment.exposed_group_id if assessment is not None else None,
+        )
         if assessment is not None:
-            index = self.exposed_group.findData(assessment.exposed_group_id)
-            if index >= 0:
-                self.exposed_group.setCurrentIndex(index)
             self.consequence.setPlainText(assessment.consequence or "")
             severity_index = self.severity.findData(assessment.severity)
             if severity_index >= 0:
@@ -115,20 +114,31 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
             self.active_checkbox.setEnabled(False)
             buttons.button(QDialogButtonBox.StandardButton.Save).setEnabled(False)
 
-    def _populate_exposed_groups(self) -> None:
-        selected_id = self.exposed_group.currentData() if self.exposed_group.count() else None
+    def _populate_exposed_groups(self, *, selected_group_id: int | None = None) -> None:
+        current_id = selected_group_id or self.exposed_group.currentData()
         self.exposed_group.clear()
-        for group in exposed_group_service.get_active_groups():
+        for group in exposed_group_service.get_active_all():
             self.exposed_group.addItem(group.name, group.id)
-        if selected_id is not None:
-            index = self.exposed_group.findData(selected_id)
+        if selected_group_id is not None:
+            index = self.exposed_group.findData(selected_group_id)
+            if index >= 0:
+                self.exposed_group.setCurrentIndex(index)
+            else:
+                group = exposed_group_service.get_by_id(selected_group_id)
+                if group is not None:
+                    label = f"{group.name} (neaktivní)"
+                    self.exposed_group.addItem(label, group.id)
+                    self.exposed_group.setCurrentIndex(self.exposed_group.count() - 1)
+        elif current_id is not None:
+            index = self.exposed_group.findData(current_id)
             if index >= 0:
                 self.exposed_group.setCurrentIndex(index)
 
     def _open_groups_management(self) -> None:
+        selected_id = self.exposed_group.currentData()
         dialog = ExposedGroupsManagementDialog(self)
         if dialog.exec():
-            self._populate_exposed_groups()
+            self._populate_exposed_groups(selected_group_id=selected_id)
 
     def _update_severity_description(self) -> None:
         severity = self.severity.currentData()
