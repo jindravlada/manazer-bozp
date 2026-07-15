@@ -11,6 +11,11 @@ AI_PEER_REVIEW_INTRO_TEXT = (
 AI_PEER_REVIEW_EXPORT_BUTTON = "Exportovat podklady pro AI"
 AI_PEER_REVIEW_IMPORT_BUTTON = "Načíst odpověď AI"
 AI_PEER_REVIEW_DIALOG_TITLE = "Oponentní posouzení AI"
+AI_PEER_REVIEW_RESPONSE_DIALOG_TITLE = "Načíst odpověď AI"
+AI_PEER_REVIEW_RESPONSE_PLACEHOLDER = (
+    "Vložte odpověď AI ve formátu JSON 2.0 (návrhové balíky), "
+    "nebo načtěte soubor .json, .txt či .zip."
+)
 
 # Role odborného oponenta (R11.8)
 AI_PEER_REVIEW_ROLE_QUICK = "quick_check"

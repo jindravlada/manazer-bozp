@@ -54,6 +54,8 @@ from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_INTRO_TEXT,
     AI_PEER_REVIEW_OBJECTIVE_LABELS,
     AI_PEER_REVIEW_PACKAGE_TYPE_LABELS,
+    AI_PEER_REVIEW_RESPONSE_DIALOG_TITLE,
+    AI_PEER_REVIEW_RESPONSE_PLACEHOLDER,
     AI_PEER_REVIEW_ROLE_LABELS,
     AI_PEER_REVIEW_ROLES,
     AI_PEER_REVIEW_TABLE_HEADERS,
@@ -280,7 +282,7 @@ def catalog_peer_review_export_dialog_config() -> AiPeerReviewExportDialogConfig
 class AiPeerReviewResponseDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Načíst odpověď AI")
+        self.setWindowTitle(AI_PEER_REVIEW_RESPONSE_DIALOG_TITLE)
         self.resize(640, 480)
 
         layout = QVBoxLayout(self)
@@ -292,11 +294,7 @@ class AiPeerReviewResponseDialog(QDialog):
 
         layout.addWidget(QLabel("Odpověď AI:"))
         self.response = QPlainTextEdit()
-        self.response.setPlaceholderText(
-            "Vložte odpověď AI ve formátu JSON 1.1 (dle schema_odpovedi.json), "
-            "textovém formátu Oblast / Návrh / Zdůvodnění, nebo načtěte soubor "
-            ".json, .txt či .zip."
-        )
+        self.response.setPlaceholderText(AI_PEER_REVIEW_RESPONSE_PLACEHOLDER)
         layout.addWidget(self.response)
 
         load_btn = QPushButton("Načíst ze souboru…")
@@ -314,7 +312,7 @@ class AiPeerReviewResponseDialog(QDialog):
     def _load_from_file(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
             self,
-            "Načíst odpověď AI",
+            AI_PEER_REVIEW_RESPONSE_DIALOG_TITLE,
             "",
             "Odpovědi AI (*.json *.txt *.zip);;"
             "JSON (*.json);;Text (*.txt);;ZIP (*.zip);;"
