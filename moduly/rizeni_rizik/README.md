@@ -525,6 +525,14 @@ UI a zapracování návrhových balíků:
 - editor upravuje celý balík najednou (nikoliv izolované objekty)
 - zapracování probíhá v jedné DB transakci (událost → posouzení → opatření → právní vazby → revize +1 → historie) s rollbackem při chybě
 
+## Fáze R20b.1
+
+Normalizace právních odkazů AI vůči RPP:
+
+- zkratky NV / vyhl. / zák. se ekspandují na plný název předpisu
+- primární párování podle čísla a roku předpisu (např. `NV 378/2001` ↔ `Nařízení vlády č. 378/2001 Sb.`)
+- jedna shoda se použije automaticky; více shod zůstane k ručnímu výběru
+
 ## Fáze R18g
 
 Zapracování návrhů AI do MASTER obsahu katalogu:
