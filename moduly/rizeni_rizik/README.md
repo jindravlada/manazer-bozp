@@ -454,6 +454,14 @@ Revize odborného obsahu místo verzí:
 - důvody: ruční úprava, import z identifikace, návrhy AI, aktualizace z Master
 - model `hazard_library_template_revisions` je připraven pro budoucí autora, seznam změn, komentář a obnovu
 
+## Fáze R18g.2
+
+Inteligentní zpracování duplicit při zapracování AI návrhů:
+
+- jednoznačné shody v číselnících a textech se sloučí automaticky bez dialogu
+- dialog se zobrazí pouze u podobných shod a nejasných duplicit odborného obsahu
+- po dokončení zapracování se zobrazí souhrnné hlášení (nově zapracováno, použito existujících, přeskočeno, revize)
+
 ## Fáze R18g
 
 Zapracování návrhů AI do MASTER obsahu katalogu:

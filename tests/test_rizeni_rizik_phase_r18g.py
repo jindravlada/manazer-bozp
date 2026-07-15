@@ -65,6 +65,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_support import (
         CATALOG_DUPLICATE_ACTION_MERGE,
         CATALOG_DUPLICATE_ACTION_SKIP,
+        CATALOG_DUPLICATE_MATCH_EXACT,
     )
     from moduly.rizeni_rizik.sluzby.hazard_catalog_source_peer_review_provider import (
         hazard_catalog_source_peer_review_provider,
@@ -282,6 +283,7 @@ class HazardCatalogProposalIncorporateR18gTestCase(unittest.TestCase):
         self.assertIsNotNone(duplicate)
         assert duplicate is not None
         self.assertEqual(duplicate.existing_label, "Existující událost")
+        self.assertEqual(duplicate.match_type, CATALOG_DUPLICATE_MATCH_EXACT)
 
     def test_duplicate_skip_does_not_create_event(self) -> None:
         hazard_library_template_event_service.create_event(

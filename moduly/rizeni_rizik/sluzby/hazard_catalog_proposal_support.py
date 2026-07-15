@@ -21,6 +21,9 @@ CATALOG_DUPLICATE_ACTION_MERGE = "merge"
 CATALOG_DUPLICATE_ACTION_EDIT = "edit"
 CATALOG_DUPLICATE_ACTION_CANCEL = "cancel"
 
+CATALOG_DUPLICATE_MATCH_EXACT = "exact"
+CATALOG_DUPLICATE_MATCH_SIMILAR = "similar"
+
 
 @dataclass(frozen=True)
 class CatalogProposalPayload:
@@ -34,8 +37,74 @@ class CatalogProposalPayload:
 @dataclass(frozen=True)
 class CatalogProposalDuplicate:
     kind: str
+    match_type: str
     existing_label: str
     existing_id: int | None = None
+    proposal_label: str = ""
+
+
+@dataclass(frozen=True)
+class CatalogProposalConflict:
+    proposal_id: int
+    proposal_label: str
+    duplicate: CatalogProposalDuplicate
+
+
+@dataclass
+class CatalogIncorporatePlan:
+    resolutions: dict[int, str]
+    conflicts: list[CatalogProposalConflict]
+
+
+def normalize_match_text(text: str) -> str:
+    return " ".join((text or "").strip().split()).casefold()
+
+
+def is_exact_text_match(left: str, right: str) -> bool:
+    return normalize_match_text(left) == normalize_match_text(right)
+
+
+def is_similar_text_match(left: str, right: str) -> bool:
+    left_normalized = normalize_match_text(left)
+    right_normalized = normalize_match_text(right)
+    if not left_normalized or not right_normalized:
+        return False
+    if left_normalized == right_normalized:
+        return False
+    if left_normalized in right_normalized or right_normalized in left_normalized:
+        return True
+    from difflib import SequenceMatcher
+
+    return SequenceMatcher(None, left_normalized, right_normalized).ratio() >= 0.72
+
+
+def is_codebook_proposal_kind(kind: str) -> bool:
+    return kind in {
+        CATALOG_PROPOSAL_KIND_EXPOSED_GROUP,
+    }
+
+
+def requires_dialog_for_duplicate(duplicate: CatalogProposalDuplicate) -> bool:
+    return duplicate.match_type == CATALOG_DUPLICATE_MATCH_SIMILAR
+
+
+def format_incorporate_summary(
+    *,
+    newly_incorporated: int,
+    used_existing: int,
+    skipped: int,
+    rejected: int,
+    revision: int | None,
+) -> str:
+    from moduly.rizeni_rizik.constants_library import CATALOG_AI_PROPOSAL_INCORPORATE_SUMMARY
+
+    return CATALOG_AI_PROPOSAL_INCORPORATE_SUMMARY.format(
+        newly_incorporated=newly_incorporated,
+        used_existing=used_existing,
+        skipped=skipped,
+        rejected=rejected,
+        revision=revision if revision is not None else "—",
+    )
 
 
 def area_matches(area: str, needles: tuple[str, ...]) -> bool:

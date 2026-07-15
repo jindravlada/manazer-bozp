@@ -13,6 +13,7 @@ from moduly.rizeni_rizik.constants_library import (
     CATALOG_AI_PROPOSAL_DUPLICATE_EDIT,
     CATALOG_AI_PROPOSAL_DUPLICATE_INTRO,
     CATALOG_AI_PROPOSAL_DUPLICATE_MERGE,
+    CATALOG_AI_PROPOSAL_DUPLICATE_SIMILAR_INTRO,
     CATALOG_AI_PROPOSAL_DUPLICATE_SKIP,
 )
 from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_support import (
@@ -20,6 +21,7 @@ from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_support import (
     CATALOG_DUPLICATE_ACTION_EDIT,
     CATALOG_DUPLICATE_ACTION_MERGE,
     CATALOG_DUPLICATE_ACTION_SKIP,
+    CATALOG_DUPLICATE_MATCH_SIMILAR,
     CatalogProposalDuplicate,
 )
 
@@ -39,8 +41,13 @@ class HazardCatalogProposalDuplicateDialog(QDialog):
         self.resize(520, 220)
 
         layout = QVBoxLayout(self)
+        intro_text = (
+            CATALOG_AI_PROPOSAL_DUPLICATE_SIMILAR_INTRO
+            if duplicate.match_type == CATALOG_DUPLICATE_MATCH_SIMILAR
+            else CATALOG_AI_PROPOSAL_DUPLICATE_INTRO
+        )
         intro = QLabel(
-            CATALOG_AI_PROPOSAL_DUPLICATE_INTRO.format(
+            intro_text.format(
                 proposal_name=proposal_name,
                 existing_label=duplicate.existing_label,
             )

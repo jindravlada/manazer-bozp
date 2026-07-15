@@ -1002,7 +1002,6 @@ class AiPeerReviewWidget(QWidget):
             )
             return
 
-        from moduly.rizeni_rizik.constants_library import CATALOG_AI_PROPOSAL_INCORPORATE_SUCCESS
         from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_incorporate_service import (
             HazardCatalogProposalIncorporateError,
             hazard_catalog_proposal_incorporate_service,
@@ -1010,8 +1009,8 @@ class AiPeerReviewWidget(QWidget):
         from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_support import (
             CATALOG_DUPLICATE_ACTION_CANCEL,
             CATALOG_DUPLICATE_ACTION_EDIT,
-            CATALOG_DUPLICATE_ACTION_MERGE,
             CATALOG_DUPLICATE_ACTION_SKIP,
+            format_incorporate_summary,
         )
         from moduly.rizeni_rizik.ui.hazard_catalog_ai_proposal_edit_dialog import (
             HazardCatalogAiProposalEditDialog,
@@ -1020,27 +1019,22 @@ class AiPeerReviewWidget(QWidget):
             HazardCatalogProposalDuplicateDialog,
         )
 
-        export_id_map = hazard_catalog_proposal_incorporate_service.get_export_id_map(review_id)
-        resolutions: dict[int, str] = {}
-        proposals = hazard_catalog_proposal_incorporate_service.proposal_repository.get_by_ids(
-            proposal_ids,
+        plan = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
+            template_id=self._source_id,
+            review_id=review_id,
+            proposal_ids=proposal_ids,
         )
+        resolutions = dict(plan.resolutions)
 
-        for proposal in proposals:
-            if proposal.status != PROPOSAL_STATUS_PENDING:
+        for conflict in plan.conflicts:
+            proposal = ai_peer_review_service.get_proposal_by_id(conflict.proposal_id)
+            if proposal is None or proposal.status != PROPOSAL_STATUS_PENDING:
                 continue
             while True:
-                duplicate = hazard_catalog_proposal_incorporate_service.detect_duplicate(
-                    template_id=self._source_id,
-                    proposal=proposal,
-                    export_id_map=export_id_map,
-                )
-                if duplicate is None:
-                    break
                 dialog = HazardCatalogProposalDuplicateDialog(
                     self,
-                    proposal_name=proposal.name,
-                    duplicate=duplicate,
+                    proposal_name=conflict.proposal_label,
+                    duplicate=conflict.duplicate,
                 )
                 if not dialog.exec():
                     return
@@ -1054,7 +1048,18 @@ class AiPeerReviewWidget(QWidget):
                     proposal = ai_peer_review_service.get_proposal_by_id(proposal.id)
                     if proposal is None:
                         return
-                    continue
+                    refreshed = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
+                        template_id=self._source_id,
+                        review_id=review_id,
+                        proposal_ids=[proposal.id],
+                    )
+                    if refreshed.conflicts:
+                        conflict = refreshed.conflicts[0]
+                        continue
+                    resolutions.update(refreshed.resolutions)
+                    if proposal.id not in refreshed.resolutions:
+                        resolutions.pop(proposal.id, None)
+                    break
                 resolutions[proposal.id] = action
                 break
 
@@ -1072,12 +1077,19 @@ class AiPeerReviewWidget(QWidget):
         self.refresh()
         if self._on_catalog_incorporated is not None:
             self._on_catalog_incorporated(result.new_revision_number)
-        if result.incorporated_count > 0:
+        if (
+            result.incorporated_count > 0
+            or result.skipped_count > 0
+            or result.used_existing_count > 0
+        ):
             QMessageBox.information(
                 self,
                 AI_PEER_REVIEW_DIALOG_TITLE,
-                CATALOG_AI_PROPOSAL_INCORPORATE_SUCCESS.format(
-                    count=result.incorporated_count,
-                    revision=result.new_revision_number or "—",
+                format_incorporate_summary(
+                    newly_incorporated=result.newly_incorporated_count,
+                    used_existing=result.used_existing_count,
+                    skipped=result.skipped_count,
+                    rejected=0,
+                    revision=result.new_revision_number,
                 ),
             )

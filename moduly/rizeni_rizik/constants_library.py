@@ -200,10 +200,22 @@ CATALOG_AI_PROPOSAL_QUEUE_LABEL = "Návrhy ke zpracování (čekají na odborné
 CATALOG_AI_PROPOSAL_INCORPORATE_SUCCESS = (
     "Do MASTER obsahu bylo zapracováno {count} návrhů. Revize zdroje: {revision}."
 )
+CATALOG_AI_PROPOSAL_INCORPORATE_SUMMARY = (
+    "Zapracování dokončeno.\n\n"
+    "Nově zapracováno:\n{newly_incorporated}\n\n"
+    "Použito existujících položek:\n{used_existing}\n\n"
+    "Přeskočeno:\n{skipped}\n\n"
+    "Zamítnuto:\n{rejected}\n\n"
+    "Nová revize:\n{revision}"
+)
 CATALOG_AI_PROPOSAL_REJECT_SUCCESS = "Zamítnuto návrhů: {count}."
 CATALOG_AI_PROPOSAL_DUPLICATE_DIALOG_TITLE = "Duplicitní návrh"
 CATALOG_AI_PROPOSAL_DUPLICATE_INTRO = (
     "Návrh „{proposal_name}“ je v konfliktu s existující položkou „{existing_label}“."
+)
+CATALOG_AI_PROPOSAL_DUPLICATE_SIMILAR_INTRO = (
+    "Návrh „{proposal_name}“ je podobný existující položce „{existing_label}“.\n"
+    "Vyberte, jak s návrhem naložit."
 )
 CATALOG_AI_PROPOSAL_DUPLICATE_SKIP = "Přeskočit"
 CATALOG_AI_PROPOSAL_DUPLICATE_MERGE = "Sloučit"

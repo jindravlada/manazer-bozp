@@ -18,7 +18,11 @@ from core.ai_oponentni.repository.ai_unassigned_proposal_repository import (
     AiUnassignedProposalRepository,
 )
 from core.database.session import get_session
-from moduly.rizeni_rizik.constants import DEFAULT_RISK_SEVERITY, RISK_SEVERITIES
+from moduly.rizeni_rizik.constants import (
+    DEFAULT_RISK_SEVERITY,
+    RISK_SEVERITIES,
+    RISK_SEVERITY_LABELS,
+)
 from moduly.rizeni_rizik.constants_library import HAZARD_LIBRARY_REVISION_REASON_AI_PROPOSALS
 from moduly.rizeni_rizik.modely.hazard_library_template import HazardLibraryTemplate
 from moduly.rizeni_rizik.modely.hazard_library_template_assessment import (
@@ -35,6 +39,8 @@ from moduly.rizeni_rizik.modely.hazard_library_template_revision import (
 from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_support import (
     CATALOG_DUPLICATE_ACTION_MERGE,
     CATALOG_DUPLICATE_ACTION_SKIP,
+    CATALOG_DUPLICATE_MATCH_EXACT,
+    CATALOG_DUPLICATE_MATCH_SIMILAR,
     CATALOG_PROPOSAL_KIND_ASSESSMENT,
     CATALOG_PROPOSAL_KIND_EVENT,
     CATALOG_PROPOSAL_KIND_EXISTING_MEASURE,
@@ -42,16 +48,18 @@ from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_support import (
     CATALOG_PROPOSAL_KIND_LEGAL,
     CATALOG_PROPOSAL_KIND_REQUIRED_MEASURE,
     CATALOG_PROPOSAL_KIND_UNKNOWN,
+    CatalogIncorporatePlan,
+    CatalogProposalConflict,
     CatalogProposalDuplicate,
     CatalogProposalPayload,
+    area_matches,
     classify_catalog_proposal,
+    is_exact_text_match,
+    is_similar_text_match,
+    normalize_match_text,
     parse_proposal_payload,
-)
-from moduly.rizeni_rizik.sluzby.hazard_library_template_event_service import (
-    normalize_template_event_name,
-)
-from moduly.rizeni_rizik.sluzby.hazard_library_template_existing_measure_service import (
-    normalize_template_measure_description,
+    proposal_payload_to_json,
+    requires_dialog_for_duplicate,
 )
 from moduly.rizeni_rizik.sluzby.hazard_library_template_service import (
     hazard_library_template_service,
@@ -65,6 +73,8 @@ class HazardCatalogProposalIncorporateError(ValueError):
 @dataclass
 class CatalogIncorporateResult:
     incorporated_count: int
+    newly_incorporated_count: int
+    used_existing_count: int
     skipped_count: int
     merged_count: int
     new_revision_number: int | None
@@ -98,19 +108,152 @@ class HazardCatalogProposalIncorporateService:
         proposal: AiUnassignedProposal,
         export_id_map: dict[str, dict],
     ) -> CatalogProposalDuplicate | None:
+        duplicate = self._find_duplicate_match(
+            template_id=template_id,
+            proposal=proposal,
+            export_id_map=export_id_map,
+        )
+        if duplicate is None or duplicate.match_type != CATALOG_DUPLICATE_MATCH_EXACT:
+            return None
+        return duplicate
+
+    def prepare_incorporation(
+        self,
+        *,
+        template_id: int,
+        review_id: int,
+        proposal_ids: list[int],
+    ) -> CatalogIncorporatePlan:
+        export_id_map = self.get_export_id_map(review_id)
+        proposals = [
+            proposal
+            for proposal in self.proposal_repository.get_by_ids(proposal_ids)
+            if proposal.status == PROPOSAL_STATUS_PENDING
+        ]
+        resolutions: dict[int, str] = {}
+        conflicts: list[CatalogProposalConflict] = []
+
+        for proposal in proposals:
+            working = self.proposal_repository.get_by_id(proposal.id)
+            if working is None or working.status != PROPOSAL_STATUS_PENDING:
+                continue
+
+            if self.auto_resolve_codebooks(working):
+                self.proposal_repository.update(working)
+
+            duplicate = self._find_duplicate_match(
+                template_id=template_id,
+                proposal=working,
+                export_id_map=export_id_map,
+            )
+            if duplicate is None:
+                continue
+            if duplicate.match_type == CATALOG_DUPLICATE_MATCH_EXACT:
+                resolutions[working.id] = CATALOG_DUPLICATE_ACTION_MERGE
+                continue
+            if requires_dialog_for_duplicate(duplicate):
+                conflicts.append(
+                    CatalogProposalConflict(
+                        proposal_id=working.id,
+                        proposal_label=working.name,
+                        duplicate=duplicate,
+                    ),
+                )
+        return CatalogIncorporatePlan(resolutions=resolutions, conflicts=conflicts)
+
+    def auto_resolve_codebooks(self, proposal: AiUnassignedProposal) -> bool:
+        changed = False
+        if self._auto_resolve_exposed_group(proposal):
+            changed = True
+        if self._auto_resolve_severity(proposal):
+            changed = True
+        return changed
+
+    def _auto_resolve_exposed_group(self, proposal: AiUnassignedProposal) -> bool:
+        if proposal.exposed_group_id is not None:
+            return False
+
+        from moduly.nastaveni.sluzby.exposed_group_service import (
+            ExposedGroupMatchKind,
+            exposed_group_service,
+        )
+
+        kind = classify_catalog_proposal(proposal)
+        candidates: list[str] = []
+        if kind == CATALOG_PROPOSAL_KIND_EXPOSED_GROUP:
+            candidates.append(proposal.name)
+        elif kind == CATALOG_PROPOSAL_KIND_ASSESSMENT and area_matches(
+            (proposal.area or "").casefold(),
+            ("ohrožen", "ohrozen", "skupin"),
+        ):
+            candidates.append(proposal.name)
+
+        for candidate in candidates:
+            match = exposed_group_service.classify_name(candidate)
+            if match.kind == ExposedGroupMatchKind.ACTIVE and match.groups:
+                proposal.exposed_group_id = match.groups[0].id
+                return True
+        return False
+
+    def _auto_resolve_severity(self, proposal: AiUnassignedProposal) -> bool:
+        if classify_catalog_proposal(proposal) != CATALOG_PROPOSAL_KIND_ASSESSMENT:
+            return False
+
+        payload = parse_proposal_payload(proposal)
+        if payload.severity in RISK_SEVERITIES:
+            return False
+
+        resolved = self._resolve_severity_value(
+            payload.severity,
+            proposal.name,
+            proposal.reasoning,
+        )
+        if resolved == payload.severity or resolved not in RISK_SEVERITIES:
+            return False
+
+        proposal.payload_json = proposal_payload_to_json(
+            CatalogProposalPayload(
+                description=payload.description,
+                note=payload.note,
+                consequence=payload.consequence,
+                conclusion=payload.conclusion,
+                severity=resolved,
+            ),
+        )
+        return True
+
+    @staticmethod
+    def _resolve_severity_value(*candidates: str) -> str:
+        for candidate in candidates:
+            normalized = normalize_match_text(candidate)
+            if not normalized:
+                continue
+            if candidate in RISK_SEVERITIES:
+                return candidate
+            for severity, label in RISK_SEVERITY_LABELS.items():
+                if normalize_match_text(label) == normalized:
+                    return severity
+        return ""
+
+    def _find_duplicate_match(
+        self,
+        *,
+        template_id: int,
+        proposal: AiUnassignedProposal,
+        export_id_map: dict[str, dict],
+    ) -> CatalogProposalDuplicate | None:
         kind = classify_catalog_proposal(proposal)
         payload = parse_proposal_payload(proposal)
 
         if kind == CATALOG_PROPOSAL_KIND_EVENT:
-            normalized = normalize_template_event_name(proposal.name)
-            for event in self._active_events(template_id):
-                if normalize_template_event_name(event.name) == normalized:
-                    return CatalogProposalDuplicate(
-                        kind=kind,
-                        existing_label=event.name,
-                        existing_id=event.id,
-                    )
-            return None
+            return self._match_content_duplicate(
+                kind=kind,
+                proposal_label=proposal.name,
+                candidates=[
+                    (event.name, event.id)
+                    for event in self._active_events(template_id)
+                ],
+            )
 
         if kind == CATALOG_PROPOSAL_KIND_ASSESSMENT:
             parent = self._resolve_parent(proposal, export_id_map)
@@ -119,15 +262,18 @@ class HazardCatalogProposalIncorporateService:
             if proposal.exposed_group_id is None:
                 return None
             for assessment in self._active_assessments(int(parent["id"])):
-                if assessment.exposed_group_id == proposal.exposed_group_id:
-                    from moduly.nastaveni.sluzby.exposed_group_service import exposed_group_service
+                if assessment.exposed_group_id != proposal.exposed_group_id:
+                    continue
+                from moduly.nastaveni.sluzby.exposed_group_service import exposed_group_service
 
-                    group_name = exposed_group_service.display_name(assessment.exposed_group_id)
-                    return CatalogProposalDuplicate(
-                        kind=kind,
-                        existing_label=group_name or "—",
-                        existing_id=assessment.id,
-                    )
+                group_name = exposed_group_service.display_name(assessment.exposed_group_id)
+                return CatalogProposalDuplicate(
+                    kind=kind,
+                    match_type=CATALOG_DUPLICATE_MATCH_EXACT,
+                    existing_label=group_name or "—",
+                    existing_id=assessment.id,
+                    proposal_label=proposal.name,
+                )
             return None
 
         if kind in {
@@ -138,35 +284,97 @@ class HazardCatalogProposalIncorporateService:
             if parent is None or parent.get("kind") != "assessment":
                 return None
             description = payload.description or proposal.name
-            normalized = normalize_template_measure_description(description)
             measures = (
                 self._active_existing_measures(int(parent["id"]))
                 if kind == CATALOG_PROPOSAL_KIND_EXISTING_MEASURE
                 else self._active_required_measures(int(parent["id"]))
             )
-            for measure in measures:
-                if normalize_template_measure_description(measure.description) == normalized:
-                    return CatalogProposalDuplicate(
-                        kind=kind,
-                        existing_label=measure.description,
-                        existing_id=measure.id,
-                    )
-            return None
+            return self._match_content_duplicate(
+                kind=kind,
+                proposal_label=description,
+                candidates=[(measure.description, measure.id) for measure in measures],
+            )
 
         if kind == CATALOG_PROPOSAL_KIND_EXPOSED_GROUP:
             from moduly.nastaveni.sluzby.exposed_group_service import exposed_group_service
 
-            normalized = normalize_template_event_name(proposal.name)
-            for group in exposed_group_service.get_all(include_inactive=False):
-                if normalize_template_event_name(group.name) == normalized:
-                    return CatalogProposalDuplicate(
-                        kind=kind,
-                        existing_label=group.name,
-                        existing_id=group.id,
-                    )
-            return None
+            return self._match_codebook_duplicate(
+                kind=kind,
+                proposal_label=proposal.name,
+                candidates=[
+                    (group.name, group.id)
+                    for group in exposed_group_service.get_all(include_inactive=False)
+                ],
+            )
+
+        if kind == CATALOG_PROPOSAL_KIND_LEGAL:
+            return self._match_content_duplicate(
+                kind=kind,
+                proposal_label=proposal.name,
+                candidates=[],
+            )
 
         return None
+
+    @staticmethod
+    def _match_codebook_duplicate(
+        *,
+        kind: str,
+        proposal_label: str,
+        candidates: list[tuple[str, int | None]],
+    ) -> CatalogProposalDuplicate | None:
+        for existing_label, existing_id in candidates:
+            if is_exact_text_match(proposal_label, existing_label):
+                return CatalogProposalDuplicate(
+                    kind=kind,
+                    match_type=CATALOG_DUPLICATE_MATCH_EXACT,
+                    existing_label=existing_label,
+                    existing_id=existing_id,
+                    proposal_label=proposal_label,
+                )
+        for existing_label, existing_id in candidates:
+            if is_similar_text_match(proposal_label, existing_label):
+                return CatalogProposalDuplicate(
+                    kind=kind,
+                    match_type=CATALOG_DUPLICATE_MATCH_SIMILAR,
+                    existing_label=existing_label,
+                    existing_id=existing_id,
+                    proposal_label=proposal_label,
+                )
+        return None
+
+    @staticmethod
+    def _match_content_duplicate(
+        *,
+        kind: str,
+        proposal_label: str,
+        candidates: list[tuple[str, int | None]],
+    ) -> CatalogProposalDuplicate | None:
+        for existing_label, existing_id in candidates:
+            if is_exact_text_match(proposal_label, existing_label):
+                return CatalogProposalDuplicate(
+                    kind=kind,
+                    match_type=CATALOG_DUPLICATE_MATCH_EXACT,
+                    existing_label=existing_label,
+                    existing_id=existing_id,
+                    proposal_label=proposal_label,
+                )
+
+        similar_candidates = [
+            (existing_label, existing_id)
+            for existing_label, existing_id in candidates
+            if is_similar_text_match(proposal_label, existing_label)
+        ]
+        if not similar_candidates:
+            return None
+        existing_label, existing_id = similar_candidates[0]
+        return CatalogProposalDuplicate(
+            kind=kind,
+            match_type=CATALOG_DUPLICATE_MATCH_SIMILAR,
+            existing_label=existing_label,
+            existing_id=existing_id,
+            proposal_label=proposal_label,
+        )
 
     def reject_proposals(self, proposal_ids: list[int]) -> int:
         if not proposal_ids:
@@ -223,8 +431,9 @@ class HazardCatalogProposalIncorporateService:
             )
 
         incorporated = 0
+        newly_created = 0
+        used_existing = 0
         skipped = 0
-        merged = 0
         applied_any = False
         new_revision_number: int | None = None
 
@@ -256,7 +465,7 @@ class HazardCatalogProposalIncorporateService:
 
                 if action == CATALOG_DUPLICATE_ACTION_MERGE:
                     db_proposal.status = PROPOSAL_STATUS_INCORPORATED
-                    merged += 1
+                    used_existing += 1
                     incorporated += 1
                     applied_any = True
                     continue
@@ -268,6 +477,7 @@ class HazardCatalogProposalIncorporateService:
                     export_id_map=export_id_map,
                 )
                 db_proposal.status = PROPOSAL_STATUS_INCORPORATED
+                newly_created += 1
                 incorporated += 1
                 applied_any = True
 
@@ -296,8 +506,10 @@ class HazardCatalogProposalIncorporateService:
         self._refresh_review_counts(review_id)
         return CatalogIncorporateResult(
             incorporated_count=incorporated,
+            newly_incorporated_count=newly_created,
+            used_existing_count=used_existing,
             skipped_count=skipped,
-            merged_count=merged,
+            merged_count=used_existing,
             new_revision_number=new_revision_number,
         )
 
