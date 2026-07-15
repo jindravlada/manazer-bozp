@@ -42,6 +42,9 @@ from moduly.rizeni_rizik.constants import (
     format_inventory_item_display_name,
 )
 from moduly.rizeni_rizik.constants_library import (
+    CATALOG_COMPARE_WITH_MASTER_BUTTON,
+    CATALOG_COMPARE_WITH_MASTER_NOT_CATALOG_ITEM,
+    CATALOG_COMPARE_WITH_MASTER_SELECT_ITEM,
     HAZARD_LIBRARY_APPLY_ARCHIVED_MESSAGE,
     HAZARD_LIBRARY_APPLY_TO_INVENTORY_BUTTON,
     HAZARD_LIBRARY_APPLY_TO_INVENTORY_SUCCESS_TITLE,
@@ -50,6 +53,10 @@ from moduly.rizeni_rizik.constants_library import (
     HAZARD_LIBRARY_SAVE_FROM_INVENTORY_SUCCESS_TITLE,
     HAZARD_LIBRARY_SAVE_INACTIVE_ITEM_MESSAGE,
     HAZARD_LIBRARY_SAVE_TO_LIBRARY_BUTTON,
+)
+from moduly.rizeni_rizik.sluzby.hazard_catalog_instance_compare_service import (
+    HazardCatalogInstanceCompareError,
+    hazard_catalog_instance_compare_service,
 )
 from moduly.rizeni_rizik.sluzby.hazard_library_template_apply_service import (
     hazard_library_template_apply_service,
@@ -63,6 +70,9 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_import_service import (
     hazard_library_template_import_service,
 )
 from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import hazard_risk_assessment_service
+from moduly.rizeni_rizik.ui.hazard_catalog_instance_compare_dialog import (
+    HazardCatalogInstanceCompareDialog,
+)
 from moduly.rizeni_rizik.ui.hazard_event_dialog import HazardEventDialog
 from moduly.rizeni_rizik.ui.hazard_inventory_item_dialog import HazardInventoryItemDialog
 from moduly.rizeni_rizik.ui.hazard_library_apply_to_inventory_dialog import (
@@ -100,12 +110,14 @@ class HazardInventoryWidget(QWidget):
         self.activate_btn = QPushButton("Aktivovat")
         self.deactivate_btn = QPushButton("Deaktivovat")
         self.save_to_library_btn = QPushButton(HAZARD_LIBRARY_SAVE_TO_LIBRARY_BUTTON)
+        self.compare_with_master_btn = QPushButton(CATALOG_COMPARE_WITH_MASTER_BUTTON)
         self.toolbar.addWidget(self.add_btn)
         self.toolbar.addWidget(self.apply_from_library_btn)
         self.toolbar.addWidget(self.edit_btn)
         self.toolbar.addWidget(self.activate_btn)
         self.toolbar.addWidget(self.deactivate_btn)
         self.toolbar.addWidget(self.save_to_library_btn)
+        self.toolbar.addWidget(self.compare_with_master_btn)
         self.toolbar.addStretch()
         layout.addLayout(self.toolbar)
 
@@ -170,6 +182,7 @@ class HazardInventoryWidget(QWidget):
         self.activate_btn.clicked.connect(self.activate_selected_item)
         self.deactivate_btn.clicked.connect(self.deactivate_selected_item)
         self.save_to_library_btn.clicked.connect(self.save_selected_item_to_library)
+        self.compare_with_master_btn.clicked.connect(self.compare_selected_item_with_master)
         self.add_event_btn.clicked.connect(self.add_event_for_selected_item)
         self.edit_event_btn.clicked.connect(self.edit_selected_event)
         self.activate_event_btn.clicked.connect(self.activate_selected_event)
@@ -200,6 +213,8 @@ class HazardInventoryWidget(QWidget):
         self._set_event_actions_enabled(False)
         self._update_save_to_library_enabled()
         self._update_apply_from_library_enabled()
+        self.compare_with_master_btn.setEnabled(False)
+        self._update_compare_with_master_enabled()
         self.refresh()
 
     def refresh(self) -> None:
@@ -385,6 +400,32 @@ class HazardInventoryWidget(QWidget):
         if message.clickedButton() == open_button and self._on_open_library_template is not None:
             self._on_open_library_template(result.template.id)
 
+    def compare_selected_item_with_master(self) -> None:
+        item = self._selected_item()
+        if item is None:
+            QMessageBox.information(
+                self,
+                CATALOG_COMPARE_WITH_MASTER_BUTTON,
+                CATALOG_COMPARE_WITH_MASTER_SELECT_ITEM,
+            )
+            return
+        if item.source_template_id is None:
+            QMessageBox.information(
+                self,
+                CATALOG_COMPARE_WITH_MASTER_BUTTON,
+                CATALOG_COMPARE_WITH_MASTER_NOT_CATALOG_ITEM,
+            )
+            return
+
+        try:
+            result = hazard_catalog_instance_compare_service.compare(item.id)
+        except HazardCatalogInstanceCompareError as error:
+            QMessageBox.warning(self, CATALOG_COMPARE_WITH_MASTER_BUTTON, str(error))
+            return
+
+        dialog = HazardCatalogInstanceCompareDialog(self, result=result)
+        dialog.exec()
+
     def add_event_for_selected_item(self) -> None:
         if not self._ensure_editable():
             return
@@ -537,6 +578,15 @@ class HazardInventoryWidget(QWidget):
             enabled and not self._read_only and self._identification_id is not None
         )
 
+    def _update_compare_with_master_enabled(self) -> None:
+        item = self._selected_item()
+        enabled = (
+            self._identification_id is not None
+            and item is not None
+            and item.source_template_id is not None
+        )
+        self.compare_with_master_btn.setEnabled(enabled)
+
     def _populate_categories(self) -> None:
         counts = (
             hazard_inventory_item_service.count_active_by_category(self._identification_id)
@@ -604,6 +654,7 @@ class HazardInventoryWidget(QWidget):
         self.table.blockSignals(False)
         self._update_event_actions_for_selection()
         self._update_save_to_library_enabled()
+        self._update_compare_with_master_enabled()
 
     def _load_events_table(self) -> None:
         self.events_table.blockSignals(True)
@@ -683,6 +734,7 @@ class HazardInventoryWidget(QWidget):
         self._load_events_table()
         self._update_event_actions_for_selection()
         self._update_save_to_library_enabled()
+        self._update_compare_with_master_enabled()
 
     def _on_event_selection_changed(self) -> None:
         event = self._selected_event()

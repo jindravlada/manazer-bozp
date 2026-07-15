@@ -104,6 +104,29 @@ HAZARD_LIBRARY_APPLY_ARCHIVED_MESSAGE = (
     "U archivované identifikace nelze převzít zdroj z katalogu."
 )
 
+CATALOG_COMPARE_KIND_ADDED = "+"
+CATALOG_COMPARE_KIND_REMOVED = "-"
+CATALOG_COMPARE_KIND_CHANGED = "~"
+
+CATALOG_COMPARE_WITH_MASTER_BUTTON = "Porovnat s Masterem…"
+CATALOG_COMPARE_WITH_MASTER_DIALOG_TITLE = "Porovnání s Masterem"
+CATALOG_COMPARE_WITH_MASTER_INTRO = (
+    "Master\n\n↓\n\nLokální změny\n\n"
+    "Legenda: + nová položka, − odebraná položka, ~ změněný text"
+)
+CATALOG_COMPARE_WITH_MASTER_NO_DIFFERENCES = (
+    "Lokální instance odpovídá Master zdroji (bez zaznamenaných odchylek)."
+)
+CATALOG_COMPARE_WITH_MASTER_VERSION_NOTE = (
+    "Poznámka: Master je ve verzi {master_version}, instance byla převzata ve verzi {source_version}."
+)
+CATALOG_COMPARE_WITH_MASTER_SELECT_ITEM = (
+    "Vyberte zdroj analýzy převzatý z katalogu."
+)
+CATALOG_COMPARE_WITH_MASTER_NOT_CATALOG_ITEM = (
+    "Porovnání s Masterem je dostupné pouze u zdroje převzatého z katalogu."
+)
+
 HAZARD_LIBRARY_COL_ID = 0
 HAZARD_LIBRARY_COL_NAME = 1
 HAZARD_LIBRARY_COL_CATEGORY = 2

@@ -333,6 +333,14 @@ Lokální úpravy instancí převzatých z katalogu:
 - ručně založené zdroje nemění příznak `modified`
 - Master katalog zůstává beze změny
 
+## Fáze R18d
+
+Porovnání lokální instance s Master katalogem:
+
+- tlačítko **Porovnat s Masterem…** u zdroje převzatého z katalogu
+- read-only přehled odchylek: `+` nová položka, `−` odebraná položka, `~` změněný text
+- porovnání proti aktuálnímu Master obsahu; bez aktualizace instance
+
 ## Fáze R12
 
 Odstranění entity Nebezpečí (`IdentifiedHazard`):
