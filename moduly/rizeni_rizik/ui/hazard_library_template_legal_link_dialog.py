@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QMessageBox,
     QPlainTextEdit,
+    QSizePolicy,
     QVBoxLayout,
 )
 
@@ -23,6 +24,8 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_legal_link_service impor
 
 
 class HazardLibraryTemplateLegalLinkDialog(QDialog):
+    """Kompaktní dialog vazby zdroje na právní předpis (R20e.1)."""
+
     def __init__(
         self,
         parent=None,
@@ -37,16 +40,26 @@ class HazardLibraryTemplateLegalLinkDialog(QDialog):
         self.read_only = read_only
 
         self.setWindowTitle(HAZARD_LIBRARY_LEGAL_LINK_DIALOG_TITLE)
-        self.resize(640, 340)
+        self.setMinimumSize(560, 280)
+        self.resize(700, 350)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
 
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(8)
+
         form = QFormLayout()
+        form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
 
         self.document_combo = QComboBox()
         self.document_combo.setEditable(True)
         self.document_combo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+        self.document_combo.setMinimumWidth(360)
+
         self.note = QPlainTextEdit()
-        self.note.setMinimumHeight(80)
+        self.note.setFixedHeight(90)
+        self.note.setPlaceholderText("Volitelná poznámka k vazbě")
+
         self.active_checkbox = QCheckBox("Aktivní")
         self.active_checkbox.setChecked(True)
 
@@ -111,16 +124,12 @@ class HazardLibraryTemplateLegalLinkDialog(QDialog):
             )
             return
 
-        requirement_id = None
-        if self.link is not None:
-            requirement_id = self.link.legal_requirement_id
-
         try:
+            # R20e.1: pouze předpis; proces se dopočítá přes požadavky předpisu.
             if self.link is None:
                 hazard_library_template_legal_link_service.create_link(
                     template_id=self.template_id,
                     legal_document_id=document_id,
-                    legal_requirement_id=requirement_id,
                     note=self.note.toPlainText().strip(),
                     active=self.active_checkbox.isChecked(),
                 )
@@ -129,7 +138,6 @@ class HazardLibraryTemplateLegalLinkDialog(QDialog):
                     self.link.id,
                     template_id=self.template_id,
                     legal_document_id=document_id,
-                    legal_requirement_id=requirement_id,
                     note=self.note.toPlainText().strip(),
                     active=self.active_checkbox.isChecked(),
                 )

@@ -474,6 +474,76 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             QHeaderView.Fixed,
         )
 
+    elif profile == "hazard_library_template_assessments":
+        from moduly.rizeni_rizik.constants_library import (
+            HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COL_ACTIVE,
+            HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COL_GROUP,
+            HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COL_SEVERITY,
+        )
+
+        table.setColumnWidth(HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COL_SEVERITY, 110)
+        table.setColumnWidth(HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COL_ACTIVE, 70)
+        table.setColumnHidden(0, True)
+        table.setWordWrap(True)
+        header.setSectionResizeMode(
+            HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COL_GROUP,
+            QHeaderView.Stretch,
+        )
+        header.setSectionResizeMode(
+            HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COL_SEVERITY,
+            QHeaderView.Fixed,
+        )
+        header.setSectionResizeMode(
+            HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COL_ACTIVE,
+            QHeaderView.Fixed,
+        )
+
+    elif profile == "hazard_library_template_existing_measures":
+        from moduly.rizeni_rizik.constants_library import (
+            HAZARD_LIBRARY_TEMPLATE_MEASURE_COL_ACTIVE,
+            HAZARD_LIBRARY_TEMPLATE_MEASURE_COL_DESCRIPTION,
+            HAZARD_LIBRARY_TEMPLATE_MEASURE_COL_NOTE,
+        )
+
+        table.setColumnWidth(HAZARD_LIBRARY_TEMPLATE_MEASURE_COL_ACTIVE, 70)
+        table.setColumnHidden(0, True)
+        table.setWordWrap(True)
+        header.setSectionResizeMode(
+            HAZARD_LIBRARY_TEMPLATE_MEASURE_COL_DESCRIPTION,
+            QHeaderView.Stretch,
+        )
+        header.setSectionResizeMode(
+            HAZARD_LIBRARY_TEMPLATE_MEASURE_COL_NOTE,
+            QHeaderView.Stretch,
+        )
+        header.setSectionResizeMode(
+            HAZARD_LIBRARY_TEMPLATE_MEASURE_COL_ACTIVE,
+            QHeaderView.Fixed,
+        )
+
+    elif profile == "hazard_library_template_required_measures":
+        from moduly.rizeni_rizik.constants_library import (
+            HAZARD_LIBRARY_TEMPLATE_MEASURE_COL_ACTIVE,
+            HAZARD_LIBRARY_TEMPLATE_MEASURE_COL_DESCRIPTION,
+            HAZARD_LIBRARY_TEMPLATE_MEASURE_COL_NOTE,
+        )
+
+        table.setColumnWidth(HAZARD_LIBRARY_TEMPLATE_MEASURE_COL_ACTIVE, 70)
+        table.setColumnHidden(0, True)
+        table.setWordWrap(True)
+        header.setSectionResizeMode(
+            HAZARD_LIBRARY_TEMPLATE_MEASURE_COL_DESCRIPTION,
+            QHeaderView.Stretch,
+        )
+        header.setSectionResizeMode(
+            HAZARD_LIBRARY_TEMPLATE_MEASURE_COL_NOTE,
+            QHeaderView.Stretch,
+        )
+        header.setSectionResizeMode(
+            HAZARD_LIBRARY_TEMPLATE_MEASURE_COL_ACTIVE,
+            QHeaderView.Fixed,
+        )
+
     elif profile == "exposed_groups":
         widths = {0: 260, 1: 280, 2: 80}
         for column, width in widths.items():

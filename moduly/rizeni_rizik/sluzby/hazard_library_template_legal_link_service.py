@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
-from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
 from moduly.rizeni_rizik.modely.hazard_library_template_legal_link import (
     HazardLibraryTemplateLegalLink,
 )
@@ -46,9 +45,14 @@ class HazardLibraryTemplateLegalLinkService:
         note: str = "",
         active: bool = True,
     ) -> HazardLibraryTemplateLegalLink:
+        """Vytvoří vazbu na právní předpis.
+
+        ``legal_requirement_id`` se záměrně neukládá (R20e.1): proces se vždy
+        dopočítává přes Zdroj → předpis → právní požadavky → Proces.
+        """
+        del legal_requirement_id  # API kompatibilita; nový zápis vazbu na proces/požadavek neukládá.
         self._validate_template(template_id)
         validated_document_id = self._validate_legal_document_id(legal_document_id)
-        validated_requirement_id = self._validate_optional_requirement_id(legal_requirement_id)
         self._validate_unique_active_document(
             template_id,
             legal_document_id=validated_document_id,
@@ -59,7 +63,7 @@ class HazardLibraryTemplateLegalLinkService:
         link = HazardLibraryTemplateLegalLink(
             template_id=template_id,
             legal_document_id=validated_document_id,
-            legal_requirement_id=validated_requirement_id,
+            legal_requirement_id=None,
             note=note.strip(),
             active=active,
             sort_order=self.repository.next_sort_order(template_id),
@@ -76,13 +80,13 @@ class HazardLibraryTemplateLegalLinkService:
         note: str = "",
         active: bool = True,
     ) -> HazardLibraryTemplateLegalLink | None:
+        del legal_requirement_id
         link = self.repository.get_by_id(link_id)
         if link is None:
             return None
 
         self._validate_template(template_id)
         validated_document_id = self._validate_legal_document_id(legal_document_id)
-        validated_requirement_id = self._validate_optional_requirement_id(legal_requirement_id)
         self._validate_unique_active_document(
             template_id,
             legal_document_id=validated_document_id,
@@ -92,7 +96,7 @@ class HazardLibraryTemplateLegalLinkService:
 
         link.template_id = template_id
         link.legal_document_id = validated_document_id
-        link.legal_requirement_id = validated_requirement_id
+        link.legal_requirement_id = None
         link.note = note.strip()
         link.active = active
         link.updated_at = datetime.now()
@@ -140,21 +144,6 @@ class HazardLibraryTemplateLegalLinkService:
                 "Právní předpis není aktivní a nelze ho použít ve vazbě."
             )
         return document.id
-
-    def _validate_optional_requirement_id(
-        self,
-        legal_requirement_id: int | None,
-    ) -> int | None:
-        if legal_requirement_id is None:
-            return None
-        requirement = legal_requirement_service.get_by_id(legal_requirement_id)
-        if requirement is None:
-            raise HazardLibraryTemplateLegalLinkError("Právní požadavek neexistuje.")
-        if not requirement.active:
-            raise HazardLibraryTemplateLegalLinkError(
-                "Právní požadavek není aktivní a nelze ho použít ve vazbě."
-            )
-        return requirement.id
 
     def _validate_unique_active_document(
         self,

@@ -61,8 +61,8 @@ class HazardCatalogLegalRequirementUsageService:
         process_id: int,
     ) -> tuple[HazardCatalogSourceUsage, ...]:
         """
-        Processo → podřízené požadavky → jejich předpis → zdroje rizik.
-        Každý zdroj jen jednou.
+        Processo → podřízené právní požadavky → jejich předpis → zdroje rizik.
+        Přímá vazba Zdroj → Proces se nepoužívá (R20e.1).
         """
         document_ids: list[int] = []
         for child in legal_requirement_service.list_children(process_id):

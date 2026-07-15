@@ -1,3 +1,4 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
@@ -6,14 +7,18 @@ from PySide6.QtWidgets import (
     QLabel,
     QMessageBox,
     QPushButton,
+    QSplitter,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
+from core.widgets.dialog_utils import create_close_box
 from core.widgets.table_utils import configure_table_columns, create_preview_table_item
 from moduly.rizeni_rizik.constants_library import (
+    HAZARD_LIBRARY_ASSESSMENT_DIALOG_TITLE,
+    HAZARD_LIBRARY_ASSESSMENTS_DIALOG_TITLE,
     HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COL_ACTIVE,
     HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COL_GROUP,
     HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COL_ID,
@@ -29,8 +34,6 @@ from moduly.rizeni_rizik.constants_library import (
     HAZARD_LIBRARY_TEMPLATE_MEASURE_TABLE_HEADERS,
     HAZARD_LIBRARY_TEMPLATE_REQUIRED_MEASURES_TITLE,
     HAZARD_LIBRARY_TEMPLATE_SELECT_ASSESSMENT,
-    HAZARD_LIBRARY_ASSESSMENT_DIALOG_TITLE,
-    HAZARD_LIBRARY_ASSESSMENTS_DIALOG_TITLE,
 )
 from moduly.rizeni_rizik.sluzby.hazard_library_template_assessment_service import (
     HazardLibraryTemplateAssessmentError,
@@ -69,7 +72,7 @@ class _TemplateMeasuresSection(QWidget):
         self._read_only = False
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 8, 0, 0)
+        layout.setContentsMargins(0, 0, 0, 0)
 
         group = QGroupBox(title)
         group_layout = QVBoxLayout(group)
@@ -98,8 +101,9 @@ class _TemplateMeasuresSection(QWidget):
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setAlternatingRowColors(True)
+        self.table.horizontalHeader().setStretchLastSection(False)
         configure_table_columns(self.table, f"hazard_library_template_{measure_type}_measures")
-        group_layout.addWidget(self.table)
+        group_layout.addWidget(self.table, 1)
 
         layout.addWidget(group)
 
@@ -274,7 +278,7 @@ class HazardLibraryTemplateAssessmentsDialog(QDialog):
     ):
         super().__init__(parent)
         self.setWindowTitle(HAZARD_LIBRARY_ASSESSMENTS_DIALOG_TITLE)
-        self.resize(900, 720)
+        self.setMinimumSize(720, 520)
 
         layout = QVBoxLayout(self)
         self._panel = _HazardLibraryTemplateAssessmentsPanel(
@@ -284,11 +288,14 @@ class HazardLibraryTemplateAssessmentsDialog(QDialog):
             read_only=read_only,
             on_content_changed=on_content_changed,
         )
-        layout.addWidget(self._panel)
+        layout.addWidget(self._panel, 1)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons = create_close_box(self)
         buttons.rejected.connect(self.reject)
         buttons.accepted.connect(self.accept)
+        close_btn = buttons.button(QDialogButtonBox.StandardButton.Close)
+        if close_btn is not None:
+            close_btn.clicked.connect(self.accept)
         layout.addWidget(buttons)
 
     def refresh(self) -> None:
@@ -315,12 +322,18 @@ class _HazardLibraryTemplateAssessmentsPanel(QWidget):
         self._selected_assessment_id: int | None = None
 
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
 
-        intro = QLabel(
-            f"Posouzení a opatření pro událost: {event_name}"
-        )
+        intro = QLabel(f"Posouzení a opatření pro událost: {event_name}")
         intro.setWordWrap(True)
         layout.addWidget(intro)
+
+        splitter = QSplitter(Qt.Orientation.Vertical)
+        splitter.setChildrenCollapsible(False)
+
+        assessments_panel = QWidget()
+        assessments_layout = QVBoxLayout(assessments_panel)
+        assessments_layout.setContentsMargins(0, 0, 0, 0)
 
         toolbar = QHBoxLayout()
         self.add_btn = QPushButton("Přidat")
@@ -332,7 +345,7 @@ class _HazardLibraryTemplateAssessmentsPanel(QWidget):
         toolbar.addWidget(self.activate_btn)
         toolbar.addWidget(self.deactivate_btn)
         toolbar.addStretch()
-        layout.addLayout(toolbar)
+        assessments_layout.addLayout(toolbar)
 
         self.table = QTableWidget()
         self.table.setColumnCount(HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COLUMN_COUNT)
@@ -342,22 +355,30 @@ class _HazardLibraryTemplateAssessmentsPanel(QWidget):
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setAlternatingRowColors(True)
+        self.table.horizontalHeader().setStretchLastSection(False)
         configure_table_columns(self.table, "hazard_library_template_assessments")
-        layout.addWidget(self.table, 2)
+        assessments_layout.addWidget(self.table, 1)
 
         self.existing_measures = _TemplateMeasuresSection(
             title=HAZARD_LIBRARY_TEMPLATE_EXISTING_MEASURES_TITLE,
             measure_type="existing",
             on_changed=self._notify_content_changed,
         )
-        layout.addWidget(self.existing_measures, 1)
-
         self.required_measures = _TemplateMeasuresSection(
             title=HAZARD_LIBRARY_TEMPLATE_REQUIRED_MEASURES_TITLE,
             measure_type="required",
             on_changed=self._notify_content_changed,
         )
-        layout.addWidget(self.required_measures, 1)
+
+        splitter.addWidget(assessments_panel)
+        splitter.addWidget(self.existing_measures)
+        splitter.addWidget(self.required_measures)
+        splitter.setStretchFactor(0, 3)
+        splitter.setStretchFactor(1, 2)
+        splitter.setStretchFactor(2, 2)
+        splitter.setSizes([320, 220, 220])
+        self.content_splitter = splitter
+        layout.addWidget(splitter, 1)
 
         self.add_btn.clicked.connect(self.add_assessment)
         self.edit_btn.clicked.connect(self.edit_selected_assessment)
@@ -383,10 +404,13 @@ class _HazardLibraryTemplateAssessmentsPanel(QWidget):
                 HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COL_ID,
                 QTableWidgetItem(str(assessment.id)),
             )
+            group_item = QTableWidgetItem(row.exposed_group_name)
+            if row.exposed_group_name:
+                group_item.setToolTip(row.exposed_group_name)
             self.table.setItem(
                 row_index,
                 HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COL_GROUP,
-                QTableWidgetItem(row.exposed_group_name),
+                group_item,
             )
             self.table.setItem(
                 row_index,

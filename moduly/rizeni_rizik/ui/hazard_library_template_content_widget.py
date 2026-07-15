@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.widgets.dialog_utils import exec_maximized
 from core.widgets.table_utils import configure_table_columns
 from moduly.rizeni_rizik.constants import format_event_display_name
 from moduly.rizeni_rizik.constants_library import (
@@ -316,7 +317,7 @@ class HazardLibraryTemplateContentWidget(QWidget):
             read_only=self._read_only,
             on_content_changed=self._notify_content_changed,
         )
-        dialog.exec()
+        exec_maximized(dialog)
         self.refresh()
 
     def activate_selected_event(self) -> None:

@@ -223,7 +223,7 @@ class HazardCatalogPackageIncorporateService:
                     HazardLibraryTemplateLegalLink(
                         template_id=template_id,
                         legal_document_id=document_id,
-                        legal_requirement_id=link.legal_requirement_id,
+                        legal_requirement_id=None,
                         note=self._build_legal_note(link, package.reasoning),
                         active=True,
                         sort_order=self._order._next_legal_link_sort_order(

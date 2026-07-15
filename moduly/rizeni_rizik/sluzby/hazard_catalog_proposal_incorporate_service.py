@@ -1028,7 +1028,7 @@ class HazardCatalogProposalIncorporateService:
             link = HazardLibraryTemplateLegalLink(
                 template_id=template_id,
                 legal_document_id=document_id,
-                legal_requirement_id=payload.legal_requirement_id,
+                legal_requirement_id=None,
                 note=note,
                 active=True,
                 sort_order=self._next_legal_link_sort_order(session, template_id),

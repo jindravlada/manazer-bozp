@@ -14,7 +14,8 @@ class HazardLibraryTemplateLegalLink(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     template_id: Mapped[int] = mapped_column(Integer, nullable=False)
     legal_document_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    # Dočasně / volitelně — migrace a budoucí upřesnění na požadavek P-xxx.
+    # Legacy / dočasné pole. Nové zápisy (R20e.1) ukládají jen legal_document_id;
+    # proces se dopočítává Zdroj → předpis → požadavky → Proces.
     legal_requirement_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     note: Mapped[str] = mapped_column(Text, default="")
     active: Mapped[bool] = mapped_column(Boolean, default=True)
