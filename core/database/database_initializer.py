@@ -126,6 +126,10 @@ def initialize_database() -> None:
     _ensure_hazard_identification_photos_table()
     _ensure_hazard_library_templates_table()
     _ensure_hazard_library_template_operations_table()
+    _ensure_hazard_library_template_items_table()
+    _ensure_hazard_library_template_events_table()
+    _ensure_hazard_library_template_assessments_table()
+    _ensure_hazard_library_template_measures_tables()
     _ensure_ai_peer_reviews_table()
     _ensure_ai_peer_review_batches_table()
     _ensure_ai_unassigned_proposals_table()
@@ -1073,6 +1077,54 @@ def _ensure_hazard_library_template_operations_table() -> None:
         ON hazard_library_template_operations (template_id, operation_id)
         """,
     )
+
+
+def _ensure_hazard_library_template_items_table() -> None:
+    columns = _table_columns("hazard_library_template_items")
+    if not columns:
+        from moduly.rizeni_rizik.modely.hazard_library_template_item import (
+            HazardLibraryTemplateItem,
+        )
+
+        HazardLibraryTemplateItem.__table__.create(bind=_db_engine(), checkfirst=True)
+
+
+def _ensure_hazard_library_template_events_table() -> None:
+    columns = _table_columns("hazard_library_template_events")
+    if not columns:
+        from moduly.rizeni_rizik.modely.hazard_library_template_event import (
+            HazardLibraryTemplateEvent,
+        )
+
+        HazardLibraryTemplateEvent.__table__.create(bind=_db_engine(), checkfirst=True)
+
+
+def _ensure_hazard_library_template_assessments_table() -> None:
+    columns = _table_columns("hazard_library_template_assessments")
+    if not columns:
+        from moduly.rizeni_rizik.modely.hazard_library_template_assessment import (
+            HazardLibraryTemplateAssessment,
+        )
+
+        HazardLibraryTemplateAssessment.__table__.create(bind=_db_engine(), checkfirst=True)
+
+
+def _ensure_hazard_library_template_measures_tables() -> None:
+    existing_columns = _table_columns("hazard_library_template_existing_measures")
+    if not existing_columns:
+        from moduly.rizeni_rizik.modely.hazard_library_template_measure import (
+            HazardLibraryTemplateExistingMeasure,
+        )
+
+        HazardLibraryTemplateExistingMeasure.__table__.create(bind=_db_engine(), checkfirst=True)
+
+    required_columns = _table_columns("hazard_library_template_required_measures")
+    if not required_columns:
+        from moduly.rizeni_rizik.modely.hazard_library_template_measure import (
+            HazardLibraryTemplateRequiredMeasure,
+        )
+
+        HazardLibraryTemplateRequiredMeasure.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_ai_peer_reviews_table() -> None:

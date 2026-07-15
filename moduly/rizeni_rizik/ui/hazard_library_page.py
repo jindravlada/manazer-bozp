@@ -111,8 +111,8 @@ class HazardLibraryPage(QWidget):
 
     def new_template(self) -> None:
         dialog = HazardLibraryTemplateDialog(self)
-        if dialog.exec():
-            self.refresh()
+        dialog.exec()
+        self.refresh()
 
     def edit_selected_template(self) -> None:
         template = self._selected_template()
@@ -124,8 +124,8 @@ class HazardLibraryPage(QWidget):
             )
             return
         dialog = HazardLibraryTemplateDialog(self, template=template)
-        if dialog.exec():
-            self.refresh()
+        dialog.exec()
+        self.refresh()
 
     def activate_selected_template(self) -> None:
         template = self._selected_template()

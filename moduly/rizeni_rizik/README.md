@@ -274,6 +274,18 @@ Základ firemní knihovny vzorů:
 - editor vzoru se záložkou Základní údaje; ostatní záložky zatím disabled
 - bez ukládání obsahu identifikace a bez převzetí vzoru do identifikace
 
+## Fáze R17b
+
+Obsah firemního vzoru:
+
+- modely položky, události, posouzení, existujícího a potřebného opatření ve vzoru
+- záložka **Obsah vzoru** (kategorie | položky | události; dialog Posouzení a opatření)
+- ruční zadávání obsahu; soft delete přes aktivní/neaktivní
+- `exposed_group_id` z číselníku ohrožených skupin; závažnost jako u běžného posouzení
+- automatické zvýšení `version_number` při změně obsahu (ne při úpravě základních údajů)
+- neaktivní vzor: obsah pouze pro čtení
+- záložky Použití a Historie zatím disabled; bez převzetí z identifikace ani použití vzoru
+
 ## Fáze R12
 
 Odstranění entity Nebezpečí (`IdentifiedHazard`):

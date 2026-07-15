@@ -2,6 +2,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDialog,
+    QDialogButtonBox,
     QFormLayout,
     QLabel,
     QListWidget,
@@ -34,16 +35,19 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_service import (
     HazardLibraryTemplateError,
     hazard_library_template_service,
 )
+from moduly.rizeni_rizik.ui.hazard_library_template_content_widget import (
+    HazardLibraryTemplateContentWidget,
+)
 
 
 class HazardLibraryTemplateDialog(QDialog):
     def __init__(self, parent=None, template=None):
         super().__init__(parent)
         self.template = template
-        self.saved_template = None
+        self.saved_template = template
 
         self.setWindowTitle(HAZARD_LIBRARY_DIALOG_TITLE)
-        self.resize(720, 560)
+        self.resize(960, 680)
 
         layout = QVBoxLayout(self)
         self.tabs = QTabWidget()
@@ -84,8 +88,10 @@ class HazardLibraryTemplateDialog(QDialog):
 
         self.tabs.addTab(basics, HAZARD_LIBRARY_TAB_BASICS)
 
+        self.content_widget = HazardLibraryTemplateContentWidget()
+        self.content_tab_index = self.tabs.addTab(self.content_widget, HAZARD_LIBRARY_TAB_CONTENT)
+
         for tab_label in (
-            HAZARD_LIBRARY_TAB_CONTENT,
             HAZARD_LIBRARY_TAB_USAGE,
             HAZARD_LIBRARY_TAB_HISTORY,
         ):
@@ -99,16 +105,25 @@ class HazardLibraryTemplateDialog(QDialog):
         layout.addWidget(self.tabs)
 
         buttons = create_save_cancel_box(self)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
+        save_button = buttons.button(QDialogButtonBox.StandardButton.Save)
+        cancel_button = buttons.button(QDialogButtonBox.StandardButton.Cancel)
+        if save_button is not None:
+            save_button.clicked.connect(self._save_basics)
+        if cancel_button is not None:
+            cancel_button.clicked.connect(self.reject)
         layout.addWidget(buttons)
 
         self.application_scope.currentIndexChanged.connect(self._update_operations_enabled)
+        self.content_widget.content_changed.connect(self._on_content_changed)
+        self.tabs.currentChanged.connect(self._on_tab_changed)
+
         self._load_operations()
         if template is not None:
             self._load_template(template)
         else:
             self._update_operations_enabled()
+        self._sync_content_context()
+        self._update_content_tab_enabled()
 
     def _load_operations(self) -> None:
         self.operations_list.clear()
@@ -160,7 +175,7 @@ class HazardLibraryTemplateDialog(QDialog):
             "operation_ids": self._selected_operation_ids(),
         }
 
-    def accept(self) -> None:
+    def _save_basics(self) -> None:
         data = self.get_data()
         template_id = self.template.id if self.template is not None else None
         preview = hazard_library_template_service.preview_scope_change(
@@ -185,13 +200,53 @@ class HazardLibraryTemplateDialog(QDialog):
 
         try:
             if self.template is None:
-                self.saved_template = hazard_library_template_service.create_template(**data)
+                self.template = hazard_library_template_service.create_template(**data)
             else:
-                self.saved_template = hazard_library_template_service.update_template(
+                updated = hazard_library_template_service.update_template(
                     self.template.id,
                     **data,
                 )
+                if updated is not None:
+                    self.template = updated
         except HazardLibraryTemplateError as error:
             QMessageBox.warning(self, HAZARD_LIBRARY_DIALOG_TITLE, str(error))
+            self.tabs.setCurrentIndex(0)
             return
-        super().accept()
+
+        self.saved_template = self.template
+        self._load_template(self.template)
+        self._update_content_tab_enabled()
+        self._sync_content_context()
+        QMessageBox.information(self, HAZARD_LIBRARY_DIALOG_TITLE, "Základní údaje byly uloženy.")
+
+    def _update_content_tab_enabled(self) -> None:
+        self.tabs.setTabEnabled(self.content_tab_index, self.template is not None)
+
+    def _sync_content_context(self) -> None:
+        template_id = self.template.id if self.template is not None else None
+        read_only = (
+            self.template is None
+            or not hazard_library_template_service.is_template_content_editable(template_id)
+        )
+        self.content_widget.set_template(template_id, read_only=read_only)
+
+    def _on_content_changed(self) -> None:
+        if self.template is None:
+            return
+        reloaded = hazard_library_template_service.get_by_id(self.template.id)
+        if reloaded is not None:
+            self.template = reloaded
+            self.saved_template = reloaded
+            self.version_number.setValue(reloaded.version_number)
+
+    def _on_tab_changed(self, index: int) -> None:
+        if index == self.content_tab_index and self.template is not None:
+            reloaded = hazard_library_template_service.get_by_id(self.template.id)
+            if reloaded is not None:
+                self.template = reloaded
+                self.version_number.setValue(reloaded.version_number)
+            self._sync_content_context()
+            self.content_widget.refresh()
+
+    def accept(self) -> None:
+        self.reject()

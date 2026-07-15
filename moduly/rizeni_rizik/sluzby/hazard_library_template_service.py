@@ -205,6 +205,18 @@ class HazardLibraryTemplateService:
     def deactivate(self, template_id: int) -> bool:
         return self.repository.deactivate(template_id)
 
+    def bump_content_version(self, template_id: int) -> HazardLibraryTemplate | None:
+        template = self.repository.get_by_id(template_id)
+        if template is None:
+            return None
+        template.version_number += 1
+        template.updated_at = datetime.now()
+        return self.repository.update(template)
+
+    def is_template_content_editable(self, template_id: int) -> bool:
+        template = self.repository.get_by_id(template_id)
+        return template is not None and template.active
+
     def format_scope_label(self, scope: str) -> str:
         return HAZARD_LIBRARY_SCOPE_LABELS.get(scope, scope)
 
