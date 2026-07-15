@@ -105,6 +105,7 @@ class CatalogIncorporateResult:
     used_existing_count: int
     skipped_count: int
     requires_manual_decision_count: int
+    manual_decision_proposal_ids: list[int]
     merged_count: int
     new_revision_number: int | None
 
@@ -656,6 +657,7 @@ class HazardCatalogProposalIncorporateService:
         used_existing = 0
         skipped = 0
         requires_manual = 0
+        manual_decision_proposal_ids: list[int] = []
         applied_any = False
         new_revision_number: int | None = None
 
@@ -668,6 +670,7 @@ class HazardCatalogProposalIncorporateService:
             for proposal in proposals:
                 if proposal.id in pending_ids:
                     requires_manual += 1
+                    manual_decision_proposal_ids.append(proposal.id)
                     continue
 
                 action = resolutions.get(proposal.id, "")
@@ -684,6 +687,7 @@ class HazardCatalogProposalIncorporateService:
                     payload = parse_proposal_payload(db_proposal)
                     if payload.legal_requirement_id is None:
                         requires_manual += 1
+                        manual_decision_proposal_ids.append(proposal.id)
                         continue
                 if kind == CATALOG_PROPOSAL_KIND_UNKNOWN:
                     raise HazardCatalogProposalIncorporateError(
@@ -737,8 +741,39 @@ class HazardCatalogProposalIncorporateService:
             used_existing_count=used_existing,
             skipped_count=skipped,
             requires_manual_decision_count=requires_manual,
+            manual_decision_proposal_ids=manual_decision_proposal_ids,
             merged_count=used_existing,
             new_revision_number=new_revision_number,
+        )
+
+    @staticmethod
+    def list_legal_requirement_candidates() -> tuple[tuple[int, str], ...]:
+        from moduly.pravni_pozadavky.constants import legal_requirement_merged_target_label
+        from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
+            legal_requirement_service,
+        )
+
+        return tuple(
+            (process.id, legal_requirement_merged_target_label(process))
+            for process in legal_requirement_service.list_active_processes()
+        )
+
+    def merge_incorporate_results(
+        self,
+        base: CatalogIncorporateResult,
+        extra: CatalogIncorporateResult,
+    ) -> CatalogIncorporateResult:
+        revision = extra.new_revision_number or base.new_revision_number
+        return CatalogIncorporateResult(
+            incorporated_count=base.incorporated_count + extra.incorporated_count,
+            newly_incorporated_count=base.newly_incorporated_count
+            + extra.newly_incorporated_count,
+            used_existing_count=base.used_existing_count + extra.used_existing_count,
+            skipped_count=base.skipped_count + extra.skipped_count,
+            requires_manual_decision_count=extra.requires_manual_decision_count,
+            manual_decision_proposal_ids=list(extra.manual_decision_proposal_ids),
+            merged_count=base.merged_count + extra.merged_count,
+            new_revision_number=revision,
         )
 
     def _apply_proposal(

@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
 from moduly.rizeni_rizik.constants_library import (
     CATALOG_AI_PROPOSAL_DUPLICATE_CANCEL,
     CATALOG_AI_PROPOSAL_DUPLICATE_SKIP,
+    CATALOG_AI_PROPOSAL_MANUAL_REQUIREMENT_INTRO,
     CATALOG_AI_PROPOSAL_REQUIREMENT_CHOICE_DIALOG_TITLE,
     CATALOG_AI_PROPOSAL_REQUIREMENT_CHOICE_INTRO,
 )
@@ -28,6 +29,7 @@ class HazardCatalogProposalRequirementChoiceDialog(QDialog):
         *,
         proposal_name: str,
         candidates: tuple[tuple[int, str], ...],
+        intro_text: str | None = None,
     ):
         super().__init__(parent)
         self.selected_requirement_id: int | None = None
@@ -38,7 +40,7 @@ class HazardCatalogProposalRequirementChoiceDialog(QDialog):
 
         layout = QVBoxLayout(self)
         intro = QLabel(
-            CATALOG_AI_PROPOSAL_REQUIREMENT_CHOICE_INTRO.format(
+            (intro_text or CATALOG_AI_PROPOSAL_REQUIREMENT_CHOICE_INTRO).format(
                 proposal_name=proposal_name,
             )
         )

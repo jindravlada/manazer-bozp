@@ -258,6 +258,25 @@ CATALOG_AI_PROPOSAL_REQUIREMENT_NOT_FOUND_INFO = (
     "Návrh zůstane ve frontě ke zpracování."
 )
 
+CATALOG_AI_PROPOSAL_MANUAL_COMPLETION_OFFER_TITLE = "Ruční dokončení zapracování"
+CATALOG_AI_PROPOSAL_MANUAL_COMPLETION_OFFER_TEXT = (
+    "Po automatickém zapracování zbývá {count} návrhů vyžadujících ruční rozhodnutí.\n\n"
+    "Průvodce vás provede dokončením jednotlivých návrhů."
+)
+CATALOG_AI_PROPOSAL_MANUAL_COMPLETION_OPEN_BUTTON = "Otevřít první problémový návrh"
+CATALOG_AI_PROPOSAL_MANUAL_COMPLETION_LATER_BUTTON = "Později"
+CATALOG_AI_PROPOSAL_MANUAL_REQUIREMENT_INTRO = (
+    "Právní požadavek pro návrh „{proposal_name}“ nebyl nalezen automaticky.\n"
+    "Vyberte správný požadavek z registru RPP."
+)
+CATALOG_AI_PROPOSAL_MANUAL_COMPLETION_DEFERRED = (
+    "Zapracování bylo částečně dokončeno. "
+    "Návrhy vyžadující ruční zásah zůstávají ve frontě ke zpracování."
+)
+CATALOG_AI_PROPOSAL_MANUAL_COMPLETION_PROGRESS = (
+    "Návrh {current} z {total}: „{proposal_name}“"
+)
+
 CATALOG_INCORPORATE_ERROR_SELECT_PROPOSALS = "Vyberte alespoň jeden návrh ke zapracování."
 CATALOG_INCORPORATE_ERROR_SOURCE_MISSING = "Zdroj rizika neexistuje nebo není dostupný."
 CATALOG_INCORPORATE_ERROR_SOURCE_INACTIVE = (

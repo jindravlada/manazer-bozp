@@ -472,6 +472,14 @@ Právní vazby katalogu a dokončení AI workflow:
 - opatření navázané na SOURCE: dialog výběru posouzení místo chyby
 - srozumitelné chybové hlášky a rozšířené souhrnné hlášení po zapracování
 
+## Fáze R19.1
+
+Průvodce ručním dokončením zapracování:
+
+- po automatickém zapracování s návrhy vyžadujícími ruční zásah nabídne průvodce (výchozí) nebo odložení
+- průvodce postupně vybere problémový návrh, otevře odpovídající dialog a po vyřešení pokračuje na další
+- finální souhrn se zobrazí až po dokončení všech ručních kroků
+
 ## Fáze R18g
 
 Zapracování návrhů AI do MASTER obsahu katalogu:

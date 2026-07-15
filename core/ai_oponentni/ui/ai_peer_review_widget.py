@@ -990,20 +990,72 @@ class AiPeerReviewWidget(QWidget):
         if dialog.exec():
             self._load_proposals_table()
 
-    def _incorporate_proposal_ids(self, proposal_ids: list[int]) -> None:
-        if self._source_id is None:
-            return
-        review_id = self._selected_review_id()
-        if review_id is None:
-            QMessageBox.information(
-                self,
-                AI_PEER_REVIEW_DIALOG_TITLE,
-                "Vyberte konzultaci s návrhy.",
-            )
-            return
+    def _select_proposal_row(self, proposal_id: int) -> None:
+        for row_index in range(self.proposals_table.rowCount()):
+            item = self.proposals_table.item(row_index, 0)
+            if item is None:
+                continue
+            if item.data(Qt.ItemDataRole.UserRole) == proposal_id:
+                self.proposals_table.selectRow(row_index)
+                self.proposals_table.scrollToItem(item)
+                return
 
+    def _show_incorporate_summary(self, result) -> None:
+        from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_support import (
+            format_incorporate_summary,
+        )
+
+        QMessageBox.information(
+            self,
+            AI_PEER_REVIEW_DIALOG_TITLE,
+            format_incorporate_summary(
+                newly_incorporated=result.newly_incorporated_count,
+                used_existing=result.used_existing_count,
+                requires_manual_decision=result.requires_manual_decision_count,
+                skipped=result.skipped_count,
+                rejected=0,
+                revision=result.new_revision_number,
+            ),
+        )
+
+    def _offer_manual_completion_guide(self, manual_count: int) -> bool:
+        from moduly.rizeni_rizik.constants_library import (
+            CATALOG_AI_PROPOSAL_MANUAL_COMPLETION_LATER_BUTTON,
+            CATALOG_AI_PROPOSAL_MANUAL_COMPLETION_OFFER_TEXT,
+            CATALOG_AI_PROPOSAL_MANUAL_COMPLETION_OFFER_TITLE,
+            CATALOG_AI_PROPOSAL_MANUAL_COMPLETION_OPEN_BUTTON,
+        )
+
+        message = QMessageBox(self)
+        message.setIcon(QMessageBox.Icon.Question)
+        message.setWindowTitle(CATALOG_AI_PROPOSAL_MANUAL_COMPLETION_OFFER_TITLE)
+        message.setText(
+            CATALOG_AI_PROPOSAL_MANUAL_COMPLETION_OFFER_TEXT.format(count=manual_count),
+        )
+        open_button = message.addButton(
+            CATALOG_AI_PROPOSAL_MANUAL_COMPLETION_OPEN_BUTTON,
+            QMessageBox.ButtonRole.AcceptRole,
+        )
+        later_button = message.addButton(
+            CATALOG_AI_PROPOSAL_MANUAL_COMPLETION_LATER_BUTTON,
+            QMessageBox.ButtonRole.RejectRole,
+        )
+        message.setDefaultButton(open_button)
+        message.exec()
+        return message.clickedButton() == open_button
+
+    def _resolve_incorporation_plan_interactively(
+        self,
+        *,
+        review_id: int,
+        plan,
+        allow_manual_legal_pick: bool = False,
+        progress_label: str = "",
+    ) -> tuple[dict[int, str], bool] | None:
+        from moduly.rizeni_rizik.constants_library import (
+            CATALOG_AI_PROPOSAL_MANUAL_REQUIREMENT_INTRO,
+        )
         from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_incorporate_service import (
-            HazardCatalogProposalIncorporateError,
             hazard_catalog_proposal_incorporate_service,
         )
         from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_support import (
@@ -1013,7 +1065,6 @@ class AiPeerReviewWidget(QWidget):
             CATALOG_DUPLICATE_ACTION_CANCEL,
             CATALOG_DUPLICATE_ACTION_EDIT,
             CATALOG_DUPLICATE_ACTION_SKIP,
-            format_incorporate_summary,
         )
         from moduly.rizeni_rizik.ui.hazard_catalog_ai_proposal_edit_dialog import (
             HazardCatalogAiProposalEditDialog,
@@ -1028,14 +1079,68 @@ class AiPeerReviewWidget(QWidget):
             HazardCatalogProposalRequirementChoiceDialog,
         )
 
-        plan = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
-            template_id=self._source_id,
-            review_id=review_id,
-            proposal_ids=proposal_ids,
-        )
         resolutions = dict(plan.resolutions)
         pending_conflicts = list(plan.conflicts)
+        pending_manual_ids = list(plan.pending_proposal_ids)
         conflict_index = 0
+
+        while pending_manual_ids and allow_manual_legal_pick:
+            proposal_id = pending_manual_ids[0]
+            proposal = ai_peer_review_service.get_proposal_by_id(proposal_id)
+            if proposal is None or proposal.status != PROPOSAL_STATUS_PENDING:
+                pending_manual_ids.pop(0)
+                continue
+
+            self._select_proposal_row(proposal_id)
+            candidates = hazard_catalog_proposal_incorporate_service.list_legal_requirement_candidates()
+            if not candidates:
+                edit_dialog = HazardCatalogAiProposalEditDialog(self, proposal=proposal)
+                if not edit_dialog.exec():
+                    return None
+                pending_manual_ids.pop(0)
+                refreshed = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
+                    template_id=self._source_id,
+                    review_id=review_id,
+                    proposal_ids=[proposal_id],
+                )
+                resolutions.update(refreshed.resolutions)
+                pending_conflicts.extend(refreshed.conflicts)
+                pending_manual_ids = list(refreshed.pending_proposal_ids)
+                continue
+
+            dialog = HazardCatalogProposalRequirementChoiceDialog(
+                self,
+                proposal_name=proposal.name,
+                candidates=candidates,
+                intro_text=CATALOG_AI_PROPOSAL_MANUAL_REQUIREMENT_INTRO,
+            )
+            if progress_label:
+                dialog.setWindowTitle(
+                    f"{dialog.windowTitle()} – {progress_label}",
+                )
+            if not dialog.exec():
+                return None
+            if dialog.selected_action == CATALOG_DUPLICATE_ACTION_CANCEL:
+                return None
+            if dialog.selected_action == CATALOG_DUPLICATE_ACTION_SKIP:
+                resolutions[proposal_id] = CATALOG_DUPLICATE_ACTION_SKIP
+                pending_manual_ids.pop(0)
+                continue
+            if dialog.selected_requirement_id is not None:
+                hazard_catalog_proposal_incorporate_service.assign_proposal_legal_requirement(
+                    proposal_id,
+                    dialog.selected_requirement_id,
+                )
+                refreshed = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
+                    template_id=self._source_id,
+                    review_id=review_id,
+                    proposal_ids=[proposal_id],
+                )
+                resolutions.update(refreshed.resolutions)
+                pending_conflicts.extend(refreshed.conflicts)
+                pending_manual_ids = list(refreshed.pending_proposal_ids)
+                continue
+            return None
 
         while conflict_index < len(pending_conflicts):
             conflict = pending_conflicts[conflict_index]
@@ -1044,16 +1149,22 @@ class AiPeerReviewWidget(QWidget):
                 conflict_index += 1
                 continue
 
+            self._select_proposal_row(conflict.proposal_id)
+
             if conflict.conflict_type == CATALOG_CONFLICT_TYPE_REQUIREMENT_CHOICE:
                 dialog = HazardCatalogProposalRequirementChoiceDialog(
                     self,
                     proposal_name=conflict.proposal_label,
                     candidates=conflict.requirement_candidates,
                 )
+                if progress_label:
+                    dialog.setWindowTitle(
+                        f"{dialog.windowTitle()} – {progress_label}",
+                    )
                 if not dialog.exec():
-                    return
+                    return None
                 if dialog.selected_action == CATALOG_DUPLICATE_ACTION_CANCEL:
-                    return
+                    return None
                 if dialog.selected_action == CATALOG_DUPLICATE_ACTION_SKIP:
                     resolutions[proposal.id] = CATALOG_DUPLICATE_ACTION_SKIP
                     conflict_index += 1
@@ -1079,10 +1190,14 @@ class AiPeerReviewWidget(QWidget):
                     proposal_name=conflict.proposal_label,
                     candidates=conflict.assessment_candidates,
                 )
+                if progress_label:
+                    dialog.setWindowTitle(
+                        f"{dialog.windowTitle()} – {progress_label}",
+                    )
                 if not dialog.exec():
-                    return
+                    return None
                 if dialog.selected_action == CATALOG_DUPLICATE_ACTION_CANCEL:
-                    return
+                    return None
                 if dialog.selected_action == CATALOG_DUPLICATE_ACTION_SKIP:
                     resolutions[proposal.id] = CATALOG_DUPLICATE_ACTION_SKIP
                     conflict_index += 1
@@ -1110,18 +1225,22 @@ class AiPeerReviewWidget(QWidget):
                     proposal_name=conflict.proposal_label,
                     duplicate=conflict.duplicate,
                 )
+                if progress_label:
+                    dialog.setWindowTitle(
+                        f"{dialog.windowTitle()} – {progress_label}",
+                    )
                 if not dialog.exec():
-                    return
+                    return None
                 action = dialog.selected_action
                 if action == CATALOG_DUPLICATE_ACTION_CANCEL:
-                    return
+                    return None
                 if action == CATALOG_DUPLICATE_ACTION_EDIT:
                     edit_dialog = HazardCatalogAiProposalEditDialog(self, proposal=proposal)
                     if not edit_dialog.exec():
-                        return
+                        return None
                     proposal = ai_peer_review_service.get_proposal_by_id(proposal.id)
                     if proposal is None:
-                        return
+                        return None
                     refreshed = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
                         template_id=self._source_id,
                         review_id=review_id,
@@ -1138,6 +1257,123 @@ class AiPeerReviewWidget(QWidget):
                 break
             conflict_index += 1
 
+        return resolutions, True
+
+    def _run_manual_completion_guide(
+        self,
+        proposal_ids: list[int],
+        review_id: int,
+        accumulated,
+    ):
+        from moduly.rizeni_rizik.constants_library import (
+            CATALOG_AI_PROPOSAL_MANUAL_COMPLETION_PROGRESS,
+        )
+        from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_incorporate_service import (
+            CatalogIncorporateResult,
+            HazardCatalogProposalIncorporateError,
+            hazard_catalog_proposal_incorporate_service,
+        )
+
+        remaining = list(proposal_ids)
+        total = len(remaining)
+        current_result = accumulated
+
+        while remaining:
+            proposal_id = remaining[0]
+            proposal = ai_peer_review_service.get_proposal_by_id(proposal_id)
+            if proposal is None or proposal.status != PROPOSAL_STATUS_PENDING:
+                remaining.pop(0)
+                continue
+
+            self._select_proposal_row(proposal_id)
+            progress_label = CATALOG_AI_PROPOSAL_MANUAL_COMPLETION_PROGRESS.format(
+                current=total - len(remaining) + 1,
+                total=total,
+                proposal_name=proposal.name,
+            )
+
+            plan = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
+                template_id=self._source_id,
+                review_id=review_id,
+                proposal_ids=[proposal_id],
+            )
+            resolved = self._resolve_incorporation_plan_interactively(
+                review_id=review_id,
+                plan=plan,
+                allow_manual_legal_pick=True,
+                progress_label=progress_label,
+            )
+            if resolved is None:
+                return None
+            resolutions, _ = resolved
+
+            try:
+                step_result = hazard_catalog_proposal_incorporate_service.incorporate_proposals(
+                    template_id=self._source_id,
+                    review_id=review_id,
+                    proposal_ids=[proposal_id],
+                    resolutions=resolutions,
+                    pending_proposal_ids=[],
+                )
+            except HazardCatalogProposalIncorporateError as error:
+                QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+                return None
+
+            current_result = hazard_catalog_proposal_incorporate_service.merge_incorporate_results(
+                current_result,
+                step_result,
+            )
+            if self._on_catalog_incorporated is not None and step_result.new_revision_number:
+                self._on_catalog_incororporated(step_result.new_revision_number)
+
+            remaining.pop(0)
+            self.refresh()
+
+        return CatalogIncorporateResult(
+            incorporated_count=current_result.incorporated_count,
+            newly_incorporated_count=current_result.newly_incorporated_count,
+            used_existing_count=current_result.used_existing_count,
+            skipped_count=current_result.skipped_count,
+            requires_manual_decision_count=0,
+            manual_decision_proposal_ids=[],
+            merged_count=current_result.merged_count,
+            new_revision_number=current_result.new_revision_number,
+        )
+
+    def _incorporate_proposal_ids(self, proposal_ids: list[int]) -> None:
+        if self._source_id is None:
+            return
+        review_id = self._selected_review_id()
+        if review_id is None:
+            QMessageBox.information(
+                self,
+                AI_PEER_REVIEW_DIALOG_TITLE,
+                "Vyberte konzultaci s návrhy.",
+            )
+            return
+
+        from moduly.rizeni_rizik.constants_library import (
+            CATALOG_AI_PROPOSAL_MANUAL_COMPLETION_DEFERRED,
+        )
+        from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_incorporate_service import (
+            HazardCatalogProposalIncorporateError,
+            hazard_catalog_proposal_incorporate_service,
+        )
+
+        plan = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
+            template_id=self._source_id,
+            review_id=review_id,
+            proposal_ids=proposal_ids,
+        )
+        resolved = self._resolve_incorporation_plan_interactively(
+            review_id=review_id,
+            plan=plan,
+            allow_manual_legal_pick=False,
+        )
+        if resolved is None:
+            return
+        resolutions, _ = resolved
+
         try:
             result = hazard_catalog_proposal_incorporate_service.incorporate_proposals(
                 template_id=self._source_id,
@@ -1153,21 +1389,28 @@ class AiPeerReviewWidget(QWidget):
         self.refresh()
         if self._on_catalog_incorporated is not None:
             self._on_catalog_incorporated(result.new_revision_number)
+
+        if result.requires_manual_decision_count > 0:
+            if self._offer_manual_completion_guide(result.requires_manual_decision_count):
+                final_result = self._run_manual_completion_guide(
+                    result.manual_decision_proposal_ids,
+                    review_id,
+                    result,
+                )
+                if final_result is None:
+                    return
+                self._show_incorporate_summary(final_result)
+            else:
+                QMessageBox.information(
+                    self,
+                    AI_PEER_REVIEW_DIALOG_TITLE,
+                    CATALOG_AI_PROPOSAL_MANUAL_COMPLETION_DEFERRED,
+                )
+            return
+
         if (
             result.incorporated_count > 0
             or result.skipped_count > 0
             or result.used_existing_count > 0
-            or result.requires_manual_decision_count > 0
         ):
-            QMessageBox.information(
-                self,
-                AI_PEER_REVIEW_DIALOG_TITLE,
-                format_incorporate_summary(
-                    newly_incorporated=result.newly_incorporated_count,
-                    used_existing=result.used_existing_count,
-                    requires_manual_decision=result.requires_manual_decision_count,
-                    skipped=result.skipped_count,
-                    rejected=0,
-                    revision=result.new_revision_number,
-                ),
-            )
+            self._show_incorporate_summary(result)
