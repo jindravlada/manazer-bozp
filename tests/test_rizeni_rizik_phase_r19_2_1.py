@@ -1,4 +1,4 @@
-"""HOTFIX R19.2 – dokončení ručního přiřazení opatření k posouzení."""
+"""HOTFIX R19.2.1 – dokončení workflow po ručním rozhodnutí."""
 
 from __future__ import annotations
 
@@ -32,6 +32,10 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from core.ai_oponentni.sluzby.ai_peer_review_service import ai_peer_review_service
     from core.ai_oponentni.types import AiPeerReviewExportOptions, AiProposal
+    from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
+    from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
+        legal_requirement_service,
+    )
     from moduly.rizeni_rizik.constants import (
         HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
         RISK_SEVERITY_MODERATE,
@@ -44,22 +48,18 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.modely.hazard_library_template_event import (
         HazardLibraryTemplateEvent,
     )
+    from moduly.rizeni_rizik.modely.hazard_library_template_legal_link import (
+        HazardLibraryTemplateLegalLink,
+    )
     from moduly.rizeni_rizik.modely.hazard_library_template_measure import (
         HazardLibraryTemplateExistingMeasure,
         HazardLibraryTemplateRequiredMeasure,
-    )
-    from moduly.rizeni_rizik.modely.hazard_library_template_legal_link import (
-        HazardLibraryTemplateLegalLink,
     )
     from moduly.rizeni_rizik.modely.hazard_library_template_revision import (
         HazardLibraryTemplateRevision,
     )
     from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_incorporate_service import (
         hazard_catalog_proposal_incorporate_service,
-    )
-    from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_support import (
-        CATALOG_CONFLICT_TYPE_ASSESSMENT_CHOICE,
-        CATALOG_CONFLICT_TYPE_ASSESSMENT_CREATE,
     )
     from moduly.rizeni_rizik.sluzby.hazard_catalog_source_peer_review_provider import (
         hazard_catalog_source_peer_review_provider,
@@ -70,13 +70,19 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.sluzby.hazard_library_template_event_service import (
         hazard_library_template_event_service,
     )
+    from moduly.rizeni_rizik.sluzby.hazard_library_template_existing_measure_service import (
+        hazard_library_template_existing_measure_service,
+    )
+    from moduly.rizeni_rizik.sluzby.hazard_library_template_legal_link_service import (
+        hazard_library_template_legal_link_service,
+    )
     from moduly.rizeni_rizik.sluzby.hazard_library_template_service import (
         hazard_library_template_service,
     )
-    from moduly.nastaveni.sluzby.exposed_group_service import exposed_group_service
+    from tests.rizeni_rizik_test_helpers import ensure_exposed_group
 
 
-class HazardCatalogMeasureAssignmentR19_2TestCase(unittest.TestCase):
+class HazardCatalogManualDecisionCompletionR19_2_1TestCase(unittest.TestCase):
     def setUp(self) -> None:
         from sqlalchemy import delete
 
@@ -93,14 +99,19 @@ class HazardCatalogMeasureAssignmentR19_2TestCase(unittest.TestCase):
             session.execute(delete(HazardLibraryTemplateAssessment))
             session.execute(delete(HazardLibraryTemplateEvent))
             session.execute(delete(HazardLibraryTemplate))
+            session.execute(delete(LegalRequirement))
             session.commit()
 
+        self.group = ensure_exposed_group("Zaměstnanci")
         self.template = hazard_library_template_service.create_template(
-            name="Zdroj R19.2",
+            name="Zdroj R19.2.1",
             category=HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
             application_scope=HAZARD_LIBRARY_SCOPE_ALL,
         )
-        self.group = exposed_group_service.get_all(include_inactive=False)[0]
+        self.requirement = legal_requirement_service.create_requirement(
+            title="BOZP školení",
+            process_code=f"P-{self.template.id:03d}",
+        )
         self.provider = hazard_catalog_source_peer_review_provider
         self.review = ai_peer_review_service.export_package(
             self.provider,
@@ -120,14 +131,27 @@ class HazardCatalogMeasureAssignmentR19_2TestCase(unittest.TestCase):
             rejected=[],
             loaded_proposals_count=len(proposals),
         )
-        return ai_peer_review_service.get_unassigned_for_review(self.review.id)
+        return [
+            item
+            for item in ai_peer_review_service.get_unassigned_for_review(self.review.id)
+            if item.status == PROPOSAL_STATUS_PENDING
+        ]
 
-    def test_single_assessment_is_auto_assigned_without_conflict(self) -> None:
+    def _pending_count(self) -> int:
+        return len(
+            [
+                item
+                for item in ai_peer_review_service.get_unassigned_for_review(self.review.id)
+                if item.status == PROPOSAL_STATUS_PENDING
+            ],
+        )
+
+    def test_assessment_selection_incorporates_measure_and_creates_master_object(self) -> None:
         event = hazard_library_template_event_service.create_event(
             template_id=self.template.id,
             name="Provoz jeřábu",
         )
-        hazard_library_template_assessment_service.create_assessment(
+        assessment = hazard_library_template_assessment_service.create_assessment(
             template_id=self.template.id,
             template_event_id=event.id,
             exposed_group_id=self.group.id,
@@ -140,160 +164,84 @@ class HazardCatalogMeasureAssignmentR19_2TestCase(unittest.TestCase):
             Path(tempfile.mkdtemp()) / "export2.zip",
             options=AiPeerReviewExportOptions(),
         ).review
-        stored = self._store_pending(
-            [
-                AiProposal(
-                    proposal_id="P-001",
-                    area="Existující opatření",
-                    name="Ochranné brýle",
-                    parent_export_id="SOURCE-001",
-                    reasoning="Opatření bez posouzení",
-                ),
-            ],
-        )
-        plan = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
-            template_id=self.template.id,
-            review_id=self.review.id,
-            proposal_ids=[stored[0].id],
-        )
-        assessment_conflicts = [
-            item
-            for item in plan.conflicts
-            if item.conflict_type
-            in {
-                CATALOG_CONFLICT_TYPE_ASSESSMENT_CHOICE,
-                CATALOG_CONFLICT_TYPE_ASSESSMENT_CREATE,
-            }
-        ]
-        self.assertEqual(assessment_conflicts, [])
-        updated = ai_peer_review_service.get_proposal_by_id(stored[0].id)
-        assert updated is not None
-        self.assertTrue((updated.parent_export_id or "").startswith("ASSESSMENT-"))
-
-    def test_measure_without_assessment_offers_create_conflict(self) -> None:
-        hazard_library_template_event_service.create_event(
-            template_id=self.template.id,
-            name="Provoz jeřábu",
-        )
-        self.review = ai_peer_review_service.export_package(
-            self.provider,
-            self.template.id,
-            Path(tempfile.mkdtemp()) / "export3.zip",
-            options=AiPeerReviewExportOptions(),
-        ).review
-        stored = self._store_pending(
-            [
-                AiProposal(
-                    proposal_id="P-001",
-                    area="Potřebné opatření",
-                    name="Instruktáž",
-                    parent_export_id="SOURCE-001",
-                    reasoning="Bez posouzení",
-                ),
-            ],
-        )
-        plan = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
-            template_id=self.template.id,
-            review_id=self.review.id,
-            proposal_ids=[stored[0].id],
-        )
-        self.assertEqual(len(plan.conflicts), 1)
-        self.assertEqual(plan.conflicts[0].conflict_type, CATALOG_CONFLICT_TYPE_ASSESSMENT_CREATE)
-        self.assertGreaterEqual(len(plan.conflicts[0].template_event_choices), 1)
-
-    def test_assessment_assignment_incorporates_measure(self) -> None:
-        event = hazard_library_template_event_service.create_event(
-            template_id=self.template.id,
-            name="Provoz jeřábu",
-        )
-        assessment = hazard_library_template_assessment_service.create_assessment(
-            template_id=self.template.id,
-            template_event_id=event.id,
-            exposed_group_id=self.group.id,
-            consequence="Úraz",
-            severity=RISK_SEVERITY_MODERATE,
-        )
-        self.review = ai_peer_review_service.export_package(
-            self.provider,
-            self.template.id,
-            Path(tempfile.mkdtemp()) / "export4.zip",
-            options=AiPeerReviewExportOptions(),
-        ).review
-        stored = self._store_pending(
-            [
-                AiProposal(
-                    proposal_id="P-001",
-                    area="Existující opatření",
-                    name="Ochranné brýle",
-                    parent_export_id="SOURCE-001",
-                    reasoning="Opatření bez posouzení",
-                ),
-            ],
-        )
-        hazard_catalog_proposal_incorporate_service.assign_proposal_assessment_by_id(
-            stored[0].id,
+        export_id_map = hazard_catalog_proposal_incorporate_service.get_export_id_map(
             self.review.id,
-            assessment.id,
         )
-        plan = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
-            template_id=self.template.id,
-            review_id=self.review.id,
-            proposal_ids=[stored[0].id],
+        assessment_export_id = next(
+            export_id
+            for export_id, payload in export_id_map.items()
+            if payload.get("kind") == "assessment"
+        )
+        stored = self._store_pending(
+            [
+                AiProposal(
+                    proposal_id="P-001",
+                    area="Existující opatření",
+                    name="Ochranné brýle",
+                    parent_export_id="SOURCE-001",
+                    reasoning="Opatření bez posouzení",
+                ),
+            ],
+        )
+        self.assertEqual(self._pending_count(), 1)
+
+        hazard_catalog_proposal_incorporate_service.assign_proposal_assessment(
+            stored[0].id,
+            assessment_export_id,
         )
         result = hazard_catalog_proposal_incorporate_service.incorporate_single_proposal(
             template_id=self.template.id,
             review_id=self.review.id,
             proposal_id=stored[0].id,
-            resolutions=plan.resolutions,
         )
+
         self.assertEqual(result.newly_incorporated_count, 1)
+        self.assertEqual(self._pending_count(), 0)
         updated = ai_peer_review_service.get_proposal_by_id(stored[0].id)
         assert updated is not None
         self.assertEqual(updated.status, PROPOSAL_STATUS_INCORPORATED)
+        measures = hazard_library_template_existing_measure_service.get_for_assessment(
+            assessment.id,
+            include_inactive=False,
+        )
+        self.assertEqual(len(measures), 1)
+        self.assertEqual(measures[0].description, "Ochranné brýle")
 
-    def test_assessment_created_after_export_is_listed_as_candidate(self) -> None:
-        event = hazard_library_template_event_service.create_event(
-            template_id=self.template.id,
-            name="Provoz jeřábu",
-        )
-        self.review = ai_peer_review_service.export_package(
-            self.provider,
-            self.template.id,
-            Path(tempfile.mkdtemp()) / "export5.zip",
-            options=AiPeerReviewExportOptions(),
-        ).review
-        assessment = hazard_library_template_assessment_service.create_assessment(
-            template_id=self.template.id,
-            template_event_id=event.id,
-            exposed_group_id=self.group.id,
-            consequence="Úraz",
-            severity=RISK_SEVERITY_MODERATE,
-        )
+    def test_legal_requirement_selection_incorporates_link_and_creates_master_object(self) -> None:
         stored = self._store_pending(
             [
                 AiProposal(
                     proposal_id="P-001",
-                    area="Existující opatření",
-                    name="Ochranné brýle",
+                    area="Právní vazba",
+                    name="Neexistující právní požadavek",
                     parent_export_id="SOURCE-001",
-                    reasoning="Opatření bez posouzení",
+                    reasoning="Bez shody",
                 ),
             ],
         )
-        proposal = ai_peer_review_service.get_proposal_by_id(stored[0].id)
-        assert proposal is not None
-        export_id_map = hazard_catalog_proposal_incorporate_service.get_export_id_map(
-            self.review.id,
+        self.assertEqual(self._pending_count(), 1)
+
+        hazard_catalog_proposal_incorporate_service.assign_proposal_legal_requirement(
+            stored[0].id,
+            self.requirement.id,
         )
-        candidates = hazard_catalog_proposal_incorporate_service._list_suitable_assessment_candidates(
+        result = hazard_catalog_proposal_incorporate_service.incorporate_single_proposal(
+            template_id=self.template.id,
+            review_id=self.review.id,
+            proposal_id=stored[0].id,
+        )
+
+        self.assertEqual(result.newly_incorporated_count, 1)
+        self.assertEqual(self._pending_count(), 0)
+        updated = ai_peer_review_service.get_proposal_by_id(stored[0].id)
+        assert updated is not None
+        self.assertEqual(updated.status, PROPOSAL_STATUS_INCORPORATED)
+        links = hazard_library_template_legal_link_service.get_for_template(
             self.template.id,
-            self.review.id,
-            proposal,
-            export_id_map,
+            include_inactive=False,
         )
-        self.assertEqual(len(candidates), 1)
-        self.assertEqual(candidates[0].assessment_id, assessment.id)
-        self.assertTrue(candidates[0].export_id.startswith("ASSESSMENT-"))
+        self.assertEqual(len(links), 1)
+        self.assertEqual(links[0].legal_requirement_id, self.requirement.id)
 
 
 if __name__ == "__main__":

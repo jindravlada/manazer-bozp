@@ -1059,19 +1059,11 @@ class AiPeerReviewWidget(QWidget):
         if self._source_id is None:
             return None
         try:
-            plan = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
+            result = hazard_catalog_proposal_incorporate_service.incorporate_single_proposal(
                 template_id=self._source_id,
                 review_id=review_id,
-                proposal_ids=[proposal_id],
-            )
-            merged_resolutions = dict(plan.resolutions)
-            merged_resolutions.update(resolutions)
-            result = hazard_catalog_proposal_incorporate_service.incorporate_proposals(
-                template_id=self._source_id,
-                review_id=review_id,
-                proposal_ids=[proposal_id],
-                resolutions=merged_resolutions,
-                pending_proposal_ids=plan.pending_proposal_ids,
+                proposal_id=proposal_id,
+                resolutions=resolutions,
             )
         except HazardCatalogProposalIncorporateError as error:
             QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
@@ -1081,6 +1073,55 @@ class AiPeerReviewWidget(QWidget):
         if self._on_catalog_incorporated is not None and result.new_revision_number:
             self._on_catalog_incorporated(result.new_revision_number)
         return result
+
+    def _proposal_incorporation_succeeded(self, result) -> bool:
+        if result is None:
+            return False
+        return (
+            result.incorporated_count > 0
+            or result.skipped_count > 0
+            or result.used_existing_count > 0
+        )
+
+    def _assign_legal_requirement_and_incorporate(
+        self,
+        *,
+        review_id: int,
+        proposal_id: int,
+        requirement_id: int,
+        resolutions: dict[int, str],
+    ) -> bool:
+        from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_incorporate_service import (
+            hazard_catalog_proposal_incorporate_service,
+        )
+
+        hazard_catalog_proposal_incorporate_service.assign_proposal_legal_requirement(
+            proposal_id,
+            requirement_id,
+        )
+        result = self._incorporate_single_catalog_proposal(
+            review_id=review_id,
+            proposal_id=proposal_id,
+            resolutions=resolutions,
+        )
+        return self._proposal_incorporation_succeeded(result)
+
+    def _incorporate_proposal_if_pending(
+        self,
+        *,
+        review_id: int,
+        proposal_id: int,
+        resolutions: dict[int, str],
+    ) -> bool:
+        proposal = ai_peer_review_service.get_proposal_by_id(proposal_id)
+        if proposal is None or proposal.status != PROPOSAL_STATUS_PENDING:
+            return True
+        result = self._incorporate_single_catalog_proposal(
+            review_id=review_id,
+            proposal_id=proposal_id,
+            resolutions=resolutions,
+        )
+        return self._proposal_incorporation_succeeded(result)
 
     def _assign_measure_assessment_and_incorporate(
         self,
@@ -1222,6 +1263,7 @@ class AiPeerReviewWidget(QWidget):
         review_id: int,
         plan,
         allow_manual_legal_pick: bool = False,
+        auto_incorporate: bool = False,
         progress_label: str = "",
     ) -> tuple[dict[int, str], bool] | None:
         from moduly.rizeni_rizik.constants_library import (
@@ -1284,12 +1326,19 @@ class AiPeerReviewWidget(QWidget):
                     review_id=review_id,
                     plan=measure_plan,
                     allow_manual_legal_pick=False,
+                    auto_incorporate=auto_incorporate,
                     progress_label=progress_label,
                 )
                 if measure_resolved is None:
                     return None
                 child_resolutions, _ = measure_resolved
                 resolutions.update(child_resolutions)
+                if auto_incorporate and not self._incorporate_proposal_if_pending(
+                    review_id=review_id,
+                    proposal_id=proposal_id,
+                    resolutions=resolutions,
+                ):
+                    return None
                 pending_manual_ids.pop(0)
                 continue
 
@@ -1329,9 +1378,34 @@ class AiPeerReviewWidget(QWidget):
                 return None
             if dialog.selected_action == CATALOG_DUPLICATE_ACTION_SKIP:
                 resolutions[proposal_id] = CATALOG_DUPLICATE_ACTION_SKIP
+                if auto_incorporate:
+                    if not self._incorporate_proposal_if_pending(
+                        review_id=review_id,
+                        proposal_id=proposal_id,
+                        resolutions=resolutions,
+                    ):
+                        return None
                 pending_manual_ids.pop(0)
                 continue
             if dialog.selected_requirement_id is not None:
+                if auto_incorporate:
+                    if not self._assign_legal_requirement_and_incorporate(
+                        review_id=review_id,
+                        proposal_id=proposal_id,
+                        requirement_id=dialog.selected_requirement_id,
+                        resolutions=resolutions,
+                    ):
+                        refreshed = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
+                            template_id=self._source_id,
+                            review_id=review_id,
+                            proposal_ids=[proposal_id],
+                        )
+                        resolutions.update(refreshed.resolutions)
+                        pending_conflicts.extend(refreshed.conflicts)
+                        pending_manual_ids = list(refreshed.pending_proposal_ids)
+                        continue
+                    pending_manual_ids.pop(0)
+                    continue
                 hazard_catalog_proposal_incorporate_service.assign_proposal_legal_requirement(
                     proposal_id,
                     dialog.selected_requirement_id,
@@ -1372,22 +1446,45 @@ class AiPeerReviewWidget(QWidget):
                     return None
                 if dialog.selected_action == CATALOG_DUPLICATE_ACTION_SKIP:
                     resolutions[proposal.id] = CATALOG_DUPLICATE_ACTION_SKIP
+                    if auto_incorporate and not self._incorporate_proposal_if_pending(
+                        review_id=review_id,
+                        proposal_id=proposal.id,
+                        resolutions=resolutions,
+                    ):
+                        return None
                     conflict_index += 1
                     continue
                 if dialog.selected_requirement_id is not None:
-                    hazard_catalog_proposal_incorporate_service.assign_proposal_legal_requirement(
-                        proposal.id,
-                        dialog.selected_requirement_id,
-                    )
-                    refreshed = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
-                        template_id=self._source_id,
-                        review_id=review_id,
-                        proposal_ids=[proposal.id],
-                    )
-                    resolutions.update(refreshed.resolutions)
-                    pending_conflicts.extend(refreshed.conflicts)
-                conflict_index += 1
-                continue
+                    if auto_incorporate:
+                        if not self._assign_legal_requirement_and_incorporate(
+                            review_id=review_id,
+                            proposal_id=proposal.id,
+                            requirement_id=dialog.selected_requirement_id,
+                            resolutions=resolutions,
+                        ):
+                            refreshed = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
+                                template_id=self._source_id,
+                                review_id=review_id,
+                                proposal_ids=[proposal.id],
+                            )
+                            resolutions.update(refreshed.resolutions)
+                            pending_conflicts.extend(refreshed.conflicts)
+                            conflict_index += 1
+                            continue
+                    else:
+                        hazard_catalog_proposal_incorporate_service.assign_proposal_legal_requirement(
+                            proposal.id,
+                            dialog.selected_requirement_id,
+                        )
+                        refreshed = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
+                            template_id=self._source_id,
+                            review_id=review_id,
+                            proposal_ids=[proposal.id],
+                        )
+                        resolutions.update(refreshed.resolutions)
+                        pending_conflicts.extend(refreshed.conflicts)
+                    conflict_index += 1
+                    continue
 
             if conflict.conflict_type == CATALOG_CONFLICT_TYPE_ASSESSMENT_CREATE:
                 if not self._create_assessment_for_measure_proposal(
@@ -1418,22 +1515,34 @@ class AiPeerReviewWidget(QWidget):
                     return None
                 if dialog.selected_action == CATALOG_DUPLICATE_ACTION_SKIP:
                     resolutions[proposal.id] = CATALOG_DUPLICATE_ACTION_SKIP
+                    if auto_incorporate and not self._incorporate_proposal_if_pending(
+                        review_id=review_id,
+                        proposal_id=proposal.id,
+                        resolutions=resolutions,
+                    ):
+                        return None
                     conflict_index += 1
                     continue
                 if dialog.selected_assessment_export_id:
-                    if not self._assign_measure_assessment_and_incorporate(
+                    incorporated = self._assign_measure_assessment_and_incorporate(
                         review_id=review_id,
                         proposal_id=proposal.id,
                         assessment_export_id=dialog.selected_assessment_export_id,
                         resolutions=resolutions,
-                    ):
-                        refreshed = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
-                            template_id=self._source_id,
+                    )
+                    if not incorporated:
+                        if auto_incorporate and not self._incorporate_proposal_if_pending(
                             review_id=review_id,
-                            proposal_ids=[proposal.id],
-                        )
-                        resolutions.update(refreshed.resolutions)
-                        pending_conflicts.extend(refreshed.conflicts)
+                            proposal_id=proposal.id,
+                            resolutions=resolutions,
+                        ):
+                            refreshed = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
+                                template_id=self._source_id,
+                                review_id=review_id,
+                                proposal_ids=[proposal.id],
+                            )
+                            resolutions.update(refreshed.resolutions)
+                            pending_conflicts.extend(refreshed.conflicts)
                 conflict_index += 1
                 continue
 
@@ -1475,6 +1584,12 @@ class AiPeerReviewWidget(QWidget):
                     break
                 resolutions[proposal.id] = action
                 break
+            if auto_incorporate and not self._incorporate_proposal_if_pending(
+                review_id=review_id,
+                proposal_id=proposal.id,
+                resolutions=resolutions,
+            ):
+                return None
             conflict_index += 1
 
         return resolutions, True
@@ -1521,23 +1636,36 @@ class AiPeerReviewWidget(QWidget):
                 review_id=review_id,
                 plan=plan,
                 allow_manual_legal_pick=True,
+                auto_incorporate=True,
                 progress_label=progress_label,
             )
             if resolved is None:
                 return None
             resolutions, _ = resolved
 
-            try:
-                step_result = hazard_catalog_proposal_incorporate_service.incorporate_proposals(
-                    template_id=self._source_id,
-                    review_id=review_id,
-                    proposal_ids=[proposal_id],
-                    resolutions=resolutions,
-                    pending_proposal_ids=[],
+            proposal = ai_peer_review_service.get_proposal_by_id(proposal_id)
+            if proposal is not None and proposal.status == PROPOSAL_STATUS_PENDING:
+                try:
+                    step_result = hazard_catalog_proposal_incorporate_service.incorporate_single_proposal(
+                        template_id=self._source_id,
+                        review_id=review_id,
+                        proposal_id=proposal_id,
+                        resolutions=resolutions,
+                    )
+                except HazardCatalogProposalIncorporateError as error:
+                    QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+                    return None
+            else:
+                step_result = CatalogIncorporateResult(
+                    incorporated_count=0,
+                    newly_incorporated_count=0,
+                    used_existing_count=0,
+                    skipped_count=0,
+                    requires_manual_decision_count=0,
+                    manual_decision_proposal_ids=[],
+                    merged_count=0,
+                    new_revision_number=None,
                 )
-            except HazardCatalogProposalIncorporateError as error:
-                QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
-                return None
 
             current_result = hazard_catalog_proposal_incorporate_service.merge_incorporate_results(
                 current_result,
@@ -1589,6 +1717,7 @@ class AiPeerReviewWidget(QWidget):
             review_id=review_id,
             plan=plan,
             allow_manual_legal_pick=False,
+            auto_incorporate=True,
         )
         if resolved is None:
             return

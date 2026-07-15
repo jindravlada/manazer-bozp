@@ -489,6 +489,14 @@ Dokončení ručního přiřazení opatření k posouzení:
 - jediné vhodné posouzení se přiřadí automaticky bez dialogu
 - chybí-li vhodné posouzení, lze založit nové nebo návrh ponechat ve frontě
 
+## Fáze R19.2.1
+
+Dokončení workflow po ručním rozhodnutí:
+
+- po výběru posouzení nebo právního požadavku se návrh okamžitě zapracuje
+- stav se změní na Zapracováno, objekt vznikne v MASTER a UI se obnoví
+- průvodce R19.1 teprve potom pokračuje na další problémový návrh
+
 ## Fáze R18g
 
 Zapracování návrhů AI do MASTER obsahu katalogu:

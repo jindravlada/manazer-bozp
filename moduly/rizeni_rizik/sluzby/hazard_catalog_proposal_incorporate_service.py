@@ -854,6 +854,30 @@ class HazardCatalogProposalIncorporateService:
             new_revision_number=revision,
         )
 
+    def incorporate_single_proposal(
+        self,
+        *,
+        template_id: int,
+        review_id: int,
+        proposal_id: int,
+        resolutions: dict[int, str] | None = None,
+    ) -> CatalogIncorporateResult:
+        plan = self.prepare_incorporation(
+            template_id=template_id,
+            review_id=review_id,
+            proposal_ids=[proposal_id],
+        )
+        merged_resolutions = dict(plan.resolutions)
+        if resolutions:
+            merged_resolutions.update(resolutions)
+        return self.incorporate_proposals(
+            template_id=template_id,
+            review_id=review_id,
+            proposal_ids=[proposal_id],
+            resolutions=merged_resolutions,
+            pending_proposal_ids=[],
+        )
+
     def _apply_proposal(
         self,
         session,
