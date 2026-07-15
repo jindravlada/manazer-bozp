@@ -1,4 +1,9 @@
-"""Automatické zvýšení verze vzoru při změně obsahu (R17b)."""
+"""Zvýšení verze odborného obsahu zdroje rizika (R17b, R18g.0).
+
+Verze se zvyšuje pouze explicitně:
+- jednou po ukončení editační relace v editoru zdroje,
+- jednou po dokončení hromadné operace (import, převzetí návrhů AI, …).
+"""
 
 
 def bump_template_content_version(template_id: int) -> None:

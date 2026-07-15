@@ -307,7 +307,7 @@ Obsah firemního vzoru:
 - záložka **Obsah vzoru** (kategorie | položky | události; dialog Posouzení a opatření)
 - ruční zadávání obsahu; soft delete přes aktivní/neaktivní
 - `exposed_group_id` z číselníku ohrožených skupin; závažnost jako u běžného posouzení
-- automatické zvýšení `version_number` při změně obsahu (ne při úpravě základních údajů)
+- zvýšení `version_number` jednou po editační relaci nebo hromadné operaci (ne při každém dílčím zápisu)
 - neaktivní vzor: obsah pouze pro čtení
 - záložky Použití a Historie zatím disabled; bez převzetí z identifikace ani použití vzoru
 
@@ -435,5 +435,14 @@ Oprava evidence importovaných návrhů v katalogu:
 - návrhy se ukládají do databáze včetně `proposal_id` a vazby na konzultaci
 - opakované načtení odpovědi: nová konzultace / nahrazení / zrušení
 - tabulka návrhů vybrané konzultace se obnoví ihned po importu
+
+## Fáze R18g.0
+
+Oprava verzování Master zdroje rizika:
+
+- dílčí služby obsahu nevolají bump verze
+- editor eviduje změnu odborného obsahu a zvýší verzi nejvýše o 1 při zavření
+- nový zdroj zůstává na verzi 1 i po prvotním naplnění obsahu
+- hromadné operace mají jeden explicitní bump po dokončení transakce
 
 ## Fáze R18g

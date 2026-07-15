@@ -260,20 +260,27 @@ class HazardLibraryTemplateR17bTestCase(unittest.TestCase):
         self.assertEqual(rows_a[0].assessment.exposed_group_id, self.group_a.id)
         self.assertEqual(rows_b[0].assessment.exposed_group_id, self.group_b.id)
 
-    def test_content_change_bumps_version(self) -> None:
+    def test_content_change_bumps_version_once_per_session(self) -> None:
         initial_version = self.template.version_number
         self._create_event()
+        self._create_event(name="Druhá událost")
+        reloaded = hazard_library_template_service.get_by_id(self.template.id)
+        assert reloaded is not None
+        self.assertEqual(reloaded.version_number, initial_version)
+
+        hazard_library_template_service.bump_content_version(self.template.id)
         reloaded = hazard_library_template_service.get_by_id(self.template.id)
         assert reloaded is not None
         self.assertEqual(reloaded.version_number, initial_version + 1)
 
-        self._create_event(name="Druhá událost")
+        hazard_library_template_service.bump_content_version(self.template.id)
         reloaded = hazard_library_template_service.get_by_id(self.template.id)
         assert reloaded is not None
         self.assertEqual(reloaded.version_number, initial_version + 2)
 
     def test_basics_update_does_not_bump_version(self) -> None:
         self._create_event()
+        hazard_library_template_service.bump_content_version(self.template.id)
         reloaded = hazard_library_template_service.get_by_id(self.template.id)
         assert reloaded is not None
         version_after_content = reloaded.version_number
@@ -292,6 +299,7 @@ class HazardLibraryTemplateR17bTestCase(unittest.TestCase):
     def test_reading_content_does_not_bump_version(self) -> None:
         event = self._create_event()
         self._create_assessment(event)
+        hazard_library_template_service.bump_content_version(self.template.id)
 
         reloaded = hazard_library_template_service.get_by_id(self.template.id)
         assert reloaded is not None

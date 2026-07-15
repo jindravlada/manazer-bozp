@@ -12,9 +12,6 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_assessment_service impor
 from moduly.rizeni_rizik.sluzby.hazard_library_template_existing_measure_service import (
     normalize_template_measure_description,
 )
-from moduly.rizeni_rizik.sluzby.hazard_library_template_version import (
-    bump_template_content_version,
-)
 
 
 class HazardLibraryTemplateRequiredMeasureError(ValueError):
@@ -70,7 +67,6 @@ class HazardLibraryTemplateRequiredMeasureService:
             sort_order=self.repository.next_sort_order(template_assessment_id),
         )
         saved = self.repository.add(measure)
-        bump_template_content_version(template_id)
         return saved
 
     def update_measure(
@@ -105,7 +101,6 @@ class HazardLibraryTemplateRequiredMeasureService:
         measure.active = active
         measure.updated_at = datetime.now()
         saved = self.repository.update(measure)
-        bump_template_content_version(template_id)
         return saved
 
     def activate_measure(self, measure_id: int) -> bool:
@@ -122,7 +117,6 @@ class HazardLibraryTemplateRequiredMeasureService:
         measure.active = True
         measure.updated_at = datetime.now()
         self.repository.update(measure)
-        bump_template_content_version(template_id)
         return True
 
     def deactivate_measure(self, measure_id: int) -> bool:
@@ -133,7 +127,6 @@ class HazardLibraryTemplateRequiredMeasureService:
         measure.active = False
         measure.updated_at = datetime.now()
         self.repository.update(measure)
-        bump_template_content_version(template_id)
         return True
 
     def _template_id_for_measure(self, measure: HazardLibraryTemplateRequiredMeasure) -> int:

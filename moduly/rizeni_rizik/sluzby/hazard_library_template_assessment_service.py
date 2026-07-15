@@ -16,9 +16,6 @@ from moduly.rizeni_rizik.repository.hazard_library_template_assessment_repositor
 from moduly.rizeni_rizik.sluzby.hazard_library_template_event_service import (
     hazard_library_template_event_service,
 )
-from moduly.rizeni_rizik.sluzby.hazard_library_template_version import (
-    bump_template_content_version,
-)
 
 
 class HazardLibraryTemplateAssessmentError(ValueError):
@@ -108,7 +105,6 @@ class HazardLibraryTemplateAssessmentService:
             sort_order=self.repository.next_sort_order(template_event_id),
         )
         saved = self.repository.add(assessment)
-        bump_template_content_version(template_id)
         return saved
 
     def update_assessment(
@@ -149,14 +145,12 @@ class HazardLibraryTemplateAssessmentService:
         assessment.active = active
         assessment.updated_at = datetime.now()
         saved = self.repository.update(assessment)
-        bump_template_content_version(template_id)
         return saved
 
     def activate_assessment(self, assessment_id: int) -> bool:
         assessment = self.repository.get_by_id(assessment_id)
         if assessment is None:
             return False
-        template_id = self._template_id_for_assessment(assessment)
         self._validate_unique_active_group(
             assessment.template_event_id,
             exposed_group_id=assessment.exposed_group_id,
@@ -166,18 +160,15 @@ class HazardLibraryTemplateAssessmentService:
         assessment.active = True
         assessment.updated_at = datetime.now()
         self.repository.update(assessment)
-        bump_template_content_version(template_id)
         return True
 
     def deactivate_assessment(self, assessment_id: int) -> bool:
         assessment = self.repository.get_by_id(assessment_id)
         if assessment is None:
             return False
-        template_id = self._template_id_for_assessment(assessment)
         assessment.active = False
         assessment.updated_at = datetime.now()
         self.repository.update(assessment)
-        bump_template_content_version(template_id)
         return True
 
     def get_template_id_for_assessment(self, assessment_id: int) -> int | None:

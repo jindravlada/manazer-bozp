@@ -1,3 +1,4 @@
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -57,6 +58,7 @@ class HazardLibraryTemplateDialog(QDialog):
         super().__init__(parent)
         self.template = template
         self.saved_template = template
+        self._content_changed = False
 
         self.setWindowTitle(HAZARD_LIBRARY_DIALOG_TITLE)
         self.resize(960, 680)
@@ -275,20 +277,31 @@ class HazardLibraryTemplateDialog(QDialog):
     def _on_content_changed(self) -> None:
         if self.template is None:
             return
-        reloaded = hazard_library_template_service.get_by_id(self.template.id)
-        if reloaded is not None:
-            self.template = reloaded
-            self.saved_template = reloaded
-            self.version_number.setValue(reloaded.version_number)
+        self._content_changed = True
 
     def _on_tab_changed(self, index: int) -> None:
         if index == self.content_tab_index and self.template is not None:
-            reloaded = hazard_library_template_service.get_by_id(self.template.id)
-            if reloaded is not None:
-                self.template = reloaded
-                self.version_number.setValue(reloaded.version_number)
             self._sync_content_context()
             self.content_widget.refresh()
 
+    def _finalize_content_version(self) -> None:
+        if self.template is None or not self._content_changed:
+            return
+        updated = hazard_library_template_service.bump_content_version(self.template.id)
+        if updated is not None:
+            self.template = updated
+            self.saved_template = updated
+            self.version_number.setValue(updated.version_number)
+        self._content_changed = False
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        self._finalize_content_version()
+        super().closeEvent(event)
+
+    def reject(self) -> None:
+        self._finalize_content_version()
+        super().reject()
+
     def accept(self) -> None:
-        self.reject()
+        self._finalize_content_version()
+        super().reject()

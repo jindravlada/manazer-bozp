@@ -7,9 +7,6 @@ from moduly.rizeni_rizik.repository.hazard_library_template_event_repository imp
 from moduly.rizeni_rizik.sluzby.hazard_library_template_service import (
     hazard_library_template_service,
 )
-from moduly.rizeni_rizik.sluzby.hazard_library_template_version import (
-    bump_template_content_version,
-)
 
 
 class HazardLibraryTemplateEventError(ValueError):
@@ -73,7 +70,6 @@ class HazardLibraryTemplateEventService:
             sort_order=self.repository.next_sort_order(template_id),
         )
         saved = self.repository.add(event)
-        bump_template_content_version(template_id)
         return saved
 
     def update_event(
@@ -110,7 +106,6 @@ class HazardLibraryTemplateEventService:
         event.active = active
         event.updated_at = datetime.now()
         saved = self.repository.update(event)
-        bump_template_content_version(template_id)
         return saved
 
     def activate_event(self, event_id: int) -> bool:
@@ -126,7 +121,6 @@ class HazardLibraryTemplateEventService:
         event.active = True
         event.updated_at = datetime.now()
         self.repository.update(event)
-        bump_template_content_version(event.template_id)
         return True
 
     def deactivate_event(self, event_id: int) -> bool:
@@ -136,7 +130,6 @@ class HazardLibraryTemplateEventService:
         event.active = False
         event.updated_at = datetime.now()
         self.repository.update(event)
-        bump_template_content_version(event.template_id)
         return True
 
     def get_template_id_for_event(self, event_id: int) -> int | None:
