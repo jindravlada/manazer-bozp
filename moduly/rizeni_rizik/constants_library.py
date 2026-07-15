@@ -31,7 +31,7 @@ HAZARD_LIBRARY_TAB_HISTORY = "Historie změn"
 HAZARD_LIBRARY_PLACEHOLDER_TEXT = "Obsah bude doplněn v další fázi."
 
 HAZARD_LIBRARY_CONTENT_INTRO_TEXT = (
-    "Nežádoucí události, posouzení rizik a opatření zdroje. "
+    "Nežádoucí události, posouzení rizik, opatření a právní vazby zdroje. "
     "Obsah se zadává ručně a slouží jako opakovaně použitelný odborný podklad."
 )
 HAZARD_LIBRARY_CONTENT_READ_ONLY_MESSAGE = (
@@ -42,6 +42,24 @@ HAZARD_LIBRARY_ASSESSMENTS_DIALOG_TITLE = "Posouzení a opatření zdroje rizika
 HAZARD_LIBRARY_ASSESSMENT_DIALOG_TITLE = "Posouzení zdroje rizika"
 HAZARD_LIBRARY_EXISTING_MEASURE_DIALOG_TITLE = "Existující opatření zdroje rizika"
 HAZARD_LIBRARY_REQUIRED_MEASURE_DIALOG_TITLE = "Potřebné opatření zdroje rizika"
+HAZARD_LIBRARY_LEGAL_LINK_DIALOG_TITLE = "Právní vazba zdroje rizika"
+
+HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_ID = 0
+HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_REQUIREMENT = 1
+HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_NOTE = 2
+HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_ACTIVE = 3
+HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COLUMN_COUNT = 4
+HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_TABLE_HEADERS = [
+    "ID",
+    "Právní požadavek",
+    "Poznámka",
+    "Aktivní",
+]
+HAZARD_LIBRARY_TEMPLATE_LEGAL_LINKS_SECTION_TITLE = "Právní vazby"
+HAZARD_LIBRARY_TEMPLATE_SELECT_LEGAL_LINK = "Vyberte právní vazbu."
+HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_REQUIREMENT_REQUIRED = (
+    "Vyberte právní požadavek z registru řídicích procesů."
+)
 
 HAZARD_LIBRARY_TEMPLATE_EVENT_COL_ID = 0
 HAZARD_LIBRARY_TEMPLATE_EVENT_COL_NAME = 1
@@ -202,8 +220,9 @@ CATALOG_AI_PROPOSAL_INCORPORATE_SUCCESS = (
 )
 CATALOG_AI_PROPOSAL_INCORPORATE_SUMMARY = (
     "Zapracování dokončeno.\n\n"
-    "Nově zapracováno:\n{newly_incorporated}\n\n"
-    "Použito existujících položek:\n{used_existing}\n\n"
+    "Zapracováno:\n{newly_incorporated}\n\n"
+    "Použito existujících:\n{used_existing}\n\n"
+    "Vyžaduje ruční rozhodnutí:\n{requires_manual_decision}\n\n"
     "Přeskočeno:\n{skipped}\n\n"
     "Zamítnuto:\n{rejected}\n\n"
     "Nová revize:\n{revision}"
@@ -223,7 +242,52 @@ CATALOG_AI_PROPOSAL_DUPLICATE_EDIT = "Upravit"
 CATALOG_AI_PROPOSAL_DUPLICATE_CANCEL = "Zrušit zapracování"
 CATALOG_AI_PROPOSAL_EDIT_DIALOG_TITLE = "Úprava návrhu AI"
 CATALOG_AI_PROPOSAL_LEGAL_EDIT_INFO = (
-    "Právní vazbu lze upravit pouze jako text návrhu. Do MASTER obsahu se nezapisuje."
+    "Právní vazba se zapracuje jako odkaz na existující právní požadavek v registru RPP."
 )
+CATALOG_AI_PROPOSAL_REQUIREMENT_CHOICE_DIALOG_TITLE = "Výběr právního požadavku"
+CATALOG_AI_PROPOSAL_REQUIREMENT_CHOICE_INTRO = (
+    "Návrh „{proposal_name}“ odpovídá více právním požadavkům.\n"
+    "Vyberte správný požadavek nebo návrh přeskočte."
+)
+CATALOG_AI_PROPOSAL_ASSESSMENT_CHOICE_DIALOG_TITLE = "Výběr posouzení pro opatření"
+CATALOG_AI_PROPOSAL_ASSESSMENT_CHOICE_INTRO = (
+    "Vyberte posouzení, do kterého chcete opatření „{proposal_name}“ zařadit."
+)
+CATALOG_AI_PROPOSAL_REQUIREMENT_NOT_FOUND_INFO = (
+    "Právní požadavek pro návrh „{proposal_name}“ nebyl v registru nalezen. "
+    "Návrh zůstane ve frontě ke zpracování."
+)
+
+CATALOG_INCORPORATE_ERROR_SELECT_PROPOSALS = "Vyberte alespoň jeden návrh ke zapracování."
+CATALOG_INCORPORATE_ERROR_SOURCE_MISSING = "Zdroj rizika neexistuje nebo není dostupný."
+CATALOG_INCORPORATE_ERROR_SOURCE_INACTIVE = (
+    "Návrhy lze zapracovat pouze do aktivního zdroje rizika."
+)
+CATALOG_INCORPORATE_ERROR_REVIEW_MISSING = "Vybraná konzultace AI neexistuje."
+CATALOG_INCORPORATE_ERROR_REVIEW_MISMATCH = (
+    "Vybraná konzultace nepatří k tomuto zdroji rizika."
+)
+CATALOG_INCORPORATE_ERROR_NO_PENDING = (
+    "Vybrané návrhy nejsou ve stavu čekajícím na odborné posouzení."
+)
+CATALOG_INCORPORATE_ERROR_UNKNOWN_AREA = (
+    "Návrh „{name}“ nelze zařadit do známé oblasti odborného obsahu."
+)
+CATALOG_INCORPORATE_ERROR_EVENT_PARENT = (
+    "Návrh události „{name}“ nelze zařadit ke zdroji rizika."
+)
+CATALOG_INCORPORATE_ERROR_ASSESSMENT_PARENT = (
+    "Návrh posouzení „{name}“ nelze zařadit k nežádoucí události."
+)
+CATALOG_INCORPORATE_ERROR_ASSESSMENT_GROUP = (
+    "Návrh posouzení „{name}“ nemá určenou ohroženou skupinu."
+)
+CATALOG_INCORPORATE_ERROR_MEASURE_PARENT = (
+    "Návrh opatření „{name}“ nelze zařadit k posouzení rizika."
+)
+CATALOG_INCORPORATE_ERROR_EXPOSED_GROUP = (
+    "Návrh ohrožené skupiny nelze přímo zapsat do odborného obsahu zdroje."
+)
+CATALOG_INCORPORATE_ERROR_GENERIC = "Návrh „{name}“ nelze zapracovat."
 
 DEFAULT_HAZARD_LIBRARY_VERSION = 1

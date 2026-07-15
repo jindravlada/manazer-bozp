@@ -1,4 +1,4 @@
-"""Zapracování návrhů AI do MASTER obsahu katalogu zdrojů rizik (R18g)."""
+"""Zapracování návrhů AI do MASTER obsahu katalogu zdrojů rizik (R18g, R19)."""
 
 from __future__ import annotations
 
@@ -23,12 +23,30 @@ from moduly.rizeni_rizik.constants import (
     RISK_SEVERITIES,
     RISK_SEVERITY_LABELS,
 )
-from moduly.rizeni_rizik.constants_library import HAZARD_LIBRARY_REVISION_REASON_AI_PROPOSALS
+from moduly.rizeni_rizik.constants_library import (
+    CATALOG_INCORPORATE_ERROR_ASSESSMENT_GROUP,
+    CATALOG_INCORPORATE_ERROR_ASSESSMENT_PARENT,
+    CATALOG_INCORPORATE_ERROR_EVENT_PARENT,
+    CATALOG_INCORPORATE_ERROR_EXPOSED_GROUP,
+    CATALOG_INCORPORATE_ERROR_GENERIC,
+    CATALOG_INCORPORATE_ERROR_MEASURE_PARENT,
+    CATALOG_INCORPORATE_ERROR_NO_PENDING,
+    CATALOG_INCORPORATE_ERROR_REVIEW_MISMATCH,
+    CATALOG_INCORPORATE_ERROR_REVIEW_MISSING,
+    CATALOG_INCORPORATE_ERROR_SELECT_PROPOSALS,
+    CATALOG_INCORPORATE_ERROR_SOURCE_INACTIVE,
+    CATALOG_INCORPORATE_ERROR_SOURCE_MISSING,
+    CATALOG_INCORPORATE_ERROR_UNKNOWN_AREA,
+    HAZARD_LIBRARY_REVISION_REASON_AI_PROPOSALS,
+)
 from moduly.rizeni_rizik.modely.hazard_library_template import HazardLibraryTemplate
 from moduly.rizeni_rizik.modely.hazard_library_template_assessment import (
     HazardLibraryTemplateAssessment,
 )
 from moduly.rizeni_rizik.modely.hazard_library_template_event import HazardLibraryTemplateEvent
+from moduly.rizeni_rizik.modely.hazard_library_template_legal_link import (
+    HazardLibraryTemplateLegalLink,
+)
 from moduly.rizeni_rizik.modely.hazard_library_template_measure import (
     HazardLibraryTemplateExistingMeasure,
     HazardLibraryTemplateRequiredMeasure,
@@ -36,7 +54,14 @@ from moduly.rizeni_rizik.modely.hazard_library_template_measure import (
 from moduly.rizeni_rizik.modely.hazard_library_template_revision import (
     HazardLibraryTemplateRevision,
 )
+from moduly.rizeni_rizik.sluzby.hazard_catalog_legal_requirement_resolver import (
+    LegalRequirementMatchKind,
+    hazard_catalog_legal_requirement_resolver,
+)
 from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_support import (
+    CATALOG_CONFLICT_TYPE_ASSESSMENT_CHOICE,
+    CATALOG_CONFLICT_TYPE_DUPLICATE,
+    CATALOG_CONFLICT_TYPE_REQUIREMENT_CHOICE,
     CATALOG_DUPLICATE_ACTION_MERGE,
     CATALOG_DUPLICATE_ACTION_SKIP,
     CATALOG_DUPLICATE_MATCH_EXACT,
@@ -61,6 +86,9 @@ from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_support import (
     proposal_payload_to_json,
     requires_dialog_for_duplicate,
 )
+from moduly.rizeni_rizik.sluzby.hazard_library_template_assessment_service import (
+    hazard_library_template_assessment_service,
+)
 from moduly.rizeni_rizik.sluzby.hazard_library_template_service import (
     hazard_library_template_service,
 )
@@ -76,6 +104,7 @@ class CatalogIncorporateResult:
     newly_incorporated_count: int
     used_existing_count: int
     skipped_count: int
+    requires_manual_decision_count: int
     merged_count: int
     new_revision_number: int | None
 
@@ -132,6 +161,7 @@ class HazardCatalogProposalIncorporateService:
         ]
         resolutions: dict[int, str] = {}
         conflicts: list[CatalogProposalConflict] = []
+        pending_proposal_ids: list[int] = []
 
         for proposal in proposals:
             working = self.proposal_repository.get_by_id(proposal.id)
@@ -140,6 +170,35 @@ class HazardCatalogProposalIncorporateService:
 
             if self.auto_resolve_codebooks(working):
                 self.proposal_repository.update(working)
+
+            kind = classify_catalog_proposal(working)
+            if kind == CATALOG_PROPOSAL_KIND_LEGAL:
+                if self._prepare_legal_proposal(
+                    working,
+                    template_id=template_id,
+                    resolutions=resolutions,
+                    conflicts=conflicts,
+                    pending_proposal_ids=pending_proposal_ids,
+                ):
+                    continue
+
+            if kind in {
+                CATALOG_PROPOSAL_KIND_EXISTING_MEASURE,
+                CATALOG_PROPOSAL_KIND_REQUIRED_MEASURE,
+            } and self._needs_assessment_choice(working, export_id_map):
+                candidates = self._list_assessment_candidates(template_id, export_id_map)
+                if not candidates:
+                    pending_proposal_ids.append(working.id)
+                    continue
+                conflicts.append(
+                    CatalogProposalConflict(
+                        proposal_id=working.id,
+                        proposal_label=working.name,
+                        conflict_type=CATALOG_CONFLICT_TYPE_ASSESSMENT_CHOICE,
+                        assessment_candidates=candidates,
+                    ),
+                )
+                continue
 
             duplicate = self._find_duplicate_match(
                 template_id=template_id,
@@ -156,10 +215,15 @@ class HazardCatalogProposalIncorporateService:
                     CatalogProposalConflict(
                         proposal_id=working.id,
                         proposal_label=working.name,
+                        conflict_type=CATALOG_CONFLICT_TYPE_DUPLICATE,
                         duplicate=duplicate,
                     ),
                 )
-        return CatalogIncorporatePlan(resolutions=resolutions, conflicts=conflicts)
+        return CatalogIncorporatePlan(
+            resolutions=resolutions,
+            conflicts=conflicts,
+            pending_proposal_ids=pending_proposal_ids,
+        )
 
     def auto_resolve_codebooks(self, proposal: AiUnassignedProposal) -> bool:
         changed = False
@@ -235,6 +299,168 @@ class HazardCatalogProposalIncorporateService:
                     return severity
         return ""
 
+    def _prepare_legal_proposal(
+        self,
+        proposal: AiUnassignedProposal,
+        *,
+        template_id: int,
+        resolutions: dict[int, str],
+        conflicts: list[CatalogProposalConflict],
+        pending_proposal_ids: list[int],
+    ) -> bool:
+        payload = parse_proposal_payload(proposal)
+        requirement_id = payload.legal_requirement_id
+        if requirement_id is None:
+            match = hazard_catalog_legal_requirement_resolver.resolve(proposal.name)
+            if match.kind == LegalRequirementMatchKind.NONE:
+                pending_proposal_ids.append(proposal.id)
+                return True
+            if match.kind == LegalRequirementMatchKind.AMBIGUOUS:
+                conflicts.append(
+                    CatalogProposalConflict(
+                        proposal_id=proposal.id,
+                        proposal_label=proposal.name,
+                        conflict_type=CATALOG_CONFLICT_TYPE_REQUIREMENT_CHOICE,
+                        requirement_candidates=match.candidates,
+                    ),
+                )
+                return True
+            requirement_id = match.requirement_id
+            self._store_legal_requirement_id(proposal, requirement_id)
+            self.proposal_repository.update(proposal)
+
+        duplicate = self._find_legal_link_duplicate(template_id, requirement_id)
+        if duplicate is None:
+            return True
+        if duplicate.match_type == CATALOG_DUPLICATE_MATCH_EXACT:
+            resolutions[proposal.id] = CATALOG_DUPLICATE_ACTION_MERGE
+            return True
+        if requires_dialog_for_duplicate(duplicate):
+            conflicts.append(
+                CatalogProposalConflict(
+                    proposal_id=proposal.id,
+                    proposal_label=proposal.name,
+                    conflict_type=CATALOG_CONFLICT_TYPE_DUPLICATE,
+                    duplicate=duplicate,
+                ),
+            )
+        return True
+
+    @staticmethod
+    def _store_legal_requirement_id(
+        proposal: AiUnassignedProposal,
+        legal_requirement_id: int | None,
+    ) -> None:
+        payload = parse_proposal_payload(proposal)
+        proposal.payload_json = proposal_payload_to_json(
+            CatalogProposalPayload(
+                description=payload.description,
+                note=payload.note,
+                consequence=payload.consequence,
+                conclusion=payload.conclusion,
+                severity=payload.severity,
+                legal_requirement_id=legal_requirement_id,
+            ),
+        )
+
+    @staticmethod
+    def _needs_assessment_choice(
+        proposal: AiUnassignedProposal,
+        export_id_map: dict[str, dict],
+    ) -> bool:
+        parent = HazardCatalogProposalIncorporateService._resolve_parent(
+            proposal,
+            export_id_map,
+        )
+        return parent is None or parent.get("kind") != "assessment"
+
+    def _list_assessment_candidates(
+        self,
+        template_id: int,
+        export_id_map: dict[str, dict],
+    ) -> tuple[tuple[str, str], ...]:
+        from moduly.nastaveni.sluzby.exposed_group_service import exposed_group_service
+
+        assessment_export_ids = {
+            export_id: payload
+            for export_id, payload in export_id_map.items()
+            if payload.get("kind") == "assessment"
+        }
+        if not assessment_export_ids:
+            return ()
+
+        event_names: dict[int, str] = {}
+        for event in self._active_events(template_id):
+            event_names[event.id] = event.name
+
+        candidates: list[tuple[str, str]] = []
+        for export_id, payload in sorted(assessment_export_ids.items()):
+            assessment_id = payload.get("id")
+            if assessment_id is None:
+                continue
+            assessment = hazard_library_template_assessment_service.get_by_id(int(assessment_id))
+            if assessment is None:
+                continue
+            event_id = assessment.template_event_id
+            event_name = event_names.get(event_id, "Událost")
+            group_name = exposed_group_service.display_name(assessment.exposed_group_id)
+            label = f"{event_name} – {group_name or '—'}"
+            candidates.append((export_id, label))
+        return tuple(candidates)
+
+    def _find_legal_link_duplicate(
+        self,
+        template_id: int,
+        legal_requirement_id: int | None,
+    ) -> CatalogProposalDuplicate | None:
+        if legal_requirement_id is None:
+            return None
+        from moduly.pravni_pozadavky.constants import legal_requirement_merged_target_label
+        from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
+            legal_requirement_service,
+        )
+        from moduly.rizeni_rizik.sluzby.hazard_library_template_legal_link_service import (
+            hazard_library_template_legal_link_service,
+        )
+
+        requirement = legal_requirement_service.get_by_id(legal_requirement_id)
+        label = legal_requirement_merged_target_label(requirement) if requirement else "—"
+        for link in hazard_library_template_legal_link_service.get_for_template(
+            template_id,
+            include_inactive=False,
+        ):
+            if link.legal_requirement_id == legal_requirement_id:
+                return CatalogProposalDuplicate(
+                    kind=CATALOG_PROPOSAL_KIND_LEGAL,
+                    match_type=CATALOG_DUPLICATE_MATCH_EXACT,
+                    existing_label=label,
+                    existing_id=link.id,
+                    proposal_label=label,
+                )
+        return None
+
+    def assign_proposal_assessment(
+        self,
+        proposal_id: int,
+        assessment_export_id: str,
+    ) -> None:
+        proposal = self.proposal_repository.get_by_id(proposal_id)
+        if proposal is None:
+            return
+        proposal.parent_export_id = assessment_export_id.strip()
+        self.proposal_repository.update(proposal)
+
+    def assign_proposal_legal_requirement(
+        self,
+        proposal_id: int,
+        legal_requirement_id: int,
+    ) -> None:
+        proposal = self.proposal_repository.get_by_id(proposal_id)
+        if proposal is None:
+            return
+        self._store_legal_requirement_id(proposal, legal_requirement_id)
+        self.proposal_repository.update(proposal)
+
     def _find_duplicate_match(
         self,
         *,
@@ -308,11 +534,8 @@ class HazardCatalogProposalIncorporateService:
             )
 
         if kind == CATALOG_PROPOSAL_KIND_LEGAL:
-            return self._match_content_duplicate(
-                kind=kind,
-                proposal_label=proposal.name,
-                candidates=[],
-            )
+            payload = parse_proposal_payload(proposal)
+            return self._find_legal_link_duplicate(template_id, payload.legal_requirement_id)
 
         return None
 
@@ -401,23 +624,22 @@ class HazardCatalogProposalIncorporateService:
         review_id: int,
         proposal_ids: list[int],
         resolutions: dict[int, str],
+        pending_proposal_ids: list[int] | None = None,
     ) -> CatalogIncorporateResult:
         if not proposal_ids:
-            raise HazardCatalogProposalIncorporateError("Vyberte alespoň jeden návrh ke zapracování.")
+            raise HazardCatalogProposalIncorporateError(CATALOG_INCORPORATE_ERROR_SELECT_PROPOSALS)
 
         template = hazard_library_template_service.get_by_id(template_id)
         if template is None:
-            raise HazardCatalogProposalIncorporateError("Zdroj rizika neexistuje.")
+            raise HazardCatalogProposalIncorporateError(CATALOG_INCORPORATE_ERROR_SOURCE_MISSING)
         if not template.active:
-            raise HazardCatalogProposalIncorporateError(
-                "Návrhy lze zapracovat pouze do aktivního zdroje rizika."
-            )
+            raise HazardCatalogProposalIncorporateError(CATALOG_INCORPORATE_ERROR_SOURCE_INACTIVE)
 
         review = self.review_repository.get_by_id(review_id)
         if review is None:
-            raise HazardCatalogProposalIncorporateError("Konzultace neexistuje.")
+            raise HazardCatalogProposalIncorporateError(CATALOG_INCORPORATE_ERROR_REVIEW_MISSING)
         if review.source_id != template_id:
-            raise HazardCatalogProposalIncorporateError("Konzultace nepatří k tomuto zdroji rizika.")
+            raise HazardCatalogProposalIncorporateError(CATALOG_INCORPORATE_ERROR_REVIEW_MISMATCH)
 
         export_id_map = self.get_export_id_map(review_id)
         proposals = [
@@ -426,14 +648,14 @@ class HazardCatalogProposalIncorporateService:
             if proposal.status == PROPOSAL_STATUS_PENDING
         ]
         if not proposals:
-            raise HazardCatalogProposalIncorporateError(
-                "Vybrané návrhy nejsou ve stavu čekajícím na odborné posouzení."
-            )
+            raise HazardCatalogProposalIncorporateError(CATALOG_INCORPORATE_ERROR_NO_PENDING)
 
+        pending_ids = set(pending_proposal_ids or [])
         incorporated = 0
         newly_created = 0
         used_existing = 0
         skipped = 0
+        requires_manual = 0
         applied_any = False
         new_revision_number: int | None = None
 
@@ -441,9 +663,13 @@ class HazardCatalogProposalIncorporateService:
         try:
             db_template = session.get(HazardLibraryTemplate, template_id)
             if db_template is None:
-                raise HazardCatalogProposalIncorporateError("Zdroj rizika neexistuje.")
+                raise HazardCatalogProposalIncorporateError(CATALOG_INCORPORATE_ERROR_SOURCE_MISSING)
 
             for proposal in proposals:
+                if proposal.id in pending_ids:
+                    requires_manual += 1
+                    continue
+
                 action = resolutions.get(proposal.id, "")
                 if action == CATALOG_DUPLICATE_ACTION_SKIP:
                     skipped += 1
@@ -455,12 +681,13 @@ class HazardCatalogProposalIncorporateService:
 
                 kind = classify_catalog_proposal(db_proposal)
                 if kind == CATALOG_PROPOSAL_KIND_LEGAL:
-                    raise HazardCatalogProposalIncorporateError(
-                        f"Právní vazbu „{db_proposal.name}“ nelze zapracovat do MASTER obsahu."
-                    )
+                    payload = parse_proposal_payload(db_proposal)
+                    if payload.legal_requirement_id is None:
+                        requires_manual += 1
+                        continue
                 if kind == CATALOG_PROPOSAL_KIND_UNKNOWN:
                     raise HazardCatalogProposalIncorporateError(
-                        f"Návrh „{db_proposal.name}“ nelze zařadit do známé oblasti."
+                        CATALOG_INCORPORATE_ERROR_UNKNOWN_AREA.format(name=db_proposal.name),
                     )
 
                 if action == CATALOG_DUPLICATE_ACTION_MERGE:
@@ -509,6 +736,7 @@ class HazardCatalogProposalIncorporateService:
             newly_incorporated_count=newly_created,
             used_existing_count=used_existing,
             skipped_count=skipped,
+            requires_manual_decision_count=requires_manual,
             merged_count=used_existing,
             new_revision_number=new_revision_number,
         )
@@ -529,7 +757,7 @@ class HazardCatalogProposalIncorporateService:
             parent = self._resolve_parent(proposal, export_id_map)
             if parent is None or parent.get("kind") != "source":
                 raise HazardCatalogProposalIncorporateError(
-                    f"Návrh události „{proposal.name}“ nemá platný rodič SOURCE."
+                    CATALOG_INCORPORATE_ERROR_EVENT_PARENT.format(name=proposal.name),
                 )
             event = HazardLibraryTemplateEvent(
                 template_id=template_id,
@@ -546,11 +774,11 @@ class HazardCatalogProposalIncorporateService:
             parent = self._resolve_parent(proposal, export_id_map)
             if parent is None or parent.get("kind") != "event":
                 raise HazardCatalogProposalIncorporateError(
-                    f"Návrh posouzení „{proposal.name}“ nemá platný rodič EVENT."
+                    CATALOG_INCORPORATE_ERROR_ASSESSMENT_PARENT.format(name=proposal.name),
                 )
             if proposal.exposed_group_id is None:
                 raise HazardCatalogProposalIncorporateError(
-                    f"Návrh posouzení „{proposal.name}“ nemá vybranou ohroženou skupinu."
+                    CATALOG_INCORPORATE_ERROR_ASSESSMENT_GROUP.format(name=proposal.name),
                 )
             severity = payload.severity if payload.severity in RISK_SEVERITIES else DEFAULT_RISK_SEVERITY
             consequence = (
@@ -576,7 +804,7 @@ class HazardCatalogProposalIncorporateService:
             parent = self._resolve_parent(proposal, export_id_map)
             if parent is None or parent.get("kind") != "assessment":
                 raise HazardCatalogProposalIncorporateError(
-                    f"Návrh opatření „{proposal.name}“ nemá platný rodič ASSESSMENT."
+                    CATALOG_INCORPORATE_ERROR_MEASURE_PARENT.format(name=proposal.name),
                 )
             measure = HazardLibraryTemplateExistingMeasure(
                 template_assessment_id=int(parent["id"]),
@@ -592,7 +820,7 @@ class HazardCatalogProposalIncorporateService:
             parent = self._resolve_parent(proposal, export_id_map)
             if parent is None or parent.get("kind") != "assessment":
                 raise HazardCatalogProposalIncorporateError(
-                    f"Návrh opatření „{proposal.name}“ nemá platný rodič ASSESSMENT."
+                    CATALOG_INCORPORATE_ERROR_MEASURE_PARENT.format(name=proposal.name),
                 )
             measure = HazardLibraryTemplateRequiredMeasure(
                 template_assessment_id=int(parent["id"]),
@@ -604,13 +832,24 @@ class HazardCatalogProposalIncorporateService:
             session.add(measure)
             return
 
-        if kind == CATALOG_PROPOSAL_KIND_EXPOSED_GROUP:
-            raise HazardCatalogProposalIncorporateError(
-                "Návrh ohrožené skupiny zatím nelze přímo zapracovat do MASTER obsahu."
+        if kind == CATALOG_PROPOSAL_KIND_LEGAL:
+            if payload.legal_requirement_id is None:
+                return
+            link = HazardLibraryTemplateLegalLink(
+                template_id=template_id,
+                legal_requirement_id=payload.legal_requirement_id,
+                note=note,
+                active=True,
+                sort_order=self._next_legal_link_sort_order(session, template_id),
             )
+            session.add(link)
+            return
+
+        if kind == CATALOG_PROPOSAL_KIND_EXPOSED_GROUP:
+            raise HazardCatalogProposalIncorporateError(CATALOG_INCORPORATE_ERROR_EXPOSED_GROUP)
 
         raise HazardCatalogProposalIncorporateError(
-            f"Návrh „{proposal.name}“ nelze zapracovat."
+            CATALOG_INCORPORATE_ERROR_GENERIC.format(name=proposal.name),
         )
 
     @staticmethod
@@ -699,6 +938,17 @@ class HazardCatalogProposalIncorporateService:
             template_assessment_id,
             include_inactive=False,
         )
+
+    @staticmethod
+    def _next_legal_link_sort_order(session, template_id: int) -> int:
+        from sqlalchemy import func, select
+
+        value = session.scalar(
+            select(func.max(HazardLibraryTemplateLegalLink.sort_order)).where(
+                HazardLibraryTemplateLegalLink.template_id == template_id,
+            ),
+        )
+        return (value or 0) + 1
 
     @staticmethod
     def _next_event_sort_order(session, template_id: int) -> int:

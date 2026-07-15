@@ -1007,6 +1007,9 @@ class AiPeerReviewWidget(QWidget):
             hazard_catalog_proposal_incorporate_service,
         )
         from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_support import (
+            CATALOG_CONFLICT_TYPE_ASSESSMENT_CHOICE,
+            CATALOG_CONFLICT_TYPE_DUPLICATE,
+            CATALOG_CONFLICT_TYPE_REQUIREMENT_CHOICE,
             CATALOG_DUPLICATE_ACTION_CANCEL,
             CATALOG_DUPLICATE_ACTION_EDIT,
             CATALOG_DUPLICATE_ACTION_SKIP,
@@ -1015,8 +1018,14 @@ class AiPeerReviewWidget(QWidget):
         from moduly.rizeni_rizik.ui.hazard_catalog_ai_proposal_edit_dialog import (
             HazardCatalogAiProposalEditDialog,
         )
+        from moduly.rizeni_rizik.ui.hazard_catalog_proposal_assessment_choice_dialog import (
+            HazardCatalogProposalAssessmentChoiceDialog,
+        )
         from moduly.rizeni_rizik.ui.hazard_catalog_proposal_duplicate_dialog import (
             HazardCatalogProposalDuplicateDialog,
+        )
+        from moduly.rizeni_rizik.ui.hazard_catalog_proposal_requirement_choice_dialog import (
+            HazardCatalogProposalRequirementChoiceDialog,
         )
 
         plan = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
@@ -1025,12 +1034,77 @@ class AiPeerReviewWidget(QWidget):
             proposal_ids=proposal_ids,
         )
         resolutions = dict(plan.resolutions)
+        pending_conflicts = list(plan.conflicts)
+        conflict_index = 0
 
-        for conflict in plan.conflicts:
+        while conflict_index < len(pending_conflicts):
+            conflict = pending_conflicts[conflict_index]
             proposal = ai_peer_review_service.get_proposal_by_id(conflict.proposal_id)
             if proposal is None or proposal.status != PROPOSAL_STATUS_PENDING:
+                conflict_index += 1
                 continue
+
+            if conflict.conflict_type == CATALOG_CONFLICT_TYPE_REQUIREMENT_CHOICE:
+                dialog = HazardCatalogProposalRequirementChoiceDialog(
+                    self,
+                    proposal_name=conflict.proposal_label,
+                    candidates=conflict.requirement_candidates,
+                )
+                if not dialog.exec():
+                    return
+                if dialog.selected_action == CATALOG_DUPLICATE_ACTION_CANCEL:
+                    return
+                if dialog.selected_action == CATALOG_DUPLICATE_ACTION_SKIP:
+                    resolutions[proposal.id] = CATALOG_DUPLICATE_ACTION_SKIP
+                    conflict_index += 1
+                    continue
+                if dialog.selected_requirement_id is not None:
+                    hazard_catalog_proposal_incorporate_service.assign_proposal_legal_requirement(
+                        proposal.id,
+                        dialog.selected_requirement_id,
+                    )
+                    refreshed = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
+                        template_id=self._source_id,
+                        review_id=review_id,
+                        proposal_ids=[proposal.id],
+                    )
+                    resolutions.update(refreshed.resolutions)
+                    pending_conflicts.extend(refreshed.conflicts)
+                conflict_index += 1
+                continue
+
+            if conflict.conflict_type == CATALOG_CONFLICT_TYPE_ASSESSMENT_CHOICE:
+                dialog = HazardCatalogProposalAssessmentChoiceDialog(
+                    self,
+                    proposal_name=conflict.proposal_label,
+                    candidates=conflict.assessment_candidates,
+                )
+                if not dialog.exec():
+                    return
+                if dialog.selected_action == CATALOG_DUPLICATE_ACTION_CANCEL:
+                    return
+                if dialog.selected_action == CATALOG_DUPLICATE_ACTION_SKIP:
+                    resolutions[proposal.id] = CATALOG_DUPLICATE_ACTION_SKIP
+                    conflict_index += 1
+                    continue
+                if dialog.selected_assessment_export_id:
+                    hazard_catalog_proposal_incorporate_service.assign_proposal_assessment(
+                        proposal.id,
+                        dialog.selected_assessment_export_id,
+                    )
+                    refreshed = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
+                        template_id=self._source_id,
+                        review_id=review_id,
+                        proposal_ids=[proposal.id],
+                    )
+                    resolutions.update(refreshed.resolutions)
+                    pending_conflicts.extend(refreshed.conflicts)
+                conflict_index += 1
+                continue
+
             while True:
+                if conflict.conflict_type != CATALOG_CONFLICT_TYPE_DUPLICATE or conflict.duplicate is None:
+                    break
                 dialog = HazardCatalogProposalDuplicateDialog(
                     self,
                     proposal_name=conflict.proposal_label,
@@ -1062,6 +1136,7 @@ class AiPeerReviewWidget(QWidget):
                     break
                 resolutions[proposal.id] = action
                 break
+            conflict_index += 1
 
         try:
             result = hazard_catalog_proposal_incorporate_service.incorporate_proposals(
@@ -1069,6 +1144,7 @@ class AiPeerReviewWidget(QWidget):
                 review_id=review_id,
                 proposal_ids=proposal_ids,
                 resolutions=resolutions,
+                pending_proposal_ids=plan.pending_proposal_ids,
             )
         except HazardCatalogProposalIncorporateError as error:
             QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
@@ -1081,6 +1157,7 @@ class AiPeerReviewWidget(QWidget):
             result.incorporated_count > 0
             or result.skipped_count > 0
             or result.used_existing_count > 0
+            or result.requires_manual_decision_count > 0
         ):
             QMessageBox.information(
                 self,
@@ -1088,6 +1165,7 @@ class AiPeerReviewWidget(QWidget):
                 format_incorporate_summary(
                     newly_incorporated=result.newly_incorporated_count,
                     used_existing=result.used_existing_count,
+                    requires_manual_decision=result.requires_manual_decision_count,
                     skipped=result.skipped_count,
                     rejected=0,
                     revision=result.new_revision_number,

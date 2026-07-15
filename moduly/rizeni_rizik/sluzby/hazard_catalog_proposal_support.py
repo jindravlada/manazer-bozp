@@ -24,6 +24,10 @@ CATALOG_DUPLICATE_ACTION_CANCEL = "cancel"
 CATALOG_DUPLICATE_MATCH_EXACT = "exact"
 CATALOG_DUPLICATE_MATCH_SIMILAR = "similar"
 
+CATALOG_CONFLICT_TYPE_DUPLICATE = "duplicate"
+CATALOG_CONFLICT_TYPE_REQUIREMENT_CHOICE = "requirement_choice"
+CATALOG_CONFLICT_TYPE_ASSESSMENT_CHOICE = "assessment_choice"
+
 
 @dataclass(frozen=True)
 class CatalogProposalPayload:
@@ -32,6 +36,7 @@ class CatalogProposalPayload:
     consequence: str = ""
     conclusion: str = ""
     severity: str = ""
+    legal_requirement_id: int | None = None
 
 
 @dataclass(frozen=True)
@@ -47,13 +52,17 @@ class CatalogProposalDuplicate:
 class CatalogProposalConflict:
     proposal_id: int
     proposal_label: str
-    duplicate: CatalogProposalDuplicate
+    conflict_type: str = CATALOG_CONFLICT_TYPE_DUPLICATE
+    duplicate: CatalogProposalDuplicate | None = None
+    requirement_candidates: tuple[tuple[int, str], ...] = ()
+    assessment_candidates: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass
 class CatalogIncorporatePlan:
     resolutions: dict[int, str]
     conflicts: list[CatalogProposalConflict]
+    pending_proposal_ids: list[int]
 
 
 def normalize_match_text(text: str) -> str:
@@ -92,6 +101,7 @@ def format_incorporate_summary(
     *,
     newly_incorporated: int,
     used_existing: int,
+    requires_manual_decision: int,
     skipped: int,
     rejected: int,
     revision: int | None,
@@ -101,6 +111,7 @@ def format_incorporate_summary(
     return CATALOG_AI_PROPOSAL_INCORPORATE_SUMMARY.format(
         newly_incorporated=newly_incorporated,
         used_existing=used_existing,
+        requires_manual_decision=requires_manual_decision,
         skipped=skipped,
         rejected=rejected,
         revision=revision if revision is not None else "—",
@@ -161,7 +172,17 @@ def parse_proposal_payload(proposal: AiUnassignedProposal) -> CatalogProposalPay
         consequence=str(data.get("consequence") or "").strip(),
         conclusion=str(data.get("conclusion") or "").strip(),
         severity=str(data.get("severity") or "").strip(),
+        legal_requirement_id=_parse_optional_int(data.get("legal_requirement_id")),
     )
+
+
+def _parse_optional_int(value) -> int | None:
+    if value in (None, ""):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def proposal_payload_to_json(payload: CatalogProposalPayload) -> str:
@@ -172,6 +193,7 @@ def proposal_payload_to_json(payload: CatalogProposalPayload) -> str:
             "consequence": payload.consequence,
             "conclusion": payload.conclusion,
             "severity": payload.severity,
+            "legal_requirement_id": payload.legal_requirement_id,
         },
         ensure_ascii=False,
     )
@@ -184,6 +206,7 @@ def merge_payload(existing: CatalogProposalPayload, updates: dict[str, Any]) -> 
         "consequence": existing.consequence,
         "conclusion": existing.conclusion,
         "severity": existing.severity,
+        "legal_requirement_id": existing.legal_requirement_id,
     }
     for key, value in updates.items():
         if key in data and value is not None:

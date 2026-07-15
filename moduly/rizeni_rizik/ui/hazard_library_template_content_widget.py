@@ -16,13 +16,28 @@ from moduly.rizeni_rizik.constants_library import (
     HAZARD_LIBRARY_CONTENT_INTRO_TEXT,
     HAZARD_LIBRARY_CONTENT_READ_ONLY_MESSAGE,
     HAZARD_LIBRARY_EVENT_DIALOG_TITLE,
+    HAZARD_LIBRARY_LEGAL_LINK_DIALOG_TITLE,
     HAZARD_LIBRARY_TEMPLATE_EVENT_COL_ACTIVE,
     HAZARD_LIBRARY_TEMPLATE_EVENT_COL_ID,
     HAZARD_LIBRARY_TEMPLATE_EVENT_COL_NAME,
     HAZARD_LIBRARY_TEMPLATE_EVENT_COLUMN_COUNT,
     HAZARD_LIBRARY_TEMPLATE_EVENT_TABLE_HEADERS,
     HAZARD_LIBRARY_TEMPLATE_EVENTS_SECTION_TITLE,
+    HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_ACTIVE,
+    HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_ID,
+    HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_NOTE,
+    HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_REQUIREMENT,
+    HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COLUMN_COUNT,
+    HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_TABLE_HEADERS,
+    HAZARD_LIBRARY_TEMPLATE_LEGAL_LINKS_SECTION_TITLE,
     HAZARD_LIBRARY_TEMPLATE_SELECT_EVENT,
+    HAZARD_LIBRARY_TEMPLATE_SELECT_LEGAL_LINK,
+)
+from moduly.pravni_pozadavky.constants import legal_requirement_merged_target_label
+from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
+from moduly.rizeni_rizik.sluzby.hazard_library_template_legal_link_service import (
+    HazardLibraryTemplateLegalLinkError,
+    hazard_library_template_legal_link_service,
 )
 from moduly.rizeni_rizik.sluzby.hazard_library_template_assessment_service import (
     hazard_library_template_assessment_service,
@@ -37,6 +52,9 @@ from moduly.rizeni_rizik.ui.hazard_library_template_assessments_dialog import (
 from moduly.rizeni_rizik.ui.hazard_library_template_event_dialog import (
     HazardLibraryTemplateEventDialog,
 )
+from moduly.rizeni_rizik.ui.hazard_library_template_legal_link_dialog import (
+    HazardLibraryTemplateLegalLinkDialog,
+)
 
 
 class HazardLibraryTemplateContentWidget(QWidget):
@@ -48,6 +66,7 @@ class HazardLibraryTemplateContentWidget(QWidget):
         self._template_id: int | None = None
         self._read_only = False
         self._selected_event_id: int | None = None
+        self._selected_legal_link_id: int | None = None
 
         layout = QVBoxLayout(self)
 
@@ -82,6 +101,32 @@ class HazardLibraryTemplateContentWidget(QWidget):
         configure_table_columns(self.events_table, "hazard_library_template_events")
         layout.addWidget(self.events_table, 1)
 
+        layout.addWidget(QLabel(HAZARD_LIBRARY_TEMPLATE_LEGAL_LINKS_SECTION_TITLE))
+        legal_toolbar = QHBoxLayout()
+        self.add_legal_link_btn = QPushButton("Přidat")
+        self.edit_legal_link_btn = QPushButton("Upravit")
+        self.activate_legal_link_btn = QPushButton("Aktivovat")
+        self.deactivate_legal_link_btn = QPushButton("Deaktivovat")
+        legal_toolbar.addWidget(self.add_legal_link_btn)
+        legal_toolbar.addWidget(self.edit_legal_link_btn)
+        legal_toolbar.addWidget(self.activate_legal_link_btn)
+        legal_toolbar.addWidget(self.deactivate_legal_link_btn)
+        legal_toolbar.addStretch()
+        layout.addLayout(legal_toolbar)
+
+        self.legal_links_table = QTableWidget()
+        self.legal_links_table.setColumnCount(HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COLUMN_COUNT)
+        self.legal_links_table.setHorizontalHeaderLabels(
+            HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_TABLE_HEADERS,
+        )
+        self.legal_links_table.setColumnHidden(HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_ID, True)
+        self.legal_links_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.legal_links_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.legal_links_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.legal_links_table.setAlternatingRowColors(True)
+        configure_table_columns(self.legal_links_table, "hazard_library_template_legal_links")
+        layout.addWidget(self.legal_links_table)
+
         self.add_event_btn.clicked.connect(self.add_event)
         self.edit_event_btn.clicked.connect(self.edit_selected_event)
         self.assessments_btn.clicked.connect(self.open_assessments_for_selected_event)
@@ -89,6 +134,12 @@ class HazardLibraryTemplateContentWidget(QWidget):
         self.deactivate_event_btn.clicked.connect(self.deactivate_selected_event)
         self.events_table.itemSelectionChanged.connect(self._on_event_selection_changed)
         self.events_table.doubleClicked.connect(self.edit_selected_event)
+        self.add_legal_link_btn.clicked.connect(self.add_legal_link)
+        self.edit_legal_link_btn.clicked.connect(self.edit_selected_legal_link)
+        self.activate_legal_link_btn.clicked.connect(self.activate_selected_legal_link)
+        self.deactivate_legal_link_btn.clicked.connect(self.deactivate_selected_legal_link)
+        self.legal_links_table.itemSelectionChanged.connect(self._on_legal_link_selection_changed)
+        self.legal_links_table.doubleClicked.connect(self.edit_selected_legal_link)
 
         self.set_template(None, read_only=False)
 
@@ -101,11 +152,91 @@ class HazardLibraryTemplateContentWidget(QWidget):
         self._template_id = template_id
         self._read_only = read_only
         self._selected_event_id = None
+        self._selected_legal_link_id = None
         self._update_actions_enabled()
         self.refresh()
 
     def refresh(self) -> None:
         self._load_events_table()
+        self._load_legal_links_table()
+
+    def add_legal_link(self) -> None:
+        if not self._ensure_editable():
+            return
+        dialog = HazardLibraryTemplateLegalLinkDialog(
+            self,
+            template_id=self._template_id,
+        )
+        if dialog.exec():
+            self._notify_content_changed()
+            self.refresh()
+
+    def edit_selected_legal_link(self) -> None:
+        link = self._selected_legal_link()
+        if link is None:
+            QMessageBox.information(
+                self,
+                HAZARD_LIBRARY_LEGAL_LINK_DIALOG_TITLE,
+                HAZARD_LIBRARY_TEMPLATE_SELECT_LEGAL_LINK,
+            )
+            return
+        dialog = HazardLibraryTemplateLegalLinkDialog(
+            self,
+            template_id=self._template_id,
+            link=link,
+            read_only=self._read_only,
+        )
+        if dialog.exec():
+            self._notify_content_changed()
+            self.refresh()
+
+    def activate_selected_legal_link(self) -> None:
+        if not self._ensure_editable():
+            return
+        link = self._selected_legal_link()
+        if link is None:
+            QMessageBox.information(
+                self,
+                HAZARD_LIBRARY_LEGAL_LINK_DIALOG_TITLE,
+                HAZARD_LIBRARY_TEMPLATE_SELECT_LEGAL_LINK,
+            )
+            return
+        if link.active:
+            QMessageBox.information(
+                self,
+                HAZARD_LIBRARY_LEGAL_LINK_DIALOG_TITLE,
+                "Právní vazba je již aktivní.",
+            )
+            return
+        try:
+            hazard_library_template_legal_link_service.activate_link(link.id)
+        except HazardLibraryTemplateLegalLinkError as error:
+            QMessageBox.warning(self, HAZARD_LIBRARY_LEGAL_LINK_DIALOG_TITLE, str(error))
+            return
+        self._notify_content_changed()
+        self.refresh()
+
+    def deactivate_selected_legal_link(self) -> None:
+        if not self._ensure_editable():
+            return
+        link = self._selected_legal_link()
+        if link is None:
+            QMessageBox.information(
+                self,
+                HAZARD_LIBRARY_LEGAL_LINK_DIALOG_TITLE,
+                HAZARD_LIBRARY_TEMPLATE_SELECT_LEGAL_LINK,
+            )
+            return
+        if not link.active:
+            QMessageBox.information(
+                self,
+                HAZARD_LIBRARY_LEGAL_LINK_DIALOG_TITLE,
+                "Právní vazba je již neaktivní.",
+            )
+            return
+        hazard_library_template_legal_link_service.deactivate_link(link.id)
+        self._notify_content_changed()
+        self.refresh()
 
     def add_event(self) -> None:
         if not self._ensure_editable():
@@ -303,6 +434,19 @@ class HazardLibraryTemplateContentWidget(QWidget):
         self.deactivate_event_btn.setEnabled(editable and has_event)
         self.assessments_btn.setEnabled(has_template and has_event)
 
+        has_legal_link = self._selected_legal_link_id is not None
+        if self._read_only:
+            self.add_legal_link_btn.setEnabled(False)
+            self.edit_legal_link_btn.setEnabled(has_template and has_legal_link)
+            self.activate_legal_link_btn.setEnabled(False)
+            self.deactivate_legal_link_btn.setEnabled(False)
+            return
+
+        self.add_legal_link_btn.setEnabled(editable)
+        self.edit_legal_link_btn.setEnabled(has_template and has_legal_link)
+        self.activate_legal_link_btn.setEnabled(editable and has_legal_link)
+        self.deactivate_legal_link_btn.setEnabled(editable and has_legal_link)
+
     def _on_event_selection_changed(self) -> None:
         event = self._selected_event()
         self._selected_event_id = event.id if event is not None else None
@@ -316,3 +460,73 @@ class HazardLibraryTemplateContentWidget(QWidget):
         if id_item is None:
             return None
         return hazard_library_template_event_service.get_by_id(int(id_item.text()))
+
+    def _on_legal_link_selection_changed(self) -> None:
+        link = self._selected_legal_link()
+        self._selected_legal_link_id = link.id if link is not None else None
+        self._update_actions_enabled()
+
+    def _selected_legal_link(self):
+        selected = self.legal_links_table.selectionModel().selectedRows()
+        if not selected:
+            return None
+        id_item = self.legal_links_table.item(
+            selected[0].row(),
+            HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_ID,
+        )
+        if id_item is None:
+            return None
+        return hazard_library_template_legal_link_service.get_by_id(int(id_item.text()))
+
+    def _load_legal_links_table(self) -> None:
+        self.legal_links_table.blockSignals(True)
+        self.legal_links_table.setRowCount(0)
+
+        if self._template_id is None:
+            self.legal_links_table.blockSignals(False)
+            self._update_actions_enabled()
+            return
+
+        links = hazard_library_template_legal_link_service.get_for_template(
+            self._template_id,
+            include_inactive=True,
+        )
+        self.legal_links_table.setRowCount(len(links))
+        selected_row = -1
+        for row_index, link in enumerate(links):
+            requirement = legal_requirement_service.get_by_id(link.legal_requirement_id)
+            label = (
+                legal_requirement_merged_target_label(requirement)
+                if requirement is not None
+                else "—"
+            )
+            self.legal_links_table.setItem(
+                row_index,
+                HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_ID,
+                QTableWidgetItem(str(link.id)),
+            )
+            self.legal_links_table.setItem(
+                row_index,
+                HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_REQUIREMENT,
+                QTableWidgetItem(label),
+            )
+            self.legal_links_table.setItem(
+                row_index,
+                HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_NOTE,
+                QTableWidgetItem(link.note or ""),
+            )
+            self.legal_links_table.setItem(
+                row_index,
+                HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_ACTIVE,
+                QTableWidgetItem("Ano" if link.active else "Ne"),
+            )
+            if self._selected_legal_link_id == link.id:
+                selected_row = row_index
+
+        configure_table_columns(self.legal_links_table, "hazard_library_template_legal_links")
+        if selected_row >= 0:
+            self.legal_links_table.selectRow(selected_row)
+        else:
+            self._selected_legal_link_id = None
+        self.legal_links_table.blockSignals(False)
+        self._update_actions_enabled()

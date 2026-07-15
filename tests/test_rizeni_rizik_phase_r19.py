@@ -1,4 +1,4 @@
-"""HOTFIX R18g.2 – inteligentní zpracování duplicit při zapracování AI návrhů."""
+"""Fáze R19 – právní vazby katalogu a dokončení AI workflow."""
 
 from __future__ import annotations
 
@@ -33,12 +33,15 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from core.ai_oponentni.sluzby.ai_peer_review_service import ai_peer_review_service
     from core.ai_oponentni.types import AiPeerReviewExportOptions, AiProposal
+    from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
+        legal_requirement_service,
+    )
     from moduly.rizeni_rizik.constants import (
         HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
         RISK_SEVERITY_MODERATE,
     )
     from moduly.rizeni_rizik.constants_library import (
-        CATALOG_AI_PROPOSAL_DUPLICATE_SIMILAR_INTRO,
+        CATALOG_INCORPORATE_ERROR_UNKNOWN_AREA,
         HAZARD_LIBRARY_SCOPE_ALL,
     )
     from moduly.rizeni_rizik.modely.hazard_library_template import HazardLibraryTemplate
@@ -48,6 +51,9 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.modely.hazard_library_template_event import (
         HazardLibraryTemplateEvent,
     )
+    from moduly.rizeni_rizik.modely.hazard_library_template_legal_link import (
+        HazardLibraryTemplateLegalLink,
+    )
     from moduly.rizeni_rizik.modely.hazard_library_template_measure import (
         HazardLibraryTemplateExistingMeasure,
         HazardLibraryTemplateRequiredMeasure,
@@ -55,15 +61,19 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.modely.hazard_library_template_revision import (
         HazardLibraryTemplateRevision,
     )
+    from moduly.rizeni_rizik.sluzby.hazard_catalog_legal_requirement_resolver import (
+        LegalRequirementMatchKind,
+        hazard_catalog_legal_requirement_resolver,
+    )
     from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_incorporate_service import (
+        HazardCatalogProposalIncorporateError,
         hazard_catalog_proposal_incorporate_service,
     )
     from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_support import (
+        CATALOG_CONFLICT_TYPE_ASSESSMENT_CHOICE,
+        CATALOG_CONFLICT_TYPE_REQUIREMENT_CHOICE,
         CATALOG_DUPLICATE_ACTION_MERGE,
-        CATALOG_DUPLICATE_MATCH_EXACT,
-        CATALOG_DUPLICATE_MATCH_SIMILAR,
         format_incorporate_summary,
-        requires_dialog_for_duplicate,
     )
     from moduly.rizeni_rizik.sluzby.hazard_catalog_source_peer_review_provider import (
         hazard_catalog_source_peer_review_provider,
@@ -77,16 +87,16 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.sluzby.hazard_library_template_existing_measure_service import (
         hazard_library_template_existing_measure_service,
     )
+    from moduly.rizeni_rizik.sluzby.hazard_library_template_legal_link_service import (
+        hazard_library_template_legal_link_service,
+    )
     from moduly.rizeni_rizik.sluzby.hazard_library_template_service import (
         hazard_library_template_service,
-    )
-    from moduly.rizeni_rizik.ui.hazard_catalog_proposal_duplicate_dialog import (
-        HazardCatalogProposalDuplicateDialog,
     )
     from tests.rizeni_rizik_test_helpers import ensure_exposed_group
 
 
-class HazardCatalogProposalDuplicateR18g2TestCase(unittest.TestCase):
+class HazardCatalogLegalLinksR19TestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -98,25 +108,35 @@ class HazardCatalogProposalDuplicateR18g2TestCase(unittest.TestCase):
         from sqlalchemy import delete
 
         from core.database.session import get_session
+        from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
 
         with get_session() as session:
             session.execute(delete(HazardLibraryTemplateRevision))
             session.execute(delete(AiUnassignedProposal))
             session.execute(delete(AiPeerReviewBatch))
             session.execute(delete(AiPeerReview))
+            session.execute(delete(HazardLibraryTemplateLegalLink))
             session.execute(delete(HazardLibraryTemplateRequiredMeasure))
             session.execute(delete(HazardLibraryTemplateExistingMeasure))
             session.execute(delete(HazardLibraryTemplateAssessment))
             session.execute(delete(HazardLibraryTemplateEvent))
             session.execute(delete(HazardLibraryTemplate))
+            session.execute(delete(LegalRequirement))
             session.commit()
 
         self.group = ensure_exposed_group("Zaměstnanci")
-        self.suppliers = ensure_exposed_group("Dodavatelé")
         self.template = hazard_library_template_service.create_template(
-            name="Zdroj R18g.2",
+            name="Zdroj R19",
             category=HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
             application_scope=HAZARD_LIBRARY_SCOPE_ALL,
+        )
+        self.requirement = legal_requirement_service.create_requirement(
+            title="BOZP dokumentace",
+            process_code="P-901",
+        )
+        self.other_requirement = legal_requirement_service.create_requirement(
+            title="BOZP dokumentace dodavatelů",
+            process_code="P-902",
         )
         self.export_dir = Path(tempfile.mkdtemp())
         self.provider = hazard_catalog_source_peer_review_provider
@@ -148,50 +168,38 @@ class HazardCatalogProposalDuplicateR18g2TestCase(unittest.TestCase):
             if item.status == PROPOSAL_STATUS_PENDING
         ]
 
-    def test_auto_resolve_exposed_group_for_assessment(self) -> None:
-        event = hazard_library_template_event_service.create_event(
+    def test_legal_link_crud(self) -> None:
+        link = hazard_library_template_legal_link_service.create_link(
             template_id=self.template.id,
-            name="Provoz jeřábu",
+            legal_requirement_id=self.requirement.id,
+            note="Povinnost mít BOZP dokumentaci",
         )
-        self.review = self._export().review
-        export_id_map = hazard_catalog_proposal_incorporate_service.get_export_id_map(
-            self.review.id,
-        )
-        event_export_id = next(
-            export_id
-            for export_id, payload in export_id_map.items()
-            if payload.get("kind") == "event"
-        )
-        stored = self._store_pending(
-            [
-                AiProposal(
-                    proposal_id="P-001",
-                    area="Posouzení rizik – ohrožená skupina",
-                    name="Zaměstnanci",
-                    parent_export_id=event_export_id,
-                    reasoning="Posouzení pro zaměstnance",
-                ),
-            ],
-        )
-        plan = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
-            template_id=self.template.id,
-            review_id=self.review.id,
-            proposal_ids=[stored[0].id],
-        )
-        self.assertEqual(plan.conflicts, [])
-        updated = ai_peer_review_service.get_proposal_by_id(stored[0].id)
-        assert updated is not None
-        self.assertEqual(updated.exposed_group_id, self.group.id)
+        self.assertTrue(link.active)
 
-    def test_exact_exposed_group_match_auto_merges_without_conflict(self) -> None:
+        hazard_library_template_legal_link_service.deactivate_link(link.id)
+        reloaded = hazard_library_template_legal_link_service.get_by_id(link.id)
+        assert reloaded is not None
+        self.assertFalse(reloaded.active)
+
+        hazard_library_template_legal_link_service.activate_link(link.id)
+        reloaded = hazard_library_template_legal_link_service.get_by_id(link.id)
+        assert reloaded is not None
+        self.assertTrue(reloaded.active)
+
+    def test_legal_requirement_resolver_exact_by_code(self) -> None:
+        match = hazard_catalog_legal_requirement_resolver.resolve("P-901")
+        self.assertEqual(match.kind, LegalRequirementMatchKind.EXACT)
+        self.assertEqual(match.requirement_id, self.requirement.id)
+
+    def test_legal_proposal_auto_uses_existing_requirement(self) -> None:
         stored = self._store_pending(
             [
                 AiProposal(
                     proposal_id="P-001",
-                    area="Ohrožené skupiny",
-                    name="Dodavatelé",
+                    area="Právní vazba",
+                    name="P-901",
                     parent_export_id="SOURCE-001",
-                    reasoning="Existující skupina",
+                    reasoning="Právní požadavek z AI",
                 ),
             ],
         )
@@ -201,8 +209,41 @@ class HazardCatalogProposalDuplicateR18g2TestCase(unittest.TestCase):
             proposal_ids=[stored[0].id],
         )
         self.assertEqual(plan.conflicts, [])
-        self.assertEqual(plan.resolutions[stored[0].id], CATALOG_DUPLICATE_ACTION_MERGE)
+        self.assertEqual(plan.pending_proposal_ids, [])
+        result = hazard_catalog_proposal_incorporate_service.incorporate_proposals(
+            template_id=self.template.id,
+            review_id=self.review.id,
+            proposal_ids=[stored[0].id],
+            resolutions=plan.resolutions,
+            pending_proposal_ids=plan.pending_proposal_ids,
+        )
+        self.assertEqual(result.newly_incorporated_count, 1)
+        links = hazard_library_template_legal_link_service.get_for_template(self.template.id)
+        self.assertEqual(len(links), 1)
+        self.assertEqual(links[0].legal_requirement_id, self.requirement.id)
 
+    def test_legal_proposal_auto_merges_existing_link(self) -> None:
+        hazard_library_template_legal_link_service.create_link(
+            template_id=self.template.id,
+            legal_requirement_id=self.requirement.id,
+        )
+        stored = self._store_pending(
+            [
+                AiProposal(
+                    proposal_id="P-001",
+                    area="Právní vazba",
+                    name="BOZP dokumentace",
+                    parent_export_id="SOURCE-001",
+                    reasoning="Duplicitní vazba",
+                ),
+            ],
+        )
+        plan = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
+            template_id=self.template.id,
+            review_id=self.review.id,
+            proposal_ids=[stored[0].id],
+        )
+        self.assertEqual(plan.resolutions[stored[0].id], CATALOG_DUPLICATE_ACTION_MERGE)
         result = hazard_catalog_proposal_incorporate_service.incorporate_proposals(
             template_id=self.template.id,
             review_id=self.review.id,
@@ -210,48 +251,26 @@ class HazardCatalogProposalDuplicateR18g2TestCase(unittest.TestCase):
             resolutions=plan.resolutions,
         )
         self.assertEqual(result.used_existing_count, 1)
-        self.assertEqual(result.newly_incorporated_count, 0)
-        updated = ai_peer_review_service.get_proposal_by_id(stored[0].id)
-        assert updated is not None
-        self.assertEqual(updated.status, PROPOSAL_STATUS_INCORPORATED)
+        links = hazard_library_template_legal_link_service.get_for_template(self.template.id)
+        self.assertEqual(len(links), 1)
 
-    def test_exact_event_match_has_no_conflict(self) -> None:
-        hazard_library_template_event_service.create_event(
-            template_id=self.template.id,
-            name="Existující událost",
+    def test_legal_proposal_ambiguous_requires_choice(self) -> None:
+        legal_requirement_service.create_requirement(
+            title="Právní povinnost BOZP",
+            process_code="P-903",
+        )
+        legal_requirement_service.create_requirement(
+            title="Právní povinnost BOZP",
+            process_code="P-904",
         )
         stored = self._store_pending(
             [
                 AiProposal(
                     proposal_id="P-001",
-                    area="Nežádoucí událost",
-                    name="Existující událost",
+                    area="Právní vazba",
+                    name="Právní povinnost BOZP",
                     parent_export_id="SOURCE-001",
-                    reasoning="Duplicita",
-                ),
-            ],
-        )
-        plan = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
-            template_id=self.template.id,
-            review_id=self.review.id,
-            proposal_ids=[stored[0].id],
-        )
-        self.assertEqual(plan.conflicts, [])
-        self.assertEqual(plan.resolutions[stored[0].id], CATALOG_DUPLICATE_ACTION_MERGE)
-
-    def test_similar_event_match_requires_dialog(self) -> None:
-        hazard_library_template_event_service.create_event(
-            template_id=self.template.id,
-            name="Údržba a servis jeřábu",
-        )
-        stored = self._store_pending(
-            [
-                AiProposal(
-                    proposal_id="P-001",
-                    area="Nežádoucí událost",
-                    name="Údržba jeřábu",
-                    parent_export_id="SOURCE-001",
-                    reasoning="Podobná událost",
+                    reasoning="Nejednoznačná shoda",
                 ),
             ],
         )
@@ -261,28 +280,83 @@ class HazardCatalogProposalDuplicateR18g2TestCase(unittest.TestCase):
             proposal_ids=[stored[0].id],
         )
         self.assertEqual(len(plan.conflicts), 1)
-        conflict = plan.conflicts[0]
-        self.assertEqual(conflict.proposal_id, stored[0].id)
-        self.assertEqual(conflict.duplicate.match_type, CATALOG_DUPLICATE_MATCH_SIMILAR)
-        self.assertTrue(requires_dialog_for_duplicate(conflict.duplicate))
-        self.assertNotIn(stored[0].id, plan.resolutions)
+        self.assertEqual(plan.conflicts[0].conflict_type, CATALOG_CONFLICT_TYPE_REQUIREMENT_CHOICE)
+        self.assertGreaterEqual(len(plan.conflicts[0].requirement_candidates), 2)
 
-    def test_similar_existing_measure_requires_dialog(self) -> None:
+    def test_legal_proposal_not_found_stays_pending(self) -> None:
+        stored = self._store_pending(
+            [
+                AiProposal(
+                    proposal_id="P-001",
+                    area="Právní vazba",
+                    name="Neexistující právní požadavek XYZ",
+                    parent_export_id="SOURCE-001",
+                    reasoning="Bez shody v RPP",
+                ),
+            ],
+        )
+        plan = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
+            template_id=self.template.id,
+            review_id=self.review.id,
+            proposal_ids=[stored[0].id],
+        )
+        self.assertIn(stored[0].id, plan.pending_proposal_ids)
+        result = hazard_catalog_proposal_incorporate_service.incorporate_proposals(
+            template_id=self.template.id,
+            review_id=self.review.id,
+            proposal_ids=[stored[0].id],
+            resolutions={},
+            pending_proposal_ids=plan.pending_proposal_ids,
+        )
+        self.assertEqual(result.requires_manual_decision_count, 1)
+        updated = ai_peer_review_service.get_proposal_by_id(stored[0].id)
+        assert updated is not None
+        self.assertEqual(updated.status, PROPOSAL_STATUS_PENDING)
+
+    def test_measure_without_assessment_requires_choice(self) -> None:
         event = hazard_library_template_event_service.create_event(
             template_id=self.template.id,
-            name="Provoz",
+            name="Provoz jeřábu",
         )
-        assessment = hazard_library_template_assessment_service.create_assessment(
+        hazard_library_template_assessment_service.create_assessment(
             template_id=self.template.id,
             template_event_id=event.id,
             exposed_group_id=self.group.id,
             consequence="Úraz",
             severity=RISK_SEVERITY_MODERATE,
         )
-        hazard_library_template_existing_measure_service.create_measure(
+        self.review = self._export().review
+        stored = self._store_pending(
+            [
+                AiProposal(
+                    proposal_id="P-001",
+                    area="Existující opatření",
+                    name="Ochranné brýle",
+                    parent_export_id="SOURCE-001",
+                    reasoning="Opatření bez posouzení",
+                ),
+            ],
+        )
+        plan = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
             template_id=self.template.id,
-            template_assessment_id=assessment.id,
-            description="Používat ochranné brýle a rukavice",
+            review_id=self.review.id,
+            proposal_ids=[stored[0].id],
+        )
+        self.assertEqual(len(plan.conflicts), 1)
+        self.assertEqual(plan.conflicts[0].conflict_type, CATALOG_CONFLICT_TYPE_ASSESSMENT_CHOICE)
+        self.assertGreaterEqual(len(plan.conflicts[0].assessment_candidates), 1)
+
+    def test_measure_assigned_to_assessment_incorporates(self) -> None:
+        event = hazard_library_template_event_service.create_event(
+            template_id=self.template.id,
+            name="Provoz jeřábu",
+        )
+        hazard_library_template_assessment_service.create_assessment(
+            template_id=self.template.id,
+            template_event_id=event.id,
+            exposed_group_id=self.group.id,
+            consequence="Úraz",
+            severity=RISK_SEVERITY_MODERATE,
         )
         self.review = self._export().review
         export_id_map = hazard_catalog_proposal_incorporate_service.get_export_id_map(
@@ -291,74 +365,86 @@ class HazardCatalogProposalDuplicateR18g2TestCase(unittest.TestCase):
         assessment_export_id = next(
             export_id
             for export_id, payload in export_id_map.items()
-            if payload.get("kind") == "assessment" and payload.get("id") == assessment.id
+            if payload.get("kind") == "assessment"
         )
         stored = self._store_pending(
             [
                 AiProposal(
                     proposal_id="P-001",
                     area="Existující opatření",
-                    name="Používat ochranné brýle",
-                    parent_export_id=assessment_export_id,
-                    reasoning="Podobné opatření",
+                    name="Ochranné brýle",
+                    parent_export_id="SOURCE-001",
+                    reasoning="Opatření bez posouzení",
                 ),
             ],
+        )
+        hazard_catalog_proposal_incorporate_service.assign_proposal_assessment(
+            stored[0].id,
+            assessment_export_id,
         )
         plan = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
             template_id=self.template.id,
             review_id=self.review.id,
             proposal_ids=[stored[0].id],
         )
-        self.assertEqual(len(plan.conflicts), 1)
-        self.assertEqual(plan.conflicts[0].duplicate.match_type, CATALOG_DUPLICATE_MATCH_SIMILAR)
-
-    def test_similar_match_duplicate_dialog_uses_similar_intro(self) -> None:
-        from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_support import (
-            CatalogProposalDuplicate,
-        )
-
-        duplicate = CatalogProposalDuplicate(
-            kind="event",
-            match_type=CATALOG_DUPLICATE_MATCH_SIMILAR,
-            existing_label="Údržba a servis jeřábu",
-        )
-        dialog = HazardCatalogProposalDuplicateDialog(
-            None,
-            proposal_name="Údržba jeřábu",
-            duplicate=duplicate,
-        )
-        from PySide6.QtWidgets import QLabel
-
-        labels = dialog.findChildren(QLabel)
-        self.assertTrue(labels)
-        expected = CATALOG_AI_PROPOSAL_DUPLICATE_SIMILAR_INTRO.format(
-            proposal_name="Údržba jeřábu",
-            existing_label="Údržba a servis jeřábu",
-        )
-        self.assertEqual(labels[0].text(), expected)
-
-    def test_format_incorporate_summary(self) -> None:
-        summary = format_incorporate_summary(
-            newly_incorporated=18,
-            used_existing=3,
-            requires_manual_decision=2,
-            skipped=1,
-            rejected=2,
-            revision=5,
-        )
-        self.assertIn("Zapracování dokončeno.", summary)
-        self.assertIn("Zapracováno:\n18", summary)
-        self.assertIn("Použito existujících:\n3", summary)
-        self.assertIn("Vyžaduje ruční rozhodnutí:\n2", summary)
-        self.assertIn("Přeskočeno:\n1", summary)
-        self.assertIn("Zamítnuto:\n2", summary)
-        self.assertIn("Nová revize:\n5", summary)
-
-    def test_incorporate_summary_counts_after_auto_merge(self) -> None:
-        hazard_library_template_event_service.create_event(
+        assessment_conflicts = [
+            item
+            for item in plan.conflicts
+            if item.conflict_type == CATALOG_CONFLICT_TYPE_ASSESSMENT_CHOICE
+        ]
+        self.assertEqual(assessment_conflicts, [])
+        result = hazard_catalog_proposal_incorporate_service.incorporate_proposals(
             template_id=self.template.id,
-            name="Existující událost",
+            review_id=self.review.id,
+            proposal_ids=[stored[0].id],
+            resolutions=plan.resolutions,
         )
+        self.assertEqual(result.newly_incorporated_count, 1)
+        updated = ai_peer_review_service.get_proposal_by_id(stored[0].id)
+        assert updated is not None
+        self.assertEqual(updated.status, PROPOSAL_STATUS_INCORPORATED)
+
+    def test_user_friendly_unknown_area_error(self) -> None:
+        stored = self._store_pending(
+            [
+                AiProposal(
+                    proposal_id="P-001",
+                    area="Neznámá oblast",
+                    name="Něco",
+                    parent_export_id="SOURCE-001",
+                    reasoning="Neznámé",
+                ),
+            ],
+        )
+        with self.assertRaises(HazardCatalogProposalIncorporateError) as context:
+            hazard_catalog_proposal_incorporate_service.incorporate_proposals(
+                template_id=self.template.id,
+                review_id=self.review.id,
+                proposal_ids=[stored[0].id],
+                resolutions={},
+            )
+        self.assertEqual(
+            str(context.exception),
+            CATALOG_INCORPORATE_ERROR_UNKNOWN_AREA.format(name="Něco"),
+        )
+
+    def test_incorporation_summary_with_manual_decision(self) -> None:
+        summary = format_incorporate_summary(
+            newly_incorporated=2,
+            used_existing=1,
+            requires_manual_decision=1,
+            skipped=0,
+            rejected=0,
+            revision=3,
+        )
+        self.assertIn("Vyžaduje ruční rozhodnutí:\n1", summary)
+
+    def test_mixed_incorporation_completes_without_crash(self) -> None:
+        event = hazard_library_template_event_service.create_event(
+            template_id=self.template.id,
+            name="Událost R19",
+        )
+        self.review = self._export().review
         stored = self._store_pending(
             [
                 AiProposal(
@@ -370,10 +456,10 @@ class HazardCatalogProposalDuplicateR18g2TestCase(unittest.TestCase):
                 ),
                 AiProposal(
                     proposal_id="P-002",
-                    area="Nežádoucí událost",
-                    name="Existující událost",
+                    area="Právní vazba",
+                    name="Neexistující požadavek",
                     parent_export_id="SOURCE-001",
-                    reasoning="Duplicita",
+                    reasoning="Bez shody",
                 ),
             ],
         )
@@ -387,10 +473,10 @@ class HazardCatalogProposalDuplicateR18g2TestCase(unittest.TestCase):
             review_id=self.review.id,
             proposal_ids=[item.id for item in stored],
             resolutions=plan.resolutions,
+            pending_proposal_ids=plan.pending_proposal_ids,
         )
         self.assertEqual(result.newly_incorporated_count, 1)
-        self.assertEqual(result.used_existing_count, 1)
-        self.assertEqual(result.incorporated_count, 2)
+        self.assertEqual(result.requires_manual_decision_count, 1)
 
 
 if __name__ == "__main__":

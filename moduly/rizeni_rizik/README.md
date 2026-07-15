@@ -462,6 +462,16 @@ Inteligentní zpracování duplicit při zapracování AI návrhů:
 - dialog se zobrazí pouze u podobných shod a nejasných duplicit odborného obsahu
 - po dokončení zapracování se zobrazí souhrnné hlášení (nově zapracováno, použito existujících, přeskočeno, revize)
 
+## Fáze R19
+
+Právní vazby katalogu a dokončení AI workflow:
+
+- nová úroveň **Právní vazby** u zdroje rizika (vazba na RPP, poznámka, aktivní, pořadí)
+- správa v editoru odborného obsahu (Přidat / Upravit / Aktivovat / Deaktivovat)
+- AI návrh právní vazby: automatická shoda, výběr při více kandidátech, jinak návrh zůstane ve frontě
+- opatření navázané na SOURCE: dialog výběru posouzení místo chyby
+- srozumitelné chybové hlášky a rozšířené souhrnné hlášení po zapracování
+
 ## Fáze R18g
 
 Zapracování návrhů AI do MASTER obsahu katalogu:

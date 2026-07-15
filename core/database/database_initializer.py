@@ -81,6 +81,9 @@ def initialize_database() -> None:
     from moduly.rizeni_rizik.modely.hazard_library_template_revision import (  # noqa: F401
         HazardLibraryTemplateRevision,
     )
+    from moduly.rizeni_rizik.modely.hazard_library_template_legal_link import (  # noqa: F401
+        HazardLibraryTemplateLegalLink,
+    )
     from core.ai_oponentni.modely.ai_peer_review import (  # noqa: F401
         AiPeerReview,
         AiPeerReviewBatch,
@@ -134,6 +137,7 @@ def initialize_database() -> None:
     _ensure_hazard_library_template_assessments_table()
     _ensure_hazard_library_template_measures_tables()
     _ensure_hazard_library_template_revisions_table()
+    _ensure_hazard_library_template_legal_links_table()
     _ensure_ai_peer_reviews_table()
     _ensure_ai_peer_review_batches_table()
     _ensure_ai_unassigned_proposals_table()
@@ -1432,6 +1436,23 @@ def _ensure_hazard_library_template_revisions_table() -> None:
         """
         CREATE UNIQUE INDEX IF NOT EXISTS idx_hazard_library_template_revisions_unique
         ON hazard_library_template_revisions (template_id, revision_number)
+        """,
+    )
+
+
+def _ensure_hazard_library_template_legal_links_table() -> None:
+    columns = _table_columns("hazard_library_template_legal_links")
+    if not columns:
+        from moduly.rizeni_rizik.modely.hazard_library_template_legal_link import (
+            HazardLibraryTemplateLegalLink,
+        )
+
+        HazardLibraryTemplateLegalLink.__table__.create(bind=_db_engine(), checkfirst=True)
+    _ensure_index(
+        "idx_hazard_library_template_legal_links_template",
+        """
+        CREATE INDEX IF NOT EXISTS idx_hazard_library_template_legal_links_template
+        ON hazard_library_template_legal_links (template_id)
         """,
     )
 

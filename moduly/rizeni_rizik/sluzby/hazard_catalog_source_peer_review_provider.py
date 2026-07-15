@@ -48,6 +48,11 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_event_service import (
 from moduly.rizeni_rizik.sluzby.hazard_library_template_existing_measure_service import (
     hazard_library_template_existing_measure_service,
 )
+from moduly.pravni_pozadavky.constants import legal_requirement_merged_target_label
+from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
+from moduly.rizeni_rizik.sluzby.hazard_library_template_legal_link_service import (
+    hazard_library_template_legal_link_service,
+)
 from moduly.rizeni_rizik.sluzby.hazard_library_template_required_measure_service import (
     hazard_library_template_required_measure_service,
 )
@@ -181,9 +186,35 @@ class HazardCatalogSourcePeerReviewProvider:
             include_inactive=False,
         )
         event_nodes: list[dict] = []
+        legal_link_nodes: list[dict] = []
         existing_counter = 0
         required_counter = 0
         assessment_counter = 0
+        legal_counter = 0
+
+        for link in hazard_library_template_legal_link_service.get_for_template(
+            template.id,
+            include_inactive=False,
+        ):
+            legal_counter += 1
+            legal_export_id = f"LEGAL-LINK-{legal_counter:03d}"
+            requirement = legal_requirement_service.get_by_id(link.legal_requirement_id)
+            export_id_map[legal_export_id] = {
+                "kind": "legal_link",
+                "id": link.id,
+            }
+            legal_link_nodes.append(
+                {
+                    "export_id": legal_export_id,
+                    "legal_requirement_id": link.legal_requirement_id,
+                    "legal_requirement_label": (
+                        legal_requirement_merged_target_label(requirement)
+                        if requirement is not None
+                        else "—"
+                    ),
+                    "note": link.note or "",
+                }
+            )
 
         for event_index, event in enumerate(events, start=1):
             event_export_id = f"EVENT-{event_index:03d}"
@@ -282,6 +313,7 @@ class HazardCatalogSourcePeerReviewProvider:
             "version_number": template.version_number,
             "note": template.note or "",
             "events": event_nodes,
+            "legal_links": legal_link_nodes,
         }
         catalog_source = {
             "reference": catalog_source_reference(template.id),
@@ -403,7 +435,7 @@ class HazardCatalogSourcePeerReviewProvider:
                     "Nehodnotit závažnost rizik.",
                     "Neměnit existující položky.",
                     "U návrhů uvádět parent_export_id "
-                    "(SOURCE/EVENT/ASSESSMENT/EXISTING-MEASURE/REQUIRED-MEASURE).",
+                    "(SOURCE/EVENT/ASSESSMENT/EXISTING-MEASURE/REQUIRED-MEASURE/LEGAL-LINK).",
                     "Ke každému návrhu uvést stručné odborné zdůvodnění.",
                     "Posuzovat podle aktuálně platných právních předpisů ČR v oblasti BOZP.",
                 ],
@@ -430,7 +462,7 @@ class HazardCatalogSourcePeerReviewProvider:
         lines.append("HIERARCHIE")
         lines.append("-" * 40)
         lines.append(
-            "Zdroj rizika → Nežádoucí události → Posouzení "
+            "Zdroj rizika → Právní vazby → Nežádoucí události → Posouzení "
             "→ Existující opatření → Potřebná opatření"
         )
         lines.append("")
@@ -441,6 +473,18 @@ class HazardCatalogSourcePeerReviewProvider:
             lines.append(f"    Popis: {risk_source['description']}")
         if risk_source["note"]:
             lines.append(f"    Poznámka: {risk_source['note']}")
+
+        lines.append("")
+        lines.append("    Právní vazby")
+        if not risk_source.get("legal_links"):
+            lines.append("        (žádné)")
+        for legal_link in risk_source.get("legal_links") or []:
+            lines.append(
+                f"        [{legal_link['export_id']}] "
+                f"{legal_link['legal_requirement_label']}"
+            )
+            if legal_link.get("note"):
+                lines.append(f"            Poznámka: {legal_link['note']}")
 
         if not risk_source["events"]:
             lines.append("    Událost: (žádná)")
