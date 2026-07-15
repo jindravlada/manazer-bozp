@@ -15,7 +15,8 @@ from PySide6.QtWidgets import (
 from core.ai_oponentni.modely.ai_unassigned_proposal import AiUnassignedProposal
 from core.ai_oponentni.sluzby.ai_peer_review_service import ai_peer_review_service
 from core.widgets.dialog_utils import create_save_cancel_box
-from core.widgets.exposed_group_selector import ExposedGroupSelector
+from core.widgets.multi_exposed_group_selector import MultiExposedGroupSelector
+from moduly.nastaveni.sluzby.exposed_group_service import exposed_group_service
 from moduly.nastaveni.ui.exposed_groups_management_dialog import ExposedGroupsManagementDialog
 from moduly.rizeni_rizik.constants import (
     DEFAULT_RISK_SEVERITY,
@@ -75,9 +76,8 @@ class HazardCatalogAiProposalEditDialog(QDialog):
         self.reasoning = QPlainTextEdit(proposal.reasoning or "")
         self.reasoning.setMinimumHeight(70)
 
-        self.exposed_group: ExposedGroupSelector | None = None
+        self.exposed_groups: MultiExposedGroupSelector | None = None
         self.manage_groups_btn: QPushButton | None = None
-        self.consequence: QPlainTextEdit | None = None
         self.severity: QComboBox | None = None
         self.severity_description = QLabel()
         self.severity_description.setWordWrap(True)
@@ -91,16 +91,11 @@ class HazardCatalogAiProposalEditDialog(QDialog):
             form.addRow("Poznámka:", self.note)
         elif self.kind == CATALOG_PROPOSAL_KIND_ASSESSMENT:
             group_row = QHBoxLayout()
-            self.exposed_group = ExposedGroupSelector(self)
+            self.exposed_groups = MultiExposedGroupSelector(self)
             self.manage_groups_btn = QPushButton("Spravovat číselník…")
             self.manage_groups_btn.clicked.connect(self._open_groups_management)
-            group_row.addWidget(self.exposed_group, 1)
+            group_row.addWidget(self.exposed_groups, 1)
             group_row.addWidget(self.manage_groups_btn)
-            self.consequence = QPlainTextEdit()
-            self.consequence.setMinimumHeight(80)
-            self.consequence.setPlainText(
-                self.payload.consequence or proposal.name or proposal.reasoning or "",
-            )
             self.severity = QComboBox()
             for severity in RISK_SEVERITIES:
                 self.severity.addItem(RISK_SEVERITY_LABELS[severity], severity)
@@ -113,9 +108,11 @@ class HazardCatalogAiProposalEditDialog(QDialog):
             self.conclusion.setMinimumHeight(70)
             self.conclusion.setPlainText(self.payload.conclusion)
             self.note.setPlainText(self.payload.note)
-            self.exposed_group.reload(preserve_id=proposal.exposed_group_id)
-            form.addRow("Ohrožená skupina *:", group_row)
-            form.addRow("Možný následek *:", self.consequence)
+            initial_ids = list(self.payload.exposed_group_ids)
+            if not initial_ids and proposal.exposed_group_id is not None:
+                initial_ids = [proposal.exposed_group_id]
+            self.exposed_groups.reload(preserve_ids=initial_ids)
+            form.addRow("Ohrožené skupiny *:", group_row)
             form.addRow("Závažnost následku *:", self.severity)
             form.addRow("", self.severity_description)
             form.addRow("Závěr:", self.conclusion)
@@ -152,12 +149,12 @@ class HazardCatalogAiProposalEditDialog(QDialog):
         layout.addWidget(buttons)
 
     def _open_groups_management(self) -> None:
-        if self.exposed_group is None:
+        if self.exposed_groups is None:
             return
-        selected_id = self.exposed_group.current_group_id()
+        selected_ids = self.exposed_groups.selected_group_ids()
         dialog = ExposedGroupsManagementDialog(self)
         dialog.exec()
-        self.exposed_group.reload(preserve_id=selected_id)
+        self.exposed_groups.reload(preserve_ids=selected_ids)
 
     def _update_severity_description(self) -> None:
         if self.severity is None:
@@ -169,16 +166,16 @@ class HazardCatalogAiProposalEditDialog(QDialog):
             self.severity_description.setText("")
 
     def accept(self) -> None:
-        if self.kind == CATALOG_PROPOSAL_KIND_ASSESSMENT and self.exposed_group is not None:
-            group_id = self.exposed_group.ensure_selected_group_id(self)
-            if group_id is None:
+        if self.kind == CATALOG_PROPOSAL_KIND_ASSESSMENT and self.exposed_groups is not None:
+            group_ids = self.exposed_groups.selected_group_ids()
+            if not group_ids:
                 QMessageBox.warning(
                     self,
                     self.windowTitle(),
-                    "Vyberte nebo vytvořte ohroženou skupinu.",
+                    "Vyberte alespoň jednu ohroženou skupinu.",
                 )
                 return
-            self.proposal.exposed_group_id = group_id
+            self.proposal.exposed_group_id = group_ids[0]
 
         if self.kind == CATALOG_PROPOSAL_KIND_EVENT:
             if not self.name.text().strip():
@@ -193,18 +190,20 @@ class HazardCatalogAiProposalEditDialog(QDialog):
                 },
             )
         elif self.kind == CATALOG_PROPOSAL_KIND_ASSESSMENT:
-            assert self.consequence is not None and self.severity is not None
-            if not self.consequence.toPlainText().strip():
-                QMessageBox.warning(self, self.windowTitle(), "Možný následek je povinný.")
-                return
-            self.proposal.name = self.consequence.toPlainText().strip()
+            assert self.severity is not None and self.exposed_groups is not None
+            group_ids = self.exposed_groups.selected_group_ids()
+            group_names = [
+                exposed_group_service.display_name(group_id) or f"#{group_id}"
+                for group_id in group_ids
+            ]
+            self.proposal.name = ", ".join(group_names) if group_names else "Posouzení"
             self.payload = merge_payload(
                 self.payload,
                 {
-                    "consequence": self.consequence.toPlainText().strip(),
                     "severity": self.severity.currentData(),
                     "conclusion": self.conclusion.toPlainText().strip() if self.conclusion else "",
                     "note": self.note.toPlainText().strip(),
+                    "exposed_group_ids": group_ids,
                 },
             )
         elif self.kind in {

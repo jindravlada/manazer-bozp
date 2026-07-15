@@ -133,7 +133,6 @@ class HazardCatalogInstanceModificationR18cTestCase(unittest.TestCase):
             template_id=self.template.id,
             template_event_id=self.template_event.id,
             exposed_group_id=self.group.id,
-            consequence="Úraz",
             severity=RISK_SEVERITY_MODERATE,
         )
         from moduly.rizeni_rizik.sluzby.hazard_library_template_existing_measure_service import (
@@ -192,7 +191,6 @@ class HazardCatalogInstanceModificationR18cTestCase(unittest.TestCase):
             hazard_identification_id=self.identification.id,
             hazard_event_id=self.event.id,
             exposed_group_id=self.group.id,
-            consequence="Těžký úraz",
             severity=RISK_SEVERITY_MODERATE,
         )
         assert updated is not None
@@ -229,7 +227,6 @@ class HazardCatalogInstanceModificationR18cTestCase(unittest.TestCase):
             hazard_identification_id=self.identification.id,
             hazard_event_id=new_event.id,
             exposed_group_id=other_group.id,
-            consequence="Nový následek",
             severity=RISK_SEVERITY_MODERATE,
         )
         self.assertTrue(new_assessment.modified)
@@ -281,7 +278,6 @@ class HazardCatalogInstanceModificationR18cTestCase(unittest.TestCase):
             hazard_identification_id=self.identification.id,
             hazard_event_id=self.event.id,
             exposed_group_id=self.group.id,
-            consequence="Lokální následek",
             severity=RISK_SEVERITY_MODERATE,
         )
 
@@ -292,7 +288,7 @@ class HazardCatalogInstanceModificationR18cTestCase(unittest.TestCase):
         assert template_event is not None
         assert template_assessment is not None
         self.assertEqual(template_event.name, "Pád břemene")
-        self.assertEqual(template_assessment.consequence, "Úraz")
+        self.assertEqual(template_assessment.severity, RISK_SEVERITY_MODERATE)
 
 
 if __name__ == "__main__":

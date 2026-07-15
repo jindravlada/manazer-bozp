@@ -15,7 +15,6 @@ from PySide6.QtWidgets import (
 from core.widgets.table_utils import configure_table_columns, create_preview_table_item
 from moduly.rizeni_rizik.constants_library import (
     HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COL_ACTIVE,
-    HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COL_CONSEQUENCE,
     HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COL_GROUP,
     HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COL_ID,
     HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COL_SEVERITY,
@@ -388,11 +387,6 @@ class _HazardLibraryTemplateAssessmentsPanel(QWidget):
                 row_index,
                 HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COL_GROUP,
                 QTableWidgetItem(row.exposed_group_name),
-            )
-            self.table.setItem(
-                row_index,
-                HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COL_CONSEQUENCE,
-                create_preview_table_item(assessment.consequence),
             )
             self.table.setItem(
                 row_index,

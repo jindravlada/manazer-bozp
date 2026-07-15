@@ -128,6 +128,8 @@ def initialize_database() -> None:
     _ensure_hazard_events_table()
     _migrate_hazard_events_drop_identified_hazards()
     _ensure_hazard_risk_assessments_table()
+    _ensure_hazard_risk_assessment_exposed_groups_table()
+    _migrate_hazard_risk_assessment_groups_and_drop_consequence()
     _ensure_hazard_existing_measures_table()
     _ensure_hazard_required_measures_table()
     _ensure_hazard_identification_photos_table()
@@ -136,6 +138,8 @@ def initialize_database() -> None:
     _ensure_hazard_library_template_events_table()
     _migrate_hazard_library_template_master_catalog()
     _ensure_hazard_library_template_assessments_table()
+    _ensure_hazard_library_template_assessment_exposed_groups_table()
+    _migrate_hazard_library_template_assessment_groups_and_drop_consequence()
     _ensure_hazard_library_template_measures_tables()
     _ensure_hazard_library_template_revisions_table()
     _ensure_hazard_library_template_legal_links_table()
@@ -967,8 +971,6 @@ def _ensure_hazard_risk_assessments_table() -> None:
 
         HazardRiskAssessment.__table__.create(bind=_db_engine(), checkfirst=True)
         return
-    if "consequence" not in columns:
-        _add_column("hazard_risk_assessments", "consequence TEXT DEFAULT '' NOT NULL")
     if "severity" not in columns:
         _add_column("hazard_risk_assessments", "severity VARCHAR(32) DEFAULT '' NOT NULL")
     if "assessment_status" not in columns:
@@ -984,7 +986,136 @@ def _ensure_hazard_risk_assessments_table() -> None:
         _add_column("hazard_risk_assessments", "exposed_group_id INTEGER")
     if "modified" not in columns:
         _add_column("hazard_risk_assessments", "modified BOOLEAN DEFAULT 0")
+    # consequence se přidává jen pro staré DB před R20c migrací
+    if "consequence" not in columns and not _table_exists(
+        "hazard_risk_assessment_exposed_groups",
+    ):
+        _add_column("hazard_risk_assessments", "consequence TEXT DEFAULT '' NOT NULL")
     _migrate_hazard_risk_assessment_exposed_group_ids()
+
+
+def _ensure_hazard_risk_assessment_exposed_groups_table() -> None:
+    columns = _table_columns("hazard_risk_assessment_exposed_groups")
+    if not columns:
+        from moduly.rizeni_rizik.modely.hazard_risk_assessment_exposed_group import (
+            HazardRiskAssessmentExposedGroup,
+        )
+
+        HazardRiskAssessmentExposedGroup.__table__.create(
+            bind=_db_engine(),
+            checkfirst=True,
+        )
+    _ensure_index(
+        "idx_hazard_risk_assessment_groups_assessment",
+        """
+        CREATE INDEX IF NOT EXISTS idx_hazard_risk_assessment_groups_assessment
+        ON hazard_risk_assessment_exposed_groups (assessment_id)
+        """,
+    )
+
+
+def _migrate_hazard_risk_assessment_groups_and_drop_consequence() -> None:
+    """R20c: M:N skupiny + odstranění consequence."""
+    assessment_columns = _table_columns("hazard_risk_assessments")
+    if not assessment_columns:
+        return
+    if not _table_exists("hazard_risk_assessment_exposed_groups"):
+        return
+
+    with _db_engine().connect() as connection:
+        if "exposed_group_id" in assessment_columns:
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO hazard_risk_assessment_exposed_groups (
+                        assessment_id,
+                        exposed_group_id,
+                        sort_order
+                    )
+                    SELECT
+                        a.id,
+                        a.exposed_group_id,
+                        1
+                    FROM hazard_risk_assessments AS a
+                    WHERE a.exposed_group_id IS NOT NULL
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM hazard_risk_assessment_exposed_groups AS g
+                          WHERE g.assessment_id = a.id
+                      )
+                    """
+                ),
+            )
+            connection.commit()
+
+        if "consequence" not in assessment_columns:
+            return
+
+        connection.execute(
+            text(
+                """
+                CREATE TABLE hazard_risk_assessments_r20c (
+                    id INTEGER NOT NULL PRIMARY KEY,
+                    hazard_event_id INTEGER NOT NULL,
+                    exposed_group_id INTEGER,
+                    exposed_group VARCHAR(200) NOT NULL DEFAULT '',
+                    severity VARCHAR(32) NOT NULL DEFAULT '',
+                    note TEXT DEFAULT '',
+                    assessment_status VARCHAR(32) NOT NULL DEFAULT 'draft',
+                    conclusion TEXT DEFAULT '',
+                    completed_at DATETIME,
+                    active BOOLEAN DEFAULT 1,
+                    modified BOOLEAN DEFAULT 0,
+                    created_at DATETIME,
+                    updated_at DATETIME
+                )
+                """
+            ),
+        )
+        connection.execute(
+            text(
+                """
+                INSERT INTO hazard_risk_assessments_r20c (
+                    id,
+                    hazard_event_id,
+                    exposed_group_id,
+                    exposed_group,
+                    severity,
+                    note,
+                    assessment_status,
+                    conclusion,
+                    completed_at,
+                    active,
+                    modified,
+                    created_at,
+                    updated_at
+                )
+                SELECT
+                    id,
+                    hazard_event_id,
+                    exposed_group_id,
+                    COALESCE(exposed_group, ''),
+                    COALESCE(severity, ''),
+                    COALESCE(note, ''),
+                    COALESCE(assessment_status, 'draft'),
+                    COALESCE(conclusion, ''),
+                    completed_at,
+                    COALESCE(active, 1),
+                    COALESCE(modified, 0),
+                    created_at,
+                    updated_at
+                FROM hazard_risk_assessments
+                """
+            ),
+        )
+        connection.execute(text("DROP TABLE hazard_risk_assessments"))
+        connection.execute(
+            text(
+                "ALTER TABLE hazard_risk_assessments_r20c "
+                "RENAME TO hazard_risk_assessments"
+            ),
+        )
+        connection.commit()
 
 
 def _ensure_exposed_groups_table() -> None:
@@ -1405,6 +1536,136 @@ def _ensure_hazard_library_template_assessments_table() -> None:
         )
 
         HazardLibraryTemplateAssessment.__table__.create(bind=_db_engine(), checkfirst=True)
+
+
+def _ensure_hazard_library_template_assessment_exposed_groups_table() -> None:
+    columns = _table_columns("hazard_library_template_assessment_exposed_groups")
+    if not columns:
+        from moduly.rizeni_rizik.modely.hazard_library_template_assessment_exposed_group import (
+            HazardLibraryTemplateAssessmentExposedGroup,
+        )
+
+        HazardLibraryTemplateAssessmentExposedGroup.__table__.create(
+            bind=_db_engine(),
+            checkfirst=True,
+        )
+    _ensure_index(
+        "idx_hl_template_assessment_groups_assessment",
+        """
+        CREATE INDEX IF NOT EXISTS idx_hl_template_assessment_groups_assessment
+        ON hazard_library_template_assessment_exposed_groups (assessment_id)
+        """,
+    )
+
+
+def _migrate_hazard_library_template_assessment_groups_and_drop_consequence() -> None:
+    """R20c: M:N skupiny katalogových posouzení + odstranění consequence."""
+    columns = _table_columns("hazard_library_template_assessments")
+    if not columns:
+        return
+    if not _table_exists("hazard_library_template_assessment_exposed_groups"):
+        return
+
+    with _db_engine().connect() as connection:
+        if "exposed_group_id" in columns:
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO hazard_library_template_assessment_exposed_groups (
+                        assessment_id,
+                        exposed_group_id,
+                        sort_order
+                    )
+                    SELECT
+                        a.id,
+                        a.exposed_group_id,
+                        1
+                    FROM hazard_library_template_assessments AS a
+                    WHERE a.exposed_group_id IS NOT NULL
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM hazard_library_template_assessment_exposed_groups AS g
+                          WHERE g.assessment_id = a.id
+                      )
+                    """
+                ),
+            )
+            connection.commit()
+
+        if "consequence" not in columns:
+            return
+
+        # Nullable exposed_group_id
+        create_sql = connection.execute(
+            text(
+                "SELECT sql FROM sqlite_master "
+                "WHERE type = 'table' AND name = 'hazard_library_template_assessments'"
+            ),
+        ).scalar()
+        normalized = " ".join(str(create_sql or "").upper().split())
+        needs_rebuild = (
+            "CONSEQUENCE" in normalized
+            or "EXPOSED_GROUP_ID INTEGER NOT NULL" in normalized
+        )
+        if not needs_rebuild:
+            return
+
+        connection.execute(
+            text(
+                """
+                CREATE TABLE hazard_library_template_assessments_r20c (
+                    id INTEGER NOT NULL PRIMARY KEY,
+                    template_event_id INTEGER NOT NULL,
+                    exposed_group_id INTEGER,
+                    severity VARCHAR(32) NOT NULL DEFAULT '',
+                    conclusion TEXT DEFAULT '',
+                    note TEXT DEFAULT '',
+                    active BOOLEAN DEFAULT 1,
+                    sort_order INTEGER NOT NULL DEFAULT 0,
+                    created_at DATETIME,
+                    updated_at DATETIME
+                )
+                """
+            ),
+        )
+        connection.execute(
+            text(
+                """
+                INSERT INTO hazard_library_template_assessments_r20c (
+                    id,
+                    template_event_id,
+                    exposed_group_id,
+                    severity,
+                    conclusion,
+                    note,
+                    active,
+                    sort_order,
+                    created_at,
+                    updated_at
+                )
+                SELECT
+                    id,
+                    template_event_id,
+                    exposed_group_id,
+                    COALESCE(severity, ''),
+                    COALESCE(conclusion, ''),
+                    COALESCE(note, ''),
+                    COALESCE(active, 1),
+                    COALESCE(sort_order, 0),
+                    created_at,
+                    updated_at
+                FROM hazard_library_template_assessments
+                """
+            ),
+        )
+        connection.execute(text("DROP TABLE hazard_library_template_assessments"))
+        connection.execute(
+            text(
+                "ALTER TABLE hazard_library_template_assessments_r20c "
+                "RENAME TO hazard_library_template_assessments"
+            ),
+        )
+        connection.commit()
 
 
 def _ensure_hazard_library_template_measures_tables() -> None:

@@ -117,7 +117,6 @@ class HazardCatalogImportEvidenceR18f1TestCase(unittest.TestCase):
             template_id=self.template.id,
             template_event_id=event.id,
             exposed_group_id=self.group.id,
-            consequence="Úraz",
             severity=RISK_SEVERITY_MODERATE,
         )
         self.export_dir = Path(tempfile.mkdtemp())

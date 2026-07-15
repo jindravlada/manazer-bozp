@@ -110,12 +110,11 @@ class HazardLibraryTemplateR17bTestCase(unittest.TestCase):
             active=active,
         )
 
-    def _create_assessment(self, event, *, group_id=None, consequence="Úraz"):
+    def _create_assessment(self, event, *, group_id=None):
         return hazard_library_template_assessment_service.create_assessment(
             template_id=self.template.id,
             template_event_id=event.id,
             exposed_group_id=group_id or self.group_a.id,
-            consequence=consequence,
             severity=RISK_SEVERITY_MODERATE,
         )
 
@@ -152,14 +151,12 @@ class HazardLibraryTemplateR17bTestCase(unittest.TestCase):
         with self.assertRaises(HazardLibraryTemplateAssessmentError):
             self._create_assessment(event, group_id=self.group_a.id)
 
-    def test_validate_consequence_and_severity(self) -> None:
+    def test_validate_exposed_groups_and_severity(self) -> None:
         event = self._create_event()
         with self.assertRaises(HazardLibraryTemplateAssessmentError):
             hazard_library_template_assessment_service.create_assessment(
                 template_id=self.template.id,
                 template_event_id=event.id,
-                exposed_group_id=self.group_a.id,
-                consequence="   ",
                 severity=RISK_SEVERITY_MODERATE,
             )
         with self.assertRaises(HazardLibraryTemplateAssessmentError):
@@ -167,7 +164,6 @@ class HazardLibraryTemplateR17bTestCase(unittest.TestCase):
                 template_id=self.template.id,
                 template_event_id=event.id,
                 exposed_group_id=self.group_a.id,
-                consequence="Úraz",
                 severity="invalid",
             )
 

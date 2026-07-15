@@ -11,9 +11,9 @@ class HazardRiskAssessment(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     hazard_event_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Legacy: první skupina (primární display); zdroj pravdy je vazební tabulka (R20c).
     exposed_group_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    exposed_group: Mapped[str] = mapped_column(String(200), nullable=False)
-    consequence: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    exposed_group: Mapped[str] = mapped_column(String(200), nullable=False, default="")
     severity: Mapped[str] = mapped_column(String(32), default="", nullable=False)
     note: Mapped[str] = mapped_column(Text, default="")
     assessment_status: Mapped[str] = mapped_column(String(32), default="draft", nullable=False)

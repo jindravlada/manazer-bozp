@@ -356,12 +356,14 @@ AI_PEER_REVIEW_RESPONSE_SCHEMA_2_0 = {
             "type": "object",
             "required": [
                 "exposed_group",
-                "consequence",
                 "severity",
             ],
             "properties": {
                 "exposed_group": {"type": "string"},
-                "consequence": {"type": "string"},
+                "exposed_groups": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                },
                 "severity": {
                     "type": "string",
                     "enum": [

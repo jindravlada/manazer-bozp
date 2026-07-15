@@ -227,7 +227,6 @@ class HazardCatalogInstanceCompareService:
 
             changes = self._changed_field_details(
                 [
-                    ("následek", master_assessment.consequence, local_assessment.consequence),
                     ("závažnost", master_assessment.severity, local_assessment.severity),
                     ("poznámka", master_assessment.note, local_assessment.note),
                     ("závěr", master_assessment.conclusion, local_assessment.conclusion),

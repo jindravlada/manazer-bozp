@@ -12,6 +12,9 @@ from moduly.rizeni_rizik.constants import (
     format_risk_severity_label,
 )
 from moduly.rizeni_rizik.modely.hazard_risk_assessment import HazardRiskAssessment
+from moduly.rizeni_rizik.repository.hazard_risk_assessment_exposed_group_repository import (
+    HazardRiskAssessmentExposedGroupRepository,
+)
 from moduly.rizeni_rizik.repository.hazard_risk_assessment_repository import (
     HazardRiskAssessmentRepository,
 )
@@ -43,17 +46,27 @@ class HazardRiskAssessmentRow:
     exposed_group_name: str
     severity_label: str
     status_label: str
+    exposed_group_ids: tuple[int, ...] = ()
 
 
 class HazardRiskAssessmentService:
     def __init__(self):
         self.repository = HazardRiskAssessmentRepository()
+        self.group_repository = HazardRiskAssessmentExposedGroupRepository()
+
+    def get_group_ids(self, assessment_id: int) -> list[int]:
+        return self.group_repository.list_group_ids(assessment_id)
 
     def get_exposed_group_display_name(self, assessment: HazardRiskAssessment) -> str:
-        if assessment.exposed_group_id:
-            name = exposed_group_service.display_name(assessment.exposed_group_id)
-            if name:
-                return name
+        group_ids = self.group_repository.list_group_ids(assessment.id)
+        if not group_ids and assessment.exposed_group_id:
+            group_ids = [assessment.exposed_group_id]
+        names = [
+            exposed_group_service.display_name(group_id) or f"#{group_id}"
+            for group_id in group_ids
+        ]
+        if names:
+            return ", ".join(names)
         if assessment.exposed_group:
             return assessment.exposed_group
         return "—"
@@ -123,31 +136,32 @@ class HazardRiskAssessmentService:
         *,
         hazard_identification_id: int,
         hazard_event_id: int,
-        exposed_group_id: int,
-        consequence: str,
+        exposed_group_ids: list[int] | tuple[int, ...] | None = None,
+        exposed_group_id: int | None = None,
         severity: str,
         note: str = "",
         assessment_status: str = DEFAULT_RISK_ASSESSMENT_STATUS,
         conclusion: str = "",
         active: bool = True,
     ) -> HazardRiskAssessment:
-        validated_group_id = self._validate_exposed_group_id(exposed_group_id)
-        normalized_consequence = self._validate_consequence(consequence)
+        validated_group_ids = self._validate_exposed_group_ids(
+            exposed_group_ids,
+            legacy_single_id=exposed_group_id,
+        )
         normalized_severity = self._validate_severity(severity)
 
         self._validate_event(hazard_identification_id, hazard_event_id)
-        self._validate_unique_active_group(
+        self._validate_unique_active_groups(
             hazard_event_id,
-            exposed_group_id=validated_group_id,
+            exposed_group_ids=validated_group_ids,
             exclude_assessment_id=None,
             active=active,
         )
 
         assessment = HazardRiskAssessment(
             hazard_event_id=hazard_event_id,
-            exposed_group_id=validated_group_id,
+            exposed_group_id=validated_group_ids[0],
             exposed_group="",
-            consequence=normalized_consequence,
             severity=normalized_severity,
             note=note.strip(),
             conclusion=conclusion.strip(),
@@ -158,12 +172,13 @@ class HazardRiskAssessmentService:
             assessment_status=assessment_status,
             hazard_identification_id=hazard_identification_id,
             hazard_event_id=hazard_event_id,
-            exposed_group_id=validated_group_id,
-            consequence=normalized_consequence,
+            exposed_group_ids=validated_group_ids,
             severity=normalized_severity,
         )
         mark_assessment_modified_if_catalog_instance(assessment)
-        return self.repository.add(assessment)
+        saved = self.repository.add(assessment)
+        self.group_repository.replace_groups(saved.id, validated_group_ids)
+        return saved
 
     def update_assessment(
         self,
@@ -171,8 +186,8 @@ class HazardRiskAssessmentService:
         *,
         hazard_identification_id: int,
         hazard_event_id: int,
-        exposed_group_id: int,
-        consequence: str,
+        exposed_group_ids: list[int] | tuple[int, ...] | None = None,
+        exposed_group_id: int | None = None,
         severity: str,
         note: str = "",
         assessment_status: str = DEFAULT_RISK_ASSESSMENT_STATUS,
@@ -183,21 +198,22 @@ class HazardRiskAssessmentService:
         if assessment is None:
             return None
 
-        validated_group_id = self._validate_exposed_group_id(exposed_group_id)
-        normalized_consequence = self._validate_consequence(consequence)
+        validated_group_ids = self._validate_exposed_group_ids(
+            exposed_group_ids,
+            legacy_single_id=exposed_group_id,
+        )
         normalized_severity = self._validate_severity(severity)
 
         self._validate_event(hazard_identification_id, hazard_event_id)
-        self._validate_unique_active_group(
+        self._validate_unique_active_groups(
             hazard_event_id,
-            exposed_group_id=validated_group_id,
+            exposed_group_ids=validated_group_ids,
             exclude_assessment_id=assessment_id,
             active=active,
         )
 
         assessment.hazard_event_id = hazard_event_id
-        assessment.exposed_group_id = validated_group_id
-        assessment.consequence = normalized_consequence
+        assessment.exposed_group_id = validated_group_ids[0]
         assessment.severity = normalized_severity
         assessment.note = note.strip()
         assessment.conclusion = conclusion.strip()
@@ -207,24 +223,28 @@ class HazardRiskAssessmentService:
             assessment_status=assessment_status,
             hazard_identification_id=hazard_identification_id,
             hazard_event_id=hazard_event_id,
-            exposed_group_id=validated_group_id,
-            consequence=normalized_consequence,
+            exposed_group_ids=validated_group_ids,
             severity=normalized_severity,
         )
         assessment.updated_at = datetime.now()
         mark_assessment_modified_if_catalog_instance(assessment)
-        return self.repository.update(assessment)
+        saved = self.repository.update(assessment)
+        self.group_repository.replace_groups(saved.id, validated_group_ids)
+        return saved
 
     def activate_assessment(self, assessment_id: int) -> bool:
         assessment = self.repository.get_by_id(assessment_id)
         if assessment is None:
             return False
-        if assessment.exposed_group_id is None:
+        group_ids = self.group_repository.list_group_ids(assessment_id)
+        if not group_ids and assessment.exposed_group_id:
+            group_ids = [assessment.exposed_group_id]
+        if not group_ids:
             raise HazardRiskAssessmentError("Posouzení nemá přiřazenou ohroženou skupinu.")
 
-        self._validate_unique_active_group(
+        self._validate_unique_active_groups(
             assessment.hazard_event_id,
-            exposed_group_id=assessment.exposed_group_id,
+            exposed_group_ids=group_ids,
             exclude_assessment_id=assessment_id,
             active=True,
         )
@@ -249,6 +269,9 @@ class HazardRiskAssessmentService:
         assessment: HazardRiskAssessment,
         event_rows: dict[int, HazardEventRow],
     ) -> HazardRiskAssessmentRow:
+        group_ids = tuple(self.group_repository.list_group_ids(assessment.id))
+        if not group_ids and assessment.exposed_group_id:
+            group_ids = (assessment.exposed_group_id,)
         exposed_group_name = self.get_exposed_group_display_name(assessment)
         event_row = event_rows.get(assessment.hazard_event_id)
         if event_row is None:
@@ -259,6 +282,7 @@ class HazardRiskAssessmentService:
                 exposed_group_name=exposed_group_name,
                 severity_label=format_risk_severity_label(assessment.severity),
                 status_label=format_risk_assessment_status_label(assessment.assessment_status),
+                exposed_group_ids=group_ids,
             )
 
         return HazardRiskAssessmentRow(
@@ -268,6 +292,7 @@ class HazardRiskAssessmentService:
             exposed_group_name=exposed_group_name,
             severity_label=format_risk_severity_label(assessment.severity),
             status_label=format_risk_assessment_status_label(assessment.assessment_status),
+            exposed_group_ids=group_ids,
         )
 
     def _sort_rows(self, rows: list[HazardRiskAssessmentRow]) -> list[HazardRiskAssessmentRow]:
@@ -280,23 +305,33 @@ class HazardRiskAssessmentService:
 
         return czech_sorted(rows, key=sort_key)
 
-    def _validate_exposed_group_id(self, exposed_group_id: int | None) -> int:
-        if not exposed_group_id:
-            raise HazardRiskAssessmentError("Ohrožená skupina je povinná.")
-        group = exposed_group_service.get_by_id(exposed_group_id)
-        if group is None:
-            raise HazardRiskAssessmentError("Vybraná ohrožená skupina neexistuje.")
-        if not group.active:
-            raise HazardRiskAssessmentError(
-                "Lze vybrat pouze aktivní ohroženou skupinu z číselníku."
-            )
-        return group.id
+    def _validate_exposed_group_ids(
+        self,
+        exposed_group_ids: list[int] | tuple[int, ...] | None,
+        *,
+        legacy_single_id: int | None,
+    ) -> list[int]:
+        values = list(exposed_group_ids or [])
+        if not values and legacy_single_id is not None:
+            values = [legacy_single_id]
+        if not values:
+            raise HazardRiskAssessmentError("Vyberte alespoň jednu ohroženou skupinu.")
 
-    def _validate_consequence(self, consequence: str) -> str:
-        normalized_consequence = consequence.strip()
-        if not normalized_consequence:
-            raise HazardRiskAssessmentError("Možný následek je povinný.")
-        return normalized_consequence
+        validated: list[int] = []
+        seen: set[int] = set()
+        for group_id in values:
+            if group_id in seen:
+                continue
+            group = exposed_group_service.get_by_id(group_id)
+            if group is None:
+                raise HazardRiskAssessmentError("Vybraná ohrožená skupina neexistuje.")
+            if not group.active:
+                raise HazardRiskAssessmentError(
+                    "Lze vybrat pouze aktivní ohroženou skupinu z číselníku."
+                )
+            seen.add(group.id)
+            validated.append(group.id)
+        return validated
 
     def _validate_severity(self, severity: str) -> str:
         if severity not in RISK_SEVERITIES:
@@ -310,8 +345,7 @@ class HazardRiskAssessmentService:
         assessment_status: str,
         hazard_identification_id: int,
         hazard_event_id: int,
-        exposed_group_id: int,
-        consequence: str,
+        exposed_group_ids: list[int],
         severity: str,
     ) -> None:
         if assessment_status not in RISK_ASSESSMENT_STATUSES:
@@ -319,8 +353,7 @@ class HazardRiskAssessmentService:
 
         if assessment_status == RISK_ASSESSMENT_STATUS_COMPLETED:
             self._validate_event(hazard_identification_id, hazard_event_id)
-            self._validate_exposed_group_id(exposed_group_id)
-            self._validate_consequence(consequence)
+            self._validate_exposed_group_ids(exposed_group_ids, legacy_single_id=None)
             self._validate_severity(severity)
             assessment.completed_at = datetime.now()
         else:
@@ -347,15 +380,15 @@ class HazardRiskAssessmentService:
         if not event.active:
             raise HazardRiskAssessmentError("Lze vybrat pouze aktivní nežádoucí událost.")
 
-    def _validate_unique_active_group(
+    def _validate_unique_active_groups(
         self,
         hazard_event_id: int,
         *,
-        exposed_group_id: int,
+        exposed_group_ids: list[int],
         exclude_assessment_id: int | None,
         active: bool,
     ) -> None:
-        if not active:
+        if not active or not exposed_group_ids:
             return
 
         for assessment in self.repository.get_for_event(hazard_event_id, include_inactive=True):
@@ -363,12 +396,17 @@ class HazardRiskAssessmentService:
                 continue
             if not assessment.active:
                 continue
-            if assessment.exposed_group_id == exposed_group_id:
-                group_name = self.get_exposed_group_display_name(assessment)
-                raise HazardRiskAssessmentError(
-                    f"U vybrané nežádoucí události již existuje aktivní ohrožená skupina "
-                    f"„{group_name}“."
-                )
+            other_ids = set(self.group_repository.list_group_ids(assessment.id))
+            if not other_ids and assessment.exposed_group_id:
+                other_ids = {assessment.exposed_group_id}
+            overlap = set(exposed_group_ids) & other_ids
+            if not overlap:
+                continue
+            group_name = exposed_group_service.display_name(next(iter(overlap))) or "—"
+            raise HazardRiskAssessmentError(
+                f"U vybrané nežádoucí události již existuje aktivní ohrožená skupina "
+                f"„{group_name}“."
+            )
 
 
 hazard_risk_assessment_service = HazardRiskAssessmentService()

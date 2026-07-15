@@ -220,10 +220,12 @@ class HazardLibraryTemplateImportService:
                     event_assessments[event.id],
                     start=1,
                 ):
+                    group_ids = hazard_risk_assessment_service.get_group_ids(assessment.id)
+                    if not group_ids and assessment.exposed_group_id:
+                        group_ids = [assessment.exposed_group_id]
                     template_assessment = HazardLibraryTemplateAssessment(
                         template_event_id=template_event.id,
-                        exposed_group_id=assessment.exposed_group_id,
-                        consequence=assessment.consequence,
+                        exposed_group_id=group_ids[0] if group_ids else assessment.exposed_group_id,
                         severity=assessment.severity,
                         conclusion=assessment.conclusion or "",
                         note=assessment.note or "",
@@ -232,6 +234,18 @@ class HazardLibraryTemplateImportService:
                     )
                     session.add(template_assessment)
                     session.flush()
+                    from moduly.rizeni_rizik.modely.hazard_library_template_assessment_exposed_group import (
+                        HazardLibraryTemplateAssessmentExposedGroup,
+                    )
+
+                    for group_sort, group_id in enumerate(group_ids, start=1):
+                        session.add(
+                            HazardLibraryTemplateAssessmentExposedGroup(
+                                assessment_id=template_assessment.id,
+                                exposed_group_id=group_id,
+                                sort_order=group_sort,
+                            ),
+                        )
                     assessment_count += 1
 
                     existing_measures, required_measures = assessment_measures[assessment.id]

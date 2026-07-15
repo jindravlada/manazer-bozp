@@ -32,7 +32,8 @@ from core.ai_oponentni.proposal_package_types import (
     AiProposalPackageMeasure,
 )
 from core.widgets.dialog_utils import create_save_cancel_box
-from core.widgets.exposed_group_selector import ExposedGroupSelector
+from core.widgets.multi_exposed_group_selector import MultiExposedGroupSelector
+from moduly.nastaveni.sluzby.exposed_group_service import ExposedGroupMatchKind, exposed_group_service
 from moduly.nastaveni.ui.exposed_groups_management_dialog import ExposedGroupsManagementDialog
 from moduly.rizeni_rizik.constants import (
     DEFAULT_RISK_SEVERITY,
@@ -51,14 +52,12 @@ class _AssessmentEditor(QGroupBox):
         layout = QFormLayout(self)
 
         group_row = QHBoxLayout()
-        self.exposed_group = ExposedGroupSelector(self)
+        self.exposed_groups = MultiExposedGroupSelector(self)
         self.manage_groups_btn = QPushButton("Spravovat číselník…")
         self.manage_groups_btn.clicked.connect(self._open_groups_management)
-        group_row.addWidget(self.exposed_group, 1)
+        group_row.addWidget(self.exposed_groups, 1)
         group_row.addWidget(self.manage_groups_btn)
 
-        self.consequence = QPlainTextEdit()
-        self.consequence.setMinimumHeight(60)
         self.severity = QComboBox()
         for severity in RISK_SEVERITIES:
             self.severity.addItem(RISK_SEVERITY_LABELS[severity], severity)
@@ -71,18 +70,24 @@ class _AssessmentEditor(QGroupBox):
         self.required_measures.setPlaceholderText("Jedno opatření na řádek")
         self.required_measures.setMinimumHeight(60)
 
-        layout.addRow("Ohrožená skupina *:", group_row)
-        layout.addRow("Možný následek *:", self.consequence)
+        layout.addRow("Ohrožené skupiny *:", group_row)
         layout.addRow("Závažnost *:", self.severity)
         layout.addRow("Závěr:", self.conclusion)
         layout.addRow("Existující opatření:", self.existing_measures)
         layout.addRow("Potřebná opatření:", self.required_measures)
 
         if assessment is not None:
-            self.exposed_group.reload(preserve_id=assessment.exposed_group_id)
-            if assessment.exposed_group_id is None and assessment.exposed_group.strip():
-                self.exposed_group.setCurrentText(assessment.exposed_group)
-            self.consequence.setPlainText(assessment.consequence)
+            group_ids = list(assessment.exposed_group_ids)
+            if not group_ids and assessment.exposed_group_id is not None:
+                group_ids = [assessment.exposed_group_id]
+            if not group_ids:
+                for name in assessment.exposed_groups or (
+                    (assessment.exposed_group,) if assessment.exposed_group else ()
+                ):
+                    match = exposed_group_service.classify_name(name)
+                    if match.kind == ExposedGroupMatchKind.ACTIVE and match.groups:
+                        group_ids.append(int(match.groups[0].id))
+            self.exposed_groups.reload(preserve_ids=group_ids)
             severity_index = self.severity.findData(
                 assessment.severity if assessment.severity in RISK_SEVERITIES else DEFAULT_RISK_SEVERITY,
             )
@@ -96,7 +101,7 @@ class _AssessmentEditor(QGroupBox):
                 "\n".join(m.description for m in assessment.required_measures),
             )
         else:
-            self.exposed_group.reload()
+            self.exposed_groups.reload()
             severity_index = self.severity.findData(DEFAULT_RISK_SEVERITY)
             if severity_index >= 0:
                 self.severity.setCurrentIndex(severity_index)
@@ -104,21 +109,22 @@ class _AssessmentEditor(QGroupBox):
     def _open_groups_management(self) -> None:
         dialog = ExposedGroupsManagementDialog(self)
         dialog.exec()
-        self.exposed_group.reload(preserve_id=self.exposed_group.current_group_id())
+        self.exposed_groups.reload(preserve_ids=self.exposed_groups.selected_group_ids())
 
     def to_assessment(self) -> AiProposalPackageAssessment:
-        group_id = self.exposed_group.current_group_id()
-        group_name = (self.exposed_group.currentText() or "").strip()
-        if group_id is not None:
-            from moduly.nastaveni.sluzby.exposed_group_service import exposed_group_service
-
-            group_name = exposed_group_service.display_name(group_id) or group_name
+        group_ids = self.exposed_groups.selected_group_ids()
+        group_names: list[str] = []
+        for group_id in group_ids:
+            name = exposed_group_service.display_name(group_id)
+            if name:
+                group_names.append(name)
         return AiProposalPackageAssessment(
-            exposed_group=group_name,
-            consequence=self.consequence.toPlainText().strip(),
+            exposed_group=group_names[0] if group_names else "",
+            exposed_groups=tuple(group_names),
             severity=self.severity.currentData() or DEFAULT_RISK_SEVERITY,
             conclusion=self.conclusion.toPlainText().strip(),
-            exposed_group_id=group_id,
+            exposed_group_id=group_ids[0] if group_ids else None,
+            exposed_group_ids=tuple(group_ids),
             existing_measures=tuple(
                 AiProposalPackageMeasure(description=line.strip())
                 for line in self.existing_measures.toPlainText().splitlines()
@@ -191,7 +197,6 @@ class HazardCatalogAiPackageEditDialog(QDialog):
         for assessment in package.assessments or (
             AiProposalPackageAssessment(
                 exposed_group="",
-                consequence="",
                 severity=DEFAULT_RISK_SEVERITY,
             ),
         ):
@@ -264,11 +269,8 @@ class HazardCatalogAiPackageEditDialog(QDialog):
         assessments: list[AiProposalPackageAssessment] = []
         for editor in self._assessment_editors:
             assessment = editor.to_assessment()
-            if not assessment.exposed_group.strip():
-                QMessageBox.warning(self, self.windowTitle(), "Vyplňte ohroženou skupinu.")
-                return
-            if not assessment.consequence.strip():
-                QMessageBox.warning(self, self.windowTitle(), "Vyplňte možný následek.")
+            if not assessment.exposed_group.strip() and not assessment.exposed_group_ids:
+                QMessageBox.warning(self, self.windowTitle(), "Vyberte alespoň jednu ohroženou skupinu.")
                 return
             assessments.append(assessment)
         if not assessments:

@@ -61,9 +61,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.ui.hazard_risk_assessments_widget import HazardRiskAssessmentsWidget
 
 
-SAMPLE_CONSEQUENCE = "Zranění končetiny"
-
-
 class HazardExistingMeasurePhaseR08TestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -127,14 +124,12 @@ class HazardExistingMeasurePhaseR08TestCase(unittest.TestCase):
             hazard_identification_id=self.identification.id,
             hazard_event_id=event.id,
             exposed_group_id=ensure_exposed_group("Posunovač").id,
-            consequence=SAMPLE_CONSEQUENCE,
             severity=RISK_SEVERITY_MODERATE,
         )
         self.assessment_b = hazard_risk_assessment_service.create_assessment(
             hazard_identification_id=self.other_identification.id,
             hazard_event_id=other_event.id,
             exposed_group_id=ensure_exposed_group("Posunovač").id,
-            consequence=SAMPLE_CONSEQUENCE,
             severity=RISK_SEVERITY_MODERATE,
         )
 

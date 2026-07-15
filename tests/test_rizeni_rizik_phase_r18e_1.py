@@ -132,7 +132,6 @@ class HazardCatalogManualItemUpdateGuardR18e1TestCase(unittest.TestCase):
             template_id=self.template.id,
             template_event_id=template_event.id,
             exposed_group_id=self.group.id,
-            consequence="Úraz",
             severity="moderate",
         )
         self.catalog_item = hazard_library_template_apply_service.apply_template(

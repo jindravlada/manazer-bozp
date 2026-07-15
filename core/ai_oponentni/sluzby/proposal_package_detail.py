@@ -34,8 +34,14 @@ def format_proposal_package_detail(package: AiProposalPackage) -> str:
     for index, assessment in enumerate(package.assessments, start=1):
         lines.append(f"POSOUZENÍ {index}")
         lines.append("-" * 40)
-        lines.append(f"Ohrožená skupina: {assessment.exposed_group or '—'}")
-        lines.append(f"Možný následek: {assessment.consequence or '—'}")
+        groups = assessment.exposed_groups or (
+            (assessment.exposed_group,) if assessment.exposed_group else ()
+        )
+        if groups:
+            for group_name in groups:
+                lines.append(f"Ohrožená skupina: {group_name}")
+        else:
+            lines.append("Ohrožená skupina: —")
         severity_label = RISK_SEVERITY_LABELS.get(
             assessment.severity,
             assessment.severity or "—",

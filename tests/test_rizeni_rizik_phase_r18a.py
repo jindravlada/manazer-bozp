@@ -169,7 +169,6 @@ class HazardLibraryTemplateApplyR18aTestCase(unittest.TestCase):
             template_id=template.id,
             template_event_id=event.id,
             exposed_group_id=self.group.id,
-            consequence="Těžký úraz",
             severity=RISK_SEVERITY_MODERATE,
             conclusion="Nutná opatření",
         )
@@ -209,7 +208,7 @@ class HazardLibraryTemplateApplyR18aTestCase(unittest.TestCase):
         events = hazard_event_service.get_for_inventory_item(items[0].id)
         self.assertEqual(events[0].name, "Pád břemene")
         assessments = hazard_risk_assessment_service.repository.get_for_event(events[0].id)
-        self.assertEqual(assessments[0].consequence, "Těžký úraz")
+        self.assertEqual(assessments[0].severity, RISK_SEVERITY_MODERATE)
         self.assertEqual(assessments[0].assessment_status, DEFAULT_RISK_ASSESSMENT_STATUS)
         self.assertIsNone(assessments[0].completed_at)
         existing = hazard_existing_measure_service.get_for_assessment(assessments[0].id)

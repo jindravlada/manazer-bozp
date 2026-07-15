@@ -64,9 +64,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.constants import HAZARD_INVENTORY_CATEGORY_EQUIPMENT
     from tests.rizeni_rizik_test_helpers import ensure_exposed_group
 
-SAMPLE_CONSEQUENCE = "Možný úraz"
-
-
 class ExposedGroupCatalogR16TestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -154,7 +151,6 @@ class ExposedGroupCatalogR16TestCase(unittest.TestCase):
             hazard_event_id=self.event.id,
             exposed_group="  údržba ",
             exposed_group_id=None,
-            consequence=SAMPLE_CONSEQUENCE,
             severity=RISK_SEVERITY_MODERATE,
         )
         from moduly.rizeni_rizik.repository.hazard_risk_assessment_repository import (
@@ -178,7 +174,6 @@ class ExposedGroupCatalogR16TestCase(unittest.TestCase):
             hazard_identification_id=self.identification.id,
             hazard_event_id=self.event.id,
             exposed_group_id=group.id,
-            consequence=SAMPLE_CONSEQUENCE,
             severity=RISK_SEVERITY_MODERATE,
         )
         reloaded = hazard_risk_assessment_service.get_by_id(assessment.id)
@@ -198,10 +193,12 @@ class ExposedGroupCatalogR16TestCase(unittest.TestCase):
             hazard_identification_id=self.identification.id,
             default_hazard_event_id=self.event.id,
         )
+        selector = dialog.exposed_groups.selector
+        selector._rebuild_popup_items(selected_id=None)
         combo_ids = {
-            dialog.exposed_group.itemData(index)
-            for index in range(dialog.exposed_group.count())
-            if isinstance(dialog.exposed_group.itemData(index), int)
+            selector.itemData(index)
+            for index in range(selector.count())
+            if isinstance(selector.itemData(index), int)
         }
         self.assertIn(active.id, combo_ids)
         self.assertNotIn(inactive.id, combo_ids)
@@ -212,7 +209,6 @@ class ExposedGroupCatalogR16TestCase(unittest.TestCase):
             hazard_identification_id=self.identification.id,
             hazard_event_id=self.event.id,
             exposed_group_id=group.id,
-            consequence=SAMPLE_CONSEQUENCE,
             severity=RISK_SEVERITY_MODERATE,
         )
         dialog = HazardRiskAssessmentDialog(
@@ -220,7 +216,7 @@ class ExposedGroupCatalogR16TestCase(unittest.TestCase):
             hazard_identification_id=self.identification.id,
             assessment=assessment,
         )
-        self.assertEqual(dialog.exposed_group.current_group_id(), group.id)
+        self.assertEqual(dialog.exposed_groups.selected_group_ids(), [group.id])
 
     def test_duplicate_assessment_by_exposed_group_id(self) -> None:
         group = ensure_exposed_group("Posunovač")
@@ -228,7 +224,6 @@ class ExposedGroupCatalogR16TestCase(unittest.TestCase):
             hazard_identification_id=self.identification.id,
             hazard_event_id=self.event.id,
             exposed_group_id=group.id,
-            consequence=SAMPLE_CONSEQUENCE,
             severity=RISK_SEVERITY_MODERATE,
         )
         with self.assertRaises(HazardRiskAssessmentError):
@@ -236,7 +231,6 @@ class ExposedGroupCatalogR16TestCase(unittest.TestCase):
                 hazard_identification_id=self.identification.id,
                 hazard_event_id=self.event.id,
                 exposed_group_id=group.id,
-                consequence="Jiný následek",
                 severity=RISK_SEVERITY_MODERATE,
             )
 
@@ -246,7 +240,6 @@ class ExposedGroupCatalogR16TestCase(unittest.TestCase):
             hazard_identification_id=self.identification.id,
             hazard_event_id=self.event.id,
             exposed_group_id=group.id,
-            consequence=SAMPLE_CONSEQUENCE,
             severity=RISK_SEVERITY_MODERATE,
         )
         rows = hazard_risk_assessment_service.get_for_identification(self.identification.id)
@@ -258,7 +251,6 @@ class ExposedGroupCatalogR16TestCase(unittest.TestCase):
             hazard_identification_id=self.identification.id,
             hazard_event_id=self.event.id,
             exposed_group_id=group.id,
-            consequence=SAMPLE_CONSEQUENCE,
             severity=RISK_SEVERITY_MODERATE,
         )
         content = self.provider.build_export_content(

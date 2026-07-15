@@ -372,7 +372,6 @@ class HazardIdentificationPeerReviewProvider:
                 hazard_identification_id=source_id,
                 hazard_event_id=int(parent["id"]),
                 exposed_group_id=proposal.exposed_group_id,
-                consequence=proposal.reasoning or "Dle návrhu AI",
                 severity=RISK_SEVERITY_MODERATE,
                 note=note,
             )
@@ -587,7 +586,6 @@ class HazardIdentificationPeerReviewProvider:
                             "exposed_group": hazard_risk_assessment_service.get_exposed_group_display_name(
                                 assessment
                             ),
-                            "consequence": assessment.consequence or "",
                             "severity": assessment.severity,
                             "severity_label": format_risk_severity_label(
                                 assessment.severity
@@ -840,10 +838,6 @@ class HazardIdentificationPeerReviewProvider:
                     lines.append(
                         f"                [{assessment['export_id']}] "
                         f"{assessment['exposed_group']}"
-                    )
-                    lines.append(
-                        "                    Možný následek: "
-                        f"{assessment['consequence'] or '—'}"
                     )
                     lines.append(
                         "                    Závažnost: "

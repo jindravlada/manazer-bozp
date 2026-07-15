@@ -104,7 +104,6 @@ def _package(
     assessments = (
         AiProposalPackageAssessment(
             exposed_group="Zaměstnanci",
-            consequence="Úraz hlavy",
             severity=RISK_SEVERITY_MODERATE,
             existing_measures=(
                 (AiProposalPackageMeasure(description="Zábradlí"),) if with_measures else ()
@@ -170,7 +169,6 @@ class AiProposalPackagesR20bTestCase(unittest.TestCase):
             template_id=self.template.id,
             template_event_id=self.existing_event.id,
             exposed_group_id=self.group.id,
-            consequence="Úraz",
             severity=RISK_SEVERITY_MODERATE,
         )
         self.provider = hazard_catalog_source_peer_review_provider
@@ -282,7 +280,6 @@ class AiProposalPackagesR20bTestCase(unittest.TestCase):
             assessments=(
                 AiProposalPackageAssessment(
                     exposed_group="Neexistující skupina XYZ",
-                    consequence="Popáleniny",
                     severity=RISK_SEVERITY_MODERATE,
                 ),
             ),

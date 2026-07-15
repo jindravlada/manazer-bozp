@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
-from core.widgets.exposed_group_selector import ExposedGroupSelector
+from core.widgets.multi_exposed_group_selector import MultiExposedGroupSelector
 from moduly.nastaveni.ui.exposed_groups_management_dialog import ExposedGroupsManagementDialog
 from moduly.rizeni_rizik.constants import (
     DEFAULT_RISK_SEVERITY,
@@ -53,14 +53,12 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
         form = QFormLayout()
 
         group_row = QHBoxLayout()
-        self.exposed_group = ExposedGroupSelector(self)
+        self.exposed_groups = MultiExposedGroupSelector(self)
         self.manage_groups_btn = QPushButton("Spravovat číselník…")
         self.manage_groups_btn.clicked.connect(self._open_groups_management)
-        group_row.addWidget(self.exposed_group, 1)
+        group_row.addWidget(self.exposed_groups, 1)
         group_row.addWidget(self.manage_groups_btn)
 
-        self.consequence = QPlainTextEdit()
-        self.consequence.setMinimumHeight(80)
         self.severity = QComboBox()
         for severity in RISK_SEVERITIES:
             self.severity.addItem(RISK_SEVERITY_LABELS[severity], severity)
@@ -74,8 +72,7 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
         self.active_checkbox = QCheckBox("Aktivní")
         self.active_checkbox.setChecked(True)
 
-        form.addRow("Ohrožená skupina *:", group_row)
-        form.addRow("Možný následek *:", self.consequence)
+        form.addRow("Ohrožené skupiny *:", group_row)
         form.addRow("Závažnost následku *:", self.severity)
         form.addRow("", self.severity_description)
         form.addRow("Závěr:", self.conclusion)
@@ -89,11 +86,11 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
-        self.exposed_group.reload(
-            preserve_id=assessment.exposed_group_id if assessment is not None else None,
-        )
         if assessment is not None:
-            self.consequence.setPlainText(assessment.consequence or "")
+            group_ids = hazard_library_template_assessment_service.get_group_ids(assessment.id)
+            if not group_ids and assessment.exposed_group_id:
+                group_ids = [assessment.exposed_group_id]
+            self.exposed_groups.set_group_ids(group_ids)
             severity_index = self.severity.findData(assessment.severity)
             if severity_index >= 0:
                 self.severity.setCurrentIndex(severity_index)
@@ -106,9 +103,8 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
         self._update_severity_description()
 
         if read_only:
-            self.exposed_group.setEnabled(False)
+            self.exposed_groups.setEnabled(False)
             self.manage_groups_btn.setEnabled(False)
-            self.consequence.setReadOnly(True)
             self.severity.setEnabled(False)
             self.conclusion.setReadOnly(True)
             self.note.setReadOnly(True)
@@ -116,10 +112,10 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
             buttons.button(QDialogButtonBox.StandardButton.Save).setEnabled(False)
 
     def _open_groups_management(self) -> None:
-        selected_id = self.exposed_group.current_group_id()
+        selected_ids = self.exposed_groups.selected_group_ids()
         dialog = ExposedGroupsManagementDialog(self)
         dialog.exec()
-        self.exposed_group.reload(preserve_id=selected_id)
+        self.exposed_groups.reload(preserve_ids=selected_ids)
 
     def _update_severity_description(self) -> None:
         severity = self.severity.currentData()
@@ -134,15 +130,13 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
             return
 
         data = self.get_data()
-        group_id = self.exposed_group.ensure_selected_group_id(self)
-        if group_id is None:
+        if not data["exposed_group_ids"]:
             QMessageBox.warning(
                 self,
                 HAZARD_LIBRARY_ASSESSMENT_DIALOG_TITLE,
-                "Vyberte nebo vytvořte ohroženou skupinu.",
+                "Vyberte alespoň jednu ohroženou skupinu.",
             )
             return
-        data["exposed_group_id"] = group_id
 
         try:
             if self.assessment is None:
@@ -165,8 +159,7 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
 
     def get_data(self) -> dict:
         return {
-            "exposed_group_id": self.exposed_group.current_group_id(),
-            "consequence": self.consequence.toPlainText().strip(),
+            "exposed_group_ids": self.exposed_groups.selected_group_ids(),
             "severity": self.severity.currentData(),
             "conclusion": self.conclusion.toPlainText().strip(),
             "note": self.note.toPlainText().strip(),

@@ -316,7 +316,6 @@ class HazardCatalogSourcePeerReviewProvider:
                     {
                         "export_id": assessment_export_id,
                         "exposed_group": assessment_row.exposed_group_name,
-                        "consequence": assessment.consequence or "",
                         "severity": assessment.severity,
                         "severity_label": assessment_row.severity_label,
                         "conclusion": assessment.conclusion or "",
@@ -546,10 +545,6 @@ class HazardCatalogSourcePeerReviewProvider:
                 lines.append(
                     f"                [{assessment['export_id']}] "
                     f"{assessment['exposed_group']}"
-                )
-                lines.append(
-                    "                    Možný následek: "
-                    f"{assessment['consequence'] or '—'}"
                 )
                 lines.append(
                     "                    Závažnost: "

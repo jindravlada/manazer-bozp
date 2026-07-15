@@ -209,7 +209,6 @@ class HazardLibraryTemplateRevisionR18g1TestCase(unittest.TestCase):
             hazard_identification_id=identification.id,
             hazard_event_id=event.id,
             exposed_group_id=self.group.id,
-            consequence="Úraz",
             severity=RISK_SEVERITY_MODERATE,
             assessment_status=RISK_ASSESSMENT_STATUS_COMPLETED,
         )

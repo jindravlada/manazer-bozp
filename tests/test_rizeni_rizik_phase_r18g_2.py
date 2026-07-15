@@ -276,7 +276,6 @@ class HazardCatalogProposalDuplicateR18g2TestCase(unittest.TestCase):
             template_id=self.template.id,
             template_event_id=event.id,
             exposed_group_id=self.group.id,
-            consequence="Úraz",
             severity=RISK_SEVERITY_MODERATE,
         )
         hazard_library_template_existing_measure_service.create_measure(

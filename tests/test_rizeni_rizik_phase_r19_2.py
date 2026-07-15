@@ -131,7 +131,6 @@ class HazardCatalogMeasureAssignmentR19_2TestCase(unittest.TestCase):
             template_id=self.template.id,
             template_event_id=event.id,
             exposed_group_id=self.group.id,
-            consequence="Úraz",
             severity=RISK_SEVERITY_MODERATE,
         )
         self.review = ai_peer_review_service.export_package(
@@ -210,7 +209,6 @@ class HazardCatalogMeasureAssignmentR19_2TestCase(unittest.TestCase):
             template_id=self.template.id,
             template_event_id=event.id,
             exposed_group_id=self.group.id,
-            consequence="Úraz",
             severity=RISK_SEVERITY_MODERATE,
         )
         self.review = ai_peer_review_service.export_package(
@@ -266,7 +264,6 @@ class HazardCatalogMeasureAssignmentR19_2TestCase(unittest.TestCase):
             template_id=self.template.id,
             template_event_id=event.id,
             exposed_group_id=self.group.id,
-            consequence="Úraz",
             severity=RISK_SEVERITY_MODERATE,
         )
         stored = self._store_pending(

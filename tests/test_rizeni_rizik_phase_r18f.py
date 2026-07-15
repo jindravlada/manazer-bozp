@@ -204,7 +204,6 @@ class HazardCatalogAiPeerReviewR18fTestCase(unittest.TestCase):
             template_id=template.id,
             template_event_id=event.id,
             exposed_group_id=self.group.id,
-            consequence="Těžký úraz",
             severity=RISK_SEVERITY_MODERATE,
             conclusion="Nutná opatření",
         )

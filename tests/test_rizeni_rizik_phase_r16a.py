@@ -229,12 +229,12 @@ class ExposedGroupCatalogR16aTestCase(unittest.TestCase):
             hazard_identification_id=self.identification.id,
             default_hazard_event_id=self.event.id,
         )
-        before_count = dialog.exposed_group.count()
+        before_count = dialog.exposed_groups.selector.count()
         exposed_group_service.create_group(name="Nová ze správy")
         dialog._open_groups_management()
-        self.assertGreaterEqual(dialog.exposed_group.count(), before_count)
-        dialog.exposed_group.set_group_id(active.id)
-        self.assertEqual(dialog.exposed_group.current_group_id(), active.id)
+        self.assertGreaterEqual(dialog.exposed_groups.selector.count(), before_count)
+        dialog.exposed_groups.set_group_ids([active.id])
+        self.assertEqual(dialog.exposed_groups.selected_group_ids(), [active.id])
 
     def test_assessment_can_be_created_with_new_group_from_selector(self) -> None:
         dialog = HazardRiskAssessmentDialog(
@@ -243,8 +243,7 @@ class ExposedGroupCatalogR16aTestCase(unittest.TestCase):
             default_hazard_event_id=self.event.id,
         )
         group = ensure_exposed_group("Vrtačkář")
-        dialog.exposed_group.set_group_id(group.id)
-        dialog.consequence.setPlainText("Poranění ruky")
+        dialog.exposed_groups.set_group_ids([group.id])
         severity_index = dialog.severity.findData(RISK_SEVERITY_MODERATE)
         dialog.severity.setCurrentIndex(severity_index)
         dialog.accept()

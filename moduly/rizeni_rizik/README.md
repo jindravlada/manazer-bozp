@@ -127,12 +127,13 @@ Posouzení rizik v záložce Posouzení rizik:
 
 ## Fáze R07
 
-Rozšíření posouzení rizika o následek a závažnost:
+Rozšíření posouzení rizika o závažnost a více ohrožených skupin:
 
-- pole `consequence` a `severity` v modelu `HazardRiskAssessment`
+- pole `severity` v modelu `HazardRiskAssessment` (jediné hodnocení následku)
+- vazba M:N na ohrožené skupiny (`hazard_risk_assessment_exposed_groups`)
 - pět úrovní závažnosti se slovní popisem v dialogu
-- sloupce Možný následek a Závažnost v záložce Posouzení rizik
-- validace povinných polí bez změny pravidel duplicity ohrožené skupiny
+- sloupce Ohrožené skupiny a Závažnost v záložce Posouzení rizik
+- validace povinných polí; aktivní posouzení se nesmí překrývat v ohrožených skupinách u stejné události
 
 ## Fáze R08
 

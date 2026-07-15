@@ -89,7 +89,6 @@ def _base_package_payload(
         assessments = [
             {
                 "exposed_group": "Zaměstnanci",
-                "consequence": "Úraz hlavy",
                 "severity": RISK_SEVERITY_MODERATE,
                 "existing_measures": [{"description": "Zábradlí"}],
                 "required_measures": [{"description": "Kontrola zábradlí"}],
@@ -195,12 +194,10 @@ class AiProposalPackagesR20aTestCase(unittest.TestCase):
                     assessments=[
                         {
                             "exposed_group": "Zaměstnanci",
-                            "consequence": "Úraz",
                             "severity": RISK_SEVERITY_MODERATE,
                         },
                         {
                             "exposed_group": "Dodavatelé",
-                            "consequence": "Pálení",
                             "severity": "minor",
                         },
                     ],
@@ -230,15 +227,14 @@ class AiProposalPackagesR20aTestCase(unittest.TestCase):
         self.assertEqual(len(result.packages), 0)
         self.assertTrue(result.skip_reasons)
 
-    def test_reject_assessment_without_consequence(self) -> None:
+    def test_reject_assessment_without_exposed_group(self) -> None:
         payload = _response_payload(
             self.source_reference,
             [
                 _base_package_payload(
                     assessments=[
                         {
-                            "exposed_group": "Zaměstnanci",
-                            "consequence": "",
+                            "exposed_group": "",
                             "severity": RISK_SEVERITY_MODERATE,
                         },
                     ],
@@ -256,7 +252,6 @@ class AiProposalPackagesR20aTestCase(unittest.TestCase):
                     assessments=[
                         {
                             "exposed_group": "Zaměstnanci",
-                            "consequence": "Úraz",
                             "severity": "extrémní",
                         },
                     ],
@@ -291,7 +286,6 @@ Výbuch
 
 POSOUZENÍ:
 Ohrožená skupina: Zaměstnanci
-Možný následek: Popáleniny
 Závažnost: serious
 
 EXISTUJÍCÍ OPATŘENÍ:

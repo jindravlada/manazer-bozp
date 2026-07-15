@@ -34,7 +34,7 @@ _REQUIRED_MEASURES_RE = re.compile(r"^potřebná\s+opatření\s*:\s*$", re.IGNOR
 _LEGAL_LINKS_RE = re.compile(r"^právní\s+vazby\s*:\s*$", re.IGNORECASE)
 _REASONING_SECTION_RE = re.compile(r"^zdůvodnění\s*:\s*(.*)$", re.IGNORECASE)
 _EXPOSED_GROUP_RE = re.compile(r"^ohrožená\s+skupina\s*:\s*(.+)$", re.IGNORECASE)
-_CONSEQUENCE_RE = re.compile(r"^možný\s+následek\s*:\s*(.+)$", re.IGNORECASE)
+_EXPOSED_GROUPS_RE = re.compile(r"^ohrožené\s+skupiny\s*:\s*(.+)$", re.IGNORECASE)
 _SEVERITY_RE = re.compile(r"^závažnost\s*:\s*(.+)$", re.IGNORECASE)
 _CONCLUSION_RE = re.compile(r"^závěr\s*:\s*(.+)$", re.IGNORECASE)
 _MEASURE_ITEM_RE = re.compile(r"^-\s*(.+)$")
@@ -228,7 +228,11 @@ def _parse_assessments_payload(payload: object) -> tuple[AiProposalPackageAssess
         assessments.append(
             AiProposalPackageAssessment(
                 exposed_group=str(item.get("exposed_group") or "").strip(),
-                consequence=str(item.get("consequence") or "").strip(),
+                exposed_groups=tuple(
+                    str(name or "").strip()
+                    for name in (item.get("exposed_groups") or [])
+                    if str(name or "").strip()
+                ),
                 severity=str(item.get("severity") or "").strip(),
                 conclusion=str(item.get("conclusion") or "").strip(),
                 existing_measures=existing,
@@ -305,10 +309,8 @@ def _validate_package(
 
     for assessment_index, assessment in enumerate(assessments, start=1):
         assessment_label = f"{label}, posouzení #{assessment_index}"
-        if not assessment.exposed_group.strip():
+        if not (assessment.exposed_groups or assessment.exposed_group.strip()):
             return f"{assessment_label}: chybí ohrožená skupina."
-        if not assessment.consequence.strip():
-            return f"{assessment_label}: chybí možný následek."
         if assessment.severity.strip().casefold() not in RISK_SEVERITIES:
             return (
                 f"{assessment_label}: neplatná závažnost "
@@ -372,7 +374,11 @@ def _parse_one_text_package(
         assessments.append(
             AiProposalPackageAssessment(
                 exposed_group=str(current_assessment.get("exposed_group") or "").strip(),
-                consequence=str(current_assessment.get("consequence") or "").strip(),
+                exposed_groups=tuple(
+                    str(name or "").strip()
+                    for name in (current_assessment.get("exposed_groups") or [])
+                    if str(name or "").strip()
+                ),
                 severity=str(current_assessment.get("severity") or "").strip(),
                 conclusion=str(current_assessment.get("conclusion") or "").strip(),
                 existing_measures=existing,
@@ -411,6 +417,7 @@ def _parse_one_text_package(
             flush_assessment()
             section = "assessment"
             current_assessment = {
+                "exposed_groups": [],
                 "existing_measures": [],
                 "required_measures": [],
             }
@@ -446,11 +453,24 @@ def _parse_one_text_package(
         if section == "assessment" and current_assessment is not None:
             exposed_match = _EXPOSED_GROUP_RE.match(line)
             if exposed_match:
-                current_assessment["exposed_group"] = exposed_match.group(1).strip()
+                groups = list(current_assessment.get("exposed_groups") or [])
+                name = exposed_match.group(1).strip()
+                if name:
+                    groups.append(name)
+                    current_assessment["exposed_groups"] = groups
+                    if not current_assessment.get("exposed_group"):
+                        current_assessment["exposed_group"] = name
                 continue
-            consequence_match = _CONSEQUENCE_RE.match(line)
-            if consequence_match:
-                current_assessment["consequence"] = consequence_match.group(1).strip()
+            groups_match = _EXPOSED_GROUPS_RE.match(line)
+            if groups_match:
+                groups = list(current_assessment.get("exposed_groups") or [])
+                for part in re.split(r"[;|]", groups_match.group(1)):
+                    name = part.strip()
+                    if name:
+                        groups.append(name)
+                current_assessment["exposed_groups"] = groups
+                if groups and not current_assessment.get("exposed_group"):
+                    current_assessment["exposed_group"] = groups[0]
                 continue
             severity_match = _SEVERITY_RE.match(line)
             if severity_match:

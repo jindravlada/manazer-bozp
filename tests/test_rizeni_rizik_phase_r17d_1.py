@@ -360,7 +360,6 @@ class HazardLibraryMasterCatalogMigrationR17d1TestCase(unittest.TestCase):
             template_id=template.id,
             template_event_id=event.id,
             exposed_group_id=group.id,
-            consequence="Úraz",
             severity="moderate",
         )
         hazard_library_template_existing_measure_service.create_measure(

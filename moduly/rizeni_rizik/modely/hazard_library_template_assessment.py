@@ -11,8 +11,8 @@ class HazardLibraryTemplateAssessment(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     template_event_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    exposed_group_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    consequence: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    # Legacy: první skupina; zdroj pravdy je vazební tabulka (R20c).
+    exposed_group_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     severity: Mapped[str] = mapped_column(String(32), default="", nullable=False)
     conclusion: Mapped[str] = mapped_column(Text, default="")
     note: Mapped[str] = mapped_column(Text, default="")

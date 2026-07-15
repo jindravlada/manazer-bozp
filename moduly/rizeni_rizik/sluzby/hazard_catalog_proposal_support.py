@@ -35,9 +35,9 @@ CATALOG_CONFLICT_TYPE_ASSESSMENT_CREATE = "assessment_create"
 class CatalogProposalPayload:
     description: str = ""
     note: str = ""
-    consequence: str = ""
     conclusion: str = ""
     severity: str = ""
+    exposed_group_ids: tuple[int, ...] = ()
     legal_document_id: int | None = None
     legal_requirement_id: int | None = None
 
@@ -179,12 +179,20 @@ def parse_proposal_payload(proposal: AiUnassignedProposal) -> CatalogProposalPay
         data = {}
     if not isinstance(data, dict):
         data = {}
+    group_ids: list[int] = []
+    seen: set[int] = set()
+    for raw in data.get("exposed_group_ids") or []:
+        parsed = _parse_optional_int(raw)
+        if parsed is None or parsed in seen:
+            continue
+        seen.add(parsed)
+        group_ids.append(parsed)
     return CatalogProposalPayload(
         description=str(data.get("description") or "").strip(),
         note=str(data.get("note") or "").strip(),
-        consequence=str(data.get("consequence") or "").strip(),
         conclusion=str(data.get("conclusion") or "").strip(),
         severity=str(data.get("severity") or "").strip(),
+        exposed_group_ids=tuple(group_ids),
         legal_document_id=_parse_optional_int(data.get("legal_document_id")),
         legal_requirement_id=_parse_optional_int(data.get("legal_requirement_id")),
     )
@@ -204,9 +212,9 @@ def proposal_payload_to_json(payload: CatalogProposalPayload) -> str:
         {
             "description": payload.description,
             "note": payload.note,
-            "consequence": payload.consequence,
             "conclusion": payload.conclusion,
             "severity": payload.severity,
+            "exposed_group_ids": list(payload.exposed_group_ids),
             "legal_document_id": payload.legal_document_id,
             "legal_requirement_id": payload.legal_requirement_id,
         },
@@ -218,9 +226,9 @@ def merge_payload(existing: CatalogProposalPayload, updates: dict[str, Any]) -> 
     data = {
         "description": existing.description,
         "note": existing.note,
-        "consequence": existing.consequence,
         "conclusion": existing.conclusion,
         "severity": existing.severity,
+        "exposed_group_ids": existing.exposed_group_ids,
         "legal_document_id": existing.legal_document_id,
         "legal_requirement_id": existing.legal_requirement_id,
     }
@@ -229,6 +237,16 @@ def merge_payload(existing: CatalogProposalPayload, updates: dict[str, Any]) -> 
             continue
         if key in {"legal_document_id", "legal_requirement_id"}:
             data[key] = _parse_optional_int(value)
+        elif key == "exposed_group_ids":
+            ids: list[int] = []
+            seen: set[int] = set()
+            for raw in value if isinstance(value, (list, tuple)) else ():
+                parsed = _parse_optional_int(raw)
+                if parsed is None or parsed in seen:
+                    continue
+                seen.add(parsed)
+                ids.append(parsed)
+            data[key] = tuple(ids)
         else:
             data[key] = str(value).strip()
     return CatalogProposalPayload(**data)

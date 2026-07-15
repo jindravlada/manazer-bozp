@@ -346,14 +346,12 @@ class HazardCatalogLegalLinksR19TestCase(unittest.TestCase):
             template_id=self.template.id,
             template_event_id=event.id,
             exposed_group_id=self.group.id,
-            consequence="Úraz",
             severity=RISK_SEVERITY_MODERATE,
         )
         hazard_library_template_assessment_service.create_assessment(
             template_id=self.template.id,
             template_event_id=event.id,
             exposed_group_id=other_group.id,
-            consequence="Pád",
             severity=RISK_SEVERITY_MODERATE,
         )
         self.review = self._export().review
@@ -386,7 +384,6 @@ class HazardCatalogLegalLinksR19TestCase(unittest.TestCase):
             template_id=self.template.id,
             template_event_id=event.id,
             exposed_group_id=self.group.id,
-            consequence="Úraz",
             severity=RISK_SEVERITY_MODERATE,
         )
         self.review = self._export().review

@@ -293,7 +293,7 @@ def build_catalog_source_ai_peer_review_prompt(
     lines.append(
         "Vrať ucelené návrhové balíky (schema 2.0). Každý balík musí obsahovat "
         "událost nebo vazbu na existující EVENT-…, alespoň jedno kompletní posouzení "
-        "(ohrožená skupina, následek, závažnost), volitelně opatření uvnitř posouzení "
+        "(jedna nebo více ohrožených skupin a závažnost), volitelně opatření uvnitř posouzení "
         "a volitelně právní vazby k celému balíku.\n"
         "\n"
         "Textový fallback (použij přesně tuto strukturu u každého balíku):\n"
@@ -306,7 +306,7 @@ def build_catalog_source_ai_peer_review_prompt(
         "\n"
         "POSOUZENÍ:\n"
         "Ohrožená skupina: ...\n"
-        "Možný následek: ...\n"
+        "Ohrožená skupina: ...\n"
         "Závažnost: moderate\n"
         "\n"
         "EXISTUJÍCÍ OPATŘENÍ:\n"

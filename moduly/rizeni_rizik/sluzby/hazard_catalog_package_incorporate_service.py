@@ -313,23 +313,15 @@ class HazardCatalogPackageIncorporateService:
         assessment,
         package_reasoning: str,
     ) -> int:
-        group_id = self._resolve_exposed_group_id(assessment)
+        group_ids = self._resolve_exposed_group_ids(assessment)
         severity = (
             assessment.severity
             if assessment.severity in RISK_SEVERITIES
             else DEFAULT_RISK_SEVERITY
         )
-        consequence = (assessment.consequence or "").strip()
-        if not consequence:
-            raise HazardCatalogPackageIncorporateError(
-                CATALOG_INCORPORATE_ERROR_GENERIC.format(
-                    name=assessment.exposed_group or "posouzení",
-                ),
-            )
         row = HazardLibraryTemplateAssessment(
             template_event_id=template_event_id,
-            exposed_group_id=group_id,
-            consequence=consequence,
+            exposed_group_id=group_ids[0],
             severity=severity,
             conclusion=(assessment.conclusion or "").strip(),
             note=(package_reasoning or "").strip(),
@@ -338,19 +330,53 @@ class HazardCatalogPackageIncorporateService:
         )
         session.add(row)
         session.flush()
+        from moduly.rizeni_rizik.modely.hazard_library_template_assessment_exposed_group import (
+            HazardLibraryTemplateAssessmentExposedGroup,
+        )
+
+        for sort_order, group_id in enumerate(group_ids, start=1):
+            session.add(
+                HazardLibraryTemplateAssessmentExposedGroup(
+                    assessment_id=int(row.id),
+                    exposed_group_id=group_id,
+                    sort_order=sort_order,
+                ),
+            )
         return int(row.id)
 
-    def _resolve_exposed_group_id(self, assessment) -> int:
+    def _resolve_exposed_group_ids(self, assessment) -> list[int]:
+        ids: list[int] = []
+        seen: set[int] = set()
+        candidate_ids = list(getattr(assessment, "exposed_group_ids", ()) or ())
         if assessment.exposed_group_id is not None:
-            return int(assessment.exposed_group_id)
-        match = exposed_group_service.classify_name(assessment.exposed_group or "")
-        if match.kind == ExposedGroupMatchKind.ACTIVE and match.groups:
-            return int(match.groups[0].id)
-        raise HazardCatalogPackageIncorporateError(
-            CATALOG_INCORPORATE_ERROR_ASSESSMENT_GROUP.format(
-                name=assessment.exposed_group or "posouzení",
-            ),
-        )
+            candidate_ids.insert(0, int(assessment.exposed_group_id))
+        for group_id in candidate_ids:
+            if group_id in seen:
+                continue
+            seen.add(int(group_id))
+            ids.append(int(group_id))
+
+        names = list(getattr(assessment, "exposed_groups", ()) or ())
+        primary = (assessment.exposed_group or "").strip()
+        if primary and primary not in names:
+            names.insert(0, primary)
+        for name in names:
+            match = exposed_group_service.classify_name(name)
+            if match.kind == ExposedGroupMatchKind.ACTIVE and match.groups:
+                group_id = int(match.groups[0].id)
+                if group_id not in seen:
+                    seen.add(group_id)
+                    ids.append(group_id)
+        if not ids:
+            raise HazardCatalogPackageIncorporateError(
+                CATALOG_INCORPORATE_ERROR_ASSESSMENT_GROUP.format(
+                    name=assessment.exposed_group or "posouzení",
+                ),
+            )
+        return ids
+
+    def _resolve_exposed_group_id(self, assessment) -> int:
+        return self._resolve_exposed_group_ids(assessment)[0]
 
     def _resolve_legal_document_id(self, link) -> int:
         if link.legal_document_id is not None:

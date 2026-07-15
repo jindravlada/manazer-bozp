@@ -180,17 +180,19 @@ class HazardSelectionHotfixR18f1TestCase(unittest.TestCase):
             template_id=self.template.id,
             template_event_id=self.event.id,
         )
-        self.assertGreater(dialog.exposed_group.count(), 0)
+        self.assertGreater(dialog.exposed_groups.selector.count(), 0)
 
     def test_catalog_assessment_dialog_loads_active_exposed_groups(self) -> None:
         dialog = HazardLibraryTemplateAssessmentDialog(
             template_id=self.template.id,
             template_event_id=self.event.id,
         )
+        selector = dialog.exposed_groups.selector
+        selector._rebuild_popup_items(selected_id=None)
         group_ids = {
-            dialog.exposed_group.itemData(index)
-            for index in range(dialog.exposed_group.count())
-            if isinstance(dialog.exposed_group.itemData(index), int)
+            selector.itemData(index)
+            for index in range(selector.count())
+            if isinstance(selector.itemData(index), int)
         }
         self.assertIn(self.active_group.id, group_ids)
         self.assertNotIn(self.inactive_group.id, group_ids)
@@ -200,9 +202,8 @@ class HazardSelectionHotfixR18f1TestCase(unittest.TestCase):
             template_id=self.template.id,
             template_event_id=self.event.id,
         )
-        dialog.exposed_group.set_group_id(self.active_group.id)
-        self.assertEqual(dialog.exposed_group.current_group_id(), self.active_group.id)
-        dialog.consequence.setPlainText("Úraz končetiny")
+        dialog.exposed_groups.set_group_ids([self.active_group.id])
+        self.assertEqual(dialog.exposed_groups.selected_group_ids(), [self.active_group.id])
         dialog.accept()
 
         rows = hazard_library_template_assessment_service.get_for_event(
@@ -210,7 +211,6 @@ class HazardSelectionHotfixR18f1TestCase(unittest.TestCase):
             include_inactive=False,
         )
         self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0].assessment.consequence, "Úraz končetiny")
         self.assertEqual(rows[0].assessment.exposed_group_id, self.active_group.id)
 
 

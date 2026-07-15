@@ -164,7 +164,6 @@ class HazardLibraryTemplateImportR17cTestCase(unittest.TestCase):
             hazard_identification_id=self.identification.id,
             hazard_event_id=self.event.id,
             exposed_group_id=self.group.id,
-            consequence="Těžký úraz",
             severity=RISK_SEVERITY_MODERATE,
             conclusion="Nutná opatření",
             note="Poznámka posouzení",
@@ -214,7 +213,7 @@ class HazardLibraryTemplateImportR17cTestCase(unittest.TestCase):
         template_event = self._template_event(result)
         rows = hazard_library_template_assessment_service.get_for_event(template_event.id)
         self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0].assessment.consequence, "Těžký úraz")
+        self.assertEqual(rows[0].assessment.severity, RISK_SEVERITY_MODERATE)
         self.assertEqual(rows[0].assessment.conclusion, "Nutná opatření")
 
     def test_import_existing_measures(self) -> None:
@@ -300,7 +299,6 @@ class HazardLibraryTemplateImportR17cTestCase(unittest.TestCase):
                 hazard_event_id=self.event.id,
                 exposed_group_id=None,
                 exposed_group="",
-                consequence="Chyba",
                 severity=RISK_SEVERITY_MODERATE,
                 active=True,
             )

@@ -300,7 +300,6 @@ class HazardCatalogProposalIncorporateService:
             CatalogProposalPayload(
                 description=payload.description,
                 note=payload.note,
-                consequence=payload.consequence,
                 conclusion=payload.conclusion,
                 severity=resolved,
             ),
@@ -389,7 +388,6 @@ class HazardCatalogProposalIncorporateService:
             CatalogProposalPayload(
                 description=payload.description,
                 note=payload.note,
-                consequence=payload.consequence,
                 conclusion=payload.conclusion,
                 severity=payload.severity,
                 legal_document_id=legal_document_id,
@@ -407,7 +405,6 @@ class HazardCatalogProposalIncorporateService:
             CatalogProposalPayload(
                 description=payload.description,
                 note=payload.note,
-                consequence=payload.consequence,
                 conclusion=payload.conclusion,
                 severity=payload.severity,
                 legal_document_id=payload.legal_document_id,
@@ -962,16 +959,9 @@ class HazardCatalogProposalIncorporateService:
                     CATALOG_INCORPORATE_ERROR_ASSESSMENT_GROUP.format(name=proposal.name),
                 )
             severity = payload.severity if payload.severity in RISK_SEVERITIES else DEFAULT_RISK_SEVERITY
-            consequence = (
-                payload.consequence
-                or proposal.name
-                or proposal.reasoning
-                or "Dle návrhu AI"
-            ).strip()
             assessment = HazardLibraryTemplateAssessment(
                 template_event_id=int(parent["id"]),
                 exposed_group_id=proposal.exposed_group_id,
-                consequence=consequence,
                 severity=severity,
                 conclusion=(payload.conclusion or "").strip(),
                 note=note,
@@ -979,6 +969,24 @@ class HazardCatalogProposalIncorporateService:
                 sort_order=self._next_assessment_sort_order(session, int(parent["id"])),
             )
             session.add(assessment)
+            session.flush()
+            from moduly.rizeni_rizik.modely.hazard_library_template_assessment_exposed_group import (
+                HazardLibraryTemplateAssessmentExposedGroup,
+            )
+
+            group_ids = [int(proposal.exposed_group_id)]
+            for extra_id in getattr(payload, "exposed_group_ids", None) or ():
+                gid = int(extra_id)
+                if gid not in group_ids:
+                    group_ids.append(gid)
+            for sort_order, group_id in enumerate(group_ids, start=1):
+                session.add(
+                    HazardLibraryTemplateAssessmentExposedGroup(
+                        assessment_id=int(assessment.id),
+                        exposed_group_id=group_id,
+                        sort_order=sort_order,
+                    ),
+                )
             return
 
         if kind == CATALOG_PROPOSAL_KIND_EXISTING_MEASURE:

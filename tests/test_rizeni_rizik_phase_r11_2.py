@@ -163,7 +163,6 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
             hazard_identification_id=self.identification.id,
             hazard_event_id=self.event.id,
             exposed_group_id=ensure_exposed_group("Posunovač").id,
-            consequence="Zranění končetiny",
             severity=RISK_SEVERITY_MODERATE,
         )
         hazard_existing_measure_service.create_measure(
