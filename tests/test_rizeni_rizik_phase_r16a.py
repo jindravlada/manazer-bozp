@@ -120,13 +120,17 @@ class ExposedGroupCatalogR16aTestCase(unittest.TestCase):
             {"Zaměstnanci daného pracoviště", "Dodavatelé"},
         )
 
-    def test_seed_preserves_existing_user_groups(self) -> None:
-        custom = exposed_group_service.create_group(name="Posunovač")
+    def test_seed_resets_catalog_to_default_groups(self) -> None:
+        exposed_group_service.create_group(name="Posunovač")
+        exposed_group_service.create_group(name="Testovací skupina")
         _seed_exposed_groups()
-        names = {group.name for group in exposed_group_service.get_all(include_inactive=True)}
-        self.assertIn("Posunovač", names)
-        self.assertIn(custom.name, names)
-        self.assertGreater(len(names), 2)
+        groups = exposed_group_service.get_all(include_inactive=True)
+        names = {group.name for group in groups}
+        self.assertEqual(len(groups), 2)
+        self.assertEqual(
+            names,
+            {"Zaměstnanci daného pracoviště", "Dodavatelé"},
+        )
 
     def test_selector_filters_groups_while_typing(self) -> None:
         ensure_exposed_group("Elektrikáři")

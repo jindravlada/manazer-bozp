@@ -275,6 +275,13 @@ Zjednodušení číselníku ohrožených skupin:
 - neaktivní shoda při vytváření nabídne aktivaci, aktivní duplicita je zakázána
 - správa číselníku zobrazuje názvy a podporuje Přidat / Upravit / Aktivovat / Deaktivovat
 
+## Fáze R16a.1
+
+Vyčištění číselníku při startu aplikace:
+
+- seed při každém spuštění obnoví pouze dvě výchozí položky
+- testovací a uživatelsky přidané položky z předchozích běhů se při startu odstraní
+
 ## Fáze R17a
 
 Základ firemní knihovny vzorů:

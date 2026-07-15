@@ -986,20 +986,18 @@ def _ensure_exposed_groups_table() -> None:
     _seed_exposed_groups()
 
 
-def _seed_exposed_groups() -> None:
-    default_groups = [
-        "Zaměstnanci daného pracoviště",
-        "Dodavatelé",
-    ]
-    with _db_engine().connect() as connection:
-        existing_count = connection.execute(
-            text("SELECT COUNT(*) FROM exposed_groups"),
-        ).scalar_one()
-        if existing_count:
-            return
+DEFAULT_EXPOSED_GROUPS = (
+    "Zaměstnanci daného pracoviště",
+    "Dodavatelé",
+)
 
-        now = datetime.now()
-        for index, name in enumerate(default_groups, start=1):
+
+def _seed_exposed_groups() -> None:
+    """Obnoví číselník na výchozí dvě položky (vývoj – bez migrace starých dat)."""
+    now = datetime.now()
+    with _db_engine().connect() as connection:
+        connection.execute(text("DELETE FROM exposed_groups"))
+        for index, name in enumerate(DEFAULT_EXPOSED_GROUPS, start=1):
             connection.execute(
                 text(
                     """
