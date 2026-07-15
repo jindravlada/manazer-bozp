@@ -9,10 +9,6 @@ from moduly.rizeni_rizik.constants import (
     DEFAULT_RISK_ASSESSMENT_STATUS,
     HAZARD_IDENTIFICATION_STATUS_ARCHIVED,
 )
-from moduly.rizeni_rizik.constants_library import (
-    HAZARD_LIBRARY_SCOPE_ALL,
-    HAZARD_LIBRARY_SCOPE_SELECTED,
-)
 from moduly.rizeni_rizik.modely.hazard_event import HazardEvent
 from moduly.rizeni_rizik.modely.hazard_existing_measure import HazardExistingMeasure
 from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem
@@ -85,14 +81,7 @@ class HazardLibraryTemplateApplyService:
         template: HazardLibraryTemplate,
         operation_id: int | None,
     ) -> bool:
-        if not template.active:
-            return False
-        if template.application_scope == HAZARD_LIBRARY_SCOPE_ALL:
-            return True
-        if template.application_scope == HAZARD_LIBRARY_SCOPE_SELECTED:
-            if operation_id is None:
-                return False
-            return self.operation_repository.has_link(template.id, operation_id)
+        # R20e: katalog je obecný MASTER; doporučování dle rozsahu se nepoužívá.
         return False
 
     def get_template_groups(
@@ -101,23 +90,21 @@ class HazardLibraryTemplateApplyService:
         operation_id: int | None,
         category: str | None = None,
     ) -> HazardLibraryTemplateCatalogGroups:
-        recommended: list[HazardLibraryTemplate] = []
-        other: list[HazardLibraryTemplate] = []
+        templates: list[HazardLibraryTemplate] = []
 
         for template in hazard_library_template_service.repository.get_all(
             include_inactive=False,
         ):
             if category is not None and template.category != category:
                 continue
-            if self.is_recommended_template(template, operation_id):
-                recommended.append(template)
-            else:
-                other.append(template)
+            if not template.active:
+                continue
+            templates.append(template)
 
         sort_key = lambda template: template.name.casefold()  # noqa: E731
         return HazardLibraryTemplateCatalogGroups(
-            recommended=czech_sorted(recommended, key=sort_key),
-            other=czech_sorted(other, key=sort_key),
+            recommended=[],
+            other=czech_sorted(templates, key=sort_key),
         )
 
     def apply_template(

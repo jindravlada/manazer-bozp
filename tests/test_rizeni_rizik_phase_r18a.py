@@ -217,6 +217,7 @@ class HazardLibraryTemplateApplyR18aTestCase(unittest.TestCase):
         self.assertEqual(required[0].description, "Doplnit zábradlí")
 
     def test_recommended_templates_for_operation(self) -> None:
+        # R20e: katalog je obecný MASTER — doporučování dle rozsahu se nepoužívá.
         selected = self._create_template_with_content(
             name="Vrtačka",
             application_scope=HAZARD_LIBRARY_SCOPE_SELECTED,
@@ -234,11 +235,16 @@ class HazardLibraryTemplateApplyR18aTestCase(unittest.TestCase):
         recommended_names = {template.name for template in groups.recommended}
         other_names = {template.name for template in groups.other}
 
-        self.assertIn("Portálový jeřáb", recommended_names)
-        self.assertIn("Vrtačka", recommended_names)
-        self.assertIn("Bruska", other_names)
-        self.assertNotIn("Bruska", recommended_names)
-        self.assertNotIn(selected.name, other_names)
+        self.assertEqual(recommended_names, set())
+        self.assertIn("Portálový jeřáb", other_names)
+        self.assertIn(selected.name, other_names)
+        self.assertIn(manual.name, other_names)
+        self.assertFalse(
+            hazard_library_template_apply_service.is_recommended_template(
+                selected,
+                self.operation_a.id,
+            )
+        )
 
     def test_reject_duplicate_active_item_name(self) -> None:
         hazard_inventory_item_service.create_item(

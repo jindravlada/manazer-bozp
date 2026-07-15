@@ -46,7 +46,6 @@ from core.ai_oponentni.types import (
 )
 from core.version import APP_VERSION
 from moduly.rizeni_rizik.constants import HAZARD_INVENTORY_CATEGORY_LABELS
-from moduly.rizeni_rizik.constants_library import HAZARD_LIBRARY_SCOPE_LABELS
 from moduly.rizeni_rizik.sluzby.hazard_library_template_assessment_service import (
     hazard_library_template_assessment_service,
 )
@@ -344,11 +343,6 @@ class HazardCatalogSourcePeerReviewProvider:
                 template.category,
             ),
             "description": template.description or "",
-            "application_scope": template.application_scope,
-            "application_scope_label": HAZARD_LIBRARY_SCOPE_LABELS.get(
-                template.application_scope,
-                template.application_scope,
-            ),
             "version_number": template.version_number,
             "note": template.note or "",
             "events": event_nodes,
@@ -360,8 +354,6 @@ class HazardCatalogSourcePeerReviewProvider:
             "category": template.category,
             "category_label": risk_source["category_label"],
             "description": template.description or "",
-            "application_scope": template.application_scope,
-            "application_scope_label": risk_source["application_scope_label"],
             "version_number": template.version_number,
             "note": template.note or "",
         }
@@ -495,7 +487,6 @@ class HazardCatalogSourcePeerReviewProvider:
         lines.append(f"Název: {catalog_source['name']}")
         lines.append(f"Kategorie: {catalog_source['category_label']}")
         lines.append(f"Popis: {catalog_source['description'] or '—'}")
-        lines.append(f"Rozsah použití: {catalog_source['application_scope_label']}")
         lines.append(f"Revize: {catalog_source['version_number']}")
         lines.append(f"Poznámka: {catalog_source['note'] or '—'}")
         lines.append("")

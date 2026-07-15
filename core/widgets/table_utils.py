@@ -229,7 +229,6 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         from moduly.rizeni_rizik.constants import (
             RISK_ASSESSMENT_COL_ACTIVE,
             RISK_ASSESSMENT_COL_COMPLETED_AT,
-            RISK_ASSESSMENT_COL_CONSEQUENCE,
             RISK_ASSESSMENT_COL_EVENT,
             RISK_ASSESSMENT_COL_EXPOSED_GROUP,
             RISK_ASSESSMENT_COL_INVENTORY_ITEM,
@@ -241,7 +240,6 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             RISK_ASSESSMENT_COL_EXPOSED_GROUP: 160,
             RISK_ASSESSMENT_COL_EVENT: 180,
             RISK_ASSESSMENT_COL_INVENTORY_ITEM: 160,
-            RISK_ASSESSMENT_COL_CONSEQUENCE: 220,
             RISK_ASSESSMENT_COL_SEVERITY: 120,
             RISK_ASSESSMENT_COL_STATUS: 120,
             RISK_ASSESSMENT_COL_COMPLETED_AT: 110,
@@ -250,7 +248,6 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
-        header.setSectionResizeMode(RISK_ASSESSMENT_COL_CONSEQUENCE, QHeaderView.Stretch)
         for column in (
             RISK_ASSESSMENT_COL_EXPOSED_GROUP,
             RISK_ASSESSMENT_COL_EVENT,
@@ -414,30 +411,68 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
     elif profile == "hazard_library_templates":
         from moduly.rizeni_rizik.constants_library import (
             HAZARD_LIBRARY_COL_ACTIVE,
+            HAZARD_LIBRARY_COL_CATEGORY,
             HAZARD_LIBRARY_COL_NAME,
-            HAZARD_LIBRARY_COL_OPERATION_COUNT,
-            HAZARD_LIBRARY_COL_SCOPE,
             HAZARD_LIBRARY_COL_VERSION,
         )
 
         widths = {
             HAZARD_LIBRARY_COL_NAME: 220,
-            HAZARD_LIBRARY_COL_SCOPE: 220,
+            HAZARD_LIBRARY_COL_CATEGORY: 160,
             HAZARD_LIBRARY_COL_VERSION: 70,
-            HAZARD_LIBRARY_COL_OPERATION_COUNT: 110,
-            HAZARD_LIBRARY_COL_ACTIVE: 80,
+            HAZARD_LIBRARY_COL_ACTIVE: 70,
         }
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
         header.setSectionResizeMode(HAZARD_LIBRARY_COL_NAME, QHeaderView.Stretch)
         for column in (
-            HAZARD_LIBRARY_COL_SCOPE,
+            HAZARD_LIBRARY_COL_CATEGORY,
             HAZARD_LIBRARY_COL_VERSION,
-            HAZARD_LIBRARY_COL_OPERATION_COUNT,
             HAZARD_LIBRARY_COL_ACTIVE,
         ):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
+
+    elif profile == "hazard_library_template_events":
+        from moduly.rizeni_rizik.constants_library import (
+            HAZARD_LIBRARY_TEMPLATE_EVENT_COL_ACTIVE,
+            HAZARD_LIBRARY_TEMPLATE_EVENT_COL_NAME,
+        )
+
+        table.setColumnWidth(HAZARD_LIBRARY_TEMPLATE_EVENT_COL_ACTIVE, 70)
+        table.setColumnHidden(0, True)
+        table.setWordWrap(True)
+        header.setSectionResizeMode(
+            HAZARD_LIBRARY_TEMPLATE_EVENT_COL_NAME,
+            QHeaderView.Stretch,
+        )
+        header.setSectionResizeMode(
+            HAZARD_LIBRARY_TEMPLATE_EVENT_COL_ACTIVE,
+            QHeaderView.Fixed,
+        )
+
+    elif profile == "hazard_library_template_legal_links":
+        from moduly.rizeni_rizik.constants_library import (
+            HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_ACTIVE,
+            HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_NOTE,
+            HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_REQUIREMENT,
+        )
+
+        table.setColumnWidth(HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_ACTIVE, 70)
+        table.setColumnHidden(0, True)
+        table.setWordWrap(True)
+        header.setSectionResizeMode(
+            HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_REQUIREMENT,
+            QHeaderView.Stretch,
+        )
+        header.setSectionResizeMode(
+            HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_NOTE,
+            QHeaderView.Stretch,
+        )
+        header.setSectionResizeMode(
+            HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_ACTIVE,
+            QHeaderView.Fixed,
+        )
 
     elif profile == "exposed_groups":
         widths = {0: 260, 1: 280, 2: 80}

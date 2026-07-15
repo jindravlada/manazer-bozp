@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
 from moduly.rizeni_rizik.constants import HAZARD_INVENTORY_CATEGORY_LABELS
@@ -16,8 +17,6 @@ from moduly.rizeni_rizik.constants_library import (
     HAZARD_LIBRARY_COL_CATEGORY,
     HAZARD_LIBRARY_COL_ID,
     HAZARD_LIBRARY_COL_NAME,
-    HAZARD_LIBRARY_COL_OPERATION_COUNT,
-    HAZARD_LIBRARY_COL_SCOPE,
     HAZARD_LIBRARY_COL_VERSION,
     HAZARD_LIBRARY_COLUMN_COUNT,
     HAZARD_LIBRARY_DIALOG_TITLE,
@@ -33,7 +32,7 @@ from moduly.rizeni_rizik.ui.hazard_library_template_dialog import HazardLibraryT
 
 
 class HazardLibraryPage(QWidget):
-    """Stránka Katalog zdrojů rizik – evidence Master zdrojů a rozsahu použití."""
+    """Stránka Katalog zdrojů rizik – evidence Master zdrojů rizika."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -79,17 +78,14 @@ class HazardLibraryPage(QWidget):
         self.table.setRowCount(len(rows))
         for row_index, row in enumerate(rows):
             template = row.template
-            self.table.setItem(
-                row_index,
-                HAZARD_LIBRARY_COL_ID,
-                QTableWidgetItem(str(template.id)),
+            name_item = QTableWidgetItem(template.name)
+            name_item.setToolTip(template.name)
+            self.table.setItem(row_index, HAZARD_LIBRARY_COL_ID, QTableWidgetItem(str(template.id)))
+            self.table.setItem(row_index, HAZARD_LIBRARY_COL_NAME, name_item)
+            category_label = HAZARD_INVENTORY_CATEGORY_LABELS.get(
+                template.category,
+                template.category,
             )
-            self.table.setItem(
-                row_index,
-                HAZARD_LIBRARY_COL_NAME,
-                QTableWidgetItem(template.name),
-            )
-            category_label = HAZARD_INVENTORY_CATEGORY_LABELS.get(template.category, template.category)
             self.table.setItem(
                 row_index,
                 HAZARD_LIBRARY_COL_CATEGORY,
@@ -97,18 +93,8 @@ class HazardLibraryPage(QWidget):
             )
             self.table.setItem(
                 row_index,
-                HAZARD_LIBRARY_COL_SCOPE,
-                QTableWidgetItem(row.scope_label),
-            )
-            self.table.setItem(
-                row_index,
                 HAZARD_LIBRARY_COL_VERSION,
                 QTableWidgetItem(str(template.version_number)),
-            )
-            self.table.setItem(
-                row_index,
-                HAZARD_LIBRARY_COL_OPERATION_COUNT,
-                QTableWidgetItem(row.operation_count_label),
             )
             self.table.setItem(
                 row_index,
@@ -120,7 +106,7 @@ class HazardLibraryPage(QWidget):
 
     def new_template(self) -> None:
         dialog = HazardLibraryTemplateDialog(self)
-        dialog.exec()
+        exec_maximized(dialog)
         self.refresh()
 
     def edit_selected_template(self) -> None:
@@ -133,7 +119,7 @@ class HazardLibraryPage(QWidget):
             )
             return
         dialog = HazardLibraryTemplateDialog(self, template=template)
-        dialog.exec()
+        exec_maximized(dialog)
         self.refresh()
 
     def activate_selected_template(self) -> None:
@@ -172,8 +158,6 @@ class HazardLibraryPage(QWidget):
                 break
 
     def open_template_editor(self, template_id: int) -> None:
-        from core.widgets.dialog_utils import exec_maximized
-
         self.open_template(template_id)
         template = hazard_library_template_service.get_by_id(template_id)
         if template is None:
@@ -192,8 +176,10 @@ class HazardLibraryPage(QWidget):
         selected = self.table.selectionModel().selectedRows()
         if not selected:
             return None
-        item = self.table.item(selected[0].row(), HAZARD_LIBRARY_COL_ID)
-        return int(item.text()) if item is not None else None
+        id_item = self.table.item(selected[0].row(), HAZARD_LIBRARY_COL_ID)
+        if id_item is None:
+            return None
+        return int(id_item.text())
 
     def _selected_template(self):
         template_id = self._selected_template_id()

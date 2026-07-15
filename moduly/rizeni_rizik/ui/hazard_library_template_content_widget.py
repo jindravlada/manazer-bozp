@@ -1,9 +1,10 @@
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QMessageBox,
     QPushButton,
+    QSplitter,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -78,7 +79,13 @@ class HazardLibraryTemplateContentWidget(QWidget):
         intro.setWordWrap(True)
         layout.addWidget(intro)
 
-        layout.addWidget(QLabel(HAZARD_LIBRARY_TEMPLATE_EVENTS_SECTION_TITLE))
+        splitter = QSplitter(Qt.Orientation.Vertical)
+        splitter.setChildrenCollapsible(False)
+
+        events_panel = QWidget()
+        events_layout = QVBoxLayout(events_panel)
+        events_layout.setContentsMargins(0, 0, 0, 0)
+        events_layout.addWidget(QLabel(HAZARD_LIBRARY_TEMPLATE_EVENTS_SECTION_TITLE))
 
         self.toolbar = QHBoxLayout()
         self.add_event_btn = QPushButton("Přidat událost")
@@ -92,7 +99,7 @@ class HazardLibraryTemplateContentWidget(QWidget):
         self.toolbar.addWidget(self.activate_event_btn)
         self.toolbar.addWidget(self.deactivate_event_btn)
         self.toolbar.addStretch()
-        layout.addLayout(self.toolbar)
+        events_layout.addLayout(self.toolbar)
 
         self.events_table = QTableWidget()
         self.events_table.setColumnCount(HAZARD_LIBRARY_TEMPLATE_EVENT_COLUMN_COUNT)
@@ -102,10 +109,14 @@ class HazardLibraryTemplateContentWidget(QWidget):
         self.events_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.events_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.events_table.setAlternatingRowColors(True)
+        self.events_table.horizontalHeader().setStretchLastSection(False)
         configure_table_columns(self.events_table, "hazard_library_template_events")
-        layout.addWidget(self.events_table, 1)
+        events_layout.addWidget(self.events_table, 1)
 
-        layout.addWidget(QLabel(HAZARD_LIBRARY_TEMPLATE_LEGAL_LINKS_SECTION_TITLE))
+        legal_panel = QWidget()
+        legal_layout = QVBoxLayout(legal_panel)
+        legal_layout.setContentsMargins(0, 0, 0, 0)
+        legal_layout.addWidget(QLabel(HAZARD_LIBRARY_TEMPLATE_LEGAL_LINKS_SECTION_TITLE))
         legal_toolbar = QHBoxLayout()
         self.add_legal_link_btn = QPushButton("Přidat")
         self.edit_legal_link_btn = QPushButton("Upravit")
@@ -116,7 +127,7 @@ class HazardLibraryTemplateContentWidget(QWidget):
         legal_toolbar.addWidget(self.activate_legal_link_btn)
         legal_toolbar.addWidget(self.deactivate_legal_link_btn)
         legal_toolbar.addStretch()
-        layout.addLayout(legal_toolbar)
+        legal_layout.addLayout(legal_toolbar)
 
         self.legal_links_table = QTableWidget()
         self.legal_links_table.setColumnCount(HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COLUMN_COUNT)
@@ -128,8 +139,17 @@ class HazardLibraryTemplateContentWidget(QWidget):
         self.legal_links_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.legal_links_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.legal_links_table.setAlternatingRowColors(True)
+        self.legal_links_table.horizontalHeader().setStretchLastSection(False)
         configure_table_columns(self.legal_links_table, "hazard_library_template_legal_links")
-        layout.addWidget(self.legal_links_table)
+        legal_layout.addWidget(self.legal_links_table, 1)
+
+        splitter.addWidget(events_panel)
+        splitter.addWidget(legal_panel)
+        splitter.setStretchFactor(0, 3)
+        splitter.setStretchFactor(1, 1)
+        splitter.setSizes([420, 160])
+        self.content_splitter = splitter
+        layout.addWidget(splitter, 1)
 
         self.add_event_btn.clicked.connect(self.add_event)
         self.edit_event_btn.clicked.connect(self.edit_selected_event)
@@ -146,6 +166,13 @@ class HazardLibraryTemplateContentWidget(QWidget):
         self.legal_links_table.doubleClicked.connect(self.edit_selected_legal_link)
 
         self.set_template(None, read_only=False)
+
+    @staticmethod
+    def _text_item(text: str) -> QTableWidgetItem:
+        item = QTableWidgetItem(text)
+        if text:
+            item.setToolTip(text)
+        return item
 
     def set_template(
         self,
@@ -401,7 +428,7 @@ class HazardLibraryTemplateContentWidget(QWidget):
             self.events_table.setItem(
                 row_index,
                 HAZARD_LIBRARY_TEMPLATE_EVENT_COL_NAME,
-                QTableWidgetItem(display_name),
+                self._text_item(display_name),
             )
             self.events_table.setItem(
                 row_index,
@@ -515,12 +542,12 @@ class HazardLibraryTemplateContentWidget(QWidget):
             self.legal_links_table.setItem(
                 row_index,
                 HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_REQUIREMENT,
-                QTableWidgetItem(label),
+                self._text_item(label),
             )
             self.legal_links_table.setItem(
                 row_index,
                 HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_NOTE,
-                QTableWidgetItem(link.note or ""),
+                self._text_item(link.note or ""),
             )
             self.legal_links_table.setItem(
                 row_index,

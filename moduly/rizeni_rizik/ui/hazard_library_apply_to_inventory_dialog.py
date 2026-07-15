@@ -14,11 +14,7 @@ from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.rizeni_rizik.constants import HAZARD_INVENTORY_CATEGORY_LABELS
 from moduly.rizeni_rizik.constants_library import (
     HAZARD_LIBRARY_APPLY_TO_INVENTORY_DIALOG_TITLE,
-    HAZARD_LIBRARY_OTHER_SOURCES_TITLE,
-    HAZARD_LIBRARY_RECOMMENDED_SOURCES_TITLE,
-)
-from moduly.rizeni_rizik.sluzby.hazard_identification_service import (
-    hazard_identification_service,
+    HAZARD_LIBRARY_CATALOG_SOURCES_TITLE,
 )
 from moduly.rizeni_rizik.sluzby.hazard_library_template_apply_service import (
     HazardLibraryTemplateApplyError,
@@ -41,11 +37,8 @@ class HazardLibraryApplyToInventoryDialog(QDialog):
         self.default_category = default_category
         self.result: HazardLibraryTemplateApplyResult | None = None
 
-        identification = hazard_identification_service.get_by_id(hazard_identification_id)
-        operation_id = identification.operation_id if identification is not None else None
-
         self.setWindowTitle(HAZARD_LIBRARY_APPLY_TO_INVENTORY_DIALOG_TITLE)
-        self.resize(720, 560)
+        self.resize(720, 520)
 
         layout = QVBoxLayout(self)
 
@@ -60,15 +53,15 @@ class HazardLibraryApplyToInventoryDialog(QDialog):
             intro.setWordWrap(True)
             layout.addWidget(intro)
 
-        layout.addWidget(QLabel(HAZARD_LIBRARY_RECOMMENDED_SOURCES_TITLE))
-        self.recommended_list = QListWidget()
-        self.recommended_list.setMinimumHeight(180)
-        layout.addWidget(self.recommended_list)
+        layout.addWidget(QLabel(HAZARD_LIBRARY_CATALOG_SOURCES_TITLE))
+        self.sources_list = QListWidget()
+        self.sources_list.setMinimumHeight(280)
+        layout.addWidget(self.sources_list)
 
-        layout.addWidget(QLabel(HAZARD_LIBRARY_OTHER_SOURCES_TITLE))
+        # Zpětná kompatibilita pro starší testy / volání.
+        self.recommended_list = self.sources_list
         self.other_list = QListWidget()
-        self.other_list.setMinimumHeight(180)
-        layout.addWidget(self.other_list)
+        self.other_list.hide()
 
         self.include_inactive = QCheckBox("Zahrnout neaktivní záznamy")
         self.include_inactive.setChecked(False)
@@ -81,18 +74,14 @@ class HazardLibraryApplyToInventoryDialog(QDialog):
         layout.addWidget(buttons)
 
         groups = hazard_library_template_apply_service.get_template_groups(
-            operation_id=operation_id,
+            operation_id=None,
             category=default_category,
         )
-        self._populate_list(self.recommended_list, groups.recommended)
-        self._populate_list(self.other_list, groups.other)
+        templates = list(groups.recommended) + list(groups.other)
+        self._populate_list(self.sources_list, templates)
+        self.sources_list.itemDoubleClicked.connect(lambda _: self.accept())
 
-        self.recommended_list.itemSelectionChanged.connect(self._clear_other_selection)
-        self.other_list.itemSelectionChanged.connect(self._clear_recommended_selection)
-        self.recommended_list.itemDoubleClicked.connect(lambda _: self.accept())
-        self.other_list.itemDoubleClicked.connect(lambda _: self.accept())
-
-        if not groups.recommended and not groups.other:
+        if not templates:
             QMessageBox.information(
                 self,
                 HAZARD_LIBRARY_APPLY_TO_INVENTORY_DIALOG_TITLE,
@@ -108,25 +97,13 @@ class HazardLibraryApplyToInventoryDialog(QDialog):
             )
             item = QListWidgetItem(f"{template.name} ({category_label})")
             item.setData(Qt.ItemDataRole.UserRole, template.id)
+            item.setToolTip(template.name)
             list_widget.addItem(item)
 
-    def _clear_other_selection(self) -> None:
-        if self.recommended_list.selectedItems():
-            self.other_list.blockSignals(True)
-            self.other_list.clearSelection()
-            self.other_list.blockSignals(False)
-
-    def _clear_recommended_selection(self) -> None:
-        if self.other_list.selectedItems():
-            self.recommended_list.blockSignals(True)
-            self.recommended_list.clearSelection()
-            self.recommended_list.blockSignals(False)
-
     def _selected_template_id(self) -> int | None:
-        for list_widget in (self.recommended_list, self.other_list):
-            selected = list_widget.selectedItems()
-            if selected:
-                return selected[0].data(Qt.ItemDataRole.UserRole)
+        selected = self.sources_list.selectedItems()
+        if selected:
+            return selected[0].data(Qt.ItemDataRole.UserRole)
         return None
 
     def accept(self) -> None:
