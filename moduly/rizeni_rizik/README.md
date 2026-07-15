@@ -472,6 +472,14 @@ Právní vazby katalogu a dokončení AI workflow:
 - opatření navázané na SOURCE: dialog výběru posouzení místo chyby
 - srozumitelné chybové hlášky a rozšířené souhrnné hlášení po zapracování
 
+## Fáze R19a
+
+Zobrazení zdrojů rizik ve Vazbách a použití:
+
+- u právního požadavku automatická sekce Zdroje rizik s aktivními katalogovými vazbami
+- u procesu odvozené zobrazení zdrojů navázaných na aktivní podřízené požadavky
+- dvojklik otevře zdroj v katalogu zdrojů rizik
+
 ## Fáze R19.1
 
 Průvodce ručním dokončením zapracování:

@@ -171,6 +171,23 @@ class HazardLibraryPage(QWidget):
                 self.table.scrollToItem(id_item)
                 break
 
+    def open_template_editor(self, template_id: int) -> None:
+        from core.widgets.dialog_utils import exec_maximized
+
+        self.open_template(template_id)
+        template = hazard_library_template_service.get_by_id(template_id)
+        if template is None:
+            QMessageBox.warning(
+                self,
+                HAZARD_LIBRARY_PAGE_TITLE,
+                "Zdroj rizika nebyl nalezen.",
+            )
+            self.refresh()
+            return
+        dialog = HazardLibraryTemplateDialog(self, template=template)
+        exec_maximized(dialog)
+        self.refresh()
+
     def _selected_template_id(self) -> int | None:
         selected = self.table.selectionModel().selectedRows()
         if not selected:

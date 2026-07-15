@@ -52,3 +52,28 @@ class HazardLibraryTemplateLegalLinkRepository:
             )
             current = session.scalar(stmt)
             return int(current or 0) + 1
+
+    def list_active_template_ids_for_requirements(
+        self,
+        requirement_ids: list[int],
+    ) -> list[int]:
+        if not requirement_ids:
+            return []
+        from moduly.rizeni_rizik.modely.hazard_library_template import HazardLibraryTemplate
+
+        with get_session() as session:
+            stmt = (
+                select(HazardLibraryTemplate.id)
+                .join(
+                    HazardLibraryTemplateLegalLink,
+                    HazardLibraryTemplateLegalLink.template_id == HazardLibraryTemplate.id,
+                )
+                .where(
+                    HazardLibraryTemplateLegalLink.legal_requirement_id.in_(requirement_ids),
+                    HazardLibraryTemplateLegalLink.active == True,  # noqa: E712
+                    HazardLibraryTemplate.active == True,  # noqa: E712
+                )
+                .distinct()
+                .order_by(HazardLibraryTemplate.id)
+            )
+            return [int(template_id) for template_id in session.scalars(stmt)]

@@ -227,6 +227,12 @@ class MainWindow(QMainWindow):
             self.stack.setCurrentIndex(self._pages[key])
             self.statusBar().showMessage(f"Otevřen modul: {key}")
 
+    def open_hazard_library_template(self, template_id: int) -> None:
+        self._show("rizeni_rizik")
+        page = self._page_widgets.get("rizeni_rizik")
+        if page is not None and hasattr(page, "open_library_template_editor"):
+            page.open_library_template_editor(template_id)
+
     def _open_new_task(self):
         self._show("ukoly")
         page = self._page_widgets.get("ukoly")

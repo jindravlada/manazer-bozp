@@ -150,6 +150,10 @@ class RizeniRizikPage(QWidget):
         self.tabs.setCurrentIndex(self.library_tab_index)
         self.library_page.open_template(template_id)
 
+    def open_library_template_editor(self, template_id: int) -> None:
+        self.tabs.setCurrentIndex(self.library_tab_index)
+        self.library_page.open_template_editor(template_id)
+
     def refresh(self) -> None:
         self.identifications_tab.refresh()
         self.library_page.refresh()

@@ -4,15 +4,25 @@ from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 from moduly.pravni_pozadavky.sluzby.legal_requirement_usage_service import (
     legal_requirement_usage_service,
 )
+from moduly.pravni_pozadavky.ui.legal_requirement_hazard_catalog_sources_widget import (
+    LegalRequirementHazardCatalogSourcesWidget,
+)
 
 _EMPTY_USAGE_TEXT = "žádné"
 _UNSAVED_USAGE_TEXT = "Použití bude dostupné až po uložení procesu."
 
 
 class LegalRequirementAutomaticUsageWidget(QWidget):
-    def __init__(self, requirement_id: int | None = None, parent=None):
+    def __init__(
+        self,
+        requirement_id: int | None = None,
+        *,
+        is_process: bool = False,
+        parent=None,
+    ):
         super().__init__(parent)
         self.requirement_id = requirement_id
+        self.is_process = is_process
 
         self._layout = QVBoxLayout(self)
         self._layout.setContentsMargins(0, 0, 0, 0)
@@ -23,18 +33,32 @@ class LegalRequirementAutomaticUsageWidget(QWidget):
         heading.setFont(heading_font)
         self._layout.addWidget(heading)
 
+        self._process_hazard_sources_widget: LegalRequirementHazardCatalogSourcesWidget | None = None
+        if self.is_process:
+            self._process_hazard_sources_widget = LegalRequirementHazardCatalogSourcesWidget(
+                requirement_id=requirement_id,
+                usage_mode="process",
+            )
+            self._layout.addWidget(self._process_hazard_sources_widget)
+
         self.refresh()
 
     def set_requirement_id(self, requirement_id: int | None) -> None:
         self.requirement_id = requirement_id
+        if self._process_hazard_sources_widget is not None:
+            self._process_hazard_sources_widget.set_requirement_id(requirement_id)
         self.refresh()
 
     def refresh(self) -> None:
-        while self._layout.count() > 1:
-            item = self._layout.takeAt(1)
+        preserved_count = 2 if self._process_hazard_sources_widget is not None else 1
+        while self._layout.count() > preserved_count:
+            item = self._layout.takeAt(preserved_count)
             widget = item.widget()
             if widget is not None:
                 widget.deleteLater()
+
+        if self._process_hazard_sources_widget is not None:
+            self._process_hazard_sources_widget.refresh()
 
         if self.requirement_id is None:
             self._layout.addWidget(QLabel(_UNSAVED_USAGE_TEXT))

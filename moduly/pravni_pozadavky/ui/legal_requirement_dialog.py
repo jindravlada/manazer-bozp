@@ -100,6 +100,9 @@ class LegalRequirementDialog(QDialog):
         self.tabs.addTab(wrap_in_scroll_area(self.sanctions_tab), "Sankce")
         self.links_widget = LegalRequirementLinksAndUsageWidget(
             requirement.id if requirement is not None else None,
+            parent_requirement_id=(
+                requirement.parent_requirement_id if requirement is not None else parent_requirement_id
+            ),
         )
         self.tabs.addTab(wrap_in_scroll_area(self.links_widget), "Vazby a použití")
         self.process_status_widget = LegalRequirementProcessStatusWidget(
