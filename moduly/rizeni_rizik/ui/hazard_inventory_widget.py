@@ -444,6 +444,8 @@ class HazardInventoryWidget(QWidget):
     def _maybe_offer_master_update(self, item) -> None:
         if item is None:
             return
+        if item.source_template_id is None or item.source_template_version is None:
+            return
         if not hazard_catalog_instance_update_service.can_offer_update(
             hazard_identification_id=self._identification_id,
             identification_status=self._identification_status,
@@ -453,7 +455,10 @@ class HazardInventoryWidget(QWidget):
         if item.id in self._dismissed_master_update_offers:
             return
 
-        offer = hazard_catalog_instance_update_service.get_update_offer(item.id)
+        try:
+            offer = hazard_catalog_instance_update_service.get_update_offer(item.id)
+        except HazardCatalogInstanceUpdateError:
+            return
         if offer is None:
             return
 
@@ -644,6 +649,7 @@ class HazardInventoryWidget(QWidget):
             self._identification_id is not None
             and item is not None
             and item.source_template_id is not None
+            and item.source_template_version is not None
         )
         self.compare_with_master_btn.setEnabled(enabled)
 
