@@ -139,9 +139,39 @@ def initialize_database() -> None:
 
 
 def _table_columns(table_name: str) -> set[str]:
+    if not _table_exists(table_name):
+        return set()
     with _db_engine().connect() as connection:
         columns = connection.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
         return {column[1] for column in columns}
+
+
+def _table_exists(table_name: str) -> bool:
+    with _db_engine().connect() as connection:
+        row = connection.execute(
+            text(
+                "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = :table_name"
+            ),
+            {"table_name": table_name},
+        ).fetchone()
+        return row is not None
+
+
+def _is_hazard_library_master_catalog_migration_complete() -> bool:
+    if _table_exists("hazard_library_template_items"):
+        return False
+
+    template_columns = _table_columns("hazard_library_templates")
+    if not template_columns or "category" not in template_columns:
+        return False
+
+    event_columns = _table_columns("hazard_library_template_events")
+    if not event_columns or "template_id" not in event_columns:
+        return False
+    if "template_item_id" in event_columns:
+        return False
+
+    return True
 
 
 def _add_column(table_name: str, column_sql: str) -> None:
@@ -1109,6 +1139,9 @@ def _ensure_hazard_library_template_operations_table() -> None:
 
 def _migrate_hazard_library_template_master_catalog() -> None:
     """R17d: položka vzoru → přímo Master zdroj rizika; události navázány na template_id."""
+    if _is_hazard_library_master_catalog_migration_complete():
+        return
+
     from moduly.rizeni_rizik.constants import HAZARD_INVENTORY_CATEGORY_EQUIPMENT
 
     template_columns = _table_columns("hazard_library_templates")
@@ -1121,10 +1154,10 @@ def _migrate_hazard_library_template_master_catalog() -> None:
             f"category VARCHAR(32) NOT NULL DEFAULT '{HAZARD_INVENTORY_CATEGORY_EQUIPMENT}'",
         )
 
-    item_columns = _table_columns("hazard_library_template_items")
+    items_table_exists = _table_exists("hazard_library_template_items")
     item_to_template: dict[int, int] = {}
 
-    if item_columns:
+    if items_table_exists:
         with _db_engine().connect() as connection:
             templates = connection.execute(
                 text("SELECT id FROM hazard_library_templates ORDER BY id")
@@ -1236,15 +1269,21 @@ def _migrate_hazard_library_template_master_catalog() -> None:
 
             connection.commit()
 
+    _migrate_hazard_library_template_events_to_template_id(
+        item_to_template,
+        items_table_exists=items_table_exists,
+    )
+
+    if items_table_exists:
         with _db_engine().connect() as connection:
             connection.execute(text("DROP TABLE IF EXISTS hazard_library_template_items"))
             connection.commit()
 
-    _migrate_hazard_library_template_events_to_template_id(item_to_template)
-
 
 def _migrate_hazard_library_template_events_to_template_id(
     item_to_template: dict[int, int],
+    *,
+    items_table_exists: bool,
 ) -> None:
     event_columns = _table_columns("hazard_library_template_events")
     if not event_columns:
@@ -1271,11 +1310,12 @@ def _migrate_hazard_library_template_events_to_template_id(
                         UPDATE hazard_library_template_events
                         SET template_id = :template_id
                         WHERE template_item_id = :item_id
+                          AND template_id IS NULL
                         """
                     ),
                     {"template_id": template_id, "item_id": item_id},
                 )
-        else:
+        elif items_table_exists:
             connection.execute(
                 text(
                     """
@@ -1290,6 +1330,19 @@ def _migrate_hazard_library_template_events_to_template_id(
                     """
                 )
             )
+
+        unresolved = connection.execute(
+            text(
+                """
+                SELECT COUNT(*)
+                FROM hazard_library_template_events
+                WHERE template_id IS NULL
+                """
+            )
+        ).scalar()
+        if unresolved:
+            connection.commit()
+            return
 
         connection.execute(
             text(
