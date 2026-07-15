@@ -15,6 +15,9 @@ from moduly.rizeni_rizik.modely.hazard_risk_assessment import HazardRiskAssessme
 from moduly.rizeni_rizik.repository.hazard_risk_assessment_repository import (
     HazardRiskAssessmentRepository,
 )
+from moduly.rizeni_rizik.sluzby.hazard_catalog_instance_modification import (
+    mark_assessment_modified_if_catalog_instance,
+)
 from moduly.rizeni_rizik.sluzby.hazard_event_service import (
     HazardEventRow,
     hazard_event_service,
@@ -159,6 +162,7 @@ class HazardRiskAssessmentService:
             consequence=normalized_consequence,
             severity=normalized_severity,
         )
+        mark_assessment_modified_if_catalog_instance(assessment)
         return self.repository.add(assessment)
 
     def update_assessment(
@@ -208,6 +212,7 @@ class HazardRiskAssessmentService:
             severity=normalized_severity,
         )
         assessment.updated_at = datetime.now()
+        mark_assessment_modified_if_catalog_instance(assessment)
         return self.repository.update(assessment)
 
     def activate_assessment(self, assessment_id: int) -> bool:
@@ -225,6 +230,7 @@ class HazardRiskAssessmentService:
         )
         assessment.active = True
         assessment.updated_at = datetime.now()
+        mark_assessment_modified_if_catalog_instance(assessment)
         self.repository.update(assessment)
         return True
 
@@ -234,6 +240,7 @@ class HazardRiskAssessmentService:
             return False
         assessment.active = False
         assessment.updated_at = datetime.now()
+        mark_assessment_modified_if_catalog_instance(assessment)
         self.repository.update(assessment)
         return True
 

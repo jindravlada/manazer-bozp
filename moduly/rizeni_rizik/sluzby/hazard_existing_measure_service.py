@@ -4,6 +4,9 @@ from moduly.rizeni_rizik.modely.hazard_existing_measure import HazardExistingMea
 from moduly.rizeni_rizik.repository.hazard_existing_measure_repository import (
     HazardExistingMeasureRepository,
 )
+from moduly.rizeni_rizik.sluzby.hazard_catalog_instance_modification import (
+    mark_existing_measure_modified_if_catalog_instance,
+)
 from moduly.rizeni_rizik.sluzby.hazard_event_service import hazard_event_service
 from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import (
     hazard_inventory_item_service,
@@ -80,6 +83,7 @@ class HazardExistingMeasureService:
             active=active,
             sort_order=self.repository.next_sort_order(hazard_risk_assessment_id),
         )
+        mark_existing_measure_modified_if_catalog_instance(measure)
         return self.repository.add(measure)
 
     def update_measure(
@@ -113,6 +117,7 @@ class HazardExistingMeasureService:
         measure.note = note.strip()
         measure.active = active
         measure.updated_at = datetime.now()
+        mark_existing_measure_modified_if_catalog_instance(measure)
         return self.repository.update(measure)
 
     def activate_measure(self, measure_id: int) -> bool:
@@ -128,6 +133,7 @@ class HazardExistingMeasureService:
         )
         measure.active = True
         measure.updated_at = datetime.now()
+        mark_existing_measure_modified_if_catalog_instance(measure)
         self.repository.update(measure)
         return True
 
@@ -137,6 +143,7 @@ class HazardExistingMeasureService:
             return False
         measure.active = False
         measure.updated_at = datetime.now()
+        mark_existing_measure_modified_if_catalog_instance(measure)
         self.repository.update(measure)
         return True
 

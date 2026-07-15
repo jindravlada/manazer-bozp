@@ -9,6 +9,9 @@ from moduly.rizeni_rizik.constants import (
 from moduly.rizeni_rizik.modely.hazard_event import HazardEvent
 from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem
 from moduly.rizeni_rizik.repository.hazard_event_repository import HazardEventRepository
+from moduly.rizeni_rizik.sluzby.hazard_catalog_instance_modification import (
+    mark_event_modified_if_catalog_instance,
+)
 from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import (
     hazard_inventory_item_service,
 )
@@ -121,6 +124,7 @@ class HazardEventService:
             active=active,
             sort_order=self.repository.next_sort_order(inventory_item_id),
         )
+        mark_event_modified_if_catalog_instance(event)
         return self.repository.add(event)
 
     def update_event(
@@ -156,6 +160,7 @@ class HazardEventService:
         event.note = note.strip()
         event.active = active
         event.updated_at = datetime.now()
+        mark_event_modified_if_catalog_instance(event)
         return self.repository.update(event)
 
     def activate_event(self, event_id: int) -> bool:
@@ -171,6 +176,7 @@ class HazardEventService:
         )
         event.active = True
         event.updated_at = datetime.now()
+        mark_event_modified_if_catalog_instance(event)
         self.repository.update(event)
         return True
 
@@ -180,6 +186,7 @@ class HazardEventService:
             return False
         event.active = False
         event.updated_at = datetime.now()
+        mark_event_modified_if_catalog_instance(event)
         self.repository.update(event)
         return True
 

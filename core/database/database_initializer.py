@@ -820,6 +820,9 @@ def _ensure_hazard_events_table() -> None:
         from moduly.rizeni_rizik.modely.hazard_event import HazardEvent
 
         HazardEvent.__table__.create(bind=_db_engine(), checkfirst=True)
+        return
+    if "modified" not in columns:
+        _add_column("hazard_events", "modified BOOLEAN DEFAULT 0")
 
 
 def _migrate_hazard_events_drop_identified_hazards() -> None:
@@ -939,6 +942,8 @@ def _ensure_hazard_risk_assessments_table() -> None:
         _add_column("hazard_risk_assessments", "completed_at DATETIME")
     if "exposed_group_id" not in columns:
         _add_column("hazard_risk_assessments", "exposed_group_id INTEGER")
+    if "modified" not in columns:
+        _add_column("hazard_risk_assessments", "modified BOOLEAN DEFAULT 0")
     _migrate_hazard_risk_assessment_exposed_group_ids()
 
 
@@ -1039,6 +1044,9 @@ def _ensure_hazard_existing_measures_table() -> None:
         from moduly.rizeni_rizik.modely.hazard_existing_measure import HazardExistingMeasure
 
         HazardExistingMeasure.__table__.create(bind=_db_engine(), checkfirst=True)
+        return
+    if "modified" not in columns:
+        _add_column("hazard_existing_measures", "modified BOOLEAN DEFAULT 0")
 
 
 def _ensure_hazard_required_measures_table() -> None:
@@ -1047,6 +1055,9 @@ def _ensure_hazard_required_measures_table() -> None:
         from moduly.rizeni_rizik.modely.hazard_required_measure import HazardRequiredMeasure
 
         HazardRequiredMeasure.__table__.create(bind=_db_engine(), checkfirst=True)
+        return
+    if "modified" not in columns:
+        _add_column("hazard_required_measures", "modified BOOLEAN DEFAULT 0")
 
 
 def _ensure_hazard_identification_photos_table() -> None:

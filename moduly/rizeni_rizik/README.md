@@ -324,6 +324,15 @@ Evidence původu instance z katalogu:
 - verze je snímek v okamžiku převzetí (bez automatické aktualizace a porovnávání)
 - ručně založené zdroje nemají původ; v dialogu položky se původ zobrazí informativně
 
+## Fáze R18c
+
+Lokální úpravy instancí převzatých z katalogu:
+
+- pole `modified` u událostí, posouzení a opatření (stávající i potřebná)
+- po převzetí z katalogu je `modified = False`; při uživatelské změně nebo novém záznamu na instanci s původem z katalogu se nastaví `modified = True`
+- ručně založené zdroje nemění příznak `modified`
+- Master katalog zůstává beze změny
+
 ## Fáze R12
 
 Odstranění entity Nebezpečí (`IdentifiedHazard`):

@@ -235,6 +235,7 @@ class HazardLibraryTemplateApplyService:
                     description=event.description or "",
                     note=event.note or "",
                     active=event.active if include_inactive else True,
+                    modified=False,
                     sort_order=event.sort_order,
                 )
                 session.add(hazard_event)
@@ -253,6 +254,7 @@ class HazardLibraryTemplateApplyService:
                         assessment_status=DEFAULT_RISK_ASSESSMENT_STATUS,
                         completed_at=None,
                         active=assessment.active if include_inactive else True,
+                        modified=False,
                     )
                     session.add(hazard_assessment)
                     session.flush()
@@ -266,6 +268,7 @@ class HazardLibraryTemplateApplyService:
                                 description=measure.description,
                                 note=measure.note or "",
                                 active=measure.active if include_inactive else True,
+                                modified=False,
                                 sort_order=measure.sort_order,
                             )
                         )
@@ -277,6 +280,7 @@ class HazardLibraryTemplateApplyService:
                                 description=measure.description,
                                 note=measure.note or "",
                                 active=measure.active if include_inactive else True,
+                                modified=False,
                                 sort_order=measure.sort_order,
                             )
                         )

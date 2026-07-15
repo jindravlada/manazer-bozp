@@ -20,6 +20,7 @@ class HazardRiskAssessment(Base):
     conclusion: Mapped[str] = mapped_column(Text, default="")
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
+    modified: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
