@@ -5,6 +5,8 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 
 from core.ai_oponentni.constants import (
+    AI_CATALOG_PEER_REVIEW_DEFAULT_OBJECTIVES,
+    AI_CATALOG_PEER_REVIEW_OBJECTIVES,
     AI_PEER_REVIEW_DEFAULT_OBJECTIVES,
     AI_PEER_REVIEW_DEFAULT_ROLE,
     AI_PEER_REVIEW_FOCUS_AREA_LABELS,
@@ -29,6 +31,16 @@ def normalize_objectives(objectives: Iterable[str] | None) -> list[str]:
     allowed = set(AI_PEER_REVIEW_OBJECTIVES)
     result = [key for key in AI_PEER_REVIEW_OBJECTIVES if key in objectives and key in allowed]
     return result if result else list(AI_PEER_REVIEW_DEFAULT_OBJECTIVES)
+
+
+def normalize_catalog_objectives(objectives: Iterable[str] | None) -> list[str]:
+    if objectives is None:
+        return list(AI_CATALOG_PEER_REVIEW_DEFAULT_OBJECTIVES)
+    allowed = set(AI_CATALOG_PEER_REVIEW_OBJECTIVES)
+    result = [
+        key for key in AI_CATALOG_PEER_REVIEW_OBJECTIVES if key in objectives and key in allowed
+    ]
+    return result if result else list(AI_CATALOG_PEER_REVIEW_DEFAULT_OBJECTIVES)
 
 
 def normalize_focus_areas(focus_areas: Iterable[str] | None) -> list[str]:
@@ -148,6 +160,124 @@ def build_ai_peer_review_prompt(
         "Chybí některá běžná opatření?",
         "Chybí některé důležité právní požadavky?",
         "Na co se při podobných pracovištích nejčastěji zapomíná?",
+    ]
+    for question in questions:
+        lines.append(f"- {question}")
+    lines.append("")
+
+    lines.append("FORMÁT ODPOVĚDI")
+    lines.append("-" * 40)
+    lines.append(
+        "Formát odpovědi (použij přesně tuto strukturu u každého návrhu):\n"
+        "\n"
+        "Oblast: <název oblasti>\n"
+        "Návrh: <navržená položka>\n"
+        "Rodič: <exportní ID rodiče, nebo —>\n"
+        "Zdůvodnění: <stručné odborné zdůvodnění>\n"
+        "\n"
+        "Odděl jednotlivé návrhy prázdným řádkem."
+    )
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def build_catalog_source_ai_peer_review_prompt(
+    *,
+    role: str | None = None,
+    objectives: Sequence[str] | None = None,
+    focus_areas: Sequence[str] | None = None,
+    general_context: str = "",
+) -> str:
+    """Sestaví pokyn pro oponenturu katalogového zdroje rizika."""
+    role_id = normalize_opponent_role(role)
+    role_label = AI_PEER_REVIEW_ROLE_LABELS[role_id]
+    objective_ids = normalize_catalog_objectives(objectives)
+    focus_ids = normalize_focus_areas(focus_areas)
+    context = " ".join((general_context or "").split()).strip()
+
+    lines: list[str] = []
+    lines.append("ROLE ODBORNÉHO OPONENTA")
+    lines.append("-" * 40)
+    lines.append(f"Jsi: {role_label}.")
+    lines.append(
+        "Proveď odborné oponentní posouzení poskytnutých podkladů katalogového "
+        "zdroje rizika přesně z této odborné pozice."
+    )
+    lines.append("")
+
+    lines.append("KONTEXT ZDROJE RIZIKA")
+    lines.append("-" * 40)
+    if context:
+        lines.append(f"Obecný kontext zdroje rizika: {context}")
+    else:
+        lines.append(
+            "Obecný kontext zdroje rizika nebyl samostatně zadán – "
+            "vycházej pouze z exportovaných podkladů."
+        )
+    lines.append("")
+
+    lines.append("PRÁVNÍ RÁMEC")
+    lines.append("-" * 40)
+    lines.append(
+        "Posuzuj podle aktuálně platných právních předpisů České republiky "
+        "v oblasti BOZP."
+    )
+    lines.append("")
+
+    lines.append("CÍL OPONENTURY")
+    lines.append("-" * 40)
+    lines.append("Zaměř se zejména na:")
+    for objective_id in objective_ids:
+        lines.append(f"- {AI_PEER_REVIEW_OBJECTIVE_LABELS[objective_id]}")
+    if focus_ids:
+        lines.append("")
+        lines.append("Doplňující zaměření:")
+        for focus_id in focus_ids:
+            lines.append(f"- {AI_PEER_REVIEW_FOCUS_AREA_LABELS[focus_id]}")
+    lines.append("")
+
+    lines.append("STRUKTURA PODKLADŮ")
+    lines.append("-" * 40)
+    lines.append(
+        "Podklady jsou hierarchické:\n"
+        "\n"
+        "Zdroj rizika → Nežádoucí události → Posouzení\n"
+        "→ Existující opatření → Potřebná opatření\n"
+        "\n"
+        "Každý objekt má stabilní exportní ID "
+        "(SOURCE-…, EVENT-…, ASSESSMENT-…, EXISTING-MEASURE-…, REQUIRED-MEASURE-…).\n"
+        "Při návrhu doplnění uveď rodiče pomocí tohoto ID (pole Rodič)."
+    )
+    lines.append("")
+
+    lines.append("PRAVIDLA")
+    lines.append("-" * 40)
+    rules = [
+        "Nehodnoť závažnost rizik.",
+        "Neměň existující položky.",
+        "Neopakuj již existující položky z exportu.",
+        "Nenavrhuj zjevně nereálné scénáře.",
+        "Nevymýšlej technologie, zařízení ani činnosti, které nejsou z exportu "
+        "ani z obecného kontextu zdroje patrné.",
+        "Respektuj skutečný charakter katalogového zdroje rizika.",
+        "Ke každému návrhu napiš stručné odborné zdůvodnění.",
+        "Právní předpisy uváděj pouze jako návrh k odbornému ověření.",
+        "Nevydávej návrhy za úplné ani definitivní.",
+        "Odpověď strukturoj podle schema_odpovedi.json "
+        "(nebo použij textový formát níže).",
+    ]
+    for rule in rules:
+        lines.append(f"- {rule}")
+    lines.append("")
+
+    lines.append("OTÁZKY K POSOUZENÍ")
+    lines.append("-" * 40)
+    questions = [
+        "Jsou v katalogovém zdroji popsány všechny významné nežádoucí události?",
+        "Chybí některé běžné nežádoucí události?",
+        "Chybí některé skupiny ohrožených osob?",
+        "Chybí některá běžná opatření?",
+        "Chybí některé důležité právní požadavky?",
+        "Na co se u podobných zdrojů rizika nejčastěji zapomíná?",
     ]
     for question in questions:
         lines.append(f"- {question}")

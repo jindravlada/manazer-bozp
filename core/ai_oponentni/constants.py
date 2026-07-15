@@ -111,6 +111,27 @@ AI_PEER_REVIEW_ZIP_FILES = (
 
 AI_PEER_REVIEW_SCHEMA_VERSION = "1.1"
 AI_PEER_REVIEW_EXPORT_TYPE = "hazard_identification_ai_peer_review"
+AI_CATALOG_PEER_REVIEW_EXPORT_TYPE = "hazard_catalog_source_ai_peer_review"
+
+# Cíle oponentury katalogu zdrojů rizik (bez „chybějících zdrojů analýzy“)
+AI_CATALOG_PEER_REVIEW_OBJECTIVES = (
+    AI_PEER_REVIEW_OBJECTIVE_MISSING_EVENTS,
+    AI_PEER_REVIEW_OBJECTIVE_MISSING_GROUPS,
+    AI_PEER_REVIEW_OBJECTIVE_EXISTING_MEASURES,
+    AI_PEER_REVIEW_OBJECTIVE_REQUIRED_MEASURES,
+    AI_PEER_REVIEW_OBJECTIVE_LEGAL_REQUIREMENTS,
+    AI_PEER_REVIEW_OBJECTIVE_COMPLETENESS,
+)
+
+AI_CATALOG_PEER_REVIEW_DEFAULT_OBJECTIVES = AI_CATALOG_PEER_REVIEW_OBJECTIVES
+
+AI_CATALOG_PEER_REVIEW_CONTEXT_LABEL = "Obecný kontext zdroje rizika (volitelné):"
+AI_CATALOG_PEER_REVIEW_CONTEXT_PLACEHOLDER = (
+    "Např. Typické použití zdroje v provozu, specifika technologie, "
+    "provozní režim nebo další odborný kontext pro posouzení katalogového zdroje."
+)
+
+AI_CATALOG_PEER_REVIEW_SCOPE_FULL_LABEL = "Celý zdroj rizika"
 
 AI_PEER_REVIEW_FORMAT_JSON_1_1 = "JSON 1.1"
 AI_PEER_REVIEW_FORMAT_TEXT = "Textový formát"

@@ -47,11 +47,8 @@ from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_IMPORT_BUTTON,
     AI_PEER_REVIEW_INTRO_TEXT,
     AI_PEER_REVIEW_OBJECTIVE_LABELS,
-    AI_PEER_REVIEW_OBJECTIVES,
     AI_PEER_REVIEW_ROLE_LABELS,
     AI_PEER_REVIEW_ROLES,
-    AI_PEER_REVIEW_SCOPE_FULL_LABEL,
-    AI_PEER_REVIEW_SCOPE_SELECTED_LABEL,
     AI_PEER_REVIEW_TABLE_HEADERS,
 )
 from core.ai_oponentni.sluzby.ai_peer_review_service import (
@@ -60,6 +57,7 @@ from core.ai_oponentni.sluzby.ai_peer_review_service import (
 )
 from core.ai_oponentni.types import (
     AiExportSourceChoice,
+    AiPeerReviewExportDialogConfig,
     AiPeerReviewExportOptions,
     AiPeerReviewProvider,
 )
@@ -74,8 +72,10 @@ class AiPeerReviewExportOptionsDialog(QDialog):
         parent=None,
         *,
         source_choices: list[AiExportSourceChoice] | None = None,
+        dialog_config: AiPeerReviewExportDialogConfig | None = None,
     ):
         super().__init__(parent)
+        self._config = dialog_config or AiPeerReviewExportDialogConfig()
         self.setWindowTitle(AI_PEER_REVIEW_DIALOG_TITLE)
         self.resize(620, 680)
 
@@ -97,9 +97,14 @@ class AiPeerReviewExportOptionsDialog(QDialog):
         objectives_box = QGroupBox("Cíl oponentury")
         objectives_layout = QVBoxLayout(objectives_box)
         self._objective_checks: dict[str, QCheckBox] = {}
-        for objective_id in AI_PEER_REVIEW_OBJECTIVES:
-            checkbox = QCheckBox(AI_PEER_REVIEW_OBJECTIVE_LABELS[objective_id])
-            checkbox.setChecked(objective_id in AI_PEER_REVIEW_DEFAULT_OBJECTIVES)
+        for objective_id in self._config.objectives:
+            checkbox = QCheckBox(
+                self._config.objective_labels.get(
+                    objective_id,
+                    AI_PEER_REVIEW_OBJECTIVE_LABELS.get(objective_id, objective_id),
+                )
+            )
+            checkbox.setChecked(objective_id in self._config.default_objectives)
             self._objective_checks[objective_id] = checkbox
             objectives_layout.addWidget(checkbox)
         layout.addWidget(objectives_box)
@@ -114,27 +119,21 @@ class AiPeerReviewExportOptionsDialog(QDialog):
             focus_layout.addWidget(checkbox)
         layout.addWidget(focus_box)
 
-        layout.addWidget(QLabel("Charakteristika pracoviště (volitelné):"))
+        layout.addWidget(QLabel(self._config.context_field_label))
         self.workplace_characteristics = QPlainTextEdit()
-        self.workplace_characteristics.setPlaceholderText(
-            "Např. Dílna oprav kolejových vozidel. Probíhá údržba, svařování, "
-            "obrábění, manipulace portálovým jeřábem a posun kolejových vozidel."
-        )
+        self.workplace_characteristics.setPlaceholderText(self._config.context_placeholder)
         self.workplace_characteristics.setMinimumHeight(90)
         layout.addWidget(self.workplace_characteristics)
 
-        layout.addWidget(QLabel("Rozsah exportu:"))
-
-        self.scope_full = QRadioButton(AI_PEER_REVIEW_SCOPE_FULL_LABEL)
-        self.scope_selected = QRadioButton(AI_PEER_REVIEW_SCOPE_SELECTED_LABEL)
+        self.scope_full = QRadioButton(self._config.scope_full_label)
+        self.scope_selected = QRadioButton(self._config.scope_selected_label)
         self.scope_full.setChecked(True)
         self._scope_group = QButtonGroup(self)
         self._scope_group.addButton(self.scope_full)
         self._scope_group.addButton(self.scope_selected)
-        layout.addWidget(self.scope_full)
-        layout.addWidget(self.scope_selected)
 
-        layout.addWidget(QLabel("Aktivní zdroje analýzy:"))
+        self.scope_section_label = QLabel("Rozsah exportu:")
+        self.source_list_label = QLabel(self._config.source_list_label)
         self.source_list = QListWidget()
         self.source_list.setSelectionMode(QListWidget.SelectionMode.MultiSelection)
         for choice in source_choices or []:
@@ -144,10 +143,27 @@ class AiPeerReviewExportOptionsDialog(QDialog):
             item = QListWidgetItem(label)
             item.setData(Qt.ItemDataRole.UserRole, choice.id)
             self.source_list.addItem(item)
-        layout.addWidget(self.source_list)
 
-        self.scope_full.toggled.connect(self._update_source_list_enabled)
-        self._update_source_list_enabled()
+        if self._config.show_export_scope:
+            layout.addWidget(self.scope_section_label)
+            layout.addWidget(self.scope_full)
+            layout.addWidget(self.scope_selected)
+        else:
+            self.scope_full.setChecked(True)
+            self.scope_full.hide()
+            self.scope_selected.hide()
+            self.scope_section_label.hide()
+
+        if self._config.show_source_list:
+            layout.addWidget(self.source_list_label)
+            layout.addWidget(self.source_list)
+        else:
+            self.source_list_label.hide()
+            self.source_list.hide()
+
+        if self._config.show_export_scope:
+            self.scope_full.toggled.connect(self._update_source_list_enabled)
+            self._update_source_list_enabled()
 
         scroll.setWidget(content)
         root.addWidget(scroll, 1)
@@ -161,11 +177,18 @@ class AiPeerReviewExportOptionsDialog(QDialog):
         root.addWidget(buttons)
 
     def _update_source_list_enabled(self) -> None:
+        if not self._config.show_source_list:
+            return
         enabled = self.scope_selected.isChecked()
         self.source_list.setEnabled(enabled)
 
     def _accept_if_valid(self) -> None:
-        if self.scope_selected.isChecked() and not self.source_list.selectedItems():
+        if (
+            self._config.show_export_scope
+            and self._config.show_source_list
+            and self.scope_selected.isChecked()
+            and not self.source_list.selectedItems()
+        ):
             QMessageBox.warning(
                 self,
                 AI_PEER_REVIEW_DIALOG_TITLE,
@@ -216,6 +239,26 @@ class AiPeerReviewExportOptionsDialog(QDialog):
             selected_source_ids=None,
             **common,
         )
+
+
+def catalog_peer_review_export_dialog_config() -> AiPeerReviewExportDialogConfig:
+    from core.ai_oponentni.constants import (
+        AI_CATALOG_PEER_REVIEW_CONTEXT_LABEL,
+        AI_CATALOG_PEER_REVIEW_CONTEXT_PLACEHOLDER,
+        AI_CATALOG_PEER_REVIEW_DEFAULT_OBJECTIVES,
+        AI_CATALOG_PEER_REVIEW_OBJECTIVES,
+        AI_CATALOG_PEER_REVIEW_SCOPE_FULL_LABEL,
+    )
+
+    return AiPeerReviewExportDialogConfig(
+        objectives=AI_CATALOG_PEER_REVIEW_OBJECTIVES,
+        default_objectives=AI_CATALOG_PEER_REVIEW_DEFAULT_OBJECTIVES,
+        context_field_label=AI_CATALOG_PEER_REVIEW_CONTEXT_LABEL,
+        context_placeholder=AI_CATALOG_PEER_REVIEW_CONTEXT_PLACEHOLDER,
+        show_export_scope=False,
+        show_source_list=False,
+        scope_full_label=AI_CATALOG_PEER_REVIEW_SCOPE_FULL_LABEL,
+    )
 
 
 class AiPeerReviewResponseDialog(QDialog):
@@ -326,11 +369,17 @@ class AiPeerReviewWidget(QWidget):
         *,
         provider: AiPeerReviewProvider,
         on_proposals_applied=None,
+        allow_new_exports: bool = True,
+        export_dialog_config: AiPeerReviewExportDialogConfig | None = None,
+        resolve_exposed_groups: bool = True,
     ):
         super().__init__(parent)
         self._provider = provider
         self._source_id: int | None = None
         self._on_proposals_applied = on_proposals_applied
+        self._allow_new_exports = allow_new_exports
+        self._export_dialog_config = export_dialog_config
+        self._resolve_exposed_groups = resolve_exposed_groups
 
         layout = QVBoxLayout(self)
 
@@ -364,9 +413,13 @@ class AiPeerReviewWidget(QWidget):
 
     def set_source(self, source_id: int | None) -> None:
         self._source_id = source_id
-        enabled = self._provider.can_export(source_id)
-        self.export_btn.setEnabled(enabled)
-        self.import_btn.setEnabled(enabled)
+        can_interact = self._provider.can_export(source_id)
+        if self._allow_new_exports:
+            self.export_btn.setEnabled(can_interact)
+            self.import_btn.setEnabled(can_interact)
+        else:
+            self.export_btn.setEnabled(False)
+            self.import_btn.setEnabled(False)
         self.refresh()
 
     def refresh(self) -> None:
@@ -390,6 +443,7 @@ class AiPeerReviewWidget(QWidget):
         options_dialog = AiPeerReviewExportOptionsDialog(
             self,
             source_choices=source_choices,
+            dialog_config=self._export_dialog_config,
         )
         if not options_dialog.exec():
             return False
@@ -535,12 +589,13 @@ class AiPeerReviewWidget(QWidget):
             return False
 
         accepted, rejected = import_dialog.get_accepted_and_rejected()
-        from moduly.rizeni_rizik.ui.exposed_group_proposal_resolution_dialog import (
-            resolve_exposed_group_proposals,
-        )
+        if self._resolve_exposed_groups:
+            from moduly.rizeni_rizik.ui.exposed_group_proposal_resolution_dialog import (
+                resolve_exposed_group_proposals,
+            )
 
-        accepted, resolution_rejected = resolve_exposed_group_proposals(self, accepted)
-        rejected.extend(resolution_rejected)
+            accepted, resolution_rejected = resolve_exposed_group_proposals(self, accepted)
+            rejected.extend(resolution_rejected)
         try:
             ai_peer_review_service.finalize_import(
                 provider=self._provider,

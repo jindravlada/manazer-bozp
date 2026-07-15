@@ -5,7 +5,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Protocol
 
-from core.ai_oponentni.constants import AI_PEER_REVIEW_DEFAULT_ROLE
+from core.ai_oponentni.constants import (
+    AI_PEER_REVIEW_DEFAULT_OBJECTIVES,
+    AI_PEER_REVIEW_DEFAULT_ROLE,
+    AI_PEER_REVIEW_OBJECTIVE_LABELS,
+    AI_PEER_REVIEW_OBJECTIVES,
+    AI_PEER_REVIEW_SCOPE_FULL_LABEL,
+    AI_PEER_REVIEW_SCOPE_SELECTED_LABEL,
+)
 
 
 @dataclass
@@ -108,6 +115,27 @@ class AiPeerReviewExportContent:
 class AiPeerReviewApplyResult:
     applied_count: int = 0
     unassigned_count: int = 0
+
+
+@dataclass
+class AiPeerReviewExportDialogConfig:
+    """Konfigurace exportního dialogu pro konkrétní doménový provider."""
+
+    objectives: tuple[str, ...] = AI_PEER_REVIEW_OBJECTIVES
+    default_objectives: tuple[str, ...] = AI_PEER_REVIEW_DEFAULT_OBJECTIVES
+    objective_labels: dict[str, str] = field(
+        default_factory=lambda: dict(AI_PEER_REVIEW_OBJECTIVE_LABELS)
+    )
+    context_field_label: str = "Charakteristika pracoviště (volitelné):"
+    context_placeholder: str = (
+        "Např. Dílna oprav kolejových vozidel. Probíhá údržba, svařování, "
+        "obrábění, manipulace portálovým jeřábem a posun kolejových vozidel."
+    )
+    show_export_scope: bool = True
+    show_source_list: bool = True
+    scope_full_label: str = AI_PEER_REVIEW_SCOPE_FULL_LABEL
+    scope_selected_label: str = AI_PEER_REVIEW_SCOPE_SELECTED_LABEL
+    source_list_label: str = "Aktivní zdroje analýzy:"
 
 
 @dataclass

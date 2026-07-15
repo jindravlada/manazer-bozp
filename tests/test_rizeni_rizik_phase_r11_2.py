@@ -540,8 +540,8 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         labels = [dialog.tabs.tabText(index) for index in range(dialog.tabs.count())]
         self.assertIn(AI_PEER_REVIEW_TAB_TITLE, labels)
         self.assertTrue(dialog.tabs.isTabEnabled(4))
-        self.assertTrue(dialog.ai_peer_review_widget.export_btn.isEnabled())
-        self.assertTrue(dialog.ai_peer_review_widget.import_btn.isEnabled())
+        self.assertFalse(dialog.ai_peer_review_widget.export_btn.isEnabled())
+        self.assertFalse(dialog.ai_peer_review_widget.import_btn.isEnabled())
 
     def test_widget_lists_history(self) -> None:
         target = self.export_dir / "historie.zip"

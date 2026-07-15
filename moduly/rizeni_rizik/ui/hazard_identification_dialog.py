@@ -54,6 +54,7 @@ class HazardIdentificationDialog(QDialog):
         self.ai_peer_review_widget = AiPeerReviewWidget(
             provider=hazard_identification_peer_review_provider,
             on_proposals_applied=self._on_peer_review_applied,
+            allow_new_exports=False,
         )
         self.tabs.addTab(self.basics_widget, TAB_BASICS)
         self.tabs.addTab(self.photos_widget, TAB_PHOTOS)

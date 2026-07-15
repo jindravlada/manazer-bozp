@@ -391,3 +391,13 @@ Sloučení Analýzy pracoviště a Nežádoucích událostí:
 - tabulka událostí bez sloupce Zdroj analýzy; počty událostí u položek
 - Posouzení rizik beze změny
 
+## Fáze R18f
+
+Oponentura AI v Katalogu zdrojů rizik:
+
+- záložka **Oponentní posouzení AI** v editoru zdroje rizika (po prvním uložení)
+- provider `hazard_catalog_source` s exportem MASTER hierarchie (`SOURCE` → `EVENT` → `ASSESSMENT` → opatření)
+- exportní dialog bez cíle „Hledat chybějící zdroje analýzy“, pole **Obecný kontext zdroje rizika**
+- import JSON/TXT/ZIP pouze do evidence konzultace (návrhy se nezapisují do MASTER obsahu)
+- v identifikaci pracoviště je nový export/import AI vypnutý; historická konzultace zůstává zobrazena
+

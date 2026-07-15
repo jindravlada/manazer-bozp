@@ -16,6 +16,10 @@ from PySide6.QtWidgets import (
     QLineEdit,
 )
 
+from core.ai_oponentni.ui.ai_peer_review_widget import (
+    AiPeerReviewWidget,
+    catalog_peer_review_export_dialog_config,
+)
 from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.rizeni_rizik.constants import (
     HAZARD_INVENTORY_CATEGORIES,
@@ -30,10 +34,14 @@ from moduly.rizeni_rizik.constants_library import (
     HAZARD_LIBRARY_SCOPE_MANUAL,
     HAZARD_LIBRARY_SCOPE_SELECTED,
     HAZARD_LIBRARY_SCOPES,
+    HAZARD_LIBRARY_TAB_AI_PEER_REVIEW,
     HAZARD_LIBRARY_TAB_BASICS,
     HAZARD_LIBRARY_TAB_CONTENT,
     HAZARD_LIBRARY_TAB_HISTORY,
     HAZARD_LIBRARY_TAB_USAGE,
+)
+from moduly.rizeni_rizik.sluzby.hazard_catalog_source_peer_review_provider import (
+    hazard_catalog_source_peer_review_provider,
 )
 from moduly.rizeni_rizik.sluzby.hazard_library_template_service import (
     HazardLibraryTemplateError,
@@ -99,6 +107,16 @@ class HazardLibraryTemplateDialog(QDialog):
         self.content_widget = HazardLibraryTemplateContentWidget()
         self.content_tab_index = self.tabs.addTab(self.content_widget, HAZARD_LIBRARY_TAB_CONTENT)
 
+        self.ai_peer_review_widget = AiPeerReviewWidget(
+            provider=hazard_catalog_source_peer_review_provider,
+            export_dialog_config=catalog_peer_review_export_dialog_config(),
+            resolve_exposed_groups=False,
+        )
+        self.ai_peer_review_tab_index = self.tabs.addTab(
+            self.ai_peer_review_widget,
+            HAZARD_LIBRARY_TAB_AI_PEER_REVIEW,
+        )
+
         for tab_label in (
             HAZARD_LIBRARY_TAB_USAGE,
             HAZARD_LIBRARY_TAB_HISTORY,
@@ -132,6 +150,8 @@ class HazardLibraryTemplateDialog(QDialog):
             self._update_operations_enabled()
         self._sync_content_context()
         self._update_content_tab_enabled()
+        self._sync_ai_peer_review_context()
+        self._update_ai_peer_review_tab_enabled()
 
     def _load_operations(self) -> None:
         self.operations_list.clear()
@@ -229,10 +249,19 @@ class HazardLibraryTemplateDialog(QDialog):
         self._load_template(self.template)
         self._update_content_tab_enabled()
         self._sync_content_context()
+        self._sync_ai_peer_review_context()
+        self._update_ai_peer_review_tab_enabled()
         QMessageBox.information(self, HAZARD_LIBRARY_DIALOG_TITLE, "Základní údaje byly uloženy.")
 
     def _update_content_tab_enabled(self) -> None:
         self.tabs.setTabEnabled(self.content_tab_index, self.template is not None)
+
+    def _update_ai_peer_review_tab_enabled(self) -> None:
+        self.tabs.setTabEnabled(self.ai_peer_review_tab_index, self.template is not None)
+
+    def _sync_ai_peer_review_context(self) -> None:
+        template_id = self.template.id if self.template is not None else None
+        self.ai_peer_review_widget.set_source(template_id)
 
     def _sync_content_context(self) -> None:
         template_id = self.template.id if self.template is not None else None
