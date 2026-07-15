@@ -265,6 +265,16 @@ Import odpovědi AI ze ZIP:
 - duplicita posouzení podle stejné události a stejné skupiny (ID)
 - AI import vyžaduje rozhodnutí uživatele při párování na číselník
 
+## Fáze R16a
+
+Zjednodušení číselníku ohrožených skupin:
+
+- výchozí seed obsahuje pouze **Zaměstnanci daného pracoviště** a **Dodavatelé**
+- vyhledávací výběr `ExposedGroupSelector` s filtrováním při psaní a vytvořením nové skupiny
+- bez jednorázového použití; každá nová skupina se ukládá do číselníku
+- neaktivní shoda při vytváření nabídne aktivaci, aktivní duplicita je zakázána
+- správa číselníku zobrazuje názvy a podporuje Přidat / Upravit / Aktivovat / Deaktivovat
+
 ## Fáze R17a
 
 Základ firemní knihovny vzorů:

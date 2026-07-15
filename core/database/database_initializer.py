@@ -989,19 +989,7 @@ def _ensure_exposed_groups_table() -> None:
 def _seed_exposed_groups() -> None:
     default_groups = [
         "Zaměstnanci daného pracoviště",
-        "Obsluha zařízení",
-        "Údržba",
-        "Vedoucí zaměstnanci",
-        "Administrativní pracovníci",
-        "Řidiči",
-        "Chodci",
         "Dodavatelé",
-        "Návštěvy",
-        "Veřejnost",
-        "Těhotné zaměstnankyně",
-        "Mladiství",
-        "Osoby se zdravotním omezením",
-        "Ostatní osoby",
     ]
     with _db_engine().connect() as connection:
         existing_count = connection.execute(

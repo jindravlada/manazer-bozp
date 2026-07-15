@@ -1,3 +1,4 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -39,14 +40,17 @@ class ExposedGroupsManagementDialog(QDialog):
         add_button.clicked.connect(self.add_group)
         edit_button = QPushButton("Upravit")
         edit_button.clicked.connect(self.edit_selected_group)
-        self.toggle_button = QPushButton("Deaktivovat / Aktivovat")
-        self.toggle_button.clicked.connect(self.toggle_selected_group_active)
+        self.activate_button = QPushButton("Aktivovat")
+        self.activate_button.clicked.connect(self.activate_selected_group)
+        self.deactivate_button = QPushButton("Deaktivovat")
+        self.deactivate_button.clicked.connect(self.deactivate_selected_group)
         self.filter = QComboBox()
         self.filter.addItems(["Aktivní", "Všechny"])
         self.filter.currentIndexChanged.connect(self.refresh)
         toolbar.addWidget(add_button)
         toolbar.addWidget(edit_button)
-        toolbar.addWidget(self.toggle_button)
+        toolbar.addWidget(self.activate_button)
+        toolbar.addWidget(self.deactivate_button)
         toolbar.addStretch()
         toolbar.addWidget(QLabel("Zobrazit:"))
         toolbar.addWidget(self.filter)
@@ -59,6 +63,7 @@ class ExposedGroupsManagementDialog(QDialog):
         self.table.setSelectionMode(QTableWidget.SingleSelection)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.doubleClicked.connect(self.edit_selected_group)
+        self.table.itemSelectionChanged.connect(self._update_action_buttons)
         configure_table_columns(self.table, "exposed_groups")
         self.text_filter = FilterBar(self.table)
         layout.addWidget(self.text_filter)
@@ -75,21 +80,40 @@ class ExposedGroupsManagementDialog(QDialog):
         groups = exposed_group_service.get_all(include_inactive=include_inactive)
         self.table.setRowCount(len(groups))
         for row_index, group in enumerate(groups):
-            self.table.setItem(row_index, 0, QTableWidgetItem(group.name))
+            name_item = QTableWidgetItem(group.name)
+            name_item.setData(Qt.ItemDataRole.UserRole, group.id)
+            self.table.setItem(row_index, 0, name_item)
             self.table.setItem(row_index, 1, QTableWidgetItem(group.note or ""))
             self.table.setItem(
                 row_index,
                 2,
                 QTableWidgetItem("Ano" if group.active else "Ne"),
             )
-            self.table.item(row_index, 0).setData(0, group.id)
+        configure_table_columns(self.table, "exposed_groups")
+        self._update_action_buttons()
+
+    def _update_action_buttons(self) -> None:
+        group_id = self._selected_group_id()
+        if group_id is None:
+            self.activate_button.setEnabled(False)
+            self.deactivate_button.setEnabled(False)
+            return
+        group = exposed_group_service.get_by_id(group_id)
+        if group is None:
+            self.activate_button.setEnabled(False)
+            self.deactivate_button.setEnabled(False)
+            return
+        self.activate_button.setEnabled(not group.active)
+        self.deactivate_button.setEnabled(group.active)
 
     def _selected_group_id(self) -> int | None:
         selected = self.table.selectionModel().selectedRows()
         if not selected:
             return None
         item = self.table.item(selected[0].row(), 0)
-        return item.data(0) if item is not None else None
+        if item is None:
+            return None
+        return item.data(Qt.ItemDataRole.UserRole)
 
     def add_group(self) -> None:
         dialog = ExposedGroupDialog(self)
@@ -122,19 +146,25 @@ class ExposedGroupsManagementDialog(QDialog):
             return
         self.refresh()
 
-    def toggle_selected_group_active(self) -> None:
+    def activate_selected_group(self) -> None:
         group_id = self._selected_group_id()
         if group_id is None:
             QMessageBox.information(self, "Ohrožené skupiny osob", "Vyberte skupinu.")
             return
-        group = exposed_group_service.get_by_id(group_id)
-        if group is None:
+        try:
+            exposed_group_service.activate(group_id)
+        except ExposedGroupError as error:
+            QMessageBox.warning(self, "Ohrožené skupiny osob", str(error))
+            return
+        self.refresh()
+
+    def deactivate_selected_group(self) -> None:
+        group_id = self._selected_group_id()
+        if group_id is None:
+            QMessageBox.information(self, "Ohrožené skupiny osob", "Vyberte skupinu.")
             return
         try:
-            if group.active:
-                exposed_group_service.deactivate(group_id)
-            else:
-                exposed_group_service.activate(group_id)
+            exposed_group_service.deactivate(group_id)
         except ExposedGroupError as error:
             QMessageBox.warning(self, "Ohrožené skupiny osob", str(error))
             return

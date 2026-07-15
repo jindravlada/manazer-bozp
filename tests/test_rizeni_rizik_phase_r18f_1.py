@@ -190,6 +190,7 @@ class HazardSelectionHotfixR18f1TestCase(unittest.TestCase):
         group_ids = {
             dialog.exposed_group.itemData(index)
             for index in range(dialog.exposed_group.count())
+            if isinstance(dialog.exposed_group.itemData(index), int)
         }
         self.assertIn(self.active_group.id, group_ids)
         self.assertNotIn(self.inactive_group.id, group_ids)
@@ -199,9 +200,8 @@ class HazardSelectionHotfixR18f1TestCase(unittest.TestCase):
             template_id=self.template.id,
             template_event_id=self.event.id,
         )
-        index = dialog.exposed_group.findData(self.active_group.id)
-        self.assertGreaterEqual(index, 0)
-        dialog.exposed_group.setCurrentIndex(index)
+        dialog.exposed_group.set_group_id(self.active_group.id)
+        self.assertEqual(dialog.exposed_group.current_group_id(), self.active_group.id)
         dialog.consequence.setPlainText("Úraz končetiny")
         dialog.accept()
 

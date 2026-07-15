@@ -120,9 +120,9 @@ class ExposedGroupCatalogR16TestCase(unittest.TestCase):
     def test_default_catalog_is_seeded(self) -> None:
         groups = exposed_group_service.get_all(include_inactive=False)
         names = {group.name for group in groups}
-        self.assertIn("Údržba", names)
-        self.assertIn("Veřejnost", names)
-        self.assertGreaterEqual(len(groups), 14)
+        self.assertIn("Zaměstnanci daného pracoviště", names)
+        self.assertIn("Dodavatelé", names)
+        self.assertEqual(len(groups), 2)
 
     def test_create_new_group(self) -> None:
         group = exposed_group_service.create_group(name="Speciální skupina", note="Test")
@@ -201,6 +201,7 @@ class ExposedGroupCatalogR16TestCase(unittest.TestCase):
         combo_ids = {
             dialog.exposed_group.itemData(index)
             for index in range(dialog.exposed_group.count())
+            if isinstance(dialog.exposed_group.itemData(index), int)
         }
         self.assertIn(active.id, combo_ids)
         self.assertNotIn(inactive.id, combo_ids)
@@ -219,7 +220,7 @@ class ExposedGroupCatalogR16TestCase(unittest.TestCase):
             hazard_identification_id=self.identification.id,
             assessment=assessment,
         )
-        self.assertEqual(dialog.exposed_group.currentData(), group.id)
+        self.assertEqual(dialog.exposed_group.current_group_id(), group.id)
 
     def test_duplicate_assessment_by_exposed_group_id(self) -> None:
         group = ensure_exposed_group("Posunovač")

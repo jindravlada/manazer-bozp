@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
-from moduly.nastaveni.sluzby.exposed_group_service import exposed_group_service
+from core.widgets.exposed_group_selector import ExposedGroupSelector
 from moduly.nastaveni.ui.exposed_groups_management_dialog import ExposedGroupsManagementDialog
 from moduly.rizeni_rizik.constants import (
     DEFAULT_RISK_SEVERITY,
@@ -52,7 +52,7 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
         form = QFormLayout()
 
         group_row = QHBoxLayout()
-        self.exposed_group = QComboBox()
+        self.exposed_group = ExposedGroupSelector(self)
         self.manage_groups_btn = QPushButton("Spravovat číselník…")
         self.manage_groups_btn.clicked.connect(self._open_groups_management)
         group_row.addWidget(self.exposed_group, 1)
@@ -88,8 +88,8 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
-        self._populate_exposed_groups(
-            selected_group_id=assessment.exposed_group_id if assessment is not None else None,
+        self.exposed_group.reload(
+            preserve_id=assessment.exposed_group_id if assessment is not None else None,
         )
         if assessment is not None:
             self.consequence.setPlainText(assessment.consequence or "")
@@ -114,31 +114,11 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
             self.active_checkbox.setEnabled(False)
             buttons.button(QDialogButtonBox.StandardButton.Save).setEnabled(False)
 
-    def _populate_exposed_groups(self, *, selected_group_id: int | None = None) -> None:
-        current_id = selected_group_id or self.exposed_group.currentData()
-        self.exposed_group.clear()
-        for group in exposed_group_service.get_active_all():
-            self.exposed_group.addItem(group.name, group.id)
-        if selected_group_id is not None:
-            index = self.exposed_group.findData(selected_group_id)
-            if index >= 0:
-                self.exposed_group.setCurrentIndex(index)
-            else:
-                group = exposed_group_service.get_by_id(selected_group_id)
-                if group is not None:
-                    label = f"{group.name} (neaktivní)"
-                    self.exposed_group.addItem(label, group.id)
-                    self.exposed_group.setCurrentIndex(self.exposed_group.count() - 1)
-        elif current_id is not None:
-            index = self.exposed_group.findData(current_id)
-            if index >= 0:
-                self.exposed_group.setCurrentIndex(index)
-
     def _open_groups_management(self) -> None:
-        selected_id = self.exposed_group.currentData()
+        selected_id = self.exposed_group.current_group_id()
         dialog = ExposedGroupsManagementDialog(self)
-        if dialog.exec():
-            self._populate_exposed_groups(selected_group_id=selected_id)
+        dialog.exec()
+        self.exposed_group.reload(preserve_id=selected_id)
 
     def _update_severity_description(self) -> None:
         severity = self.severity.currentData()
@@ -153,6 +133,16 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
             return
 
         data = self.get_data()
+        group_id = self.exposed_group.ensure_selected_group_id(self)
+        if group_id is None:
+            QMessageBox.warning(
+                self,
+                HAZARD_LIBRARY_ASSESSMENT_DIALOG_TITLE,
+                "Vyberte nebo vytvořte ohroženou skupinu.",
+            )
+            return
+        data["exposed_group_id"] = group_id
+
         try:
             if self.assessment is None:
                 hazard_library_template_assessment_service.create_assessment(
@@ -174,7 +164,7 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
 
     def get_data(self) -> dict:
         return {
-            "exposed_group_id": self.exposed_group.currentData(),
+            "exposed_group_id": self.exposed_group.current_group_id(),
             "consequence": self.consequence.toPlainText().strip(),
             "severity": self.severity.currentData(),
             "conclusion": self.conclusion.toPlainText().strip(),

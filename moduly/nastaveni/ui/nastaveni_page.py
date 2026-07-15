@@ -332,16 +332,21 @@ class NastaveniPage(QWidget):
         add_button.clicked.connect(self.add_exposed_group)
         edit_button = QPushButton("Upravit")
         edit_button.clicked.connect(self.edit_selected_exposed_group)
-        self.exposed_group_active_toggle_button = QPushButton("Deaktivovat / Aktivovat")
-        self.exposed_group_active_toggle_button.clicked.connect(
-            self.toggle_selected_exposed_group_active,
+        self.exposed_group_activate_button = QPushButton("Aktivovat")
+        self.exposed_group_activate_button.clicked.connect(
+            self.activate_selected_exposed_group,
+        )
+        self.exposed_group_deactivate_button = QPushButton("Deaktivovat")
+        self.exposed_group_deactivate_button.clicked.connect(
+            self.deactivate_selected_exposed_group,
         )
         self.exposed_group_filter = QComboBox()
         self.exposed_group_filter.addItems(["Aktivní", "Všechny"])
         self.exposed_group_filter.currentIndexChanged.connect(self.refresh_exposed_groups)
         toolbar.addWidget(add_button)
         toolbar.addWidget(edit_button)
-        toolbar.addWidget(self.exposed_group_active_toggle_button)
+        toolbar.addWidget(self.exposed_group_activate_button)
+        toolbar.addWidget(self.exposed_group_deactivate_button)
         toolbar.addStretch()
         toolbar.addWidget(QLabel("Zobrazit:"))
         toolbar.addWidget(self.exposed_group_filter)
@@ -982,20 +987,25 @@ class NastaveniPage(QWidget):
                 return
             self.refresh_exposed_groups()
 
-    def toggle_selected_exposed_group_active(self):
+    def activate_selected_exposed_group(self):
         group_id = self._selected_exposed_group_id()
         if group_id is None:
             QMessageBox.information(self, "Ohrožené skupiny", "Vyberte skupinu.")
             return
-        group = exposed_group_service.get_by_id(group_id)
-        if group is None:
-            self.refresh_exposed_groups()
+        try:
+            exposed_group_service.activate(group_id)
+        except ExposedGroupError as error:
+            QMessageBox.warning(self, "Ohrožené skupiny", str(error))
+            return
+        self.refresh_exposed_groups()
+
+    def deactivate_selected_exposed_group(self):
+        group_id = self._selected_exposed_group_id()
+        if group_id is None:
+            QMessageBox.information(self, "Ohrožené skupiny", "Vyberte skupinu.")
             return
         try:
-            if group.active:
-                exposed_group_service.deactivate(group_id)
-            else:
-                exposed_group_service.activate(group_id)
+            exposed_group_service.deactivate(group_id)
         except ExposedGroupError as error:
             QMessageBox.warning(self, "Ohrožené skupiny", str(error))
             return
@@ -1004,15 +1014,16 @@ class NastaveniPage(QWidget):
     def update_exposed_group_buttons(self):
         group_id = self._selected_exposed_group_id()
         if group_id is None:
-            self.exposed_group_active_toggle_button.setText("Deaktivovat / Aktivovat")
+            self.exposed_group_activate_button.setEnabled(False)
+            self.exposed_group_deactivate_button.setEnabled(False)
             return
         group = exposed_group_service.get_by_id(group_id)
         if group is None:
-            self.exposed_group_active_toggle_button.setText("Deaktivovat / Aktivovat")
+            self.exposed_group_activate_button.setEnabled(False)
+            self.exposed_group_deactivate_button.setEnabled(False)
             return
-        self.exposed_group_active_toggle_button.setText(
-            "Deaktivovat" if group.active else "Aktivovat",
-        )
+        self.exposed_group_activate_button.setEnabled(not group.active)
+        self.exposed_group_deactivate_button.setEnabled(group.active)
 
     def refresh_exposed_groups(self):
         include_inactive = self.exposed_group_filter.currentText() == "Všechny"
