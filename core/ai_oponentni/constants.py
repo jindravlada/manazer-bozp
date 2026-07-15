@@ -119,6 +119,20 @@ AI_PEER_REVIEW_PARSE_NO_PROPOSALS = (
     "ve podporovaném JSON ani textovém formátu."
 )
 
+AI_PEER_REVIEW_RESPONSE_ZIP_PREFERRED_NAMES = (
+    "odpoved_AI.json",
+    "odpoved.json",
+    "response.json",
+)
+AI_PEER_REVIEW_RESPONSE_ZIP_MAX_UNCOMPRESSED_BYTES = 10 * 1024 * 1024
+AI_PEER_REVIEW_ZIP_CORRUPT = "ZIP archiv je poškozený nebo nelze otevřít."
+AI_PEER_REVIEW_ZIP_NO_RESPONSE = (
+    "ZIP archiv neobsahuje žádnou podporovanou odpověď (.json nebo .txt)."
+)
+AI_PEER_REVIEW_ZIP_SIZE_EXCEEDED = (
+    "Obsah ZIP archivu překračuje povolený limit velikosti."
+)
+
 # Dávkový export (R11.7)
 AI_PEER_REVIEW_EXPORT_SCOPE_FULL = "full"
 AI_PEER_REVIEW_EXPORT_SCOPE_SELECTED = "selected"

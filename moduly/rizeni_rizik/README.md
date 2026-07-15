@@ -247,6 +247,15 @@ Import odpovědi AI ve formátu JSON:
 - dialog načtení přijímá `.json` i `.txt`; souhrn importu uvádí použitý parser
 - workflow přijetí / zamítnutí a apply podle exportních ID beze změny
 
+## Fáze R11.11
+
+Import odpovědi AI ze ZIP:
+
+- dialog načtení přijímá `.json`, `.txt` i `.zip`
+- ZIP se bezpečně otevře v paměti; ignorují se vnořené archivy a nepodporované typy
+- preferované názvy: `odpoved_AI.json`, `odpoved.json`, `response.json`; při více souborech výběr uživatele
+- parsování po načtení stejné jako u R11.10 (JSON 1.1 → text)
+
 ## Fáze R12
 
 Odstranění entity Nebezpečí (`IdentifiedHazard`):

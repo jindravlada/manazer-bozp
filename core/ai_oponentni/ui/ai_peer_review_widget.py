@@ -234,8 +234,9 @@ class AiPeerReviewResponseDialog(QDialog):
         layout.addWidget(QLabel("Odpověď AI:"))
         self.response = QPlainTextEdit()
         self.response.setPlaceholderText(
-            "Vložte odpověď AI ve formátu JSON 1.1 (dle schema_odpovedi.json) "
-            "nebo textovém formátu Oblast / Návrh / Zdůvodnění."
+            "Vložte odpověď AI ve formátu JSON 1.1 (dle schema_odpovedi.json), "
+            "textovém formátu Oblast / Návrh / Zdůvodnění, nebo načtěte soubor "
+            ".json, .txt či .zip."
         )
         layout.addWidget(self.response)
 
@@ -256,15 +257,58 @@ class AiPeerReviewResponseDialog(QDialog):
             self,
             "Načíst odpověď AI",
             "",
-            "Odpovědi AI (*.json *.txt *.md);;JSON (*.json);;Text (*.txt *.md);;"
+            "Odpovědi AI (*.json *.txt *.zip);;"
+            "JSON (*.json);;Text (*.txt);;ZIP (*.zip);;"
             "Všechny soubory (*)",
         )
         if not path:
             return
+        file_path = Path(path)
         try:
-            self.response.setPlainText(Path(path).read_text(encoding="utf-8"))
+            if file_path.suffix.casefold() == ".zip":
+                self._load_from_zip(file_path)
+            else:
+                self.response.setPlainText(file_path.read_text(encoding="utf-8"))
         except OSError as error:
             QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+
+    def _load_from_zip(self, zip_path: Path) -> None:
+        from core.ai_oponentni.sluzby.response_zip_loader import (
+            AiPeerReviewZipLoadError,
+            load_response_from_zip,
+        )
+
+        entry_name: str | None = None
+        while True:
+            try:
+                result = load_response_from_zip(zip_path, entry_name=entry_name)
+                break
+            except AiPeerReviewZipLoadError as error:
+                if getattr(error, "selection_required", False):
+                    entries = getattr(error, "entries", [])
+                    if not entries:
+                        QMessageBox.warning(
+                            self,
+                            AI_PEER_REVIEW_DIALOG_TITLE,
+                            str(error),
+                        )
+                        return
+                    label, ok = QInputDialog.getItem(
+                        self,
+                        AI_PEER_REVIEW_DIALOG_TITLE,
+                        "Vyberte soubor odpovědi v ZIP:",
+                        entries,
+                        0,
+                        False,
+                    )
+                    if not ok:
+                        return
+                    entry_name = label
+                    continue
+                QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+                return
+
+        self.response.setPlainText(result.text)
 
     def get_ai_model(self) -> str:
         return self.ai_model.text().strip()
