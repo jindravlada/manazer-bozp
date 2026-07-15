@@ -10,12 +10,19 @@ from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_EXPORT_SCOPE_FULL,
     AI_PEER_REVIEW_FOCUS_AREA_LABELS,
     AI_PEER_REVIEW_OBJECTIVE_LABELS,
-    AI_PEER_REVIEW_RESPONSE_SCHEMA,
-    AI_PEER_REVIEW_SCHEMA_VERSION,
+    AI_PEER_REVIEW_RESPONSE_SCHEMA_2_0,
+    AI_PEER_REVIEW_SCHEMA_VERSION_2_0,
+)
+from core.ai_oponentni.modely.ai_proposal_package import (
+    PACKAGE_STATUS_PENDING,
+    AiProposalPackageRecord,
 )
 from core.ai_oponentni.modely.ai_unassigned_proposal import (
     PROPOSAL_STATUS_PENDING,
     AiUnassignedProposal,
+)
+from core.ai_oponentni.repository.ai_proposal_package_repository import (
+    AiProposalPackageRepository,
 )
 from core.ai_oponentni.repository.ai_unassigned_proposal_repository import (
     AiUnassignedProposalRepository,
@@ -28,6 +35,7 @@ from core.ai_oponentni.sluzby.prompt_builder import (
     normalize_opponent_role,
     opponent_role_label,
 )
+from core.ai_oponentni.proposal_package_types import AiProposalPackage
 from core.ai_oponentni.types import (
     AiExportSourceChoice,
     AiPeerReviewApplyResult,
@@ -70,6 +78,7 @@ def catalog_source_reference(template_id: int) -> str:
 class HazardCatalogSourcePeerReviewProvider:
     source_type = SOURCE_TYPE_HAZARD_CATALOG_SOURCE
     evidence_only_import = True
+    uses_proposal_packages = True
 
     def can_export(self, source_id: int | None) -> bool:
         if not source_id:
@@ -128,7 +137,7 @@ class HazardCatalogSourcePeerReviewProvider:
             overview_text=overview_text,
             summary_lines=summary_lines,
             zadani_json=zadani_json,
-            schema_json=AI_PEER_REVIEW_RESPONSE_SCHEMA,
+            schema_json=AI_PEER_REVIEW_RESPONSE_SCHEMA_2_0,
         )
         return AiPeerReviewExportContent(
             source_label=catalog_source_reference(template.id),
@@ -139,6 +148,34 @@ class HazardCatalogSourcePeerReviewProvider:
             total_object_count=object_count,
             batches=[batch],
             change_tracking=dict(AI_PEER_REVIEW_DEFAULT_CHANGE_TRACKING),
+        )
+
+    def apply_proposal_packages(
+        self,
+        source_id: int,
+        packages: list[AiProposalPackage],
+        *,
+        review_id: int,
+    ) -> AiPeerReviewApplyResult:
+        if hazard_library_template_service.get_by_id(source_id) is None:
+            raise AiPeerReviewError("Zdroj rizika v katalogu neexistuje.")
+
+        records = [
+            AiProposalPackageRepository.record_from_package(
+                review_id=review_id,
+                source_type=self.source_type,
+                source_id=source_id,
+                package=package,
+                status=PACKAGE_STATUS_PENDING,
+            )
+            for package in packages
+        ]
+        if records:
+            AiProposalPackageRepository().add_many(records)
+        return AiPeerReviewApplyResult(
+            applied_count=0,
+            pending_count=len(records),
+            unassigned_count=0,
         )
 
     def apply_proposals(
@@ -389,7 +426,8 @@ class HazardCatalogSourcePeerReviewProvider:
         briefing: dict,
     ) -> dict:
         return {
-            "schema_version": AI_PEER_REVIEW_SCHEMA_VERSION,
+            "schema_version": AI_PEER_REVIEW_SCHEMA_VERSION_2_0,
+            "response_schema_version": AI_PEER_REVIEW_SCHEMA_VERSION_2_0,
             "export_type": AI_CATALOG_PEER_REVIEW_EXPORT_TYPE,
             "export_scope": AI_PEER_REVIEW_EXPORT_SCOPE_FULL,
             "batch_number": 1,

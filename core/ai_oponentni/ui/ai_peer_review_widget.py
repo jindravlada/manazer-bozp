@@ -50,11 +50,17 @@ from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_FOCUS_AREAS,
     AI_PEER_REVIEW_IMPORT_BUTTON,
     AI_PEER_REVIEW_IMPORT_INTRO_EVIDENCE,
+    AI_PEER_REVIEW_IMPORT_INTRO_PACKAGES,
     AI_PEER_REVIEW_INTRO_TEXT,
     AI_PEER_REVIEW_OBJECTIVE_LABELS,
+    AI_PEER_REVIEW_PACKAGE_TYPE_LABELS,
     AI_PEER_REVIEW_ROLE_LABELS,
     AI_PEER_REVIEW_ROLES,
     AI_PEER_REVIEW_TABLE_HEADERS,
+)
+from core.ai_oponentni.modely.ai_proposal_package import (
+    PACKAGE_STATUS_LABELS,
+    PACKAGE_STATUS_PENDING,
 )
 from core.ai_oponentni.modely.ai_unassigned_proposal import (
     PROPOSAL_STATUS_LABELS,
@@ -70,6 +76,7 @@ from core.ai_oponentni.types import (
     AiPeerReviewExportOptions,
     AiPeerReviewProvider,
 )
+from core.ai_oponentni.ui.import_packages_dialog import AiPeerReviewPackageImportDialog
 from core.ai_oponentni.ui.import_proposals_dialog import AiPeerReviewImportDialog
 from core.widgets.dialog_utils import create_save_cancel_box
 from core.widgets.table_utils import configure_table_columns
@@ -393,6 +400,9 @@ class AiPeerReviewWidget(QWidget):
         self._export_dialog_config = export_dialog_config
         self._resolve_exposed_groups = resolve_exposed_groups
         self._evidence_only_import = evidence_only_import
+        self._uses_proposal_packages = ai_peer_review_service.provider_uses_proposal_packages(
+            provider,
+        )
 
         layout = QVBoxLayout(self)
 
@@ -424,11 +434,26 @@ class AiPeerReviewWidget(QWidget):
         self.proposals_label = QLabel("Návrhy vybrané konzultace:")
         layout.addWidget(self.proposals_label)
         self.proposals_table = QTableWidget()
-        self.proposals_table.setColumnCount(5)
-        self.proposals_table.setHorizontalHeaderLabels(
-            ["Oblast", "Návrh", "Zdůvodnění", "Stav", "ID návrhu"],
-        )
-        if self._evidence_only_import:
+        if self._uses_proposal_packages:
+            self.proposals_table.setColumnCount(8)
+            self.proposals_table.setHorizontalHeaderLabels(
+                [
+                    "Typ",
+                    "Událost",
+                    "Posouzení",
+                    "Exist. opatření",
+                    "Potřebná opatření",
+                    "Právní vazby",
+                    "Zdůvodnění",
+                    "Stav",
+                ],
+            )
+        else:
+            self.proposals_table.setColumnCount(5)
+            self.proposals_table.setHorizontalHeaderLabels(
+                ["Oblast", "Návrh", "Zdůvodnění", "Stav", "ID návrhu"],
+            )
+        if self._evidence_only_import and not self._uses_proposal_packages:
             self.proposals_table.setSelectionMode(QTableWidget.SelectionMode.ExtendedSelection)
         else:
             self.proposals_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
@@ -439,7 +464,7 @@ class AiPeerReviewWidget(QWidget):
         self.proposals_table.doubleClicked.connect(self._edit_selected_proposals)
         layout.addWidget(self.proposals_table)
 
-        if self._evidence_only_import:
+        if self._evidence_only_import and not self._uses_proposal_packages:
             from moduly.rizeni_rizik.constants_library import (
                 CATALOG_AI_PROPOSAL_EDIT_BUTTON,
                 CATALOG_AI_PROPOSAL_INCORPORATE_BUTTON,
@@ -471,6 +496,15 @@ class AiPeerReviewWidget(QWidget):
             self.edit_proposal_btn.clicked.connect(self._edit_selected_proposals)
             self.incorporate_selected_btn.clicked.connect(self._incorporate_selected_proposals)
             self.reject_selected_btn.clicked.connect(self._reject_selected_proposals)
+        elif self._evidence_only_import and self._uses_proposal_packages:
+            self.proposals_label.setText(
+                "Návrhové balíky vybrané konzultace (zatím bez zápisu do MASTER):",
+            )
+            self.incorporate_btn = None
+            self.reject_proposal_btn = None
+            self.edit_proposal_btn = None
+            self.incorporate_selected_btn = None
+            self.reject_selected_btn = None
         else:
             self.incorporate_btn = None
             self.reject_proposal_btn = None
@@ -634,6 +668,7 @@ class AiPeerReviewWidget(QWidget):
             parse_result = ai_peer_review_service.parse_response(
                 response_text,
                 expected_source_identification_number=expected_number or None,
+                require_proposal_packages=self._uses_proposal_packages,
             )
         except AiPeerReviewError as error:
             QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
@@ -646,52 +681,81 @@ class AiPeerReviewWidget(QWidget):
             extra = ""
             if len(parse_result.skip_reasons) > 12:
                 extra = f"\n… a dalších {len(parse_result.skip_reasons) - 12}."
+            loaded_label = (
+                "balíků" if parse_result.uses_proposal_packages else "návrhů"
+            )
             QMessageBox.information(
                 self,
                 AI_PEER_REVIEW_DIALOG_TITLE,
                 (
-                    f"Načteno platných návrhů: {len(parse_result.proposals)}\n"
-                    f"Přeskočeno neplatných návrhů: {parse_result.skipped_count}\n\n"
+                    f"Načteno platných {loaded_label}: "
+                    f"{len(parse_result.packages) if parse_result.uses_proposal_packages else len(parse_result.proposals)}\n"
+                    f"Přeskočeno neplatných {loaded_label}: {parse_result.skipped_count}\n\n"
                     f"{reasons}{extra}"
                 ),
             )
 
-        import_dialog = AiPeerReviewImportDialog(
-            self,
-            proposals=parse_result.proposals,
-            ai_model=ai_model,
-            intro_text=(
-                AI_PEER_REVIEW_IMPORT_INTRO_EVIDENCE if self._evidence_only_import else None
-            ),
-            accept_column_label=(
-                "Přijmout" if self._evidence_only_import else "Převzít"
-            ),
-        )
-        if not import_dialog.exec():
-            return False
-
-        accepted, rejected = import_dialog.get_accepted_and_rejected()
-        if self._resolve_exposed_groups:
-            from moduly.rizeni_rizik.ui.exposed_group_proposal_resolution_dialog import (
-                resolve_exposed_group_proposals,
-            )
-
-            accepted, resolution_rejected = resolve_exposed_group_proposals(self, accepted)
-            rejected.extend(resolution_rejected)
-        try:
-            updated = ai_peer_review_service.finalize_import(
-                provider=self._provider,
-                source_id=self._source_id,
-                review_id=review.id,
-                response_text=response_text,
+        if parse_result.uses_proposal_packages:
+            import_dialog = AiPeerReviewPackageImportDialog(
+                self,
+                packages=parse_result.packages,
                 ai_model=ai_model,
-                accepted=accepted,
-                rejected=rejected,
-                loaded_proposals_count=len(parse_result.proposals),
+                intro_text=AI_PEER_REVIEW_IMPORT_INTRO_PACKAGES,
             )
-        except AiPeerReviewError as error:
-            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
-            return False
+            if not import_dialog.exec():
+                return False
+            accepted, rejected = import_dialog.get_accepted_and_rejected()
+            try:
+                updated = ai_peer_review_service.finalize_package_import(
+                    provider=self._provider,
+                    source_id=self._source_id,
+                    review_id=review.id,
+                    response_text=response_text,
+                    ai_model=ai_model,
+                    accepted=accepted,
+                    rejected=rejected,
+                    loaded_packages_count=len(parse_result.packages),
+                )
+            except AiPeerReviewError as error:
+                QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+                return False
+        else:
+            import_dialog = AiPeerReviewImportDialog(
+                self,
+                proposals=parse_result.proposals,
+                ai_model=ai_model,
+                intro_text=(
+                    AI_PEER_REVIEW_IMPORT_INTRO_EVIDENCE if self._evidence_only_import else None
+                ),
+                accept_column_label=(
+                    "Přijmout" if self._evidence_only_import else "Převzít"
+                ),
+            )
+            if not import_dialog.exec():
+                return False
+
+            accepted, rejected = import_dialog.get_accepted_and_rejected()
+            if self._resolve_exposed_groups:
+                from moduly.rizeni_rizik.ui.exposed_group_proposal_resolution_dialog import (
+                    resolve_exposed_group_proposals,
+                )
+
+                accepted, resolution_rejected = resolve_exposed_group_proposals(self, accepted)
+                rejected.extend(resolution_rejected)
+            try:
+                updated = ai_peer_review_service.finalize_import(
+                    provider=self._provider,
+                    source_id=self._source_id,
+                    review_id=review.id,
+                    response_text=response_text,
+                    ai_model=ai_model,
+                    accepted=accepted,
+                    rejected=rejected,
+                    loaded_proposals_count=len(parse_result.proposals),
+                )
+            except AiPeerReviewError as error:
+                QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+                return False
 
         self.refresh()
         self._select_review_row(updated.id)
@@ -738,11 +802,19 @@ class AiPeerReviewWidget(QWidget):
                 QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
                 return None
         if clicked is replace_button:
-            ai_peer_review_service.delete_proposals_for_review(review.id)
+            ai_peer_review_service.delete_import_data_for_review(review.id)
             return review
         return None
 
     def _import_summary_message(self, review, format_label: str) -> str:
+        if self._uses_proposal_packages:
+            return (
+                f"Formát odpovědi: {format_label}\n"
+                f"Načteno balíků: {review.loaded_proposals_count}\n"
+                f"Čeká na odborné posouzení: {review.pending_proposals_count}\n"
+                f"Zamítnuto: {review.rejected_count}\n\n"
+                "Balíky jsou evidovány; zápis do MASTER katalogu zatím není k dispozici."
+            )
         if self._evidence_only_import:
             return (
                 f"Formát odpovědi: {format_label}\n"
@@ -784,6 +856,66 @@ class AiPeerReviewWidget(QWidget):
         if review_id is None:
             return
 
+        package_records = ai_peer_review_service.get_packages_for_review(review_id)
+        if package_records:
+            self._configure_package_proposals_table()
+            display_records = package_records
+            if self._uses_proposal_packages:
+                display_records = [
+                    record
+                    for record in package_records
+                    if record.status == PACKAGE_STATUS_PENDING
+                ]
+            self.proposals_table.setRowCount(len(display_records))
+            for row_index, record in enumerate(display_records):
+                package = ai_peer_review_service.package_repository.package_from_record(
+                    record,
+                )
+                type_item = QTableWidgetItem(
+                    AI_PEER_REVIEW_PACKAGE_TYPE_LABELS.get(
+                        package.package_type,
+                        package.package_type,
+                    ),
+                )
+                type_item.setData(Qt.ItemDataRole.UserRole, record.id)
+                self.proposals_table.setItem(row_index, 0, type_item)
+                self.proposals_table.setItem(row_index, 1, QTableWidgetItem(package.event_name))
+                self.proposals_table.setItem(
+                    row_index,
+                    2,
+                    QTableWidgetItem(str(package.assessment_count)),
+                )
+                self.proposals_table.setItem(
+                    row_index,
+                    3,
+                    QTableWidgetItem(str(package.existing_measure_count)),
+                )
+                self.proposals_table.setItem(
+                    row_index,
+                    4,
+                    QTableWidgetItem(str(package.required_measure_count)),
+                )
+                self.proposals_table.setItem(
+                    row_index,
+                    5,
+                    QTableWidgetItem(str(package.legal_link_count)),
+                )
+                self.proposals_table.setItem(
+                    row_index,
+                    6,
+                    QTableWidgetItem(package.reasoning or "—"),
+                )
+                self.proposals_table.setItem(
+                    row_index,
+                    7,
+                    QTableWidgetItem(
+                        PACKAGE_STATUS_LABELS.get(record.status, record.status),
+                    ),
+                )
+            configure_table_columns(self.proposals_table, "ai_peer_review_proposals")
+            return
+
+        self._configure_flat_proposals_table()
         proposals = ai_peer_review_service.get_unassigned_for_review(review_id)
         if self._evidence_only_import:
             proposals = [
@@ -819,6 +951,31 @@ class AiPeerReviewWidget(QWidget):
                 QTableWidgetItem(proposal.proposal_id or "—"),
             )
         configure_table_columns(self.proposals_table, "ai_peer_review_proposals")
+
+    def _configure_package_proposals_table(self) -> None:
+        if self.proposals_table.columnCount() == 8:
+            return
+        self.proposals_table.setColumnCount(8)
+        self.proposals_table.setHorizontalHeaderLabels(
+            [
+                "Typ",
+                "Událost",
+                "Posouzení",
+                "Exist. opatření",
+                "Potřebná opatření",
+                "Právní vazby",
+                "Zdůvodnění",
+                "Stav",
+            ],
+        )
+
+    def _configure_flat_proposals_table(self) -> None:
+        if self.proposals_table.columnCount() == 5:
+            return
+        self.proposals_table.setColumnCount(5)
+        self.proposals_table.setHorizontalHeaderLabels(
+            ["Oblast", "Návrh", "Zdůvodnění", "Stav", "ID návrhu"],
+        )
 
     def _load_table(self) -> None:
         self.table.setRowCount(0)

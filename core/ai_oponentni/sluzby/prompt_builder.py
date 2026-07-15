@@ -252,14 +252,19 @@ def build_catalog_source_ai_peer_review_prompt(
     lines.append("PRAVIDLA")
     lines.append("-" * 40)
     rules = [
-        "Nehodnoť závažnost rizik.",
+        "Nevracej izolovaná opatření bez kompletního posouzení.",
+        "Nevracej izolované ohrožené skupiny bez události a následku.",
+        "Každý návrh musí být jeden ucelený balík s úplným odborným kontextem.",
+        "Každé opomenutí popiš jako kompletní scénář: co se může stát → komu → "
+        "jaký může být následek → jaká opatření existují nebo mají být přijata → "
+        "jaká legislativa může souviset.",
         "Neměň existující položky.",
         "Neopakuj již existující položky z exportu.",
         "Nenavrhuj zjevně nereálné scénáře.",
         "Nevymýšlej technologie, zařízení ani činnosti, které nejsou z exportu "
         "ani z obecného kontextu zdroje patrné.",
         "Respektuj skutečný charakter katalogového zdroje rizika.",
-        "Ke každému návrhu napiš stručné odborné zdůvodnění.",
+        "Ke každému balíku napiš stručné odborné zdůvodnění.",
         "Právní předpisy uváděj pouze jako návrh k odbornému ověření.",
         "Nevydávej návrhy za úplné ani definitivní.",
         "Odpověď strukturoj podle schema_odpovedi.json "
@@ -286,13 +291,37 @@ def build_catalog_source_ai_peer_review_prompt(
     lines.append("FORMÁT ODPOVĚDI")
     lines.append("-" * 40)
     lines.append(
-        "Formát odpovědi (použij přesně tuto strukturu u každého návrhu):\n"
+        "Vrať ucelené návrhové balíky (schema 2.0). Každý balík musí obsahovat "
+        "událost nebo vazbu na existující EVENT-…, alespoň jedno kompletní posouzení "
+        "(ohrožená skupina, následek, závažnost), volitelně opatření uvnitř posouzení "
+        "a volitelně právní vazby k celému balíku.\n"
         "\n"
-        "Oblast: <název oblasti>\n"
-        "Návrh: <navržená položka>\n"
-        "Rodič: <exportní ID rodiče, nebo —>\n"
-        "Zdůvodnění: <stručné odborné zdůvodnění>\n"
+        "Textový fallback (použij přesně tuto strukturu u každého balíku):\n"
         "\n"
-        "Odděl jednotlivé návrhy prázdným řádkem."
+        "BALÍK: PACKAGE-001\n"
+        "TYP: Nová událost\n"
+        "\n"
+        "UDÁLOST:\n"
+        "...\n"
+        "\n"
+        "POSOUZENÍ:\n"
+        "Ohrožená skupina: ...\n"
+        "Možný následek: ...\n"
+        "Závažnost: moderate\n"
+        "\n"
+        "EXISTUJÍCÍ OPATŘENÍ:\n"
+        "- ...\n"
+        "\n"
+        "POTŘEBNÁ OPATŘENÍ:\n"
+        "- ...\n"
+        "\n"
+        "PRÁVNÍ VAZBY:\n"
+        "- ...\n"
+        "\n"
+        "ZDŮVODNĚNÍ:\n"
+        "...\n"
+        "\n"
+        "Pro doplnění existující události použij TYP: Doplnění existující události "
+        "a uveď Cílová událost: EVENT-…"
     )
     return "\n".join(lines).rstrip() + "\n"

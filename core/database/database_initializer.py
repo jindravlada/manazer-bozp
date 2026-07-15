@@ -89,6 +89,7 @@ def initialize_database() -> None:
         AiPeerReviewBatch,
     )
     from core.ai_oponentni.modely.ai_unassigned_proposal import AiUnassignedProposal  # noqa: F401
+    from core.ai_oponentni.modely.ai_proposal_package import AiProposalPackageRecord  # noqa: F401
 
     create_database()
     _ensure_thp_worker_title_columns()
@@ -141,6 +142,7 @@ def initialize_database() -> None:
     _ensure_ai_peer_reviews_table()
     _ensure_ai_peer_review_batches_table()
     _ensure_ai_unassigned_proposals_table()
+    _ensure_ai_proposal_packages_table()
     _migrate_legal_document_types()
     _normalize_task_status_values()
     _normalize_accident_legacy_values()
@@ -1505,6 +1507,14 @@ def _ensure_ai_unassigned_proposals_table() -> None:
         _add_column("ai_unassigned_proposals", "exposed_group_id INTEGER")
     if "payload_json" not in columns:
         _add_column("ai_unassigned_proposals", "payload_json TEXT DEFAULT '{}' NOT NULL")
+
+
+def _ensure_ai_proposal_packages_table() -> None:
+    columns = _table_columns("ai_proposal_packages")
+    if not columns:
+        from core.ai_oponentni.modely.ai_proposal_package import AiProposalPackageRecord
+
+        AiProposalPackageRecord.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_responsibility_roles_table() -> None:

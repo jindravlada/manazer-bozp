@@ -13,6 +13,7 @@ from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_SCOPE_FULL_LABEL,
     AI_PEER_REVIEW_SCOPE_SELECTED_LABEL,
 )
+from core.ai_oponentni.proposal_package_types import AiProposalPackage
 
 
 @dataclass
@@ -29,10 +30,17 @@ class AiProposal:
 class AiPeerReviewParseResult:
     """Výsledek parsování odpovědi AI (JSON nebo text)."""
 
-    proposals: list[AiProposal]
-    format_label: str
+    proposals: list[AiProposal] = field(default_factory=list)
+    packages: list[AiProposalPackage] = field(default_factory=list)
+    format_label: str = ""
+    schema_version: str = ""
+    source_reference: str = ""
     skipped_count: int = 0
     skip_reasons: list[str] = field(default_factory=list)
+
+    @property
+    def uses_proposal_packages(self) -> bool:
+        return bool(self.packages)
 
 
 @dataclass

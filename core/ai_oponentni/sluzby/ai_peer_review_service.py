@@ -10,18 +10,30 @@ from datetime import datetime
 from pathlib import Path
 
 from core.ai_oponentni.constants import (
+    AI_PEER_REVIEW_CATALOG_REQUIRES_SCHEMA_2_0,
+    AI_PEER_REVIEW_PARSE_NO_PACKAGES,
     AI_PEER_REVIEW_PARSE_NO_PROPOSALS,
+    AI_PEER_REVIEW_SCHEMA_VERSION_2_0,
     AI_PEER_REVIEW_ZIP_FILES,
 )
 from core.ai_oponentni.modely.ai_peer_review import AiPeerReview, AiPeerReviewBatch
+from core.ai_oponentni.modely.ai_proposal_package import (
+    AiProposalPackageRecord,
+    PACKAGE_STATUS_PENDING,
+    PACKAGE_STATUS_REJECTED,
+)
 from core.ai_oponentni.modely.ai_unassigned_proposal import (
     AiUnassignedProposal,
     PROPOSAL_STATUS_REJECTED,
 )
+from core.ai_oponentni.proposal_package_types import AiProposalPackage
 from core.ai_oponentni.repository.ai_peer_review_batch_repository import (
     AiPeerReviewBatchRepository,
 )
 from core.ai_oponentni.repository.ai_peer_review_repository import AiPeerReviewRepository
+from core.ai_oponentni.repository.ai_proposal_package_repository import (
+    AiProposalPackageRepository,
+)
 from core.ai_oponentni.repository.ai_unassigned_proposal_repository import (
     AiUnassignedProposalRepository,
 )
@@ -56,6 +68,7 @@ class AiPeerReviewService:
         self.repository = AiPeerReviewRepository()
         self.batch_repository = AiPeerReviewBatchRepository()
         self.unassigned_repository = AiUnassignedProposalRepository()
+        self.package_repository = AiProposalPackageRepository()
 
     def get_for_source(self, source_type: str, source_id: int) -> list[AiPeerReview]:
         return self.repository.get_for_source(source_type, source_id)
@@ -70,6 +83,22 @@ class AiPeerReviewService:
 
     def get_unassigned_for_review(self, review_id: int):
         return self.unassigned_repository.get_for_review(review_id)
+
+    def get_packages_for_review(self, review_id: int) -> list[AiProposalPackageRecord]:
+        return self.package_repository.get_for_review(review_id)
+
+    def get_package_models_for_review(self, review_id: int) -> list[AiProposalPackage]:
+        return [
+            self.package_repository.package_from_record(record)
+            for record in self.get_packages_for_review(review_id)
+        ]
+
+    def delete_packages_for_review(self, review_id: int) -> None:
+        self.package_repository.delete_for_review(review_id)
+
+    def delete_import_data_for_review(self, review_id: int) -> None:
+        self.delete_proposals_for_review(review_id)
+        self.delete_packages_for_review(review_id)
 
     def get_proposal_by_id(self, proposal_id: int):
         return self.unassigned_repository.get_by_id(proposal_id)
@@ -369,6 +398,7 @@ class AiPeerReviewService:
         response_text: str,
         *,
         expected_source_identification_number: str | None = None,
+        require_proposal_packages: bool = False,
     ) -> AiPeerReviewParseResult:
         try:
             result = parse_ai_peer_review_response(
@@ -376,12 +406,95 @@ class AiPeerReviewService:
                 expected_source_identification_number=(
                     expected_source_identification_number
                 ),
+                require_proposal_packages=require_proposal_packages,
             )
         except AiPeerReviewParseError as error:
             raise AiPeerReviewError(str(error)) from error
+        if require_proposal_packages:
+            if result.schema_version and result.schema_version != AI_PEER_REVIEW_SCHEMA_VERSION_2_0:
+                raise AiPeerReviewError(AI_PEER_REVIEW_CATALOG_REQUIRES_SCHEMA_2_0)
+            if result.proposals:
+                raise AiPeerReviewError(AI_PEER_REVIEW_CATALOG_REQUIRES_SCHEMA_2_0)
+            if not result.packages:
+                raise AiPeerReviewError(AI_PEER_REVIEW_PARSE_NO_PACKAGES)
+            return result
         if not result.proposals:
             raise AiPeerReviewError(AI_PEER_REVIEW_PARSE_NO_PROPOSALS)
         return result
+
+    @staticmethod
+    def provider_uses_proposal_packages(provider: AiPeerReviewProvider) -> bool:
+        return bool(getattr(provider, "uses_proposal_packages", False))
+
+    def store_rejected_packages(
+        self,
+        *,
+        review_id: int,
+        source_type: str,
+        source_id: int,
+        packages: list[AiProposalPackage],
+    ) -> None:
+        if not packages:
+            return
+        records = [
+            AiProposalPackageRepository.record_from_package(
+                review_id=review_id,
+                source_type=source_type,
+                source_id=source_id,
+                package=package,
+                status=PACKAGE_STATUS_REJECTED,
+            )
+            for package in packages
+        ]
+        self.package_repository.add_many(records)
+
+    def finalize_package_import(
+        self,
+        *,
+        provider: AiPeerReviewProvider,
+        source_id: int,
+        review_id: int,
+        response_text: str,
+        ai_model: str,
+        accepted: list[AiProposalPackage],
+        rejected: list[AiProposalPackage],
+        loaded_packages_count: int | None = None,
+    ) -> AiPeerReview:
+        review = self.repository.get_by_id(review_id)
+        if review is None:
+            raise AiPeerReviewError("Záznam konzultace neexistuje.")
+        if review.source_type != provider.source_type or review.source_id != source_id:
+            raise AiPeerReviewError("Konzultace nepatří k aktuálnímu záznamu.")
+
+        pending = 0
+        if accepted:
+            result = provider.apply_proposal_packages(
+                source_id,
+                accepted,
+                review_id=review_id,
+            )
+            pending = result.pending_count
+
+        self.store_rejected_packages(
+            review_id=review_id,
+            source_type=provider.source_type,
+            source_id=source_id,
+            packages=rejected,
+        )
+
+        review.ai_model = (ai_model or "").strip()
+        review.response_text = response_text.strip()
+        review.response_loaded_at = datetime.now()
+        review.loaded_proposals_count = (
+            loaded_packages_count
+            if loaded_packages_count is not None
+            else len(accepted) + len(rejected)
+        )
+        review.pending_proposals_count = pending
+        review.accepted_count = 0
+        review.rejected_count = len(rejected)
+        review.unassigned_count = 0
+        return self.repository.update(review)
 
     def finalize_import(
         self,

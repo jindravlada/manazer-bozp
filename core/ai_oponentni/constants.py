@@ -133,11 +133,37 @@ AI_CATALOG_PEER_REVIEW_CONTEXT_PLACEHOLDER = (
 
 AI_CATALOG_PEER_REVIEW_SCOPE_FULL_LABEL = "Celý zdroj rizika"
 
+AI_PEER_REVIEW_SCHEMA_VERSION = "1.1"
+AI_PEER_REVIEW_SCHEMA_VERSION_2_0 = "2.0"
+
+AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT = "new_event"
+AI_PEER_REVIEW_PACKAGE_TYPE_EXTEND_EVENT = "extend_event"
+
+AI_PEER_REVIEW_PACKAGE_TYPE_LABELS = {
+    AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT: "Nová událost",
+    AI_PEER_REVIEW_PACKAGE_TYPE_EXTEND_EVENT: "Doplnění existující události",
+}
+
 AI_PEER_REVIEW_FORMAT_JSON_1_1 = "JSON 1.1"
+AI_PEER_REVIEW_FORMAT_JSON_2_0 = "JSON 2.0"
 AI_PEER_REVIEW_FORMAT_TEXT = "Textový formát"
+AI_PEER_REVIEW_FORMAT_TEXT_2_0 = "Textový formát 2.0"
 AI_PEER_REVIEW_PARSE_NO_PROPOSALS = (
     "V odpovědi AI se nepodařilo najít žádný platný návrh "
     "ve podporovaném JSON ani textovém formátu."
+)
+AI_PEER_REVIEW_PARSE_NO_PACKAGES = (
+    "V odpovědi AI se nepodařilo najít žádný platný návrhový balík "
+    "ve formátu schema 2.0."
+)
+AI_PEER_REVIEW_CATALOG_REQUIRES_SCHEMA_2_0 = (
+    "Katalog zdrojů rizik vyžaduje odpověď ve formátu schema 2.0 "
+    "(ucelené návrhové balíky). Atomizovaný formát schema 1.1 nelze načíst."
+)
+AI_PEER_REVIEW_IMPORT_INTRO_PACKAGES = (
+    "Označte návrhové balíky k uložení do evidence ke zpracování. "
+    "Neoznačené balíky budou evidovány jako zamítnuté. "
+    "Balíky se zatím nezapisují do MASTER obsahu katalogu."
 )
 
 AI_PEER_REVIEW_RESPONSE_ZIP_PREFERRED_NAMES = (
@@ -283,6 +309,123 @@ AI_PEER_REVIEW_RESPONSE_SCHEMA = {
                     "type": "string",
                     "description": "Stručné odborné zdůvodnění.",
                 },
+            },
+        },
+    },
+}
+
+AI_PEER_REVIEW_RESPONSE_SCHEMA_2_0 = {
+    "schema_version": "2.0",
+    "description": (
+        "Očekávaný formát odpovědi AI pro oponentní posouzení katalogu zdrojů rizik. "
+        "Každý návrh je ucelený balík: událost, posouzení, opatření a právní vazby."
+    ),
+    "type": "object",
+    "required": [
+        "schema_version",
+        "source_reference",
+        "proposal_packages",
+    ],
+    "properties": {
+        "schema_version": {
+            "type": "string",
+            "const": "2.0",
+        },
+        "source_reference": {
+            "type": "string",
+            "description": "Reference zdroje z zadani.json (např. KZR-0002).",
+        },
+        "generated_at": {
+            "type": "string",
+            "format": "date-time",
+        },
+        "proposal_packages": {
+            "type": "array",
+            "items": {"$ref": "#/$defs/proposal_package"},
+        },
+    },
+    "$defs": {
+        "measure": {
+            "type": "object",
+            "required": ["description"],
+            "properties": {
+                "description": {"type": "string"},
+                "note": {"type": "string"},
+            },
+        },
+        "assessment": {
+            "type": "object",
+            "required": [
+                "exposed_group",
+                "consequence",
+                "severity",
+            ],
+            "properties": {
+                "exposed_group": {"type": "string"},
+                "consequence": {"type": "string"},
+                "severity": {
+                    "type": "string",
+                    "enum": [
+                        "negligible",
+                        "minor",
+                        "moderate",
+                        "serious",
+                        "critical",
+                    ],
+                },
+                "conclusion": {"type": "string"},
+                "existing_measures": {
+                    "type": "array",
+                    "items": {"$ref": "#/$defs/measure"},
+                },
+                "required_measures": {
+                    "type": "array",
+                    "items": {"$ref": "#/$defs/measure"},
+                },
+            },
+        },
+        "legal_link": {
+            "type": "object",
+            "required": ["reference"],
+            "properties": {
+                "reference": {"type": "string"},
+                "reasoning": {"type": "string"},
+            },
+        },
+        "proposal_package": {
+            "type": "object",
+            "required": [
+                "package_id",
+                "package_type",
+                "assessments",
+            ],
+            "properties": {
+                "package_id": {"type": "string"},
+                "package_type": {
+                    "type": "string",
+                    "enum": ["new_event", "extend_event"],
+                },
+                "target_event_export_id": {
+                    "type": ["string", "null"],
+                },
+                "event": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "name": {"type": "string"},
+                        "description": {"type": "string"},
+                        "note": {"type": "string"},
+                    },
+                },
+                "assessments": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {"$ref": "#/$defs/assessment"},
+                },
+                "legal_links": {
+                    "type": "array",
+                    "items": {"$ref": "#/$defs/legal_link"},
+                },
+                "reasoning": {"type": "string"},
             },
         },
     },

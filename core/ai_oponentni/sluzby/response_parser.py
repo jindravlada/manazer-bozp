@@ -8,15 +8,20 @@ from dataclasses import dataclass
 
 from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_FORMAT_JSON_1_1,
+    AI_PEER_REVIEW_FORMAT_JSON_2_0,
     AI_PEER_REVIEW_FORMAT_TEXT,
+    AI_PEER_REVIEW_FORMAT_TEXT_2_0,
     AI_PEER_REVIEW_SCHEMA_VERSION,
+    AI_PEER_REVIEW_SCHEMA_VERSION_2_0,
+)
+from core.ai_oponentni.proposal_package_types import AiProposalPackage
+from core.ai_oponentni.sluzby.proposal_package_parser import (
+    parse_ai_proposal_packages_response,
 )
 from core.ai_oponentni.types import AiPeerReviewParseResult, AiProposal
 
 
-class AiPeerReviewParseError(ValueError):
-    """Chyba strukturované JSON odpovědi, která vypadá jako naše schéma."""
-
+from core.ai_oponentni.sluzby.parse_errors import AiPeerReviewParseError
 
 _AREA_RE = re.compile(r"^oblast\s*:\s*(.+)$", re.IGNORECASE)
 _NAME_RE = re.compile(r"^návrh\s*:\s*(.+)$", re.IGNORECASE)
@@ -36,18 +41,23 @@ def parse_ai_peer_review_response(
     text: str,
     *,
     expected_source_identification_number: str | None = None,
+    require_proposal_packages: bool = False,
 ) -> AiPeerReviewParseResult:
     """
     Pořadí:
     1. pokus o JSON,
-    2. pokud jde o podporovanou odpověď dle schématu → JSON parser,
-    3. jinak textový parser (zpětná kompatibilita).
+    2. pokud jde o schema 2.0 → parser balíků,
+    3. pokud jde o schema 1.1 → JSON parser atomických návrhů,
+    4. jinak textový parser (1.1 nebo 2.0 podle režimu).
     """
     raw = text if text is not None else ""
     if not raw.strip():
         return AiPeerReviewParseResult(
-            proposals=[],
-            format_label=AI_PEER_REVIEW_FORMAT_TEXT,
+            format_label=(
+                AI_PEER_REVIEW_FORMAT_TEXT_2_0
+                if require_proposal_packages
+                else AI_PEER_REVIEW_FORMAT_TEXT
+            ),
         )
 
     try:
@@ -56,6 +66,26 @@ def parse_ai_peer_review_response(
         loaded = None
 
     if isinstance(loaded, dict) and _looks_like_schema_response(loaded):
+        schema_version = str(loaded.get("schema_version") or "")
+        if schema_version == AI_PEER_REVIEW_SCHEMA_VERSION_2_0 or (
+            require_proposal_packages and "proposal_packages" in loaded
+        ):
+            package_result = parse_ai_proposal_packages_response(
+                raw,
+                expected_source_reference=expected_source_identification_number,
+            )
+            return AiPeerReviewParseResult(
+                packages=package_result.packages,
+                format_label=package_result.format_label,
+                schema_version=package_result.schema_version,
+                source_reference=package_result.source_reference,
+                skipped_count=len(package_result.skip_reasons),
+                skip_reasons=package_result.skip_reasons,
+            )
+        if require_proposal_packages:
+            raise AiPeerReviewParseError(
+                "Katalog zdrojů rizik vyžaduje odpověď ve formátu schema 2.0."
+            )
         proposals, skip_reasons = _parse_json_schema_response(
             loaded,
             expected_source_identification_number=expected_source_identification_number,
@@ -63,8 +93,22 @@ def parse_ai_peer_review_response(
         return AiPeerReviewParseResult(
             proposals=proposals,
             format_label=AI_PEER_REVIEW_FORMAT_JSON_1_1,
+            schema_version=AI_PEER_REVIEW_SCHEMA_VERSION,
             skipped_count=len(skip_reasons),
             skip_reasons=skip_reasons,
+        )
+
+    if require_proposal_packages:
+        package_result = parse_ai_proposal_packages_response(
+            raw,
+            expected_source_reference=expected_source_identification_number,
+        )
+        return AiPeerReviewParseResult(
+            packages=package_result.packages,
+            format_label=package_result.format_label,
+            schema_version=package_result.schema_version or AI_PEER_REVIEW_SCHEMA_VERSION_2_0,
+            skipped_count=len(package_result.skip_reasons),
+            skip_reasons=package_result.skip_reasons,
         )
 
     text_proposals = parse_ai_peer_review_text_response(raw)

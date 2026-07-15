@@ -505,6 +505,17 @@ Dokončení workflow po ručním rozhodnutí:
 - stav se změní na Zapracováno, objekt vznikne v MASTER a UI se obnoví
 - průvodce R19.1 teprve potom pokračuje na další problémový návrh
 
+## Fáze R20a
+
+AI oponentura katalogu jako ucelené návrhové balíky (schema 2.0):
+
+- export katalogu používá `schema_odpovedi.json` verze 2.0 s `proposal_packages`
+- každý balík obsahuje událost (nebo vazbu na EVENT-…), posouzení, opatření a právní vazby
+- validace odmítne neúplné balíky; neplatný balík se neimportuje částečně
+- atomizovaný import schema 1.1 nelze načíst do nových katalogových konzultací
+- schema 1.1 zůstává pro čtení historických odpovědí identifikace rizik
+- UI zobrazuje přehled načtených balíků; zápis do MASTER zatím není implementován
+
 ## Fáze R18g
 
 Zapracování návrhů AI do MASTER obsahu katalogu:
