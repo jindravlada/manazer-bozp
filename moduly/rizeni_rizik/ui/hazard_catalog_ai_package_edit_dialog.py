@@ -215,18 +215,21 @@ class HazardCatalogAiPackageEditDialog(QDialog):
         )
         legal_layout.addWidget(self.legal_references)
 
-        self.legal_requirement = QComboBox()
-        self.legal_requirement.addItem("— bez výběru z registru —", None)
-        for requirement_id, label in (
-            hazard_catalog_proposal_incorporate_service.list_legal_requirement_candidates()
+        self.legal_document = QComboBox()
+        self.legal_document.addItem("— bez výběru z registru —", None)
+        for document_id, label in (
+            hazard_catalog_proposal_incorporate_service.list_legal_document_candidates()
         ):
-            self.legal_requirement.addItem(label, requirement_id)
-        if package.legal_links and package.legal_links[0].legal_requirement_id is not None:
-            index = self.legal_requirement.findData(package.legal_links[0].legal_requirement_id)
+            self.legal_document.addItem(label, document_id)
+        selected_document_id = None
+        if package.legal_links:
+            selected_document_id = package.legal_links[0].legal_document_id
+        if selected_document_id is not None:
+            index = self.legal_document.findData(selected_document_id)
             if index >= 0:
-                self.legal_requirement.setCurrentIndex(index)
-        legal_layout.addWidget(QLabel("Mapovat první řádek na požadavek:"))
-        legal_layout.addWidget(self.legal_requirement)
+                self.legal_document.setCurrentIndex(index)
+        legal_layout.addWidget(QLabel("Mapovat první řádek na předpis:"))
+        legal_layout.addWidget(self.legal_document)
         layout.addWidget(legal_box)
 
         self.reasoning = QPlainTextEdit(package.reasoning or "")
@@ -297,7 +300,7 @@ class HazardCatalogAiPackageEditDialog(QDialog):
                 )
 
         legal_links: list[AiProposalPackageLegalLink] = []
-        selected_requirement_id = self.legal_requirement.currentData()
+        selected_document_id = self.legal_document.currentData()
         for index, line in enumerate(self.legal_references.toPlainText().splitlines()):
             reference = line.strip()
             if not reference:
@@ -305,8 +308,8 @@ class HazardCatalogAiPackageEditDialog(QDialog):
             legal_links.append(
                 AiProposalPackageLegalLink(
                     reference=reference,
-                    legal_requirement_id=(
-                        selected_requirement_id if index == 0 else None
+                    legal_document_id=(
+                        selected_document_id if index == 0 else None
                     ),
                 ),
             )

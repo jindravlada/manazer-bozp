@@ -7,13 +7,15 @@ from core.database.base import Base
 
 
 class HazardLibraryTemplateLegalLink(Base):
-    """Právní vazba zdroje rizika na řídicí proces (RPP)."""
+    """Právní vazba zdroje rizika na právní předpis (R19b)."""
 
     __tablename__ = "hazard_library_template_legal_links"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     template_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    legal_requirement_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    legal_document_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Dočasně / volitelně — migrace a budoucí upřesnění na požadavek P-xxx.
+    legal_requirement_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     note: Mapped[str] = mapped_column(Text, default="")
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

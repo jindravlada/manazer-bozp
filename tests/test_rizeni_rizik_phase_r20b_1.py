@@ -1,4 +1,4 @@
-"""HOTFIX R20b.1 – normalizace právních odkazů AI vůči RPP."""
+"""HOTFIX R20b.1 / R19b – normalizace právních odkazů AI vůči předpisům."""
 
 from __future__ import annotations
 
@@ -24,14 +24,17 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
-    from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
-    from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
-        legal_requirement_service,
+    from moduly.pravni_pozadavky.constants import (
+        DOCUMENT_TYPE_NARIZENI_VLADY,
+        DOCUMENT_TYPE_VYHLASKA,
+        DOCUMENT_TYPE_ZAKON,
     )
+    from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
+    from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
     from moduly.rizeni_rizik.sluzby.hazard_catalog_legal_requirement_resolver import (
-        LegalRequirementMatchKind,
+        LegalDocumentMatchKind,
         expand_legal_abbreviations,
-        hazard_catalog_legal_requirement_resolver,
+        hazard_catalog_legal_document_resolver,
         normalize_legal_citation_text,
         parse_legal_citation,
     )
@@ -44,32 +47,32 @@ class LegalCitationNormalizationR20b1TestCase(unittest.TestCase):
         from core.database.session import get_session
 
         with get_session() as session:
-            session.execute(delete(LegalRequirement))
+            session.execute(delete(LegalDocument))
             session.commit()
 
-        self.nv_378 = legal_requirement_service.create_requirement(
+        self.nv_378 = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
+            number="378",
+            year=2001,
             title="Bezpečnost provozu",
-            process_code="P-378",
-            regulation_name="Nařízení vlády č. 378/2001 Sb.",
-            regulation_number="378/2001 Sb.",
         )
-        self.vyhl_50 = legal_requirement_service.create_requirement(
+        self.vyhl_50 = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_VYHLASKA,
+            number="50",
+            year=1978,
             title="Odborná způsobilost",
-            process_code="P-050",
-            regulation_name="Vyhláška č. 50/1978 Sb.",
-            regulation_number="50/1978 Sb.",
         )
-        self.zak_262 = legal_requirement_service.create_requirement(
+        self.zak_262 = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_ZAKON,
+            number="262",
+            year=2006,
             title="Zákoník práce",
-            process_code="P-262",
-            regulation_name="Zákon č. 262/2006 Sb.",
-            regulation_number="262/2006 Sb.",
         )
-        self.nv_other_year = legal_requirement_service.create_requirement(
+        self.nv_other_year = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
+            number="378",
+            year=2002,
             title="Jiný rok",
-            process_code="P-379",
-            regulation_name="Nařízení vlády č. 378/2002 Sb.",
-            regulation_number="378/2002 Sb.",
         )
 
     def test_expand_abbreviations(self) -> None:
@@ -101,41 +104,41 @@ class LegalCitationNormalizationR20b1TestCase(unittest.TestCase):
         self.assertEqual(parsed.regulation_type, "narizeni_vlady")
 
     def test_nv_with_cislo_matches_full_name(self) -> None:
-        match = hazard_catalog_legal_requirement_resolver.resolve("NV č. 378/2001 Sb.")
-        self.assertEqual(match.kind, LegalRequirementMatchKind.EXACT)
-        self.assertEqual(match.requirement_id, self.nv_378.id)
+        match = hazard_catalog_legal_document_resolver.resolve("NV č. 378/2001 Sb.")
+        self.assertEqual(match.kind, LegalDocumentMatchKind.EXACT)
+        self.assertEqual(match.document_id, self.nv_378.id)
 
     def test_nv_without_cislo_matches_same_regulation(self) -> None:
-        match = hazard_catalog_legal_requirement_resolver.resolve("NV 378/2001")
-        self.assertEqual(match.kind, LegalRequirementMatchKind.EXACT)
-        self.assertEqual(match.requirement_id, self.nv_378.id)
+        match = hazard_catalog_legal_document_resolver.resolve("NV 378/2001")
+        self.assertEqual(match.kind, LegalDocumentMatchKind.EXACT)
+        self.assertEqual(match.document_id, self.nv_378.id)
 
     def test_vyhlaska_abbreviation(self) -> None:
-        match = hazard_catalog_legal_requirement_resolver.resolve("vyhl. č. 50/1978 Sb.")
-        self.assertEqual(match.kind, LegalRequirementMatchKind.EXACT)
-        self.assertEqual(match.requirement_id, self.vyhl_50.id)
+        match = hazard_catalog_legal_document_resolver.resolve("vyhl. č. 50/1978 Sb.")
+        self.assertEqual(match.kind, LegalDocumentMatchKind.EXACT)
+        self.assertEqual(match.document_id, self.vyhl_50.id)
 
     def test_zakon_abbreviation(self) -> None:
-        match = hazard_catalog_legal_requirement_resolver.resolve("zák. č. 262/2006 Sb.")
-        self.assertEqual(match.kind, LegalRequirementMatchKind.EXACT)
-        self.assertEqual(match.requirement_id, self.zak_262.id)
+        match = hazard_catalog_legal_document_resolver.resolve("zák. č. 262/2006 Sb.")
+        self.assertEqual(match.kind, LegalDocumentMatchKind.EXACT)
+        self.assertEqual(match.document_id, self.zak_262.id)
 
     def test_same_number_different_year_is_not_false_match(self) -> None:
-        match = hazard_catalog_legal_requirement_resolver.resolve("NV č. 378/2001 Sb.")
-        self.assertEqual(match.requirement_id, self.nv_378.id)
-        other = hazard_catalog_legal_requirement_resolver.resolve("NV 378/2002")
-        self.assertEqual(other.kind, LegalRequirementMatchKind.EXACT)
-        self.assertEqual(other.requirement_id, self.nv_other_year.id)
-        self.assertNotEqual(match.requirement_id, other.requirement_id)
+        match = hazard_catalog_legal_document_resolver.resolve("NV č. 378/2001 Sb.")
+        self.assertEqual(match.document_id, self.nv_378.id)
+        other = hazard_catalog_legal_document_resolver.resolve("NV 378/2002")
+        self.assertEqual(other.kind, LegalDocumentMatchKind.EXACT)
+        self.assertEqual(other.document_id, self.nv_other_year.id)
+        self.assertNotEqual(match.document_id, other.document_id)
 
-    def test_ambiguous_when_multiple_processes_share_citation(self) -> None:
-        second = legal_requirement_service.create_requirement(
-            title="Další proces ke stejnému NV",
-            process_code="P-380",
-            regulation_name="Nařízení vlády č. 378/2001 Sb.",
-            regulation_number="378/2001 Sb.",
+    def test_ambiguous_when_multiple_documents_share_citation(self) -> None:
+        second = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
+            number="378",
+            year=2001,
+            title="Další předpis ke stejnému NV",
         )
-        match = hazard_catalog_legal_requirement_resolver.resolve("NV 378/2001")
-        self.assertEqual(match.kind, LegalRequirementMatchKind.AMBIGUOUS)
+        match = hazard_catalog_legal_document_resolver.resolve("NV 378/2001")
+        self.assertEqual(match.kind, LegalDocumentMatchKind.AMBIGUOUS)
         candidate_ids = {item[0] for item in match.candidates}
         self.assertEqual(candidate_ids, {self.nv_378.id, second.id})

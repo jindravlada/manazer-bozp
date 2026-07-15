@@ -55,8 +55,8 @@ from moduly.rizeni_rizik.modely.hazard_library_template_revision import (
     HazardLibraryTemplateRevision,
 )
 from moduly.rizeni_rizik.sluzby.hazard_catalog_legal_requirement_resolver import (
-    LegalRequirementMatchKind,
-    hazard_catalog_legal_requirement_resolver,
+    LegalDocumentMatchKind,
+    hazard_catalog_legal_document_resolver,
 )
 from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_support import (
     CATALOG_CONFLICT_TYPE_ASSESSMENT_CHOICE,
@@ -331,12 +331,24 @@ class HazardCatalogProposalIncorporateService:
     ) -> bool:
         payload = parse_proposal_payload(proposal)
         requirement_id = payload.legal_requirement_id
-        if requirement_id is None:
-            match = hazard_catalog_legal_requirement_resolver.resolve(proposal.name)
-            if match.kind == LegalRequirementMatchKind.NONE:
+        document_id = payload.legal_document_id
+        if document_id is None and requirement_id is not None:
+            from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
+                legal_requirement_service,
+            )
+
+            requirement = legal_requirement_service.get_by_id(requirement_id)
+            if requirement is not None and requirement.legal_document_id is not None:
+                document_id = int(requirement.legal_document_id)
+                self._store_legal_document_id(proposal, document_id)
+                self.proposal_repository.update(proposal)
+
+        if document_id is None:
+            match = hazard_catalog_legal_document_resolver.resolve(proposal.name)
+            if match.kind == LegalDocumentMatchKind.NONE:
                 pending_proposal_ids.append(proposal.id)
                 return True
-            if match.kind == LegalRequirementMatchKind.AMBIGUOUS:
+            if match.kind == LegalDocumentMatchKind.AMBIGUOUS:
                 conflicts.append(
                     CatalogProposalConflict(
                         proposal_id=proposal.id,
@@ -346,11 +358,11 @@ class HazardCatalogProposalIncorporateService:
                     ),
                 )
                 return True
-            requirement_id = match.requirement_id
-            self._store_legal_requirement_id(proposal, requirement_id)
+            document_id = match.document_id
+            self._store_legal_document_id(proposal, document_id)
             self.proposal_repository.update(proposal)
 
-        duplicate = self._find_legal_link_duplicate(template_id, requirement_id)
+        duplicate = self._find_legal_link_duplicate(template_id, document_id)
         if duplicate is None:
             return True
         if duplicate.match_type == CATALOG_DUPLICATE_MATCH_EXACT:
@@ -368,6 +380,24 @@ class HazardCatalogProposalIncorporateService:
         return True
 
     @staticmethod
+    def _store_legal_document_id(
+        proposal: AiUnassignedProposal,
+        legal_document_id: int | None,
+    ) -> None:
+        payload = parse_proposal_payload(proposal)
+        proposal.payload_json = proposal_payload_to_json(
+            CatalogProposalPayload(
+                description=payload.description,
+                note=payload.note,
+                consequence=payload.consequence,
+                conclusion=payload.conclusion,
+                severity=payload.severity,
+                legal_document_id=legal_document_id,
+                legal_requirement_id=payload.legal_requirement_id,
+            ),
+        )
+
+    @staticmethod
     def _store_legal_requirement_id(
         proposal: AiUnassignedProposal,
         legal_requirement_id: int | None,
@@ -380,6 +410,7 @@ class HazardCatalogProposalIncorporateService:
                 consequence=payload.consequence,
                 conclusion=payload.conclusion,
                 severity=payload.severity,
+                legal_document_id=payload.legal_document_id,
                 legal_requirement_id=legal_requirement_id,
             ),
         )
@@ -490,25 +521,25 @@ class HazardCatalogProposalIncorporateService:
     def _find_legal_link_duplicate(
         self,
         template_id: int,
-        legal_requirement_id: int | None,
+        legal_document_id: int | None,
     ) -> CatalogProposalDuplicate | None:
-        if legal_requirement_id is None:
+        if legal_document_id is None:
             return None
-        from moduly.pravni_pozadavky.constants import legal_requirement_merged_target_label
-        from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
-            legal_requirement_service,
+        from moduly.pravni_pozadavky.constants import legal_document_catalog_link_label
+        from moduly.pravni_pozadavky.sluzby.legal_document_service import (
+            legal_document_service,
         )
         from moduly.rizeni_rizik.sluzby.hazard_library_template_legal_link_service import (
             hazard_library_template_legal_link_service,
         )
 
-        requirement = legal_requirement_service.get_by_id(legal_requirement_id)
-        label = legal_requirement_merged_target_label(requirement) if requirement else "—"
+        document = legal_document_service.get_by_id(legal_document_id)
+        label = legal_document_catalog_link_label(document) if document else "—"
         for link in hazard_library_template_legal_link_service.get_for_template(
             template_id,
             include_inactive=False,
         ):
-            if link.legal_requirement_id == legal_requirement_id:
+            if link.legal_document_id == legal_document_id:
                 return CatalogProposalDuplicate(
                     kind=CATALOG_PROPOSAL_KIND_LEGAL,
                     match_type=CATALOG_DUPLICATE_MATCH_EXACT,
@@ -529,16 +560,24 @@ class HazardCatalogProposalIncorporateService:
         proposal.parent_export_id = assessment_export_id.strip()
         self.proposal_repository.update(proposal)
 
+    def assign_proposal_legal_document(
+        self,
+        proposal_id: int,
+        legal_document_id: int,
+    ) -> None:
+        proposal = self.proposal_repository.get_by_id(proposal_id)
+        if proposal is None:
+            return
+        self._store_legal_document_id(proposal, legal_document_id)
+        self.proposal_repository.update(proposal)
+
     def assign_proposal_legal_requirement(
         self,
         proposal_id: int,
         legal_requirement_id: int,
     ) -> None:
-        proposal = self.proposal_repository.get_by_id(proposal_id)
-        if proposal is None:
-            return
-        self._store_legal_requirement_id(proposal, legal_requirement_id)
-        self.proposal_repository.update(proposal)
+        """Deprecated alias — ID se bere jako legal_document_id (R19b)."""
+        self.assign_proposal_legal_document(proposal_id, legal_requirement_id)
 
     def _find_duplicate_match(
         self,
@@ -614,7 +653,7 @@ class HazardCatalogProposalIncorporateService:
 
         if kind == CATALOG_PROPOSAL_KIND_LEGAL:
             payload = parse_proposal_payload(proposal)
-            return self._find_legal_link_duplicate(template_id, payload.legal_requirement_id)
+            return self._find_legal_link_duplicate(template_id, payload.legal_document_id)
 
         return None
 
@@ -763,7 +802,7 @@ class HazardCatalogProposalIncorporateService:
                 kind = classify_catalog_proposal(db_proposal)
                 if kind == CATALOG_PROPOSAL_KIND_LEGAL:
                     payload = parse_proposal_payload(db_proposal)
-                    if payload.legal_requirement_id is None:
+                    if payload.legal_document_id is None and payload.legal_requirement_id is None:
                         requires_manual += 1
                         manual_decision_proposal_ids.append(proposal.id)
                         continue
@@ -825,16 +864,21 @@ class HazardCatalogProposalIncorporateService:
         )
 
     @staticmethod
-    def list_legal_requirement_candidates() -> tuple[tuple[int, str], ...]:
-        from moduly.pravni_pozadavky.constants import legal_requirement_merged_target_label
-        from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
-            legal_requirement_service,
+    def list_legal_document_candidates() -> tuple[tuple[int, str], ...]:
+        from moduly.pravni_pozadavky.constants import legal_document_catalog_link_label
+        from moduly.pravni_pozadavky.sluzby.legal_document_service import (
+            legal_document_service,
         )
 
         return tuple(
-            (process.id, legal_requirement_merged_target_label(process))
-            for process in legal_requirement_service.list_active_processes()
+            (document.id, legal_document_catalog_link_label(document))
+            for document in legal_document_service.list_all(include_inactive=False)
         )
+
+    @staticmethod
+    def list_legal_requirement_candidates() -> tuple[tuple[int, str], ...]:
+        """Deprecated alias — kandidáti jsou právní předpisy (R19b)."""
+        return HazardCatalogProposalIncorporateService.list_legal_document_candidates()
 
     def merge_incorporate_results(
         self,
@@ -970,10 +1014,12 @@ class HazardCatalogProposalIncorporateService:
             return
 
         if kind == CATALOG_PROPOSAL_KIND_LEGAL:
-            if payload.legal_requirement_id is None:
+            document_id = payload.legal_document_id
+            if document_id is None:
                 return
             link = HazardLibraryTemplateLegalLink(
                 template_id=template_id,
+                legal_document_id=document_id,
                 legal_requirement_id=payload.legal_requirement_id,
                 note=note,
                 active=True,

@@ -35,6 +35,7 @@ class AiProposalPackageAssessment:
 class AiProposalPackageLegalLink:
     reference: str
     reasoning: str = ""
+    legal_document_id: int | None = None
     legal_requirement_id: int | None = None
 
 
@@ -115,6 +116,7 @@ class AiProposalPackage:
                 {
                     "reference": link.reference,
                     "reasoning": link.reasoning,
+                    "legal_document_id": link.legal_document_id,
                     "legal_requirement_id": link.legal_requirement_id,
                 }
                 for link in self.legal_links
@@ -165,6 +167,7 @@ class AiProposalPackage:
             AiProposalPackageLegalLink(
                 reference=str(item.get("reference") or "").strip(),
                 reasoning=str(item.get("reasoning") or "").strip(),
+                legal_document_id=_optional_int(item.get("legal_document_id")),
                 legal_requirement_id=_optional_int(item.get("legal_requirement_id")),
             )
             for item in (payload.get("legal_links") or [])

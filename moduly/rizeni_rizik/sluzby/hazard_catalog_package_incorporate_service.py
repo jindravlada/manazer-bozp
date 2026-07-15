@@ -53,8 +53,8 @@ from moduly.rizeni_rizik.modely.hazard_library_template_revision import (
     HazardLibraryTemplateRevision,
 )
 from moduly.rizeni_rizik.sluzby.hazard_catalog_legal_requirement_resolver import (
-    LegalRequirementMatchKind,
-    hazard_catalog_legal_requirement_resolver,
+    LegalDocumentMatchKind,
+    hazard_catalog_legal_document_resolver,
 )
 from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_incorporate_service import (
     HazardCatalogProposalIncorporateService,
@@ -218,11 +218,12 @@ class HazardCatalogPackageIncorporateService:
                     required_measure_count += 1
 
             for link in package.legal_links:
-                requirement_id = self._resolve_legal_requirement_id(link)
+                document_id = self._resolve_legal_document_id(link)
                 session.add(
                     HazardLibraryTemplateLegalLink(
                         template_id=template_id,
-                        legal_requirement_id=requirement_id,
+                        legal_document_id=document_id,
+                        legal_requirement_id=link.legal_requirement_id,
                         note=self._build_legal_note(link, package.reasoning),
                         active=True,
                         sort_order=self._order._next_legal_link_sort_order(
@@ -351,20 +352,20 @@ class HazardCatalogPackageIncorporateService:
             ),
         )
 
-    def _resolve_legal_requirement_id(self, link) -> int:
-        if link.legal_requirement_id is not None:
-            return int(link.legal_requirement_id)
-        match = hazard_catalog_legal_requirement_resolver.resolve(link.reference or "")
-        if match.kind == LegalRequirementMatchKind.EXACT and match.requirement_id is not None:
-            return int(match.requirement_id)
-        if match.kind == LegalRequirementMatchKind.AMBIGUOUS:
+    def _resolve_legal_document_id(self, link) -> int:
+        if link.legal_document_id is not None:
+            return int(link.legal_document_id)
+        match = hazard_catalog_legal_document_resolver.resolve(link.reference or "")
+        if match.kind == LegalDocumentMatchKind.EXACT and match.document_id is not None:
+            return int(match.document_id)
+        if match.kind == LegalDocumentMatchKind.AMBIGUOUS:
             raise HazardCatalogPackageIncorporateError(
-                f"Právní odkaz „{link.reference}“ odpovídá více požadavkům. "
-                "Upravte balík a vyberte konkrétní požadavek.",
+                f"Právní odkaz „{link.reference}“ odpovídá více předpisům. "
+                "Upravte balík a vyberte konkrétní předpis.",
             )
         raise HazardCatalogPackageIncorporateError(
-            f"Právní odkaz „{link.reference}“ nebyl v registru nalezen. "
-            "Upravte balík a vyberte existující právní požadavek.",
+            f"Právní odkaz „{link.reference}“ nebyl v registru předpisů nalezen. "
+            "Upravte balík a vyberte existující právní předpis.",
         )
 
     @staticmethod

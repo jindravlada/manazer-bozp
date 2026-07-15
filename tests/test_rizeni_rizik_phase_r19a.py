@@ -27,7 +27,10 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
+    from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_NARIZENI_VLADY
+    from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
     from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
+    from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
     from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
         legal_requirement_service,
     )
@@ -65,8 +68,21 @@ class HazardCatalogLegalRequirementUsageR19aTestCase(unittest.TestCase):
             session.execute(delete(HazardLibraryTemplateLegalLink))
             session.execute(delete(HazardLibraryTemplate))
             session.execute(delete(LegalRequirement))
+            session.execute(delete(LegalDocument))
             session.commit()
 
+        self.document = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
+            number="100",
+            year=2000,
+            title="Testovací předpis",
+        )
+        self.other_document = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
+            number="101",
+            year=2000,
+            title="Druhý předpis",
+        )
         self.process = legal_requirement_service.create_requirement(
             title="Proces BOZP",
             process_code="P-701",
@@ -75,11 +91,13 @@ class HazardCatalogLegalRequirementUsageR19aTestCase(unittest.TestCase):
             title="Požadavek školení",
             process_code=legal_requirement_service.allocate_child_process_code(self.process.id),
             parent_requirement_id=self.process.id,
+            legal_document_id=self.document.id,
         )
         self.other_child = legal_requirement_service.create_requirement(
             title="Požadavek OOPP",
             process_code=legal_requirement_service.allocate_child_process_code(self.process.id),
             parent_requirement_id=self.process.id,
+            legal_document_id=self.other_document.id,
         )
         self.template_a = hazard_library_template_service.create_template(
             name="Zdroj A",
@@ -95,7 +113,7 @@ class HazardCatalogLegalRequirementUsageR19aTestCase(unittest.TestCase):
     def test_requirement_shows_linked_active_source(self) -> None:
         hazard_library_template_legal_link_service.create_link(
             template_id=self.template_a.id,
-            legal_requirement_id=self.child.id,
+            legal_document_id=self.document.id,
         )
         sources = hazard_catalog_legal_requirement_usage_service.list_sources_for_requirement(
             self.child.id,
@@ -107,7 +125,7 @@ class HazardCatalogLegalRequirementUsageR19aTestCase(unittest.TestCase):
     def test_process_shows_source_from_active_child_requirement(self) -> None:
         hazard_library_template_legal_link_service.create_link(
             template_id=self.template_a.id,
-            legal_requirement_id=self.child.id,
+            legal_document_id=self.document.id,
         )
         sources = hazard_catalog_legal_requirement_usage_service.list_sources_for_process(
             self.process.id,
@@ -118,7 +136,7 @@ class HazardCatalogLegalRequirementUsageR19aTestCase(unittest.TestCase):
     def test_inactive_link_is_not_shown(self) -> None:
         link = hazard_library_template_legal_link_service.create_link(
             template_id=self.template_a.id,
-            legal_requirement_id=self.child.id,
+            legal_document_id=self.document.id,
         )
         hazard_library_template_legal_link_service.deactivate_link(link.id)
         sources = hazard_catalog_legal_requirement_usage_service.list_sources_for_requirement(
@@ -129,7 +147,7 @@ class HazardCatalogLegalRequirementUsageR19aTestCase(unittest.TestCase):
     def test_inactive_template_is_not_shown(self) -> None:
         hazard_library_template_legal_link_service.create_link(
             template_id=self.template_a.id,
-            legal_requirement_id=self.child.id,
+            legal_document_id=self.document.id,
         )
         hazard_library_template_service.deactivate(self.template_a.id)
         sources = hazard_catalog_legal_requirement_usage_service.list_sources_for_requirement(
@@ -140,15 +158,15 @@ class HazardCatalogLegalRequirementUsageR19aTestCase(unittest.TestCase):
     def test_process_deduplicates_sources_from_multiple_children(self) -> None:
         hazard_library_template_legal_link_service.create_link(
             template_id=self.template_a.id,
-            legal_requirement_id=self.child.id,
+            legal_document_id=self.document.id,
         )
         hazard_library_template_legal_link_service.create_link(
             template_id=self.template_a.id,
-            legal_requirement_id=self.other_child.id,
+            legal_document_id=self.other_document.id,
         )
         hazard_library_template_legal_link_service.create_link(
             template_id=self.template_b.id,
-            legal_requirement_id=self.other_child.id,
+            legal_document_id=self.other_document.id,
         )
         sources = hazard_catalog_legal_requirement_usage_service.list_sources_for_process(
             self.process.id,
@@ -166,7 +184,7 @@ class HazardCatalogLegalRequirementUsageR19aTestCase(unittest.TestCase):
 
         hazard_library_template_legal_link_service.create_link(
             template_id=self.template_a.id,
-            legal_requirement_id=self.child.id,
+            legal_document_id=self.document.id,
         )
         widget = LegalRequirementHazardCatalogSourcesWidget(
             requirement_id=self.child.id,
@@ -183,7 +201,7 @@ class HazardCatalogLegalRequirementUsageR19aTestCase(unittest.TestCase):
 
         hazard_library_template_legal_link_service.create_link(
             template_id=self.template_a.id,
-            legal_requirement_id=self.child.id,
+            legal_document_id=self.document.id,
         )
         widget = LegalRequirementHazardCatalogSourcesWidget(
             requirement_id=self.child.id,

@@ -33,7 +33,11 @@ from moduly.rizeni_rizik.constants_library import (
     HAZARD_LIBRARY_TEMPLATE_SELECT_EVENT,
     HAZARD_LIBRARY_TEMPLATE_SELECT_LEGAL_LINK,
 )
-from moduly.pravni_pozadavky.constants import legal_requirement_merged_target_label
+from moduly.pravni_pozadavky.constants import (
+    legal_document_catalog_link_label,
+    legal_requirement_merged_target_label,
+)
+from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
 from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
 from moduly.rizeni_rizik.sluzby.hazard_library_template_legal_link_service import (
     HazardLibraryTemplateLegalLinkError,
@@ -494,12 +498,15 @@ class HazardLibraryTemplateContentWidget(QWidget):
         self.legal_links_table.setRowCount(len(links))
         selected_row = -1
         for row_index, link in enumerate(links):
-            requirement = legal_requirement_service.get_by_id(link.legal_requirement_id)
-            label = (
-                legal_requirement_merged_target_label(requirement)
-                if requirement is not None
-                else "—"
-            )
+            label = "—"
+            if link.legal_document_id is not None:
+                document = legal_document_service.get_by_id(link.legal_document_id)
+                if document is not None:
+                    label = legal_document_catalog_link_label(document)
+            elif link.legal_requirement_id is not None:
+                requirement = legal_requirement_service.get_by_id(link.legal_requirement_id)
+                if requirement is not None:
+                    label = legal_requirement_merged_target_label(requirement)
             self.legal_links_table.setItem(
                 row_index,
                 HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_ID,

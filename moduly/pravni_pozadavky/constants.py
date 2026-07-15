@@ -190,6 +190,26 @@ def legal_document_list_label(document) -> str:
     return f"Předpis #{document_id}" if document_id is not None else "Předpis"
 
 
+def legal_document_catalog_link_label(document) -> str:
+    """Popisek vazby zdroje na předpis: typ, číslo/rok, název."""
+    type_key = (getattr(document, "document_type", "") or "").strip()
+    type_label = DOCUMENT_TYPE_LABELS.get(type_key, type_key)
+    regulation_number = legal_document_regulation_number(document)
+    title = (getattr(document, "title", "") or "").strip()
+    if not title:
+        title = (getattr(document, "short_title", "") or "").strip()
+
+    head = " ".join(part for part in (type_label, regulation_number) if part).strip()
+    if head and title:
+        return f"{head} – {title}"
+    if head:
+        return head
+    if title:
+        return title
+    document_id = getattr(document, "id", None)
+    return f"Předpis #{document_id}" if document_id is not None else "Předpis"
+
+
 def legal_document_matches_search(document, query: str) -> bool:
     normalized = (query or "").strip().casefold()
     if not normalized:

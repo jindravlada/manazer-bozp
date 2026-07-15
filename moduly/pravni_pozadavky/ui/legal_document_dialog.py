@@ -19,7 +19,9 @@ from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_LABELS, VALID_DOCUMENT_TYPES
 from moduly.pravni_pozadavky.ui.legal_document_versions_tab import LegalDocumentVersionsTab
 from moduly.pravni_pozadavky.ui.legal_document_process_usage_tab import LegalDocumentProcessUsageTab
-
+from moduly.pravni_pozadavky.ui.legal_document_hazard_catalog_sources_tab import (
+    LegalDocumentHazardCatalogSourcesTab,
+)
 
 class LegalDocumentDialog(QDialog):
     def __init__(self, parent=None, document=None):
@@ -40,6 +42,13 @@ class LegalDocumentDialog(QDialog):
         if document is not None:
             self.process_usage_tab = LegalDocumentProcessUsageTab(document_id=document.id)
             self.tabs.addTab(wrap_in_scroll_area(self.process_usage_tab), "Použití v procesech")
+            self.hazard_sources_tab = LegalDocumentHazardCatalogSourcesTab(
+                document_id=document.id,
+            )
+            self.tabs.addTab(
+                wrap_in_scroll_area(self.hazard_sources_tab),
+                "Zdroje rizik",
+            )
         layout.addWidget(self.tabs, 1)
         add_save_cancel_footer(layout, self)
 

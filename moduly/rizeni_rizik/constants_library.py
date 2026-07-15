@@ -46,12 +46,13 @@ HAZARD_LIBRARY_LEGAL_LINK_DIALOG_TITLE = "Právní vazba zdroje rizika"
 
 HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_ID = 0
 HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_REQUIREMENT = 1
+HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_DOCUMENT = 1
 HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_NOTE = 2
 HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COL_ACTIVE = 3
 HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_COLUMN_COUNT = 4
 HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_TABLE_HEADERS = [
     "ID",
-    "Právní požadavek",
+    "Právní předpis",
     "Poznámka",
     "Aktivní",
 ]
@@ -59,6 +60,9 @@ HAZARD_LIBRARY_TEMPLATE_LEGAL_LINKS_SECTION_TITLE = "Právní vazby"
 HAZARD_LIBRARY_TEMPLATE_SELECT_LEGAL_LINK = "Vyberte právní vazbu."
 HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_REQUIREMENT_REQUIRED = (
     "Vyberte právní požadavek z registru řídicích procesů."
+)
+HAZARD_LIBRARY_TEMPLATE_LEGAL_LINK_DOCUMENT_REQUIRED = (
+    "Vyberte právní předpis."
 )
 
 HAZARD_LIBRARY_TEMPLATE_EVENT_COL_ID = 0
@@ -254,12 +258,12 @@ CATALOG_AI_PROPOSAL_DUPLICATE_EDIT = "Upravit"
 CATALOG_AI_PROPOSAL_DUPLICATE_CANCEL = "Zrušit zapracování"
 CATALOG_AI_PROPOSAL_EDIT_DIALOG_TITLE = "Úprava návrhu AI"
 CATALOG_AI_PROPOSAL_LEGAL_EDIT_INFO = (
-    "Právní vazba se zapracuje jako odkaz na existující právní požadavek v registru RPP."
+    "Právní vazba se zapracuje jako odkaz na existující právní předpis v registru."
 )
-CATALOG_AI_PROPOSAL_REQUIREMENT_CHOICE_DIALOG_TITLE = "Výběr právního požadavku"
+CATALOG_AI_PROPOSAL_REQUIREMENT_CHOICE_DIALOG_TITLE = "Výběr právního předpisu"
 CATALOG_AI_PROPOSAL_REQUIREMENT_CHOICE_INTRO = (
-    "Návrh „{proposal_name}“ odpovídá více právním požadavkům.\n"
-    "Vyberte správný požadavek nebo návrh přeskočte."
+    "Návrh „{proposal_name}“ odpovídá více právním předpisům.\n"
+    "Vyberte správný předpis nebo návrh přeskočte."
 )
 CATALOG_AI_PROPOSAL_ASSESSMENT_CHOICE_DIALOG_TITLE = "Výběr posouzení pro opatření"
 CATALOG_AI_PROPOSAL_ASSESSMENT_CHOICE_INTRO = (
@@ -276,7 +280,7 @@ CATALOG_AI_PROPOSAL_ASSESSMENT_CREATE_INTRO = (
 )
 CATALOG_AI_PROPOSAL_ASSESSMENT_CREATE_EVENT_DIALOG_TITLE = "Výběr události pro nové posouzení"
 CATALOG_AI_PROPOSAL_REQUIREMENT_NOT_FOUND_INFO = (
-    "Právní požadavek pro návrh „{proposal_name}“ nebyl v registru nalezen. "
+    "Právní předpis pro návrh „{proposal_name}“ nebyl v registru nalezen. "
     "Návrh zůstane ve frontě ke zpracování."
 )
 
@@ -288,8 +292,8 @@ CATALOG_AI_PROPOSAL_MANUAL_COMPLETION_OFFER_TEXT = (
 CATALOG_AI_PROPOSAL_MANUAL_COMPLETION_OPEN_BUTTON = "Otevřít první problémový návrh"
 CATALOG_AI_PROPOSAL_MANUAL_COMPLETION_LATER_BUTTON = "Později"
 CATALOG_AI_PROPOSAL_MANUAL_REQUIREMENT_INTRO = (
-    "Právní požadavek pro návrh „{proposal_name}“ nebyl nalezen automaticky.\n"
-    "Vyberte správný požadavek z registru RPP."
+    "Právní předpis pro návrh „{proposal_name}“ nebyl nalezen automaticky.\n"
+    "Vyberte správný předpis z registru."
 )
 CATALOG_AI_PROPOSAL_MANUAL_COMPLETION_DEFERRED = (
     "Zapracování bylo částečně dokončeno. "

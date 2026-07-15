@@ -1450,6 +1450,14 @@ def _ensure_hazard_library_template_legal_links_table() -> None:
         )
 
         HazardLibraryTemplateLegalLink.__table__.create(bind=_db_engine(), checkfirst=True)
+    else:
+        if "legal_document_id" not in columns:
+            _add_column(
+                "hazard_library_template_legal_links",
+                "legal_document_id INTEGER",
+            )
+        _migrate_rebuild_hazard_library_template_legal_links_nullable()
+        _migrate_hazard_library_template_legal_links_to_documents()
     _ensure_index(
         "idx_hazard_library_template_legal_links_template",
         """
@@ -1457,6 +1465,122 @@ def _ensure_hazard_library_template_legal_links_table() -> None:
         ON hazard_library_template_legal_links (template_id)
         """,
     )
+    _ensure_index(
+        "idx_hazard_library_template_legal_links_document",
+        """
+        CREATE INDEX IF NOT EXISTS idx_hazard_library_template_legal_links_document
+        ON hazard_library_template_legal_links (legal_document_id)
+        """,
+    )
+
+
+def _migrate_rebuild_hazard_library_template_legal_links_nullable() -> None:
+    """R19b: legal_requirement_id NULLABLE, legal_document_id jako hlavní vazba."""
+    columns = _table_columns("hazard_library_template_legal_links")
+    if not columns or "legal_document_id" not in columns:
+        return
+    with _db_engine().connect() as connection:
+        create_sql = connection.execute(
+            text(
+                "SELECT sql FROM sqlite_master "
+                "WHERE type = 'table' AND name = 'hazard_library_template_legal_links'"
+            ),
+        ).scalar()
+        if not create_sql:
+            return
+        normalized = " ".join(str(create_sql).upper().split())
+        if "LEGAL_REQUIREMENT_ID INTEGER NOT NULL" not in normalized:
+            return
+
+        connection.execute(
+            text(
+                """
+                CREATE TABLE hazard_library_template_legal_links_r19b (
+                    id INTEGER NOT NULL PRIMARY KEY,
+                    template_id INTEGER NOT NULL,
+                    legal_document_id INTEGER,
+                    legal_requirement_id INTEGER,
+                    note TEXT DEFAULT '',
+                    active BOOLEAN DEFAULT 1,
+                    sort_order INTEGER NOT NULL DEFAULT 0,
+                    created_at DATETIME,
+                    updated_at DATETIME
+                )
+                """
+            ),
+        )
+        connection.execute(
+            text(
+                """
+                INSERT INTO hazard_library_template_legal_links_r19b (
+                    id,
+                    template_id,
+                    legal_document_id,
+                    legal_requirement_id,
+                    note,
+                    active,
+                    sort_order,
+                    created_at,
+                    updated_at
+                )
+                SELECT
+                    id,
+                    template_id,
+                    legal_document_id,
+                    legal_requirement_id,
+                    COALESCE(note, ''),
+                    COALESCE(active, 1),
+                    COALESCE(sort_order, 0),
+                    created_at,
+                    updated_at
+                FROM hazard_library_template_legal_links
+                """
+            ),
+        )
+        connection.execute(text("DROP TABLE hazard_library_template_legal_links"))
+        connection.execute(
+            text(
+                "ALTER TABLE hazard_library_template_legal_links_r19b "
+                "RENAME TO hazard_library_template_legal_links"
+            ),
+        )
+        connection.commit()
+
+
+def _migrate_hazard_library_template_legal_links_to_documents() -> None:
+    """R19b: převod legal_requirement_id → legal_document_id, pokud je jednoznačný."""
+    columns = _table_columns("hazard_library_template_legal_links")
+    if "legal_document_id" not in columns:
+        return
+    if not _table_exists("legal_requirements"):
+        return
+
+    with _db_engine().connect() as connection:
+        connection.execute(
+            text(
+                """
+                UPDATE hazard_library_template_legal_links
+                SET legal_document_id = (
+                    SELECT legal_requirements.legal_document_id
+                    FROM legal_requirements
+                    WHERE legal_requirements.id =
+                        hazard_library_template_legal_links.legal_requirement_id
+                      AND legal_requirements.legal_document_id IS NOT NULL
+                )
+                WHERE legal_document_id IS NULL
+                  AND legal_requirement_id IS NOT NULL
+                  AND EXISTS (
+                      SELECT 1
+                      FROM legal_requirements
+                      WHERE legal_requirements.id =
+                          hazard_library_template_legal_links.legal_requirement_id
+                        AND legal_requirements.legal_document_id IS NOT NULL
+                  )
+                """
+            ),
+        )
+        connection.commit()
+
 
 
 def _ensure_ai_peer_reviews_table() -> None:

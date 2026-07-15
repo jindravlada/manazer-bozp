@@ -1,4 +1,4 @@
-"""Odchozí použití katalogových zdrojů rizik z právních požadavků (R19a)."""
+"""Použití katalogových zdrojů rizik z právních předpisů a procesů (R19a, R19b)."""
 
 from __future__ import annotations
 
@@ -28,32 +28,62 @@ class HazardCatalogLegalRequirementUsageService:
     def __init__(self):
         self.legal_link_repository = HazardLibraryTemplateLegalLinkRepository()
 
+    def list_sources_for_document(
+        self,
+        document_id: int,
+    ) -> tuple[HazardCatalogSourceUsage, ...]:
+        return self._list_sources_for_template_ids(
+            self.legal_link_repository.list_active_template_ids_for_documents([document_id]),
+        )
+
     def list_sources_for_requirement(
         self,
         requirement_id: int,
     ) -> tuple[HazardCatalogSourceUsage, ...]:
-        return self._list_sources_for_requirement_ids([requirement_id])
+        """Zdroje u požadavku: přímá vazba na předpis požadavku + legacy vazby."""
+        template_ids: list[int] = []
+        requirement = legal_requirement_service.get_by_id(requirement_id)
+        if requirement is not None and requirement.legal_document_id is not None:
+            template_ids.extend(
+                self.legal_link_repository.list_active_template_ids_for_documents(
+                    [requirement.legal_document_id],
+                ),
+            )
+        template_ids.extend(
+            self.legal_link_repository.list_active_template_ids_for_requirements(
+                [requirement_id],
+            ),
+        )
+        return self._list_sources_for_template_ids(template_ids)
 
     def list_sources_for_process(
         self,
         process_id: int,
     ) -> tuple[HazardCatalogSourceUsage, ...]:
-        child_ids = [
-            child.id
-            for child in legal_requirement_service.list_children(process_id)
-            if child.active
-        ]
-        return self._list_sources_for_requirement_ids(child_ids)
-
-    def _list_sources_for_requirement_ids(
-        self,
-        requirement_ids: list[int],
-    ) -> tuple[HazardCatalogSourceUsage, ...]:
-        template_ids = self.legal_link_repository.list_active_template_ids_for_requirements(
-            requirement_ids,
+        """
+        Processo → podřízené požadavky → jejich předpis → zdroje rizik.
+        Každý zdroj jen jednou.
+        """
+        document_ids: list[int] = []
+        for child in legal_requirement_service.list_children(process_id):
+            if not child.active:
+                continue
+            if child.legal_document_id is not None:
+                document_ids.append(int(child.legal_document_id))
+        return self._list_sources_for_template_ids(
+            self.legal_link_repository.list_active_template_ids_for_documents(document_ids),
         )
+
+    def _list_sources_for_template_ids(
+        self,
+        template_ids: list[int],
+    ) -> tuple[HazardCatalogSourceUsage, ...]:
+        seen: set[int] = set()
         usages: list[HazardCatalogSourceUsage] = []
         for template_id in template_ids:
+            if template_id in seen:
+                continue
+            seen.add(template_id)
             template = hazard_library_template_service.get_by_id(template_id)
             if template is None or not template.active:
                 continue

@@ -32,7 +32,10 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from core.ai_oponentni.sluzby.ai_peer_review_service import ai_peer_review_service
     from core.ai_oponentni.types import AiPeerReviewExportOptions, AiProposal
+    from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_NARIZENI_VLADY
+    from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
     from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
+    from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
     from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
         legal_requirement_service,
     )
@@ -75,6 +78,7 @@ class HazardCatalogManualCompletionR19_1TestCase(unittest.TestCase):
             session.execute(delete(HazardLibraryTemplateEvent))
             session.execute(delete(HazardLibraryTemplate))
             session.execute(delete(LegalRequirement))
+            session.execute(delete(LegalDocument))
             session.commit()
 
         self.template = hazard_library_template_service.create_template(
@@ -85,6 +89,12 @@ class HazardCatalogManualCompletionR19_1TestCase(unittest.TestCase):
         self.requirement = legal_requirement_service.create_requirement(
             title="BOZP školení",
             process_code="P-911",
+        )
+        self.document = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
+            number="911",
+            year=2001,
+            title="BOZP školení předpis",
         )
         self.export_dir = Path(tempfile.mkdtemp())
         self.provider = hazard_catalog_source_peer_review_provider
@@ -141,7 +151,7 @@ class HazardCatalogManualCompletionR19_1TestCase(unittest.TestCase):
 
     def test_list_legal_requirement_candidates_contains_active_process(self) -> None:
         candidates = hazard_catalog_proposal_incorporate_service.list_legal_requirement_candidates()
-        self.assertTrue(any(item[0] == self.requirement.id for item in candidates))
+        self.assertTrue(any(item[0] == self.document.id for item in candidates))
 
     def test_merge_incorporate_results_aggregates_counts(self) -> None:
         first = CatalogIncorporateResult(

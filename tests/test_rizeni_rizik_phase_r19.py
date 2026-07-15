@@ -33,6 +33,9 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from core.ai_oponentni.sluzby.ai_peer_review_service import ai_peer_review_service
     from core.ai_oponentni.types import AiPeerReviewExportOptions, AiProposal
+    from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_NARIZENI_VLADY
+    from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
+    from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
     from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
         legal_requirement_service,
     )
@@ -108,6 +111,7 @@ class HazardCatalogLegalLinksR19TestCase(unittest.TestCase):
         from sqlalchemy import delete
 
         from core.database.session import get_session
+        from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
         from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
 
         with get_session() as session:
@@ -122,6 +126,7 @@ class HazardCatalogLegalLinksR19TestCase(unittest.TestCase):
             session.execute(delete(HazardLibraryTemplateEvent))
             session.execute(delete(HazardLibraryTemplate))
             session.execute(delete(LegalRequirement))
+            session.execute(delete(LegalDocument))
             session.commit()
 
         self.group = ensure_exposed_group("Zaměstnanci")
@@ -130,13 +135,27 @@ class HazardCatalogLegalLinksR19TestCase(unittest.TestCase):
             category=HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
             application_scope=HAZARD_LIBRARY_SCOPE_ALL,
         )
+        self.document = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
+            number="901",
+            year=2001,
+            title="BOZP dokumentace",
+        )
+        self.other_document = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
+            number="902",
+            year=2001,
+            title="BOZP dokumentace dodavatelů",
+        )
         self.requirement = legal_requirement_service.create_requirement(
             title="BOZP dokumentace",
             process_code="P-901",
+            legal_document_id=self.document.id,
         )
         self.other_requirement = legal_requirement_service.create_requirement(
             title="BOZP dokumentace dodavatelů",
             process_code="P-902",
+            legal_document_id=self.other_document.id,
         )
         self.export_dir = Path(tempfile.mkdtemp())
         self.provider = hazard_catalog_source_peer_review_provider
@@ -171,7 +190,7 @@ class HazardCatalogLegalLinksR19TestCase(unittest.TestCase):
     def test_legal_link_crud(self) -> None:
         link = hazard_library_template_legal_link_service.create_link(
             template_id=self.template.id,
-            legal_requirement_id=self.requirement.id,
+            legal_document_id=self.document.id,
             note="Povinnost mít BOZP dokumentaci",
         )
         self.assertTrue(link.active)
@@ -189,7 +208,7 @@ class HazardCatalogLegalLinksR19TestCase(unittest.TestCase):
     def test_legal_requirement_resolver_exact_by_code(self) -> None:
         match = hazard_catalog_legal_requirement_resolver.resolve("P-901")
         self.assertEqual(match.kind, LegalRequirementMatchKind.EXACT)
-        self.assertEqual(match.requirement_id, self.requirement.id)
+        self.assertEqual(match.document_id, self.document.id)
 
     def test_legal_proposal_auto_uses_existing_requirement(self) -> None:
         stored = self._store_pending(
@@ -220,19 +239,19 @@ class HazardCatalogLegalLinksR19TestCase(unittest.TestCase):
         self.assertEqual(result.newly_incorporated_count, 1)
         links = hazard_library_template_legal_link_service.get_for_template(self.template.id)
         self.assertEqual(len(links), 1)
-        self.assertEqual(links[0].legal_requirement_id, self.requirement.id)
+        self.assertEqual(links[0].legal_document_id, self.document.id)
 
     def test_legal_proposal_auto_merges_existing_link(self) -> None:
         hazard_library_template_legal_link_service.create_link(
             template_id=self.template.id,
-            legal_requirement_id=self.requirement.id,
+            legal_document_id=self.document.id,
         )
         stored = self._store_pending(
             [
                 AiProposal(
                     proposal_id="P-001",
                     area="Právní vazba",
-                    name="BOZP dokumentace",
+                    name="NV č. 901/2001 Sb.",
                     parent_export_id="SOURCE-001",
                     reasoning="Duplicitní vazba",
                 ),
@@ -255,13 +274,17 @@ class HazardCatalogLegalLinksR19TestCase(unittest.TestCase):
         self.assertEqual(len(links), 1)
 
     def test_legal_proposal_ambiguous_requires_choice(self) -> None:
-        legal_requirement_service.create_requirement(
+        legal_document_service.create(
+            document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
+            number="903",
+            year=2001,
             title="Právní povinnost BOZP",
-            process_code="P-903",
         )
-        legal_requirement_service.create_requirement(
+        legal_document_service.create(
+            document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
+            number="904",
+            year=2001,
             title="Právní povinnost BOZP",
-            process_code="P-904",
         )
         stored = self._store_pending(
             [

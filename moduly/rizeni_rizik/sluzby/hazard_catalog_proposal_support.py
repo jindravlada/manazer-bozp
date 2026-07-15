@@ -38,6 +38,7 @@ class CatalogProposalPayload:
     consequence: str = ""
     conclusion: str = ""
     severity: str = ""
+    legal_document_id: int | None = None
     legal_requirement_id: int | None = None
 
 
@@ -184,6 +185,7 @@ def parse_proposal_payload(proposal: AiUnassignedProposal) -> CatalogProposalPay
         consequence=str(data.get("consequence") or "").strip(),
         conclusion=str(data.get("conclusion") or "").strip(),
         severity=str(data.get("severity") or "").strip(),
+        legal_document_id=_parse_optional_int(data.get("legal_document_id")),
         legal_requirement_id=_parse_optional_int(data.get("legal_requirement_id")),
     )
 
@@ -205,6 +207,7 @@ def proposal_payload_to_json(payload: CatalogProposalPayload) -> str:
             "consequence": payload.consequence,
             "conclusion": payload.conclusion,
             "severity": payload.severity,
+            "legal_document_id": payload.legal_document_id,
             "legal_requirement_id": payload.legal_requirement_id,
         },
         ensure_ascii=False,
@@ -218,9 +221,14 @@ def merge_payload(existing: CatalogProposalPayload, updates: dict[str, Any]) -> 
         "consequence": existing.consequence,
         "conclusion": existing.conclusion,
         "severity": existing.severity,
+        "legal_document_id": existing.legal_document_id,
         "legal_requirement_id": existing.legal_requirement_id,
     }
     for key, value in updates.items():
-        if key in data and value is not None:
+        if key not in data or value is None:
+            continue
+        if key in {"legal_document_id", "legal_requirement_id"}:
+            data[key] = _parse_optional_int(value)
+        else:
             data[key] = str(value).strip()
     return CatalogProposalPayload(**data)

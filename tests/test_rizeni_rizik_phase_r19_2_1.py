@@ -32,7 +32,10 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from core.ai_oponentni.sluzby.ai_peer_review_service import ai_peer_review_service
     from core.ai_oponentni.types import AiPeerReviewExportOptions, AiProposal
+    from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_NARIZENI_VLADY
+    from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
     from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
+    from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
     from moduly.pravni_pozadavky.sluzby.legal_requirement_service import (
         legal_requirement_service,
     )
@@ -100,6 +103,7 @@ class HazardCatalogManualDecisionCompletionR19_2_1TestCase(unittest.TestCase):
             session.execute(delete(HazardLibraryTemplateEvent))
             session.execute(delete(HazardLibraryTemplate))
             session.execute(delete(LegalRequirement))
+            session.execute(delete(LegalDocument))
             session.commit()
 
         self.group = ensure_exposed_group("Zaměstnanci")
@@ -108,9 +112,16 @@ class HazardCatalogManualDecisionCompletionR19_2_1TestCase(unittest.TestCase):
             category=HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
             application_scope=HAZARD_LIBRARY_SCOPE_ALL,
         )
+        self.document = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
+            number="912",
+            year=2001,
+            title="BOZP školení předpis",
+        )
         self.requirement = legal_requirement_service.create_requirement(
             title="BOZP školení",
             process_code=f"P-{self.template.id:03d}",
+            legal_document_id=self.document.id,
         )
         self.provider = hazard_catalog_source_peer_review_provider
         self.review = ai_peer_review_service.export_package(
@@ -223,7 +234,7 @@ class HazardCatalogManualDecisionCompletionR19_2_1TestCase(unittest.TestCase):
 
         hazard_catalog_proposal_incorporate_service.assign_proposal_legal_requirement(
             stored[0].id,
-            self.requirement.id,
+            self.document.id,
         )
         result = hazard_catalog_proposal_incorporate_service.incorporate_single_proposal(
             template_id=self.template.id,
@@ -241,7 +252,7 @@ class HazardCatalogManualDecisionCompletionR19_2_1TestCase(unittest.TestCase):
             include_inactive=False,
         )
         self.assertEqual(len(links), 1)
-        self.assertEqual(links[0].legal_requirement_id, self.requirement.id)
+        self.assertEqual(links[0].legal_document_id, self.document.id)
 
 
 if __name__ == "__main__":

@@ -56,8 +56,8 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_event_service import (
 from moduly.rizeni_rizik.sluzby.hazard_library_template_existing_measure_service import (
     hazard_library_template_existing_measure_service,
 )
-from moduly.pravni_pozadavky.constants import legal_requirement_merged_target_label
-from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
+from moduly.pravni_pozadavky.constants import legal_document_catalog_link_label
+from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
 from moduly.rizeni_rizik.sluzby.hazard_library_template_legal_link_service import (
     hazard_library_template_legal_link_service,
 )
@@ -235,7 +235,9 @@ class HazardCatalogSourcePeerReviewProvider:
         ):
             legal_counter += 1
             legal_export_id = f"LEGAL-LINK-{legal_counter:03d}"
-            requirement = legal_requirement_service.get_by_id(link.legal_requirement_id)
+            document = None
+            if link.legal_document_id is not None:
+                document = legal_document_service.get_by_id(link.legal_document_id)
             export_id_map[legal_export_id] = {
                 "kind": "legal_link",
                 "id": link.id,
@@ -243,12 +245,13 @@ class HazardCatalogSourcePeerReviewProvider:
             legal_link_nodes.append(
                 {
                     "export_id": legal_export_id,
-                    "legal_requirement_id": link.legal_requirement_id,
-                    "legal_requirement_label": (
-                        legal_requirement_merged_target_label(requirement)
-                        if requirement is not None
+                    "legal_document_id": link.legal_document_id,
+                    "legal_document_label": (
+                        legal_document_catalog_link_label(document)
+                        if document is not None
                         else "—"
                     ),
+                    "legal_requirement_id": link.legal_requirement_id,
                     "note": link.note or "",
                 }
             )
