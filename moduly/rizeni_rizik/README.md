@@ -516,6 +516,15 @@ AI oponentura katalogu jako ucelené návrhové balíky (schema 2.0):
 - schema 1.1 zůstává pro čtení historických odpovědí identifikace rizik
 - UI zobrazuje přehled načtených balíků; zápis do MASTER zatím není implementován
 
+## Fáze R20b
+
+UI a zapracování návrhových balíků:
+
+- po výběru balíku se zobrazí Detail balíku (událost, posouzení, opatření, právní vazby, zdůvodnění)
+- akce **Upravit balík…**, **Zapracovat balík**, **Zamítnout balík**
+- editor upravuje celý balík najednou (nikoliv izolované objekty)
+- zapracování probíhá v jedné DB transakci (událost → posouzení → opatření → právní vazby → revize +1 → historie) s rollbackem při chybě
+
 ## Fáze R18g
 
 Zapracování návrhů AI do MASTER obsahu katalogu:

@@ -20,6 +20,10 @@ class AiProposalPackageRepository:
             )
             return list(session.scalars(stmt))
 
+    def get_by_id(self, package_record_id: int) -> AiProposalPackageRecord | None:
+        with get_session() as session:
+            return session.get(AiProposalPackageRecord, package_record_id)
+
     def delete_for_review(self, ai_peer_review_id: int) -> None:
         with get_session() as session:
             session.execute(
@@ -41,6 +45,13 @@ class AiProposalPackageRepository:
             for record in records:
                 session.refresh(record)
             return records
+
+    def update(self, record: AiProposalPackageRecord) -> AiProposalPackageRecord:
+        with get_session() as session:
+            record = session.merge(record)
+            session.commit()
+            session.refresh(record)
+            return record
 
     @staticmethod
     def package_from_record(record: AiProposalPackageRecord) -> AiProposalPackage:

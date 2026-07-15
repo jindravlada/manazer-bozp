@@ -215,6 +215,18 @@ CATALOG_AI_PROPOSAL_EDIT_BUTTON = "Upravit…"
 CATALOG_AI_PROPOSAL_INCORPORATE_SELECTED_BUTTON = "Zapracovat vybrané"
 CATALOG_AI_PROPOSAL_REJECT_SELECTED_BUTTON = "Zamítnout vybrané"
 CATALOG_AI_PROPOSAL_QUEUE_LABEL = "Návrhy ke zpracování (čekají na odborné posouzení):"
+CATALOG_AI_PACKAGE_QUEUE_LABEL = "Návrhové balíky ke zpracování:"
+CATALOG_AI_PACKAGE_DETAIL_LABEL = "Detail balíku:"
+CATALOG_AI_PACKAGE_EDIT_BUTTON = "Upravit balík…"
+CATALOG_AI_PACKAGE_INCORPORATE_BUTTON = "Zapracovat balík"
+CATALOG_AI_PACKAGE_REJECT_BUTTON = "Zamítnout balík"
+CATALOG_AI_PACKAGE_EDIT_DIALOG_TITLE = "Úprava návrhového balíku"
+CATALOG_AI_PACKAGE_INCORPORATE_SUCCESS = (
+    "Balík byl zapracován do MASTER obsahu. Revize zdroje: {revision}."
+)
+CATALOG_AI_PACKAGE_REJECT_SUCCESS = "Balík byl zamítnut."
+CATALOG_AI_PACKAGE_SELECT_ONE = "Vyberte právě jeden návrhový balík."
+CATALOG_AI_PACKAGE_EMPTY_DETAIL = "Vyberte balík v seznamu pro zobrazení detailu."
 CATALOG_AI_PROPOSAL_INCORPORATE_SUCCESS = (
     "Do MASTER obsahu bylo zapracováno {count} návrhů. Revize zdroje: {revision}."
 )

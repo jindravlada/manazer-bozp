@@ -461,8 +461,14 @@ class AiPeerReviewWidget(QWidget):
         self.proposals_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.proposals_table.setAlternatingRowColors(True)
         configure_table_columns(self.proposals_table, "ai_peer_review_proposals")
-        self.proposals_table.doubleClicked.connect(self._edit_selected_proposals)
+        if self._uses_proposal_packages:
+            self.proposals_table.doubleClicked.connect(self._edit_selected_package)
+        else:
+            self.proposals_table.doubleClicked.connect(self._edit_selected_proposals)
         layout.addWidget(self.proposals_table)
+
+        self.package_detail = None
+        self.package_detail_label = None
 
         if self._evidence_only_import and not self._uses_proposal_packages:
             from moduly.rizeni_rizik.constants_library import (
@@ -497,14 +503,38 @@ class AiPeerReviewWidget(QWidget):
             self.incorporate_selected_btn.clicked.connect(self._incorporate_selected_proposals)
             self.reject_selected_btn.clicked.connect(self._reject_selected_proposals)
         elif self._evidence_only_import and self._uses_proposal_packages:
-            self.proposals_label.setText(
-                "Návrhové balíky vybrané konzultace (zatím bez zápisu do MASTER):",
+            from moduly.rizeni_rizik.constants_library import (
+                CATALOG_AI_PACKAGE_DETAIL_LABEL,
+                CATALOG_AI_PACKAGE_EDIT_BUTTON,
+                CATALOG_AI_PACKAGE_INCORPORATE_BUTTON,
+                CATALOG_AI_PACKAGE_QUEUE_LABEL,
+                CATALOG_AI_PACKAGE_REJECT_BUTTON,
             )
-            self.incorporate_btn = None
-            self.reject_proposal_btn = None
-            self.edit_proposal_btn = None
+
+            self.proposals_label.setText(CATALOG_AI_PACKAGE_QUEUE_LABEL)
+            self.package_detail_label = QLabel(CATALOG_AI_PACKAGE_DETAIL_LABEL)
+            layout.addWidget(self.package_detail_label)
+            self.package_detail = QPlainTextEdit()
+            self.package_detail.setReadOnly(True)
+            self.package_detail.setMinimumHeight(180)
+            layout.addWidget(self.package_detail)
+
+            package_actions = QHBoxLayout()
+            self.edit_proposal_btn = QPushButton(CATALOG_AI_PACKAGE_EDIT_BUTTON)
+            self.incorporate_btn = QPushButton(CATALOG_AI_PACKAGE_INCORPORATE_BUTTON)
+            self.reject_proposal_btn = QPushButton(CATALOG_AI_PACKAGE_REJECT_BUTTON)
             self.incorporate_selected_btn = None
             self.reject_selected_btn = None
+            package_actions.addWidget(self.edit_proposal_btn)
+            package_actions.addWidget(self.incorporate_btn)
+            package_actions.addWidget(self.reject_proposal_btn)
+            package_actions.addStretch()
+            layout.addLayout(package_actions)
+
+            self.edit_proposal_btn.clicked.connect(self._edit_selected_package)
+            self.incorporate_btn.clicked.connect(self._incorporate_selected_package)
+            self.reject_proposal_btn.clicked.connect(self._reject_selected_package)
+            self.proposals_table.itemSelectionChanged.connect(self._load_package_detail)
         else:
             self.incorporate_btn = None
             self.reject_proposal_btn = None
@@ -813,7 +843,7 @@ class AiPeerReviewWidget(QWidget):
                 f"Načteno balíků: {review.loaded_proposals_count}\n"
                 f"Čeká na odborné posouzení: {review.pending_proposals_count}\n"
                 f"Zamítnuto: {review.rejected_count}\n\n"
-                "Balíky jsou evidovány; zápis do MASTER katalogu zatím není k dispozici."
+                "Balíky jsou evidovány. Zapracujte je tlačítkem „Zapracovat balík“."
             )
         if self._evidence_only_import:
             return (
@@ -913,9 +943,12 @@ class AiPeerReviewWidget(QWidget):
                     ),
                 )
             configure_table_columns(self.proposals_table, "ai_peer_review_proposals")
+            self._load_package_detail()
             return
 
         self._configure_flat_proposals_table()
+        if self.package_detail is not None:
+            self.package_detail.clear()
         proposals = ai_peer_review_service.get_unassigned_for_review(review_id)
         if self._evidence_only_import:
             proposals = [
@@ -1126,6 +1159,9 @@ class AiPeerReviewWidget(QWidget):
         )
 
     def _edit_selected_proposals(self) -> None:
+        if self._uses_proposal_packages:
+            self._edit_selected_package()
+            return
         if not self._evidence_only_import:
             return
         selected = self._selected_proposal_ids()
@@ -1146,6 +1182,141 @@ class AiPeerReviewWidget(QWidget):
         dialog = HazardCatalogAiProposalEditDialog(self, proposal=proposal)
         if dialog.exec():
             self._load_proposals_table()
+
+    def _selected_package_record_id(self) -> int | None:
+        selected = self._selected_proposal_ids()
+        if len(selected) != 1:
+            return None
+        return selected[0]
+
+    def _load_package_detail(self) -> None:
+        if self.package_detail is None:
+            return
+        from moduly.rizeni_rizik.constants_library import CATALOG_AI_PACKAGE_EMPTY_DETAIL
+        from core.ai_oponentni.sluzby.proposal_package_detail import (
+            format_proposal_package_detail,
+        )
+
+        record_id = self._selected_package_record_id()
+        if record_id is None:
+            self.package_detail.setPlainText(CATALOG_AI_PACKAGE_EMPTY_DETAIL)
+            return
+        record = ai_peer_review_service.package_repository.get_by_id(record_id)
+        if record is None:
+            self.package_detail.setPlainText(CATALOG_AI_PACKAGE_EMPTY_DETAIL)
+            return
+        package = ai_peer_review_service.package_repository.package_from_record(record)
+        self.package_detail.setPlainText(format_proposal_package_detail(package))
+
+    def _edit_selected_package(self) -> None:
+        from moduly.rizeni_rizik.constants_library import CATALOG_AI_PACKAGE_SELECT_ONE
+        from moduly.rizeni_rizik.sluzby.hazard_catalog_package_incorporate_service import (
+            HazardCatalogPackageIncorporateError,
+            hazard_catalog_package_incorporate_service,
+        )
+        from moduly.rizeni_rizik.ui.hazard_catalog_ai_package_edit_dialog import (
+            HazardCatalogAiPackageEditDialog,
+        )
+
+        record_id = self._selected_package_record_id()
+        if record_id is None:
+            QMessageBox.information(
+                self,
+                AI_PEER_REVIEW_DIALOG_TITLE,
+                CATALOG_AI_PACKAGE_SELECT_ONE,
+            )
+            return
+        record = ai_peer_review_service.package_repository.get_by_id(record_id)
+        if record is None:
+            return
+        package = ai_peer_review_service.package_repository.package_from_record(record)
+        dialog = HazardCatalogAiPackageEditDialog(
+            self,
+            package=package,
+            package_record_id=record_id,
+        )
+        if not dialog.exec():
+            return
+        updated = dialog.get_package()
+        if updated is None:
+            return
+        try:
+            hazard_catalog_package_incorporate_service.update_package_payload(
+                record_id,
+                updated,
+            )
+        except HazardCatalogPackageIncorporateError as error:
+            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+            return
+        self._load_proposals_table()
+        self._select_proposal_row(record_id)
+        self._load_package_detail()
+
+    def _incorporate_selected_package(self) -> None:
+        from moduly.rizeni_rizik.constants_library import (
+            CATALOG_AI_PACKAGE_INCORPORATE_SUCCESS,
+            CATALOG_AI_PACKAGE_SELECT_ONE,
+        )
+        from moduly.rizeni_rizik.sluzby.hazard_catalog_package_incorporate_service import (
+            HazardCatalogPackageIncorporateError,
+            hazard_catalog_package_incorporate_service,
+        )
+
+        record_id = self._selected_package_record_id()
+        if record_id is None or self._source_id is None:
+            QMessageBox.information(
+                self,
+                AI_PEER_REVIEW_DIALOG_TITLE,
+                CATALOG_AI_PACKAGE_SELECT_ONE,
+            )
+            return
+        try:
+            result = hazard_catalog_package_incorporate_service.incorporate_package(
+                template_id=self._source_id,
+                package_record_id=record_id,
+            )
+        except HazardCatalogPackageIncorporateError as error:
+            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+            return
+
+        self.refresh()
+        if self._on_catalog_incorporated is not None:
+            self._on_catalog_incorporated(result.new_revision_number)
+        QMessageBox.information(
+            self,
+            AI_PEER_REVIEW_DIALOG_TITLE,
+            CATALOG_AI_PACKAGE_INCORPORATE_SUCCESS.format(
+                revision=result.new_revision_number,
+            ),
+        )
+
+    def _reject_selected_package(self) -> None:
+        from moduly.rizeni_rizik.constants_library import (
+            CATALOG_AI_PACKAGE_REJECT_SUCCESS,
+            CATALOG_AI_PACKAGE_SELECT_ONE,
+        )
+        from moduly.rizeni_rizik.sluzby.hazard_catalog_package_incorporate_service import (
+            hazard_catalog_package_incorporate_service,
+        )
+
+        record_id = self._selected_package_record_id()
+        if record_id is None:
+            QMessageBox.information(
+                self,
+                AI_PEER_REVIEW_DIALOG_TITLE,
+                CATALOG_AI_PACKAGE_SELECT_ONE,
+            )
+            return
+        if not hazard_catalog_package_incorporate_service.reject_package(record_id):
+            return
+        self.refresh()
+        if self._on_catalog_incorporated is not None:
+            self._on_catalog_incorporated(None)
+        QMessageBox.information(
+            self,
+            AI_PEER_REVIEW_DIALOG_TITLE,
+            CATALOG_AI_PACKAGE_REJECT_SUCCESS,
+        )
 
     def _select_proposal_row(self, proposal_id: int) -> None:
         for row_index in range(self.proposals_table.rowCount()):

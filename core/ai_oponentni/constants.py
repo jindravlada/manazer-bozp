@@ -162,8 +162,7 @@ AI_PEER_REVIEW_CATALOG_REQUIRES_SCHEMA_2_0 = (
 )
 AI_PEER_REVIEW_IMPORT_INTRO_PACKAGES = (
     "Označte návrhové balíky k uložení do evidence ke zpracování. "
-    "Neoznačené balíky budou evidovány jako zamítnuté. "
-    "Balíky se zatím nezapisují do MASTER obsahu katalogu."
+    "Neoznačené balíky budou evidovány jako zamítnuté."
 )
 
 AI_PEER_REVIEW_RESPONSE_ZIP_PREFERRED_NAMES = (

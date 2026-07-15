@@ -8,10 +8,12 @@ from core.database.base import Base
 
 PACKAGE_STATUS_PENDING = "pending"
 PACKAGE_STATUS_REJECTED = "rejected"
+PACKAGE_STATUS_INCORPORATED = "incorporated"
 
 PACKAGE_STATUS_LABELS = {
     PACKAGE_STATUS_PENDING: "Čeká na odborné posouzení",
     PACKAGE_STATUS_REJECTED: "Zamítnuto",
+    PACKAGE_STATUS_INCORPORATED: "Zapracováno",
 }
 
 

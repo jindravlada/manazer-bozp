@@ -5,6 +5,15 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 
+def _optional_int(value: object) -> int | None:
+    if value is None or value == "":
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 @dataclass(frozen=True)
 class AiProposalPackageMeasure:
     description: str
@@ -19,12 +28,14 @@ class AiProposalPackageAssessment:
     conclusion: str = ""
     existing_measures: tuple[AiProposalPackageMeasure, ...] = ()
     required_measures: tuple[AiProposalPackageMeasure, ...] = ()
+    exposed_group_id: int | None = None
 
 
 @dataclass(frozen=True)
 class AiProposalPackageLegalLink:
     reference: str
     reasoning: str = ""
+    legal_requirement_id: int | None = None
 
 
 @dataclass(frozen=True)
@@ -88,6 +99,7 @@ class AiProposalPackage:
                     "consequence": assessment.consequence,
                     "severity": assessment.severity,
                     "conclusion": assessment.conclusion,
+                    "exposed_group_id": assessment.exposed_group_id,
                     "existing_measures": [
                         {"description": measure.description, "note": measure.note}
                         for measure in assessment.existing_measures
@@ -100,7 +112,11 @@ class AiProposalPackage:
                 for assessment in self.assessments
             ],
             "legal_links": [
-                {"reference": link.reference, "reasoning": link.reasoning}
+                {
+                    "reference": link.reference,
+                    "reasoning": link.reasoning,
+                    "legal_requirement_id": link.legal_requirement_id,
+                }
                 for link in self.legal_links
             ],
             "reasoning": self.reasoning,
@@ -126,6 +142,7 @@ class AiProposalPackage:
                     consequence=str(item.get("consequence") or "").strip(),
                     severity=str(item.get("severity") or "").strip(),
                     conclusion=str(item.get("conclusion") or "").strip(),
+                    exposed_group_id=_optional_int(item.get("exposed_group_id")),
                     existing_measures=tuple(
                         AiProposalPackageMeasure(
                             description=str(measure.get("description") or "").strip(),
@@ -148,6 +165,7 @@ class AiProposalPackage:
             AiProposalPackageLegalLink(
                 reference=str(item.get("reference") or "").strip(),
                 reasoning=str(item.get("reasoning") or "").strip(),
+                legal_requirement_id=_optional_int(item.get("legal_requirement_id")),
             )
             for item in (payload.get("legal_links") or [])
             if isinstance(item, dict)
