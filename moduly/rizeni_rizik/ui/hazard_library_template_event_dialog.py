@@ -29,7 +29,7 @@ class HazardLibraryTemplateEventDialog(QDialog):
         super().__init__(parent)
 
         self.template_id = template_id
-        self.event = event
+        self.template_event = event
         self.read_only = read_only
 
         self.setWindowTitle(HAZARD_LIBRARY_EVENT_DIALOG_TITLE)
@@ -78,14 +78,14 @@ class HazardLibraryTemplateEventDialog(QDialog):
 
         data = self.get_data()
         try:
-            if self.event is None:
+            if self.template_event is None:
                 hazard_library_template_event_service.create_event(
                     template_id=self.template_id,
                     **data,
                 )
             else:
                 hazard_library_template_event_service.update_event(
-                    self.event.id,
+                    self.template_event.id,
                     template_id=self.template_id,
                     **data,
                 )
