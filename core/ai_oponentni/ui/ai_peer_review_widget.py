@@ -30,11 +30,15 @@ from PySide6.QtWidgets import (
 
 from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_COL_ACCEPTED,
-    AI_PEER_REVIEW_COL_DATE,
+    AI_PEER_REVIEW_COL_EXPORT_DATE,
     AI_PEER_REVIEW_COL_FILENAME,
     AI_PEER_REVIEW_COL_ID,
+    AI_PEER_REVIEW_COL_LOADED,
     AI_PEER_REVIEW_COL_MODEL,
+    AI_PEER_REVIEW_COL_PENDING,
     AI_PEER_REVIEW_COL_REJECTED,
+    AI_PEER_REVIEW_COL_RESPONSE_DATE,
+    AI_PEER_REVIEW_COL_UNASSIGNED,
     AI_PEER_REVIEW_COLUMN_COUNT,
     AI_PEER_REVIEW_DEFAULT_OBJECTIVES,
     AI_PEER_REVIEW_DEFAULT_ROLE,
@@ -45,12 +49,14 @@ from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_FOCUS_AREA_LABELS,
     AI_PEER_REVIEW_FOCUS_AREAS,
     AI_PEER_REVIEW_IMPORT_BUTTON,
+    AI_PEER_REVIEW_IMPORT_INTRO_EVIDENCE,
     AI_PEER_REVIEW_INTRO_TEXT,
     AI_PEER_REVIEW_OBJECTIVE_LABELS,
     AI_PEER_REVIEW_ROLE_LABELS,
     AI_PEER_REVIEW_ROLES,
     AI_PEER_REVIEW_TABLE_HEADERS,
 )
+from core.ai_oponentni.modely.ai_unassigned_proposal import PROPOSAL_STATUS_LABELS
 from core.ai_oponentni.sluzby.ai_peer_review_service import (
     AiPeerReviewError,
     ai_peer_review_service,
@@ -372,6 +378,7 @@ class AiPeerReviewWidget(QWidget):
         allow_new_exports: bool = True,
         export_dialog_config: AiPeerReviewExportDialogConfig | None = None,
         resolve_exposed_groups: bool = True,
+        evidence_only_import: bool = False,
     ):
         super().__init__(parent)
         self._provider = provider
@@ -380,6 +387,7 @@ class AiPeerReviewWidget(QWidget):
         self._allow_new_exports = allow_new_exports
         self._export_dialog_config = export_dialog_config
         self._resolve_exposed_groups = resolve_exposed_groups
+        self._evidence_only_import = evidence_only_import
 
         layout = QVBoxLayout(self)
 
@@ -405,7 +413,21 @@ class AiPeerReviewWidget(QWidget):
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setAlternatingRowColors(True)
         configure_table_columns(self.table, "ai_peer_reviews")
+        self.table.itemSelectionChanged.connect(self._load_proposals_table)
         layout.addWidget(self.table)
+
+        layout.addWidget(QLabel("Návrhy vybrané konzultace:"))
+        self.proposals_table = QTableWidget()
+        self.proposals_table.setColumnCount(5)
+        self.proposals_table.setHorizontalHeaderLabels(
+            ["Oblast", "Návrh", "Zdůvodnění", "Stav", "ID návrhu"],
+        )
+        self.proposals_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.proposals_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.proposals_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.proposals_table.setAlternatingRowColors(True)
+        configure_table_columns(self.proposals_table, "ai_peer_review_proposals")
+        layout.addWidget(self.proposals_table)
 
         self.export_btn.clicked.connect(self.export_package)
         self.import_btn.clicked.connect(self.import_response)
@@ -424,6 +446,7 @@ class AiPeerReviewWidget(QWidget):
 
     def refresh(self) -> None:
         self._load_table()
+        self._load_proposals_table()
 
     def export_package(self) -> bool:
         if self._source_id is None or not self._provider.can_export(self._source_id):
@@ -539,6 +562,10 @@ class AiPeerReviewWidget(QWidget):
                 return False
             review = reviews[labels.index(label)]
 
+        review = self._resolve_import_review(review)
+        if review is None:
+            return False
+
         response_dialog = AiPeerReviewResponseDialog(self)
         if not response_dialog.exec():
             return False
@@ -584,6 +611,12 @@ class AiPeerReviewWidget(QWidget):
             self,
             proposals=parse_result.proposals,
             ai_model=ai_model,
+            intro_text=(
+                AI_PEER_REVIEW_IMPORT_INTRO_EVIDENCE if self._evidence_only_import else None
+            ),
+            accept_column_label=(
+                "Přijmout" if self._evidence_only_import else "Převzít"
+            ),
         )
         if not import_dialog.exec():
             return False
@@ -597,7 +630,7 @@ class AiPeerReviewWidget(QWidget):
             accepted, resolution_rejected = resolve_exposed_group_proposals(self, accepted)
             rejected.extend(resolution_rejected)
         try:
-            ai_peer_review_service.finalize_import(
+            updated = ai_peer_review_service.finalize_import(
                 provider=self._provider,
                 source_id=self._source_id,
                 review_id=review.id,
@@ -605,25 +638,134 @@ class AiPeerReviewWidget(QWidget):
                 ai_model=ai_model,
                 accepted=accepted,
                 rejected=rejected,
+                loaded_proposals_count=len(parse_result.proposals),
             )
         except AiPeerReviewError as error:
             QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
             return False
 
         self.refresh()
+        self._select_review_row(updated.id)
         if self._on_proposals_applied is not None:
             self._on_proposals_applied()
 
         QMessageBox.information(
             self,
             AI_PEER_REVIEW_DIALOG_TITLE,
-            (
-                f"Formát odpovědi: {parse_result.format_label}\n"
-                f"Převzato: {len(accepted)}\n"
-                f"Zamítnuto: {len(rejected)}"
-            ),
+            self._import_summary_message(updated, parse_result.format_label),
         )
         return True
+
+    def _resolve_import_review(self, review):
+        if not (review.response_text or "").strip():
+            return review
+
+        message_box = QMessageBox(self)
+        message_box.setWindowTitle(AI_PEER_REVIEW_DIALOG_TITLE)
+        message_box.setIcon(QMessageBox.Icon.Question)
+        message_box.setText("K této konzultaci již existuje načtená odpověď.")
+        message_box.setInformativeText("Jak chcete pokračovat?")
+        new_button = message_box.addButton(
+            "Načíst jako novou odpověď",
+            QMessageBox.ButtonRole.AcceptRole,
+        )
+        replace_button = message_box.addButton(
+            "Nahradit předchozí odpověď",
+            QMessageBox.ButtonRole.DestructiveRole,
+        )
+        cancel_button = message_box.addButton(
+            "Zrušit",
+            QMessageBox.ButtonRole.RejectRole,
+        )
+        message_box.setDefaultButton(new_button)
+        message_box.exec()
+        clicked = message_box.clickedButton()
+        if clicked is cancel_button:
+            return None
+        if clicked is new_button:
+            try:
+                return ai_peer_review_service.clone_consultation_for_new_import(review.id)
+            except AiPeerReviewError as error:
+                QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+                return None
+        if clicked is replace_button:
+            ai_peer_review_service.delete_proposals_for_review(review.id)
+            return review
+        return None
+
+    def _import_summary_message(self, review, format_label: str) -> str:
+        if self._evidence_only_import:
+            return (
+                f"Formát odpovědi: {format_label}\n"
+                f"Načteno návrhů: {review.loaded_proposals_count}\n"
+                f"Čeká na zpracování: {review.pending_proposals_count}\n"
+                f"Zamítnuto: {review.rejected_count}\n"
+                f"Nezařazeno: {review.unassigned_count}"
+            )
+        return (
+            f"Formát odpovědi: {format_label}\n"
+            f"Načteno návrhů: {review.loaded_proposals_count}\n"
+            f"Převzato: {review.accepted_count}\n"
+            f"Zamítnuto: {review.rejected_count}\n"
+            f"Nezařazeno: {review.unassigned_count}"
+        )
+
+    def _select_review_row(self, review_id: int) -> None:
+        for row_index in range(self.table.rowCount()):
+            item = self.table.item(row_index, AI_PEER_REVIEW_COL_ID)
+            if item is not None and item.text() == str(review_id):
+                self.table.selectRow(row_index)
+                return
+
+    def _selected_review_id(self) -> int | None:
+        selected = self.table.selectionModel().selectedRows()
+        if not selected:
+            return None
+        item = self.table.item(selected[0].row(), AI_PEER_REVIEW_COL_ID)
+        if item is None:
+            return None
+        try:
+            return int(item.text())
+        except ValueError:
+            return None
+
+    def _load_proposals_table(self) -> None:
+        self.proposals_table.setRowCount(0)
+        review_id = self._selected_review_id()
+        if review_id is None:
+            return
+
+        proposals = ai_peer_review_service.get_unassigned_for_review(review_id)
+        self.proposals_table.setRowCount(len(proposals))
+        for row_index, proposal in enumerate(proposals):
+            self.proposals_table.setItem(
+                row_index,
+                0,
+                QTableWidgetItem(proposal.area or "—"),
+            )
+            self.proposals_table.setItem(
+                row_index,
+                1,
+                QTableWidgetItem(proposal.name),
+            )
+            self.proposals_table.setItem(
+                row_index,
+                2,
+                QTableWidgetItem(proposal.reasoning or "—"),
+            )
+            self.proposals_table.setItem(
+                row_index,
+                3,
+                QTableWidgetItem(
+                    PROPOSAL_STATUS_LABELS.get(proposal.status, proposal.status),
+                ),
+            )
+            self.proposals_table.setItem(
+                row_index,
+                4,
+                QTableWidgetItem(proposal.proposal_id or "—"),
+            )
+        configure_table_columns(self.proposals_table, "ai_peer_review_proposals")
 
     def _load_table(self) -> None:
         self.table.setRowCount(0)
@@ -636,16 +778,40 @@ class AiPeerReviewWidget(QWidget):
         )
         self.table.setRowCount(len(rows))
         for row_index, review in enumerate(rows):
-            self.table.setItem(row_index, AI_PEER_REVIEW_COL_ID, QTableWidgetItem(str(review.id)))
             self.table.setItem(
                 row_index,
-                AI_PEER_REVIEW_COL_DATE,
+                AI_PEER_REVIEW_COL_ID,
+                QTableWidgetItem(str(review.id)),
+            )
+            self.table.setItem(
+                row_index,
+                AI_PEER_REVIEW_COL_EXPORT_DATE,
                 QTableWidgetItem(review.exported_at.strftime("%d.%m.%Y %H:%M")),
+            )
+            response_loaded = (
+                review.response_loaded_at.strftime("%d.%m.%Y %H:%M")
+                if review.response_loaded_at is not None
+                else "—"
+            )
+            self.table.setItem(
+                row_index,
+                AI_PEER_REVIEW_COL_RESPONSE_DATE,
+                QTableWidgetItem(response_loaded),
             )
             self.table.setItem(
                 row_index,
                 AI_PEER_REVIEW_COL_MODEL,
                 QTableWidgetItem(review.ai_model or "—"),
+            )
+            self.table.setItem(
+                row_index,
+                AI_PEER_REVIEW_COL_LOADED,
+                QTableWidgetItem(str(review.loaded_proposals_count)),
+            )
+            self.table.setItem(
+                row_index,
+                AI_PEER_REVIEW_COL_PENDING,
+                QTableWidgetItem(str(review.pending_proposals_count)),
             )
             self.table.setItem(
                 row_index,
@@ -659,7 +825,14 @@ class AiPeerReviewWidget(QWidget):
             )
             self.table.setItem(
                 row_index,
+                AI_PEER_REVIEW_COL_UNASSIGNED,
+                QTableWidgetItem(str(review.unassigned_count)),
+            )
+            self.table.setItem(
+                row_index,
                 AI_PEER_REVIEW_COL_FILENAME,
                 QTableWidgetItem(Path(review.export_file_path).name or "—"),
             )
         configure_table_columns(self.table, "ai_peer_reviews")
+        if rows:
+            self.table.selectRow(0)

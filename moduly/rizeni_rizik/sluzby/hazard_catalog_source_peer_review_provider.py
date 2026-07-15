@@ -14,7 +14,7 @@ from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_SCHEMA_VERSION,
 )
 from core.ai_oponentni.modely.ai_unassigned_proposal import (
-    UNASSIGNED_PROPOSAL_STATUS,
+    PROPOSAL_STATUS_PENDING,
     AiUnassignedProposal,
 )
 from core.ai_oponentni.repository.ai_unassigned_proposal_repository import (
@@ -64,6 +64,7 @@ def catalog_source_reference(template_id: int) -> str:
 
 class HazardCatalogSourcePeerReviewProvider:
     source_type = SOURCE_TYPE_HAZARD_CATALOG_SOURCE
+    evidence_only_import = True
 
     def can_export(self, source_id: int | None) -> bool:
         if not source_id:
@@ -153,18 +154,20 @@ class HazardCatalogSourcePeerReviewProvider:
                     ai_peer_review_id=review_id,
                     source_type=self.source_type,
                     source_id=source_id,
+                    proposal_id=(proposal.proposal_id or "").strip(),
                     area=proposal.area or "",
                     name=proposal.name,
                     reasoning=proposal.reasoning or "",
                     parent_export_id=proposal.parent_export_id or "",
-                    status=UNASSIGNED_PROPOSAL_STATUS,
+                    status=PROPOSAL_STATUS_PENDING,
                 )
             )
         if unassigned_models:
             AiUnassignedProposalRepository().add_many(unassigned_models)
         return AiPeerReviewApplyResult(
             applied_count=0,
-            unassigned_count=len(unassigned_models),
+            pending_count=len(unassigned_models),
+            unassigned_count=0,
         )
 
     def _build_hierarchy(self, template) -> dict:

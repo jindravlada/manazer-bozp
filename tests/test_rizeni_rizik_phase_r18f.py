@@ -34,7 +34,11 @@ with patch.object(Path, "home", return_value=_TMP):
         AI_PEER_REVIEW_ZIP_FILES,
     )
     from core.ai_oponentni.modely.ai_peer_review import AiPeerReview, AiPeerReviewBatch
-    from core.ai_oponentni.modely.ai_unassigned_proposal import AiUnassignedProposal
+    from core.ai_oponentni.modely.ai_unassigned_proposal import (
+        PROPOSAL_STATUS_PENDING,
+        PROPOSAL_STATUS_REJECTED,
+        AiUnassignedProposal,
+    )
     from core.ai_oponentni.sluzby.ai_peer_review_service import ai_peer_review_service
     from core.ai_oponentni.sluzby.response_parser import parse_ai_peer_review_response
     from core.ai_oponentni.sluzby.response_zip_loader import load_response_from_zip
@@ -377,11 +381,17 @@ class HazardCatalogAiPeerReviewR18fTestCase(unittest.TestCase):
             ai_model="Claude",
             accepted=parsed_txt.proposals,
             rejected=[],
+            loaded_proposals_count=len(parsed_txt.proposals),
         )
         self.assertEqual(updated.ai_model, "Claude")
         self.assertEqual(updated.accepted_count, 0)
-        self.assertEqual(updated.unassigned_count, 2)
+        self.assertEqual(updated.pending_proposals_count, 2)
+        self.assertEqual(updated.loaded_proposals_count, 2)
+        self.assertIsNotNone(updated.response_loaded_at)
         self.assertIn("Pád z výšky", updated.response_text)
+        stored = ai_peer_review_service.get_unassigned_for_review(updated.id)
+        self.assertEqual(len(stored), 2)
+        self.assertTrue(all(item.status == PROPOSAL_STATUS_PENDING for item in stored))
         after_events = hazard_library_template_event_service.get_for_template(
             self.template.id,
             include_inactive=False,

@@ -14,6 +14,10 @@ from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_ZIP_FILES,
 )
 from core.ai_oponentni.modely.ai_peer_review import AiPeerReview, AiPeerReviewBatch
+from core.ai_oponentni.modely.ai_unassigned_proposal import (
+    AiUnassignedProposal,
+    PROPOSAL_STATUS_REJECTED,
+)
 from core.ai_oponentni.repository.ai_peer_review_batch_repository import (
     AiPeerReviewBatchRepository,
 )
@@ -66,6 +70,95 @@ class AiPeerReviewService:
 
     def get_unassigned_for_review(self, review_id: int):
         return self.unassigned_repository.get_for_review(review_id)
+
+    def delete_proposals_for_review(self, review_id: int) -> None:
+        self.unassigned_repository.delete_for_review(review_id)
+
+    def clone_consultation_for_new_import(self, review_id: int) -> AiPeerReview:
+        source = self.repository.get_by_id(review_id)
+        if source is None:
+            raise AiPeerReviewError("Záznam konzultace neexistuje.")
+
+        clone = AiPeerReview(
+            source_type=source.source_type,
+            source_id=source.source_id,
+            exported_at=source.exported_at,
+            export_file_path=source.export_file_path,
+            export_id_map_json=source.export_id_map_json,
+            export_scope=source.export_scope,
+            batch_count=source.batch_count,
+            selected_source_count=source.selected_source_count,
+            total_object_count=source.total_object_count,
+            ai_model="",
+            prompt_text=source.prompt_text,
+            response_text="",
+            response_loaded_at=None,
+            loaded_proposals_count=0,
+            pending_proposals_count=0,
+            accepted_count=0,
+            rejected_count=0,
+            unassigned_count=0,
+        )
+        saved = self.repository.add(clone)
+        batches = self.batch_repository.get_for_review(review_id)
+        if batches:
+            self.batch_repository.add_many(
+                [
+                    AiPeerReviewBatch(
+                        ai_peer_review_id=saved.id,
+                        batch_number=batch.batch_number,
+                        source_count=batch.source_count,
+                        object_count=batch.object_count,
+                        filename=batch.filename,
+                        recommended_limit_exceeded=batch.recommended_limit_exceeded,
+                    )
+                    for batch in batches
+                ],
+            )
+        return saved
+
+    @staticmethod
+    def _proposal_model(
+        *,
+        review_id: int,
+        source_type: str,
+        source_id: int,
+        proposal: AiProposal,
+        status: str,
+    ) -> AiUnassignedProposal:
+        return AiUnassignedProposal(
+            ai_peer_review_id=review_id,
+            source_type=source_type,
+            source_id=source_id,
+            proposal_id=(proposal.proposal_id or "").strip(),
+            area=proposal.area or "",
+            name=proposal.name,
+            reasoning=proposal.reasoning or "",
+            parent_export_id=proposal.parent_export_id or "",
+            status=status,
+        )
+
+    def store_rejected_proposals(
+        self,
+        *,
+        review_id: int,
+        source_type: str,
+        source_id: int,
+        proposals: list[AiProposal],
+    ) -> None:
+        if not proposals:
+            return
+        models = [
+            self._proposal_model(
+                review_id=review_id,
+                source_type=source_type,
+                source_id=source_id,
+                proposal=proposal,
+                status=PROPOSAL_STATUS_REJECTED,
+            )
+            for proposal in proposals
+        ]
+        self.unassigned_repository.add_many(models)
 
     def default_export_filename(self, source_label: str, exported_at: datetime) -> str:
         stamp = exported_at.strftime("%Y-%m-%d_%H%M")
@@ -293,6 +386,7 @@ class AiPeerReviewService:
         ai_model: str,
         accepted: list[AiProposal],
         rejected: list[AiProposal],
+        loaded_proposals_count: int | None = None,
     ) -> AiPeerReview:
         review = self.repository.get_by_id(review_id)
         if review is None:
@@ -308,6 +402,7 @@ class AiPeerReviewService:
             export_id_map = {}
 
         applied = 0
+        pending = 0
         unassigned = 0
         if accepted:
             result = provider.apply_proposals(
@@ -317,10 +412,25 @@ class AiPeerReviewService:
                 export_id_map=export_id_map,
             )
             applied = result.applied_count
+            pending = result.pending_count
             unassigned = result.unassigned_count
+
+        self.store_rejected_proposals(
+            review_id=review_id,
+            source_type=provider.source_type,
+            source_id=source_id,
+            proposals=rejected,
+        )
 
         review.ai_model = (ai_model or "").strip()
         review.response_text = response_text.strip()
+        review.response_loaded_at = datetime.now()
+        review.loaded_proposals_count = (
+            loaded_proposals_count
+            if loaded_proposals_count is not None
+            else len(accepted) + len(rejected)
+        )
+        review.pending_proposals_count = pending
         review.accepted_count = applied
         review.rejected_count = len(rejected)
         review.unassigned_count = unassigned

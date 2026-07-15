@@ -111,6 +111,7 @@ class HazardLibraryTemplateDialog(QDialog):
             provider=hazard_catalog_source_peer_review_provider,
             export_dialog_config=catalog_peer_review_export_dialog_config(),
             resolve_exposed_groups=False,
+            evidence_only_import=True,
         )
         self.ai_peer_review_tab_index = self.tabs.addTab(
             self.ai_peer_review_widget,

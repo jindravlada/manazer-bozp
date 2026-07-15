@@ -426,3 +426,14 @@ Oponentura AI v Katalogu zdrojů rizik:
 - import JSON/TXT/ZIP pouze do evidence konzultace (návrhy se nezapisují do MASTER obsahu)
 - v identifikaci pracoviště je nový export/import AI vypnutý; historická konzultace zůstává zobrazena
 
+## Fáze R18f.1 (evidence importu)
+
+Oprava evidence importovaných návrhů v katalogu:
+
+- stavy návrhů: **Čeká na zpracování**, **Zamítnuto**, **Nezařazeno** (bez falešného „Převzato“)
+- souhrn importu a historie konzultací s počty podle stavů
+- návrhy se ukládají do databáze včetně `proposal_id` a vazby na konzultaci
+- opakované načtení odpovědi: nová konzultace / nahrazení / zrušení
+- tabulka návrhů vybrané konzultace se obnoví ihned po importu
+
+## Fáze R18g

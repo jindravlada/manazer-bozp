@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from core.ai_oponentni.modely.ai_unassigned_proposal import AiUnassignedProposal
 from core.database.session import get_session
@@ -25,6 +25,15 @@ class AiUnassignedProposalRepository:
                 .order_by(AiUnassignedProposal.id)
             )
             return list(session.scalars(stmt))
+
+    def delete_for_review(self, ai_peer_review_id: int) -> None:
+        with get_session() as session:
+            session.execute(
+                delete(AiUnassignedProposal).where(
+                    AiUnassignedProposal.ai_peer_review_id == ai_peer_review_id,
+                ),
+            )
+            session.commit()
 
     def add(self, proposal: AiUnassignedProposal) -> AiUnassignedProposal:
         with get_session() as session:

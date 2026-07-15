@@ -175,21 +175,37 @@ AI_PEER_REVIEW_DEFAULT_CHANGE_TRACKING = {
 }
 
 AI_PEER_REVIEW_COL_ID = 0
-AI_PEER_REVIEW_COL_DATE = 1
-AI_PEER_REVIEW_COL_MODEL = 2
-AI_PEER_REVIEW_COL_ACCEPTED = 3
-AI_PEER_REVIEW_COL_REJECTED = 4
-AI_PEER_REVIEW_COL_FILENAME = 5
-AI_PEER_REVIEW_COLUMN_COUNT = 6
+AI_PEER_REVIEW_COL_EXPORT_DATE = 1
+AI_PEER_REVIEW_COL_RESPONSE_DATE = 2
+AI_PEER_REVIEW_COL_MODEL = 3
+AI_PEER_REVIEW_COL_LOADED = 4
+AI_PEER_REVIEW_COL_PENDING = 5
+AI_PEER_REVIEW_COL_ACCEPTED = 6
+AI_PEER_REVIEW_COL_REJECTED = 7
+AI_PEER_REVIEW_COL_UNASSIGNED = 8
+AI_PEER_REVIEW_COL_FILENAME = 9
+AI_PEER_REVIEW_COLUMN_COUNT = 10
+
+# Zpětná kompatibilita starých indexů sloupců
+AI_PEER_REVIEW_COL_DATE = AI_PEER_REVIEW_COL_EXPORT_DATE
 
 AI_PEER_REVIEW_TABLE_HEADERS = [
     "ID",
-    "Datum",
+    "Datum exportu",
+    "Datum načtení odpovědi",
     "Model AI",
+    "Načteno návrhů",
+    "Čeká na zpracování",
     "Převzato",
     "Zamítnuto",
+    "Nezařazeno",
     "Soubor",
 ]
+
+AI_PEER_REVIEW_IMPORT_INTRO_EVIDENCE = (
+    "Označte návrhy k uložení do evidence ke zpracování. "
+    "Neoznačené návrhy budou evidovány jako zamítnuté."
+)
 
 # Zachováno pro zpětnou kompatibilitu importů; obsah se sestavuje dynamicky (R11.8).
 DEFAULT_AI_PEER_REVIEW_PROMPT = (

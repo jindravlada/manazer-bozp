@@ -482,7 +482,7 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         self.assertEqual(len(unassigned), 1)
         self.assertEqual(unassigned[0].name, "Orphan event")
         self.assertEqual(unassigned[0].parent_export_id, "ITEM-999")
-        self.assertEqual(UNASSIGNED_PROPOSAL_STATUS_LABEL, "Nezařazený návrh")
+        self.assertEqual(UNASSIGNED_PROPOSAL_STATUS_LABEL, "Nezařazeno")
 
     def test_import_never_attaches_to_first_item(self) -> None:
         """Bez parent_export_id se událost nesmí přilepit k prvnímu zdroji."""

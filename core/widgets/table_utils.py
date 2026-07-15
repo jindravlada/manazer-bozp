@@ -331,30 +331,40 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
     elif profile == "ai_peer_reviews":
         from core.ai_oponentni.constants import (
             AI_PEER_REVIEW_COL_ACCEPTED,
-            AI_PEER_REVIEW_COL_DATE,
+            AI_PEER_REVIEW_COL_EXPORT_DATE,
             AI_PEER_REVIEW_COL_FILENAME,
+            AI_PEER_REVIEW_COL_LOADED,
             AI_PEER_REVIEW_COL_MODEL,
+            AI_PEER_REVIEW_COL_PENDING,
             AI_PEER_REVIEW_COL_REJECTED,
+            AI_PEER_REVIEW_COL_RESPONSE_DATE,
+            AI_PEER_REVIEW_COL_UNASSIGNED,
         )
 
         widths = {
-            AI_PEER_REVIEW_COL_DATE: 130,
-            AI_PEER_REVIEW_COL_MODEL: 140,
-            AI_PEER_REVIEW_COL_ACCEPTED: 90,
-            AI_PEER_REVIEW_COL_REJECTED: 90,
-            AI_PEER_REVIEW_COL_FILENAME: 260,
+            AI_PEER_REVIEW_COL_EXPORT_DATE: 130,
+            AI_PEER_REVIEW_COL_RESPONSE_DATE: 130,
+            AI_PEER_REVIEW_COL_MODEL: 120,
+            AI_PEER_REVIEW_COL_LOADED: 90,
+            AI_PEER_REVIEW_COL_PENDING: 90,
+            AI_PEER_REVIEW_COL_ACCEPTED: 80,
+            AI_PEER_REVIEW_COL_REJECTED: 80,
+            AI_PEER_REVIEW_COL_UNASSIGNED: 90,
+            AI_PEER_REVIEW_COL_FILENAME: 220,
         }
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
         header.setSectionResizeMode(AI_PEER_REVIEW_COL_FILENAME, QHeaderView.Stretch)
-        for column in (
-            AI_PEER_REVIEW_COL_DATE,
-            AI_PEER_REVIEW_COL_MODEL,
-            AI_PEER_REVIEW_COL_ACCEPTED,
-            AI_PEER_REVIEW_COL_REJECTED,
-        ):
-            header.setSectionResizeMode(column, QHeaderView.Fixed)
+        for column in widths:
+            if column != AI_PEER_REVIEW_COL_FILENAME:
+                header.setSectionResizeMode(column, QHeaderView.Fixed)
+
+    elif profile == "ai_peer_review_proposals":
+        header.setSectionResizeMode(1, QHeaderView.Stretch)
+        header.setSectionResizeMode(2, QHeaderView.Stretch)
+        for column in (0, 3, 4):
+            header.setSectionResizeMode(column, QHeaderView.ResizeToContents)
 
     elif profile == "hazard_inventory_items":
         from moduly.rizeni_rizik.constants import (

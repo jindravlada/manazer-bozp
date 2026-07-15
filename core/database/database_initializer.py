@@ -1434,6 +1434,12 @@ def _ensure_ai_peer_reviews_table() -> None:
         _add_column("ai_peer_reviews", "selected_source_count INTEGER DEFAULT 0 NOT NULL")
     if "total_object_count" not in columns:
         _add_column("ai_peer_reviews", "total_object_count INTEGER DEFAULT 0 NOT NULL")
+    if "response_loaded_at" not in columns:
+        _add_column("ai_peer_reviews", "response_loaded_at DATETIME")
+    if "loaded_proposals_count" not in columns:
+        _add_column("ai_peer_reviews", "loaded_proposals_count INTEGER DEFAULT 0 NOT NULL")
+    if "pending_proposals_count" not in columns:
+        _add_column("ai_peer_reviews", "pending_proposals_count INTEGER DEFAULT 0 NOT NULL")
 
 
 def _ensure_ai_peer_review_batches_table() -> None:
@@ -1450,6 +1456,9 @@ def _ensure_ai_unassigned_proposals_table() -> None:
         from core.ai_oponentni.modely.ai_unassigned_proposal import AiUnassignedProposal
 
         AiUnassignedProposal.__table__.create(bind=_db_engine(), checkfirst=True)
+        return
+    if "proposal_id" not in columns:
+        _add_column("ai_unassigned_proposals", "proposal_id VARCHAR(64) DEFAULT '' NOT NULL")
 
 
 def _ensure_responsibility_roles_table() -> None:

@@ -28,6 +28,8 @@ class AiPeerReviewImportDialog(QDialog):
         *,
         proposals: list[AiProposal],
         ai_model: str = "",
+        intro_text: str | None = None,
+        accept_column_label: str = "Převzít",
     ):
         super().__init__(parent)
         self.setWindowTitle(AI_PEER_REVIEW_DIALOG_TITLE)
@@ -38,8 +40,11 @@ class AiPeerReviewImportDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.addWidget(
             QLabel(
-                "Označte návrhy k převzetí do evidence. "
-                "Neoznačené návrhy budou evidovány jako zamítnuté."
+                intro_text
+                or (
+                    "Označte návrhy k převzetí do evidence. "
+                    "Neoznačené návrhy budou evidovány jako zamítnuté."
+                )
             )
         )
 
@@ -53,7 +58,7 @@ class AiPeerReviewImportDialog(QDialog):
 
         self.table = QTableWidget(len(self._proposals), 4)
         self.table.setHorizontalHeaderLabels(
-            ["Převzít", "Oblast", "Návrh", "Zdůvodnění"]
+            [accept_column_label, "Oblast", "Návrh", "Zdůvodnění"]
         )
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)

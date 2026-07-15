@@ -114,6 +114,7 @@ class AiPeerReviewExportContent:
 @dataclass
 class AiPeerReviewApplyResult:
     applied_count: int = 0
+    pending_count: int = 0
     unassigned_count: int = 0
 
 

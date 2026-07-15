@@ -282,6 +282,7 @@ class HazardIdentificationPeerReviewProvider:
                         ai_peer_review_id=review_id,
                         source_type=self.source_type,
                         source_id=source_id,
+                        proposal_id=(proposal.proposal_id or "").strip(),
                         area=proposal.area or "",
                         name=proposal.name,
                         reasoning=proposal.reasoning or "",
