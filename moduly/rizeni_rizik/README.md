@@ -282,6 +282,14 @@ Vyčištění číselníku při startu aplikace:
 - seed při každém spuštění obnoví pouze dvě výchozí položky
 - testovací a uživatelsky přidané položky z předchozích běhů se při startu odstraní
 
+## Fáze R16a.2
+
+Bezpečný seed ohrožených skupin:
+
+- seed nemaže existující obsah tabulky
+- výchozí dvě položky se vloží pouze do prázdné tabulky (nová databáze)
+- uživatelsky přidané skupiny zůstávají zachované při dalších startech
+
 ## Fáze R17a
 
 Základ firemní knihovny vzorů:

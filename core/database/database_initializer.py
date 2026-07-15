@@ -993,10 +993,15 @@ DEFAULT_EXPOSED_GROUPS = (
 
 
 def _seed_exposed_groups() -> None:
-    """Obnoví číselník na výchozí dvě položky (vývoj – bez migrace starých dat)."""
-    now = datetime.now()
+    """Vloží výchozí položky pouze do prázdné tabulky."""
     with _db_engine().connect() as connection:
-        connection.execute(text("DELETE FROM exposed_groups"))
+        existing_count = connection.execute(
+            text("SELECT COUNT(*) FROM exposed_groups"),
+        ).scalar_one()
+        if existing_count:
+            return
+
+        now = datetime.now()
         for index, name in enumerate(DEFAULT_EXPOSED_GROUPS, start=1):
             connection.execute(
                 text(

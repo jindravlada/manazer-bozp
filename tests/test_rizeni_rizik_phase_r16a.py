@@ -120,17 +120,31 @@ class ExposedGroupCatalogR16aTestCase(unittest.TestCase):
             {"Zaměstnanci daného pracoviště", "Dodavatelé"},
         )
 
-    def test_seed_resets_catalog_to_default_groups(self) -> None:
-        exposed_group_service.create_group(name="Posunovač")
-        exposed_group_service.create_group(name="Testovací skupina")
+    def test_seed_preserves_user_groups_on_subsequent_run(self) -> None:
+        custom = exposed_group_service.create_group(name="Posunovač")
+        count_before = len(exposed_group_service.get_all(include_inactive=True))
         _seed_exposed_groups()
         groups = exposed_group_service.get_all(include_inactive=True)
         names = {group.name for group in groups}
-        self.assertEqual(len(groups), 2)
-        self.assertEqual(
-            names,
-            {"Zaměstnanci daného pracoviště", "Dodavatelé"},
-        )
+        self.assertEqual(len(groups), count_before)
+        self.assertIn(custom.name, names)
+        self.assertIn("Posunovač", names)
+
+    def test_repeated_seed_leaves_catalog_unchanged(self) -> None:
+        exposed_group_service.create_group(name="Externisté")
+        before = {
+            group.name
+            for group in exposed_group_service.get_all(include_inactive=True)
+        }
+        _seed_exposed_groups()
+        _seed_exposed_groups()
+        after = {
+            group.name
+            for group in exposed_group_service.get_all(include_inactive=True)
+        }
+        self.assertEqual(after, before)
+        self.assertNotIn("Obsluha zařízení", after)
+        self.assertNotIn("Návštěvy", after)
 
     def test_selector_filters_groups_while_typing(self) -> None:
         ensure_exposed_group("Elektrikáři")
