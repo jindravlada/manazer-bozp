@@ -60,6 +60,7 @@ from moduly.rizeni_rizik.sluzby.hazard_catalog_legal_requirement_resolver import
 )
 from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_support import (
     CATALOG_CONFLICT_TYPE_ASSESSMENT_CHOICE,
+    CATALOG_CONFLICT_TYPE_ASSESSMENT_CREATE,
     CATALOG_CONFLICT_TYPE_DUPLICATE,
     CATALOG_CONFLICT_TYPE_REQUIREMENT_CHOICE,
     CATALOG_DUPLICATE_ACTION_MERGE,
@@ -73,6 +74,7 @@ from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_support import (
     CATALOG_PROPOSAL_KIND_LEGAL,
     CATALOG_PROPOSAL_KIND_REQUIRED_MEASURE,
     CATALOG_PROPOSAL_KIND_UNKNOWN,
+    CatalogAssessmentCandidate,
     CatalogIncorporatePlan,
     CatalogProposalConflict,
     CatalogProposalDuplicate,
@@ -187,19 +189,37 @@ class HazardCatalogProposalIncorporateService:
                 CATALOG_PROPOSAL_KIND_EXISTING_MEASURE,
                 CATALOG_PROPOSAL_KIND_REQUIRED_MEASURE,
             } and self._needs_assessment_choice(working, export_id_map):
-                candidates = self._list_assessment_candidates(template_id, export_id_map)
-                if not candidates:
-                    pending_proposal_ids.append(working.id)
-                    continue
-                conflicts.append(
-                    CatalogProposalConflict(
-                        proposal_id=working.id,
-                        proposal_label=working.name,
-                        conflict_type=CATALOG_CONFLICT_TYPE_ASSESSMENT_CHOICE,
-                        assessment_candidates=candidates,
-                    ),
+                candidates = self._list_suitable_assessment_candidates(
+                    template_id,
+                    review_id,
+                    working,
+                    export_id_map,
                 )
-                continue
+                if len(candidates) == 1:
+                    self.assign_proposal_assessment(working.id, candidates[0].export_id)
+                    working = self.proposal_repository.get_by_id(working.id)
+                    if working is None or working.status != PROPOSAL_STATUS_PENDING:
+                        continue
+                elif len(candidates) > 1:
+                    conflicts.append(
+                        CatalogProposalConflict(
+                            proposal_id=working.id,
+                            proposal_label=working.name,
+                            conflict_type=CATALOG_CONFLICT_TYPE_ASSESSMENT_CHOICE,
+                            assessment_candidates=candidates,
+                        ),
+                    )
+                    continue
+                else:
+                    conflicts.append(
+                        CatalogProposalConflict(
+                            proposal_id=working.id,
+                            proposal_label=working.name,
+                            conflict_type=CATALOG_CONFLICT_TYPE_ASSESSMENT_CREATE,
+                            template_event_choices=self._list_template_event_choices(template_id),
+                        ),
+                    )
+                    continue
 
             duplicate = self._find_duplicate_match(
                 template_id=template_id,
@@ -375,39 +395,97 @@ class HazardCatalogProposalIncorporateService:
         )
         return parent is None or parent.get("kind") != "assessment"
 
-    def _list_assessment_candidates(
+    def _list_suitable_assessment_candidates(
         self,
         template_id: int,
+        review_id: int,
+        proposal: AiUnassignedProposal,
         export_id_map: dict[str, dict],
-    ) -> tuple[tuple[str, str], ...]:
+    ) -> tuple[CatalogAssessmentCandidate, ...]:
         from moduly.nastaveni.sluzby.exposed_group_service import exposed_group_service
 
-        assessment_export_ids = {
-            export_id: payload
-            for export_id, payload in export_id_map.items()
-            if payload.get("kind") == "assessment"
-        }
-        if not assessment_export_ids:
-            return ()
+        parent = self._resolve_parent(proposal, export_id_map)
+        event_filter_id: int | None = None
+        if parent is not None and parent.get("kind") == "event":
+            event_filter_id = int(parent["id"])
 
         event_names: dict[int, str] = {}
         for event in self._active_events(template_id):
             event_names[event.id] = event.name
 
-        candidates: list[tuple[str, str]] = []
-        for export_id, payload in sorted(assessment_export_ids.items()):
-            assessment_id = payload.get("id")
-            if assessment_id is None:
+        export_id_by_assessment_id = {
+            int(payload["id"]): export_id
+            for export_id, payload in export_id_map.items()
+            if payload.get("kind") == "assessment" and payload.get("id") is not None
+        }
+
+        candidates: list[CatalogAssessmentCandidate] = []
+        for event in self._active_events(template_id):
+            if event_filter_id is not None and event.id != event_filter_id:
                 continue
-            assessment = hazard_library_template_assessment_service.get_by_id(int(assessment_id))
-            if assessment is None:
-                continue
-            event_id = assessment.template_event_id
-            event_name = event_names.get(event_id, "Událost")
-            group_name = exposed_group_service.display_name(assessment.exposed_group_id)
-            label = f"{event_name} – {group_name or '—'}"
-            candidates.append((export_id, label))
+            for assessment in self._active_assessments(event.id):
+                export_id = export_id_by_assessment_id.get(assessment.id)
+                if export_id is None:
+                    export_id = self.ensure_assessment_export_id(review_id, assessment.id)
+                group_name = exposed_group_service.display_name(assessment.exposed_group_id)
+                candidates.append(
+                    CatalogAssessmentCandidate(
+                        export_id=export_id,
+                        event_name=event_names.get(event.id, "Událost"),
+                        group_name=group_name or "—",
+                        assessment_id=assessment.id,
+                        template_event_id=event.id,
+                    ),
+                )
         return tuple(candidates)
+
+    @staticmethod
+    def _list_template_event_choices(template_id: int) -> tuple[tuple[int, str], ...]:
+        from moduly.rizeni_rizik.sluzby.hazard_library_template_event_service import (
+            hazard_library_template_event_service,
+        )
+
+        return tuple(
+            (event.id, event.name)
+            for event in hazard_library_template_event_service.get_for_template(
+                template_id,
+                include_inactive=False,
+            )
+        )
+
+    def ensure_assessment_export_id(self, review_id: int, assessment_id: int) -> str:
+        export_id_map = dict(self.get_export_id_map(review_id))
+        for export_id, payload in export_id_map.items():
+            if payload.get("kind") == "assessment" and payload.get("id") == assessment_id:
+                return export_id
+
+        counter = 0
+        for export_id in export_id_map:
+            if export_id.startswith("ASSESSMENT-"):
+                try:
+                    counter = max(counter, int(export_id.split("-", 1)[1]))
+                except (IndexError, ValueError):
+                    continue
+        new_export_id = f"ASSESSMENT-{counter + 1:03d}"
+        export_id_map[new_export_id] = {"kind": "assessment", "id": assessment_id}
+        self._save_export_id_map(review_id, export_id_map)
+        return new_export_id
+
+    def _save_export_id_map(self, review_id: int, export_id_map: dict[str, dict]) -> None:
+        review = self.review_repository.get_by_id(review_id)
+        if review is None:
+            return
+        review.export_id_map_json = json.dumps(export_id_map, ensure_ascii=False)
+        self.review_repository.update(review)
+
+    def assign_proposal_assessment_by_id(
+        self,
+        proposal_id: int,
+        review_id: int,
+        assessment_id: int,
+    ) -> None:
+        export_id = self.ensure_assessment_export_id(review_id, assessment_id)
+        self.assign_proposal_assessment(proposal_id, export_id)
 
     def _find_legal_link_duplicate(
         self,

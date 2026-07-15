@@ -480,6 +480,15 @@ Průvodce ručním dokončením zapracování:
 - průvodce postupně vybere problémový návrh, otevře odpovídající dialog a po vyřešení pokračuje na další
 - finální souhrn se zobrazí až po dokončení všech ručních kroků
 
+## Fáze R19.2
+
+Dokončení ručního přiřazení opatření k posouzení:
+
+- po výběru posouzení se návrh okamžitě zapracuje (nové opatření, stav Zapracováno, obnovení UI)
+- dialog výběru posouzení zobrazuje událost a ohroženou skupinu zvlášť
+- jediné vhodné posouzení se přiřadí automaticky bez dialogu
+- chybí-li vhodné posouzení, lze založit nové nebo návrh ponechat ve frontě
+
 ## Fáze R18g
 
 Zapracování návrhů AI do MASTER obsahu katalogu:

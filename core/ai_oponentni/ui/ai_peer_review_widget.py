@@ -1044,6 +1044,178 @@ class AiPeerReviewWidget(QWidget):
         message.exec()
         return message.clickedButton() == open_button
 
+    def _incorporate_single_catalog_proposal(
+        self,
+        *,
+        review_id: int,
+        proposal_id: int,
+        resolutions: dict[int, str],
+    ):
+        from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_incorporate_service import (
+            HazardCatalogProposalIncorporateError,
+            hazard_catalog_proposal_incorporate_service,
+        )
+
+        if self._source_id is None:
+            return None
+        try:
+            plan = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
+                template_id=self._source_id,
+                review_id=review_id,
+                proposal_ids=[proposal_id],
+            )
+            merged_resolutions = dict(plan.resolutions)
+            merged_resolutions.update(resolutions)
+            result = hazard_catalog_proposal_incorporate_service.incorporate_proposals(
+                template_id=self._source_id,
+                review_id=review_id,
+                proposal_ids=[proposal_id],
+                resolutions=merged_resolutions,
+                pending_proposal_ids=plan.pending_proposal_ids,
+            )
+        except HazardCatalogProposalIncorporateError as error:
+            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+            return None
+
+        self.refresh()
+        if self._on_catalog_incorporated is not None and result.new_revision_number:
+            self._on_catalog_incorporated(result.new_revision_number)
+        return result
+
+    def _assign_measure_assessment_and_incorporate(
+        self,
+        *,
+        review_id: int,
+        proposal_id: int,
+        assessment_export_id: str | None = None,
+        assessment_id: int | None = None,
+        resolutions: dict[int, str],
+    ) -> bool:
+        from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_incorporate_service import (
+            hazard_catalog_proposal_incorporate_service,
+        )
+
+        if assessment_id is not None:
+            hazard_catalog_proposal_incorporate_service.assign_proposal_assessment_by_id(
+                proposal_id,
+                review_id,
+                assessment_id,
+            )
+        elif assessment_export_id:
+            hazard_catalog_proposal_incorporate_service.assign_proposal_assessment(
+                proposal_id,
+                assessment_export_id,
+            )
+        else:
+            return False
+
+        result = self._incorporate_single_catalog_proposal(
+            review_id=review_id,
+            proposal_id=proposal_id,
+            resolutions=resolutions,
+        )
+        return result is not None and result.incorporated_count > 0
+
+    def _create_assessment_for_measure_proposal(
+        self,
+        *,
+        review_id: int,
+        proposal_id: int,
+        proposal_name: str,
+        event_choices: tuple[tuple[int, str], ...],
+        resolutions: dict[int, str],
+        progress_label: str = "",
+    ) -> bool:
+        from moduly.rizeni_rizik.constants_library import (
+            CATALOG_AI_PROPOSAL_ASSESSMENT_CREATE_EVENT_DIALOG_TITLE,
+        )
+        from moduly.rizeni_rizik.ui.hazard_catalog_proposal_assessment_choice_dialog import (
+            HazardCatalogProposalAssessmentCreateDialog,
+        )
+        from moduly.rizeni_rizik.ui.hazard_catalog_proposal_requirement_choice_dialog import (
+            HazardCatalogProposalRequirementChoiceDialog,
+        )
+        from moduly.rizeni_rizik.ui.hazard_library_template_assessment_dialog import (
+            HazardLibraryTemplateAssessmentDialog,
+        )
+        from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_support import (
+            CATALOG_DUPLICATE_ACTION_CREATE,
+            CATALOG_DUPLICATE_ACTION_SKIP,
+        )
+
+        if self._source_id is None:
+            return False
+
+        create_dialog = HazardCatalogProposalAssessmentCreateDialog(
+            self,
+            proposal_name=proposal_name,
+        )
+        if progress_label:
+            create_dialog.setWindowTitle(f"{create_dialog.windowTitle()} – {progress_label}")
+        if not create_dialog.exec():
+            return False
+        if create_dialog.selected_action == CATALOG_DUPLICATE_ACTION_SKIP:
+            resolutions[proposal_id] = CATALOG_DUPLICATE_ACTION_SKIP
+            return True
+        if create_dialog.selected_action != CATALOG_DUPLICATE_ACTION_CREATE:
+            return False
+
+        if not event_choices:
+            QMessageBox.information(
+                self,
+                AI_PEER_REVIEW_DIALOG_TITLE,
+                "Ve zdroji rizika zatím není žádná nežádoucí událost. "
+                "Nejdříve založte událost v odborném obsahu zdroje.",
+            )
+            return False
+
+        template_event_id = event_choices[0][0]
+        if len(event_choices) > 1:
+            event_dialog = HazardCatalogProposalRequirementChoiceDialog(
+                self,
+                proposal_name=proposal_name,
+                candidates=event_choices,
+                intro_text=(
+                    "Vyberte nežádoucí událost, ke které se má nové posouzení vztahovat."
+                ),
+            )
+            event_dialog.setWindowTitle(CATALOG_AI_PROPOSAL_ASSESSMENT_CREATE_EVENT_DIALOG_TITLE)
+            if progress_label:
+                event_dialog.setWindowTitle(
+                    f"{event_dialog.windowTitle()} – {progress_label}",
+                )
+            if not event_dialog.exec():
+                return False
+            if event_dialog.selected_action == CATALOG_DUPLICATE_ACTION_SKIP:
+                resolutions[proposal_id] = CATALOG_DUPLICATE_ACTION_SKIP
+                return True
+            if event_dialog.selected_requirement_id is None:
+                return False
+            template_event_id = event_dialog.selected_requirement_id
+
+        assessment_dialog = HazardLibraryTemplateAssessmentDialog(
+            self,
+            template_id=self._source_id,
+            template_event_id=template_event_id,
+        )
+        if progress_label:
+            assessment_dialog.setWindowTitle(
+                f"{assessment_dialog.windowTitle()} – {progress_label}",
+            )
+        if not assessment_dialog.exec():
+            return False
+
+        saved = assessment_dialog.saved_assessment
+        if saved is None:
+            return False
+
+        return self._assign_measure_assessment_and_incorporate(
+            review_id=review_id,
+            proposal_id=proposal_id,
+            assessment_id=saved.id,
+            resolutions=resolutions,
+        )
+
     def _resolve_incorporation_plan_interactively(
         self,
         *,
@@ -1060,17 +1232,23 @@ class AiPeerReviewWidget(QWidget):
         )
         from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_support import (
             CATALOG_CONFLICT_TYPE_ASSESSMENT_CHOICE,
+            CATALOG_CONFLICT_TYPE_ASSESSMENT_CREATE,
             CATALOG_CONFLICT_TYPE_DUPLICATE,
             CATALOG_CONFLICT_TYPE_REQUIREMENT_CHOICE,
             CATALOG_DUPLICATE_ACTION_CANCEL,
             CATALOG_DUPLICATE_ACTION_EDIT,
             CATALOG_DUPLICATE_ACTION_SKIP,
+            CATALOG_PROPOSAL_KIND_EXISTING_MEASURE,
+            CATALOG_PROPOSAL_KIND_LEGAL,
+            CATALOG_PROPOSAL_KIND_REQUIRED_MEASURE,
+            classify_catalog_proposal,
         )
         from moduly.rizeni_rizik.ui.hazard_catalog_ai_proposal_edit_dialog import (
             HazardCatalogAiProposalEditDialog,
         )
         from moduly.rizeni_rizik.ui.hazard_catalog_proposal_assessment_choice_dialog import (
             HazardCatalogProposalAssessmentChoiceDialog,
+            HazardCatalogProposalAssessmentCreateDialog,
         )
         from moduly.rizeni_rizik.ui.hazard_catalog_proposal_duplicate_dialog import (
             HazardCatalogProposalDuplicateDialog,
@@ -1092,6 +1270,33 @@ class AiPeerReviewWidget(QWidget):
                 continue
 
             self._select_proposal_row(proposal_id)
+            proposal_kind = classify_catalog_proposal(proposal)
+            if proposal_kind in {
+                CATALOG_PROPOSAL_KIND_EXISTING_MEASURE,
+                CATALOG_PROPOSAL_KIND_REQUIRED_MEASURE,
+            }:
+                measure_plan = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
+                    template_id=self._source_id,
+                    review_id=review_id,
+                    proposal_ids=[proposal_id],
+                )
+                measure_resolved = self._resolve_incorporation_plan_interactively(
+                    review_id=review_id,
+                    plan=measure_plan,
+                    allow_manual_legal_pick=False,
+                    progress_label=progress_label,
+                )
+                if measure_resolved is None:
+                    return None
+                child_resolutions, _ = measure_resolved
+                resolutions.update(child_resolutions)
+                pending_manual_ids.pop(0)
+                continue
+
+            if proposal_kind != CATALOG_PROPOSAL_KIND_LEGAL:
+                pending_manual_ids.pop(0)
+                continue
+
             candidates = hazard_catalog_proposal_incorporate_service.list_legal_requirement_candidates()
             if not candidates:
                 edit_dialog = HazardCatalogAiProposalEditDialog(self, proposal=proposal)
@@ -1184,6 +1389,19 @@ class AiPeerReviewWidget(QWidget):
                 conflict_index += 1
                 continue
 
+            if conflict.conflict_type == CATALOG_CONFLICT_TYPE_ASSESSMENT_CREATE:
+                if not self._create_assessment_for_measure_proposal(
+                    review_id=review_id,
+                    proposal_id=proposal.id,
+                    proposal_name=conflict.proposal_label,
+                    event_choices=conflict.template_event_choices,
+                    resolutions=resolutions,
+                    progress_label=progress_label,
+                ):
+                    return None
+                conflict_index += 1
+                continue
+
             if conflict.conflict_type == CATALOG_CONFLICT_TYPE_ASSESSMENT_CHOICE:
                 dialog = HazardCatalogProposalAssessmentChoiceDialog(
                     self,
@@ -1203,17 +1421,19 @@ class AiPeerReviewWidget(QWidget):
                     conflict_index += 1
                     continue
                 if dialog.selected_assessment_export_id:
-                    hazard_catalog_proposal_incorporate_service.assign_proposal_assessment(
-                        proposal.id,
-                        dialog.selected_assessment_export_id,
-                    )
-                    refreshed = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
-                        template_id=self._source_id,
+                    if not self._assign_measure_assessment_and_incorporate(
                         review_id=review_id,
-                        proposal_ids=[proposal.id],
-                    )
-                    resolutions.update(refreshed.resolutions)
-                    pending_conflicts.extend(refreshed.conflicts)
+                        proposal_id=proposal.id,
+                        assessment_export_id=dialog.selected_assessment_export_id,
+                        resolutions=resolutions,
+                    ):
+                        refreshed = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
+                            template_id=self._source_id,
+                            review_id=review_id,
+                            proposal_ids=[proposal.id],
+                        )
+                        resolutions.update(refreshed.resolutions)
+                        pending_conflicts.extend(refreshed.conflicts)
                 conflict_index += 1
                 continue
 
@@ -1374,13 +1594,21 @@ class AiPeerReviewWidget(QWidget):
             return
         resolutions, _ = resolved
 
+        final_plan = hazard_catalog_proposal_incorporate_service.prepare_incorporation(
+            template_id=self._source_id,
+            review_id=review_id,
+            proposal_ids=proposal_ids,
+        )
+        merged_resolutions = dict(final_plan.resolutions)
+        merged_resolutions.update(resolutions)
+
         try:
             result = hazard_catalog_proposal_incorporate_service.incorporate_proposals(
                 template_id=self._source_id,
                 review_id=review_id,
                 proposal_ids=proposal_ids,
-                resolutions=resolutions,
-                pending_proposal_ids=plan.pending_proposal_ids,
+                resolutions=merged_resolutions,
+                pending_proposal_ids=final_plan.pending_proposal_ids,
             )
         except HazardCatalogProposalIncorporateError as error:
             QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))

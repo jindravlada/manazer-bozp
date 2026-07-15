@@ -251,8 +251,18 @@ CATALOG_AI_PROPOSAL_REQUIREMENT_CHOICE_INTRO = (
 )
 CATALOG_AI_PROPOSAL_ASSESSMENT_CHOICE_DIALOG_TITLE = "Výběr posouzení pro opatření"
 CATALOG_AI_PROPOSAL_ASSESSMENT_CHOICE_INTRO = (
-    "Vyberte posouzení, do kterého chcete opatření „{proposal_name}“ zařadit."
+    "AI neurčila, ke kterému posouzení rizika opatření patří."
 )
+CATALOG_AI_PROPOSAL_ASSESSMENT_CHOICE_EVENT_COLUMN = "Událost"
+CATALOG_AI_PROPOSAL_ASSESSMENT_CHOICE_GROUP_COLUMN = "Ohrožená skupina"
+CATALOG_AI_PROPOSAL_ASSESSMENT_CHOICE_USE_BUTTON = "Použít vybrané posouzení"
+CATALOG_AI_PROPOSAL_ASSESSMENT_CREATE_BUTTON = "Vytvořit nové posouzení"
+CATALOG_AI_PROPOSAL_ASSESSMENT_CREATE_DIALOG_TITLE = "Chybí vhodné posouzení"
+CATALOG_AI_PROPOSAL_ASSESSMENT_CREATE_INTRO = (
+    "AI neurčila, ke kterému posouzení rizika opatření „{proposal_name}“ patří.\n"
+    "Ve zdroji rizika zatím není vhodné posouzení, ke kterému by šlo opatření zařadit."
+)
+CATALOG_AI_PROPOSAL_ASSESSMENT_CREATE_EVENT_DIALOG_TITLE = "Výběr události pro nové posouzení"
 CATALOG_AI_PROPOSAL_REQUIREMENT_NOT_FOUND_INFO = (
     "Právní požadavek pro návrh „{proposal_name}“ nebyl v registru nalezen. "
     "Návrh zůstane ve frontě ke zpracování."

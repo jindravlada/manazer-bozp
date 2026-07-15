@@ -20,6 +20,7 @@ CATALOG_DUPLICATE_ACTION_SKIP = "skip"
 CATALOG_DUPLICATE_ACTION_MERGE = "merge"
 CATALOG_DUPLICATE_ACTION_EDIT = "edit"
 CATALOG_DUPLICATE_ACTION_CANCEL = "cancel"
+CATALOG_DUPLICATE_ACTION_CREATE = "create"
 
 CATALOG_DUPLICATE_MATCH_EXACT = "exact"
 CATALOG_DUPLICATE_MATCH_SIMILAR = "similar"
@@ -27,6 +28,7 @@ CATALOG_DUPLICATE_MATCH_SIMILAR = "similar"
 CATALOG_CONFLICT_TYPE_DUPLICATE = "duplicate"
 CATALOG_CONFLICT_TYPE_REQUIREMENT_CHOICE = "requirement_choice"
 CATALOG_CONFLICT_TYPE_ASSESSMENT_CHOICE = "assessment_choice"
+CATALOG_CONFLICT_TYPE_ASSESSMENT_CREATE = "assessment_create"
 
 
 @dataclass(frozen=True)
@@ -37,6 +39,15 @@ class CatalogProposalPayload:
     conclusion: str = ""
     severity: str = ""
     legal_requirement_id: int | None = None
+
+
+@dataclass(frozen=True)
+class CatalogAssessmentCandidate:
+    export_id: str
+    event_name: str
+    group_name: str
+    assessment_id: int
+    template_event_id: int
 
 
 @dataclass(frozen=True)
@@ -55,7 +66,8 @@ class CatalogProposalConflict:
     conflict_type: str = CATALOG_CONFLICT_TYPE_DUPLICATE
     duplicate: CatalogProposalDuplicate | None = None
     requirement_candidates: tuple[tuple[int, str], ...] = ()
-    assessment_candidates: tuple[tuple[str, str], ...] = ()
+    assessment_candidates: tuple[CatalogAssessmentCandidate, ...] = ()
+    template_event_choices: tuple[tuple[int, str], ...] = ()
 
 
 @dataclass

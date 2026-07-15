@@ -44,6 +44,7 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
         self.template_event_id = template_event_id
         self.assessment = assessment
         self.read_only = read_only
+        self.saved_assessment = assessment
 
         self.setWindowTitle(HAZARD_LIBRARY_ASSESSMENT_DIALOG_TITLE)
         self.resize(620, 520)
@@ -145,13 +146,13 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
 
         try:
             if self.assessment is None:
-                hazard_library_template_assessment_service.create_assessment(
+                self.saved_assessment = hazard_library_template_assessment_service.create_assessment(
                     template_id=self.template_id,
                     template_event_id=self.template_event_id,
                     **data,
                 )
             else:
-                hazard_library_template_assessment_service.update_assessment(
+                self.saved_assessment = hazard_library_template_assessment_service.update_assessment(
                     self.assessment.id,
                     template_id=self.template_id,
                     template_event_id=self.template_event_id,

@@ -318,11 +318,19 @@ class HazardCatalogLegalLinksR19TestCase(unittest.TestCase):
             template_id=self.template.id,
             name="Provoz jeřábu",
         )
+        other_group = ensure_exposed_group("Dodavatelé")
         hazard_library_template_assessment_service.create_assessment(
             template_id=self.template.id,
             template_event_id=event.id,
             exposed_group_id=self.group.id,
             consequence="Úraz",
+            severity=RISK_SEVERITY_MODERATE,
+        )
+        hazard_library_template_assessment_service.create_assessment(
+            template_id=self.template.id,
+            template_event_id=event.id,
+            exposed_group_id=other_group.id,
+            consequence="Pád",
             severity=RISK_SEVERITY_MODERATE,
         )
         self.review = self._export().review
@@ -344,7 +352,7 @@ class HazardCatalogLegalLinksR19TestCase(unittest.TestCase):
         )
         self.assertEqual(len(plan.conflicts), 1)
         self.assertEqual(plan.conflicts[0].conflict_type, CATALOG_CONFLICT_TYPE_ASSESSMENT_CHOICE)
-        self.assertGreaterEqual(len(plan.conflicts[0].assessment_candidates), 1)
+        self.assertEqual(len(plan.conflicts[0].assessment_candidates), 2)
 
     def test_measure_assigned_to_assessment_incorporates(self) -> None:
         event = hazard_library_template_event_service.create_event(
