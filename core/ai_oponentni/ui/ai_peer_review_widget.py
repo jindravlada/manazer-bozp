@@ -56,7 +56,10 @@ from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_ROLES,
     AI_PEER_REVIEW_TABLE_HEADERS,
 )
-from core.ai_oponentni.modely.ai_unassigned_proposal import PROPOSAL_STATUS_LABELS
+from core.ai_oponentni.modely.ai_unassigned_proposal import (
+    PROPOSAL_STATUS_LABELS,
+    PROPOSAL_STATUS_PENDING,
+)
 from core.ai_oponentni.sluzby.ai_peer_review_service import (
     AiPeerReviewError,
     ai_peer_review_service,
@@ -375,6 +378,7 @@ class AiPeerReviewWidget(QWidget):
         *,
         provider: AiPeerReviewProvider,
         on_proposals_applied=None,
+        on_catalog_incorporated=None,
         allow_new_exports: bool = True,
         export_dialog_config: AiPeerReviewExportDialogConfig | None = None,
         resolve_exposed_groups: bool = True,
@@ -384,6 +388,7 @@ class AiPeerReviewWidget(QWidget):
         self._provider = provider
         self._source_id: int | None = None
         self._on_proposals_applied = on_proposals_applied
+        self._on_catalog_incorporated = on_catalog_incorporated
         self._allow_new_exports = allow_new_exports
         self._export_dialog_config = export_dialog_config
         self._resolve_exposed_groups = resolve_exposed_groups
@@ -416,18 +421,62 @@ class AiPeerReviewWidget(QWidget):
         self.table.itemSelectionChanged.connect(self._load_proposals_table)
         layout.addWidget(self.table)
 
-        layout.addWidget(QLabel("Návrhy vybrané konzultace:"))
+        self.proposals_label = QLabel("Návrhy vybrané konzultace:")
+        layout.addWidget(self.proposals_label)
         self.proposals_table = QTableWidget()
         self.proposals_table.setColumnCount(5)
         self.proposals_table.setHorizontalHeaderLabels(
             ["Oblast", "Návrh", "Zdůvodnění", "Stav", "ID návrhu"],
         )
+        if self._evidence_only_import:
+            self.proposals_table.setSelectionMode(QTableWidget.SelectionMode.ExtendedSelection)
+        else:
+            self.proposals_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.proposals_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.proposals_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.proposals_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.proposals_table.setAlternatingRowColors(True)
         configure_table_columns(self.proposals_table, "ai_peer_review_proposals")
+        self.proposals_table.doubleClicked.connect(self._edit_selected_proposals)
         layout.addWidget(self.proposals_table)
+
+        if self._evidence_only_import:
+            from moduly.rizeni_rizik.constants_library import (
+                CATALOG_AI_PROPOSAL_EDIT_BUTTON,
+                CATALOG_AI_PROPOSAL_INCORPORATE_BUTTON,
+                CATALOG_AI_PROPOSAL_INCORPORATE_SELECTED_BUTTON,
+                CATALOG_AI_PROPOSAL_QUEUE_LABEL,
+                CATALOG_AI_PROPOSAL_REJECT_BUTTON,
+                CATALOG_AI_PROPOSAL_REJECT_SELECTED_BUTTON,
+            )
+
+            self.proposals_label.setText(CATALOG_AI_PROPOSAL_QUEUE_LABEL)
+            proposal_actions = QHBoxLayout()
+            self.incorporate_btn = QPushButton(CATALOG_AI_PROPOSAL_INCORPORATE_BUTTON)
+            self.reject_proposal_btn = QPushButton(CATALOG_AI_PROPOSAL_REJECT_BUTTON)
+            self.edit_proposal_btn = QPushButton(CATALOG_AI_PROPOSAL_EDIT_BUTTON)
+            self.incorporate_selected_btn = QPushButton(
+                CATALOG_AI_PROPOSAL_INCORPORATE_SELECTED_BUTTON,
+            )
+            self.reject_selected_btn = QPushButton(CATALOG_AI_PROPOSAL_REJECT_SELECTED_BUTTON)
+            proposal_actions.addWidget(self.incorporate_btn)
+            proposal_actions.addWidget(self.reject_proposal_btn)
+            proposal_actions.addWidget(self.edit_proposal_btn)
+            proposal_actions.addWidget(self.incorporate_selected_btn)
+            proposal_actions.addWidget(self.reject_selected_btn)
+            proposal_actions.addStretch()
+            layout.addLayout(proposal_actions)
+
+            self.incorporate_btn.clicked.connect(self._incorporate_current_proposal)
+            self.reject_proposal_btn.clicked.connect(self._reject_current_proposals)
+            self.edit_proposal_btn.clicked.connect(self._edit_selected_proposals)
+            self.incorporate_selected_btn.clicked.connect(self._incorporate_selected_proposals)
+            self.reject_selected_btn.clicked.connect(self._reject_selected_proposals)
+        else:
+            self.incorporate_btn = None
+            self.reject_proposal_btn = None
+            self.edit_proposal_btn = None
+            self.incorporate_selected_btn = None
+            self.reject_selected_btn = None
 
         self.export_btn.clicked.connect(self.export_package)
         self.import_btn.clicked.connect(self.import_response)
@@ -698,7 +747,7 @@ class AiPeerReviewWidget(QWidget):
             return (
                 f"Formát odpovědi: {format_label}\n"
                 f"Načteno návrhů: {review.loaded_proposals_count}\n"
-                f"Čeká na zpracování: {review.pending_proposals_count}\n"
+                f"Čeká na odborné posouzení: {review.pending_proposals_count}\n"
                 f"Zamítnuto: {review.rejected_count}\n"
                 f"Nezařazeno: {review.unassigned_count}"
             )
@@ -736,13 +785,17 @@ class AiPeerReviewWidget(QWidget):
             return
 
         proposals = ai_peer_review_service.get_unassigned_for_review(review_id)
+        if self._evidence_only_import:
+            proposals = [
+                proposal
+                for proposal in proposals
+                if proposal.status == PROPOSAL_STATUS_PENDING
+            ]
         self.proposals_table.setRowCount(len(proposals))
         for row_index, proposal in enumerate(proposals):
-            self.proposals_table.setItem(
-                row_index,
-                0,
-                QTableWidgetItem(proposal.area or "—"),
-            )
+            area_item = QTableWidgetItem(proposal.area or "—")
+            area_item.setData(Qt.ItemDataRole.UserRole, proposal.id)
+            self.proposals_table.setItem(row_index, 0, area_item)
             self.proposals_table.setItem(
                 row_index,
                 1,
@@ -776,6 +829,10 @@ class AiPeerReviewWidget(QWidget):
             self._provider.source_type,
             self._source_id,
         )
+        headers = list(AI_PEER_REVIEW_TABLE_HEADERS)
+        if self._evidence_only_import:
+            headers[AI_PEER_REVIEW_COL_ACCEPTED] = "Zapracováno"
+        self.table.setHorizontalHeaderLabels(headers)
         self.table.setRowCount(len(rows))
         for row_index, review in enumerate(rows):
             self.table.setItem(
@@ -836,3 +893,191 @@ class AiPeerReviewWidget(QWidget):
         configure_table_columns(self.table, "ai_peer_reviews")
         if rows:
             self.table.selectRow(0)
+
+    def _selected_proposal_ids(self) -> list[int]:
+        selected_rows = self.proposals_table.selectionModel().selectedRows()
+        proposal_ids: list[int] = []
+        for model_index in selected_rows:
+            item = self.proposals_table.item(model_index.row(), 0)
+            if item is None:
+                continue
+            proposal_id = item.data(Qt.ItemDataRole.UserRole)
+            if proposal_id is not None:
+                proposal_ids.append(int(proposal_id))
+        return proposal_ids
+
+    def _incorporate_current_proposal(self) -> None:
+        selected = self._selected_proposal_ids()
+        if len(selected) != 1:
+            QMessageBox.information(
+                self,
+                AI_PEER_REVIEW_DIALOG_TITLE,
+                "Vyberte právě jeden návrh ke zapracování.",
+            )
+            return
+        self._incorporate_proposal_ids(selected)
+
+    def _incorporate_selected_proposals(self) -> None:
+        selected = self._selected_proposal_ids()
+        if not selected:
+            QMessageBox.information(
+                self,
+                AI_PEER_REVIEW_DIALOG_TITLE,
+                "Vyberte alespoň jeden návrh ke zapracování.",
+            )
+            return
+        self._incorporate_proposal_ids(selected)
+
+    def _reject_current_proposals(self) -> None:
+        selected = self._selected_proposal_ids()
+        if len(selected) != 1:
+            QMessageBox.information(
+                self,
+                AI_PEER_REVIEW_DIALOG_TITLE,
+                "Vyberte právě jeden návrh k zamítnutí.",
+            )
+            return
+        self._reject_proposal_ids(selected)
+
+    def _reject_selected_proposals(self) -> None:
+        selected = self._selected_proposal_ids()
+        if not selected:
+            QMessageBox.information(
+                self,
+                AI_PEER_REVIEW_DIALOG_TITLE,
+                "Vyberte alespoň jeden návrh k zamítnutí.",
+            )
+            return
+        self._reject_proposal_ids(selected)
+
+    def _reject_proposal_ids(self, proposal_ids: list[int]) -> None:
+        from moduly.rizeni_rizik.constants_library import CATALOG_AI_PROPOSAL_REJECT_SUCCESS
+        from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_incorporate_service import (
+            hazard_catalog_proposal_incorporate_service,
+        )
+
+        rejected = hazard_catalog_proposal_incorporate_service.reject_proposals(proposal_ids)
+        if rejected <= 0:
+            return
+        self.refresh()
+        if self._on_catalog_incorporated is not None:
+            self._on_catalog_incorporated(None)
+        QMessageBox.information(
+            self,
+            AI_PEER_REVIEW_DIALOG_TITLE,
+            CATALOG_AI_PROPOSAL_REJECT_SUCCESS.format(count=rejected),
+        )
+
+    def _edit_selected_proposals(self) -> None:
+        if not self._evidence_only_import:
+            return
+        selected = self._selected_proposal_ids()
+        if len(selected) != 1:
+            QMessageBox.information(
+                self,
+                AI_PEER_REVIEW_DIALOG_TITLE,
+                "Vyberte právě jeden návrh k úpravě.",
+            )
+            return
+        proposal = ai_peer_review_service.get_proposal_by_id(selected[0])
+        if proposal is None:
+            return
+        from moduly.rizeni_rizik.ui.hazard_catalog_ai_proposal_edit_dialog import (
+            HazardCatalogAiProposalEditDialog,
+        )
+
+        dialog = HazardCatalogAiProposalEditDialog(self, proposal=proposal)
+        if dialog.exec():
+            self._load_proposals_table()
+
+    def _incorporate_proposal_ids(self, proposal_ids: list[int]) -> None:
+        if self._source_id is None:
+            return
+        review_id = self._selected_review_id()
+        if review_id is None:
+            QMessageBox.information(
+                self,
+                AI_PEER_REVIEW_DIALOG_TITLE,
+                "Vyberte konzultaci s návrhy.",
+            )
+            return
+
+        from moduly.rizeni_rizik.constants_library import CATALOG_AI_PROPOSAL_INCORPORATE_SUCCESS
+        from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_incorporate_service import (
+            HazardCatalogProposalIncorporateError,
+            hazard_catalog_proposal_incorporate_service,
+        )
+        from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_support import (
+            CATALOG_DUPLICATE_ACTION_CANCEL,
+            CATALOG_DUPLICATE_ACTION_EDIT,
+            CATALOG_DUPLICATE_ACTION_MERGE,
+            CATALOG_DUPLICATE_ACTION_SKIP,
+        )
+        from moduly.rizeni_rizik.ui.hazard_catalog_ai_proposal_edit_dialog import (
+            HazardCatalogAiProposalEditDialog,
+        )
+        from moduly.rizeni_rizik.ui.hazard_catalog_proposal_duplicate_dialog import (
+            HazardCatalogProposalDuplicateDialog,
+        )
+
+        export_id_map = hazard_catalog_proposal_incorporate_service.get_export_id_map(review_id)
+        resolutions: dict[int, str] = {}
+        proposals = hazard_catalog_proposal_incorporate_service.proposal_repository.get_by_ids(
+            proposal_ids,
+        )
+
+        for proposal in proposals:
+            if proposal.status != PROPOSAL_STATUS_PENDING:
+                continue
+            while True:
+                duplicate = hazard_catalog_proposal_incorporate_service.detect_duplicate(
+                    template_id=self._source_id,
+                    proposal=proposal,
+                    export_id_map=export_id_map,
+                )
+                if duplicate is None:
+                    break
+                dialog = HazardCatalogProposalDuplicateDialog(
+                    self,
+                    proposal_name=proposal.name,
+                    duplicate=duplicate,
+                )
+                if not dialog.exec():
+                    return
+                action = dialog.selected_action
+                if action == CATALOG_DUPLICATE_ACTION_CANCEL:
+                    return
+                if action == CATALOG_DUPLICATE_ACTION_EDIT:
+                    edit_dialog = HazardCatalogAiProposalEditDialog(self, proposal=proposal)
+                    if not edit_dialog.exec():
+                        return
+                    proposal = ai_peer_review_service.get_proposal_by_id(proposal.id)
+                    if proposal is None:
+                        return
+                    continue
+                resolutions[proposal.id] = action
+                break
+
+        try:
+            result = hazard_catalog_proposal_incorporate_service.incorporate_proposals(
+                template_id=self._source_id,
+                review_id=review_id,
+                proposal_ids=proposal_ids,
+                resolutions=resolutions,
+            )
+        except HazardCatalogProposalIncorporateError as error:
+            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+            return
+
+        self.refresh()
+        if self._on_catalog_incorporated is not None:
+            self._on_catalog_incorporated(result.new_revision_number)
+        if result.incorporated_count > 0:
+            QMessageBox.information(
+                self,
+                AI_PEER_REVIEW_DIALOG_TITLE,
+                CATALOG_AI_PROPOSAL_INCORPORATE_SUCCESS.format(
+                    count=result.incorporated_count,
+                    revision=result.new_revision_number or "—",
+                ),
+            )

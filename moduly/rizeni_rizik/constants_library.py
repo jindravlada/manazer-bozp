@@ -191,4 +191,27 @@ HAZARD_LIBRARY_REVISION_HISTORY_EMPTY = (
 CATALOG_UPDATE_OFFER_REVISION_INSTANCE = "Revize instance: {revision}"
 CATALOG_UPDATE_OFFER_REVISION_MASTER = "Revize Master: {revision}"
 
+CATALOG_AI_PROPOSAL_INCORPORATE_BUTTON = "Zapracovat"
+CATALOG_AI_PROPOSAL_REJECT_BUTTON = "Zamítnout"
+CATALOG_AI_PROPOSAL_EDIT_BUTTON = "Upravit…"
+CATALOG_AI_PROPOSAL_INCORPORATE_SELECTED_BUTTON = "Zapracovat vybrané"
+CATALOG_AI_PROPOSAL_REJECT_SELECTED_BUTTON = "Zamítnout vybrané"
+CATALOG_AI_PROPOSAL_QUEUE_LABEL = "Návrhy ke zpracování (čekají na odborné posouzení):"
+CATALOG_AI_PROPOSAL_INCORPORATE_SUCCESS = (
+    "Do MASTER obsahu bylo zapracováno {count} návrhů. Revize zdroje: {revision}."
+)
+CATALOG_AI_PROPOSAL_REJECT_SUCCESS = "Zamítnuto návrhů: {count}."
+CATALOG_AI_PROPOSAL_DUPLICATE_DIALOG_TITLE = "Duplicitní návrh"
+CATALOG_AI_PROPOSAL_DUPLICATE_INTRO = (
+    "Návrh „{proposal_name}“ je v konfliktu s existující položkou „{existing_label}“."
+)
+CATALOG_AI_PROPOSAL_DUPLICATE_SKIP = "Přeskočit"
+CATALOG_AI_PROPOSAL_DUPLICATE_MERGE = "Sloučit"
+CATALOG_AI_PROPOSAL_DUPLICATE_EDIT = "Upravit"
+CATALOG_AI_PROPOSAL_DUPLICATE_CANCEL = "Zrušit zapracování"
+CATALOG_AI_PROPOSAL_EDIT_DIALOG_TITLE = "Úprava návrhu AI"
+CATALOG_AI_PROPOSAL_LEGAL_EDIT_INFO = (
+    "Právní vazbu lze upravit pouze jako text návrhu. Do MASTER obsahu se nezapisuje."
+)
+
 DEFAULT_HAZARD_LIBRARY_VERSION = 1

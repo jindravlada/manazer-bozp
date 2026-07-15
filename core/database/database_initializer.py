@@ -1480,6 +1480,10 @@ def _ensure_ai_unassigned_proposals_table() -> None:
         return
     if "proposal_id" not in columns:
         _add_column("ai_unassigned_proposals", "proposal_id VARCHAR(64) DEFAULT '' NOT NULL")
+    if "exposed_group_id" not in columns:
+        _add_column("ai_unassigned_proposals", "exposed_group_id INTEGER")
+    if "payload_json" not in columns:
+        _add_column("ai_unassigned_proposals", "payload_json TEXT DEFAULT '{}' NOT NULL")
 
 
 def _ensure_responsibility_roles_table() -> None:

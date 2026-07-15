@@ -9,11 +9,13 @@ from core.database.base import Base
 PROPOSAL_STATUS_PENDING = "pending"
 PROPOSAL_STATUS_REJECTED = "rejected"
 PROPOSAL_STATUS_UNASSIGNED = "unassigned"
+PROPOSAL_STATUS_INCORPORATED = "incorporated"
 
 PROPOSAL_STATUS_LABELS = {
-    PROPOSAL_STATUS_PENDING: "Čeká na zpracování",
+    PROPOSAL_STATUS_PENDING: "Čeká na odborné posouzení",
     PROPOSAL_STATUS_REJECTED: "Zamítnuto",
     PROPOSAL_STATUS_UNASSIGNED: "Nezařazeno",
+    PROPOSAL_STATUS_INCORPORATED: "Zapracováno",
 }
 
 UNASSIGNED_PROPOSAL_STATUS = PROPOSAL_STATUS_UNASSIGNED
@@ -37,6 +39,8 @@ class AiUnassignedProposal(Base):
     name: Mapped[str] = mapped_column(String(300), nullable=False)
     reasoning: Mapped[str] = mapped_column(Text, default="", nullable=False)
     parent_export_id: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    exposed_group_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    payload_json: Mapped[str] = mapped_column(Text, default="{}", nullable=False)
     status: Mapped[str] = mapped_column(
         String(32),
         default=PROPOSAL_STATUS_UNASSIGNED,

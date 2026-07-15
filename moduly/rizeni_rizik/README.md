@@ -430,7 +430,7 @@ Oponentura AI v Katalogu zdrojů rizik:
 
 Oprava evidence importovaných návrhů v katalogu:
 
-- stavy návrhů: **Čeká na zpracování**, **Zamítnuto**, **Nezařazeno** (bez falešného „Převzato“)
+- stavy návrhů: **Čeká na odborné posouzení**, **Zamítnuto**, **Nezařazeno** (bez falešného „Převzato“)
 - souhrn importu a historie konzultací s počty podle stavů
 - návrhy se ukládají do databáze včetně `proposal_id` a vazby na konzultaci
 - opakované načtení odpovědi: nová konzultace / nahrazení / zrušení
@@ -455,3 +455,10 @@ Revize odborného obsahu místo verzí:
 - model `hazard_library_template_revisions` je připraven pro budoucí autora, seznam změn, komentář a obnovu
 
 ## Fáze R18g
+
+Zapracování návrhů AI do MASTER obsahu katalogu:
+
+- stav **Čeká na odborné posouzení** a akce Zapracovat / Zamítnout / Upravit
+- hromadné zapracování v jedné transakci se zvýšením Revize o 1
+- historie změn s důvodem „Převzaty návrhy AI“
+- detekce duplicit s volbami Přeskočit / Sloučit / Upravit / Zrušit

@@ -195,7 +195,7 @@ AI_PEER_REVIEW_TABLE_HEADERS = [
     "Datum načtení odpovědi",
     "Model AI",
     "Načteno návrhů",
-    "Čeká na zpracování",
+    "Čeká na odborné posouzení",
     "Převzato",
     "Zamítnuto",
     "Nezařazeno",

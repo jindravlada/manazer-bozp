@@ -299,7 +299,7 @@ class HazardCatalogImportEvidenceR18f1TestCase(unittest.TestCase):
             widget.table.item(0, AI_PEER_REVIEW_COL_PENDING).text(),
             "2",
         )
-        self.assertEqual(widget.proposals_table.rowCount(), 3)
+        self.assertEqual(widget.proposals_table.rowCount(), 2)
 
     def test_catalog_dialog_uses_evidence_only_import(self) -> None:
         dialog = HazardLibraryTemplateDialog(template=self.template)

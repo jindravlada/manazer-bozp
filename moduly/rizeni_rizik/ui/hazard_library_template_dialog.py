@@ -122,6 +122,7 @@ class HazardLibraryTemplateDialog(QDialog):
             export_dialog_config=catalog_peer_review_export_dialog_config(),
             resolve_exposed_groups=False,
             evidence_only_import=True,
+            on_catalog_incorporated=self._on_catalog_proposals_incorporated,
         )
         self.ai_peer_review_tab_index = self.tabs.addTab(
             self.ai_peer_review_widget,
@@ -283,6 +284,20 @@ class HazardLibraryTemplateDialog(QDialog):
     def _sync_ai_peer_review_context(self) -> None:
         template_id = self.template.id if self.template is not None else None
         self.ai_peer_review_widget.set_source(template_id)
+
+    def _on_catalog_proposals_incorporated(self, new_revision_number: int | None) -> None:
+        if self.template is None:
+            return
+        if new_revision_number is not None:
+            reloaded = hazard_library_template_service.get_by_id(self.template.id)
+            if reloaded is not None:
+                self.template = reloaded
+                self.saved_template = reloaded
+                self.version_number.setValue(reloaded.version_number)
+            self._content_changed = False
+        self.content_widget.refresh()
+        self.history_widget.refresh()
+        self.ai_peer_review_widget.refresh()
 
     def _sync_content_context(self) -> None:
         template_id = self.template.id if self.template is not None else None

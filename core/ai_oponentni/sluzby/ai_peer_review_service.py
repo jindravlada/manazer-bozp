@@ -71,6 +71,12 @@ class AiPeerReviewService:
     def get_unassigned_for_review(self, review_id: int):
         return self.unassigned_repository.get_for_review(review_id)
 
+    def get_proposal_by_id(self, proposal_id: int):
+        return self.unassigned_repository.get_by_id(proposal_id)
+
+    def update_proposal(self, proposal) -> None:
+        self.unassigned_repository.update(proposal)
+
     def delete_proposals_for_review(self, review_id: int) -> None:
         self.unassigned_repository.delete_for_review(review_id)
 
@@ -135,6 +141,7 @@ class AiPeerReviewService:
             name=proposal.name,
             reasoning=proposal.reasoning or "",
             parent_export_id=proposal.parent_export_id or "",
+            exposed_group_id=proposal.exposed_group_id,
             status=status,
         )
 
