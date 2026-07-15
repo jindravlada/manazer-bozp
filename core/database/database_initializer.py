@@ -74,6 +74,10 @@ def initialize_database() -> None:
     from moduly.rizeni_rizik.modely.hazard_identification_photo import (  # noqa: F401
         HazardIdentificationPhoto,
     )
+    from moduly.rizeni_rizik.modely.hazard_library_template import HazardLibraryTemplate  # noqa: F401
+    from moduly.rizeni_rizik.modely.hazard_library_template_operation import (  # noqa: F401
+        HazardLibraryTemplateOperation,
+    )
     from core.ai_oponentni.modely.ai_peer_review import (  # noqa: F401
         AiPeerReview,
         AiPeerReviewBatch,
@@ -120,6 +124,8 @@ def initialize_database() -> None:
     _ensure_hazard_existing_measures_table()
     _ensure_hazard_required_measures_table()
     _ensure_hazard_identification_photos_table()
+    _ensure_hazard_library_templates_table()
+    _ensure_hazard_library_template_operations_table()
     _ensure_ai_peer_reviews_table()
     _ensure_ai_peer_review_batches_table()
     _ensure_ai_unassigned_proposals_table()
@@ -1042,6 +1048,31 @@ def _ensure_hazard_identification_photos_table() -> None:
         )
 
         HazardIdentificationPhoto.__table__.create(bind=_db_engine(), checkfirst=True)
+
+
+def _ensure_hazard_library_templates_table() -> None:
+    columns = _table_columns("hazard_library_templates")
+    if not columns:
+        from moduly.rizeni_rizik.modely.hazard_library_template import HazardLibraryTemplate
+
+        HazardLibraryTemplate.__table__.create(bind=_db_engine(), checkfirst=True)
+
+
+def _ensure_hazard_library_template_operations_table() -> None:
+    columns = _table_columns("hazard_library_template_operations")
+    if not columns:
+        from moduly.rizeni_rizik.modely.hazard_library_template_operation import (
+            HazardLibraryTemplateOperation,
+        )
+
+        HazardLibraryTemplateOperation.__table__.create(bind=_db_engine(), checkfirst=True)
+    _ensure_index(
+        "idx_hazard_library_template_operations_unique",
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_hazard_library_template_operations_unique
+        ON hazard_library_template_operations (template_id, operation_id)
+        """,
+    )
 
 
 def _ensure_ai_peer_reviews_table() -> None:

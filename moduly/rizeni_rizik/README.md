@@ -265,6 +265,15 @@ Import odpovědi AI ze ZIP:
 - duplicita posouzení podle stejné události a stejné skupiny (ID)
 - AI import vyžaduje rozhodnutí uživatele při párování na číselník
 
+## Fáze R17a
+
+Základ firemní knihovny vzorů:
+
+- modely `HazardLibraryTemplate` a vazba na provozy
+- stránka Firemní knihovna v modulu Řízení rizik (záložka vedle Identifikace)
+- editor vzoru se záložkou Základní údaje; ostatní záložky zatím disabled
+- bez ukládání obsahu identifikace a bez převzetí vzoru do identifikace
+
 ## Fáze R12
 
 Odstranění entity Nebezpečí (`IdentifiedHazard`):

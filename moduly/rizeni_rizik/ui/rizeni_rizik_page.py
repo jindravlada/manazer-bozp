@@ -1,17 +1,19 @@
-from PySide6.QtWidgets import QHBoxLayout, QMessageBox, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QMessageBox, QPushButton, QTabWidget, QVBoxLayout, QWidget
 
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
 from moduly.rizeni_rizik.constants import DIALOG_WINDOW_TITLE
+from moduly.rizeni_rizik.constants_library import HAZARD_LIBRARY_PAGE_TITLE
 from moduly.rizeni_rizik.sluzby.hazard_identification_service import hazard_identification_service
 from moduly.rizeni_rizik.ui.hazard_identification_dialog import HazardIdentificationDialog
 from moduly.rizeni_rizik.ui.hazard_identification_table import HazardIdentificationTable
+from moduly.rizeni_rizik.ui.hazard_library_page import HazardLibraryPage
 
 
-class RizeniRizikPage(QWidget):
-    def __init__(self):
-        super().__init__()
+class HazardIdentificationsTab(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
         layout = QVBoxLayout(self)
 
@@ -115,3 +117,20 @@ class RizeniRizikPage(QWidget):
         self.table.load_identifications(identifications)
         configure_table_columns(self.table, "hazard_identifications")
         self.text_filter.update_count()
+
+
+class RizeniRizikPage(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        layout = QVBoxLayout(self)
+        self.tabs = QTabWidget()
+        self.identifications_tab = HazardIdentificationsTab()
+        self.library_page = HazardLibraryPage()
+        self.tabs.addTab(self.identifications_tab, "Identifikace")
+        self.tabs.addTab(self.library_page, HAZARD_LIBRARY_PAGE_TITLE)
+        layout.addWidget(self.tabs)
+
+    def refresh(self) -> None:
+        self.identifications_tab.refresh()
+        self.library_page.refresh()

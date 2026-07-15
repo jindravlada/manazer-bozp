@@ -401,6 +401,34 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             if column != COL_OPERATION:
                 header.setSectionResizeMode(column, QHeaderView.Fixed)
 
+    elif profile == "hazard_library_templates":
+        from moduly.rizeni_rizik.constants_library import (
+            HAZARD_LIBRARY_COL_ACTIVE,
+            HAZARD_LIBRARY_COL_NAME,
+            HAZARD_LIBRARY_COL_OPERATION_COUNT,
+            HAZARD_LIBRARY_COL_SCOPE,
+            HAZARD_LIBRARY_COL_VERSION,
+        )
+
+        widths = {
+            HAZARD_LIBRARY_COL_NAME: 220,
+            HAZARD_LIBRARY_COL_SCOPE: 220,
+            HAZARD_LIBRARY_COL_VERSION: 70,
+            HAZARD_LIBRARY_COL_OPERATION_COUNT: 110,
+            HAZARD_LIBRARY_COL_ACTIVE: 80,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        header.setSectionResizeMode(HAZARD_LIBRARY_COL_NAME, QHeaderView.Stretch)
+        for column in (
+            HAZARD_LIBRARY_COL_SCOPE,
+            HAZARD_LIBRARY_COL_VERSION,
+            HAZARD_LIBRARY_COL_OPERATION_COUNT,
+            HAZARD_LIBRARY_COL_ACTIVE,
+        ):
+            header.setSectionResizeMode(column, QHeaderView.Fixed)
+
     elif profile == "exposed_groups":
         widths = {0: 260, 1: 280, 2: 80}
         for column, width in widths.items():
