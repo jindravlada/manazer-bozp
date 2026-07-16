@@ -388,6 +388,8 @@ class AudityProtokolExportTestCase(unittest.TestCase):
             "auditovany_system",
             "vedouci_auditor",
             "zastupce_provozu",
+            "zastupce_odborove_organizace",
+            "podpis_odboru_blok",
             "doporuceni_auditora",
             "silne_stranky_text",
             "oblasti_pozornosti_text",
@@ -417,34 +419,54 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         path = protokol_audit_service.generate_for_audit(audit)
         content = _odt_content(path)
 
-        for heading in (
+        headings = (
             "ZPRÁVA Z INTERNÍHO AUDITU",
             "Základní informace",
             "CELKOVÉ HODNOCENÍ",
             "Přehled výsledků",
             "Silné stránky systému",
             "Oblasti vyžadující pozornost",
+            "Významná zjištění",
             "Doporučení vedoucího auditora",
             "Rozsah auditu",
-            "Významná zjištění",
-            "Přijatá opatření / úkoly",
             "Detail zjištění",
-            "Příloha – Auditované procesy",
-            "Příloha B – Auditní tvrzení",
+            "Přijatá opatření / úkoly",
             "Podpisy",
-        ):
+            "Příloha A – Auditované procesy",
+            "Příloha B – Auditní tvrzení",
+        )
+        positions = []
+        for heading in headings:
             self.assertIn(heading, content)
+            positions.append(content.find(heading))
+        self.assertEqual(positions, sorted(positions))
 
         self.assertIn("Jan Novák", content)
         self.assertIn("Eva Králová", content)
-        self.assertNotIn("Lucie Horáková", content)
+        self.assertIn("Lucie Horáková", content)
         self.assertIn("Datum zahájení auditu", content)
         self.assertIn("Datum ukončení auditu", content)
         self.assertIn("Členové auditorské komise", content)
+        self.assertIn("Zástupce odborové organizace", content)
         self.assertIn("Dosud neukončen", content)
+        self.assertNotIn("Příloha – Auditované procesy", content)
         self.assertNotIn("Datum auditu", content)
         self.assertNotIn("Zobrazit pouze výsledky", content)
         self.assertNotIn("Executive Summary", content)
+
+        self.assertIn('fo:break-before="page"', content)
+        self.assertLess(
+            content.find("Podpisy"),
+            content.find("Příloha A – Auditované procesy"),
+        )
+        self.assertLess(
+            content.find("Přijatá opatření / úkoly"),
+            content.find("Podpisy"),
+        )
+        self.assertLess(
+            content.find("Významná zjištění"),
+            content.find("Podpisy"),
+        )
 
     def test_strengths_and_attention_areas_in_output(self) -> None:
         audit = self._create_audit()
@@ -618,7 +640,7 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         content = _odt_content(path)
 
         self.assertIn("Eva Králová", content)
-        self.assertNotIn("Lucie Horáková", content)
+        self.assertIn("Lucie Horáková", content)
         self.assertIn("Petr Svoboda", content)
         self.assertIn("10.03.2026", content)
         self.assertIn("12.03.2026", content)
@@ -626,6 +648,7 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         self.assertIn("Datum ukončení auditu", content)
         self.assertNotIn("${datum_zahajeni_auditu}", content)
         self.assertNotIn("${datum_ukonceni_auditu}", content)
+        self.assertIn("Příloha A – Auditované procesy", content)
         self.assertIn("Příloha B – Auditní tvrzení", content)
         self.assertIn("🟢 Rizika jsou identifikována.", content)
         self.assertIn("Celkem auditních tvrzení: 3", content)
@@ -757,7 +780,9 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         self.assertEqual(values["datum_ukonceni_auditu"], "05.04.2026")
         self.assertEqual(values["vedouci_auditor"], "Dana Testovací")
         self.assertEqual(values["zastupce_provozu"], "Cyril Testovací")
+        self.assertEqual(values["zastupce_odborove_organizace"], "Lucie Horáková")
         self.assertEqual(values["clenove_komise_text"], members_text)
+        self.assertIn("Lucie Horáková", values["podpis_odboru_blok"])
 
         path = protokol_audit_service.generate_for_audit(finished)
         content = _odt_content(path)
@@ -767,12 +792,155 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         self.assertIn("Vladimír Jindra", content)
         self.assertIn("Boris Testovací", content)
         commission_block = content.split("Členové auditorské komise", 1)[1].split(
-            "Zástupce provozu",
+            "CELKOVÉ HODNOCENÍ",
             1,
         )[0]
         self.assertIn("Adam Testovací", commission_block)
         self.assertNotIn("Cyril Testovací", commission_block)
         self.assertNotIn("Dana Testovací", commission_block)
+        self.assertNotIn("Lucie Horáková", commission_block)
+
+    def test_a12_2_participants_signatures_and_appendix_page_breaks(self) -> None:
+        audit = self._create_audit(
+            started_at=date(2026, 5, 1),
+            finished_at=date(2026, 5, 3),
+        )
+        assert audit is not None
+        member_id = settings_service.save_worker(
+            first_name="Petr",
+            last_name="Svoboda",
+        ).id
+        leader_id = settings_service.save_worker(first_name="Jan", last_name="Novák").id
+        workplace_rep_id = settings_service.save_worker(
+            first_name="Eva",
+            last_name="Králová",
+        ).id
+        union_id = person_service.create_person(
+            first_name="Lucie",
+            last_name="Horáková",
+        ).id
+        audit_commission_service.save_members(
+            audit.id,
+            [
+                {
+                    "record_type": "vedouci_komise",
+                    "thp_worker_id": leader_id,
+                    "display_name": "Jan Novák",
+                    "display_order": 10,
+                    "active": True,
+                },
+                {
+                    "record_type": "zastupce_pracoviste",
+                    "thp_worker_id": workplace_rep_id,
+                    "display_name": "Eva Králová",
+                    "display_order": 20,
+                    "active": True,
+                },
+                {
+                    "record_type": "zastupce_odboru",
+                    "person_id": union_id,
+                    "display_name": "Lucie Horáková",
+                    "display_order": 30,
+                    "active": True,
+                },
+                {
+                    "record_type": "clen_komise",
+                    "thp_worker_id": member_id,
+                    "display_name": "Petr Svoboda",
+                    "display_order": 40,
+                    "active": True,
+                },
+            ],
+        )
+
+        context = audit_export_context_service.build(audit)
+        values = context.placeholder_values()
+        self.assertEqual(values["zastupce_odborove_organizace"], "Lucie Horáková")
+        self.assertIn("Zástupce odborové organizace", values["podpis_odboru_blok"])
+        self.assertIn("Lucie Horáková", values["podpis_odboru_blok"])
+        self.assertEqual(values["clenove_komise_text"], "Petr Svoboda")
+
+        path = protokol_audit_service.generate_for_audit(audit)
+        content = _odt_content(path)
+
+        basic = content.split("Základní informace", 1)[1].split("CELKOVÉ HODNOCENÍ", 1)[0]
+        order_labels = [
+            "Vedoucí auditor",
+            "Zástupce auditovaného provozu",
+            "Zástupce odborové organizace",
+            "Členové auditorské komise",
+        ]
+        positions = [basic.find(label) for label in order_labels]
+        self.assertTrue(all(pos >= 0 for pos in positions))
+        self.assertEqual(positions, sorted(positions))
+
+        members_cell = basic.split("Členové auditorské komise", 1)[1]
+        self.assertIn("Petr Svoboda", members_cell)
+        self.assertNotIn("Eva Králová", members_cell.split("Petr Svoboda", 1)[0])
+        self.assertNotIn("Jan Novák", members_cell)
+        # zástupce provozu je v základních informacích dříve, ne v buňce členů
+        self.assertNotIn("Eva Králová", members_cell)
+
+        main = content.split("CELKOVÉ HODNOCENÍ", 1)[1]
+        self.assertLess(main.find("Podpisy"), main.find("Příloha A – Auditované procesy"))
+        self.assertLess(main.find("Přijatá opatření / úkoly"), main.find("Podpisy"))
+        self.assertLess(main.find("Významná zjištění"), main.find("Podpisy"))
+        self.assertLess(main.find("Detail zjištění"), main.find("Podpisy"))
+        after_signatures = main.split("Podpisy", 1)[1]
+        for forbidden in (
+            "CELKOVÉ HODNOCENÍ",
+            "Přehled výsledků",
+            "Silné stránky systému",
+            "Oblasti vyžadující pozornost",
+            "Významná zjištění",
+            "Doporučení vedoucího auditora",
+            "Rozsah auditu",
+            "Detail zjištění",
+            "Přijatá opatření / úkoly",
+        ):
+            self.assertNotIn(f">{forbidden}</text:p>", after_signatures)
+
+        self.assertIn("Příloha A – Auditované procesy", content)
+        self.assertIn("Příloha B – Auditní tvrzení", content)
+        self.assertNotIn("Příloha – Auditované procesy", content)
+        self.assertIn('fo:break-before="page"', content)
+        self.assertIn('text:style-name="HPageBreak"', content)
+        self.assertEqual(content.count('text:style-name="HPageBreak"'), 2)
+
+        signatures = content.split("Podpisy", 1)[1].split("Příloha A", 1)[0]
+        self.assertIn("Jan Novák", signatures)
+        self.assertIn("Eva Králová", signatures)
+        self.assertIn("Lucie Horáková", signatures)
+        self.assertIn("Zástupce odborové organizace", signatures)
+
+        from core.database.session import SessionLocal
+        from sqlalchemy import select
+
+        with SessionLocal() as session:
+            rows = session.scalars(
+                select(AuditCommissionMember).where(
+                    AuditCommissionMember.audit_id == audit.id,
+                    AuditCommissionMember.record_type == "zastupce_odboru",
+                )
+            ).all()
+            for row in rows:
+                session.delete(row)
+            session.commit()
+
+        audit_reloaded = audit_service.get_by_id(audit.id)
+        assert audit_reloaded is not None
+        values_without_union = audit_export_context_service.build(
+            audit_reloaded
+        ).placeholder_values()
+        self.assertEqual(values_without_union["zastupce_odborove_organizace"], "Neuveden")
+        self.assertEqual(values_without_union["podpis_odboru_blok"], "")
+
+        path2 = protokol_audit_service.generate_for_audit(audit_reloaded)
+        content2 = _odt_content(path2)
+        basic2 = content2.split("Základní informace", 1)[1].split("CELKOVÉ HODNOCENÍ", 1)[0]
+        self.assertIn("Neuveden", basic2)
+        signatures2 = content2.split("Podpisy", 1)[1].split("Příloha A", 1)[0]
+        self.assertNotIn("Zástupce odborové organizace", signatures2)
 
     def test_appendix_assertions_skips_empty_area_heading(self) -> None:
         audit = self._create_audit()

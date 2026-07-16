@@ -245,6 +245,28 @@ class AuditExportContext:
     def workplace_representative_name(self) -> str:
         return self.commission_member_name(COMMISSION_RECORD_WORKPLACE)
 
+    def union_representative_raw_name(self) -> str:
+        name = self.commission_member_name(COMMISSION_RECORD_UNION)
+        if name in {"", "—"}:
+            return ""
+        return name
+
+    def union_representative_name(self) -> str:
+        return self.union_representative_raw_name() or "Neuveden"
+
+    def union_signature_block_text(self) -> str:
+        name = self.union_representative_raw_name()
+        if not name:
+            return ""
+        return "\n".join(
+            [
+                "Zástupce odborové organizace",
+                name,
+                "........................................",
+                "podpis",
+            ]
+        )
+
     def planned_process_ids(self) -> tuple[str, ...]:
         visit_id = self.audit.program_visit_id
         if visit_id is None:
@@ -500,16 +522,28 @@ class AuditExportContext:
         )
 
     def signatures_text(self) -> str:
-        lines = [
-            "Vedoucí auditor:",
-            self.leader_auditor_name(),
-            "",
-            "Zástupce auditovaného provozu:",
-            self.workplace_representative_name(),
-            "",
-            f"Datum vyhotovení protokolu: {datetime.now().strftime('%d.%m.%Y')}",
+        blocks = [
+            "\n".join(
+                [
+                    "Vedoucí auditor",
+                    self.leader_auditor_name(),
+                    "........................................",
+                    "podpis",
+                ]
+            ),
+            "\n".join(
+                [
+                    "Zástupce auditovaného provozu",
+                    self.workplace_representative_name(),
+                    "........................................",
+                    "podpis",
+                ]
+            ),
         ]
-        return "\n".join(lines)
+        union_block = self.union_signature_block_text()
+        if union_block:
+            blocks.append(union_block)
+        return "\n\n".join(blocks)
 
     def evaluation_lines(self) -> list[str]:
         results = control_result_service.get_for_entity(ENTITY_AUDITY, self.audit_id)
@@ -696,6 +730,8 @@ class AuditExportContext:
             "auditovany_system": self.audited_system_label(),
             "vedouci_auditor": self.leader_auditor_name(),
             "zastupce_provozu": self.workplace_representative_name(),
+            "zastupce_odborove_organizace": self.union_representative_name(),
+            "podpis_odboru_blok": self.union_signature_block_text(),
             "doporuceni_auditora": self.auditor_recommendation_text(),
             "silne_stranky_text": self.strengths_text(),
             "oblasti_pozornosti_text": self.attention_areas_text(),
