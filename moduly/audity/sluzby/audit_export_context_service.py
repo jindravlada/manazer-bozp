@@ -2,7 +2,10 @@ from dataclasses import dataclass
 from datetime import date, datetime
 
 from core.shared.constants import (
+    CONTROL_RESULT_NEKONTROLOVANO,
+    CONTROL_RESULT_NELZE_POSOUDIT,
     CONTROL_RESULT_NEVYHOVUJE,
+    CONTROL_RESULT_VYHOVUJE,
     CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
     ENTITY_AUDITY,
 )
@@ -84,6 +87,14 @@ _COMMISSION_EXPORT_ORDER = {
     COMMISSION_RECORD_INVITED: 5,
 }
 
+_ASSERTION_RESULT_EMOJI = {
+    CONTROL_RESULT_VYHOVUJE: "🟢",
+    CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM: "🟡",
+    CONTROL_RESULT_NEVYHOVUJE: "🔴",
+    CONTROL_RESULT_NELZE_POSOUDIT: "⚪",
+    CONTROL_RESULT_NEKONTROLOVANO: "○",
+}
+
 
 @dataclass(frozen=True)
 class AuditExportContext:
@@ -147,6 +158,30 @@ class AuditExportContext:
         lines = self.commission_lines()
         return "\n".join(lines) if lines else "Nejsou evidováni."
 
+    def commission_members_without_leader_lines(self) -> list[str]:
+        members = audit_commission_service.get_for_audit(self.audit_id)
+        if not members:
+            return []
+
+        lines: list[str] = []
+        for member in sorted(
+            members,
+            key=lambda item: (
+                _COMMISSION_EXPORT_ORDER.get(item.record_type, 99),
+                item.display_order,
+                item.id,
+            ),
+        ):
+            if member.record_type == COMMISSION_RECORD_LEADER:
+                continue
+            name = _text(member.display_name)
+            if name:
+                lines.append(name)
+        return lines
+
+    def commission_members_without_leader_text(self) -> str:
+        return "\n".join(self.commission_members_without_leader_lines())
+
     def commission_member_name(self, record_type: str) -> str:
         for member in audit_commission_service.get_for_audit(self.audit_id):
             if member.record_type == record_type:
@@ -196,6 +231,54 @@ class AuditExportContext:
 
     def appendix_processes_text(self) -> str:
         return self.processes_text()
+
+    def appendix_assertions_text(self) -> str:
+        results = control_result_service.get_for_entity(ENTITY_AUDITY, self.audit_id)
+        if not results:
+            return ""
+
+        grouped: dict[str, list[str]] = {}
+        area_order: list[str] = []
+        for row in sorted(
+            results,
+            key=lambda item: (
+                item.source_area_label or "",
+                item.source_section_label or "",
+                item.source_control_point_label or "",
+                item.id,
+            ),
+        ):
+            assertion = _text(row.source_control_point_label)
+            if not assertion:
+                continue
+            area = _text(row.source_section_label) or _text(row.source_area_label)
+            if not area:
+                continue
+            emoji = _ASSERTION_RESULT_EMOJI.get(row.result, "○")
+            if area not in grouped:
+                grouped[area] = []
+                area_order.append(area)
+            grouped[area].append(f"{emoji} {assertion}")
+
+        blocks: list[str] = []
+        for area in area_order:
+            lines = grouped.get(area) or []
+            if not lines:
+                continue
+            blocks.append(f"{area}\n" + "\n".join(lines))
+        return "\n\n".join(blocks)
+
+    def appendix_assertions_summary_text(self) -> str:
+        stats = self._activity_statistics()
+        return "\n".join(
+            [
+                f"Celkem auditních tvrzení: {stats.control_points_checked}",
+                f"🟢 Splněno: {stats.ratings_vyhovuje}",
+                f"🟡 Částečně splněno: {stats.ratings_vyhovuje_s_doporucenim}",
+                f"🔴 Nesplněno: {stats.ratings_nevyhovuje}",
+                f"⚪ Není relevantní: {stats.ratings_netyka_se}",
+            ]
+        )
 
     def _activity_statistics(self):
         return control_activity_statistics_service.compute(ENTITY_AUDITY, self.audit_id)
@@ -549,8 +632,11 @@ class AuditExportContext:
             "stav": self.status_label(),
             "komise_text": self.commission_text(),
             "auditni_tym_text": self.commission_text(),
+            "clenove_komise_text": self.commission_members_without_leader_text(),
             "procesy_text": self.processes_text(),
             "priloha_procesy_text": self.appendix_processes_text(),
+            "priloha_auditni_tvrzeni_text": self.appendix_assertions_text(),
+            "priloha_auditni_tvrzeni_souhrn": self.appendix_assertions_summary_text(),
             "celkove_hodnoceni": self.overall_rating_label(),
             "celkove_hodnoceni_text": self.overall_assessment_text(),
             "auditovany_provoz": _text(self.audit.workplace_name),

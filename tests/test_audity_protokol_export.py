@@ -23,6 +23,7 @@ with patch.object(Path, "home", return_value=_TMP):
     initialize_database()
 
     from core.shared.constants import (
+        CONTROL_RESULT_NELZE_POSOUDIT,
         CONTROL_RESULT_NEVYHOVUJE,
         CONTROL_RESULT_VYHOVUJE,
         CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
@@ -36,6 +37,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.audity.sluzby.audit_commission_service import audit_commission_service
     from moduly.audity.sluzby.audit_export_context_service import audit_export_context_service
     from moduly.audity.sluzby.audit_service import audit_service
+    from moduly.nastaveni.sluzby.person_service import person_service
     from moduly.ukoly.sluzby.task_service import task_service
 
 
@@ -101,8 +103,6 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         workplace = settings_service.save_workplace(name="Provoz A")
         leader_id = settings_service.save_worker(first_name="Jan", last_name="Novák").id
         workplace_rep_id = settings_service.save_worker(first_name="Eva", last_name="Králová").id
-        from moduly.nastaveni.sluzby.person_service import person_service
-
         union_id = person_service.create_person(first_name="Lucie", last_name="Horáková").id
         audit = audit_service.create_audit(
             workplace_id=workplace.id,
@@ -234,7 +234,9 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         content = _odt_content(path)
         self.assertIn("🟡 Vyhovuje s doporučením", content)
         self.assertIn("🔴 Nevyhovuje", content)
-        self.assertNotIn("Vyhovuje tvrzení", content)
+        before_appendix_b = content.split("Příloha B", 1)[0]
+        self.assertNotIn("Vyhovuje tvrzení", before_appendix_b)
+        self.assertIn("🟢 Vyhovuje tvrzení", content)
         self.assertNotIn("Vyhovuje;", content)
         self.assertNotIn("Zobrazit pouze výsledky", content)
 
@@ -370,8 +372,11 @@ class AudityProtokolExportTestCase(unittest.TestCase):
             "stav",
             "komise_text",
             "auditni_tym_text",
+            "clenove_komise_text",
             "procesy_text",
             "priloha_procesy_text",
+            "priloha_auditni_tvrzeni_text",
+            "priloha_auditni_tvrzeni_souhrn",
             "celkove_hodnoceni",
             "celkove_hodnoceni_text",
             "auditovany_provoz",
@@ -418,13 +423,18 @@ class AudityProtokolExportTestCase(unittest.TestCase):
             "Přijatá opatření / úkoly",
             "Detail zjištění",
             "Příloha – Auditované procesy",
+            "Příloha B – Auditní tvrzení",
             "Podpisy",
         ):
             self.assertIn(heading, content)
 
         self.assertIn("Jan Novák", content)
         self.assertIn("Eva Králová", content)
-        self.assertNotIn("Lucie Horáková", content)
+        self.assertIn("Lucie Horáková", content)
+        self.assertIn("Datum zahájení auditu", content)
+        self.assertIn("Datum ukončení auditu", content)
+        self.assertIn("Členové komise", content)
+        self.assertNotIn("Datum auditu", content)
         self.assertNotIn("Zobrazit pouze výsledky", content)
         self.assertNotIn("Executive Summary", content)
 
@@ -473,6 +483,161 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         self.assertIn("🟡 Evidence preventivních opatření není vždy úplná.", content)
         self.assertIn("Auditované procesy jsou uvedeny v příloze této zprávy.", content)
         self.assertIn("Otevřené úkoly:", content)
+
+    def test_a12_protocol_export_includes_commission_dates_and_assertions_appendix(
+        self,
+    ) -> None:
+        audit = self._create_audit(
+            started_at=date(2026, 3, 10),
+            finished_at=date(2026, 3, 12),
+        )
+        assert audit is not None
+
+        leader_id = settings_service.save_worker(first_name="Jan", last_name="Novák").id
+        workplace_rep_id = settings_service.save_worker(
+            first_name="Eva",
+            last_name="Králová",
+        ).id
+        union_id = person_service.create_person(
+            first_name="Lucie",
+            last_name="Horáková",
+        ).id
+        member_id = settings_service.save_worker(
+            first_name="Petr",
+            last_name="Svoboda",
+        ).id
+        audit_commission_service.save_members(
+            audit.id,
+            [
+                {
+                    "record_type": "vedouci_komise",
+                    "thp_worker_id": leader_id,
+                    "display_name": "Jan Novák",
+                    "display_order": 10,
+                    "active": True,
+                },
+                {
+                    "record_type": "zastupce_pracoviste",
+                    "thp_worker_id": workplace_rep_id,
+                    "display_name": "Eva Králová",
+                    "display_order": 20,
+                    "active": True,
+                },
+                {
+                    "record_type": "zastupce_odboru",
+                    "person_id": union_id,
+                    "display_name": "Lucie Horáková",
+                    "display_order": 30,
+                    "active": True,
+                },
+                {
+                    "record_type": "clen_komise",
+                    "thp_worker_id": member_id,
+                    "display_name": "Petr Svoboda",
+                    "display_order": 40,
+                    "active": True,
+                },
+            ],
+        )
+
+        control_result_service.set_result(
+            ENTITY_AUDITY,
+            audit.id,
+            ControlPointContext(
+                area_id="rizeni_rizik",
+                area_label="Řízení rizik",
+                section_id="dokumentace",
+                section_label="Dokumentace rizik",
+                control_point_id="q_ok",
+                control_point_label="Rizika jsou identifikována.",
+            ),
+            result=CONTROL_RESULT_VYHOVUJE,
+        )
+        control_result_service.set_result(
+            ENTITY_AUDITY,
+            audit.id,
+            ControlPointContext(
+                area_id="rizeni_rizik",
+                area_label="Řízení rizik",
+                section_id="dokumentace",
+                section_label="Dokumentace rizik",
+                control_point_id="q_partial",
+                control_point_label="Evidence opatření je neúplná.",
+            ),
+            result=CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
+        )
+        control_result_service.set_result(
+            ENTITY_AUDITY,
+            audit.id,
+            ControlPointContext(
+                area_id="havarijni",
+                area_label="Havarijní připravenost",
+                section_id="cviceni",
+                section_label="Cvičení",
+                control_point_id="q_na",
+                control_point_label="Cvičení se neprovádí.",
+            ),
+            result=CONTROL_RESULT_NELZE_POSOUDIT,
+        )
+
+        context = audit_export_context_service.build(audit)
+        members_text = context.commission_members_without_leader_text()
+        self.assertIn("Eva Králová", members_text)
+        self.assertIn("Lucie Horáková", members_text)
+        self.assertIn("Petr Svoboda", members_text)
+        self.assertNotIn("Jan Novák", members_text)
+
+        assertions_text = context.appendix_assertions_text()
+        self.assertIn("Dokumentace rizik", assertions_text)
+        self.assertIn("🟢 Rizika jsou identifikována.", assertions_text)
+        self.assertIn("🟡 Evidence opatření je neúplná.", assertions_text)
+        self.assertIn("Cvičení", assertions_text)
+        self.assertIn("⚪ Cvičení se neprovádí.", assertions_text)
+        self.assertNotIn("Havarijní připravenost\n", assertions_text)
+
+        summary = context.appendix_assertions_summary_text()
+        self.assertIn("Celkem auditních tvrzení: 3", summary)
+        self.assertIn("🟢 Splněno: 1", summary)
+        self.assertIn("🟡 Částečně splněno: 1", summary)
+        self.assertIn("🔴 Nesplněno: 0", summary)
+        self.assertIn("⚪ Není relevantní: 1", summary)
+
+        path = protokol_audit_service.generate_for_audit(audit)
+        content = _odt_content(path)
+
+        self.assertIn("Eva Králová", content)
+        self.assertIn("Lucie Horáková", content)
+        self.assertIn("Petr Svoboda", content)
+        self.assertIn("10.03.2026", content)
+        self.assertIn("12.03.2026", content)
+        self.assertIn("Datum zahájení auditu", content)
+        self.assertIn("Datum ukončení auditu", content)
+        self.assertIn("Příloha B – Auditní tvrzení", content)
+        self.assertIn("🟢 Rizika jsou identifikována.", content)
+        self.assertIn("Celkem auditních tvrzení: 3", content)
+        self.assertIn("🟢 Splněno: 1", content)
+
+    def test_appendix_assertions_skips_empty_area_heading(self) -> None:
+        audit = self._create_audit()
+        assert audit is not None
+        control_result_service.set_result(
+            ENTITY_AUDITY,
+            audit.id,
+            ControlPointContext(
+                area_id="rizeni_rizik",
+                area_label="Řízení rizik",
+                section_id="sekce",
+                section_label="Sekce A",
+                control_point_id="q1",
+                control_point_label="Tvrzení A",
+            ),
+            result=CONTROL_RESULT_VYHOVUJE,
+        )
+
+        text = audit_export_context_service.build(audit).appendix_assertions_text()
+        self.assertIn("Sekce A", text)
+        self.assertIn("🟢 Tvrzení A", text)
+        self.assertNotIn("Sekce B", text)
 
     def test_incomplete_warning(self) -> None:
         audit = self._create_audit()
