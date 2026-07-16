@@ -54,6 +54,21 @@ def _text(value) -> str:
     return str(value or "").replace("\r\n", "\n").replace("\r", "\n").strip()
 
 
+def _normalize_person_name(value) -> str:
+    text = _text(value).casefold()
+    return " ".join(text.split())
+
+
+_AUDIT_TEAM_EXCLUDED_RECORD_TYPES = frozenset(
+    {
+        COMMISSION_RECORD_LEADER,
+        COMMISSION_RECORD_WORKPLACE,
+        COMMISSION_RECORD_UNION,
+        COMMISSION_RECORD_INVITED,
+    }
+)
+
+
 def _format_labeled_block(
     index: int,
     title: str,
@@ -159,9 +174,24 @@ class AuditExportContext:
         return "\n".join(lines) if lines else "Nejsou evidováni."
 
     def commission_members_without_leader_lines(self) -> list[str]:
+        """Skuteční členové auditorského týmu (bez vedoucího, zástupců a hostů)."""
         members = audit_commission_service.get_for_audit(self.audit_id)
         if not members:
             return []
+
+        excluded_thp_ids: set[int] = set()
+        excluded_person_ids: set[int] = set()
+        excluded_names: set[str] = set()
+        for member in members:
+            if member.record_type not in _AUDIT_TEAM_EXCLUDED_RECORD_TYPES:
+                continue
+            if member.thp_worker_id is not None:
+                excluded_thp_ids.add(int(member.thp_worker_id))
+            if member.person_id is not None:
+                excluded_person_ids.add(int(member.person_id))
+            normalized = _normalize_person_name(member.display_name)
+            if normalized:
+                excluded_names.add(normalized)
 
         lines: list[str] = []
         for member in sorted(
@@ -172,15 +202,36 @@ class AuditExportContext:
                 item.id,
             ),
         ):
-            if member.record_type == COMMISSION_RECORD_LEADER:
+            if member.record_type != COMMISSION_RECORD_MEMBER:
+                continue
+            if (
+                member.thp_worker_id is not None
+                and int(member.thp_worker_id) in excluded_thp_ids
+            ):
+                continue
+            if (
+                member.person_id is not None
+                and int(member.person_id) in excluded_person_ids
+            ):
                 continue
             name = _text(member.display_name)
-            if name:
-                lines.append(name)
+            if not name:
+                continue
+            if _normalize_person_name(name) in excluded_names:
+                continue
+            lines.append(name)
         return lines
 
     def commission_members_without_leader_text(self) -> str:
         return "\n".join(self.commission_members_without_leader_lines())
+
+    def audit_start_date_text(self) -> str:
+        return _fmt_date(self.audit.started_at)
+
+    def audit_end_date_text(self) -> str:
+        if not self.audit.finished_at:
+            return "Dosud neukončen"
+        return _fmt_date(self.audit.finished_at)
 
     def commission_member_name(self, record_type: str) -> str:
         for member in audit_commission_service.get_for_audit(self.audit_id):
@@ -627,8 +678,10 @@ class AuditExportContext:
             "planovany_mesic": self.planned_month_label(),
             "typ_auditu": _text(self.audit.audit_type),
             "datum_auditu": _fmt_date(self.audit.audit_date),
-            "datum_zahajeni": _fmt_date(self.audit.started_at),
-            "datum_ukonceni": _fmt_date(self.audit.finished_at),
+            "datum_zahajeni": self.audit_start_date_text(),
+            "datum_ukonceni": self.audit_end_date_text(),
+            "datum_zahajeni_auditu": self.audit_start_date_text(),
+            "datum_ukonceni_auditu": self.audit_end_date_text(),
             "stav": self.status_label(),
             "komise_text": self.commission_text(),
             "auditni_tym_text": self.commission_text(),

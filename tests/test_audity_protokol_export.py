@@ -37,6 +37,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.audity.sluzby.audit_commission_service import audit_commission_service
     from moduly.audity.sluzby.audit_export_context_service import audit_export_context_service
     from moduly.audity.sluzby.audit_service import audit_service
+    from moduly.audity.modely.audit_commission_member import AuditCommissionMember
     from moduly.nastaveni.sluzby.person_service import person_service
     from moduly.ukoly.sluzby.task_service import task_service
 
@@ -55,6 +56,8 @@ def _ensure_audit_protocol_template() -> Path:
         / "exporty"
         / "ProtokolAudit.odt"
     )
+    if path.resolve() == bundled.resolve():
+        return path
     path.parent.mkdir(parents=True, exist_ok=True)
     if bundled.exists():
         shutil.copy2(bundled, path)
@@ -369,6 +372,8 @@ class AudityProtokolExportTestCase(unittest.TestCase):
             "datum_auditu",
             "datum_zahajeni",
             "datum_ukonceni",
+            "datum_zahajeni_auditu",
+            "datum_ukonceni_auditu",
             "stav",
             "komise_text",
             "auditni_tym_text",
@@ -402,6 +407,8 @@ class AudityProtokolExportTestCase(unittest.TestCase):
             "datum_vygenerovani",
         }
         self.assertEqual(set(values.keys()), expected_keys)
+        self.assertEqual(values["datum_ukonceni_auditu"], "Dosud neukončen")
+        self.assertEqual(values["datum_ukonceni"], "Dosud neukončen")
 
     def test_management_reporting_structure_in_output(self) -> None:
         audit = self._create_audit()
@@ -430,10 +437,11 @@ class AudityProtokolExportTestCase(unittest.TestCase):
 
         self.assertIn("Jan Novák", content)
         self.assertIn("Eva Králová", content)
-        self.assertIn("Lucie Horáková", content)
+        self.assertNotIn("Lucie Horáková", content)
         self.assertIn("Datum zahájení auditu", content)
         self.assertIn("Datum ukončení auditu", content)
-        self.assertIn("Členové komise", content)
+        self.assertIn("Členové auditorské komise", content)
+        self.assertIn("Dosud neukončen", content)
         self.assertNotIn("Datum auditu", content)
         self.assertNotIn("Zobrazit pouze výsledky", content)
         self.assertNotIn("Executive Summary", content)
@@ -582,9 +590,9 @@ class AudityProtokolExportTestCase(unittest.TestCase):
 
         context = audit_export_context_service.build(audit)
         members_text = context.commission_members_without_leader_text()
-        self.assertIn("Eva Králová", members_text)
-        self.assertIn("Lucie Horáková", members_text)
-        self.assertIn("Petr Svoboda", members_text)
+        self.assertEqual(members_text, "Petr Svoboda")
+        self.assertNotIn("Eva Králová", members_text)
+        self.assertNotIn("Lucie Horáková", members_text)
         self.assertNotIn("Jan Novák", members_text)
 
         assertions_text = context.appendix_assertions_text()
@@ -602,20 +610,169 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         self.assertIn("🔴 Nesplněno: 0", summary)
         self.assertIn("⚪ Není relevantní: 1", summary)
 
+        values = context.placeholder_values()
+        self.assertEqual(values["datum_zahajeni_auditu"], "10.03.2026")
+        self.assertEqual(values["datum_ukonceni_auditu"], "12.03.2026")
+
         path = protokol_audit_service.generate_for_audit(audit)
         content = _odt_content(path)
 
         self.assertIn("Eva Králová", content)
-        self.assertIn("Lucie Horáková", content)
+        self.assertNotIn("Lucie Horáková", content)
         self.assertIn("Petr Svoboda", content)
         self.assertIn("10.03.2026", content)
         self.assertIn("12.03.2026", content)
         self.assertIn("Datum zahájení auditu", content)
         self.assertIn("Datum ukončení auditu", content)
+        self.assertNotIn("${datum_zahajeni_auditu}", content)
+        self.assertNotIn("${datum_ukonceni_auditu}", content)
         self.assertIn("Příloha B – Auditní tvrzení", content)
         self.assertIn("🟢 Rizika jsou identifikována.", content)
         self.assertIn("Celkem auditních tvrzení: 3", content)
         self.assertIn("🟢 Splněno: 1", content)
+
+    def test_a12_1_dates_and_commission_membership_rules(self) -> None:
+        unfinished = self._create_audit(started_at=date(2026, 4, 1))
+        assert unfinished is not None
+        unfinished_values = audit_export_context_service.build(unfinished).placeholder_values()
+        self.assertEqual(unfinished_values["datum_zahajeni_auditu"], "01.04.2026")
+        self.assertEqual(unfinished_values["datum_ukonceni_auditu"], "Dosud neukončen")
+
+        finished = self._create_audit(
+            started_at=date(2026, 4, 1),
+            finished_at=date(2026, 4, 5),
+        )
+        assert finished is not None
+        leader_id = settings_service.save_worker(
+            first_name="Dana",
+            last_name="Testovací",
+        ).id
+        workplace_rep_id = settings_service.save_worker(
+            first_name="Cyril",
+            last_name="Testovací",
+        ).id
+        member_ids = [
+            settings_service.save_worker(first_name="Adam", last_name="Testovací").id,
+            settings_service.save_worker(first_name="Vladimír", last_name="Jindra").id,
+            settings_service.save_worker(first_name="Boris", last_name="Testovací").id,
+        ]
+        audit_commission_service.save_members(
+            finished.id,
+            [
+                {
+                    "record_type": "vedouci_komise",
+                    "thp_worker_id": leader_id,
+                    "display_name": "Dana Testovací",
+                    "display_order": 10,
+                    "active": True,
+                },
+                {
+                    "record_type": "zastupce_pracoviste",
+                    "thp_worker_id": workplace_rep_id,
+                    "display_name": "Cyril Testovací",
+                    "display_order": 20,
+                    "active": True,
+                },
+                {
+                    "record_type": "zastupce_odboru",
+                    "person_id": person_service.create_person(
+                        first_name="Lucie",
+                        last_name="Horáková",
+                    ).id,
+                    "display_name": "Lucie Horáková",
+                    "display_order": 30,
+                    "active": True,
+                },
+                {
+                    "record_type": "clen_komise",
+                    "thp_worker_id": member_ids[0],
+                    "display_name": "Ing. Adam Testovací",
+                    "display_order": 40,
+                    "active": True,
+                },
+                {
+                    "record_type": "clen_komise",
+                    "thp_worker_id": member_ids[1],
+                    "display_name": "Ing. Vladimír Jindra",
+                    "display_order": 50,
+                    "active": True,
+                },
+                {
+                    "record_type": "clen_komise",
+                    "thp_worker_id": member_ids[2],
+                    "display_name": "Boris Testovací",
+                    "display_order": 60,
+                    "active": True,
+                },
+                {
+                    "record_type": "clen_komise",
+                    "thp_worker_id": settings_service.save_worker(
+                        first_name="Dana",
+                        last_name="Testovací",
+                    ).id,
+                    "display_name": "Dana Testovací",
+                    "display_order": 80,
+                    "active": True,
+                },
+                {
+                    "record_type": "prizvana_osoba",
+                    "person_id": person_service.create_person(
+                        first_name="Host",
+                        last_name="Testovací",
+                    ).id,
+                    "display_name": "Host Testovací",
+                    "display_order": 90,
+                    "active": True,
+                },
+            ],
+        )
+        # Stejné THP ID nelze uložit validací služby — ověříme ID filtr přímo v datech.
+        audit_commission_service.repository.add(
+            AuditCommissionMember(
+                audit_id=finished.id,
+                record_type="clen_komise",
+                thp_worker_id=workplace_rep_id,
+                person_id=None,
+                display_name="Cyril Testovací",
+                role_text=None,
+                note_text=None,
+                display_order=70,
+                active=True,
+            )
+        )
+
+        context = audit_export_context_service.build(finished)
+        members_text = context.commission_members_without_leader_text()
+        self.assertEqual(
+            members_text,
+            "Adam Testovací\nVladimír Jindra\nBoris Testovací",
+        )
+        self.assertNotIn("Dana Testovací", members_text)
+        self.assertNotIn("Cyril Testovací", members_text)
+        self.assertNotIn("Lucie Horáková", members_text)
+        self.assertNotIn("Host Testovací", members_text)
+
+        values = context.placeholder_values()
+        self.assertEqual(values["datum_zahajeni_auditu"], "01.04.2026")
+        self.assertEqual(values["datum_ukonceni_auditu"], "05.04.2026")
+        self.assertEqual(values["vedouci_auditor"], "Dana Testovací")
+        self.assertEqual(values["zastupce_provozu"], "Cyril Testovací")
+        self.assertEqual(values["clenove_komise_text"], members_text)
+
+        path = protokol_audit_service.generate_for_audit(finished)
+        content = _odt_content(path)
+        self.assertIn("01.04.2026", content)
+        self.assertIn("05.04.2026", content)
+        self.assertIn("Adam Testovací", content)
+        self.assertIn("Vladimír Jindra", content)
+        self.assertIn("Boris Testovací", content)
+        commission_block = content.split("Členové auditorské komise", 1)[1].split(
+            "Zástupce provozu",
+            1,
+        )[0]
+        self.assertIn("Adam Testovací", commission_block)
+        self.assertNotIn("Cyril Testovací", commission_block)
+        self.assertNotIn("Dana Testovací", commission_block)
 
     def test_appendix_assertions_skips_empty_area_heading(self) -> None:
         audit = self._create_audit()

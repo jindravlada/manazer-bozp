@@ -23,6 +23,9 @@ class ProtokolAuditService:
 
     def template_path(self) -> Path:
         storage_service.ensure_structure()
+        bundled = storage_service.bundled_template_file(self.TEMPLATE_SUBDIR, self.TEMPLATE_NAME)
+        if bundled is not None:
+            return bundled
         return storage_service.template_file(self.TEMPLATE_SUBDIR, self.TEMPLATE_NAME)
 
     def generate_for_audit(self, audit: Audit) -> Path:
