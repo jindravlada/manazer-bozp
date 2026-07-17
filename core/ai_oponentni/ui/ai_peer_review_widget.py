@@ -1268,7 +1268,9 @@ class AiPeerReviewWidget(QWidget):
             package=package,
             package_record_id=record_id,
         )
-        if not dialog.exec():
+        from core.widgets.dialog_utils import exec_maximized
+
+        if not exec_maximized(dialog):
             return
         updated = dialog.get_package()
         if updated is None:

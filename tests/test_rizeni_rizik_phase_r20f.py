@@ -220,6 +220,52 @@ class RizeniRizikPhaseR20fTestCase(unittest.TestCase):
         self.assertTrue(dialog.target_event_name_label.isReadOnly())
         self.assertGreaterEqual(dialog.target_event_name_label.minimumHeight(), 48)
 
+    def test_r20f4_package_editor_opens_maximized(self) -> None:
+        from core.ai_oponentni.ui.ai_peer_review_widget import AiPeerReviewWidget
+        from core.ai_oponentni.constants import AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT
+        from core.ai_oponentni.proposal_package_types import (
+            AiProposalPackage,
+            AiProposalPackageEvent,
+        )
+
+        package = AiProposalPackage(
+            package_id="PACKAGE-MAX",
+            package_type=AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT,
+            target_event_export_id=None,
+            event=AiProposalPackageEvent(name="Pád"),
+            assessments=(),
+            legal_links=(),
+            reasoning="",
+        )
+        updated = ai_peer_review_service.finalize_package_import(
+            provider=self.provider,
+            source_id=self.template.id,
+            review_id=self.review.id,
+            response_text="{}",
+            ai_model="Test",
+            accepted=[package],
+            rejected=[],
+            loaded_packages_count=1,
+        )
+        records = ai_peer_review_service.get_packages_for_review(updated.id)
+        self.assertEqual(len(records), 1)
+
+        widget = AiPeerReviewWidget(
+            provider=self.provider,
+            evidence_only_import=True,
+        )
+        widget.set_source(self.template.id)
+        widget._select_review_row(updated.id)
+        widget._load_proposals_table()
+        widget.proposals_table.selectRow(0)
+
+        with patch(
+            "core.widgets.dialog_utils.exec_maximized",
+            return_value=False,
+        ) as maximized_mock:
+            widget._edit_selected_package()
+        maximized_mock.assert_called_once()
+
 
 if __name__ == "__main__":
     unittest.main()
