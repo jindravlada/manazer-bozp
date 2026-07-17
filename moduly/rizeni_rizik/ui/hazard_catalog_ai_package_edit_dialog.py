@@ -365,15 +365,28 @@ class HazardCatalogAiPackageEditDialog(QDialog):
         self.event_note = QPlainTextEdit()
         _configure_plain_text(self.event_note, min_height=50)
         self.target_event = QLineEdit(self._target_event_export_id)
-        self.target_event_name_label = QLabel()
-        self.target_event_name_label.setWordWrap(True)
+        self.target_event_name_label = QPlainTextEdit()
+        self.target_event_name_label.setReadOnly(True)
+        self.target_event_name_label.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
+        self.target_event_name_label.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff,
+        )
+        self.target_event_name_label.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded,
+        )
+        self.target_event_name_label.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.MinimumExpanding,
+        )
+        self.target_event_name_label.setMinimumHeight(48)
+        self.target_event_name_label.setMaximumHeight(120)
+        self.target_event_name_label.setFrameStyle(QFrame.Shape.StyledPanel)
         self.target_event_id_label = QLabel()
-        self.target_event_id_label.setWordWrap(True)
-        self.target_event_id_label.setStyleSheet("color: #666666; font-size: 11px;")
+        self.target_event_id_label.setVisible(False)
 
         if package.package_type == AI_PEER_REVIEW_PACKAGE_TYPE_EXTEND_EVENT:
             display_name = self._target_event_name or "Doplnění události"
-            self.target_event_name_label.setText(display_name)
+            self.target_event_name_label.setPlainText(display_name)
             if self._target_event_export_id:
                 self.target_event_name_label.setToolTip(self._target_event_export_id)
             event_form.addRow("Cílová událost:", self.target_event_name_label)

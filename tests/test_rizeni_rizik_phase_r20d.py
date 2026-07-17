@@ -244,14 +244,18 @@ class AiProposalPackageEditorR20dTestCase(unittest.TestCase):
             package_record_id=record.id,
         )
         self.assertEqual(
-            dialog.target_event_name_label.text(),
+            dialog.target_event_name_label.toPlainText(),
             "Přejetí osoby lokomotivou",
         )
         self.assertEqual(
             dialog.target_event_name_label.toolTip(),
             self.event_export_id,
         )
-        self.assertNotEqual(dialog.target_event_name_label.text(), self.event_export_id)
+        self.assertNotEqual(
+            dialog.target_event_name_label.toPlainText(),
+            self.event_export_id,
+        )
+        self.assertTrue(dialog.target_event_name_label.isReadOnly())
         self.assertFalse(dialog.target_event_id_label.isVisibleTo(dialog))
 
         save_button = dialog._buttons.button(QDialogButtonBox.StandardButton.Save)

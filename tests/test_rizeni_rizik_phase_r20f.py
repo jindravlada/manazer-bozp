@@ -191,6 +191,35 @@ class RizeniRizikPhaseR20fTestCase(unittest.TestCase):
         self.assertIn("Cílová událost: Pád z výšky", summary)
         self.assertNotIn("EVENT-003", summary)
 
+    def test_r20f3_target_event_uses_wrapping_readonly_widget(self) -> None:
+        from core.ai_oponentni.constants import AI_PEER_REVIEW_PACKAGE_TYPE_EXTEND_EVENT
+        from core.ai_oponentni.proposal_package_types import AiProposalPackage
+        from moduly.rizeni_rizik.ui.hazard_catalog_ai_package_edit_dialog import (
+            HazardCatalogAiPackageEditDialog,
+        )
+
+        long_name = (
+            "Velmi dlouhý název cílové události, který se dříve překrýval "
+            "v jednořádkovém poli a musí být čitelný i při zalamování textu."
+        )
+        package = AiProposalPackage(
+            package_id="PACKAGE-LONG",
+            package_type=AI_PEER_REVIEW_PACKAGE_TYPE_EXTEND_EVENT,
+            target_event_export_id="EVENT-009",
+            event=None,
+            assessments=(),
+            legal_links=(),
+            reasoning="",
+        )
+        dialog = HazardCatalogAiPackageEditDialog(
+            package=package,
+            package_record_id=0,
+            target_event_name=long_name,
+        )
+        self.assertEqual(dialog.target_event_name_label.toPlainText(), long_name)
+        self.assertTrue(dialog.target_event_name_label.isReadOnly())
+        self.assertGreaterEqual(dialog.target_event_name_label.minimumHeight(), 48)
+
 
 if __name__ == "__main__":
     unittest.main()
