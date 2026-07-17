@@ -120,13 +120,10 @@ def format_package_summary(
         package.package_type,
     )
     if package.package_type == AI_PEER_REVIEW_PACKAGE_TYPE_EXTEND_EVENT:
-        export_id = (package.target_event_export_id or "").strip() or "—"
         if target_event_name:
             event_label = target_event_name
-            if export_id != "—":
-                event_label = f"{target_event_name} ({export_id})"
         else:
-            event_label = export_id
+            event_label = "Doplnění události"
         event_line = f"Cílová událost: {event_label}"
     else:
         event_name = ""
@@ -375,15 +372,11 @@ class HazardCatalogAiPackageEditDialog(QDialog):
         self.target_event_id_label.setStyleSheet("color: #666666; font-size: 11px;")
 
         if package.package_type == AI_PEER_REVIEW_PACKAGE_TYPE_EXTEND_EVENT:
-            display_name = self._target_event_name or self._target_event_export_id or "—"
+            display_name = self._target_event_name or "Doplnění události"
             self.target_event_name_label.setText(display_name)
             if self._target_event_export_id:
                 self.target_event_name_label.setToolTip(self._target_event_export_id)
-                self.target_event_id_label.setText(self._target_event_export_id)
-                self.target_event_id_label.setToolTip(self._target_event_export_id)
             event_form.addRow("Cílová událost:", self.target_event_name_label)
-            if self._target_event_name and self._target_event_export_id:
-                event_form.addRow("", self.target_event_id_label)
             self.target_event.setVisible(False)
             if package.event is not None:
                 self.event_name.setText(package.event.name)

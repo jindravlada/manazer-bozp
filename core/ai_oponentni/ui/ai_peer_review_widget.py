@@ -910,8 +910,24 @@ class AiPeerReviewWidget(QWidget):
                     ),
                 )
                 type_item.setData(Qt.ItemDataRole.UserRole, record.id)
+                resolved_name = None
+                if package.target_event_export_id:
+                    from moduly.rizeni_rizik.ui.hazard_catalog_ai_package_edit_dialog import (
+                        resolve_target_event_name,
+                    )
+
+                    resolved_name = resolve_target_event_name(
+                        package_record_id=record.id,
+                        target_event_export_id=package.target_event_export_id,
+                    )
                 self.proposals_table.setItem(row_index, 0, type_item)
-                self.proposals_table.setItem(row_index, 1, QTableWidgetItem(package.event_name))
+                self.proposals_table.setItem(
+                    row_index,
+                    1,
+                    QTableWidgetItem(
+                        package.display_event_label(resolved_target_name=resolved_name),
+                    ),
+                )
                 self.proposals_table.setItem(
                     row_index,
                     2,
@@ -1208,7 +1224,22 @@ class AiPeerReviewWidget(QWidget):
             self.package_detail.setPlainText(CATALOG_AI_PACKAGE_EMPTY_DETAIL)
             return
         package = ai_peer_review_service.package_repository.package_from_record(record)
-        self.package_detail.setPlainText(format_proposal_package_detail(package))
+        resolved_name = None
+        if package.target_event_export_id:
+            from moduly.rizeni_rizik.ui.hazard_catalog_ai_package_edit_dialog import (
+                resolve_target_event_name,
+            )
+
+            resolved_name = resolve_target_event_name(
+                package_record_id=record.id,
+                target_event_export_id=package.target_event_export_id,
+            )
+        self.package_detail.setPlainText(
+            format_proposal_package_detail(
+                package,
+                resolved_target_event_name=resolved_name,
+            ),
+        )
 
     def _edit_selected_package(self) -> None:
         from moduly.rizeni_rizik.constants_library import CATALOG_AI_PACKAGE_SELECT_ONE

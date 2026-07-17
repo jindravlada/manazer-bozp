@@ -217,7 +217,7 @@ class AiProposalPackageEditorR20dTestCase(unittest.TestCase):
         )
         self.assertIn("Doplnění", summary)
         self.assertIn("Přejetí osoby lokomotivou", summary)
-        self.assertIn(self.event_export_id, summary)
+        self.assertNotIn(self.event_export_id, summary)
         self.assertIn("Posouzení: 2", summary)
         self.assertIn("Existující opatření: 1", summary)
         self.assertIn("Potřebná opatření: 3", summary)
@@ -247,12 +247,12 @@ class AiProposalPackageEditorR20dTestCase(unittest.TestCase):
             dialog.target_event_name_label.text(),
             "Přejetí osoby lokomotivou",
         )
-        self.assertEqual(dialog.target_event_id_label.text(), self.event_export_id)
         self.assertEqual(
             dialog.target_event_name_label.toolTip(),
             self.event_export_id,
         )
         self.assertNotEqual(dialog.target_event_name_label.text(), self.event_export_id)
+        self.assertFalse(dialog.target_event_id_label.isVisibleTo(dialog))
 
         save_button = dialog._buttons.button(QDialogButtonBox.StandardButton.Save)
         assert save_button is not None

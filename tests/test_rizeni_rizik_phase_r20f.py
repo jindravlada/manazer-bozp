@@ -146,6 +146,51 @@ class RizeniRizikPhaseR20fTestCase(unittest.TestCase):
         self.assertEqual(kwargs["rejected"], [])
         self.assertEqual(kwargs["loaded_packages_count"], 2)
 
+    def test_r20f2_ui_hides_event_export_ids(self) -> None:
+        from core.ai_oponentni.constants import (
+            AI_PEER_REVIEW_PACKAGE_TYPE_EXTEND_EVENT,
+            AI_PEER_REVIEW_PACKAGE_TYPE_LABELS,
+        )
+        from core.ai_oponentni.proposal_package_types import AiProposalPackage
+        from core.ai_oponentni.sluzby.proposal_package_detail import (
+            format_proposal_package_detail,
+        )
+        from moduly.rizeni_rizik.ui.hazard_catalog_ai_package_edit_dialog import (
+            format_package_summary,
+        )
+
+        package = AiProposalPackage(
+            package_id="PACKAGE-EXT",
+            package_type=AI_PEER_REVIEW_PACKAGE_TYPE_EXTEND_EVENT,
+            target_event_export_id="EVENT-003",
+            event=None,
+            assessments=(),
+            legal_links=(),
+            reasoning="",
+        )
+        self.assertEqual(
+            AI_PEER_REVIEW_PACKAGE_TYPE_LABELS[AI_PEER_REVIEW_PACKAGE_TYPE_EXTEND_EVENT],
+            "Doplnění události",
+        )
+        self.assertEqual(package.event_name, "—")
+        self.assertEqual(
+            package.display_event_label(resolved_target_name="Pád z výšky"),
+            "Pád z výšky",
+        )
+        self.assertEqual(package.display_event_label(), "Doplnění události")
+        self.assertNotIn("EVENT-003", package.display_event_label())
+
+        detail = format_proposal_package_detail(
+            package,
+            resolved_target_event_name="Pád z výšky",
+        )
+        self.assertIn("Doplnění události: Pád z výšky", detail)
+        self.assertNotIn("EVENT-003", detail)
+
+        summary = format_package_summary(package, target_event_name="Pád z výšky")
+        self.assertIn("Cílová událost: Pád z výšky", summary)
+        self.assertNotIn("EVENT-003", summary)
+
 
 if __name__ == "__main__":
     unittest.main()

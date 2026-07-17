@@ -7,7 +7,11 @@ from core.ai_oponentni.proposal_package_types import AiProposalPackage
 from moduly.rizeni_rizik.constants import RISK_SEVERITY_LABELS
 
 
-def format_proposal_package_detail(package: AiProposalPackage) -> str:
+def format_proposal_package_detail(
+    package: AiProposalPackage,
+    *,
+    resolved_target_event_name: str | None = None,
+) -> str:
     lines: list[str] = []
     type_label = AI_PEER_REVIEW_PACKAGE_TYPE_LABELS.get(
         package.package_type,
@@ -16,13 +20,21 @@ def format_proposal_package_detail(package: AiProposalPackage) -> str:
     lines.append(f"Balík: {package.package_id}")
     lines.append(f"Typ: {type_label}")
     if package.target_event_export_id:
-        lines.append(f"Cílová událost: {package.target_event_export_id}")
+        target_name = (resolved_target_event_name or "").strip()
+        if target_name:
+            lines.append(f"Cílová událost: {target_name}")
+        else:
+            lines.append("Cílová událost: Doplnění události")
     lines.append("")
 
     lines.append("UDÁLOST")
     lines.append("-" * 40)
     if package.event is None:
-        lines.append("(doplnění existující události – bez nové události)")
+        target_name = (resolved_target_event_name or "").strip()
+        if target_name:
+            lines.append(f"Doplnění události: {target_name}")
+        else:
+            lines.append("(doplnění existující události – bez nové události)")
     else:
         lines.append(package.event.name or "—")
         if package.event.description.strip():

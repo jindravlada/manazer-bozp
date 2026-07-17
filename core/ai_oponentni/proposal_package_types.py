@@ -121,10 +121,20 @@ class AiProposalPackage:
 
     @property
     def event_name(self) -> str:
+        """Lidský název události pro UI (bez technického EVENT-XXX)."""
         if self.event is not None and self.event.name.strip():
             return self.event.name.strip()
+        return "—"
+
+    def display_event_label(self, *, resolved_target_name: str | None = None) -> str:
+        """Text sloupce Událost: název nové události nebo cílové události."""
+        if self.event is not None and self.event.name.strip():
+            return self.event.name.strip()
+        name = (resolved_target_name or "").strip()
+        if name:
+            return name
         if self.target_event_export_id:
-            return self.target_event_export_id
+            return "Doplnění události"
         return "—"
 
     @property
