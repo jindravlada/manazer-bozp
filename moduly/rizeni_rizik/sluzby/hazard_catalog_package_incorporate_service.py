@@ -740,6 +740,366 @@ class HazardCatalogPackageIncorporateService:
     def _join_notes(*parts: str) -> str:
         return "\n".join(part.strip() for part in parts if (part or "").strip())
 
+    def incorporate_package_into_working_copy(
+        self,
+        working_copy,
+        *,
+        template_id: int,
+        package_record_id: int,
+        group_assessment_overrides: dict[int, int] | None = None,
+    ) -> CatalogPackageIncorporateResult:
+        """Zapracuje balík pouze do pracovní kopie; stav balíku až při Uložit."""
+        from moduly.rizeni_rizik.sluzby.hazard_library_template_working_copy import (
+            WcLegalLink,
+        )
+
+        template = hazard_library_template_service.get_by_id(template_id)
+        if template is None:
+            raise HazardCatalogPackageIncorporateError(CATALOG_INCORPORATE_ERROR_SOURCE_MISSING)
+        if not template.active:
+            raise HazardCatalogPackageIncorporateError(CATALOG_INCORPORATE_ERROR_SOURCE_INACTIVE)
+
+        record = self.package_repository.get_by_id(package_record_id)
+        if record is None:
+            raise HazardCatalogPackageIncorporateError("Návrhový balík neexistuje.")
+        if record.status != PACKAGE_STATUS_PENDING:
+            raise HazardCatalogPackageIncorporateError(
+                "Zapracovat lze pouze balík čekající na odborné posouzení.",
+            )
+        if record.source_id != template_id:
+            raise HazardCatalogPackageIncorporateError(CATALOG_INCORPORATE_ERROR_REVIEW_MISMATCH)
+        if package_record_id in working_copy.pending_package_ids:
+            raise HazardCatalogPackageIncorporateError(
+                "Tento balík je již zapracován v pracovní kopii. Uložte změny.",
+            )
+
+        review = self.review_repository.get_by_id(record.ai_peer_review_id)
+        if review is None:
+            raise HazardCatalogPackageIncorporateError(CATALOG_INCORPORATE_ERROR_REVIEW_MISSING)
+        if review.source_id != template_id:
+            raise HazardCatalogPackageIncorporateError(CATALOG_INCORPORATE_ERROR_REVIEW_MISMATCH)
+
+        package = self.package_repository.package_from_record(record)
+        export_id_map = self.get_export_id_map(record.ai_peer_review_id)
+        overrides = {
+            int(group_id): int(assessment_id)
+            for group_id, assessment_id in (group_assessment_overrides or {}).items()
+        }
+
+        event_count = 0
+        assessment_count = 0
+        merged_assessment_count = 0
+        existing_measure_count = 0
+        required_measure_count = 0
+        legal_link_count = 0
+
+        event_id = self._wc_resolve_or_create_event(
+            working_copy,
+            package=package,
+            export_id_map=export_id_map,
+        )
+        if package.package_type == AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT:
+            event_count = 1
+
+        for assessment in package.assessments:
+            created, merged, existing_added, required_added = self._wc_incorporate_assessment(
+                working_copy,
+                template_event_id=event_id,
+                assessment=assessment,
+                package_reasoning=package.reasoning,
+                group_assessment_overrides=overrides,
+            )
+            assessment_count += created
+            merged_assessment_count += merged
+            existing_measure_count += existing_added
+            required_measure_count += required_added
+
+        for link in package.legal_links:
+            document_id = self._resolve_legal_document_id(link)
+            sort_order = max((row.sort_order for row in working_copy.legal_links), default=0) + 1
+            working_copy.legal_links.append(
+                WcLegalLink(
+                    id=working_copy._alloc_id(),
+                    template_id=template_id,
+                    legal_document_id=document_id,
+                    legal_requirement_id=None,
+                    note=self._build_legal_note(link, package.reasoning),
+                    active=True,
+                    sort_order=sort_order,
+                ),
+            )
+            working_copy._touch()
+            legal_link_count += 1
+
+        working_copy.queue_package_incorporate(package_record_id)
+        return CatalogPackageIncorporateResult(
+            package_record_id=package_record_id,
+            new_revision_number=0,
+            event_count=event_count,
+            assessment_count=assessment_count,
+            existing_measure_count=existing_measure_count,
+            required_measure_count=required_measure_count,
+            legal_link_count=legal_link_count,
+            merged_assessment_count=merged_assessment_count,
+        )
+
+    def _wc_resolve_or_create_event(self, working_copy, *, package, export_id_map) -> int:
+        if package.package_type == AI_PEER_REVIEW_PACKAGE_TYPE_EXTEND_EVENT:
+            export_id = (package.target_event_export_id or "").strip()
+            parent = export_id_map.get(export_id) if export_id else None
+            if not isinstance(parent, dict) or parent.get("kind") != "event":
+                raise HazardCatalogPackageIncorporateError(
+                    CATALOG_INCORPORATE_ERROR_EVENT_PARENT.format(
+                        name=package.event_name,
+                    ),
+                )
+            event_id = int(parent["id"])
+            if working_copy.get_event(event_id) is None:
+                raise HazardCatalogPackageIncorporateError(
+                    CATALOG_INCORPORATE_ERROR_EVENT_PARENT.format(
+                        name=package.event_name,
+                    ),
+                )
+            return event_id
+
+        if package.package_type != AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT:
+            raise HazardCatalogPackageIncorporateError(
+                f"Nepodporovaný typ balíku „{package.package_type}“.",
+            )
+        if package.event is None or not package.event.name.strip():
+            raise HazardCatalogPackageIncorporateError(
+                "Balík typu nová událost musí obsahovat název události.",
+            )
+        event = working_copy.create_event(
+            template_id=working_copy.template_id,
+            name=package.event.name.strip(),
+            description=(package.event.description or "").strip(),
+            note=self._join_notes(package.event.note, package.reasoning),
+            active=True,
+        )
+        return int(event.id)
+
+    def _wc_incorporate_assessment(
+        self,
+        working_copy,
+        *,
+        template_event_id: int,
+        assessment,
+        package_reasoning: str,
+        group_assessment_overrides: dict[int, int],
+    ) -> tuple[int, int, int, int]:
+        group_ids = self._resolve_exposed_group_ids(assessment)
+        merge_targets = {}
+        new_group_ids: list[int] = []
+
+        for group_id in group_ids:
+            matches = self._wc_find_active_assessments_containing_group(
+                working_copy,
+                template_event_id=template_event_id,
+                group_id=group_id,
+            )
+            override_id = group_assessment_overrides.get(group_id)
+            if override_id is not None:
+                override = working_copy.get_assessment(override_id)
+                if (
+                    override is None
+                    or not override.active
+                    or int(override.template_event_id) != int(template_event_id)
+                ):
+                    raise HazardCatalogPackageIncorporateError(
+                        "Vybrané cílové posouzení pro ohroženou skupinu není platné.",
+                    )
+                matches = [override]
+
+            if len(matches) > 1:
+                group_name = (
+                    exposed_group_service.display_name(group_id) or f"#{group_id}"
+                )
+                raise HazardCatalogPackageAmbiguousGroupError(
+                    group_id=group_id,
+                    group_name=group_name,
+                    candidates=tuple(
+                        self._wc_to_ambiguous_candidate(row) for row in matches
+                    ),
+                )
+            if len(matches) == 1:
+                merge_targets[int(matches[0].id)] = matches[0]
+            else:
+                new_group_ids.append(group_id)
+
+        existing_added = 0
+        required_added = 0
+        merged_count = 0
+
+        for target in merge_targets.values():
+            added_existing, added_required = self._wc_merge_into_assessment(
+                working_copy,
+                target=target,
+                assessment=assessment,
+                package_reasoning=package_reasoning,
+            )
+            existing_added += added_existing
+            required_added += added_required
+            merged_count += 1
+
+        created_count = 0
+        if new_group_ids:
+            created = working_copy.create_assessment(
+                template_id=working_copy.template_id,
+                template_event_id=template_event_id,
+                exposed_group_ids=new_group_ids,
+                severity=(
+                    assessment.severity
+                    if assessment.severity in RISK_SEVERITIES
+                    else DEFAULT_RISK_SEVERITY
+                ),
+                conclusion=(assessment.conclusion or "").strip(),
+                note=(package_reasoning or "").strip(),
+                active=True,
+            )
+            created_count = 1
+            assessment_id = int(created.id)
+            for measure in assessment.existing_measures:
+                description = (measure.description or "").strip()
+                if not description:
+                    continue
+                working_copy.create_existing_measure(
+                    template_id=working_copy.template_id,
+                    template_assessment_id=assessment_id,
+                    description=description,
+                    note=(measure.note or "").strip(),
+                    active=True,
+                )
+                existing_added += 1
+            for measure in assessment.required_measures:
+                description = (measure.description or "").strip()
+                if not description:
+                    continue
+                working_copy.create_required_measure(
+                    template_id=working_copy.template_id,
+                    template_assessment_id=assessment_id,
+                    description=description,
+                    note=(measure.note or "").strip(),
+                    active=True,
+                )
+                required_added += 1
+
+        return created_count, merged_count, existing_added, required_added
+
+    def _wc_find_active_assessments_containing_group(
+        self,
+        working_copy,
+        *,
+        template_event_id: int,
+        group_id: int,
+    ):
+        event = working_copy.get_event(template_event_id)
+        if event is None:
+            return []
+        matches = []
+        for assessment in event.assessments:
+            if not assessment.active:
+                continue
+            if group_id in assessment.exposed_group_ids:
+                matches.append(assessment)
+        return matches
+
+    def _wc_to_ambiguous_candidate(self, assessment) -> AmbiguousAssessmentCandidate:
+        group_ids = sorted(assessment.exposed_group_ids)
+        names = [
+            exposed_group_service.display_name(group_id) or f"#{group_id}"
+            for group_id in group_ids
+        ]
+        return AmbiguousAssessmentCandidate(
+            assessment_id=int(assessment.id),
+            severity=assessment.severity or "",
+            severity_label=format_risk_severity_label(assessment.severity or ""),
+            conclusion=(assessment.conclusion or "").strip(),
+            group_names=", ".join(names) if names else "—",
+        )
+
+    def _wc_merge_into_assessment(
+        self,
+        working_copy,
+        *,
+        target,
+        assessment,
+        package_reasoning: str,
+    ) -> tuple[int, int]:
+        proposed_severity = (
+            assessment.severity
+            if assessment.severity in RISK_SEVERITIES
+            else DEFAULT_RISK_SEVERITY
+        )
+        target.severity = self._stricter_severity(target.severity, proposed_severity)
+        target.conclusion = self._merge_conclusions(
+            target.conclusion or "",
+            assessment.conclusion or "",
+        )
+        if package_reasoning.strip() and not (target.note or "").strip():
+            target.note = package_reasoning.strip()
+        working_copy._touch()
+
+        existing_added = self._wc_add_unique_measures(
+            working_copy,
+            assessment_id=int(target.id),
+            measures=assessment.existing_measures,
+            existing=True,
+        )
+        required_added = self._wc_add_unique_measures(
+            working_copy,
+            assessment_id=int(target.id),
+            measures=assessment.required_measures,
+            existing=False,
+        )
+        return existing_added, required_added
+
+    def _wc_add_unique_measures(
+        self,
+        working_copy,
+        *,
+        assessment_id: int,
+        measures,
+        existing: bool,
+    ) -> int:
+        bucket = (
+            working_copy.get_existing_measures(assessment_id, include_inactive=True)
+            if existing
+            else working_copy.get_required_measures(assessment_id, include_inactive=True)
+        )
+        known = {
+            normalize_template_measure_description(row.description or "")
+            for row in bucket
+            if (row.description or "").strip()
+        }
+        added = 0
+        for measure in measures or ():
+            description = (measure.description or "").strip()
+            if not description:
+                continue
+            key = normalize_template_measure_description(description)
+            if key in known:
+                continue
+            known.add(key)
+            if existing:
+                working_copy.create_existing_measure(
+                    template_id=working_copy.template_id,
+                    template_assessment_id=assessment_id,
+                    description=description,
+                    note=(measure.note or "").strip(),
+                    active=True,
+                )
+            else:
+                working_copy.create_required_measure(
+                    template_id=working_copy.template_id,
+                    template_assessment_id=assessment_id,
+                    description=description,
+                    note=(measure.note or "").strip(),
+                    active=True,
+                )
+            added += 1
+        return added
+
     def _refresh_review_counts(self, review_id: int) -> None:
         packages = self.package_repository.get_for_review(review_id)
         review = self.review_repository.get_by_id(review_id)

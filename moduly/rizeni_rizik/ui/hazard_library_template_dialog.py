@@ -1,3 +1,4 @@
+from PySide6.QtCore import QSignalBlocker
 from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -27,16 +28,21 @@ from moduly.rizeni_rizik.constants import (
 from moduly.rizeni_rizik.constants_library import (
     DEFAULT_HAZARD_LIBRARY_SCOPE,
     DEFAULT_HAZARD_LIBRARY_VERSION,
+    HAZARD_LIBRARY_CANCEL_CONFIRM,
     HAZARD_LIBRARY_DIALOG_TITLE,
     HAZARD_LIBRARY_PLACEHOLDER_TEXT,
     HAZARD_LIBRARY_REVISION_FORM_LABEL,
     HAZARD_LIBRARY_REVISION_READ_ONLY_TOOLTIP,
-    HAZARD_LIBRARY_REVISION_REASON_MANUAL,
+    HAZARD_LIBRARY_SAVE_SUCCESS,
     HAZARD_LIBRARY_TAB_AI_PEER_REVIEW,
     HAZARD_LIBRARY_TAB_BASICS,
     HAZARD_LIBRARY_TAB_CONTENT,
     HAZARD_LIBRARY_TAB_HISTORY,
     HAZARD_LIBRARY_TAB_USAGE,
+    HAZARD_LIBRARY_UNSAVED_DISCARD,
+    HAZARD_LIBRARY_UNSAVED_PROMPT,
+    HAZARD_LIBRARY_UNSAVED_SAVE,
+    HAZARD_LIBRARY_UNSAVED_STAY,
 )
 from moduly.rizeni_rizik.sluzby.hazard_catalog_source_peer_review_provider import (
     hazard_catalog_source_peer_review_provider,
@@ -44,6 +50,9 @@ from moduly.rizeni_rizik.sluzby.hazard_catalog_source_peer_review_provider impor
 from moduly.rizeni_rizik.sluzby.hazard_library_template_service import (
     HazardLibraryTemplateError,
     hazard_library_template_service,
+)
+from moduly.rizeni_rizik.sluzby.hazard_library_template_working_copy import (
+    HazardLibraryTemplateWorkingCopy,
 )
 from moduly.rizeni_rizik.ui.hazard_library_template_content_widget import (
     HazardLibraryTemplateContentWidget,
@@ -58,7 +67,9 @@ class HazardLibraryTemplateDialog(QDialog):
         super().__init__(parent)
         self.template = template
         self.saved_template = template
-        self._content_changed = False
+        self._content_store: HazardLibraryTemplateWorkingCopy | None = None
+        self._basics_dirty = False
+        self._closing = False
 
         self.setWindowTitle(HAZARD_LIBRARY_DIALOG_TITLE)
         self.setMinimumSize(720, 520)
@@ -106,6 +117,7 @@ class HazardLibraryTemplateDialog(QDialog):
             resolve_exposed_groups=False,
             evidence_only_import=True,
             on_catalog_incorporated=self._on_catalog_proposals_incorporated,
+            package_incorporate_handler=self._incorporate_package_into_working_copy,
         )
         self.ai_peer_review_tab_index = self.tabs.addTab(
             self.ai_peer_review_widget,
@@ -124,39 +136,49 @@ class HazardLibraryTemplateDialog(QDialog):
 
         layout.addWidget(self.tabs)
 
-        buttons = create_save_cancel_box(self)
-        save_button = buttons.button(QDialogButtonBox.StandardButton.Save)
-        cancel_button = buttons.button(QDialogButtonBox.StandardButton.Cancel)
-        if save_button is not None:
-            save_button.clicked.connect(self._save_basics)
+        self.buttons = create_save_cancel_box(self)
+        self.save_button = self.buttons.button(QDialogButtonBox.StandardButton.Save)
+        cancel_button = self.buttons.button(QDialogButtonBox.StandardButton.Cancel)
+        if self.save_button is not None:
+            self.save_button.clicked.connect(self._save_all)
         if cancel_button is not None:
-            cancel_button.clicked.connect(self.reject)
-        layout.addWidget(buttons)
+            cancel_button.clicked.connect(self._on_cancel_clicked)
+        layout.addWidget(self.buttons)
 
         self.content_widget.content_changed.connect(self._on_content_changed)
         self.tabs.currentChanged.connect(self._on_tab_changed)
+        self.name.textChanged.connect(self._on_basics_edited)
+        self.category.currentIndexChanged.connect(self._on_basics_edited)
+        self.description.textChanged.connect(self._on_basics_edited)
+        self.note.textChanged.connect(self._on_basics_edited)
+        self.active_checkbox.toggled.connect(self._on_basics_edited)
 
         if template is not None:
             self._load_template(template)
+            self._content_store = HazardLibraryTemplateWorkingCopy.load(template.id)
         self._sync_content_context()
         self._update_content_tab_enabled()
         self._sync_ai_peer_review_context()
         self._update_ai_peer_review_tab_enabled()
         self._sync_history_context()
         self._update_history_tab_enabled()
+        self._update_save_enabled()
 
     def _load_template(self, template) -> None:
-        self.name.setText(template.name)
-        category_index = self.category.findData(template.category)
-        if category_index >= 0:
-            self.category.setCurrentIndex(category_index)
-        self.description.setPlainText(template.description or "")
-        self.version_number.setValue(template.version_number)
-        self.note.setPlainText(template.note or "")
-        self.active_checkbox.setChecked(bool(template.active))
+        with QSignalBlocker(self.name), QSignalBlocker(self.category), QSignalBlocker(
+            self.description,
+        ), QSignalBlocker(self.note), QSignalBlocker(self.active_checkbox):
+            self.name.setText(template.name)
+            category_index = self.category.findData(template.category)
+            if category_index >= 0:
+                self.category.setCurrentIndex(category_index)
+            self.description.setPlainText(template.description or "")
+            self.version_number.setValue(template.version_number)
+            self.note.setPlainText(template.note or "")
+            self.active_checkbox.setChecked(bool(template.active))
+        self._basics_dirty = False
 
     def get_data(self) -> dict:
-        # R20e: rozsah použití se v UI nepoužívá; nové zápisy vždy MANUAL bez provozů.
         return {
             "name": self.name.text().strip(),
             "category": self.category.currentData(),
@@ -168,22 +190,55 @@ class HazardLibraryTemplateDialog(QDialog):
             "operation_ids": [],
         }
 
-    def _save_basics(self) -> None:
+    def is_dirty(self) -> bool:
+        content_dirty = self._content_store is not None and self._content_store.is_dirty
+        return self._basics_dirty or content_dirty
+
+    def _update_save_enabled(self) -> None:
+        if self.save_button is not None:
+            self.save_button.setEnabled(self.is_dirty() or self.template is None)
+
+    def _on_basics_edited(self, *_args) -> None:
+        self._basics_dirty = True
+        self._update_save_enabled()
+
+    def _on_content_changed(self) -> None:
+        self._update_save_enabled()
+
+    def _save_all(self) -> bool:
         data = self.get_data()
         try:
             if self.template is None:
                 self.template = hazard_library_template_service.create_template(**data)
+                self._content_store = HazardLibraryTemplateWorkingCopy.load(self.template.id)
+                self._basics_dirty = False
             else:
-                updated = hazard_library_template_service.update_template(
-                    self.template.id,
-                    **data,
-                )
-                if updated is not None:
+                if self._content_store is None:
+                    self._content_store = HazardLibraryTemplateWorkingCopy.load(
+                        self.template.id,
+                    )
+                content_dirty = self._content_store.is_dirty
+                if content_dirty:
+                    updated = self._content_store.commit(
+                        basics=data if self._basics_dirty else None,
+                        bump_revision=True,
+                    )
                     self.template = updated
+                elif self._basics_dirty:
+                    updated = hazard_library_template_service.update_template(
+                        self.template.id,
+                        **data,
+                    )
+                    if updated is not None:
+                        self.template = updated
+                self._basics_dirty = False
         except HazardLibraryTemplateError as error:
             QMessageBox.warning(self, HAZARD_LIBRARY_DIALOG_TITLE, str(error))
             self.tabs.setCurrentIndex(0)
-            return
+            return False
+        except Exception as error:
+            QMessageBox.warning(self, HAZARD_LIBRARY_DIALOG_TITLE, str(error))
+            return False
 
         self.saved_template = self.template
         self._load_template(self.template)
@@ -193,7 +248,57 @@ class HazardLibraryTemplateDialog(QDialog):
         self._update_ai_peer_review_tab_enabled()
         self._sync_history_context()
         self._update_history_tab_enabled()
-        QMessageBox.information(self, HAZARD_LIBRARY_DIALOG_TITLE, "Základní údaje byly uloženy.")
+        self.content_widget.refresh()
+        self.history_widget.refresh()
+        self.ai_peer_review_widget.refresh()
+        self._update_save_enabled()
+        QMessageBox.information(self, HAZARD_LIBRARY_DIALOG_TITLE, HAZARD_LIBRARY_SAVE_SUCCESS)
+        return True
+
+    def _discard_working_copy(self) -> None:
+        self._content_store = None
+        self._basics_dirty = False
+
+    def _on_cancel_clicked(self) -> None:
+        if self.is_dirty():
+            answer = QMessageBox.question(
+                self,
+                HAZARD_LIBRARY_DIALOG_TITLE,
+                HAZARD_LIBRARY_CANCEL_CONFIRM,
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if answer != QMessageBox.StandardButton.Yes:
+                return
+        self._discard_working_copy()
+        self._closing = True
+        self.reject()
+
+    def _prompt_unsaved_close(self) -> str:
+        message = QMessageBox(self)
+        message.setWindowTitle(HAZARD_LIBRARY_DIALOG_TITLE)
+        message.setText(HAZARD_LIBRARY_UNSAVED_PROMPT)
+        message.setIcon(QMessageBox.Icon.Question)
+        save_btn = message.addButton(
+            HAZARD_LIBRARY_UNSAVED_SAVE,
+            QMessageBox.ButtonRole.AcceptRole,
+        )
+        discard_btn = message.addButton(
+            HAZARD_LIBRARY_UNSAVED_DISCARD,
+            QMessageBox.ButtonRole.DestructiveRole,
+        )
+        stay_btn = message.addButton(
+            HAZARD_LIBRARY_UNSAVED_STAY,
+            QMessageBox.ButtonRole.RejectRole,
+        )
+        message.setDefaultButton(stay_btn)
+        message.exec()
+        clicked = message.clickedButton()
+        if clicked is save_btn:
+            return "save"
+        if clicked is discard_btn:
+            return "discard"
+        return "stay"
 
     def _update_content_tab_enabled(self) -> None:
         self.tabs.setTabEnabled(self.content_tab_index, self.template is not None)
@@ -212,19 +317,39 @@ class HazardLibraryTemplateDialog(QDialog):
         template_id = self.template.id if self.template is not None else None
         self.ai_peer_review_widget.set_source(template_id)
 
+    def _incorporate_package_into_working_copy(
+        self,
+        *,
+        template_id: int,
+        package_record_id: int,
+        group_assessment_overrides: dict[int, int] | None = None,
+    ):
+        from moduly.rizeni_rizik.sluzby.hazard_catalog_package_incorporate_service import (
+            hazard_catalog_package_incorporate_service,
+        )
+
+        if self._content_store is None:
+            self._content_store = HazardLibraryTemplateWorkingCopy.load(template_id)
+        return hazard_catalog_package_incorporate_service.incorporate_package_into_working_copy(
+            self._content_store,
+            template_id=template_id,
+            package_record_id=package_record_id,
+            group_assessment_overrides=group_assessment_overrides,
+        )
+
     def _on_catalog_proposals_incorporated(self, new_revision_number: int | None) -> None:
         if self.template is None:
             return
-        if new_revision_number is not None:
+        if new_revision_number is not None and new_revision_number > 0:
             reloaded = hazard_library_template_service.get_by_id(self.template.id)
             if reloaded is not None:
                 self.template = reloaded
                 self.saved_template = reloaded
                 self.version_number.setValue(reloaded.version_number)
-            self._content_changed = False
         self.content_widget.refresh()
         self.history_widget.refresh()
         self.ai_peer_review_widget.refresh()
+        self._update_save_enabled()
 
     def _sync_content_context(self) -> None:
         template_id = self.template.id if self.template is not None else None
@@ -232,12 +357,11 @@ class HazardLibraryTemplateDialog(QDialog):
             self.template is None
             or not hazard_library_template_service.is_template_content_editable(template_id)
         )
-        self.content_widget.set_template(template_id, read_only=read_only)
-
-    def _on_content_changed(self) -> None:
-        if self.template is None:
-            return
-        self._content_changed = True
+        self.content_widget.set_template(
+            template_id,
+            read_only=read_only,
+            content_store=self._content_store,
+        )
 
     def _on_tab_changed(self, index: int) -> None:
         if index == self.content_tab_index and self.template is not None:
@@ -246,28 +370,40 @@ class HazardLibraryTemplateDialog(QDialog):
         if index == self.history_tab_index and self.template is not None:
             self.history_widget.refresh()
 
-    def _finalize_content_version(self) -> None:
-        if self.template is None or not self._content_changed:
-            return
-        updated = hazard_library_template_service.bump_content_version(
-            self.template.id,
-            change_reason=HAZARD_LIBRARY_REVISION_REASON_MANUAL,
-        )
-        if updated is not None:
-            self.template = updated
-            self.saved_template = updated
-            self.version_number.setValue(updated.version_number)
-            self.history_widget.refresh()
-        self._content_changed = False
-
     def closeEvent(self, event: QCloseEvent) -> None:
-        self._finalize_content_version()
+        if self._closing or not self.is_dirty():
+            self._discard_working_copy()
+            super().closeEvent(event)
+            return
+        decision = self._prompt_unsaved_close()
+        if decision == "stay":
+            event.ignore()
+            return
+        if decision == "save":
+            if not self._save_all():
+                event.ignore()
+                return
+        self._discard_working_copy()
+        self._closing = True
         super().closeEvent(event)
 
     def reject(self) -> None:
-        self._finalize_content_version()
+        if self._closing:
+            super().reject()
+            return
+        if self.is_dirty():
+            decision = self._prompt_unsaved_close()
+            if decision == "stay":
+                return
+            if decision == "save":
+                if not self._save_all():
+                    return
+            self._discard_working_copy()
+        self._closing = True
         super().reject()
 
     def accept(self) -> None:
-        self._finalize_content_version()
-        super().reject()
+        if not self._save_all():
+            return
+        self._closing = True
+        super().accept()

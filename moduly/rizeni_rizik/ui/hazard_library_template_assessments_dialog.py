@@ -47,6 +47,9 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_required_measure_service
     HazardLibraryTemplateRequiredMeasureError,
     hazard_library_template_required_measure_service,
 )
+from moduly.rizeni_rizik.sluzby.hazard_library_template_working_copy import (
+    find_catalog_working_copy,
+)
 from moduly.rizeni_rizik.ui.hazard_library_template_assessment_dialog import (
     HazardLibraryTemplateAssessmentDialog,
 )
@@ -139,7 +142,19 @@ class _TemplateMeasuresSection(QWidget):
             self.header_label.setText(HAZARD_LIBRARY_TEMPLATE_SELECT_ASSESSMENT)
             return
 
-        if self.measure_type == "existing":
+        store = find_catalog_working_copy(self)
+        if store is not None:
+            if self.measure_type == "existing":
+                measures = store.get_existing_measures(
+                    self._assessment_id,
+                    include_inactive=True,
+                )
+            else:
+                measures = store.get_required_measures(
+                    self._assessment_id,
+                    include_inactive=True,
+                )
+        elif self.measure_type == "existing":
             measures = hazard_library_template_existing_measure_service.get_for_assessment(
                 self._assessment_id,
                 include_inactive=True,
@@ -182,6 +197,11 @@ class _TemplateMeasuresSection(QWidget):
         if id_item is None:
             return None
         measure_id = int(id_item.text())
+        store = find_catalog_working_copy(self)
+        if store is not None:
+            if self.measure_type == "existing":
+                return store.get_existing_measure(measure_id)
+            return store.get_required_measure(measure_id)
         if self.measure_type == "existing":
             return hazard_library_template_existing_measure_service.get_by_id(measure_id)
         return hazard_library_template_required_measure_service.get_by_id(measure_id)
@@ -234,7 +254,13 @@ class _TemplateMeasuresSection(QWidget):
             else HAZARD_LIBRARY_TEMPLATE_REQUIRED_MEASURES_TITLE
         )
         try:
-            if self.measure_type == "existing":
+            store = find_catalog_working_copy(self)
+            if store is not None:
+                if self.measure_type == "existing":
+                    store.activate_existing_measure(measure.id)
+                else:
+                    store.activate_required_measure(measure.id)
+            elif self.measure_type == "existing":
                 hazard_library_template_existing_measure_service.activate_measure(measure.id)
             else:
                 hazard_library_template_required_measure_service.activate_measure(measure.id)
@@ -253,7 +279,13 @@ class _TemplateMeasuresSection(QWidget):
         measure = self._selected_measure()
         if measure is None or not measure.active:
             return
-        if self.measure_type == "existing":
+        store = find_catalog_working_copy(self)
+        if store is not None:
+            if self.measure_type == "existing":
+                store.deactivate_existing_measure(measure.id)
+            else:
+                store.deactivate_required_measure(measure.id)
+        elif self.measure_type == "existing":
             hazard_library_template_existing_measure_service.deactivate_measure(measure.id)
         else:
             hazard_library_template_required_measure_service.deactivate_measure(measure.id)
@@ -391,10 +423,17 @@ class _HazardLibraryTemplateAssessmentsPanel(QWidget):
         self.refresh()
 
     def refresh(self) -> None:
-        rows = hazard_library_template_assessment_service.get_for_event(
-            self.template_event_id,
-            include_inactive=True,
-        )
+        store = find_catalog_working_copy(self)
+        if store is not None:
+            rows = store.get_assessments_for_event(
+                self.template_event_id,
+                include_inactive=True,
+            )
+        else:
+            rows = hazard_library_template_assessment_service.get_for_event(
+                self.template_event_id,
+                include_inactive=True,
+            )
         self.table.setRowCount(len(rows))
         selected_row = -1
         for row_index, row in enumerate(rows):
@@ -466,7 +505,11 @@ class _HazardLibraryTemplateAssessmentsPanel(QWidget):
         if assessment is None or assessment.active:
             return
         try:
-            hazard_library_template_assessment_service.activate_assessment(assessment.id)
+            store = find_catalog_working_copy(self)
+            if store is not None:
+                store.activate_assessment(assessment.id)
+            else:
+                hazard_library_template_assessment_service.activate_assessment(assessment.id)
         except HazardLibraryTemplateAssessmentError as error:
             QMessageBox.warning(self, HAZARD_LIBRARY_ASSESSMENT_DIALOG_TITLE, str(error))
             return
@@ -479,7 +522,11 @@ class _HazardLibraryTemplateAssessmentsPanel(QWidget):
         assessment = self._selected_assessment()
         if assessment is None or not assessment.active:
             return
-        hazard_library_template_assessment_service.deactivate_assessment(assessment.id)
+        store = find_catalog_working_copy(self)
+        if store is not None:
+            store.deactivate_assessment(assessment.id)
+        else:
+            hazard_library_template_assessment_service.deactivate_assessment(assessment.id)
         self.refresh()
         self._notify_content_changed()
 
@@ -516,7 +563,14 @@ class _HazardLibraryTemplateAssessmentsPanel(QWidget):
         id_item = self.table.item(selected[0].row(), HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COL_ID)
         if id_item is None:
             return None
-        return hazard_library_template_assessment_service.get_by_id(int(id_item.text()))
+        assessment_id = int(id_item.text())
+        store = find_catalog_working_copy(self)
+        if store is not None:
+            assessment = store.get_assessment(assessment_id)
+            if assessment is None:
+                return None
+            return store._assessment_proxy(assessment)
+        return hazard_library_template_assessment_service.get_by_id(assessment_id)
 
     def _notify_content_changed(self) -> None:
         if self._on_content_changed is not None:

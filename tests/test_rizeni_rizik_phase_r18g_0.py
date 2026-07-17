@@ -188,32 +188,43 @@ class HazardLibraryTemplateVersionR18g0TestCase(unittest.TestCase):
         self.assertEqual(reloaded.version_number, 2)
 
     def test_open_editor_without_changes_does_not_bump(self) -> None:
+        from PySide6.QtWidgets import QMessageBox
+
         dialog = HazardLibraryTemplateDialog(template=self.template)
+        dialog._closing = True
         dialog.reject()
         reloaded = hazard_library_template_service.get_by_id(self.template.id)
         assert reloaded is not None
         self.assertEqual(reloaded.version_number, 1)
 
-    def test_editor_session_bumps_once_on_close(self) -> None:
+    def test_editor_session_bumps_once_on_save(self) -> None:
+        from PySide6.QtWidgets import QMessageBox
+
         dialog = HazardLibraryTemplateDialog(template=self.template)
-        hazard_library_template_event_service.create_event(
+        assert dialog._content_store is not None
+        dialog._content_store.create_event(
             template_id=self.template.id,
             name="Nová událost",
         )
-        dialog._on_content_changed()
-        dialog.reject()
+        with patch.object(QMessageBox, "information", return_value=QMessageBox.StandardButton.Ok):
+            self.assertTrue(dialog._save_all())
 
         reloaded = hazard_library_template_service.get_by_id(self.template.id)
         assert reloaded is not None
         self.assertEqual(reloaded.version_number, 2)
 
     def test_separate_sessions_bump_incrementally(self) -> None:
+        from PySide6.QtWidgets import QMessageBox
+
         dialog_first = HazardLibraryTemplateDialog(template=self.template)
-        hazard_library_template_event_service.create_event(
+        assert dialog_first._content_store is not None
+        dialog_first._content_store.create_event(
             template_id=self.template.id,
             name="Relace 1",
         )
-        dialog_first._on_content_changed()
+        with patch.object(QMessageBox, "information", return_value=QMessageBox.StandardButton.Ok):
+            self.assertTrue(dialog_first._save_all())
+        dialog_first._closing = True
         dialog_first.reject()
 
         reloaded = hazard_library_template_service.get_by_id(self.template.id)
@@ -221,16 +232,36 @@ class HazardLibraryTemplateVersionR18g0TestCase(unittest.TestCase):
         self.assertEqual(reloaded.version_number, 2)
 
         dialog_second = HazardLibraryTemplateDialog(template=reloaded)
-        hazard_library_template_event_service.create_event(
+        assert dialog_second._content_store is not None
+        dialog_second._content_store.create_event(
             template_id=self.template.id,
             name="Relace 2",
         )
-        dialog_second._on_content_changed()
+        with patch.object(QMessageBox, "information", return_value=QMessageBox.StandardButton.Ok):
+            self.assertTrue(dialog_second._save_all())
+        dialog_second._closing = True
         dialog_second.reject()
 
         reloaded = hazard_library_template_service.get_by_id(self.template.id)
         assert reloaded is not None
         self.assertEqual(reloaded.version_number, 3)
+
+    def test_cancel_does_not_bump_or_persist(self) -> None:
+        dialog = HazardLibraryTemplateDialog(template=self.template)
+        assert dialog._content_store is not None
+        dialog._content_store.create_event(
+            template_id=self.template.id,
+            name="Dočasná událost",
+        )
+        dialog._discard_working_copy()
+        dialog._closing = True
+        dialog.reject()
+
+        reloaded = hazard_library_template_service.get_by_id(self.template.id)
+        assert reloaded is not None
+        self.assertEqual(reloaded.version_number, 1)
+        events = hazard_library_template_event_service.get_for_template(self.template.id)
+        self.assertEqual(len(events), 0)
 
     def test_bulk_operation_bumps_once(self) -> None:
         """Simulace hromadného převzetí návrhů AI – více zápisů, jeden bump."""

@@ -15,6 +15,9 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_event_service import (
     HazardLibraryTemplateEventError,
     hazard_library_template_event_service,
 )
+from moduly.rizeni_rizik.sluzby.hazard_library_template_working_copy import (
+    find_catalog_working_copy,
+)
 
 
 class HazardLibraryTemplateEventDialog(QDialog):
@@ -78,8 +81,18 @@ class HazardLibraryTemplateEventDialog(QDialog):
 
         data = self.get_data()
         try:
+            store = find_catalog_working_copy(self)
             if self.template_event is None:
-                hazard_library_template_event_service.create_event(
+                if store is not None:
+                    store.create_event(template_id=self.template_id, **data)
+                else:
+                    hazard_library_template_event_service.create_event(
+                        template_id=self.template_id,
+                        **data,
+                    )
+            elif store is not None:
+                store.update_event(
+                    self.template_event.id,
                     template_id=self.template_id,
                     **data,
                 )

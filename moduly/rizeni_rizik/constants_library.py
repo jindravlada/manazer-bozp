@@ -21,6 +21,12 @@ HAZARD_LIBRARY_SCOPE_LABELS = {
 HAZARD_LIBRARY_PAGE_TITLE = "Katalog zdrojů rizik"
 HAZARD_LIBRARY_DIALOG_TITLE = "Zdroj rizika"
 HAZARD_LIBRARY_NEW_BUTTON = "Nový zdroj rizika"
+HAZARD_LIBRARY_UNSAVED_PROMPT = "Máte neuložené změny. Co chcete udělat?"
+HAZARD_LIBRARY_UNSAVED_SAVE = "Uložit"
+HAZARD_LIBRARY_UNSAVED_DISCARD = "Zahodit"
+HAZARD_LIBRARY_UNSAVED_STAY = "Zůstat"
+HAZARD_LIBRARY_CANCEL_CONFIRM = "Zahodit všechny neuložené změny a zavřít editor?"
+HAZARD_LIBRARY_SAVE_SUCCESS = "Změny byly uloženy."
 
 HAZARD_LIBRARY_TAB_BASICS = "Základní údaje"
 HAZARD_LIBRARY_TAB_CONTENT = "Odborný obsah"
@@ -224,6 +230,10 @@ CATALOG_AI_PACKAGE_EDIT_SAVE_BUTTON = "Uložit změny"
 CATALOG_AI_PACKAGE_SUMMARY_TITLE = "Souhrn balíku"
 CATALOG_AI_PACKAGE_INCORPORATE_SUCCESS = (
     "Balík byl zapracován do MASTER obsahu. Revize zdroje: {revision}."
+)
+CATALOG_AI_PACKAGE_INCORPORATE_PENDING_SAVE = (
+    "Balík byl zapracován do pracovní kopie. "
+    "Stav „Zapracováno“ a nová revize se uloží až po stisku Uložit."
 )
 CATALOG_AI_PACKAGE_REJECT_SUCCESS = "Balík byl zamítnut."
 CATALOG_AI_PACKAGE_SELECT_ONE = "Vyberte právě jeden návrhový balík."

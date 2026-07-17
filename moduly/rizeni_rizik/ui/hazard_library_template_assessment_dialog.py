@@ -26,6 +26,9 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_assessment_service impor
     HazardLibraryTemplateAssessmentError,
     hazard_library_template_assessment_service,
 )
+from moduly.rizeni_rizik.sluzby.hazard_library_template_working_copy import (
+    find_catalog_working_copy,
+)
 
 
 class HazardLibraryTemplateAssessmentDialog(QDialog):
@@ -87,7 +90,13 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
         layout.addWidget(buttons)
 
         if assessment is not None:
-            group_ids = hazard_library_template_assessment_service.get_group_ids(assessment.id)
+            store = find_catalog_working_copy(self)
+            if store is not None:
+                group_ids = store.get_group_ids(assessment.id)
+            else:
+                group_ids = hazard_library_template_assessment_service.get_group_ids(
+                    assessment.id,
+                )
             if not group_ids and assessment.exposed_group_id:
                 group_ids = [assessment.exposed_group_id]
             self.exposed_groups.set_group_ids(group_ids)
@@ -139,18 +148,37 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
             return
 
         try:
+            store = find_catalog_working_copy(self)
             if self.assessment is None:
-                self.saved_assessment = hazard_library_template_assessment_service.create_assessment(
+                if store is not None:
+                    self.saved_assessment = store.create_assessment(
+                        template_id=self.template_id,
+                        template_event_id=self.template_event_id,
+                        **data,
+                    )
+                else:
+                    self.saved_assessment = (
+                        hazard_library_template_assessment_service.create_assessment(
+                            template_id=self.template_id,
+                            template_event_id=self.template_event_id,
+                            **data,
+                        )
+                    )
+            elif store is not None:
+                self.saved_assessment = store.update_assessment(
+                    self.assessment.id,
                     template_id=self.template_id,
                     template_event_id=self.template_event_id,
                     **data,
                 )
             else:
-                self.saved_assessment = hazard_library_template_assessment_service.update_assessment(
-                    self.assessment.id,
-                    template_id=self.template_id,
-                    template_event_id=self.template_event_id,
-                    **data,
+                self.saved_assessment = (
+                    hazard_library_template_assessment_service.update_assessment(
+                        self.assessment.id,
+                        template_id=self.template_id,
+                        template_event_id=self.template_event_id,
+                        **data,
+                    )
                 )
         except HazardLibraryTemplateAssessmentError as error:
             QMessageBox.warning(self, HAZARD_LIBRARY_ASSESSMENT_DIALOG_TITLE, str(error))

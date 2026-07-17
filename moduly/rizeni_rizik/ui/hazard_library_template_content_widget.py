@@ -52,6 +52,10 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_event_service import (
     HazardLibraryTemplateEventError,
     hazard_library_template_event_service,
 )
+from moduly.rizeni_rizik.sluzby.hazard_library_template_working_copy import (
+    HazardLibraryTemplateWorkingCopy,
+    find_catalog_working_copy,
+)
 from moduly.rizeni_rizik.ui.hazard_library_template_assessments_dialog import (
     HazardLibraryTemplateAssessmentsDialog,
 )
@@ -71,6 +75,7 @@ class HazardLibraryTemplateContentWidget(QWidget):
 
         self._template_id: int | None = None
         self._read_only = False
+        self._content_store: HazardLibraryTemplateWorkingCopy | None = None
         self._selected_event_id: int | None = None
         self._selected_legal_link_id: int | None = None
 
@@ -180,13 +185,20 @@ class HazardLibraryTemplateContentWidget(QWidget):
         template_id: int | None,
         *,
         read_only: bool,
+        content_store: HazardLibraryTemplateWorkingCopy | None = None,
     ) -> None:
         self._template_id = template_id
         self._read_only = read_only
+        self._content_store = content_store
         self._selected_event_id = None
         self._selected_legal_link_id = None
         self._update_actions_enabled()
         self.refresh()
+
+    def _store(self) -> HazardLibraryTemplateWorkingCopy | None:
+        if self._content_store is not None:
+            return self._content_store
+        return find_catalog_working_copy(self)
 
     def refresh(self) -> None:
         self._load_events_table()
@@ -241,7 +253,11 @@ class HazardLibraryTemplateContentWidget(QWidget):
             )
             return
         try:
-            hazard_library_template_legal_link_service.activate_link(link.id)
+            store = self._store()
+            if store is not None:
+                store.activate_legal_link(link.id)
+            else:
+                hazard_library_template_legal_link_service.activate_link(link.id)
         except HazardLibraryTemplateLegalLinkError as error:
             QMessageBox.warning(self, HAZARD_LIBRARY_LEGAL_LINK_DIALOG_TITLE, str(error))
             return
@@ -266,7 +282,11 @@ class HazardLibraryTemplateContentWidget(QWidget):
                 "Právní vazba je již neaktivní.",
             )
             return
-        hazard_library_template_legal_link_service.deactivate_link(link.id)
+        store = self._store()
+        if store is not None:
+            store.deactivate_legal_link(link.id)
+        else:
+            hazard_library_template_legal_link_service.deactivate_link(link.id)
         self._notify_content_changed()
         self.refresh()
 
@@ -339,7 +359,11 @@ class HazardLibraryTemplateContentWidget(QWidget):
             )
             return
         try:
-            hazard_library_template_event_service.activate_event(event.id)
+            store = self._store()
+            if store is not None:
+                store.activate_event(event.id)
+            else:
+                hazard_library_template_event_service.activate_event(event.id)
         except HazardLibraryTemplateEventError as error:
             QMessageBox.warning(self, HAZARD_LIBRARY_EVENT_DIALOG_TITLE, str(error))
             return
@@ -364,7 +388,11 @@ class HazardLibraryTemplateContentWidget(QWidget):
                 "Nežádoucí událost je již neaktivní.",
             )
             return
-        hazard_library_template_event_service.deactivate_event(event.id)
+        store = self._store()
+        if store is not None:
+            store.deactivate_event(event.id)
+        else:
+            hazard_library_template_event_service.deactivate_event(event.id)
         self._notify_content_changed()
         self.refresh()
 
@@ -407,13 +435,18 @@ class HazardLibraryTemplateContentWidget(QWidget):
             self._update_actions_enabled()
             return
 
-        assessment_counts = hazard_library_template_assessment_service.count_active_by_events(
-            self._template_id
-        )
-        events = hazard_library_template_event_service.get_for_template(
-            self._template_id,
-            include_inactive=True,
-        )
+        store = self._store()
+        if store is not None:
+            assessment_counts = store.count_active_assessments_by_events()
+            events = store.get_events(include_inactive=True)
+        else:
+            assessment_counts = hazard_library_template_assessment_service.count_active_by_events(
+                self._template_id
+            )
+            events = hazard_library_template_event_service.get_for_template(
+                self._template_id,
+                include_inactive=True,
+            )
         self.events_table.setRowCount(len(events))
         selected_row = -1
         for row_index, event in enumerate(events):
@@ -491,6 +524,9 @@ class HazardLibraryTemplateContentWidget(QWidget):
         id_item = self.events_table.item(selected[0].row(), HAZARD_LIBRARY_TEMPLATE_EVENT_COL_ID)
         if id_item is None:
             return None
+        store = self._store()
+        if store is not None:
+            return store.get_event(int(id_item.text()))
         return hazard_library_template_event_service.get_by_id(int(id_item.text()))
 
     def _on_legal_link_selection_changed(self) -> None:
@@ -508,6 +544,9 @@ class HazardLibraryTemplateContentWidget(QWidget):
         )
         if id_item is None:
             return None
+        store = self._store()
+        if store is not None:
+            return store.get_legal_link(int(id_item.text()))
         return hazard_library_template_legal_link_service.get_by_id(int(id_item.text()))
 
     def _load_legal_links_table(self) -> None:
@@ -519,10 +558,14 @@ class HazardLibraryTemplateContentWidget(QWidget):
             self._update_actions_enabled()
             return
 
-        links = hazard_library_template_legal_link_service.get_for_template(
-            self._template_id,
-            include_inactive=True,
-        )
+        store = self._store()
+        if store is not None:
+            links = store.get_legal_links(include_inactive=True)
+        else:
+            links = hazard_library_template_legal_link_service.get_for_template(
+                self._template_id,
+                include_inactive=True,
+            )
         self.legal_links_table.setRowCount(len(links))
         selected_row = -1
         for row_index, link in enumerate(links):

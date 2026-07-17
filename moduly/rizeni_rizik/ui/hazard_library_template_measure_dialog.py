@@ -21,6 +21,9 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_required_measure_service
     HazardLibraryTemplateRequiredMeasureError,
     hazard_library_template_required_measure_service,
 )
+from moduly.rizeni_rizik.sluzby.hazard_library_template_working_copy import (
+    find_catalog_working_copy,
+)
 
 
 class HazardLibraryTemplateMeasureDialog(QDialog):
@@ -94,9 +97,24 @@ class HazardLibraryTemplateMeasureDialog(QDialog):
             else HAZARD_LIBRARY_REQUIRED_MEASURE_DIALOG_TITLE
         )
         try:
+            store = find_catalog_working_copy(self)
             if self.measure_type == "existing":
                 if self.measure is None:
-                    hazard_library_template_existing_measure_service.create_measure(
+                    if store is not None:
+                        store.create_existing_measure(
+                            template_id=self.template_id,
+                            template_assessment_id=self.template_assessment_id,
+                            **data,
+                        )
+                    else:
+                        hazard_library_template_existing_measure_service.create_measure(
+                            template_id=self.template_id,
+                            template_assessment_id=self.template_assessment_id,
+                            **data,
+                        )
+                elif store is not None:
+                    store.update_existing_measure(
+                        self.measure.id,
                         template_id=self.template_id,
                         template_assessment_id=self.template_assessment_id,
                         **data,
@@ -109,7 +127,21 @@ class HazardLibraryTemplateMeasureDialog(QDialog):
                         **data,
                     )
             elif self.measure is None:
-                hazard_library_template_required_measure_service.create_measure(
+                if store is not None:
+                    store.create_required_measure(
+                        template_id=self.template_id,
+                        template_assessment_id=self.template_assessment_id,
+                        **data,
+                    )
+                else:
+                    hazard_library_template_required_measure_service.create_measure(
+                        template_id=self.template_id,
+                        template_assessment_id=self.template_assessment_id,
+                        **data,
+                    )
+            elif store is not None:
+                store.update_required_measure(
+                    self.measure.id,
                     template_id=self.template_id,
                     template_assessment_id=self.template_assessment_id,
                     **data,

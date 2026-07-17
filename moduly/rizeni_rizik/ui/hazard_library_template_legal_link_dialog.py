@@ -21,6 +21,9 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_legal_link_service impor
     HazardLibraryTemplateLegalLinkError,
     hazard_library_template_legal_link_service,
 )
+from moduly.rizeni_rizik.sluzby.hazard_library_template_working_copy import (
+    find_catalog_working_copy,
+)
 
 
 class HazardLibraryTemplateLegalLinkDialog(QDialog):
@@ -125,9 +128,26 @@ class HazardLibraryTemplateLegalLinkDialog(QDialog):
             return
 
         try:
+            store = find_catalog_working_copy(self)
             # R20e.1: pouze předpis; proces se dopočítá přes požadavky předpisu.
             if self.link is None:
-                hazard_library_template_legal_link_service.create_link(
+                if store is not None:
+                    store.create_legal_link(
+                        template_id=self.template_id,
+                        legal_document_id=document_id,
+                        note=self.note.toPlainText().strip(),
+                        active=self.active_checkbox.isChecked(),
+                    )
+                else:
+                    hazard_library_template_legal_link_service.create_link(
+                        template_id=self.template_id,
+                        legal_document_id=document_id,
+                        note=self.note.toPlainText().strip(),
+                        active=self.active_checkbox.isChecked(),
+                    )
+            elif store is not None:
+                store.update_legal_link(
+                    self.link.id,
                     template_id=self.template_id,
                     legal_document_id=document_id,
                     note=self.note.toPlainText().strip(),

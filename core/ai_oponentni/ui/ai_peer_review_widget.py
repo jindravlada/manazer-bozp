@@ -386,6 +386,7 @@ class AiPeerReviewWidget(QWidget):
         export_dialog_config: AiPeerReviewExportDialogConfig | None = None,
         resolve_exposed_groups: bool = True,
         evidence_only_import: bool = False,
+        package_incorporate_handler=None,
     ):
         super().__init__(parent)
         self._provider = provider
@@ -396,6 +397,7 @@ class AiPeerReviewWidget(QWidget):
         self._export_dialog_config = export_dialog_config
         self._resolve_exposed_groups = resolve_exposed_groups
         self._evidence_only_import = evidence_only_import
+        self._package_incorporate_handler = package_incorporate_handler
         self._uses_proposal_packages = ai_peer_review_service.provider_uses_proposal_packages(
             provider,
         )
@@ -1313,7 +1315,12 @@ class AiPeerReviewWidget(QWidget):
         overrides: dict[int, int] = {}
         while True:
             try:
-                result = hazard_catalog_package_incorporate_service.incorporate_package(
+                incorporate = (
+                    self._package_incorporate_handler
+                    if self._package_incorporate_handler is not None
+                    else hazard_catalog_package_incorporate_service.incorporate_package
+                )
+                result = incorporate(
                     template_id=self._source_id,
                     package_record_id=record_id,
                     group_assessment_overrides=overrides or None,
@@ -1335,12 +1342,20 @@ class AiPeerReviewWidget(QWidget):
         self.refresh()
         if self._on_catalog_incorporated is not None:
             self._on_catalog_incorporated(result.new_revision_number)
+        if result.new_revision_number:
+            success_text = CATALOG_AI_PACKAGE_INCORPORATE_SUCCESS.format(
+                revision=result.new_revision_number,
+            )
+        else:
+            from moduly.rizeni_rizik.constants_library import (
+                CATALOG_AI_PACKAGE_INCORPORATE_PENDING_SAVE,
+            )
+
+            success_text = CATALOG_AI_PACKAGE_INCORPORATE_PENDING_SAVE
         QMessageBox.information(
             self,
             AI_PEER_REVIEW_DIALOG_TITLE,
-            CATALOG_AI_PACKAGE_INCORPORATE_SUCCESS.format(
-                revision=result.new_revision_number,
-            ),
+            success_text,
         )
 
     def _reject_selected_package(self) -> None:
