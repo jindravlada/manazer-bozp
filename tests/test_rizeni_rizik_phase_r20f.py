@@ -274,6 +274,7 @@ class RizeniRizikPhaseR20fTestCase(unittest.TestCase):
             AiProposalPackageLegalLink,
         )
         from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_NARIZENI_VLADY
+        from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
         from moduly.pravni_pozadavky.sluzby.legal_document_service import (
             legal_document_service,
         )
@@ -283,12 +284,20 @@ class RizeniRizikPhaseR20fTestCase(unittest.TestCase):
         from moduly.rizeni_rizik.ui.hazard_catalog_legal_document_pick_dialog import (
             HazardCatalogLegalDocumentPickDialog,
         )
+        from sqlalchemy import delete
+
+        from core.database.session import SessionLocal
+
+        with SessionLocal() as session:
+            session.execute(delete(LegalDocument))
+            session.commit()
 
         document = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
+            number="378",
+            year=2001,
             title="Nařízení vlády č. 378/2001 Sb.",
             short_title="NV 378/2001",
-            number="378/2001",
-            document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
         )
         package = AiProposalPackage(
             package_id="PACKAGE-LEGAL",
@@ -326,6 +335,7 @@ class RizeniRizikPhaseR20fTestCase(unittest.TestCase):
             AiProposalPackageLegalLink,
         )
         from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_NARIZENI_VLADY
+        from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
         from moduly.pravni_pozadavky.sluzby.legal_document_service import (
             legal_document_service,
         )
@@ -336,12 +346,20 @@ class RizeniRizikPhaseR20fTestCase(unittest.TestCase):
         from moduly.rizeni_rizik.ui.hazard_catalog_legal_document_pick_dialog import (
             HazardCatalogLegalDocumentPickDialog,
         )
+        from sqlalchemy import delete
+
+        from core.database.session import SessionLocal
+
+        with SessionLocal() as session:
+            session.execute(delete(LegalDocument))
+            session.commit()
 
         document = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
+            number="378",
+            year=2001,
             title="Nařízení vlády č. 378/2001 Sb.",
             short_title="NV 378/2001",
-            number="378/2001",
-            document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
         )
         self.assertEqual(
             resolve_exact_legal_document_id("NV 378/2001 Sb."),
