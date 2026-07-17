@@ -59,6 +59,18 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_event_service import (
     hazard_library_template_event_service,
 )
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
+from moduly.rizeni_rizik.sluzby.hazard_catalog_legal_requirement_resolver import (
+    LegalDocumentMatchKind,
+    hazard_catalog_legal_document_resolver,
+)
+
+
+def resolve_exact_legal_document_id(reference: str) -> int | None:
+    """Vrátí ID předpisu při jednoznačné shodě resolveru, jinak None."""
+    match = hazard_catalog_legal_document_resolver.resolve(reference or "")
+    if match.kind == LegalDocumentMatchKind.EXACT and match.document_id is not None:
+        return int(match.document_id)
+    return None
 
 
 def resolve_target_event_name(
@@ -442,6 +454,10 @@ class HazardCatalogAiPackageEditDialog(QDialog):
         self._selected_legal_document_id: int | None = None
         if package.legal_links:
             self._selected_legal_document_id = package.legal_links[0].legal_document_id
+        if self._selected_legal_document_id is None and package.legal_links:
+            self._selected_legal_document_id = resolve_exact_legal_document_id(
+                package.legal_links[0].reference or "",
+            )
 
         map_row = QHBoxLayout()
         self.legal_mapping_label = QLabel()
@@ -514,10 +530,14 @@ class HazardCatalogAiPackageEditDialog(QDialog):
             HazardCatalogLegalDocumentPickDialog,
         )
 
+        reference = self._first_legal_reference()
+        initial_id = self._selected_legal_document_id
+        if initial_id is None:
+            initial_id = resolve_exact_legal_document_id(reference)
         dialog = HazardCatalogLegalDocumentPickDialog(
             self,
-            ai_reference=self._first_legal_reference(),
-            initial_document_id=self._selected_legal_document_id,
+            ai_reference=reference,
+            initial_document_id=initial_id,
         )
         if not dialog.exec():
             return
