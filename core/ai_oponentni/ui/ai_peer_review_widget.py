@@ -387,6 +387,7 @@ class AiPeerReviewWidget(QWidget):
         resolve_exposed_groups: bool = True,
         evidence_only_import: bool = False,
         package_incorporate_handler=None,
+        package_session=None,
     ):
         super().__init__(parent)
         self._provider = provider
@@ -398,6 +399,7 @@ class AiPeerReviewWidget(QWidget):
         self._resolve_exposed_groups = resolve_exposed_groups
         self._evidence_only_import = evidence_only_import
         self._package_incorporate_handler = package_incorporate_handler
+        self._package_session = package_session
         self._uses_proposal_packages = ai_peer_review_service.provider_uses_proposal_packages(
             provider,
         )
@@ -543,6 +545,12 @@ class AiPeerReviewWidget(QWidget):
         self.export_btn.clicked.connect(self.export_package)
         self.import_btn.clicked.connect(self.import_response)
         self.set_source(None)
+
+    def set_package_session(self, package_session) -> None:
+        """Nastaví CatalogEditorSession pro odložené AI balíky (katalog)."""
+        self._package_session = package_session
+        if self._source_id is not None:
+            self._load_proposals_table()
 
     def set_source(self, source_id: int | None) -> None:
         self._source_id = source_id
@@ -732,17 +740,30 @@ class AiPeerReviewWidget(QWidget):
                 )
                 return False
             try:
-                updated = ai_peer_review_service.finalize_package_import(
-                    provider=self._provider,
-                    source_id=self._source_id,
-                    review_id=review.id,
-                    response_text=response_text,
-                    ai_model=ai_model,
-                    accepted=list(parse_result.packages),
-                    rejected=[],
-                    loaded_packages_count=len(parse_result.packages),
-                )
+                if self._package_session is not None:
+                    self._package_session.import_packages(
+                        review_id=review.id,
+                        source_type=self._provider.source_type,
+                        packages=list(parse_result.packages),
+                        response_text=response_text,
+                        ai_model=ai_model,
+                    )
+                    updated = review
+                else:
+                    updated = ai_peer_review_service.finalize_package_import(
+                        provider=self._provider,
+                        source_id=self._source_id,
+                        review_id=review.id,
+                        response_text=response_text,
+                        ai_model=ai_model,
+                        accepted=list(parse_result.packages),
+                        rejected=[],
+                        loaded_packages_count=len(parse_result.packages),
+                    )
             except AiPeerReviewError as error:
+                QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+                return False
+            except Exception as error:
                 QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
                 return False
         else:
@@ -795,6 +816,8 @@ class AiPeerReviewWidget(QWidget):
                     self.proposals_table.scrollToItem(first_item)
         if self._on_proposals_applied is not None:
             self._on_proposals_applied()
+        if self._package_session is not None and self._on_catalog_incorporated is not None:
+            self._on_catalog_incorporated(None)
 
         QMessageBox.information(
             self,
@@ -891,6 +914,77 @@ class AiPeerReviewWidget(QWidget):
             return
 
         package_records = ai_peer_review_service.get_packages_for_review(review_id)
+        if self._package_session is not None and self._uses_proposal_packages:
+            self._configure_package_proposals_table()
+            display_items = self._package_session.list_pending_packages(review_id)
+            self.proposals_table.setRowCount(len(display_items))
+            for row_index, item in enumerate(display_items):
+                package = item.package
+                type_item = QTableWidgetItem(
+                    AI_PEER_REVIEW_PACKAGE_TYPE_LABELS.get(
+                        package.package_type,
+                        package.package_type,
+                    ),
+                )
+                type_item.setData(Qt.ItemDataRole.UserRole, item.local_id)
+                resolved_name = None
+                if package.target_event_export_id:
+                    from moduly.rizeni_rizik.ui.hazard_catalog_ai_package_edit_dialog import (
+                        resolve_target_event_name,
+                    )
+
+                    resolved_name = resolve_target_event_name(
+                        package_record_id=item.db_id,
+                        target_event_export_id=package.target_event_export_id,
+                        review_id=item.review_id,
+                    )
+                self.proposals_table.setItem(row_index, 0, type_item)
+                self.proposals_table.setItem(
+                    row_index,
+                    1,
+                    QTableWidgetItem(
+                        package.display_event_label(resolved_target_name=resolved_name),
+                    ),
+                )
+                self.proposals_table.setItem(
+                    row_index,
+                    2,
+                    QTableWidgetItem(str(package.assessment_count)),
+                )
+                self.proposals_table.setItem(
+                    row_index,
+                    3,
+                    QTableWidgetItem(str(package.existing_measure_count)),
+                )
+                self.proposals_table.setItem(
+                    row_index,
+                    4,
+                    QTableWidgetItem(str(package.required_measure_count)),
+                )
+                self.proposals_table.setItem(
+                    row_index,
+                    5,
+                    QTableWidgetItem(str(package.legal_link_count)),
+                )
+                self.proposals_table.setItem(
+                    row_index,
+                    6,
+                    QTableWidgetItem(package.reasoning or "—"),
+                )
+                self.proposals_table.setItem(
+                    row_index,
+                    7,
+                    QTableWidgetItem(
+                        PACKAGE_STATUS_LABELS.get(
+                            PACKAGE_STATUS_PENDING,
+                            PACKAGE_STATUS_PENDING,
+                        ),
+                    ),
+                )
+            configure_table_columns(self.proposals_table, "ai_peer_review_proposals")
+            self._load_package_detail()
+            return
+
         if package_records:
             self._configure_package_proposals_table()
             display_records = package_records
@@ -1221,11 +1315,24 @@ class AiPeerReviewWidget(QWidget):
         if record_id is None:
             self.package_detail.setPlainText(CATALOG_AI_PACKAGE_EMPTY_DETAIL)
             return
-        record = ai_peer_review_service.package_repository.get_by_id(record_id)
-        if record is None:
-            self.package_detail.setPlainText(CATALOG_AI_PACKAGE_EMPTY_DETAIL)
-            return
-        package = ai_peer_review_service.package_repository.package_from_record(record)
+
+        package = None
+        review_id = None
+        if self._package_session is not None:
+            item = self._package_session.get_package(record_id)
+            if item is None:
+                self.package_detail.setPlainText(CATALOG_AI_PACKAGE_EMPTY_DETAIL)
+                return
+            package = item.package
+            review_id = item.review_id
+        else:
+            record = ai_peer_review_service.package_repository.get_by_id(record_id)
+            if record is None:
+                self.package_detail.setPlainText(CATALOG_AI_PACKAGE_EMPTY_DETAIL)
+                return
+            package = ai_peer_review_service.package_repository.package_from_record(record)
+            review_id = record.ai_peer_review_id
+
         resolved_name = None
         if package.target_event_export_id:
             from moduly.rizeni_rizik.ui.hazard_catalog_ai_package_edit_dialog import (
@@ -1233,8 +1340,9 @@ class AiPeerReviewWidget(QWidget):
             )
 
             resolved_name = resolve_target_event_name(
-                package_record_id=record.id,
+                package_record_id=record_id if record_id > 0 else None,
                 target_event_export_id=package.target_event_export_id,
+                review_id=review_id,
             )
         self.package_detail.setPlainText(
             format_proposal_package_detail(
@@ -1261,15 +1369,41 @@ class AiPeerReviewWidget(QWidget):
                 CATALOG_AI_PACKAGE_SELECT_ONE,
             )
             return
-        record = ai_peer_review_service.package_repository.get_by_id(record_id)
-        if record is None:
-            return
-        package = ai_peer_review_service.package_repository.package_from_record(record)
-        dialog = HazardCatalogAiPackageEditDialog(
-            self,
-            package=package,
-            package_record_id=record_id,
-        )
+
+        if self._package_session is not None:
+            item = self._package_session.get_package(record_id)
+            if item is None:
+                QMessageBox.warning(
+                    self,
+                    AI_PEER_REVIEW_DIALOG_TITLE,
+                    CATALOG_AI_PACKAGE_SELECT_ONE,
+                )
+                self._load_proposals_table()
+                return
+            package = item.package
+            dialog = HazardCatalogAiPackageEditDialog(
+                self,
+                package=package,
+                package_record_id=item.db_id or 0,
+                review_id=item.review_id,
+            )
+        else:
+            record = ai_peer_review_service.package_repository.get_by_id(record_id)
+            if record is None:
+                QMessageBox.warning(
+                    self,
+                    AI_PEER_REVIEW_DIALOG_TITLE,
+                    CATALOG_AI_PACKAGE_SELECT_ONE,
+                )
+                self._load_proposals_table()
+                return
+            package = ai_peer_review_service.package_repository.package_from_record(record)
+            dialog = HazardCatalogAiPackageEditDialog(
+                self,
+                package=package,
+                package_record_id=record_id,
+            )
+
         from core.widgets.dialog_utils import exec_maximized
 
         if not exec_maximized(dialog):
@@ -1278,16 +1412,21 @@ class AiPeerReviewWidget(QWidget):
         if updated is None:
             return
         try:
-            hazard_catalog_package_incorporate_service.update_package_payload(
-                record_id,
-                updated,
-            )
-        except HazardCatalogPackageIncorporateError as error:
+            if self._package_session is not None:
+                self._package_session.update_package(record_id, updated)
+            else:
+                hazard_catalog_package_incorporate_service.update_package_payload(
+                    record_id,
+                    updated,
+                )
+        except (HazardCatalogPackageIncorporateError, ValueError) as error:
             QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
             return
         self._load_proposals_table()
         self._select_proposal_row(record_id)
         self._load_package_detail()
+        if self._package_session is not None and self._on_catalog_incorporated is not None:
+            self._on_catalog_incorporated(None)
 
     def _incorporate_selected_package(self) -> None:
         from moduly.rizeni_rizik.constants_library import (
@@ -1375,7 +1514,10 @@ class AiPeerReviewWidget(QWidget):
                 CATALOG_AI_PACKAGE_SELECT_ONE,
             )
             return
-        if not hazard_catalog_package_incorporate_service.reject_package(record_id):
+        if self._package_session is not None:
+            if not self._package_session.reject_package(record_id):
+                return
+        elif not hazard_catalog_package_incorporate_service.reject_package(record_id):
             return
         self.refresh()
         if self._on_catalog_incorporated is not None:

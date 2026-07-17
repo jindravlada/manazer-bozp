@@ -110,16 +110,22 @@ def resolve_target_event_name(
     *,
     package_record_id: int | None,
     target_event_export_id: str | None,
+    review_id: int | None = None,
 ) -> str | None:
     """Vrátí lidský název cílové události pro EVENT-… z export_id_map oponentury."""
     export_id = (target_event_export_id or "").strip()
-    if not export_id or package_record_id is None:
+    if not export_id:
         return None
-    record = AiProposalPackageRepository().get_by_id(package_record_id)
-    if record is None:
+    resolved_review_id = review_id
+    if resolved_review_id is None and package_record_id is not None:
+        record = AiProposalPackageRepository().get_by_id(package_record_id)
+        if record is None:
+            return None
+        resolved_review_id = record.ai_peer_review_id
+    if resolved_review_id is None:
         return None
     export_map = hazard_catalog_package_incorporate_service.get_export_id_map(
-        record.ai_peer_review_id,
+        resolved_review_id,
     )
     payload = export_map.get(export_id)
     if not isinstance(payload, dict) or payload.get("kind") != "event":
@@ -347,6 +353,7 @@ class HazardCatalogAiPackageEditDialog(QDialog):
         package: AiProposalPackage,
         package_record_id: int,
         target_event_name: str | None = None,
+        review_id: int | None = None,
     ):
         super().__init__(parent)
         self._package = package
@@ -356,8 +363,9 @@ class HazardCatalogAiPackageEditDialog(QDialog):
         self._target_event_name = target_event_name
         if self._target_event_name is None and self._target_event_export_id:
             self._target_event_name = resolve_target_event_name(
-                package_record_id=package_record_id,
+                package_record_id=package_record_id if package_record_id > 0 else None,
                 target_event_export_id=self._target_event_export_id,
+                review_id=review_id,
             )
 
         self.setWindowTitle(CATALOG_AI_PACKAGE_EDIT_DIALOG_TITLE)

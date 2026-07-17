@@ -44,15 +44,13 @@ from moduly.rizeni_rizik.constants_library import (
     HAZARD_LIBRARY_UNSAVED_SAVE,
     HAZARD_LIBRARY_UNSAVED_STAY,
 )
+from moduly.rizeni_rizik.sluzby.catalog_editor_session import CatalogEditorSession
 from moduly.rizeni_rizik.sluzby.hazard_catalog_source_peer_review_provider import (
     hazard_catalog_source_peer_review_provider,
 )
 from moduly.rizeni_rizik.sluzby.hazard_library_template_service import (
     HazardLibraryTemplateError,
     hazard_library_template_service,
-)
-from moduly.rizeni_rizik.sluzby.hazard_library_template_working_copy import (
-    HazardLibraryTemplateWorkingCopy,
 )
 from moduly.rizeni_rizik.ui.hazard_library_template_content_widget import (
     HazardLibraryTemplateContentWidget,
@@ -67,7 +65,7 @@ class HazardLibraryTemplateDialog(QDialog):
         super().__init__(parent)
         self.template = template
         self.saved_template = template
-        self._content_store: HazardLibraryTemplateWorkingCopy | None = None
+        self._editor_session: CatalogEditorSession | None = None
         self._basics_dirty = False
         self._closing = False
 
@@ -155,7 +153,8 @@ class HazardLibraryTemplateDialog(QDialog):
 
         if template is not None:
             self._load_template(template)
-            self._content_store = HazardLibraryTemplateWorkingCopy.load(template.id)
+            self._editor_session = CatalogEditorSession.load(template.id)
+            self.ai_peer_review_widget.set_package_session(self._editor_session)
         self._sync_content_context()
         self._update_content_tab_enabled()
         self._sync_ai_peer_review_context()
@@ -163,6 +162,27 @@ class HazardLibraryTemplateDialog(QDialog):
         self._sync_history_context()
         self._update_history_tab_enabled()
         self._update_save_enabled()
+
+    @property
+    def _content_store(self):
+        """Kompatibilita pro content widget / find_catalog_working_copy."""
+        if self._editor_session is None:
+            return None
+        return self._editor_session.content
+
+    @_content_store.setter
+    def _content_store(self, value) -> None:
+        # Zachováno kvůli starším testům, které nastavují _content_store přímo.
+        if value is None:
+            self._editor_session = None
+            self.ai_peer_review_widget.set_package_session(None)
+            return
+        if self._editor_session is None:
+            self._editor_session = CatalogEditorSession(value.template_id, value)
+            self._editor_session._load_pending_packages_from_db()
+            self.ai_peer_review_widget.set_package_session(self._editor_session)
+        else:
+            self._editor_session.content = value
 
     def _load_template(self, template) -> None:
         with QSignalBlocker(self.name), QSignalBlocker(self.category), QSignalBlocker(
@@ -191,8 +211,8 @@ class HazardLibraryTemplateDialog(QDialog):
         }
 
     def is_dirty(self) -> bool:
-        content_dirty = self._content_store is not None and self._content_store.is_dirty
-        return self._basics_dirty or content_dirty
+        session_dirty = self._editor_session is not None and self._editor_session.is_dirty
+        return self._basics_dirty or session_dirty
 
     def _update_save_enabled(self) -> None:
         if self.save_button is not None:
@@ -210,16 +230,16 @@ class HazardLibraryTemplateDialog(QDialog):
         try:
             if self.template is None:
                 self.template = hazard_library_template_service.create_template(**data)
-                self._content_store = HazardLibraryTemplateWorkingCopy.load(self.template.id)
+                self._editor_session = CatalogEditorSession.load(self.template.id)
+                self.ai_peer_review_widget.set_package_session(self._editor_session)
                 self._basics_dirty = False
             else:
-                if self._content_store is None:
-                    self._content_store = HazardLibraryTemplateWorkingCopy.load(
-                        self.template.id,
-                    )
-                content_dirty = self._content_store.is_dirty
-                if content_dirty:
-                    updated = self._content_store.commit(
+                if self._editor_session is None:
+                    self._editor_session = CatalogEditorSession.load(self.template.id)
+                    self.ai_peer_review_widget.set_package_session(self._editor_session)
+                session_dirty = self._editor_session.is_dirty
+                if session_dirty:
+                    updated = self._editor_session.commit(
                         basics=data if self._basics_dirty else None,
                         bump_revision=True,
                     )
@@ -256,7 +276,8 @@ class HazardLibraryTemplateDialog(QDialog):
         return True
 
     def _discard_working_copy(self) -> None:
-        self._content_store = None
+        self._editor_session = None
+        self.ai_peer_review_widget.set_package_session(None)
         self._basics_dirty = False
 
     def _on_cancel_clicked(self) -> None:
@@ -315,6 +336,7 @@ class HazardLibraryTemplateDialog(QDialog):
 
     def _sync_ai_peer_review_context(self) -> None:
         template_id = self.template.id if self.template is not None else None
+        self.ai_peer_review_widget.set_package_session(self._editor_session)
         self.ai_peer_review_widget.set_source(template_id)
 
     def _incorporate_package_into_working_copy(
@@ -328,13 +350,15 @@ class HazardLibraryTemplateDialog(QDialog):
             hazard_catalog_package_incorporate_service,
         )
 
-        if self._content_store is None:
-            self._content_store = HazardLibraryTemplateWorkingCopy.load(template_id)
+        if self._editor_session is None:
+            self._editor_session = CatalogEditorSession.load(template_id)
+            self.ai_peer_review_widget.set_package_session(self._editor_session)
         return hazard_catalog_package_incorporate_service.incorporate_package_into_working_copy(
-            self._content_store,
+            self._editor_session.content,
             template_id=template_id,
             package_record_id=package_record_id,
             group_assessment_overrides=group_assessment_overrides,
+            editor_session=self._editor_session,
         )
 
     def _on_catalog_proposals_incorporated(self, new_revision_number: int | None) -> None:

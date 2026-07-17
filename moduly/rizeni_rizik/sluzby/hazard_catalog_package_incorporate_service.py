@@ -747,8 +747,15 @@ class HazardCatalogPackageIncorporateService:
         template_id: int,
         package_record_id: int,
         group_assessment_overrides: dict[int, int] | None = None,
+        package: AiProposalPackage | None = None,
+        review_id: int | None = None,
+        editor_session=None,
     ) -> CatalogPackageIncorporateResult:
         """Zapracuje balík pouze do pracovní kopie; stav balíku až při Uložit."""
+        from moduly.rizeni_rizik.sluzby.catalog_editor_session import (
+            SESSION_PACKAGE_PENDING,
+            CatalogEditorSession,
+        )
         from moduly.rizeni_rizik.sluzby.hazard_library_template_working_copy import (
             WcLegalLink,
         )
@@ -759,28 +766,49 @@ class HazardCatalogPackageIncorporateService:
         if not template.active:
             raise HazardCatalogPackageIncorporateError(CATALOG_INCORPORATE_ERROR_SOURCE_INACTIVE)
 
-        record = self.package_repository.get_by_id(package_record_id)
-        if record is None:
-            raise HazardCatalogPackageIncorporateError("Návrhový balík neexistuje.")
-        if record.status != PACKAGE_STATUS_PENDING:
-            raise HazardCatalogPackageIncorporateError(
-                "Zapracovat lze pouze balík čekající na odborné posouzení.",
-            )
-        if record.source_id != template_id:
-            raise HazardCatalogPackageIncorporateError(CATALOG_INCORPORATE_ERROR_REVIEW_MISMATCH)
-        if package_record_id in working_copy.pending_package_ids:
-            raise HazardCatalogPackageIncorporateError(
-                "Tento balík je již zapracován v pracovní kopii. Uložte změny.",
-            )
+        session_pkg = None
+        if editor_session is not None:
+            if not isinstance(editor_session, CatalogEditorSession):
+                raise HazardCatalogPackageIncorporateError("Neplatná editorová session.")
+            session_pkg = editor_session.get_package(package_record_id)
+            if session_pkg is None:
+                raise HazardCatalogPackageIncorporateError("Návrhový balík neexistuje.")
+            if session_pkg.session_status != SESSION_PACKAGE_PENDING:
+                raise HazardCatalogPackageIncorporateError(
+                    "Zapracovat lze pouze balík čekající na odborné posouzení.",
+                )
+            if session_pkg.source_id != template_id:
+                raise HazardCatalogPackageIncorporateError(
+                    CATALOG_INCORPORATE_ERROR_REVIEW_MISMATCH,
+                )
+            resolved_package = session_pkg.package
+            resolved_review_id = session_pkg.review_id
+        else:
+            record = self.package_repository.get_by_id(package_record_id)
+            if record is None:
+                raise HazardCatalogPackageIncorporateError("Návrhový balík neexistuje.")
+            if record.status != PACKAGE_STATUS_PENDING:
+                raise HazardCatalogPackageIncorporateError(
+                    "Zapracovat lze pouze balík čekající na odborné posouzení.",
+                )
+            if record.source_id != template_id:
+                raise HazardCatalogPackageIncorporateError(
+                    CATALOG_INCORPORATE_ERROR_REVIEW_MISMATCH,
+                )
+            if package_record_id in working_copy.pending_package_ids:
+                raise HazardCatalogPackageIncorporateError(
+                    "Tento balík je již zapracován v pracovní kopii. Uložte změny.",
+                )
+            resolved_package = package or self.package_repository.package_from_record(record)
+            resolved_review_id = review_id or record.ai_peer_review_id
 
-        review = self.review_repository.get_by_id(record.ai_peer_review_id)
+        review = self.review_repository.get_by_id(resolved_review_id)
         if review is None:
             raise HazardCatalogPackageIncorporateError(CATALOG_INCORPORATE_ERROR_REVIEW_MISSING)
         if review.source_id != template_id:
             raise HazardCatalogPackageIncorporateError(CATALOG_INCORPORATE_ERROR_REVIEW_MISMATCH)
 
-        package = self.package_repository.package_from_record(record)
-        export_id_map = self.get_export_id_map(record.ai_peer_review_id)
+        export_id_map = self.get_export_id_map(resolved_review_id)
         overrides = {
             int(group_id): int(assessment_id)
             for group_id, assessment_id in (group_assessment_overrides or {}).items()
@@ -795,18 +823,18 @@ class HazardCatalogPackageIncorporateService:
 
         event_id = self._wc_resolve_or_create_event(
             working_copy,
-            package=package,
+            package=resolved_package,
             export_id_map=export_id_map,
         )
-        if package.package_type == AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT:
+        if resolved_package.package_type == AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT:
             event_count = 1
 
-        for assessment in package.assessments:
+        for assessment in resolved_package.assessments:
             created, merged, existing_added, required_added = self._wc_incorporate_assessment(
                 working_copy,
                 template_event_id=event_id,
                 assessment=assessment,
-                package_reasoning=package.reasoning,
+                package_reasoning=resolved_package.reasoning,
                 group_assessment_overrides=overrides,
             )
             assessment_count += created
@@ -814,7 +842,7 @@ class HazardCatalogPackageIncorporateService:
             existing_measure_count += existing_added
             required_measure_count += required_added
 
-        for link in package.legal_links:
+        for link in resolved_package.legal_links:
             document_id = self._resolve_legal_document_id(link)
             sort_order = max((row.sort_order for row in working_copy.legal_links), default=0) + 1
             working_copy.legal_links.append(
@@ -823,7 +851,7 @@ class HazardCatalogPackageIncorporateService:
                     template_id=template_id,
                     legal_document_id=document_id,
                     legal_requirement_id=None,
-                    note=self._build_legal_note(link, package.reasoning),
+                    note=self._build_legal_note(link, resolved_package.reasoning),
                     active=True,
                     sort_order=sort_order,
                 ),
@@ -831,7 +859,10 @@ class HazardCatalogPackageIncorporateService:
             working_copy._touch()
             legal_link_count += 1
 
-        working_copy.queue_package_incorporate(package_record_id)
+        if editor_session is not None:
+            editor_session.stage_for_incorporation(package_record_id)
+        else:
+            working_copy.queue_package_incorporate(package_record_id)
         return CatalogPackageIncorporateResult(
             package_record_id=package_record_id,
             new_revision_number=0,
