@@ -44,24 +44,10 @@ with patch.object(Path, "home", return_value=_TMP):
 
 def _ensure_audit_protocol_template() -> Path:
     import moduly.audity.sluzby.protokol_audit_service as protokol_module
-    import shutil
 
     importlib.reload(protokol_module)
-    path = protokol_module.protokol_audit_service.template_path()
-    bundled = (
-        Path(__file__).resolve().parents[1]
-        / "moduly"
-        / "audity"
-        / "templates"
-        / "exporty"
-        / "ProtokolAudit.odt"
-    )
-    if path.resolve() == bundled.resolve():
-        return path
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if bundled.exists():
-        shutil.copy2(bundled, path)
-    return path
+    # Preferuje uživatelskou kopii v .local a případně ji obnoví z balíčku.
+    return protokol_module.protokol_audit_service.template_path()
 
 
 with patch.object(Path, "home", return_value=_TMP):
@@ -70,6 +56,7 @@ with patch.object(Path, "home", return_value=_TMP):
         protokol_audit_service,
     )
     from moduly.nastaveni.sluzby.settings_service import settings_service
+    from core.services.storage_service import storage_service
 
 
 def _odt_content(path: Path) -> str:
@@ -101,6 +88,40 @@ class AudityProtokolExportTestCase(unittest.TestCase):
             nace="62.01",
         )
         _ensure_audit_protocol_template()
+
+    def test_protocol_template_uses_local_copy_and_preserves_customization(self) -> None:
+        import shutil
+
+        user = storage_service.template_file("exporty", "ProtokolAudit.odt")
+        bundled = storage_service.bundled_template_file("exporty", "ProtokolAudit.odt")
+        self.assertIsNotNone(bundled)
+        assert bundled is not None
+
+        resolved = protokol_audit_service.template_path()
+        self.assertEqual(resolved.resolve(), user.resolve())
+        self.assertTrue(str(resolved).startswith(str(_TMP)))
+
+        shutil.copy2(bundled, user)
+        storage_service._write_template_bundle_hash(
+            user,
+            storage_service._file_sha256(bundled),
+        )
+        customized = b"custom-logo-template"
+        user.write_bytes(customized)
+        self.assertEqual(
+            storage_service.resolve_editable_template("exporty", "ProtokolAudit.odt").read_bytes(),
+            customized,
+        )
+
+        # Neupravená (marker odpovídá obsahu) se při změně balíčku obnoví.
+        old_default = b"old-default-from-previous-appimage"
+        user.write_bytes(old_default)
+        storage_service._write_template_bundle_hash(
+            user,
+            storage_service._file_sha256(user),
+        )
+        refreshed = storage_service.resolve_editable_template("exporty", "ProtokolAudit.odt")
+        self.assertEqual(refreshed.read_bytes(), bundled.read_bytes())
 
     def _create_audit(self, **fields):
         workplace = settings_service.save_workplace(name="Provoz A")
@@ -963,6 +984,73 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         self.assertIn("Sekce A", text)
         self.assertIn("🟢 Tvrzení A", text)
         self.assertNotIn("Sekce B", text)
+
+    def test_a12_3_appendix_excludes_orphaned_methodology_assertions(self) -> None:
+        """Export tiskne jen tvrzení ze spisu, která patří do aktuální metodiky auditu."""
+        from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
+
+        audit = self._create_audit()
+        assert audit is not None
+
+        process = audit_knowledge_service.get_process_by_id("bezpecnostni_kultura")
+        self.assertIsNotNone(process)
+        knowledge = audit_knowledge_service.load_process_knowledge(process)
+        self.assertIsNotNone(knowledge)
+
+        section = None
+        for candidate in audit_export_context_service.build(audit)._iter_knowledge_sections(
+            knowledge.get("sekce") or [],
+        ):
+            if str(candidate.get("id") or "") == "postoj_vedeni":
+                section = candidate
+                break
+        self.assertIsNotNone(section)
+        questions = audit_knowledge_service.get_audit_questions(section)
+        self.assertTrue(questions)
+        current = questions[0]
+        current_id = str(current.get("id") or "").strip()
+        current_text = str(current.get("text") or current.get("nazev") or "").strip()
+        self.assertTrue(current_id)
+        self.assertTrue(current_text)
+
+        control_result_service.set_result(
+            ENTITY_AUDITY,
+            audit.id,
+            ControlPointContext(
+                area_id="bezpecnostni_kultura",
+                area_label="Bezpečnostní kultura",
+                section_id="postoj_vedeni",
+                section_label="Postoj vedení k BOZP",
+                control_point_id="legacy_bozp_postoj_vedeni_old",
+                control_point_label="Staré BOZP tvrzení ze starší metodiky.",
+            ),
+            result=CONTROL_RESULT_NELZE_POSOUDIT,
+        )
+        control_result_service.set_result(
+            ENTITY_AUDITY,
+            audit.id,
+            ControlPointContext(
+                area_id="bezpecnostni_kultura",
+                area_label="Bezpečnostní kultura",
+                section_id="postoj_vedeni",
+                section_label="Postoj vedení k BOZP",
+                control_point_id=current_id,
+                control_point_label=current_text,
+            ),
+            result=CONTROL_RESULT_VYHOVUJE,
+        )
+
+        context = audit_export_context_service.build(audit)
+        text = context.appendix_assertions_text()
+        self.assertIn("Postoj vedení k BOZP", text)
+        self.assertIn(f"🟢 {current_text}", text)
+        self.assertNotIn("Staré BOZP tvrzení ze starší metodiky.", text)
+        self.assertNotIn("legacy_bozp_postoj_vedeni_old", text)
+
+        summary = context.appendix_assertions_summary_text()
+        self.assertIn("Celkem auditních tvrzení: 1", summary)
+        self.assertIn("🟢 Splněno: 1", summary)
+        self.assertIn("⚪ Není relevantní: 0", summary)
 
     def test_incomplete_warning(self) -> None:
         audit = self._create_audit()

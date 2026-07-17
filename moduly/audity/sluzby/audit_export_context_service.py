@@ -305,8 +305,108 @@ class AuditExportContext:
     def appendix_processes_text(self) -> str:
         return self.processes_text()
 
-    def appendix_assertions_text(self) -> str:
+    @staticmethod
+    def _iter_knowledge_sections(sections: list) -> list[dict]:
+        collected: list[dict] = []
+        for section in sections:
+            if not isinstance(section, dict):
+                continue
+            collected.append(section)
+            nested = section.get("sekce") or []
+            if isinstance(nested, list):
+                collected.extend(AuditExportContext._iter_knowledge_sections(nested))
+        return collected
+
+    def _section_assertion_ids(
+        self,
+        process_id: str,
+        section_id: str,
+        *,
+        cache: dict[tuple[str, str], set[str] | None],
+    ) -> set[str] | None:
+        """Vrátí ID aktuálních tvrzení sekce, nebo None pokud sekce v metodice není."""
+        key = (process_id, section_id)
+        if key in cache:
+            return cache[key]
+
+        if not process_id or not section_id:
+            cache[key] = None
+            return None
+
+        process = audit_knowledge_service.get_process_by_id(process_id, ensure=False)
+        if process is None:
+            cache[key] = None
+            return None
+
+        knowledge = audit_knowledge_service.load_process_knowledge(process, ensure=False)
+        if not knowledge:
+            cache[key] = None
+            return None
+
+        for section in self._iter_knowledge_sections(knowledge.get("sekce") or []):
+            if str(section.get("id") or "").strip() != section_id:
+                continue
+            if not section.get("aktivni", True):
+                cache[key] = set()
+                return cache[key]
+            cache[key] = {
+                str(item.get("id") or "").strip()
+                for item in audit_knowledge_service.get_audit_questions(section)
+                if str(item.get("id") or "").strip()
+            }
+            return cache[key]
+
+        cache[key] = None
+        return None
+
+    def _assertion_control_results(self):
+        """Výsledky ze spisu auditu bez osiřelých tvrzení ze starší metodiky.
+
+        Text tvrzení vždy bere z uloženého ``control_results`` (spis).
+        Metodika slouží jen jako filtr platných ID — nikoli jako zdroj textů.
+        """
         results = control_result_service.get_for_entity(ENTITY_AUDITY, self.audit_id)
+        if not results:
+            return []
+
+        planned_ids = set(self.planned_process_ids())
+        known_process_ids = {
+            process.id for process in audit_knowledge_service.get_processes()
+        }
+        section_cache: dict[tuple[str, str], set[str] | None] = {}
+        filtered = []
+
+        for row in results:
+            area_id = str(row.source_area_id or "").strip()
+            section_id = str(row.source_section_id or "").strip()
+            control_point_id = str(row.source_control_point_id or "").strip()
+
+            if (
+                planned_ids
+                and area_id
+                and area_id in known_process_ids
+                and area_id not in planned_ids
+            ):
+                continue
+
+            assertion_ids = self._section_assertion_ids(
+                area_id,
+                section_id,
+                cache=section_cache,
+            )
+            if assertion_ids is None:
+                # Proces/sekce v metodice neexistuje — ponechat uložený výsledek.
+                filtered.append(row)
+                continue
+            if control_point_id in assertion_ids:
+                filtered.append(row)
+                continue
+            # Sekce v metodice je, ale toto tvrzení už ne (osiřelý záznam).
+
+        return filtered
+
+    def appendix_assertions_text(self) -> str:
+        results = self._assertion_control_results()
         if not results:
             return ""
 
@@ -342,14 +442,31 @@ class AuditExportContext:
         return "\n\n".join(blocks)
 
     def appendix_assertions_summary_text(self) -> str:
-        stats = self._activity_statistics()
+        results = self._assertion_control_results()
+        total = 0
+        ok = 0
+        partial = 0
+        fail = 0
+        na = 0
+        for row in results:
+            if row.result == CONTROL_RESULT_NEKONTROLOVANO:
+                continue
+            total += 1
+            if row.result == CONTROL_RESULT_VYHOVUJE:
+                ok += 1
+            elif row.result == CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM:
+                partial += 1
+            elif row.result == CONTROL_RESULT_NEVYHOVUJE:
+                fail += 1
+            elif row.result == CONTROL_RESULT_NELZE_POSOUDIT:
+                na += 1
         return "\n".join(
             [
-                f"Celkem auditních tvrzení: {stats.control_points_checked}",
-                f"🟢 Splněno: {stats.ratings_vyhovuje}",
-                f"🟡 Částečně splněno: {stats.ratings_vyhovuje_s_doporucenim}",
-                f"🔴 Nesplněno: {stats.ratings_nevyhovuje}",
-                f"⚪ Není relevantní: {stats.ratings_netyka_se}",
+                f"Celkem auditních tvrzení: {total}",
+                f"🟢 Splněno: {ok}",
+                f"🟡 Částečně splněno: {partial}",
+                f"🔴 Nesplněno: {fail}",
+                f"⚪ Není relevantní: {na}",
             ]
         )
 
