@@ -266,13 +266,14 @@ class RizeniRizikPhaseR20fTestCase(unittest.TestCase):
             widget._edit_selected_package()
         maximized_mock.assert_called_once()
 
-    def test_r20f5_legal_mapping_uses_search_dialog_not_full_list(self) -> None:
+    def test_r20f5_legal_mapping_uses_multi_selector_not_dialog(self) -> None:
         from core.ai_oponentni.constants import AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT
         from core.ai_oponentni.proposal_package_types import (
             AiProposalPackage,
             AiProposalPackageEvent,
             AiProposalPackageLegalLink,
         )
+        from core.widgets.multi_legal_document_selector import MultiLegalDocumentSelector
         from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_NARIZENI_VLADY
         from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
         from moduly.pravni_pozadavky.sluzby.legal_document_service import (
@@ -280,9 +281,6 @@ class RizeniRizikPhaseR20fTestCase(unittest.TestCase):
         )
         from moduly.rizeni_rizik.ui.hazard_catalog_ai_package_edit_dialog import (
             HazardCatalogAiPackageEditDialog,
-        )
-        from moduly.rizeni_rizik.ui.hazard_catalog_legal_document_pick_dialog import (
-            HazardCatalogLegalDocumentPickDialog,
         )
         from sqlalchemy import delete
 
@@ -292,7 +290,7 @@ class RizeniRizikPhaseR20fTestCase(unittest.TestCase):
             session.execute(delete(LegalDocument))
             session.commit()
 
-        document = legal_document_service.create(
+        legal_document_service.create(
             document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
             number="378",
             year=2001,
@@ -314,18 +312,10 @@ class RizeniRizikPhaseR20fTestCase(unittest.TestCase):
             package=package,
             package_record_id=0,
         )
-        self.assertTrue(hasattr(dialog, "pick_legal_document_btn"))
-        self.assertFalse(hasattr(dialog, "legal_document"))
-        self.assertNotIn("Mapovat první řádek", dialog.legal_mapping_label.text())
-
-        pick = HazardCatalogLegalDocumentPickDialog(
-            ai_reference="NV č. 378/2001 Sb.",
-            initial_document_id=document.id,
-        )
-        self.assertEqual(pick.ai_reference_label.text(), "NV č. 378/2001 Sb.")
-        self.assertEqual(pick.selected_document_id(), document.id)
-        self.assertIn("378/2001", pick.selected_label.text())
-        self.assertIsNotNone(pick.selector)
+        self.assertIsInstance(dialog.legal_documents, MultiLegalDocumentSelector)
+        self.assertFalse(hasattr(dialog, "pick_legal_document_btn"))
+        self.assertFalse(hasattr(dialog, "legal_mapping_label"))
+        self.assertNotIn("Mapovat první řádek", dialog.windowTitle())
 
     def test_r20f6_exact_legal_match_is_prefilled(self) -> None:
         from core.ai_oponentni.constants import AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT
@@ -342,9 +332,6 @@ class RizeniRizikPhaseR20fTestCase(unittest.TestCase):
         from moduly.rizeni_rizik.ui.hazard_catalog_ai_package_edit_dialog import (
             HazardCatalogAiPackageEditDialog,
             resolve_exact_legal_document_id,
-        )
-        from moduly.rizeni_rizik.ui.hazard_catalog_legal_document_pick_dialog import (
-            HazardCatalogLegalDocumentPickDialog,
         )
         from sqlalchemy import delete
 
@@ -380,17 +367,123 @@ class RizeniRizikPhaseR20fTestCase(unittest.TestCase):
             package=package,
             package_record_id=0,
         )
-        self.assertEqual(dialog._selected_legal_document_id, document.id)
-        self.assertIn("378/2001", dialog.legal_mapping_label.text())
+        self.assertEqual(dialog.legal_documents.selected_document_ids(), [document.id])
+        self.assertFalse(dialog.unresolved_legal_label.isVisible())
+        self.assertIsNone(resolve_exact_legal_document_id("neexistující předpis XYZ"))
 
-        pick = HazardCatalogLegalDocumentPickDialog(
-            ai_reference="NV 378/2001 Sb.",
-            initial_document_id=resolve_exact_legal_document_id("NV 378/2001 Sb."),
+    def test_r20f7_multi_legal_document_selection_roundtrip(self) -> None:
+        from core.ai_oponentni.constants import AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT
+        from core.ai_oponentni.proposal_package_types import (
+            AiProposalPackage,
+            AiProposalPackageEvent,
+            AiProposalPackageLegalLink,
         )
-        self.assertEqual(pick.selected_document_id(), document.id)
+        from moduly.nastaveni.sluzby.exposed_group_service import exposed_group_service
+        from moduly.pravni_pozadavky.constants import (
+            DOCUMENT_TYPE_NARIZENI_VLADY,
+            DOCUMENT_TYPE_ZAKON,
+        )
+        from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
+        from moduly.pravni_pozadavky.sluzby.legal_document_service import (
+            legal_document_service,
+        )
+        from moduly.rizeni_rizik.ui.hazard_catalog_ai_package_edit_dialog import (
+            HazardCatalogAiPackageEditDialog,
+        )
+        from sqlalchemy import delete
 
-        ambiguous = resolve_exact_legal_document_id("neexistující předpis XYZ")
-        self.assertIsNone(ambiguous)
+        from core.database.session import SessionLocal
+
+        with SessionLocal() as session:
+            session.execute(delete(LegalDocument))
+            session.commit()
+
+        zakon = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_ZAKON,
+            number="262",
+            year=2006,
+            title="Zákon č. 262/2006 Sb., zákoník práce",
+            short_title="ZP",
+        )
+        nv_101 = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
+            number="101",
+            year=2005,
+            title="Nařízení vlády č. 101/2005 Sb.",
+            short_title="NV 101/2005",
+        )
+        nv_378 = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
+            number="378",
+            year=2001,
+            title="Nařízení vlády č. 378/2001 Sb.",
+            short_title="NV 378/2001",
+        )
+        group = exposed_group_service.create_group(name=f"R20f7 skupina {id(self)}")
+
+        package = AiProposalPackage(
+            package_id="PACKAGE-MULTI-LEGAL",
+            package_type=AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT,
+            target_event_export_id=None,
+            event=AiProposalPackageEvent(name="Pád"),
+            assessments=(),
+            legal_links=(
+                AiProposalPackageLegalLink(reference="zák. č. 262/2006 Sb."),
+                AiProposalPackageLegalLink(reference="NV 101/2005 Sb."),
+                AiProposalPackageLegalLink(reference="neznámý předpis XYZ-999"),
+            ),
+            reasoning="",
+        )
+        dialog = HazardCatalogAiPackageEditDialog(
+            package=package,
+            package_record_id=0,
+        )
+        self.assertEqual(
+            set(dialog.legal_documents.selected_document_ids()),
+            {zakon.id, nv_101.id},
+        )
+        self.assertIn("neznámý předpis XYZ-999", dialog.unresolved_legal_label.text())
+        self.assertFalse(dialog.unresolved_legal_label.isHidden())
+        self.assertNotIn("Vybrat předpis", dialog.windowTitle())
+
+        dialog.legal_documents._append_document_id(nv_378.id)
+        self.assertEqual(
+            set(dialog.legal_documents.selected_document_ids()),
+            {zakon.id, nv_101.id, nv_378.id},
+        )
+        dialog.legal_documents.list_widget.setCurrentRow(0)
+        dialog.legal_documents.remove_selected()
+        remaining = set(dialog.legal_documents.selected_document_ids())
+        self.assertEqual(len(remaining), 2)
+        self.assertTrue(remaining.issubset({zakon.id, nv_101.id, nv_378.id}))
+
+        dialog._assessment_editors[0].exposed_groups.set_group_ids([group.id])
+        dialog.event_name.setText("Pád z výšky")
+        dialog.accept()
+        saved = dialog.get_package()
+        self.assertIsNotNone(saved)
+        saved_ids = {
+            link.legal_document_id
+            for link in saved.legal_links
+            if link.legal_document_id is not None
+        }
+        self.assertEqual(saved_ids, remaining)
+        unresolved = [
+            link.reference
+            for link in saved.legal_links
+            if link.legal_document_id is None
+        ]
+        self.assertEqual(unresolved, ["neznámý předpis XYZ-999"])
+
+        reopened = HazardCatalogAiPackageEditDialog(
+            package=saved,
+            package_record_id=0,
+        )
+        self.assertEqual(
+            set(reopened.legal_documents.selected_document_ids()),
+            remaining,
+        )
+        self.assertIn("neznámý předpis XYZ-999", reopened.unresolved_legal_label.text())
 
 
 if __name__ == "__main__":

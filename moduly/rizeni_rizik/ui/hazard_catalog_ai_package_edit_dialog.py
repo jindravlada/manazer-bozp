@@ -40,6 +40,7 @@ from core.ai_oponentni.repository.ai_proposal_package_repository import (
 )
 from core.widgets.dialog_utils import create_save_cancel_box
 from core.widgets.multi_exposed_group_selector import MultiExposedGroupSelector
+from core.widgets.multi_legal_document_selector import MultiLegalDocumentSelector
 from moduly.nastaveni.sluzby.exposed_group_service import ExposedGroupMatchKind, exposed_group_service
 from moduly.nastaveni.ui.exposed_groups_management_dialog import ExposedGroupsManagementDialog
 from moduly.rizeni_rizik.constants import (
@@ -71,6 +72,38 @@ def resolve_exact_legal_document_id(reference: str) -> int | None:
     if match.kind == LegalDocumentMatchKind.EXACT and match.document_id is not None:
         return int(match.document_id)
     return None
+
+
+def collect_legal_document_ids_from_links(
+    links: tuple[AiProposalPackageLegalLink, ...] | list[AiProposalPackageLegalLink],
+) -> tuple[list[int], list[str], dict[int, str]]:
+    """Rozdělí AI vazby na vybraná ID, nenalezené citace a mapu ID→původní citace."""
+    selected_ids: list[int] = []
+    unresolved: list[str] = []
+    reference_by_id: dict[int, str] = {}
+    seen_ids: set[int] = set()
+    seen_unresolved: set[str] = set()
+
+    for link in links or ():
+        reference = (link.reference or "").strip()
+        document_id = link.legal_document_id
+        if document_id is None and reference:
+            document_id = resolve_exact_legal_document_id(reference)
+
+        if document_id is not None:
+            document_id = int(document_id)
+            if document_id not in seen_ids:
+                selected_ids.append(document_id)
+                seen_ids.add(document_id)
+            if reference and document_id not in reference_by_id:
+                reference_by_id[document_id] = reference
+            continue
+
+        if reference and reference.casefold() not in seen_unresolved:
+            unresolved.append(reference)
+            seen_unresolved.add(reference.casefold())
+
+    return selected_ids, unresolved, reference_by_id
 
 
 def resolve_target_event_name(
@@ -440,34 +473,32 @@ class HazardCatalogAiPackageEditDialog(QDialog):
         legal_box = QGroupBox("Právní vazby")
         legal_layout = QVBoxLayout(legal_box)
         legal_info = QLabel(
-            "Každý řádek: odkaz z návrhu AI. Předpis z registru vyberte přes našeptávač."
+            "Přidejte předpisy z registru přes našeptávač. "
+            "Jednoznačné AI citace se předvyplní automaticky."
         )
         legal_info.setWordWrap(True)
         legal_layout.addWidget(legal_info)
-        self.legal_references = QPlainTextEdit()
-        _configure_plain_text(self.legal_references, min_height=70)
-        self.legal_references.setPlainText(
-            "\n".join(link.reference for link in package.legal_links),
+
+        legal_form = QFormLayout()
+        legal_form.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow,
         )
-        legal_layout.addWidget(self.legal_references)
+        self.legal_documents = MultiLegalDocumentSelector(self)
+        legal_form.addRow("Právní předpis:", self.legal_documents)
+        legal_layout.addLayout(legal_form)
 
-        self._selected_legal_document_id: int | None = None
-        if package.legal_links:
-            self._selected_legal_document_id = package.legal_links[0].legal_document_id
-        if self._selected_legal_document_id is None and package.legal_links:
-            self._selected_legal_document_id = resolve_exact_legal_document_id(
-                package.legal_links[0].reference or "",
-            )
+        self.unresolved_legal_label = QLabel()
+        self.unresolved_legal_label.setWordWrap(True)
+        self.unresolved_legal_label.setObjectName("InfoText")
+        legal_layout.addWidget(self.unresolved_legal_label)
 
-        map_row = QHBoxLayout()
-        self.legal_mapping_label = QLabel()
-        self.legal_mapping_label.setWordWrap(True)
-        self._refresh_legal_mapping_label()
-        map_row.addWidget(self.legal_mapping_label, 1)
-        self.pick_legal_document_btn = QPushButton("Vybrat předpis…")
-        self.pick_legal_document_btn.clicked.connect(self._pick_legal_document)
-        map_row.addWidget(self.pick_legal_document_btn)
-        legal_layout.addLayout(map_row)
+        selected_ids, unresolved, reference_by_id = collect_legal_document_ids_from_links(
+            package.legal_links,
+        )
+        self._legal_reference_by_document_id = reference_by_id
+        self._unresolved_legal_references = list(unresolved)
+        self.legal_documents.set_document_ids(selected_ids)
+        self._refresh_unresolved_legal_label()
         layout.addWidget(legal_box)
 
         reasoning_label = QLabel("Zdůvodnění AI:")
@@ -506,43 +537,44 @@ class HazardCatalogAiPackageEditDialog(QDialog):
         # Insert before the "Přidat posouzení" button.
         self._assessments_layout.insertWidget(self._assessments_layout.count() - 1, section)
 
-    def _first_legal_reference(self) -> str:
-        for line in self.legal_references.toPlainText().splitlines():
-            reference = line.strip()
-            if reference:
-                return reference
-        return ""
-
-    def _refresh_legal_mapping_label(self) -> None:
-        if self._selected_legal_document_id is None:
-            self.legal_mapping_label.setText("Vybraný předpis: —")
+    def _refresh_unresolved_legal_label(self) -> None:
+        references = [
+            reference.strip()
+            for reference in self._unresolved_legal_references
+            if str(reference or "").strip()
+        ]
+        if not references:
+            self.unresolved_legal_label.setText("")
+            self.unresolved_legal_label.hide()
             return
-        document = legal_document_service.get_by_id(self._selected_legal_document_id)
-        if document is None:
-            self.legal_mapping_label.setText("Vybraný předpis: —")
-            self._selected_legal_document_id = None
-            return
-        title = (document.title or "").strip() or f"Předpis #{document.id}"
-        self.legal_mapping_label.setText(f"Vybraný předpis: {title}")
+        lines = ["Návrhy AI k dořešení:"]
+        lines.extend(f"• {reference}" for reference in references)
+        self.unresolved_legal_label.setText("\n".join(lines))
+        self.unresolved_legal_label.show()
 
-    def _pick_legal_document(self) -> None:
-        from moduly.rizeni_rizik.ui.hazard_catalog_legal_document_pick_dialog import (
-            HazardCatalogLegalDocumentPickDialog,
-        )
-
-        reference = self._first_legal_reference()
-        initial_id = self._selected_legal_document_id
-        if initial_id is None:
-            initial_id = resolve_exact_legal_document_id(reference)
-        dialog = HazardCatalogLegalDocumentPickDialog(
-            self,
-            ai_reference=reference,
-            initial_document_id=initial_id,
-        )
-        if not dialog.exec():
-            return
-        self._selected_legal_document_id = dialog.selected_document_id()
-        self._refresh_legal_mapping_label()
+    def _build_legal_links(self) -> tuple[AiProposalPackageLegalLink, ...]:
+        legal_links: list[AiProposalPackageLegalLink] = []
+        selected_ids = self.legal_documents.selected_document_ids()
+        for document_id in selected_ids:
+            reference = self._legal_reference_by_document_id.get(document_id, "")
+            if not reference:
+                document = legal_document_service.get_by_id(document_id)
+                if document is not None:
+                    reference = (document.title or "").strip() or f"Předpis #{document_id}"
+                else:
+                    reference = f"Předpis #{document_id}"
+            legal_links.append(
+                AiProposalPackageLegalLink(
+                    reference=reference,
+                    legal_document_id=document_id,
+                ),
+            )
+        for reference in self._unresolved_legal_references:
+            cleaned = str(reference or "").strip()
+            if not cleaned:
+                continue
+            legal_links.append(AiProposalPackageLegalLink(reference=cleaned))
+        return tuple(legal_links)
 
     def get_package(self) -> AiProposalPackage | None:
         return self._result_package
@@ -591,28 +623,13 @@ class HazardCatalogAiPackageEditDialog(QDialog):
                     note=self.event_note.toPlainText().strip(),
                 )
 
-        legal_links: list[AiProposalPackageLegalLink] = []
-        selected_document_id = self._selected_legal_document_id
-        for index, line in enumerate(self.legal_references.toPlainText().splitlines()):
-            reference = line.strip()
-            if not reference:
-                continue
-            legal_links.append(
-                AiProposalPackageLegalLink(
-                    reference=reference,
-                    legal_document_id=(
-                        selected_document_id if index == 0 else None
-                    ),
-                ),
-            )
-
         self._result_package = AiProposalPackage(
             package_id=self._package.package_id,
             package_type=self._package.package_type,
             target_event_export_id=target_event,
             event=event,
             assessments=tuple(assessments),
-            legal_links=tuple(legal_links),
+            legal_links=self._build_legal_links(),
             reasoning=self.reasoning.toPlainText().strip(),
         )
         super().accept()

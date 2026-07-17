@@ -16,3 +16,4 @@ from .info_tooltip import format_info_card, set_widget_tooltip, wrap_tooltip_tex
 from .text_preview import DEFAULT_TEXT_PREVIEW_LENGTH, TEXT_PREVIEW_SUFFIX, truncate_text_preview
 
 from .multi_code_selector import MultiCodeSelector
+from .multi_legal_document_selector import MultiLegalDocumentSelector

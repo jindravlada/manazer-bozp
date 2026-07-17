@@ -63,6 +63,9 @@ class LegalDocumentNameSelector(SearchComboBox):
             self.set_document_id(selected_id)
         elif current_text:
             self.setCurrentText(current_text)
+        else:
+            self.setCurrentIndex(-1)
+            self.setCurrentText("")
         self.blockSignals(False)
 
     def current_document_id(self) -> int | None:
