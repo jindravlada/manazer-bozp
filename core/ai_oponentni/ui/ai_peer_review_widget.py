@@ -50,7 +50,6 @@ from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_FOCUS_AREAS,
     AI_PEER_REVIEW_IMPORT_BUTTON,
     AI_PEER_REVIEW_IMPORT_INTRO_EVIDENCE,
-    AI_PEER_REVIEW_IMPORT_INTRO_PACKAGES,
     AI_PEER_REVIEW_INTRO_TEXT,
     AI_PEER_REVIEW_OBJECTIVE_LABELS,
     AI_PEER_REVIEW_PACKAGE_TYPE_LABELS,
@@ -78,7 +77,6 @@ from core.ai_oponentni.types import (
     AiPeerReviewExportOptions,
     AiPeerReviewProvider,
 )
-from core.ai_oponentni.ui.import_packages_dialog import AiPeerReviewPackageImportDialog
 from core.ai_oponentni.ui.import_proposals_dialog import AiPeerReviewImportDialog
 from core.widgets.dialog_utils import create_save_cancel_box
 from core.widgets.table_utils import configure_table_columns
@@ -724,15 +722,13 @@ class AiPeerReviewWidget(QWidget):
             )
 
         if parse_result.uses_proposal_packages:
-            import_dialog = AiPeerReviewPackageImportDialog(
-                self,
-                packages=parse_result.packages,
-                ai_model=ai_model,
-                intro_text=AI_PEER_REVIEW_IMPORT_INTRO_PACKAGES,
-            )
-            if not import_dialog.exec():
+            if not parse_result.packages:
+                QMessageBox.warning(
+                    self,
+                    AI_PEER_REVIEW_DIALOG_TITLE,
+                    "Odpověď AI neobsahuje žádný platný návrhový balík.",
+                )
                 return False
-            accepted, rejected = import_dialog.get_accepted_and_rejected()
             try:
                 updated = ai_peer_review_service.finalize_package_import(
                     provider=self._provider,
@@ -740,8 +736,8 @@ class AiPeerReviewWidget(QWidget):
                     review_id=review.id,
                     response_text=response_text,
                     ai_model=ai_model,
-                    accepted=accepted,
-                    rejected=rejected,
+                    accepted=list(parse_result.packages),
+                    rejected=[],
                     loaded_packages_count=len(parse_result.packages),
                 )
             except AiPeerReviewError as error:
@@ -787,6 +783,14 @@ class AiPeerReviewWidget(QWidget):
 
         self.refresh()
         self._select_review_row(updated.id)
+        if parse_result.uses_proposal_packages:
+            self._load_proposals_table()
+            if self.proposals_table.rowCount() > 0:
+                self.proposals_table.selectRow(0)
+                self.proposals_table.setFocus()
+                first_item = self.proposals_table.item(0, 0)
+                if first_item is not None:
+                    self.proposals_table.scrollToItem(first_item)
         if self._on_proposals_applied is not None:
             self._on_proposals_applied()
 
