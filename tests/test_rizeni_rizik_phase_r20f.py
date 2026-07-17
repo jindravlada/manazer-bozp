@@ -266,6 +266,58 @@ class RizeniRizikPhaseR20fTestCase(unittest.TestCase):
             widget._edit_selected_package()
         maximized_mock.assert_called_once()
 
+    def test_r20f5_legal_mapping_uses_search_dialog_not_full_list(self) -> None:
+        from core.ai_oponentni.constants import AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT
+        from core.ai_oponentni.proposal_package_types import (
+            AiProposalPackage,
+            AiProposalPackageEvent,
+            AiProposalPackageLegalLink,
+        )
+        from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_NARIZENI_VLADY
+        from moduly.pravni_pozadavky.sluzby.legal_document_service import (
+            legal_document_service,
+        )
+        from moduly.rizeni_rizik.ui.hazard_catalog_ai_package_edit_dialog import (
+            HazardCatalogAiPackageEditDialog,
+        )
+        from moduly.rizeni_rizik.ui.hazard_catalog_legal_document_pick_dialog import (
+            HazardCatalogLegalDocumentPickDialog,
+        )
+
+        document = legal_document_service.create(
+            title="Nařízení vlády č. 378/2001 Sb.",
+            short_title="NV 378/2001",
+            number="378/2001",
+            document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
+        )
+        package = AiProposalPackage(
+            package_id="PACKAGE-LEGAL",
+            package_type=AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT,
+            target_event_export_id=None,
+            event=AiProposalPackageEvent(name="Pád"),
+            assessments=(),
+            legal_links=(
+                AiProposalPackageLegalLink(reference="NV č. 378/2001 Sb."),
+            ),
+            reasoning="",
+        )
+        dialog = HazardCatalogAiPackageEditDialog(
+            package=package,
+            package_record_id=0,
+        )
+        self.assertTrue(hasattr(dialog, "pick_legal_document_btn"))
+        self.assertFalse(hasattr(dialog, "legal_document"))
+        self.assertNotIn("Mapovat první řádek", dialog.legal_mapping_label.text())
+
+        pick = HazardCatalogLegalDocumentPickDialog(
+            ai_reference="NV č. 378/2001 Sb.",
+            initial_document_id=document.id,
+        )
+        self.assertEqual(pick.ai_reference_label.text(), "NV č. 378/2001 Sb.")
+        self.assertEqual(pick.selected_document_id(), document.id)
+        self.assertIn("378/2001", pick.selected_label.text())
+        self.assertIsNotNone(pick.selector)
+
 
 if __name__ == "__main__":
     unittest.main()

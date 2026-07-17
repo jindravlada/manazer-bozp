@@ -55,12 +55,10 @@ from moduly.rizeni_rizik.constants_library import (
 from moduly.rizeni_rizik.sluzby.hazard_catalog_package_incorporate_service import (
     hazard_catalog_package_incorporate_service,
 )
-from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_incorporate_service import (
-    hazard_catalog_proposal_incorporate_service,
-)
 from moduly.rizeni_rizik.sluzby.hazard_library_template_event_service import (
     hazard_library_template_event_service,
 )
+from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
 
 
 def resolve_target_event_name(
@@ -429,7 +427,9 @@ class HazardCatalogAiPackageEditDialog(QDialog):
 
         legal_box = QGroupBox("Právní vazby")
         legal_layout = QVBoxLayout(legal_box)
-        legal_info = QLabel("Každý řádek: odkaz. Volitelně vyberte předpis z registru.")
+        legal_info = QLabel(
+            "Každý řádek: odkaz z návrhu AI. Předpis z registru vyberte přes našeptávač."
+        )
         legal_info.setWordWrap(True)
         legal_layout.addWidget(legal_info)
         self.legal_references = QPlainTextEdit()
@@ -439,31 +439,19 @@ class HazardCatalogAiPackageEditDialog(QDialog):
         )
         legal_layout.addWidget(self.legal_references)
 
-        self.legal_document = QComboBox()
-        self.legal_document.setSizePolicy(
-            QSizePolicy.Policy.Expanding,
-            QSizePolicy.Policy.Fixed,
-        )
-        self.legal_document.setSizeAdjustPolicy(
-            QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon,
-        )
-        self.legal_document.setMinimumContentsLength(20)
-        self.legal_document.addItem("— bez výběru z registru —", None)
-        for document_id, label in (
-            hazard_catalog_proposal_incorporate_service.list_legal_document_candidates()
-        ):
-            self.legal_document.addItem(label, document_id)
-        selected_document_id = None
+        self._selected_legal_document_id: int | None = None
         if package.legal_links:
-            selected_document_id = package.legal_links[0].legal_document_id
-        if selected_document_id is not None:
-            index = self.legal_document.findData(selected_document_id)
-            if index >= 0:
-                self.legal_document.setCurrentIndex(index)
-        map_label = QLabel("Mapovat první řádek na předpis:")
-        map_label.setWordWrap(True)
-        legal_layout.addWidget(map_label)
-        legal_layout.addWidget(self.legal_document)
+            self._selected_legal_document_id = package.legal_links[0].legal_document_id
+
+        map_row = QHBoxLayout()
+        self.legal_mapping_label = QLabel()
+        self.legal_mapping_label.setWordWrap(True)
+        self._refresh_legal_mapping_label()
+        map_row.addWidget(self.legal_mapping_label, 1)
+        self.pick_legal_document_btn = QPushButton("Vybrat předpis…")
+        self.pick_legal_document_btn.clicked.connect(self._pick_legal_document)
+        map_row.addWidget(self.pick_legal_document_btn)
+        legal_layout.addLayout(map_row)
         layout.addWidget(legal_box)
 
         reasoning_label = QLabel("Zdůvodnění AI:")
@@ -501,6 +489,40 @@ class HazardCatalogAiPackageEditDialog(QDialog):
         self._assessment_sections.append(section)
         # Insert before the "Přidat posouzení" button.
         self._assessments_layout.insertWidget(self._assessments_layout.count() - 1, section)
+
+    def _first_legal_reference(self) -> str:
+        for line in self.legal_references.toPlainText().splitlines():
+            reference = line.strip()
+            if reference:
+                return reference
+        return ""
+
+    def _refresh_legal_mapping_label(self) -> None:
+        if self._selected_legal_document_id is None:
+            self.legal_mapping_label.setText("Vybraný předpis: —")
+            return
+        document = legal_document_service.get_by_id(self._selected_legal_document_id)
+        if document is None:
+            self.legal_mapping_label.setText("Vybraný předpis: —")
+            self._selected_legal_document_id = None
+            return
+        title = (document.title or "").strip() or f"Předpis #{document.id}"
+        self.legal_mapping_label.setText(f"Vybraný předpis: {title}")
+
+    def _pick_legal_document(self) -> None:
+        from moduly.rizeni_rizik.ui.hazard_catalog_legal_document_pick_dialog import (
+            HazardCatalogLegalDocumentPickDialog,
+        )
+
+        dialog = HazardCatalogLegalDocumentPickDialog(
+            self,
+            ai_reference=self._first_legal_reference(),
+            initial_document_id=self._selected_legal_document_id,
+        )
+        if not dialog.exec():
+            return
+        self._selected_legal_document_id = dialog.selected_document_id()
+        self._refresh_legal_mapping_label()
 
     def get_package(self) -> AiProposalPackage | None:
         return self._result_package
@@ -550,7 +572,7 @@ class HazardCatalogAiPackageEditDialog(QDialog):
                 )
 
         legal_links: list[AiProposalPackageLegalLink] = []
-        selected_document_id = self.legal_document.currentData()
+        selected_document_id = self._selected_legal_document_id
         for index, line in enumerate(self.legal_references.toPlainText().splitlines()):
             reference = line.strip()
             if not reference:
