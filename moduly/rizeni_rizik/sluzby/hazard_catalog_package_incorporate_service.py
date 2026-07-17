@@ -1,10 +1,12 @@
-"""Zapracování návrhových balíků AI do MASTER katalogu (R20b)."""
+"""Zapracování návrhových balíků AI do MASTER katalogu (R20b, slučování R20g)."""
 
 from __future__ import annotations
 
 import json
 from dataclasses import dataclass
 from datetime import datetime
+
+from sqlalchemy import select
 
 from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_PACKAGE_TYPE_EXTEND_EVENT,
@@ -26,11 +28,14 @@ from moduly.nastaveni.sluzby.exposed_group_service import (
     ExposedGroupMatchKind,
     exposed_group_service,
 )
-from moduly.rizeni_rizik.constants import DEFAULT_RISK_SEVERITY, RISK_SEVERITIES
+from moduly.rizeni_rizik.constants import (
+    DEFAULT_RISK_SEVERITY,
+    RISK_SEVERITIES,
+    format_risk_severity_label,
+)
 from moduly.rizeni_rizik.constants_library import (
     CATALOG_INCORPORATE_ERROR_ASSESSMENT_GROUP,
     CATALOG_INCORPORATE_ERROR_EVENT_PARENT,
-    CATALOG_INCORPORATE_ERROR_GENERIC,
     CATALOG_INCORPORATE_ERROR_REVIEW_MISMATCH,
     CATALOG_INCORPORATE_ERROR_REVIEW_MISSING,
     CATALOG_INCORPORATE_ERROR_SOURCE_INACTIVE,
@@ -40,6 +45,9 @@ from moduly.rizeni_rizik.constants_library import (
 from moduly.rizeni_rizik.modely.hazard_library_template import HazardLibraryTemplate
 from moduly.rizeni_rizik.modely.hazard_library_template_assessment import (
     HazardLibraryTemplateAssessment,
+)
+from moduly.rizeni_rizik.modely.hazard_library_template_assessment_exposed_group import (
+    HazardLibraryTemplateAssessmentExposedGroup,
 )
 from moduly.rizeni_rizik.modely.hazard_library_template_event import HazardLibraryTemplateEvent
 from moduly.rizeni_rizik.modely.hazard_library_template_legal_link import (
@@ -59,6 +67,9 @@ from moduly.rizeni_rizik.sluzby.hazard_catalog_legal_requirement_resolver import
 from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_incorporate_service import (
     HazardCatalogProposalIncorporateService,
 )
+from moduly.rizeni_rizik.sluzby.hazard_library_template_existing_measure_service import (
+    normalize_template_measure_description,
+)
 from moduly.rizeni_rizik.sluzby.hazard_library_template_service import (
     hazard_library_template_service,
 )
@@ -66,6 +77,34 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_service import (
 
 class HazardCatalogPackageIncorporateError(ValueError):
     pass
+
+
+@dataclass(frozen=True)
+class AmbiguousAssessmentCandidate:
+    assessment_id: int
+    severity: str
+    severity_label: str
+    conclusion: str
+    group_names: str
+
+
+class HazardCatalogPackageAmbiguousGroupError(HazardCatalogPackageIncorporateError):
+    """Více aktivních posouzení obsahuje stejnou ohroženou skupinu."""
+
+    def __init__(
+        self,
+        *,
+        group_id: int,
+        group_name: str,
+        candidates: tuple[AmbiguousAssessmentCandidate, ...],
+    ):
+        self.group_id = group_id
+        self.group_name = group_name
+        self.candidates = candidates
+        super().__init__(
+            f"Ohrožená skupina „{group_name}“ je ve více aktivních posouzeních. "
+            "Vyberte cílové posouzení.",
+        )
 
 
 @dataclass
@@ -77,6 +116,7 @@ class CatalogPackageIncorporateResult:
     existing_measure_count: int
     required_measure_count: int
     legal_link_count: int
+    merged_assessment_count: int = 0
 
 
 class HazardCatalogPackageIncorporateService:
@@ -127,6 +167,7 @@ class HazardCatalogPackageIncorporateService:
         *,
         template_id: int,
         package_record_id: int,
+        group_assessment_overrides: dict[int, int] | None = None,
     ) -> CatalogPackageIncorporateResult:
         template = hazard_library_template_service.get_by_id(template_id)
         if template is None:
@@ -152,9 +193,14 @@ class HazardCatalogPackageIncorporateService:
 
         package = self.package_repository.package_from_record(record)
         export_id_map = self.get_export_id_map(record.ai_peer_review_id)
+        overrides = {
+            int(group_id): int(assessment_id)
+            for group_id, assessment_id in (group_assessment_overrides or {}).items()
+        }
 
         event_count = 0
         assessment_count = 0
+        merged_assessment_count = 0
         existing_measure_count = 0
         required_measure_count = 0
         legal_link_count = 0
@@ -181,41 +227,19 @@ class HazardCatalogPackageIncorporateService:
                 event_count = 1
 
             for assessment in package.assessments:
-                assessment_id = self._create_assessment(
-                    session,
-                    template_event_id=event_id,
-                    assessment=assessment,
-                    package_reasoning=package.reasoning,
+                created, merged, existing_added, required_added = (
+                    self._incorporate_assessment(
+                        session,
+                        template_event_id=event_id,
+                        assessment=assessment,
+                        package_reasoning=package.reasoning,
+                        group_assessment_overrides=overrides,
+                    )
                 )
-                assessment_count += 1
-                for measure in assessment.existing_measures:
-                    session.add(
-                        HazardLibraryTemplateExistingMeasure(
-                            template_assessment_id=assessment_id,
-                            description=(measure.description or "").strip(),
-                            note=(measure.note or "").strip(),
-                            active=True,
-                            sort_order=self._order._next_existing_measure_sort_order(
-                                session,
-                                assessment_id,
-                            ),
-                        ),
-                    )
-                    existing_measure_count += 1
-                for measure in assessment.required_measures:
-                    session.add(
-                        HazardLibraryTemplateRequiredMeasure(
-                            template_assessment_id=assessment_id,
-                            description=(measure.description or "").strip(),
-                            note=(measure.note or "").strip(),
-                            active=True,
-                            sort_order=self._order._next_required_measure_sort_order(
-                                session,
-                                assessment_id,
-                            ),
-                        ),
-                    )
-                    required_measure_count += 1
+                assessment_count += created
+                merged_assessment_count += merged
+                existing_measure_count += existing_added
+                required_measure_count += required_added
 
             for link in package.legal_links:
                 document_id = self._resolve_legal_document_id(link)
@@ -264,6 +288,7 @@ class HazardCatalogPackageIncorporateService:
             existing_measure_count=existing_measure_count,
             required_measure_count=required_measure_count,
             legal_link_count=legal_link_count,
+            merged_assessment_count=merged_assessment_count,
         )
 
     def _resolve_or_create_event(
@@ -305,6 +330,279 @@ class HazardCatalogPackageIncorporateService:
         session.flush()
         return int(event.id)
 
+    def _incorporate_assessment(
+        self,
+        session,
+        *,
+        template_event_id: int,
+        assessment,
+        package_reasoning: str,
+        group_assessment_overrides: dict[int, int],
+    ) -> tuple[int, int, int, int]:
+        group_ids = self._resolve_exposed_group_ids(assessment)
+        merge_targets: dict[int, HazardLibraryTemplateAssessment] = {}
+        new_group_ids: list[int] = []
+
+        for group_id in group_ids:
+            matches = self._find_active_assessments_containing_group(
+                session,
+                template_event_id=template_event_id,
+                group_id=group_id,
+            )
+            override_id = group_assessment_overrides.get(group_id)
+            if override_id is not None:
+                override = session.get(HazardLibraryTemplateAssessment, override_id)
+                if (
+                    override is None
+                    or not override.active
+                    or int(override.template_event_id) != int(template_event_id)
+                ):
+                    raise HazardCatalogPackageIncorporateError(
+                        "Vybrané cílové posouzení pro ohroženou skupinu není platné.",
+                    )
+                matches = [override]
+
+            if len(matches) > 1:
+                group_name = (
+                    exposed_group_service.display_name(group_id) or f"#{group_id}"
+                )
+                raise HazardCatalogPackageAmbiguousGroupError(
+                    group_id=group_id,
+                    group_name=group_name,
+                    candidates=tuple(
+                        self._to_ambiguous_candidate(session, row) for row in matches
+                    ),
+                )
+            if len(matches) == 1:
+                merge_targets[int(matches[0].id)] = matches[0]
+            else:
+                new_group_ids.append(group_id)
+
+        existing_added = 0
+        required_added = 0
+        merged_count = 0
+
+        for target in merge_targets.values():
+            added_existing, added_required = self._merge_into_assessment(
+                session,
+                target=target,
+                assessment=assessment,
+                package_reasoning=package_reasoning,
+            )
+            existing_added += added_existing
+            required_added += added_required
+            merged_count += 1
+
+        created_count = 0
+        if new_group_ids:
+            assessment_id = self._create_assessment(
+                session,
+                template_event_id=template_event_id,
+                assessment=assessment,
+                package_reasoning=package_reasoning,
+                group_ids=new_group_ids,
+            )
+            created_count = 1
+            for measure in assessment.existing_measures:
+                description = (measure.description or "").strip()
+                if not description:
+                    continue
+                session.add(
+                    HazardLibraryTemplateExistingMeasure(
+                        template_assessment_id=assessment_id,
+                        description=description,
+                        note=(measure.note or "").strip(),
+                        active=True,
+                        sort_order=self._order._next_existing_measure_sort_order(
+                            session,
+                            assessment_id,
+                        ),
+                    ),
+                )
+                existing_added += 1
+            for measure in assessment.required_measures:
+                description = (measure.description or "").strip()
+                if not description:
+                    continue
+                session.add(
+                    HazardLibraryTemplateRequiredMeasure(
+                        template_assessment_id=assessment_id,
+                        description=description,
+                        note=(measure.note or "").strip(),
+                        active=True,
+                        sort_order=self._order._next_required_measure_sort_order(
+                            session,
+                            assessment_id,
+                        ),
+                    ),
+                )
+                required_added += 1
+
+        return created_count, merged_count, existing_added, required_added
+
+    def _merge_into_assessment(
+        self,
+        session,
+        *,
+        target: HazardLibraryTemplateAssessment,
+        assessment,
+        package_reasoning: str,
+    ) -> tuple[int, int]:
+        proposed_severity = (
+            assessment.severity
+            if assessment.severity in RISK_SEVERITIES
+            else DEFAULT_RISK_SEVERITY
+        )
+        target.severity = self._stricter_severity(target.severity, proposed_severity)
+        target.conclusion = self._merge_conclusions(
+            target.conclusion or "",
+            assessment.conclusion or "",
+        )
+        if package_reasoning.strip() and not (target.note or "").strip():
+            target.note = package_reasoning.strip()
+        target.updated_at = datetime.now()
+        session.add(target)
+
+        existing_added = self._add_unique_existing_measures(
+            session,
+            assessment_id=int(target.id),
+            measures=assessment.existing_measures,
+        )
+        required_added = self._add_unique_required_measures(
+            session,
+            assessment_id=int(target.id),
+            measures=assessment.required_measures,
+        )
+        return existing_added, required_added
+
+    def _add_unique_existing_measures(self, session, *, assessment_id: int, measures) -> int:
+        existing = session.scalars(
+            select(HazardLibraryTemplateExistingMeasure).where(
+                HazardLibraryTemplateExistingMeasure.template_assessment_id
+                == assessment_id,
+            ),
+        ).all()
+        known = {
+            normalize_template_measure_description(row.description or "")
+            for row in existing
+            if (row.description or "").strip()
+        }
+        added = 0
+        for measure in measures or ():
+            description = (measure.description or "").strip()
+            if not description:
+                continue
+            key = normalize_template_measure_description(description)
+            if key in known:
+                continue
+            known.add(key)
+            session.add(
+                HazardLibraryTemplateExistingMeasure(
+                    template_assessment_id=assessment_id,
+                    description=description,
+                    note=(measure.note or "").strip(),
+                    active=True,
+                    sort_order=self._order._next_existing_measure_sort_order(
+                        session,
+                        assessment_id,
+                    ),
+                ),
+            )
+            added += 1
+        return added
+
+    def _add_unique_required_measures(self, session, *, assessment_id: int, measures) -> int:
+        existing = session.scalars(
+            select(HazardLibraryTemplateRequiredMeasure).where(
+                HazardLibraryTemplateRequiredMeasure.template_assessment_id
+                == assessment_id,
+            ),
+        ).all()
+        known = {
+            normalize_template_measure_description(row.description or "")
+            for row in existing
+            if (row.description or "").strip()
+        }
+        added = 0
+        for measure in measures or ():
+            description = (measure.description or "").strip()
+            if not description:
+                continue
+            key = normalize_template_measure_description(description)
+            if key in known:
+                continue
+            known.add(key)
+            session.add(
+                HazardLibraryTemplateRequiredMeasure(
+                    template_assessment_id=assessment_id,
+                    description=description,
+                    note=(measure.note or "").strip(),
+                    active=True,
+                    sort_order=self._order._next_required_measure_sort_order(
+                        session,
+                        assessment_id,
+                    ),
+                ),
+            )
+            added += 1
+        return added
+
+    def _find_active_assessments_containing_group(
+        self,
+        session,
+        *,
+        template_event_id: int,
+        group_id: int,
+    ) -> list[HazardLibraryTemplateAssessment]:
+        assessments = list(
+            session.scalars(
+                select(HazardLibraryTemplateAssessment).where(
+                    HazardLibraryTemplateAssessment.template_event_id
+                    == template_event_id,
+                    HazardLibraryTemplateAssessment.active.is_(True),
+                ),
+            ),
+        )
+        matches: list[HazardLibraryTemplateAssessment] = []
+        for assessment in assessments:
+            if group_id in self._assessment_group_ids(session, assessment):
+                matches.append(assessment)
+        return matches
+
+    def _assessment_group_ids(
+        self,
+        session,
+        assessment: HazardLibraryTemplateAssessment,
+    ) -> set[int]:
+        join_ids = session.scalars(
+            select(HazardLibraryTemplateAssessmentExposedGroup.exposed_group_id).where(
+                HazardLibraryTemplateAssessmentExposedGroup.assessment_id
+                == assessment.id,
+            ),
+        ).all()
+        ids = {int(value) for value in join_ids}
+        if not ids and assessment.exposed_group_id:
+            ids = {int(assessment.exposed_group_id)}
+        return ids
+
+    def _to_ambiguous_candidate(
+        self,
+        session,
+        assessment: HazardLibraryTemplateAssessment,
+    ) -> AmbiguousAssessmentCandidate:
+        group_ids = sorted(self._assessment_group_ids(session, assessment))
+        names = [
+            exposed_group_service.display_name(group_id) or f"#{group_id}"
+            for group_id in group_ids
+        ]
+        return AmbiguousAssessmentCandidate(
+            assessment_id=int(assessment.id),
+            severity=assessment.severity or "",
+            severity_label=format_risk_severity_label(assessment.severity or ""),
+            conclusion=(assessment.conclusion or "").strip(),
+            group_names=", ".join(names) if names else "—",
+        )
+
     def _create_assessment(
         self,
         session,
@@ -312,8 +610,15 @@ class HazardCatalogPackageIncorporateService:
         template_event_id: int,
         assessment,
         package_reasoning: str,
+        group_ids: list[int] | None = None,
     ) -> int:
-        group_ids = self._resolve_exposed_group_ids(assessment)
+        resolved_group_ids = group_ids or self._resolve_exposed_group_ids(assessment)
+        if not resolved_group_ids:
+            raise HazardCatalogPackageIncorporateError(
+                CATALOG_INCORPORATE_ERROR_ASSESSMENT_GROUP.format(
+                    name=assessment.exposed_group or "posouzení",
+                ),
+            )
         severity = (
             assessment.severity
             if assessment.severity in RISK_SEVERITIES
@@ -321,7 +626,7 @@ class HazardCatalogPackageIncorporateService:
         )
         row = HazardLibraryTemplateAssessment(
             template_event_id=template_event_id,
-            exposed_group_id=group_ids[0],
+            exposed_group_id=resolved_group_ids[0],
             severity=severity,
             conclusion=(assessment.conclusion or "").strip(),
             note=(package_reasoning or "").strip(),
@@ -330,11 +635,11 @@ class HazardCatalogPackageIncorporateService:
         )
         session.add(row)
         session.flush()
-        from moduly.rizeni_rizik.modely.hazard_library_template_assessment_exposed_group import (
-            HazardLibraryTemplateAssessmentExposedGroup,
-        )
 
-        for sort_order, group_id in enumerate(group_ids, start=1):
+        for sort_order, group_id in enumerate(
+            dict.fromkeys(resolved_group_ids),
+            start=1,
+        ):
             session.add(
                 HazardLibraryTemplateAssessmentExposedGroup(
                     assessment_id=int(row.id),
@@ -393,6 +698,36 @@ class HazardCatalogPackageIncorporateService:
             f"Právní odkaz „{link.reference}“ nebyl v registru předpisů nalezen. "
             "Upravte balík a vyberte existující právní předpis.",
         )
+
+    @staticmethod
+    def _stricter_severity(left: str, right: str) -> str:
+        order = {severity: index for index, severity in enumerate(RISK_SEVERITIES)}
+        left_rank = order.get(left, -1)
+        right_rank = order.get(right, -1)
+        return left if left_rank >= right_rank else right
+
+    @staticmethod
+    def _normalize_conclusion(text: str) -> str:
+        return " ".join((text or "").strip().split()).casefold()
+
+    @classmethod
+    def _merge_conclusions(cls, existing: str, proposed: str) -> str:
+        existing_text = (existing or "").strip()
+        proposed_text = (proposed or "").strip()
+        if not proposed_text:
+            return existing_text
+        if not existing_text:
+            return proposed_text
+        if cls._normalize_conclusion(existing_text) == cls._normalize_conclusion(
+            proposed_text,
+        ):
+            return existing_text
+        for paragraph in existing_text.split("\n\n"):
+            if cls._normalize_conclusion(paragraph) == cls._normalize_conclusion(
+                proposed_text,
+            ):
+                return existing_text
+        return f"{existing_text}\n\n{proposed_text}"
 
     @staticmethod
     def _build_legal_note(link, package_reasoning: str) -> str:

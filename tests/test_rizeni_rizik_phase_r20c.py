@@ -57,6 +57,9 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.modely.hazard_library_template_assessment import (
         HazardLibraryTemplateAssessment,
     )
+    from moduly.rizeni_rizik.modely.hazard_library_template_assessment_exposed_group import (
+        HazardLibraryTemplateAssessmentExposedGroup,
+    )
     from moduly.rizeni_rizik.modely.hazard_library_template_event import (
         HazardLibraryTemplateEvent,
     )
@@ -107,6 +110,7 @@ class MultiExposedGroupsR20cTestCase(unittest.TestCase):
             session.execute(delete(AiProposalPackageRecord))
             session.execute(delete(AiPeerReviewBatch))
             session.execute(delete(AiPeerReview))
+            session.execute(delete(HazardLibraryTemplateAssessmentExposedGroup))
             session.execute(delete(HazardLibraryTemplateAssessment))
             session.execute(delete(HazardLibraryTemplateEvent))
             session.execute(delete(HazardLibraryTemplate))

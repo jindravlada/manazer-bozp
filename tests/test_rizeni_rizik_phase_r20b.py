@@ -264,12 +264,19 @@ class AiProposalPackagesR20bTestCase(unittest.TestCase):
             package_record_id=record.id,
         )
         self.assertEqual(result.event_count, 0)
-        self.assertEqual(result.assessment_count, 1)
+        self.assertEqual(result.assessment_count, 0)
+        self.assertEqual(result.merged_assessment_count, 1)
         assessments = hazard_library_template_assessment_service.get_for_event(
             self.existing_event.id,
             include_inactive=False,
         )
-        self.assertGreaterEqual(len(assessments), 2)
+        self.assertEqual(len(assessments), 1)
+        self.assertEqual(
+            hazard_library_template_assessment_service.get_group_ids(
+                assessments[0].assessment.id,
+            ),
+            [self.group.id],
+        )
 
     def test_rollback_on_unresolved_exposed_group(self) -> None:
         package = AiProposalPackage(

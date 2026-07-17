@@ -1293,8 +1293,12 @@ class AiPeerReviewWidget(QWidget):
             CATALOG_AI_PACKAGE_SELECT_ONE,
         )
         from moduly.rizeni_rizik.sluzby.hazard_catalog_package_incorporate_service import (
+            HazardCatalogPackageAmbiguousGroupError,
             HazardCatalogPackageIncorporateError,
             hazard_catalog_package_incorporate_service,
+        )
+        from moduly.rizeni_rizik.ui.hazard_catalog_package_ambiguous_group_dialog import (
+            HazardCatalogPackageAmbiguousGroupDialog,
         )
 
         record_id = self._selected_package_record_id()
@@ -1305,14 +1309,28 @@ class AiPeerReviewWidget(QWidget):
                 CATALOG_AI_PACKAGE_SELECT_ONE,
             )
             return
-        try:
-            result = hazard_catalog_package_incorporate_service.incorporate_package(
-                template_id=self._source_id,
-                package_record_id=record_id,
-            )
-        except HazardCatalogPackageIncorporateError as error:
-            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
-            return
+
+        overrides: dict[int, int] = {}
+        while True:
+            try:
+                result = hazard_catalog_package_incorporate_service.incorporate_package(
+                    template_id=self._source_id,
+                    package_record_id=record_id,
+                    group_assessment_overrides=overrides or None,
+                )
+                break
+            except HazardCatalogPackageAmbiguousGroupError as error:
+                dialog = HazardCatalogPackageAmbiguousGroupDialog(
+                    self,
+                    group_name=error.group_name,
+                    candidates=error.candidates,
+                )
+                if not dialog.exec() or dialog.selected_assessment_id is None:
+                    return
+                overrides[error.group_id] = dialog.selected_assessment_id
+            except HazardCatalogPackageIncorporateError as error:
+                QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+                return
 
         self.refresh()
         if self._on_catalog_incorporated is not None:
