@@ -127,7 +127,7 @@ class HazardCatalogInstanceCompareService:
             result.lines.append(
                 CatalogCompareLine(
                     kind=CATALOG_COMPARE_KIND_CHANGED,
-                    label="Zdroj analýzy",
+                    label="Zdroj rizika",
                     detail=changes,
                 )
             )

@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.widgets.info_tooltip import set_widget_tooltip
 from core.widgets.table_utils import configure_table_columns
 from moduly.rizeni_rizik.constants import (
     HAZARD_RISK_ASSESSMENT_DIALOG_TITLE,
@@ -308,7 +309,7 @@ class HazardRiskAssessmentsWidget(QWidget):
             QMessageBox.information(
                 self,
                 HAZARD_RISK_ASSESSMENT_DIALOG_TITLE,
-                "Posouzení rizik je u dokončené nebo archivované identifikace "
+                "Posouzení zdrojů rizik je u dokončené nebo archivované identifikace "
                 "pouze pro čtení.",
             )
             return False
@@ -352,20 +353,26 @@ class HazardRiskAssessmentsWidget(QWidget):
                 existing_measure_count=existing_measure_counts.get(assessment.id, 0),
                 required_measure_count=required_measure_counts.get(assessment.id, 0),
             )
+            group_item = QTableWidgetItem(display_name)
+            set_widget_tooltip(group_item, display_name)
             self.table.setItem(
                 row_index,
                 RISK_ASSESSMENT_COL_EXPOSED_GROUP,
-                QTableWidgetItem(display_name),
+                group_item,
             )
+            event_item = QTableWidgetItem(row.event_name)
+            set_widget_tooltip(event_item, row.event_name)
             self.table.setItem(
                 row_index,
                 RISK_ASSESSMENT_COL_EVENT,
-                QTableWidgetItem(row.event_name),
+                event_item,
             )
+            source_item = QTableWidgetItem(row.inventory_item_name)
+            set_widget_tooltip(source_item, row.inventory_item_name)
             self.table.setItem(
                 row_index,
                 RISK_ASSESSMENT_COL_INVENTORY_ITEM,
-                QTableWidgetItem(row.inventory_item_name),
+                source_item,
             )
             self.table.setItem(
                 row_index,

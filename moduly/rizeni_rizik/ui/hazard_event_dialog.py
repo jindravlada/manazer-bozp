@@ -57,7 +57,7 @@ class HazardEventDialog(QDialog):
         self.active_checkbox = QCheckBox("Aktivní")
         self.active_checkbox.setChecked(True)
 
-        form.addRow("Zdroj analýzy *:", self.inventory_item)
+        form.addRow("Zdroj rizika *:", self.inventory_item)
         form.addRow("Název události *:", self.name)
         form.addRow("Popis:", self.description)
         form.addRow("Poznámka:", self.note)

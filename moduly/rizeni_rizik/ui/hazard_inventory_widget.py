@@ -346,7 +346,9 @@ class HazardInventoryWidget(QWidget):
         message = QMessageBox(self)
         message.setIcon(QMessageBox.Icon.Information)
         message.setWindowTitle(HAZARD_LIBRARY_APPLY_TO_INVENTORY_SUCCESS_TITLE)
-        message.setText("Zdroj rizika byl převzat z katalogu a vložen do analýzy pracoviště.")
+        message.setText(
+            "Zdroj rizika byl převzat z katalogu a evidován na tomto pracovišti."
+        )
         message.setInformativeText(summary)
         message.exec()
         self._notify_event_saved()

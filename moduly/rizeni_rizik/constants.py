@@ -46,9 +46,9 @@ TABLE_HEADERS = [
 
 TAB_BASICS = "Základní údaje"
 TAB_PHOTOS = "Fotodokumentace"
-TAB_INVENTORY = "Analýza pracoviště"
-TAB_EVENTS = "Nežádoucí události"  # odstraněno z dialogu ve fázi R15 (UI sloučeno do Analýzy)
-TAB_RISK_ASSESSMENT = "Posouzení rizik"
+TAB_INVENTORY = "Zdroje rizik na pracovišti"
+TAB_EVENTS = "Nežádoucí události"  # odstraněno z dialogu ve fázi R15 (UI sloučeno do zdrojů rizik)
+TAB_RISK_ASSESSMENT = "Posouzení zdrojů rizik"
 TAB_AI_PEER_REVIEW = "Oponentní posouzení AI"  # R21a: skryto v Identifikaci (AI jen v Katalogu)
 TAB_MEASURES = "Opatření"  # R21a: dočasně nezobrazeno
 TAB_PUBLICATION = "Publikace"  # R21a: dočasně nezobrazeno
@@ -79,11 +79,12 @@ HAZARD_IDENTIFICATION_VISIBLE_TABS = (
     TAB_RISK_ASSESSMENT,
 )
 
-DIALOG_WINDOW_TITLE = "Identifikace nebezpečí"
+DIALOG_WINDOW_TITLE = "Identifikace rizik"
 
 INVENTORY_INTRO_TEXT = (
-    "Popište pracoviště – zaznamenejte zařízení, činnosti, energie, látky, prostory, "
-    "dopravu, osoby, podmínky prostředí a další skutečnosti, které se zde vyskytují."
+    "Evidujte výskyt katalogových zdrojů rizik na tomto pracovišti. "
+    "Odborný obsah zdrojů se spravuje v Katalogu zdrojů rizik; zde jen "
+    "zaznamenáváte, které zdroje se na pracovišti vyskytují."
 )
 INVENTORY_ADD_NEW_BUTTON = "Přidat nový"
 
@@ -126,7 +127,7 @@ READ_ONLY_IDENTIFICATION_STATUSES = (
     HAZARD_IDENTIFICATION_STATUS_ARCHIVED,
 )
 
-INVENTORY_ITEM_DIALOG_TITLE = "Položka analýzy pracoviště"
+INVENTORY_ITEM_DIALOG_TITLE = "Zdroj rizika na pracovišti"
 
 
 def format_inventory_item_source_label(
@@ -147,10 +148,11 @@ INVENTORY_COLUMN_COUNT = 4
 
 INVENTORY_TABLE_HEADERS = ["ID", "Název", "Popis", "Aktivní"]
 
-WORKPLACE_ANALYSIS_SELECT_ITEM = "Vyberte položku analýzy pracoviště."
+WORKPLACE_ANALYSIS_SELECT_ITEM = "Vyberte zdroj rizika na pracovišti."
 
 WORKPLACE_ANALYSIS_READ_ONLY_MESSAGE = (
-    "Analýza pracoviště je u dokončené nebo archivované identifikace pouze pro čtení."
+    "Zdroje rizik na pracovišti jsou u dokončené nebo archivované identifikace "
+    "pouze pro čtení."
 )
 
 
@@ -159,14 +161,13 @@ def is_identification_inventory_read_only(status: str) -> bool:
 
 
 def can_save_inventory_item_to_library(status: str) -> bool:
-    """Uložení položky analýzy do knihovny – povoleno kromě archivované identifikace."""
+    """Uložení zdroje do katalogu – povoleno kromě archivované identifikace."""
     return status != HAZARD_IDENTIFICATION_STATUS_ARCHIVED
 
 
 PHOTOS_INTRO_TEXT = (
-    "Tato fotodokumentace zachycuje skutečný stav pracoviště v době provádění "
-    "identifikace rizik. Slouží jako pracovní podklad i jako důkaz, že identifikace "
-    "byla provedena na místě."
+    "Fotodokumentace zachycuje skutečný stav pracoviště v době identifikace. "
+    "Slouží jako podklad k evidenci výskytu zdrojů rizik na místě."
 )
 
 HAZARD_PHOTO_DIALOG_TITLE = "Fotografie identifikace"
@@ -210,7 +211,7 @@ def is_identification_events_read_only(status: str) -> bool:
 
 
 EVENTS_INTRO_TEXT = (
-    "Popište konkrétní nežádoucí události příslušné k jednotlivým zdrojům analýzy pracoviště."
+    "Nežádoucí události příslušné k evidovaným zdrojům rizik na pracovišti."
 )
 
 HAZARD_EVENT_DIALOG_TITLE = "Nežádoucí událost"
@@ -224,20 +225,20 @@ EVENT_COLUMN_COUNT = 4
 EVENT_TABLE_HEADERS = [
     "ID",
     "Nežádoucí událost",
-    "Zdroj analýzy",
+    "Zdroj rizika",
     "Aktivní",
 ]
 
-# Tabulka událostí v záložce Analýza pracoviště (bez sloupce Zdroj analýzy).
+# Tabulka událostí v záložce Zdroje rizik na pracovišti (bez sloupce Zdroj rizika).
 ITEM_EVENT_COL_ID = 0
 ITEM_EVENT_COL_NAME = 1
 ITEM_EVENT_COL_ACTIVE = 2
 ITEM_EVENT_COLUMN_COUNT = 3
 ITEM_EVENT_TABLE_HEADERS = ["ID", "Nežádoucí událost", "Aktivní"]
 
-ITEM_EVENTS_SELECT_ITEM = "Vyberte položku analýzy pracoviště."
+ITEM_EVENTS_SELECT_ITEM = "Vyberte zdroj rizika na pracovišti."
 ITEM_EVENTS_SELECT_EVENT = "Vyberte nežádoucí událost."
-ITEM_EVENTS_SECTION_TITLE = "Nežádoucí události vybrané položky"
+ITEM_EVENTS_SECTION_TITLE = "Nežádoucí události vybraného zdroje rizika"
 
 
 def format_event_display_name(name: str, *, assessment_count: int = 0) -> str:
@@ -283,11 +284,11 @@ def format_risk_assessment_completed_at(value) -> str:
 
 
 RISK_ASSESSMENTS_INTRO_TEXT = (
-    "Určete, které skupiny osob mohou být vystaveny jednotlivým nežádoucím událostem "
-    "a popište možný následek včetně jeho závažnosti."
+    "Posouzení rizik převzatá z katalogových zdrojů evidovaných na tomto pracovišti. "
+    "U každého posouzení je uvedena ohrožená skupina, nežádoucí událost a závažnost."
 )
 
-HAZARD_RISK_ASSESSMENT_DIALOG_TITLE = "Posouzení rizika"
+HAZARD_RISK_ASSESSMENT_DIALOG_TITLE = "Posouzení zdroje rizika"
 
 RISK_SEVERITY_NEGLIGIBLE = "negligible"
 RISK_SEVERITY_MINOR = "minor"
@@ -350,7 +351,7 @@ RISK_ASSESSMENT_TABLE_HEADERS = [
     "ID",
     "Ohrožené skupiny",
     "Nežádoucí událost",
-    "Zdroj analýzy",
+    "Zdroj rizika",
     "Závažnost",
     "Stav posouzení",
     "Dokončeno dne",

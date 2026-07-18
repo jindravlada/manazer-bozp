@@ -124,7 +124,7 @@ HAZARD_LIBRARY_SAVE_FROM_INVENTORY_SUCCESS_TITLE = "Zdroj rizika uložen do kata
 HAZARD_LIBRARY_SAVE_TO_LIBRARY_BUTTON = "Uložit do katalogu zdrojů rizik…"
 HAZARD_LIBRARY_OPEN_IN_LIBRARY_BUTTON = "Otevřít v katalogu zdrojů rizik"
 HAZARD_LIBRARY_SAVE_INACTIVE_ITEM_MESSAGE = (
-    "Do katalogu lze uložit pouze aktivní položku analýzy pracoviště."
+    "Do katalogu lze uložit pouze aktivní zdroj rizika evidovaný na pracovišti."
 )
 HAZARD_LIBRARY_SAVE_ARCHIVED_MESSAGE = (
     "U archivované identifikace nelze ukládat položky do katalogu zdrojů rizik."
@@ -160,7 +160,7 @@ CATALOG_COMPARE_WITH_MASTER_VERSION_NOTE = (
     "Poznámka: Master je v revizi {master_version}, instance byla převzata v revizi {source_version}."
 )
 CATALOG_COMPARE_WITH_MASTER_SELECT_ITEM = (
-    "Vyberte zdroj analýzy převzatý z katalogu."
+    "Vyberte zdroj rizika převzatý z katalogu."
 )
 CATALOG_COMPARE_WITH_MASTER_NOT_CATALOG_ITEM = (
     "Porovnání s Masterem je dostupné pouze u zdroje převzatého z katalogu."

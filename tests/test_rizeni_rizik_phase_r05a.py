@@ -82,18 +82,20 @@ class WorkplaceAnalysisTerminologyPhaseR05aTestCase(unittest.TestCase):
             workplace_id=workplace.id,
         )
 
-    def test_tab_label_is_workplace_analysis(self) -> None:
-        self.assertEqual(TAB_INVENTORY, "Analýza pracoviště")
+    def test_tab_label_is_workplace_sources(self) -> None:
+        self.assertEqual(TAB_INVENTORY, "Zdroje rizik na pracovišti")
 
     def test_intro_text_updated(self) -> None:
-        self.assertIn("Popište pracoviště", INVENTORY_INTRO_TEXT)
-        self.assertIn("podmínky prostředí", INVENTORY_INTRO_TEXT)
+        self.assertIn("katalogových zdrojů rizik", INVENTORY_INTRO_TEXT)
+        self.assertIn("vyskytují", INVENTORY_INTRO_TEXT)
         self.assertNotIn("Inventura", INVENTORY_INTRO_TEXT)
+        self.assertNotIn("Popište pracoviště", INVENTORY_INTRO_TEXT)
 
     def test_event_table_headers(self) -> None:
-        self.assertIn("Zdroj analýzy", EVENT_TABLE_HEADERS)
+        self.assertIn("Zdroj rizika", EVENT_TABLE_HEADERS)
         self.assertNotIn("Zdrojová položka inventury", EVENT_TABLE_HEADERS)
         self.assertNotIn("Zdrojová položka analýzy", EVENT_TABLE_HEADERS)
+        self.assertNotIn("Zdroj analýzy", EVENT_TABLE_HEADERS)
 
     def test_inventory_widget_shows_new_intro(self) -> None:
         widget = HazardInventoryWidget()
@@ -120,7 +122,8 @@ class WorkplaceAnalysisTerminologyPhaseR05aTestCase(unittest.TestCase):
             ITEM_EVENT_TABLE_HEADERS,
         )
         self.assertNotIn("Zdroj analýzy", ITEM_EVENT_TABLE_HEADERS)
-        self.assertIn("Zdroj analýzy", EVENT_TABLE_HEADERS)
+        self.assertNotIn("Zdroj rizika", ITEM_EVENT_TABLE_HEADERS)
+        self.assertIn("Zdroj rizika", EVENT_TABLE_HEADERS)
 
     def test_inventory_item_service_still_works(self) -> None:
         item = hazard_inventory_item_service.create_item(
@@ -129,7 +132,7 @@ class WorkplaceAnalysisTerminologyPhaseR05aTestCase(unittest.TestCase):
             name="Lokomotiva",
         )
         self.assertEqual(item.name, "Lokomotiva")
-        self.assertEqual(INVENTORY_ITEM_DIALOG_TITLE, "Položka analýzy pracoviště")
+        self.assertEqual(INVENTORY_ITEM_DIALOG_TITLE, "Zdroj rizika na pracovišti")
 
 
 if __name__ == "__main__":

@@ -676,11 +676,11 @@ class HazardIdentificationWorkingCopy:
     def _validate_inventory_item(self, inventory_item_id: int) -> None:
         item = self.get_item(inventory_item_id)
         if item is None:
-            raise HazardEventError("Zdroj analýzy neexistuje.")
+            raise HazardEventError("Zdroj rizika neexistuje.")
         if item.hazard_identification_id != self.identification_id:
-            raise HazardEventError("Zdroj analýzy musí patřit ke stejné identifikaci.")
+            raise HazardEventError("Zdroj rizika musí patřit ke stejné identifikaci.")
         if not item.active:
-            raise HazardEventError("Lze vybrat pouze aktivní zdroj analýzy.")
+            raise HazardEventError("Lze vybrat pouze aktivní zdroj rizika.")
 
     def _validate_unique_active_event_name(
         self,

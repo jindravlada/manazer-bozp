@@ -236,18 +236,21 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             RISK_ASSESSMENT_COL_STATUS,
         )
 
+        # R21b: výchozí šířky; poslední sloupec (Aktivní) dobíhá do konce okna.
         widths = {
-            RISK_ASSESSMENT_COL_EXPOSED_GROUP: 160,
-            RISK_ASSESSMENT_COL_EVENT: 180,
-            RISK_ASSESSMENT_COL_INVENTORY_ITEM: 160,
-            RISK_ASSESSMENT_COL_SEVERITY: 120,
-            RISK_ASSESSMENT_COL_STATUS: 120,
-            RISK_ASSESSMENT_COL_COMPLETED_AT: 110,
-            RISK_ASSESSMENT_COL_ACTIVE: 80,
+            RISK_ASSESSMENT_COL_EXPOSED_GROUP: 260,
+            RISK_ASSESSMENT_COL_EVENT: 340,
+            RISK_ASSESSMENT_COL_INVENTORY_ITEM: 220,
+            RISK_ASSESSMENT_COL_SEVERITY: 110,
+            RISK_ASSESSMENT_COL_STATUS: 130,
+            RISK_ASSESSMENT_COL_COMPLETED_AT: 120,
+            RISK_ASSESSMENT_COL_ACTIVE: 70,
         }
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
+        table.setWordWrap(False)
+        table.setTextElideMode(Qt.TextElideMode.ElideRight)
         for column in (
             RISK_ASSESSMENT_COL_EXPOSED_GROUP,
             RISK_ASSESSMENT_COL_EVENT,
@@ -255,9 +258,9 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             RISK_ASSESSMENT_COL_SEVERITY,
             RISK_ASSESSMENT_COL_STATUS,
             RISK_ASSESSMENT_COL_COMPLETED_AT,
-            RISK_ASSESSMENT_COL_ACTIVE,
         ):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
+        header.setSectionResizeMode(RISK_ASSESSMENT_COL_ACTIVE, QHeaderView.Stretch)
 
     elif profile == "hazard_existing_measures":
         from moduly.rizeni_rizik.constants import (

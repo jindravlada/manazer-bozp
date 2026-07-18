@@ -30,7 +30,7 @@ class HazardCatalogInstanceCompareDialog(QDialog):
         layout = QVBoxLayout(self)
 
         header_parts = [
-            f"Zdroj analýzy: {result.inventory_item_name}",
+            f"Zdroj rizika: {result.inventory_item_name}",
             f"Master: {result.template_name}",
             format_inventory_item_source_label(
                 source_template_id=result.template_id,
