@@ -38,6 +38,8 @@ class ProgramFindingItem:
     is_open: bool
     is_overdue: bool
     is_severe: bool
+    status: str = ""
+    finding_type: str = ""
 
 
 @dataclass(frozen=True)
@@ -128,6 +130,8 @@ class AuditProgramDashboardService:
                         is_open=is_open,
                         is_overdue=is_overdue,
                         is_severe=is_severe,
+                        status=finding.status,
+                        finding_type=finding.finding_type,
                     )
                 )
         items.sort(

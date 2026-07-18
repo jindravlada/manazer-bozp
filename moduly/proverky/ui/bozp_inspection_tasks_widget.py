@@ -8,15 +8,45 @@ from PySide6.QtWidgets import (
     QPushButton,
     QStackedWidget,
     QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
+from core.widgets.typed_table_sort import (
+    create_typed_item,
+    enable_typed_sorting,
+    sorting_paused,
+    typed_date,
+    typed_empty,
+    typed_int,
+    typed_status,
+    typed_text,
+)
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 from moduly.ukoly.sluzby.task_service import task_service
 from moduly.ukoly.task_display import task_description_table_text
 from moduly.ukoly.ui.task_dialog import TaskDialog
+
+# Pořadí odpovídá návratovým hodnotám Task.computed_status.
+_TASK_STATUS_ORDER = (
+    "Aktivní",
+    "Splněno - čeká na kontrolu",
+    "Ukončeno",
+    "Zrušeno",
+)
+
+
+def _task_status_sort(status: str):
+    try:
+        return typed_status(_TASK_STATUS_ORDER.index(status), label=status or "")
+    except ValueError:
+        return typed_status(len(_TASK_STATUS_ORDER), label=status or "")
+
+
+def _text_or_empty(display: str):
+    if not display or display == "—":
+        return typed_empty()
+    return typed_text(display)
 
 
 class BozpInspectionTasksWidget(QWidget):
@@ -56,6 +86,7 @@ class BozpInspectionTasksWidget(QWidget):
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setSelectionMode(QTableWidget.SingleSelection)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        enable_typed_sorting(self.table)
 
         self.content_stack = QStackedWidget()
         self.empty_page = QWidget()
@@ -101,18 +132,42 @@ class BozpInspectionTasksWidget(QWidget):
             else "Úkoly lze zobrazit až po uložení prověrky."
         )
 
-        self.table.setRowCount(len(tasks))
-        for row, task in enumerate(tasks):
-            values = [
-                str(task.id),
-                task_description_table_text(task),
-                task.responsible_person or "—",
-                "" if task.due_date is None else task.due_date.strftime("%d.%m.%Y"),
-                task.computed_status,
-            ]
-            for column, value in enumerate(values):
-                item = QTableWidgetItem(value)
-                self.table.setItem(row, column, item)
+        with sorting_paused(self.table):
+            self.table.setRowCount(len(tasks))
+            for row, task in enumerate(tasks):
+                record_id = int(task.id)
+                responsible = task.responsible_person or "—"
+                due_display = "" if task.due_date is None else task.due_date.strftime("%d.%m.%Y")
+                status = task.computed_status
+                cells = [
+                    create_typed_item(
+                        str(task.id),
+                        typed_int(task.id),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        task_description_table_text(task),
+                        typed_text(task_description_table_text(task)),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        responsible,
+                        _text_or_empty(responsible),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        due_display,
+                        typed_date(task.due_date) if task.due_date is not None else typed_empty(),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        status,
+                        _task_status_sort(status),
+                        stable_id=record_id,
+                    ),
+                ]
+                for column, item in enumerate(cells):
+                    self.table.setItem(row, column, item)
 
     def _update_state(self) -> None:
         enabled = self.inspection_id is not None

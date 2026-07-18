@@ -7,13 +7,22 @@ from PySide6.QtWidgets import (
     QFrame,
     QHeaderView,
     QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
 )
 
+from core.widgets.typed_table_sort import (
+    create_typed_item,
+    enable_typed_sorting,
+    sorting_paused,
+    typed_date,
+    typed_empty,
+    typed_status,
+    typed_text,
+)
 from moduly.audity.constants import (
     AUDIT_PROGRAM_PLANNED_VISITS_COLUMN_TERM,
     AUDIT_PROGRAM_VISIT_STATUS_LABELS,
+    AUDIT_PROGRAM_VISIT_STATUSES,
 )
 from moduly.audity.sluzby.audit_program_service import audit_program_service
 from moduly.audity.sluzby.audit_program_visit_formatting import (
@@ -21,13 +30,25 @@ from moduly.audity.sluzby.audit_program_visit_formatting import (
     format_planned_term,
 )
 
-_SORT_ROLE = Qt.ItemDataRole.UserRole + 1
 _COLUMN_TERM = 0
 _COLUMN_WORKPLACE = 1
 _COLUMN_PROCESSES = 2
 _COLUMN_STATUS = 3
 _COLUMN_AUDIT = 4
 _COLUMN_AUDIT_MIN_WIDTH = 80
+
+
+def _visit_status_sort(status: str):
+    try:
+        return typed_status(AUDIT_PROGRAM_VISIT_STATUSES.index(status), label=status or "")
+    except ValueError:
+        return typed_status(len(AUDIT_PROGRAM_VISIT_STATUSES), label=status or "")
+
+
+def _text_or_empty(display: str):
+    if not display or display == "—":
+        return typed_empty()
+    return typed_text(display)
 
 
 class AuditProgramPlannedVisitsWidget(QFrame):
@@ -54,6 +75,7 @@ class AuditProgramPlannedVisitsWidget(QFrame):
         self._table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self._table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self._table.verticalHeader().setVisible(False)
+        enable_typed_sorting(self._table)
         header = self._table.horizontalHeader()
         header.setStretchLastSection(False)
         header.setSectionResizeMode(_COLUMN_TERM, QHeaderView.ResizeMode.ResizeToContents)
@@ -68,35 +90,59 @@ class AuditProgramPlannedVisitsWidget(QFrame):
 
     def load_program(self, program_id: int | None) -> None:
         if program_id is None:
-            self._table.setRowCount(0)
+            with sorting_paused(self._table):
+                self._table.setRowCount(0)
             return
 
         rows = audit_program_service.get_planned_visits_overview(program_id)
-        self._table.setRowCount(len(rows))
+        with sorting_paused(self._table):
+            self._table.setRowCount(len(rows))
 
-        for row_index, row in enumerate(rows):
-            processes_text, processes_tooltip = format_planned_processes_cell(row.process_names)
-            values = [
-                format_planned_term(
+            for row_index, row in enumerate(rows):
+                record_id = int(row.visit_id)
+                processes_text, processes_tooltip = format_planned_processes_cell(row.process_names)
+                workplace = row.workplace_name or "—"
+                status_label = AUDIT_PROGRAM_VISIT_STATUS_LABELS.get(row.status, row.status)
+                audit_number = row.audit_number or "—"
+                term_display = format_planned_term(
                     planned_date=row.planned_date,
                     planned_year=row.planned_year,
                     planned_month=row.planned_month,
-                ),
-                row.workplace_name or "—",
-                processes_text,
-                AUDIT_PROGRAM_VISIT_STATUS_LABELS.get(row.status, row.status),
-                row.audit_number or "—",
-            ]
-            sort_key = row.sort_date.toordinal() if row.sort_date is not None else 99999999
+                )
+                term_item = create_typed_item(
+                    term_display,
+                    typed_date(row.sort_date) if row.sort_date is not None else typed_empty(),
+                    stable_id=record_id,
+                )
+                term_item.setData(Qt.ItemDataRole.UserRole, row.visit_id)
 
-            for column_index, value in enumerate(values):
-                item = QTableWidgetItem(value)
-                if column_index == _COLUMN_TERM:
-                    item.setData(_SORT_ROLE, sort_key)
-                    item.setData(Qt.ItemDataRole.UserRole, row.visit_id)
-                if column_index == _COLUMN_PROCESSES and processes_tooltip:
-                    item.setToolTip(processes_tooltip)
-                self._table.setItem(row_index, column_index, item)
+                cells = [
+                    term_item,
+                    create_typed_item(
+                        workplace,
+                        _text_or_empty(workplace),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        processes_text,
+                        typed_text(processes_text),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        status_label,
+                        _visit_status_sort(row.status),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        audit_number,
+                        _text_or_empty(audit_number),
+                        stable_id=record_id,
+                    ),
+                ]
+                if processes_tooltip:
+                    cells[_COLUMN_PROCESSES].setToolTip(processes_tooltip)
+                for column_index, item in enumerate(cells):
+                    self._table.setItem(row_index, column_index, item)
 
     def selected_visit_id(self) -> int | None:
         selected = self._table.selectionModel().selectedRows()

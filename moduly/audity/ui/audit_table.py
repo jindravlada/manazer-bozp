@@ -1,7 +1,29 @@
-from PySide6.QtWidgets import QHeaderView, QTableWidget, QTableWidgetItem
+from PySide6.QtWidgets import QHeaderView, QTableWidget
 
 from core.widgets.info_tooltip import format_info_card
-from moduly.audity.constants import PLANNED_MONTH_NAMES, PLANNED_MONTH_NOT_SET_LABEL
+from core.widgets.typed_table_sort import (
+    create_typed_item,
+    enable_typed_sorting,
+    sorting_paused,
+    typed_date,
+    typed_empty,
+    typed_int,
+    typed_status,
+    typed_text,
+)
+from moduly.audity.constants import (
+    AUDIT_SPIS_STATUSES,
+    PLANNED_MONTH_NAMES,
+    PLANNED_MONTH_NOT_SET_LABEL,
+)
+
+
+def _status_sort(status: str):
+    try:
+        order = AUDIT_SPIS_STATUSES.index(status)
+    except ValueError:
+        order = len(AUDIT_SPIS_STATUSES)
+    return typed_status(order, label=status or "")
 
 
 class AuditTable(QTableWidget):
@@ -29,27 +51,72 @@ class AuditTable(QTableWidget):
         self.setSelectionBehavior(QTableWidget.SelectRows)
         self.setSelectionMode(QTableWidget.SingleSelection)
         self.setEditTriggers(QTableWidget.NoEditTriggers)
+        enable_typed_sorting(self)
 
     def load_audits(self, audits) -> None:
-        self.setRowCount(len(audits))
+        with sorting_paused(self):
+            self.setRowCount(len(audits))
 
-        for row, audit in enumerate(audits):
-            tooltip = self._audit_tooltip(audit)
-            values = [
-                str(getattr(audit, "id", "")),
-                getattr(audit, "number", None) or "—",
-                self._format_year(getattr(audit, "year", None)),
-                self._format_planned_month(getattr(audit, "planned_month", None)),
-                getattr(audit, "workplace_name", None) or "—",
-                self._format_date(getattr(audit, "audit_date", None)),
-                getattr(audit, "status", None) or "—",
-                getattr(audit, "audit_type", None) or "—",
-            ]
+            for row, audit in enumerate(audits):
+                record_id = int(getattr(audit, "id", 0) or 0)
+                tooltip = self._audit_tooltip(audit)
+                year = getattr(audit, "year", None)
+                planned_month = getattr(audit, "planned_month", None)
+                audit_date = getattr(audit, "audit_date", None)
+                status = getattr(audit, "status", None) or ""
+                number = getattr(audit, "number", None) or "—"
+                workplace = getattr(audit, "workplace_name", None) or "—"
+                audit_type = getattr(audit, "audit_type", None) or "—"
 
-            for column, value in enumerate(values):
-                item = QTableWidgetItem(value)
-                item.setToolTip(tooltip)
-                self.setItem(row, column, item)
+                cells = [
+                    create_typed_item(
+                        str(record_id),
+                        typed_int(record_id),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        number,
+                        typed_text(None if number == "—" else number),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        self._format_year(year),
+                        typed_int(year) if year is not None else typed_empty(),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        self._format_planned_month(planned_month),
+                        (
+                            typed_int(int(planned_month))
+                            if planned_month is not None and 1 <= int(planned_month) <= 12
+                            else typed_empty()
+                        ),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        workplace,
+                        typed_text(None if workplace == "—" else workplace),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        self._format_date(audit_date),
+                        typed_date(audit_date) if audit_date is not None else typed_empty(),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        status or "—",
+                        _status_sort(status) if status else typed_empty(),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        audit_type,
+                        typed_text(None if audit_type == "—" else audit_type),
+                        stable_id=record_id,
+                    ),
+                ]
+                for column, item in enumerate(cells):
+                    item.setToolTip(tooltip)
+                    self.setItem(row, column, item)
 
     @staticmethod
     def _format_date(value) -> str:

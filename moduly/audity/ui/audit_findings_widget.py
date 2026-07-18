@@ -8,13 +8,18 @@ from PySide6.QtWidgets import (
     QPushButton,
     QStackedWidget,
     QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
-from core.shared.constants import ENTITY_AUDITY
+from core.shared.constants import (
+    ENTITY_AUDITY,
+    FINDING_STATUS_OTEVRENE,
+    FINDING_STATUS_V_PROCESU,
+    FINDING_STATUS_VYPORADANO,
+)
 from core.shared.finding_display import (
+    FINDING_TYPE_LABELS,
     finding_status_background,
     finding_status_label,
     finding_status_text_color,
@@ -24,6 +29,15 @@ from core.shared.sluzby.finding_service import finding_service
 from core.widgets.finding_dialog import FindingDialog
 from core.widgets.finding_summary_panel import FindingSummaryPanel
 from core.widgets.finding_task_actions import FindingTaskActions
+from core.widgets.typed_table_sort import (
+    create_typed_item,
+    enable_typed_sorting,
+    sorting_paused,
+    typed_empty,
+    typed_int,
+    typed_status,
+    typed_text,
+)
 from moduly.audity.constants import (
     FINDING_DIALOG_TITLE,
     FINDING_SOURCE_LABEL,
@@ -31,6 +45,26 @@ from moduly.audity.constants import (
     PROCESS_TERM_PROCESS,
     PROCESS_TERM_QUESTION,
 )
+
+_FINDING_STATUS_ORDER = (
+    FINDING_STATUS_OTEVRENE,
+    FINDING_STATUS_V_PROCESU,
+    FINDING_STATUS_VYPORADANO,
+)
+_FINDING_TYPE_ORDER = tuple(FINDING_TYPE_LABELS.keys())
+
+
+def _order_status(value: str, order: tuple[str, ...]):
+    try:
+        return typed_status(order.index(value), label=value or "")
+    except ValueError:
+        return typed_status(len(order), label=value or "")
+
+
+def _text_or_empty(display: str):
+    if not display or display == "—":
+        return typed_empty()
+    return typed_text(display)
 
 
 class AuditFindingsWidget(QWidget):
@@ -83,6 +117,7 @@ class AuditFindingsWidget(QWidget):
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setSelectionMode(QTableWidget.SingleSelection)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        enable_typed_sorting(self.table)
 
         self.content_stack = QStackedWidget()
         self.empty_page = QWidget()
@@ -139,27 +174,63 @@ class AuditFindingsWidget(QWidget):
             else "Zjištění lze zobrazit až po uložení auditu."
         )
 
-        self.table.setRowCount(len(findings))
-        for row, finding in enumerate(findings):
-            tooltip = self._finding_tooltip(finding)
-            values = [
-                str(finding.id),
-                str(finding.display_order),
-                finding_type_label(finding.finding_type),
-                finding.source_area_label or "—",
-                finding.source_section_label or "—",
-                finding.source_control_point_label or "—",
-                finding.reference_label or "—",
-                self._text_preview(finding.description),
-                finding_status_label(finding.status),
-            ]
-            for column, value in enumerate(values):
-                item = QTableWidgetItem(value)
-                item.setToolTip(tooltip)
-                if column == 8:
-                    item.setBackground(QBrush(QColor(finding_status_background(finding.status))))
-                    item.setForeground(QBrush(QColor(finding_status_text_color(finding.status))))
-                self.table.setItem(row, column, item)
+        with sorting_paused(self.table):
+            self.table.setRowCount(len(findings))
+            for row, finding in enumerate(findings):
+                record_id = int(finding.id)
+                tooltip = self._finding_tooltip(finding)
+                description = self._text_preview(finding.description)
+                area = finding.source_area_label or "—"
+                section = finding.source_section_label or "—"
+                control_point = finding.source_control_point_label or "—"
+                reference = finding.reference_label or "—"
+                type_label = finding_type_label(finding.finding_type)
+                status_label = finding_status_label(finding.status)
+                cells = [
+                    create_typed_item(
+                        str(finding.id),
+                        typed_int(finding.id),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        str(finding.display_order),
+                        typed_int(finding.display_order),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        type_label,
+                        _order_status(finding.finding_type, _FINDING_TYPE_ORDER),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(area, _text_or_empty(area), stable_id=record_id),
+                    create_typed_item(section, _text_or_empty(section), stable_id=record_id),
+                    create_typed_item(
+                        control_point,
+                        _text_or_empty(control_point),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        reference,
+                        _text_or_empty(reference),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        description,
+                        typed_text(finding.description),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        status_label,
+                        _order_status(finding.status, _FINDING_STATUS_ORDER),
+                        stable_id=record_id,
+                    ),
+                ]
+                for column, item in enumerate(cells):
+                    item.setToolTip(tooltip)
+                    if column == 8:
+                        item.setBackground(QBrush(QColor(finding_status_background(finding.status))))
+                        item.setForeground(QBrush(QColor(finding_status_text_color(finding.status))))
+                    self.table.setItem(row, column, item)
 
         self.task_actions.update_state()
 

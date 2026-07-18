@@ -9,15 +9,33 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QTabWidget,
     QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
+from core.shared.constants import (
+    FINDING_STATUS_OTEVRENE,
+    FINDING_STATUS_V_PROCESU,
+    FINDING_STATUS_VYPORADANO,
+)
 from core.shared.sluzby.finding_service import finding_service
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.finding_dialog import FindingDialog
+from core.widgets.typed_table_sort import (
+    create_typed_item,
+    enable_typed_sorting,
+    sorting_paused,
+    typed_bool,
+    typed_date,
+    typed_empty,
+    typed_int,
+    typed_status,
+    typed_text,
+)
 from moduly.audity.constants import (
+    AUDIT_FINDING_TYPE_NESHODA,
+    AUDIT_FINDING_TYPE_PKZ,
+    AUDIT_FINDING_TYPE_POZOROVANI,
     AUDIT_PROGRAM_DASHBOARD_FILTER_OPEN_ONLY,
     AUDIT_PROGRAM_DASHBOARD_FILTER_OVERDUE,
     AUDIT_PROGRAM_DASHBOARD_FILTER_SEVERE,
@@ -36,7 +54,36 @@ from moduly.audity.sluzby.audit_service import audit_service
 from moduly.ukoly.sluzby.task_service import task_service
 from moduly.ukoly.ui.task_dialog import TaskDialog
 
-_SORT_ROLE = Qt.ItemDataRole.UserRole + 1
+_FINDING_STATUS_ORDER = (
+    FINDING_STATUS_OTEVRENE,
+    FINDING_STATUS_V_PROCESU,
+    FINDING_STATUS_VYPORADANO,
+)
+_FINDING_TYPE_ORDER = (
+    AUDIT_FINDING_TYPE_NESHODA,
+    AUDIT_FINDING_TYPE_PKZ,
+    AUDIT_FINDING_TYPE_POZOROVANI,
+)
+# Pořadí odpovídá návratovým hodnotám Task.computed_status.
+_TASK_STATUS_ORDER = (
+    "Aktivní",
+    "Splněno - čeká na kontrolu",
+    "Ukončeno",
+    "Zrušeno",
+)
+
+
+def _order_status(value: str, order: tuple[str, ...]):
+    try:
+        return typed_status(order.index(value), label=value or "")
+    except ValueError:
+        return typed_status(len(order), label=value or "")
+
+
+def _text_or_empty(display: str):
+    if not display or display == "—":
+        return typed_empty()
+    return typed_text(display)
 
 
 class AuditProgramDashboardWidget(QFrame):
@@ -160,7 +207,7 @@ class AuditProgramDashboardWidget(QFrame):
         table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        table.setSortingEnabled(True)
+        enable_typed_sorting(table)
         header = table.horizontalHeader()
         for column in range(2, len(headers)):
             if column == 5:
@@ -221,49 +268,122 @@ class AuditProgramDashboardWidget(QFrame):
         self._fill_findings_table(tuple(rows))
 
     def _fill_findings_table(self, rows: tuple[ProgramFindingItem, ...]) -> None:
-        self._findings_table.setSortingEnabled(False)
-        self._findings_table.setRowCount(len(rows))
-        for row_index, item in enumerate(rows):
-            values = [
-                str(item.finding_id),
-                str(item.audit_id),
-                item.workplace_name,
-                item.audit_number,
-                item.process_name,
-                item.title,
-                item.severity_label,
-                item.due_date.strftime("%d.%m.%Y") if item.due_date else "—",
-                item.status_label,
-                item.responsible_person,
-            ]
-            for column_index, value in enumerate(values):
-                cell = QTableWidgetItem(value)
-                if column_index == 7 and item.due_date is not None:
-                    cell.setData(_SORT_ROLE, item.due_date.toordinal())
-                self._findings_table.setItem(row_index, column_index, cell)
-        self._findings_table.setSortingEnabled(True)
+        with sorting_paused(self._findings_table):
+            self._findings_table.setRowCount(len(rows))
+            for row_index, item in enumerate(rows):
+                record_id = int(item.finding_id)
+                due_display = item.due_date.strftime("%d.%m.%Y") if item.due_date else "—"
+                cells = [
+                    create_typed_item(
+                        str(item.finding_id),
+                        typed_int(item.finding_id),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        str(item.audit_id),
+                        typed_int(item.audit_id),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        item.workplace_name,
+                        _text_or_empty(item.workplace_name),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        item.audit_number,
+                        typed_text(item.audit_number),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        item.process_name,
+                        _text_or_empty(item.process_name),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        item.title,
+                        typed_text(item.title),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        item.severity_label,
+                        _order_status(item.finding_type, _FINDING_TYPE_ORDER),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        due_display,
+                        typed_date(item.due_date) if item.due_date else typed_empty(),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        item.status_label,
+                        _order_status(item.status, _FINDING_STATUS_ORDER),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        item.responsible_person,
+                        _text_or_empty(item.responsible_person),
+                        stable_id=record_id,
+                    ),
+                ]
+                for column_index, cell in enumerate(cells):
+                    self._findings_table.setItem(row_index, column_index, cell)
 
     def _fill_tasks_table(self, rows: tuple[ProgramTaskItem, ...]) -> None:
-        self._tasks_table.setSortingEnabled(False)
-        self._tasks_table.setRowCount(len(rows))
-        for row_index, item in enumerate(rows):
-            values = [
-                str(item.task_id),
-                str(item.audit_id),
-                item.workplace_name,
-                item.audit_number,
-                item.title,
-                item.responsible_person,
-                item.due_date.strftime("%d.%m.%Y") if item.due_date else "—",
-                item.completion_label,
-                item.status_label,
-            ]
-            for column_index, value in enumerate(values):
-                cell = QTableWidgetItem(value)
-                if column_index == 6 and item.due_date is not None:
-                    cell.setData(_SORT_ROLE, item.due_date.toordinal())
-                self._tasks_table.setItem(row_index, column_index, cell)
-        self._tasks_table.setSortingEnabled(True)
+        with sorting_paused(self._tasks_table):
+            self._tasks_table.setRowCount(len(rows))
+            for row_index, item in enumerate(rows):
+                record_id = int(item.task_id)
+                due_display = item.due_date.strftime("%d.%m.%Y") if item.due_date else "—"
+                completed = item.completion_label == "Ano"
+                cells = [
+                    create_typed_item(
+                        str(item.task_id),
+                        typed_int(item.task_id),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        str(item.audit_id),
+                        typed_int(item.audit_id),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        item.workplace_name,
+                        _text_or_empty(item.workplace_name),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        item.audit_number,
+                        typed_text(item.audit_number),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        item.title,
+                        typed_text(item.title),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        item.responsible_person,
+                        _text_or_empty(item.responsible_person),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        due_display,
+                        typed_date(item.due_date) if item.due_date else typed_empty(),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        item.completion_label,
+                        typed_bool(completed),
+                        stable_id=record_id,
+                    ),
+                    create_typed_item(
+                        item.status_label,
+                        _order_status(item.status_label, _TASK_STATUS_ORDER),
+                        stable_id=record_id,
+                    ),
+                ]
+                for column_index, cell in enumerate(cells):
+                    self._tasks_table.setItem(row_index, column_index, cell)
 
     def _on_finding_double_clicked(self, index) -> None:
         if index.column() == 3:
