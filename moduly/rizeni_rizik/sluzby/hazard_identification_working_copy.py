@@ -1679,6 +1679,189 @@ class HazardIdentificationWorkingCopy:
             required_measure_count=required_measure_count,
         )
 
+    def sync_item_from_template(
+        self,
+        item_id: int,
+        *,
+        include_inactive: bool = False,
+    ) -> IdApplyResult:
+        """Obnoví aktivní instanci z aktuálního Masteru (ponechá ID položky)."""
+        item = self.get_item(item_id)
+        if item is None:
+            raise HazardLibraryTemplateApplyError("Položka analýzy neexistuje.")
+        if item.source_template_id is None:
+            raise HazardLibraryTemplateApplyError(
+                "Položka není převzata z katalogu zdrojů rizik.",
+            )
+
+        template = hazard_library_template_service.get_by_id(item.source_template_id)
+        if template is None:
+            raise HazardLibraryTemplateApplyError("Zdroj rizika neexistuje.")
+        if not template.active:
+            raise HazardLibraryTemplateApplyError(
+                "Lze synchronizovat pouze z aktivního zdroje rizika z katalogu.",
+            )
+
+        try:
+            self._validate_category(template.category)
+            self._validate_unique_active_item_name(
+                category=template.category,
+                name=template.name,
+                exclude_item_id=item.id,
+                active=True,
+            )
+        except HazardInventoryItemError as error:
+            raise HazardLibraryTemplateApplyError(str(error)) from error
+
+        # Znovu sestav strom jako při převzetí, ale zachovej item.id / sort_order / active.
+        events = [
+            event
+            for event in hazard_library_template_event_service.get_for_template(
+                template.id,
+                include_inactive=True,
+            )
+            if include_inactive or event.active
+        ]
+        event_assessments: dict[int, list] = {}
+        for event in events:
+            assessments = [
+                assessment
+                for assessment in hazard_library_template_assessment_service.repository.get_for_event(
+                    event.id,
+                    include_inactive=True,
+                )
+                if include_inactive or assessment.active
+            ]
+            for assessment in assessments:
+                if assessment.exposed_group_id is None:
+                    raise HazardLibraryTemplateApplyError(
+                        f"Posouzení události „{event.name}“ nemá přiřazenou ohroženou skupinu.",
+                    )
+            event_assessments[event.id] = assessments
+
+        assessment_measures: dict[int, tuple[list, list]] = {}
+        for event in events:
+            for assessment in event_assessments[event.id]:
+                existing = [
+                    measure
+                    for measure in hazard_library_template_existing_measure_service.get_for_assessment(
+                        assessment.id,
+                        include_inactive=True,
+                    )
+                    if include_inactive or measure.active
+                ]
+                required = [
+                    measure
+                    for measure in hazard_library_template_required_measure_service.get_for_assessment(
+                        assessment.id,
+                        include_inactive=True,
+                    )
+                    if include_inactive or measure.active
+                ]
+                assessment_measures[assessment.id] = (existing, required)
+
+        item.category = template.category
+        item.name = template.name.strip()
+        item.description = template.description or ""
+        item.source_template_id = template.id
+        item.source_template_version = template.version_number
+        item.events = []
+
+        event_count = 0
+        assessment_count = 0
+        existing_measure_count = 0
+        required_measure_count = 0
+
+        for event in events:
+            wc_event = IdWcEvent(
+                id=self._alloc_id(),
+                inventory_item_id=item.id,
+                name=event.name,
+                description=event.description or "",
+                note=event.note or "",
+                active=event.active if include_inactive else True,
+                modified=False,
+                sort_order=event.sort_order,
+            )
+            event_count += 1
+            for assessment in event_assessments[event.id]:
+                group_ids = hazard_library_template_assessment_service.get_group_ids(
+                    assessment.id,
+                )
+                if not group_ids and assessment.exposed_group_id:
+                    group_ids = [assessment.exposed_group_id]
+                wc_assessment = IdWcAssessment(
+                    id=self._alloc_id(),
+                    hazard_event_id=wc_event.id,
+                    exposed_group_id=group_ids[0] if group_ids else None,
+                    exposed_group_ids=[int(g) for g in group_ids],
+                    severity=assessment.severity,
+                    note=assessment.note or "",
+                    conclusion=assessment.conclusion or "",
+                    assessment_status=DEFAULT_RISK_ASSESSMENT_STATUS,
+                    completed_at=None,
+                    active=assessment.active if include_inactive else True,
+                    modified=False,
+                )
+                assessment_count += 1
+                existing_measures, required_measures = assessment_measures[assessment.id]
+                for measure in existing_measures:
+                    wc_assessment.existing_measures.append(
+                        IdWcMeasure(
+                            id=self._alloc_id(),
+                            hazard_risk_assessment_id=wc_assessment.id,
+                            description=measure.description,
+                            note=measure.note or "",
+                            active=measure.active if include_inactive else True,
+                            modified=False,
+                            sort_order=measure.sort_order,
+                        ),
+                    )
+                    existing_measure_count += 1
+                for measure in required_measures:
+                    wc_assessment.required_measures.append(
+                        IdWcMeasure(
+                            id=self._alloc_id(),
+                            hazard_risk_assessment_id=wc_assessment.id,
+                            description=measure.description,
+                            note=measure.note or "",
+                            active=measure.active if include_inactive else True,
+                            modified=False,
+                            sort_order=measure.sort_order,
+                        ),
+                    )
+                    required_measure_count += 1
+                wc_event.assessments.append(wc_assessment)
+            item.events.append(wc_event)
+
+        self._touch()
+        return IdApplyResult(
+            item=item,
+            template=template,
+            event_count=event_count,
+            assessment_count=assessment_count,
+            existing_measure_count=existing_measure_count,
+            required_measure_count=required_measure_count,
+        )
+
+    def apply_or_sync_template(
+        self,
+        template_id: int,
+        *,
+        include_inactive: bool = False,
+    ) -> IdApplyResult:
+        """Převzít Master, nebo synchronizovat existující aktivní instanci."""
+        for item in self.items:
+            if item.active and item.source_template_id == template_id:
+                return self.sync_item_from_template(
+                    item.id,
+                    include_inactive=include_inactive,
+                )
+        return self.apply_from_template(
+            template_id,
+            include_inactive=include_inactive,
+        )
+
     # --- Commit -----------------------------------------------------------------
 
     def commit(self, basics: dict[str, Any] | None = None) -> HazardIdentification:

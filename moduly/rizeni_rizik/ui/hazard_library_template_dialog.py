@@ -30,6 +30,11 @@ from moduly.rizeni_rizik.constants_library import (
     DEFAULT_HAZARD_LIBRARY_VERSION,
     HAZARD_LIBRARY_CANCEL_CONFIRM,
     HAZARD_LIBRARY_DIALOG_TITLE,
+    HAZARD_LIBRARY_DUPLICATE_CANCEL,
+    HAZARD_LIBRARY_DUPLICATE_CREATE_NEW,
+    HAZARD_LIBRARY_DUPLICATE_NAME_TEXT,
+    HAZARD_LIBRARY_DUPLICATE_NAME_TITLE,
+    HAZARD_LIBRARY_DUPLICATE_OPEN_EXISTING,
     HAZARD_LIBRARY_PLACEHOLDER_TEXT,
     HAZARD_LIBRARY_REVISION_FORM_LABEL,
     HAZARD_LIBRARY_REVISION_READ_ONLY_TOOLTIP,
@@ -61,13 +66,23 @@ from moduly.rizeni_rizik.ui.hazard_library_template_revision_history_widget impo
 
 
 class HazardLibraryTemplateDialog(QDialog):
-    def __init__(self, parent=None, template=None):
+    def __init__(
+        self,
+        parent=None,
+        template=None,
+        *,
+        default_category: str | None = None,
+        on_template_persisted=None,
+    ):
         super().__init__(parent)
         self.template = template
         self.saved_template = template
         self._editor_session: CatalogEditorSession | None = None
         self._basics_dirty = False
         self._closing = False
+        self._on_template_persisted = on_template_persisted
+        self._allow_duplicate_name = False
+        self._default_category = default_category
 
         self.setWindowTitle(HAZARD_LIBRARY_DIALOG_TITLE)
         self.setMinimumSize(720, 520)
@@ -155,6 +170,11 @@ class HazardLibraryTemplateDialog(QDialog):
             self._load_template(template)
             self._editor_session = CatalogEditorSession.load(template.id)
             self.ai_peer_review_widget.set_package_session(self._editor_session)
+        elif default_category is not None:
+            index = self.category.findData(default_category)
+            if index >= 0:
+                with QSignalBlocker(self.category):
+                    self.category.setCurrentIndex(index)
         self._sync_content_context()
         self._update_content_tab_enabled()
         self._sync_ai_peer_review_context()
@@ -229,7 +249,37 @@ class HazardLibraryTemplateDialog(QDialog):
         data = self.get_data()
         try:
             if self.template is None:
-                self.template = hazard_library_template_service.create_template(**data)
+                existing = hazard_library_template_service.find_active_by_name(data["name"])
+                if existing is not None and not self._allow_duplicate_name:
+                    choice = self._prompt_duplicate_name(existing)
+                    if choice == "cancel":
+                        return False
+                    if choice == "open":
+                        self.template = existing
+                        self.saved_template = existing
+                        self._editor_session = CatalogEditorSession.load(existing.id)
+                        self.ai_peer_review_widget.set_package_session(self._editor_session)
+                        self._load_template(existing)
+                        self._basics_dirty = False
+                        self._update_content_tab_enabled()
+                        self._sync_content_context()
+                        self._sync_ai_peer_review_context()
+                        self._update_ai_peer_review_tab_enabled()
+                        self._sync_history_context()
+                        self._update_history_tab_enabled()
+                        self.content_widget.refresh()
+                        self.history_widget.refresh()
+                        self.ai_peer_review_widget.refresh()
+                        self._update_save_enabled()
+                        if self._on_template_persisted is not None:
+                            self._on_template_persisted(existing)
+                        return True
+                    self._allow_duplicate_name = True
+
+                self.template = hazard_library_template_service.create_template(
+                    **data,
+                    allow_duplicate_name=self._allow_duplicate_name,
+                )
                 self._editor_session = CatalogEditorSession.load(self.template.id)
                 self.ai_peer_review_widget.set_package_session(self._editor_session)
                 self._basics_dirty = False
@@ -273,7 +323,38 @@ class HazardLibraryTemplateDialog(QDialog):
         self.ai_peer_review_widget.refresh()
         self._update_save_enabled()
         QMessageBox.information(self, HAZARD_LIBRARY_DIALOG_TITLE, HAZARD_LIBRARY_SAVE_SUCCESS)
+        if self._on_template_persisted is not None and self.template is not None:
+            self._on_template_persisted(self.template)
         return True
+
+    def _prompt_duplicate_name(self, existing) -> str:
+        message = QMessageBox(self)
+        message.setWindowTitle(HAZARD_LIBRARY_DUPLICATE_NAME_TITLE)
+        message.setIcon(QMessageBox.Icon.Question)
+        message.setText(HAZARD_LIBRARY_DUPLICATE_NAME_TEXT)
+        message.setInformativeText(f"Existující zdroj: {existing.name}")
+        open_btn = message.addButton(
+            HAZARD_LIBRARY_DUPLICATE_OPEN_EXISTING,
+            QMessageBox.ButtonRole.AcceptRole,
+        )
+        create_btn = message.addButton(
+            HAZARD_LIBRARY_DUPLICATE_CREATE_NEW,
+            QMessageBox.ButtonRole.ActionRole,
+        )
+        cancel_btn = message.addButton(
+            HAZARD_LIBRARY_DUPLICATE_CANCEL,
+            QMessageBox.ButtonRole.RejectRole,
+        )
+        message.setDefaultButton(open_btn)
+        message.exec()
+        clicked = message.clickedButton()
+        if clicked is open_btn:
+            return "open"
+        if clicked is create_btn:
+            return "create"
+        if clicked is cancel_btn:
+            return "cancel"
+        return "cancel"
 
     def _discard_working_copy(self) -> None:
         self._editor_session = None

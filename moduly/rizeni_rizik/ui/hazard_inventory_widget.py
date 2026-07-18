@@ -38,7 +38,6 @@ from moduly.rizeni_rizik.constants import (
     ITEM_EVENTS_SELECT_ITEM,
     WORKPLACE_ANALYSIS_READ_ONLY_MESSAGE,
     WORKPLACE_ANALYSIS_SELECT_ITEM,
-    can_save_inventory_item_to_library,
     format_event_display_name,
     format_inventory_item_display_name,
 )
@@ -51,11 +50,7 @@ from moduly.rizeni_rizik.constants_library import (
     HAZARD_LIBRARY_APPLY_ARCHIVED_MESSAGE,
     HAZARD_LIBRARY_APPLY_TO_INVENTORY_BUTTON,
     HAZARD_LIBRARY_APPLY_TO_INVENTORY_SUCCESS_TITLE,
-    HAZARD_LIBRARY_OPEN_IN_LIBRARY_BUTTON,
-    HAZARD_LIBRARY_SAVE_ARCHIVED_MESSAGE,
-    HAZARD_LIBRARY_SAVE_FROM_INVENTORY_SUCCESS_TITLE,
-    HAZARD_LIBRARY_SAVE_INACTIVE_ITEM_MESSAGE,
-    HAZARD_LIBRARY_SAVE_TO_LIBRARY_BUTTON,
+    HAZARD_LIBRARY_DIALOG_TITLE,
 )
 from moduly.rizeni_rizik.sluzby.hazard_identification_working_copy import (
     find_identification_working_copy,
@@ -69,6 +64,7 @@ from moduly.rizeni_rizik.sluzby.hazard_catalog_instance_compare_service import (
     hazard_catalog_instance_compare_service,
 )
 from moduly.rizeni_rizik.sluzby.hazard_library_template_apply_service import (
+    HazardLibraryTemplateApplyError,
     hazard_library_template_apply_service,
 )
 from moduly.rizeni_rizik.sluzby.hazard_event_service import (
@@ -76,8 +72,8 @@ from moduly.rizeni_rizik.sluzby.hazard_event_service import (
     hazard_event_service,
 )
 from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import hazard_inventory_item_service
-from moduly.rizeni_rizik.sluzby.hazard_library_template_import_service import (
-    hazard_library_template_import_service,
+from moduly.rizeni_rizik.sluzby.hazard_library_template_service import (
+    hazard_library_template_service,
 )
 from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import hazard_risk_assessment_service
 from moduly.rizeni_rizik.ui.hazard_catalog_instance_update_offer_dialog import (
@@ -94,9 +90,8 @@ from moduly.rizeni_rizik.ui.hazard_inventory_item_dialog import HazardInventoryI
 from moduly.rizeni_rizik.ui.hazard_library_apply_to_inventory_dialog import (
     HazardLibraryApplyToInventoryDialog,
 )
-from moduly.rizeni_rizik.ui.hazard_library_save_from_inventory_dialog import (
-    HazardLibrarySaveFromInventoryDialog,
-)
+from moduly.rizeni_rizik.ui.hazard_library_template_dialog import HazardLibraryTemplateDialog
+from core.widgets.dialog_utils import exec_maximized
 
 
 class HazardInventoryWidget(QWidget):
@@ -126,14 +121,12 @@ class HazardInventoryWidget(QWidget):
         self.edit_btn = QPushButton("Upravit")
         self.activate_btn = QPushButton("Aktivovat")
         self.deactivate_btn = QPushButton("Deaktivovat")
-        self.save_to_library_btn = QPushButton(HAZARD_LIBRARY_SAVE_TO_LIBRARY_BUTTON)
         self.compare_with_master_btn = QPushButton(CATALOG_COMPARE_WITH_MASTER_BUTTON)
         self.toolbar.addWidget(self.add_btn)
         self.toolbar.addWidget(self.apply_from_library_btn)
         self.toolbar.addWidget(self.edit_btn)
         self.toolbar.addWidget(self.activate_btn)
         self.toolbar.addWidget(self.deactivate_btn)
-        self.toolbar.addWidget(self.save_to_library_btn)
         self.toolbar.addWidget(self.compare_with_master_btn)
         self.toolbar.addStretch()
         layout.addLayout(self.toolbar)
@@ -198,7 +191,6 @@ class HazardInventoryWidget(QWidget):
         self.edit_btn.clicked.connect(self.edit_selected_item)
         self.activate_btn.clicked.connect(self.activate_selected_item)
         self.deactivate_btn.clicked.connect(self.deactivate_selected_item)
-        self.save_to_library_btn.clicked.connect(self.save_selected_item_to_library)
         self.compare_with_master_btn.clicked.connect(self.compare_selected_item_with_master)
         self.add_event_btn.clicked.connect(self.add_event_for_selected_item)
         self.edit_event_btn.clicked.connect(self.edit_selected_event)
@@ -238,7 +230,6 @@ class HazardInventoryWidget(QWidget):
         editable = not read_only and identification_id is not None
         self._set_item_actions_enabled(editable)
         self._set_event_actions_enabled(False)
-        self._update_save_to_library_enabled()
         self._update_apply_from_library_enabled()
         self.compare_with_master_btn.setEnabled(False)
         self._update_compare_with_master_enabled()
@@ -250,17 +241,59 @@ class HazardInventoryWidget(QWidget):
         self._load_events_table()
 
     def add_item(self) -> None:
+        """R21: nový zdroj vzniká v Katalogu a po Uložení se převzme do Identifikace."""
         if not self._ensure_editable():
             return
-
-        dialog = HazardInventoryItemDialog(
-            self,
+        if self._identification_id is None:
+            QMessageBox.information(
+                self,
+                INVENTORY_ITEM_DIALOG_TITLE,
+                "Nejprve uložte základní údaje identifikace.",
+            )
+            return
+        if not hazard_library_template_apply_service.can_apply_template(
             hazard_identification_id=self._identification_id,
+            identification_status=self._identification_status,
+        ):
+            QMessageBox.information(
+                self,
+                HAZARD_LIBRARY_APPLY_TO_INVENTORY_SUCCESS_TITLE,
+                HAZARD_LIBRARY_APPLY_ARCHIVED_MESSAGE,
+            )
+            return
+
+        dialog = HazardLibraryTemplateDialog(
+            self,
             default_category=self._current_category,
+            on_template_persisted=self._on_catalog_template_persisted,
         )
-        if dialog.exec():
-            self.refresh()
-            self._notify_editor_dirty()
+        exec_maximized(dialog)
+
+    def _on_catalog_template_persisted(self, template) -> None:
+        store = self._store()
+        if store is None:
+            QMessageBox.warning(
+                self,
+                HAZARD_LIBRARY_DIALOG_TITLE,
+                "Pracovní kopie identifikace není k dispozici.",
+            )
+            return
+        try:
+            result = store.apply_or_sync_template(template.id)
+        except HazardLibraryTemplateApplyError as error:
+            QMessageBox.warning(self, HAZARD_LIBRARY_APPLY_TO_INVENTORY_SUCCESS_TITLE, str(error))
+            return
+
+        self._current_category = result.item.category
+        if result.item.category in HAZARD_INVENTORY_CATEGORIES:
+            self.category_list.setCurrentRow(
+                HAZARD_INVENTORY_CATEGORIES.index(result.item.category),
+            )
+        self._selected_item_id = result.item.id
+        self._selected_event_id = None
+        self._notify_event_saved()
+        self.refresh()
+        self._notify_editor_dirty()
 
     def apply_from_library(self) -> None:
         if not self._ensure_editable():
@@ -326,6 +359,25 @@ class HazardInventoryWidget(QWidget):
             QMessageBox.information(self, INVENTORY_ITEM_DIALOG_TITLE, WORKPLACE_ANALYSIS_SELECT_ITEM)
             return
 
+        # R21: katalogová instance → editor Masteru; legacy lokální → starý dialog.
+        if item.source_template_id is not None:
+            template = hazard_library_template_service.get_by_id(item.source_template_id)
+            if template is None:
+                QMessageBox.warning(
+                    self,
+                    HAZARD_LIBRARY_DIALOG_TITLE,
+                    "Zdroj rizika v katalogu nebyl nalezen.",
+                )
+                return
+            item_id = item.id
+            dialog = HazardLibraryTemplateDialog(
+                self,
+                template=template,
+                on_template_persisted=lambda saved: self._on_master_edited(item_id, saved),
+            )
+            exec_maximized(dialog)
+            return
+
         dialog = HazardInventoryItemDialog(
             self,
             hazard_identification_id=self._identification_id,
@@ -335,6 +387,27 @@ class HazardInventoryWidget(QWidget):
         if dialog.exec():
             self.refresh()
             self._notify_editor_dirty()
+
+    def _on_master_edited(self, inventory_item_id: int, template) -> None:
+        store = self._store()
+        if store is not None:
+            try:
+                store.sync_item_from_template(inventory_item_id)
+            except HazardLibraryTemplateApplyError as error:
+                QMessageBox.warning(self, HAZARD_LIBRARY_DIALOG_TITLE, str(error))
+                return
+            self.refresh()
+            self._notify_editor_dirty()
+            return
+
+        # Bez WC (standalone) – aktualizace z Masteru do DB, pokud je novější revize.
+        try:
+            offer = hazard_catalog_instance_update_service.get_update_offer(inventory_item_id)
+            if offer is not None:
+                hazard_catalog_instance_update_service.update_from_master(inventory_item_id)
+        except HazardCatalogInstanceUpdateError:
+            pass
+        self.refresh()
 
     def activate_selected_item(self) -> None:
         if not self._ensure_editable():
@@ -381,69 +454,6 @@ class HazardInventoryWidget(QWidget):
             hazard_inventory_item_service.deactivate_item(item.id)
         self.refresh()
         self._notify_editor_dirty()
-
-    def save_selected_item_to_library(self) -> None:
-        if self._identification_id is None:
-            QMessageBox.information(
-                self,
-                INVENTORY_ITEM_DIALOG_TITLE,
-                "Nejprve uložte základní údaje identifikace.",
-            )
-            return
-        if not can_save_inventory_item_to_library(self._identification_status):
-            QMessageBox.information(
-                self,
-                HAZARD_LIBRARY_SAVE_FROM_INVENTORY_SUCCESS_TITLE,
-                HAZARD_LIBRARY_SAVE_ARCHIVED_MESSAGE,
-            )
-            return
-
-        item = self._selected_item()
-        if item is None:
-            QMessageBox.information(
-                self,
-                INVENTORY_ITEM_DIALOG_TITLE,
-                WORKPLACE_ANALYSIS_SELECT_ITEM,
-            )
-            return
-        if not item.active:
-            QMessageBox.information(
-                self,
-                HAZARD_LIBRARY_SAVE_FROM_INVENTORY_SUCCESS_TITLE,
-                HAZARD_LIBRARY_SAVE_INACTIVE_ITEM_MESSAGE,
-            )
-            return
-
-        dialog = HazardLibrarySaveFromInventoryDialog(
-            self,
-            hazard_identification_id=self._identification_id,
-            inventory_item_id=item.id,
-            default_name=item.name,
-        )
-        if not dialog.exec() or dialog.result is None:
-            return
-
-        result = dialog.result
-        summary = (
-            f"Název zdroje: {result.template.name}\n"
-            f"Nežádoucí události: {result.event_count}\n"
-            f"Posouzení: {result.assessment_count}\n"
-            f"Existující opatření: {result.existing_measure_count}\n"
-            f"Potřebná opatření: {result.required_measure_count}"
-        )
-        message = QMessageBox(self)
-        message.setIcon(QMessageBox.Icon.Information)
-        message.setWindowTitle(HAZARD_LIBRARY_SAVE_FROM_INVENTORY_SUCCESS_TITLE)
-        message.setText("Zdroj rizika byl úspěšně uložen do katalogu zdrojů rizik.")
-        message.setInformativeText(summary)
-        open_button = message.addButton(
-            HAZARD_LIBRARY_OPEN_IN_LIBRARY_BUTTON,
-            QMessageBox.ButtonRole.ActionRole,
-        )
-        message.addButton(QMessageBox.StandardButton.Close)
-        message.exec()
-        if message.clickedButton() == open_button and self._on_open_library_template is not None:
-            self._on_open_library_template(result.template.id)
 
     def compare_selected_item_with_master(self) -> None:
         item = self._selected_item()
@@ -503,9 +513,17 @@ class HazardInventoryWidget(QWidget):
             self.compare_selected_item_with_master()
             return
         if dialog.selected_choice == CATALOG_UPDATE_CHOICE_UPDATE:
+            store = self._store()
             try:
-                result = hazard_catalog_instance_update_service.update_from_master(item.id)
-            except HazardCatalogInstanceUpdateError as error:
+                if store is not None:
+                    result = store.sync_item_from_template(item.id)
+                    previous_version = item.source_template_version or 0
+                    new_version = result.template.version_number
+                else:
+                    updated = hazard_catalog_instance_update_service.update_from_master(item.id)
+                    previous_version = updated.previous_version
+                    new_version = updated.new_version
+            except (HazardCatalogInstanceUpdateError, HazardLibraryTemplateApplyError) as error:
                 QMessageBox.warning(self, CATALOG_UPDATE_SUCCESS_TITLE, str(error))
                 return
 
@@ -514,12 +532,13 @@ class HazardInventoryWidget(QWidget):
                 self,
                 CATALOG_UPDATE_SUCCESS_TITLE,
                 CATALOG_UPDATE_SUCCESS_TEXT.format(
-                    previous_version=result.previous_version,
-                    new_version=result.new_version,
+                    previous_version=previous_version,
+                    new_version=new_version,
                 ),
             )
             self._notify_event_saved()
             self.refresh()
+            self._notify_editor_dirty()
 
     def add_event_for_selected_item(self) -> None:
         if not self._ensure_editable():
@@ -667,15 +686,6 @@ class HazardInventoryWidget(QWidget):
         ):
             button.setEnabled(enabled)
 
-    def _update_save_to_library_enabled(self) -> None:
-        item = self._selected_item()
-        enabled = hazard_library_template_import_service.can_save_inventory_item(
-            hazard_identification_id=self._identification_id,
-            identification_status=self._identification_status,
-            inventory_item_id=item.id if item is not None else None,
-        )
-        self.save_to_library_btn.setEnabled(enabled)
-
     def _update_apply_from_library_enabled(self) -> None:
         enabled = hazard_library_template_apply_service.can_apply_template(
             hazard_identification_id=self._identification_id,
@@ -773,7 +783,6 @@ class HazardInventoryWidget(QWidget):
             self._selected_event_id = None
         self.table.blockSignals(False)
         self._update_event_actions_for_selection()
-        self._update_save_to_library_enabled()
         self._update_compare_with_master_enabled()
 
     def _load_events_table(self) -> None:
@@ -861,7 +870,6 @@ class HazardInventoryWidget(QWidget):
         self._selected_event_id = None
         self._load_events_table()
         self._update_event_actions_for_selection()
-        self._update_save_to_library_enabled()
         self._update_compare_with_master_enabled()
         self._maybe_offer_master_update(item)
 

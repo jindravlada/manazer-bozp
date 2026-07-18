@@ -349,35 +349,25 @@ class HazardLibraryTemplateImportR17cTestCase(unittest.TestCase):
         with self.assertRaises(HazardLibraryTemplateImportError):
             self._import()
 
-    def test_inventory_widget_save_button_for_completed(self) -> None:
-        hazard_identification_service.update_identification(
-            self.identification.id,
-            status=HAZARD_IDENTIFICATION_STATUS_COMPLETED,
-        )
+    def test_inventory_widget_save_button_removed_r21(self) -> None:
         widget = HazardInventoryWidget()
         widget.set_identification(
             self.identification.id,
             read_only=True,
             identification_status=HAZARD_IDENTIFICATION_STATUS_COMPLETED,
         )
-        widget.table.selectRow(0)
-        widget._update_save_to_library_enabled()
-        self.assertTrue(widget.save_to_library_btn.isEnabled())
+        self.assertFalse(hasattr(widget, "save_to_library_btn"))
 
     def test_inventory_widget_save_button_disabled_for_archived(self) -> None:
-        hazard_identification_service.update_identification(
-            self.identification.id,
-            status=HAZARD_IDENTIFICATION_STATUS_ARCHIVED,
-        )
+        # R21: tlačítko „Uložit do katalogu“ odstraněno – archivace se řeší u Převzít.
         widget = HazardInventoryWidget()
         widget.set_identification(
             self.identification.id,
             read_only=True,
             identification_status=HAZARD_IDENTIFICATION_STATUS_ARCHIVED,
         )
-        widget.table.selectRow(0)
-        widget._update_save_to_library_enabled()
-        self.assertFalse(widget.save_to_library_btn.isEnabled())
+        self.assertFalse(hasattr(widget, "save_to_library_btn"))
+        self.assertFalse(widget.apply_from_library_btn.isEnabled())
 
 
 if __name__ == "__main__":

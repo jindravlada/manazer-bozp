@@ -128,6 +128,15 @@ class HazardLibraryTemplateService:
                 )
         return None
 
+    def find_active_by_name(self, name: str) -> HazardLibraryTemplate | None:
+        normalized = normalize_template_name(name)
+        if not normalized:
+            return None
+        for template in self.repository.get_all(include_inactive=False):
+            if normalize_template_name(template.name) == normalized:
+                return template
+        return None
+
     def create_template(
         self,
         *,
@@ -139,12 +148,13 @@ class HazardLibraryTemplateService:
         note: str = "",
         active: bool = True,
         operation_ids: list[int] | None = None,
+        allow_duplicate_name: bool = False,
     ) -> HazardLibraryTemplate:
         normalized_name = self._validate_name(name)
         validated_category = self._validate_category(category)
         scope = self._validate_scope(application_scope)
         version = self._validate_version(version_number)
-        if active:
+        if active and not allow_duplicate_name:
             self._ensure_unique_active_name(normalized_name)
 
         validated_operation_ids = self._validate_operation_ids(
