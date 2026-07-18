@@ -6,10 +6,7 @@ from moduly.nastaveni.constants.workplace_hierarchy_constants import (
     WORKPLACE_ITEM_TYPE_OPERATION,
 )
 from moduly.nastaveni.sluzby.settings_service import settings_service
-from moduly.rizeni_rizik.constants import (
-    HAZARD_INVENTORY_CATEGORIES,
-    HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
-)
+from moduly.rizeni_rizik.constants import HAZARD_INVENTORY_CATEGORY_EQUIPMENT
 from moduly.rizeni_rizik.constants_library import (
     DEFAULT_HAZARD_LIBRARY_SCOPE,
     DEFAULT_HAZARD_LIBRARY_VERSION,
@@ -193,7 +190,10 @@ class HazardLibraryTemplateService:
             return None
 
         normalized_name = self._validate_name(name)
-        validated_category = self._validate_category(category)
+        validated_category = self._validate_category(
+            category,
+            previous_code=template.category,
+        )
         scope = self._validate_scope(application_scope)
         version = self._validate_version(version_number)
         if active:
@@ -299,10 +299,21 @@ class HazardLibraryTemplateService:
             raise HazardLibraryTemplateError("Název zdroje rizika je povinný.")
         return normalized
 
-    def _validate_category(self, category: str) -> str:
-        if category not in HAZARD_INVENTORY_CATEGORIES:
-            raise HazardLibraryTemplateError("Neplatná kategorie zdroje rizika.")
-        return category
+    def _validate_category(self, category: str, *, previous_code: str | None = None) -> str:
+        from moduly.rizeni_rizik.sluzby.hazard_source_category_service import (
+            HazardSourceCategoryError,
+            hazard_source_category_service,
+        )
+
+        try:
+            if previous_code is None:
+                return hazard_source_category_service.validate_for_new(category)
+            return hazard_source_category_service.validate_existing(
+                category,
+                previous_code=previous_code,
+            )
+        except HazardSourceCategoryError as error:
+            raise HazardLibraryTemplateError(str(error)) from error
 
     def _validate_scope(self, scope: str) -> str:
         if scope not in HAZARD_LIBRARY_SCOPES:

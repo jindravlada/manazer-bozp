@@ -17,8 +17,6 @@ from PySide6.QtWidgets import (
 from core.widgets.table_utils import configure_table_columns, create_preview_table_item
 from moduly.rizeni_rizik.constants import (
     HAZARD_EVENT_DIALOG_TITLE,
-    HAZARD_INVENTORY_CATEGORIES,
-    HAZARD_INVENTORY_CATEGORY_LABELS,
     INVENTORY_ADD_NEW_BUTTON,
     INVENTORY_COL_ACTIVE,
     INVENTORY_COL_DESCRIPTION,
@@ -76,6 +74,9 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_service import (
     hazard_library_template_service,
 )
 from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import hazard_risk_assessment_service
+from moduly.rizeni_rizik.sluzby.hazard_source_category_service import (
+    hazard_source_category_service,
+)
 from moduly.rizeni_rizik.ui.hazard_catalog_instance_update_offer_dialog import (
     CATALOG_UPDATE_CHOICE_KEEP,
     CATALOG_UPDATE_CHOICE_SHOW_DIFF,
@@ -104,7 +105,8 @@ class HazardInventoryWidget(QWidget):
         self._identification_id: int | None = None
         self._identification_status = ""
         self._read_only = False
-        self._current_category = HAZARD_INVENTORY_CATEGORIES[0]
+        categories = hazard_source_category_service.ordered_codes(include_inactive=True)
+        self._current_category = categories[0] if categories else "equipment"
         self._selected_item_id: int | None = None
         self._selected_event_id: int | None = None
         self._dismissed_master_update_offers: set[int] = set()
@@ -285,10 +287,9 @@ class HazardInventoryWidget(QWidget):
             return
 
         self._current_category = result.item.category
-        if result.item.category in HAZARD_INVENTORY_CATEGORIES:
-            self.category_list.setCurrentRow(
-                HAZARD_INVENTORY_CATEGORIES.index(result.item.category),
-            )
+        row = self._category_row_index(result.item.category)
+        if row is not None:
+            self.category_list.setCurrentRow(row)
         self._selected_item_id = result.item.id
         self._selected_event_id = None
         self._notify_event_saved()
@@ -331,8 +332,9 @@ class HazardInventoryWidget(QWidget):
 
         result = dialog.result
         self._current_category = result.item.category
-        category_index = HAZARD_INVENTORY_CATEGORIES.index(self._current_category)
-        self.category_list.setCurrentRow(category_index)
+        row = self._category_row_index(self._current_category)
+        if row is not None:
+            self.category_list.setCurrentRow(row)
         self._selected_item_id = result.item.id
         self._selected_event_id = None
 
@@ -709,6 +711,7 @@ class HazardInventoryWidget(QWidget):
 
     def _populate_categories(self) -> None:
         store = self._store()
+        category_codes = hazard_source_category_service.ordered_codes(include_inactive=True)
         if store is not None:
             counts = store.count_active_by_category()
         elif self._identification_id is not None:
@@ -716,20 +719,31 @@ class HazardInventoryWidget(QWidget):
                 self._identification_id,
             )
         else:
-            counts = {category: 0 for category in HAZARD_INVENTORY_CATEGORIES}
+            counts = {category: 0 for category in category_codes}
 
         selected_category = self._current_category
+        if selected_category not in category_codes and category_codes:
+            selected_category = category_codes[0]
+            self._current_category = selected_category
+
         self.category_list.blockSignals(True)
         self.category_list.clear()
-        for category in HAZARD_INVENTORY_CATEGORIES:
-            label = HAZARD_INVENTORY_CATEGORY_LABELS[category]
+        for category in category_codes:
+            label = hazard_source_category_service.label_for(category)
             count = counts.get(category, 0)
             item = QListWidgetItem(f"{label} ({count})")
             item.setData(Qt.ItemDataRole.UserRole, category)
             self.category_list.addItem(item)
-        index = HAZARD_INVENTORY_CATEGORIES.index(selected_category)
-        self.category_list.setCurrentRow(index)
+        row = self._category_row_index(selected_category)
+        self.category_list.setCurrentRow(0 if row is None else row)
         self.category_list.blockSignals(False)
+
+    def _category_row_index(self, category_code: str) -> int | None:
+        for row in range(self.category_list.count()):
+            item = self.category_list.item(row)
+            if item is not None and item.data(Qt.ItemDataRole.UserRole) == category_code:
+                return row
+        return None
 
     def _load_table(self) -> None:
         self.table.blockSignals(True)

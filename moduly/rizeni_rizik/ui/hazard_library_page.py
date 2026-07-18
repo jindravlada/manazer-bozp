@@ -11,7 +11,6 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
-from moduly.rizeni_rizik.constants import HAZARD_INVENTORY_CATEGORY_LABELS
 from moduly.rizeni_rizik.constants_library import (
     HAZARD_LIBRARY_COL_ACTIVE,
     HAZARD_LIBRARY_COL_CATEGORY,
@@ -28,7 +27,13 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_service import (
     HazardLibraryTemplateError,
     hazard_library_template_service,
 )
+from moduly.rizeni_rizik.sluzby.hazard_source_category_service import (
+    hazard_source_category_service,
+)
 from moduly.rizeni_rizik.ui.hazard_library_template_dialog import HazardLibraryTemplateDialog
+from moduly.rizeni_rizik.ui.hazard_source_categories_management_dialog import (
+    HazardSourceCategoriesManagementDialog,
+)
 
 
 class HazardLibraryPage(QWidget):
@@ -44,10 +49,12 @@ class HazardLibraryPage(QWidget):
         self.edit_btn = QPushButton("Upravit")
         self.activate_btn = QPushButton("Aktivovat")
         self.deactivate_btn = QPushButton("Deaktivovat")
+        self.manage_categories_btn = QPushButton("Spravovat kategorie…")
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.activate_btn)
         toolbar.addWidget(self.deactivate_btn)
+        toolbar.addWidget(self.manage_categories_btn)
         toolbar.addStretch()
 
         self.table = QTableWidget()
@@ -69,6 +76,7 @@ class HazardLibraryPage(QWidget):
         self.edit_btn.clicked.connect(self.edit_selected_template)
         self.activate_btn.clicked.connect(self.activate_selected_template)
         self.deactivate_btn.clicked.connect(self.deactivate_selected_template)
+        self.manage_categories_btn.clicked.connect(self.manage_categories)
         self.table.doubleClicked.connect(self.edit_selected_template)
 
         self.refresh()
@@ -82,10 +90,7 @@ class HazardLibraryPage(QWidget):
             name_item.setToolTip(template.name)
             self.table.setItem(row_index, HAZARD_LIBRARY_COL_ID, QTableWidgetItem(str(template.id)))
             self.table.setItem(row_index, HAZARD_LIBRARY_COL_NAME, name_item)
-            category_label = HAZARD_INVENTORY_CATEGORY_LABELS.get(
-                template.category,
-                template.category,
-            )
+            category_label = hazard_source_category_service.label_for(template.category)
             self.table.setItem(
                 row_index,
                 HAZARD_LIBRARY_COL_CATEGORY,
@@ -146,6 +151,11 @@ class HazardLibraryPage(QWidget):
             QMessageBox.information(self, HAZARD_LIBRARY_PAGE_TITLE, "Zdroj rizika je již neaktivní.")
             return
         hazard_library_template_service.deactivate(template.id)
+        self.refresh()
+
+    def manage_categories(self) -> None:
+        dialog = HazardSourceCategoriesManagementDialog(self)
+        dialog.exec()
         self.refresh()
 
     def open_template(self, template_id: int) -> None:

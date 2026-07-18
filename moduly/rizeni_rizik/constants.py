@@ -125,7 +125,66 @@ HAZARD_INVENTORY_CATEGORIES = (
     HAZARD_INVENTORY_CATEGORY_OTHER,
 )
 
-HAZARD_INVENTORY_CATEGORY_LABELS = {
+# UX-RISK-3: výchozí seed číselníku (kód, název, popis, pořadí).
+DEFAULT_HAZARD_SOURCE_CATEGORIES = (
+    (
+        HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
+        "Stroje a technická zařízení",
+        "Stroje, linky a technická zařízení na pracovišti.",
+        1,
+    ),
+    (
+        HAZARD_INVENTORY_CATEGORY_ACTIVITY,
+        "Nářadí a pracovní prostředky",
+        "Ruční nářadí, přípravky a pracovní prostředky.",
+        2,
+    ),
+    (
+        HAZARD_INVENTORY_CATEGORY_ENERGY,
+        "Energie a fyzikální faktory",
+        "Elektrická energie, tlak, teplo, záření a další fyzikální faktory.",
+        3,
+    ),
+    (
+        HAZARD_INVENTORY_CATEGORY_SUBSTANCE,
+        "Látky, materiály a prach",
+        "Chemické látky, materiály a prašné zdroje.",
+        4,
+    ),
+    (
+        HAZARD_INVENTORY_CATEGORY_STRUCTURE,
+        "Prostory, konstrukce a povrchy",
+        "Stavební konstrukce, podlahy, stropy a povrchy.",
+        5,
+    ),
+    (
+        HAZARD_INVENTORY_CATEGORY_TRANSPORT,
+        "Vozidla a dopravní prostředky",
+        "Vozidla, manipulační technika a dopravní prostředky.",
+        6,
+    ),
+    (
+        HAZARD_INVENTORY_CATEGORY_PERSON,
+        "Biologické zdroje a živé organismy",
+        "Biologické agens a živé organismy.",
+        7,
+    ),
+    (
+        HAZARD_INVENTORY_CATEGORY_ENVIRONMENT,
+        "Přírodní a klimatické vlivy",
+        "Přírodní podmínky a klimatické vlivy na pracovišti.",
+        8,
+    ),
+    (
+        HAZARD_INVENTORY_CATEGORY_OTHER,
+        "Ostatní zdroje",
+        "Ostatní zdroje rizik mimo předchozí kategorie.",
+        9,
+    ),
+)
+
+# Starší názvy – migrace přejmenuje pouze řádky se shodou (ne uživatelské přejmenování).
+LEGACY_HAZARD_SOURCE_CATEGORY_NAMES = {
     HAZARD_INVENTORY_CATEGORY_EQUIPMENT: "Stroje a zařízení",
     HAZARD_INVENTORY_CATEGORY_ACTIVITY: "Činnosti",
     HAZARD_INVENTORY_CATEGORY_ENERGY: "Energie",
@@ -135,6 +194,10 @@ HAZARD_INVENTORY_CATEGORY_LABELS = {
     HAZARD_INVENTORY_CATEGORY_PERSON: "Osoby",
     HAZARD_INVENTORY_CATEGORY_ENVIRONMENT: "Podmínky prostředí",
     HAZARD_INVENTORY_CATEGORY_OTHER: "Ostatní",
+}
+
+HAZARD_INVENTORY_CATEGORY_LABELS = {
+    code: name for code, name, _description, _order in DEFAULT_HAZARD_SOURCE_CATEGORIES
 }
 
 READ_ONLY_IDENTIFICATION_STATUSES = (

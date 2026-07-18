@@ -115,7 +115,10 @@ class HazardLibraryTemplateImportService:
 
         try:
             normalized_name = self.template_service._validate_name(name)
-            validated_category = self.template_service._validate_category(item.category)
+            validated_category = self.template_service._validate_category(
+                item.category,
+                previous_code=item.category,
+            )
             scope = self.template_service._validate_scope(application_scope)
             validated_operation_ids = self.template_service._validate_operation_ids(
                 scope,

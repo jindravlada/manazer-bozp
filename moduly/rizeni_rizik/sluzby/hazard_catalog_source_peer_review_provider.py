@@ -45,7 +45,9 @@ from core.ai_oponentni.types import (
     AiProposal,
 )
 from core.version import APP_VERSION
-from moduly.rizeni_rizik.constants import HAZARD_INVENTORY_CATEGORY_LABELS
+from moduly.rizeni_rizik.sluzby.hazard_source_category_service import (
+    hazard_source_category_service,
+)
 from moduly.rizeni_rizik.sluzby.hazard_library_template_assessment_service import (
     hazard_library_template_assessment_service,
 )
@@ -338,8 +340,7 @@ class HazardCatalogSourcePeerReviewProvider:
             "export_id": source_export_id,
             "name": template.name,
             "category": template.category,
-            "category_label": HAZARD_INVENTORY_CATEGORY_LABELS.get(
-                template.category,
+            "category_label": hazard_source_category_service.label_for(
                 template.category,
             ),
             "description": template.description or "",

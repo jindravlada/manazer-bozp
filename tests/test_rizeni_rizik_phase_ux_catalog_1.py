@@ -31,10 +31,8 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.rizeni_rizik.constants import (
-        HAZARD_INVENTORY_CATEGORIES,
         HAZARD_INVENTORY_CATEGORY_ENVIRONMENT,
         HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
-        HAZARD_INVENTORY_CATEGORY_LABELS,
         HAZARD_INVENTORY_CATEGORY_STRUCTURE,
         RISK_SEVERITY_MODERATE,
     )
@@ -214,19 +212,22 @@ class HazardLibraryApplyCategoryFilterUxCatalog1TestCase(unittest.TestCase):
                 HAZARD_LIBRARY_APPLY_SHOWN_COUNT_TEMPLATE.format(shown=2, total=2),
             )
             # Combo obsahuje všechny kategorie + „Všechny“.
+            from moduly.rizeni_rizik.sluzby.hazard_source_category_service import (
+                hazard_source_category_service,
+            )
+
+            categories = hazard_source_category_service.get_all(include_inactive=True)
             self.assertEqual(
                 dialog.category_filter.count(),
-                1 + len(HAZARD_INVENTORY_CATEGORIES),
+                1 + len(categories),
             )
-            for category in HAZARD_INVENTORY_CATEGORIES:
+            for category in categories:
                 self.assertGreaterEqual(
-                    dialog.category_filter.findData(category),
+                    dialog.category_filter.findData(category.code),
                     0,
                 )
                 self.assertGreaterEqual(
-                    dialog.category_filter.findText(
-                        HAZARD_INVENTORY_CATEGORY_LABELS[category],
-                    ),
+                    dialog.category_filter.findText(category.name),
                     0,
                 )
         finally:

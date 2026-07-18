@@ -13,10 +13,6 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
-from moduly.rizeni_rizik.constants import (
-    HAZARD_INVENTORY_CATEGORIES,
-    HAZARD_INVENTORY_CATEGORY_LABELS,
-)
 from moduly.rizeni_rizik.constants_library import (
     HAZARD_LIBRARY_APPLY_ALL_CATEGORIES,
     HAZARD_LIBRARY_APPLY_CATEGORY_FILTER_LABEL,
@@ -33,6 +29,9 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_apply_service import (
     HazardLibraryTemplateApplyError,
     HazardLibraryTemplateApplyResult,
     hazard_library_template_apply_service,
+)
+from moduly.rizeni_rizik.sluzby.hazard_source_category_service import (
+    hazard_source_category_service,
 )
 
 
@@ -66,11 +65,8 @@ class HazardLibraryApplyToInventoryDialog(QDialog):
         category_row.addWidget(QLabel(HAZARD_LIBRARY_APPLY_CATEGORY_FILTER_LABEL))
         self.category_filter = QComboBox()
         self.category_filter.addItem(HAZARD_LIBRARY_APPLY_ALL_CATEGORIES, None)
-        for category in HAZARD_INVENTORY_CATEGORIES:
-            self.category_filter.addItem(
-                HAZARD_INVENTORY_CATEGORY_LABELS.get(category, category),
-                category,
-            )
+        for category in hazard_source_category_service.get_all(include_inactive=True):
+            self.category_filter.addItem(category.name, category.code)
         self.category_filter.setCurrentIndex(0)
         self.category_filter.currentIndexChanged.connect(self._reload_sources)
         category_row.addWidget(self.category_filter, stretch=1)
@@ -145,10 +141,7 @@ class HazardLibraryApplyToInventoryDialog(QDialog):
     def _populate_list(self, list_widget: QListWidget, templates) -> None:
         list_widget.clear()
         for template in templates:
-            category_label = HAZARD_INVENTORY_CATEGORY_LABELS.get(
-                template.category,
-                template.category,
-            )
+            category_label = hazard_source_category_service.label_for(template.category)
             item = QListWidgetItem(f"{template.name} ({category_label})")
             item.setData(Qt.ItemDataRole.UserRole, template.id)
             item.setToolTip(template.name)

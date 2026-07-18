@@ -13,7 +13,6 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.rizeni_rizik.constants import (
     HAZARD_EVENT_DIALOG_TITLE,
-    HAZARD_INVENTORY_CATEGORY_LABELS,
 )
 from moduly.rizeni_rizik.sluzby.hazard_identification_working_copy import (
     find_identification_working_copy,
@@ -21,6 +20,9 @@ from moduly.rizeni_rizik.sluzby.hazard_identification_working_copy import (
 from moduly.rizeni_rizik.sluzby.hazard_event_service import (
     HazardEventError,
     hazard_event_service,
+)
+from moduly.rizeni_rizik.sluzby.hazard_source_category_service import (
+    hazard_source_category_service,
 )
 
 
@@ -97,10 +99,7 @@ class HazardEventDialog(QDialog):
             )
         self.inventory_item.clear()
         for item in items:
-            category_label = HAZARD_INVENTORY_CATEGORY_LABELS.get(
-                item.category,
-                item.category,
-            )
+            category_label = hazard_source_category_service.label_for(item.category)
             label = f"{item.name} ({category_label})"
             self.inventory_item.addItem(label, item.id)
 

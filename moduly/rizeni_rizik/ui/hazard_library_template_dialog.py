@@ -21,10 +21,6 @@ from core.ai_oponentni.ui.ai_peer_review_widget import (
     catalog_peer_review_export_dialog_config,
 )
 from core.widgets.dialog_utils import create_save_cancel_box
-from moduly.rizeni_rizik.constants import (
-    HAZARD_INVENTORY_CATEGORIES,
-    HAZARD_INVENTORY_CATEGORY_LABELS,
-)
 from moduly.rizeni_rizik.constants_library import (
     DEFAULT_HAZARD_LIBRARY_SCOPE,
     DEFAULT_HAZARD_LIBRARY_VERSION,
@@ -63,6 +59,9 @@ from moduly.rizeni_rizik.ui.hazard_library_template_content_widget import (
 from moduly.rizeni_rizik.ui.hazard_library_template_revision_history_widget import (
     HazardLibraryTemplateRevisionHistoryWidget,
 )
+from moduly.rizeni_rizik.ui.hazard_source_category_combo import (
+    populate_hazard_source_category_combo,
+)
 
 
 class HazardLibraryTemplateDialog(QDialog):
@@ -96,8 +95,13 @@ class HazardLibraryTemplateDialog(QDialog):
 
         self.name = QLineEdit()
         self.category = QComboBox()
-        for category in HAZARD_INVENTORY_CATEGORIES:
-            self.category.addItem(HAZARD_INVENTORY_CATEGORY_LABELS[category], category)
+        populate_hazard_source_category_combo(
+            self.category,
+            current_code=(
+                template.category if template is not None else default_category
+            ),
+            include_inactive_current=template is not None,
+        )
         self.description = QTextEdit()
         self.description.setMinimumHeight(80)
         self.version_number = QSpinBox()

@@ -2,10 +2,6 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from core.utils.czech_sort import czech_sorted
-from moduly.rizeni_rizik.constants import (
-    HAZARD_INVENTORY_CATEGORIES,
-    HAZARD_INVENTORY_CATEGORY_LABELS,
-)
 from moduly.rizeni_rizik.modely.hazard_event import HazardEvent
 from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem
 from moduly.rizeni_rizik.repository.hazard_event_repository import HazardEventRepository
@@ -14,6 +10,9 @@ from moduly.rizeni_rizik.sluzby.hazard_catalog_instance_modification import (
 )
 from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import (
     hazard_inventory_item_service,
+)
+from moduly.rizeni_rizik.sluzby.hazard_source_category_service import (
+    hazard_source_category_service,
 )
 
 
@@ -208,21 +207,23 @@ class HazardEventService:
             event=event,
             inventory_item_name=item.name,
             inventory_item_category=item.category,
-            inventory_item_category_label=HAZARD_INVENTORY_CATEGORY_LABELS.get(
-                item.category,
+            inventory_item_category_label=hazard_source_category_service.label_for(
                 item.category,
             ),
         )
 
     def _sort_rows(self, rows: list[HazardEventRow]) -> list[HazardEventRow]:
         category_order = {
-            category: index for index, category in enumerate(HAZARD_INVENTORY_CATEGORIES)
+            category: index
+            for index, category in enumerate(
+                hazard_source_category_service.ordered_codes(include_inactive=True),
+            )
         }
 
         def sort_key(row: HazardEventRow) -> tuple:
             category_index = category_order.get(
                 row.inventory_item_category,
-                len(HAZARD_INVENTORY_CATEGORIES),
+                len(category_order),
             )
             return (
                 category_index,

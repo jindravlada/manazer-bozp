@@ -12,8 +12,6 @@ from PySide6.QtWidgets import (
 
 from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.rizeni_rizik.constants import (
-    HAZARD_INVENTORY_CATEGORIES,
-    HAZARD_INVENTORY_CATEGORY_LABELS,
     INVENTORY_ITEM_DIALOG_TITLE,
     format_inventory_item_source_label,
 )
@@ -23,6 +21,9 @@ from moduly.rizeni_rizik.sluzby.hazard_identification_working_copy import (
 from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import (
     HazardInventoryItemError,
     hazard_inventory_item_service,
+)
+from moduly.rizeni_rizik.ui.hazard_source_category_combo import (
+    populate_hazard_source_category_combo,
 )
 
 
@@ -49,8 +50,11 @@ class HazardInventoryItemDialog(QDialog):
         form = QFormLayout()
 
         self.category = QComboBox()
-        for category in HAZARD_INVENTORY_CATEGORIES:
-            self.category.addItem(HAZARD_INVENTORY_CATEGORY_LABELS[category], category)
+        populate_hazard_source_category_combo(
+            self.category,
+            current_code=item.category if item is not None else default_category,
+            include_inactive_current=item is not None,
+        )
 
         self.name = QLineEdit()
         self.description = QPlainTextEdit()
@@ -74,9 +78,6 @@ class HazardInventoryItemDialog(QDialog):
         layout.addWidget(buttons)
 
         if item is not None:
-            index = self.category.findData(item.category)
-            if index >= 0:
-                self.category.setCurrentIndex(index)
             self.name.setText(item.name)
             self.description.setPlainText(item.description or "")
             self.active_checkbox.setChecked(bool(item.active))
@@ -86,10 +87,6 @@ class HazardInventoryItemDialog(QDialog):
             )
             if source_text:
                 self.source_label.setText(f"Původ: {source_text}")
-        elif default_category is not None:
-            index = self.category.findData(default_category)
-            if index >= 0:
-                self.category.setCurrentIndex(index)
 
         if read_only:
             self.category.setEnabled(False)

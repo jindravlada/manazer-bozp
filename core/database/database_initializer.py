@@ -75,6 +75,9 @@ def initialize_database() -> None:
         HazardIdentificationPhoto,
     )
     from moduly.rizeni_rizik.modely.hazard_library_template import HazardLibraryTemplate  # noqa: F401
+    from moduly.rizeni_rizik.modely.hazard_source_category import (  # noqa: F401
+        HazardSourceCategory,
+    )
     from moduly.rizeni_rizik.modely.hazard_library_template_operation import (  # noqa: F401
         HazardLibraryTemplateOperation,
     )
@@ -112,6 +115,7 @@ def initialize_database() -> None:
     _ensure_workplace_hierarchy_columns()
     _ensure_responsibility_roles_table()
     _ensure_exposed_groups_table()
+    _ensure_hazard_source_categories_table()
     _ensure_audit_program_columns()
     _ensure_audit_program_workplace_columns()
     _ensure_audit_program_link_columns()
@@ -1160,6 +1164,85 @@ def _seed_exposed_groups() -> None:
                     "updated_at": now,
                 },
             )
+        connection.commit()
+
+
+def _ensure_hazard_source_categories_table() -> None:
+    columns = _table_columns("hazard_source_categories")
+    if not columns:
+        from moduly.rizeni_rizik.modely.hazard_source_category import HazardSourceCategory
+
+        HazardSourceCategory.__table__.create(bind=_db_engine(), checkfirst=True)
+    _seed_and_migrate_hazard_source_categories()
+
+
+def _seed_and_migrate_hazard_source_categories() -> None:
+    """Založí výchozí kategorie a přejmenuje legacy názvy podle kódu (UX-RISK-3)."""
+    from moduly.rizeni_rizik.constants import (
+        DEFAULT_HAZARD_SOURCE_CATEGORIES,
+        LEGACY_HAZARD_SOURCE_CATEGORY_NAMES,
+    )
+
+    now = datetime.now()
+    with _db_engine().connect() as connection:
+        for code, name, description, sort_order in DEFAULT_HAZARD_SOURCE_CATEGORIES:
+            existing = connection.execute(
+                text(
+                    """
+                    SELECT id, name FROM hazard_source_categories
+                    WHERE code = :code
+                    """
+                ),
+                {"code": code},
+            ).mappings().first()
+            if existing is None:
+                connection.execute(
+                    text(
+                        """
+                        INSERT INTO hazard_source_categories
+                            (code, name, description, sort_order, active, created_at, updated_at)
+                        VALUES
+                            (:code, :name, :description, :sort_order, 1, :created_at, :updated_at)
+                        """
+                    ),
+                    {
+                        "code": code,
+                        "name": name,
+                        "description": description,
+                        "sort_order": sort_order,
+                        "created_at": now,
+                        "updated_at": now,
+                    },
+                )
+                continue
+
+            legacy_name = LEGACY_HAZARD_SOURCE_CATEGORY_NAMES.get(code, "")
+            current_name = (existing["name"] or "").strip()
+            if current_name == name:
+                continue
+            if current_name.casefold() == legacy_name.casefold():
+                connection.execute(
+                    text(
+                        """
+                        UPDATE hazard_source_categories
+                        SET name = :name,
+                            description = CASE
+                                WHEN TRIM(COALESCE(description, '')) = '' THEN :description
+                                ELSE description
+                            END,
+                            sort_order = :sort_order,
+                            updated_at = :updated_at
+                        WHERE code = :code
+                        """
+                    ),
+                    {
+                        "code": code,
+                        "name": name,
+                        "description": description,
+                        "sort_order": sort_order,
+                        "updated_at": now,
+                    },
+                )
         connection.commit()
 
 

@@ -6,7 +6,9 @@ from dataclasses import dataclass
 
 from core.utils.czech_sort import czech_sorted
 from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
-from moduly.rizeni_rizik.constants import HAZARD_INVENTORY_CATEGORY_LABELS
+from moduly.rizeni_rizik.sluzby.hazard_source_category_service import (
+    hazard_source_category_service,
+)
 from moduly.rizeni_rizik.repository.hazard_library_template_legal_link_repository import (
     HazardLibraryTemplateLegalLinkRepository,
 )
@@ -91,8 +93,7 @@ class HazardCatalogLegalRequirementUsageService:
                 HazardCatalogSourceUsage(
                     template_id=template.id,
                     name=template.name,
-                    category_label=HAZARD_INVENTORY_CATEGORY_LABELS.get(
-                        template.category,
+                    category_label=hazard_source_category_service.label_for(
                         template.category,
                     ),
                     version_number=template.version_number,

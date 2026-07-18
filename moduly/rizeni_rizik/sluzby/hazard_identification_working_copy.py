@@ -22,8 +22,6 @@ from moduly.rizeni_rizik.constants import (
     DEFAULT_RISK_ASSESSMENT_STATUS,
     HAZARD_IDENTIFICATION_STATUS_ARCHIVED,
     HAZARD_IDENTIFICATION_STATUSES,
-    HAZARD_INVENTORY_CATEGORIES,
-    HAZARD_INVENTORY_CATEGORY_LABELS,
     RISK_ASSESSMENT_STATUS_COMPLETED,
     RISK_ASSESSMENT_STATUSES,
     RISK_SEVERITIES,
@@ -407,10 +405,19 @@ class HazardIdentificationWorkingCopy:
         )
 
     def count_active_by_category(self) -> dict[str, int]:
-        counts = {category: 0 for category in HAZARD_INVENTORY_CATEGORIES}
+        from moduly.rizeni_rizik.sluzby.hazard_source_category_service import (
+            hazard_source_category_service,
+        )
+
+        counts = {
+            category: 0
+            for category in hazard_source_category_service.ordered_codes(
+                include_inactive=True,
+            )
+        }
         for item in self.items:
-            if item.active and item.category in counts:
-                counts[item.category] += 1
+            if item.active:
+                counts[item.category] = counts.get(item.category, 0) + 1
         return counts
 
     def create_item(
@@ -421,22 +428,30 @@ class HazardIdentificationWorkingCopy:
         description: str = "",
         active: bool = True,
     ) -> IdWcInventoryItem:
+        from moduly.rizeni_rizik.sluzby.hazard_source_category_service import (
+            HazardSourceCategoryError,
+            hazard_source_category_service,
+        )
+
         normalized_name = name.strip()
         if not normalized_name:
             raise HazardInventoryItemError("Název je povinný.")
-        self._validate_category(category)
+        try:
+            validated_category = hazard_source_category_service.validate_for_new(category)
+        except HazardSourceCategoryError as error:
+            raise HazardInventoryItemError(str(error)) from error
         self._validate_unique_active_item_name(
-            category=category,
+            category=validated_category,
             name=normalized_name,
             exclude_item_id=None,
             active=active,
         )
-        category_items = [item for item in self.items if item.category == category]
+        category_items = [item for item in self.items if item.category == validated_category]
         sort_order = max((item.sort_order for item in category_items), default=0) + 1
         item = IdWcInventoryItem(
             id=self._alloc_id(),
             hazard_identification_id=self.identification_id,
-            category=category,
+            category=validated_category,
             name=normalized_name,
             description=description.strip(),
             active=active,
@@ -455,20 +470,31 @@ class HazardIdentificationWorkingCopy:
         description: str = "",
         active: bool = True,
     ) -> IdWcInventoryItem | None:
+        from moduly.rizeni_rizik.sluzby.hazard_source_category_service import (
+            HazardSourceCategoryError,
+            hazard_source_category_service,
+        )
+
         item = self.get_item(item_id)
         if item is None:
             return None
         normalized_name = name.strip()
         if not normalized_name:
             raise HazardInventoryItemError("Název je povinný.")
-        self._validate_category(category)
+        try:
+            validated_category = hazard_source_category_service.validate_existing(
+                category,
+                previous_code=item.category,
+            )
+        except HazardSourceCategoryError as error:
+            raise HazardInventoryItemError(str(error)) from error
         self._validate_unique_active_item_name(
-            category=category,
+            category=validated_category,
             name=normalized_name,
             exclude_item_id=item_id,
             active=active,
         )
-        item.category = category
+        item.category = validated_category
         item.name = normalized_name
         item.description = description.strip()
         item.active = active
@@ -497,9 +523,21 @@ class HazardIdentificationWorkingCopy:
         self._touch()
         return True
 
-    def _validate_category(self, category: str) -> None:
-        if category not in HAZARD_INVENTORY_CATEGORIES:
-            raise HazardInventoryItemError("Neplatná kategorie položky analýzy.")
+    def _validate_category(self, category: str, *, previous_code: str | None = None) -> str:
+        from moduly.rizeni_rizik.sluzby.hazard_source_category_service import (
+            HazardSourceCategoryError,
+            hazard_source_category_service,
+        )
+
+        try:
+            if previous_code is None:
+                return hazard_source_category_service.validate_known(category)
+            return hazard_source_category_service.validate_existing(
+                category,
+                previous_code=previous_code,
+            )
+        except HazardSourceCategoryError as error:
+            raise HazardInventoryItemError(str(error)) from error
 
     def _validate_unique_active_item_name(
         self,
@@ -511,6 +549,10 @@ class HazardIdentificationWorkingCopy:
     ) -> None:
         if not active:
             return
+        from moduly.rizeni_rizik.sluzby.hazard_source_category_service import (
+            hazard_source_category_service,
+        )
+
         normalized = normalize_inventory_name(name)
         for item in self.items:
             if item.id == exclude_item_id:
@@ -520,7 +562,7 @@ class HazardIdentificationWorkingCopy:
             if item.category != category:
                 continue
             if normalize_inventory_name(item.name) == normalized:
-                label = HAZARD_INVENTORY_CATEGORY_LABELS.get(category, category)
+                label = hazard_source_category_service.label_for(category)
                 raise HazardInventoryItemError(
                     f"V kategorii {label} již existuje aktivní položka "
                     f"s názvem „{name.strip()}“.",

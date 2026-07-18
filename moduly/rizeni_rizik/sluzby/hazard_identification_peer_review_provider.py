@@ -49,8 +49,6 @@ from core.ai_oponentni.types import (
 from core.version import APP_VERSION
 from moduly.rizeni_rizik.constants import (
     HAZARD_IDENTIFICATION_STATUS_LABELS,
-    HAZARD_INVENTORY_CATEGORIES,
-    HAZARD_INVENTORY_CATEGORY_LABELS,
     HAZARD_INVENTORY_CATEGORY_OTHER,
     RISK_ASSESSMENT_STATUS_COMPLETED,
     RISK_ASSESSMENT_STATUS_LABELS,
@@ -71,6 +69,9 @@ from moduly.rizeni_rizik.sluzby.hazard_identification_service import (
 from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import (
     HazardInventoryItemError,
     hazard_inventory_item_service,
+)
+from moduly.rizeni_rizik.sluzby.hazard_source_category_service import (
+    hazard_source_category_service,
 )
 from moduly.rizeni_rizik.sluzby.hazard_required_measure_service import (
     HazardRequiredMeasureError,
@@ -108,10 +109,7 @@ class HazardIdentificationPeerReviewProvider:
             AiExportSourceChoice(
                 id=item.id,
                 label=item.name,
-                category_label=HAZARD_INVENTORY_CATEGORY_LABELS.get(
-                    item.category,
-                    item.category,
-                ),
+                category_label=hazard_source_category_service.label_for(item.category),
             )
             for item in sorted_items
         ]
@@ -423,10 +421,11 @@ class HazardIdentificationPeerReviewProvider:
 
     @staticmethod
     def _category_sort_key(category: str) -> int:
+        codes = hazard_source_category_service.ordered_codes(include_inactive=True)
         try:
-            return HAZARD_INVENTORY_CATEGORIES.index(category)
+            return codes.index(category)
         except ValueError:
-            return len(HAZARD_INVENTORY_CATEGORIES)
+            return len(codes)
 
     @classmethod
     def _sort_analysis_sources(cls, items: list) -> list:
@@ -617,8 +616,7 @@ class HazardIdentificationPeerReviewProvider:
                     "_source_id": item.id,
                     "export_id": item_export_ids[item.id],
                     "category": item.category,
-                    "category_label": HAZARD_INVENTORY_CATEGORY_LABELS.get(
-                        item.category,
+                    "category_label": hazard_source_category_service.label_for(
                         item.category,
                     ),
                     "name": item.name,
