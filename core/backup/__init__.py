@@ -1,8 +1,9 @@
-"""Společná infrastruktura formátu a tvorby záložního balíčku ``*.mbbackup``.
+"""Společná infrastruktura formátu, tvorby, kontroly a obnovy ``*.mbbackup``.
 
 BACKUP-1a: konstanty, cesty, SHA-256, metadata.
-BACKUP-1b: vytvoření úplné zálohy instance (bez obnovy a bez UI).
+BACKUP-1b: vytvoření úplné zálohy instance.
 BACKUP-1c: důkladné ověření integrity balíčku.
+BACKUP-2a: bezpečná obnova instance (bez UI).
 """
 
 from core.backup.constants import (
@@ -23,6 +24,16 @@ from core.backup.constants import (
     PACKAGE_STATUS_COMPLETE,
     PACKAGE_STATUS_CREATING,
     REQUIRED_ARCHIVE_ROOTS,
+    RESTORE_ERR_BAD_ARCHIVE,
+    RESTORE_ERR_DISK_FULL,
+    RESTORE_ERR_INTEGRITY,
+    RESTORE_ERR_INTERRUPTED,
+    RESTORE_ERR_INVALID_DATABASE,
+    RESTORE_ERR_INVALID_METADATA,
+    RESTORE_ERR_MISSING_COMPONENT,
+    RESTORE_ERR_POSTCHECK,
+    RESTORE_ERR_UNSAFE_PATH,
+    RESTORE_ERR_WRITE_ERROR,
     SUPPORTED_BACKUP_FORMAT_VERSIONS,
     SUPPORTED_PACKAGE_KINDS,
 )
@@ -44,12 +55,18 @@ from core.backup.package_create import (
     create_instance_backup,
     default_instance_backup_filename,
 )
+from core.backup.package_extract import SafeExtractError, safe_extract_zip_member
 from core.backup.package_integrity import (
     BackupIntegrityIssue,
     BackupIntegrityReport,
     BackupPackageVerificationError,
     assert_backup_integrity,
     inspect_backup_integrity,
+)
+from core.backup.package_restore import (
+    InstanceRestoreError,
+    RestoreInstanceBackupResult,
+    restore_instance_backup,
 )
 from core.backup.package_verify import (
     package_looks_like_mbbackup,
@@ -92,6 +109,16 @@ __all__ = [
     "PACKAGE_STATUS_COMPLETE",
     "PACKAGE_STATUS_CREATING",
     "REQUIRED_ARCHIVE_ROOTS",
+    "RESTORE_ERR_BAD_ARCHIVE",
+    "RESTORE_ERR_DISK_FULL",
+    "RESTORE_ERR_INTEGRITY",
+    "RESTORE_ERR_INTERRUPTED",
+    "RESTORE_ERR_INVALID_DATABASE",
+    "RESTORE_ERR_INVALID_METADATA",
+    "RESTORE_ERR_MISSING_COMPONENT",
+    "RESTORE_ERR_POSTCHECK",
+    "RESTORE_ERR_UNSAFE_PATH",
+    "RESTORE_ERR_WRITE_ERROR",
     "SUPPORTED_BACKUP_FORMAT_VERSIONS",
     "SUPPORTED_PACKAGE_KINDS",
     "BackupFileEntry",
@@ -103,6 +130,9 @@ __all__ = [
     "BackupPathError",
     "CreateInstanceBackupResult",
     "InstanceBackupError",
+    "InstanceRestoreError",
+    "RestoreInstanceBackupResult",
+    "SafeExtractError",
     "SqliteSnapshotError",
     "assert_backup_integrity",
     "build_file_entry",
@@ -121,6 +151,8 @@ __all__ = [
     "package_looks_like_mbbackup",
     "read_backup_metadata_from_package",
     "read_sqlite_user_version",
+    "restore_instance_backup",
+    "safe_extract_zip_member",
     "sha256_bytes",
     "sha256_file",
     "sha256_stream",

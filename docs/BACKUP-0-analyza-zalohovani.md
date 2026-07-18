@@ -384,7 +384,7 @@ Detail Katalogu se v BACKUP-0 nenavrhuje.
 | **BACKUP-1a** | Společný formát balíčku + `metadata.json` (`package_kind`, checksumy). | Hotovo (`core/backup/`, docs BACKUP-1a) |
 | **BACKUP-1b** | Vytvoření úplné zálohy `*.mbbackup` (SQLite backup API + komponenty A/B). | Hotovo (`create_instance_backup`, docs BACKUP-1b) |
 | **BACKUP-1c** | Kontrola integrity (CRC, checksums, `PRAGMA integrity_check`, attachment gaps). | Hotovo (`inspect_backup_integrity`, docs BACKUP-1c; attachment gaps později) |
-| **BACKUP-2a** | Bezpečná obnova: náhled, varování, path-safe extract, staging + atomický swap, restart. | Plán |
+| **BACKUP-2a** | Bezpečná obnova: náhled, varování, path-safe extract, staging + atomický swap, restart. | Hotovo (API `restore_instance_backup`, docs BACKUP-2a; UI/náhled později) |
 | **BACKUP-2b** | Rollback při chybě na ověřenou safety zálohu; preflight disk space. | Plán |
 | **BACKUP-3** | Automatické + generační zálohy; limity velikosti `zalohy/`. | Plán |
 | **BACKUP-4** (volitelně) | Přesun `SettingsManager` do workspace; remap/varování absolutních cest; volitelné šifrování. | Plán |
@@ -400,6 +400,7 @@ Paralelně nesmí vzniknout kolize s budoucím `*.mbcatalog`.
 | Formát / metadata `*.mbbackup` | `tests/test_backup_1a_format_metadata.py` |
 | Vytvoření úplné zálohy `*.mbbackup` | `tests/test_backup_1b_create_instance_backup.py` |
 | Ověření integrity `*.mbbackup` | `tests/test_backup_1c_integrity.py` |
+| Bezpečná obnova `*.mbbackup` | `tests/test_backup_2a_restore_instance_backup.py` |
 | Kompletní záloha UI (legacy ZIP) | `tests/test_sprava_dat_backup.py`, `tests/test_dashboard_backup_restore_phase_88.py` |
 | Přílohy v ZIP / obnova | `tests/test_attachment_backup_phase_92a.py`, `92b` |
 | Workspace init | `tests/test_workspace_init_phase_95a.py` |

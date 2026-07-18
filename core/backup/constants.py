@@ -67,3 +67,15 @@ INTEGRITY_STATUSES: frozenset[str] = frozenset(
 
 ISSUE_SEVERITY_ERROR = "error"
 ISSUE_SEVERITY_WARNING = "warning"
+
+# Diagnostické kódy obnovy (BACKUP-2a).
+RESTORE_ERR_BAD_ARCHIVE = "bad_archive"
+RESTORE_ERR_INVALID_METADATA = "invalid_metadata"
+RESTORE_ERR_INVALID_DATABASE = "invalid_database"
+RESTORE_ERR_MISSING_COMPONENT = "missing_component"
+RESTORE_ERR_DISK_FULL = "disk_full"
+RESTORE_ERR_WRITE_ERROR = "write_error"
+RESTORE_ERR_INTERRUPTED = "interrupted"
+RESTORE_ERR_INTEGRITY = "integrity_failed"
+RESTORE_ERR_POSTCHECK = "post_restore_check_failed"
+RESTORE_ERR_UNSAFE_PATH = "unsafe_path"

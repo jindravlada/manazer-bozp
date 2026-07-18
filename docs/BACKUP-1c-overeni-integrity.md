@@ -97,7 +97,7 @@ neplatný stav/typ, úspěšné ověření.
 
 ## 6. Co záměrně chybí
 
-- obnova instance,
+- obnova instance → [BACKUP-2a](BACKUP-2a-bezpecna-obnova.md),
 - UI,
 - automatické zálohy,
 - kontrola existence příloh vůči DB (attachment gaps → budoucí rozšíření).
