@@ -23,7 +23,6 @@ from PySide6.QtWidgets import (
     QRadioButton,
     QScrollArea,
     QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
@@ -80,6 +79,33 @@ from core.ai_oponentni.types import (
 from core.ai_oponentni.ui.import_proposals_dialog import AiPeerReviewImportDialog
 from core.widgets.dialog_utils import create_save_cancel_box
 from core.widgets.table_utils import configure_table_columns
+from core.widgets.typed_table_sort import (
+    create_typed_item,
+    enable_typed_sorting,
+    sorting_paused,
+    typed_datetime,
+    typed_empty,
+    typed_int,
+    typed_status,
+    typed_text,
+)
+
+_PACKAGE_TYPE_ORDER = tuple(AI_PEER_REVIEW_PACKAGE_TYPE_LABELS.keys())
+_PACKAGE_STATUS_ORDER = tuple(PACKAGE_STATUS_LABELS.keys())
+_PROPOSAL_STATUS_ORDER = tuple(PROPOSAL_STATUS_LABELS.keys())
+
+
+def _order_status(value: str, order: tuple[str, ...]):
+    try:
+        return typed_status(order.index(value), label=value or "")
+    except ValueError:
+        return typed_status(len(order), label=value or "")
+
+
+def _text_or_empty(display: str | None):
+    if not display or display == "—":
+        return typed_empty()
+    return typed_text(display)
 
 
 class AiPeerReviewExportOptionsDialog(QDialog):
@@ -428,6 +454,7 @@ class AiPeerReviewWidget(QWidget):
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setAlternatingRowColors(True)
         configure_table_columns(self.table, "ai_peer_reviews")
+        enable_typed_sorting(self.table)
         self.table.itemSelectionChanged.connect(self._load_proposals_table)
         layout.addWidget(self.table)
 
@@ -461,6 +488,7 @@ class AiPeerReviewWidget(QWidget):
         self.proposals_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.proposals_table.setAlternatingRowColors(True)
         configure_table_columns(self.proposals_table, "ai_peer_review_proposals")
+        enable_typed_sorting(self.proposals_table)
         if self._uses_proposal_packages:
             self.proposals_table.doubleClicked.connect(self._edit_selected_package)
         else:
@@ -917,70 +945,96 @@ class AiPeerReviewWidget(QWidget):
         if self._package_session is not None and self._uses_proposal_packages:
             self._configure_package_proposals_table()
             display_items = self._package_session.list_pending_packages(review_id)
-            self.proposals_table.setRowCount(len(display_items))
-            for row_index, item in enumerate(display_items):
-                package = item.package
-                type_item = QTableWidgetItem(
-                    AI_PEER_REVIEW_PACKAGE_TYPE_LABELS.get(
+            with sorting_paused(self.proposals_table):
+                self.proposals_table.setRowCount(len(display_items))
+                for row_index, item in enumerate(display_items):
+                    package = item.package
+                    stable_id = int(item.local_id)
+                    type_label = AI_PEER_REVIEW_PACKAGE_TYPE_LABELS.get(
                         package.package_type,
                         package.package_type,
-                    ),
-                )
-                type_item.setData(Qt.ItemDataRole.UserRole, item.local_id)
-                resolved_name = None
-                if package.target_event_export_id:
-                    from moduly.rizeni_rizik.ui.hazard_catalog_ai_package_edit_dialog import (
-                        resolve_target_event_name,
                     )
+                    type_item = create_typed_item(
+                        type_label,
+                        _order_status(package.package_type, _PACKAGE_TYPE_ORDER),
+                        stable_id=stable_id,
+                    )
+                    type_item.setData(Qt.ItemDataRole.UserRole, item.local_id)
+                    resolved_name = None
+                    if package.target_event_export_id:
+                        from moduly.rizeni_rizik.ui.hazard_catalog_ai_package_edit_dialog import (
+                            resolve_target_event_name,
+                        )
 
-                    resolved_name = resolve_target_event_name(
-                        package_record_id=item.db_id,
-                        target_event_export_id=package.target_event_export_id,
-                        review_id=item.review_id,
+                        resolved_name = resolve_target_event_name(
+                            package_record_id=item.db_id,
+                            target_event_export_id=package.target_event_export_id,
+                            review_id=item.review_id,
+                        )
+                    self.proposals_table.setItem(row_index, 0, type_item)
+                    event_label = package.display_event_label(resolved_target_name=resolved_name)
+                    self.proposals_table.setItem(
+                        row_index,
+                        1,
+                        create_typed_item(event_label, _text_or_empty(event_label), stable_id=stable_id),
                     )
-                self.proposals_table.setItem(row_index, 0, type_item)
-                self.proposals_table.setItem(
-                    row_index,
-                    1,
-                    QTableWidgetItem(
-                        package.display_event_label(resolved_target_name=resolved_name),
-                    ),
-                )
-                self.proposals_table.setItem(
-                    row_index,
-                    2,
-                    QTableWidgetItem(str(package.assessment_count)),
-                )
-                self.proposals_table.setItem(
-                    row_index,
-                    3,
-                    QTableWidgetItem(str(package.existing_measure_count)),
-                )
-                self.proposals_table.setItem(
-                    row_index,
-                    4,
-                    QTableWidgetItem(str(package.required_measure_count)),
-                )
-                self.proposals_table.setItem(
-                    row_index,
-                    5,
-                    QTableWidgetItem(str(package.legal_link_count)),
-                )
-                self.proposals_table.setItem(
-                    row_index,
-                    6,
-                    QTableWidgetItem(package.reasoning or "—"),
-                )
-                self.proposals_table.setItem(
-                    row_index,
-                    7,
-                    QTableWidgetItem(
-                        PACKAGE_STATUS_LABELS.get(
-                            PACKAGE_STATUS_PENDING,
-                            PACKAGE_STATUS_PENDING,
+                    self.proposals_table.setItem(
+                        row_index,
+                        2,
+                        create_typed_item(
+                            str(package.assessment_count),
+                            typed_int(package.assessment_count),
+                            stable_id=stable_id,
                         ),
-                    ),
-                )
+                    )
+                    self.proposals_table.setItem(
+                        row_index,
+                        3,
+                        create_typed_item(
+                            str(package.existing_measure_count),
+                            typed_int(package.existing_measure_count),
+                            stable_id=stable_id,
+                        ),
+                    )
+                    self.proposals_table.setItem(
+                        row_index,
+                        4,
+                        create_typed_item(
+                            str(package.required_measure_count),
+                            typed_int(package.required_measure_count),
+                            stable_id=stable_id,
+                        ),
+                    )
+                    self.proposals_table.setItem(
+                        row_index,
+                        5,
+                        create_typed_item(
+                            str(package.legal_link_count),
+                            typed_int(package.legal_link_count),
+                            stable_id=stable_id,
+                        ),
+                    )
+                    self.proposals_table.setItem(
+                        row_index,
+                        6,
+                        create_typed_item(
+                            package.reasoning or "—",
+                            _text_or_empty(package.reasoning),
+                            stable_id=stable_id,
+                        ),
+                    )
+                    self.proposals_table.setItem(
+                        row_index,
+                        7,
+                        create_typed_item(
+                            PACKAGE_STATUS_LABELS.get(
+                                PACKAGE_STATUS_PENDING,
+                                PACKAGE_STATUS_PENDING,
+                            ),
+                            _order_status(PACKAGE_STATUS_PENDING, _PACKAGE_STATUS_ORDER),
+                            stable_id=stable_id,
+                        ),
+                    )
             configure_table_columns(self.proposals_table, "ai_peer_review_proposals")
             self._load_package_detail()
             return
@@ -994,68 +1048,94 @@ class AiPeerReviewWidget(QWidget):
                     for record in package_records
                     if record.status == PACKAGE_STATUS_PENDING
                 ]
-            self.proposals_table.setRowCount(len(display_records))
-            for row_index, record in enumerate(display_records):
-                package = ai_peer_review_service.package_repository.package_from_record(
-                    record,
-                )
-                type_item = QTableWidgetItem(
-                    AI_PEER_REVIEW_PACKAGE_TYPE_LABELS.get(
-                        package.package_type,
-                        package.package_type,
-                    ),
-                )
-                type_item.setData(Qt.ItemDataRole.UserRole, record.id)
-                resolved_name = None
-                if package.target_event_export_id:
-                    from moduly.rizeni_rizik.ui.hazard_catalog_ai_package_edit_dialog import (
-                        resolve_target_event_name,
+            with sorting_paused(self.proposals_table):
+                self.proposals_table.setRowCount(len(display_records))
+                for row_index, record in enumerate(display_records):
+                    package = ai_peer_review_service.package_repository.package_from_record(
+                        record,
                     )
+                    stable_id = int(record.id)
+                    type_label = AI_PEER_REVIEW_PACKAGE_TYPE_LABELS.get(
+                        package.package_type,
+                        package.package_type,
+                    )
+                    type_item = create_typed_item(
+                        type_label,
+                        _order_status(package.package_type, _PACKAGE_TYPE_ORDER),
+                        stable_id=stable_id,
+                    )
+                    type_item.setData(Qt.ItemDataRole.UserRole, record.id)
+                    resolved_name = None
+                    if package.target_event_export_id:
+                        from moduly.rizeni_rizik.ui.hazard_catalog_ai_package_edit_dialog import (
+                            resolve_target_event_name,
+                        )
 
-                    resolved_name = resolve_target_event_name(
-                        package_record_id=record.id,
-                        target_event_export_id=package.target_event_export_id,
+                        resolved_name = resolve_target_event_name(
+                            package_record_id=record.id,
+                            target_event_export_id=package.target_event_export_id,
+                        )
+                    self.proposals_table.setItem(row_index, 0, type_item)
+                    event_label = package.display_event_label(resolved_target_name=resolved_name)
+                    self.proposals_table.setItem(
+                        row_index,
+                        1,
+                        create_typed_item(event_label, _text_or_empty(event_label), stable_id=stable_id),
                     )
-                self.proposals_table.setItem(row_index, 0, type_item)
-                self.proposals_table.setItem(
-                    row_index,
-                    1,
-                    QTableWidgetItem(
-                        package.display_event_label(resolved_target_name=resolved_name),
-                    ),
-                )
-                self.proposals_table.setItem(
-                    row_index,
-                    2,
-                    QTableWidgetItem(str(package.assessment_count)),
-                )
-                self.proposals_table.setItem(
-                    row_index,
-                    3,
-                    QTableWidgetItem(str(package.existing_measure_count)),
-                )
-                self.proposals_table.setItem(
-                    row_index,
-                    4,
-                    QTableWidgetItem(str(package.required_measure_count)),
-                )
-                self.proposals_table.setItem(
-                    row_index,
-                    5,
-                    QTableWidgetItem(str(package.legal_link_count)),
-                )
-                self.proposals_table.setItem(
-                    row_index,
-                    6,
-                    QTableWidgetItem(package.reasoning or "—"),
-                )
-                self.proposals_table.setItem(
-                    row_index,
-                    7,
-                    QTableWidgetItem(
-                        PACKAGE_STATUS_LABELS.get(record.status, record.status),
-                    ),
-                )
+                    self.proposals_table.setItem(
+                        row_index,
+                        2,
+                        create_typed_item(
+                            str(package.assessment_count),
+                            typed_int(package.assessment_count),
+                            stable_id=stable_id,
+                        ),
+                    )
+                    self.proposals_table.setItem(
+                        row_index,
+                        3,
+                        create_typed_item(
+                            str(package.existing_measure_count),
+                            typed_int(package.existing_measure_count),
+                            stable_id=stable_id,
+                        ),
+                    )
+                    self.proposals_table.setItem(
+                        row_index,
+                        4,
+                        create_typed_item(
+                            str(package.required_measure_count),
+                            typed_int(package.required_measure_count),
+                            stable_id=stable_id,
+                        ),
+                    )
+                    self.proposals_table.setItem(
+                        row_index,
+                        5,
+                        create_typed_item(
+                            str(package.legal_link_count),
+                            typed_int(package.legal_link_count),
+                            stable_id=stable_id,
+                        ),
+                    )
+                    self.proposals_table.setItem(
+                        row_index,
+                        6,
+                        create_typed_item(
+                            package.reasoning or "—",
+                            _text_or_empty(package.reasoning),
+                            stable_id=stable_id,
+                        ),
+                    )
+                    self.proposals_table.setItem(
+                        row_index,
+                        7,
+                        create_typed_item(
+                            PACKAGE_STATUS_LABELS.get(record.status, record.status),
+                            _order_status(record.status, _PACKAGE_STATUS_ORDER),
+                            stable_id=stable_id,
+                        ),
+                    )
             configure_table_columns(self.proposals_table, "ai_peer_review_proposals")
             self._load_package_detail()
             return
@@ -1070,33 +1150,46 @@ class AiPeerReviewWidget(QWidget):
                 for proposal in proposals
                 if proposal.status == PROPOSAL_STATUS_PENDING
             ]
-        self.proposals_table.setRowCount(len(proposals))
-        for row_index, proposal in enumerate(proposals):
-            area_item = QTableWidgetItem(proposal.area or "—")
-            area_item.setData(Qt.ItemDataRole.UserRole, proposal.id)
-            self.proposals_table.setItem(row_index, 0, area_item)
-            self.proposals_table.setItem(
-                row_index,
-                1,
-                QTableWidgetItem(proposal.name),
-            )
-            self.proposals_table.setItem(
-                row_index,
-                2,
-                QTableWidgetItem(proposal.reasoning or "—"),
-            )
-            self.proposals_table.setItem(
-                row_index,
-                3,
-                QTableWidgetItem(
-                    PROPOSAL_STATUS_LABELS.get(proposal.status, proposal.status),
-                ),
-            )
-            self.proposals_table.setItem(
-                row_index,
-                4,
-                QTableWidgetItem(proposal.proposal_id or "—"),
-            )
+        with sorting_paused(self.proposals_table):
+            self.proposals_table.setRowCount(len(proposals))
+            for row_index, proposal in enumerate(proposals):
+                stable_id = int(proposal.id)
+                area = proposal.area or "—"
+                area_item = create_typed_item(area, _text_or_empty(area), stable_id=stable_id)
+                area_item.setData(Qt.ItemDataRole.UserRole, proposal.id)
+                self.proposals_table.setItem(row_index, 0, area_item)
+                self.proposals_table.setItem(
+                    row_index,
+                    1,
+                    create_typed_item(proposal.name, _text_or_empty(proposal.name), stable_id=stable_id),
+                )
+                self.proposals_table.setItem(
+                    row_index,
+                    2,
+                    create_typed_item(
+                        proposal.reasoning or "—",
+                        _text_or_empty(proposal.reasoning),
+                        stable_id=stable_id,
+                    ),
+                )
+                self.proposals_table.setItem(
+                    row_index,
+                    3,
+                    create_typed_item(
+                        PROPOSAL_STATUS_LABELS.get(proposal.status, proposal.status),
+                        _order_status(proposal.status, _PROPOSAL_STATUS_ORDER),
+                        stable_id=stable_id,
+                    ),
+                )
+                self.proposals_table.setItem(
+                    row_index,
+                    4,
+                    create_typed_item(
+                        proposal.proposal_id or "—",
+                        _text_or_empty(proposal.proposal_id),
+                        stable_id=stable_id,
+                    ),
+                )
         configure_table_columns(self.proposals_table, "ai_peer_review_proposals")
 
     def _configure_package_proposals_table(self) -> None:
@@ -1137,63 +1230,100 @@ class AiPeerReviewWidget(QWidget):
         if self._evidence_only_import:
             headers[AI_PEER_REVIEW_COL_ACCEPTED] = "Zapracováno"
         self.table.setHorizontalHeaderLabels(headers)
-        self.table.setRowCount(len(rows))
-        for row_index, review in enumerate(rows):
-            self.table.setItem(
-                row_index,
-                AI_PEER_REVIEW_COL_ID,
-                QTableWidgetItem(str(review.id)),
-            )
-            self.table.setItem(
-                row_index,
-                AI_PEER_REVIEW_COL_EXPORT_DATE,
-                QTableWidgetItem(review.exported_at.strftime("%d.%m.%Y %H:%M")),
-            )
-            response_loaded = (
-                review.response_loaded_at.strftime("%d.%m.%Y %H:%M")
-                if review.response_loaded_at is not None
-                else "—"
-            )
-            self.table.setItem(
-                row_index,
-                AI_PEER_REVIEW_COL_RESPONSE_DATE,
-                QTableWidgetItem(response_loaded),
-            )
-            self.table.setItem(
-                row_index,
-                AI_PEER_REVIEW_COL_MODEL,
-                QTableWidgetItem(review.ai_model or "—"),
-            )
-            self.table.setItem(
-                row_index,
-                AI_PEER_REVIEW_COL_LOADED,
-                QTableWidgetItem(str(review.loaded_proposals_count)),
-            )
-            self.table.setItem(
-                row_index,
-                AI_PEER_REVIEW_COL_PENDING,
-                QTableWidgetItem(str(review.pending_proposals_count)),
-            )
-            self.table.setItem(
-                row_index,
-                AI_PEER_REVIEW_COL_ACCEPTED,
-                QTableWidgetItem(str(review.accepted_count)),
-            )
-            self.table.setItem(
-                row_index,
-                AI_PEER_REVIEW_COL_REJECTED,
-                QTableWidgetItem(str(review.rejected_count)),
-            )
-            self.table.setItem(
-                row_index,
-                AI_PEER_REVIEW_COL_UNASSIGNED,
-                QTableWidgetItem(str(review.unassigned_count)),
-            )
-            self.table.setItem(
-                row_index,
-                AI_PEER_REVIEW_COL_FILENAME,
-                QTableWidgetItem(Path(review.export_file_path).name or "—"),
-            )
+        with sorting_paused(self.table):
+            self.table.setRowCount(len(rows))
+            for row_index, review in enumerate(rows):
+                record_id = int(review.id)
+                response_loaded = (
+                    review.response_loaded_at.strftime("%d.%m.%Y %H:%M")
+                    if review.response_loaded_at is not None
+                    else "—"
+                )
+                filename = Path(review.export_file_path).name or "—"
+                self.table.setItem(
+                    row_index,
+                    AI_PEER_REVIEW_COL_ID,
+                    create_typed_item(str(review.id), typed_int(review.id), stable_id=record_id),
+                )
+                self.table.setItem(
+                    row_index,
+                    AI_PEER_REVIEW_COL_EXPORT_DATE,
+                    create_typed_item(
+                        review.exported_at.strftime("%d.%m.%Y %H:%M"),
+                        typed_datetime(review.exported_at),
+                        stable_id=record_id,
+                    ),
+                )
+                self.table.setItem(
+                    row_index,
+                    AI_PEER_REVIEW_COL_RESPONSE_DATE,
+                    create_typed_item(
+                        response_loaded,
+                        typed_datetime(review.response_loaded_at)
+                        if review.response_loaded_at is not None
+                        else typed_empty(),
+                        stable_id=record_id,
+                    ),
+                )
+                self.table.setItem(
+                    row_index,
+                    AI_PEER_REVIEW_COL_MODEL,
+                    create_typed_item(
+                        review.ai_model or "—",
+                        _text_or_empty(review.ai_model),
+                        stable_id=record_id,
+                    ),
+                )
+                self.table.setItem(
+                    row_index,
+                    AI_PEER_REVIEW_COL_LOADED,
+                    create_typed_item(
+                        str(review.loaded_proposals_count),
+                        typed_int(review.loaded_proposals_count),
+                        stable_id=record_id,
+                    ),
+                )
+                self.table.setItem(
+                    row_index,
+                    AI_PEER_REVIEW_COL_PENDING,
+                    create_typed_item(
+                        str(review.pending_proposals_count),
+                        typed_int(review.pending_proposals_count),
+                        stable_id=record_id,
+                    ),
+                )
+                self.table.setItem(
+                    row_index,
+                    AI_PEER_REVIEW_COL_ACCEPTED,
+                    create_typed_item(
+                        str(review.accepted_count),
+                        typed_int(review.accepted_count),
+                        stable_id=record_id,
+                    ),
+                )
+                self.table.setItem(
+                    row_index,
+                    AI_PEER_REVIEW_COL_REJECTED,
+                    create_typed_item(
+                        str(review.rejected_count),
+                        typed_int(review.rejected_count),
+                        stable_id=record_id,
+                    ),
+                )
+                self.table.setItem(
+                    row_index,
+                    AI_PEER_REVIEW_COL_UNASSIGNED,
+                    create_typed_item(
+                        str(review.unassigned_count),
+                        typed_int(review.unassigned_count),
+                        stable_id=record_id,
+                    ),
+                )
+                self.table.setItem(
+                    row_index,
+                    AI_PEER_REVIEW_COL_FILENAME,
+                    create_typed_item(filename, _text_or_empty(filename), stable_id=record_id),
+                )
         configure_table_columns(self.table, "ai_peer_reviews")
         if rows:
             self.table.selectRow(0)

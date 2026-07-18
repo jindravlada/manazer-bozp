@@ -11,14 +11,24 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
+from core.shared.finding_display import FINDING_TYPE_LABELS
 from core.shared.sluzby.finding_service import finding_service
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.finding_dialog import FindingDialog
+from core.widgets.typed_table_sort import (
+    create_typed_item,
+    enable_typed_sorting,
+    sorting_paused,
+    typed_date,
+    typed_empty,
+    typed_int,
+    typed_status,
+    typed_text,
+)
 from moduly.audity.constants import FINDING_DIALOG_TITLE, FINDING_SOURCE_LABEL, TAB_WORKPLACE_HISTORY
 from moduly.audity.sluzby.audit_history_service import (
     WorkplaceHistory,
@@ -27,6 +37,31 @@ from moduly.audity.sluzby.audit_history_service import (
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.ukoly.sluzby.task_service import task_service
 from moduly.ukoly.ui.task_dialog import TaskDialog
+
+# Pořadí odpovídá WorkplaceFindingHistoryItem.status_label (jen neuzavřená zjištění).
+_FINDING_STATUS_ORDER = ("Otevřené", "V procesu", "Vypořádané")
+# Pořadí odpovídá AuditHistoryService._finding_severity_label (typ zjištění auditu).
+_FINDING_SEVERITY_ORDER = tuple(FINDING_TYPE_LABELS.values())
+# Pořadí odpovídá návratovým hodnotám Task.computed_status (viz AuditTasksWidget).
+_TASK_STATUS_ORDER = (
+    "Aktivní",
+    "Splněno - čeká na kontrolu",
+    "Ukončeno",
+    "Zrušeno",
+)
+
+
+def _order_status(value: str, order: tuple[str, ...]):
+    try:
+        return typed_status(order.index(value), label=value or "")
+    except ValueError:
+        return typed_status(len(order), label=value or "")
+
+
+def _text_or_empty(display: str):
+    if not display or display == "—":
+        return typed_empty()
+    return typed_text(display)
 
 
 class AuditWorkplaceHistoryWidget(QWidget):
@@ -123,6 +158,7 @@ class AuditWorkplaceHistoryWidget(QWidget):
         header.setSectionResizeMode(1, QHeaderView.Stretch)
         for column in range(2, len(headers)):
             header.setSectionResizeMode(column, QHeaderView.ResizeToContents)
+        enable_typed_sorting(table)
         return table
 
     def load_audit(self, audit) -> None:
@@ -202,42 +238,54 @@ class AuditWorkplaceHistoryWidget(QWidget):
     def _fill_findings(self) -> None:
         history = self._history
         rows = history.findings if history is not None else ()
-        self._findings_table.setRowCount(len(rows))
-        for row_index, item in enumerate(rows):
-            values = [
-                str(item.finding_id),
-                item.title,
-                item.severity_label,
-                item.due_date.strftime("%d.%m.%Y") if item.due_date else "—",
-                item.status_label,
-                item.audit_number,
-            ]
-            for column_index, value in enumerate(values):
-                self._findings_table.setItem(
-                    row_index,
-                    column_index,
-                    QTableWidgetItem(value),
-                )
+        with sorting_paused(self._findings_table):
+            self._findings_table.setRowCount(len(rows))
+            for row_index, item in enumerate(rows):
+                record_id = int(item.finding_id)
+                due_display = item.due_date.strftime("%d.%m.%Y") if item.due_date else "—"
+                values = [
+                    (str(item.finding_id), typed_int(item.finding_id)),
+                    (item.title, _text_or_empty(item.title)),
+                    (item.severity_label, _order_status(item.severity_label, _FINDING_SEVERITY_ORDER)),
+                    (due_display, typed_date(item.due_date) if item.due_date else typed_empty()),
+                    (item.status_label, _order_status(item.status_label, _FINDING_STATUS_ORDER)),
+                    (item.audit_number, _text_or_empty(item.audit_number)),
+                ]
+                for column_index, (display_text, sort_value) in enumerate(values):
+                    self._findings_table.setItem(
+                        row_index,
+                        column_index,
+                        create_typed_item(display_text, sort_value, stable_id=record_id),
+                    )
 
     def _fill_tasks(self) -> None:
         history = self._history
         rows = history.tasks if history is not None else ()
-        self._tasks_table.setRowCount(len(rows))
-        for row_index, item in enumerate(rows):
-            values = [
-                str(item.task_id),
-                item.title,
-                item.responsible_person,
-                item.due_date.strftime("%d.%m.%Y") if item.due_date else "—",
-                item.status_label,
-                item.completed_date.strftime("%d.%m.%Y") if item.completed_date else "—",
-            ]
-            for column_index, value in enumerate(values):
-                self._tasks_table.setItem(
-                    row_index,
-                    column_index,
-                    QTableWidgetItem(value),
+        with sorting_paused(self._tasks_table):
+            self._tasks_table.setRowCount(len(rows))
+            for row_index, item in enumerate(rows):
+                record_id = int(item.task_id)
+                due_display = item.due_date.strftime("%d.%m.%Y") if item.due_date else "—"
+                completed_display = (
+                    item.completed_date.strftime("%d.%m.%Y") if item.completed_date else "—"
                 )
+                values = [
+                    (str(item.task_id), typed_int(item.task_id)),
+                    (item.title, _text_or_empty(item.title)),
+                    (item.responsible_person, _text_or_empty(item.responsible_person)),
+                    (due_display, typed_date(item.due_date) if item.due_date else typed_empty()),
+                    (item.status_label, _order_status(item.status_label, _TASK_STATUS_ORDER)),
+                    (
+                        completed_display,
+                        typed_date(item.completed_date) if item.completed_date else typed_empty(),
+                    ),
+                ]
+                for column_index, (display_text, sort_value) in enumerate(values):
+                    self._tasks_table.setItem(
+                        row_index,
+                        column_index,
+                        create_typed_item(display_text, sort_value, stable_id=record_id),
+                    )
 
     def _fill_processes(self) -> None:
         self._process_list.clear()

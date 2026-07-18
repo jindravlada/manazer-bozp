@@ -6,7 +6,6 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
@@ -15,6 +14,14 @@ from core.shared.constants import ENTITY_TYPE_LABELS, LINK_TYPE_LABELS
 from core.shared.sluzby.entity_link_service import entity_link_service
 from core.shared.widgets.entity_link_dialog import EntityLinkDialog
 from core.widgets.dialog_utils import exec_maximized
+from core.widgets.typed_table_sort import (
+    create_typed_item,
+    enable_typed_sorting,
+    sorting_paused,
+    typed_bool,
+    typed_int,
+    typed_text,
+)
 
 
 class EntityLinksWidget(QWidget):
@@ -64,6 +71,7 @@ class EntityLinksWidget(QWidget):
         self.table.setSelectionMode(QTableWidget.SingleSelection)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.verticalHeader().setVisible(False)
+        enable_typed_sorting(self.table)
 
         layout.addLayout(toolbar)
         layout.addWidget(self.table)
@@ -85,27 +93,38 @@ class EntityLinksWidget(QWidget):
             self.source_id,
             include_inactive=True,
         )
-        self.table.setRowCount(len(links))
 
-        for row, link in enumerate(links):
-            self._set_item(row, 0, str(link.id))
-            self._set_item(row, 1, ENTITY_TYPE_LABELS.get(link.target_type, link.target_type))
-            self._set_item(row, 2, str(link.target_id))
-            self._set_item(row, 3, LINK_TYPE_LABELS.get(link.link_type, link.link_type))
-            self._set_item(row, 4, link.note)
-            self._set_item(row, 5, "Ano" if link.active else "Ne")
+        with sorting_paused(self.table):
+            self.table.setRowCount(len(links))
 
-            if not link.active:
-                brush = QBrush(QColor("#f0f0f0"))
-                for column in range(self.table.columnCount()):
-                    item = self.table.item(row, column)
-                    if item is not None:
-                        item.setBackground(brush)
+            for row, link in enumerate(links):
+                stable_id = int(link.id)
+                target_type_label = ENTITY_TYPE_LABELS.get(link.target_type, link.target_type)
+                link_type_label = LINK_TYPE_LABELS.get(link.link_type, link.link_type)
+                self._set_item(row, 0, str(link.id), typed_int(link.id), stable_id)
+                self._set_item(row, 1, target_type_label, typed_text(target_type_label), stable_id)
+                self._set_item(row, 2, str(link.target_id), typed_int(link.target_id), stable_id)
+                self._set_item(row, 3, link_type_label, typed_text(link_type_label), stable_id)
+                self._set_item(row, 4, link.note, typed_text(link.note), stable_id)
+                self._set_item(
+                    row,
+                    5,
+                    "Ano" if link.active else "Ne",
+                    typed_bool(link.active),
+                    stable_id,
+                )
+
+                if not link.active:
+                    brush = QBrush(QColor("#f0f0f0"))
+                    for column in range(self.table.columnCount()):
+                        item = self.table.item(row, column)
+                        if item is not None:
+                            item.setBackground(brush)
 
         self._update_action_buttons()
 
-    def _set_item(self, row: int, column: int, text: str) -> None:
-        item = QTableWidgetItem(text or "")
+    def _set_item(self, row: int, column: int, text: str, sort_value, stable_id: int) -> None:
+        item = create_typed_item(text or "", sort_value, stable_id=stable_id)
         item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         self.table.setItem(row, column, item)
 

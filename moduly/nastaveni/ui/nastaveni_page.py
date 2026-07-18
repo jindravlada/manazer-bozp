@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTabWidget,
-    QTableWidget, QTableWidgetItem, QLabel, QMessageBox, QComboBox, QCompleter,
+    QTableWidget, QLabel, QMessageBox, QComboBox, QCompleter,
     QFormLayout, QLineEdit, QTreeWidget, QTreeWidgetItem, QTreeWidgetItemIterator,
 )
 from PySide6.QtCore import Qt
@@ -9,6 +9,14 @@ from core.services.ares_service import ares_service
 from core.services.cz_nace_service import cz_nace_service
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
+from core.widgets.typed_table_sort import (
+    create_typed_item,
+    enable_typed_sorting,
+    sorting_paused,
+    typed_bool,
+    typed_int,
+    typed_text,
+)
 from moduly.nastaveni.sluzby.person_service import person_service
 from moduly.nastaveni.sluzby.exposed_group_service import (
     ExposedGroupError,
@@ -135,6 +143,7 @@ class NastaveniPage(QWidget):
         self.worker_table.doubleClicked.connect(self.edit_selected_worker)
         self.worker_table.itemSelectionChanged.connect(self.update_worker_buttons)
         configure_table_columns(self.worker_table, "thp_workers")
+        enable_typed_sorting(self.worker_table)
 
         self.worker_text_filter = FilterBar(self.worker_table)
 
@@ -193,6 +202,7 @@ class NastaveniPage(QWidget):
         self.person_table.doubleClicked.connect(self.edit_selected_person)
         self.person_table.itemSelectionChanged.connect(self.update_person_buttons)
         configure_table_columns(self.person_table, "persons")
+        enable_typed_sorting(self.person_table)
 
         self.person_text_filter = FilterBar(self.person_table)
 
@@ -308,6 +318,7 @@ class NastaveniPage(QWidget):
             self.update_responsibility_role_buttons,
         )
         configure_table_columns(self.responsibility_role_table, "responsibility_roles")
+        enable_typed_sorting(self.responsibility_role_table)
 
         self.responsibility_role_text_filter = FilterBar(self.responsibility_role_table)
 
@@ -362,6 +373,7 @@ class NastaveniPage(QWidget):
             self.update_exposed_group_buttons,
         )
         configure_table_columns(self.exposed_group_table, "exposed_groups")
+        enable_typed_sorting(self.exposed_group_table)
         self.exposed_group_text_filter = FilterBar(self.exposed_group_table)
 
         layout.addWidget(info)
@@ -824,18 +836,49 @@ class NastaveniPage(QWidget):
         include_inactive = self.worker_filter.currentText() == "Všichni"
         workers = settings_service.get_workers(include_inactive=include_inactive)
 
-        self.worker_table.setRowCount(len(workers))
-        for row, worker in enumerate(workers):
-            self.worker_table.setItem(row, 0, QTableWidgetItem(str(worker.id)))
-            self.worker_table.setItem(row, 1, QTableWidgetItem(worker.title_before))
-            self.worker_table.setItem(row, 2, QTableWidgetItem(worker.last_name))
-            self.worker_table.setItem(row, 3, QTableWidgetItem(worker.first_name))
-            self.worker_table.setItem(row, 4, QTableWidgetItem(worker.title_after))
-            self.worker_table.setItem(row, 5, QTableWidgetItem(worker.position))
-            self.worker_table.setItem(row, 6, QTableWidgetItem(worker.phone))
-            self.worker_table.setItem(row, 7, QTableWidgetItem(worker.email))
-            self.worker_table.setItem(row, 8, QTableWidgetItem("Ano" if worker.performs_controls else "Ne"))
-            self.worker_table.setItem(row, 9, QTableWidgetItem("Ano" if worker.active else "Ne"))
+        with sorting_paused(self.worker_table):
+            self.worker_table.setRowCount(len(workers))
+            for row, worker in enumerate(workers):
+                self.worker_table.setItem(
+                    row, 0, create_typed_item(str(worker.id), typed_int(worker.id), stable_id=worker.id)
+                )
+                self.worker_table.setItem(
+                    row, 1, create_typed_item(worker.title_before, typed_text(worker.title_before), stable_id=worker.id)
+                )
+                self.worker_table.setItem(
+                    row, 2, create_typed_item(worker.last_name, typed_text(worker.last_name), stable_id=worker.id)
+                )
+                self.worker_table.setItem(
+                    row, 3, create_typed_item(worker.first_name, typed_text(worker.first_name), stable_id=worker.id)
+                )
+                self.worker_table.setItem(
+                    row, 4, create_typed_item(worker.title_after, typed_text(worker.title_after), stable_id=worker.id)
+                )
+                self.worker_table.setItem(
+                    row, 5, create_typed_item(worker.position, typed_text(worker.position), stable_id=worker.id)
+                )
+                self.worker_table.setItem(
+                    row, 6, create_typed_item(worker.phone, typed_text(worker.phone), stable_id=worker.id)
+                )
+                self.worker_table.setItem(
+                    row, 7, create_typed_item(worker.email, typed_text(worker.email), stable_id=worker.id)
+                )
+                self.worker_table.setItem(
+                    row,
+                    8,
+                    create_typed_item(
+                        "Ano" if worker.performs_controls else "Ne",
+                        typed_bool(worker.performs_controls),
+                        stable_id=worker.id,
+                    ),
+                )
+                self.worker_table.setItem(
+                    row,
+                    9,
+                    create_typed_item(
+                        "Ano" if worker.active else "Ne", typed_bool(worker.active), stable_id=worker.id
+                    ),
+                )
 
         configure_table_columns(self.worker_table, "thp_workers")
         self.worker_text_filter.update_count()
@@ -863,16 +906,55 @@ class NastaveniPage(QWidget):
         else:
             persons = person_service.get_all(include_inactive=False)
 
-        self.person_table.setRowCount(len(persons))
-        for row, person in enumerate(persons):
-            self.person_table.setItem(row, 0, QTableWidgetItem(str(person.id)))
-            self.person_table.setItem(row, 1, QTableWidgetItem(person.display_name))
-            self.person_table.setItem(row, 2, QTableWidgetItem(person.organization or ""))
-            self.person_table.setItem(row, 3, QTableWidgetItem(person.job_title or ""))
-            self.person_table.setItem(row, 4, QTableWidgetItem(person.email or ""))
-            self.person_table.setItem(row, 5, QTableWidgetItem(person.phone or ""))
-            self.person_table.setItem(row, 6, QTableWidgetItem("Ano" if person.is_employee else "Ne"))
-            self.person_table.setItem(row, 7, QTableWidgetItem("Aktivní" if person.active else "Neaktivní"))
+        with sorting_paused(self.person_table):
+            self.person_table.setRowCount(len(persons))
+            for row, person in enumerate(persons):
+                self.person_table.setItem(
+                    row, 0, create_typed_item(str(person.id), typed_int(person.id), stable_id=person.id)
+                )
+                self.person_table.setItem(
+                    row,
+                    1,
+                    create_typed_item(person.display_name, typed_text(person.display_name), stable_id=person.id),
+                )
+                self.person_table.setItem(
+                    row,
+                    2,
+                    create_typed_item(person.organization or "", typed_text(person.organization), stable_id=person.id),
+                )
+                self.person_table.setItem(
+                    row,
+                    3,
+                    create_typed_item(person.job_title or "", typed_text(person.job_title), stable_id=person.id),
+                )
+                self.person_table.setItem(
+                    row,
+                    4,
+                    create_typed_item(person.email or "", typed_text(person.email), stable_id=person.id),
+                )
+                self.person_table.setItem(
+                    row,
+                    5,
+                    create_typed_item(person.phone or "", typed_text(person.phone), stable_id=person.id),
+                )
+                self.person_table.setItem(
+                    row,
+                    6,
+                    create_typed_item(
+                        "Ano" if person.is_employee else "Ne",
+                        typed_bool(person.is_employee),
+                        stable_id=person.id,
+                    ),
+                )
+                self.person_table.setItem(
+                    row,
+                    7,
+                    create_typed_item(
+                        "Aktivní" if person.active else "Neaktivní",
+                        typed_bool(person.active),
+                        stable_id=person.id,
+                    ),
+                )
 
         configure_table_columns(self.person_table, "persons")
         self.person_text_filter.update_count()
@@ -935,16 +1017,25 @@ class NastaveniPage(QWidget):
         include_inactive = self.responsibility_role_filter.currentText() == "Všechny"
         roles = responsibility_role_service.get_all(include_inactive=include_inactive)
 
-        self.responsibility_role_table.setRowCount(len(roles))
-        for row, role in enumerate(roles):
-            self.responsibility_role_table.setItem(row, 0, QTableWidgetItem(str(role.id)))
-            self.responsibility_role_table.setItem(row, 1, QTableWidgetItem(role.name))
-            self.responsibility_role_table.setItem(row, 2, QTableWidgetItem(role.description))
-            self.responsibility_role_table.setItem(
-                row,
-                3,
-                QTableWidgetItem("Ano" if role.active else "Ne"),
-            )
+        with sorting_paused(self.responsibility_role_table):
+            self.responsibility_role_table.setRowCount(len(roles))
+            for row, role in enumerate(roles):
+                self.responsibility_role_table.setItem(
+                    row, 0, create_typed_item(str(role.id), typed_int(role.id), stable_id=role.id)
+                )
+                self.responsibility_role_table.setItem(
+                    row, 1, create_typed_item(role.name, typed_text(role.name), stable_id=role.id)
+                )
+                self.responsibility_role_table.setItem(
+                    row, 2, create_typed_item(role.description, typed_text(role.description), stable_id=role.id)
+                )
+                self.responsibility_role_table.setItem(
+                    row,
+                    3,
+                    create_typed_item(
+                        "Ano" if role.active else "Ne", typed_bool(role.active), stable_id=role.id
+                    ),
+                )
 
         configure_table_columns(self.responsibility_role_table, "responsibility_roles")
         self.responsibility_role_text_filter.update_count()
@@ -1028,17 +1119,22 @@ class NastaveniPage(QWidget):
     def refresh_exposed_groups(self):
         include_inactive = self.exposed_group_filter.currentText() == "Všechny"
         groups = exposed_group_service.get_all(include_inactive=include_inactive)
-        self.exposed_group_table.setRowCount(len(groups))
-        for row, group in enumerate(groups):
-            name_item = QTableWidgetItem(group.name)
-            name_item.setData(Qt.ItemDataRole.UserRole, group.id)
-            self.exposed_group_table.setItem(row, 0, name_item)
-            self.exposed_group_table.setItem(row, 1, QTableWidgetItem(group.note or ""))
-            self.exposed_group_table.setItem(
-                row,
-                2,
-                QTableWidgetItem("Ano" if group.active else "Ne"),
-            )
+        with sorting_paused(self.exposed_group_table):
+            self.exposed_group_table.setRowCount(len(groups))
+            for row, group in enumerate(groups):
+                name_item = create_typed_item(group.name, typed_text(group.name), stable_id=group.id)
+                name_item.setData(Qt.ItemDataRole.UserRole, group.id)
+                self.exposed_group_table.setItem(row, 0, name_item)
+                self.exposed_group_table.setItem(
+                    row, 1, create_typed_item(group.note or "", typed_text(group.note), stable_id=group.id)
+                )
+                self.exposed_group_table.setItem(
+                    row,
+                    2,
+                    create_typed_item(
+                        "Ano" if group.active else "Ne", typed_bool(group.active), stable_id=group.id
+                    ),
+                )
         configure_table_columns(self.exposed_group_table, "exposed_groups")
         self.exposed_group_text_filter.update_count()
         self.update_exposed_group_buttons()

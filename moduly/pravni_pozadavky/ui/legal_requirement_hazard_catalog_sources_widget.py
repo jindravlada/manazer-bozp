@@ -3,12 +3,19 @@ from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QLabel,
     QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
 from core.widgets.table_utils import configure_table_columns
+from core.widgets.typed_table_sort import (
+    create_typed_item,
+    enable_typed_sorting,
+    sorting_paused,
+    typed_bool,
+    typed_int,
+    typed_text,
+)
 from moduly.rizeni_rizik.sluzby.hazard_catalog_legal_requirement_usage_service import (
     HazardCatalogSourceUsage,
     hazard_catalog_legal_requirement_usage_service,
@@ -52,6 +59,7 @@ class LegalRequirementHazardCatalogSourcesWidget(QWidget):
         self._table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self._table.setAlternatingRowColors(True)
         configure_table_columns(self._table, "legal_requirement_hazard_catalog_sources")
+        enable_typed_sorting(self._table)
         self._table.doubleClicked.connect(self._open_selected_source)
         self._layout.addWidget(self._table)
 
@@ -91,21 +99,27 @@ class LegalRequirementHazardCatalogSourcesWidget(QWidget):
         )
 
     def _populate_table(self, sources: tuple[HazardCatalogSourceUsage, ...]) -> None:
-        self._table.setRowCount(len(sources))
-        for row_index, source in enumerate(sources):
-            values = [
-                source.name,
-                source.category_label,
-                str(source.version_number),
-                "Ano" if source.active else "Ne",
-            ]
-            for column_index, value in enumerate(values):
-                item = QTableWidgetItem(value)
-                if column_index == 0:
-                    item.setData(Qt.ItemDataRole.UserRole, source.template_id)
-                self._table.setItem(row_index, column_index, item)
-            id_item = QTableWidgetItem(str(source.template_id))
-            self._table.setItem(row_index, len(_TABLE_HEADERS), id_item)
+        with sorting_paused(self._table):
+            self._table.setRowCount(len(sources))
+            for row_index, source in enumerate(sources):
+                stable_id = int(source.template_id)
+                values = [
+                    (source.name, typed_text(source.name)),
+                    (source.category_label, typed_text(source.category_label)),
+                    (str(source.version_number), typed_int(source.version_number)),
+                    ("Ano" if source.active else "Ne", typed_bool(source.active)),
+                ]
+                for column_index, (display_text, sort_value) in enumerate(values):
+                    item = create_typed_item(display_text, sort_value, stable_id=stable_id)
+                    if column_index == 0:
+                        item.setData(Qt.ItemDataRole.UserRole, source.template_id)
+                    self._table.setItem(row_index, column_index, item)
+                id_item = create_typed_item(
+                    str(source.template_id),
+                    typed_int(source.template_id),
+                    stable_id=stable_id,
+                )
+                self._table.setItem(row_index, len(_TABLE_HEADERS), id_item)
 
     def _selected_template_id(self) -> int | None:
         selected = self._table.selectionModel().selectedRows()

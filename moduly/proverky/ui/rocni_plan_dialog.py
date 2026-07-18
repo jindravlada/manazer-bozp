@@ -10,12 +10,25 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
 )
 
 from core.widgets.dialog_utils import create_close_box, exec_maximized
-from moduly.proverky.constants import PLANNED_MONTH_NAMES, PLANNED_MONTH_NOT_SET_LABEL
+from core.widgets.typed_table_sort import (
+    create_typed_item,
+    enable_typed_sorting,
+    sorting_paused,
+    typed_date,
+    typed_empty,
+    typed_int,
+    typed_status,
+    typed_text,
+)
+from moduly.proverky.constants import (
+    INSPECTION_SPIS_STATUSES,
+    PLANNED_MONTH_NAMES,
+    PLANNED_MONTH_NOT_SET_LABEL,
+)
 from moduly.proverky.sluzby.bozp_inspection_commission_service import (
     bozp_inspection_commission_service,
 )
@@ -23,6 +36,28 @@ from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_servi
 from moduly.proverky.ui.bozp_inspection_dialog import BozpInspectionDialog
 
 _ROLE_INSPECTION_ID = Qt.ItemDataRole.UserRole
+
+
+def _status_sort(status: str):
+    try:
+        order = INSPECTION_SPIS_STATUSES.index(status)
+    except ValueError:
+        order = len(INSPECTION_SPIS_STATUSES)
+    return typed_status(order, label=status or "")
+
+
+def _text_or_empty(display: str):
+    if not display or display == "—":
+        return typed_empty()
+    return typed_text(display)
+
+
+def _month_sort_value(inspection):
+    if inspection.planned_month is not None and 1 <= inspection.planned_month <= 12:
+        return typed_int(inspection.planned_month)
+    if inspection.inspection_date is not None:
+        return typed_int(inspection.inspection_date.month)
+    return typed_empty()
 
 
 class RocniPlanDialog(QDialog):
@@ -69,6 +104,7 @@ class RocniPlanDialog(QDialog):
         self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
+        enable_typed_sorting(self.table)
         layout.addWidget(self.table)
 
         actions = QHBoxLayout()
@@ -111,23 +147,35 @@ class RocniPlanDialog(QDialog):
     def _load_year(self, year: int) -> None:
         self._year = year
         inspections = bozp_inspection_service.get_for_year(year)
-        self.table.setRowCount(len(inspections))
 
-        for row, inspection in enumerate(inspections):
-            values = [
-                self._format_month(inspection),
-                inspection.workplace_name or "—",
-                self._format_date(inspection.inspection_date),
-                inspection.status or "—",
-                inspection.inspection_type or "—",
-            ]
-            for column, value in enumerate(values):
-                item = QTableWidgetItem(value)
-                if column == 0:
-                    item.setData(_ROLE_INSPECTION_ID, inspection.id)
-                if column == 1:
-                    item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-                self.table.setItem(row, column, item)
+        with sorting_paused(self.table):
+            self.table.setRowCount(len(inspections))
+
+            for row, inspection in enumerate(inspections):
+                record_id = int(inspection.id)
+                workplace = inspection.workplace_name or "—"
+                status = inspection.status or ""
+                inspection_type = inspection.inspection_type or "—"
+                values = [
+                    (self._format_month(inspection), _month_sort_value(inspection)),
+                    (workplace, _text_or_empty(workplace)),
+                    (
+                        self._format_date(inspection.inspection_date),
+                        typed_date(inspection.inspection_date),
+                    ),
+                    (
+                        status or "—",
+                        _status_sort(status) if status else typed_empty(),
+                    ),
+                    (inspection_type, _text_or_empty(inspection_type)),
+                ]
+                for column, (display_text, sort_value) in enumerate(values):
+                    item = create_typed_item(display_text, sort_value, stable_id=record_id)
+                    if column == 0:
+                        item.setData(_ROLE_INSPECTION_ID, inspection.id)
+                    if column == 1:
+                        item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+                    self.table.setItem(row, column, item)
 
         count = len(inspections)
         if count == 0:

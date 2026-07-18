@@ -13,13 +13,33 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
     QTableWidget,
-    QTableWidgetItem,
     QWidget,
 )
 
-from core.dashboard.attention_item import AttentionItem
+from core.dashboard.attention_item import (
+    ITEM_TYPE_AUDIT,
+    ITEM_TYPE_BOZP_INSPECTION,
+    ITEM_TYPE_TASK,
+    PRIORITY_RANK,
+    AttentionItem,
+)
 from core.dashboard.attention_service import get_attention_items
 from core.dashboard.widget_base import DashboardPanel
+from core.widgets.typed_table_sort import (
+    create_typed_item,
+    enable_typed_sorting,
+    sorting_paused,
+    typed_date,
+    typed_empty,
+    typed_status,
+    typed_text,
+)
+
+_TYPE_STABLE_PREFIX = {
+    ITEM_TYPE_TASK: 1,
+    ITEM_TYPE_AUDIT: 2,
+    ITEM_TYPE_BOZP_INSPECTION: 3,
+}
 
 _EMPTY_TEXT = "Aktuálně není nic, co by vyžadovalo pozornost."
 
@@ -76,6 +96,7 @@ class UpcomingTasksWidget(DashboardPanel):
         self.table.setColumnWidth(COL_SOURCE, 90)
         self.table.doubleClicked.connect(self._open_selected)
         self.table.itemSelectionChanged.connect(self._update_open_button)
+        enable_typed_sorting(self.table)
 
         buttons = QWidget()
         buttons_layout = QHBoxLayout(buttons)
@@ -141,31 +162,65 @@ class UpcomingTasksWidget(DashboardPanel):
         self.empty_label.hide()
         self.table.show()
         today = date.today()
-        self.table.setRowCount(len(items))
 
-        for row, attention in enumerate(items):
-            type_item = QTableWidgetItem(attention.type_label)
-            type_item.setData(_ROLE_ITEM, attention)
+        with sorting_paused(self.table):
+            self.table.setRowCount(len(items))
 
-            due_text = (
-                "bez termínu"
-                if attention.due_date is None
-                else attention.due_date.strftime("%d.%m.%Y")
-            )
-            due_item = QTableWidgetItem(due_text)
-            due_color = self._due_color(attention.due_date, today)
-            if due_color is not None:
-                due_item.setForeground(QBrush(due_color))
+            for row, attention in enumerate(items):
+                stable_id = (
+                    _TYPE_STABLE_PREFIX.get(attention.item_type, 9) * 1_000_000_000
+                    + int(attention.entity_id)
+                )
+                type_item = create_typed_item(
+                    attention.type_label,
+                    typed_text(attention.type_label),
+                    stable_id=stable_id,
+                )
+                type_item.setData(_ROLE_ITEM, attention)
 
-            title_item = QTableWidgetItem(attention.title)
-            priority_item = QTableWidgetItem(attention.priority or "—")
-            source_item = QTableWidgetItem(attention.source_label or "—")
+                due_text = (
+                    "bez termínu"
+                    if attention.due_date is None
+                    else attention.due_date.strftime("%d.%m.%Y")
+                )
+                due_item = create_typed_item(
+                    due_text,
+                    typed_date(attention.due_date),
+                    stable_id=stable_id,
+                )
+                due_color = self._due_color(attention.due_date, today)
+                if due_color is not None:
+                    due_item.setForeground(QBrush(due_color))
 
-            self.table.setItem(row, COL_TYPE, type_item)
-            self.table.setItem(row, COL_DUE, due_item)
-            self.table.setItem(row, COL_TITLE, title_item)
-            self.table.setItem(row, COL_PRIORITY, priority_item)
-            self.table.setItem(row, COL_SOURCE, source_item)
+                title_item = create_typed_item(
+                    attention.title,
+                    typed_text(attention.title),
+                    stable_id=stable_id,
+                )
+
+                priority_rank = PRIORITY_RANK.get(attention.priority) if attention.priority else None
+                priority_sort = (
+                    typed_status(priority_rank, label=attention.priority)
+                    if priority_rank is not None
+                    else typed_empty()
+                )
+                priority_item = create_typed_item(
+                    attention.priority or "—",
+                    priority_sort,
+                    stable_id=stable_id,
+                )
+
+                source_item = create_typed_item(
+                    attention.source_label or "—",
+                    typed_text(attention.source_label),
+                    stable_id=stable_id,
+                )
+
+                self.table.setItem(row, COL_TYPE, type_item)
+                self.table.setItem(row, COL_DUE, due_item)
+                self.table.setItem(row, COL_TITLE, title_item)
+                self.table.setItem(row, COL_PRIORITY, priority_item)
+                self.table.setItem(row, COL_SOURCE, source_item)
 
         self.table.resizeRowsToContents()
         self._update_open_button()

@@ -7,12 +7,18 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
 )
 
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
+from core.widgets.typed_table_sort import (
+    create_typed_item,
+    enable_typed_sorting,
+    sorting_paused,
+    typed_bool,
+    typed_text,
+)
 from moduly.nastaveni.sluzby.exposed_group_service import (
     ExposedGroupError,
     exposed_group_service,
@@ -65,6 +71,7 @@ class ExposedGroupsManagementDialog(QDialog):
         self.table.doubleClicked.connect(self.edit_selected_group)
         self.table.itemSelectionChanged.connect(self._update_action_buttons)
         configure_table_columns(self.table, "exposed_groups")
+        enable_typed_sorting(self.table)
         self.text_filter = FilterBar(self.table)
         layout.addWidget(self.text_filter)
         layout.addWidget(self.table)
@@ -78,17 +85,22 @@ class ExposedGroupsManagementDialog(QDialog):
     def refresh(self) -> None:
         include_inactive = self.filter.currentIndex() == 1
         groups = exposed_group_service.get_all(include_inactive=include_inactive)
-        self.table.setRowCount(len(groups))
-        for row_index, group in enumerate(groups):
-            name_item = QTableWidgetItem(group.name)
-            name_item.setData(Qt.ItemDataRole.UserRole, group.id)
-            self.table.setItem(row_index, 0, name_item)
-            self.table.setItem(row_index, 1, QTableWidgetItem(group.note or ""))
-            self.table.setItem(
-                row_index,
-                2,
-                QTableWidgetItem("Ano" if group.active else "Ne"),
-            )
+        with sorting_paused(self.table):
+            self.table.setRowCount(len(groups))
+            for row_index, group in enumerate(groups):
+                name_item = create_typed_item(group.name, typed_text(group.name), stable_id=group.id)
+                name_item.setData(Qt.ItemDataRole.UserRole, group.id)
+                self.table.setItem(row_index, 0, name_item)
+                self.table.setItem(
+                    row_index, 1, create_typed_item(group.note or "", typed_text(group.note), stable_id=group.id)
+                )
+                self.table.setItem(
+                    row_index,
+                    2,
+                    create_typed_item(
+                        "Ano" if group.active else "Ne", typed_bool(group.active), stable_id=group.id
+                    ),
+                )
         configure_table_columns(self.table, "exposed_groups")
         self._update_action_buttons()
 
