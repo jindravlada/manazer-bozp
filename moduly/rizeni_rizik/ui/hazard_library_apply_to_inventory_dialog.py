@@ -16,6 +16,7 @@ from moduly.rizeni_rizik.constants_library import (
     HAZARD_LIBRARY_APPLY_TO_INVENTORY_DIALOG_TITLE,
     HAZARD_LIBRARY_CATALOG_SOURCES_TITLE,
 )
+from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem
 from moduly.rizeni_rizik.sluzby.hazard_library_template_apply_service import (
     HazardLibraryTemplateApplyError,
     HazardLibraryTemplateApplyResult,
@@ -30,11 +31,14 @@ class HazardLibraryApplyToInventoryDialog(QDialog):
         *,
         hazard_identification_id: int,
         default_category: str | None = None,
+        inventory_items: list[HazardInventoryItem] | None = None,
     ):
         super().__init__(parent)
 
         self.hazard_identification_id = hazard_identification_id
         self.default_category = default_category
+        # Volitelná pracovní kopie identifikace (deferred-save) – jinak DB.
+        self._inventory_items = inventory_items
         self.result: HazardLibraryTemplateApplyResult | None = None
 
         self.setWindowTitle(HAZARD_LIBRARY_APPLY_TO_INVENTORY_DIALOG_TITLE)
@@ -65,6 +69,7 @@ class HazardLibraryApplyToInventoryDialog(QDialog):
 
         self.include_inactive = QCheckBox("Zahrnout neaktivní záznamy")
         self.include_inactive.setChecked(False)
+        self.include_inactive.toggled.connect(self._reload_sources)
         layout.addWidget(self.include_inactive)
 
         buttons = create_save_cancel_box(self)
@@ -73,20 +78,30 @@ class HazardLibraryApplyToInventoryDialog(QDialog):
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
+        self.sources_list.itemDoubleClicked.connect(lambda _: self.accept())
+        self._reload_sources()
+
+    def _reload_sources(self) -> None:
+        """Při každém otevření / změně filtru načte aktuální katalog z DB."""
         groups = hazard_library_template_apply_service.get_template_groups(
             operation_id=None,
-            category=default_category,
+            category=self.default_category,
+            hazard_identification_id=self.hazard_identification_id,
+            include_inactive=self.include_inactive.isChecked(),
+            inventory_items=self._inventory_items,
         )
         templates = list(groups.recommended) + list(groups.other)
         self._populate_list(self.sources_list, templates)
-        self.sources_list.itemDoubleClicked.connect(lambda _: self.accept())
 
         if not templates:
-            QMessageBox.information(
-                self,
-                HAZARD_LIBRARY_APPLY_TO_INVENTORY_DIALOG_TITLE,
-                "V katalogu nejsou k dispozici žádné zdroje rizika pro tuto kategorii.",
-            )
+            # Jen při prvním naplnění (ne při každém toggle) – jinak by rušilo.
+            if not hasattr(self, "_empty_notified"):
+                self._empty_notified = True
+                QMessageBox.information(
+                    self,
+                    HAZARD_LIBRARY_APPLY_TO_INVENTORY_DIALOG_TITLE,
+                    "V katalogu nejsou k dispozici žádné zdroje rizika pro tuto kategorii.",
+                )
 
     def _populate_list(self, list_widget: QListWidget, templates) -> None:
         list_widget.clear()

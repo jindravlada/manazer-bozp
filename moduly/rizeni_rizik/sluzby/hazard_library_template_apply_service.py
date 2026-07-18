@@ -84,20 +84,62 @@ class HazardLibraryTemplateApplyService:
         # R20e: katalog je obecný MASTER; doporučování dle rozsahu se nepoužívá.
         return False
 
+    def get_applied_catalog_template_ids(
+        self,
+        *,
+        hazard_identification_id: int,
+        inventory_items: list[HazardInventoryItem] | None = None,
+    ) -> set[int]:
+        """ID katalogových zdrojů s aktivní instancí v identifikaci.
+
+        ``inventory_items`` umožňuje zohlednit pracovní kopii identifikace
+        (deferred-save), aniž by se četlo jen z DB.
+        """
+        if inventory_items is None:
+            inventory_items = hazard_inventory_item_service.get_for_identification(
+                hazard_identification_id,
+                include_inactive=True,
+            )
+        return {
+            item.source_template_id
+            for item in inventory_items
+            if item.active and item.source_template_id is not None
+        }
+
     def get_template_groups(
         self,
         *,
         operation_id: int | None,
         category: str | None = None,
+        hazard_identification_id: int | None = None,
+        include_inactive: bool = False,
+        applied_template_ids: set[int] | None = None,
+        inventory_items: list[HazardInventoryItem] | None = None,
     ) -> HazardLibraryTemplateCatalogGroups:
+        """Nabídka katalogu pro převzetí – vždy čerstvý dotaz do DB.
+
+        Skryje zdroje, které už mají v identifikaci aktivní instanci
+        (vazba ``source_template_id``). Parametry ``applied_template_ids`` /
+        ``inventory_items`` připravují filtrování podle pracovní kopie.
+        """
+        if applied_template_ids is None and hazard_identification_id is not None:
+            applied_template_ids = self.get_applied_catalog_template_ids(
+                hazard_identification_id=hazard_identification_id,
+                inventory_items=inventory_items,
+            )
+        elif applied_template_ids is None:
+            applied_template_ids = set()
+
         templates: list[HazardLibraryTemplate] = []
 
         for template in hazard_library_template_service.repository.get_all(
-            include_inactive=False,
+            include_inactive=include_inactive,
         ):
             if category is not None and template.category != category:
                 continue
-            if not template.active:
+            if not include_inactive and not template.active:
+                continue
+            if template.id in applied_template_ids:
                 continue
             templates.append(template)
 
@@ -128,6 +170,14 @@ class HazardLibraryTemplateApplyService:
         if not template.active:
             raise HazardLibraryTemplateApplyError(
                 "Lze převzít pouze aktivní zdroj rizika z katalogu."
+            )
+
+        applied_ids = self.get_applied_catalog_template_ids(
+            hazard_identification_id=hazard_identification_id,
+        )
+        if template.id in applied_ids:
+            raise HazardLibraryTemplateApplyError(
+                "Tento zdroj rizika z katalogu už je v identifikaci převzatý."
             )
 
         try:

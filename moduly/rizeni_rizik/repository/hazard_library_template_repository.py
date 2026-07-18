@@ -9,15 +9,23 @@ from moduly.rizeni_rizik.modely.hazard_library_template_operation import (
 
 class HazardLibraryTemplateRepository:
     def get_all(self, include_inactive: bool = False) -> list[HazardLibraryTemplate]:
+        """Načte katalogové zdroje z DB v nové session (bez cache / snapshotu)."""
         with get_session() as session:
-            stmt = select(HazardLibraryTemplate)
+            # Nová session + populate_existing: vždy aktuální řádky z DB
+            # (žádný dlouho žijící identity map / stale snapshot).
+            stmt = select(HazardLibraryTemplate).execution_options(
+                populate_existing=True,
+            )
             if not include_inactive:
                 stmt = stmt.where(HazardLibraryTemplate.active == True)  # noqa: E712
             stmt = stmt.order_by(
                 HazardLibraryTemplate.name,
                 HazardLibraryTemplate.version_number.desc(),
             )
-            return list(session.scalars(stmt))
+            templates = list(session.scalars(stmt))
+            # Odpoj od session se zachovanými atributy (po close jsou bezpečně čitelné).
+            session.expunge_all()
+            return templates
 
     def get_by_id(self, template_id: int) -> HazardLibraryTemplate | None:
         with get_session() as session:
