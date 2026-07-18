@@ -103,6 +103,9 @@ class BackupMetadata:
     total_content_size: int
     database_integrity: str | None = None
     schema_version: str | None = None
+    database_quick_check: str | None = None
+    database_size: int | None = None
+    database_empty: bool | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -116,6 +119,9 @@ class BackupMetadata:
             "files": [entry.to_dict() for entry in self.files],
             "total_content_size": self.total_content_size,
             "database_integrity": self.database_integrity,
+            "database_quick_check": self.database_quick_check,
+            "database_size": self.database_size,
+            "database_empty": self.database_empty,
             "package_status": self.package_status,
         }
 
@@ -189,6 +195,23 @@ class BackupMetadata:
         if database_integrity is not None:
             database_integrity = str(database_integrity).strip() or None
 
+        database_quick_check = data.get("database_quick_check")
+        if database_quick_check is not None:
+            database_quick_check = str(database_quick_check).strip() or None
+
+        database_size = data.get("database_size")
+        if database_size is not None:
+            try:
+                database_size = int(database_size)
+            except (TypeError, ValueError) as exc:
+                raise BackupMetadataError("Neplatná database_size.") from exc
+            if database_size < 0:
+                raise BackupMetadataError("database_size nesmí být záporná.")
+
+        database_empty = data.get("database_empty")
+        if database_empty is not None:
+            database_empty = bool(database_empty)
+
         meta = cls(
             format_version=format_version,
             created_at=created_at,
@@ -201,6 +224,9 @@ class BackupMetadata:
             total_content_size=total_content_size,
             database_integrity=database_integrity,
             schema_version=schema_version,
+            database_quick_check=database_quick_check,
+            database_size=database_size,
+            database_empty=database_empty,
         )
         validate_backup_metadata(meta)
         return meta
@@ -242,6 +268,9 @@ def create_backup_metadata(
     app_version: str | None = None,
     schema_version: str | None = None,
     database_integrity: str | None = None,
+    database_quick_check: str | None = None,
+    database_size: int | None = None,
+    database_empty: bool | None = None,
     created_at: str | None = None,
     platform_name: str | None = None,
     validate: bool = True,
@@ -272,6 +301,9 @@ def create_backup_metadata(
         total_content_size=total,
         database_integrity=database_integrity,
         schema_version=schema_version,
+        database_quick_check=database_quick_check,
+        database_size=database_size,
+        database_empty=database_empty,
     )
     if validate:
         # Při creating povolíme i prázdný manifest; při complete musí být validní.
@@ -381,6 +413,9 @@ def mark_package_complete(meta: BackupMetadata) -> BackupMetadata:
         total_content_size=sum(f.size for f in files),
         database_integrity=meta.database_integrity,
         schema_version=meta.schema_version,
+        database_quick_check=meta.database_quick_check,
+        database_size=meta.database_size,
+        database_empty=meta.database_empty,
     )
 
 

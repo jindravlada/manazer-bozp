@@ -2,6 +2,7 @@
 
 BACKUP-1a: konstanty, cesty, SHA-256, metadata.
 BACKUP-1b: vytvoření úplné zálohy instance (bez obnovy a bez UI).
+BACKUP-1c: důkladné ověření integrity balíčku.
 """
 
 from core.backup.constants import (
@@ -11,6 +12,11 @@ from core.backup.constants import (
     COMPONENT_METADATA,
     COMPONENT_SETTINGS,
     COMPONENT_WORKSPACE,
+    INTEGRITY_INVALID,
+    INTEGRITY_VALID,
+    INTEGRITY_VALID_WITH_WARNINGS,
+    ISSUE_SEVERITY_ERROR,
+    ISSUE_SEVERITY_WARNING,
     METADATA_FILENAME,
     PACKAGE_KIND_INSTANCE_BACKUP,
     PACKAGE_KIND_RISK_CATALOG_EXPORT,
@@ -38,8 +44,14 @@ from core.backup.package_create import (
     create_instance_backup,
     default_instance_backup_filename,
 )
-from core.backup.package_verify import (
+from core.backup.package_integrity import (
+    BackupIntegrityIssue,
+    BackupIntegrityReport,
     BackupPackageVerificationError,
+    assert_backup_integrity,
+    inspect_backup_integrity,
+)
+from core.backup.package_verify import (
     package_looks_like_mbbackup,
     read_backup_metadata_from_package,
     verify_instance_backup_package,
@@ -53,8 +65,11 @@ from core.backup.paths import (
 from core.backup.sqlite_snapshot import (
     SqliteSnapshotError,
     create_sqlite_snapshot,
+    inspect_sqlite_file,
+    is_sqlite_database_empty,
     read_sqlite_user_version,
     sqlite_integrity_check,
+    sqlite_quick_check,
 )
 
 __all__ = [
@@ -66,6 +81,11 @@ __all__ = [
     "COMPONENT_WORKSPACE",
     "DEFAULT_WORKSPACE_EXCLUDE_DIRS",
     "DEFAULT_WORKSPACE_INCLUDE_DIRS",
+    "INTEGRITY_INVALID",
+    "INTEGRITY_VALID",
+    "INTEGRITY_VALID_WITH_WARNINGS",
+    "ISSUE_SEVERITY_ERROR",
+    "ISSUE_SEVERITY_WARNING",
     "METADATA_FILENAME",
     "PACKAGE_KIND_INSTANCE_BACKUP",
     "PACKAGE_KIND_RISK_CATALOG_EXPORT",
@@ -75,6 +95,8 @@ __all__ = [
     "SUPPORTED_BACKUP_FORMAT_VERSIONS",
     "SUPPORTED_PACKAGE_KINDS",
     "BackupFileEntry",
+    "BackupIntegrityIssue",
+    "BackupIntegrityReport",
     "BackupMetadata",
     "BackupMetadataError",
     "BackupPackageVerificationError",
@@ -82,6 +104,7 @@ __all__ = [
     "CreateInstanceBackupResult",
     "InstanceBackupError",
     "SqliteSnapshotError",
+    "assert_backup_integrity",
     "build_file_entry",
     "component_for_archive_path",
     "create_backup_metadata",
@@ -89,7 +112,10 @@ __all__ = [
     "create_sqlite_snapshot",
     "default_instance_backup_filename",
     "hashes_equal",
+    "inspect_backup_integrity",
+    "inspect_sqlite_file",
     "is_safe_archive_path",
+    "is_sqlite_database_empty",
     "mark_package_complete",
     "normalize_archive_path",
     "package_looks_like_mbbackup",
@@ -99,6 +125,7 @@ __all__ = [
     "sha256_file",
     "sha256_stream",
     "sqlite_integrity_check",
+    "sqlite_quick_check",
     "validate_backup_metadata",
     "verify_instance_backup_package",
 ]

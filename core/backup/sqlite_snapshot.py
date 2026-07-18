@@ -10,21 +10,15 @@ class SqliteSnapshotError(RuntimeError):
     """Chyba při vytváření nebo kontrole SQLite snapshotu."""
 
 
-def sqlite_integrity_check(db_path: str | Path) -> str:
-    """
-    Spustí ``PRAGMA integrity_check`` a vrátí výsledek.
-
-    Při úspěchu vrací ``\"ok\"``, jinak text chyb (zkrácený).
-    """
-    path = Path(db_path)
-    if not path.is_file():
-        raise SqliteSnapshotError(f"Databáze neexistuje: {path}")
-
-    connection = sqlite3.connect(f"file:{path.resolve()}?mode=ro", uri=True)
+def _pragma_check_result(db_path: Path, pragma: str) -> str:
     try:
-        rows = connection.execute("PRAGMA integrity_check").fetchall()
-    finally:
-        connection.close()
+        connection = sqlite3.connect(f"file:{db_path.resolve()}?mode=ro", uri=True)
+        try:
+            rows = connection.execute(pragma).fetchall()
+        finally:
+            connection.close()
+    except sqlite3.Error as exc:
+        return f"error: {exc}"
 
     messages = [str(row[0]) for row in rows if row and row[0] is not None]
     if messages == ["ok"]:
@@ -35,6 +29,86 @@ def sqlite_integrity_check(db_path: str | Path) -> str:
     if len(joined) > 500:
         return joined[:497] + "..."
     return joined
+
+
+def sqlite_integrity_check(db_path: str | Path) -> str:
+    """
+    Spustí ``PRAGMA integrity_check`` a vrátí výsledek.
+
+    Při úspěchu vrací ``\"ok\"``, jinak text chyb (zkrácený).
+    """
+    path = Path(db_path)
+    if not path.is_file():
+        raise SqliteSnapshotError(f"Databáze neexistuje: {path}")
+    return _pragma_check_result(path, "PRAGMA integrity_check")
+
+
+def sqlite_quick_check(db_path: str | Path) -> str:
+    """Spustí ``PRAGMA quick_check`` (rychlejší kontrola)."""
+    path = Path(db_path)
+    if not path.is_file():
+        raise SqliteSnapshotError(f"Databáze neexistuje: {path}")
+    return _pragma_check_result(path, "PRAGMA quick_check")
+
+
+def is_sqlite_database_empty(db_path: str | Path) -> bool:
+    """
+    True, pokud soubor chybí / má nulovou velikost, nebo nemá žádné uživatelské objekty
+    v ``sqlite_master`` (kromě interních).
+    """
+    path = Path(db_path)
+    if not path.is_file() or path.stat().st_size <= 0:
+        return True
+    try:
+        connection = sqlite3.connect(f"file:{path.resolve()}?mode=ro", uri=True)
+        try:
+            row = connection.execute(
+                "SELECT COUNT(*) FROM sqlite_master "
+                "WHERE type IN ('table', 'index', 'view', 'trigger') "
+                "AND name NOT LIKE 'sqlite_%'"
+            ).fetchone()
+        finally:
+            connection.close()
+    except sqlite3.Error:
+        return True
+    return not row or int(row[0]) == 0
+
+
+def inspect_sqlite_file(db_path: str | Path) -> dict[str, object]:
+    """
+    Souhrn kontrol SQLite souboru pro metadata / integrity report.
+
+    Keys: size, empty, integrity_check, quick_check
+    """
+    path = Path(db_path)
+    if not path.is_file():
+        raise SqliteSnapshotError(f"Databáze neexistuje: {path}")
+
+    size = path.stat().st_size
+    empty = is_sqlite_database_empty(path)
+    if size <= 0:
+        return {
+            "size": size,
+            "empty": True,
+            "integrity_check": "failed",
+            "quick_check": "failed",
+        }
+
+    try:
+        integrity = sqlite_integrity_check(path)
+    except SqliteSnapshotError as exc:
+        integrity = f"error: {exc}"
+    try:
+        quick = sqlite_quick_check(path)
+    except SqliteSnapshotError as exc:
+        quick = f"error: {exc}"
+
+    return {
+        "size": size,
+        "empty": empty,
+        "integrity_check": integrity,
+        "quick_check": quick,
+    }
 
 
 def read_sqlite_user_version(db_path: str | Path) -> str | None:

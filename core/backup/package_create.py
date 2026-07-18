@@ -38,6 +38,7 @@ from core.backup.paths import normalize_archive_path
 from core.backup.sqlite_snapshot import (
     SqliteSnapshotError,
     create_sqlite_snapshot,
+    inspect_sqlite_file,
     read_sqlite_user_version,
 )
 
@@ -239,6 +240,11 @@ def create_instance_backup(
         except SqliteSnapshotError as exc:
             raise InstanceBackupError(str(exc)) from exc
 
+        db_info = inspect_sqlite_file(db_dest)
+        integrity = str(db_info["integrity_check"])
+        quick_check = str(db_info["quick_check"])
+        db_size = int(db_info["size"])  # type: ignore[arg-type]
+        db_empty = bool(db_info["empty"])
         schema_version = read_sqlite_user_version(db_dest)
 
         staged_files: list[_StagedFile] = [
@@ -290,6 +296,9 @@ def create_instance_backup(
             included_components=list(REQUIRED_ARCHIVE_ROOTS),
             package_status=PACKAGE_STATUS_CREATING,
             database_integrity=integrity,
+            database_quick_check=quick_check,
+            database_size=db_size,
+            database_empty=db_empty,
             schema_version=schema_version,
             validate=True,
         )

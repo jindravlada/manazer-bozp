@@ -70,6 +70,9 @@ porušení čtení starších platných balíčků, pokud validátor podporuje d
 |------|--------|
 | `schema_version` | Verze DB schématu, pokud ji aplikace umí zjistit; jinak `null` |
 | `database_integrity` | Výsledek kontroly integrity DB (např. `ok`, `failed`, `skipped`) |
+| `database_quick_check` | Výsledek `PRAGMA quick_check` (BACKUP-1c) |
+| `database_size` | Velikost DB souboru v bajtech (BACKUP-1c) |
+| `database_empty` | Zda DB nemá uživatelské objekty (BACKUP-1c) |
 
 ### Co se **neukládá**
 

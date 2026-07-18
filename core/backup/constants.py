@@ -51,3 +51,19 @@ KNOWN_COMPONENTS: frozenset[str] = frozenset(
         COMPONENT_METADATA,
     }
 )
+
+# Souhrnný výsledek kontroly integrity (BACKUP-1c).
+INTEGRITY_VALID = "VALID"
+INTEGRITY_VALID_WITH_WARNINGS = "VALID_WITH_WARNINGS"
+INTEGRITY_INVALID = "INVALID"
+
+INTEGRITY_STATUSES: frozenset[str] = frozenset(
+    {
+        INTEGRITY_VALID,
+        INTEGRITY_VALID_WITH_WARNINGS,
+        INTEGRITY_INVALID,
+    }
+)
+
+ISSUE_SEVERITY_ERROR = "error"
+ISSUE_SEVERITY_WARNING = "warning"

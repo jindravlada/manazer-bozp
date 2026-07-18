@@ -101,16 +101,17 @@ Při chybě / přerušení:
 
 ## 5. Kontrola po vytvoření
 
-`verify_instance_backup_package()` kontroluje:
+Po zápisu se volá `verify_instance_backup_package()` →
+`inspect_backup_integrity()` (viz [BACKUP-1c](BACKUP-1c-overeni-integrity.md)):
 
-- příponu `.mbbackup`,
-- načtení a validaci `metadata.json` (stav `complete`, kind `instance_backup`),
-- přítomnost všech souborů z manifestu,
-- shodu velikostí a SHA-256,
-- přítomnost databázové komponenty,
-- bezpečné relativní cesty v ZIP.
+- čitelnost ZIP a `metadata.json`,
+- verze formátu, typ balíčku, stav `complete`,
+- manifest (existence, velikost, SHA-256),
+- SQLite `integrity_check` / `quick_check`, velikost a prázdnost DB.
 
 Při chybě ověření se partial maže a API vyhodí `InstanceBackupError`.
+
+Do metadat se ukládá také `database_quick_check`, `database_size`, `database_empty`.
 
 ---
 
