@@ -1,0 +1,53 @@
+"""Společný formát záložního balíčku Manažera BOZP (BACKUP-1a).
+
+Verze formátu a identifikátory balíčku. Bez UI a bez tvorby/obnovy obsahu.
+"""
+
+from __future__ import annotations
+
+# Verze formátu *.mbbackup (metadata.format_version).
+BACKUP_FORMAT_VERSION = 1
+
+# Podporované verze při načítání (zpětná kompatibilita).
+SUPPORTED_BACKUP_FORMAT_VERSIONS: frozenset[int] = frozenset({BACKUP_FORMAT_VERSION})
+
+BACKUP_EXTENSION = ".mbbackup"
+METADATA_FILENAME = "metadata.json"
+
+# Typ balíčku – instance vs. budoucí knowledge exporty.
+PACKAGE_KIND_INSTANCE_BACKUP = "instance_backup"
+PACKAGE_KIND_RISK_CATALOG_EXPORT = "risk_catalog_export"  # rezervováno, neimplementováno
+
+SUPPORTED_PACKAGE_KINDS: frozenset[str] = frozenset({PACKAGE_KIND_INSTANCE_BACKUP})
+
+# Stav dokončení balíčku.
+PACKAGE_STATUS_CREATING = "creating"
+PACKAGE_STATUS_COMPLETE = "complete"
+
+VALID_PACKAGE_STATUSES: frozenset[str] = frozenset(
+    {
+        PACKAGE_STATUS_CREATING,
+        PACKAGE_STATUS_COMPLETE,
+    }
+)
+
+# Povinné kořenové komponenty / adresáře ve formátu v1.
+COMPONENT_DATABASE = "database"
+COMPONENT_WORKSPACE = "workspace"
+COMPONENT_SETTINGS = "settings"
+COMPONENT_METADATA = "metadata"
+
+REQUIRED_ARCHIVE_ROOTS: tuple[str, ...] = (
+    COMPONENT_DATABASE,
+    COMPONENT_WORKSPACE,
+    COMPONENT_SETTINGS,
+)
+
+KNOWN_COMPONENTS: frozenset[str] = frozenset(
+    {
+        COMPONENT_DATABASE,
+        COMPONENT_WORKSPACE,
+        COMPONENT_SETTINGS,
+        COMPONENT_METADATA,
+    }
+)
