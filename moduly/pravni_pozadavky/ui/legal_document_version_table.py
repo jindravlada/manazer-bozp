@@ -1,8 +1,17 @@
 from datetime import date
 
-from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QBrush
-from PySide6.QtWidgets import QHeaderView, QTableWidget, QTableWidgetItem
+from PySide6.QtWidgets import QHeaderView, QTableWidget
+
+from core.widgets.typed_table_sort import (
+    create_typed_item,
+    enable_typed_sorting,
+    sorting_paused,
+    typed_bool,
+    typed_date,
+    typed_int,
+    typed_text,
+)
 
 
 def _format_date(value) -> str:
@@ -47,28 +56,71 @@ class LegalDocumentVersionTable(QTableWidget):
         self.setColumnWidth(4, 110)
         self.setColumnWidth(5, 80)
 
+        enable_typed_sorting(self)
+
     def load_versions(self, versions) -> None:
-        self.setRowCount(len(versions))
+        with sorting_paused(self):
+            self.setRowCount(len(versions))
 
-        for row, version in enumerate(versions):
-            self._set_item(row, 0, str(version.id))
-            self._set_item(row, 1, version.version_name)
-            self._set_item(row, 2, _format_date(version.effective_from))
-            self._set_item(row, 3, _format_date(version.effective_to))
-            self._set_item(row, 4, _format_date(version.publication_date))
-            self._set_item(row, 5, "Ano" if version.active else "Ne")
+            for row, version in enumerate(versions):
+                record_id = int(version.id)
+                self.setItem(
+                    row,
+                    0,
+                    create_typed_item(str(record_id), typed_int(record_id), stable_id=record_id),
+                )
+                self.setItem(
+                    row,
+                    1,
+                    create_typed_item(
+                        version.version_name,
+                        typed_text(version.version_name),
+                        stable_id=record_id,
+                    ),
+                )
+                self.setItem(
+                    row,
+                    2,
+                    create_typed_item(
+                        _format_date(version.effective_from),
+                        typed_date(version.effective_from),
+                        stable_id=record_id,
+                    ),
+                )
+                self.setItem(
+                    row,
+                    3,
+                    create_typed_item(
+                        _format_date(version.effective_to),
+                        typed_date(version.effective_to),
+                        stable_id=record_id,
+                    ),
+                )
+                self.setItem(
+                    row,
+                    4,
+                    create_typed_item(
+                        _format_date(version.publication_date),
+                        typed_date(version.publication_date),
+                        stable_id=record_id,
+                    ),
+                )
+                self.setItem(
+                    row,
+                    5,
+                    create_typed_item(
+                        "Ano" if version.active else "Ne",
+                        typed_bool(version.active),
+                        stable_id=record_id,
+                    ),
+                )
 
-            if not version.active:
-                brush = QBrush(QColor("#f0f0f0"))
-                for column in range(self.columnCount()):
-                    item = self.item(row, column)
-                    if item is not None:
-                        item.setBackground(brush)
-
-    def _set_item(self, row: int, column: int, text: str) -> None:
-        item = QTableWidgetItem(text or "")
-        item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-        self.setItem(row, column, item)
+                if not version.active:
+                    brush = QBrush(QColor("#f0f0f0"))
+                    for column in range(self.columnCount()):
+                        item = self.item(row, column)
+                        if item is not None:
+                            item.setBackground(brush)
 
     def selected_version_id(self) -> int | None:
         selected = self.selectionModel().selectedRows()

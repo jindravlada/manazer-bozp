@@ -1,10 +1,31 @@
 from datetime import date
 
-from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QBrush
-from PySide6.QtWidgets import QHeaderView, QTableWidget, QTableWidgetItem
+from PySide6.QtWidgets import QHeaderView, QTableWidget
 
+from core.widgets.typed_table_sort import (
+    create_typed_item,
+    enable_typed_sorting,
+    sorting_paused,
+    typed_bool,
+    typed_date,
+    typed_empty,
+    typed_int,
+    typed_status,
+    typed_text,
+)
 from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_LABELS
+
+DOCUMENT_TYPE_ORDER = tuple(DOCUMENT_TYPE_LABELS.keys())
+
+
+def _order_status(value: str, order: tuple[str, ...]):
+    if not value:
+        return typed_empty()
+    try:
+        return typed_status(order.index(value), label=value or "")
+    except ValueError:
+        return typed_status(len(order), label=value or "")
 
 
 def _format_date(value) -> str:
@@ -59,35 +80,92 @@ class LegalDocumentTable(QTableWidget):
         self.setColumnWidth(7, 150)
         self.setColumnWidth(8, 80)
 
+        enable_typed_sorting(self)
+
     def load_documents(self, documents) -> None:
-        self.setRowCount(len(documents))
+        with sorting_paused(self):
+            self.setRowCount(len(documents))
 
-        for row, document in enumerate(documents):
-            self._set_item(row, 0, str(document.id))
-            self._set_item(
-                row,
-                1,
-                DOCUMENT_TYPE_LABELS.get(document.document_type, document.document_type),
-            )
-            self._set_item(row, 2, document.number)
-            self._set_item(row, 3, str(document.year) if document.year is not None else "")
-            self._set_item(row, 4, document.title)
-            self._set_item(row, 5, document.short_title)
-            self._set_item(row, 6, _format_date(document.effective_from or document.valid_from))
-            self._set_item(row, 7, _format_included_in_processes(document.included_in_processes))
-            self._set_item(row, 8, "Ano" if document.active else "Ne")
+            for row, document in enumerate(documents):
+                record_id = int(document.id)
+                self.setItem(
+                    row,
+                    0,
+                    create_typed_item(str(record_id), typed_int(record_id), stable_id=record_id),
+                )
+                type_label = DOCUMENT_TYPE_LABELS.get(document.document_type, document.document_type)
+                self.setItem(
+                    row,
+                    1,
+                    create_typed_item(
+                        type_label,
+                        _order_status(document.document_type, DOCUMENT_TYPE_ORDER),
+                        stable_id=record_id,
+                    ),
+                )
+                self.setItem(
+                    row,
+                    2,
+                    create_typed_item(document.number, typed_text(document.number), stable_id=record_id),
+                )
+                self.setItem(
+                    row,
+                    3,
+                    create_typed_item(
+                        str(document.year) if document.year is not None else "",
+                        typed_int(document.year),
+                        stable_id=record_id,
+                    ),
+                )
+                self.setItem(
+                    row,
+                    4,
+                    create_typed_item(document.title, typed_text(document.title), stable_id=record_id),
+                )
+                self.setItem(
+                    row,
+                    5,
+                    create_typed_item(
+                        document.short_title,
+                        typed_text(document.short_title),
+                        stable_id=record_id,
+                    ),
+                )
+                effective_from = document.effective_from or document.valid_from
+                self.setItem(
+                    row,
+                    6,
+                    create_typed_item(
+                        _format_date(effective_from),
+                        typed_date(effective_from),
+                        stable_id=record_id,
+                    ),
+                )
+                self.setItem(
+                    row,
+                    7,
+                    create_typed_item(
+                        _format_included_in_processes(document.included_in_processes),
+                        typed_bool(document.included_in_processes),
+                        stable_id=record_id,
+                    ),
+                )
+                self.setItem(
+                    row,
+                    8,
+                    create_typed_item(
+                        "Ano" if document.active else "Ne",
+                        typed_bool(document.active),
+                        stable_id=record_id,
+                    ),
+                )
 
-            if not document.active:
-                brush = QBrush(QColor("#f0f0f0"))
-                for column in range(self.columnCount()):
-                    item = self.item(row, column)
-                    if item is not None:
-                        item.setBackground(brush)
-
-    def _set_item(self, row: int, column: int, text: str) -> None:
-        item = QTableWidgetItem(text or "")
-        item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-        self.setItem(row, column, item)
+                if not document.active:
+                    brush = QBrush(QColor("#f0f0f0"))
+                    for column in range(self.columnCount()):
+                        item = self.item(row, column)
+                        if item is not None:
+                            item.setBackground(brush)
 
     def selected_document_id(self) -> int | None:
         selected = self.selectionModel().selectedRows()
