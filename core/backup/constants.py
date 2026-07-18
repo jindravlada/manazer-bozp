@@ -79,3 +79,13 @@ RESTORE_ERR_INTERRUPTED = "interrupted"
 RESTORE_ERR_INTEGRITY = "integrity_failed"
 RESTORE_ERR_POSTCHECK = "post_restore_check_failed"
 RESTORE_ERR_UNSAFE_PATH = "unsafe_path"
+
+# Fázové kódy obnovy (BACKUP-2b).
+RESTORE_ERR_FAILED_BEFORE_SWAP = "failed_before_swap"
+RESTORE_ERR_FAILED_AFTER_SWAP_ROLLED_BACK = "failed_after_swap_rolled_back"
+RESTORE_ERR_ROLLBACK_FAILED = "rollback_failed"
+
+# Recovery marker.
+RESTORE_MARKER_KIND = "instance_restore"
+RESTORE_MARKER_FORMAT_VERSION = 1
+RESTORE_MARKER_FILENAME_PREFIX = ".mbrestore-in-progress-"

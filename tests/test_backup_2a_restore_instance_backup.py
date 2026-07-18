@@ -14,6 +14,7 @@ from core.backup import (
     METADATA_FILENAME,
     PACKAGE_STATUS_CREATING,
     RESTORE_ERR_BAD_ARCHIVE,
+    RESTORE_ERR_FAILED_BEFORE_SWAP,
     RESTORE_ERR_INTERRUPTED,
     RESTORE_ERR_INVALID_DATABASE,
     RESTORE_ERR_INVALID_METADATA,
@@ -116,13 +117,19 @@ def test_successful_restore(tmp_path: Path):
     # zalohy z live zachovány
     assert (live_ws / "zalohy" / "keep-me.zip").read_bytes() == b"ZIPKEEP"
     assert result.preserved_backups_dir is True
+    assert result.restored is True
+    assert result.post_check_ok is True
+    assert result.rollback_copy_removed is True
+    assert result.recovery_marker_removed is True
 
     settings_data = json.loads(live_settings.read_text(encoding="utf-8"))
     assert settings_data["marker"] == "from-backup"
 
-    # žádné orphan staging adresáře
+    # žádné orphan staging adresáře / markery
     leftovers = [
-        p for p in live_ws.parent.iterdir() if "mbrestore" in p.name or "mbrestore" in p.name
+        p
+        for p in live_ws.parent.iterdir()
+        if "mbrestore" in p.name
     ]
     assert leftovers == []
 
@@ -138,7 +145,8 @@ def test_corrupted_archive(tmp_path: Path):
         restore_instance_backup(
             package, workspace_root=live_ws, settings_path=live_settings
         )
-    assert exc.value.code == RESTORE_ERR_BAD_ARCHIVE
+    assert exc.value.code == RESTORE_ERR_FAILED_BEFORE_SWAP
+    assert exc.value.cause_code == RESTORE_ERR_BAD_ARCHIVE
     assert marker.read_text(encoding="utf-8") == before
 
 
@@ -165,7 +173,8 @@ def test_corrupted_database_in_package(tmp_path: Path):
         restore_instance_backup(
             broken, workspace_root=live_ws, settings_path=live_settings
         )
-    assert exc.value.code == RESTORE_ERR_INVALID_DATABASE
+    assert exc.value.code == RESTORE_ERR_FAILED_BEFORE_SWAP
+    assert exc.value.cause_code == RESTORE_ERR_INVALID_DATABASE
     assert (live_ws / "prilohy" / "a.txt").read_text(encoding="utf-8") == before
 
 
@@ -187,7 +196,8 @@ def test_missing_database(tmp_path: Path):
         restore_instance_backup(
             broken, workspace_root=live_ws, settings_path=live_settings
         )
-    assert exc.value.code in {
+    assert exc.value.code == RESTORE_ERR_FAILED_BEFORE_SWAP
+    assert exc.value.cause_code in {
         RESTORE_ERR_INVALID_DATABASE,
         RESTORE_ERR_MISSING_COMPONENT,
     }
@@ -207,7 +217,8 @@ def test_missing_component_file(tmp_path: Path):
         restore_instance_backup(
             broken, workspace_root=live_ws, settings_path=live_settings
         )
-    assert exc.value.code == RESTORE_ERR_MISSING_COMPONENT
+    assert exc.value.code == RESTORE_ERR_FAILED_BEFORE_SWAP
+    assert exc.value.cause_code == RESTORE_ERR_MISSING_COMPONENT
 
 
 def test_invalid_metadata(tmp_path: Path):
@@ -224,7 +235,8 @@ def test_invalid_metadata(tmp_path: Path):
         restore_instance_backup(
             broken, workspace_root=live_ws, settings_path=live_settings
         )
-    assert exc.value.code == RESTORE_ERR_INVALID_METADATA
+    assert exc.value.code == RESTORE_ERR_FAILED_BEFORE_SWAP
+    assert exc.value.cause_code == RESTORE_ERR_INVALID_METADATA
 
 
 def test_interrupted_restore_leaves_original(tmp_path: Path):
@@ -244,7 +256,8 @@ def test_interrupted_restore_leaves_original(tmp_path: Path):
             settings_path=live_settings,
             interrupt_hook=boom,
         )
-    assert exc.value.code == RESTORE_ERR_INTERRUPTED
+    assert exc.value.code == RESTORE_ERR_FAILED_BEFORE_SWAP
+    assert exc.value.cause_code == RESTORE_ERR_INTERRUPTED
     assert (live_ws / "prilohy" / "a.txt").read_text(encoding="utf-8") == before_file
     assert (live_ws / "databaze" / "manager_bozp.db").read_bytes() == before_db
     leftovers = [p for p in live_ws.parent.iterdir() if "mbrestore" in p.name]

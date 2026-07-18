@@ -3,7 +3,7 @@
 Cíl: obnovit celou instance Manažera BOZP z balíčku `*.mbbackup` tak, aby
 aplikace **nikdy** nezůstala v napůl obnoveném stavu.
 
-**Bez dialogů, menu, automatických záloh a bez rollbacku po přepnutí (BACKUP-2b).**
+**Bez dialogů, menu a automatických záloh. Rollback po přepnutí: [BACKUP-2b](BACKUP-2b-rollback-pri-selhani-obnovy.md).**
 
 Moduly: `core/backup/package_restore.py`, `package_extract.py`.
 
@@ -54,7 +54,7 @@ workspace/          →  .workspace.mbrestore-prev-<token>/
 - Nová instance se sestaví **celá** před jakýmkoli přejmenováním.
 - Původní data se nemažou, dokud není nová instance hotová.
 - Pokud selže druhý `rename`, provede se best-effort návrat `prev` → `workspace`.
-- Plný rollback po úspěšném přepnutí = BACKUP-2b.
+- Selhání **po** úspěšném přepnutí řeší automatický rollback v BACKUP-2b.
 
 ---
 
