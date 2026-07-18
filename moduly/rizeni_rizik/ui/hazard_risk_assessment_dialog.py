@@ -14,6 +14,11 @@ from PySide6.QtWidgets import (
 
 from core.widgets.dialog_utils import create_save_cancel_box
 from core.widgets.multi_exposed_group_selector import MultiExposedGroupSelector
+from core.widgets.severity_tooltips import (
+    bind_severity_combo_tooltip,
+    populate_severity_combo,
+    severity_description_for_combo,
+)
 from moduly.nastaveni.ui.exposed_groups_management_dialog import ExposedGroupsManagementDialog
 from moduly.rizeni_rizik.constants import (
     DEFAULT_RISK_ASSESSMENT_STATUS,
@@ -23,9 +28,6 @@ from moduly.rizeni_rizik.constants import (
     RISK_ASSESSMENT_STATUS_DRAFT,
     RISK_ASSESSMENT_STATUSES,
     RISK_ASSESSMENT_STATUS_LABELS,
-    RISK_SEVERITIES,
-    RISK_SEVERITY_DESCRIPTIONS,
-    RISK_SEVERITY_LABELS,
 )
 from moduly.rizeni_rizik.sluzby.hazard_identification_working_copy import (
     find_identification_working_copy,
@@ -69,11 +71,11 @@ class HazardRiskAssessmentDialog(QDialog):
         group_row.addWidget(self.manage_groups_btn)
 
         self.severity = QComboBox()
-        for severity in RISK_SEVERITIES:
-            self.severity.addItem(RISK_SEVERITY_LABELS[severity], severity)
+        populate_severity_combo(self.severity)
         self.severity_description = QLabel()
         self.severity_description.setWordWrap(True)
         self.severity.currentIndexChanged.connect(self._update_severity_description)
+        bind_severity_combo_tooltip(self.severity)
         self.assessment_status = QComboBox()
         for status in RISK_ASSESSMENT_STATUSES:
             self.assessment_status.addItem(RISK_ASSESSMENT_STATUS_LABELS[status], status)
@@ -175,9 +177,7 @@ class HazardRiskAssessmentDialog(QDialog):
                 self.event.setCurrentIndex(index)
 
     def _update_severity_description(self) -> None:
-        severity = self.severity.currentData()
-        description = RISK_SEVERITY_DESCRIPTIONS.get(severity, "")
-        self.severity_description.setText(description)
+        self.severity_description.setText(severity_description_for_combo(self.severity))
 
     def accept(self) -> None:
         if self.read_only:

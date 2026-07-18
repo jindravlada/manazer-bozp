@@ -1,5 +1,20 @@
 """Konstanty modulu Řízení rizik."""
 
+from core.shared.risk_severity import (
+    DEFAULT_RISK_SEVERITY,
+    RISK_SEVERITIES,
+    RISK_SEVERITY_CRITICAL,
+    RISK_SEVERITY_DESCRIPTIONS,
+    RISK_SEVERITY_LABELS,
+    RISK_SEVERITY_MINOR,
+    RISK_SEVERITY_MODERATE,
+    RISK_SEVERITY_NEGLIGIBLE,
+    RISK_SEVERITY_SERIOUS,
+    format_risk_severity_description,
+    format_risk_severity_label,
+    format_risk_severity_tooltip,
+)
+
 MODULE_KEY = "rizeni_rizik"
 MODULE_NAME = "Řízení rizik"
 MODULE_DESCRIPTION = "Identifikace nebezpečí a řízení rizik na provozech a pracovištích."
@@ -289,53 +304,6 @@ RISK_ASSESSMENTS_INTRO_TEXT = (
 )
 
 HAZARD_RISK_ASSESSMENT_DIALOG_TITLE = "Posouzení zdroje rizika"
-
-RISK_SEVERITY_NEGLIGIBLE = "negligible"
-RISK_SEVERITY_MINOR = "minor"
-RISK_SEVERITY_MODERATE = "moderate"
-RISK_SEVERITY_SERIOUS = "serious"
-RISK_SEVERITY_CRITICAL = "critical"
-
-RISK_SEVERITIES = (
-    RISK_SEVERITY_NEGLIGIBLE,
-    RISK_SEVERITY_MINOR,
-    RISK_SEVERITY_MODERATE,
-    RISK_SEVERITY_SERIOUS,
-    RISK_SEVERITY_CRITICAL,
-)
-
-DEFAULT_RISK_SEVERITY = RISK_SEVERITY_MODERATE
-
-RISK_SEVERITY_LABELS = {
-    RISK_SEVERITY_NEGLIGIBLE: "Zanedbatelný",
-    RISK_SEVERITY_MINOR: "Lehký",
-    RISK_SEVERITY_MODERATE: "Závažný",
-    RISK_SEVERITY_SERIOUS: "Velmi závažný",
-    RISK_SEVERITY_CRITICAL: "Kritický",
-}
-
-RISK_SEVERITY_DESCRIPTIONS = {
-    RISK_SEVERITY_NEGLIGIBLE: (
-        "Bez zranění nebo pouze přechodné drobné obtíže bez potřeby odborného ošetření."
-    ),
-    RISK_SEVERITY_MINOR: (
-        "Lehké zranění nebo zdravotní obtíže bez pracovní neschopnosti."
-    ),
-    RISK_SEVERITY_MODERATE: (
-        "Zranění nebo poškození zdraví s pracovní neschopností."
-    ),
-    RISK_SEVERITY_SERIOUS: (
-        "Těžké zranění, hospitalizace, trvalé následky nebo nemoc z povolání."
-    ),
-    RISK_SEVERITY_CRITICAL: (
-        "Smrtelné zranění nebo událost s možností postižení více osob."
-    ),
-}
-
-
-def format_risk_severity_label(severity: str) -> str:
-    return RISK_SEVERITY_LABELS.get(severity, severity or "—")
-
 
 RISK_ASSESSMENT_COL_ID = 0
 RISK_ASSESSMENT_COL_EXPOSED_GROUP = 1

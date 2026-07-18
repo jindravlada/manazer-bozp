@@ -14,13 +14,13 @@ from PySide6.QtWidgets import (
 
 from core.widgets.dialog_utils import create_save_cancel_box
 from core.widgets.multi_exposed_group_selector import MultiExposedGroupSelector
-from moduly.nastaveni.ui.exposed_groups_management_dialog import ExposedGroupsManagementDialog
-from moduly.rizeni_rizik.constants import (
-    DEFAULT_RISK_SEVERITY,
-    RISK_SEVERITIES,
-    RISK_SEVERITY_DESCRIPTIONS,
-    RISK_SEVERITY_LABELS,
+from core.widgets.severity_tooltips import (
+    bind_severity_combo_tooltip,
+    populate_severity_combo,
+    severity_description_for_combo,
 )
+from moduly.nastaveni.ui.exposed_groups_management_dialog import ExposedGroupsManagementDialog
+from moduly.rizeni_rizik.constants import DEFAULT_RISK_SEVERITY
 from moduly.rizeni_rizik.constants_library import HAZARD_LIBRARY_ASSESSMENT_DIALOG_TITLE
 from moduly.rizeni_rizik.sluzby.hazard_library_template_assessment_service import (
     HazardLibraryTemplateAssessmentError,
@@ -63,11 +63,11 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
         group_row.addWidget(self.manage_groups_btn)
 
         self.severity = QComboBox()
-        for severity in RISK_SEVERITIES:
-            self.severity.addItem(RISK_SEVERITY_LABELS[severity], severity)
+        populate_severity_combo(self.severity)
         self.severity_description = QLabel()
         self.severity_description.setWordWrap(True)
         self.severity.currentIndexChanged.connect(self._update_severity_description)
+        bind_severity_combo_tooltip(self.severity)
         self.conclusion = QPlainTextEdit()
         self.conclusion.setMinimumHeight(80)
         self.note = QPlainTextEdit()
@@ -127,11 +127,7 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
         self.exposed_groups.reload(preserve_ids=selected_ids)
 
     def _update_severity_description(self) -> None:
-        severity = self.severity.currentData()
-        if severity in RISK_SEVERITY_DESCRIPTIONS:
-            self.severity_description.setText(RISK_SEVERITY_DESCRIPTIONS[severity])
-        else:
-            self.severity_description.setText("")
+        self.severity_description.setText(severity_description_for_combo(self.severity))
 
     def accept(self) -> None:
         if self.read_only:

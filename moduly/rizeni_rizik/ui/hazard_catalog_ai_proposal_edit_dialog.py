@@ -16,14 +16,14 @@ from core.ai_oponentni.modely.ai_unassigned_proposal import AiUnassignedProposal
 from core.ai_oponentni.sluzby.ai_peer_review_service import ai_peer_review_service
 from core.widgets.dialog_utils import create_save_cancel_box
 from core.widgets.multi_exposed_group_selector import MultiExposedGroupSelector
+from core.widgets.severity_tooltips import (
+    bind_severity_combo_tooltip,
+    populate_severity_combo,
+    severity_description_for_combo,
+)
 from moduly.nastaveni.sluzby.exposed_group_service import exposed_group_service
 from moduly.nastaveni.ui.exposed_groups_management_dialog import ExposedGroupsManagementDialog
-from moduly.rizeni_rizik.constants import (
-    DEFAULT_RISK_SEVERITY,
-    RISK_SEVERITIES,
-    RISK_SEVERITY_DESCRIPTIONS,
-    RISK_SEVERITY_LABELS,
-)
+from moduly.rizeni_rizik.constants import DEFAULT_RISK_SEVERITY
 from moduly.rizeni_rizik.constants_library import (
     CATALOG_AI_PROPOSAL_EDIT_DIALOG_TITLE,
     CATALOG_AI_PROPOSAL_LEGAL_EDIT_INFO,
@@ -97,13 +97,12 @@ class HazardCatalogAiProposalEditDialog(QDialog):
             group_row.addWidget(self.exposed_groups, 1)
             group_row.addWidget(self.manage_groups_btn)
             self.severity = QComboBox()
-            for severity in RISK_SEVERITIES:
-                self.severity.addItem(RISK_SEVERITY_LABELS[severity], severity)
-            severity_value = self.payload.severity or DEFAULT_RISK_SEVERITY
-            severity_index = self.severity.findData(severity_value)
-            if severity_index >= 0:
-                self.severity.setCurrentIndex(severity_index)
+            populate_severity_combo(
+                self.severity,
+                current=self.payload.severity or DEFAULT_RISK_SEVERITY,
+            )
             self.severity.currentIndexChanged.connect(self._update_severity_description)
+            bind_severity_combo_tooltip(self.severity)
             self.conclusion = QPlainTextEdit()
             self.conclusion.setMinimumHeight(70)
             self.conclusion.setPlainText(self.payload.conclusion)
@@ -159,11 +158,7 @@ class HazardCatalogAiProposalEditDialog(QDialog):
     def _update_severity_description(self) -> None:
         if self.severity is None:
             return
-        severity = self.severity.currentData()
-        if severity in RISK_SEVERITY_DESCRIPTIONS:
-            self.severity_description.setText(RISK_SEVERITY_DESCRIPTIONS[severity])
-        else:
-            self.severity_description.setText("")
+        self.severity_description.setText(severity_description_for_combo(self.severity))
 
     def accept(self) -> None:
         if self.kind == CATALOG_PROPOSAL_KIND_ASSESSMENT and self.exposed_groups is not None:

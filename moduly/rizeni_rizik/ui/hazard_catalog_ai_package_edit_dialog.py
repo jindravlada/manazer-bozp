@@ -41,13 +41,10 @@ from core.ai_oponentni.repository.ai_proposal_package_repository import (
 from core.widgets.dialog_utils import create_save_cancel_box
 from core.widgets.multi_exposed_group_selector import MultiExposedGroupSelector
 from core.widgets.multi_legal_document_selector import MultiLegalDocumentSelector
+from core.widgets.severity_tooltips import bind_severity_combo_tooltip, populate_severity_combo
 from moduly.nastaveni.sluzby.exposed_group_service import ExposedGroupMatchKind, exposed_group_service
 from moduly.nastaveni.ui.exposed_groups_management_dialog import ExposedGroupsManagementDialog
-from moduly.rizeni_rizik.constants import (
-    DEFAULT_RISK_SEVERITY,
-    RISK_SEVERITIES,
-    RISK_SEVERITY_LABELS,
-)
+from moduly.rizeni_rizik.constants import DEFAULT_RISK_SEVERITY, RISK_SEVERITIES
 from moduly.rizeni_rizik.constants_library import (
     CATALOG_AI_PACKAGE_EDIT_DIALOG_TITLE,
     CATALOG_AI_PACKAGE_EDIT_SAVE_BUTTON,
@@ -214,8 +211,15 @@ class _AssessmentEditor(QWidget):
         group_row.addWidget(self.manage_groups_btn)
 
         self.severity = QComboBox()
-        for severity in RISK_SEVERITIES:
-            self.severity.addItem(RISK_SEVERITY_LABELS[severity], severity)
+        populate_severity_combo(
+            self.severity,
+            current=(
+                assessment.severity
+                if assessment is not None and assessment.severity in RISK_SEVERITIES
+                else DEFAULT_RISK_SEVERITY
+            ),
+        )
+        bind_severity_combo_tooltip(self.severity)
         self.conclusion = QPlainTextEdit()
         _configure_plain_text(self.conclusion, min_height=50)
         self.existing_measures = QPlainTextEdit()
@@ -243,11 +247,6 @@ class _AssessmentEditor(QWidget):
                     if match.kind == ExposedGroupMatchKind.ACTIVE and match.groups:
                         group_ids.append(int(match.groups[0].id))
             self.exposed_groups.reload(preserve_ids=group_ids)
-            severity_index = self.severity.findData(
-                assessment.severity if assessment.severity in RISK_SEVERITIES else DEFAULT_RISK_SEVERITY,
-            )
-            if severity_index >= 0:
-                self.severity.setCurrentIndex(severity_index)
             self.conclusion.setPlainText(assessment.conclusion)
             self.existing_measures.setPlainText(
                 "\n".join(m.description for m in assessment.existing_measures),
@@ -257,9 +256,6 @@ class _AssessmentEditor(QWidget):
             )
         else:
             self.exposed_groups.reload()
-            severity_index = self.severity.findData(DEFAULT_RISK_SEVERITY)
-            if severity_index >= 0:
-                self.severity.setCurrentIndex(severity_index)
 
     def _open_groups_management(self) -> None:
         dialog = ExposedGroupsManagementDialog(self)

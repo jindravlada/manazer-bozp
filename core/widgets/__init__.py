@@ -14,6 +14,13 @@ from .notes_widget import NotesWidget
 from .table_utils import configure_table_columns, create_preview_table_item
 from .info_tooltip import format_info_card, set_widget_tooltip, wrap_tooltip_text
 from .text_preview import DEFAULT_TEXT_PREVIEW_LENGTH, TEXT_PREVIEW_SUFFIX, truncate_text_preview
+from .severity_tooltips import (
+    apply_severity_tooltip,
+    bind_severity_combo_tooltip,
+    populate_severity_combo,
+    severity_description_for_combo,
+    sync_severity_combo_tooltip,
+)
 
 from .multi_code_selector import MultiCodeSelector
 from .multi_legal_document_selector import MultiLegalDocumentSelector

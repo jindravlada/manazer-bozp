@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from core.widgets.severity_tooltips import apply_severity_tooltip
 from moduly.rizeni_rizik.constants_library import (
     CATALOG_AI_PACKAGE_AMBIGUOUS_GROUP_COLUMN_CONCLUSION,
     CATALOG_AI_PACKAGE_AMBIGUOUS_GROUP_COLUMN_SEVERITY,
@@ -73,6 +74,7 @@ class HazardCatalogPackageAmbiguousGroupDialog(QDialog):
             groups_item = QTableWidgetItem(candidate.group_names)
             groups_item.setData(Qt.ItemDataRole.UserRole, candidate.assessment_id)
             severity_item = QTableWidgetItem(candidate.severity_label)
+            apply_severity_tooltip(severity_item, candidate.severity)
             conclusion_item = QTableWidgetItem(candidate.conclusion or "—")
             self.table.setItem(row_index, 0, groups_item)
             self.table.setItem(row_index, 1, severity_item)

@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.info_tooltip import set_widget_tooltip
+from core.widgets.severity_tooltips import apply_severity_tooltip
 from core.widgets.table_utils import configure_table_columns
 from moduly.rizeni_rizik.constants import (
     HAZARD_RISK_ASSESSMENT_DIALOG_TITLE,
@@ -378,6 +379,10 @@ class HazardRiskAssessmentsWidget(QWidget):
                 row_index,
                 RISK_ASSESSMENT_COL_SEVERITY,
                 QTableWidgetItem(row.severity_label),
+            )
+            apply_severity_tooltip(
+                self.table.item(row_index, RISK_ASSESSMENT_COL_SEVERITY),
+                assessment.severity,
             )
             self.table.setItem(
                 row_index,

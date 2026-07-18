@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_close_box
+from core.widgets.severity_tooltips import apply_severity_tooltip
 from core.widgets.table_utils import configure_table_columns, create_preview_table_item
 from moduly.rizeni_rizik.constants_library import (
     HAZARD_LIBRARY_ASSESSMENT_DIALOG_TITLE,
@@ -513,6 +514,10 @@ class _HazardLibraryTemplateAssessmentsPanel(QWidget):
                 row_index,
                 HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COL_SEVERITY,
                 QTableWidgetItem(row.severity_label),
+            )
+            apply_severity_tooltip(
+                self.table.item(row_index, HAZARD_LIBRARY_TEMPLATE_ASSESSMENT_COL_SEVERITY),
+                assessment.severity,
             )
             self.table.setItem(
                 row_index,
