@@ -1,8 +1,10 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QDialog,
     QDialogButtonBox,
+    QHBoxLayout,
     QLabel,
     QListWidget,
     QListWidgetItem,
@@ -11,8 +13,14 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
-from moduly.rizeni_rizik.constants import HAZARD_INVENTORY_CATEGORY_LABELS
+from moduly.rizeni_rizik.constants import (
+    HAZARD_INVENTORY_CATEGORIES,
+    HAZARD_INVENTORY_CATEGORY_LABELS,
+)
 from moduly.rizeni_rizik.constants_library import (
+    HAZARD_LIBRARY_APPLY_ALL_CATEGORIES,
+    HAZARD_LIBRARY_APPLY_CATEGORY_FILTER_LABEL,
+    HAZARD_LIBRARY_APPLY_SHOWN_COUNT_TEMPLATE,
     HAZARD_LIBRARY_APPLY_TO_INVENTORY_DIALOG_TITLE,
     HAZARD_LIBRARY_CATALOG_SOURCES_TITLE,
 )
@@ -36,26 +44,36 @@ class HazardLibraryApplyToInventoryDialog(QDialog):
         super().__init__(parent)
 
         self.hazard_identification_id = hazard_identification_id
+        # Zachováno kvůli volajícím; výchozí filtr je vždy „Všechny kategorie“.
         self.default_category = default_category
         # Volitelná pracovní kopie identifikace (deferred-save) – jinak DB.
         self._inventory_items = inventory_items
         self.result: HazardLibraryTemplateApplyResult | None = None
+        self._empty_notified = False
 
         self.setWindowTitle(HAZARD_LIBRARY_APPLY_TO_INVENTORY_DIALOG_TITLE)
         self.resize(720, 520)
 
         layout = QVBoxLayout(self)
 
-        if default_category is not None:
-            category_label = HAZARD_INVENTORY_CATEGORY_LABELS.get(
-                default_category,
-                default_category,
+        category_row = QHBoxLayout()
+        category_row.addWidget(QLabel(HAZARD_LIBRARY_APPLY_CATEGORY_FILTER_LABEL))
+        self.category_filter = QComboBox()
+        self.category_filter.addItem(HAZARD_LIBRARY_APPLY_ALL_CATEGORIES, None)
+        for category in HAZARD_INVENTORY_CATEGORIES:
+            self.category_filter.addItem(
+                HAZARD_INVENTORY_CATEGORY_LABELS.get(category, category),
+                category,
             )
-            intro = QLabel(
-                f"Kategorie: {category_label}. Vyberte zdroj rizika z katalogu."
-            )
-            intro.setWordWrap(True)
-            layout.addWidget(intro)
+        self.category_filter.setCurrentIndex(0)
+        self.category_filter.currentIndexChanged.connect(self._reload_sources)
+        category_row.addWidget(self.category_filter, stretch=1)
+        layout.addLayout(category_row)
+
+        self.shown_count_label = QLabel(
+            HAZARD_LIBRARY_APPLY_SHOWN_COUNT_TEMPLATE.format(shown=0, total=0),
+        )
+        layout.addWidget(self.shown_count_label)
 
         layout.addWidget(QLabel(HAZARD_LIBRARY_CATALOG_SOURCES_TITLE))
         self.sources_list = QListWidget()
@@ -81,27 +99,46 @@ class HazardLibraryApplyToInventoryDialog(QDialog):
         self.sources_list.itemDoubleClicked.connect(lambda _: self.accept())
         self._reload_sources()
 
+    def _selected_category(self) -> str | None:
+        return self.category_filter.currentData()
+
     def _reload_sources(self) -> None:
-        """Při každém otevření / změně filtru načte aktuální katalog z DB."""
+        """Při otevření / změně filtru načte aktuální katalog z DB."""
         groups = hazard_library_template_apply_service.get_template_groups(
             operation_id=None,
-            category=self.default_category,
+            category=None,
             hazard_identification_id=self.hazard_identification_id,
             include_inactive=self.include_inactive.isChecked(),
             inventory_items=self._inventory_items,
         )
-        templates = list(groups.recommended) + list(groups.other)
-        self._populate_list(self.sources_list, templates)
+        available = list(groups.recommended) + list(groups.other)
+        total = len(available)
 
-        if not templates:
-            # Jen při prvním naplnění (ne při každém toggle) – jinak by rušilo.
-            if not hasattr(self, "_empty_notified"):
-                self._empty_notified = True
-                QMessageBox.information(
-                    self,
-                    HAZARD_LIBRARY_APPLY_TO_INVENTORY_DIALOG_TITLE,
-                    "V katalogu nejsou k dispozici žádné zdroje rizika pro tuto kategorii.",
-                )
+        selected_category = self._selected_category()
+        if selected_category is None:
+            templates = available
+        else:
+            templates = [
+                template
+                for template in available
+                if template.category == selected_category
+            ]
+
+        self._populate_list(self.sources_list, templates)
+        self.shown_count_label.setText(
+            HAZARD_LIBRARY_APPLY_SHOWN_COUNT_TEMPLATE.format(
+                shown=len(templates),
+                total=total,
+            ),
+        )
+
+        if total == 0 and not self._empty_notified:
+            self._empty_notified = True
+            QMessageBox.information(
+                self,
+                HAZARD_LIBRARY_APPLY_TO_INVENTORY_DIALOG_TITLE,
+                "V katalogu nejsou k dispozici žádné zdroje rizika.",
+            )
 
     def _populate_list(self, list_widget: QListWidget, templates) -> None:
         list_widget.clear()
