@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.services.storage_service import storage_service
 from core.widgets.image_viewer_dialog import ImageViewerDialog
 from core.widgets.table_utils import configure_table_columns
 from moduly.rizeni_rizik.constants import (
@@ -29,6 +30,9 @@ from moduly.rizeni_rizik.constants import (
     PHOTO_TABLE_HEADERS,
     PHOTOS_INTRO_TEXT,
     format_photo_file_size,
+)
+from moduly.rizeni_rizik.sluzby.hazard_identification_working_copy import (
+    find_identification_working_copy,
 )
 from moduly.rizeni_rizik.sluzby.hazard_identification_photo_service import (
     hazard_identification_photo_service,
@@ -111,6 +115,25 @@ class HazardIdentificationPhotosWidget(QWidget):
 
         self.set_identification(None, read_only=False)
 
+    def _store(self):
+        return find_identification_working_copy(self)
+
+    def _notify_editor_dirty(self) -> None:
+        window = self.window()
+        update = getattr(window, "_update_save_enabled", None)
+        if callable(update):
+            update()
+
+    @staticmethod
+    def _absolute_photo_path(photo) -> Path:
+        staged = getattr(photo, "staged_source_path", None)
+        if staged:
+            return Path(staged)
+        relative = getattr(photo, "relative_path", None)
+        if relative:
+            return storage_service.attachment_absolute(relative)
+        return hazard_identification_photo_service.absolute_path(photo)
+
     def set_identification(
         self,
         identification_id: int | None,
@@ -136,6 +159,7 @@ class HazardIdentificationPhotosWidget(QWidget):
         )
         if dialog.exec():
             self.refresh()
+            self._notify_editor_dirty()
             return True
         return False
 
@@ -152,13 +176,14 @@ class HazardIdentificationPhotosWidget(QWidget):
         )
         if dialog.exec():
             self.refresh()
+            self._notify_editor_dirty()
 
     def open_selected_photo(self) -> None:
         photo = self._selected_photo()
         if photo is None:
             QMessageBox.information(self, HAZARD_PHOTO_DIALOG_TITLE, "Vyberte fotografii.")
             return
-        path = hazard_identification_photo_service.absolute_path(photo)
+        path = self._absolute_photo_path(photo)
         if not path.is_file():
             QMessageBox.warning(
                 self,
@@ -180,8 +205,13 @@ class HazardIdentificationPhotosWidget(QWidget):
         if photo.active:
             QMessageBox.information(self, HAZARD_PHOTO_DIALOG_TITLE, "Fotografie je již aktivní.")
             return
-        hazard_identification_photo_service.activate_photo(photo.id)
+        store = self._store()
+        if store is not None:
+            store.activate_photo(photo.id)
+        else:
+            hazard_identification_photo_service.activate_photo(photo.id)
         self.refresh()
+        self._notify_editor_dirty()
 
     def deactivate_selected_photo(self) -> None:
         if not self._ensure_editable():
@@ -197,8 +227,13 @@ class HazardIdentificationPhotosWidget(QWidget):
                 "Fotografie je již neaktivní.",
             )
             return
-        hazard_identification_photo_service.deactivate_photo(photo.id)
+        store = self._store()
+        if store is not None:
+            store.deactivate_photo(photo.id)
+        else:
+            hazard_identification_photo_service.deactivate_photo(photo.id)
         self.refresh()
+        self._notify_editor_dirty()
 
     def _ensure_editable(self) -> bool:
         if self._identification_id is None:
@@ -234,10 +269,14 @@ class HazardIdentificationPhotosWidget(QWidget):
             self.table.blockSignals(False)
             return
 
-        rows = hazard_identification_photo_service.get_for_identification(
-            self._identification_id,
-            include_inactive=True,
-        )
+        store = self._store()
+        if store is not None:
+            rows = store.get_photos(include_inactive=True)
+        else:
+            rows = hazard_identification_photo_service.get_for_identification(
+                self._identification_id,
+                include_inactive=True,
+            )
         self.table.setRowCount(len(rows))
         selected_row = -1
         for row_index, photo in enumerate(rows):
@@ -245,7 +284,7 @@ class HazardIdentificationPhotosWidget(QWidget):
 
             thumb_item = QTableWidgetItem()
             thumb_item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
-            path = hazard_identification_photo_service.absolute_path(photo)
+            path = self._absolute_photo_path(photo)
             if path.is_file():
                 pixmap = QPixmap(str(path))
                 if not pixmap.isNull():
@@ -307,7 +346,7 @@ class HazardIdentificationPhotosWidget(QWidget):
             self.preview_note.setText("")
             return
 
-        path = hazard_identification_photo_service.absolute_path(photo)
+        path = self._absolute_photo_path(photo)
         if not path.is_file():
             self.preview_image.setPixmap(QPixmap())
             self.preview_image.setText(HAZARD_PHOTO_MISSING_FILE_MESSAGE)
@@ -336,4 +375,8 @@ class HazardIdentificationPhotosWidget(QWidget):
         id_item = self.table.item(selected[0].row(), PHOTO_COL_ID)
         if id_item is None:
             return None
-        return hazard_identification_photo_service.get_by_id(int(id_item.text()))
+        photo_id = int(id_item.text())
+        store = self._store()
+        if store is not None:
+            return store.get_photo(photo_id)
+        return hazard_identification_photo_service.get_by_id(photo_id)

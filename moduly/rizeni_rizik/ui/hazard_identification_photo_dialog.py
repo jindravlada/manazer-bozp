@@ -18,6 +18,9 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import create_save_cancel_box
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.rizeni_rizik.constants import HAZARD_PHOTO_DIALOG_TITLE
+from moduly.rizeni_rizik.sluzby.hazard_identification_working_copy import (
+    find_identification_working_copy,
+)
 from moduly.rizeni_rizik.sluzby.hazard_identification_photo_service import (
     HazardIdentificationPhotoError,
     hazard_identification_photo_service,
@@ -116,7 +119,32 @@ class HazardIdentificationPhotoDialog(QDialog):
             return
 
         try:
-            if self.photo is None:
+            store = find_identification_working_copy(self)
+            if store is not None:
+                if self.photo is None:
+                    if self._source_path is None:
+                        QMessageBox.warning(
+                            self,
+                            HAZARD_PHOTO_DIALOG_TITLE,
+                            "Vyberte soubor fotografie.",
+                        )
+                        return
+                    store.create_photo(
+                        source_path=self._source_path,
+                        caption=self.caption.text().strip(),
+                        note=self.note.toPlainText().strip(),
+                        taken_at=self.taken_at.get_date(),
+                        active=self.active_checkbox.isChecked(),
+                    )
+                else:
+                    store.update_photo(
+                        self.photo.id,
+                        caption=self.caption.text().strip(),
+                        note=self.note.toPlainText().strip(),
+                        taken_at=self.taken_at.get_date(),
+                        active=self.active_checkbox.isChecked(),
+                    )
+            elif self.photo is None:
                 if self._source_path is None:
                     QMessageBox.warning(
                         self,

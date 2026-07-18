@@ -17,6 +17,9 @@ from moduly.rizeni_rizik.constants import (
     INVENTORY_ITEM_DIALOG_TITLE,
     format_inventory_item_source_label,
 )
+from moduly.rizeni_rizik.sluzby.hazard_identification_working_copy import (
+    find_identification_working_copy,
+)
 from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import (
     HazardInventoryItemError,
     hazard_inventory_item_service,
@@ -101,8 +104,14 @@ class HazardInventoryItemDialog(QDialog):
             return
 
         data = self.get_data()
+        store = find_identification_working_copy(self)
         try:
-            if self.item is None:
+            if store is not None:
+                if self.item is None:
+                    store.create_item(**data)
+                else:
+                    store.update_item(self.item.id, **data)
+            elif self.item is None:
                 hazard_inventory_item_service.create_item(
                     hazard_identification_id=self.hazard_identification_id,
                     **data,

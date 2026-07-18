@@ -396,6 +396,13 @@ REQUIRED_MEASURE_COLUMN_COUNT = 4
 
 REQUIRED_MEASURE_TABLE_HEADERS = ["ID", "Opatření", "Poznámka", "Aktivní"]
 
+HAZARD_IDENTIFICATION_UNSAVED_PROMPT = "Máte neuložené změny. Co chcete udělat?"
+HAZARD_IDENTIFICATION_UNSAVED_SAVE = "Uložit"
+HAZARD_IDENTIFICATION_UNSAVED_DISCARD = "Zahodit"
+HAZARD_IDENTIFICATION_UNSAVED_STAY = "Zůstat"
+HAZARD_IDENTIFICATION_CANCEL_CONFIRM = "Zahodit všechny neuložené změny a zavřít editor?"
+HAZARD_IDENTIFICATION_SAVE_SUCCESS = "Změny byly uloženy."
+
 
 def format_inventory_item_display_name(
     name: str,

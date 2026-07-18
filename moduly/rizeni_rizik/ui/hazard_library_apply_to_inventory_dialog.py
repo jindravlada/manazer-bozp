@@ -25,6 +25,10 @@ from moduly.rizeni_rizik.constants_library import (
     HAZARD_LIBRARY_CATALOG_SOURCES_TITLE,
 )
 from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem
+from moduly.rizeni_rizik.sluzby.hazard_identification_working_copy import (
+    IdApplyResult,
+    find_identification_working_copy,
+)
 from moduly.rizeni_rizik.sluzby.hazard_library_template_apply_service import (
     HazardLibraryTemplateApplyError,
     HazardLibraryTemplateApplyResult,
@@ -46,10 +50,12 @@ class HazardLibraryApplyToInventoryDialog(QDialog):
         self.hazard_identification_id = hazard_identification_id
         # Zachováno kvůli volajícím; výchozí filtr je vždy „Všechny kategorie“.
         self.default_category = default_category
-        # Volitelná pracovní kopie identifikace (deferred-save) – jinak DB.
-        self._inventory_items = inventory_items
-        self.result: HazardLibraryTemplateApplyResult | None = None
-        self._empty_notified = False
+        store = find_identification_working_copy(self)
+        if store is not None:
+            self._inventory_items = store.get_items(include_inactive=True)
+        else:
+            self._inventory_items = inventory_items
+        self.result: HazardLibraryTemplateApplyResult | IdApplyResult | None = None
 
         self.setWindowTitle(HAZARD_LIBRARY_APPLY_TO_INVENTORY_DIALOG_TITLE)
         self.resize(720, 520)
@@ -104,6 +110,10 @@ class HazardLibraryApplyToInventoryDialog(QDialog):
 
     def _reload_sources(self) -> None:
         """Při otevření / změně filtru načte aktuální katalog z DB."""
+        store = find_identification_working_copy(self)
+        if store is not None:
+            self._inventory_items = store.get_items(include_inactive=True)
+
         groups = hazard_library_template_apply_service.get_template_groups(
             operation_id=None,
             category=None,
@@ -131,14 +141,6 @@ class HazardLibraryApplyToInventoryDialog(QDialog):
                 total=total,
             ),
         )
-
-        if total == 0 and not self._empty_notified:
-            self._empty_notified = True
-            QMessageBox.information(
-                self,
-                HAZARD_LIBRARY_APPLY_TO_INVENTORY_DIALOG_TITLE,
-                "V katalogu nejsou k dispozici žádné zdroje rizika.",
-            )
 
     def _populate_list(self, list_widget: QListWidget, templates) -> None:
         list_widget.clear()
@@ -169,11 +171,18 @@ class HazardLibraryApplyToInventoryDialog(QDialog):
             return
 
         try:
-            self.result = hazard_library_template_apply_service.apply_template(
-                hazard_identification_id=self.hazard_identification_id,
-                template_id=template_id,
-                include_inactive=self.include_inactive.isChecked(),
-            )
+            store = find_identification_working_copy(self)
+            if store is not None:
+                self.result = store.apply_from_template(
+                    template_id,
+                    include_inactive=self.include_inactive.isChecked(),
+                )
+            else:
+                self.result = hazard_library_template_apply_service.apply_template(
+                    hazard_identification_id=self.hazard_identification_id,
+                    template_id=template_id,
+                    include_inactive=self.include_inactive.isChecked(),
+                )
         except HazardLibraryTemplateApplyError as error:
             QMessageBox.warning(
                 self,

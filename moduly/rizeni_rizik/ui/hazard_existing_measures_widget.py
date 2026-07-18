@@ -22,6 +22,10 @@ from moduly.rizeni_rizik.constants import (
     EXISTING_MEASURES_TITLE,
     HAZARD_EXISTING_MEASURE_DIALOG_TITLE,
 )
+from moduly.nastaveni.sluzby.exposed_group_service import exposed_group_service
+from moduly.rizeni_rizik.sluzby.hazard_identification_working_copy import (
+    find_identification_working_copy,
+)
 from moduly.rizeni_rizik.sluzby.hazard_existing_measure_service import (
     HazardExistingMeasureError,
     hazard_existing_measure_service,
@@ -84,6 +88,36 @@ class HazardExistingMeasuresWidget(QWidget):
 
         self.set_assessment(None, identification_id=None, read_only=False)
 
+    def _store(self):
+        return find_identification_working_copy(self)
+
+    def _notify_editor_dirty(self) -> None:
+        window = self.window()
+        update = getattr(window, "_update_save_enabled", None)
+        if callable(update):
+            update()
+
+    def _assessment_header_text(self) -> str:
+        store = self._store()
+        if store is not None and self._assessment is not None:
+            wc_assessment = store.get_assessment(self._assessment.id)
+            if wc_assessment is not None:
+                names = [
+                    exposed_group_service.display_name(group_id) or f"#{group_id}"
+                    for group_id in wc_assessment.exposed_group_ids
+                ]
+                if not names and wc_assessment.exposed_group_id:
+                    names = [
+                        exposed_group_service.display_name(wc_assessment.exposed_group_id)
+                        or f"#{wc_assessment.exposed_group_id}",
+                    ]
+                if names:
+                    return ", ".join(names)
+                if wc_assessment.exposed_group:
+                    return wc_assessment.exposed_group
+                return "—"
+        return hazard_risk_assessment_service.get_exposed_group_display_name(self._assessment)
+
     def set_assessment(
         self,
         assessment,
@@ -109,9 +143,7 @@ class HazardExistingMeasuresWidget(QWidget):
             self.table.setRowCount(0)
             return
 
-        self.header_label.setText(
-            hazard_risk_assessment_service.get_exposed_group_display_name(self._assessment)
-        )
+        self.header_label.setText(self._assessment_header_text())
         self._load_table()
 
     def add_measure(self) -> None:
@@ -166,8 +198,12 @@ class HazardExistingMeasuresWidget(QWidget):
             )
             return
 
+        store = self._store()
         try:
-            hazard_existing_measure_service.activate_measure(measure.id)
+            if store is not None:
+                store.activate_existing_measure(measure.id)
+            else:
+                hazard_existing_measure_service.activate_measure(measure.id)
         except HazardExistingMeasureError as error:
             QMessageBox.warning(self, HAZARD_EXISTING_MEASURE_DIALOG_TITLE, str(error))
             return
@@ -193,13 +229,18 @@ class HazardExistingMeasuresWidget(QWidget):
             )
             return
 
-        hazard_existing_measure_service.deactivate_measure(measure.id)
+        store = self._store()
+        if store is not None:
+            store.deactivate_existing_measure(measure.id)
+        else:
+            hazard_existing_measure_service.deactivate_measure(measure.id)
         self._notify_changed()
 
     def _notify_changed(self) -> None:
         self.refresh()
         if self._on_changed is not None:
             self._on_changed()
+        self._notify_editor_dirty()
 
     def _ensure_editable(self) -> bool:
         if self._identification_id is None or self._assessment is None:
@@ -224,10 +265,17 @@ class HazardExistingMeasuresWidget(QWidget):
         if self._assessment is None:
             return
 
-        measures = hazard_existing_measure_service.get_for_assessment(
-            self._assessment.id,
-            include_inactive=True,
-        )
+        store = self._store()
+        if store is not None:
+            measures = store.get_existing_measures_for_assessment(
+                self._assessment.id,
+                include_inactive=True,
+            )
+        else:
+            measures = hazard_existing_measure_service.get_for_assessment(
+                self._assessment.id,
+                include_inactive=True,
+            )
         self.table.setRowCount(len(measures))
         for row_index, measure in enumerate(measures):
             self.table.setItem(
@@ -259,4 +307,14 @@ class HazardExistingMeasuresWidget(QWidget):
         id_item = self.table.item(selected[0].row(), EXISTING_MEASURE_COL_ID)
         if id_item is None:
             return None
-        return hazard_existing_measure_service.get_by_id(int(id_item.text()))
+        measure_id = int(id_item.text())
+        store = self._store()
+        if store is not None:
+            for measure in store.get_existing_measures_for_assessment(
+                self._assessment.id,
+                include_inactive=True,
+            ):
+                if measure.id == measure_id:
+                    return measure
+            return None
+        return hazard_existing_measure_service.get_by_id(measure_id)

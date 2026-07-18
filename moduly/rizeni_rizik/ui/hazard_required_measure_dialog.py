@@ -10,6 +10,9 @@ from PySide6.QtWidgets import (
 
 from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.rizeni_rizik.constants import HAZARD_REQUIRED_MEASURE_DIALOG_TITLE
+from moduly.rizeni_rizik.sluzby.hazard_identification_working_copy import (
+    find_identification_working_copy,
+)
 from moduly.rizeni_rizik.sluzby.hazard_required_measure_service import (
     HazardRequiredMeasureError,
     hazard_required_measure_service,
@@ -74,8 +77,21 @@ class HazardRequiredMeasureDialog(QDialog):
             return
 
         data = self.get_data()
+        store = find_identification_working_copy(self)
         try:
-            if self.required_measure is None:
+            if store is not None:
+                if self.required_measure is None:
+                    store.create_required_measure(
+                        hazard_risk_assessment_id=self.hazard_risk_assessment_id,
+                        **data,
+                    )
+                else:
+                    store.update_required_measure(
+                        self.required_measure.id,
+                        hazard_risk_assessment_id=self.hazard_risk_assessment_id,
+                        **data,
+                    )
+            elif self.required_measure is None:
                 hazard_required_measure_service.create_measure(
                     hazard_identification_id=self.hazard_identification_id,
                     hazard_risk_assessment_id=self.hazard_risk_assessment_id,

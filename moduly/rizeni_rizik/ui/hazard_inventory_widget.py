@@ -57,6 +57,9 @@ from moduly.rizeni_rizik.constants_library import (
     HAZARD_LIBRARY_SAVE_INACTIVE_ITEM_MESSAGE,
     HAZARD_LIBRARY_SAVE_TO_LIBRARY_BUTTON,
 )
+from moduly.rizeni_rizik.sluzby.hazard_identification_working_copy import (
+    find_identification_working_copy,
+)
 from moduly.rizeni_rizik.sluzby.hazard_catalog_instance_update_service import (
     HazardCatalogInstanceUpdateError,
     hazard_catalog_instance_update_service,
@@ -210,6 +213,15 @@ class HazardInventoryWidget(QWidget):
         self._populate_categories()
         self.set_identification(None, read_only=False, identification_status="")
 
+    def _store(self):
+        return find_identification_working_copy(self)
+
+    def _notify_editor_dirty(self) -> None:
+        window = self.window()
+        update = getattr(window, "_update_save_enabled", None)
+        if callable(update):
+            update()
+
     def set_identification(
         self,
         identification_id: int | None,
@@ -248,6 +260,7 @@ class HazardInventoryWidget(QWidget):
         )
         if dialog.exec():
             self.refresh()
+            self._notify_editor_dirty()
 
     def apply_from_library(self) -> None:
         if not self._ensure_editable():
@@ -274,6 +287,11 @@ class HazardInventoryWidget(QWidget):
             self,
             hazard_identification_id=self._identification_id,
             default_category=self._current_category,
+            inventory_items=(
+                store.get_items(include_inactive=True)
+                if (store := self._store()) is not None
+                else None
+            ),
         )
         if not dialog.exec() or dialog.result is None:
             return
@@ -300,6 +318,7 @@ class HazardInventoryWidget(QWidget):
         message.exec()
         self._notify_event_saved()
         self.refresh()
+        self._notify_editor_dirty()
 
     def edit_selected_item(self) -> None:
         item = self._selected_item()
@@ -315,6 +334,7 @@ class HazardInventoryWidget(QWidget):
         )
         if dialog.exec():
             self.refresh()
+            self._notify_editor_dirty()
 
     def activate_selected_item(self) -> None:
         if not self._ensure_editable():
@@ -330,12 +350,17 @@ class HazardInventoryWidget(QWidget):
 
         from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import HazardInventoryItemError
 
+        store = self._store()
         try:
-            hazard_inventory_item_service.activate_item(item.id)
+            if store is not None:
+                store.activate_item(item.id)
+            else:
+                hazard_inventory_item_service.activate_item(item.id)
         except HazardInventoryItemError as error:
             QMessageBox.warning(self, INVENTORY_ITEM_DIALOG_TITLE, str(error))
             return
         self.refresh()
+        self._notify_editor_dirty()
 
     def deactivate_selected_item(self) -> None:
         if not self._ensure_editable():
@@ -349,8 +374,13 @@ class HazardInventoryWidget(QWidget):
             QMessageBox.information(self, INVENTORY_ITEM_DIALOG_TITLE, "Položka je již neaktivní.")
             return
 
-        hazard_inventory_item_service.deactivate_item(item.id)
+        store = self._store()
+        if store is not None:
+            store.deactivate_item(item.id)
+        else:
+            hazard_inventory_item_service.deactivate_item(item.id)
         self.refresh()
+        self._notify_editor_dirty()
 
     def save_selected_item_to_library(self) -> None:
         if self._identification_id is None:
@@ -512,6 +542,7 @@ class HazardInventoryWidget(QWidget):
         if dialog.exec():
             self._notify_event_saved()
             self.refresh()
+            self._notify_editor_dirty()
 
     def edit_selected_event(self) -> None:
         event = self._selected_event()
@@ -532,6 +563,7 @@ class HazardInventoryWidget(QWidget):
         if dialog.exec():
             self._notify_event_saved()
             self.refresh()
+            self._notify_editor_dirty()
 
     def activate_selected_event(self) -> None:
         if not self._ensure_editable():
@@ -553,13 +585,18 @@ class HazardInventoryWidget(QWidget):
             )
             return
 
+        store = self._store()
         try:
-            hazard_event_service.activate_event(event.id)
+            if store is not None:
+                store.activate_event(event.id)
+            else:
+                hazard_event_service.activate_event(event.id)
         except HazardEventError as error:
             QMessageBox.warning(self, HAZARD_EVENT_DIALOG_TITLE, str(error))
             return
         self._notify_event_saved()
         self.refresh()
+        self._notify_editor_dirty()
 
     def deactivate_selected_event(self) -> None:
         if not self._ensure_editable():
@@ -581,9 +618,14 @@ class HazardInventoryWidget(QWidget):
             )
             return
 
-        hazard_event_service.deactivate_event(event.id)
+        store = self._store()
+        if store is not None:
+            store.deactivate_event(event.id)
+        else:
+            hazard_event_service.deactivate_event(event.id)
         self._notify_event_saved()
         self.refresh()
+        self._notify_editor_dirty()
 
     def _notify_event_saved(self) -> None:
         if self._on_event_saved is not None:
@@ -654,11 +696,15 @@ class HazardInventoryWidget(QWidget):
         self.compare_with_master_btn.setEnabled(enabled)
 
     def _populate_categories(self) -> None:
-        counts = (
-            hazard_inventory_item_service.count_active_by_category(self._identification_id)
-            if self._identification_id is not None
-            else {category: 0 for category in HAZARD_INVENTORY_CATEGORIES}
-        )
+        store = self._store()
+        if store is not None:
+            counts = store.count_active_by_category()
+        elif self._identification_id is not None:
+            counts = hazard_inventory_item_service.count_active_by_category(
+                self._identification_id,
+            )
+        else:
+            counts = {category: 0 for category in HAZARD_INVENTORY_CATEGORIES}
 
         selected_category = self._current_category
         self.category_list.blockSignals(True)
@@ -681,14 +727,22 @@ class HazardInventoryWidget(QWidget):
             self._update_event_actions_for_selection()
             return
 
-        event_counts = hazard_event_service.count_active_by_inventory_items(
-            self._identification_id
-        )
-        items = hazard_inventory_item_service.get_by_category(
-            self._identification_id,
-            self._current_category,
-            include_inactive=True,
-        )
+        store = self._store()
+        if store is not None:
+            event_counts = store.count_active_by_inventory_items()
+            items = store.get_items(
+                category=self._current_category,
+                include_inactive=True,
+            )
+        else:
+            event_counts = hazard_event_service.count_active_by_inventory_items(
+                self._identification_id,
+            )
+            items = hazard_inventory_item_service.get_by_category(
+                self._identification_id,
+                self._current_category,
+                include_inactive=True,
+            )
         self.table.setRowCount(len(items))
         selected_row = -1
         for row, item in enumerate(items):
@@ -731,13 +785,21 @@ class HazardInventoryWidget(QWidget):
             self._update_event_actions_for_selection()
             return
 
-        assessment_counts = hazard_risk_assessment_service.count_active_by_events(
-            self._identification_id
-        )
-        events = hazard_event_service.get_for_inventory_item(
-            self._selected_item_id,
-            include_inactive=True,
-        )
+        store = self._store()
+        if store is not None:
+            assessment_counts = store.count_active_by_events()
+            events = store.get_events_for_item(
+                self._selected_item_id,
+                include_inactive=True,
+            )
+        else:
+            assessment_counts = hazard_risk_assessment_service.count_active_by_events(
+                self._identification_id,
+            )
+            events = hazard_event_service.get_for_inventory_item(
+                self._selected_item_id,
+                include_inactive=True,
+            )
         self.events_table.setRowCount(len(events))
         selected_row = -1
         for row_index, event in enumerate(events):
@@ -814,7 +876,11 @@ class HazardInventoryWidget(QWidget):
         id_item = self.table.item(selected[0].row(), INVENTORY_COL_ID)
         if id_item is None:
             return None
-        return hazard_inventory_item_service.get_by_id(int(id_item.text()))
+        item_id = int(id_item.text())
+        store = self._store()
+        if store is not None:
+            return store.get_item(item_id)
+        return hazard_inventory_item_service.get_by_id(item_id)
 
     def _selected_event(self):
         selected = self.events_table.selectionModel().selectedRows()
@@ -823,4 +889,8 @@ class HazardInventoryWidget(QWidget):
         id_item = self.events_table.item(selected[0].row(), ITEM_EVENT_COL_ID)
         if id_item is None:
             return None
-        return hazard_event_service.get_by_id(int(id_item.text()))
+        event_id = int(id_item.text())
+        store = self._store()
+        if store is not None:
+            return store.get_event(event_id)
+        return hazard_event_service.get_by_id(event_id)

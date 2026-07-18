@@ -27,6 +27,9 @@ from moduly.rizeni_rizik.constants import (
     RISK_SEVERITY_DESCRIPTIONS,
     RISK_SEVERITY_LABELS,
 )
+from moduly.rizeni_rizik.sluzby.hazard_identification_working_copy import (
+    find_identification_working_copy,
+)
 from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import (
     HazardRiskAssessmentError,
     hazard_risk_assessment_service,
@@ -101,9 +104,16 @@ class HazardRiskAssessmentDialog(QDialog):
             index = self.event.findData(assessment.hazard_event_id)
             if index >= 0:
                 self.event.setCurrentIndex(index)
-            group_ids = hazard_risk_assessment_service.get_group_ids(assessment.id)
-            if not group_ids and assessment.exposed_group_id:
-                group_ids = [assessment.exposed_group_id]
+            store = find_identification_working_copy(self)
+            if store is not None:
+                wc_assessment = store.get_assessment(assessment.id)
+                group_ids = list(wc_assessment.exposed_group_ids) if wc_assessment else []
+                if not group_ids and wc_assessment and wc_assessment.exposed_group_id:
+                    group_ids = [wc_assessment.exposed_group_id]
+            else:
+                group_ids = hazard_risk_assessment_service.get_group_ids(assessment.id)
+                if not group_ids and assessment.exposed_group_id:
+                    group_ids = [assessment.exposed_group_id]
             self.exposed_groups.set_group_ids(group_ids)
             severity_index = self.severity.findData(assessment.severity)
             if severity_index >= 0:
@@ -144,13 +154,20 @@ class HazardRiskAssessmentDialog(QDialog):
         self.exposed_groups.reload(preserve_ids=selected_ids)
 
     def _populate_events(self, default_hazard_event_id: int | None) -> None:
-        rows = hazard_risk_assessment_service.get_event_candidates(
-            self.hazard_identification_id
-        )
+        store = find_identification_working_copy(self)
         self.event.clear()
-        for row in rows:
-            label = f"{row.event.name} ({row.inventory_item_name})"
-            self.event.addItem(label, row.event.id)
+        if store is not None:
+            for item in store.get_items(include_inactive=False):
+                for event in store.get_events_for_item(item.id, include_inactive=False):
+                    label = f"{event.name} ({item.name})"
+                    self.event.addItem(label, event.id)
+        else:
+            rows = hazard_risk_assessment_service.get_event_candidates(
+                self.hazard_identification_id,
+            )
+            for row in rows:
+                label = f"{row.event.name} ({row.inventory_item_name})"
+                self.event.addItem(label, row.event.id)
 
         if default_hazard_event_id is not None:
             index = self.event.findData(default_hazard_event_id)
@@ -212,7 +229,13 @@ class HazardRiskAssessmentDialog(QDialog):
                 return
 
         try:
-            if self.risk_assessment is None:
+            store = find_identification_working_copy(self)
+            if store is not None:
+                if self.risk_assessment is None:
+                    store.create_assessment(**data)
+                else:
+                    store.update_assessment(self.risk_assessment.id, **data)
+            elif self.risk_assessment is None:
                 hazard_risk_assessment_service.create_assessment(
                     hazard_identification_id=self.hazard_identification_id,
                     **data,

@@ -15,6 +15,9 @@ from moduly.rizeni_rizik.constants import (
     HAZARD_EVENT_DIALOG_TITLE,
     HAZARD_INVENTORY_CATEGORY_LABELS,
 )
+from moduly.rizeni_rizik.sluzby.hazard_identification_working_copy import (
+    find_identification_working_copy,
+)
 from moduly.rizeni_rizik.sluzby.hazard_event_service import (
     HazardEventError,
     hazard_event_service,
@@ -85,9 +88,13 @@ class HazardEventDialog(QDialog):
             buttons.button(QDialogButtonBox.StandardButton.Save).setEnabled(False)
 
     def _populate_inventory_items(self, default_inventory_item_id: int | None) -> None:
-        items = hazard_event_service.get_inventory_item_candidates(
-            self.hazard_identification_id
-        )
+        store = find_identification_working_copy(self)
+        if store is not None:
+            items = store.get_items(include_inactive=False)
+        else:
+            items = hazard_event_service.get_inventory_item_candidates(
+                self.hazard_identification_id,
+            )
         self.inventory_item.clear()
         for item in items:
             category_label = HAZARD_INVENTORY_CATEGORY_LABELS.get(
@@ -108,8 +115,14 @@ class HazardEventDialog(QDialog):
             return
 
         data = self.get_data()
+        store = find_identification_working_copy(self)
         try:
-            if self.hazard_event is None:
+            if store is not None:
+                if self.hazard_event is None:
+                    store.create_event(**data)
+                else:
+                    store.update_event(self.hazard_event.id, **data)
+            elif self.hazard_event is None:
                 hazard_event_service.create_event(
                     hazard_identification_id=self.hazard_identification_id,
                     **data,

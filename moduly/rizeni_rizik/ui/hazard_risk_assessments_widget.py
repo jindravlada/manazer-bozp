@@ -26,6 +26,9 @@ from moduly.rizeni_rizik.constants import (
     format_risk_assessment_completed_at,
     format_risk_assessment_display_name,
 )
+from moduly.rizeni_rizik.sluzby.hazard_identification_working_copy import (
+    find_identification_working_copy,
+)
 from moduly.rizeni_rizik.sluzby.hazard_existing_measure_service import (
     hazard_existing_measure_service,
 )
@@ -101,6 +104,36 @@ class HazardRiskAssessmentsWidget(QWidget):
 
         self.set_identification(None, read_only=False)
 
+    def _store(self):
+        return find_identification_working_copy(self)
+
+    def _notify_editor_dirty(self) -> None:
+        window = self.window()
+        update = getattr(window, "_update_save_enabled", None)
+        if callable(update):
+            update()
+
+    def _count_active_measures(self, *, existing: bool) -> dict[int, int]:
+        store = self._store()
+        if store is None:
+            service = (
+                hazard_existing_measure_service
+                if existing
+                else hazard_required_measure_service
+            )
+            return service.count_active_by_assessments(self._identification_id)
+        counts: dict[int, int] = {}
+        for item in store.items:
+            for event in item.events:
+                for assessment in event.assessments:
+                    bucket = (
+                        assessment.existing_measures
+                        if existing
+                        else assessment.required_measures
+                    )
+                    counts[assessment.id] = sum(1 for measure in bucket if measure.active)
+        return counts
+
     def set_identification(
         self,
         identification_id: int | None,
@@ -142,6 +175,7 @@ class HazardRiskAssessmentsWidget(QWidget):
         )
         if dialog.exec():
             self.refresh()
+            self._notify_editor_dirty()
             return True
         return False
 
@@ -163,6 +197,7 @@ class HazardRiskAssessmentsWidget(QWidget):
         )
         if dialog.exec():
             self.refresh()
+            self._notify_editor_dirty()
 
     def activate_selected_assessment(self) -> None:
         if not self._ensure_editable():
@@ -184,12 +219,17 @@ class HazardRiskAssessmentsWidget(QWidget):
             )
             return
 
+        store = self._store()
         try:
-            hazard_risk_assessment_service.activate_assessment(assessment.id)
+            if store is not None:
+                store.activate_assessment(assessment.id)
+            else:
+                hazard_risk_assessment_service.activate_assessment(assessment.id)
         except HazardRiskAssessmentError as error:
             QMessageBox.warning(self, HAZARD_RISK_ASSESSMENT_DIALOG_TITLE, str(error))
             return
         self.refresh()
+        self._notify_editor_dirty()
 
     def deactivate_selected_assessment(self) -> None:
         if not self._ensure_editable():
@@ -211,14 +251,21 @@ class HazardRiskAssessmentsWidget(QWidget):
             )
             return
 
-        hazard_risk_assessment_service.deactivate_assessment(assessment.id)
+        store = self._store()
+        if store is not None:
+            store.deactivate_assessment(assessment.id)
+        else:
+            hazard_risk_assessment_service.deactivate_assessment(assessment.id)
         self.refresh()
+        self._notify_editor_dirty()
 
     def _on_existing_measures_changed(self) -> None:
         self._load_table()
+        self._notify_editor_dirty()
 
     def _on_required_measures_changed(self) -> None:
         self._load_table()
+        self._notify_editor_dirty()
 
     def _on_selection_changed(self) -> None:
         assessment = self._selected_assessment()
@@ -228,7 +275,16 @@ class HazardRiskAssessmentsWidget(QWidget):
     def _sync_measures_selection(self) -> None:
         assessment = None
         if self._selected_assessment_id is not None:
-            assessment = hazard_risk_assessment_service.get_by_id(self._selected_assessment_id)
+            store = self._store()
+            if store is not None:
+                for row in store.list_assessment_rows(include_inactive=True):
+                    if row.assessment.id == self._selected_assessment_id:
+                        assessment = row.assessment
+                        break
+            else:
+                assessment = hazard_risk_assessment_service.get_by_id(
+                    self._selected_assessment_id,
+                )
         self.existing_measures_widget.set_assessment(
             assessment,
             identification_id=self._identification_id,
@@ -271,16 +327,16 @@ class HazardRiskAssessmentsWidget(QWidget):
             return
 
         self._update_summary()
-        existing_measure_counts = hazard_existing_measure_service.count_active_by_assessments(
-            self._identification_id
-        )
-        required_measure_counts = hazard_required_measure_service.count_active_by_assessments(
-            self._identification_id
-        )
-        rows = hazard_risk_assessment_service.get_for_identification(
-            self._identification_id,
-            include_inactive=True,
-        )
+        existing_measure_counts = self._count_active_measures(existing=True)
+        required_measure_counts = self._count_active_measures(existing=False)
+        store = self._store()
+        if store is not None:
+            rows = store.list_assessment_rows(include_inactive=True)
+        else:
+            rows = hazard_risk_assessment_service.get_for_identification(
+                self._identification_id,
+                include_inactive=True,
+            )
         self.table.setRowCount(len(rows))
         selected_row = -1
         for row_index, row in enumerate(rows):
@@ -340,9 +396,13 @@ class HazardRiskAssessmentsWidget(QWidget):
         self.table.blockSignals(False)
 
     def _update_summary(self) -> None:
-        summary = hazard_risk_assessment_service.get_active_status_summary(
-            self._identification_id
-        )
+        store = self._store()
+        if store is not None:
+            summary = store.get_active_status_summary()
+        else:
+            summary = hazard_risk_assessment_service.get_active_status_summary(
+                self._identification_id,
+            )
         self.summary_label.setText(
             f"Posouzení celkem: {summary['total']} | "
             f"Rozpracovaná: {summary['draft']} | "
@@ -356,4 +416,11 @@ class HazardRiskAssessmentsWidget(QWidget):
         id_item = self.table.item(selected[0].row(), RISK_ASSESSMENT_COL_ID)
         if id_item is None:
             return None
-        return hazard_risk_assessment_service.get_by_id(int(id_item.text()))
+        assessment_id = int(id_item.text())
+        store = self._store()
+        if store is not None:
+            for row in store.list_assessment_rows(include_inactive=True):
+                if row.assessment.id == assessment_id:
+                    return row.assessment
+            return None
+        return hazard_risk_assessment_service.get_by_id(assessment_id)
