@@ -18,6 +18,7 @@ from .typed_table_sort import (
     create_typed_item,
     enable_typed_sorting,
     set_typed_sort_value,
+    sorting_paused,
     typed_bool,
     typed_date,
     typed_datetime,

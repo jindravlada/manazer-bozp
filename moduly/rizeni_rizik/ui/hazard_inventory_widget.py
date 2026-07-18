@@ -9,12 +9,21 @@ from PySide6.QtWidgets import (
     QPushButton,
     QSplitter,
     QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
-from core.widgets.table_utils import configure_table_columns, create_preview_table_item
+from core.widgets.table_utils import configure_table_columns
+from core.widgets.text_preview import DEFAULT_TEXT_PREVIEW_LENGTH, truncate_text_preview
+from core.widgets.info_tooltip import set_widget_tooltip
+from core.widgets.typed_table_sort import (
+    create_typed_item,
+    enable_typed_sorting,
+    sorting_paused,
+    typed_bool,
+    typed_int,
+    typed_text,
+)
 from moduly.rizeni_rizik.constants import (
     HAZARD_EVENT_DIALOG_TITLE,
     INVENTORY_ADD_NEW_BUTTON,
@@ -150,6 +159,7 @@ class HazardInventoryWidget(QWidget):
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setAlternatingRowColors(True)
         configure_table_columns(self.table, "hazard_inventory_items")
+        enable_typed_sorting(self.table)
         right_splitter.addWidget(self.table)
 
         events_panel = QWidget()
@@ -178,6 +188,7 @@ class HazardInventoryWidget(QWidget):
         self.events_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.events_table.setAlternatingRowColors(True)
         configure_table_columns(self.events_table, "hazard_inventory_item_events")
+        enable_typed_sorting(self.events_table)
         events_layout.addWidget(self.events_table, 1)
 
         right_splitter.addWidget(events_panel)
@@ -747,53 +758,85 @@ class HazardInventoryWidget(QWidget):
 
     def _load_table(self) -> None:
         self.table.blockSignals(True)
-        self.table.setRowCount(0)
-        if self._identification_id is None:
-            self.table.blockSignals(False)
-            self._update_event_actions_for_selection()
-            return
+        keep_item_id = self._selected_item_id
+        with sorting_paused(self.table):
+            self.table.setRowCount(0)
+            if self._identification_id is None:
+                self.table.blockSignals(False)
+                self._update_event_actions_for_selection()
+                return
 
-        store = self._store()
-        if store is not None:
-            event_counts = store.count_active_by_inventory_items()
-            items = store.get_items(
-                category=self._current_category,
-                include_inactive=True,
-            )
-        else:
-            event_counts = hazard_event_service.count_active_by_inventory_items(
-                self._identification_id,
-            )
-            items = hazard_inventory_item_service.get_by_category(
-                self._identification_id,
-                self._current_category,
-                include_inactive=True,
-            )
-        self.table.setRowCount(len(items))
-        selected_row = -1
-        for row, item in enumerate(items):
-            self.table.setItem(row, INVENTORY_COL_ID, QTableWidgetItem(str(item.id)))
-            display_name = format_inventory_item_display_name(
-                item.name,
-                event_count=event_counts.get(item.id, 0),
-            )
-            self.table.setItem(row, INVENTORY_COL_NAME, QTableWidgetItem(display_name))
-            self.table.setItem(
-                row,
-                INVENTORY_COL_DESCRIPTION,
-                create_preview_table_item(item.description),
-            )
-            self.table.setItem(
-                row,
-                INVENTORY_COL_ACTIVE,
-                QTableWidgetItem("Ano" if item.active else "Ne"),
-            )
-            if self._selected_item_id == item.id:
-                selected_row = row
+            store = self._store()
+            if store is not None:
+                event_counts = store.count_active_by_inventory_items()
+                items = store.get_items(
+                    category=self._current_category,
+                    include_inactive=True,
+                )
+            else:
+                event_counts = hazard_event_service.count_active_by_inventory_items(
+                    self._identification_id,
+                )
+                items = hazard_inventory_item_service.get_by_category(
+                    self._identification_id,
+                    self._current_category,
+                    include_inactive=True,
+                )
+            self.table.setRowCount(len(items))
+            for row, item in enumerate(items):
+                record_id = int(item.id)
+                self.table.setItem(
+                    row,
+                    INVENTORY_COL_ID,
+                    create_typed_item(
+                        str(record_id),
+                        typed_int(record_id),
+                        stable_id=record_id,
+                    ),
+                )
+                display_name = format_inventory_item_display_name(
+                    item.name,
+                    event_count=event_counts.get(item.id, 0),
+                )
+                self.table.setItem(
+                    row,
+                    INVENTORY_COL_NAME,
+                    create_typed_item(
+                        display_name,
+                        typed_text(item.name),
+                        stable_id=record_id,
+                    ),
+                )
+                description = item.description or ""
+                description_item = create_typed_item(
+                    truncate_text_preview(
+                        description,
+                        max_length=DEFAULT_TEXT_PREVIEW_LENGTH,
+                    ),
+                    typed_text(description),
+                    stable_id=record_id,
+                )
+                if description.strip():
+                    set_widget_tooltip(description_item, description)
+                self.table.setItem(row, INVENTORY_COL_DESCRIPTION, description_item)
+                self.table.setItem(
+                    row,
+                    INVENTORY_COL_ACTIVE,
+                    create_typed_item(
+                        "Ano" if item.active else "Ne",
+                        typed_bool(item.active),
+                        stable_id=record_id,
+                    ),
+                )
 
         configure_table_columns(self.table, "hazard_inventory_items")
-        if selected_row >= 0:
-            self.table.selectRow(selected_row)
+        if keep_item_id is not None:
+            selected_row = self._find_row_by_id(self.table, INVENTORY_COL_ID, keep_item_id)
+            if selected_row >= 0:
+                self.table.selectRow(selected_row)
+            else:
+                self._selected_item_id = None
+                self._selected_event_id = None
         else:
             self._selected_item_id = None
             self._selected_event_id = None
@@ -803,59 +846,86 @@ class HazardInventoryWidget(QWidget):
 
     def _load_events_table(self) -> None:
         self.events_table.blockSignals(True)
-        self.events_table.setRowCount(0)
+        keep_event_id = self._selected_event_id
+        with sorting_paused(self.events_table):
+            self.events_table.setRowCount(0)
 
-        if self._identification_id is None or self._selected_item_id is None:
-            self.events_table.blockSignals(False)
-            self._update_event_actions_for_selection()
-            return
+            if self._identification_id is None or self._selected_item_id is None:
+                self.events_table.blockSignals(False)
+                self._update_event_actions_for_selection()
+                return
 
-        store = self._store()
-        if store is not None:
-            assessment_counts = store.count_active_by_events()
-            events = store.get_events_for_item(
-                self._selected_item_id,
-                include_inactive=True,
-            )
-        else:
-            assessment_counts = hazard_risk_assessment_service.count_active_by_events(
-                self._identification_id,
-            )
-            events = hazard_event_service.get_for_inventory_item(
-                self._selected_item_id,
-                include_inactive=True,
-            )
-        self.events_table.setRowCount(len(events))
-        selected_row = -1
-        for row_index, event in enumerate(events):
-            self.events_table.setItem(
-                row_index,
-                ITEM_EVENT_COL_ID,
-                QTableWidgetItem(str(event.id)),
-            )
-            display_name = format_event_display_name(
-                event.name,
-                assessment_count=assessment_counts.get(event.id, 0),
-            )
-            self.events_table.setItem(
-                row_index,
-                ITEM_EVENT_COL_NAME,
-                QTableWidgetItem(display_name),
-            )
-            self.events_table.setItem(
-                row_index,
-                ITEM_EVENT_COL_ACTIVE,
-                QTableWidgetItem("Ano" if event.active else "Ne"),
-            )
-            if self._selected_event_id == event.id:
-                selected_row = row_index
+            store = self._store()
+            if store is not None:
+                assessment_counts = store.count_active_by_events()
+                events = store.get_events_for_item(
+                    self._selected_item_id,
+                    include_inactive=True,
+                )
+            else:
+                assessment_counts = hazard_risk_assessment_service.count_active_by_events(
+                    self._identification_id,
+                )
+                events = hazard_event_service.get_for_inventory_item(
+                    self._selected_item_id,
+                    include_inactive=True,
+                )
+            self.events_table.setRowCount(len(events))
+            for row_index, event in enumerate(events):
+                record_id = int(event.id)
+                self.events_table.setItem(
+                    row_index,
+                    ITEM_EVENT_COL_ID,
+                    create_typed_item(
+                        str(record_id),
+                        typed_int(record_id),
+                        stable_id=record_id,
+                    ),
+                )
+                display_name = format_event_display_name(
+                    event.name,
+                    assessment_count=assessment_counts.get(event.id, 0),
+                )
+                self.events_table.setItem(
+                    row_index,
+                    ITEM_EVENT_COL_NAME,
+                    create_typed_item(
+                        display_name,
+                        typed_text(event.name),
+                        stable_id=record_id,
+                    ),
+                )
+                self.events_table.setItem(
+                    row_index,
+                    ITEM_EVENT_COL_ACTIVE,
+                    create_typed_item(
+                        "Ano" if event.active else "Ne",
+                        typed_bool(event.active),
+                        stable_id=record_id,
+                    ),
+                )
 
         configure_table_columns(self.events_table, "hazard_inventory_item_events")
-        if selected_row >= 0:
-            self.events_table.selectRow(selected_row)
+        if keep_event_id is not None:
+            selected_row = self._find_row_by_id(
+                self.events_table,
+                ITEM_EVENT_COL_ID,
+                keep_event_id,
+            )
+            if selected_row >= 0:
+                self.events_table.selectRow(selected_row)
+            else:
+                self._selected_event_id = None
         else:
             self._selected_event_id = None
         self.events_table.blockSignals(False)
+
+    def _find_row_by_id(self, table: QTableWidget, id_column: int, record_id: int) -> int:
+        for row in range(table.rowCount()):
+            id_item = table.item(row, id_column)
+            if id_item is not None and int(id_item.text()) == record_id:
+                return row
+        return -1
 
     def _update_event_actions_for_selection(self) -> None:
         editable = (

@@ -3,7 +3,6 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
@@ -11,6 +10,14 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
+from core.widgets.typed_table_sort import (
+    create_typed_item,
+    enable_typed_sorting,
+    sorting_paused,
+    typed_bool,
+    typed_int,
+    typed_text,
+)
 from moduly.rizeni_rizik.constants_library import (
     HAZARD_LIBRARY_COL_ACTIVE,
     HAZARD_LIBRARY_COL_CATEGORY,
@@ -66,6 +73,7 @@ class HazardLibraryPage(QWidget):
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setAlternatingRowColors(True)
         configure_table_columns(self.table, "hazard_library_templates")
+        enable_typed_sorting(self.table)
         self.text_filter = FilterBar(self.table, placeholder="🔍 Hledat zdroj rizika...")
 
         layout.addLayout(toolbar)
@@ -83,29 +91,55 @@ class HazardLibraryPage(QWidget):
 
     def refresh(self) -> None:
         rows = hazard_library_template_service.get_all_rows(include_inactive=True)
-        self.table.setRowCount(len(rows))
-        for row_index, row in enumerate(rows):
-            template = row.template
-            name_item = QTableWidgetItem(template.name)
-            name_item.setToolTip(template.name)
-            self.table.setItem(row_index, HAZARD_LIBRARY_COL_ID, QTableWidgetItem(str(template.id)))
-            self.table.setItem(row_index, HAZARD_LIBRARY_COL_NAME, name_item)
-            category_label = hazard_source_category_service.label_for(template.category)
-            self.table.setItem(
-                row_index,
-                HAZARD_LIBRARY_COL_CATEGORY,
-                QTableWidgetItem(category_label),
-            )
-            self.table.setItem(
-                row_index,
-                HAZARD_LIBRARY_COL_VERSION,
-                QTableWidgetItem(str(template.version_number)),
-            )
-            self.table.setItem(
-                row_index,
-                HAZARD_LIBRARY_COL_ACTIVE,
-                QTableWidgetItem("Ano" if template.active else "Ne"),
-            )
+        with sorting_paused(self.table):
+            self.table.setRowCount(len(rows))
+            for row_index, row in enumerate(rows):
+                template = row.template
+                record_id = int(template.id)
+                name_item = create_typed_item(
+                    template.name,
+                    typed_text(template.name),
+                    stable_id=record_id,
+                )
+                name_item.setToolTip(template.name)
+                self.table.setItem(
+                    row_index,
+                    HAZARD_LIBRARY_COL_ID,
+                    create_typed_item(
+                        str(record_id),
+                        typed_int(record_id),
+                        stable_id=record_id,
+                    ),
+                )
+                self.table.setItem(row_index, HAZARD_LIBRARY_COL_NAME, name_item)
+                category_label = hazard_source_category_service.label_for(template.category)
+                self.table.setItem(
+                    row_index,
+                    HAZARD_LIBRARY_COL_CATEGORY,
+                    create_typed_item(
+                        category_label,
+                        typed_text(category_label),
+                        stable_id=record_id,
+                    ),
+                )
+                self.table.setItem(
+                    row_index,
+                    HAZARD_LIBRARY_COL_VERSION,
+                    create_typed_item(
+                        str(template.version_number),
+                        typed_int(template.version_number),
+                        stable_id=record_id,
+                    ),
+                )
+                self.table.setItem(
+                    row_index,
+                    HAZARD_LIBRARY_COL_ACTIVE,
+                    create_typed_item(
+                        "Ano" if template.active else "Ne",
+                        typed_bool(template.active),
+                        stable_id=record_id,
+                    ),
+                )
         configure_table_columns(self.table, "hazard_library_templates")
         self.text_filter.update_count()
 

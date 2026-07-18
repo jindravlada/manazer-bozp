@@ -4,7 +4,6 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
@@ -12,6 +11,17 @@ from PySide6.QtWidgets import (
 from core.widgets.info_tooltip import set_widget_tooltip
 from core.widgets.severity_tooltips import apply_severity_tooltip
 from core.widgets.table_utils import configure_table_columns
+from core.widgets.typed_table_sort import (
+    create_typed_item,
+    enable_typed_sorting,
+    sorting_paused,
+    typed_bool,
+    typed_datetime,
+    typed_empty,
+    typed_int,
+    typed_status,
+    typed_text,
+)
 from moduly.rizeni_rizik.constants import (
     HAZARD_RISK_ASSESSMENT_DIALOG_TITLE,
     RISK_ASSESSMENT_COL_ACTIVE,
@@ -23,8 +33,10 @@ from moduly.rizeni_rizik.constants import (
     RISK_ASSESSMENT_COL_SEVERITY,
     RISK_ASSESSMENT_COL_STATUS,
     RISK_ASSESSMENT_COLUMN_COUNT,
+    RISK_ASSESSMENT_STATUSES,
     RISK_ASSESSMENTS_INTRO_TEXT,
     RISK_ASSESSMENT_TABLE_HEADERS,
+    RISK_SEVERITIES,
     format_risk_assessment_completed_at,
     format_risk_assessment_display_name,
 )
@@ -85,6 +97,7 @@ class HazardRiskAssessmentsWidget(QWidget):
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setAlternatingRowColors(True)
         configure_table_columns(self.table, "hazard_risk_assessments")
+        enable_typed_sorting(self.table)
         layout.addWidget(self.table, 2)
 
         self.existing_measures_widget = HazardExistingMeasuresWidget(
@@ -322,90 +335,144 @@ class HazardRiskAssessmentsWidget(QWidget):
 
     def _load_table(self) -> None:
         self.table.blockSignals(True)
-        self.table.setRowCount(0)
-        if self._identification_id is None:
-            self.summary_label.setText("")
-            self.table.blockSignals(False)
-            return
+        keep_assessment_id = self._selected_assessment_id
+        with sorting_paused(self.table):
+            self.table.setRowCount(0)
+            if self._identification_id is None:
+                self.summary_label.setText("")
+                self.table.blockSignals(False)
+                return
 
-        self._update_summary()
-        existing_measure_counts = self._count_active_measures(existing=True)
-        required_measure_counts = self._count_active_measures(existing=False)
-        store = self._store()
-        if store is not None:
-            rows = store.list_assessment_rows(include_inactive=True)
-        else:
-            rows = hazard_risk_assessment_service.get_for_identification(
-                self._identification_id,
-                include_inactive=True,
-            )
-        self.table.setRowCount(len(rows))
-        selected_row = -1
-        for row_index, row in enumerate(rows):
-            assessment = row.assessment
-            self.table.setItem(
-                row_index,
-                RISK_ASSESSMENT_COL_ID,
-                QTableWidgetItem(str(assessment.id)),
-            )
-            display_name = format_risk_assessment_display_name(
-                row.exposed_group_name,
-                assessment_status_label=row.status_label,
-                existing_measure_count=existing_measure_counts.get(assessment.id, 0),
-                required_measure_count=required_measure_counts.get(assessment.id, 0),
-            )
-            group_item = QTableWidgetItem(display_name)
-            set_widget_tooltip(group_item, display_name)
-            self.table.setItem(
-                row_index,
-                RISK_ASSESSMENT_COL_EXPOSED_GROUP,
-                group_item,
-            )
-            event_item = QTableWidgetItem(row.event_name)
-            set_widget_tooltip(event_item, row.event_name)
-            self.table.setItem(
-                row_index,
-                RISK_ASSESSMENT_COL_EVENT,
-                event_item,
-            )
-            source_item = QTableWidgetItem(row.inventory_item_name)
-            set_widget_tooltip(source_item, row.inventory_item_name)
-            self.table.setItem(
-                row_index,
-                RISK_ASSESSMENT_COL_INVENTORY_ITEM,
-                source_item,
-            )
-            self.table.setItem(
-                row_index,
-                RISK_ASSESSMENT_COL_SEVERITY,
-                QTableWidgetItem(row.severity_label),
-            )
-            apply_severity_tooltip(
-                self.table.item(row_index, RISK_ASSESSMENT_COL_SEVERITY),
-                assessment.severity,
-            )
-            self.table.setItem(
-                row_index,
-                RISK_ASSESSMENT_COL_STATUS,
-                QTableWidgetItem(row.status_label),
-            )
-            self.table.setItem(
-                row_index,
-                RISK_ASSESSMENT_COL_COMPLETED_AT,
-                QTableWidgetItem(format_risk_assessment_completed_at(assessment.completed_at)),
-            )
-            self.table.setItem(
-                row_index,
-                RISK_ASSESSMENT_COL_ACTIVE,
-                QTableWidgetItem("Ano" if assessment.active else "Ne"),
-            )
-            if self._selected_assessment_id == assessment.id:
-                selected_row = row_index
+            self._update_summary()
+            existing_measure_counts = self._count_active_measures(existing=True)
+            required_measure_counts = self._count_active_measures(existing=False)
+            store = self._store()
+            if store is not None:
+                rows = store.list_assessment_rows(include_inactive=True)
+            else:
+                rows = hazard_risk_assessment_service.get_for_identification(
+                    self._identification_id,
+                    include_inactive=True,
+                )
+            self.table.setRowCount(len(rows))
+            for row_index, row in enumerate(rows):
+                assessment = row.assessment
+                record_id = int(assessment.id)
+                self.table.setItem(
+                    row_index,
+                    RISK_ASSESSMENT_COL_ID,
+                    create_typed_item(
+                        str(record_id),
+                        typed_int(record_id),
+                        stable_id=record_id,
+                    ),
+                )
+                display_name = format_risk_assessment_display_name(
+                    row.exposed_group_name,
+                    assessment_status_label=row.status_label,
+                    existing_measure_count=existing_measure_counts.get(assessment.id, 0),
+                    required_measure_count=required_measure_counts.get(assessment.id, 0),
+                )
+                group_item = create_typed_item(
+                    display_name,
+                    typed_text(row.exposed_group_name),
+                    stable_id=record_id,
+                )
+                set_widget_tooltip(group_item, display_name)
+                self.table.setItem(
+                    row_index,
+                    RISK_ASSESSMENT_COL_EXPOSED_GROUP,
+                    group_item,
+                )
+                event_item = create_typed_item(
+                    row.event_name,
+                    typed_text(row.event_name),
+                    stable_id=record_id,
+                )
+                set_widget_tooltip(event_item, row.event_name)
+                self.table.setItem(
+                    row_index,
+                    RISK_ASSESSMENT_COL_EVENT,
+                    event_item,
+                )
+                source_item = create_typed_item(
+                    row.inventory_item_name,
+                    typed_text(row.inventory_item_name),
+                    stable_id=record_id,
+                )
+                set_widget_tooltip(source_item, row.inventory_item_name)
+                self.table.setItem(
+                    row_index,
+                    RISK_ASSESSMENT_COL_INVENTORY_ITEM,
+                    source_item,
+                )
+                try:
+                    severity_order = RISK_SEVERITIES.index(assessment.severity)
+                except ValueError:
+                    severity_order = len(RISK_SEVERITIES)
+                severity_item = create_typed_item(
+                    row.severity_label,
+                    typed_status(severity_order, label=assessment.severity or ""),
+                    stable_id=record_id,
+                )
+                self.table.setItem(
+                    row_index,
+                    RISK_ASSESSMENT_COL_SEVERITY,
+                    severity_item,
+                )
+                apply_severity_tooltip(severity_item, assessment.severity)
+                try:
+                    status_order = RISK_ASSESSMENT_STATUSES.index(assessment.assessment_status)
+                except ValueError:
+                    status_order = len(RISK_ASSESSMENT_STATUSES)
+                self.table.setItem(
+                    row_index,
+                    RISK_ASSESSMENT_COL_STATUS,
+                    create_typed_item(
+                        row.status_label,
+                        typed_status(
+                            status_order,
+                            label=assessment.assessment_status or "",
+                        ),
+                        stable_id=record_id,
+                    ),
+                )
+                if assessment.completed_at is not None:
+                    completed_sort = typed_datetime(assessment.completed_at)
+                else:
+                    completed_sort = typed_empty()
+                self.table.setItem(
+                    row_index,
+                    RISK_ASSESSMENT_COL_COMPLETED_AT,
+                    create_typed_item(
+                        format_risk_assessment_completed_at(assessment.completed_at),
+                        completed_sort,
+                        stable_id=record_id,
+                    ),
+                )
+                self.table.setItem(
+                    row_index,
+                    RISK_ASSESSMENT_COL_ACTIVE,
+                    create_typed_item(
+                        "Ano" if assessment.active else "Ne",
+                        typed_bool(assessment.active),
+                        stable_id=record_id,
+                    ),
+                )
 
         configure_table_columns(self.table, "hazard_risk_assessments")
-        if selected_row >= 0:
-            self.table.selectRow(selected_row)
+        if keep_assessment_id is not None:
+            selected_row = self._find_row_by_id(keep_assessment_id)
+            if selected_row >= 0:
+                self.table.selectRow(selected_row)
         self.table.blockSignals(False)
+
+    def _find_row_by_id(self, record_id: int) -> int:
+        for row in range(self.table.rowCount()):
+            id_item = self.table.item(row, RISK_ASSESSMENT_COL_ID)
+            if id_item is not None and int(id_item.text()) == record_id:
+                return row
+        return -1
 
     def _update_summary(self) -> None:
         store = self._store()

@@ -20,10 +20,11 @@ Prázdné hodnoty jsou vždy na konci (vzestupně i sestupně).
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import date, datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Iterator
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QTableWidget, QTableWidgetItem
@@ -282,3 +283,23 @@ def enable_typed_sorting(table: QTableWidget) -> None:
     table.setSortingEnabled(True)
     header = table.horizontalHeader()
     header.setSortIndicatorShown(True)
+
+
+@contextmanager
+def sorting_paused(table: QTableWidget) -> Iterator[None]:
+    """
+    Dočasně vypne řazení při plnění buněk a po dokončení obnoví
+    předchozí sloupec a směr (pokud byly nastavené).
+    """
+    header = table.horizontalHeader()
+    was_enabled = table.isSortingEnabled()
+    section = header.sortIndicatorSection()
+    order = header.sortIndicatorOrder()
+    table.setSortingEnabled(False)
+    try:
+        yield
+    finally:
+        table.setSortingEnabled(was_enabled)
+        if was_enabled and section >= 0:
+            header.setSortIndicator(section, order)
+            table.sortItems(section, order)

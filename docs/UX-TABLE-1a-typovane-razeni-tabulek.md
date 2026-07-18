@@ -41,6 +41,6 @@ table.setSortingEnabled(True)
 ## Zapojení do běžné tabulky (pozdější migrace)
 
 1. `enable_typed_sorting(table)` jednou po vytvoření tabulky.
-2. Při `refresh` vypnout sorting, plnit jen přes `create_typed_item(...)`, znovu zapnout.
+2. Při `refresh` použij `sorting_paused(table)` (nebo vypni sorting, plň přes `create_typed_item`, znovu zapni a obnov indikátor).
 3. Neměnit DisplayRole kvůli řazení – typovat klíč zvlášť.
 4. Persistenci sloupce/směru UX-TABLE-1a neřeší.
