@@ -4,8 +4,19 @@ BACKUP-1a: konstanty, cesty, SHA-256, metadata.
 BACKUP-1b: vytvoření úplné zálohy instance.
 BACKUP-1c: důkladné ověření integrity balíčku.
 BACKUP-2a: bezpečná obnova instance (bez UI).
+BACKUP-2d: ověření úplnosti zálohy.
 """
 
+from core.backup.completeness import (
+    BACKUP_WORKSPACE_ROOTS,
+    NON_BACKUP_WORKSPACE_ROOTS,
+    VERDICT_COMPLETE,
+    VERDICT_COMPLETE_WITH_LIMITATIONS,
+    VERDICT_INCOMPLETE,
+    compare_instances,
+    inventory_workspace_files,
+    scan_absolute_paths,
+)
 from core.backup.constants import (
     BACKUP_EXTENSION,
     BACKUP_FORMAT_VERSION,
@@ -102,6 +113,14 @@ from core.backup.sqlite_snapshot import (
 __all__ = [
     "BACKUP_EXTENSION",
     "BACKUP_FORMAT_VERSION",
+    "BACKUP_WORKSPACE_ROOTS",
+    "NON_BACKUP_WORKSPACE_ROOTS",
+    "VERDICT_COMPLETE",
+    "VERDICT_COMPLETE_WITH_LIMITATIONS",
+    "VERDICT_INCOMPLETE",
+    "compare_instances",
+    "inventory_workspace_files",
+    "scan_absolute_paths",
     "COMPONENT_DATABASE",
     "COMPONENT_METADATA",
     "COMPONENT_SETTINGS",
