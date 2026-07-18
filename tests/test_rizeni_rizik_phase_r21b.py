@@ -134,14 +134,21 @@ class PhaseR21bTests(unittest.TestCase):
         table = widget.table
         header = table.horizontalHeader()
 
-        self.assertEqual(table.columnWidth(RISK_ASSESSMENT_COL_EXPOSED_GROUP), 260)
-        self.assertEqual(table.columnWidth(RISK_ASSESSMENT_COL_EVENT), 340)
         self.assertEqual(table.columnWidth(RISK_ASSESSMENT_COL_INVENTORY_ITEM), 220)
         self.assertEqual(table.columnWidth(RISK_ASSESSMENT_COL_SEVERITY), 110)
         self.assertEqual(table.columnWidth(RISK_ASSESSMENT_COL_STATUS), 130)
         self.assertEqual(table.columnWidth(RISK_ASSESSMENT_COL_COMPLETED_AT), 120)
+        self.assertEqual(table.columnWidth(RISK_ASSESSMENT_COL_ACTIVE), 70)
         self.assertEqual(
             header.sectionResizeMode(RISK_ASSESSMENT_COL_ACTIVE),
+            QHeaderView.ResizeMode.Fixed,
+        )
+        self.assertEqual(
+            header.sectionResizeMode(RISK_ASSESSMENT_COL_EXPOSED_GROUP),
+            QHeaderView.ResizeMode.Stretch,
+        )
+        self.assertEqual(
+            header.sectionResizeMode(RISK_ASSESSMENT_COL_EVENT),
             QHeaderView.ResizeMode.Stretch,
         )
         self.assertEqual(table.textElideMode(), Qt.TextElideMode.ElideRight)
@@ -152,38 +159,39 @@ class PhaseR21bTests(unittest.TestCase):
         widget.set_identification(self.identification.id, read_only=False)
         table = widget.table
         header = table.horizontalHeader()
+        from PySide6.QtWidgets import QApplication
 
-        fixed_columns = (
-            RISK_ASSESSMENT_COL_EXPOSED_GROUP,
-            RISK_ASSESSMENT_COL_EVENT,
-            RISK_ASSESSMENT_COL_INVENTORY_ITEM,
-            RISK_ASSESSMENT_COL_SEVERITY,
-            RISK_ASSESSMENT_COL_STATUS,
-            RISK_ASSESSMENT_COL_COMPLETED_AT,
-        )
-        expected_widths = {
-            RISK_ASSESSMENT_COL_EXPOSED_GROUP: 260,
-            RISK_ASSESSMENT_COL_EVENT: 340,
+        fixed_columns = {
             RISK_ASSESSMENT_COL_INVENTORY_ITEM: 220,
             RISK_ASSESSMENT_COL_SEVERITY: 110,
             RISK_ASSESSMENT_COL_STATUS: 130,
             RISK_ASSESSMENT_COL_COMPLETED_AT: 120,
+            RISK_ASSESSMENT_COL_ACTIVE: 70,
         }
 
-        for width in (1400, 960, 720):
+        widget.show()
+        for width in (1400, 1100, 900):
             widget.resize(width, 600)
             table.resize(max(width - 40, 400), 280)
-            for column in fixed_columns:
+            QApplication.processEvents()
+            for column, expected in fixed_columns.items():
                 self.assertEqual(
                     header.sectionResizeMode(column),
                     QHeaderView.ResizeMode.Fixed,
                 )
-                self.assertEqual(table.columnWidth(column), expected_widths[column])
+                self.assertEqual(table.columnWidth(column), expected)
             self.assertEqual(
-                header.sectionResizeMode(RISK_ASSESSMENT_COL_ACTIVE),
+                header.sectionResizeMode(RISK_ASSESSMENT_COL_EXPOSED_GROUP),
                 QHeaderView.ResizeMode.Stretch,
             )
-            self.assertGreaterEqual(table.columnWidth(RISK_ASSESSMENT_COL_ACTIVE), 70)
+            self.assertEqual(
+                header.sectionResizeMode(RISK_ASSESSMENT_COL_EVENT),
+                QHeaderView.ResizeMode.Stretch,
+            )
+            # Ušetřená šířka se dělí rovnoměrně mezi textové sloupce.
+            group_width = table.columnWidth(RISK_ASSESSMENT_COL_EXPOSED_GROUP)
+            event_width = table.columnWidth(RISK_ASSESSMENT_COL_EVENT)
+            self.assertAlmostEqual(group_width, event_width, delta=2)
 
         event_item = table.item(0, RISK_ASSESSMENT_COL_EVENT)
         source_item = table.item(0, RISK_ASSESSMENT_COL_INVENTORY_ITEM)

@@ -236,7 +236,9 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             RISK_ASSESSMENT_COL_STATUS,
         )
 
-        # R21b: výchozí šířky; poslední sloupec (Aktivní) dobíhá do konce okna.
+        # UX-RISK-2: Aktivní pevně ~70 px. Ušetřenou šířku (dříve celý Stretch
+        # na Aktivní) sdílejí rovnoměrně Ohrožené skupiny a Nežádoucí událost.
+        # Ostatní sloupce, ElideRight a tooltipy beze změny.
         widths = {
             RISK_ASSESSMENT_COL_EXPOSED_GROUP: 260,
             RISK_ASSESSMENT_COL_EVENT: 340,
@@ -252,15 +254,15 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         table.setWordWrap(False)
         table.setTextElideMode(Qt.TextElideMode.ElideRight)
         for column in (
-            RISK_ASSESSMENT_COL_EXPOSED_GROUP,
-            RISK_ASSESSMENT_COL_EVENT,
             RISK_ASSESSMENT_COL_INVENTORY_ITEM,
             RISK_ASSESSMENT_COL_SEVERITY,
             RISK_ASSESSMENT_COL_STATUS,
             RISK_ASSESSMENT_COL_COMPLETED_AT,
+            RISK_ASSESSMENT_COL_ACTIVE,
         ):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
-        header.setSectionResizeMode(RISK_ASSESSMENT_COL_ACTIVE, QHeaderView.Stretch)
+        header.setSectionResizeMode(RISK_ASSESSMENT_COL_EXPOSED_GROUP, QHeaderView.Stretch)
+        header.setSectionResizeMode(RISK_ASSESSMENT_COL_EVENT, QHeaderView.Stretch)
 
     elif profile == "hazard_existing_measures":
         from moduly.rizeni_rizik.constants import (
