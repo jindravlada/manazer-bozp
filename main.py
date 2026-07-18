@@ -1,8 +1,11 @@
 import sys
 
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QMessageBox
 
-from core.database.database_initializer import initialize_database
+from core.database.upgrade_guard import (
+    MigrationGuardError,
+    prepare_database_for_startup,
+)
 from core.services.app_runtime_service import mark_application_started
 from core.settings.settings_manager import settings
 from core.theme import theme
@@ -12,13 +15,28 @@ from core.version import APP_NAME, APP_VERSION, app_display_name
 from core.windows.main_window import MainWindow
 
 
+def _show_startup_error(title: str, message: str) -> None:
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication(sys.argv)
+        app.setApplicationName(APP_NAME)
+        app.setApplicationVersion(APP_VERSION)
+    QMessageBox.critical(None, title, message)
+
+
 def main():
-    initialize_database()
+    # MIGRATION-0: předmigrační záloha (je-li třeba) před jakýmkoli zápisem schématu.
+    try:
+        prepare_database_for_startup()
+    except MigrationGuardError as exc:
+        _show_startup_error("Nelze spustit upgrade databáze", str(exc))
+        sys.exit(1)
+
     mark_application_started()
     settings.load()
     theme.load(settings.get("theme", "default"))
 
-    app = QApplication(sys.argv)
+    app = QApplication.instance() or QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
     app.setApplicationVersion(APP_VERSION)
     app.setApplicationDisplayName(app_display_name())

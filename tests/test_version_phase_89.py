@@ -41,17 +41,23 @@ class VersionPhase89TestCase(unittest.TestCase):
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         cls._app = QApplication.instance() or QApplication([])
 
-    def test_central_version_is_3_1_0(self) -> None:
-        self.assertEqual(APP_VERSION, "3.1.0")
-        self.assertEqual(app_display_name(), "Manažer BOZP 3.1.0")
+    def test_central_version_is_3_2_0(self) -> None:
+        self.assertEqual(APP_VERSION, "3.2.0")
+        self.assertEqual(app_display_name(), "Manažer BOZP 3.2.0")
 
     def test_main_window_title_uses_central_version(self) -> None:
+        # Izolace vůči jiným testům, které mohly přepsat SDÍLENÝ sqlite soubor.
+        db_path = storage_module.storage_service.database_path
+        if db_path.exists():
+            db_path.unlink()
+        session_module.dispose_database_engine()
+        initialize_database()
         window = MainWindow()
-        self.assertEqual(window.windowTitle(), "Manažer BOZP 3.1.0")
+        self.assertEqual(window.windowTitle(), "Manažer BOZP 3.2.0")
 
     def test_about_dialog_shows_central_version(self) -> None:
         dialog = AboutDialog()
-        self.assertIn("3.1.0", dialog.windowTitle())
+        self.assertIn("3.2.0", dialog.windowTitle())
         labels = {label.text() for label in dialog.findChildren(QLabel)}
         self.assertIn(app_display_name(), labels)
         self.assertIn(APP_AUTHOR, labels)
@@ -61,14 +67,14 @@ class VersionPhase89TestCase(unittest.TestCase):
         project_root = Path(__file__).resolve().parents[1]
         content = (project_root / "version_info.txt").read_text(encoding="utf-8")
 
-        self.assertIn("StringStruct('FileVersion', '3.1.0')", content)
-        self.assertIn("StringStruct('ProductVersion', '3.1.0')", content)
+        self.assertIn("StringStruct('FileVersion', '3.2.0')", content)
+        self.assertIn("StringStruct('ProductVersion', '3.2.0')", content)
 
     def test_generate_installer_iss_uses_central_version(self) -> None:
         project_root = Path(__file__).resolve().parents[1]
         content = (project_root / "installer.iss").read_text(encoding="utf-8")
 
-        self.assertIn('#define MyAppVersion "3.1.0"', content)
+        self.assertIn('#define MyAppVersion "3.2.0"', content)
         self.assertIn(f"OutputBaseFilename={installer_output_basename()}", content)
 
     def test_official_runtime_files_do_not_hardcode_old_version(self) -> None:
