@@ -114,5 +114,22 @@ def remove_recovery_marker(path: Path | None) -> None:
         path.unlink(missing_ok=True)
 
 
+def find_recovery_markers(parent_dir: str | Path | None = None) -> list[Path]:
+    """
+    Najde všechny recovery markery vedle workspace.
+
+    Výchozí umístění: rodič ``StorageService.base``.
+    """
+    if parent_dir is None:
+        from core.services.storage_service import storage_service
+
+        parent = storage_service.base.parent
+    else:
+        parent = Path(parent_dir)
+    if not parent.is_dir():
+        return []
+    return sorted(parent.glob(".mbrestore-in-progress-*.json"))
+
+
 def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()

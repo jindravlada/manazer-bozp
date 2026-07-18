@@ -107,7 +107,7 @@ class SummaryTab(QWidget):
         self.open_backup_button = QPushButton("Otevřít umístění")
         self.open_backup_button.clicked.connect(self._open_backup_location)
         buttons.addWidget(self.open_backup_button)
-        buttons.addWidget(self._nav_button("Přejít na Zálohování", TAB_BACKUP))
+        buttons.addWidget(self._nav_button(f"Přejít na {TAB_BACKUP}", TAB_BACKUP))
         buttons.addStretch()
         layout.addLayout(buttons)
         return group
@@ -124,7 +124,7 @@ class SummaryTab(QWidget):
         self.open_restore_safety_button = QPushButton("Otevřít umístění bezpečnostní zálohy")
         self.open_restore_safety_button.clicked.connect(self._open_restore_safety_location)
         buttons.addWidget(self.open_restore_safety_button)
-        buttons.addWidget(self._nav_button("Přejít na Zálohování", TAB_BACKUP))
+        buttons.addWidget(self._nav_button(f"Přejít na {TAB_BACKUP}", TAB_BACKUP))
         buttons.addStretch()
         layout.addLayout(buttons)
         return group

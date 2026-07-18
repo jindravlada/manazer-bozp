@@ -28,3 +28,12 @@ def create_database() -> None:
 
 def get_session():
     return SessionLocal()
+
+
+def dispose_database_engine() -> None:
+    """
+    Uvolní všechna připojení SQLAlchemy engine.
+
+    Volat před atomickou obnovou workspace (přejmenování databázového souboru).
+    """
+    engine.dispose()

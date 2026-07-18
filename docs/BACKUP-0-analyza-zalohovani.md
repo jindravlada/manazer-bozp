@@ -386,6 +386,7 @@ Detail Katalogu se v BACKUP-0 nenavrhuje.
 | **BACKUP-1c** | Kontrola integrity (CRC, checksums, `PRAGMA integrity_check`, attachment gaps). | Hotovo (`inspect_backup_integrity`, docs BACKUP-1c; attachment gaps později) |
 | **BACKUP-2a** | Bezpečná obnova: náhled, varování, path-safe extract, staging + atomický swap, restart. | Hotovo (API `restore_instance_backup`, docs BACKUP-2a; UI/náhled později) |
 | **BACKUP-2b** | Rollback při chybě na ověřenou safety zálohu; preflight disk space. | Hotovo (auto-rollback + recovery marker, docs BACKUP-2b) |
+| **BACKUP-2c** | UI ruční zálohy / ověření / obnovy `*.mbbackup` + marker při startu. | Hotovo (docs BACKUP-2c) |
 | **BACKUP-3** | Automatické + generační zálohy; limity velikosti `zalohy/`. | Plán |
 | **BACKUP-4** (volitelně) | Přesun `SettingsManager` do workspace; remap/varování absolutních cest; volitelné šifrování. | Plán |
 
@@ -402,6 +403,7 @@ Paralelně nesmí vzniknout kolize s budoucím `*.mbcatalog`.
 | Ověření integrity `*.mbbackup` | `tests/test_backup_1c_integrity.py` |
 | Bezpečná obnova `*.mbbackup` | `tests/test_backup_2a_restore_instance_backup.py` |
 | Rollback při selhání obnovy | `tests/test_backup_2b_restore_rollback.py` |
+| UI zálohy a obnovy `*.mbbackup` | `tests/test_backup_2c_ui.py` |
 | Kompletní záloha UI (legacy ZIP) | `tests/test_sprava_dat_backup.py`, `tests/test_dashboard_backup_restore_phase_88.py` |
 | Přílohy v ZIP / obnova | `tests/test_attachment_backup_phase_92a.py`, `92b` |
 | Workspace init | `tests/test_workspace_init_phase_95a.py` |

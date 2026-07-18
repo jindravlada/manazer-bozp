@@ -73,6 +73,7 @@ from core.backup.package_restore import (
 )
 from core.backup.recovery_marker import (
     build_recovery_marker_payload,
+    find_recovery_markers,
     read_recovery_marker,
     recovery_marker_path,
     write_recovery_marker,
@@ -153,6 +154,7 @@ __all__ = [
     "create_instance_backup",
     "create_sqlite_snapshot",
     "default_instance_backup_filename",
+    "find_recovery_markers",
     "hashes_equal",
     "inspect_backup_integrity",
     "inspect_sqlite_file",

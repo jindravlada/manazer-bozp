@@ -28,6 +28,13 @@ def main():
     if not app_icon.isNull():
         app.setWindowIcon(app_icon)
 
+    # BACKUP-2c: upozornění na nedokončenou obnovu (marker) před otevřením okna.
+    from moduly.sprava_dat.sluzby.instance_backup_workflow_service import (
+        instance_backup_workflow_service,
+    )
+
+    instance_backup_workflow_service.check_recovery_markers_at_startup(None)
+
     window = MainWindow()
     if not app_icon.isNull():
         window.setWindowIcon(app_icon)

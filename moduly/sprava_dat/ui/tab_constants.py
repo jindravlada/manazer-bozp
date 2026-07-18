@@ -1,5 +1,5 @@
 TAB_SUMMARY = "Souhrn"
-TAB_BACKUP = "Zálohování"
+TAB_BACKUP = "Zálohování a obnova"
 TAB_TRANSFER = "Přenos dat"
 TAB_CODEBOOKS = "Číselníky"
 TAB_DIAGNOSTICS = "Diagnostika"
