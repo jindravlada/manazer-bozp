@@ -534,13 +534,12 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         self.assertEqual(mapping["EVENT-001"]["id"], self.event.id)
         self.assertEqual(mapping["ASSESSMENT-001"]["id"], self.assessment.id)
 
-    def test_dialog_has_peer_review_tab(self) -> None:
+    def test_dialog_has_no_peer_review_tab(self) -> None:
+        # R21a: AI oponentura jen v Katalogu zdrojů rizik.
         dialog = HazardIdentificationDialog(identification=self.identification)
         labels = [dialog.tabs.tabText(index) for index in range(dialog.tabs.count())]
-        self.assertIn(AI_PEER_REVIEW_TAB_TITLE, labels)
-        self.assertTrue(dialog.tabs.isTabEnabled(4))
-        self.assertFalse(dialog.ai_peer_review_widget.export_btn.isEnabled())
-        self.assertFalse(dialog.ai_peer_review_widget.import_btn.isEnabled())
+        self.assertNotIn(AI_PEER_REVIEW_TAB_TITLE, labels)
+        self.assertFalse(hasattr(dialog, "ai_peer_review_widget"))
 
     def test_widget_lists_history(self) -> None:
         target = self.export_dir / "historie.zip"

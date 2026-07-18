@@ -34,7 +34,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.rizeni_rizik.constants import (
         HAZARD_IDENTIFICATION_STATUS_IN_PROGRESS,
-        HAZARD_IDENTIFICATION_TABS,
+        HAZARD_IDENTIFICATION_VISIBLE_TABS,
         TAB_BASICS,
         TAB_EVENTS,
         TAB_INVENTORY,
@@ -170,7 +170,7 @@ class RizeniRizikEditorPhaseR01bTestCase(unittest.TestCase):
             self.assertFalse(dialog.tabs.isTabEnabled(index))
         self.assertEqual(
             [dialog.tabs.tabText(index) for index in range(dialog.tabs.count())],
-            list(HAZARD_IDENTIFICATION_TABS),
+            list(HAZARD_IDENTIFICATION_VISIBLE_TABS),
         )
 
     @patch("moduly.rizeni_rizik.ui.rizeni_rizik_page.exec_maximized")

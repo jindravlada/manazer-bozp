@@ -2,21 +2,16 @@ from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
-    QLabel,
     QMessageBox,
     QTabWidget,
     QVBoxLayout,
-    QWidget,
 )
 
-from core.ai_oponentni.constants import AI_PEER_REVIEW_TAB_TITLE
-from core.ai_oponentni.ui.ai_peer_review_widget import AiPeerReviewWidget
 from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.rizeni_rizik.constants import (
     DIALOG_WINDOW_TITLE,
     HAZARD_IDENTIFICATION_CANCEL_CONFIRM,
     HAZARD_IDENTIFICATION_SAVE_SUCCESS,
-    HAZARD_IDENTIFICATION_TABS,
     HAZARD_IDENTIFICATION_UNSAVED_DISCARD,
     HAZARD_IDENTIFICATION_UNSAVED_PROMPT,
     HAZARD_IDENTIFICATION_UNSAVED_SAVE,
@@ -28,9 +23,6 @@ from moduly.rizeni_rizik.constants import (
     is_identification_inventory_read_only,
     is_identification_photos_read_only,
     is_identification_risk_assessment_read_only,
-)
-from moduly.rizeni_rizik.sluzby.hazard_identification_peer_review_provider import (
-    hazard_identification_peer_review_provider,
 )
 from moduly.rizeni_rizik.sluzby.hazard_identification_service import (
     HazardIdentificationError,
@@ -73,11 +65,7 @@ class HazardIdentificationDialog(QDialog):
             on_event_saved=self._on_event_saved,
             on_open_library_template=self._handle_open_library_template,
         )
-        self.ai_peer_review_widget = AiPeerReviewWidget(
-            provider=hazard_identification_peer_review_provider,
-            on_proposals_applied=self._on_peer_review_applied,
-            allow_new_exports=False,
-        )
+        # R21a: jen HAZARD_IDENTIFICATION_VISIBLE_TABS (AI / Opatření / Publikace / Historie skryté).
         self.basics_tab_index = self.tabs.addTab(self.basics_widget, TAB_BASICS)
         self.photos_tab_index = self.tabs.addTab(self.photos_widget, TAB_PHOTOS)
         self.inventory_tab_index = self.tabs.addTab(self.inventory_widget, TAB_INVENTORY)
@@ -85,18 +73,6 @@ class HazardIdentificationDialog(QDialog):
             self.risk_assessments_widget,
             TAB_RISK_ASSESSMENT,
         )
-        self.ai_peer_review_tab_index = self.tabs.addTab(
-            self.ai_peer_review_widget,
-            AI_PEER_REVIEW_TAB_TITLE,
-        )
-
-        for tab_label in HAZARD_IDENTIFICATION_TABS[5:]:
-            placeholder = QWidget()
-            placeholder_layout = QVBoxLayout(placeholder)
-            placeholder_layout.addWidget(QLabel("Obsah bude doplněn v další fázi."))
-            placeholder_layout.addStretch()
-            index = self.tabs.addTab(placeholder, tab_label)
-            self.tabs.setTabEnabled(index, False)
 
         layout.addWidget(self.tabs)
 
@@ -120,11 +96,9 @@ class HazardIdentificationDialog(QDialog):
         self._sync_photos_context()
         self._sync_inventory_context()
         self._sync_risk_assessment_context()
-        self._sync_ai_peer_review_context()
         self._update_photos_tab_enabled()
         self._update_inventory_tab_enabled()
         self._update_risk_assessment_tab_enabled()
-        self._update_ai_peer_review_tab_enabled()
         self._update_save_enabled()
 
     @property
@@ -181,12 +155,6 @@ class HazardIdentificationDialog(QDialog):
             self.identification is not None,
         )
 
-    def _update_ai_peer_review_tab_enabled(self) -> None:
-        self.tabs.setTabEnabled(
-            self.ai_peer_review_tab_index,
-            self.identification is not None,
-        )
-
     def _sync_photos_context(self) -> None:
         identification_id = self.identification.id if self.identification is not None else None
         status = self.identification.status if self.identification is not None else ""
@@ -212,10 +180,6 @@ class HazardIdentificationDialog(QDialog):
             read_only=is_identification_risk_assessment_read_only(status),
         )
 
-    def _sync_ai_peer_review_context(self) -> None:
-        identification_id = self.identification.id if self.identification is not None else None
-        self.ai_peer_review_widget.set_source(identification_id)
-
     def _refresh_child_widgets(self) -> None:
         self.photos_widget.refresh()
         self.inventory_widget.refresh()
@@ -238,11 +202,6 @@ class HazardIdentificationDialog(QDialog):
             self._on_open_library_template(template_id)
 
     def _on_event_saved(self) -> None:
-        self.risk_assessments_widget.refresh()
-        self._update_save_enabled()
-
-    def _on_peer_review_applied(self) -> None:
-        self.inventory_widget.refresh()
         self.risk_assessments_widget.refresh()
         self._update_save_enabled()
 
@@ -282,11 +241,9 @@ class HazardIdentificationDialog(QDialog):
         self._update_photos_tab_enabled()
         self._update_inventory_tab_enabled()
         self._update_risk_assessment_tab_enabled()
-        self._update_ai_peer_review_tab_enabled()
         self._sync_photos_context()
         self._sync_inventory_context()
         self._sync_risk_assessment_context()
-        self._sync_ai_peer_review_context()
         self._refresh_child_widgets()
         self._update_save_enabled()
         QMessageBox.information(self, DIALOG_WINDOW_TITLE, HAZARD_IDENTIFICATION_SAVE_SUCCESS)

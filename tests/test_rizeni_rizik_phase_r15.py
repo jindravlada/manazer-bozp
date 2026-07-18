@@ -31,7 +31,7 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.rizeni_rizik.constants import (
-        HAZARD_IDENTIFICATION_TABS,
+        HAZARD_IDENTIFICATION_VISIBLE_TABS,
         HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
         INVENTORY_COL_NAME,
         ITEM_EVENT_COL_NAME,
@@ -116,7 +116,7 @@ class WorkplaceAnalysisEventsMergeR15TestCase(unittest.TestCase):
     def test_events_tab_removed_from_dialog(self) -> None:
         dialog = HazardIdentificationDialog(identification=self.identification)
         labels = [dialog.tabs.tabText(index) for index in range(dialog.tabs.count())]
-        self.assertEqual(labels, list(HAZARD_IDENTIFICATION_TABS))
+        self.assertEqual(labels, list(HAZARD_IDENTIFICATION_VISIBLE_TABS))
         self.assertNotIn(TAB_EVENTS, labels)
         self.assertEqual(dialog.tabs.tabText(2), TAB_INVENTORY)
         self.assertEqual(dialog.tabs.tabText(3), TAB_RISK_ASSESSMENT)

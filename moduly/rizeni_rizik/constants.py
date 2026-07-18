@@ -49,16 +49,17 @@ TAB_PHOTOS = "Fotodokumentace"
 TAB_INVENTORY = "Analýza pracoviště"
 TAB_EVENTS = "Nežádoucí události"  # odstraněno z dialogu ve fázi R15 (UI sloučeno do Analýzy)
 TAB_RISK_ASSESSMENT = "Posouzení rizik"
-TAB_AI_PEER_REVIEW = "Oponentní posouzení AI"
-TAB_MEASURES = "Opatření"
-TAB_PUBLICATION = "Publikace"
-TAB_HISTORY = "Historie"
+TAB_AI_PEER_REVIEW = "Oponentní posouzení AI"  # R21a: skryto v Identifikaci (AI jen v Katalogu)
+TAB_MEASURES = "Opatření"  # R21a: dočasně nezobrazeno
+TAB_PUBLICATION = "Publikace"  # R21a: dočasně nezobrazeno
+TAB_HISTORY = "Historie"  # R21a: dočasně nezobrazeno
 
 # Zpětná kompatibilita se starším názvem záložky.
 TAB_AI_CONSULTATION = TAB_AI_PEER_REVIEW
 # Odstraněno v R12 (entita Nebezpečí).
 TAB_HAZARDS = "Nebezpečí"
 
+# Plný seznam záložek včetně skrytých (implementace / budoucí použití).
 HAZARD_IDENTIFICATION_TABS = (
     TAB_BASICS,
     TAB_PHOTOS,
@@ -68,6 +69,14 @@ HAZARD_IDENTIFICATION_TABS = (
     TAB_MEASURES,
     TAB_PUBLICATION,
     TAB_HISTORY,
+)
+
+# R21a: záložky skutečně zobrazené v editoru Identifikace.
+HAZARD_IDENTIFICATION_VISIBLE_TABS = (
+    TAB_BASICS,
+    TAB_PHOTOS,
+    TAB_INVENTORY,
+    TAB_RISK_ASSESSMENT,
 )
 
 DIALOG_WINDOW_TITLE = "Identifikace nebezpečí"
