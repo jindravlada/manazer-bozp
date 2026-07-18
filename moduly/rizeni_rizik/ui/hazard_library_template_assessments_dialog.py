@@ -48,6 +48,7 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_required_measure_service
     hazard_library_template_required_measure_service,
 )
 from moduly.rizeni_rizik.sluzby.hazard_library_template_working_copy import (
+    HazardLibraryTemplateWorkingCopy,
     find_catalog_working_copy,
 )
 from moduly.rizeni_rizik.ui.hazard_library_template_assessment_dialog import (
@@ -66,10 +67,12 @@ class _TemplateMeasuresSection(QWidget):
         title: str,
         measure_type: str,
         on_changed=None,
+        content_store: HazardLibraryTemplateWorkingCopy | None = None,
     ):
         super().__init__(parent)
         self.measure_type = measure_type
         self._on_changed = on_changed
+        self._content_store = content_store
         self._template_id: int | None = None
         self._assessment_id: int | None = None
         self._read_only = False
@@ -116,6 +119,17 @@ class _TemplateMeasuresSection(QWidget):
         self.deactivate_btn.clicked.connect(self.deactivate_selected_measure)
         self.table.doubleClicked.connect(self.edit_selected_measure)
 
+    def set_content_store(
+        self,
+        content_store: HazardLibraryTemplateWorkingCopy | None,
+    ) -> None:
+        self._content_store = content_store
+
+    def _store(self) -> HazardLibraryTemplateWorkingCopy | None:
+        if self._content_store is not None:
+            return self._content_store
+        return find_catalog_working_copy(self)
+
     def set_assessment(
         self,
         assessment_id: int | None,
@@ -142,7 +156,7 @@ class _TemplateMeasuresSection(QWidget):
             self.header_label.setText(HAZARD_LIBRARY_TEMPLATE_SELECT_ASSESSMENT)
             return
 
-        store = find_catalog_working_copy(self)
+        store = self._store()
         if store is not None:
             if self.measure_type == "existing":
                 measures = store.get_existing_measures(
@@ -197,7 +211,7 @@ class _TemplateMeasuresSection(QWidget):
         if id_item is None:
             return None
         measure_id = int(id_item.text())
-        store = find_catalog_working_copy(self)
+        store = self._store()
         if store is not None:
             if self.measure_type == "existing":
                 return store.get_existing_measure(measure_id)
@@ -254,7 +268,7 @@ class _TemplateMeasuresSection(QWidget):
             else HAZARD_LIBRARY_TEMPLATE_REQUIRED_MEASURES_TITLE
         )
         try:
-            store = find_catalog_working_copy(self)
+            store = self._store()
             if store is not None:
                 if self.measure_type == "existing":
                     store.activate_existing_measure(measure.id)
@@ -279,7 +293,7 @@ class _TemplateMeasuresSection(QWidget):
         measure = self._selected_measure()
         if measure is None or not measure.active:
             return
-        store = find_catalog_working_copy(self)
+        store = self._store()
         if store is not None:
             if self.measure_type == "existing":
                 store.deactivate_existing_measure(measure.id)
@@ -307,18 +321,24 @@ class HazardLibraryTemplateAssessmentsDialog(QDialog):
         event_name: str,
         read_only: bool = False,
         on_content_changed=None,
+        content_store: HazardLibraryTemplateWorkingCopy | None = None,
+        prefer_assessment_id: int | None = None,
     ):
         super().__init__(parent)
         self.setWindowTitle(HAZARD_LIBRARY_ASSESSMENTS_DIALOG_TITLE)
         self.setMinimumSize(720, 520)
+        self._content_store = content_store
 
         layout = QVBoxLayout(self)
         self._panel = _HazardLibraryTemplateAssessmentsPanel(
+            self,
             template_id=template_id,
             template_event_id=template_event_id,
             event_name=event_name,
             read_only=read_only,
             on_content_changed=on_content_changed,
+            content_store=content_store,
+            prefer_assessment_id=prefer_assessment_id,
         )
         layout.addWidget(self._panel, 1)
 
@@ -344,6 +364,8 @@ class _HazardLibraryTemplateAssessmentsPanel(QWidget):
         event_name: str,
         read_only: bool = False,
         on_content_changed=None,
+        content_store: HazardLibraryTemplateWorkingCopy | None = None,
+        prefer_assessment_id: int | None = None,
     ):
         super().__init__(parent)
         self.template_id = template_id
@@ -351,7 +373,10 @@ class _HazardLibraryTemplateAssessmentsPanel(QWidget):
         self.event_name = event_name
         self.read_only = read_only
         self._on_content_changed = on_content_changed
+        self._content_store = content_store
+        self._prefer_assessment_id = prefer_assessment_id
         self._selected_assessment_id: int | None = None
+        self._known_assessment_ids: set[int] = set()
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -392,14 +417,18 @@ class _HazardLibraryTemplateAssessmentsPanel(QWidget):
         assessments_layout.addWidget(self.table, 1)
 
         self.existing_measures = _TemplateMeasuresSection(
+            self,
             title=HAZARD_LIBRARY_TEMPLATE_EXISTING_MEASURES_TITLE,
             measure_type="existing",
             on_changed=self._notify_content_changed,
+            content_store=content_store,
         )
         self.required_measures = _TemplateMeasuresSection(
+            self,
             title=HAZARD_LIBRARY_TEMPLATE_REQUIRED_MEASURES_TITLE,
             measure_type="required",
             on_changed=self._notify_content_changed,
+            content_store=content_store,
         )
 
         splitter.addWidget(assessments_panel)
@@ -422,8 +451,21 @@ class _HazardLibraryTemplateAssessmentsPanel(QWidget):
         self._set_actions_enabled(not read_only)
         self.refresh()
 
+    def set_content_store(
+        self,
+        content_store: HazardLibraryTemplateWorkingCopy | None,
+    ) -> None:
+        self._content_store = content_store
+        self.existing_measures.set_content_store(content_store)
+        self.required_measures.set_content_store(content_store)
+
+    def _store(self) -> HazardLibraryTemplateWorkingCopy | None:
+        if self._content_store is not None:
+            return self._content_store
+        return find_catalog_working_copy(self)
+
     def refresh(self) -> None:
-        store = find_catalog_working_copy(self)
+        store = self._store()
         if store is not None:
             rows = store.get_assessments_for_event(
                 self.template_event_id,
@@ -434,6 +476,22 @@ class _HazardLibraryTemplateAssessmentsPanel(QWidget):
                 self.template_event_id,
                 include_inactive=True,
             )
+        current_ids = {row.assessment.id for row in rows}
+        new_ids = current_ids - self._known_assessment_ids
+        self._known_assessment_ids = current_ids
+
+        preferred_id = self._prefer_assessment_id
+        self._prefer_assessment_id = None
+        if preferred_id is not None and preferred_id in current_ids:
+            self._selected_assessment_id = preferred_id
+        elif self._selected_assessment_id not in current_ids:
+            if new_ids:
+                self._selected_assessment_id = sorted(new_ids)[0]
+            elif rows:
+                self._selected_assessment_id = rows[0].assessment.id
+            else:
+                self._selected_assessment_id = None
+
         self.table.setRowCount(len(rows))
         selected_row = -1
         for row_index, row in enumerate(rows):
@@ -467,6 +525,9 @@ class _HazardLibraryTemplateAssessmentsPanel(QWidget):
         configure_table_columns(self.table, "hazard_library_template_assessments")
         if selected_row >= 0:
             self.table.selectRow(selected_row)
+        elif rows:
+            self.table.selectRow(0)
+            self._selected_assessment_id = rows[0].assessment.id
         else:
             self._selected_assessment_id = None
         self._sync_measures()
@@ -505,7 +566,7 @@ class _HazardLibraryTemplateAssessmentsPanel(QWidget):
         if assessment is None or assessment.active:
             return
         try:
-            store = find_catalog_working_copy(self)
+            store = self._store()
             if store is not None:
                 store.activate_assessment(assessment.id)
             else:
@@ -522,7 +583,7 @@ class _HazardLibraryTemplateAssessmentsPanel(QWidget):
         assessment = self._selected_assessment()
         if assessment is None or not assessment.active:
             return
-        store = find_catalog_working_copy(self)
+        store = self._store()
         if store is not None:
             store.deactivate_assessment(assessment.id)
         else:
@@ -564,7 +625,7 @@ class _HazardLibraryTemplateAssessmentsPanel(QWidget):
         if id_item is None:
             return None
         assessment_id = int(id_item.text())
-        store = find_catalog_working_copy(self)
+        store = self._store()
         if store is not None:
             assessment = store.get_assessment(assessment_id)
             if assessment is None:

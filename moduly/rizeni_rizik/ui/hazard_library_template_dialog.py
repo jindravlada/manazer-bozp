@@ -370,7 +370,10 @@ class HazardLibraryTemplateDialog(QDialog):
                 self.template = reloaded
                 self.saved_template = reloaded
                 self.version_number.setValue(reloaded.version_number)
+        selected_event_id = self.content_widget._selected_event_id
+        self._sync_content_context()
         self.content_widget.refresh()
+        self.content_widget.select_event_by_id(selected_event_id)
         self.history_widget.refresh()
         self.ai_peer_review_widget.refresh()
         self._update_save_enabled()

@@ -336,9 +336,24 @@ class HazardLibraryTemplateContentWidget(QWidget):
             event_name=event.name,
             read_only=self._read_only,
             on_content_changed=self._notify_content_changed,
+            content_store=self._store(),
         )
         exec_maximized(dialog)
         self.refresh()
+
+    def select_event_by_id(self, event_id: int | None) -> None:
+        """Vybere událost v tabulce podle ID (po refreshi z pracovní session)."""
+        if event_id is None:
+            return
+        for row_index in range(self.events_table.rowCount()):
+            id_item = self.events_table.item(row_index, HAZARD_LIBRARY_TEMPLATE_EVENT_COL_ID)
+            if id_item is None:
+                continue
+            if int(id_item.text()) == int(event_id):
+                self.events_table.selectRow(row_index)
+                self._selected_event_id = int(event_id)
+                self._update_actions_enabled()
+                return
 
     def activate_selected_event(self) -> None:
         if not self._ensure_editable():
