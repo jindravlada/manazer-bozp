@@ -1,6 +1,6 @@
-# BACKUP-2c – Uživatelské rozhraní zálohy a obnovy
+"""BACKUP-2c / 2e – Uživatelské rozhraní zálohy a obnovy
 
-Napojení infrastruktury BACKUP-1a…2b do Správy dat.
+Napojení infrastruktury BACKUP-1a…2b do Správy dat a Dashboardu.
 
 **Bez automatických / generačních záloh.**
 
@@ -10,14 +10,30 @@ Napojení infrastruktury BACKUP-1a…2b do Správy dat.
 
 **Správa dat → Zálohování a obnova**
 
-Karty:
+Jediná karta pro běžného uživatele:
 
-1. **Zálohování a obnova instance (`*.mbbackup`)** – doporučený způsob  
-   - Vytvořit zálohu  
-   - Ověřit zálohu  
-   - Obnovit ze zálohy  
-   - Diagnostika obnovy  
-2. Dřívější formát ZIP (kompatibilita) – beze změny chování
+**Úplná záloha Manažera BOZP (`*.mbbackup`)**
+
+- Vytvořit zálohu  
+- Ověřit zálohu  
+- Obnovit ze zálohy  
+- Diagnostika obnovy  
+
+Popis: záloha obsahuje databázi, přílohy, fotografie, číselníky, šablony,
+konfiguraci a uživatelská nastavení.
+
+**Dashboard** (tlačítka Záloha / Obnova) používá stejný `*.mbbackup` workflow.
+
+### Starý ZIP formát
+
+Od BACKUP-2e **není** v běžném UI. Zůstává jen jako interní kompatibilita:
+
+- `BackupService` / `full_backup_workflow_service` (API, testy, diagnostika),
+- bezpečnostní ZIP před importem číselníků / registru,
+- případná obnova starých ZIP souborů přes servisní nástroje.
+
+Po přechodu z 3.1.0 má uživatel vytvořit novou `*.mbbackup`
+(viz [MIGRATION-0](MIGRATION-0-overeni-prechodu-3.1.0-na-3.2.0.md)).
 
 ---
 
@@ -73,8 +89,10 @@ Při existenci `.mbrestore-in-progress-*.json`:
 
 | Soubor | Role |
 |--------|------|
-| `moduly/sprava_dat/sluzby/instance_backup_workflow_service.py` | UI workflow |
+| `moduly/sprava_dat/sluzby/instance_backup_workflow_service.py` | UI workflow `*.mbbackup` |
 | `moduly/sprava_dat/ui/instance_backup_dialogs.py` | Dialogy |
-| `moduly/sprava_dat/ui/backup_tab.py` | Záložka |
+| `moduly/sprava_dat/ui/backup_tab.py` | Záložka (jen `*.mbbackup`) |
+| `moduly/sprava_dat/sluzby/full_backup_workflow_service.py` | Legacy ZIP API (bez běžného UI) |
 | `core/database/session.py` | `dispose_database_engine()` |
-| `tests/test_backup_2c_ui.py` | UI testy |
+| `tests/test_backup_2c_ui.py` | UI testy mbbackup |
+| `tests/test_backup_2e_ui.py` | Odstranění ZIP z UI |

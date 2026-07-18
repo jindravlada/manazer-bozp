@@ -69,8 +69,8 @@ class SummaryLayoutTestCase(unittest.TestCase):
         self._app.processEvents()
 
         group_titles = [group.title() for group in tab.findChildren(QGroupBox)]
-        self.assertIn("Kompletní záloha", group_titles)
-        self.assertIn("Obnova kompletní zálohy", group_titles)
+        self.assertIn("Úplná záloha", group_titles)
+        self.assertIn("Obnova ze zálohy", group_titles)
 
         row = tab.findChild(QWidget, "summaryBackupRestoreRow")
         self.assertIsNotNone(row)

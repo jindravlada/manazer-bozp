@@ -163,7 +163,7 @@ class InstanceBackupWorkflowService:
         default_path = storage_service.backups_dir / default_name
         file_path, _ = QFileDialog.getSaveFileName(
             parent,
-            "Uložit zálohu instance",
+            "Uložit zálohu",
             str(default_path),
             f"Záloha Manažera BOZP (*{BACKUP_EXTENSION})",
         )

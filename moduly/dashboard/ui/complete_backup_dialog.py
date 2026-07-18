@@ -1,4 +1,4 @@
-"""Potvrzovací dialogy pro kompletní zálohu a obnovu z Dashboardu."""
+"""Potvrzovací dialogy pro úplnou zálohu a obnovu z Dashboardu."""
 
 from __future__ import annotations
 
@@ -10,19 +10,22 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-BACKUP_DIALOG_TITLE = "Kompletní záloha programu"
+BACKUP_DIALOG_TITLE = "Úplná záloha Manažera BOZP"
 BACKUP_DIALOG_TEXT = (
-    "Bude vytvořena kompletní záloha všech uživatelských dat Manažera BOZP.\n\n"
-    "Pokud chcete exportovat pouze určitou část dat, například Registr právních požadavků "
-    "nebo číselníky, použijte modul Správa dat."
+    "Bude vytvořena úplná záloha Manažera BOZP (*.mbbackup).\n\n"
+    "Záloha obsahuje databázi, přílohy, fotografie, číselníky, šablony, "
+    "konfiguraci a uživatelská nastavení.\n\n"
+    "Pokud chcete exportovat pouze určitou část dat, například Registr právních "
+    "požadavků nebo číselníky, použijte modul Správa dat."
 )
 
-RESTORE_DIALOG_TITLE = "Kompletní obnova programu"
+RESTORE_DIALOG_TITLE = "Obnova ze zálohy"
 RESTORE_DIALOG_TEXT = (
-    "Bude provedena kompletní obnova uživatelských dat Manažera BOZP ze zvolené úplné zálohy.\n\n"
-    "Před obnovou bude automaticky vytvořena bezpečnostní záloha aktuálního stavu.\n\n"
-    "Pokud chcete importovat pouze určitou oblast dat, například Registr právních požadavků "
-    "nebo číselníky, použijte modul Správa dat."
+    "Bude provedena obnova uživatelských dat Manažera BOZP ze zvolené "
+    "úplné zálohy (*.mbbackup).\n\n"
+    "Před obnovou se záloha ověří. Obnova nahradí současná pracovní data.\n\n"
+    "Pokud chcete importovat pouze určitou oblast dat, například Registr právních "
+    "požadavků nebo číselníky, použijte modul Správa dat."
 )
 
 ACTION_PROCEED = "proceed"
@@ -80,7 +83,7 @@ class CompleteBackupConfirmDialog(_CompleteOperationDialog):
         super().__init__(
             title=BACKUP_DIALOG_TITLE,
             text=BACKUP_DIALOG_TEXT,
-            proceed_label="Provést kompletní zálohu",
+            proceed_label="Vytvořit zálohu",
             parent=parent,
         )
 
@@ -90,6 +93,6 @@ class CompleteRestoreConfirmDialog(_CompleteOperationDialog):
         super().__init__(
             title=RESTORE_DIALOG_TITLE,
             text=RESTORE_DIALOG_TEXT,
-            proceed_label="Provést kompletní obnovu",
+            proceed_label="Obnovit ze zálohy",
             parent=parent,
         )

@@ -89,17 +89,20 @@ class DashboardBackupRestorePhase88TestCase(unittest.TestCase):
 
         self.assertEqual(dialog.windowTitle(), BACKUP_DIALOG_TITLE)
         self.assertEqual(message.text(), BACKUP_DIALOG_TEXT)
-        self.assertIn("Provést kompletní zálohu", buttons)
+        self.assertIn("*.mbbackup", message.text())
+        self.assertIn("Vytvořit zálohu", buttons)
         self.assertIn("Přejít na Správu dat", buttons)
         self.assertIn("Zrušit", buttons)
 
-    def test_restore_dialog_mentions_safety_backup(self) -> None:
+    def test_restore_dialog_mentions_mbbackup(self) -> None:
         dialog = CompleteRestoreConfirmDialog()
         message = dialog.layout().itemAt(0).widget()
+        buttons = self._dialog_buttons(dialog)
 
         self.assertEqual(dialog.windowTitle(), RESTORE_DIALOG_TITLE)
-        self.assertIn("bezpečnostní záloha", message.text())
+        self.assertIn("*.mbbackup", message.text())
         self.assertEqual(message.text(), RESTORE_DIALOG_TEXT)
+        self.assertIn("Obnovit ze zálohy", buttons)
 
     def test_cancel_does_not_run_backup(self) -> None:
         with patch(
@@ -110,7 +113,7 @@ class DashboardBackupRestorePhase88TestCase(unittest.TestCase):
             mock_dialog_cls.return_value = mock_dialog
 
             with patch(
-                "moduly.dashboard.ui.dashboard_page.full_backup_workflow_service.create_full_backup"
+                "moduly.dashboard.ui.dashboard_page.instance_backup_workflow_service.create_instance_backup_ui"
             ) as mock_create:
                 self.dashboard._show_backup_dialog()
 
@@ -127,7 +130,7 @@ class DashboardBackupRestorePhase88TestCase(unittest.TestCase):
             mock_dialog_cls.return_value = mock_dialog
 
             with patch(
-                "moduly.dashboard.ui.dashboard_page.full_backup_workflow_service.create_full_backup",
+                "moduly.dashboard.ui.dashboard_page.instance_backup_workflow_service.create_instance_backup_ui",
                 return_value=True,
             ) as mock_create:
                 self.dashboard._show_backup_dialog()
@@ -145,7 +148,7 @@ class DashboardBackupRestorePhase88TestCase(unittest.TestCase):
             mock_dialog_cls.return_value = mock_dialog
 
             with patch(
-                "moduly.dashboard.ui.dashboard_page.full_backup_workflow_service.create_full_backup"
+                "moduly.dashboard.ui.dashboard_page.instance_backup_workflow_service.create_instance_backup_ui"
             ) as mock_create:
                 self.dashboard._show_backup_dialog()
 
@@ -162,7 +165,7 @@ class DashboardBackupRestorePhase88TestCase(unittest.TestCase):
             mock_dialog_cls.return_value = mock_dialog
 
             with patch(
-                "moduly.dashboard.ui.dashboard_page.full_backup_workflow_service.restore_full_backup",
+                "moduly.dashboard.ui.dashboard_page.instance_backup_workflow_service.restore_instance_backup_ui",
                 return_value=True,
             ) as mock_restore:
                 self.dashboard._show_restore_dialog()
@@ -179,38 +182,35 @@ class DashboardBackupRestorePhase88TestCase(unittest.TestCase):
             mock_dialog_cls.return_value = mock_dialog
 
             with patch(
-                "moduly.dashboard.ui.dashboard_page.full_backup_workflow_service.restore_full_backup"
+                "moduly.dashboard.ui.dashboard_page.instance_backup_workflow_service.restore_instance_backup_ui"
             ) as mock_restore:
                 self.dashboard._show_restore_dialog()
 
         mock_restore.assert_not_called()
         self.refresh_sprava_dat.assert_not_called()
 
-    def test_dashboard_backup_updates_sprava_dat_status(self) -> None:
-        target = storage_module.storage_service.backups_dir / "dashboard-phase-88.zip"
+    def test_dashboard_backup_calls_mbbackup_workflow(self) -> None:
         sprava_page = SpravaDatPage()
 
         with patch(
-            "moduly.sprava_dat.sluzby.full_backup_workflow_service.QFileDialog.getSaveFileName",
-            return_value=(str(target), ""),
-        ):
-            with patch("moduly.sprava_dat.sluzby.full_backup_workflow_service.QMessageBox.information"):
-                with patch(
-                    "moduly.dashboard.ui.dashboard_page.CompleteBackupConfirmDialog"
-                ) as mock_dialog_cls:
-                    mock_dialog = MagicMock()
-                    mock_dialog.exec.return_value = QDialog.DialogCode.Accepted
-                    mock_dialog.action = ACTION_PROCEED
-                    mock_dialog_cls.return_value = mock_dialog
+            "moduly.dashboard.ui.dashboard_page.CompleteBackupConfirmDialog"
+        ) as mock_dialog_cls:
+            mock_dialog = MagicMock()
+            mock_dialog.exec.return_value = QDialog.DialogCode.Accepted
+            mock_dialog.action = ACTION_PROCEED
+            mock_dialog_cls.return_value = mock_dialog
 
-                    dashboard = DashboardPage(refresh_sprava_dat_callback=sprava_page.refresh_backup_status)
-                    dashboard._show_backup_dialog()
+            with patch(
+                "moduly.dashboard.ui.dashboard_page.instance_backup_workflow_service.create_instance_backup_ui",
+                return_value=True,
+            ) as mock_create:
+                dashboard = DashboardPage(
+                    refresh_sprava_dat_callback=sprava_page.refresh_backup_status
+                )
+                dashboard._show_backup_dialog()
 
-        record = data_management_settings_service.get_last_backup()
-        self.assertIsNotNone(record)
-        assert record is not None
-        sprava_page.refresh_backup_status()
-        self.assertIn(Path(record.path).name, sprava_page.backup_tab.last_backup_label.text())
+        mock_create.assert_called_once()
+        self.assertTrue(hasattr(sprava_page.backup_tab, "create_mbbackup_button"))
 
     def test_workflow_service_persists_backup_record(self) -> None:
         from moduly.sprava_dat.sluzby.full_backup_workflow_service import full_backup_workflow_service

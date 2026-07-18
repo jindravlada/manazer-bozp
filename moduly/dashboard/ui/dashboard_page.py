@@ -20,7 +20,9 @@ from moduly.dashboard.ui.complete_backup_dialog import (
     CompleteBackupConfirmDialog,
     CompleteRestoreConfirmDialog,
 )
-from moduly.sprava_dat.sluzby.full_backup_workflow_service import full_backup_workflow_service
+from moduly.sprava_dat.sluzby.instance_backup_workflow_service import (
+    instance_backup_workflow_service,
+)
 from moduly.sprava_dat.ui.tab_constants import TAB_BACKUP
 
 from core.dashboard import (
@@ -287,7 +289,7 @@ class DashboardPage(QWidget):
             self._open_sprava_dat(TAB_BACKUP)
             return
         if dialog.action == ACTION_PROCEED:
-            if full_backup_workflow_service.create_full_backup(self):
+            if instance_backup_workflow_service.create_instance_backup_ui(self):
                 self._refresh_sprava_dat_status()
 
     def _show_restore_dialog(self) -> None:
@@ -301,7 +303,7 @@ class DashboardPage(QWidget):
             self._open_sprava_dat(TAB_BACKUP)
             return
         if dialog.action == ACTION_PROCEED:
-            if full_backup_workflow_service.restore_full_backup(self):
+            if instance_backup_workflow_service.restore_instance_backup_ui(self):
                 self._refresh_sprava_dat_status()
 
     def _open_sprava_dat(self, tab_key: str) -> None:

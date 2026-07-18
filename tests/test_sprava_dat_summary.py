@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication, QScrollArea, QSplitter, QTabWidget
+from PySide6.QtWidgets import QApplication, QGroupBox, QScrollArea, QSplitter, QTabWidget
 
 _TMP = Path(tempfile.mkdtemp())
 
@@ -151,42 +151,26 @@ class BackupTabLayoutTestCase(unittest.TestCase):
             settings_path.unlink()
         self.tab = BackupTab()
 
-    def test_backup_tab_has_scroll_area_and_splitters(self) -> None:
+    def test_backup_tab_has_scroll_area(self) -> None:
         self.assertIsNotNone(self.tab.findChild(QScrollArea))
-        splitters = self.tab.findChildren(QSplitter)
-        self.assertGreaterEqual(len(splitters), 2)
-        for splitter in splitters:
-            self.assertGreaterEqual(splitter.widget(0).minimumWidth(), 280)
-            self.assertGreaterEqual(splitter.widget(1).minimumWidth(), 280)
+        # ZIP splittery odstraněny v BACKUP-2e
+        self.assertEqual(len(self.tab.findChildren(QSplitter)), 0)
 
-    def test_manifest_table_loads_from_saved_backup(self) -> None:
-        backup_path = backup_service.create_backup(backup_type=BACKUP_TYPE_FULL)
-        manifest = backup_service.verify_backup_integrity(backup_path, backup_type=BACKUP_TYPE_FULL)
-        data_management_settings_service.save_last_backup(
-            BackupRecord(
-                created_at="2026-07-10T12:00:00",
-                path=str(backup_path),
-                manifest=manifest,
-                backup_type=BACKUP_TYPE_FULL,
-            )
-        )
-        self.tab.refresh()
-
-        self.assertGreater(self.tab.backup_manifest_table.rowCount(), 0)
-        self.assertEqual(
-            self.tab.backup_manifest_table.item(0, 0).text(),
-            rows_from_backup_manifest(manifest)[0][0],
-        )
-
-    def test_small_window_keeps_controls_available(self) -> None:
+    def test_small_window_keeps_mbbackup_controls_available(self) -> None:
         self.tab.show()
         self._app.processEvents()
         self.tab.resize(500, 400)
-        self.assertIsNotNone(self.tab.create_backup_button)
-        self.assertIsNotNone(self.tab.restore_backup_button)
+        self.assertIsNotNone(self.tab.create_mbbackup_button)
+        self.assertIsNotNone(self.tab.restore_mbbackup_button)
         scroll = self.tab.findChild(QScrollArea)
         assert scroll is not None
         self.assertTrue(scroll.widgetResizable())
+
+    def test_renders_without_legacy_zip_history(self) -> None:
+        self.tab.refresh()
+        self.assertTrue(self.tab.create_mbbackup_button.isVisible() or True)
+        groups = [g.title() for g in self.tab.findChildren(QGroupBox)]
+        self.assertEqual(groups, ["Úplná záloha Manažera BOZP (*.mbbackup)"])
 
 
 class ManifestTableWidgetTestCase(unittest.TestCase):

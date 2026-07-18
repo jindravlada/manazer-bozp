@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 import json
 import os
 import sqlite3
@@ -11,9 +12,10 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 _TMP = Path(tempfile.mkdtemp(prefix="mbbackup-2c-ui-"))
+_HOME = _TMP
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-with patch.object(Path, "home", return_value=_TMP):
+with patch.object(Path, "home", return_value=_HOME):
     from PySide6.QtWidgets import QApplication, QDialog
 
     from core.backup import (
@@ -29,7 +31,11 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from core.backup.package_integrity import BackupIntegrityIssue, BackupIntegrityReport
     from core.database.database_initializer import initialize_database
-    from core.services import storage_service as storage_module
+    import core.services.storage_service as storage_module
+
+    importlib.reload(storage_module)
+    storage_module.storage_service.ensure_structure()
+
     from moduly.sprava_dat.sluzby import instance_backup_workflow_service as wf_mod
     from moduly.sprava_dat.sluzby.instance_backup_workflow_service import (
         InstanceBackupWorkflowService,
@@ -37,6 +43,8 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.sprava_dat.ui.backup_tab import BackupTab
     from moduly.sprava_dat.ui.tab_constants import TAB_BACKUP
+
+    initialize_database()
 
 
 def _app() -> QApplication:
@@ -73,9 +81,13 @@ class InstanceBackupUiTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         _app()
-        initialize_database()
 
     def setUp(self) -> None:
+        with patch.object(Path, "home", return_value=_HOME):
+            importlib.reload(storage_module)
+            storage_module.storage_service.ensure_structure()
+        # Workflow drží vlastní referenci na storage_service – sjednotit po reloadu.
+        wf_mod.storage_service = storage_module.storage_service
         self.service = InstanceBackupWorkflowService()
         self.parent = BackupTab()
         # reset global service block state

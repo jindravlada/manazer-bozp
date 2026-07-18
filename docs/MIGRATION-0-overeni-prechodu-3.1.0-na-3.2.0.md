@@ -172,8 +172,8 @@ AppImage zůstávají funkční, pokud cílové soubory existují.
 
 ## 8. Starý ZIP formát
 
-V této fázi **neměněn** – zůstává v UI. Odstranění z běžného rozhraní až v
-samostatné UX fázi po potvrzení tohoto přechodu.
+Od BACKUP-2e již **není** v běžném UI. Zůstává jen interní kompatibilita
+(`BackupService`, bezpečnostní ZIP před importy, testy).
 
 ---
 
@@ -187,7 +187,8 @@ samostatné UX fázi po potvrzení tohoto přechodu.
 5. Ověřit v `zalohy/` soubor `pre-migration-3.1.0-to-3.2.0-….mbbackup`.
 6. Spot-check: úkoly, úrazy, audity, právní požadavky, přílohy.
 7. Otevřít Registr rizik – prázdný, bez chyby.
-8. Ve Správě dat vytvořit novou `*.mbbackup` a volitelně ověřit integritu.
+8. Ve Správě dat → Zálohování a obnova vytvořit novou `*.mbbackup`
+   (jediný běžný formát úplné zálohy).
 
 **Při chybě upgrade / nedokončené migraci:** nepokračovat v práci; obnovit z
 `pre-migration-….mbbackup` (nebo ruční zálohy z kroku 1) a nahlásit problém.

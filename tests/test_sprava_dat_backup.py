@@ -6,7 +6,7 @@ import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication, QMessageBox, QTabWidget
+from PySide6.QtWidgets import QApplication, QGroupBox, QLabel, QMessageBox, QTabWidget
 
 _TMP = Path(tempfile.mkdtemp())
 
@@ -103,6 +103,42 @@ class BackupTabTestCase(unittest.TestCase):
             settings_path.unlink()
         self.tab = BackupTab()
 
+    def test_mbbackup_controls_visible_without_legacy_zip_ui(self) -> None:
+        self.assertTrue(hasattr(self.tab, "create_mbbackup_button"))
+        self.assertTrue(hasattr(self.tab, "verify_mbbackup_button"))
+        self.assertTrue(hasattr(self.tab, "restore_mbbackup_button"))
+        self.assertTrue(hasattr(self.tab, "recovery_diag_button"))
+        self.assertFalse(hasattr(self.tab, "create_backup_button"))
+        self.assertFalse(hasattr(self.tab, "restore_backup_button"))
+        self.assertFalse(hasattr(self.tab, "last_backup_label"))
+        text = "\n".join(label.text() for label in self.tab.findChildren(QLabel))
+        titles = "\n".join(group.title() for group in self.tab.findChildren(QGroupBox))
+        combined = f"{text}\n{titles}"
+        self.assertIn("*.mbbackup", combined)
+        self.assertNotIn("Dřívější formát", combined)
+        self.assertNotIn("kompletní ZIP", combined.lower())
+        self.assertNotIn("Vytvořit kompletní zálohu", combined)
+
+
+class LegacyZipWorkflowServiceTestCase(unittest.TestCase):
+    """Legacy ZIP zůstává funkční mimo běžné UI (BACKUP-2e)."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        cls._app = QApplication.instance() or QApplication([])
+
+    def setUp(self) -> None:
+        settings_path = data_management_settings_service.settings_path()
+        if settings_path.exists():
+            settings_path.unlink()
+        from moduly.sprava_dat.sluzby.full_backup_workflow_service import (
+            full_backup_workflow_service,
+        )
+
+        self.service = full_backup_workflow_service
+        self.parent = BackupTab()
+
     def test_create_backup_uses_existing_service_and_persists_last_backup(self) -> None:
         target = storage_module.storage_service.backups_dir / "sprava-dat-test.zip"
 
@@ -111,16 +147,13 @@ class BackupTabTestCase(unittest.TestCase):
             return_value=(str(target), ""),
         ):
             with patch("moduly.sprava_dat.sluzby.full_backup_workflow_service.QMessageBox.information"):
-                self.tab._create_full_backup()
+                self.service.create_full_backup(self.parent)
 
         record = data_management_settings_service.get_last_backup()
         self.assertIsNotNone(record)
         assert record is not None
         self.assertTrue(Path(record.path).is_file())
         self.assertTrue(record.manifest.get("verified"))
-
-        self.tab.refresh()
-        self.assertIn(Path(record.path).name, self.tab.last_backup_label.text())
 
     def test_failed_verification_does_not_save_last_backup(self) -> None:
         target = storage_module.storage_service.backups_dir / "invalid-backup.zip"
@@ -138,28 +171,9 @@ class BackupTabTestCase(unittest.TestCase):
                     return_value={"verified": False, "verification_errors": ["test"]},
                 ):
                     with patch("moduly.sprava_dat.sluzby.full_backup_workflow_service.QMessageBox.critical"):
-                        self.tab._create_full_backup()
+                        self.service.create_full_backup(self.parent)
 
         self.assertIsNone(data_management_settings_service.get_last_backup())
-
-    def test_open_location_uses_backup_path(self) -> None:
-        backup_path = backup_service.create_backup(backup_type=BACKUP_TYPE_FULL)
-        data_management_settings_service.save_last_backup(
-            BackupRecord(
-                created_at="2026-07-10T12:00:00",
-                path=str(backup_path),
-                manifest={"verified": True},
-                backup_type=BACKUP_TYPE_FULL,
-            )
-        )
-
-        with patch(
-            "moduly.sprava_dat.ui.backup_tab.open_path_in_file_manager",
-            return_value=True,
-        ) as mock_open:
-            self.tab._open_last_backup_location()
-
-        mock_open.assert_called_once_with(str(backup_path.resolve()), parent=self.tab, title="Umístění zálohy")
 
     def test_restore_creates_verified_safety_backup(self) -> None:
         source = backup_service.create_backup(backup_type=BACKUP_TYPE_FULL)
@@ -174,7 +188,7 @@ class BackupTabTestCase(unittest.TestCase):
             ):
                 with patch("moduly.sprava_dat.sluzby.full_backup_workflow_service.QMessageBox.information"):
                     with patch("PySide6.QtWidgets.QApplication.quit"):
-                        self.tab._restore_full_backup()
+                        self.service.restore_full_backup(self.parent)
 
         safety = data_management_settings_service.get_last_pre_restore_backup()
         self.assertIsNotNone(safety)
@@ -203,12 +217,13 @@ class BackupTabTestCase(unittest.TestCase):
                     "moduly.sprava_dat.sluzby.full_backup_workflow_service.backup_service.restore_backup_with_verified_safety",
                     side_effect=ValueError("Bezpečnostní záloha se nepodařila ověřit."),
                 ):
-                    with patch("moduly.sprava_dat.sluzby.full_backup_workflow_service.QMessageBox.critical") as mock_critical:
-                        self.tab._restore_full_backup()
+                    with patch(
+                        "moduly.sprava_dat.sluzby.full_backup_workflow_service.QMessageBox.critical"
+                    ) as mock_critical:
+                        self.service.restore_full_backup(self.parent)
 
         mock_critical.assert_called_once()
         self.assertIsNone(data_management_settings_service.get_last_pre_restore_backup())
-
 
 class SpravaDatPageBackupTestCase(unittest.TestCase):
     @classmethod

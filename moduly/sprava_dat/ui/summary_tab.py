@@ -96,7 +96,7 @@ class SummaryTab(QWidget):
         return row
 
     def _create_backup_section(self) -> QGroupBox:
-        group = QGroupBox("Kompletní záloha")
+        group = QGroupBox("Úplná záloha")
         apply_card_group_style(group)
         layout = QVBoxLayout(group)
         self.backup_summary_label = QLabel()
@@ -113,7 +113,7 @@ class SummaryTab(QWidget):
         return group
 
     def _create_restore_section(self) -> QGroupBox:
-        group = QGroupBox("Obnova kompletní zálohy")
+        group = QGroupBox("Obnova ze zálohy")
         apply_card_group_style(group)
         layout = QVBoxLayout(group)
         self.restore_summary_label = QLabel()
