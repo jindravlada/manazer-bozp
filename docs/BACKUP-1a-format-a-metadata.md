@@ -1,8 +1,8 @@
 # BACKUP-1a – Formát záložního balíčku a metadata
 
 Cíl této fáze: společný, verzovaný a testovaný základ pro úplné zálohy Manažera BOZP
-ve formátu `*.mbbackup`. **Bez UI, bez tvorby obsahu a bez obnovy** – ty přijdou
-v BACKUP-1b a dalších fázích.
+ve formátu `*.mbbackup`. Tvorba obsahu balíčku je v
+[BACKUP-1b](BACKUP-1b-vytvoreni-uplne-zalohy.md); obnova a UI v dalších fázích.
 
 Modul: `core/backup/` (nezávislý na konkrétním business modulu aplikace).
 
@@ -33,9 +33,9 @@ Minimální povinná struktura formátu v1:
 ```text
 archive.mbbackup          # ZIP s příponou .mbbackup
 ├── metadata.json         # povinné metadata + manifest
-├── database/             # DB snapshot (soubory doplní BACKUP-1b)
-├── workspace/            # workspace mimo DB (soubory doplní BACKUP-1b)
-└── settings/             # nastavení / konfigurační stopy (BACKUP-1b)
+├── database/             # DB snapshot (viz BACKUP-1b)
+├── workspace/            # workspace mimo DB (viz BACKUP-1b)
+└── settings/             # nastavení / konfigurační stopy (viz BACKUP-1b)
 ```
 
 Konstanty kořenů: `REQUIRED_ARCHIVE_ROOTS` =
@@ -199,9 +199,10 @@ from core.backup import (
 
 ## 11. Co tato fáze záměrně neřeší
 
-- uživatelské UI a ruční spuštění zálohy,
-- zápis obsahu do ZIP / atomické přejmenování,
+- uživatelské UI a ruční spuštění zálohy z menu,
 - obnovu dat,
 - změnu stávajícího ZIP workspace exportu / `BackupService`,
 - `extractall` / `_replace_item`,
 - automatické zálohy.
+
+Tvorba obsahu `*.mbbackup` je v [BACKUP-1b](BACKUP-1b-vytvoreni-uplne-zalohy.md).

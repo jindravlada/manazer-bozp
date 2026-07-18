@@ -379,15 +379,15 @@ Detail Katalogu se v BACKUP-0 nenavrhuje.
 
 ## 13. Doporučené implementační fáze
 
-| Fáze | Obsah |
-|------|--------|
-| **BACKUP-1a** | Společný formát balíčku + `metadata.json` (`package_kind`, checksumy); čtení legacy ZIP. |
-| **BACKUP-1b** | Vytvoření ruční úplné zálohy `*.mbbackup` (SQLite backup API + výběr komponent A/B). |
-| **BACKUP-1c** | Kontrola integrity (CRC, checksums, `PRAGMA integrity_check`, attachment gaps). |
-| **BACKUP-2a** | Bezpečná obnova: náhled, varování, path-safe extract, staging + atomický swap, restart. |
-| **BACKUP-2b** | Rollback při chybě na ověřenou safety zálohu; preflight disk space. |
-| **BACKUP-3** | Automatické + generační zálohy; limity velikosti `zalohy/`. |
-| **BACKUP-4** (volitelně) | Přesun `SettingsManager` do workspace; remap/varování absolutních cest; volitelné šifrování. |
+| Fáze | Obsah | Stav |
+|------|--------|------|
+| **BACKUP-1a** | Společný formát balíčku + `metadata.json` (`package_kind`, checksumy). | Hotovo (`core/backup/`, docs BACKUP-1a) |
+| **BACKUP-1b** | Vytvoření úplné zálohy `*.mbbackup` (SQLite backup API + komponenty A/B). | Hotovo (`create_instance_backup`, docs BACKUP-1b) |
+| **BACKUP-1c** | Kontrola integrity (CRC, checksums, `PRAGMA integrity_check`, attachment gaps). | Plán |
+| **BACKUP-2a** | Bezpečná obnova: náhled, varování, path-safe extract, staging + atomický swap, restart. | Plán |
+| **BACKUP-2b** | Rollback při chybě na ověřenou safety zálohu; preflight disk space. | Plán |
+| **BACKUP-3** | Automatické + generační zálohy; limity velikosti `zalohy/`. | Plán |
+| **BACKUP-4** (volitelně) | Přesun `SettingsManager` do workspace; remap/varování absolutních cest; volitelné šifrování. | Plán |
 
 Paralelně nesmí vzniknout kolize s budoucím `*.mbcatalog`.
 
@@ -397,7 +397,9 @@ Paralelně nesmí vzniknout kolize s budoucím `*.mbcatalog`.
 
 | Oblast | Soubory |
 |--------|---------|
-| Kompletní záloha UI | `tests/test_sprava_dat_backup.py`, `tests/test_dashboard_backup_restore_phase_88.py` |
+| Formát / metadata `*.mbbackup` | `tests/test_backup_1a_format_metadata.py` |
+| Vytvoření úplné zálohy `*.mbbackup` | `tests/test_backup_1b_create_instance_backup.py` |
+| Kompletní záloha UI (legacy ZIP) | `tests/test_sprava_dat_backup.py`, `tests/test_dashboard_backup_restore_phase_88.py` |
 | Přílohy v ZIP / obnova | `tests/test_attachment_backup_phase_92a.py`, `92b` |
 | Workspace init | `tests/test_workspace_init_phase_95a.py` |
 
