@@ -94,14 +94,15 @@ class RizeniRizikModulePhaseR01aTestCase(unittest.TestCase):
         from moduly.rizeni_rizik.ui.rizeni_rizik_page import RizeniRizikPage
 
         page = RizeniRizikPage()
-        self.assertEqual(page.new_btn.text(), "Nová identifikace")
-        self.assertEqual(page.edit_btn.text(), "Upravit")
-        self.assertEqual(page.activate_btn.text(), "Aktivovat")
-        self.assertEqual(page.deactivate_btn.text(), "Deaktivovat")
+        tab = page.identifications_tab
+        self.assertEqual(tab.new_btn.text(), "Nová identifikace")
+        self.assertEqual(tab.edit_btn.text(), "Upravit")
+        self.assertEqual(tab.activate_btn.text(), "Aktivovat")
+        self.assertEqual(tab.deactivate_btn.text(), "Deaktivovat")
         self.assertEqual(
             [
-                page.table.horizontalHeaderItem(column).text()
-                for column in range(page.table.columnCount())
+                tab.table.horizontalHeaderItem(column).text()
+                for column in range(tab.table.columnCount())
             ],
             TABLE_HEADERS,
         )
@@ -131,11 +132,12 @@ class RizeniRizikModulePhaseR01aTestCase(unittest.TestCase):
         from moduly.rizeni_rizik.ui.rizeni_rizik_page import RizeniRizikPage
 
         page = RizeniRizikPage()
-        self.assertEqual(page.table.rowCount(), 2)
-        self.assertEqual(page.table.item(0, 1).text(), newer.identification_number)
-        self.assertNotEqual(page.table.item(0, 1).text(), page.table.item(1, 1).text())
-        self.assertEqual(page.table.item(0, 6).text(), "Koncept")
-        self.assertEqual(page.table.item(0, 5).text(), "Jan Novák")
+        table = page.identifications_tab.table
+        self.assertEqual(table.rowCount(), 2)
+        self.assertEqual(table.item(0, 1).text(), newer.identification_number)
+        self.assertNotEqual(table.item(0, 1).text(), table.item(1, 1).text())
+        self.assertEqual(table.item(0, 7).text(), "Koncept")
+        self.assertEqual(table.item(0, 5).text(), "15.06.2026")
 
     def test_create_identification_uses_default_status(self) -> None:
         operation = settings_service.save_workplace(name="Provoz test")

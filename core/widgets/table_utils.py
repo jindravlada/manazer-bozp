@@ -395,22 +395,24 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             COL_STARTED_AT,
             COL_STATUS,
             COL_WORKPLACE,
+            COL_WORKPLACE_PART,
         )
 
         widths = {
-            COL_IDENTIFICATION: 120,
-            COL_OPERATION: 180,
-            COL_WORKPLACE: 180,
-            COL_STARTED_AT: 120,
-            COL_RESPONSIBLE_PERSON: 180,
-            COL_STATUS: 120,
+            COL_OPERATION: 120,
+            COL_WORKPLACE: 160,
+            COL_WORKPLACE_PART: 220,
+            COL_STARTED_AT: 110,
+            COL_RESPONSIBLE_PERSON: 160,
+            COL_STATUS: 110,
         }
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
-        header.setSectionResizeMode(COL_OPERATION, QHeaderView.Stretch)
+        table.setColumnHidden(COL_IDENTIFICATION, True)
+        header.setSectionResizeMode(COL_WORKPLACE_PART, QHeaderView.Stretch)
         for column in widths:
-            if column != COL_OPERATION:
+            if column != COL_WORKPLACE_PART:
                 header.setSectionResizeMode(column, QHeaderView.Fixed)
 
     elif profile == "hazard_library_templates":

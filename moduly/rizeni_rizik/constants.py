@@ -44,16 +44,18 @@ COL_ID = 0
 COL_IDENTIFICATION = 1
 COL_OPERATION = 2
 COL_WORKPLACE = 3
-COL_STARTED_AT = 4
-COL_RESPONSIBLE_PERSON = 5
-COL_STATUS = 6
-COLUMN_COUNT = 7
+COL_WORKPLACE_PART = 4
+COL_STARTED_AT = 5
+COL_RESPONSIBLE_PERSON = 6
+COL_STATUS = 7
+COLUMN_COUNT = 8
 
 TABLE_HEADERS = [
     "ID",
     "Identifikace",
     "Provoz",
     "Pracoviště",
+    "Část pracoviště",
     "Datum zahájení",
     "Odpovědná osoba",
     "Stav",

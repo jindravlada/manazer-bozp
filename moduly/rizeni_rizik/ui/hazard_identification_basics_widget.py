@@ -32,7 +32,7 @@ class HazardIdentificationBasicsWidget(QWidget):
         for status in HAZARD_IDENTIFICATION_STATUSES:
             self.status.addItem(HAZARD_IDENTIFICATION_STATUS_LABELS[status], status)
 
-        form.addRow("Identifikace:", self.identification_number_label)
+        form.addRow("Číslo identifikace:", self.identification_number_label)
         form.addRow("Provoz *:", self.operation)
         form.addRow("Pracoviště *:", self.workplace)
         form.addRow("Část pracoviště:", self.workplace_part)

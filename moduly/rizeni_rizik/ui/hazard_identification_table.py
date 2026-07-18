@@ -9,6 +9,7 @@ from moduly.rizeni_rizik.constants import (
     COL_STARTED_AT,
     COL_STATUS,
     COL_WORKPLACE,
+    COL_WORKPLACE_PART,
     COLUMN_COUNT,
     HAZARD_IDENTIFICATION_STATUS_LABELS,
     TABLE_HEADERS,
@@ -22,6 +23,7 @@ class HazardIdentificationTable(QTableWidget):
         self.setColumnCount(COLUMN_COUNT)
         self.setHorizontalHeaderLabels(TABLE_HEADERS)
         self.setColumnHidden(COL_ID, True)
+        self.setColumnHidden(COL_IDENTIFICATION, True)
         self.setSelectionBehavior(QTableWidget.SelectRows)
         self.setSelectionMode(QTableWidget.SingleSelection)
         self.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -31,9 +33,26 @@ class HazardIdentificationTable(QTableWidget):
         self.setRowCount(len(identifications))
         for row, identification in enumerate(identifications):
             self.setItem(row, COL_ID, QTableWidgetItem(str(identification.id)))
-            self.setItem(row, COL_IDENTIFICATION, QTableWidgetItem(identification.identification_number))
-            self.setItem(row, COL_OPERATION, QTableWidgetItem(identification.operation_name))
-            self.setItem(row, COL_WORKPLACE, QTableWidgetItem(identification.workplace_name))
+            self.setItem(
+                row,
+                COL_IDENTIFICATION,
+                QTableWidgetItem(identification.identification_number or ""),
+            )
+            self.setItem(
+                row,
+                COL_OPERATION,
+                QTableWidgetItem(identification.operation_name or ""),
+            )
+            self.setItem(
+                row,
+                COL_WORKPLACE,
+                QTableWidgetItem(identification.workplace_name or ""),
+            )
+            self.setItem(
+                row,
+                COL_WORKPLACE_PART,
+                QTableWidgetItem(identification.workplace_part_name or ""),
+            )
             started_text = (
                 identification.started_at.strftime("%d.%m.%Y")
                 if identification.started_at is not None
@@ -43,7 +62,7 @@ class HazardIdentificationTable(QTableWidget):
             self.setItem(
                 row,
                 COL_RESPONSIBLE_PERSON,
-                QTableWidgetItem(identification.responsible_person_name),
+                QTableWidgetItem(identification.responsible_person_name or ""),
             )
             status_label = HAZARD_IDENTIFICATION_STATUS_LABELS.get(
                 identification.status,

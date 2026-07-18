@@ -100,6 +100,7 @@ class HazardIdentificationDialog(QDialog):
         self._update_inventory_tab_enabled()
         self._update_risk_assessment_tab_enabled()
         self._update_save_enabled()
+        self._update_window_title()
 
     @property
     def _content_store(self):
@@ -109,6 +110,17 @@ class HazardIdentificationDialog(QDialog):
     @_content_store.setter
     def _content_store(self, value) -> None:
         self._identification_store = value
+
+    def _update_window_title(self) -> None:
+        if (
+            self.identification is not None
+            and (self.identification.identification_number or "").strip()
+        ):
+            self.setWindowTitle(
+                f"{DIALOG_WINDOW_TITLE} — {self.identification.identification_number}",
+            )
+        else:
+            self.setWindowTitle(DIALOG_WINDOW_TITLE)
 
     def _connect_basics_change_signals(self) -> None:
         self.basics_widget.operation.currentIndexChanged.connect(self._on_basics_edited)
@@ -238,6 +250,7 @@ class HazardIdentificationDialog(QDialog):
 
         self.basics_widget.load_identification(self.identification)
         self._capture_loaded_basics()
+        self._update_window_title()
         self._update_photos_tab_enabled()
         self._update_inventory_tab_enabled()
         self._update_risk_assessment_tab_enabled()
