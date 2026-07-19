@@ -10,8 +10,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.widgets.table_utils import configure_table_columns
+from core.widgets.table_header_settings import configure_and_persist_table_columns
+from core.widgets.table_row_actions import install_table_row_actions
 from moduly.koordinace_bozp.constants import (
+    COORD_HEADER_CONTACTS,
     DEFAULT_ACCIDENT_REPORTING,
     DEFAULT_EMERGENCY_REPORTING,
     DEFAULT_EVACUATION_INSTRUCTIONS,
@@ -70,7 +72,7 @@ class CoordinationContactsTab(QWidget):
         contacts_layout.addLayout(toolbar)
 
         self.table = CoordinationContactTable()
-        configure_table_columns(self.table, "coordination_contacts")
+        configure_and_persist_table_columns(self.table, "coordination_contacts", COORD_HEADER_CONTACTS)
         contacts_layout.addWidget(self.table)
         content_layout.addWidget(contacts_group, 1)
 
@@ -102,6 +104,13 @@ class CoordinationContactsTab(QWidget):
         self.activate_btn.clicked.connect(self.activate_selected_contact)
         self.deactivate_btn.clicked.connect(self.deactivate_selected_contact)
         self.table.doubleClicked.connect(self.edit_selected_contact)
+        install_table_row_actions(
+            self.table,
+            on_edit=self.edit_selected_contact,
+            on_deactivate=self.deactivate_selected_contact,
+            can_edit=lambda: self.edit_btn.isEnabled(),
+            can_deactivate=lambda: self.deactivate_btn.isEnabled(),
+        )
         self.table.itemSelectionChanged.connect(self._update_action_buttons)
 
         self.set_coordination_id(coordination_id)
@@ -127,7 +136,7 @@ class CoordinationContactsTab(QWidget):
             include_inactive=True,
         )
         self.table.load_contacts(contacts)
-        configure_table_columns(self.table, "coordination_contacts")
+        configure_and_persist_table_columns(self.table, "coordination_contacts", COORD_HEADER_CONTACTS)
         if selected_id is not None:
             for row in range(self.table.rowCount()):
                 item = self.table.item(row, 0)

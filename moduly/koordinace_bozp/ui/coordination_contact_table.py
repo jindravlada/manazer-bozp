@@ -1,6 +1,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QTableWidget
 
+from core.widgets.table_utils import apply_cell_tooltip
 from core.widgets.typed_table_sort import (
     create_typed_item,
     enable_typed_sorting,
@@ -35,6 +36,8 @@ class CoordinationContactTable(QTableWidget):
         self.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.setAlternatingRowColors(True)
+        self.setWordWrap(False)
+        self.setTextElideMode(Qt.TextElideMode.ElideRight)
         enable_typed_sorting(self)
 
     def load_contacts(self, contacts) -> None:
@@ -63,24 +66,22 @@ class CoordinationContactTable(QTableWidget):
                         stable_id=record_id,
                     ),
                 )
-                self.setItem(
-                    row,
-                    CTC_COL_NAME,
-                    create_typed_item(
-                        item.custom_name or "",
-                        typed_text(item.custom_name),
-                        stable_id=record_id,
-                    ),
+                name_text = item.custom_name or ""
+                name_item = create_typed_item(
+                    name_text,
+                    typed_text(item.custom_name),
+                    stable_id=record_id,
                 )
-                self.setItem(
-                    row,
-                    CTC_COL_ROLE,
-                    create_typed_item(
-                        item.role or "",
-                        typed_text(item.role),
-                        stable_id=record_id,
-                    ),
+                apply_cell_tooltip(name_item, name_text)
+                self.setItem(row, CTC_COL_NAME, name_item)
+                role_text = item.role or ""
+                role_item = create_typed_item(
+                    role_text,
+                    typed_text(item.role),
+                    stable_id=record_id,
                 )
+                apply_cell_tooltip(role_item, role_text)
+                self.setItem(row, CTC_COL_ROLE, role_item)
                 self.setItem(
                     row,
                     CTC_COL_PHONE,

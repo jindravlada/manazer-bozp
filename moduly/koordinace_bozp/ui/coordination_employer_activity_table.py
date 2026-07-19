@@ -1,6 +1,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QTableWidget
 
+from core.widgets.table_utils import apply_cell_tooltip
 from core.widgets.typed_table_sort import (
     create_typed_item,
     enable_typed_sorting,
@@ -35,6 +36,8 @@ class CoordinationEmployerActivityTable(QTableWidget):
         self.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.setAlternatingRowColors(True)
+        self.setWordWrap(False)
+        self.setTextElideMode(Qt.TextElideMode.ElideRight)
         enable_typed_sorting(self)
 
     def load_activities(self, activities) -> None:
@@ -58,24 +61,21 @@ class CoordinationEmployerActivityTable(QTableWidget):
                         stable_id=record_id,
                     ),
                 )
-                self.setItem(
-                    row,
-                    ACT_COL_NAME,
-                    create_typed_item(
-                        item.activity_name or "",
-                        typed_text(item.activity_name),
-                        stable_id=record_id,
-                    ),
+                name_text = item.activity_name or ""
+                name_item = create_typed_item(
+                    name_text,
+                    typed_text(item.activity_name),
+                    stable_id=record_id,
                 )
-                self.setItem(
-                    row,
-                    ACT_COL_PLACE,
-                    create_typed_item(
-                        place_label,
-                        typed_text(place_label),
-                        stable_id=record_id,
-                    ),
+                apply_cell_tooltip(name_item, name_text)
+                self.setItem(row, ACT_COL_NAME, name_item)
+                place_item = create_typed_item(
+                    place_label,
+                    typed_text(place_label),
+                    stable_id=record_id,
                 )
+                apply_cell_tooltip(place_item, place_label)
+                self.setItem(row, ACT_COL_PLACE, place_item)
                 self.setItem(
                     row,
                     ACT_COL_FROM,

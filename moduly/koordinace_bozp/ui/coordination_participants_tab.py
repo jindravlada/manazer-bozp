@@ -8,8 +8,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.widgets.table_utils import configure_table_columns
+from core.widgets.table_header_settings import configure_and_persist_table_columns
+from core.widgets.table_row_actions import install_table_row_actions
 from moduly.koordinace_bozp.constants import (
+    COORD_HEADER_PARTICIPANTS,
     COORDINATION_PARTICIPANT_SOURCE_EMPLOYEE,
     TAB_PARTICIPANTS,
 )
@@ -70,7 +72,7 @@ class CoordinationParticipantsTab(QWidget):
         content_layout.addLayout(toolbar)
 
         self.table = CoordinationParticipantTable()
-        configure_table_columns(self.table, "coordination_participants")
+        configure_and_persist_table_columns(self.table, "coordination_participants", COORD_HEADER_PARTICIPANTS)
         content_layout.addWidget(self.table)
         layout.addWidget(self.content)
 
@@ -79,6 +81,13 @@ class CoordinationParticipantsTab(QWidget):
         self.activate_btn.clicked.connect(self.activate_selected_participant)
         self.deactivate_btn.clicked.connect(self.deactivate_selected_participant)
         self.table.doubleClicked.connect(self.edit_selected_participant)
+        install_table_row_actions(
+            self.table,
+            on_edit=self.edit_selected_participant,
+            on_deactivate=self.deactivate_selected_participant,
+            can_edit=lambda: self.edit_btn.isEnabled(),
+            can_deactivate=lambda: self.deactivate_btn.isEnabled(),
+        )
         self.table.itemSelectionChanged.connect(self._update_action_buttons)
 
         self.set_coordination_id(coordination_id)
@@ -130,7 +139,7 @@ class CoordinationParticipantsTab(QWidget):
             include_inactive=True,
         )
         self.table.load_participants(participants)
-        configure_table_columns(self.table, "coordination_participants")
+        configure_and_persist_table_columns(self.table, "coordination_participants", COORD_HEADER_PARTICIPANTS)
         self.table.clear_selection()
         self._update_action_buttons()
 

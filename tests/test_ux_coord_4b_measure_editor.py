@@ -243,7 +243,7 @@ class UxCoord4bMeasureEditorTestCase(unittest.TestCase):
         )
         self.assertEqual(
             header.sectionResizeMode(MSR_COL_TITLE),
-            QHeaderView.ResizeMode.Fixed,
+            QHeaderView.ResizeMode.Interactive,
         )
 
     def test_default_templates_have_measure_text(self) -> None:

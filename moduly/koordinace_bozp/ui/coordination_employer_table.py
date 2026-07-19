@@ -1,6 +1,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QTableWidget
 
+from core.widgets.table_utils import apply_cell_tooltip
 from core.widgets.typed_table_sort import (
     create_typed_item,
     enable_typed_sorting,
@@ -36,6 +37,8 @@ class CoordinationEmployerTable(QTableWidget):
         self.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.setAlternatingRowColors(True)
+        self.setWordWrap(False)
+        self.setTextElideMode(Qt.TextElideMode.ElideRight)
         enable_typed_sorting(self)
 
     def load_employers(self, employers) -> None:
@@ -63,15 +66,14 @@ class CoordinationEmployerTable(QTableWidget):
                         stable_id=record_id,
                     ),
                 )
-                self.setItem(
-                    row,
-                    EMP_COL_NAME,
-                    create_typed_item(
-                        item.company_name or "",
-                        typed_text(item.company_name),
-                        stable_id=record_id,
-                    ),
+                name_text = item.company_name or ""
+                name_item = create_typed_item(
+                    name_text,
+                    typed_text(item.company_name),
+                    stable_id=record_id,
                 )
+                apply_cell_tooltip(name_item, name_text)
+                self.setItem(row, EMP_COL_NAME, name_item)
                 self.setItem(
                     row,
                     EMP_COL_ICO,

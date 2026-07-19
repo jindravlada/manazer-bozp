@@ -7,8 +7,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.widgets.table_utils import configure_table_columns
-from moduly.koordinace_bozp.constants import TAB_MEASURES
+from core.widgets.table_header_settings import configure_and_persist_table_columns
+from core.widgets.table_row_actions import install_table_row_actions
+from moduly.koordinace_bozp.constants import COORD_HEADER_MEASURES, TAB_MEASURES
 from moduly.koordinace_bozp.sluzby.coordination_measure_service import (
     CoordinationMeasureError,
     coordination_measure_service,
@@ -56,7 +57,7 @@ class CoordinationMeasuresTab(QWidget):
         content_layout.addLayout(toolbar)
 
         self.table = CoordinationMeasureTable()
-        configure_table_columns(self.table, "coordination_measures")
+        configure_and_persist_table_columns(self.table, "coordination_measures", COORD_HEADER_MEASURES)
         content_layout.addWidget(self.table)
         layout.addWidget(self.content)
 
@@ -67,6 +68,13 @@ class CoordinationMeasuresTab(QWidget):
         self.activate_btn.clicked.connect(self.activate_selected_measure)
         self.deactivate_btn.clicked.connect(self.deactivate_selected_measure)
         self.table.doubleClicked.connect(self.edit_selected_measure)
+        install_table_row_actions(
+            self.table,
+            on_edit=self.edit_selected_measure,
+            on_deactivate=self.deactivate_selected_measure,
+            can_edit=lambda: self.edit_btn.isEnabled(),
+            can_deactivate=lambda: self.deactivate_btn.isEnabled(),
+        )
         self.table.itemSelectionChanged.connect(self._update_action_buttons)
 
         self.set_coordination_id(coordination_id)
@@ -91,7 +99,7 @@ class CoordinationMeasuresTab(QWidget):
             include_inactive=True,
         )
         self.table.load_measures(measures)
-        configure_table_columns(self.table, "coordination_measures")
+        configure_and_persist_table_columns(self.table, "coordination_measures", COORD_HEADER_MEASURES)
         if selected_id is not None:
             for row in range(self.table.rowCount()):
                 item = self.table.item(row, 0)

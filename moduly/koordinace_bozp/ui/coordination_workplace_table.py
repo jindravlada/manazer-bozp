@@ -1,6 +1,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QTableWidget
 
+from core.widgets.table_utils import apply_cell_tooltip
 from core.widgets.typed_table_sort import (
     create_typed_item,
     enable_typed_sorting,
@@ -34,6 +35,8 @@ class CoordinationWorkplaceTable(QTableWidget):
         self.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.setAlternatingRowColors(True)
+        self.setWordWrap(False)
+        self.setTextElideMode(Qt.TextElideMode.ElideRight)
         enable_typed_sorting(self)
 
     def load_workplaces(self, workplaces) -> None:
@@ -53,42 +56,35 @@ class CoordinationWorkplaceTable(QTableWidget):
                         stable_id=record_id,
                     ),
                 )
-                self.setItem(
-                    row,
-                    WP_COL_OPERATION,
-                    create_typed_item(
-                        operation_name,
-                        typed_text(operation_name),
-                        stable_id=record_id,
-                    ),
+                operation_item = create_typed_item(
+                    operation_name,
+                    typed_text(operation_name),
+                    stable_id=record_id,
                 )
-                self.setItem(
-                    row,
-                    WP_COL_WORKPLACE,
-                    create_typed_item(
-                        workplace_name,
-                        typed_text(workplace_name),
-                        stable_id=record_id,
-                    ),
+                apply_cell_tooltip(operation_item, operation_name)
+                self.setItem(row, WP_COL_OPERATION, operation_item)
+                workplace_item = create_typed_item(
+                    workplace_name,
+                    typed_text(workplace_name),
+                    stable_id=record_id,
                 )
-                self.setItem(
-                    row,
-                    WP_COL_PART,
-                    create_typed_item(
-                        part_name,
-                        typed_text(part_name),
-                        stable_id=record_id,
-                    ),
+                apply_cell_tooltip(workplace_item, workplace_name)
+                self.setItem(row, WP_COL_WORKPLACE, workplace_item)
+                part_item = create_typed_item(
+                    part_name,
+                    typed_text(part_name),
+                    stable_id=record_id,
                 )
-                self.setItem(
-                    row,
-                    WP_COL_NOTE,
-                    create_typed_item(
-                        item.note or "",
-                        typed_text(item.note),
-                        stable_id=record_id,
-                    ),
+                apply_cell_tooltip(part_item, part_name)
+                self.setItem(row, WP_COL_PART, part_item)
+                note_text = item.note or ""
+                note_item = create_typed_item(
+                    note_text,
+                    typed_text(item.note),
+                    stable_id=record_id,
                 )
+                apply_cell_tooltip(note_item, note_text)
+                self.setItem(row, WP_COL_NOTE, note_item)
                 active_item = create_typed_item(
                     "Ano" if item.active else "Ne",
                     typed_bool(bool(item.active)),

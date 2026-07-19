@@ -41,6 +41,17 @@ TAB_CONTACTS = "Kontakty a mimořádné události"
 TAB_RISK_SUBMISSIONS = "Předání rizik dodavatelů"
 TAB_PBP_ATTACHMENT = "Příloha PBP"
 
+# UX-COORD-4d – klíče QSettings pro šířky sloupců.
+COORD_HEADER_LIST = "coordination/list/header"
+COORD_HEADER_EMPLOYERS = "coordination/employers/header"
+COORD_HEADER_PARTICIPANTS = "coordination/participants/header"
+COORD_HEADER_WORKPLACES = "coordination/workplaces/header"
+COORD_HEADER_ACTIVITIES = "coordination/activities/header"
+COORD_HEADER_MEASURES = "coordination/measures/header"
+COORD_HEADER_CONTACTS = "coordination/contacts/header"
+COORD_HEADER_RISKS = "coordination/risks/header"
+COORD_HEADER_PBP = "coordination/pbp/header"
+
 # Kontakty a mimořádné události (COORD-010).
 CONTACT_TYPE_COORDINATION = "coordination"
 CONTACT_TYPE_WORKPLACE_HANDOVER = "workplace_handover"
@@ -391,7 +402,7 @@ ATT_COLUMN_COUNT = 5
 
 ATTACHMENT_TABLE_HEADERS = [
     "ID",
-    "Soubor",
+    "Název přílohy",
     "Typ",
     "Popis",
     "Aktivní",

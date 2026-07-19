@@ -1,7 +1,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QTableWidget
 
-from core.widgets.info_tooltip import set_widget_tooltip
+from core.widgets.table_utils import apply_cell_tooltip
 from core.widgets.typed_table_sort import (
     create_typed_item,
     enable_typed_sorting,
@@ -63,22 +63,20 @@ class CoordinationMeasureTable(QTableWidget):
                         stable_id=record_id,
                     ),
                 )
-                self.setItem(
-                    row,
-                    MSR_COL_TITLE,
-                    create_typed_item(
-                        item.title or "",
-                        typed_text(item.title),
-                        stable_id=record_id,
-                    ),
+                title_text = item.title or ""
+                title_item = create_typed_item(
+                    title_text,
+                    typed_text(item.title),
+                    stable_id=record_id,
                 )
+                apply_cell_tooltip(title_item, title_text)
+                self.setItem(row, MSR_COL_TITLE, title_item)
                 description_item = create_typed_item(
                     description,
                     typed_text(description),
                     stable_id=record_id,
                 )
-                if description.strip():
-                    set_widget_tooltip(description_item, description)
+                apply_cell_tooltip(description_item, description)
                 self.setItem(row, MSR_COL_DESCRIPTION, description_item)
                 active_item = create_typed_item(
                     "Ano" if item.active else "Ne",

@@ -108,7 +108,7 @@ class UxCoord1NomenclatureTestCase(unittest.TestCase):
         ):
             self.assertEqual(
                 header.sectionResizeMode(column),
-                QHeaderView.ResizeMode.Fixed,
+                QHeaderView.ResizeMode.Interactive,
             )
         self.assertGreater(
             table.columnWidth(COL_SUBJECT),

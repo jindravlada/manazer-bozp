@@ -8,8 +8,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.widgets.table_utils import configure_table_columns
-from moduly.koordinace_bozp.constants import TAB_EMPLOYER_ACTIVITIES
+from core.widgets.table_header_settings import configure_and_persist_table_columns
+from core.widgets.table_row_actions import install_table_row_actions
+from moduly.koordinace_bozp.constants import COORD_HEADER_ACTIVITIES, TAB_EMPLOYER_ACTIVITIES
 from moduly.koordinace_bozp.sluzby.coordination_employer_activity_service import (
     CoordinationEmployerActivityError,
     coordination_employer_activity_service,
@@ -64,7 +65,7 @@ class CoordinationEmployerActivitiesTab(QWidget):
         content_layout.addLayout(toolbar)
 
         self.table = CoordinationEmployerActivityTable()
-        configure_table_columns(self.table, "coordination_employer_activities")
+        configure_and_persist_table_columns(self.table, "coordination_employer_activities", COORD_HEADER_ACTIVITIES)
         content_layout.addWidget(self.table)
         layout.addWidget(self.content)
 
@@ -73,6 +74,13 @@ class CoordinationEmployerActivitiesTab(QWidget):
         self.activate_btn.clicked.connect(self.activate_selected_activity)
         self.deactivate_btn.clicked.connect(self.deactivate_selected_activity)
         self.table.doubleClicked.connect(self.edit_selected_activity)
+        install_table_row_actions(
+            self.table,
+            on_edit=self.edit_selected_activity,
+            on_deactivate=self.deactivate_selected_activity,
+            can_edit=lambda: self.edit_btn.isEnabled(),
+            can_deactivate=lambda: self.deactivate_btn.isEnabled(),
+        )
         self.table.itemSelectionChanged.connect(self._update_action_buttons)
 
         self.set_coordination_id(coordination_id)
@@ -124,7 +132,7 @@ class CoordinationEmployerActivitiesTab(QWidget):
             include_inactive=True,
         )
         self.table.load_activities(activities)
-        configure_table_columns(self.table, "coordination_employer_activities")
+        configure_and_persist_table_columns(self.table, "coordination_employer_activities", COORD_HEADER_ACTIVITIES)
         self.table.clear_selection()
         self._update_action_buttons()
 

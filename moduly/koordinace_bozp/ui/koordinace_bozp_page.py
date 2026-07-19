@@ -10,8 +10,10 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.filter_bar import FilterBar
-from core.widgets.table_utils import configure_table_columns
+from core.widgets.table_header_settings import configure_and_persist_table_columns
+from core.widgets.table_row_actions import install_table_row_actions
 from moduly.koordinace_bozp.constants import (
+    COORD_HEADER_LIST,
     DIALOG_WINDOW_TITLE,
     PBP_FILTER_ALL,
     PBP_FILTER_CURRENT,
@@ -78,7 +80,9 @@ class KoordinaceBozpPage(QWidget):
         toolbar.addWidget(self.pbp_filter)
 
         self.table = BozpCoordinationTable()
-        configure_table_columns(self.table, "bozp_coordinations")
+        configure_and_persist_table_columns(
+            self.table, "bozp_coordinations", COORD_HEADER_LIST
+        )
         self.text_filter = FilterBar(self.table, placeholder="🔍 Hledat koordinaci...")
 
         layout.addLayout(toolbar)
@@ -92,6 +96,13 @@ class KoordinaceBozpPage(QWidget):
         self.validity_filter.currentIndexChanged.connect(self.refresh)
         self.pbp_filter.currentIndexChanged.connect(self.refresh)
         self.table.doubleClicked.connect(self.open_selected_coordination)
+        install_table_row_actions(
+            self.table,
+            on_edit=self.open_selected_coordination,
+            on_deactivate=self.deactivate_selected_coordination,
+            can_edit=lambda: self.open_btn.isEnabled(),
+            can_deactivate=lambda: self.deactivate_btn.isEnabled(),
+        )
         self.table.itemSelectionChanged.connect(self._update_action_buttons)
 
         self.refresh()
@@ -120,7 +131,9 @@ class KoordinaceBozpPage(QWidget):
             pbp_cache=self._pbp_cache,
         )
         self.table.load_coordinations(coordinations, pbp_cache=self._pbp_cache)
-        configure_table_columns(self.table, "bozp_coordinations")
+        configure_and_persist_table_columns(
+            self.table, "bozp_coordinations", COORD_HEADER_LIST
+        )
         self.table.clear_selection()
         self.text_filter.update_count()
         self._update_action_buttons()

@@ -1,6 +1,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QTableWidget
 
+from core.widgets.table_utils import apply_cell_tooltip
 from core.widgets.typed_table_sort import (
     create_typed_item,
     enable_typed_sorting,
@@ -31,6 +32,8 @@ class CoordinationAttachmentTable(QTableWidget):
         self.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.setAlternatingRowColors(True)
+        self.setWordWrap(False)
+        self.setTextElideMode(Qt.TextElideMode.ElideRight)
         enable_typed_sorting(self)
 
     def load_attachments(self, attachments) -> None:
@@ -51,15 +54,14 @@ class CoordinationAttachmentTable(QTableWidget):
                         stable_id=record_id,
                     ),
                 )
-                self.setItem(
-                    row,
-                    ATT_COL_FILENAME,
-                    create_typed_item(
-                        item.original_filename or "",
-                        typed_text(item.original_filename),
-                        stable_id=record_id,
-                    ),
+                filename = item.original_filename or ""
+                filename_item = create_typed_item(
+                    filename,
+                    typed_text(item.original_filename),
+                    stable_id=record_id,
                 )
+                apply_cell_tooltip(filename_item, filename)
+                self.setItem(row, ATT_COL_FILENAME, filename_item)
                 self.setItem(
                     row,
                     ATT_COL_TYPE,
@@ -69,15 +71,14 @@ class CoordinationAttachmentTable(QTableWidget):
                         stable_id=record_id,
                     ),
                 )
-                self.setItem(
-                    row,
-                    ATT_COL_DESCRIPTION,
-                    create_typed_item(
-                        item.description or "",
-                        typed_text(item.description),
-                        stable_id=record_id,
-                    ),
+                description = item.description or ""
+                description_item = create_typed_item(
+                    description,
+                    typed_text(item.description),
+                    stable_id=record_id,
                 )
+                apply_cell_tooltip(description_item, description)
+                self.setItem(row, ATT_COL_DESCRIPTION, description_item)
                 active_item = create_typed_item(
                     "Ano" if item.active else "Ne",
                     typed_bool(bool(item.active)),

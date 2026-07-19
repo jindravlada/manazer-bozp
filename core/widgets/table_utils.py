@@ -5,6 +5,17 @@ from core.widgets.info_tooltip import set_widget_tooltip
 from core.widgets.text_preview import DEFAULT_TEXT_PREVIEW_LENGTH, truncate_text_preview
 
 
+def apply_cell_tooltip(item: QTableWidgetItem | None, text: str | None) -> None:
+    """Elidovaný text v buňce + celý obsah v tooltipu."""
+    if item is None:
+        return
+    full_text = text or ""
+    if full_text.strip():
+        set_widget_tooltip(item, full_text)
+    else:
+        item.setToolTip("")
+
+
 def create_preview_table_item(
     text: str,
     *,
@@ -201,7 +212,9 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             COL_VALIDITY,
         )
 
-        # UX-COORD-1: Název akce je nejširší (Stretch), ostatní pevné šířky.
+        # UX-COORD-4d: Název akce Stretch, krátké sloupce Interactive.
+        table.setWordWrap(False)
+        table.setTextElideMode(Qt.TextElideMode.ElideRight)
         widths = {
             COL_NUMBER: 110,
             COL_MEETING_DATE: 110,
@@ -222,8 +235,120 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             COL_VALIDITY,
             COL_PBP,
         ):
-            header.setSectionResizeMode(column, QHeaderView.Fixed)
+            header.setSectionResizeMode(column, QHeaderView.Interactive)
         header.setSectionResizeMode(COL_SUBJECT, QHeaderView.Stretch)
+
+    elif profile == "coordination_employers":
+        from moduly.koordinace_bozp.constants import (
+            EMP_COL_ABBREVIATION,
+            EMP_COL_ACTIVE,
+            EMP_COL_ICO,
+            EMP_COL_IS_MAIN,
+            EMP_COL_NAME,
+            EMP_COL_RISK_STATUS,
+        )
+
+        table.setWordWrap(False)
+        table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        widths = {
+            EMP_COL_ABBREVIATION: 90,
+            EMP_COL_NAME: 260,
+            EMP_COL_ICO: 100,
+            EMP_COL_IS_MAIN: 120,
+            EMP_COL_RISK_STATUS: 150,
+            EMP_COL_ACTIVE: 80,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        for column in (
+            EMP_COL_ABBREVIATION,
+            EMP_COL_ICO,
+            EMP_COL_IS_MAIN,
+            EMP_COL_RISK_STATUS,
+            EMP_COL_ACTIVE,
+        ):
+            header.setSectionResizeMode(column, QHeaderView.Interactive)
+        header.setSectionResizeMode(EMP_COL_NAME, QHeaderView.Stretch)
+
+    elif profile == "coordination_participants":
+        from moduly.koordinace_bozp.constants import (
+            PART_COL_ACTIVE,
+            PART_COL_EMAIL,
+            PART_COL_FULL_NAME,
+            PART_COL_PHONE,
+            PART_COL_ROLE,
+        )
+
+        table.setWordWrap(False)
+        table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        widths = {
+            PART_COL_FULL_NAME: 200,
+            PART_COL_ROLE: 180,
+            PART_COL_PHONE: 120,
+            PART_COL_EMAIL: 180,
+            PART_COL_ACTIVE: 80,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        for column in (PART_COL_PHONE, PART_COL_EMAIL, PART_COL_ACTIVE):
+            header.setSectionResizeMode(column, QHeaderView.Interactive)
+        header.setSectionResizeMode(PART_COL_FULL_NAME, QHeaderView.Stretch)
+        header.setSectionResizeMode(PART_COL_ROLE, QHeaderView.Stretch)
+
+    elif profile == "coordination_workplaces":
+        from moduly.koordinace_bozp.constants import (
+            WP_COL_ACTIVE,
+            WP_COL_NOTE,
+            WP_COL_OPERATION,
+            WP_COL_PART,
+            WP_COL_WORKPLACE,
+        )
+
+        table.setWordWrap(False)
+        table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        widths = {
+            WP_COL_OPERATION: 160,
+            WP_COL_WORKPLACE: 200,
+            WP_COL_PART: 180,
+            WP_COL_NOTE: 220,
+            WP_COL_ACTIVE: 80,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        header.setSectionResizeMode(WP_COL_OPERATION, QHeaderView.Interactive)
+        header.setSectionResizeMode(WP_COL_ACTIVE, QHeaderView.Interactive)
+        header.setSectionResizeMode(WP_COL_WORKPLACE, QHeaderView.Stretch)
+        header.setSectionResizeMode(WP_COL_PART, QHeaderView.Stretch)
+        header.setSectionResizeMode(WP_COL_NOTE, QHeaderView.Stretch)
+
+    elif profile == "coordination_employer_activities":
+        from moduly.koordinace_bozp.constants import (
+            ACT_COL_ACTIVE,
+            ACT_COL_FROM,
+            ACT_COL_NAME,
+            ACT_COL_PLACE,
+            ACT_COL_TO,
+        )
+
+        table.setWordWrap(False)
+        table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        widths = {
+            ACT_COL_NAME: 240,
+            ACT_COL_PLACE: 220,
+            ACT_COL_FROM: 110,
+            ACT_COL_TO: 110,
+            ACT_COL_ACTIVE: 80,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        for column in (ACT_COL_FROM, ACT_COL_TO, ACT_COL_ACTIVE):
+            header.setSectionResizeMode(column, QHeaderView.Interactive)
+        header.setSectionResizeMode(ACT_COL_NAME, QHeaderView.Stretch)
+        header.setSectionResizeMode(ACT_COL_PLACE, QHeaderView.Stretch)
 
     elif profile == "coordination_measures":
         from moduly.koordinace_bozp.constants import (
@@ -233,7 +358,9 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             MSR_COL_TITLE,
         )
 
-        # UX-COORD-4b: Text opatření je nejširší (Stretch), ostatní pevné šířky.
+        # UX-COORD-4b/4d: Text opatření Stretch, krátké sloupce Interactive.
+        table.setWordWrap(False)
+        table.setTextElideMode(Qt.TextElideMode.ElideRight)
         widths = {
             MSR_COL_CATEGORY: 140,
             MSR_COL_TITLE: 220,
@@ -243,8 +370,71 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
         for column in (MSR_COL_CATEGORY, MSR_COL_TITLE, MSR_COL_ACTIVE):
-            header.setSectionResizeMode(column, QHeaderView.Fixed)
+            header.setSectionResizeMode(column, QHeaderView.Interactive)
         header.setSectionResizeMode(MSR_COL_DESCRIPTION, QHeaderView.Stretch)
+
+    elif profile == "coordination_contacts":
+        from moduly.koordinace_bozp.constants import (
+            CTC_COL_ACTIVE,
+            CTC_COL_EMAIL,
+            CTC_COL_NAME,
+            CTC_COL_PHONE,
+            CTC_COL_ROLE,
+            CTC_COL_TYPE,
+        )
+
+        table.setWordWrap(False)
+        table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        widths = {
+            CTC_COL_TYPE: 140,
+            CTC_COL_NAME: 180,
+            CTC_COL_ROLE: 160,
+            CTC_COL_PHONE: 120,
+            CTC_COL_EMAIL: 180,
+            CTC_COL_ACTIVE: 80,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        for column in (CTC_COL_TYPE, CTC_COL_PHONE, CTC_COL_EMAIL, CTC_COL_ACTIVE):
+            header.setSectionResizeMode(column, QHeaderView.Interactive)
+        header.setSectionResizeMode(CTC_COL_NAME, QHeaderView.Stretch)
+        header.setSectionResizeMode(CTC_COL_ROLE, QHeaderView.Stretch)
+
+    elif profile == "coordination_attachments":
+        from moduly.koordinace_bozp.constants import (
+            ATT_COL_ACTIVE,
+            ATT_COL_DESCRIPTION,
+            ATT_COL_FILENAME,
+            ATT_COL_TYPE,
+        )
+
+        table.setWordWrap(False)
+        table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        widths = {
+            ATT_COL_FILENAME: 240,
+            ATT_COL_TYPE: 140,
+            ATT_COL_DESCRIPTION: 220,
+            ATT_COL_ACTIVE: 80,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        for column in (ATT_COL_TYPE, ATT_COL_ACTIVE):
+            header.setSectionResizeMode(column, QHeaderView.Interactive)
+        header.setSectionResizeMode(ATT_COL_FILENAME, QHeaderView.Stretch)
+        header.setSectionResizeMode(ATT_COL_DESCRIPTION, QHeaderView.Stretch)
+
+    elif profile == "coordination_pbp_history":
+        table.setWordWrap(False)
+        table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        widths = {0: 70, 1: 130, 2: 160, 3: 110, 4: 200}
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        for column in (0, 1, 3):
+            header.setSectionResizeMode(column, QHeaderView.Interactive)
+        header.setSectionResizeMode(2, QHeaderView.Stretch)
+        header.setSectionResizeMode(4, QHeaderView.Stretch)
 
     elif profile == "hazard_events":
         from moduly.rizeni_rizik.constants import (

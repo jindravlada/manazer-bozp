@@ -2,6 +2,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import QTableWidget
 
+from core.widgets.table_utils import apply_cell_tooltip
 from core.widgets.typed_table_sort import (
     create_typed_item,
     enable_typed_sorting,
@@ -57,6 +58,8 @@ class BozpCoordinationTable(QTableWidget):
         self.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.setAlternatingRowColors(True)
+        self.setWordWrap(False)
+        self.setTextElideMode(Qt.TextElideMode.ElideRight)
         enable_typed_sorting(self)
 
     def load_coordinations(
@@ -101,24 +104,22 @@ class BozpCoordinationTable(QTableWidget):
                         stable_id=record_id,
                     ),
                 )
-                self.setItem(
-                    row,
-                    COL_PLACE,
-                    create_typed_item(
-                        item.place or "",
-                        typed_text(item.place),
-                        stable_id=record_id,
-                    ),
+                place_text = item.place or ""
+                place_item = create_typed_item(
+                    place_text,
+                    typed_text(item.place),
+                    stable_id=record_id,
                 )
-                self.setItem(
-                    row,
-                    COL_SUBJECT,
-                    create_typed_item(
-                        item.subject or "",
-                        typed_text(item.subject),
-                        stable_id=record_id,
-                    ),
+                apply_cell_tooltip(place_item, place_text)
+                self.setItem(row, COL_PLACE, place_item)
+                subject_text = item.subject or ""
+                subject_item = create_typed_item(
+                    subject_text,
+                    typed_text(item.subject),
+                    stable_id=record_id,
                 )
+                apply_cell_tooltip(subject_item, subject_text)
+                self.setItem(row, COL_SUBJECT, subject_item)
                 status_item = create_typed_item(
                     display_status,
                     _status_sort(item.status),

@@ -11,6 +11,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.widgets.table_header_settings import configure_and_persist_table_columns
+from core.widgets.table_utils import apply_cell_tooltip
 from core.widgets.typed_table_sort import (
     create_typed_item,
     enable_typed_sorting,
@@ -20,6 +22,7 @@ from core.widgets.typed_table_sort import (
     typed_text,
 )
 from moduly.koordinace_bozp.constants import (
+    COORD_HEADER_PBP,
     MAIN_EMPLOYER_RISK_HANDOVER_ATTACHMENT_TITLE,
     PBP_FRESHNESS_NEEDS_UPDATE,
     TAB_PBP_ATTACHMENT,
@@ -75,21 +78,24 @@ class CoordinationPbpHistoryDialog(QDialog):
                     1,
                     create_typed_item(created_text, typed_date(created.date() if created else None)),
                 )
-                self.table.setItem(
-                    row,
-                    2,
-                    create_typed_item(item.created_by or "", typed_text(item.created_by)),
-                )
+                user_text = item.created_by or ""
+                user_item = create_typed_item(user_text, typed_text(item.created_by))
+                apply_cell_tooltip(user_item, user_text)
+                self.table.setItem(row, 2, user_item)
                 self.table.setItem(
                     row,
                     3,
                     create_typed_item(str(item.rules_count), typed_int(item.rules_count)),
                 )
-                self.table.setItem(
-                    row,
-                    4,
-                    create_typed_item((item.content_hash or "")[:12], typed_text(item.content_hash)),
-                )
+                hash_full = item.content_hash or ""
+                hash_item = create_typed_item(hash_full[:12], typed_text(item.content_hash))
+                apply_cell_tooltip(hash_item, hash_full)
+                self.table.setItem(row, 4, hash_item)
+        configure_and_persist_table_columns(
+            self.table,
+            "coordination_pbp_history",
+            COORD_HEADER_PBP,
+        )
 
 
 class CoordinationPbpAttachmentTab(QWidget):

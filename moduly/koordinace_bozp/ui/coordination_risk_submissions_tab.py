@@ -13,9 +13,11 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.nullable_date_edit import NullableDateEdit
-from core.widgets.table_utils import configure_table_columns
+from core.widgets.table_header_settings import configure_and_persist_table_columns
+from core.widgets.table_row_actions import install_table_row_actions
 from moduly.koordinace_bozp.constants import (
     ATTACHMENT_TYPE_CONTRACTOR_RISKS,
+    COORD_HEADER_RISKS,
     COORDINATION_ATTACHMENT_ALLOWED_SUFFIXES,
     MAIN_EMPLOYER_RISK_HANDOVER_ATTACHMENT_TITLE,
     MAIN_EMPLOYER_RISK_HANDOVER_PROTOCOL_TEXT,
@@ -109,7 +111,11 @@ class CoordinationRiskSubmissionsTab(QWidget):
         content_layout.addLayout(att_toolbar)
 
         self.attachments_table = CoordinationAttachmentTable()
-        configure_table_columns(self.attachments_table, "coordination_attachments")
+        configure_and_persist_table_columns(
+            self.attachments_table,
+            "coordination_attachments",
+            COORD_HEADER_RISKS,
+        )
         content_layout.addWidget(self.attachments_table)
         layout.addWidget(self.content)
 
@@ -118,6 +124,14 @@ class CoordinationRiskSubmissionsTab(QWidget):
         self.add_attachment_btn.clicked.connect(self.add_attachment)
         self.open_attachment_btn.clicked.connect(self.open_attachment)
         self.deactivate_attachment_btn.clicked.connect(self.deactivate_attachment)
+        self.attachments_table.doubleClicked.connect(self.open_attachment)
+        install_table_row_actions(
+            self.attachments_table,
+            on_edit=self.open_attachment,
+            on_deactivate=self.deactivate_attachment,
+            can_edit=lambda: self.open_attachment_btn.isEnabled(),
+            can_deactivate=lambda: self.deactivate_attachment_btn.isEnabled(),
+        )
         self.attachments_table.itemSelectionChanged.connect(self._update_attachment_buttons)
 
         self.set_coordination_id(coordination_id)
@@ -204,7 +218,11 @@ class CoordinationRiskSubmissionsTab(QWidget):
             include_inactive=True,
         )
         self.attachments_table.load_attachments(attachments)
-        configure_table_columns(self.attachments_table, "coordination_attachments")
+        configure_and_persist_table_columns(
+            self.attachments_table,
+            "coordination_attachments",
+            COORD_HEADER_RISKS,
+        )
         self._update_attachment_buttons()
 
     def save_submission(self) -> None:
