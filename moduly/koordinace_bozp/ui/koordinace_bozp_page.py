@@ -127,6 +127,7 @@ class KoordinaceBozpPage(QWidget):
 
     def new_coordination(self) -> None:
         dialog = BozpCoordinationDialog(self)
+        dialog.showMaximized()
         if not dialog.exec():
             return
         try:
@@ -142,6 +143,7 @@ class KoordinaceBozpPage(QWidget):
             QMessageBox.information(self, DIALOG_WINDOW_TITLE, "Vyberte koordinaci.")
             return
         dialog = BozpCoordinationDialog(self, coordination=coordination)
+        dialog.showMaximized()
         if not dialog.exec():
             return
         try:

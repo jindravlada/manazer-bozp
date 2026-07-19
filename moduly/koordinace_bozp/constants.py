@@ -391,13 +391,19 @@ COLUMN_COUNT = 8
 TABLE_HEADERS = [
     "ID",
     "Číslo",
-    "Datum koordinační schůzky",
+    "Datum schůzky",
     "Místo",
-    "Předmět koordinace",
+    "Název akce",
     "Stav",
     "Platnost",
     "Příloha PBP",
 ]
+
+# Popisky editoru / validací / exportů (UX-COORD-1).
+LABEL_MEETING_DATE = "Datum schůzky"
+LABEL_MEETING_PLACE = "Místo schůzky"
+LABEL_ACTION_NAME = "Název akce"
+SUBJECT_REQUIRED_MESSAGE = "Název akce je povinný."
 
 VALIDITY_STATE_VALID = "valid"
 VALIDITY_STATE_EXPIRING = "expiring"

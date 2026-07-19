@@ -12,6 +12,7 @@ from moduly.koordinace_bozp.constants import (
     DEFAULT_EVACUATION_INSTRUCTIONS,
     DEFAULT_FIRE_REPORTING,
     PBP_FILTER_ALL,
+    SUBJECT_REQUIRED_MESSAGE,
     VALIDITY_FILTER_ALL,
     VALIDITY_FILTER_EXPIRED,
     VALIDITY_FILTER_EXPIRING,
@@ -232,7 +233,7 @@ class BozpCoordinationService:
     def _validate_subject(subject: str) -> str:
         normalized = " ".join((subject or "").strip().split())
         if not normalized:
-            raise BozpCoordinationError("Předmět koordinace je povinný.")
+            raise BozpCoordinationError(SUBJECT_REQUIRED_MESSAGE)
         return normalized
 
     @staticmethod

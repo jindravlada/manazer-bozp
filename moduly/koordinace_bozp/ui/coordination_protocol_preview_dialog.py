@@ -271,7 +271,7 @@ class CoordinationProtocolPreviewDialog(QDialog):
             f"Číslo: {basics.get('coordination_number') or '—'}",
             f"Datum schůzky: {_format_date(basics.get('meeting_date'))}",
             f"Místo: {basics.get('place') or '—'}",
-            f"Předmět: {basics.get('subject') or '—'}",
+            f"Název akce: {basics.get('subject') or '—'}",
             f"Stav: {basics.get('status_label') or basics.get('status') or '—'}",
             (
                 f"Platnost: {_format_date(basics.get('valid_from'))}"

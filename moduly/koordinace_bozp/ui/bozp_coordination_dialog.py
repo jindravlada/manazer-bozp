@@ -1,6 +1,6 @@
 from datetime import date
 
-from PySide6.QtCore import QDate
+from PySide6.QtCore import QDate, Qt
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -28,6 +28,9 @@ from moduly.koordinace_bozp.constants import (
     BOZP_COORDINATION_STATUSES,
     DEFAULT_BOZP_COORDINATION_STATUS,
     DIALOG_WINDOW_TITLE,
+    LABEL_ACTION_NAME,
+    LABEL_MEETING_DATE,
+    LABEL_MEETING_PLACE,
     TAB_BASICS,
     TAB_CONTACTS,
     TAB_COORDINATOR,
@@ -118,9 +121,9 @@ class BozpCoordinationDialog(QDialog):
         self.insert_default_measures.setChecked(True)
 
         form.addRow("Číslo koordinace:", self.number_label)
-        form.addRow("Datum koordinační schůzky:", self.meeting_date)
-        form.addRow("Místo:", self.place)
-        form.addRow("Předmět koordinace *:", self.subject)
+        form.addRow(f"{LABEL_MEETING_DATE}:", self.meeting_date)
+        form.addRow(f"{LABEL_MEETING_PLACE}:", self.place)
+        form.addRow(f"{LABEL_ACTION_NAME} *:", self.subject)
         form.addRow("Stav:", self.status)
         form.addRow("Platnost od:", self.valid_from)
         form.addRow("Platnost do:", self.valid_to)
@@ -223,6 +226,8 @@ class BozpCoordinationDialog(QDialog):
             self.insert_default_measures.setChecked(False)
 
         self.meeting_date.dateChanged.connect(self._on_meeting_date_changed)
+        # UX-COORD-1: editor se otevírá maximalizovaný.
+        self.setWindowState(self.windowState() | Qt.WindowState.WindowMaximized)
 
     def _on_meeting_date_changed(self, *_args) -> None:
         if self._sync_validity_from_meeting:

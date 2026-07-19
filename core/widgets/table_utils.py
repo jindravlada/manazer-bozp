@@ -190,6 +190,41 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             header.setSectionResizeMode(column, QHeaderView.Fixed)
         header.setSectionResizeMode(7, QHeaderView.Stretch)
 
+    elif profile == "bozp_coordinations":
+        from moduly.koordinace_bozp.constants import (
+            COL_MEETING_DATE,
+            COL_NUMBER,
+            COL_PBP,
+            COL_PLACE,
+            COL_STATUS,
+            COL_SUBJECT,
+            COL_VALIDITY,
+        )
+
+        # UX-COORD-1: Název akce je nejširší (Stretch), ostatní pevné šířky.
+        widths = {
+            COL_NUMBER: 110,
+            COL_MEETING_DATE: 110,
+            COL_PLACE: 160,
+            COL_SUBJECT: 320,
+            COL_STATUS: 120,
+            COL_VALIDITY: 110,
+            COL_PBP: 130,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        for column in (
+            COL_NUMBER,
+            COL_MEETING_DATE,
+            COL_PLACE,
+            COL_STATUS,
+            COL_VALIDITY,
+            COL_PBP,
+        ):
+            header.setSectionResizeMode(column, QHeaderView.Fixed)
+        header.setSectionResizeMode(COL_SUBJECT, QHeaderView.Stretch)
+
     elif profile == "hazard_events":
         from moduly.rizeni_rizik.constants import (
             EVENT_COL_ACTIVE,
