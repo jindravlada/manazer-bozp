@@ -13,6 +13,10 @@ from moduly.rizeni_rizik.modely.pravidla_bezpecne_prace_edition import (
 from moduly.rizeni_rizik.repository.pravidla_bezpecne_prace_edition_repository import (
     PravidlaBezpecnePraceEditionRepository,
 )
+from moduly.rizeni_rizik.sluzby.pravidla_bezpecne_prace_comparison import (
+    PravidlaBezpecnePraceComparison,
+    compare_rules_to_edition,
+)
 from moduly.rizeni_rizik.sluzby.pravidla_bezpecne_prace_service import (
     PravidloBezpecnePrace,
 )
@@ -23,6 +27,24 @@ class PravidlaBezpecnePraceEditionService:
 
     def __init__(self) -> None:
         self.repository = PravidlaBezpecnePraceEditionRepository()
+
+    def compare_to_latest(
+        self,
+        *,
+        endangered_group_id: int,
+        operation_id: int,
+        workplace_id: int | None = None,
+        workplace_part_id: int | None = None,
+        rules: list[PravidloBezpecnePrace],
+    ) -> PravidlaBezpecnePraceComparison:
+        """Porovná aktuální pravidla s posledním vydáním stejného rozsahu."""
+        previous = self.get_latest_edition(
+            endangered_group_id=endangered_group_id,
+            operation_id=operation_id,
+            workplace_id=workplace_id,
+            workplace_part_id=workplace_part_id,
+        )
+        return compare_rules_to_edition(rules, previous)
 
     def record_edition(
         self,

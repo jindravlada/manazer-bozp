@@ -5,6 +5,7 @@ PBP-3: export do ODT podle šablony.
 PBP-4: normalizace textů a kontrola vhodnosti pro zaměstnance.
 PBP-4b: řazení podle závažnosti rizika.
 PBP-5a: evidence vydání (snapshot) po úspěšném exportu.
+PBP-5b: porovnání s předchozím vydáním před uložením.
 """
 
 from __future__ import annotations
@@ -193,6 +194,7 @@ class PravidlaBezpecnePraceService:
 
     def __init__(self) -> None:
         self.engine = OdtExportEngine()
+        self.last_comparison = None
 
     def template_path(self) -> Path:
         storage_service.ensure_structure()
@@ -303,6 +305,7 @@ class PravidlaBezpecnePraceService:
                 workplace_part_id=workplace_part_id,
             )
         if not rules:
+            self.last_comparison = None
             return None
 
         template = self.template_path()
@@ -310,6 +313,19 @@ class PravidlaBezpecnePraceService:
             raise FileNotFoundError(
                 f"Šablona Pravidel bezpečné práce nebyla nalezena: {template}"
             )
+
+        # Porovnání s posledním vydáním (PBP-5b) – před ODT i před uložením evidence.
+        from moduly.rizeni_rizik.sluzby.pravidla_bezpecne_prace_edition_service import (
+            pravidla_bezpecne_prace_edition_service,
+        )
+
+        self.last_comparison = pravidla_bezpecne_prace_edition_service.compare_to_latest(
+            endangered_group_id=endangered_group_id,
+            operation_id=operation_id,
+            workplace_id=workplace_id,
+            workplace_part_id=workplace_part_id,
+            rules=rules,
+        )
 
         values = self._placeholder_values(
             endangered_group_id=endangered_group_id,
@@ -329,11 +345,7 @@ class PravidlaBezpecnePraceService:
         rendered = self.engine.render(template, output_path, values)
         self._strip_empty_workplace_rows(rendered)
 
-        # Evidence vydání až po úspěšném ODT (PBP-5a).
-        from moduly.rizeni_rizik.sluzby.pravidla_bezpecne_prace_edition_service import (
-            pravidla_bezpecne_prace_edition_service,
-        )
-
+        # Evidence vydání až po úspěšném porovnání i ODT (PBP-5a/5b).
         issued_dt: datetime
         if issued_at is None:
             issued_dt = datetime.now()
