@@ -203,6 +203,7 @@ class PravidlaBezpecnePracePhasePbp4TestCase(unittest.TestCase):
 
     def test_dialog_shows_quality_warning(self) -> None:
         dialog = PravidlaBezpecnePraceDialog()
+        dialog.mode.setCurrentIndex(dialog.mode.findData("group"))
         dialog.endangered_group.set_group_id(self.group.id)
         dialog.operation.setCurrentIndex(dialog.operation.findData(self.operation.id))
 
@@ -247,6 +248,7 @@ class PravidlaBezpecnePracePhasePbp4TestCase(unittest.TestCase):
 
     def test_dialog_skips_quality_warning_when_all_ok(self) -> None:
         dialog = PravidlaBezpecnePraceDialog()
+        dialog.mode.setCurrentIndex(dialog.mode.findData("group"))
         dialog.endangered_group.set_group_id(self.group.id)
         dialog.operation.setCurrentIndex(dialog.operation.findData(self.operation.id))
 

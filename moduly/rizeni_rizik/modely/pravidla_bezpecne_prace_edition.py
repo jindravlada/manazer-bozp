@@ -1,4 +1,4 @@
-"""Evidence vydání Pravidel bezpečné práce (PBP-5a)."""
+"""Evidence vydání Pravidel bezpečné práce (PBP-5a, PBP-5c)."""
 
 from __future__ import annotations
 
@@ -9,15 +9,23 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database.base import Base
 
+# Sentinel: vydání pro profesi nemá konkrétní ohroženou skupinu v rozsahu.
+PBP_EDITION_NO_ENDANGERED_GROUP = 0
+
 
 class PravidlaBezpecnePraceEdition(Base):
-    """Jedno vydání Pravidel bezpečné práce pro daný rozsah."""
+    """Jedno vydání Pravidel bezpečné práce pro daný rozsah.
+
+    Rozsah je buď přímá ohrožená skupina (``profession_id`` je NULL),
+    nebo profese (``profession_id`` nastaveno, ``endangered_group_id`` = 0).
+    """
 
     __tablename__ = "pravidla_bezpecne_prace_editions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     issued_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
     endangered_group_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    profession_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     operation_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     workplace_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     workplace_part_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)

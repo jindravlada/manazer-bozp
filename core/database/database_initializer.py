@@ -91,6 +91,10 @@ def initialize_database() -> None:
         PravidlaBezpecnePraceEdition,
         PravidlaBezpecnePraceEditionRule,
     )
+    from moduly.rizeni_rizik.modely.profession import Profession  # noqa: F401
+    from moduly.rizeni_rizik.modely.profession_exposed_group import (  # noqa: F401
+        ProfessionExposedGroup,
+    )
     from core.ai_oponentni.modely.ai_peer_review import (  # noqa: F401
         AiPeerReview,
         AiPeerReviewBatch,
@@ -119,6 +123,7 @@ def initialize_database() -> None:
     _ensure_workplace_hierarchy_columns()
     _ensure_responsibility_roles_table()
     _ensure_exposed_groups_table()
+    _ensure_professions_tables()
     _ensure_hazard_source_categories_table()
     _ensure_audit_program_columns()
     _ensure_audit_program_workplace_columns()
@@ -1791,6 +1796,37 @@ def _ensure_hazard_library_template_revisions_table() -> None:
     )
 
 
+def _ensure_professions_tables() -> None:
+    profession_columns = _table_columns("professions")
+    if not profession_columns:
+        from moduly.rizeni_rizik.modely.profession import Profession
+
+        Profession.__table__.create(bind=_db_engine(), checkfirst=True)
+
+    link_columns = _table_columns("profession_exposed_groups")
+    if not link_columns:
+        from moduly.rizeni_rizik.modely.profession_exposed_group import (
+            ProfessionExposedGroup,
+        )
+
+        ProfessionExposedGroup.__table__.create(bind=_db_engine(), checkfirst=True)
+
+    _ensure_index(
+        "idx_profession_exposed_groups_profession",
+        """
+        CREATE INDEX IF NOT EXISTS idx_profession_exposed_groups_profession
+        ON profession_exposed_groups (profession_id)
+        """,
+    )
+    _ensure_index(
+        "idx_profession_exposed_groups_group",
+        """
+        CREATE INDEX IF NOT EXISTS idx_profession_exposed_groups_group
+        ON profession_exposed_groups (exposed_group_id)
+        """,
+    )
+
+
 def _ensure_pravidla_bezpecne_prace_editions_tables() -> None:
     edition_columns = _table_columns("pravidla_bezpecne_prace_editions")
     if not edition_columns:
@@ -1801,6 +1837,8 @@ def _ensure_pravidla_bezpecne_prace_editions_tables() -> None:
 
         PravidlaBezpecnePraceEdition.__table__.create(bind=_db_engine(), checkfirst=True)
         PravidlaBezpecnePraceEditionRule.__table__.create(bind=_db_engine(), checkfirst=True)
+    elif "profession_id" not in edition_columns:
+        _add_column("pravidla_bezpecne_prace_editions", "profession_id INTEGER")
 
     rule_columns = _table_columns("pravidla_bezpecne_prace_edition_rules")
     if not rule_columns:
@@ -1816,6 +1854,19 @@ def _ensure_pravidla_bezpecne_prace_editions_tables() -> None:
         CREATE INDEX IF NOT EXISTS idx_pbp_editions_scope_issued
         ON pravidla_bezpecne_prace_editions (
             endangered_group_id,
+            operation_id,
+            workplace_id,
+            workplace_part_id,
+            issued_at
+        )
+        """,
+    )
+    _ensure_index(
+        "idx_pbp_editions_profession_scope_issued",
+        """
+        CREATE INDEX IF NOT EXISTS idx_pbp_editions_profession_scope_issued
+        ON pravidla_bezpecne_prace_editions (
+            profession_id,
             operation_id,
             workplace_id,
             workplace_part_id,

@@ -6,6 +6,7 @@ PBP-4: normalizace textů a kontrola vhodnosti pro zaměstnance.
 PBP-4b: řazení podle závažnosti rizika.
 PBP-5a: evidence vydání (snapshot) po úspěšném exportu.
 PBP-5b: porovnání s předchozím vydáním před uložením.
+PBP-5c: generování pro profesi (sjednocení ohrožených skupin).
 """
 
 from __future__ import annotations
@@ -35,6 +36,7 @@ from moduly.rizeni_rizik.sluzby.hazard_identification_service import (
 from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import (
     hazard_risk_assessment_service,
 )
+from moduly.rizeni_rizik.sluzby.profession_service import profession_service
 
 # Infinitivy / formulace typu „zajistit…“ – nevhodné jako přímé pokyny zaměstnanci.
 _UNSUITABLE_EMPLOYEE_PREFIXES = (
@@ -205,21 +207,58 @@ class PravidlaBezpecnePraceService:
 
     def generate(
         self,
-        endangered_group_id: int,
-        operation_id: int,
+        endangered_group_id: int | None = None,
+        operation_id: int | None = None,
         workplace_id: int | None = None,
         workplace_part_id: int | None = None,
+        *,
+        profession_id: int | None = None,
     ) -> list[PravidloBezpecnePrace]:
-        """Vrátí platná pravidla pro zadanou ohroženou skupinu a rozsah pracoviště.
+        """Vrátí platná pravidla pro ohroženou skupinu nebo profesi a rozsah pracoviště.
 
         Platná = aktivní **existující** opatření (realizovaná).
         Potřebná další / neaktivní opatření se nezahrnují.
         Texty se normalizují; nevhodné formulace zůstávají ve výsledku
         a mají ``unsuitable_for_employee=True``.
+
+        Při výběru profese se sjednotí pravidla ze všech jejích aktivních
+        ohrožených skupin (deduplikace, nejvyšší závažnost, všechny zdroje).
         """
+        if operation_id is None:
+            raise ValueError("operation_id je povinný.")
         if workplace_id is None:
             workplace_part_id = None
 
+        if profession_id is not None:
+            group_ids = profession_service.get_active_exposed_group_ids(profession_id)
+            if not group_ids:
+                return []
+            return self._generate_for_groups(
+                group_ids=group_ids,
+                operation_id=operation_id,
+                workplace_id=workplace_id,
+                workplace_part_id=workplace_part_id,
+            )
+
+        if endangered_group_id is None:
+            raise ValueError("Je nutné zadat endangered_group_id nebo profession_id.")
+
+        return self._generate_for_groups(
+            group_ids=[endangered_group_id],
+            operation_id=operation_id,
+            workplace_id=workplace_id,
+            workplace_part_id=workplace_part_id,
+        )
+
+    def _generate_for_groups(
+        self,
+        *,
+        group_ids: list[int],
+        operation_id: int,
+        workplace_id: int | None,
+        workplace_part_id: int | None,
+    ) -> list[PravidloBezpecnePrace]:
+        target_groups = set(group_ids)
         collected: list[PravidloBezpecnePrace] = []
         for identification in hazard_identification_service.get_all(
             include_inactive=False
@@ -236,9 +275,9 @@ class PravidlaBezpecnePraceService:
                 identification.id,
                 include_inactive=False,
             ):
-                if not self._assessment_matches_group(
+                if not self._assessment_matches_any_group(
                     row.assessment.id,
-                    endangered_group_id,
+                    target_groups,
                     legacy_exposed_group_id=row.assessment.exposed_group_id,
                 ):
                     continue
@@ -286,8 +325,9 @@ class PravidlaBezpecnePraceService:
     def export_document(
         self,
         *,
-        endangered_group_id: int,
         operation_id: int,
+        endangered_group_id: int | None = None,
+        profession_id: int | None = None,
         workplace_id: int | None = None,
         workplace_part_id: int | None = None,
         rules: list[PravidloBezpecnePrace] | None = None,
@@ -300,6 +340,7 @@ class PravidlaBezpecnePraceService:
         if rules is None:
             rules = self.generate(
                 endangered_group_id=endangered_group_id,
+                profession_id=profession_id,
                 operation_id=operation_id,
                 workplace_id=workplace_id,
                 workplace_part_id=workplace_part_id,
@@ -321,6 +362,7 @@ class PravidlaBezpecnePraceService:
 
         self.last_comparison = pravidla_bezpecne_prace_edition_service.compare_to_latest(
             endangered_group_id=endangered_group_id,
+            profession_id=profession_id,
             operation_id=operation_id,
             workplace_id=workplace_id,
             workplace_part_id=workplace_part_id,
@@ -329,6 +371,7 @@ class PravidlaBezpecnePraceService:
 
         values = self._placeholder_values(
             endangered_group_id=endangered_group_id,
+            profession_id=profession_id,
             operation_id=operation_id,
             workplace_id=workplace_id,
             workplace_part_id=workplace_part_id,
@@ -339,6 +382,7 @@ class PravidlaBezpecnePraceService:
             self.EXPORT_SUBDIR,
             self._output_filename(
                 endangered_group_id=endangered_group_id,
+                profession_id=profession_id,
                 operation_id=operation_id,
             ),
         )
@@ -356,6 +400,7 @@ class PravidlaBezpecnePraceService:
 
         pravidla_bezpecne_prace_edition_service.record_edition(
             endangered_group_id=endangered_group_id,
+            profession_id=profession_id,
             operation_id=operation_id,
             workplace_id=workplace_id,
             workplace_part_id=workplace_part_id,
@@ -394,14 +439,16 @@ class PravidlaBezpecnePraceService:
     def open_document(
         self,
         *,
-        endangered_group_id: int,
         operation_id: int,
+        endangered_group_id: int | None = None,
+        profession_id: int | None = None,
         workplace_id: int | None = None,
         workplace_part_id: int | None = None,
         rules: list[PravidloBezpecnePrace] | None = None,
     ) -> Path | None:
         path = self.export_document(
             endangered_group_id=endangered_group_id,
+            profession_id=profession_id,
             operation_id=operation_id,
             workplace_id=workplace_id,
             workplace_part_id=workplace_part_id,
@@ -415,15 +462,23 @@ class PravidlaBezpecnePraceService:
     def _placeholder_values(
         self,
         *,
-        endangered_group_id: int,
+        endangered_group_id: int | None,
+        profession_id: int | None,
         operation_id: int,
         workplace_id: int | None,
         workplace_part_id: int | None,
         rules: list[PravidloBezpecnePrace],
         issued_at: date | datetime,
     ) -> dict[str, str]:
+        if profession_id is not None:
+            rozsah_label = "Profese"
+            rozsah_nazev = profession_service.display_name(profession_id)
+        else:
+            rozsah_label = "Ohrožená skupina"
+            rozsah_nazev = exposed_group_service.display_name(endangered_group_id)
         return {
-            "ohrozena_skupina": exposed_group_service.display_name(endangered_group_id),
+            "rozsah_label": rozsah_label,
+            "ohrozena_skupina": rozsah_nazev,
             "provoz": self._workplace_name(operation_id),
             "pracoviste": self._workplace_name(workplace_id),
             "cast_pracoviste": self._workplace_name(workplace_part_id),
@@ -454,12 +509,18 @@ class PravidlaBezpecnePraceService:
         return value.strftime("%d.%m.%Y")
 
     @staticmethod
-    def _output_filename(*, endangered_group_id: int, operation_id: int) -> str:
+    def _output_filename(
+        *,
+        operation_id: int,
+        endangered_group_id: int | None = None,
+        profession_id: int | None = None,
+    ) -> str:
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        return (
-            f"PravidlaBezpecnePrace-g{endangered_group_id}"
-            f"-o{operation_id}_{stamp}.odt"
-        )
+        if profession_id is not None:
+            scope = f"p{profession_id}"
+        else:
+            scope = f"g{endangered_group_id}"
+        return f"PravidlaBezpecnePrace-{scope}-o{operation_id}_{stamp}.odt"
 
     @staticmethod
     def _identification_in_scope(
@@ -484,11 +545,26 @@ class PravidlaBezpecnePraceService:
         *,
         legacy_exposed_group_id: int | None,
     ) -> bool:
+        return PravidlaBezpecnePraceService._assessment_matches_any_group(
+            assessment_id,
+            {endangered_group_id},
+            legacy_exposed_group_id=legacy_exposed_group_id,
+        )
+
+    @staticmethod
+    def _assessment_matches_any_group(
+        assessment_id: int,
+        endangered_group_ids: set[int],
+        *,
+        legacy_exposed_group_id: int | None,
+    ) -> bool:
+        if not endangered_group_ids:
+            return False
         group_ids = hazard_risk_assessment_service.get_group_ids(assessment_id)
-        if endangered_group_id in group_ids:
-            return True
-        if not group_ids and legacy_exposed_group_id == endangered_group_id:
-            return True
+        if group_ids:
+            return bool(endangered_group_ids.intersection(group_ids))
+        if legacy_exposed_group_id is not None:
+            return legacy_exposed_group_id in endangered_group_ids
         return False
 
     @staticmethod

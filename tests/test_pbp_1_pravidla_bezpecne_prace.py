@@ -111,6 +111,7 @@ class PravidlaBezpecnePraceDialogTestCase(unittest.TestCase):
 
     def test_generate_calls_service_with_hierarchy(self) -> None:
         dialog = PravidlaBezpecnePraceDialog()
+        dialog.mode.setCurrentIndex(dialog.mode.findData("group"))
         dialog.endangered_group.set_group_id(self.group.id)
         index = dialog.operation.findData(self.operation.id)
         self.assertGreaterEqual(index, 0)
@@ -134,6 +135,7 @@ class PravidlaBezpecnePraceDialogTestCase(unittest.TestCase):
             dialog._generate()
             mock_generate_dialog.assert_called_once_with(
                 endangered_group_id=self.group.id,
+                profession_id=None,
                 operation_id=self.operation.id,
                 workplace_id=self.workplace.id,
                 workplace_part_id=self.part.id,

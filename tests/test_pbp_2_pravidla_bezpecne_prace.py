@@ -328,6 +328,7 @@ class PravidlaBezpecnePracePhasePbp2TestCase(unittest.TestCase):
 
     def test_dialog_shows_count_and_empty_info(self) -> None:
         dialog = PravidlaBezpecnePraceDialog()
+        dialog.mode.setCurrentIndex(dialog.mode.findData("group"))
         dialog.endangered_group.set_group_id(self.group_a.id)
         dialog.operation.setCurrentIndex(dialog.operation.findData(self.operation.id))
 

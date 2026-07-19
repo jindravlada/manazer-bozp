@@ -1,4 +1,4 @@
-"""Služba evidence vydání Pravidel bezpečné práce (PBP-5a)."""
+"""Služba evidence vydání Pravidel bezpečné práce (PBP-5a, PBP-5c)."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 
 from moduly.rizeni_rizik.modely.pravidla_bezpecne_prace_edition import (
+    PBP_EDITION_NO_ENDANGERED_GROUP,
     PravidlaBezpecnePraceEdition,
     PravidlaBezpecnePraceEditionRule,
 )
@@ -31,8 +32,9 @@ class PravidlaBezpecnePraceEditionService:
     def compare_to_latest(
         self,
         *,
-        endangered_group_id: int,
         operation_id: int,
+        endangered_group_id: int | None = None,
+        profession_id: int | None = None,
         workplace_id: int | None = None,
         workplace_part_id: int | None = None,
         rules: list[PravidloBezpecnePrace],
@@ -40,6 +42,7 @@ class PravidlaBezpecnePraceEditionService:
         """Porovná aktuální pravidla s posledním vydáním stejného rozsahu."""
         previous = self.get_latest_edition(
             endangered_group_id=endangered_group_id,
+            profession_id=profession_id,
             operation_id=operation_id,
             workplace_id=workplace_id,
             workplace_part_id=workplace_part_id,
@@ -49,8 +52,9 @@ class PravidlaBezpecnePraceEditionService:
     def record_edition(
         self,
         *,
-        endangered_group_id: int,
         operation_id: int,
+        endangered_group_id: int | None = None,
+        profession_id: int | None = None,
         workplace_id: int | None = None,
         workplace_part_id: int | None = None,
         rules: list[PravidloBezpecnePrace],
@@ -61,9 +65,21 @@ class PravidlaBezpecnePraceEditionService:
         if workplace_id is None:
             workplace_part_id = None
 
+        if profession_id is not None:
+            scope_group_id = PBP_EDITION_NO_ENDANGERED_GROUP
+            scope_profession_id = profession_id
+        else:
+            if endangered_group_id is None:
+                raise ValueError(
+                    "Je nutné zadat endangered_group_id nebo profession_id."
+                )
+            scope_group_id = endangered_group_id
+            scope_profession_id = None
+
         edition = PravidlaBezpecnePraceEdition(
             issued_at=issued_at or datetime.now(),
-            endangered_group_id=endangered_group_id,
+            endangered_group_id=scope_group_id,
+            profession_id=scope_profession_id,
             operation_id=operation_id,
             workplace_id=workplace_id,
             workplace_part_id=workplace_part_id,
@@ -76,8 +92,9 @@ class PravidlaBezpecnePraceEditionService:
     def get_latest_edition(
         self,
         *,
-        endangered_group_id: int,
         operation_id: int,
+        endangered_group_id: int | None = None,
+        profession_id: int | None = None,
         workplace_id: int | None = None,
         workplace_part_id: int | None = None,
     ) -> PravidlaBezpecnePraceEdition | None:
@@ -86,6 +103,7 @@ class PravidlaBezpecnePraceEditionService:
             workplace_part_id = None
         return self.repository.get_latest_for_scope(
             endangered_group_id=endangered_group_id,
+            profession_id=profession_id,
             operation_id=operation_id,
             workplace_id=workplace_id,
             workplace_part_id=workplace_part_id,
