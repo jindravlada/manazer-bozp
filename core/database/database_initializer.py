@@ -114,6 +114,9 @@ def initialize_database() -> None:
     from moduly.koordinace_bozp.modely.coordination_attachment import (  # noqa: F401
         CoordinationAttachment,
     )
+    from moduly.koordinace_bozp.modely.coordination_pbp_revision import (  # noqa: F401
+        CoordinationPbpRevision,
+    )
     from core.ai_oponentni.modely.ai_peer_review import (  # noqa: F401
         AiPeerReview,
         AiPeerReviewBatch,
@@ -2055,6 +2058,22 @@ def _ensure_bozp_coordinations_table() -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_coordination_attachments_employer
         ON coordination_attachments (coordination_employer_id)
+        """,
+    )
+
+    pbp_revision_columns = _table_columns("coordination_pbp_revisions")
+    if not pbp_revision_columns:
+        from moduly.koordinace_bozp.modely.coordination_pbp_revision import (
+            CoordinationPbpRevision,
+        )
+
+        CoordinationPbpRevision.__table__.create(bind=_db_engine(), checkfirst=True)
+
+    _ensure_index(
+        "idx_coordination_pbp_revisions_coordination",
+        """
+        CREATE INDEX IF NOT EXISTS idx_coordination_pbp_revisions_coordination
+        ON coordination_pbp_revisions (coordination_id)
         """,
     )
 

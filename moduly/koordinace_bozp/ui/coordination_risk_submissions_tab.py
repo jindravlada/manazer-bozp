@@ -62,8 +62,8 @@ class CoordinationRiskSubmissionsTab(QWidget):
 
         main_info = QLabel(
             f"{MAIN_EMPLOYER_RISK_HANDOVER_PROTOCOL_TEXT}\n"
-            f"Budoucí příloha: „{MAIN_EMPLOYER_RISK_HANDOVER_ATTACHMENT_TITLE}“ "
-            "(obsah PBP se vytvoří v COORD-007)."
+            f"Příloha: „{MAIN_EMPLOYER_RISK_HANDOVER_ATTACHMENT_TITLE}“ "
+            "(generuje se v záložce Příloha PBP)."
         )
         main_info.setWordWrap(True)
         content_layout.addWidget(main_info)

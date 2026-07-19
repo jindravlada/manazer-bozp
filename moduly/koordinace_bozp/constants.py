@@ -32,6 +32,19 @@ TAB_PARTICIPANTS = "Účastníci schůzky"
 TAB_COORDINATOR = "Koordinátor BOZP"
 TAB_WORKPLACES = "Místa výkonu práce"
 TAB_RISK_SUBMISSIONS = "Předání rizik dodavatelů"
+TAB_PBP_ATTACHMENT = "Příloha PBP"
+
+COORDINATION_PBP_INTRO_TEXT = (
+    "Dodržujte následující pravidla bezpečné práce. "
+    "Jejich nedodržení může vést ke vzniku pracovního úrazu nebo mimořádné události."
+)
+
+COORDINATION_PBP_INFO_TEXT = (
+    "Dodavatel je povinen před zahájením prací předat hlavnímu zaměstnavateli "
+    "informace o rizicích vznikajících při jeho činnosti a o přijatých opatřeních."
+)
+
+ATTACHMENT_TYPE_MAIN_EMPLOYER_PBP = "main_employer_pbp"
 
 # Předání rizik hlavního zaměstnavatele (COORD-006 / budoucí export).
 MAIN_EMPLOYER_RISK_HANDOVER_METHOD = "attachment"
@@ -91,11 +104,13 @@ ATTACHMENT_TYPE_OTHER = "other"
 ATTACHMENT_TYPES = (
     ATTACHMENT_TYPE_CONTRACTOR_RISKS,
     ATTACHMENT_TYPE_OTHER,
+    ATTACHMENT_TYPE_MAIN_EMPLOYER_PBP,
 )
 
 ATTACHMENT_TYPE_LABELS = {
     ATTACHMENT_TYPE_CONTRACTOR_RISKS: "Rizika dodavatele",
     ATTACHMENT_TYPE_OTHER: "Jiná příloha",
+    ATTACHMENT_TYPE_MAIN_EMPLOYER_PBP: "Příloha PBP hlavního zaměstnavatele",
 }
 
 COORDINATION_ATTACHMENT_ALLOWED_SUFFIXES = (

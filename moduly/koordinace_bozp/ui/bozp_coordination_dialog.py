@@ -28,6 +28,7 @@ from moduly.koordinace_bozp.constants import (
     TAB_COORDINATOR,
     TAB_EMPLOYERS,
     TAB_PARTICIPANTS,
+    TAB_PBP_ATTACHMENT,
     TAB_RISK_SUBMISSIONS,
     TAB_WORKPLACES,
 )
@@ -43,6 +44,9 @@ from moduly.koordinace_bozp.ui.coordination_employers_tab import (
 )
 from moduly.koordinace_bozp.ui.coordination_participants_tab import (
     CoordinationParticipantsTab,
+)
+from moduly.koordinace_bozp.ui.coordination_pbp_attachment_tab import (
+    CoordinationPbpAttachmentTab,
 )
 from moduly.koordinace_bozp.ui.coordination_risk_submissions_tab import (
     CoordinationRiskSubmissionsTab,
@@ -133,6 +137,12 @@ class BozpCoordinationDialog(QDialog):
             coordination_id=coordination_id,
         )
         self.tabs.addTab(self.risk_submissions_tab, TAB_RISK_SUBMISSIONS)
+
+        self.pbp_attachment_tab = CoordinationPbpAttachmentTab(
+            self,
+            coordination_id=coordination_id,
+        )
+        self.tabs.addTab(self.pbp_attachment_tab, TAB_PBP_ATTACHMENT)
         layout.addWidget(self.tabs, 1)
 
         buttons = create_save_cancel_box(self)
@@ -181,6 +191,8 @@ class BozpCoordinationDialog(QDialog):
             self.workplaces_tab.refresh()
         elif widget is self.risk_submissions_tab:
             self.risk_submissions_tab.refresh_employers()
+        elif widget is self.pbp_attachment_tab:
+            self.pbp_attachment_tab.refresh_status()
         elif widget is self.employers_tab:
             self.employers_tab.refresh()
 
