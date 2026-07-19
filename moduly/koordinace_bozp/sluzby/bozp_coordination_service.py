@@ -7,6 +7,7 @@ from datetime import date, datetime
 from moduly.koordinace_bozp.constants import (
     BOZP_COORDINATION_STATUSES,
     DEFAULT_BOZP_COORDINATION_STATUS,
+    PBP_FILTER_ALL,
     VALIDITY_FILTER_ALL,
     VALIDITY_FILTER_EXPIRED,
     VALIDITY_FILTER_EXPIRING,
@@ -15,6 +16,10 @@ from moduly.koordinace_bozp.constants import (
 from moduly.koordinace_bozp.modely.bozp_coordination import BozpCoordination
 from moduly.koordinace_bozp.repository.bozp_coordination_repository import (
     BozpCoordinationRepository,
+)
+from moduly.koordinace_bozp.sluzby.coordination_pbp_freshness import (
+    PbpFreshnessCache,
+    filter_by_pbp_freshness,
 )
 from moduly.koordinace_bozp.sluzby.coordination_validity import (
     coordination_validity_state,
@@ -35,10 +40,13 @@ class BozpCoordinationService:
         include_inactive: bool = False,
         *,
         validity_filter: str = VALIDITY_FILTER_ALL,
+        pbp_filter: str = PBP_FILTER_ALL,
         today: date | None = None,
+        pbp_cache: PbpFreshnessCache | None = None,
     ) -> list[BozpCoordination]:
         items = self.repository.get_all(include_inactive=include_inactive)
-        return self.filter_by_validity(items, validity_filter, today=today)
+        items = self.filter_by_validity(items, validity_filter, today=today)
+        return self.filter_by_pbp(items, pbp_filter, today=today, pbp_cache=pbp_cache)
 
     def filter_by_validity(
         self,
@@ -61,6 +69,24 @@ class BozpCoordinationService:
             for item in items
             if coordination_validity_state(item.valid_to, today=today) == validity_filter
         ]
+
+    def filter_by_pbp(
+        self,
+        items: list[BozpCoordination],
+        pbp_filter: str = PBP_FILTER_ALL,
+        *,
+        today: date | None = None,
+        pbp_cache: PbpFreshnessCache | None = None,
+    ) -> list[BozpCoordination]:
+        try:
+            return filter_by_pbp_freshness(
+                items,
+                pbp_filter,
+                today=today,
+                cache=pbp_cache,
+            )
+        except ValueError as error:
+            raise BozpCoordinationError(str(error)) from error
 
     def get_by_id(self, coordination_id: int | None) -> BozpCoordination | None:
         if not coordination_id:

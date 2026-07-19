@@ -249,7 +249,10 @@ class KoordinaceBozpPhaseCoord001TestCase(unittest.TestCase):
         self.assertEqual(page.activate_btn.text(), "Aktivovat")
         self.assertEqual(page.deactivate_btn.text(), "Deaktivovat")
         self.assertEqual(
-            list(page.table.horizontalHeaderItem(i).text() for i in range(1, 7)),
+            list(
+                page.table.horizontalHeaderItem(i).text()
+                for i in range(1, page.table.columnCount())
+            ),
             TABLE_HEADERS[1:],
         )
 

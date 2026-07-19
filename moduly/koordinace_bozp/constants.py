@@ -215,7 +215,8 @@ COL_PLACE = 3
 COL_SUBJECT = 4
 COL_STATUS = 5
 COL_VALIDITY = 6
-COLUMN_COUNT = 7
+COL_PBP = 7
+COLUMN_COUNT = 8
 
 TABLE_HEADERS = [
     "ID",
@@ -225,6 +226,7 @@ TABLE_HEADERS = [
     "Předmět koordinace",
     "Stav",
     "Platnost",
+    "Příloha PBP",
 ]
 
 VALIDITY_STATE_VALID = "valid"
@@ -261,4 +263,73 @@ VALIDITY_FILTER_LABELS = {
     VALIDITY_FILTER_VALID: "Platné",
     VALIDITY_FILTER_EXPIRING: "Končící",
     VALIDITY_FILTER_EXPIRED: "Po platnosti",
+}
+
+# Aktuálnost přílohy PBP (COORD-007a) – dynamicky, neukládá se do DB.
+PBP_FRESHNESS_CURRENT = "current"
+PBP_FRESHNESS_NEEDS_UPDATE = "needs_update"
+PBP_FRESHNESS_MISSING = "missing"
+PBP_FRESHNESS_UNVERIFIABLE = "unverifiable"
+PBP_FRESHNESS_SKIPPED = "skipped"
+
+PBP_FRESHNESS_STATES = (
+    PBP_FRESHNESS_CURRENT,
+    PBP_FRESHNESS_NEEDS_UPDATE,
+    PBP_FRESHNESS_MISSING,
+    PBP_FRESHNESS_UNVERIFIABLE,
+    PBP_FRESHNESS_SKIPPED,
+)
+
+PBP_FRESHNESS_LABELS = {
+    PBP_FRESHNESS_CURRENT: "Aktuální",
+    PBP_FRESHNESS_NEEDS_UPDATE: "Vyžaduje aktualizaci",
+    PBP_FRESHNESS_MISSING: "Nevytvořena",
+    PBP_FRESHNESS_UNVERIFIABLE: "Nelze ověřit",
+    PBP_FRESHNESS_SKIPPED: "—",
+}
+
+PBP_FRESHNESS_DETAIL_MESSAGES = {
+    PBP_FRESHNESS_CURRENT: "Příloha je aktuální.",
+    PBP_FRESHNESS_NEEDS_UPDATE: (
+        "Příloha neodpovídá současným údajům v Registru rizik."
+    ),
+    PBP_FRESHNESS_MISSING: "Příloha dosud nebyla vytvořena.",
+    PBP_FRESHNESS_UNVERIFIABLE: "Aktuálnost nelze ověřit.",
+    PBP_FRESHNESS_SKIPPED: "Kontrola se u ukončené koordinace neprovádí.",
+}
+
+PBP_FRESHNESS_TOOLTIPS = {
+    PBP_FRESHNESS_CURRENT: "Hash přílohy odpovídá současnému obsahu Registru rizik.",
+    PBP_FRESHNESS_NEEDS_UPDATE: (
+        "Obsah Registru rizik se změnil – přílohu je třeba aktualizovat."
+    ),
+    PBP_FRESHNESS_MISSING: "Pro koordinaci ještě nebyla vytvořena příloha PBP.",
+    PBP_FRESHNESS_UNVERIFIABLE: (
+        "Nelze sestavit aktuální obsah (např. chybí aktivní místa nebo platná PBP)."
+    ),
+    PBP_FRESHNESS_SKIPPED: (
+        "Kontrola se neprovádí u neaktivních, archivovaných nebo ukončených koordinací."
+    ),
+}
+
+PBP_FRESHNESS_COLORS = {
+    PBP_FRESHNESS_CURRENT: "#2e7d32",
+    PBP_FRESHNESS_NEEDS_UPDATE: "#ef6c00",
+    PBP_FRESHNESS_MISSING: "#c62828",
+    PBP_FRESHNESS_UNVERIFIABLE: "#546e7a",
+    PBP_FRESHNESS_SKIPPED: "#9e9e9e",
+}
+
+PBP_FILTER_ALL = "all"
+PBP_FILTER_CURRENT = "current"
+PBP_FILTER_NEEDS_UPDATE = "needs_update"
+PBP_FILTER_MISSING = "missing"
+PBP_FILTER_UNVERIFIABLE = "unverifiable"
+
+PBP_FILTER_LABELS = {
+    PBP_FILTER_ALL: "Všechny",
+    PBP_FILTER_CURRENT: "Aktuální",
+    PBP_FILTER_NEEDS_UPDATE: "Vyžadují aktualizaci",
+    PBP_FILTER_MISSING: "Bez přílohy",
+    PBP_FILTER_UNVERIFIABLE: "Nelze ověřit",
 }

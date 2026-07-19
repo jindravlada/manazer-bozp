@@ -13,6 +13,12 @@ from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
 from moduly.koordinace_bozp.constants import (
     DIALOG_WINDOW_TITLE,
+    PBP_FILTER_ALL,
+    PBP_FILTER_CURRENT,
+    PBP_FILTER_LABELS,
+    PBP_FILTER_MISSING,
+    PBP_FILTER_NEEDS_UPDATE,
+    PBP_FILTER_UNVERIFIABLE,
     VALIDITY_FILTER_ALL,
     VALIDITY_FILTER_EXPIRED,
     VALIDITY_FILTER_EXPIRING,
@@ -23,6 +29,7 @@ from moduly.koordinace_bozp.sluzby.bozp_coordination_service import (
     BozpCoordinationError,
     bozp_coordination_service,
 )
+from moduly.koordinace_bozp.sluzby.coordination_pbp_freshness import PbpFreshnessCache
 from moduly.koordinace_bozp.ui.bozp_coordination_dialog import BozpCoordinationDialog
 from moduly.koordinace_bozp.ui.bozp_coordination_table import BozpCoordinationTable
 
@@ -32,6 +39,7 @@ class KoordinaceBozpPage(QWidget):
 
     def __init__(self):
         super().__init__()
+        self._pbp_cache = PbpFreshnessCache()
 
         layout = QVBoxLayout(self)
 
@@ -57,6 +65,18 @@ class KoordinaceBozpPage(QWidget):
             self.validity_filter.addItem(VALIDITY_FILTER_LABELS[filter_id], filter_id)
         toolbar.addWidget(self.validity_filter)
 
+        toolbar.addWidget(QLabel("Příloha PBP:"))
+        self.pbp_filter = QComboBox()
+        for filter_id in (
+            PBP_FILTER_ALL,
+            PBP_FILTER_CURRENT,
+            PBP_FILTER_NEEDS_UPDATE,
+            PBP_FILTER_MISSING,
+            PBP_FILTER_UNVERIFIABLE,
+        ):
+            self.pbp_filter.addItem(PBP_FILTER_LABELS[filter_id], filter_id)
+        toolbar.addWidget(self.pbp_filter)
+
         self.table = BozpCoordinationTable()
         configure_table_columns(self.table, "bozp_coordinations")
         self.text_filter = FilterBar(self.table, placeholder="🔍 Hledat koordinaci...")
@@ -70,6 +90,7 @@ class KoordinaceBozpPage(QWidget):
         self.activate_btn.clicked.connect(self.activate_selected_coordination)
         self.deactivate_btn.clicked.connect(self.deactivate_selected_coordination)
         self.validity_filter.currentIndexChanged.connect(self.refresh)
+        self.pbp_filter.currentIndexChanged.connect(self.refresh)
         self.table.doubleClicked.connect(self.open_selected_coordination)
         self.table.itemSelectionChanged.connect(self._update_action_buttons)
 
@@ -87,12 +108,18 @@ class KoordinaceBozpPage(QWidget):
     def current_validity_filter(self) -> str:
         return self.validity_filter.currentData() or VALIDITY_FILTER_ALL
 
+    def current_pbp_filter(self) -> str:
+        return self.pbp_filter.currentData() or PBP_FILTER_ALL
+
     def refresh(self) -> None:
+        self._pbp_cache.clear()
         coordinations = bozp_coordination_service.get_all(
             include_inactive=True,
             validity_filter=self.current_validity_filter(),
+            pbp_filter=self.current_pbp_filter(),
+            pbp_cache=self._pbp_cache,
         )
-        self.table.load_coordinations(coordinations)
+        self.table.load_coordinations(coordinations, pbp_cache=self._pbp_cache)
         configure_table_columns(self.table, "bozp_coordinations")
         self.table.clear_selection()
         self.text_filter.update_count()

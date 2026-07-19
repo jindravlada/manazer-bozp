@@ -17,12 +17,18 @@ from moduly.koordinace_bozp.constants import (
     COL_ID,
     COL_MEETING_DATE,
     COL_NUMBER,
+    COL_PBP,
     COL_PLACE,
     COL_STATUS,
     COL_SUBJECT,
     COL_VALIDITY,
     COLUMN_COUNT,
     TABLE_HEADERS,
+)
+from moduly.koordinace_bozp.sluzby.coordination_pbp_freshness import (
+    PbpFreshnessCache,
+    pbp_freshness_color,
+    pbp_freshness_sort_order,
 )
 from moduly.koordinace_bozp.sluzby.coordination_validity import (
     coordination_validity_color,
@@ -53,7 +59,14 @@ class BozpCoordinationTable(QTableWidget):
         self.setAlternatingRowColors(True)
         enable_typed_sorting(self)
 
-    def load_coordinations(self, coordinations, *, today=None) -> None:
+    def load_coordinations(
+        self,
+        coordinations,
+        *,
+        today=None,
+        pbp_cache: PbpFreshnessCache | None = None,
+    ) -> None:
+        freshness_cache = pbp_cache or PbpFreshnessCache()
         with sorting_paused(self):
             self.setRowCount(len(coordinations))
             for row, item in enumerate(coordinations):
@@ -62,6 +75,7 @@ class BozpCoordinationTable(QTableWidget):
                 display_status = status_label if item.active else f"{status_label} (neaktivní)"
                 validity_state = coordination_validity_state(item.valid_to, today=today)
                 validity_label = coordination_validity_label(item.valid_to, today=today)
+                freshness = freshness_cache.evaluate(item, today=today)
                 self.setItem(
                     row,
                     COL_ID,
@@ -127,6 +141,19 @@ class BozpCoordinationTable(QTableWidget):
                 )
                 validity_item.setData(Qt.ItemDataRole.UserRole, validity_state)
                 self.setItem(row, COL_VALIDITY, validity_item)
+
+                pbp_item = create_typed_item(
+                    freshness.label,
+                    typed_status(
+                        pbp_freshness_sort_order(freshness.state),
+                        label=freshness.label,
+                    ),
+                    stable_id=record_id,
+                )
+                pbp_item.setForeground(QBrush(QColor(pbp_freshness_color(freshness.state))))
+                pbp_item.setToolTip(freshness.tooltip)
+                pbp_item.setData(Qt.ItemDataRole.UserRole, freshness.state)
+                self.setItem(row, COL_PBP, pbp_item)
 
     def selected_coordination_id(self) -> int | None:
         selected = self.selectionModel().selectedRows()

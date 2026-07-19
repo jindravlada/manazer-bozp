@@ -1,3 +1,4 @@
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QDialog,
     QFileDialog,
@@ -20,11 +21,19 @@ from core.widgets.typed_table_sort import (
 )
 from moduly.koordinace_bozp.constants import (
     MAIN_EMPLOYER_RISK_HANDOVER_ATTACHMENT_TITLE,
+    PBP_FRESHNESS_NEEDS_UPDATE,
     TAB_PBP_ATTACHMENT,
+)
+from moduly.koordinace_bozp.sluzby.bozp_coordination_service import (
+    bozp_coordination_service,
 )
 from moduly.koordinace_bozp.sluzby.coordination_pbp_attachment_service import (
     CoordinationPbpAttachmentError,
     coordination_pbp_attachment_service,
+)
+from moduly.koordinace_bozp.sluzby.coordination_pbp_freshness import (
+    evaluate_pbp_freshness,
+    pbp_freshness_color,
 )
 
 
@@ -112,6 +121,10 @@ class CoordinationPbpAttachmentTab(QWidget):
         self.status_label.setWordWrap(True)
         content_layout.addWidget(self.status_label)
 
+        self.freshness_label = QLabel()
+        self.freshness_label.setWordWrap(True)
+        content_layout.addWidget(self.freshness_label)
+
         toolbar = QHBoxLayout()
         self.generate_btn = QPushButton("Generovat")
         self.update_btn = QPushButton("Aktualizovat")
@@ -127,6 +140,10 @@ class CoordinationPbpAttachmentTab(QWidget):
         content_layout.addLayout(toolbar)
         content_layout.addStretch()
         layout.addWidget(self.content)
+
+        self._update_btn_default_font = QFont(self.update_btn.font())
+        self._update_btn_highlight_font = QFont(self.update_btn.font())
+        self._update_btn_highlight_font.setBold(True)
 
         self.generate_btn.clicked.connect(self.generate_attachment)
         self.update_btn.clicked.connect(self.update_attachment)
@@ -145,6 +162,8 @@ class CoordinationPbpAttachmentTab(QWidget):
             self.refresh_status()
         else:
             self.status_label.clear()
+            self.freshness_label.clear()
+            self._set_update_highlighted(False)
 
     def refresh_status(self) -> None:
         if self.coordination_id is None:
@@ -154,19 +173,45 @@ class CoordinationPbpAttachmentTab(QWidget):
             self.status_label.setText("Příloha zatím nebyla vygenerována.")
             self.show_btn.setEnabled(False)
             self.export_btn.setEnabled(False)
+        else:
+            created = (
+                current.created_at.strftime("%d.%m.%Y %H:%M")
+                if current.created_at
+                else ""
+            )
+            self.status_label.setText(
+                f"Aktuální revize {current.revision_number} "
+                f"({current.rules_count} pravidel, {created}, "
+                f"hash {current.content_hash[:12]}…)."
+            )
+            self.show_btn.setEnabled(True)
+            self.export_btn.setEnabled(True)
+
+        coordination = bozp_coordination_service.get_by_id(self.coordination_id)
+        if coordination is None:
+            self.freshness_label.clear()
+            self._set_update_highlighted(False)
             return
-        created = (
-            current.created_at.strftime("%d.%m.%Y %H:%M")
-            if current.created_at
-            else ""
+        freshness = evaluate_pbp_freshness(coordination)
+        self.freshness_label.setText(freshness.detail_message)
+        self.freshness_label.setToolTip(freshness.tooltip)
+        self.freshness_label.setStyleSheet(
+            f"color: {pbp_freshness_color(freshness.state)};"
         )
-        self.status_label.setText(
-            f"Aktuální revize {current.revision_number} "
-            f"({current.rules_count} pravidel, {created}, "
-            f"hash {current.content_hash[:12]}…)."
-        )
-        self.show_btn.setEnabled(True)
-        self.export_btn.setEnabled(True)
+        self._set_update_highlighted(freshness.state == PBP_FRESHNESS_NEEDS_UPDATE)
+
+    def _set_update_highlighted(self, highlighted: bool) -> None:
+        if highlighted:
+            self.update_btn.setFont(self._update_btn_highlight_font)
+            self.update_btn.setStyleSheet(
+                "QPushButton { font-weight: bold; "
+                "border: 2px solid #ef6c00; padding: 4px 10px; }"
+            )
+            self.update_btn.setDefault(True)
+        else:
+            self.update_btn.setFont(self._update_btn_default_font)
+            self.update_btn.setStyleSheet("")
+            self.update_btn.setDefault(False)
 
     def generate_attachment(self) -> None:
         self._run_generate(prefer_create_message=True)
