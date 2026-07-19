@@ -28,14 +28,19 @@ from moduly.koordinace_bozp.ui.coordination_employer_activity_dialog import (
 from moduly.koordinace_bozp.ui.coordination_employer_activity_table import (
     CoordinationEmployerActivityTable,
 )
+from moduly.koordinace_bozp.ui.coordination_tab_edit_policy import (
+    CoordinationTabEditPolicyMixin,
+)
 
 
-class CoordinationEmployerActivitiesTab(QWidget):
+class CoordinationEmployerActivitiesTab(CoordinationTabEditPolicyMixin, QWidget):
     """Záložka činností zúčastněných zaměstnavatelů (COORD-008)."""
 
     def __init__(self, parent=None, coordination_id: int | None = None):
         super().__init__(parent)
         self.coordination_id = coordination_id
+        self._content_editable = True
+        self._before_mutate = None
 
         layout = QVBoxLayout(self)
 
@@ -175,7 +180,7 @@ class CoordinationEmployerActivitiesTab(QWidget):
         return coordination_employer_service.get_by_id(employer_id)
 
     def add_activity(self) -> None:
-        if self.coordination_id is None:
+        if self.coordination_id is None or not self.allow_mutate():
             return
         employer = self.current_employer()
         if employer is None:
@@ -214,7 +219,7 @@ class CoordinationEmployerActivitiesTab(QWidget):
         self.refresh_activities(select_id=created.id, ensure_visible=True)
 
     def edit_selected_activity(self) -> None:
-        if self.coordination_id is None:
+        if self.coordination_id is None or not self.allow_mutate():
             return
         activity = self._selected_activity()
         if activity is None:
@@ -249,6 +254,8 @@ class CoordinationEmployerActivitiesTab(QWidget):
         self.refresh_activities(select_id=activity.id, preserve_scroll=True)
 
     def activate_selected_activity(self) -> None:
+        if not self.allow_mutate():
+            return
         activity = self._selected_activity()
         if activity is None:
             QMessageBox.information(
@@ -281,6 +288,8 @@ class CoordinationEmployerActivitiesTab(QWidget):
         self.refresh_activities(select_id=activity.id, ensure_visible=True)
 
     def deactivate_selected_activity(self) -> None:
+        if not self.allow_mutate():
+            return
         activity = self._selected_activity()
         if activity is None:
             QMessageBox.information(
@@ -323,6 +332,12 @@ class CoordinationEmployerActivitiesTab(QWidget):
         return coordination_employer_activity_service.get_by_id(activity_id)
 
     def _update_action_buttons(self) -> None:
+        if not getattr(self, "_content_editable", True):
+            self.add_btn.setEnabled(False)
+            self.edit_btn.setEnabled(False)
+            self.activate_btn.setEnabled(False)
+            self.deactivate_btn.setEnabled(False)
+            return
         employer = self.current_employer()
         can_add = employer is not None and bool(employer.active)
         self.add_btn.setEnabled(can_add)

@@ -24,14 +24,19 @@ from moduly.koordinace_bozp.ui.coordination_workplace_dialog import (
 from moduly.koordinace_bozp.ui.coordination_workplace_table import (
     CoordinationWorkplaceTable,
 )
+from moduly.koordinace_bozp.ui.coordination_tab_edit_policy import (
+    CoordinationTabEditPolicyMixin,
+)
 
 
-class CoordinationWorkplacesTab(QWidget):
+class CoordinationWorkplacesTab(CoordinationTabEditPolicyMixin, QWidget):
     """Záložka míst výkonu práce (COORD-006)."""
 
     def __init__(self, parent=None, coordination_id: int | None = None):
         super().__init__(parent)
         self.coordination_id = coordination_id
+        self._content_editable = True
+        self._before_mutate = None
 
         layout = QVBoxLayout(self)
         self.unavailable_label = QLabel(
@@ -125,7 +130,7 @@ class CoordinationWorkplacesTab(QWidget):
         self._update_action_buttons()
 
     def add_workplace(self) -> None:
-        if self.coordination_id is None:
+        if self.coordination_id is None or not self.allow_mutate():
             return
         dialog = CoordinationWorkplaceDialog(self)
         if not dialog.exec():
@@ -141,6 +146,8 @@ class CoordinationWorkplacesTab(QWidget):
         self.refresh(select_id=created.id, ensure_visible=True)
 
     def edit_selected_workplace(self) -> None:
+        if not self.allow_mutate():
+            return
         item = self._selected_workplace()
         if item is None:
             QMessageBox.information(self, TAB_WORKPLACES, "Vyberte místo.")
@@ -156,6 +163,8 @@ class CoordinationWorkplacesTab(QWidget):
         self.refresh(select_id=item.id, preserve_scroll=True)
 
     def activate_selected_workplace(self) -> None:
+        if not self.allow_mutate():
+            return
         item = self._selected_workplace()
         if item is None:
             QMessageBox.information(self, TAB_WORKPLACES, "Vyberte místo.")
@@ -171,6 +180,8 @@ class CoordinationWorkplacesTab(QWidget):
         self.refresh(select_id=item.id, ensure_visible=True)
 
     def deactivate_selected_workplace(self) -> None:
+        if not self.allow_mutate():
+            return
         item = self._selected_workplace()
         if item is None:
             QMessageBox.information(self, TAB_WORKPLACES, "Vyberte místo.")
@@ -201,6 +212,12 @@ class CoordinationWorkplacesTab(QWidget):
         return coordination_workplace_service.get_by_id(workplace_link_id)
 
     def _update_action_buttons(self) -> None:
+        if not getattr(self, "_content_editable", True):
+            self.add_btn.setEnabled(False)
+            self.edit_btn.setEnabled(False)
+            self.activate_btn.setEnabled(False)
+            self.deactivate_btn.setEnabled(False)
+            return
         item = self._selected_workplace()
         has_selection = item is not None
         self.edit_btn.setEnabled(has_selection)

@@ -32,6 +32,67 @@ BOZP_COORDINATION_STATUS_LABELS = {
     BOZP_COORDINATION_STATUS_ARCHIVED: "Archivováno",
 }
 
+# Barvy stavu (UX-COORD-6b) – v souladu s platností / PBP.
+BOZP_COORDINATION_STATUS_COLORS = {
+    BOZP_COORDINATION_STATUS_DRAFT: "#ef6c00",
+    BOZP_COORDINATION_STATUS_READY: "#1565c0",
+    BOZP_COORDINATION_STATUS_ISSUED: "#2e7d32",
+    BOZP_COORDINATION_STATUS_COMPLETED: "#546e7a",
+    BOZP_COORDINATION_STATUS_ARCHIVED: "#9e9e9e",
+}
+
+STATUS_FILTER_ALL = "all"
+STATUS_FILTER_DRAFT = BOZP_COORDINATION_STATUS_DRAFT
+STATUS_FILTER_READY = BOZP_COORDINATION_STATUS_READY
+STATUS_FILTER_ISSUED = BOZP_COORDINATION_STATUS_ISSUED
+STATUS_FILTER_COMPLETED = BOZP_COORDINATION_STATUS_COMPLETED
+STATUS_FILTER_ARCHIVED = BOZP_COORDINATION_STATUS_ARCHIVED
+
+STATUS_FILTERS = (
+    STATUS_FILTER_ALL,
+    STATUS_FILTER_DRAFT,
+    STATUS_FILTER_READY,
+    STATUS_FILTER_ISSUED,
+    STATUS_FILTER_COMPLETED,
+    STATUS_FILTER_ARCHIVED,
+)
+
+STATUS_FILTER_LABELS = {
+    STATUS_FILTER_ALL: "Všechny",
+    STATUS_FILTER_DRAFT: "Rozpracováno",
+    STATUS_FILTER_READY: "Připraveno k vydání",
+    STATUS_FILTER_ISSUED: "Vydáno",
+    STATUS_FILTER_COMPLETED: "Ukončeno",
+    STATUS_FILTER_ARCHIVED: "Archivováno",
+}
+
+# Označení verze v náhledu / ODT (UX-COORD-6b).
+PROTOCOL_VERSION_MARK_DRAFT = "PRACOVNÍ VERZE"
+PROTOCOL_VERSION_MARK_READY = "VERZE PŘIPRAVENÁ K VYDÁNÍ"
+
+# Potvrzení akcí v UI (před validací builderem).
+LIFECYCLE_ACTION_CONFIRM_MESSAGES = {
+    "prepare": "Připravit koordinaci k vydání?",
+    "issue": (
+        "Vydáním označíte koordinační protokol jako vydaný.\n"
+        "Dokument bude možné dále upravovat pouze po návratu "
+        "do rozpracovaného stavu."
+    ),
+    "complete": "Ukončit koordinaci?",
+    "archive": (
+        "Archivovaná koordinace nebude určena k běžným úpravám.\n"
+        "Opravdu archivovat?"
+    ),
+    "return_to_draft": "Vrátit koordinaci k dopracování?",
+    "reopen": "Znovu otevřít koordinaci do stavu Rozpracováno?",
+    "restore": "Obnovit archivovanou koordinaci do stavu Rozpracováno?",
+}
+
+READY_EDIT_REVERT_MESSAGE = (
+    "Koordinace je připravena k vydání. "
+    "Pokračováním bude vrácena do stavu Rozpracováno."
+)
+
 # Mapování starých / neznámých hodnot status → kanonický stav (UX-COORD-6a).
 BOZP_COORDINATION_STATUS_LEGACY_MAP = {
     "draft": BOZP_COORDINATION_STATUS_DRAFT,
@@ -157,7 +218,7 @@ BOZP_COORDINATION_LIFECYCLE_ACTIONS = (
         BOZP_COORDINATION_STATUS_ARCHIVED,
         BOZP_COORDINATION_STATUS_DRAFT,
         "restore",
-        "Obnovit do Rozpracováno",
+        "Obnovit",
         True,
     ),
 )

@@ -35,14 +35,19 @@ from moduly.koordinace_bozp.ui.coordination_participant_dialog import (
 from moduly.koordinace_bozp.ui.coordination_participant_table import (
     CoordinationParticipantTable,
 )
+from moduly.koordinace_bozp.ui.coordination_tab_edit_policy import (
+    CoordinationTabEditPolicyMixin,
+)
 
 
-class CoordinationParticipantsTab(QWidget):
+class CoordinationParticipantsTab(CoordinationTabEditPolicyMixin, QWidget):
     """Záložka účastníků koordinační schůzky (COORD-003)."""
 
     def __init__(self, parent=None, coordination_id: int | None = None):
         super().__init__(parent)
         self.coordination_id = coordination_id
+        self._content_editable = True
+        self._before_mutate = None
 
         layout = QVBoxLayout(self)
 
@@ -182,6 +187,8 @@ class CoordinationParticipantsTab(QWidget):
         return coordination_employer_service.get_by_id(employer_id)
 
     def add_participant(self) -> None:
+        if not self.allow_mutate():
+            return
         employer = self.current_employer()
         if employer is None:
             QMessageBox.information(self, TAB_PARTICIPANTS, "Vyberte zaměstnavatele.")
@@ -231,6 +238,8 @@ class CoordinationParticipantsTab(QWidget):
         self.refresh_participants(select_id=created.id, ensure_visible=True)
 
     def edit_selected_participant(self) -> None:
+        if not self.allow_mutate():
+            return
         participant = self._selected_participant()
         if participant is None:
             QMessageBox.information(self, TAB_PARTICIPANTS, "Vyberte účastníka.")
@@ -249,6 +258,8 @@ class CoordinationParticipantsTab(QWidget):
         self.refresh_participants(select_id=participant.id, preserve_scroll=True)
 
     def activate_selected_participant(self) -> None:
+        if not self.allow_mutate():
+            return
         participant = self._selected_participant()
         if participant is None:
             QMessageBox.information(self, TAB_PARTICIPANTS, "Vyberte účastníka.")
@@ -268,6 +279,8 @@ class CoordinationParticipantsTab(QWidget):
             self.refresh_participants(select_id=participant.id, ensure_visible=True)
 
     def deactivate_selected_participant(self) -> None:
+        if not self.allow_mutate():
+            return
         participant = self._selected_participant()
         if participant is None:
             QMessageBox.information(self, TAB_PARTICIPANTS, "Vyberte účastníka.")
@@ -312,6 +325,12 @@ class CoordinationParticipantsTab(QWidget):
         return coordination_participant_service.get_by_id(participant_id)
 
     def _update_action_buttons(self) -> None:
+        if not getattr(self, "_content_editable", True):
+            self.add_btn.setEnabled(False)
+            self.edit_btn.setEnabled(False)
+            self.activate_btn.setEnabled(False)
+            self.deactivate_btn.setEnabled(False)
+            return
         employer = self.current_employer()
         can_add = employer is not None and bool(employer.active)
         self.add_btn.setEnabled(can_add)

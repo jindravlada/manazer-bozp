@@ -8,6 +8,7 @@ from datetime import datetime
 from moduly.koordinace_bozp.constants import (
     BOZP_COORDINATION_LIFECYCLE_ACTIONS,
     BOZP_COORDINATION_STATUS_ARCHIVED,
+    BOZP_COORDINATION_STATUS_COLORS,
     BOZP_COORDINATION_STATUS_COMPLETED,
     BOZP_COORDINATION_STATUS_DRAFT,
     BOZP_COORDINATION_STATUS_ISSUED,
@@ -18,6 +19,9 @@ from moduly.koordinace_bozp.constants import (
     BOZP_COORDINATION_STATUSES,
     BOZP_COORDINATION_STATUSES_REQUIRING_PROTOCOL_CHECK,
     DEFAULT_BOZP_COORDINATION_STATUS,
+    LIFECYCLE_ACTION_CONFIRM_MESSAGES,
+    PROTOCOL_VERSION_MARK_DRAFT,
+    PROTOCOL_VERSION_MARK_READY,
     PROTOCOL_WARNING_SEVERITY_CRITICAL,
     PROTOCOL_WARNING_SEVERITY_WARNING,
 )
@@ -80,6 +84,48 @@ def normalize_coordination_status(value: str | None) -> str:
 def status_label(status: str | None) -> str:
     normalized = normalize_coordination_status(status)
     return BOZP_COORDINATION_STATUS_LABELS.get(normalized, normalized)
+
+
+def status_color(status: str | None) -> str:
+    normalized = normalize_coordination_status(status)
+    return BOZP_COORDINATION_STATUS_COLORS.get(
+        normalized,
+        BOZP_COORDINATION_STATUS_COLORS[BOZP_COORDINATION_STATUS_DRAFT],
+    )
+
+
+def is_content_editable(status: str | None) -> bool:
+    """Plná / podmíněná editace obsahu (draft, ready)."""
+    return normalize_coordination_status(status) in {
+        BOZP_COORDINATION_STATUS_DRAFT,
+        BOZP_COORDINATION_STATUS_READY,
+    }
+
+
+def is_strict_readonly(status: str | None) -> bool:
+    """Vydáno / Ukončeno / Archivováno – bez úprav obsahu."""
+    return normalize_coordination_status(status) in {
+        BOZP_COORDINATION_STATUS_ISSUED,
+        BOZP_COORDINATION_STATUS_COMPLETED,
+        BOZP_COORDINATION_STATUS_ARCHIVED,
+    }
+
+
+def protocol_version_mark(status: str | None) -> str | None:
+    """Označení pracovní verze pro náhled / ODT, nebo None."""
+    normalized = normalize_coordination_status(status)
+    if normalized == BOZP_COORDINATION_STATUS_DRAFT:
+        return PROTOCOL_VERSION_MARK_DRAFT
+    if normalized == BOZP_COORDINATION_STATUS_READY:
+        return PROTOCOL_VERSION_MARK_READY
+    return None
+
+
+def lifecycle_confirm_message(action_id: str) -> str:
+    return LIFECYCLE_ACTION_CONFIRM_MESSAGES.get(
+        action_id,
+        "Opravdu provést změnu stavu?",
+    )
 
 
 class CoordinationLifecycleService:

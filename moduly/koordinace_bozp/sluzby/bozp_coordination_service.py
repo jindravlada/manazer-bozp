@@ -11,6 +11,8 @@ from moduly.koordinace_bozp.constants import (
     DEFAULT_EVACUATION_INSTRUCTIONS,
     DEFAULT_FIRE_REPORTING,
     PBP_FILTER_ALL,
+    STATUS_FILTER_ALL,
+    STATUS_FILTERS,
     SUBJECT_REQUIRED_MESSAGE,
     VALIDITY_FILTER_ALL,
     VALIDITY_FILTER_EXPIRED,
@@ -45,12 +47,33 @@ class BozpCoordinationService:
         *,
         validity_filter: str = VALIDITY_FILTER_ALL,
         pbp_filter: str = PBP_FILTER_ALL,
+        status_filter: str = STATUS_FILTER_ALL,
         today: date | None = None,
         pbp_cache: PbpFreshnessCache | None = None,
     ) -> list[BozpCoordination]:
         items = self.repository.get_all(include_inactive=include_inactive)
         items = self.filter_by_validity(items, validity_filter, today=today)
+        items = self.filter_by_status(items, status_filter)
         return self.filter_by_pbp(items, pbp_filter, today=today, pbp_cache=pbp_cache)
+
+    def filter_by_status(
+        self,
+        items: list[BozpCoordination],
+        status_filter: str = STATUS_FILTER_ALL,
+    ) -> list[BozpCoordination]:
+        if status_filter in ("", STATUS_FILTER_ALL, None):
+            return list(items)
+        if status_filter not in STATUS_FILTERS:
+            raise BozpCoordinationError("Neplatný filtr stavu.")
+        from moduly.koordinace_bozp.sluzby.coordination_lifecycle_service import (
+            normalize_coordination_status,
+        )
+
+        return [
+            item
+            for item in items
+            if normalize_coordination_status(item.status) == status_filter
+        ]
 
     def filter_by_validity(
         self,

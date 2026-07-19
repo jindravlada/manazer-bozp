@@ -24,14 +24,19 @@ from moduly.koordinace_bozp.ui.coordination_employer_dialog import (
 from moduly.koordinace_bozp.ui.coordination_employer_table import (
     CoordinationEmployerTable,
 )
+from moduly.koordinace_bozp.ui.coordination_tab_edit_policy import (
+    CoordinationTabEditPolicyMixin,
+)
 
 
-class CoordinationEmployersTab(QWidget):
+class CoordinationEmployersTab(CoordinationTabEditPolicyMixin, QWidget):
     """Záložka zúčastněných zaměstnavatelů (COORD-002)."""
 
     def __init__(self, parent=None, coordination_id: int | None = None):
         super().__init__(parent)
         self.coordination_id = coordination_id
+        self._content_editable = True
+        self._before_mutate = None
 
         layout = QVBoxLayout(self)
 
@@ -127,7 +132,7 @@ class CoordinationEmployersTab(QWidget):
         self._update_action_buttons()
 
     def add_employer(self) -> None:
-        if self.coordination_id is None:
+        if self.coordination_id is None or not self.allow_mutate():
             return
         dialog = CoordinationEmployerDialog(self)
         if not dialog.exec():
@@ -143,6 +148,8 @@ class CoordinationEmployersTab(QWidget):
         self.refresh(select_id=created.id, ensure_visible=True)
 
     def edit_selected_employer(self) -> None:
+        if not self.allow_mutate():
+            return
         employer = self._selected_employer()
         if employer is None:
             QMessageBox.information(self, TAB_EMPLOYERS, "Vyberte zaměstnavatele.")
@@ -161,6 +168,8 @@ class CoordinationEmployersTab(QWidget):
         self.refresh(select_id=employer.id, preserve_scroll=True)
 
     def activate_selected_employer(self) -> None:
+        if not self.allow_mutate():
+            return
         employer = self._selected_employer()
         if employer is None:
             QMessageBox.information(self, TAB_EMPLOYERS, "Vyberte zaměstnavatele.")
@@ -180,6 +189,8 @@ class CoordinationEmployersTab(QWidget):
             self.refresh(select_id=employer.id, ensure_visible=True)
 
     def deactivate_selected_employer(self) -> None:
+        if not self.allow_mutate():
+            return
         employer = self._selected_employer()
         if employer is None:
             QMessageBox.information(self, TAB_EMPLOYERS, "Vyberte zaměstnavatele.")
@@ -226,8 +237,15 @@ class CoordinationEmployersTab(QWidget):
         return coordination_employer_service.get_by_id(employer_id)
 
     def _update_action_buttons(self) -> None:
+        if not getattr(self, "_content_editable", True):
+            self.add_btn.setEnabled(False)
+            self.edit_btn.setEnabled(False)
+            self.activate_btn.setEnabled(False)
+            self.deactivate_btn.setEnabled(False)
+            return
         employer = self._selected_employer()
         has_selection = employer is not None
+        self.add_btn.setEnabled(self.coordination_id is not None)
         self.edit_btn.setEnabled(has_selection)
         if not has_selection:
             self.activate_btn.setEnabled(False)

@@ -37,14 +37,19 @@ from moduly.koordinace_bozp.ui.coordination_contact_dialog import (
 from moduly.koordinace_bozp.ui.coordination_contact_table import (
     CoordinationContactTable,
 )
+from moduly.koordinace_bozp.ui.coordination_tab_edit_policy import (
+    CoordinationTabEditPolicyMixin,
+)
 
 
-class CoordinationContactsTab(QWidget):
+class CoordinationContactsTab(CoordinationTabEditPolicyMixin, QWidget):
     """Záložka kontaktů a postupů při mimořádných událostech (COORD-010)."""
 
     def __init__(self, parent=None, coordination_id: int | None = None):
         super().__init__(parent)
         self.coordination_id = coordination_id
+        self._content_editable = True
+        self._before_mutate = None
 
         layout = QVBoxLayout(self)
         self.unavailable_label = QLabel(
@@ -177,7 +182,7 @@ class CoordinationContactsTab(QWidget):
         }
 
     def add_contact(self) -> None:
-        if self.coordination_id is None:
+        if self.coordination_id is None or not self.allow_mutate():
             return
         dialog = CoordinationContactDialog(
             self,
@@ -196,7 +201,7 @@ class CoordinationContactsTab(QWidget):
         self.refresh(select_id=created.id, ensure_visible=True)
 
     def edit_selected_contact(self) -> None:
-        if self.coordination_id is None:
+        if self.coordination_id is None or not self.allow_mutate():
             return
         contact = self._selected_contact()
         if contact is None:
@@ -217,6 +222,8 @@ class CoordinationContactsTab(QWidget):
         self.refresh(select_id=contact.id, preserve_scroll=True)
 
     def move_selected_up(self) -> None:
+        if not self.allow_mutate():
+            return
         contact = self._selected_contact()
         if contact is None:
             return
@@ -224,6 +231,8 @@ class CoordinationContactsTab(QWidget):
             self.refresh(select_id=contact.id, ensure_visible=True)
 
     def move_selected_down(self) -> None:
+        if not self.allow_mutate():
+            return
         contact = self._selected_contact()
         if contact is None:
             return
@@ -231,6 +240,8 @@ class CoordinationContactsTab(QWidget):
             self.refresh(select_id=contact.id, ensure_visible=True)
 
     def activate_selected_contact(self) -> None:
+        if not self.allow_mutate():
+            return
         contact = self._selected_contact()
         if contact is None:
             QMessageBox.information(self, TAB_CONTACTS, "Vyberte kontakt.")
@@ -250,6 +261,8 @@ class CoordinationContactsTab(QWidget):
             self.refresh(select_id=contact.id, ensure_visible=True)
 
     def deactivate_selected_contact(self) -> None:
+        if not self.allow_mutate():
+            return
         contact = self._selected_contact()
         if contact is None:
             QMessageBox.information(self, TAB_CONTACTS, "Vyberte kontakt.")
@@ -307,6 +320,22 @@ class CoordinationContactsTab(QWidget):
         return coordination_contact_service.get_by_id(contact_id)
 
     def _update_action_buttons(self) -> None:
+        editable = getattr(self, "_content_editable", True)
+        for widget in (
+            self.emergency_reporting,
+            self.accident_reporting,
+            self.fire_reporting,
+            self.evacuation_instructions,
+        ):
+            widget.setReadOnly(not editable)
+        if not editable:
+            self.add_btn.setEnabled(False)
+            self.edit_btn.setEnabled(False)
+            self.up_btn.setEnabled(False)
+            self.down_btn.setEnabled(False)
+            self.activate_btn.setEnabled(False)
+            self.deactivate_btn.setEnabled(False)
+            return
         contact = self._selected_contact()
         has_selection = contact is not None
         self.edit_btn.setEnabled(has_selection)

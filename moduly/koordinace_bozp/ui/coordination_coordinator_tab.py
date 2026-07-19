@@ -28,14 +28,19 @@ from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
 from moduly.koordinace_bozp.sluzby.coordination_participant_service import (
     coordination_participant_service,
 )
+from moduly.koordinace_bozp.ui.coordination_tab_edit_policy import (
+    CoordinationTabEditPolicyMixin,
+)
 
 
-class CoordinationCoordinatorTab(QWidget):
+class CoordinationCoordinatorTab(CoordinationTabEditPolicyMixin, QWidget):
     """Záložka pověřeného koordinátora BOZP (COORD-005 / UX-COORD-2 / 4c)."""
 
     def __init__(self, parent=None, coordination_id: int | None = None):
         super().__init__(parent)
         self.coordination_id = coordination_id
+        self._content_editable = True
+        self._before_mutate = None
         self._loading = False
         self._last_participant_id: int | None = None
 
@@ -177,7 +182,7 @@ class CoordinationCoordinatorTab(QWidget):
             self._loading = False
 
     def save_coordinator(self) -> None:
-        if self.coordination_id is None:
+        if self.coordination_id is None or not self.allow_mutate():
             return
         try:
             if self.source_participant.isChecked():
@@ -289,6 +294,7 @@ class CoordinationCoordinatorTab(QWidget):
             self._apply_participant_snapshot(overwrite=False)
         else:
             self._sync_manual_organization_field()
+        self._update_action_buttons()
 
     def _on_employer_changed(self) -> None:
         if self._loading:
@@ -499,3 +505,23 @@ class CoordinationCoordinatorTab(QWidget):
         self.note.clear()
         self.warning_label.hide()
         self.source_participant.setChecked(True)
+
+    def _update_action_buttons(self) -> None:
+        editable = getattr(self, "_content_editable", True)
+        from_participant = self.source_participant.isChecked()
+        is_other_organization = (
+            self.employer_combo.currentData() == COORDINATOR_MANUAL_OTHER_ORGANIZATION
+        )
+        self.source_participant.setEnabled(editable)
+        self.source_manual.setEnabled(editable)
+        self.employer_combo.setEnabled(editable)
+        self.participant_combo.setEnabled(editable and from_participant)
+        self.full_name.setEnabled(editable)
+        self.employer_name.setEnabled(
+            editable and (from_participant or is_other_organization)
+        )
+        self.role.setEnabled(editable)
+        self.phone.setEnabled(editable)
+        self.email.setEnabled(editable)
+        self.note.setEnabled(editable)
+        self.save_btn.setEnabled(editable)

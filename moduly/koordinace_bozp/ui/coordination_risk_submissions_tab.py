@@ -45,14 +45,19 @@ from moduly.koordinace_bozp.sluzby.coordination_risk_submission_service import (
 from moduly.koordinace_bozp.ui.coordination_attachment_table import (
     CoordinationAttachmentTable,
 )
+from moduly.koordinace_bozp.ui.coordination_tab_edit_policy import (
+    CoordinationTabEditPolicyMixin,
+)
 
 
-class CoordinationRiskSubmissionsTab(QWidget):
+class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
     """Záložka předání rizik dodavatelů (COORD-006)."""
 
     def __init__(self, parent=None, coordination_id: int | None = None):
         super().__init__(parent)
         self.coordination_id = coordination_id
+        self._content_editable = True
+        self._before_mutate = None
         self._loading = False
 
         layout = QVBoxLayout(self)
@@ -187,10 +192,11 @@ class CoordinationRiskSubmissionsTab(QWidget):
         ensure_visible: bool = False,
     ) -> None:
         employer_id = self.employer_combo.currentData()
-        enabled = isinstance(employer_id, int)
-        self.save_btn.setEnabled(enabled)
-        self.add_attachment_btn.setEnabled(enabled)
-        if not enabled:
+        has_employer = isinstance(employer_id, int)
+        editable = getattr(self, "_content_editable", True)
+        self.save_btn.setEnabled(has_employer and editable)
+        self.add_attachment_btn.setEnabled(has_employer and editable)
+        if not has_employer:
             self.submission_method.setCurrentIndex(
                 self.submission_method.findData(RISK_SUBMISSION_METHOD_NOT_SUBMITTED)
             )
@@ -256,6 +262,8 @@ class CoordinationRiskSubmissionsTab(QWidget):
         self._update_attachment_buttons()
 
     def save_submission(self) -> None:
+        if not self.allow_mutate():
+            return
         employer_id = self.employer_combo.currentData()
         if not isinstance(employer_id, int):
             return
@@ -273,6 +281,8 @@ class CoordinationRiskSubmissionsTab(QWidget):
         self.load_selected_employer(preserve_scroll=True)
 
     def add_attachment(self) -> None:
+        if not self.allow_mutate():
+            return
         employer_id = self.employer_combo.currentData()
         if not isinstance(employer_id, int) or self.coordination_id is None:
             return
@@ -311,6 +321,8 @@ class CoordinationRiskSubmissionsTab(QWidget):
             QMessageBox.warning(self, TAB_RISK_SUBMISSIONS, str(error))
 
     def deactivate_attachment(self) -> None:
+        if not self.allow_mutate():
+            return
         attachment_id = self.attachments_table.selected_attachment_id()
         if attachment_id is None:
             QMessageBox.information(self, TAB_RISK_SUBMISSIONS, "Vyberte přílohu.")
@@ -346,6 +358,14 @@ class CoordinationRiskSubmissionsTab(QWidget):
         attachment_id = self.attachments_table.selected_attachment_id()
         has_selection = attachment_id is not None
         self.open_attachment_btn.setEnabled(has_selection)
+        if not getattr(self, "_content_editable", True):
+            self.save_btn.setEnabled(False)
+            self.add_attachment_btn.setEnabled(False)
+            self.deactivate_attachment_btn.setEnabled(False)
+            return
+        has_employer = isinstance(self.employer_combo.currentData(), int)
+        self.save_btn.setEnabled(has_employer)
+        self.add_attachment_btn.setEnabled(has_employer)
         if not has_selection:
             self.deactivate_attachment_btn.setEnabled(False)
             return

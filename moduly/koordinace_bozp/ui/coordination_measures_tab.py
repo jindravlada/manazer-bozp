@@ -24,14 +24,19 @@ from moduly.koordinace_bozp.ui.coordination_measure_dialog import (
 from moduly.koordinace_bozp.ui.coordination_measure_table import (
     CoordinationMeasureTable,
 )
+from moduly.koordinace_bozp.ui.coordination_tab_edit_policy import (
+    CoordinationTabEditPolicyMixin,
+)
 
 
-class CoordinationMeasuresTab(QWidget):
+class CoordinationMeasuresTab(CoordinationTabEditPolicyMixin, QWidget):
     """Záložka organizačních opatření (COORD-009)."""
 
     def __init__(self, parent=None, coordination_id: int | None = None):
         super().__init__(parent)
         self.coordination_id = coordination_id
+        self._content_editable = True
+        self._before_mutate = None
 
         layout = QVBoxLayout(self)
         self.unavailable_label = QLabel(
@@ -131,7 +136,7 @@ class CoordinationMeasuresTab(QWidget):
         self._update_action_buttons()
 
     def add_measure(self) -> None:
-        if self.coordination_id is None:
+        if self.coordination_id is None or not self.allow_mutate():
             return
         dialog = CoordinationMeasureDialog(self)
         if not dialog.exec():
@@ -147,6 +152,8 @@ class CoordinationMeasuresTab(QWidget):
         self.refresh(select_id=created.id, ensure_visible=True)
 
     def edit_selected_measure(self) -> None:
+        if not self.allow_mutate():
+            return
         measure = self._selected_measure()
         if measure is None:
             QMessageBox.information(self, TAB_MEASURES, "Vyberte opatření.")
@@ -162,6 +169,8 @@ class CoordinationMeasuresTab(QWidget):
         self.refresh(select_id=measure.id, preserve_scroll=True)
 
     def move_selected_up(self) -> None:
+        if not self.allow_mutate():
+            return
         measure = self._selected_measure()
         if measure is None:
             return
@@ -169,6 +178,8 @@ class CoordinationMeasuresTab(QWidget):
             self.refresh(select_id=measure.id, ensure_visible=True)
 
     def move_selected_down(self) -> None:
+        if not self.allow_mutate():
+            return
         measure = self._selected_measure()
         if measure is None:
             return
@@ -176,6 +187,8 @@ class CoordinationMeasuresTab(QWidget):
             self.refresh(select_id=measure.id, ensure_visible=True)
 
     def activate_selected_measure(self) -> None:
+        if not self.allow_mutate():
+            return
         measure = self._selected_measure()
         if measure is None:
             QMessageBox.information(self, TAB_MEASURES, "Vyberte opatření.")
@@ -195,6 +208,8 @@ class CoordinationMeasuresTab(QWidget):
             self.refresh(select_id=measure.id, ensure_visible=True)
 
     def deactivate_selected_measure(self) -> None:
+        if not self.allow_mutate():
+            return
         measure = self._selected_measure()
         if measure is None:
             QMessageBox.information(self, TAB_MEASURES, "Vyberte opatření.")
@@ -225,6 +240,14 @@ class CoordinationMeasuresTab(QWidget):
         return coordination_measure_service.get_by_id(measure_id)
 
     def _update_action_buttons(self) -> None:
+        if not getattr(self, "_content_editable", True):
+            self.add_btn.setEnabled(False)
+            self.edit_btn.setEnabled(False)
+            self.up_btn.setEnabled(False)
+            self.down_btn.setEnabled(False)
+            self.activate_btn.setEnabled(False)
+            self.deactivate_btn.setEnabled(False)
+            return
         measure = self._selected_measure()
         has_selection = measure is not None
         self.edit_btn.setEnabled(has_selection)

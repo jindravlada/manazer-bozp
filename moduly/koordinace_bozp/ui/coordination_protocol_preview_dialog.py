@@ -32,6 +32,9 @@ from moduly.koordinace_bozp.sluzby.coordination_protocol_builder import (
     coordination_protocol_builder,
     flatten_protocol_measure_bullets,
 )
+from moduly.koordinace_bozp.sluzby.coordination_lifecycle_service import (
+    protocol_version_mark,
+)
 from moduly.koordinace_bozp.sluzby.coordination_protocol_odt_renderer import (
     CoordinationProtocolOdtRendererError,
     coordination_protocol_odt_renderer,
@@ -148,17 +151,28 @@ class CoordinationProtocolPreviewDialog(QDialog):
                 widget.deleteLater()
 
         warning_count = result.summary.warnings_total
+        basics = (result.protocol_data or {}).get("basics") or {}
+        version_mark = protocol_version_mark(basics.get("status"))
         if warning_count == 0:
-            self.status_label.setText("Připraveno bez upozornění")
+            status_text = "Připraveno bez upozornění"
             self.status_label.setStyleSheet("color: #2e7d32;")
         else:
-            self.status_label.setText(
-                f"Protokol obsahuje {warning_count} upozornění"
-            )
+            status_text = f"Protokol obsahuje {warning_count} upozornění"
             self.status_label.setStyleSheet("color: #ef6c00;")
+        if version_mark:
+            status_text = f"{version_mark} — {status_text}"
+        self.status_label.setText(status_text)
 
         data = result.protocol_data
         warning_codes = {item.code for item in result.warnings}
+
+        if version_mark:
+            mark_label = QLabel(version_mark)
+            mark_font = QFont(mark_label.font())
+            mark_font.setBold(True)
+            mark_label.setFont(mark_font)
+            mark_label.setStyleSheet("color: #c62828;")
+            self.body_layout.addWidget(mark_label)
 
         self._add_warnings_section(result.warnings)
 

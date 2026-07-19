@@ -19,6 +19,9 @@ from moduly.koordinace_bozp.constants import (
     PROTOCOL_WARNING_SEVERITY_INFO,
     PROTOCOL_WARNING_SEVERITY_WARNING,
 )
+from moduly.koordinace_bozp.sluzby.coordination_lifecycle_service import (
+    protocol_version_mark,
+)
 from moduly.koordinace_bozp.sluzby.coordination_protocol_builder import (
     ProtocolBuildResult,
     ProtocolSummary,
@@ -171,12 +174,17 @@ class CoordinationProtocolOdtRenderer:
             lines.append("")
 
         # 1. Titulní strana
-        lines.extend(
+        version_mark = protocol_version_mark(basics.get("status"))
+        title_lines = [
+            "Titulní strana",
+            "",
+            self.DOCUMENT_TITLE,
+            "",
+        ]
+        if version_mark:
+            title_lines.extend([version_mark, ""])
+        title_lines.extend(
             [
-                "Titulní strana",
-                "",
-                self.DOCUMENT_TITLE,
-                "",
                 f"Číslo: {basics.get('coordination_number') or '—'}",
                 f"Název akce: {basics.get('subject') or '—'}",
                 f"Datum schůzky: {_format_date(basics.get('meeting_date'))}",
@@ -184,6 +192,7 @@ class CoordinationProtocolOdtRenderer:
                 "",
             ]
         )
+        lines.extend(title_lines)
 
         # 2. Základní údaje
         lines.extend(

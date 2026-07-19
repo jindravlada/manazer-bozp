@@ -38,6 +38,9 @@ from moduly.koordinace_bozp.sluzby.coordination_pbp_freshness import (
     evaluate_pbp_freshness,
     pbp_freshness_color,
 )
+from moduly.koordinace_bozp.ui.coordination_tab_edit_policy import (
+    CoordinationTabEditPolicyMixin,
+)
 
 
 class CoordinationPbpHistoryDialog(QDialog):
@@ -98,12 +101,14 @@ class CoordinationPbpHistoryDialog(QDialog):
         )
 
 
-class CoordinationPbpAttachmentTab(QWidget):
+class CoordinationPbpAttachmentTab(CoordinationTabEditPolicyMixin, QWidget):
     """Záložka automatické přílohy PBP (COORD-007)."""
 
     def __init__(self, parent=None, coordination_id: int | None = None):
         super().__init__(parent)
         self.coordination_id = coordination_id
+        self._content_editable = True
+        self._before_mutate = None
 
         layout = QVBoxLayout(self)
         self.unavailable_label = QLabel(
@@ -197,6 +202,7 @@ class CoordinationPbpAttachmentTab(QWidget):
         if coordination is None:
             self.freshness_label.clear()
             self._set_update_highlighted(False)
+            self._update_action_buttons()
             return
         freshness = evaluate_pbp_freshness(coordination)
         self.freshness_label.setText(freshness.detail_message)
@@ -205,6 +211,7 @@ class CoordinationPbpAttachmentTab(QWidget):
             f"color: {pbp_freshness_color(freshness.state)};"
         )
         self._set_update_highlighted(freshness.state == PBP_FRESHNESS_NEEDS_UPDATE)
+        self._update_action_buttons()
 
     def _set_update_highlighted(self, highlighted: bool) -> None:
         if highlighted:
@@ -226,7 +233,7 @@ class CoordinationPbpAttachmentTab(QWidget):
         self._run_generate(prefer_create_message=False)
 
     def _run_generate(self, *, prefer_create_message: bool) -> None:
-        if self.coordination_id is None:
+        if self.coordination_id is None or not self.allow_mutate():
             return
         try:
             result = coordination_pbp_attachment_service.generate_or_update(
@@ -289,3 +296,9 @@ class CoordinationPbpAttachmentTab(QWidget):
             return
         dialog = CoordinationPbpHistoryDialog(self, coordination_id=self.coordination_id)
         dialog.exec()
+
+    def _update_action_buttons(self) -> None:
+        editable = getattr(self, "_content_editable", True)
+        available = self.coordination_id is not None
+        self.generate_btn.setEnabled(available and editable)
+        self.update_btn.setEnabled(available and editable)
