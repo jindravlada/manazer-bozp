@@ -26,6 +26,7 @@ from moduly.koordinace_bozp.constants import (
     DEFAULT_BOZP_COORDINATION_STATUS,
     DIALOG_WINDOW_TITLE,
     TAB_BASICS,
+    TAB_CONTACTS,
     TAB_COORDINATOR,
     TAB_EMPLOYER_ACTIVITIES,
     TAB_EMPLOYERS,
@@ -39,6 +40,9 @@ from moduly.koordinace_bozp.sluzby.bozp_coordination_service import (
     bozp_coordination_service,
 )
 from moduly.koordinace_bozp.sluzby.coordination_validity import add_one_year
+from moduly.koordinace_bozp.ui.coordination_contacts_tab import (
+    CoordinationContactsTab,
+)
 from moduly.koordinace_bozp.ui.coordination_coordinator_tab import (
     CoordinationCoordinatorTab,
 )
@@ -157,6 +161,12 @@ class BozpCoordinationDialog(QDialog):
         )
         self.tabs.addTab(self.measures_tab, TAB_MEASURES)
 
+        self.contacts_tab = CoordinationContactsTab(
+            self,
+            coordination_id=coordination_id,
+        )
+        self.tabs.addTab(self.contacts_tab, TAB_CONTACTS)
+
         self.risk_submissions_tab = CoordinationRiskSubmissionsTab(
             self,
             coordination_id=coordination_id,
@@ -222,6 +232,8 @@ class BozpCoordinationDialog(QDialog):
             self.employer_activities_tab.refresh_employers()
         elif widget is self.measures_tab:
             self.measures_tab.refresh()
+        elif widget is self.contacts_tab:
+            self.contacts_tab.refresh()
         elif widget is self.risk_submissions_tab:
             self.risk_submissions_tab.refresh_employers()
         elif widget is self.pbp_attachment_tab:
@@ -241,4 +253,6 @@ class BozpCoordinationDialog(QDialog):
         }
         if self.coordination is None:
             data["insert_default_measures"] = self.insert_default_measures.isChecked()
+        elif self.contacts_tab.coordination_id is not None:
+            data.update(self.contacts_tab.get_procedures_data())
         return data

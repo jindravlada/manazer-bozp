@@ -114,6 +114,9 @@ def initialize_database() -> None:
     from moduly.koordinace_bozp.modely.coordination_measure import (  # noqa: F401
         CoordinationMeasure,
     )
+    from moduly.koordinace_bozp.modely.coordination_contact import (  # noqa: F401
+        CoordinationContact,
+    )
     from moduly.koordinace_bozp.modely.coordination_employer_risk_submission import (  # noqa: F401
         CoordinationEmployerRiskSubmission,
     )
@@ -1917,6 +1920,17 @@ def _ensure_bozp_coordinations_table() -> None:
         _add_column("bozp_coordinations", "valid_from DATE")
     if "valid_to" not in columns:
         _add_column("bozp_coordinations", "valid_to DATE")
+    if "emergency_reporting" not in columns:
+        _add_column("bozp_coordinations", "emergency_reporting TEXT DEFAULT ''")
+    if "accident_reporting" not in columns:
+        _add_column("bozp_coordinations", "accident_reporting TEXT DEFAULT ''")
+    if "fire_reporting" not in columns:
+        _add_column("bozp_coordinations", "fire_reporting TEXT DEFAULT ''")
+    if "evacuation_instructions" not in columns:
+        _add_column(
+            "bozp_coordinations",
+            "evacuation_instructions TEXT DEFAULT ''",
+        )
 
     with _db_engine().connect() as connection:
         connection.execute(
@@ -2061,6 +2075,29 @@ def _ensure_bozp_coordinations_table() -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_coordination_measures_coordination
         ON coordination_measures (coordination_id)
+        """,
+    )
+
+    contact_columns = _table_columns("coordination_contacts")
+    if not contact_columns:
+        from moduly.koordinace_bozp.modely.coordination_contact import (
+            CoordinationContact,
+        )
+
+        CoordinationContact.__table__.create(bind=_db_engine(), checkfirst=True)
+
+    _ensure_index(
+        "idx_coordination_contacts_coordination",
+        """
+        CREATE INDEX IF NOT EXISTS idx_coordination_contacts_coordination
+        ON coordination_contacts (coordination_id)
+        """,
+    )
+    _ensure_index(
+        "idx_coordination_contacts_participant",
+        """
+        CREATE INDEX IF NOT EXISTS idx_coordination_contacts_participant
+        ON coordination_contacts (participant_id)
         """,
     )
 

@@ -33,8 +33,62 @@ TAB_COORDINATOR = "Koordinátor BOZP"
 TAB_WORKPLACES = "Místa výkonu práce"
 TAB_EMPLOYER_ACTIVITIES = "Činnosti zaměstnavatelů"
 TAB_MEASURES = "Organizační opatření"
+TAB_CONTACTS = "Kontakty a mimořádné události"
 TAB_RISK_SUBMISSIONS = "Předání rizik dodavatelů"
 TAB_PBP_ATTACHMENT = "Příloha PBP"
+
+# Kontakty a mimořádné události (COORD-010).
+CONTACT_TYPE_COORDINATION = "coordination"
+CONTACT_TYPE_WORKPLACE_HANDOVER = "workplace_handover"
+CONTACT_TYPE_OPERATION = "operation"
+CONTACT_TYPE_FIRST_AID = "first_aid"
+CONTACT_TYPE_FIRE = "fire"
+CONTACT_TYPE_EMERGENCY = "emergency"
+CONTACT_TYPE_OTHER = "other"
+
+CONTACT_TYPES = (
+    CONTACT_TYPE_COORDINATION,
+    CONTACT_TYPE_WORKPLACE_HANDOVER,
+    CONTACT_TYPE_OPERATION,
+    CONTACT_TYPE_FIRST_AID,
+    CONTACT_TYPE_FIRE,
+    CONTACT_TYPE_EMERGENCY,
+    CONTACT_TYPE_OTHER,
+)
+
+DEFAULT_CONTACT_TYPE = CONTACT_TYPE_OTHER
+
+CONTACT_TYPE_LABELS = {
+    CONTACT_TYPE_COORDINATION: "Koordinace BOZP",
+    CONTACT_TYPE_WORKPLACE_HANDOVER: "Předání pracoviště",
+    CONTACT_TYPE_OPERATION: "Provoz / práce",
+    CONTACT_TYPE_FIRST_AID: "První pomoc",
+    CONTACT_TYPE_FIRE: "Požár",
+    CONTACT_TYPE_EMERGENCY: "Mimořádná událost",
+    CONTACT_TYPE_OTHER: "Ostatní",
+}
+
+DEFAULT_EMERGENCY_REPORTING = (
+    "Každou mimořádnou událost neprodleně oznamte koordinátorovi BOZP "
+    "a odpovědnému zástupci hlavního zaměstnavatele."
+)
+
+DEFAULT_ACCIDENT_REPORTING = (
+    "Pracovní úraz bezodkladně oznamte vedoucímu zaměstnanci postiženého "
+    "zaměstnavatele a koordinátorovi BOZP. Místo události zachovejte beze změny, "
+    "pokud tomu nebrání záchrana osob nebo zabránění dalším škodám."
+)
+
+DEFAULT_FIRE_REPORTING = (
+    "Při zjištění požáru postupujte podle požárních poplachových směrnic "
+    "pracoviště a událost oznamte na stanovené ohlašovací místo."
+)
+
+DEFAULT_EVACUATION_INSTRUCTIONS = (
+    "Při evakuaci opustíte pracoviště určenými únikovými cestami "
+    "a shromáždíte se na stanoveném shromaždišti. Nevracejte se zpět "
+    "bez pokynu odpovědné osoby."
+)
 
 # Organizační opatření (COORD-009).
 MEASURE_CATEGORY_WORK_ORGANIZATION = "work_organization"
@@ -270,6 +324,25 @@ MEASURE_TABLE_HEADERS = [
     "ID",
     "Kategorie",
     "Název",
+    "Aktivní",
+]
+
+CTC_COL_ID = 0
+CTC_COL_TYPE = 1
+CTC_COL_NAME = 2
+CTC_COL_ROLE = 3
+CTC_COL_PHONE = 4
+CTC_COL_EMAIL = 5
+CTC_COL_ACTIVE = 6
+CTC_COLUMN_COUNT = 7
+
+CONTACT_TABLE_HEADERS = [
+    "ID",
+    "Typ kontaktu",
+    "Jméno",
+    "Funkce / role",
+    "Telefon",
+    "E-mail",
     "Aktivní",
 ]
 

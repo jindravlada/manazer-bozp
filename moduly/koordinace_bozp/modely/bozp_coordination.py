@@ -25,6 +25,26 @@ class BozpCoordination(Base):
         default=DEFAULT_BOZP_COORDINATION_STATUS,
     )
     note: Mapped[str] = mapped_column(Text, default="")
+    emergency_reporting: Mapped[str] = mapped_column(
+        Text,
+        default="",
+        server_default="",
+    )
+    accident_reporting: Mapped[str] = mapped_column(
+        Text,
+        default="",
+        server_default="",
+    )
+    fire_reporting: Mapped[str] = mapped_column(
+        Text,
+        default="",
+        server_default="",
+    )
+    evacuation_instructions: Mapped[str] = mapped_column(
+        Text,
+        default="",
+        server_default="",
+    )
     valid_from: Mapped[date | None] = mapped_column(Date, nullable=True)
     valid_to: Mapped[date | None] = mapped_column(Date, nullable=True)
     active: Mapped[bool] = mapped_column(Boolean, default=True)

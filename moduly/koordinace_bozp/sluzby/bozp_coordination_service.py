@@ -6,7 +6,11 @@ from datetime import date, datetime
 
 from moduly.koordinace_bozp.constants import (
     BOZP_COORDINATION_STATUSES,
+    DEFAULT_ACCIDENT_REPORTING,
     DEFAULT_BOZP_COORDINATION_STATUS,
+    DEFAULT_EMERGENCY_REPORTING,
+    DEFAULT_EVACUATION_INSTRUCTIONS,
+    DEFAULT_FIRE_REPORTING,
     PBP_FILTER_ALL,
     VALIDITY_FILTER_ALL,
     VALIDITY_FILTER_EXPIRED,
@@ -108,6 +112,10 @@ class BozpCoordinationService:
         valid_to: date | None = None,
         active: bool = True,
         insert_default_measures: bool = False,
+        emergency_reporting: str | None = None,
+        accident_reporting: str | None = None,
+        fire_reporting: str | None = None,
+        evacuation_instructions: str | None = None,
     ) -> BozpCoordination:
         normalized_subject = self._validate_subject(subject)
         normalized_status = self._validate_status(status)
@@ -125,6 +133,22 @@ class BozpCoordinationService:
             subject=normalized_subject,
             status=normalized_status,
             note=(note or "").strip(),
+            emergency_reporting=self._default_procedure_text(
+                emergency_reporting,
+                DEFAULT_EMERGENCY_REPORTING,
+            ),
+            accident_reporting=self._default_procedure_text(
+                accident_reporting,
+                DEFAULT_ACCIDENT_REPORTING,
+            ),
+            fire_reporting=self._default_procedure_text(
+                fire_reporting,
+                DEFAULT_FIRE_REPORTING,
+            ),
+            evacuation_instructions=self._default_procedure_text(
+                evacuation_instructions,
+                DEFAULT_EVACUATION_INSTRUCTIONS,
+            ),
             valid_from=resolved_from,
             valid_to=resolved_to,
             active=active,
@@ -154,6 +178,10 @@ class BozpCoordinationService:
         note: str = "",
         valid_from: date | None = None,
         valid_to: date | None = None,
+        emergency_reporting: str | None = None,
+        accident_reporting: str | None = None,
+        fire_reporting: str | None = None,
+        evacuation_instructions: str | None = None,
     ) -> BozpCoordination | None:
         coordination = self.repository.get_by_id(coordination_id)
         if coordination is None:
@@ -164,6 +192,16 @@ class BozpCoordinationService:
         coordination.subject = self._validate_subject(subject)
         coordination.status = self._validate_status(status)
         coordination.note = (note or "").strip()
+        if emergency_reporting is not None:
+            coordination.emergency_reporting = (emergency_reporting or "").strip()
+        if accident_reporting is not None:
+            coordination.accident_reporting = (accident_reporting or "").strip()
+        if fire_reporting is not None:
+            coordination.fire_reporting = (fire_reporting or "").strip()
+        if evacuation_instructions is not None:
+            coordination.evacuation_instructions = (
+                evacuation_instructions or ""
+            ).strip()
         if valid_from is not None:
             coordination.valid_from = valid_from
         if valid_to is not None:
@@ -209,6 +247,11 @@ class BozpCoordinationService:
             raise BozpCoordinationError(
                 "Datum konce platnosti nesmí být dříve než začátek platnosti."
             )
+
+    @staticmethod
+    def _default_procedure_text(value: str | None, default: str) -> str:
+        text = (value or "").strip()
+        return text or default
 
 
 bozp_coordination_service = BozpCoordinationService()
