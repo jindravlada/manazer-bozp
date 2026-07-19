@@ -9,6 +9,7 @@ from moduly.rizeni_rizik.sluzby.hazard_identification_service import hazard_iden
 from moduly.rizeni_rizik.ui.hazard_identification_dialog import HazardIdentificationDialog
 from moduly.rizeni_rizik.ui.hazard_identification_table import HazardIdentificationTable
 from moduly.rizeni_rizik.ui.hazard_library_page import HazardLibraryPage
+from moduly.rizeni_rizik.ui.pravidla_bezpecne_prace_dialog import PravidlaBezpecnePraceDialog
 
 
 class HazardIdentificationsTab(QWidget):
@@ -23,11 +24,13 @@ class HazardIdentificationsTab(QWidget):
         self.edit_btn = QPushButton("Upravit")
         self.activate_btn = QPushButton("Aktivovat")
         self.deactivate_btn = QPushButton("Deaktivovat")
+        self.pravidla_btn = QPushButton("Pravidla bezpečné práce")
 
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.activate_btn)
         toolbar.addWidget(self.deactivate_btn)
+        toolbar.addWidget(self.pravidla_btn)
         toolbar.addStretch()
 
         self.table = HazardIdentificationTable()
@@ -42,6 +45,7 @@ class HazardIdentificationsTab(QWidget):
         self.edit_btn.clicked.connect(self.edit_selected_identification)
         self.activate_btn.clicked.connect(self.activate_selected_identification)
         self.deactivate_btn.clicked.connect(self.deactivate_selected_identification)
+        self.pravidla_btn.clicked.connect(self.open_pravidla_bezpecne_prace)
         self.table.doubleClicked.connect(self.edit_selected_identification)
 
         self.refresh()
@@ -53,6 +57,10 @@ class HazardIdentificationsTab(QWidget):
         )
         exec_maximized(dialog)
         self.refresh()
+
+    def open_pravidla_bezpecne_prace(self) -> None:
+        dialog = PravidlaBezpecnePraceDialog(self)
+        dialog.exec()
 
     def edit_selected_identification(self) -> None:
         identification_id = self.table.selected_identification_id()
