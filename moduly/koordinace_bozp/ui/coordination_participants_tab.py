@@ -10,6 +10,10 @@ from PySide6.QtWidgets import (
 
 from core.widgets.table_header_settings import configure_and_persist_table_columns
 from core.widgets.table_row_actions import install_table_row_actions
+from core.widgets.table_selection import (
+    current_table_row,
+    refresh_and_restore_selection,
+)
 from moduly.koordinace_bozp.constants import (
     COORD_HEADER_PARTICIPANTS,
     COORDINATION_PARTICIPANT_SOURCE_EMPLOYEE,
@@ -128,19 +132,43 @@ class CoordinationParticipantsTab(QWidget):
                 self.employer_combo.setCurrentIndex(index)
         self.refresh_participants()
 
-    def refresh_participants(self) -> None:
+    def refresh_participants(
+        self,
+        *,
+        select_id: int | None = None,
+        fallback_row: int | None = None,
+        preserve_scroll: bool = False,
+        ensure_visible: bool = False,
+    ) -> None:
         employer_id = self.current_employer_id()
         if employer_id is None:
             self.table.setRowCount(0)
             self._update_action_buttons()
             return
+        scroll_value = (
+            self.table.verticalScrollBar().value() if preserve_scroll else None
+        )
+        record_id = (
+            select_id
+            if select_id is not None
+            else self.table.selected_participant_id()
+        )
         participants = coordination_participant_service.list_for_employer(
             employer_id,
             include_inactive=True,
         )
         self.table.load_participants(participants)
-        configure_and_persist_table_columns(self.table, "coordination_participants", COORD_HEADER_PARTICIPANTS)
-        self.table.clear_selection()
+        configure_and_persist_table_columns(
+            self.table, "coordination_participants", COORD_HEADER_PARTICIPANTS
+        )
+        refresh_and_restore_selection(
+            self.table,
+            record_id,
+            fallback_row=fallback_row,
+            scroll=ensure_visible and not preserve_scroll,
+            preserve_scroll_value=scroll_value,
+            focus=True,
+        )
         self._update_action_buttons()
 
     def current_employer_id(self) -> int | None:
@@ -179,7 +207,7 @@ class CoordinationParticipantsTab(QWidget):
                     raise CoordinationParticipantError(
                         "Vyberte pracovníka z evidence THP."
                     )
-                coordination_participant_service.add_from_employee(
+                created = coordination_participant_service.add_from_employee(
                     employer.id,
                     employee_id,
                     full_name=data["full_name"],
@@ -189,7 +217,7 @@ class CoordinationParticipantsTab(QWidget):
                     note=data["note"],
                 )
             else:
-                coordination_participant_service.add_manual(
+                created = coordination_participant_service.add_manual(
                     employer.id,
                     full_name=data["full_name"],
                     role=data["role"],
@@ -200,7 +228,7 @@ class CoordinationParticipantsTab(QWidget):
         except CoordinationParticipantError as error:
             QMessageBox.warning(self, TAB_PARTICIPANTS, str(error))
             return
-        self.refresh_participants()
+        self.refresh_participants(select_id=created.id, ensure_visible=True)
 
     def edit_selected_participant(self) -> None:
         participant = self._selected_participant()
@@ -218,7 +246,7 @@ class CoordinationParticipantsTab(QWidget):
         except CoordinationParticipantError as error:
             QMessageBox.warning(self, TAB_PARTICIPANTS, str(error))
             return
-        self.refresh_participants()
+        self.refresh_participants(select_id=participant.id, preserve_scroll=True)
 
     def activate_selected_participant(self) -> None:
         participant = self._selected_participant()
@@ -237,7 +265,7 @@ class CoordinationParticipantsTab(QWidget):
         )
         if answer == QMessageBox.Yes:
             coordination_participant_service.activate(participant.id)
-            self.refresh_participants()
+            self.refresh_participants(select_id=participant.id, ensure_visible=True)
 
     def deactivate_selected_participant(self) -> None:
         participant = self._selected_participant()
@@ -259,6 +287,7 @@ class CoordinationParticipantsTab(QWidget):
         is_coordinator = coordination_coordinator_service.is_participant_coordinator(
             participant.id
         )
+        row = current_table_row(self.table)
         coordination_participant_service.deactivate(participant.id)
         if is_coordinator:
             QMessageBox.warning(
@@ -267,7 +296,11 @@ class CoordinationParticipantsTab(QWidget):
                 "Účastník je pověřeným koordinátorem BOZP. "
                 "Vazba na koordinátora zůstává – koordinátora automaticky nerušíme.",
             )
-        self.refresh_participants()
+        self.refresh_participants(
+            select_id=participant.id,
+            fallback_row=row,
+            ensure_visible=True,
+        )
 
     def _on_employer_changed(self) -> None:
         self.refresh_participants()

@@ -9,6 +9,10 @@ from PySide6.QtWidgets import (
 
 from core.widgets.table_header_settings import configure_and_persist_table_columns
 from core.widgets.table_row_actions import install_table_row_actions
+from core.widgets.table_selection import (
+    current_table_row,
+    refresh_and_restore_selection,
+)
 from moduly.koordinace_bozp.constants import COORD_HEADER_WORKPLACES, TAB_WORKPLACES
 from moduly.koordinace_bozp.sluzby.coordination_workplace_service import (
     CoordinationWorkplaceError,
@@ -84,16 +88,40 @@ class CoordinationWorkplacesTab(QWidget):
             self.table.setRowCount(0)
             self._update_action_buttons()
 
-    def refresh(self) -> None:
+    def refresh(
+        self,
+        *,
+        select_id: int | None = None,
+        fallback_row: int | None = None,
+        preserve_scroll: bool = False,
+        ensure_visible: bool = False,
+    ) -> None:
         if self.coordination_id is None:
             return
+        scroll_value = (
+            self.table.verticalScrollBar().value() if preserve_scroll else None
+        )
+        record_id = (
+            select_id
+            if select_id is not None
+            else self.table.selected_workplace_link_id()
+        )
         workplaces = coordination_workplace_service.list_for_coordination(
             self.coordination_id,
             include_inactive=True,
         )
         self.table.load_workplaces(workplaces)
-        configure_and_persist_table_columns(self.table, "coordination_workplaces", COORD_HEADER_WORKPLACES)
-        self.table.clear_selection()
+        configure_and_persist_table_columns(
+            self.table, "coordination_workplaces", COORD_HEADER_WORKPLACES
+        )
+        refresh_and_restore_selection(
+            self.table,
+            record_id,
+            fallback_row=fallback_row,
+            scroll=ensure_visible and not preserve_scroll,
+            preserve_scroll_value=scroll_value,
+            focus=True,
+        )
         self._update_action_buttons()
 
     def add_workplace(self) -> None:
@@ -103,14 +131,14 @@ class CoordinationWorkplacesTab(QWidget):
         if not dialog.exec():
             return
         try:
-            coordination_workplace_service.add(
+            created = coordination_workplace_service.add(
                 self.coordination_id,
                 **dialog.get_data(),
             )
         except CoordinationWorkplaceError as error:
             QMessageBox.warning(self, TAB_WORKPLACES, str(error))
             return
-        self.refresh()
+        self.refresh(select_id=created.id, ensure_visible=True)
 
     def edit_selected_workplace(self) -> None:
         item = self._selected_workplace()
@@ -125,7 +153,7 @@ class CoordinationWorkplacesTab(QWidget):
         except CoordinationWorkplaceError as error:
             QMessageBox.warning(self, TAB_WORKPLACES, str(error))
             return
-        self.refresh()
+        self.refresh(select_id=item.id, preserve_scroll=True)
 
     def activate_selected_workplace(self) -> None:
         item = self._selected_workplace()
@@ -140,7 +168,7 @@ class CoordinationWorkplacesTab(QWidget):
         except CoordinationWorkplaceError as error:
             QMessageBox.warning(self, TAB_WORKPLACES, str(error))
             return
-        self.refresh()
+        self.refresh(select_id=item.id, ensure_visible=True)
 
     def deactivate_selected_workplace(self) -> None:
         item = self._selected_workplace()
@@ -158,8 +186,13 @@ class CoordinationWorkplacesTab(QWidget):
             QMessageBox.No,
         )
         if answer == QMessageBox.Yes:
+            row = current_table_row(self.table)
             coordination_workplace_service.deactivate(item.id)
-            self.refresh()
+            self.refresh(
+                select_id=item.id,
+                fallback_row=row,
+                ensure_visible=True,
+            )
 
     def _selected_workplace(self):
         workplace_link_id = self.table.selected_workplace_link_id()

@@ -9,6 +9,10 @@ from PySide6.QtWidgets import (
 
 from core.widgets.table_header_settings import configure_and_persist_table_columns
 from core.widgets.table_row_actions import install_table_row_actions
+from core.widgets.table_selection import (
+    current_table_row,
+    refresh_and_restore_selection,
+)
 from moduly.koordinace_bozp.constants import COORD_HEADER_EMPLOYERS, TAB_EMPLOYERS
 from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
     CoordinationEmployerError,
@@ -85,17 +89,41 @@ class CoordinationEmployersTab(QWidget):
             self.table.setRowCount(0)
             self._update_action_buttons()
 
-    def refresh(self) -> None:
+    def refresh(
+        self,
+        *,
+        select_id: int | None = None,
+        fallback_row: int | None = None,
+        preserve_scroll: bool = False,
+        ensure_visible: bool = False,
+    ) -> None:
         if self.coordination_id is None:
             return
+        scroll_value = (
+            self.table.verticalScrollBar().value() if preserve_scroll else None
+        )
+        record_id = (
+            select_id
+            if select_id is not None
+            else self.table.selected_employer_id()
+        )
         coordination_employer_service.ensure_main_employer(self.coordination_id)
         employers = coordination_employer_service.list_for_coordination(
             self.coordination_id,
             include_inactive=True,
         )
         self.table.load_employers(employers)
-        configure_and_persist_table_columns(self.table, "coordination_employers", COORD_HEADER_EMPLOYERS)
-        self.table.clear_selection()
+        configure_and_persist_table_columns(
+            self.table, "coordination_employers", COORD_HEADER_EMPLOYERS
+        )
+        refresh_and_restore_selection(
+            self.table,
+            record_id,
+            fallback_row=fallback_row,
+            scroll=ensure_visible and not preserve_scroll,
+            preserve_scroll_value=scroll_value,
+            focus=True,
+        )
         self._update_action_buttons()
 
     def add_employer(self) -> None:
@@ -105,14 +133,14 @@ class CoordinationEmployersTab(QWidget):
         if not dialog.exec():
             return
         try:
-            coordination_employer_service.add_participant(
+            created = coordination_employer_service.add_participant(
                 self.coordination_id,
                 **dialog.get_data(),
             )
         except CoordinationEmployerError as error:
             QMessageBox.warning(self, TAB_EMPLOYERS, str(error))
             return
-        self.refresh()
+        self.refresh(select_id=created.id, ensure_visible=True)
 
     def edit_selected_employer(self) -> None:
         employer = self._selected_employer()
@@ -130,7 +158,7 @@ class CoordinationEmployersTab(QWidget):
         except CoordinationEmployerError as error:
             QMessageBox.warning(self, TAB_EMPLOYERS, str(error))
             return
-        self.refresh()
+        self.refresh(select_id=employer.id, preserve_scroll=True)
 
     def activate_selected_employer(self) -> None:
         employer = self._selected_employer()
@@ -149,7 +177,7 @@ class CoordinationEmployersTab(QWidget):
         )
         if answer == QMessageBox.Yes:
             coordination_employer_service.activate(employer.id)
-            self.refresh()
+            self.refresh(select_id=employer.id, ensure_visible=True)
 
     def deactivate_selected_employer(self) -> None:
         employer = self._selected_employer()
@@ -180,11 +208,16 @@ class CoordinationEmployersTab(QWidget):
         if answer != QMessageBox.Yes:
             return
         try:
+            row = current_table_row(self.table)
             coordination_employer_service.deactivate(employer.id)
         except CoordinationEmployerError as error:
             QMessageBox.warning(self, TAB_EMPLOYERS, str(error))
             return
-        self.refresh()
+        self.refresh(
+            select_id=employer.id,
+            fallback_row=row,
+            ensure_visible=True,
+        )
 
     def _selected_employer(self):
         employer_id = self.table.selected_employer_id()

@@ -9,6 +9,10 @@ from PySide6.QtWidgets import (
 
 from core.widgets.table_header_settings import configure_and_persist_table_columns
 from core.widgets.table_row_actions import install_table_row_actions
+from core.widgets.table_selection import (
+    current_table_row,
+    refresh_and_restore_selection,
+)
 from moduly.koordinace_bozp.constants import COORD_HEADER_MEASURES, TAB_MEASURES
 from moduly.koordinace_bozp.sluzby.coordination_measure_service import (
     CoordinationMeasureError,
@@ -90,26 +94,40 @@ class CoordinationMeasuresTab(QWidget):
             self.table.setRowCount(0)
             self._update_action_buttons()
 
-    def refresh(self) -> None:
+    def refresh(
+        self,
+        *,
+        select_id: int | None = None,
+        fallback_row: int | None = None,
+        preserve_scroll: bool = False,
+        ensure_visible: bool = False,
+    ) -> None:
         if self.coordination_id is None:
             return
-        selected_id = self.table.selected_measure_id()
+        scroll_value = (
+            self.table.verticalScrollBar().value() if preserve_scroll else None
+        )
+        record_id = (
+            select_id
+            if select_id is not None
+            else self.table.selected_measure_id()
+        )
         measures = coordination_measure_service.list_for_coordination(
             self.coordination_id,
             include_inactive=True,
         )
         self.table.load_measures(measures)
-        configure_and_persist_table_columns(self.table, "coordination_measures", COORD_HEADER_MEASURES)
-        if selected_id is not None:
-            for row in range(self.table.rowCount()):
-                item = self.table.item(row, 0)
-                if item is not None and int(item.text()) == selected_id:
-                    self.table.selectRow(row)
-                    break
-            else:
-                self.table.clear_selection()
-        else:
-            self.table.clear_selection()
+        configure_and_persist_table_columns(
+            self.table, "coordination_measures", COORD_HEADER_MEASURES
+        )
+        refresh_and_restore_selection(
+            self.table,
+            record_id,
+            fallback_row=fallback_row,
+            scroll=ensure_visible and not preserve_scroll,
+            preserve_scroll_value=scroll_value,
+            focus=True,
+        )
         self._update_action_buttons()
 
     def add_measure(self) -> None:
@@ -119,14 +137,14 @@ class CoordinationMeasuresTab(QWidget):
         if not dialog.exec():
             return
         try:
-            coordination_measure_service.add(
+            created = coordination_measure_service.add(
                 self.coordination_id,
                 **dialog.get_data(),
             )
         except CoordinationMeasureError as error:
             QMessageBox.warning(self, TAB_MEASURES, str(error))
             return
-        self.refresh()
+        self.refresh(select_id=created.id, ensure_visible=True)
 
     def edit_selected_measure(self) -> None:
         measure = self._selected_measure()
@@ -141,21 +159,21 @@ class CoordinationMeasuresTab(QWidget):
         except CoordinationMeasureError as error:
             QMessageBox.warning(self, TAB_MEASURES, str(error))
             return
-        self.refresh()
+        self.refresh(select_id=measure.id, preserve_scroll=True)
 
     def move_selected_up(self) -> None:
         measure = self._selected_measure()
         if measure is None:
             return
         if coordination_measure_service.move_up(measure.id):
-            self.refresh()
+            self.refresh(select_id=measure.id, ensure_visible=True)
 
     def move_selected_down(self) -> None:
         measure = self._selected_measure()
         if measure is None:
             return
         if coordination_measure_service.move_down(measure.id):
-            self.refresh()
+            self.refresh(select_id=measure.id, ensure_visible=True)
 
     def activate_selected_measure(self) -> None:
         measure = self._selected_measure()
@@ -174,7 +192,7 @@ class CoordinationMeasuresTab(QWidget):
         )
         if answer == QMessageBox.Yes:
             coordination_measure_service.activate(measure.id)
-            self.refresh()
+            self.refresh(select_id=measure.id, ensure_visible=True)
 
     def deactivate_selected_measure(self) -> None:
         measure = self._selected_measure()
@@ -192,8 +210,13 @@ class CoordinationMeasuresTab(QWidget):
             QMessageBox.No,
         )
         if answer == QMessageBox.Yes:
+            row = current_table_row(self.table)
             coordination_measure_service.deactivate(measure.id)
-            self.refresh()
+            self.refresh(
+                select_id=measure.id,
+                fallback_row=row,
+                ensure_visible=True,
+            )
 
     def _selected_measure(self):
         measure_id = self.table.selected_measure_id()

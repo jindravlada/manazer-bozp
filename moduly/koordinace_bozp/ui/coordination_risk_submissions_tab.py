@@ -15,6 +15,10 @@ from PySide6.QtWidgets import (
 from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.table_header_settings import configure_and_persist_table_columns
 from core.widgets.table_row_actions import install_table_row_actions
+from core.widgets.table_selection import (
+    current_table_row,
+    refresh_and_restore_selection,
+)
 from moduly.koordinace_bozp.constants import (
     ATTACHMENT_TYPE_CONTRACTOR_RISKS,
     COORD_HEADER_RISKS,
@@ -174,7 +178,14 @@ class CoordinationRiskSubmissionsTab(QWidget):
                 self.employer_combo.setCurrentIndex(index)
         self.load_selected_employer()
 
-    def load_selected_employer(self) -> None:
+    def load_selected_employer(
+        self,
+        *,
+        select_attachment_id: int | None = None,
+        fallback_row: int | None = None,
+        preserve_scroll: bool = False,
+        ensure_visible: bool = False,
+    ) -> None:
         employer_id = self.employer_combo.currentData()
         enabled = isinstance(employer_id, int)
         self.save_btn.setEnabled(enabled)
@@ -190,6 +201,17 @@ class CoordinationRiskSubmissionsTab(QWidget):
             self.attachments_table.setRowCount(0)
             self._update_attachment_buttons()
             return
+
+        scroll_value = (
+            self.attachments_table.verticalScrollBar().value()
+            if preserve_scroll
+            else None
+        )
+        record_id = (
+            select_attachment_id
+            if select_attachment_id is not None
+            else self.attachments_table.selected_attachment_id()
+        )
 
         submission = coordination_risk_submission_service.get_for_employer(employer_id)
         status = coordination_risk_submission_service.handover_status(employer_id)
@@ -223,6 +245,14 @@ class CoordinationRiskSubmissionsTab(QWidget):
             "coordination_attachments",
             COORD_HEADER_RISKS,
         )
+        refresh_and_restore_selection(
+            self.attachments_table,
+            record_id,
+            fallback_row=fallback_row,
+            scroll=ensure_visible and not preserve_scroll,
+            preserve_scroll_value=scroll_value,
+            focus=True,
+        )
         self._update_attachment_buttons()
 
     def save_submission(self) -> None:
@@ -240,7 +270,7 @@ class CoordinationRiskSubmissionsTab(QWidget):
         except CoordinationRiskSubmissionError as error:
             QMessageBox.warning(self, TAB_RISK_SUBMISSIONS, str(error))
             return
-        self.load_selected_employer()
+        self.load_selected_employer(preserve_scroll=True)
 
     def add_attachment(self) -> None:
         employer_id = self.employer_combo.currentData()
@@ -256,7 +286,7 @@ class CoordinationRiskSubmissionsTab(QWidget):
         if not path:
             return
         try:
-            coordination_attachment_service.add_file(
+            created = coordination_attachment_service.add_file(
                 coordination_id=self.coordination_id,
                 coordination_employer_id=employer_id,
                 source_path=path,
@@ -265,7 +295,10 @@ class CoordinationRiskSubmissionsTab(QWidget):
         except CoordinationAttachmentError as error:
             QMessageBox.warning(self, TAB_RISK_SUBMISSIONS, str(error))
             return
-        self.load_selected_employer()
+        self.load_selected_employer(
+            select_attachment_id=created.id,
+            ensure_visible=True,
+        )
 
     def open_attachment(self) -> None:
         attachment_id = self.attachments_table.selected_attachment_id()
@@ -296,8 +329,13 @@ class CoordinationRiskSubmissionsTab(QWidget):
             QMessageBox.No,
         )
         if answer == QMessageBox.Yes:
+            row = current_table_row(self.attachments_table)
             coordination_attachment_service.deactivate(attachment_id)
-            self.load_selected_employer()
+            self.load_selected_employer(
+                select_attachment_id=attachment_id,
+                fallback_row=row,
+                ensure_visible=True,
+            )
 
     def _on_employer_changed(self) -> None:
         if self._loading:

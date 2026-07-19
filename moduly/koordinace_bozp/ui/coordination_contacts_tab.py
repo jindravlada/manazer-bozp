@@ -12,6 +12,10 @@ from PySide6.QtWidgets import (
 
 from core.widgets.table_header_settings import configure_and_persist_table_columns
 from core.widgets.table_row_actions import install_table_row_actions
+from core.widgets.table_selection import (
+    current_table_row,
+    refresh_and_restore_selection,
+)
 from moduly.koordinace_bozp.constants import (
     COORD_HEADER_CONTACTS,
     DEFAULT_ACCIDENT_REPORTING,
@@ -127,26 +131,40 @@ class CoordinationContactsTab(QWidget):
             self._clear_procedures()
             self._update_action_buttons()
 
-    def refresh(self) -> None:
+    def refresh(
+        self,
+        *,
+        select_id: int | None = None,
+        fallback_row: int | None = None,
+        preserve_scroll: bool = False,
+        ensure_visible: bool = False,
+    ) -> None:
         if self.coordination_id is None:
             return
-        selected_id = self.table.selected_contact_id()
+        scroll_value = (
+            self.table.verticalScrollBar().value() if preserve_scroll else None
+        )
+        record_id = (
+            select_id
+            if select_id is not None
+            else self.table.selected_contact_id()
+        )
         contacts = coordination_contact_service.list_for_coordination(
             self.coordination_id,
             include_inactive=True,
         )
         self.table.load_contacts(contacts)
-        configure_and_persist_table_columns(self.table, "coordination_contacts", COORD_HEADER_CONTACTS)
-        if selected_id is not None:
-            for row in range(self.table.rowCount()):
-                item = self.table.item(row, 0)
-                if item is not None and int(item.text()) == selected_id:
-                    self.table.selectRow(row)
-                    break
-            else:
-                self.table.clear_selection()
-        else:
-            self.table.clear_selection()
+        configure_and_persist_table_columns(
+            self.table, "coordination_contacts", COORD_HEADER_CONTACTS
+        )
+        refresh_and_restore_selection(
+            self.table,
+            record_id,
+            fallback_row=fallback_row,
+            scroll=ensure_visible and not preserve_scroll,
+            preserve_scroll_value=scroll_value,
+            focus=True,
+        )
         self._load_procedures()
         self._update_action_buttons()
 
@@ -168,14 +186,14 @@ class CoordinationContactsTab(QWidget):
         if not dialog.exec():
             return
         try:
-            coordination_contact_service.add(
+            created = coordination_contact_service.add(
                 self.coordination_id,
                 **dialog.get_data(),
             )
         except CoordinationContactError as error:
             QMessageBox.warning(self, TAB_CONTACTS, str(error))
             return
-        self.refresh()
+        self.refresh(select_id=created.id, ensure_visible=True)
 
     def edit_selected_contact(self) -> None:
         if self.coordination_id is None:
@@ -196,21 +214,21 @@ class CoordinationContactsTab(QWidget):
         except CoordinationContactError as error:
             QMessageBox.warning(self, TAB_CONTACTS, str(error))
             return
-        self.refresh()
+        self.refresh(select_id=contact.id, preserve_scroll=True)
 
     def move_selected_up(self) -> None:
         contact = self._selected_contact()
         if contact is None:
             return
         if coordination_contact_service.move_up(contact.id):
-            self.refresh()
+            self.refresh(select_id=contact.id, ensure_visible=True)
 
     def move_selected_down(self) -> None:
         contact = self._selected_contact()
         if contact is None:
             return
         if coordination_contact_service.move_down(contact.id):
-            self.refresh()
+            self.refresh(select_id=contact.id, ensure_visible=True)
 
     def activate_selected_contact(self) -> None:
         contact = self._selected_contact()
@@ -229,7 +247,7 @@ class CoordinationContactsTab(QWidget):
         )
         if answer == QMessageBox.Yes:
             coordination_contact_service.activate(contact.id)
-            self.refresh()
+            self.refresh(select_id=contact.id, ensure_visible=True)
 
     def deactivate_selected_contact(self) -> None:
         contact = self._selected_contact()
@@ -247,8 +265,13 @@ class CoordinationContactsTab(QWidget):
             QMessageBox.No,
         )
         if answer == QMessageBox.Yes:
+            row = current_table_row(self.table)
             coordination_contact_service.deactivate(contact.id)
-            self.refresh()
+            self.refresh(
+                select_id=contact.id,
+                fallback_row=row,
+                ensure_visible=True,
+            )
 
     def _load_procedures(self) -> None:
         if self.coordination_id is None:

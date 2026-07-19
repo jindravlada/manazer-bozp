@@ -10,6 +10,10 @@ from PySide6.QtWidgets import (
 
 from core.widgets.table_header_settings import configure_and_persist_table_columns
 from core.widgets.table_row_actions import install_table_row_actions
+from core.widgets.table_selection import (
+    current_table_row,
+    refresh_and_restore_selection,
+)
 from moduly.koordinace_bozp.constants import COORD_HEADER_ACTIVITIES, TAB_EMPLOYER_ACTIVITIES
 from moduly.koordinace_bozp.sluzby.coordination_employer_activity_service import (
     CoordinationEmployerActivityError,
@@ -121,19 +125,43 @@ class CoordinationEmployerActivitiesTab(QWidget):
                 self.employer_combo.setCurrentIndex(index)
         self.refresh_activities()
 
-    def refresh_activities(self) -> None:
+    def refresh_activities(
+        self,
+        *,
+        select_id: int | None = None,
+        fallback_row: int | None = None,
+        preserve_scroll: bool = False,
+        ensure_visible: bool = False,
+    ) -> None:
         employer_id = self.current_employer_id()
         if employer_id is None:
             self.table.setRowCount(0)
             self._update_action_buttons()
             return
+        scroll_value = (
+            self.table.verticalScrollBar().value() if preserve_scroll else None
+        )
+        record_id = (
+            select_id
+            if select_id is not None
+            else self.table.selected_activity_id()
+        )
         activities = coordination_employer_activity_service.list_for_employer(
             employer_id,
             include_inactive=True,
         )
         self.table.load_activities(activities)
-        configure_and_persist_table_columns(self.table, "coordination_employer_activities", COORD_HEADER_ACTIVITIES)
-        self.table.clear_selection()
+        configure_and_persist_table_columns(
+            self.table, "coordination_employer_activities", COORD_HEADER_ACTIVITIES
+        )
+        refresh_and_restore_selection(
+            self.table,
+            record_id,
+            fallback_row=fallback_row,
+            scroll=ensure_visible and not preserve_scroll,
+            preserve_scroll_value=scroll_value,
+            focus=True,
+        )
         self._update_action_buttons()
 
     def current_employer_id(self) -> int | None:
@@ -173,7 +201,7 @@ class CoordinationEmployerActivitiesTab(QWidget):
             return
         data = dialog.get_data()
         try:
-            coordination_employer_activity_service.add(**data)
+            created = coordination_employer_activity_service.add(**data)
         except CoordinationEmployerActivityError as error:
             QMessageBox.warning(self, TAB_EMPLOYER_ACTIVITIES, str(error))
             return
@@ -183,7 +211,7 @@ class CoordinationEmployerActivitiesTab(QWidget):
             index = self.employer_combo.findData(created_employer_id)
             if index >= 0:
                 self.employer_combo.setCurrentIndex(index)
-        self.refresh_activities()
+        self.refresh_activities(select_id=created.id, ensure_visible=True)
 
     def edit_selected_activity(self) -> None:
         if self.coordination_id is None:
@@ -218,7 +246,7 @@ class CoordinationEmployerActivitiesTab(QWidget):
             index = self.employer_combo.findData(employer_id)
             if index >= 0:
                 self.employer_combo.setCurrentIndex(index)
-        self.refresh_activities()
+        self.refresh_activities(select_id=activity.id, preserve_scroll=True)
 
     def activate_selected_activity(self) -> None:
         activity = self._selected_activity()
@@ -250,7 +278,7 @@ class CoordinationEmployerActivitiesTab(QWidget):
         except CoordinationEmployerActivityError as error:
             QMessageBox.warning(self, TAB_EMPLOYER_ACTIVITIES, str(error))
             return
-        self.refresh_activities()
+        self.refresh_activities(select_id=activity.id, ensure_visible=True)
 
     def deactivate_selected_activity(self) -> None:
         activity = self._selected_activity()
@@ -277,8 +305,13 @@ class CoordinationEmployerActivitiesTab(QWidget):
         )
         if answer != QMessageBox.Yes:
             return
+        row = current_table_row(self.table)
         coordination_employer_activity_service.deactivate(activity.id)
-        self.refresh_activities()
+        self.refresh_activities(
+            select_id=activity.id,
+            fallback_row=row,
+            ensure_visible=True,
+        )
 
     def _on_employer_changed(self) -> None:
         self.refresh_activities()
