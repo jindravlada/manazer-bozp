@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
+from datetime import datetime
 
 from moduly.rizeni_rizik.modely.pravidla_bezpecne_prace_edition import (
     PravidlaBezpecnePraceEdition,
@@ -48,6 +49,7 @@ class PravidlaBezpecnePraceComparison:
     removed_rules: list[PreviousPravidloSnapshot] = field(default_factory=list)
     unchanged_rules: list[PravidloBezpecnePrace] = field(default_factory=list)
     previous_edition_id: int | None = None
+    previous_issued_at: datetime | None = None
     is_first_edition: bool = False
 
     @property
@@ -157,6 +159,7 @@ def compare_rules_to_edition(
         removed_rules=removed_rules,
         unchanged_rules=unchanged,
         previous_edition_id=previous.id,
+        previous_issued_at=previous.issued_at,
         is_first_edition=False,
     )
 

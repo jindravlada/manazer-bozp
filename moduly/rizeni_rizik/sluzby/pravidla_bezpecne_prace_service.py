@@ -7,6 +7,7 @@ PBP-4b: řazení podle závažnosti rizika.
 PBP-5a: evidence vydání (snapshot) po úspěšném exportu.
 PBP-5b: porovnání s předchozím vydáním před uložením.
 PBP-5c: generování pro profesi (sjednocení ohrožených skupin).
+PBP-5d: zobrazení změn v ODT dokumentu.
 """
 
 from __future__ import annotations
@@ -97,6 +98,12 @@ _EMPTY_INFO_ROW_RE = re.compile(
     r"</table:table-row>",
     re.DOTALL,
 )
+
+_EMPTY_ZMENY_PARAGRAPH_RE = re.compile(
+    r"<text:p[^>]*>\s*</text:p>\s*"
+    r"(?=<text:p[^>]*>PLATNÁ PRAVIDLA BEZPEČNÉ PRÁCE</text:p>)",
+)
+
 
 
 def normalize_rule_text(text: str) -> str:
@@ -388,6 +395,7 @@ class PravidlaBezpecnePraceService:
         )
         rendered = self.engine.render(template, output_path, values)
         self._strip_empty_workplace_rows(rendered)
+        self._strip_empty_change_section_paragraph(rendered)
 
         # Evidence vydání až po úspěšném porovnání i ODT (PBP-5a/5b).
         issued_dt: datetime
@@ -413,12 +421,29 @@ class PravidlaBezpecnePraceService:
     @staticmethod
     def _strip_empty_workplace_rows(odt_path: Path) -> None:
         """Odstraní řádky Pracoviště / Část pracoviště s prázdnou hodnotou."""
+        PravidlaBezpecnePraceService._rewrite_odt_content(
+            odt_path,
+            lambda content_xml: _EMPTY_INFO_ROW_RE.sub("", content_xml),
+        )
+
+    @staticmethod
+    def _strip_empty_change_section_paragraph(odt_path: Path) -> None:
+        """Odstraní prázdný odstavec změnových sekcí před PLATNÁ PRAVIDLA."""
+        PravidlaBezpecnePraceService._rewrite_odt_content(
+            odt_path,
+            lambda content_xml: _EMPTY_ZMENY_PARAGRAPH_RE.sub("", content_xml),
+        )
+
+    @staticmethod
+    def _rewrite_odt_content(odt_path: Path, transform) -> None:
         with zipfile.ZipFile(odt_path, "r") as zin:
-            entries = {info.filename: (info, zin.read(info.filename)) for info in zin.infolist()}
+            entries = {
+                info.filename: (info, zin.read(info.filename)) for info in zin.infolist()
+            }
 
         content_info, content_data = entries["content.xml"]
         content_xml = content_data.decode("utf-8")
-        cleaned = _EMPTY_INFO_ROW_RE.sub("", content_xml)
+        cleaned = transform(content_xml)
         if cleaned == content_xml:
             return
 
@@ -476,6 +501,12 @@ class PravidlaBezpecnePraceService:
         else:
             rozsah_label = "Ohrožená skupina"
             rozsah_nazev = exposed_group_service.display_name(endangered_group_id)
+        comparison = self.last_comparison
+        from moduly.rizeni_rizik.sluzby.pravidla_bezpecne_prace_document_format import (
+            format_change_sections,
+            format_numbered_valid_rules,
+        )
+
         return {
             "rozsah_label": rozsah_label,
             "ohrozena_skupina": rozsah_nazev,
@@ -483,15 +514,13 @@ class PravidlaBezpecnePraceService:
             "pracoviste": self._workplace_name(workplace_id),
             "cast_pracoviste": self._workplace_name(workplace_part_id),
             "datum_vydani": self._fmt_date(issued_at),
-            "platna_pravidla_text": self._format_numbered_rules(rules),
+            "zmeny_text": format_change_sections(
+                comparison,
+                current_issued_at=issued_at,
+                date_formatter=self._fmt_date,
+            ),
+            "platna_pravidla_text": format_numbered_valid_rules(rules, comparison),
         }
-
-    @staticmethod
-    def _format_numbered_rules(rules: list[PravidloBezpecnePrace]) -> str:
-        lines = []
-        for index, rule in enumerate(rules, start=1):
-            lines.append(f"{index}. {rule.text}")
-        return "\n".join(lines)
 
     @staticmethod
     def _workplace_name(workplace_id: int | None) -> str:
