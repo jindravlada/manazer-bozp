@@ -25,6 +25,8 @@ class BozpCoordination(Base):
         default=DEFAULT_BOZP_COORDINATION_STATUS,
     )
     note: Mapped[str] = mapped_column(Text, default="")
+    valid_from: Mapped[date | None] = mapped_column(Date, nullable=True)
+    valid_to: Mapped[date | None] = mapped_column(Date, nullable=True)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(

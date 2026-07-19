@@ -1890,6 +1890,33 @@ def _ensure_bozp_coordinations_table() -> None:
         from moduly.koordinace_bozp.modely.bozp_coordination import BozpCoordination
 
         BozpCoordination.__table__.create(bind=_db_engine(), checkfirst=True)
+        columns = _table_columns("bozp_coordinations")
+
+    if "valid_from" not in columns:
+        _add_column("bozp_coordinations", "valid_from DATE")
+    if "valid_to" not in columns:
+        _add_column("bozp_coordinations", "valid_to DATE")
+
+    with _db_engine().connect() as connection:
+        connection.execute(
+            text(
+                """
+                UPDATE bozp_coordinations
+                SET valid_from = meeting_date
+                WHERE valid_from IS NULL
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                UPDATE bozp_coordinations
+                SET valid_to = date(meeting_date, '+1 year')
+                WHERE valid_to IS NULL
+                """
+            )
+        )
+        connection.commit()
 
     _ensure_index(
         "idx_bozp_coordinations_number",
@@ -1903,6 +1930,13 @@ def _ensure_bozp_coordinations_table() -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_bozp_coordinations_meeting_date
         ON bozp_coordinations (meeting_date)
+        """,
+    )
+    _ensure_index(
+        "idx_bozp_coordinations_valid_to",
+        """
+        CREATE INDEX IF NOT EXISTS idx_bozp_coordinations_valid_to
+        ON bozp_coordinations (valid_to)
         """,
     )
 

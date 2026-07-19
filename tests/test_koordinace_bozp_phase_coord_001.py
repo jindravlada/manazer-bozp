@@ -94,6 +94,8 @@ class KoordinaceBozpPhaseCoord001TestCase(unittest.TestCase):
             "subject",
             "status",
             "note",
+            "valid_from",
+            "valid_to",
             "created_at",
             "updated_at",
             "active",
@@ -226,7 +228,10 @@ class KoordinaceBozpPhaseCoord001TestCase(unittest.TestCase):
         self.assertEqual(page.open_btn.text(), "Otevřít")
         self.assertEqual(page.activate_btn.text(), "Aktivovat")
         self.assertEqual(page.deactivate_btn.text(), "Deaktivovat")
-        self.assertEqual(list(page.table.horizontalHeaderItem(i).text() for i in range(1, 6)), TABLE_HEADERS[1:])
+        self.assertEqual(
+            list(page.table.horizontalHeaderItem(i).text() for i in range(1, 7)),
+            TABLE_HEADERS[1:],
+        )
 
         page.refresh()
         self.assertEqual(page.table.rowCount(), 1)

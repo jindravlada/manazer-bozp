@@ -1,4 +1,4 @@
-"""Služba evidence koordinací BOZP (COORD-001)."""
+"""Služba evidence koordinací BOZP (COORD-001 / COORD-004)."""
 
 from __future__ import annotations
 
@@ -7,10 +7,18 @@ from datetime import date, datetime
 from moduly.koordinace_bozp.constants import (
     BOZP_COORDINATION_STATUSES,
     DEFAULT_BOZP_COORDINATION_STATUS,
+    VALIDITY_FILTER_ALL,
+    VALIDITY_FILTER_EXPIRED,
+    VALIDITY_FILTER_EXPIRING,
+    VALIDITY_FILTER_VALID,
 )
 from moduly.koordinace_bozp.modely.bozp_coordination import BozpCoordination
 from moduly.koordinace_bozp.repository.bozp_coordination_repository import (
     BozpCoordinationRepository,
+)
+from moduly.koordinace_bozp.sluzby.coordination_validity import (
+    coordination_validity_state,
+    resolve_validity_dates,
 )
 
 
@@ -22,8 +30,37 @@ class BozpCoordinationService:
     def __init__(self) -> None:
         self.repository = BozpCoordinationRepository()
 
-    def get_all(self, include_inactive: bool = False) -> list[BozpCoordination]:
-        return self.repository.get_all(include_inactive=include_inactive)
+    def get_all(
+        self,
+        include_inactive: bool = False,
+        *,
+        validity_filter: str = VALIDITY_FILTER_ALL,
+        today: date | None = None,
+    ) -> list[BozpCoordination]:
+        items = self.repository.get_all(include_inactive=include_inactive)
+        return self.filter_by_validity(items, validity_filter, today=today)
+
+    def filter_by_validity(
+        self,
+        items: list[BozpCoordination],
+        validity_filter: str = VALIDITY_FILTER_ALL,
+        *,
+        today: date | None = None,
+    ) -> list[BozpCoordination]:
+        if validity_filter in ("", VALIDITY_FILTER_ALL, None):
+            return list(items)
+        allowed = {
+            VALIDITY_FILTER_VALID,
+            VALIDITY_FILTER_EXPIRING,
+            VALIDITY_FILTER_EXPIRED,
+        }
+        if validity_filter not in allowed:
+            raise BozpCoordinationError("Neplatný filtr platnosti.")
+        return [
+            item
+            for item in items
+            if coordination_validity_state(item.valid_to, today=today) == validity_filter
+        ]
 
     def get_by_id(self, coordination_id: int | None) -> BozpCoordination | None:
         if not coordination_id:
@@ -41,17 +78,28 @@ class BozpCoordinationService:
         subject: str = "",
         status: str = DEFAULT_BOZP_COORDINATION_STATUS,
         note: str = "",
+        valid_from: date | None = None,
+        valid_to: date | None = None,
         active: bool = True,
     ) -> BozpCoordination:
         normalized_subject = self._validate_subject(subject)
         normalized_status = self._validate_status(status)
+        resolved_meeting = meeting_date or date.today()
+        resolved_from, resolved_to = resolve_validity_dates(
+            resolved_meeting,
+            valid_from=valid_from,
+            valid_to=valid_to,
+        )
+        self._validate_validity_range(resolved_from, resolved_to)
         coordination = BozpCoordination(
             coordination_number=self.repository.allocate_next_number(),
-            meeting_date=meeting_date or date.today(),
+            meeting_date=resolved_meeting,
             place=(place or "").strip(),
             subject=normalized_subject,
             status=normalized_status,
             note=(note or "").strip(),
+            valid_from=resolved_from,
+            valid_to=resolved_to,
             active=active,
         )
         created = self.repository.add(coordination)
@@ -71,6 +119,8 @@ class BozpCoordinationService:
         subject: str = "",
         status: str = DEFAULT_BOZP_COORDINATION_STATUS,
         note: str = "",
+        valid_from: date | None = None,
+        valid_to: date | None = None,
     ) -> BozpCoordination | None:
         coordination = self.repository.get_by_id(coordination_id)
         if coordination is None:
@@ -81,6 +131,11 @@ class BozpCoordinationService:
         coordination.subject = self._validate_subject(subject)
         coordination.status = self._validate_status(status)
         coordination.note = (note or "").strip()
+        if valid_from is not None:
+            coordination.valid_from = valid_from
+        if valid_to is not None:
+            coordination.valid_to = valid_to
+        self._validate_validity_range(coordination.valid_from, coordination.valid_to)
         coordination.updated_at = datetime.now()
         return self.repository.update(coordination)
 
@@ -114,6 +169,13 @@ class BozpCoordinationService:
         if status not in BOZP_COORDINATION_STATUSES:
             raise BozpCoordinationError("Neplatný stav koordinace.")
         return status
+
+    @staticmethod
+    def _validate_validity_range(valid_from: date, valid_to: date) -> None:
+        if valid_to < valid_from:
+            raise BozpCoordinationError(
+                "Datum konce platnosti nesmí být dříve než začátek platnosti."
+            )
 
 
 bozp_coordination_service = BozpCoordinationService()

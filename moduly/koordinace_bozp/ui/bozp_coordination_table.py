@@ -1,4 +1,5 @@
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import QTableWidget
 
 from core.widgets.typed_table_sort import (
@@ -19,8 +20,15 @@ from moduly.koordinace_bozp.constants import (
     COL_PLACE,
     COL_STATUS,
     COL_SUBJECT,
+    COL_VALIDITY,
     COLUMN_COUNT,
     TABLE_HEADERS,
+)
+from moduly.koordinace_bozp.sluzby.coordination_validity import (
+    coordination_validity_color,
+    coordination_validity_label,
+    coordination_validity_sort_order,
+    coordination_validity_state,
 )
 
 
@@ -45,13 +53,15 @@ class BozpCoordinationTable(QTableWidget):
         self.setAlternatingRowColors(True)
         enable_typed_sorting(self)
 
-    def load_coordinations(self, coordinations) -> None:
+    def load_coordinations(self, coordinations, *, today=None) -> None:
         with sorting_paused(self):
             self.setRowCount(len(coordinations))
             for row, item in enumerate(coordinations):
                 record_id = int(item.id)
                 status_label = BOZP_COORDINATION_STATUS_LABELS.get(item.status, item.status)
                 display_status = status_label if item.active else f"{status_label} (neaktivní)"
+                validity_state = coordination_validity_state(item.valid_to, today=today)
+                validity_label = coordination_validity_label(item.valid_to, today=today)
                 self.setItem(
                     row,
                     COL_ID,
@@ -103,6 +113,20 @@ class BozpCoordinationTable(QTableWidget):
                 if not item.active:
                     status_item.setData(Qt.ItemDataRole.UserRole + 1, False)
                 self.setItem(row, COL_STATUS, status_item)
+
+                validity_item = create_typed_item(
+                    validity_label,
+                    typed_status(
+                        coordination_validity_sort_order(validity_state),
+                        label=validity_label,
+                    ),
+                    stable_id=record_id,
+                )
+                validity_item.setForeground(
+                    QBrush(QColor(coordination_validity_color(validity_state)))
+                )
+                validity_item.setData(Qt.ItemDataRole.UserRole, validity_state)
+                self.setItem(row, COL_VALIDITY, validity_item)
 
     def selected_coordination_id(self) -> int | None:
         selected = self.selectionModel().selectedRows()

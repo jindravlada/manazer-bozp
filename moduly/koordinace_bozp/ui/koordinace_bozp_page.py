@@ -1,6 +1,8 @@
 from PySide6.QtGui import QHideEvent, QShowEvent
 from PySide6.QtWidgets import (
+    QComboBox,
     QHBoxLayout,
+    QLabel,
     QMessageBox,
     QPushButton,
     QVBoxLayout,
@@ -9,7 +11,14 @@ from PySide6.QtWidgets import (
 
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
-from moduly.koordinace_bozp.constants import DIALOG_WINDOW_TITLE
+from moduly.koordinace_bozp.constants import (
+    DIALOG_WINDOW_TITLE,
+    VALIDITY_FILTER_ALL,
+    VALIDITY_FILTER_EXPIRED,
+    VALIDITY_FILTER_EXPIRING,
+    VALIDITY_FILTER_LABELS,
+    VALIDITY_FILTER_VALID,
+)
 from moduly.koordinace_bozp.sluzby.bozp_coordination_service import (
     BozpCoordinationError,
     bozp_coordination_service,
@@ -19,7 +28,7 @@ from moduly.koordinace_bozp.ui.bozp_coordination_table import BozpCoordinationTa
 
 
 class KoordinaceBozpPage(QWidget):
-    """Úvodní stránka modulu – seznam koordinací (COORD-001)."""
+    """Úvodní stránka modulu – seznam koordinací."""
 
     def __init__(self):
         super().__init__()
@@ -37,6 +46,16 @@ class KoordinaceBozpPage(QWidget):
         toolbar.addWidget(self.activate_btn)
         toolbar.addWidget(self.deactivate_btn)
         toolbar.addStretch()
+        toolbar.addWidget(QLabel("Platnost:"))
+        self.validity_filter = QComboBox()
+        for filter_id in (
+            VALIDITY_FILTER_ALL,
+            VALIDITY_FILTER_VALID,
+            VALIDITY_FILTER_EXPIRING,
+            VALIDITY_FILTER_EXPIRED,
+        ):
+            self.validity_filter.addItem(VALIDITY_FILTER_LABELS[filter_id], filter_id)
+        toolbar.addWidget(self.validity_filter)
 
         self.table = BozpCoordinationTable()
         configure_table_columns(self.table, "bozp_coordinations")
@@ -50,6 +69,7 @@ class KoordinaceBozpPage(QWidget):
         self.open_btn.clicked.connect(self.open_selected_coordination)
         self.activate_btn.clicked.connect(self.activate_selected_coordination)
         self.deactivate_btn.clicked.connect(self.deactivate_selected_coordination)
+        self.validity_filter.currentIndexChanged.connect(self.refresh)
         self.table.doubleClicked.connect(self.open_selected_coordination)
         self.table.itemSelectionChanged.connect(self._update_action_buttons)
 
@@ -64,8 +84,14 @@ class KoordinaceBozpPage(QWidget):
         self.table.clear_selection()
         super().hideEvent(event)
 
+    def current_validity_filter(self) -> str:
+        return self.validity_filter.currentData() or VALIDITY_FILTER_ALL
+
     def refresh(self) -> None:
-        coordinations = bozp_coordination_service.get_all(include_inactive=True)
+        coordinations = bozp_coordination_service.get_all(
+            include_inactive=True,
+            validity_filter=self.current_validity_filter(),
+        )
         self.table.load_coordinations(coordinations)
         configure_table_columns(self.table, "bozp_coordinations")
         self.table.clear_selection()
