@@ -35,7 +35,7 @@ class CoordinationEmployerActivitiesTab(QWidget):
         layout = QVBoxLayout(self)
 
         self.unavailable_label = QLabel(
-            "Činnosti zaměstnavatelů lze spravovat po uložení koordinace."
+            "Činnosti na pracovišti lze spravovat po uložení koordinace."
         )
         self.unavailable_label.setWordWrap(True)
         layout.addWidget(self.unavailable_label)

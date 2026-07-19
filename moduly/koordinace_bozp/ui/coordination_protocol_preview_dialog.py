@@ -194,7 +194,7 @@ class CoordinationProtocolPreviewDialog(QDialog):
         activities = data.get("activities_by_employer") or []
         has_activities = any(group.get("activities") for group in activities)
         self._add_section(
-            "Činnosti zaměstnavatelů",
+            "Činnosti na pracovišti",
             self._activities_lines(activities),
             force=has_activities
             or PROTOCOL_WARNING_EMPLOYER_WITHOUT_ACTIVITY in warning_codes,

@@ -38,7 +38,7 @@ PROTOCOL_ODT_CHAPTER_TITLES = (
     "Účastníci",
     "Koordinátor BOZP",
     "Místa výkonu práce",
-    "Činnosti zaměstnavatelů",
+    "Činnosti na pracovišti",
     "Organizační opatření",
     "Kontakty",
     "Postupy při mimořádných událostech",
@@ -280,7 +280,7 @@ class CoordinationProtocolOdtRenderer:
         lines.append("")
 
         # 7. Činnosti
-        lines.append("Činnosti zaměstnavatelů")
+        lines.append("Činnosti na pracovišti")
         lines.append("")
         activity_groups = data.get("activities_by_employer") or []
         has_activities = False
