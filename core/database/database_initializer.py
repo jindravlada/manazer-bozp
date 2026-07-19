@@ -96,6 +96,9 @@ def initialize_database() -> None:
         ProfessionExposedGroup,
     )
     from moduly.koordinace_bozp.modely.bozp_coordination import BozpCoordination  # noqa: F401
+    from moduly.koordinace_bozp.modely.coordination_employer import (  # noqa: F401
+        CoordinationEmployer,
+    )
     from core.ai_oponentni.modely.ai_peer_review import (  # noqa: F401
         AiPeerReview,
         AiPeerReviewBatch,
@@ -1897,6 +1900,22 @@ def _ensure_bozp_coordinations_table() -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_bozp_coordinations_meeting_date
         ON bozp_coordinations (meeting_date)
+        """,
+    )
+
+    employer_columns = _table_columns("coordination_employers")
+    if not employer_columns:
+        from moduly.koordinace_bozp.modely.coordination_employer import (
+            CoordinationEmployer,
+        )
+
+        CoordinationEmployer.__table__.create(bind=_db_engine(), checkfirst=True)
+
+    _ensure_index(
+        "idx_coordination_employers_coordination",
+        """
+        CREATE INDEX IF NOT EXISTS idx_coordination_employers_coordination
+        ON coordination_employers (coordination_id)
         """,
     )
 

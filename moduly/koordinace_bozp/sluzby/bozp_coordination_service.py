@@ -54,7 +54,13 @@ class BozpCoordinationService:
             note=(note or "").strip(),
             active=active,
         )
-        return self.repository.add(coordination)
+        created = self.repository.add(coordination)
+        from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
+            coordination_employer_service,
+        )
+
+        coordination_employer_service.ensure_main_employer(created.id)
+        return created
 
     def update_coordination(
         self,

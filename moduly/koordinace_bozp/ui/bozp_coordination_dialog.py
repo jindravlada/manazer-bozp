@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QLabel,
     QLineEdit,
+    QTabWidget,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -23,22 +24,31 @@ from moduly.koordinace_bozp.constants import (
     BOZP_COORDINATION_STATUSES,
     DEFAULT_BOZP_COORDINATION_STATUS,
     DIALOG_WINDOW_TITLE,
+    TAB_BASICS,
+    TAB_EMPLOYERS,
 )
 from moduly.koordinace_bozp.sluzby.bozp_coordination_service import (
     bozp_coordination_service,
 )
+from moduly.koordinace_bozp.ui.coordination_employers_tab import (
+    CoordinationEmployersTab,
+)
 
 
 class BozpCoordinationDialog(QDialog):
-    """Základní údaje koordinace BOZP (COORD-001)."""
+    """Dialog koordinace BOZP – základní údaje a zaměstnavatelé."""
 
     def __init__(self, parent=None, coordination=None):
         super().__init__(parent)
         self.coordination = coordination
         self.setWindowTitle(DIALOG_WINDOW_TITLE)
-        configure_resizable_form_dialog(self, width=560, height=420, min_width=440, min_height=320)
+        configure_resizable_form_dialog(self, width=720, height=560, min_width=520, min_height=400)
 
         layout = QVBoxLayout(self)
+        self.tabs = QTabWidget()
+
+        basics_host = QWidget()
+        basics_layout = QVBoxLayout(basics_host)
         form_host = QWidget()
         form = QFormLayout(form_host)
 
@@ -59,7 +69,16 @@ class BozpCoordinationDialog(QDialog):
         form.addRow("Stav:", self.status)
         form.addRow("Poznámka:", self.note)
 
-        layout.addWidget(wrap_in_scroll_area(form_host), 1)
+        basics_layout.addWidget(wrap_in_scroll_area(form_host), 1)
+        self.tabs.addTab(basics_host, TAB_BASICS)
+
+        coordination_id = coordination.id if coordination is not None else None
+        self.employers_tab = CoordinationEmployersTab(
+            self,
+            coordination_id=coordination_id,
+        )
+        self.tabs.addTab(self.employers_tab, TAB_EMPLOYERS)
+        layout.addWidget(self.tabs, 1)
 
         buttons = create_save_cancel_box(self)
         buttons.accepted.connect(self.accept)
