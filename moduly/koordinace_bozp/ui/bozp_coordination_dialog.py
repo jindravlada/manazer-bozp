@@ -3,9 +3,9 @@ from datetime import date
 from PySide6.QtCore import QDate, Qt
 from PySide6.QtWidgets import (
     QCheckBox,
-    QComboBox,
     QDialog,
     QFormLayout,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
     QMessageBox,
@@ -24,8 +24,6 @@ from core.widgets.dialog_utils import (
     wrap_in_scroll_area,
 )
 from moduly.koordinace_bozp.constants import (
-    BOZP_COORDINATION_STATUS_LABELS,
-    BOZP_COORDINATION_STATUSES,
     DEFAULT_BOZP_COORDINATION_STATUS,
     DIALOG_WINDOW_TITLE,
     LABEL_ACTION_NAME,
@@ -44,6 +42,14 @@ from moduly.koordinace_bozp.constants import (
 )
 from moduly.koordinace_bozp.sluzby.bozp_coordination_service import (
     bozp_coordination_service,
+)
+from moduly.koordinace_bozp.sluzby.coordination_lifecycle_service import (
+    CoordinationLifecycleBlocked,
+    CoordinationLifecycleError,
+    CoordinationLifecycleNeedsConfirmation,
+    LifecycleAction,
+    coordination_lifecycle_service,
+    status_label,
 )
 from moduly.koordinace_bozp.sluzby.coordination_validity import add_one_year
 from moduly.koordinace_bozp.ui.coordination_contacts_tab import (
@@ -108,9 +114,9 @@ class BozpCoordinationDialog(QDialog):
         self.meeting_date = DateEdit()
         self.place = QLineEdit()
         self.subject = QLineEdit()
-        self.status = QComboBox()
-        for status_id in BOZP_COORDINATION_STATUSES:
-            self.status.addItem(BOZP_COORDINATION_STATUS_LABELS[status_id], status_id)
+        self.status_label = QLabel()
+        self.lifecycle_row = QHBoxLayout()
+        self._lifecycle_buttons: list[QPushButton] = []
         self.valid_from = DateEdit()
         self.valid_to = DateEdit()
         self.note = QTextEdit()
@@ -124,7 +130,8 @@ class BozpCoordinationDialog(QDialog):
         form.addRow(f"{LABEL_MEETING_DATE}:", self.meeting_date)
         form.addRow(f"{LABEL_MEETING_PLACE}:", self.place)
         form.addRow(f"{LABEL_ACTION_NAME} *:", self.subject)
-        form.addRow("Stav:", self.status)
+        form.addRow("Stav:", self.status_label)
+        form.addRow("", self._wrap_lifecycle_row())
         form.addRow("Platnost od:", self.valid_from)
         form.addRow("Platnost do:", self.valid_to)
         form.addRow("Poznámka:", self.note)
@@ -204,9 +211,7 @@ class BozpCoordinationDialog(QDialog):
 
         if coordination is None:
             self.number_label.setText(bozp_coordination_service.preview_next_number())
-            self.status.setCurrentIndex(
-                self.status.findData(DEFAULT_BOZP_COORDINATION_STATUS)
-            )
+            self._refresh_status_ui(DEFAULT_BOZP_COORDINATION_STATUS)
             self._apply_default_validity_from_meeting()
             self.insert_default_measures.setVisible(True)
         else:
@@ -215,8 +220,6 @@ class BozpCoordinationDialog(QDialog):
                 self.meeting_date.setDate(_qdate_from_date(coordination.meeting_date))
             self.place.setText(coordination.place or "")
             self.subject.setText(coordination.subject or "")
-            index = self.status.findData(coordination.status)
-            self.status.setCurrentIndex(index if index >= 0 else 0)
             if coordination.valid_from:
                 self.valid_from.setDate(_qdate_from_date(coordination.valid_from))
             if coordination.valid_to:
@@ -224,10 +227,77 @@ class BozpCoordinationDialog(QDialog):
             self.note.setPlainText(coordination.note or "")
             self.insert_default_measures.setVisible(False)
             self.insert_default_measures.setChecked(False)
+            self._refresh_status_ui(coordination.status)
 
         self.meeting_date.dateChanged.connect(self._on_meeting_date_changed)
         # UX-COORD-1: editor se otevírá maximalizovaný.
         self.setWindowState(self.windowState() | Qt.WindowState.WindowMaximized)
+
+    def _wrap_lifecycle_row(self) -> QWidget:
+        host = QWidget()
+        host.setLayout(self.lifecycle_row)
+        self.lifecycle_row.setContentsMargins(0, 0, 0, 0)
+        self.lifecycle_row.addStretch()
+        return host
+
+    def _refresh_status_ui(self, status: str | None) -> None:
+        self.status_label.setText(status_label(status))
+        for button in self._lifecycle_buttons:
+            self.lifecycle_row.removeWidget(button)
+            button.deleteLater()
+        self._lifecycle_buttons.clear()
+
+        if self.coordination is None:
+            return
+
+        for action in coordination_lifecycle_service.list_actions(status):
+            button = QPushButton(action.label)
+            button.clicked.connect(
+                lambda _checked=False, act=action: self._run_lifecycle_action(act)
+            )
+            self.lifecycle_row.insertWidget(self.lifecycle_row.count() - 1, button)
+            self._lifecycle_buttons.append(button)
+
+    def _run_lifecycle_action(self, action: LifecycleAction) -> None:
+        if self.coordination is None:
+            return
+        try:
+            updated = self._transition_with_confirmations(action)
+        except CoordinationLifecycleBlocked as error:
+            QMessageBox.warning(self, DIALOG_WINDOW_TITLE, str(error))
+            return
+        except CoordinationLifecycleError as error:
+            QMessageBox.warning(self, DIALOG_WINDOW_TITLE, str(error))
+            return
+        self.coordination = updated
+        self._refresh_status_ui(updated.status)
+
+    def _transition_with_confirmations(self, action: LifecycleAction):
+        assert self.coordination is not None
+        confirm_warnings = False
+        confirm_sensitive = False
+        while True:
+            try:
+                return coordination_lifecycle_service.transition(
+                    self.coordination.id,
+                    action.target_status,
+                    confirm_warnings=confirm_warnings,
+                    confirm_sensitive=confirm_sensitive,
+                )
+            except CoordinationLifecycleNeedsConfirmation as error:
+                answer = QMessageBox.question(
+                    self,
+                    DIALOG_WINDOW_TITLE,
+                    str(error),
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No,
+                )
+                if answer != QMessageBox.Yes:
+                    raise CoordinationLifecycleError("Přechod byl zrušen.") from error
+                if error.sensitive:
+                    confirm_sensitive = True
+                else:
+                    confirm_warnings = True
 
     def _on_meeting_date_changed(self, *_args) -> None:
         if self._sync_validity_from_meeting:
@@ -279,7 +349,6 @@ class BozpCoordinationDialog(QDialog):
             "meeting_date": _date_from_qdate(self.meeting_date.date()),
             "place": self.place.text().strip(),
             "subject": self.subject.text().strip(),
-            "status": self.status.currentData() or DEFAULT_BOZP_COORDINATION_STATUS,
             "note": self.note.toPlainText().strip(),
             "valid_from": _date_from_qdate(self.valid_from.date()),
             "valid_to": _date_from_qdate(self.valid_to.date()),

@@ -5,7 +5,6 @@ from __future__ import annotations
 from datetime import date, datetime
 
 from moduly.koordinace_bozp.constants import (
-    BOZP_COORDINATION_STATUSES,
     DEFAULT_ACCIDENT_REPORTING,
     DEFAULT_BOZP_COORDINATION_STATUS,
     DEFAULT_EMERGENCY_REPORTING,
@@ -119,7 +118,7 @@ class BozpCoordinationService:
         evacuation_instructions: str | None = None,
     ) -> BozpCoordination:
         normalized_subject = self._validate_subject(subject)
-        normalized_status = self._validate_status(status)
+        # UX-COORD-6a: nová koordinace vždy startuje jako Rozpracováno.
         resolved_meeting = meeting_date or date.today()
         resolved_from, resolved_to = resolve_validity_dates(
             resolved_meeting,
@@ -132,7 +131,7 @@ class BozpCoordinationService:
             meeting_date=resolved_meeting,
             place=(place or "").strip(),
             subject=normalized_subject,
-            status=normalized_status,
+            status=DEFAULT_BOZP_COORDINATION_STATUS,
             note=(note or "").strip(),
             emergency_reporting=self._default_procedure_text(
                 emergency_reporting,
@@ -175,7 +174,7 @@ class BozpCoordinationService:
         meeting_date: date | None = None,
         place: str = "",
         subject: str = "",
-        status: str = DEFAULT_BOZP_COORDINATION_STATUS,
+        status: str | None = None,
         note: str = "",
         valid_from: date | None = None,
         valid_to: date | None = None,
@@ -191,7 +190,7 @@ class BozpCoordinationService:
         coordination.meeting_date = meeting_date or coordination.meeting_date
         coordination.place = (place or "").strip()
         coordination.subject = self._validate_subject(subject)
-        coordination.status = self._validate_status(status)
+        # UX-COORD-6a: stav se mění jen přes coordination_lifecycle_service.
         coordination.note = (note or "").strip()
         if emergency_reporting is not None:
             coordination.emergency_reporting = (emergency_reporting or "").strip()
@@ -235,12 +234,6 @@ class BozpCoordinationService:
         if not normalized:
             raise BozpCoordinationError(SUBJECT_REQUIRED_MESSAGE)
         return normalized
-
-    @staticmethod
-    def _validate_status(status: str) -> str:
-        if status not in BOZP_COORDINATION_STATUSES:
-            raise BozpCoordinationError("Neplatný stav koordinace.")
-        return status
 
     @staticmethod
     def _validate_validity_range(valid_from: date, valid_to: date) -> None:

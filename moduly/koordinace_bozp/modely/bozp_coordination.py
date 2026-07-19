@@ -1,4 +1,4 @@
-"""Entita koordinační schůzky BOZP (COORD-001)."""
+"""Entita koordinační schůzky BOZP (COORD-001 / UX-COORD-6a)."""
 
 from datetime import date, datetime
 
@@ -47,6 +47,10 @@ class BozpCoordination(Base):
     )
     valid_from: Mapped[date | None] = mapped_column(Date, nullable=True)
     valid_to: Mapped[date | None] = mapped_column(Date, nullable=True)
+    ready_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    issued_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(

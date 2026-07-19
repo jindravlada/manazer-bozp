@@ -240,6 +240,7 @@ class KoordinaceBozpPhaseCoord011aTestCase(unittest.TestCase):
         params = {
             "subject": "COORD-011a",
             "meeting_date": self.today,
+            "place": "Jednací místnost",
             "valid_from": self.today,
             "valid_to": self.today + timedelta(days=365),
             "insert_default_measures": False,
@@ -485,15 +486,13 @@ class KoordinaceBozpPhaseCoord011aTestCase(unittest.TestCase):
 
     def test_archived_coordination_warning(self) -> None:
         coordination, *_ = self._complete_coordination(with_contractor=False)
-        bozp_coordination_service.update_coordination(
+        from moduly.koordinace_bozp.sluzby.coordination_lifecycle_service import (
+            coordination_lifecycle_service,
+        )
+
+        coordination_lifecycle_service.transition(
             coordination.id,
-            subject=coordination.subject,
-            meeting_date=coordination.meeting_date,
-            place=coordination.place or "",
-            status=BOZP_COORDINATION_STATUS_ARCHIVED,
-            note=coordination.note or "",
-            valid_from=coordination.valid_from,
-            valid_to=coordination.valid_to,
+            BOZP_COORDINATION_STATUS_ARCHIVED,
         )
         result = coordination_protocol_builder.build(coordination.id, today=self.today)
         self.assertIn(

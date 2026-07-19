@@ -9,11 +9,15 @@ MODULE_DESCRIPTION = (
 DIALOG_WINDOW_TITLE = "Koordinace BOZP"
 
 BOZP_COORDINATION_STATUS_DRAFT = "draft"
+BOZP_COORDINATION_STATUS_READY = "ready"
+BOZP_COORDINATION_STATUS_ISSUED = "issued"
 BOZP_COORDINATION_STATUS_COMPLETED = "completed"
 BOZP_COORDINATION_STATUS_ARCHIVED = "archived"
 
 BOZP_COORDINATION_STATUSES = (
     BOZP_COORDINATION_STATUS_DRAFT,
+    BOZP_COORDINATION_STATUS_READY,
+    BOZP_COORDINATION_STATUS_ISSUED,
     BOZP_COORDINATION_STATUS_COMPLETED,
     BOZP_COORDINATION_STATUS_ARCHIVED,
 )
@@ -22,9 +26,149 @@ DEFAULT_BOZP_COORDINATION_STATUS = BOZP_COORDINATION_STATUS_DRAFT
 
 BOZP_COORDINATION_STATUS_LABELS = {
     BOZP_COORDINATION_STATUS_DRAFT: "Rozpracováno",
-    BOZP_COORDINATION_STATUS_COMPLETED: "Dokončeno",
+    BOZP_COORDINATION_STATUS_READY: "Připraveno k vydání",
+    BOZP_COORDINATION_STATUS_ISSUED: "Vydáno",
+    BOZP_COORDINATION_STATUS_COMPLETED: "Ukončeno",
     BOZP_COORDINATION_STATUS_ARCHIVED: "Archivováno",
 }
+
+# Mapování starých / neznámých hodnot status → kanonický stav (UX-COORD-6a).
+BOZP_COORDINATION_STATUS_LEGACY_MAP = {
+    "draft": BOZP_COORDINATION_STATUS_DRAFT,
+    "in_progress": BOZP_COORDINATION_STATUS_DRAFT,
+    "ready": BOZP_COORDINATION_STATUS_READY,
+    "prepared": BOZP_COORDINATION_STATUS_READY,
+    "active": BOZP_COORDINATION_STATUS_READY,
+    "issued": BOZP_COORDINATION_STATUS_ISSUED,
+    "published": BOZP_COORDINATION_STATUS_ISSUED,
+    "completed": BOZP_COORDINATION_STATUS_COMPLETED,
+    "done": BOZP_COORDINATION_STATUS_COMPLETED,
+    "archived": BOZP_COORDINATION_STATUS_ARCHIVED,
+}
+
+# Povolené přechody: from → frozenset(to)
+BOZP_COORDINATION_STATUS_TRANSITIONS = {
+    BOZP_COORDINATION_STATUS_DRAFT: frozenset(
+        {
+            BOZP_COORDINATION_STATUS_READY,
+            BOZP_COORDINATION_STATUS_ARCHIVED,
+        }
+    ),
+    BOZP_COORDINATION_STATUS_READY: frozenset(
+        {
+            BOZP_COORDINATION_STATUS_DRAFT,
+            BOZP_COORDINATION_STATUS_ISSUED,
+            BOZP_COORDINATION_STATUS_ARCHIVED,
+        }
+    ),
+    BOZP_COORDINATION_STATUS_ISSUED: frozenset(
+        {
+            BOZP_COORDINATION_STATUS_COMPLETED,
+            BOZP_COORDINATION_STATUS_DRAFT,
+            BOZP_COORDINATION_STATUS_ARCHIVED,
+        }
+    ),
+    BOZP_COORDINATION_STATUS_COMPLETED: frozenset(
+        {
+            BOZP_COORDINATION_STATUS_DRAFT,
+            BOZP_COORDINATION_STATUS_ARCHIVED,
+        }
+    ),
+    BOZP_COORDINATION_STATUS_ARCHIVED: frozenset(
+        {
+            BOZP_COORDINATION_STATUS_DRAFT,
+        }
+    ),
+}
+
+# Akce UI: (from, to) → (action_id, tlačítko, vyžaduje citlivé potvrzení)
+BOZP_COORDINATION_LIFECYCLE_ACTIONS = (
+    (
+        BOZP_COORDINATION_STATUS_DRAFT,
+        BOZP_COORDINATION_STATUS_READY,
+        "prepare",
+        "Připravit k vydání",
+        False,
+    ),
+    (
+        BOZP_COORDINATION_STATUS_DRAFT,
+        BOZP_COORDINATION_STATUS_ARCHIVED,
+        "archive",
+        "Archivovat",
+        False,
+    ),
+    (
+        BOZP_COORDINATION_STATUS_READY,
+        BOZP_COORDINATION_STATUS_DRAFT,
+        "return_to_draft",
+        "Vrátit k dopracování",
+        False,
+    ),
+    (
+        BOZP_COORDINATION_STATUS_READY,
+        BOZP_COORDINATION_STATUS_ISSUED,
+        "issue",
+        "Vydat",
+        False,
+    ),
+    (
+        BOZP_COORDINATION_STATUS_READY,
+        BOZP_COORDINATION_STATUS_ARCHIVED,
+        "archive",
+        "Archivovat",
+        False,
+    ),
+    (
+        BOZP_COORDINATION_STATUS_ISSUED,
+        BOZP_COORDINATION_STATUS_COMPLETED,
+        "complete",
+        "Ukončit",
+        False,
+    ),
+    (
+        BOZP_COORDINATION_STATUS_ISSUED,
+        BOZP_COORDINATION_STATUS_DRAFT,
+        "return_to_draft",
+        "Vrátit k dopracování",
+        True,
+    ),
+    (
+        BOZP_COORDINATION_STATUS_ISSUED,
+        BOZP_COORDINATION_STATUS_ARCHIVED,
+        "archive",
+        "Archivovat",
+        False,
+    ),
+    (
+        BOZP_COORDINATION_STATUS_COMPLETED,
+        BOZP_COORDINATION_STATUS_DRAFT,
+        "reopen",
+        "Znovu otevřít",
+        True,
+    ),
+    (
+        BOZP_COORDINATION_STATUS_COMPLETED,
+        BOZP_COORDINATION_STATUS_ARCHIVED,
+        "archive",
+        "Archivovat",
+        False,
+    ),
+    (
+        BOZP_COORDINATION_STATUS_ARCHIVED,
+        BOZP_COORDINATION_STATUS_DRAFT,
+        "restore",
+        "Obnovit do Rozpracováno",
+        True,
+    ),
+)
+
+# Stavy, u kterých přechod vyžaduje kontrolu protokolovým builderem.
+BOZP_COORDINATION_STATUSES_REQUIRING_PROTOCOL_CHECK = frozenset(
+    {
+        BOZP_COORDINATION_STATUS_READY,
+        BOZP_COORDINATION_STATUS_ISSUED,
+    }
+)
 
 TAB_BASICS = "Základní údaje"
 TAB_EMPLOYERS = "Zúčastnění zaměstnavatelé"
@@ -570,6 +714,10 @@ PROTOCOL_WARNING_SEVERITIES = (
 
 PROTOCOL_WARNING_MISSING_COORDINATOR = "missing_coordinator"
 PROTOCOL_WARNING_MISSING_WORKPLACE = "missing_workplace"
+PROTOCOL_WARNING_MISSING_SUBJECT = "missing_subject"
+PROTOCOL_WARNING_MISSING_MEETING_DATE = "missing_meeting_date"
+PROTOCOL_WARNING_MISSING_MEETING_PLACE = "missing_meeting_place"
+PROTOCOL_WARNING_MISSING_ACTIVE_EMPLOYER = "missing_active_employer"
 PROTOCOL_WARNING_EMPLOYER_WITHOUT_ACTIVITY = "employer_without_activity"
 PROTOCOL_WARNING_MISSING_PBP_SNAPSHOT = "missing_pbp_snapshot"
 PROTOCOL_WARNING_STALE_PBP_SNAPSHOT = "stale_pbp_snapshot"

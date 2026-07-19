@@ -15,7 +15,6 @@ from moduly.koordinace_bozp.constants import (
     ATTACHMENT_TYPE_MAIN_EMPLOYER_PBP,
     ATTACHMENT_TYPE_OTHER,
     BOZP_COORDINATION_STATUS_ARCHIVED,
-    BOZP_COORDINATION_STATUS_LABELS,
     CONTACT_TYPE_LABELS,
     MEASURE_CATEGORIES,
     MEASURE_CATEGORY_LABELS,
@@ -23,9 +22,13 @@ from moduly.koordinace_bozp.constants import (
     PROTOCOL_WARNING_EMPLOYER_WITHOUT_ACTIVITY,
     PROTOCOL_WARNING_EXPIRED_VALIDITY,
     PROTOCOL_WARNING_INACTIVE_OR_ARCHIVED,
+    PROTOCOL_WARNING_MISSING_ACTIVE_EMPLOYER,
     PROTOCOL_WARNING_MISSING_COORDINATOR,
     PROTOCOL_WARNING_MISSING_MEASURES,
+    PROTOCOL_WARNING_MISSING_MEETING_DATE,
+    PROTOCOL_WARNING_MISSING_MEETING_PLACE,
     PROTOCOL_WARNING_MISSING_PBP_SNAPSHOT,
+    PROTOCOL_WARNING_MISSING_SUBJECT,
     PROTOCOL_WARNING_MISSING_WORKPLACE,
     PROTOCOL_WARNING_RISKS_NOT_SUBMITTED,
     PROTOCOL_WARNING_RISKS_WITHOUT_ATTACHMENT,
@@ -280,6 +283,7 @@ class CoordinationProtocolBuilder:
 
         warnings = self._build_warnings(
             coordination=coordination,
+            employers=employers_sorted,
             activities_by_employer=activities_by_employer,
             workplaces=workplaces,
             measures=measures,
@@ -327,6 +331,7 @@ class CoordinationProtocolBuilder:
         self,
         *,
         coordination,
+        employers,
         activities_by_employer,
         workplaces,
         measures,
@@ -336,6 +341,50 @@ class CoordinationProtocolBuilder:
         today: date,
     ) -> list[ProtocolWarning]:
         warnings: list[ProtocolWarning] = []
+
+        if not (coordination.subject or "").strip():
+            warnings.append(
+                ProtocolWarning(
+                    code=PROTOCOL_WARNING_MISSING_SUBJECT,
+                    severity=PROTOCOL_WARNING_SEVERITY_CRITICAL,
+                    message="Není vyplněn název akce.",
+                    related_entity_type="bozp_coordination",
+                    related_entity_id=coordination.id,
+                )
+            )
+
+        if coordination.meeting_date is None:
+            warnings.append(
+                ProtocolWarning(
+                    code=PROTOCOL_WARNING_MISSING_MEETING_DATE,
+                    severity=PROTOCOL_WARNING_SEVERITY_CRITICAL,
+                    message="Není vyplněno datum schůzky.",
+                    related_entity_type="bozp_coordination",
+                    related_entity_id=coordination.id,
+                )
+            )
+
+        if not (coordination.place or "").strip():
+            warnings.append(
+                ProtocolWarning(
+                    code=PROTOCOL_WARNING_MISSING_MEETING_PLACE,
+                    severity=PROTOCOL_WARNING_SEVERITY_CRITICAL,
+                    message="Není vyplněno místo schůzky.",
+                    related_entity_type="bozp_coordination",
+                    related_entity_id=coordination.id,
+                )
+            )
+
+        if not employers:
+            warnings.append(
+                ProtocolWarning(
+                    code=PROTOCOL_WARNING_MISSING_ACTIVE_EMPLOYER,
+                    severity=PROTOCOL_WARNING_SEVERITY_CRITICAL,
+                    message="Není evidován žádný aktivní zúčastněný zaměstnavatel.",
+                    related_entity_type="bozp_coordination",
+                    related_entity_id=coordination.id,
+                )
+            )
 
         if not coordination.active or coordination.status == BOZP_COORDINATION_STATUS_ARCHIVED:
             reason = []
@@ -607,6 +656,12 @@ class CoordinationProtocolBuilder:
 
     @staticmethod
     def _basics_dict(coordination, *, today: date) -> dict:
+        from moduly.koordinace_bozp.sluzby.coordination_lifecycle_service import (
+            normalize_coordination_status,
+            status_label,
+        )
+
+        normalized_status = normalize_coordination_status(coordination.status)
         return {
             "id": coordination.id,
             "coordination_number": coordination.coordination_number or "",
@@ -617,11 +672,8 @@ class CoordinationProtocolBuilder:
             ),
             "place": coordination.place or "",
             "subject": coordination.subject or "",
-            "status": coordination.status,
-            "status_label": BOZP_COORDINATION_STATUS_LABELS.get(
-                coordination.status,
-                coordination.status,
-            ),
+            "status": normalized_status,
+            "status_label": status_label(normalized_status),
             "note": coordination.note or "",
             "valid_from": (
                 coordination.valid_from.isoformat() if coordination.valid_from else None

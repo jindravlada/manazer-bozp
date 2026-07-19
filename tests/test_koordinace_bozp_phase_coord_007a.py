@@ -319,15 +319,13 @@ class KoordinaceBozpPhaseCoord007aTestCase(unittest.TestCase):
     def test_archived_coordination_skipped(self) -> None:
         self._create_measure(description="Pravidlo")
         coordination = self._create_coordination_with_place(subject="Archiv")
-        bozp_coordination_service.update_coordination(
+        from moduly.koordinace_bozp.sluzby.coordination_lifecycle_service import (
+            coordination_lifecycle_service,
+        )
+
+        coordination_lifecycle_service.transition(
             coordination.id,
-            meeting_date=coordination.meeting_date,
-            place=coordination.place or "",
-            subject=coordination.subject,
-            status=BOZP_COORDINATION_STATUS_ARCHIVED,
-            note=coordination.note or "",
-            valid_from=coordination.valid_from,
-            valid_to=coordination.valid_to,
+            BOZP_COORDINATION_STATUS_ARCHIVED,
         )
         coordination = bozp_coordination_service.get_by_id(coordination.id)
         result = evaluate_pbp_freshness(coordination, today=self.today)
@@ -356,8 +354,9 @@ class KoordinaceBozpPhaseCoord007aTestCase(unittest.TestCase):
             meeting_date=self.today - timedelta(days=400),
             valid_from=self.today - timedelta(days=400),
             valid_to=self.today - timedelta(days=10),
-            status=BOZP_COORDINATION_STATUS_COMPLETED,
         )
+        coordination.status = BOZP_COORDINATION_STATUS_COMPLETED
+        coordination = bozp_coordination_service.repository.update(coordination)
         result = evaluate_pbp_freshness(coordination, today=self.today)
         self.assertEqual(result.state, PBP_FRESHNESS_SKIPPED)
         self.assertNotEqual(result.state, PBP_FRESHNESS_MISSING)
@@ -396,15 +395,13 @@ class KoordinaceBozpPhaseCoord007aTestCase(unittest.TestCase):
         self._create_measure(description="Nové pravidlo", event_name="new")
 
         archived = self._create_coordination_with_place(subject="Archiv bez PBP")
-        bozp_coordination_service.update_coordination(
+        from moduly.koordinace_bozp.sluzby.coordination_lifecycle_service import (
+            coordination_lifecycle_service,
+        )
+
+        coordination_lifecycle_service.transition(
             archived.id,
-            meeting_date=archived.meeting_date,
-            place=archived.place or "",
-            subject=archived.subject,
-            status=BOZP_COORDINATION_STATUS_ARCHIVED,
-            note=archived.note or "",
-            valid_from=archived.valid_from,
-            valid_to=archived.valid_to,
+            BOZP_COORDINATION_STATUS_ARCHIVED,
         )
 
         missing_ids = {

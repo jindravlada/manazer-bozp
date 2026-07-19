@@ -13,7 +13,6 @@ from core.widgets.typed_table_sort import (
     typed_text,
 )
 from moduly.koordinace_bozp.constants import (
-    BOZP_COORDINATION_STATUS_LABELS,
     BOZP_COORDINATION_STATUSES,
     COL_ID,
     COL_MEETING_DATE,
@@ -25,6 +24,10 @@ from moduly.koordinace_bozp.constants import (
     COL_VALIDITY,
     COLUMN_COUNT,
     TABLE_HEADERS,
+)
+from moduly.koordinace_bozp.sluzby.coordination_lifecycle_service import (
+    normalize_coordination_status,
+    status_label,
 )
 from moduly.koordinace_bozp.sluzby.coordination_pbp_freshness import (
     PbpFreshnessCache,
@@ -40,12 +43,12 @@ from moduly.koordinace_bozp.sluzby.coordination_validity import (
 
 
 def _status_sort(status: str):
+    normalized = normalize_coordination_status(status)
     try:
-        order = BOZP_COORDINATION_STATUSES.index(status)
+        order = BOZP_COORDINATION_STATUSES.index(normalized)
     except ValueError:
         order = len(BOZP_COORDINATION_STATUSES)
-    label = BOZP_COORDINATION_STATUS_LABELS.get(status, status or "")
-    return typed_status(order, label=label)
+    return typed_status(order, label=status_label(normalized))
 
 
 class BozpCoordinationTable(QTableWidget):
@@ -74,8 +77,8 @@ class BozpCoordinationTable(QTableWidget):
             self.setRowCount(len(coordinations))
             for row, item in enumerate(coordinations):
                 record_id = int(item.id)
-                status_label = BOZP_COORDINATION_STATUS_LABELS.get(item.status, item.status)
-                display_status = status_label if item.active else f"{status_label} (neaktivní)"
+                label = status_label(item.status)
+                display_status = label if item.active else f"{label} (neaktivní)"
                 validity_state = coordination_validity_state(item.valid_to, today=today)
                 validity_label = coordination_validity_label(item.valid_to, today=today)
                 freshness = freshness_cache.evaluate(item, today=today)

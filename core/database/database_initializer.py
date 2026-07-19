@@ -1931,6 +1931,82 @@ def _ensure_bozp_coordinations_table() -> None:
             "bozp_coordinations",
             "evacuation_instructions TEXT DEFAULT ''",
         )
+    if "ready_at" not in columns:
+        _add_column("bozp_coordinations", "ready_at DATETIME")
+    if "issued_at" not in columns:
+        _add_column("bozp_coordinations", "issued_at DATETIME")
+    if "completed_at" not in columns:
+        _add_column("bozp_coordinations", "completed_at DATETIME")
+    if "archived_at" not in columns:
+        _add_column("bozp_coordinations", "archived_at DATETIME")
+
+    # UX-COORD-6a: bezpečné mapování legacy stavů na kanonické hodnoty.
+    with _db_engine().connect() as connection:
+        connection.execute(
+            text(
+                """
+                UPDATE bozp_coordinations
+                SET status = 'draft'
+                WHERE lower(trim(coalesce(status, ''))) IN (
+                    'draft', 'in_progress', ''
+                )
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                UPDATE bozp_coordinations
+                SET status = 'ready'
+                WHERE lower(trim(coalesce(status, ''))) IN (
+                    'ready', 'prepared', 'active'
+                )
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                UPDATE bozp_coordinations
+                SET status = 'issued'
+                WHERE lower(trim(coalesce(status, ''))) IN (
+                    'issued', 'published'
+                )
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                UPDATE bozp_coordinations
+                SET status = 'completed'
+                WHERE lower(trim(coalesce(status, ''))) IN (
+                    'completed', 'done'
+                )
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                UPDATE bozp_coordinations
+                SET status = 'archived'
+                WHERE lower(trim(coalesce(status, ''))) = 'archived'
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                UPDATE bozp_coordinations
+                SET status = 'draft'
+                WHERE lower(trim(coalesce(status, ''))) NOT IN (
+                    'draft', 'ready', 'issued', 'completed', 'archived'
+                )
+                """
+            )
+        )
+        connection.commit()
 
     with _db_engine().connect() as connection:
         connection.execute(

@@ -190,11 +190,17 @@ class KoordinaceBozpPhaseCoord001TestCase(unittest.TestCase):
         )
         self.assertEqual(coordination.coordination_number, f"{year}-0001")
 
-    def test_change_status(self) -> None:
+    def test_change_status_via_lifecycle(self) -> None:
+        from moduly.koordinace_bozp.sluzby.coordination_lifecycle_service import (
+            coordination_lifecycle_service,
+        )
+
         created = bozp_coordination_service.create_coordination(
             subject="Stav",
             meeting_date=date.today(),
+            place="Místnost",
         )
+        # Formulář už nemění status – update_coordination status ignoruje.
         updated = bozp_coordination_service.update_coordination(
             created.id,
             meeting_date=created.meeting_date,
@@ -205,22 +211,17 @@ class KoordinaceBozpPhaseCoord001TestCase(unittest.TestCase):
         )
         self.assertIsNotNone(updated)
         assert updated is not None
-        self.assertEqual(updated.status, BOZP_COORDINATION_STATUS_COMPLETED)
-        self.assertEqual(
-            BOZP_COORDINATION_STATUS_LABELS[updated.status],
-            "Dokončeno",
-        )
+        self.assertEqual(updated.status, BOZP_COORDINATION_STATUS_DRAFT)
 
-        archived = bozp_coordination_service.update_coordination(
+        archived = coordination_lifecycle_service.transition(
             created.id,
-            meeting_date=created.meeting_date,
-            place="",
-            subject="Stav",
-            status=BOZP_COORDINATION_STATUS_ARCHIVED,
-            note="",
+            BOZP_COORDINATION_STATUS_ARCHIVED,
         )
-        assert archived is not None
         self.assertEqual(archived.status, BOZP_COORDINATION_STATUS_ARCHIVED)
+        self.assertEqual(
+            BOZP_COORDINATION_STATUS_LABELS[archived.status],
+            "Archivováno",
+        )
 
     def test_deactivate_without_delete(self) -> None:
         created = bozp_coordination_service.create_coordination(
