@@ -8,6 +8,8 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QLabel,
     QLineEdit,
+    QMessageBox,
+    QPushButton,
     QTabWidget,
     QTextEdit,
     QVBoxLayout,
@@ -16,6 +18,7 @@ from PySide6.QtWidgets import (
 
 from core.widgets.date_edit import DateEdit
 from core.widgets.dialog_utils import (
+    add_work_dialog_footer,
     configure_resizable_form_dialog,
     create_save_cancel_box,
     wrap_in_scroll_area,
@@ -60,6 +63,9 @@ from moduly.koordinace_bozp.ui.coordination_participants_tab import (
 )
 from moduly.koordinace_bozp.ui.coordination_pbp_attachment_tab import (
     CoordinationPbpAttachmentTab,
+)
+from moduly.koordinace_bozp.ui.coordination_protocol_preview_dialog import (
+    CoordinationProtocolPreviewDialog,
 )
 from moduly.koordinace_bozp.ui.coordination_risk_submissions_tab import (
     CoordinationRiskSubmissionsTab,
@@ -181,10 +187,17 @@ class BozpCoordinationDialog(QDialog):
         layout.addWidget(self.tabs, 1)
         self.tabs.currentChanged.connect(self._on_tab_changed)
 
+        self.preview_btn = QPushButton("Náhled protokolu")
+        self.preview_btn.setEnabled(coordination_id is not None)
+        self.preview_btn.clicked.connect(self.open_protocol_preview)
         buttons = create_save_cancel_box(self)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        add_work_dialog_footer(
+            layout,
+            work_widgets=[self.preview_btn],
+            buttons=buttons,
+        )
 
         if coordination is None:
             self.number_label.setText(bozp_coordination_service.preview_next_number())
@@ -240,6 +253,21 @@ class BozpCoordinationDialog(QDialog):
             self.pbp_attachment_tab.refresh_status()
         elif widget is self.employers_tab:
             self.employers_tab.refresh()
+
+    def open_protocol_preview(self) -> None:
+        coordination_id = self.coordination.id if self.coordination is not None else None
+        if coordination_id is None:
+            QMessageBox.information(
+                self,
+                DIALOG_WINDOW_TITLE,
+                "Náhled protokolu je dostupný po uložení koordinace.",
+            )
+            return
+        dialog = CoordinationProtocolPreviewDialog(
+            self,
+            coordination_id=coordination_id,
+        )
+        dialog.exec()
 
     def get_data(self) -> dict:
         data = {

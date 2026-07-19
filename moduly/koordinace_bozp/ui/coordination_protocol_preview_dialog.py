@@ -1,0 +1,377 @@
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont
+from PySide6.QtWidgets import (
+    QDialog,
+    QGroupBox,
+    QLabel,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
+
+from core.widgets.dialog_utils import (
+    configure_resizable_form_dialog,
+    create_close_box,
+)
+from moduly.koordinace_bozp.constants import (
+    PROTOCOL_WARNING_EMPLOYER_WITHOUT_ACTIVITY,
+    PROTOCOL_WARNING_MISSING_COORDINATOR,
+    PROTOCOL_WARNING_MISSING_MEASURES,
+    PROTOCOL_WARNING_MISSING_WORKPLACE,
+    PROTOCOL_WARNING_SEVERITY_CRITICAL,
+    PROTOCOL_WARNING_SEVERITY_INFO,
+    PROTOCOL_WARNING_SEVERITY_WARNING,
+)
+from moduly.koordinace_bozp.sluzby.coordination_protocol_builder import (
+    CoordinationProtocolBuilderError,
+    ProtocolBuildResult,
+    coordination_protocol_builder,
+)
+
+
+def _format_date(value: str | None) -> str:
+    if not value:
+        return "—"
+    parts = value.split("-")
+    if len(parts) == 3:
+        return f"{parts[2]}.{parts[1]}.{parts[0]}"
+    return value
+
+
+class CoordinationProtocolPreviewDialog(QDialog):
+    """Read-only náhled koordinačního protokolu (COORD-011a)."""
+
+    def __init__(self, parent=None, *, coordination_id: int):
+        super().__init__(parent)
+        self.coordination_id = coordination_id
+        self.setWindowTitle("Náhled koordinačního protokolu")
+        configure_resizable_form_dialog(
+            self,
+            width=820,
+            height=700,
+            min_width=560,
+            min_height=420,
+        )
+
+        layout = QVBoxLayout(self)
+        self.status_label = QLabel()
+        font = QFont(self.status_label.font())
+        font.setBold(True)
+        font.setPointSize(font.pointSize() + 1)
+        self.status_label.setFont(font)
+        self.status_label.setWordWrap(True)
+        layout.addWidget(self.status_label)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        self.body = QWidget()
+        self.body_layout = QVBoxLayout(self.body)
+        self.body_layout.setContentsMargins(8, 8, 8, 8)
+        scroll.setWidget(self.body)
+        layout.addWidget(scroll, 1)
+
+        buttons = create_close_box(self)
+        buttons.rejected.connect(self.reject)
+        buttons.accepted.connect(self.accept)
+        layout.addWidget(buttons)
+
+        self._load()
+
+    def _load(self) -> None:
+        try:
+            result = coordination_protocol_builder.build(self.coordination_id)
+        except CoordinationProtocolBuilderError as error:
+            self.status_label.setText(str(error))
+            return
+        self._render(result)
+
+    def _render(self, result: ProtocolBuildResult) -> None:
+        while self.body_layout.count():
+            item = self.body_layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+
+        warning_count = result.summary.warnings_total
+        if warning_count == 0:
+            self.status_label.setText("Připraveno bez upozornění")
+            self.status_label.setStyleSheet("color: #2e7d32;")
+        else:
+            self.status_label.setText(
+                f"Protokol obsahuje {warning_count} upozornění"
+            )
+            self.status_label.setStyleSheet("color: #ef6c00;")
+
+        data = result.protocol_data
+        warning_codes = {item.code for item in result.warnings}
+
+        self._add_warnings_section(result.warnings)
+
+        self._add_section(
+            "Základní údaje",
+            self._basics_lines(data.get("basics") or {}),
+            force=True,
+        )
+
+        employers = data.get("employers") or []
+        participants = data.get("participants_by_employer") or []
+        self._add_section(
+            "Zaměstnavatelé a účastníci",
+            self._employers_participants_lines(employers, participants),
+            force=bool(employers or participants),
+        )
+
+        coordinator = data.get("coordinator")
+        self._add_section(
+            "Koordinátor BOZP",
+            self._coordinator_lines(coordinator),
+            force=bool(coordinator)
+            or PROTOCOL_WARNING_MISSING_COORDINATOR in warning_codes,
+        )
+
+        workplaces = data.get("workplaces") or []
+        self._add_section(
+            "Místa výkonu práce",
+            self._workplaces_lines(workplaces),
+            force=bool(workplaces)
+            or PROTOCOL_WARNING_MISSING_WORKPLACE in warning_codes,
+        )
+
+        activities = data.get("activities_by_employer") or []
+        has_activities = any(group.get("activities") for group in activities)
+        self._add_section(
+            "Činnosti zaměstnavatelů",
+            self._activities_lines(activities),
+            force=has_activities
+            or PROTOCOL_WARNING_EMPLOYER_WITHOUT_ACTIVITY in warning_codes,
+        )
+
+        measures = data.get("measures_by_category") or []
+        self._add_section(
+            "Organizační opatření",
+            self._measures_lines(measures),
+            force=bool(measures)
+            or PROTOCOL_WARNING_MISSING_MEASURES in warning_codes,
+        )
+
+        contacts = data.get("contacts") or []
+        procedures = data.get("emergency_procedures") or {}
+        self._add_section(
+            "Kontakty a mimořádné události",
+            self._contacts_procedures_lines(contacts, procedures),
+            force=bool(contacts)
+            or any(procedures.values()),
+        )
+
+        risks = data.get("risk_handovers") or []
+        self._add_section(
+            "Předání rizik",
+            self._risks_lines(risks),
+            force=bool(risks),
+        )
+
+        attachments = data.get("attachments_by_group") or []
+        pbp = data.get("pbp_snapshot")
+        self._add_section(
+            "Přílohy",
+            self._attachments_lines(attachments, pbp),
+            force=bool(attachments) or bool(pbp),
+        )
+
+        self._add_section(
+            "Souhrn",
+            self._summary_lines(result.summary.to_dict()),
+            force=True,
+        )
+        self.body_layout.addStretch(1)
+
+    def _add_warnings_section(self, warnings) -> None:
+        if not warnings:
+            return
+        lines = []
+        for item in warnings:
+            prefix = {
+                PROTOCOL_WARNING_SEVERITY_CRITICAL: "[kritické]",
+                PROTOCOL_WARNING_SEVERITY_WARNING: "[varování]",
+                PROTOCOL_WARNING_SEVERITY_INFO: "[info]",
+            }.get(item.severity, "")
+            lines.append(f"{prefix} {item.message}".strip())
+        self._add_section("Upozornění", lines, force=True)
+
+    def _add_section(self, title: str, lines: list[str], *, force: bool) -> None:
+        if not force:
+            return
+        if not lines:
+            lines = ["—"]
+        group = QGroupBox(title)
+        group_layout = QVBoxLayout(group)
+        label = QLabel("\n".join(lines))
+        label.setWordWrap(True)
+        label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        group_layout.addWidget(label)
+        self.body_layout.addWidget(group)
+
+    @staticmethod
+    def _basics_lines(basics: dict) -> list[str]:
+        return [
+            f"Číslo: {basics.get('coordination_number') or '—'}",
+            f"Datum schůzky: {_format_date(basics.get('meeting_date'))}",
+            f"Místo: {basics.get('place') or '—'}",
+            f"Předmět: {basics.get('subject') or '—'}",
+            f"Stav: {basics.get('status_label') or basics.get('status') or '—'}",
+            (
+                f"Platnost: {_format_date(basics.get('valid_from'))}"
+                f" – {_format_date(basics.get('valid_to'))}"
+            ),
+            f"Poznámka: {basics.get('note') or '—'}",
+        ]
+
+    @staticmethod
+    def _employers_participants_lines(employers, participants_groups) -> list[str]:
+        lines = []
+        for employer in employers:
+            role = "hlavní" if employer.get("is_main") else "zúčastněný"
+            lines.append(f"• {employer.get('display_name')} ({role})")
+        if participants_groups:
+            lines.append("")
+            lines.append("Účastníci podle zaměstnavatele:")
+            for group in participants_groups:
+                employer = group.get("employer") or {}
+                lines.append(f"  {employer.get('display_name')}:")
+                participants = group.get("participants") or []
+                if not participants:
+                    lines.append("    — žádní aktivní účastníci")
+                    continue
+                for participant in participants:
+                    detail = participant.get("full_name") or "—"
+                    if participant.get("role"):
+                        detail = f"{detail} – {participant['role']}"
+                    lines.append(f"    • {detail}")
+        return lines
+
+    @staticmethod
+    def _coordinator_lines(coordinator) -> list[str]:
+        if not coordinator:
+            return ["Koordinátor není určen."]
+        lines = [
+            f"Jméno: {coordinator.get('full_name') or '—'}",
+            f"Role: {coordinator.get('role') or '—'}",
+            f"Zaměstnavatel: {coordinator.get('employer_name') or '—'}",
+        ]
+        if coordinator.get("phone"):
+            lines.append(f"Telefon: {coordinator['phone']}")
+        if coordinator.get("email"):
+            lines.append(f"E-mail: {coordinator['email']}")
+        return lines
+
+    @staticmethod
+    def _workplaces_lines(workplaces) -> list[str]:
+        if not workplaces:
+            return ["Není evidováno žádné aktivní místo výkonu práce."]
+        return [f"• {item.get('label') or '—'}" for item in workplaces]
+
+    @staticmethod
+    def _activities_lines(groups) -> list[str]:
+        lines = []
+        for group in groups:
+            employer = group.get("employer") or {}
+            activities = group.get("activities") or []
+            lines.append(f"{employer.get('display_name')}:")
+            if not activities:
+                lines.append("  — bez aktivní činnosti")
+                continue
+            for activity in activities:
+                place = activity.get("workplace_label") or ""
+                suffix = f" ({place})" if place else ""
+                lines.append(f"  • {activity.get('activity_name') or '—'}{suffix}")
+        return lines or ["—"]
+
+    @staticmethod
+    def _measures_lines(groups) -> list[str]:
+        if not groups:
+            return ["Nejsou evidována žádná aktivní organizační opatření."]
+        lines = []
+        for group in groups:
+            lines.append(f"{group.get('category_label')}:")
+            for measure in group.get("measures") or []:
+                lines.append(f"  • {measure.get('title') or '—'}")
+        return lines
+
+    @staticmethod
+    def _contacts_procedures_lines(contacts, procedures) -> list[str]:
+        lines = []
+        if contacts:
+            lines.append("Kontakty:")
+            for contact in contacts:
+                detail = contact.get("custom_name") or "—"
+                type_label = contact.get("contact_type_label") or ""
+                if type_label:
+                    detail = f"{detail} ({type_label})"
+                phone = contact.get("phone") or ""
+                email = contact.get("email") or ""
+                extras = ", ".join(item for item in (phone, email) if item)
+                if extras:
+                    detail = f"{detail} – {extras}"
+                lines.append(f"  • {detail}")
+            lines.append("")
+        lines.append("Postupy:")
+        lines.append(
+            f"Mimořádná událost: {procedures.get('emergency_reporting') or '—'}"
+        )
+        lines.append(
+            f"Pracovní úraz: {procedures.get('accident_reporting') or '—'}"
+        )
+        lines.append(f"Požár: {procedures.get('fire_reporting') or '—'}")
+        lines.append(
+            f"Evakuace: {procedures.get('evacuation_instructions') or '—'}"
+        )
+        return lines
+
+    @staticmethod
+    def _risks_lines(rows) -> list[str]:
+        if not rows:
+            return ["—"]
+        lines = []
+        for row in rows:
+            employer = row.get("employer") or {}
+            lines.append(
+                f"• {employer.get('display_name')}: "
+                f"{row.get('handover_status_label') or row.get('handover_status')}"
+            )
+        return lines
+
+    @staticmethod
+    def _attachments_lines(groups, pbp) -> list[str]:
+        lines = []
+        if pbp and not groups:
+            lines.append(
+                f"Příloha PBP: revize {pbp.get('revision_number')} "
+                f"({pbp.get('rules_count') or 0} pravidel)"
+            )
+        for group in groups:
+            lines.append(f"{group.get('attachment_type_label')}:")
+            for attachment in group.get("attachments") or []:
+                name = attachment.get("original_filename") or attachment.get(
+                    "description"
+                ) or "—"
+                lines.append(f"  • {name}")
+        return lines or ["—"]
+
+    @staticmethod
+    def _summary_lines(summary: dict) -> list[str]:
+        return [
+            f"Aktivní zaměstnavatelé: {summary.get('active_employers', 0)}",
+            f"Aktivní účastníci: {summary.get('active_participants', 0)}",
+            f"Aktivní místa: {summary.get('active_workplaces', 0)}",
+            f"Aktivní činnosti: {summary.get('active_activities', 0)}",
+            f"Aktivní organizační opatření: {summary.get('active_measures', 0)}",
+            f"Aktivní kontakty: {summary.get('active_contacts', 0)}",
+            f"Pravidla v posledním PBP snapshotu: {summary.get('pbp_rules_count', 0)}",
+            f"Aktivní přílohy: {summary.get('active_attachments', 0)}",
+            (
+                "Varování – info / warning / critical: "
+                f"{summary.get('warnings_info', 0)} / "
+                f"{summary.get('warnings_warning', 0)} / "
+                f"{summary.get('warnings_critical', 0)}"
+            ),
+        ]
