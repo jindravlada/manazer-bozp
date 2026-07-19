@@ -28,6 +28,8 @@ from moduly.koordinace_bozp.constants import (
     TAB_COORDINATOR,
     TAB_EMPLOYERS,
     TAB_PARTICIPANTS,
+    TAB_RISK_SUBMISSIONS,
+    TAB_WORKPLACES,
 )
 from moduly.koordinace_bozp.sluzby.bozp_coordination_service import (
     bozp_coordination_service,
@@ -41,6 +43,12 @@ from moduly.koordinace_bozp.ui.coordination_employers_tab import (
 )
 from moduly.koordinace_bozp.ui.coordination_participants_tab import (
     CoordinationParticipantsTab,
+)
+from moduly.koordinace_bozp.ui.coordination_risk_submissions_tab import (
+    CoordinationRiskSubmissionsTab,
+)
+from moduly.koordinace_bozp.ui.coordination_workplaces_tab import (
+    CoordinationWorkplacesTab,
 )
 
 
@@ -113,6 +121,18 @@ class BozpCoordinationDialog(QDialog):
             coordination_id=coordination_id,
         )
         self.tabs.addTab(self.coordinator_tab, TAB_COORDINATOR)
+
+        self.workplaces_tab = CoordinationWorkplacesTab(
+            self,
+            coordination_id=coordination_id,
+        )
+        self.tabs.addTab(self.workplaces_tab, TAB_WORKPLACES)
+
+        self.risk_submissions_tab = CoordinationRiskSubmissionsTab(
+            self,
+            coordination_id=coordination_id,
+        )
+        self.tabs.addTab(self.risk_submissions_tab, TAB_RISK_SUBMISSIONS)
         layout.addWidget(self.tabs, 1)
 
         buttons = create_save_cancel_box(self)
@@ -157,6 +177,12 @@ class BozpCoordinationDialog(QDialog):
             self.participants_tab.refresh_employers()
         elif widget is self.coordinator_tab:
             self.coordinator_tab.refresh()
+        elif widget is self.workplaces_tab:
+            self.workplaces_tab.refresh()
+        elif widget is self.risk_submissions_tab:
+            self.risk_submissions_tab.refresh_employers()
+        elif widget is self.employers_tab:
+            self.employers_tab.refresh()
 
     def get_data(self) -> dict:
         return {

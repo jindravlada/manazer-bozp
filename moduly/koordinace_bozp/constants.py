@@ -30,6 +30,84 @@ TAB_BASICS = "Základní údaje"
 TAB_EMPLOYERS = "Zúčastnění zaměstnavatelé"
 TAB_PARTICIPANTS = "Účastníci schůzky"
 TAB_COORDINATOR = "Koordinátor BOZP"
+TAB_WORKPLACES = "Místa výkonu práce"
+TAB_RISK_SUBMISSIONS = "Předání rizik dodavatelů"
+
+# Předání rizik hlavního zaměstnavatele (COORD-006 / budoucí export).
+MAIN_EMPLOYER_RISK_HANDOVER_METHOD = "attachment"
+MAIN_EMPLOYER_RISK_HANDOVER_ATTACHMENT_TITLE = (
+    "Pravidla bezpečné práce a informace o rizicích hlavního zaměstnavatele"
+)
+MAIN_EMPLOYER_RISK_HANDOVER_PROTOCOL_TEXT = (
+    "Hlavní zaměstnavatel předal zúčastněným zaměstnavatelům informace "
+    "o rizicích a pravidlech bezpečné práce formou přílohy tohoto protokolu."
+)
+CONTRACTOR_RISK_COMMITMENT_PROTOCOL_TEXT = (
+    "Zúčastněný zaměstnavatel se zavazuje před zahájením prací předat hlavnímu "
+    "zaměstnavateli písemnou informaci o rizicích vznikajících při jeho činnosti "
+    "a o přijatých opatřeních."
+)
+
+RISK_SUBMISSION_METHOD_ATTACHMENT = "attachment"
+RISK_SUBMISSION_METHOD_EMAIL = "email"
+RISK_SUBMISSION_METHOD_PAPER = "paper"
+RISK_SUBMISSION_METHOD_DATA_BOX = "data_box"
+RISK_SUBMISSION_METHOD_OTHER = "other"
+RISK_SUBMISSION_METHOD_NOT_SUBMITTED = "not_submitted"
+
+RISK_SUBMISSION_METHODS = (
+    RISK_SUBMISSION_METHOD_NOT_SUBMITTED,
+    RISK_SUBMISSION_METHOD_ATTACHMENT,
+    RISK_SUBMISSION_METHOD_EMAIL,
+    RISK_SUBMISSION_METHOD_PAPER,
+    RISK_SUBMISSION_METHOD_DATA_BOX,
+    RISK_SUBMISSION_METHOD_OTHER,
+)
+
+RISK_SUBMISSION_METHOD_LABELS = {
+    RISK_SUBMISSION_METHOD_NOT_SUBMITTED: "Nepředáno",
+    RISK_SUBMISSION_METHOD_ATTACHMENT: "Příloha",
+    RISK_SUBMISSION_METHOD_EMAIL: "E-mail",
+    RISK_SUBMISSION_METHOD_PAPER: "Papírově",
+    RISK_SUBMISSION_METHOD_DATA_BOX: "Datová schránka",
+    RISK_SUBMISSION_METHOD_OTHER: "Jinak",
+}
+
+RISK_HANDOVER_STATUS_NOT_SUBMITTED = "not_submitted"
+RISK_HANDOVER_STATUS_WITHOUT_ATTACHMENT = "submitted_without_attachment"
+RISK_HANDOVER_STATUS_WITH_ATTACHMENT = "submitted_with_attachment"
+RISK_HANDOVER_STATUS_MAIN = "main_employer"
+
+RISK_HANDOVER_STATUS_LABELS = {
+    RISK_HANDOVER_STATUS_NOT_SUBMITTED: "Nepředáno",
+    RISK_HANDOVER_STATUS_WITHOUT_ATTACHMENT: "Předáno bez přílohy",
+    RISK_HANDOVER_STATUS_WITH_ATTACHMENT: "Předáno – příloha uložena",
+    RISK_HANDOVER_STATUS_MAIN: "—",
+}
+
+ATTACHMENT_TYPE_CONTRACTOR_RISKS = "contractor_risks"
+ATTACHMENT_TYPE_OTHER = "other"
+
+ATTACHMENT_TYPES = (
+    ATTACHMENT_TYPE_CONTRACTOR_RISKS,
+    ATTACHMENT_TYPE_OTHER,
+)
+
+ATTACHMENT_TYPE_LABELS = {
+    ATTACHMENT_TYPE_CONTRACTOR_RISKS: "Rizika dodavatele",
+    ATTACHMENT_TYPE_OTHER: "Jiná příloha",
+}
+
+COORDINATION_ATTACHMENT_ALLOWED_SUFFIXES = (
+    ".pdf",
+    ".docx",
+    ".odt",
+    ".xlsx",
+    ".ods",
+    ".jpg",
+    ".jpeg",
+    ".png",
+)
 
 COORDINATION_EMPLOYER_TYPE_MAIN = "main"
 COORDINATION_EMPLOYER_TYPE_PARTICIPANT = "participant"
@@ -52,8 +130,9 @@ EMP_COL_ABBREVIATION = 1
 EMP_COL_NAME = 2
 EMP_COL_ICO = 3
 EMP_COL_IS_MAIN = 4
-EMP_COL_ACTIVE = 5
-EMP_COLUMN_COUNT = 6
+EMP_COL_RISK_STATUS = 5
+EMP_COL_ACTIVE = 6
+EMP_COLUMN_COUNT = 7
 
 EMPLOYER_TABLE_HEADERS = [
     "ID",
@@ -61,6 +140,39 @@ EMPLOYER_TABLE_HEADERS = [
     "Název",
     "IČO",
     "Hlavní zaměstnavatel",
+    "Předání rizik",
+    "Aktivní",
+]
+
+WP_COL_ID = 0
+WP_COL_OPERATION = 1
+WP_COL_WORKPLACE = 2
+WP_COL_PART = 3
+WP_COL_NOTE = 4
+WP_COL_ACTIVE = 5
+WP_COLUMN_COUNT = 6
+
+WORKPLACE_TABLE_HEADERS = [
+    "ID",
+    "Provoz",
+    "Pracoviště",
+    "Část pracoviště",
+    "Poznámka",
+    "Aktivní",
+]
+
+ATT_COL_ID = 0
+ATT_COL_FILENAME = 1
+ATT_COL_TYPE = 2
+ATT_COL_DESCRIPTION = 3
+ATT_COL_ACTIVE = 4
+ATT_COLUMN_COUNT = 5
+
+ATTACHMENT_TABLE_HEADERS = [
+    "ID",
+    "Soubor",
+    "Typ",
+    "Popis",
     "Aktivní",
 ]
 

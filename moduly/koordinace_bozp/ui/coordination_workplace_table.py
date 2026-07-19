@@ -10,44 +10,43 @@ from core.widgets.typed_table_sort import (
     typed_text,
 )
 from moduly.koordinace_bozp.constants import (
-    EMP_COL_ABBREVIATION,
-    EMP_COL_ACTIVE,
-    EMP_COL_ICO,
-    EMP_COL_ID,
-    EMP_COL_IS_MAIN,
-    EMP_COL_NAME,
-    EMP_COL_RISK_STATUS,
-    EMP_COLUMN_COUNT,
-    EMPLOYER_TABLE_HEADERS,
-    RISK_HANDOVER_STATUS_LABELS,
+    WP_COL_ACTIVE,
+    WP_COL_ID,
+    WP_COL_NOTE,
+    WP_COL_OPERATION,
+    WP_COL_PART,
+    WP_COL_WORKPLACE,
+    WP_COLUMN_COUNT,
+    WORKPLACE_TABLE_HEADERS,
 )
-from moduly.koordinace_bozp.sluzby.coordination_risk_submission_service import (
-    coordination_risk_submission_service,
+from moduly.koordinace_bozp.sluzby.coordination_workplace_service import (
+    coordination_workplace_service,
 )
 
 
-class CoordinationEmployerTable(QTableWidget):
+class CoordinationWorkplaceTable(QTableWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setColumnCount(EMP_COLUMN_COUNT)
-        self.setHorizontalHeaderLabels(EMPLOYER_TABLE_HEADERS)
-        self.setColumnHidden(EMP_COL_ID, True)
+        self.setColumnCount(WP_COLUMN_COUNT)
+        self.setHorizontalHeaderLabels(WORKPLACE_TABLE_HEADERS)
+        self.setColumnHidden(WP_COL_ID, True)
         self.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.setAlternatingRowColors(True)
         enable_typed_sorting(self)
 
-    def load_employers(self, employers) -> None:
+    def load_workplaces(self, workplaces) -> None:
         with sorting_paused(self):
-            self.setRowCount(len(employers))
-            for row, item in enumerate(employers):
+            self.setRowCount(len(workplaces))
+            for row, item in enumerate(workplaces):
                 record_id = int(item.id)
-                risk_status = coordination_risk_submission_service.handover_status(item.id)
-                risk_label = RISK_HANDOVER_STATUS_LABELS.get(risk_status, risk_status)
+                operation_name, workplace_name, part_name = (
+                    coordination_workplace_service.workplace_display_names(item)
+                )
                 self.setItem(
                     row,
-                    EMP_COL_ID,
+                    WP_COL_ID,
                     create_typed_item(
                         str(record_id),
                         typed_int(record_id),
@@ -56,46 +55,37 @@ class CoordinationEmployerTable(QTableWidget):
                 )
                 self.setItem(
                     row,
-                    EMP_COL_ABBREVIATION,
+                    WP_COL_OPERATION,
                     create_typed_item(
-                        item.abbreviation or "",
-                        typed_text(item.abbreviation),
+                        operation_name,
+                        typed_text(operation_name),
                         stable_id=record_id,
                     ),
                 )
                 self.setItem(
                     row,
-                    EMP_COL_NAME,
+                    WP_COL_WORKPLACE,
                     create_typed_item(
-                        item.company_name or "",
-                        typed_text(item.company_name),
+                        workplace_name,
+                        typed_text(workplace_name),
                         stable_id=record_id,
                     ),
                 )
                 self.setItem(
                     row,
-                    EMP_COL_ICO,
+                    WP_COL_PART,
                     create_typed_item(
-                        item.ico or "",
-                        typed_text(item.ico),
+                        part_name,
+                        typed_text(part_name),
                         stable_id=record_id,
                     ),
                 )
                 self.setItem(
                     row,
-                    EMP_COL_IS_MAIN,
+                    WP_COL_NOTE,
                     create_typed_item(
-                        "Ano" if item.is_main else "Ne",
-                        typed_bool(bool(item.is_main)),
-                        stable_id=record_id,
-                    ),
-                )
-                self.setItem(
-                    row,
-                    EMP_COL_RISK_STATUS,
-                    create_typed_item(
-                        risk_label,
-                        typed_text(risk_label),
+                        item.note or "",
+                        typed_text(item.note),
                         stable_id=record_id,
                     ),
                 )
@@ -106,13 +96,13 @@ class CoordinationEmployerTable(QTableWidget):
                 )
                 if not item.active:
                     active_item.setData(Qt.ItemDataRole.UserRole + 1, False)
-                self.setItem(row, EMP_COL_ACTIVE, active_item)
+                self.setItem(row, WP_COL_ACTIVE, active_item)
 
-    def selected_employer_id(self) -> int | None:
+    def selected_workplace_link_id(self) -> int | None:
         selected = self.selectionModel().selectedRows()
         if not selected:
             return None
-        item = self.item(selected[0].row(), EMP_COL_ID)
+        item = self.item(selected[0].row(), WP_COL_ID)
         if item is None:
             return None
         return int(item.text())

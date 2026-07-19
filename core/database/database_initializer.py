@@ -105,6 +105,15 @@ def initialize_database() -> None:
     from moduly.koordinace_bozp.modely.coordination_coordinator import (  # noqa: F401
         CoordinationCoordinator,
     )
+    from moduly.koordinace_bozp.modely.coordination_workplace import (  # noqa: F401
+        CoordinationWorkplace,
+    )
+    from moduly.koordinace_bozp.modely.coordination_employer_risk_submission import (  # noqa: F401
+        CoordinationEmployerRiskSubmission,
+    )
+    from moduly.koordinace_bozp.modely.coordination_attachment import (  # noqa: F401
+        CoordinationAttachment,
+    )
     from core.ai_oponentni.modely.ai_peer_review import (  # noqa: F401
         AiPeerReview,
         AiPeerReviewBatch,
@@ -1988,6 +1997,64 @@ def _ensure_bozp_coordinations_table() -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_coordination_coordinators_coordination
         ON coordination_coordinators (coordination_id)
+        """,
+    )
+
+    workplace_link_columns = _table_columns("coordination_workplaces")
+    if not workplace_link_columns:
+        from moduly.koordinace_bozp.modely.coordination_workplace import (
+            CoordinationWorkplace,
+        )
+
+        CoordinationWorkplace.__table__.create(bind=_db_engine(), checkfirst=True)
+
+    _ensure_index(
+        "idx_coordination_workplaces_coordination",
+        """
+        CREATE INDEX IF NOT EXISTS idx_coordination_workplaces_coordination
+        ON coordination_workplaces (coordination_id)
+        """,
+    )
+
+    risk_submission_columns = _table_columns("coordination_employer_risk_submissions")
+    if not risk_submission_columns:
+        from moduly.koordinace_bozp.modely.coordination_employer_risk_submission import (
+            CoordinationEmployerRiskSubmission,
+        )
+
+        CoordinationEmployerRiskSubmission.__table__.create(
+            bind=_db_engine(),
+            checkfirst=True,
+        )
+
+    _ensure_index(
+        "idx_coordination_employer_risk_submissions_employer",
+        """
+        CREATE INDEX IF NOT EXISTS idx_coordination_employer_risk_submissions_employer
+        ON coordination_employer_risk_submissions (coordination_employer_id)
+        """,
+    )
+
+    attachment_columns = _table_columns("coordination_attachments")
+    if not attachment_columns:
+        from moduly.koordinace_bozp.modely.coordination_attachment import (
+            CoordinationAttachment,
+        )
+
+        CoordinationAttachment.__table__.create(bind=_db_engine(), checkfirst=True)
+
+    _ensure_index(
+        "idx_coordination_attachments_coordination",
+        """
+        CREATE INDEX IF NOT EXISTS idx_coordination_attachments_coordination
+        ON coordination_attachments (coordination_id)
+        """,
+    )
+    _ensure_index(
+        "idx_coordination_attachments_employer",
+        """
+        CREATE INDEX IF NOT EXISTS idx_coordination_attachments_employer
+        ON coordination_attachments (coordination_employer_id)
         """,
     )
 

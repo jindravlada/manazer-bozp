@@ -44,8 +44,17 @@ with patch.object(Path, "home", return_value=_TMP):
         TAB_EMPLOYERS,
     )
     from moduly.koordinace_bozp.modely.bozp_coordination import BozpCoordination
+    from moduly.koordinace_bozp.modely.coordination_attachment import (
+        CoordinationAttachment,
+    )
     from moduly.koordinace_bozp.modely.coordination_coordinator import (
         CoordinationCoordinator,
+    )
+    from moduly.koordinace_bozp.modely.coordination_employer_risk_submission import (
+        CoordinationEmployerRiskSubmission,
+    )
+    from moduly.koordinace_bozp.modely.coordination_workplace import (
+        CoordinationWorkplace,
     )
     from moduly.koordinace_bozp.modely.coordination_employer import CoordinationEmployer
     from moduly.koordinace_bozp.modely.coordination_participant import (
@@ -70,6 +79,9 @@ class KoordinaceBozpPhaseCoord002TestCase(unittest.TestCase):
 
     def setUp(self) -> None:
         with get_session() as session:
+            session.execute(delete(CoordinationAttachment))
+            session.execute(delete(CoordinationEmployerRiskSubmission))
+            session.execute(delete(CoordinationWorkplace))
             session.execute(delete(CoordinationCoordinator))
             session.execute(delete(CoordinationParticipant))
             session.execute(delete(CoordinationEmployer))
@@ -269,7 +281,7 @@ class KoordinaceBozpPhaseCoord002TestCase(unittest.TestCase):
         self.assertFalse(tab.content.isHidden())
         self.assertTrue(tab.unavailable_label.isHidden())
         self.assertEqual(
-            [dialog.employers_tab.table.horizontalHeaderItem(i).text() for i in range(6)],
+            [dialog.employers_tab.table.horizontalHeaderItem(i).text() for i in range(7)],
             EMPLOYER_TABLE_HEADERS,
         )
         self.assertEqual(tab.table.rowCount(), 2)
