@@ -26,6 +26,7 @@ from moduly.koordinace_bozp.constants import (
     DIALOG_WINDOW_TITLE,
     TAB_BASICS,
     TAB_COORDINATOR,
+    TAB_EMPLOYER_ACTIVITIES,
     TAB_EMPLOYERS,
     TAB_PARTICIPANTS,
     TAB_PBP_ATTACHMENT,
@@ -38,6 +39,9 @@ from moduly.koordinace_bozp.sluzby.bozp_coordination_service import (
 from moduly.koordinace_bozp.sluzby.coordination_validity import add_one_year
 from moduly.koordinace_bozp.ui.coordination_coordinator_tab import (
     CoordinationCoordinatorTab,
+)
+from moduly.koordinace_bozp.ui.coordination_employer_activities_tab import (
+    CoordinationEmployerActivitiesTab,
 )
 from moduly.koordinace_bozp.ui.coordination_employers_tab import (
     CoordinationEmployersTab,
@@ -132,6 +136,12 @@ class BozpCoordinationDialog(QDialog):
         )
         self.tabs.addTab(self.workplaces_tab, TAB_WORKPLACES)
 
+        self.employer_activities_tab = CoordinationEmployerActivitiesTab(
+            self,
+            coordination_id=coordination_id,
+        )
+        self.tabs.addTab(self.employer_activities_tab, TAB_EMPLOYER_ACTIVITIES)
+
         self.risk_submissions_tab = CoordinationRiskSubmissionsTab(
             self,
             coordination_id=coordination_id,
@@ -189,6 +199,8 @@ class BozpCoordinationDialog(QDialog):
             self.coordinator_tab.refresh()
         elif widget is self.workplaces_tab:
             self.workplaces_tab.refresh()
+        elif widget is self.employer_activities_tab:
+            self.employer_activities_tab.refresh_employers()
         elif widget is self.risk_submissions_tab:
             self.risk_submissions_tab.refresh_employers()
         elif widget is self.pbp_attachment_tab:

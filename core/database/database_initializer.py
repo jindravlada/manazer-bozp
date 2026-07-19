@@ -108,6 +108,9 @@ def initialize_database() -> None:
     from moduly.koordinace_bozp.modely.coordination_workplace import (  # noqa: F401
         CoordinationWorkplace,
     )
+    from moduly.koordinace_bozp.modely.coordination_employer_activity import (  # noqa: F401
+        CoordinationEmployerActivity,
+    )
     from moduly.koordinace_bozp.modely.coordination_employer_risk_submission import (  # noqa: F401
         CoordinationEmployerRiskSubmission,
     )
@@ -2016,6 +2019,29 @@ def _ensure_bozp_coordinations_table() -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_coordination_workplaces_coordination
         ON coordination_workplaces (coordination_id)
+        """,
+    )
+
+    activity_columns = _table_columns("coordination_employer_activities")
+    if not activity_columns:
+        from moduly.koordinace_bozp.modely.coordination_employer_activity import (
+            CoordinationEmployerActivity,
+        )
+
+        CoordinationEmployerActivity.__table__.create(bind=_db_engine(), checkfirst=True)
+
+    _ensure_index(
+        "idx_coordination_employer_activities_employer",
+        """
+        CREATE INDEX IF NOT EXISTS idx_coordination_employer_activities_employer
+        ON coordination_employer_activities (coordination_employer_id)
+        """,
+    )
+    _ensure_index(
+        "idx_coordination_employer_activities_workplace",
+        """
+        CREATE INDEX IF NOT EXISTS idx_coordination_employer_activities_workplace
+        ON coordination_employer_activities (coordination_workplace_id)
         """,
     )
 

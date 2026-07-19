@@ -31,6 +31,7 @@ TAB_EMPLOYERS = "Zúčastnění zaměstnavatelé"
 TAB_PARTICIPANTS = "Účastníci schůzky"
 TAB_COORDINATOR = "Koordinátor BOZP"
 TAB_WORKPLACES = "Místa výkonu práce"
+TAB_EMPLOYER_ACTIVITIES = "Činnosti zaměstnavatelů"
 TAB_RISK_SUBMISSIONS = "Předání rizik dodavatelů"
 TAB_PBP_ATTACHMENT = "Příloha PBP"
 
@@ -173,6 +174,23 @@ WORKPLACE_TABLE_HEADERS = [
     "Pracoviště",
     "Část pracoviště",
     "Poznámka",
+    "Aktivní",
+]
+
+ACT_COL_ID = 0
+ACT_COL_NAME = 1
+ACT_COL_PLACE = 2
+ACT_COL_FROM = 3
+ACT_COL_TO = 4
+ACT_COL_ACTIVE = 5
+ACT_COLUMN_COUNT = 6
+
+ACTIVITY_TABLE_HEADERS = [
+    "ID",
+    "Činnost",
+    "Místo výkonu práce",
+    "Od",
+    "Do",
     "Aktivní",
 ]
 
