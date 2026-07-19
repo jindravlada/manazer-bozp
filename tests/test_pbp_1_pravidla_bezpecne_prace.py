@@ -122,10 +122,15 @@ class PravidlaBezpecnePraceDialogTestCase(unittest.TestCase):
         self.assertGreaterEqual(part_index, 0)
         dialog.workplace_part.setCurrentIndex(part_index)
 
-        with patch(
-            "moduly.rizeni_rizik.ui.pravidla_bezpecne_prace_dialog.pravidla_bezpecne_prace_service.generate",
-            return_value=[],
-        ) as mock_generate_dialog:
+        with (
+            patch(
+                "moduly.rizeni_rizik.ui.pravidla_bezpecne_prace_dialog.pravidla_bezpecne_prace_service.generate",
+                return_value=[],
+            ) as mock_generate_dialog,
+            patch(
+                "moduly.rizeni_rizik.ui.pravidla_bezpecne_prace_dialog.QMessageBox.information"
+            ),
+        ):
             dialog._generate()
             mock_generate_dialog.assert_called_once_with(
                 endangered_group_id=self.group.id,

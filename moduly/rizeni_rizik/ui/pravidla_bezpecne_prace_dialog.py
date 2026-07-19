@@ -90,6 +90,22 @@ class PravidlaBezpecnePraceDialog(QDialog):
             workplace_id=workplace_id,
             workplace_part_id=workplace_part_id,
         )
+
+        count = len(self._last_result)
+        if count == 0:
+            QMessageBox.information(
+                self,
+                DIALOG_TITLE,
+                "Nebyla nalezena žádná platná pravidla bezpečné práce "
+                "pro zadaný výběr.",
+            )
+            return
+
+        QMessageBox.information(
+            self,
+            DIALOG_TITLE,
+            f"Nalezeno pravidel: {count}.",
+        )
         self.accept()
 
     def _on_operation_changed(self) -> None:
