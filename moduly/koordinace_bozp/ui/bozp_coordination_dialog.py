@@ -3,7 +3,6 @@ from datetime import date
 from PySide6.QtCore import QDate, Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QCheckBox,
     QDialog,
     QDialogButtonBox,
     QFormLayout,
@@ -151,10 +150,6 @@ class BozpCoordinationDialog(QDialog):
         self.valid_to = DateEdit()
         self.note = QTextEdit()
         self.note.setMinimumHeight(90)
-        self.insert_default_measures = QCheckBox(
-            "Vložit výchozí sadu organizačních opatření"
-        )
-        self.insert_default_measures.setChecked(True)
 
         form.addRow("Číslo koordinace:", self.number_label)
         form.addRow(f"{LABEL_MEETING_DATE}:", self.meeting_date)
@@ -163,7 +158,6 @@ class BozpCoordinationDialog(QDialog):
         form.addRow("Platnost od:", self.valid_from)
         form.addRow("Platnost do:", self.valid_to)
         form.addRow("Poznámka:", self.note)
-        form.addRow("", self.insert_default_measures)
 
         basics_layout.addWidget(wrap_in_scroll_area(form_host), 1)
         self.tabs.addTab(basics_host, TAB_BASICS)
@@ -240,7 +234,6 @@ class BozpCoordinationDialog(QDialog):
         if coordination is None:
             self.number_label.setText(bozp_coordination_service.preview_next_number())
             self._apply_default_validity_from_meeting()
-            self.insert_default_measures.setVisible(True)
             self._refresh_status_ui(DEFAULT_BOZP_COORDINATION_STATUS)
         else:
             self.number_label.setText(coordination.coordination_number or "")
@@ -253,8 +246,6 @@ class BozpCoordinationDialog(QDialog):
             if coordination.valid_to:
                 self.valid_to.setDate(_qdate_from_date(coordination.valid_to))
             self.note.setPlainText(coordination.note or "")
-            self.insert_default_measures.setVisible(False)
-            self.insert_default_measures.setChecked(False)
             self._refresh_status_ui(coordination.status)
 
         self.meeting_date.dateChanged.connect(self._on_meeting_date_changed)
@@ -309,7 +300,6 @@ class BozpCoordinationDialog(QDialog):
             self.valid_from.setEnabled(editable)
             self.valid_to.setEnabled(editable)
             self.note.setReadOnly(not editable)
-            self.insert_default_measures.setEnabled(editable and self.coordination is None)
 
             save_btn = self.buttons.button(QDialogButtonBox.StandardButton.Save)
             if save_btn is not None:
@@ -474,9 +464,10 @@ class BozpCoordinationDialog(QDialog):
             "valid_from": _date_from_qdate(self.valid_from.date()),
             "valid_to": _date_from_qdate(self.valid_to.date()),
         }
-        if self.coordination is None:
-            data["insert_default_measures"] = self.insert_default_measures.isChecked()
-        elif self.contacts_tab.coordination_id is not None:
+        if (
+            self.coordination is not None
+            and self.contacts_tab.coordination_id is not None
+        ):
             data.update(self.contacts_tab.get_procedures_data())
         return data
 

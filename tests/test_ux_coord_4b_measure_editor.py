@@ -33,7 +33,6 @@ with patch.object(Path, "home", return_value=_TMP):
 
     from core.database.session import get_session
     from moduly.koordinace_bozp.constants import (
-        DEFAULT_COORDINATION_MEASURES,
         MEASURE_CATEGORY_COMMUNICATION,
         MEASURE_EDITOR_HELP_TEXT,
         MEASURE_TABLE_HEADERS,
@@ -76,6 +75,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.koordinace_bozp.sluzby.coordination_protocol_builder import (
         protocol_measure_display_text,
     )
+    from moduly.koordinace_bozp.ui.bozp_coordination_dialog import BozpCoordinationDialog
     from moduly.koordinace_bozp.ui.coordination_measure_dialog import (
         CoordinationMeasureDialog,
     )
@@ -246,27 +246,13 @@ class UxCoord4bMeasureEditorTestCase(unittest.TestCase):
             QHeaderView.ResizeMode.Interactive,
         )
 
-    def test_default_templates_have_measure_text(self) -> None:
-        for category, title, description in DEFAULT_COORDINATION_MEASURES:
-            self.assertTrue(str(category).strip())
-            self.assertTrue(str(title).strip())
-            self.assertTrue(
-                str(description).strip(),
-                msg=f"Šablona '{title}' nemá Text opatření",
-            )
-
-        coordination = self._create_coordination(insert_default_measures=True)
+    def test_new_coordination_starts_without_measures(self) -> None:
+        coordination = self._create_coordination()
         items = coordination_measure_service.list_for_coordination(coordination.id)
-        self.assertEqual(len(items), len(DEFAULT_COORDINATION_MEASURES))
-        self.assertTrue(all((item.description or "").strip() for item in items))
-        self.assertEqual(
-            [item.title for item in items],
-            [title for _c, title, _d in DEFAULT_COORDINATION_MEASURES],
-        )
-        self.assertEqual(
-            [item.description for item in items],
-            [description for _c, _t, description in DEFAULT_COORDINATION_MEASURES],
-        )
+        self.assertEqual(items, [])
+        dialog = BozpCoordinationDialog(None)
+        self.assertFalse(hasattr(dialog, "insert_default_measures"))
+        dialog.close()
 
 
 if __name__ == "__main__":

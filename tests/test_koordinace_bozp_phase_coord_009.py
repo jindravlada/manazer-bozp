@@ -32,7 +32,6 @@ with patch.object(Path, "home", return_value=_TMP):
 
     from core.database.session import get_session
     from moduly.koordinace_bozp.constants import (
-        DEFAULT_COORDINATION_MEASURES,
         MEASURE_CATEGORY_COMMUNICATION,
         MEASURE_CATEGORY_EMERGENCIES,
         MEASURE_CATEGORY_LABELS,
@@ -211,31 +210,24 @@ class KoordinaceBozpPhaseCoord009TestCase(unittest.TestCase):
         self.assertTrue(coordination_measure_service.activate(measure.id))
         self.assertTrue(coordination_measure_service.get_by_id(measure.id).active)
 
-    def test_insert_default_template(self) -> None:
-        coordination = self._create_coordination(insert_default_measures=True)
+    def test_new_coordination_has_no_measures(self) -> None:
+        coordination = self._create_coordination()
         items = coordination_measure_service.list_for_coordination(coordination.id)
-        self.assertEqual(len(items), len(DEFAULT_COORDINATION_MEASURES))
-        self.assertEqual(
-            [item.title for item in items],
-            [title for _category, title, _description in DEFAULT_COORDINATION_MEASURES],
-        )
-        self.assertEqual(
-            [item.description for item in items],
-            [
-                description
-                for _category, _title, description in DEFAULT_COORDINATION_MEASURES
-            ],
-        )
-        self.assertTrue(all((item.description or "").strip() for item in items))
-        self.assertEqual(
-            [item.sort_order for item in items],
-            list(range(1, len(items) + 1)),
-        )
+        self.assertEqual(items, [])
 
-    def test_edit_inserted_measures(self) -> None:
-        coordination = self._create_coordination(insert_default_measures=True)
-        items = coordination_measure_service.list_for_coordination(coordination.id)
-        first = items[0]
+    def test_edit_manually_added_measures(self) -> None:
+        coordination = self._create_coordination()
+        first = coordination_measure_service.add(
+            coordination.id,
+            title="Pokyn koordinátora.",
+            category=MEASURE_CATEGORY_COMMUNICATION,
+            description="Původní popis",
+        )
+        second = coordination_measure_service.add(
+            coordination.id,
+            title="Další opatření",
+            category=MEASURE_CATEGORY_WORK_ORGANIZATION,
+        )
         updated = coordination_measure_service.update(
             first.id,
             title="Upravený pokyn koordinátora.",
@@ -244,42 +236,56 @@ class KoordinaceBozpPhaseCoord009TestCase(unittest.TestCase):
         )
         self.assertEqual(updated.title, "Upravený pokyn koordinátora.")
         self.assertEqual(updated.description, "Doplněný popis")
-        # ostatní zůstávají
         titles = [
             item.title
             for item in coordination_measure_service.list_for_coordination(
                 coordination.id
             )
         ]
-        self.assertEqual(len(titles), len(DEFAULT_COORDINATION_MEASURES))
+        self.assertEqual(len(titles), 2)
         self.assertIn("Upravený pokyn koordinátora.", titles)
+        self.assertIn(second.title, titles)
 
     def test_order_preserved_after_save(self) -> None:
-        coordination = self._create_coordination(insert_default_measures=True)
-        items = coordination_measure_service.list_for_coordination(coordination.id)
-        # přesun posledního nahoru a znovu načtení
-        last = items[-1]
-        coordination_measure_service.move_up(last.id)
+        coordination = self._create_coordination()
+        first = coordination_measure_service.add(
+            coordination.id,
+            title="První",
+            category=MEASURE_CATEGORY_COMMUNICATION,
+        )
+        second = coordination_measure_service.add(
+            coordination.id,
+            title="Druhé",
+            category=MEASURE_CATEGORY_WORK_ORGANIZATION,
+        )
+        third = coordination_measure_service.add(
+            coordination.id,
+            title="Třetí",
+            category=MEASURE_CATEGORY_EMERGENCIES,
+        )
+        coordination_measure_service.move_up(third.id)
         reloaded = coordination_measure_service.list_for_coordination(coordination.id)
-        self.assertEqual(reloaded[-2].id, last.id)
+        self.assertEqual([item.id for item in reloaded], [first.id, third.id, second.id])
         self.assertEqual(
             [item.sort_order for item in reloaded],
             list(range(1, len(reloaded) + 1)),
         )
 
-    def test_ui_tab_and_create_checkbox(self) -> None:
+    def test_ui_tab_without_default_checkbox(self) -> None:
         create_dialog = BozpCoordinationDialog(None)
-        self.assertFalse(create_dialog.insert_default_measures.isHidden())
-        self.assertTrue(create_dialog.insert_default_measures.isChecked())
-        self.assertIn("insert_default_measures", create_dialog.get_data())
+        self.assertFalse(hasattr(create_dialog, "insert_default_measures"))
+        self.assertNotIn("insert_default_measures", create_dialog.get_data())
 
         coordination = self._create_coordination()
         edit_dialog = BozpCoordinationDialog(None, coordination=coordination)
         labels = [edit_dialog.tabs.tabText(i) for i in range(edit_dialog.tabs.count())]
         self.assertIn(TAB_MEASURES, labels)
-        self.assertTrue(edit_dialog.insert_default_measures.isHidden())
-        self.assertNotIn("insert_default_measures", edit_dialog.get_data())
+        self.assertFalse(hasattr(edit_dialog, "insert_default_measures"))
         self.assertFalse(edit_dialog.measures_tab.content.isHidden())
+        self.assertEqual(
+            coordination_measure_service.list_for_coordination(coordination.id),
+            [],
+        )
 
 
 if __name__ == "__main__":

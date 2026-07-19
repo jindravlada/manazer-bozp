@@ -134,7 +134,6 @@ class BozpCoordinationService:
         valid_from: date | None = None,
         valid_to: date | None = None,
         active: bool = True,
-        insert_default_measures: bool = False,
         emergency_reporting: str | None = None,
         accident_reporting: str | None = None,
         fire_reporting: str | None = None,
@@ -182,12 +181,6 @@ class BozpCoordinationService:
         )
 
         coordination_employer_service.ensure_main_employer(created.id)
-        if insert_default_measures:
-            from moduly.koordinace_bozp.sluzby.coordination_measure_service import (
-                coordination_measure_service,
-            )
-
-            coordination_measure_service.insert_default_measures(created.id)
         return created
 
     def update_coordination(

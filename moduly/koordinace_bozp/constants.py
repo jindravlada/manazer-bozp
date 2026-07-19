@@ -347,59 +347,6 @@ MEASURE_CATEGORY_LABELS = {
     MEASURE_CATEGORY_OTHER: "Ostatní",
 }
 
-# (kategorie, krátký název, text opatření) – výchozí sada při založení koordinace.
-DEFAULT_COORDINATION_MEASURES = (
-    (
-        MEASURE_CATEGORY_COMMUNICATION,
-        "Dodržovat pokyny koordinátora BOZP.",
-        (
-            "Všichni zúčastnění zaměstnavatelé a jejich zaměstnanci jsou povinni "
-            "dodržovat pokyny koordinátora BOZP."
-        ),
-    ),
-    (
-        MEASURE_CATEGORY_WORKPLACE_HANDOVER,
-        "Nezahajovat práce bez předání pracoviště.",
-        (
-            "Práce na společném pracovišti se zahajují až po předání pracoviště "
-            "odpovědnou osobou hlavního zaměstnavatele."
-        ),
-    ),
-    (
-        MEASURE_CATEGORY_EMERGENCIES,
-        "Každou mimořádnou událost ihned oznámit.",
-        (
-            "Každou mimořádnou událost, pracovní úraz nebo nebezpečnou situaci "
-            "je nutné neprodleně oznámit koordinátorovi BOZP a odpovědnému "
-            "zástupci hlavního zaměstnavatele."
-        ),
-    ),
-    (
-        MEASURE_CATEGORY_PERSON_MOVEMENT,
-        "Udržovat průjezdné únikové cesty.",
-        (
-            "Únikové cesty, komunikace a východy musí být trvale volné "
-            "a průjezdné; nesmí se na nich odkládat materiál ani technika."
-        ),
-    ),
-    (
-        MEASURE_CATEGORY_WORK_ORGANIZATION,
-        "Nepřemisťovat ochranná zařízení bez souhlasu.",
-        (
-            "Ochranná zařízení, zábrany a značení se nesmí přemisťovat ani "
-            "odstraňovat bez souhlasu odpovědné osoby hlavního zaměstnavatele."
-        ),
-    ),
-    (
-        MEASURE_CATEGORY_PERSON_MOVEMENT,
-        "Dodržovat zákaz vstupu do vyznačených prostor.",
-        (
-            "Do prostor se zákazem vstupu nebo s omezeným přístupem smí vstupovat "
-            "pouze osoby k tomu oprávněné a vybavené."
-        ),
-    ),
-)
-
 COORDINATION_PBP_INTRO_TEXT = (
     "Dodržujte následující pravidla bezpečné práce. "
     "Jejich nedodržení může vést ke vzniku pracovního úrazu nebo mimořádné události."

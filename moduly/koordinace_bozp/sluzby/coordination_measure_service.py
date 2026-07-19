@@ -5,7 +5,6 @@ from __future__ import annotations
 from datetime import datetime
 
 from moduly.koordinace_bozp.constants import (
-    DEFAULT_COORDINATION_MEASURES,
     DEFAULT_MEASURE_CATEGORY,
     MEASURE_CATEGORIES,
     MEASURE_CATEGORY_LABELS,
@@ -110,25 +109,6 @@ class CoordinationMeasureService:
 
     def move_down(self, measure_id: int) -> bool:
         return self._move(measure_id, direction=1)
-
-    def insert_default_measures(
-        self,
-        coordination_id: int,
-    ) -> list[CoordinationMeasure]:
-        """Vloží výchozí šablonu (plně editovatelnou)."""
-        if not coordination_id:
-            raise CoordinationMeasureError("Koordinace je povinná.")
-        created: list[CoordinationMeasure] = []
-        for category, title, description in DEFAULT_COORDINATION_MEASURES:
-            created.append(
-                self.add(
-                    coordination_id,
-                    title=title,
-                    category=category,
-                    description=description,
-                )
-            )
-        return created
 
     def _move(self, measure_id: int, *, direction: int) -> bool:
         measure = self.repository.get_by_id(measure_id)

@@ -243,7 +243,6 @@ class KoordinaceBozpPhaseCoord011aTestCase(unittest.TestCase):
             "place": "Jednací místnost",
             "valid_from": self.today,
             "valid_to": self.today + timedelta(days=365),
-            "insert_default_measures": False,
         }
         params.update(kwargs)
         return bozp_coordination_service.create_coordination(**params)
@@ -288,7 +287,7 @@ class KoordinaceBozpPhaseCoord011aTestCase(unittest.TestCase):
     def _complete_coordination(self, *, with_contractor: bool = False):
         """Kompletní koordinace bez varování (volitelně s dodavatelem a přílohou)."""
         self._create_pbp_measure(description="Používej brýle")
-        coordination = self._create_base_coordination(insert_default_measures=False)
+        coordination = self._create_base_coordination()
         place = self._add_workplace(coordination.id)
         main = coordination_employer_service.ensure_main_employer(coordination.id)
         self._set_coordinator(coordination.id, main.id)
