@@ -140,6 +140,11 @@ class KoordinaceBozpPhaseCoord005TestCase(unittest.TestCase):
             "coordination_id",
             "employer_id",
             "participant_id",
+            "full_name",
+            "employer_name",
+            "role",
+            "phone",
+            "email",
             "note",
             "active",
             "created_at",
@@ -159,6 +164,9 @@ class KoordinaceBozpPhaseCoord005TestCase(unittest.TestCase):
         self.assertEqual(saved.employer_id, main.id)
         self.assertEqual(saved.participant_id, main_person.id)
         self.assertEqual(saved.note, "hlavní")
+        self.assertEqual(saved.full_name, "Jan Novák")
+        self.assertEqual(saved.role, "Technik BOZP")
+        self.assertEqual(saved.employer_name, "Hlavní firma s.r.o.")
 
         changed = coordination_coordinator_service.set_coordinator(
             coordination.id,

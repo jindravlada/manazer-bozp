@@ -620,21 +620,36 @@ class CoordinationProtocolBuilder:
     def _coordinator_dict(coordinator) -> dict | None:
         if coordinator is None:
             return None
-        participant = coordination_participant_service.get_by_id(
-            coordinator.participant_id
-        )
-        employer = coordination_employer_service.get_by_id(coordinator.employer_id)
+        full_name = getattr(coordinator, "full_name", None) or ""
+        role = getattr(coordinator, "role", None) or ""
+        phone = getattr(coordinator, "phone", None) or ""
+        email = getattr(coordinator, "email", None) or ""
+        employer_name = getattr(coordinator, "employer_name", None) or ""
+
+        # Legacy fallback – starší řádky bez snapshotu.
+        if not full_name and coordinator.participant_id:
+            participant = coordination_participant_service.get_by_id(
+                coordinator.participant_id
+            )
+            if participant is not None:
+                full_name = participant.full_name or ""
+                role = role or (participant.role or "")
+                phone = phone or (participant.phone or "")
+                email = email or (participant.email or "")
+        if not employer_name and coordinator.employer_id:
+            employer = coordination_employer_service.get_by_id(coordinator.employer_id)
+            if employer is not None:
+                employer_name = employer.company_name or ""
+
         return {
             "id": coordinator.id,
             "participant_id": coordinator.participant_id,
             "employer_id": coordinator.employer_id,
-            "full_name": participant.full_name if participant else "",
-            "role": participant.role if participant else "",
-            "phone": participant.phone if participant else "",
-            "email": participant.email if participant else "",
-            "employer_name": (
-                employer.company_name if employer else ""
-            ),
+            "full_name": full_name,
+            "role": role,
+            "phone": phone,
+            "email": email,
+            "employer_name": employer_name,
             "note": coordinator.note or "",
         }
 

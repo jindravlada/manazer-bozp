@@ -1,15 +1,19 @@
-"""Pověřený koordinátor BOZP u koordinace (COORD-005)."""
+"""Pověřený koordinátor BOZP u koordinace (COORD-005 / UX-COORD-2)."""
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database.base import Base
 
 
 class CoordinationCoordinator(Base):
-    """Koordinátor vybraný z účastníků schůzky (snapshot vazby, ne jména)."""
+    """Koordinátor BOZP – z účastníků nebo zadaný ručně.
+
+    Jméno, organizace, funkce, telefon a e-mail jsou snapshot – nezávisí na
+    pozdější změně účastníka schůzky.
+    """
 
     __tablename__ = "coordination_coordinators"
 
@@ -20,18 +24,23 @@ class CoordinationCoordinator(Base):
         nullable=False,
         index=True,
     )
-    employer_id: Mapped[int] = mapped_column(
+    employer_id: Mapped[int | None] = mapped_column(
         Integer,
-        ForeignKey("coordination_employers.id", ondelete="RESTRICT"),
-        nullable=False,
+        ForeignKey("coordination_employers.id", ondelete="SET NULL"),
+        nullable=True,
         index=True,
     )
-    participant_id: Mapped[int] = mapped_column(
+    participant_id: Mapped[int | None] = mapped_column(
         Integer,
-        ForeignKey("coordination_participants.id", ondelete="RESTRICT"),
-        nullable=False,
+        ForeignKey("coordination_participants.id", ondelete="SET NULL"),
+        nullable=True,
         index=True,
     )
+    full_name: Mapped[str] = mapped_column(String(250), nullable=False, default="")
+    employer_name: Mapped[str] = mapped_column(String(250), default="")
+    role: Mapped[str] = mapped_column(String(150), default="")
+    phone: Mapped[str] = mapped_column(String(50), default="")
+    email: Mapped[str] = mapped_column(String(150), default="")
     note: Mapped[str] = mapped_column(Text, default="")
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)

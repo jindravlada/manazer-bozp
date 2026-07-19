@@ -2014,6 +2014,8 @@ def _ensure_bozp_coordinations_table() -> None:
         )
 
         CoordinationCoordinator.__table__.create(bind=_db_engine(), checkfirst=True)
+    else:
+        _migrate_coordination_coordinators_snapshot_ux_coord_2()
 
     _ensure_index(
         "idx_coordination_coordinators_coordination",
@@ -2190,6 +2192,186 @@ def _ensure_hazard_library_template_legal_links_table() -> None:
         ON hazard_library_template_legal_links (legal_document_id)
         """,
     )
+
+
+def _migrate_coordination_coordinators_snapshot_ux_coord_2() -> None:
+    """UX-COORD-2: snapshot údajů koordinátora + nullable participant/employer."""
+    columns = _table_columns("coordination_coordinators")
+    if not columns:
+        return
+
+    if "full_name" not in columns:
+        _add_column(
+            "coordination_coordinators",
+            "full_name VARCHAR(250) DEFAULT ''",
+        )
+    if "employer_name" not in columns:
+        _add_column(
+            "coordination_coordinators",
+            "employer_name VARCHAR(250) DEFAULT ''",
+        )
+    if "role" not in columns:
+        _add_column(
+            "coordination_coordinators",
+            "role VARCHAR(150) DEFAULT ''",
+        )
+    if "phone" not in columns:
+        _add_column(
+            "coordination_coordinators",
+            "phone VARCHAR(50) DEFAULT ''",
+        )
+    if "email" not in columns:
+        _add_column(
+            "coordination_coordinators",
+            "email VARCHAR(150) DEFAULT ''",
+        )
+
+    with _db_engine().connect() as connection:
+        connection.execute(
+            text(
+                """
+                UPDATE coordination_coordinators
+                SET
+                    full_name = COALESCE(
+                        NULLIF(TRIM(full_name), ''),
+                        (
+                            SELECT COALESCE(p.full_name, '')
+                            FROM coordination_participants p
+                            WHERE p.id = coordination_coordinators.participant_id
+                        ),
+                        ''
+                    ),
+                    role = COALESCE(
+                        NULLIF(TRIM(role), ''),
+                        (
+                            SELECT COALESCE(p.role, '')
+                            FROM coordination_participants p
+                            WHERE p.id = coordination_coordinators.participant_id
+                        ),
+                        ''
+                    ),
+                    phone = COALESCE(
+                        NULLIF(TRIM(phone), ''),
+                        (
+                            SELECT COALESCE(p.phone, '')
+                            FROM coordination_participants p
+                            WHERE p.id = coordination_coordinators.participant_id
+                        ),
+                        ''
+                    ),
+                    email = COALESCE(
+                        NULLIF(TRIM(email), ''),
+                        (
+                            SELECT COALESCE(p.email, '')
+                            FROM coordination_participants p
+                            WHERE p.id = coordination_coordinators.participant_id
+                        ),
+                        ''
+                    ),
+                    employer_name = COALESCE(
+                        NULLIF(TRIM(employer_name), ''),
+                        (
+                            SELECT COALESCE(e.company_name, '')
+                            FROM coordination_employers e
+                            WHERE e.id = coordination_coordinators.employer_id
+                        ),
+                        ''
+                    )
+                WHERE
+                    participant_id IS NOT NULL
+                    OR employer_id IS NOT NULL
+                """
+            ),
+        )
+        connection.commit()
+
+        create_sql = connection.execute(
+            text(
+                "SELECT sql FROM sqlite_master "
+                "WHERE type = 'table' AND name = 'coordination_coordinators'"
+            ),
+        ).scalar()
+        if not create_sql:
+            return
+        normalized = " ".join(str(create_sql).upper().split())
+        needs_rebuild = (
+            "PARTICIPANT_ID INTEGER NOT NULL" in normalized
+            or "EMPLOYER_ID INTEGER NOT NULL" in normalized
+        )
+        if not needs_rebuild:
+            return
+
+        connection.execute(
+            text(
+                """
+                CREATE TABLE coordination_coordinators_ux2 (
+                    id INTEGER NOT NULL PRIMARY KEY,
+                    coordination_id INTEGER NOT NULL,
+                    employer_id INTEGER,
+                    participant_id INTEGER,
+                    full_name VARCHAR(250) NOT NULL DEFAULT '',
+                    employer_name VARCHAR(250) DEFAULT '',
+                    role VARCHAR(150) DEFAULT '',
+                    phone VARCHAR(50) DEFAULT '',
+                    email VARCHAR(150) DEFAULT '',
+                    note TEXT DEFAULT '',
+                    active BOOLEAN DEFAULT 1,
+                    created_at DATETIME,
+                    updated_at DATETIME,
+                    FOREIGN KEY(coordination_id) REFERENCES bozp_coordinations (id)
+                        ON DELETE CASCADE,
+                    FOREIGN KEY(employer_id) REFERENCES coordination_employers (id)
+                        ON DELETE SET NULL,
+                    FOREIGN KEY(participant_id) REFERENCES coordination_participants (id)
+                        ON DELETE SET NULL
+                )
+                """
+            ),
+        )
+        connection.execute(
+            text(
+                """
+                INSERT INTO coordination_coordinators_ux2 (
+                    id,
+                    coordination_id,
+                    employer_id,
+                    participant_id,
+                    full_name,
+                    employer_name,
+                    role,
+                    phone,
+                    email,
+                    note,
+                    active,
+                    created_at,
+                    updated_at
+                )
+                SELECT
+                    id,
+                    coordination_id,
+                    employer_id,
+                    participant_id,
+                    COALESCE(full_name, ''),
+                    COALESCE(employer_name, ''),
+                    COALESCE(role, ''),
+                    COALESCE(phone, ''),
+                    COALESCE(email, ''),
+                    COALESCE(note, ''),
+                    COALESCE(active, 1),
+                    created_at,
+                    updated_at
+                FROM coordination_coordinators
+                """
+            ),
+        )
+        connection.execute(text("DROP TABLE coordination_coordinators"))
+        connection.execute(
+            text(
+                "ALTER TABLE coordination_coordinators_ux2 "
+                "RENAME TO coordination_coordinators"
+            ),
+        )
+        connection.commit()
 
 
 def _migrate_rebuild_hazard_library_template_legal_links_nullable() -> None:
