@@ -95,6 +95,7 @@ def initialize_database() -> None:
     from moduly.rizeni_rizik.modely.profession_exposed_group import (  # noqa: F401
         ProfessionExposedGroup,
     )
+    from moduly.koordinace_bozp.modely.bozp_coordination import BozpCoordination  # noqa: F401
     from core.ai_oponentni.modely.ai_peer_review import (  # noqa: F401
         AiPeerReview,
         AiPeerReviewBatch,
@@ -157,6 +158,7 @@ def initialize_database() -> None:
     _ensure_hazard_library_template_revisions_table()
     _ensure_hazard_library_template_legal_links_table()
     _ensure_pravidla_bezpecne_prace_editions_tables()
+    _ensure_bozp_coordinations_table()
     _ensure_ai_peer_reviews_table()
     _ensure_ai_peer_review_batches_table()
     _ensure_ai_unassigned_proposals_table()
@@ -1872,6 +1874,29 @@ def _ensure_pravidla_bezpecne_prace_editions_tables() -> None:
             workplace_part_id,
             issued_at
         )
+        """,
+    )
+
+
+def _ensure_bozp_coordinations_table() -> None:
+    columns = _table_columns("bozp_coordinations")
+    if not columns:
+        from moduly.koordinace_bozp.modely.bozp_coordination import BozpCoordination
+
+        BozpCoordination.__table__.create(bind=_db_engine(), checkfirst=True)
+
+    _ensure_index(
+        "idx_bozp_coordinations_number",
+        """
+        CREATE INDEX IF NOT EXISTS idx_bozp_coordinations_number
+        ON bozp_coordinations (coordination_number)
+        """,
+    )
+    _ensure_index(
+        "idx_bozp_coordinations_meeting_date",
+        """
+        CREATE INDEX IF NOT EXISTS idx_bozp_coordinations_meeting_date
+        ON bozp_coordinations (meeting_date)
         """,
     )
 

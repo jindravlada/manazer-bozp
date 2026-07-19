@@ -1,0 +1,44 @@
+"""Konstanty modulu Koordinace BOZP."""
+
+MODULE_KEY = "koordinace_bozp"
+MODULE_NAME = "Koordinace BOZP"
+MODULE_DESCRIPTION = (
+    "Evidence koordinačních schůzek BOZP podle § 101 odst. 3 zákoníku práce."
+)
+
+DIALOG_WINDOW_TITLE = "Koordinace BOZP"
+
+BOZP_COORDINATION_STATUS_DRAFT = "draft"
+BOZP_COORDINATION_STATUS_COMPLETED = "completed"
+BOZP_COORDINATION_STATUS_ARCHIVED = "archived"
+
+BOZP_COORDINATION_STATUSES = (
+    BOZP_COORDINATION_STATUS_DRAFT,
+    BOZP_COORDINATION_STATUS_COMPLETED,
+    BOZP_COORDINATION_STATUS_ARCHIVED,
+)
+
+DEFAULT_BOZP_COORDINATION_STATUS = BOZP_COORDINATION_STATUS_DRAFT
+
+BOZP_COORDINATION_STATUS_LABELS = {
+    BOZP_COORDINATION_STATUS_DRAFT: "Rozpracováno",
+    BOZP_COORDINATION_STATUS_COMPLETED: "Dokončeno",
+    BOZP_COORDINATION_STATUS_ARCHIVED: "Archivováno",
+}
+
+COL_ID = 0
+COL_NUMBER = 1
+COL_MEETING_DATE = 2
+COL_PLACE = 3
+COL_SUBJECT = 4
+COL_STATUS = 5
+COLUMN_COUNT = 6
+
+TABLE_HEADERS = [
+    "ID",
+    "Číslo",
+    "Datum koordinační schůzky",
+    "Místo",
+    "Předmět koordinace",
+    "Stav",
+]
