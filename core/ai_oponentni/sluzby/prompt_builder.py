@@ -17,6 +17,85 @@ from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_ROLES,
 )
 
+# Kapitola AI-RISK-OP-2 – společná pro identifikaci i katalog.
+MEASURE_FORMULATION_STYLE_HEADING = "=== Styl formulace opatření ==="
+
+
+def measure_formulation_style_section() -> list[str]:
+    """Samostatná kapitola o stylu formulace opatření (AI-RISK-OP-2)."""
+    return [
+        MEASURE_FORMULATION_STYLE_HEADING,
+        "",
+        "1. Každé opatření formulujte jako jednoznačný pokyn zaměstnanci.",
+        "",
+        "Preferovaný styl:",
+        "- Používejte...",
+        "- Dodržujte...",
+        "- Udržujte...",
+        "- Zajistěte...",
+        "- Před zahájením práce...",
+        "- Při práci...",
+        "- Po skončení práce...",
+        "- Nevstupujte...",
+        "- Nepoužívejte...",
+        "- Neprovádějte...",
+        "",
+        "2. Opatření musí být srozumitelné samo o sobě.",
+        "Nesmí vyžadovat znalost kontextu ani předchozí věty.",
+        "",
+        "3. Každé opatření musí být možné beze změny použít",
+        "v dokumentu „Pravidla bezpečné práce“.",
+        "",
+        "4. Nepoužívejte pouze jmenné fráze.",
+        "",
+        "Nevhodné:",
+        "- Poučení zaměstnanců.",
+        "- Používání OOPP.",
+        "- Kontrola zařízení.",
+        "- Stabilní umístění zařízení.",
+        "- Zajištění bezpečného přístupu.",
+        "",
+        "5. Nepoužívejte administrativní formulace bez určení adresáta.",
+        "",
+        "Nevhodné:",
+        "- Zajistit...",
+        "- Provést...",
+        "- Kontrolovat...",
+        "- Ověřit...",
+        "- Dodržování...",
+        "",
+        "6. Nepište hodnotící věty.",
+        "",
+        "Zakázané formulace:",
+        "- Riziko je zřejmé.",
+        "- Není potřeba přijímat zvláštní opatření.",
+        "- Opatření nejsou nutná.",
+        "- Bez opatření.",
+        "",
+        "7. Preferujte aktivní věty.",
+        "",
+        "Místo:",
+        "\"Nábytek musí být stabilně umístěn.\"",
+        "",
+        "Použijte:",
+        "\"Umísťujte nábytek na rovný a stabilní podklad.\"",
+        "",
+        "8. Nepoužívejte neurčitá slova:",
+        "- vhodně",
+        "- přiměřeně",
+        "- dostatečně",
+        "- správně",
+        "- podle potřeby",
+        "",
+        "pokud lze napsat konkrétní pokyn.",
+        "",
+        "9. Nepopisujte organizaci práce zaměstnavatele.",
+        "Opatření mají popisovat bezpečné chování osoby, které jsou určena.",
+        "",
+        "10. Pokud nelze vytvořit konkrétní pokyn zaměstnanci,",
+        "raději opatření vůbec nenavrhujte.",
+    ]
+
 
 def normalize_opponent_role(role: str | None) -> str:
     value = (role or "").strip()
@@ -151,6 +230,9 @@ def build_ai_peer_review_prompt(
         lines.append(f"- {rule}")
     lines.append("")
 
+    lines.extend(measure_formulation_style_section())
+    lines.append("")
+
     lines.append("OTÁZKY K POSOUZENÍ")
     lines.append("-" * 40)
     questions = [
@@ -272,6 +354,9 @@ def build_catalog_source_ai_peer_review_prompt(
     ]
     for rule in rules:
         lines.append(f"- {rule}")
+    lines.append("")
+
+    lines.extend(measure_formulation_style_section())
     lines.append("")
 
     lines.append("OTÁZKY K POSOUZENÍ")
