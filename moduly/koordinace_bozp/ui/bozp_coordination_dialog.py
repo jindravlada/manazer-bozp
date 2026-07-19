@@ -26,6 +26,7 @@ from moduly.koordinace_bozp.constants import (
     DIALOG_WINDOW_TITLE,
     TAB_BASICS,
     TAB_EMPLOYERS,
+    TAB_PARTICIPANTS,
 )
 from moduly.koordinace_bozp.sluzby.bozp_coordination_service import (
     bozp_coordination_service,
@@ -33,19 +34,23 @@ from moduly.koordinace_bozp.sluzby.bozp_coordination_service import (
 from moduly.koordinace_bozp.ui.coordination_employers_tab import (
     CoordinationEmployersTab,
 )
+from moduly.koordinace_bozp.ui.coordination_participants_tab import (
+    CoordinationParticipantsTab,
+)
 
 
 class BozpCoordinationDialog(QDialog):
-    """Dialog koordinace BOZP – základní údaje a zaměstnavatelé."""
+    """Dialog koordinace BOZP – údaje, zaměstnavatelé a účastníci."""
 
     def __init__(self, parent=None, coordination=None):
         super().__init__(parent)
         self.coordination = coordination
         self.setWindowTitle(DIALOG_WINDOW_TITLE)
-        configure_resizable_form_dialog(self, width=720, height=560, min_width=520, min_height=400)
+        configure_resizable_form_dialog(self, width=760, height=600, min_width=540, min_height=420)
 
         layout = QVBoxLayout(self)
         self.tabs = QTabWidget()
+        self.tabs.currentChanged.connect(self._on_tab_changed)
 
         basics_host = QWidget()
         basics_layout = QVBoxLayout(basics_host)
@@ -78,6 +83,12 @@ class BozpCoordinationDialog(QDialog):
             coordination_id=coordination_id,
         )
         self.tabs.addTab(self.employers_tab, TAB_EMPLOYERS)
+
+        self.participants_tab = CoordinationParticipantsTab(
+            self,
+            coordination_id=coordination_id,
+        )
+        self.tabs.addTab(self.participants_tab, TAB_PARTICIPANTS)
         layout.addWidget(self.tabs, 1)
 
         buttons = create_save_cancel_box(self)
@@ -105,6 +116,10 @@ class BozpCoordinationDialog(QDialog):
             index = self.status.findData(coordination.status)
             self.status.setCurrentIndex(index if index >= 0 else 0)
             self.note.setPlainText(coordination.note or "")
+
+    def _on_tab_changed(self, index: int) -> None:
+        if self.tabs.widget(index) is self.participants_tab:
+            self.participants_tab.refresh_employers()
 
     def get_data(self) -> dict:
         qdate = self.meeting_date.date()

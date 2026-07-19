@@ -99,6 +99,9 @@ def initialize_database() -> None:
     from moduly.koordinace_bozp.modely.coordination_employer import (  # noqa: F401
         CoordinationEmployer,
     )
+    from moduly.koordinace_bozp.modely.coordination_participant import (  # noqa: F401
+        CoordinationParticipant,
+    )
     from core.ai_oponentni.modely.ai_peer_review import (  # noqa: F401
         AiPeerReview,
         AiPeerReviewBatch,
@@ -1916,6 +1919,22 @@ def _ensure_bozp_coordinations_table() -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_coordination_employers_coordination
         ON coordination_employers (coordination_id)
+        """,
+    )
+
+    participant_columns = _table_columns("coordination_participants")
+    if not participant_columns:
+        from moduly.koordinace_bozp.modely.coordination_participant import (
+            CoordinationParticipant,
+        )
+
+        CoordinationParticipant.__table__.create(bind=_db_engine(), checkfirst=True)
+
+    _ensure_index(
+        "idx_coordination_participants_employer",
+        """
+        CREATE INDEX IF NOT EXISTS idx_coordination_participants_employer
+        ON coordination_participants (coordination_employer_id)
         """,
     )
 
