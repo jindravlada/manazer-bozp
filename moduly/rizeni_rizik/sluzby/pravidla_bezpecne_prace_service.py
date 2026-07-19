@@ -4,6 +4,7 @@ PBP-2: sběr platných (realizovaných) opatření z Registru rizik.
 PBP-3: export do ODT podle šablony.
 PBP-4: normalizace textů a kontrola vhodnosti pro zaměstnance.
 PBP-4b: řazení podle závažnosti rizika.
+PBP-5a: evidence vydání (snapshot) po úspěšném exportu.
 """
 
 from __future__ import annotations
@@ -327,6 +328,29 @@ class PravidlaBezpecnePraceService:
         )
         rendered = self.engine.render(template, output_path, values)
         self._strip_empty_workplace_rows(rendered)
+
+        # Evidence vydání až po úspěšném ODT (PBP-5a).
+        from moduly.rizeni_rizik.sluzby.pravidla_bezpecne_prace_edition_service import (
+            pravidla_bezpecne_prace_edition_service,
+        )
+
+        issued_dt: datetime
+        if issued_at is None:
+            issued_dt = datetime.now()
+        elif isinstance(issued_at, datetime):
+            issued_dt = issued_at
+        else:
+            issued_dt = datetime.combine(issued_at, datetime.min.time())
+
+        pravidla_bezpecne_prace_edition_service.record_edition(
+            endangered_group_id=endangered_group_id,
+            operation_id=operation_id,
+            workplace_id=workplace_id,
+            workplace_part_id=workplace_part_id,
+            rules=rules,
+            export_path=rendered,
+            issued_at=issued_dt,
+        )
         return rendered
 
     @staticmethod
