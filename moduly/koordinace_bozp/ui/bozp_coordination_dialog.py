@@ -2,6 +2,7 @@ from datetime import date
 
 from PySide6.QtCore import QDate
 from PySide6.QtWidgets import (
+    QCheckBox,
     QComboBox,
     QDialog,
     QFormLayout,
@@ -28,6 +29,7 @@ from moduly.koordinace_bozp.constants import (
     TAB_COORDINATOR,
     TAB_EMPLOYER_ACTIVITIES,
     TAB_EMPLOYERS,
+    TAB_MEASURES,
     TAB_PARTICIPANTS,
     TAB_PBP_ATTACHMENT,
     TAB_RISK_SUBMISSIONS,
@@ -45,6 +47,9 @@ from moduly.koordinace_bozp.ui.coordination_employer_activities_tab import (
 )
 from moduly.koordinace_bozp.ui.coordination_employers_tab import (
     CoordinationEmployersTab,
+)
+from moduly.koordinace_bozp.ui.coordination_measures_tab import (
+    CoordinationMeasuresTab,
 )
 from moduly.koordinace_bozp.ui.coordination_participants_tab import (
     CoordinationParticipantsTab,
@@ -80,7 +85,6 @@ class BozpCoordinationDialog(QDialog):
 
         layout = QVBoxLayout(self)
         self.tabs = QTabWidget()
-        self.tabs.currentChanged.connect(self._on_tab_changed)
 
         basics_host = QWidget()
         basics_layout = QVBoxLayout(basics_host)
@@ -98,6 +102,10 @@ class BozpCoordinationDialog(QDialog):
         self.valid_to = DateEdit()
         self.note = QTextEdit()
         self.note.setMinimumHeight(90)
+        self.insert_default_measures = QCheckBox(
+            "Vložit výchozí sadu organizačních opatření"
+        )
+        self.insert_default_measures.setChecked(True)
 
         form.addRow("Číslo koordinace:", self.number_label)
         form.addRow("Datum koordinační schůzky:", self.meeting_date)
@@ -107,6 +115,7 @@ class BozpCoordinationDialog(QDialog):
         form.addRow("Platnost od:", self.valid_from)
         form.addRow("Platnost do:", self.valid_to)
         form.addRow("Poznámka:", self.note)
+        form.addRow("", self.insert_default_measures)
 
         basics_layout.addWidget(wrap_in_scroll_area(form_host), 1)
         self.tabs.addTab(basics_host, TAB_BASICS)
@@ -142,6 +151,12 @@ class BozpCoordinationDialog(QDialog):
         )
         self.tabs.addTab(self.employer_activities_tab, TAB_EMPLOYER_ACTIVITIES)
 
+        self.measures_tab = CoordinationMeasuresTab(
+            self,
+            coordination_id=coordination_id,
+        )
+        self.tabs.addTab(self.measures_tab, TAB_MEASURES)
+
         self.risk_submissions_tab = CoordinationRiskSubmissionsTab(
             self,
             coordination_id=coordination_id,
@@ -154,6 +169,7 @@ class BozpCoordinationDialog(QDialog):
         )
         self.tabs.addTab(self.pbp_attachment_tab, TAB_PBP_ATTACHMENT)
         layout.addWidget(self.tabs, 1)
+        self.tabs.currentChanged.connect(self._on_tab_changed)
 
         buttons = create_save_cancel_box(self)
         buttons.accepted.connect(self.accept)
@@ -166,6 +182,7 @@ class BozpCoordinationDialog(QDialog):
                 self.status.findData(DEFAULT_BOZP_COORDINATION_STATUS)
             )
             self._apply_default_validity_from_meeting()
+            self.insert_default_measures.setVisible(True)
         else:
             self.number_label.setText(coordination.coordination_number or "")
             if coordination.meeting_date:
@@ -179,6 +196,8 @@ class BozpCoordinationDialog(QDialog):
             if coordination.valid_to:
                 self.valid_to.setDate(_qdate_from_date(coordination.valid_to))
             self.note.setPlainText(coordination.note or "")
+            self.insert_default_measures.setVisible(False)
+            self.insert_default_measures.setChecked(False)
 
         self.meeting_date.dateChanged.connect(self._on_meeting_date_changed)
 
@@ -201,6 +220,8 @@ class BozpCoordinationDialog(QDialog):
             self.workplaces_tab.refresh()
         elif widget is self.employer_activities_tab:
             self.employer_activities_tab.refresh_employers()
+        elif widget is self.measures_tab:
+            self.measures_tab.refresh()
         elif widget is self.risk_submissions_tab:
             self.risk_submissions_tab.refresh_employers()
         elif widget is self.pbp_attachment_tab:
@@ -209,7 +230,7 @@ class BozpCoordinationDialog(QDialog):
             self.employers_tab.refresh()
 
     def get_data(self) -> dict:
-        return {
+        data = {
             "meeting_date": _date_from_qdate(self.meeting_date.date()),
             "place": self.place.text().strip(),
             "subject": self.subject.text().strip(),
@@ -218,3 +239,6 @@ class BozpCoordinationDialog(QDialog):
             "valid_from": _date_from_qdate(self.valid_from.date()),
             "valid_to": _date_from_qdate(self.valid_to.date()),
         }
+        if self.coordination is None:
+            data["insert_default_measures"] = self.insert_default_measures.isChecked()
+        return data

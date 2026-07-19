@@ -111,6 +111,9 @@ def initialize_database() -> None:
     from moduly.koordinace_bozp.modely.coordination_employer_activity import (  # noqa: F401
         CoordinationEmployerActivity,
     )
+    from moduly.koordinace_bozp.modely.coordination_measure import (  # noqa: F401
+        CoordinationMeasure,
+    )
     from moduly.koordinace_bozp.modely.coordination_employer_risk_submission import (  # noqa: F401
         CoordinationEmployerRiskSubmission,
     )
@@ -2042,6 +2045,22 @@ def _ensure_bozp_coordinations_table() -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_coordination_employer_activities_workplace
         ON coordination_employer_activities (coordination_workplace_id)
+        """,
+    )
+
+    measure_columns = _table_columns("coordination_measures")
+    if not measure_columns:
+        from moduly.koordinace_bozp.modely.coordination_measure import (
+            CoordinationMeasure,
+        )
+
+        CoordinationMeasure.__table__.create(bind=_db_engine(), checkfirst=True)
+
+    _ensure_index(
+        "idx_coordination_measures_coordination",
+        """
+        CREATE INDEX IF NOT EXISTS idx_coordination_measures_coordination
+        ON coordination_measures (coordination_id)
         """,
     )
 

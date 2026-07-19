@@ -40,6 +40,7 @@ with patch.object(Path, "home", return_value=_TMP):
         CoordinationCoordinator,
     )
     from moduly.koordinace_bozp.modely.coordination_employer import CoordinationEmployer
+    from moduly.koordinace_bozp.modely.coordination_measure import CoordinationMeasure
     from moduly.koordinace_bozp.modely.coordination_employer_activity import (
         CoordinationEmployerActivity,
     )
@@ -87,6 +88,7 @@ class KoordinaceBozpPhaseCoord008TestCase(unittest.TestCase):
             session.execute(delete(CoordinationAttachment))
             session.execute(delete(CoordinationEmployerRiskSubmission))
             session.execute(delete(CoordinationEmployerActivity))
+            session.execute(delete(CoordinationMeasure))
             session.execute(delete(CoordinationWorkplace))
             session.execute(delete(CoordinationCoordinator))
             session.execute(delete(CoordinationParticipant))

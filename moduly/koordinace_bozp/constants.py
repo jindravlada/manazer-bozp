@@ -32,8 +32,74 @@ TAB_PARTICIPANTS = "Účastníci schůzky"
 TAB_COORDINATOR = "Koordinátor BOZP"
 TAB_WORKPLACES = "Místa výkonu práce"
 TAB_EMPLOYER_ACTIVITIES = "Činnosti zaměstnavatelů"
+TAB_MEASURES = "Organizační opatření"
 TAB_RISK_SUBMISSIONS = "Předání rizik dodavatelů"
 TAB_PBP_ATTACHMENT = "Příloha PBP"
+
+# Organizační opatření (COORD-009).
+MEASURE_CATEGORY_WORK_ORGANIZATION = "work_organization"
+MEASURE_CATEGORY_PERSON_MOVEMENT = "person_movement"
+MEASURE_CATEGORY_VEHICLE_MOVEMENT = "vehicle_movement"
+MEASURE_CATEGORY_WORKPLACE_HANDOVER = "workplace_handover"
+MEASURE_CATEGORY_WORK_PERMITS = "work_permits"
+MEASURE_CATEGORY_COMMUNICATION = "communication"
+MEASURE_CATEGORY_EMERGENCIES = "emergencies"
+MEASURE_CATEGORY_PPE = "ppe"
+MEASURE_CATEGORY_OTHER = "other"
+
+MEASURE_CATEGORIES = (
+    MEASURE_CATEGORY_WORK_ORGANIZATION,
+    MEASURE_CATEGORY_PERSON_MOVEMENT,
+    MEASURE_CATEGORY_VEHICLE_MOVEMENT,
+    MEASURE_CATEGORY_WORKPLACE_HANDOVER,
+    MEASURE_CATEGORY_WORK_PERMITS,
+    MEASURE_CATEGORY_COMMUNICATION,
+    MEASURE_CATEGORY_EMERGENCIES,
+    MEASURE_CATEGORY_PPE,
+    MEASURE_CATEGORY_OTHER,
+)
+
+DEFAULT_MEASURE_CATEGORY = MEASURE_CATEGORY_OTHER
+
+MEASURE_CATEGORY_LABELS = {
+    MEASURE_CATEGORY_WORK_ORGANIZATION: "Organizace práce",
+    MEASURE_CATEGORY_PERSON_MOVEMENT: "Pohyb osob",
+    MEASURE_CATEGORY_VEHICLE_MOVEMENT: "Pohyb vozidel",
+    MEASURE_CATEGORY_WORKPLACE_HANDOVER: "Předávání pracoviště",
+    MEASURE_CATEGORY_WORK_PERMITS: "Povolení prací",
+    MEASURE_CATEGORY_COMMUNICATION: "Komunikace",
+    MEASURE_CATEGORY_EMERGENCIES: "Mimořádné události",
+    MEASURE_CATEGORY_PPE: "OOPP",
+    MEASURE_CATEGORY_OTHER: "Ostatní",
+}
+
+# (kategorie, název) – volitelně vkládaná výchozí sada při založení koordinace.
+DEFAULT_COORDINATION_MEASURES = (
+    (
+        MEASURE_CATEGORY_COMMUNICATION,
+        "Dodržovat pokyny koordinátora BOZP.",
+    ),
+    (
+        MEASURE_CATEGORY_WORKPLACE_HANDOVER,
+        "Nezahajovat práce bez předání pracoviště.",
+    ),
+    (
+        MEASURE_CATEGORY_EMERGENCIES,
+        "Každou mimořádnou událost ihned oznámit.",
+    ),
+    (
+        MEASURE_CATEGORY_PERSON_MOVEMENT,
+        "Udržovat průjezdné únikové cesty.",
+    ),
+    (
+        MEASURE_CATEGORY_WORK_ORGANIZATION,
+        "Nepřemisťovat ochranná zařízení bez souhlasu.",
+    ),
+    (
+        MEASURE_CATEGORY_PERSON_MOVEMENT,
+        "Dodržovat zákaz vstupu do vyznačených prostor.",
+    ),
+)
 
 COORDINATION_PBP_INTRO_TEXT = (
     "Dodržujte následující pravidla bezpečné práce. "
@@ -191,6 +257,19 @@ ACTIVITY_TABLE_HEADERS = [
     "Místo výkonu práce",
     "Od",
     "Do",
+    "Aktivní",
+]
+
+MSR_COL_ID = 0
+MSR_COL_CATEGORY = 1
+MSR_COL_TITLE = 2
+MSR_COL_ACTIVE = 3
+MSR_COLUMN_COUNT = 4
+
+MEASURE_TABLE_HEADERS = [
+    "ID",
+    "Kategorie",
+    "Název",
     "Aktivní",
 ]
 
