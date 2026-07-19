@@ -13,6 +13,9 @@ from moduly.koordinace_bozp.constants import (
     COORDINATION_PARTICIPANT_SOURCE_EMPLOYEE,
     TAB_PARTICIPANTS,
 )
+from moduly.koordinace_bozp.sluzby.coordination_coordinator_service import (
+    coordination_coordinator_service,
+)
 from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
     coordination_employer_service,
 )
@@ -242,9 +245,20 @@ class CoordinationParticipantsTab(QWidget):
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )
-        if answer == QMessageBox.Yes:
-            coordination_participant_service.deactivate(participant.id)
-            self.refresh_participants()
+        if answer != QMessageBox.Yes:
+            return
+        is_coordinator = coordination_coordinator_service.is_participant_coordinator(
+            participant.id
+        )
+        coordination_participant_service.deactivate(participant.id)
+        if is_coordinator:
+            QMessageBox.warning(
+                self,
+                TAB_PARTICIPANTS,
+                "Účastník je pověřeným koordinátorem BOZP. "
+                "Vazba na koordinátora zůstává – koordinátora automaticky nerušíme.",
+            )
+        self.refresh_participants()
 
     def _on_employer_changed(self) -> None:
         self.refresh_participants()

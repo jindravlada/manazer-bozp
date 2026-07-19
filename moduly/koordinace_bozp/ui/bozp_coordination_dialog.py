@@ -25,6 +25,7 @@ from moduly.koordinace_bozp.constants import (
     DEFAULT_BOZP_COORDINATION_STATUS,
     DIALOG_WINDOW_TITLE,
     TAB_BASICS,
+    TAB_COORDINATOR,
     TAB_EMPLOYERS,
     TAB_PARTICIPANTS,
 )
@@ -32,6 +33,9 @@ from moduly.koordinace_bozp.sluzby.bozp_coordination_service import (
     bozp_coordination_service,
 )
 from moduly.koordinace_bozp.sluzby.coordination_validity import add_one_year
+from moduly.koordinace_bozp.ui.coordination_coordinator_tab import (
+    CoordinationCoordinatorTab,
+)
 from moduly.koordinace_bozp.ui.coordination_employers_tab import (
     CoordinationEmployersTab,
 )
@@ -103,6 +107,12 @@ class BozpCoordinationDialog(QDialog):
             coordination_id=coordination_id,
         )
         self.tabs.addTab(self.participants_tab, TAB_PARTICIPANTS)
+
+        self.coordinator_tab = CoordinationCoordinatorTab(
+            self,
+            coordination_id=coordination_id,
+        )
+        self.tabs.addTab(self.coordinator_tab, TAB_COORDINATOR)
         layout.addWidget(self.tabs, 1)
 
         buttons = create_save_cancel_box(self)
@@ -142,8 +152,11 @@ class BozpCoordinationDialog(QDialog):
         self.valid_to.setDate(_qdate_from_date(add_one_year(meeting)))
 
     def _on_tab_changed(self, index: int) -> None:
-        if self.tabs.widget(index) is self.participants_tab:
+        widget = self.tabs.widget(index)
+        if widget is self.participants_tab:
             self.participants_tab.refresh_employers()
+        elif widget is self.coordinator_tab:
+            self.coordinator_tab.refresh()
 
     def get_data(self) -> dict:
         return {

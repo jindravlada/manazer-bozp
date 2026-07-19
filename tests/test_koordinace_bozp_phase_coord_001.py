@@ -43,6 +43,9 @@ with patch.object(Path, "home", return_value=_TMP):
         TABLE_HEADERS,
     )
     from moduly.koordinace_bozp.modely.bozp_coordination import BozpCoordination
+    from moduly.koordinace_bozp.modely.coordination_coordinator import (
+        CoordinationCoordinator,
+    )
     from moduly.koordinace_bozp.modely.coordination_employer import CoordinationEmployer
     from moduly.koordinace_bozp.modely.coordination_participant import (
         CoordinationParticipant,
@@ -73,6 +76,7 @@ class KoordinaceBozpPhaseCoord001TestCase(unittest.TestCase):
 
     def setUp(self) -> None:
         with get_session() as session:
+            session.execute(delete(CoordinationCoordinator))
             session.execute(delete(CoordinationParticipant))
             session.execute(delete(CoordinationEmployer))
             session.execute(delete(BozpCoordination))

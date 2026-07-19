@@ -29,6 +29,7 @@ BOZP_COORDINATION_STATUS_LABELS = {
 TAB_BASICS = "Základní údaje"
 TAB_EMPLOYERS = "Zúčastnění zaměstnavatelé"
 TAB_PARTICIPANTS = "Účastníci schůzky"
+TAB_COORDINATOR = "Koordinátor BOZP"
 
 COORDINATION_EMPLOYER_TYPE_MAIN = "main"
 COORDINATION_EMPLOYER_TYPE_PARTICIPANT = "participant"
