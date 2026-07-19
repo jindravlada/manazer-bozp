@@ -23,6 +23,7 @@ from moduly.koordinace_bozp.sluzby.coordination_protocol_builder import (
     ProtocolBuildResult,
     ProtocolSummary,
     ProtocolWarning,
+    flatten_protocol_measure_bullets,
 )
 
 
@@ -307,14 +308,11 @@ class CoordinationProtocolOdtRenderer:
         # 8. Opatření
         lines.append("Organizační opatření")
         lines.append("")
-        measure_groups = data.get("measures_by_category") or []
-        if measure_groups:
-            for group in measure_groups:
-                lines.append(f"{group.get('category_label') or group.get('category')}:")
-                for measure in group.get("measures") or []:
-                    lines.append(f"  • {measure.get('title') or '—'}")
-                    if measure.get("description"):
-                        lines.append(f"    {measure['description']}")
+        measure_lines = flatten_protocol_measure_bullets(
+            data.get("measures_by_category") or []
+        )
+        if measure_lines:
+            lines.extend(measure_lines)
         else:
             lines.append("—")
         lines.append("")

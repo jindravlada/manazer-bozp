@@ -30,6 +30,7 @@ from moduly.koordinace_bozp.sluzby.coordination_protocol_builder import (
     CoordinationProtocolBuilderError,
     ProtocolBuildResult,
     coordination_protocol_builder,
+    flatten_protocol_measure_bullets,
 )
 from moduly.koordinace_bozp.sluzby.coordination_protocol_odt_renderer import (
     CoordinationProtocolOdtRendererError,
@@ -342,13 +343,9 @@ class CoordinationProtocolPreviewDialog(QDialog):
 
     @staticmethod
     def _measures_lines(groups) -> list[str]:
-        if not groups:
+        lines = flatten_protocol_measure_bullets(groups)
+        if not lines:
             return ["Nejsou evidována žádná aktivní organizační opatření."]
-        lines = []
-        for group in groups:
-            lines.append(f"{group.get('category_label')}:")
-            for measure in group.get("measures") or []:
-                lines.append(f"  • {measure.get('title') or '—'}")
         return lines
 
     @staticmethod

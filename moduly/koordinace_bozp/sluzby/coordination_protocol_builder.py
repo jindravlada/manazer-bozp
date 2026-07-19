@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 from datetime import date
+from typing import Any, Mapping
 
 from moduly.koordinace_bozp.constants import (
     ATTACHMENT_TYPE_CONTRACTOR_RISKS,
@@ -81,6 +82,25 @@ from moduly.koordinace_bozp.sluzby.coordination_workplace_service import (
 
 class CoordinationProtocolBuilderError(ValueError):
     pass
+
+
+def protocol_measure_display_text(measure: Mapping[str, Any] | dict) -> str:
+    """Text opatření pro náhled/ODT: Popis, jinak Název (UX-COORD-4a)."""
+    description = (measure.get("description") or "").strip()
+    if description:
+        return description
+    return (measure.get("title") or "").strip() or "—"
+
+
+def flatten_protocol_measure_bullets(
+    measures_by_category: list | None,
+) -> list[str]:
+    """Odrážky opatření v pořadí kategorií / sort_order – bez nadpisů kategorií."""
+    lines: list[str] = []
+    for group in measures_by_category or []:
+        for measure in group.get("measures") or []:
+            lines.append(f"• {protocol_measure_display_text(measure)}")
+    return lines
 
 
 @dataclass(frozen=True)
