@@ -3,6 +3,7 @@
 PBP-2: sběr platných (realizovaných) opatření z Registru rizik.
 PBP-3: export do ODT podle šablony.
 PBP-4: normalizace textů a kontrola vhodnosti pro zaměstnance.
+PBP-4b: řazení podle závažnosti rizika.
 """
 
 from __future__ import annotations
@@ -16,9 +17,13 @@ from pathlib import Path
 from core.export import OdtExportEngine, open_export_file
 from core.export.odt_engine import _sync_written_file
 from core.services.storage_service import storage_service
-from core.utils.czech_sort import czech_sorted
+from core.utils.czech_sort import czech_sort_key
 from moduly.nastaveni.sluzby.exposed_group_service import exposed_group_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
+from moduly.rizeni_rizik.constants import (
+    DEFAULT_RISK_SEVERITY,
+    RISK_SEVERITIES,
+)
 from moduly.rizeni_rizik.sluzby.hazard_existing_measure_service import (
     hazard_existing_measure_service,
 )
@@ -134,6 +139,15 @@ def is_unsuitable_employee_rule(text: str) -> bool:
     return False
 
 
+def severity_rank(severity: str | None) -> int:
+    """Pořadí závažnosti z Registru rizik: vyšší číslo = vyšší závažnost."""
+    code = severity or DEFAULT_RISK_SEVERITY
+    try:
+        return RISK_SEVERITIES.index(code)
+    except ValueError:
+        return -1
+
+
 def _is_short_noun_phrase_without_verb(lowered: str) -> bool:
     """Detekuje krátké jmenné fráze bez slovesného pokynu (např. „Poučení obsluhy.“)."""
     body = _TRAILING_END_PUNCT_RE.sub("", lowered).strip()
@@ -146,6 +160,16 @@ def _is_short_noun_phrase_without_verb(lowered: str) -> bool:
 
 
 @dataclass(frozen=True)
+class PravidloBezpecnePraceSource:
+    """Jedna zdrojová vazba pravidla na posouzení / opatření."""
+
+    measure_id: int
+    source_hazard_id: int | None = None
+    source_event_id: int | None = None
+    severity: str = DEFAULT_RISK_SEVERITY
+
+
+@dataclass(frozen=True)
 class PravidloBezpecnePrace:
     """Jedno pravidlo bezpečné práce odvozené z existujícího opatření."""
 
@@ -154,6 +178,9 @@ class PravidloBezpecnePrace:
     source_hazard_id: int | None = None
     source_event_id: int | None = None
     unsuitable_for_employee: bool = False
+    severity: str = DEFAULT_RISK_SEVERITY
+    severity_rank: int = 0
+    sources: tuple[PravidloBezpecnePraceSource, ...] = ()
 
 
 class PravidlaBezpecnePraceService:
@@ -220,6 +247,16 @@ class PravidlaBezpecnePraceService:
                     text = normalize_rule_text(measure.description or "")
                     if not text:
                         continue
+                    severity = row.assessment.severity or DEFAULT_RISK_SEVERITY
+                    if severity not in RISK_SEVERITIES:
+                        severity = DEFAULT_RISK_SEVERITY
+                    rank = severity_rank(severity)
+                    source = PravidloBezpecnePraceSource(
+                        measure_id=measure.id,
+                        source_hazard_id=identification.id,
+                        source_event_id=row.assessment.hazard_event_id,
+                        severity=severity,
+                    )
                     collected.append(
                         PravidloBezpecnePrace(
                             measure_id=measure.id,
@@ -227,6 +264,9 @@ class PravidlaBezpecnePraceService:
                             source_hazard_id=identification.id,
                             source_event_id=row.assessment.hazard_event_id,
                             unsuitable_for_employee=is_unsuitable_employee_rule(text),
+                            severity=severity,
+                            severity_rank=rank,
+                            sources=(source,),
                         )
                     )
 
@@ -419,16 +459,51 @@ class PravidlaBezpecnePraceService:
     def _dedupe_and_sort(
         items: list[PravidloBezpecnePrace],
     ) -> list[PravidloBezpecnePrace]:
-        """Odstraní duplicity nad normalizovaným textem a seřadí abecedně."""
-        unique: list[PravidloBezpecnePrace] = []
-        seen: set[str] = set()
+        """Sloučí duplicity, vezme nejvyšší závažnost a seřadí severity → abeceda."""
+        merged: dict[str, PravidloBezpecnePrace] = {}
         for item in items:
             key = item.text.casefold()
-            if not key or key in seen:
+            if not key:
                 continue
-            seen.add(key)
-            unique.append(item)
-        return czech_sorted(unique, key=lambda item: item.text.casefold())
+            existing = merged.get(key)
+            if existing is None:
+                merged[key] = item
+                continue
+
+            sources = existing.sources + tuple(
+                source
+                for source in item.sources
+                if source.measure_id
+                not in {s.measure_id for s in existing.sources}
+            )
+            if item.severity_rank > existing.severity_rank:
+                merged[key] = PravidloBezpecnePrace(
+                    measure_id=existing.measure_id,
+                    text=existing.text,
+                    source_hazard_id=item.source_hazard_id,
+                    source_event_id=item.source_event_id,
+                    unsuitable_for_employee=existing.unsuitable_for_employee,
+                    severity=item.severity,
+                    severity_rank=item.severity_rank,
+                    sources=sources,
+                )
+            else:
+                merged[key] = PravidloBezpecnePrace(
+                    measure_id=existing.measure_id,
+                    text=existing.text,
+                    source_hazard_id=existing.source_hazard_id,
+                    source_event_id=existing.source_event_id,
+                    unsuitable_for_employee=existing.unsuitable_for_employee,
+                    severity=existing.severity,
+                    severity_rank=existing.severity_rank,
+                    sources=sources,
+                )
+
+        unique = list(merged.values())
+        return sorted(
+            unique,
+            key=lambda item: (-item.severity_rank, czech_sort_key(item.text)),
+        )
 
 
 pravidla_bezpecne_prace_service = PravidlaBezpecnePraceService()
