@@ -1,6 +1,8 @@
-"""Dialog kritérií pro generování Pravidel bezpečné práce (PBP-1)."""
+"""Dialog kritérií pro generování Pravidel bezpečné práce."""
 
 from __future__ import annotations
+
+from pathlib import Path
 
 from PySide6.QtWidgets import (
     QComboBox,
@@ -31,6 +33,7 @@ class PravidlaBezpecnePraceDialog(QDialog):
         self.setWindowTitle(DIALOG_TITLE)
         self.resize(480, 260)
         self._last_result: list | None = None
+        self._last_export_path: Path | None = None
 
         layout = QVBoxLayout(self)
         form = QFormLayout()
@@ -68,6 +71,10 @@ class PravidlaBezpecnePraceDialog(QDialog):
     def last_result(self) -> list | None:
         return self._last_result
 
+    @property
+    def last_export_path(self) -> Path | None:
+        return self._last_export_path
+
     def _generate(self) -> None:
         endangered_group_id = self.endangered_group.current_group_id()
         operation_id = self.operation.currentData()
@@ -91,8 +98,8 @@ class PravidlaBezpecnePraceDialog(QDialog):
             workplace_part_id=workplace_part_id,
         )
 
-        count = len(self._last_result)
-        if count == 0:
+        if not self._last_result:
+            self._last_export_path = None
             QMessageBox.information(
                 self,
                 DIALOG_TITLE,
@@ -101,11 +108,26 @@ class PravidlaBezpecnePraceDialog(QDialog):
             )
             return
 
-        QMessageBox.information(
-            self,
-            DIALOG_TITLE,
-            f"Nalezeno pravidel: {count}.",
+        self._last_export_path = pravidla_bezpecne_prace_service.open_document(
+            endangered_group_id=endangered_group_id,
+            operation_id=operation_id,
+            workplace_id=workplace_id,
+            workplace_part_id=workplace_part_id,
+            rules=self._last_result,
         )
+
+        warnings = pravidla_bezpecne_prace_service.quality_warnings(self._last_result)
+        if warnings:
+            QMessageBox.information(
+                self,
+                DIALOG_TITLE,
+                "Byla nalezena opatření, která nejsou formulována\n"
+                "jako pravidla bezpečné práce pro zaměstnance.\n\n"
+                "Doporučujeme upravit jejich znění.\n\n"
+                f"Počet nalezených pravidel:\n{len(self._last_result)}\n\n"
+                f"Nevhodně formulovaných:\n{len(warnings)}",
+            )
+
         self.accept()
 
     def _on_operation_changed(self) -> None:

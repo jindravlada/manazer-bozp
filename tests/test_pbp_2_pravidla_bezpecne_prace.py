@@ -185,7 +185,7 @@ class PravidlaBezpecnePracePhasePbp2TestCase(unittest.TestCase):
             workplace_id=self.workplace.id,
         )
 
-        self.assertEqual([item.text for item in result], ["Používej ochranné brýle"])
+        self.assertEqual([item.text for item in result], ["Používej ochranné brýle."])
         self.assertIsInstance(result[0], PravidloBezpecnePrace)
         self.assertIsInstance(result[0].measure_id, int)
 
@@ -209,7 +209,7 @@ class PravidlaBezpecnePracePhasePbp2TestCase(unittest.TestCase):
             workplace_id=self.workplace.id,
         )
 
-        self.assertEqual([item.text for item in result], ["Pravidlo skupiny A"])
+        self.assertEqual([item.text for item in result], ["Pravidlo skupiny A."])
 
     def test_scope_operation_workplace_and_part(self) -> None:
         self._create_chain(
@@ -238,7 +238,7 @@ class PravidlaBezpecnePracePhasePbp2TestCase(unittest.TestCase):
             workplace_id=self.workplace.id,
             workplace_part_id=self.part.id,
         )
-        self.assertEqual([item.text for item in only_part], ["Pravidlo z části"])
+        self.assertEqual([item.text for item in only_part], ["Pravidlo z části."])
 
         workplace_scope = pravidla_bezpecne_prace_service.generate(
             endangered_group_id=self.group_a.id,
@@ -247,7 +247,7 @@ class PravidlaBezpecnePracePhasePbp2TestCase(unittest.TestCase):
         )
         self.assertEqual(
             [item.text for item in workplace_scope],
-            ["Pravidlo z části", "Pravidlo z pracoviště"],
+            ["Pravidlo z části.", "Pravidlo z pracoviště."],
         )
 
         operation_scope = pravidla_bezpecne_prace_service.generate(
@@ -257,9 +257,9 @@ class PravidlaBezpecnePracePhasePbp2TestCase(unittest.TestCase):
         self.assertEqual(
             [item.text for item in operation_scope],
             [
-                "Pravidlo z části",
-                "Pravidlo z jiného pracoviště",
-                "Pravidlo z pracoviště",
+                "Pravidlo z části.",
+                "Pravidlo z jiného pracoviště.",
+                "Pravidlo z pracoviště.",
             ],
         )
 
@@ -292,10 +292,10 @@ class PravidlaBezpecnePracePhasePbp2TestCase(unittest.TestCase):
 
         texts = [item.text for item in result]
         self.assertEqual(len(texts), 2)
-        self.assertIn("Jiná ochrana", texts)
+        self.assertIn("Jiná ochrana.", texts)
         helm_variants = [t for t in texts if "helmu" in t.casefold()]
         self.assertEqual(len(helm_variants), 1)
-        self.assertEqual(helm_variants[0], "Používej   helmu")
+        self.assertEqual(helm_variants[0], "Používej helmu.")
 
     def test_stable_case_insensitive_sort(self) -> None:
         self._create_chain(
@@ -316,7 +316,7 @@ class PravidlaBezpecnePracePhasePbp2TestCase(unittest.TestCase):
             texts,
             sorted(texts, key=lambda value: value.casefold()),
         )
-        self.assertEqual(texts[0].casefold(), "alfabeticky první")
+        self.assertEqual(texts[0].casefold(), "alfabeticky první.")
 
     def test_empty_result(self) -> None:
         result = pravidla_bezpecne_prace_service.generate(
@@ -339,25 +339,34 @@ class PravidlaBezpecnePracePhasePbp2TestCase(unittest.TestCase):
             patch(
                 "moduly.rizeni_rizik.ui.pravidla_bezpecne_prace_dialog.QMessageBox.information"
             ) as info,
+            patch(
+                "moduly.rizeni_rizik.ui.pravidla_bezpecne_prace_dialog.pravidla_bezpecne_prace_service.open_document"
+            ) as open_document,
         ):
             dialog._generate()
             info.assert_called_once()
             self.assertIn("žádná platná", info.call_args.args[2])
+            open_document.assert_not_called()
 
-        sample = [PravidloBezpecnePrace(text="Pravidlo", measure_id=1)]
+        sample = [PravidloBezpecnePrace(text="Pravidlo.", measure_id=1)]
         with (
             patch(
                 "moduly.rizeni_rizik.ui.pravidla_bezpecne_prace_dialog.pravidla_bezpecne_prace_service.generate",
                 return_value=sample,
             ),
             patch(
+                "moduly.rizeni_rizik.ui.pravidla_bezpecne_prace_dialog.pravidla_bezpecne_prace_service.open_document",
+                return_value=Path("/tmp/pbp.odt"),
+            ) as open_document,
+            patch(
                 "moduly.rizeni_rizik.ui.pravidla_bezpecne_prace_dialog.QMessageBox.information"
             ) as info,
         ):
-            accepted = dialog._generate()
-            info.assert_called_once()
-            self.assertIn("Nalezeno pravidel: 1", info.call_args.args[2])
+            dialog._generate()
+            info.assert_not_called()
+            open_document.assert_called_once()
             self.assertEqual(dialog.last_result, sample)
+            self.assertEqual(dialog.last_export_path, Path("/tmp/pbp.odt"))
 
 
 if __name__ == "__main__":

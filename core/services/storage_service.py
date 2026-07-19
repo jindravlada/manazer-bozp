@@ -1,3 +1,4 @@
+import hashlib
 import os
 import platform
 import shutil
@@ -121,6 +122,7 @@ class StorageService:
             root / "moduly" / "kniha_urazu" / "templates",
             root / "moduly" / "proverky" / "templates",
             root / "moduly" / "audity" / "templates",
+            root / "moduly" / "rizeni_rizik" / "templates",
         ]
 
     def ensure_default_templates(self) -> None:
@@ -139,6 +141,63 @@ class StorageService:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 if not target.exists():
                     shutil.copy2(source, target)
+                    self._write_template_bundle_hash(target, self._file_sha256(source))
+
+    def resolve_editable_template(self, *parts: str) -> Path:
+        """Vrátí uživatelskou šablonu v .local, synchronizovanou z balíčku.
+
+        - AppImage/vývoj dodá výchozí šablonu z ``moduly/.../templates``.
+        - Uživatel ji může upravit v ``~/.local/share/manazer-bozp/templates``.
+        - Neupravenou kopii při aktualizaci balíčku obnovíme z dodané šablony.
+        - Upravenou kopii (např. s logem) nepřepisujeme.
+        """
+        user_path = self.template_file(*parts)
+        bundled = self.bundled_template_file(*parts)
+        user_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if bundled is None:
+            return user_path
+
+        bundled_hash = self._file_sha256(bundled)
+        meta_path = self._template_bundle_hash_path(user_path)
+
+        if not user_path.exists():
+            shutil.copy2(bundled, user_path)
+            self._write_template_bundle_hash(user_path, bundled_hash)
+            return user_path
+
+        user_hash = self._file_sha256(user_path)
+        if meta_path.exists():
+            recorded = meta_path.read_text(encoding="utf-8").strip()
+            if user_hash == recorded:
+                if recorded != bundled_hash:
+                    shutil.copy2(bundled, user_path)
+                    self._write_template_bundle_hash(user_path, bundled_hash)
+                return user_path
+            # Uživatelská úprava – ponechat.
+            return user_path
+
+        # Starší instalace bez markeru: pokud soubor stále odpovídá balíčku,
+        # založ marker; jinak považuj za upravený.
+        if user_hash == bundled_hash:
+            self._write_template_bundle_hash(user_path, bundled_hash)
+        return user_path
+
+    @staticmethod
+    def _file_sha256(path: Path) -> str:
+        digest = hashlib.sha256()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
+
+    @staticmethod
+    def _template_bundle_hash_path(template_path: Path) -> Path:
+        return template_path.with_name(template_path.name + ".bundle_sha256")
+
+    def _write_template_bundle_hash(self, template_path: Path, digest: str) -> None:
+        meta_path = self._template_bundle_hash_path(template_path)
+        meta_path.write_text(digest + "\n", encoding="utf-8")
 
     def attachment_dir(self, entity_type: str, entity_id: int) -> Path:
         path = self.attachments_dir / entity_type / str(entity_id)
