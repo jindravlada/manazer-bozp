@@ -30,6 +30,10 @@ TAB_BASICS = "Základní údaje"
 TAB_EMPLOYERS = "Zúčastnění zaměstnavatelé"
 TAB_PARTICIPANTS = "Účastníci schůzky"
 TAB_COORDINATOR = "Koordinátor BOZP"
+
+# Ruční koordinátor – výběr organizace (UX-COORD-4c).
+COORDINATOR_MANUAL_OTHER_ORGANIZATION = "__other_organization__"
+COORDINATOR_MANUAL_OTHER_ORGANIZATION_LABEL = "Jiná organizace"
 TAB_WORKPLACES = "Místa výkonu práce"
 TAB_EMPLOYER_ACTIVITIES = "Činnosti na pracovišti"
 TAB_MEASURES = "Organizační opatření"

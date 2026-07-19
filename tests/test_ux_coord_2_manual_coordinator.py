@@ -32,6 +32,9 @@ with patch.object(Path, "home", return_value=_TMP):
     initialize_database()
 
     from core.database.session import get_session
+    from moduly.koordinace_bozp.constants import (
+        COORDINATOR_MANUAL_OTHER_ORGANIZATION,
+    )
     from moduly.koordinace_bozp.modely.bozp_coordination import BozpCoordination
     from moduly.koordinace_bozp.modely.coordination_attachment import (
         CoordinationAttachment,
@@ -253,6 +256,11 @@ class UxCoord2ManualCoordinatorTestCase(unittest.TestCase):
             "moduly.koordinace_bozp.ui.coordination_coordinator_tab.QMessageBox.warning"
         ):
             tab.source_manual.setChecked(True)
+            other_index = tab.employer_combo.findData(
+                COORDINATOR_MANUAL_OTHER_ORGANIZATION
+            )
+            self.assertGreaterEqual(other_index, 0)
+            tab.employer_combo.setCurrentIndex(other_index)
             tab.full_name.setText("UI Ruční")
             tab.employer_name.setText("Org UI")
             tab.role.setText("role")
@@ -266,6 +274,7 @@ class UxCoord2ManualCoordinatorTestCase(unittest.TestCase):
             assert loaded is not None
             self.assertIsNone(loaded.participant_id)
             self.assertEqual(loaded.full_name, "UI Ruční")
+            self.assertEqual(loaded.employer_name, "Org UI")
 
             tab.refresh()
             self.assertTrue(tab.source_manual.isChecked())

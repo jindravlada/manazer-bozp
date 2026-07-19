@@ -13,7 +13,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from moduly.koordinace_bozp.constants import TAB_COORDINATOR
+from moduly.koordinace_bozp.constants import (
+    COORDINATOR_MANUAL_OTHER_ORGANIZATION,
+    COORDINATOR_MANUAL_OTHER_ORGANIZATION_LABEL,
+    TAB_COORDINATOR,
+)
 from moduly.koordinace_bozp.sluzby.coordination_coordinator_service import (
     CoordinationCoordinatorError,
     coordination_coordinator_service,
@@ -27,7 +31,7 @@ from moduly.koordinace_bozp.sluzby.coordination_participant_service import (
 
 
 class CoordinationCoordinatorTab(QWidget):
-    """Záložka pověřeného koordinátora BOZP (COORD-005 / UX-COORD-2)."""
+    """Záložka pověřeného koordinátora BOZP (COORD-005 / UX-COORD-2 / 4c)."""
 
     def __init__(self, parent=None, coordination_id: int | None = None):
         super().__init__(parent)
@@ -53,7 +57,7 @@ class CoordinationCoordinatorTab(QWidget):
         self.warning_label.hide()
         content_layout.addWidget(self.warning_label)
 
-        form = QFormLayout()
+        self.form = QFormLayout()
 
         self.source_group = QButtonGroup(self)
         self.source_participant = QRadioButton("Vybrat z účastníků")
@@ -67,11 +71,11 @@ class CoordinationCoordinatorTab(QWidget):
         source_layout.setContentsMargins(0, 0, 0, 0)
         source_layout.addWidget(self.source_participant)
         source_layout.addWidget(self.source_manual)
-        form.addRow("Způsob zadání:", source_host)
+        self.form.addRow("Způsob zadání:", source_host)
 
+        self.full_name = QLineEdit()
         self.employer_combo = QComboBox()
         self.participant_combo = QComboBox()
-        self.full_name = QLineEdit()
         self.employer_name = QLineEdit()
         self.role = QLineEdit()
         self.phone = QLineEdit()
@@ -79,15 +83,15 @@ class CoordinationCoordinatorTab(QWidget):
         self.note = QTextEdit()
         self.note.setMinimumHeight(80)
 
-        form.addRow("Pověřený zaměstnavatel:", self.employer_combo)
-        form.addRow("Pověřená osoba:", self.participant_combo)
-        form.addRow("Jméno *:", self.full_name)
-        form.addRow("Organizace:", self.employer_name)
-        form.addRow("Funkce:", self.role)
-        form.addRow("Telefon:", self.phone)
-        form.addRow("E-mail:", self.email)
-        form.addRow("Poznámka:", self.note)
-        content_layout.addLayout(form)
+        self.form.addRow("Jméno *:", self.full_name)
+        self.form.addRow("Pověřený zaměstnavatel:", self.employer_combo)
+        self.form.addRow("Pověřená osoba:", self.participant_combo)
+        self.form.addRow("Jiná organizace:", self.employer_name)
+        self.form.addRow("Funkce:", self.role)
+        self.form.addRow("Telefon:", self.phone)
+        self.form.addRow("E-mail:", self.email)
+        self.form.addRow("Poznámka:", self.note)
+        content_layout.addLayout(self.form)
 
         buttons = QHBoxLayout()
         self.save_btn = QPushButton("Uložit koordinátora")
@@ -132,16 +136,26 @@ class CoordinationCoordinatorTab(QWidget):
             else:
                 self.source_participant.setChecked(True)
 
-            self._reload_employers(
-                preferred_employer_id=(
-                    saved.employer_id if saved is not None else None
+            if self.source_participant.isChecked():
+                self._reload_employers_for_participant(
+                    preferred_employer_id=(
+                        saved.employer_id if saved is not None else None
+                    )
                 )
-            )
-            preferred_participant_id = (
-                saved.participant_id if saved is not None else None
-            )
-            self._reload_participants(preferred_participant_id=preferred_participant_id)
-            self._last_participant_id = preferred_participant_id
+                preferred_participant_id = (
+                    saved.participant_id if saved is not None else None
+                )
+                self._reload_participants(
+                    preferred_participant_id=preferred_participant_id
+                )
+                self._last_participant_id = preferred_participant_id
+            else:
+                self._reload_employers_for_manual(
+                    preferred_organization=(
+                        saved.employer_name if saved is not None else None
+                    )
+                )
+                self._last_participant_id = None
 
             if saved is not None:
                 self.full_name.setText(saved.full_name or "")
@@ -157,7 +171,7 @@ class CoordinationCoordinatorTab(QWidget):
                 self.phone.clear()
                 self.email.clear()
                 self.note.clear()
-            self._update_source_mode()
+            self._apply_source_mode_ui()
             self._update_warning(saved)
         finally:
             self._loading = False
@@ -190,10 +204,13 @@ class CoordinationCoordinatorTab(QWidget):
                     note=self.note.toPlainText().strip(),
                 )
             else:
+                employer_name = self._resolve_manual_employer_name()
+                if employer_name is None:
+                    return
                 coordination_coordinator_service.set_coordinator(
                     self.coordination_id,
                     full_name=self.full_name.text(),
-                    employer_name=self.employer_name.text(),
+                    employer_name=employer_name,
                     role=self.role.text(),
                     phone=self.phone.text(),
                     email=self.email.text(),
@@ -205,34 +222,104 @@ class CoordinationCoordinatorTab(QWidget):
         QMessageBox.information(self, TAB_COORDINATOR, "Koordinátor byl uložen.")
         self.refresh()
 
+    def _resolve_manual_employer_name(self) -> str | None:
+        """Vrátí název organizace ze snapshotu, nebo None při chybě validace."""
+        selection = self.employer_combo.currentData()
+        if selection == COORDINATOR_MANUAL_OTHER_ORGANIZATION:
+            employer_name = (self.employer_name.text() or "").strip()
+            if not employer_name:
+                QMessageBox.warning(
+                    self,
+                    TAB_COORDINATOR,
+                    "Zadejte název organizace.",
+                )
+                return None
+            return employer_name
+        if isinstance(selection, int):
+            employer = coordination_employer_service.get_by_id(selection)
+            if employer is None or not employer.active:
+                QMessageBox.warning(
+                    self,
+                    TAB_COORDINATOR,
+                    "Vyberte pověřeného zaměstnavatele.",
+                )
+                return None
+            return (employer.company_name or "").strip()
+        QMessageBox.warning(
+            self,
+            TAB_COORDINATOR,
+            "Vyberte pověřeného zaměstnavatele.",
+        )
+        return None
+
     def _update_source_mode(self) -> None:
+        if self._loading:
+            self._apply_source_mode_ui()
+            return
+        if self.source_participant.isChecked():
+            self._reload_employers_for_participant()
+            self._reload_participants()
+            self._last_participant_id = None
+            self._clear_identity_fields()
+        else:
+            self._reload_employers_for_manual()
+            self._last_participant_id = None
+        self._apply_source_mode_ui()
+        self._update_warning(None)
+
+    def _apply_source_mode_ui(self) -> None:
         from_participant = self.source_participant.isChecked()
-        self.employer_combo.setEnabled(from_participant)
+        self.employer_combo.setEnabled(True)
         self.participant_combo.setEnabled(from_participant)
-        for widget in (
-            self.full_name,
-            self.employer_name,
-            self.role,
-            self.phone,
-            self.email,
-        ):
+        self.form.setRowVisible(self.participant_combo, from_participant)
+
+        for widget in (self.full_name, self.role, self.phone, self.email):
             widget.setReadOnly(from_participant)
+
+        org_label = self.form.labelForField(self.employer_name)
+        if org_label is not None:
+            org_label.setText(
+                "Organizace:" if from_participant else "Jiná organizace:"
+            )
+
         if from_participant:
+            self.form.setRowVisible(self.employer_name, True)
+            self.employer_name.setEnabled(True)
+            self.employer_name.setReadOnly(True)
             self._apply_participant_snapshot(overwrite=False)
+        else:
+            self._sync_manual_organization_field()
 
     def _on_employer_changed(self) -> None:
         if self._loading:
             return
-        self._reload_participants()
-        self._last_participant_id = None
         if self.source_participant.isChecked():
+            self._reload_participants()
+            self._last_participant_id = None
             self._clear_identity_fields()
-        self._update_warning(None)
+            self._update_warning(None)
+        else:
+            self._sync_manual_organization_field(clear_other_text=True)
 
     def _on_participant_changed(self) -> None:
         if self._loading or not self.source_participant.isChecked():
             return
         self._apply_participant_snapshot(overwrite=True)
+
+    def _sync_manual_organization_field(self, *, clear_other_text: bool = False) -> None:
+        selection = self.employer_combo.currentData()
+        is_other = selection == COORDINATOR_MANUAL_OTHER_ORGANIZATION
+        self.form.setRowVisible(self.employer_name, is_other)
+        self.employer_name.setEnabled(is_other)
+        self.employer_name.setReadOnly(not is_other)
+        if is_other:
+            if clear_other_text:
+                self.employer_name.clear()
+            return
+        if isinstance(selection, int):
+            employer = coordination_employer_service.get_by_id(selection)
+            if employer is not None:
+                self.employer_name.setText(employer.company_name or "")
 
     def _apply_participant_snapshot(self, *, overwrite: bool) -> None:
         participant_id = self.participant_combo.currentData()
@@ -263,7 +350,11 @@ class CoordinationCoordinatorTab(QWidget):
         self.phone.clear()
         self.email.clear()
 
-    def _reload_employers(self, *, preferred_employer_id: int | None = None) -> None:
+    def _reload_employers_for_participant(
+        self,
+        *,
+        preferred_employer_id: int | None = None,
+    ) -> None:
         employers = coordination_employer_service.list_for_coordination(
             self.coordination_id,
             include_inactive=True,
@@ -282,6 +373,57 @@ class CoordinationCoordinatorTab(QWidget):
             index = self.employer_combo.findData(preferred_employer_id)
             if index >= 0:
                 self.employer_combo.setCurrentIndex(index)
+        self.employer_combo.blockSignals(False)
+
+    def _reload_employers_for_manual(
+        self,
+        *,
+        preferred_organization: str | None = None,
+    ) -> None:
+        employers = coordination_employer_service.list_for_coordination(
+            self.coordination_id,
+            include_inactive=False,
+        )
+        self.employer_combo.blockSignals(True)
+        self.employer_combo.clear()
+        for employer in employers:
+            label = f"{employer.abbreviation} – {employer.company_name}".strip(" –")
+            self.employer_combo.addItem(label, employer.id)
+        self.employer_combo.addItem(
+            COORDINATOR_MANUAL_OTHER_ORGANIZATION_LABEL,
+            COORDINATOR_MANUAL_OTHER_ORGANIZATION,
+        )
+
+        preferred = (preferred_organization or "").strip()
+        selected_index = -1
+        if preferred:
+            for index in range(self.employer_combo.count()):
+                data = self.employer_combo.itemData(index)
+                if not isinstance(data, int):
+                    continue
+                employer = next((item for item in employers if item.id == data), None)
+                if employer is None:
+                    continue
+                if (employer.company_name or "").strip() == preferred:
+                    selected_index = index
+                    break
+            if selected_index < 0:
+                selected_index = self.employer_combo.findData(
+                    COORDINATOR_MANUAL_OTHER_ORGANIZATION
+                )
+        else:
+            main = next((item for item in employers if item.is_main), None)
+            if main is not None:
+                selected_index = self.employer_combo.findData(main.id)
+            elif employers:
+                selected_index = 0
+            else:
+                selected_index = self.employer_combo.findData(
+                    COORDINATOR_MANUAL_OTHER_ORGANIZATION
+                )
+
+        if selected_index >= 0:
+            self.employer_combo.setCurrentIndex(selected_index)
         self.employer_combo.blockSignals(False)
 
     def _reload_participants(
