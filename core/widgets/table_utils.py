@@ -225,6 +225,27 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             header.setSectionResizeMode(column, QHeaderView.Fixed)
         header.setSectionResizeMode(COL_SUBJECT, QHeaderView.Stretch)
 
+    elif profile == "coordination_measures":
+        from moduly.koordinace_bozp.constants import (
+            MSR_COL_ACTIVE,
+            MSR_COL_CATEGORY,
+            MSR_COL_DESCRIPTION,
+            MSR_COL_TITLE,
+        )
+
+        # UX-COORD-4b: Text opatření je nejširší (Stretch), ostatní pevné šířky.
+        widths = {
+            MSR_COL_CATEGORY: 140,
+            MSR_COL_TITLE: 220,
+            MSR_COL_ACTIVE: 80,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        for column in (MSR_COL_CATEGORY, MSR_COL_TITLE, MSR_COL_ACTIVE):
+            header.setSectionResizeMode(column, QHeaderView.Fixed)
+        header.setSectionResizeMode(MSR_COL_DESCRIPTION, QHeaderView.Stretch)
+
     elif profile == "hazard_events":
         from moduly.rizeni_rizik.constants import (
             EVENT_COL_ACTIVE,

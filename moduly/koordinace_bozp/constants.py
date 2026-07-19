@@ -127,31 +127,56 @@ MEASURE_CATEGORY_LABELS = {
     MEASURE_CATEGORY_OTHER: "Ostatní",
 }
 
-# (kategorie, název) – volitelně vkládaná výchozí sada při založení koordinace.
+# (kategorie, krátký název, text opatření) – výchozí sada při založení koordinace.
 DEFAULT_COORDINATION_MEASURES = (
     (
         MEASURE_CATEGORY_COMMUNICATION,
         "Dodržovat pokyny koordinátora BOZP.",
+        (
+            "Všichni zúčastnění zaměstnavatelé a jejich zaměstnanci jsou povinni "
+            "dodržovat pokyny koordinátora BOZP."
+        ),
     ),
     (
         MEASURE_CATEGORY_WORKPLACE_HANDOVER,
         "Nezahajovat práce bez předání pracoviště.",
+        (
+            "Práce na společném pracovišti se zahajují až po předání pracoviště "
+            "odpovědnou osobou hlavního zaměstnavatele."
+        ),
     ),
     (
         MEASURE_CATEGORY_EMERGENCIES,
         "Každou mimořádnou událost ihned oznámit.",
+        (
+            "Každou mimořádnou událost, pracovní úraz nebo nebezpečnou situaci "
+            "je nutné neprodleně oznámit koordinátorovi BOZP a odpovědnému "
+            "zástupci hlavního zaměstnavatele."
+        ),
     ),
     (
         MEASURE_CATEGORY_PERSON_MOVEMENT,
         "Udržovat průjezdné únikové cesty.",
+        (
+            "Únikové cesty, komunikace a východy musí být trvale volné "
+            "a průjezdné; nesmí se na nich odkládat materiál ani technika."
+        ),
     ),
     (
         MEASURE_CATEGORY_WORK_ORGANIZATION,
         "Nepřemisťovat ochranná zařízení bez souhlasu.",
+        (
+            "Ochranná zařízení, zábrany a značení se nesmí přemisťovat ani "
+            "odstraňovat bez souhlasu odpovědné osoby hlavního zaměstnavatele."
+        ),
     ),
     (
         MEASURE_CATEGORY_PERSON_MOVEMENT,
         "Dodržovat zákaz vstupu do vyznačených prostor.",
+        (
+            "Do prostor se zákazem vstupu nebo s omezeným přístupem smí vstupovat "
+            "pouze osoby k tomu oprávněné a vybavené."
+        ),
     ),
 )
 
@@ -317,15 +342,22 @@ ACTIVITY_TABLE_HEADERS = [
 MSR_COL_ID = 0
 MSR_COL_CATEGORY = 1
 MSR_COL_TITLE = 2
-MSR_COL_ACTIVE = 3
-MSR_COLUMN_COUNT = 4
+MSR_COL_DESCRIPTION = 3
+MSR_COL_ACTIVE = 4
+MSR_COLUMN_COUNT = 5
 
 MEASURE_TABLE_HEADERS = [
     "ID",
     "Kategorie",
-    "Název",
+    "Krátký název",
+    "Text opatření",
     "Aktivní",
 ]
+
+MEASURE_EDITOR_HELP_TEXT = (
+    "Krátký název slouží pro přehled v tabulce.\n"
+    "Do pole Text opatření napište celý text určený do protokolu."
+)
 
 CTC_COL_ID = 0
 CTC_COL_TYPE = 1

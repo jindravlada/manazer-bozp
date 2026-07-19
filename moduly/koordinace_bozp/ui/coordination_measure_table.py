@@ -1,6 +1,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QTableWidget
 
+from core.widgets.info_tooltip import set_widget_tooltip
 from core.widgets.typed_table_sort import (
     create_typed_item,
     enable_typed_sorting,
@@ -13,6 +14,7 @@ from moduly.koordinace_bozp.constants import (
     MEASURE_TABLE_HEADERS,
     MSR_COL_ACTIVE,
     MSR_COL_CATEGORY,
+    MSR_COL_DESCRIPTION,
     MSR_COL_ID,
     MSR_COL_TITLE,
     MSR_COLUMN_COUNT,
@@ -32,6 +34,8 @@ class CoordinationMeasureTable(QTableWidget):
         self.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.setAlternatingRowColors(True)
+        self.setWordWrap(False)
+        self.setTextElideMode(Qt.TextElideMode.ElideRight)
         enable_typed_sorting(self)
 
     def load_measures(self, measures) -> None:
@@ -40,6 +44,7 @@ class CoordinationMeasureTable(QTableWidget):
             for row, item in enumerate(measures):
                 record_id = int(item.id)
                 category_label = coordination_measure_service.category_label(item.category)
+                description = item.description or ""
                 self.setItem(
                     row,
                     MSR_COL_ID,
@@ -67,6 +72,14 @@ class CoordinationMeasureTable(QTableWidget):
                         stable_id=record_id,
                     ),
                 )
+                description_item = create_typed_item(
+                    description,
+                    typed_text(description),
+                    stable_id=record_id,
+                )
+                if description.strip():
+                    set_widget_tooltip(description_item, description)
+                self.setItem(row, MSR_COL_DESCRIPTION, description_item)
                 active_item = create_typed_item(
                     "Ano" if item.active else "Ne",
                     typed_bool(bool(item.active)),

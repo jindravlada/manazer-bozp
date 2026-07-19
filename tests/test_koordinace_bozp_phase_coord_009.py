@@ -217,8 +217,16 @@ class KoordinaceBozpPhaseCoord009TestCase(unittest.TestCase):
         self.assertEqual(len(items), len(DEFAULT_COORDINATION_MEASURES))
         self.assertEqual(
             [item.title for item in items],
-            [title for _category, title in DEFAULT_COORDINATION_MEASURES],
+            [title for _category, title, _description in DEFAULT_COORDINATION_MEASURES],
         )
+        self.assertEqual(
+            [item.description for item in items],
+            [
+                description
+                for _category, _title, description in DEFAULT_COORDINATION_MEASURES
+            ],
+        )
+        self.assertTrue(all((item.description or "").strip() for item in items))
         self.assertEqual(
             [item.sort_order for item in items],
             list(range(1, len(items) + 1)),

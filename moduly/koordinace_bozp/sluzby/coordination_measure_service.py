@@ -119,13 +119,13 @@ class CoordinationMeasureService:
         if not coordination_id:
             raise CoordinationMeasureError("Koordinace je povinná.")
         created: list[CoordinationMeasure] = []
-        for category, title in DEFAULT_COORDINATION_MEASURES:
+        for category, title, description in DEFAULT_COORDINATION_MEASURES:
             created.append(
                 self.add(
                     coordination_id,
                     title=title,
                     category=category,
-                    description="",
+                    description=description,
                 )
             )
         return created
