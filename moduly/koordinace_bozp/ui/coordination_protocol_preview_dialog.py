@@ -2,14 +2,18 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QDialog,
+    QFileDialog,
     QGroupBox,
     QLabel,
+    QMessageBox,
+    QPushButton,
     QScrollArea,
     QVBoxLayout,
     QWidget,
 )
 
 from core.widgets.dialog_utils import (
+    add_work_dialog_footer,
     configure_resizable_form_dialog,
     create_close_box,
 )
@@ -26,6 +30,10 @@ from moduly.koordinace_bozp.sluzby.coordination_protocol_builder import (
     CoordinationProtocolBuilderError,
     ProtocolBuildResult,
     coordination_protocol_builder,
+)
+from moduly.koordinace_bozp.sluzby.coordination_protocol_odt_renderer import (
+    CoordinationProtocolOdtRendererError,
+    coordination_protocol_odt_renderer,
 )
 
 
@@ -44,6 +52,7 @@ class CoordinationProtocolPreviewDialog(QDialog):
     def __init__(self, parent=None, *, coordination_id: int):
         super().__init__(parent)
         self.coordination_id = coordination_id
+        self._build_result: ProtocolBuildResult | None = None
         self.setWindowTitle("Náhled koordinačního protokolu")
         configure_resizable_form_dialog(
             self,
@@ -70,10 +79,17 @@ class CoordinationProtocolPreviewDialog(QDialog):
         scroll.setWidget(self.body)
         layout.addWidget(scroll, 1)
 
+        self.export_btn = QPushButton("Export ODT")
+        self.export_btn.setEnabled(False)
+        self.export_btn.clicked.connect(self.export_odt)
         buttons = create_close_box(self)
         buttons.rejected.connect(self.reject)
         buttons.accepted.connect(self.accept)
-        layout.addWidget(buttons)
+        add_work_dialog_footer(
+            layout,
+            work_widgets=[self.export_btn],
+            buttons=buttons,
+        )
 
         self._load()
 
@@ -81,9 +97,47 @@ class CoordinationProtocolPreviewDialog(QDialog):
         try:
             result = coordination_protocol_builder.build(self.coordination_id)
         except CoordinationProtocolBuilderError as error:
+            self._build_result = None
+            self.export_btn.setEnabled(False)
             self.status_label.setText(str(error))
             return
+        self._build_result = result
+        self.export_btn.setEnabled(True)
         self._render(result)
+
+    def export_odt(self) -> None:
+        """Exportuje ODT z již sestavených dat náhledu (bez nového sestavení)."""
+        if self._build_result is None:
+            QMessageBox.warning(
+                self,
+                "Export ODT",
+                "Protokol není připraven k exportu.",
+            )
+            return
+        basics = (self._build_result.protocol_data or {}).get("basics") or {}
+        number = basics.get("coordination_number") or "protokol"
+        suggested = f"KoordinacniProtokol-{number}.odt"
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export ODT",
+            suggested,
+            "ODT (*.odt)",
+        )
+        if not path:
+            return
+        try:
+            exported = coordination_protocol_odt_renderer.render_from_result(
+                path,
+                self._build_result,
+            )
+        except CoordinationProtocolOdtRendererError as error:
+            QMessageBox.warning(self, "Export ODT", str(error))
+            return
+        QMessageBox.information(
+            self,
+            "Export ODT",
+            f"Soubor byl uložen:\n{exported}",
+        )
 
     def _render(self, result: ProtocolBuildResult) -> None:
         while self.body_layout.count():
