@@ -276,6 +276,119 @@ TAB_CONTACTS = "Důležité kontakty"
 TAB_RISK_SUBMISSIONS = "Předání rizik dodavatelů"
 TAB_PBP_ATTACHMENT = "Příloha PBP"
 
+# BUILDER-COORD-1 – pevné texty koordinačního protokolu (právní dokument).
+PROTOCOL_TITLE = "PROTOKOL A DOHODA"
+PROTOCOL_SUBTITLE = (
+    "Informování o rizicích a opatřeních k zajištění BOZP "
+    "pro koordinovaný postup při zajištění BOZP zaměstnanců "
+    "a dohoda ve smyslu § 101 odst. 3 zákoníku práce"
+)
+PROTOCOL_INTRO_EMPLOYERS = (
+    "Na základě §101 odst. 3 zákona č. 262/2006 Sb., zákoník práce "
+    "ve znění pozdějších předpisů proběhla koordinační schůzka k určení "
+    "zajištění BOZP zaměstnanců zúčastněných zaměstnavatelů, kterými jsou:"
+)
+PROTOCOL_SECTION_BASICS = "Základní údaje ke schůzce:"
+PROTOCOL_SECTION_PARTICIPANTS = "Účastníci koordinační schůzky:"
+PROTOCOL_SECTION_WORKPLACES = "Místa výkonu prací:"
+PROTOCOL_SECTION_ACTIVITIES = "Činnosti na pracovišti:"
+PROTOCOL_SECTION_CONCLUSIONS = (
+    "Závěry z koordinační schůzky zástupců zúčastněných zaměstnavatelů:"
+)
+PROTOCOL_CONCLUSION_1_TITLE = (
+    "Informování o záměru provádění prací a pohybu zaměstnanců / "
+    "techniky na pracovišti:"
+)
+PROTOCOL_CONCLUSION_2_TITLE = (
+    "Zástupci zúčastněných zaměstnavatelů se vzájemně informovali "
+    "o rizicích a přijatých opatřeních proti jejich působení, a to "
+    "v souvislosti se všemi činnostmi uvedenými v předchozím bodě č. 1.:"
+)
+PROTOCOL_CONCLUSION_3_OOPP_INTRO = (
+    "Osobní ochranné pracovní prostředky (dále též jen „OOPP“): "
+    "každý ze zúčastněných zaměstnavatelů vybaví své zaměstnance "
+    "potřebnými OOPP na své náklady. Zaměstnanci zúčastněných "
+    "zaměstnavatelů musí být vybaveni a musí používat tyto OOPP:"
+)
+PROTOCOL_CONCLUSION_4_COORDINATOR_INTRO = (
+    "Stanovení koordinátora BOZP na pracovišti a další ustanovení dohody:"
+)
+PROTOCOL_COORDINATOR_NOMINATION = (
+    "Zúčastnění zaměstnavatelé byli informováni, že pověřeným "
+    "zaměstnavatelem, který koordinuje provádění opatření k ochraně "
+    "bezpečnosti a zdraví zaměstnanců a postupy k jejich zajištění bude"
+)
+PROTOCOL_COORDINATOR_ALIAS = '(dříve i dále též jen „koordinátor BOZP“).'
+PROTOCOL_COORDINATOR_DUTIES = (
+    "Pověřený koordinátor BOZP má za povinnost koordinovat provádění "
+    "opatření k ochraně bezpečnosti a zdraví zaměstnanců a osob. "
+    "V případě potřeby stanovuje podmínky pro zajištění bezpečnosti "
+    "všech osob na pracovišti. K tomu je oprávněn udílet pokyny pro "
+    "všechny osoby na pracovišti a tyto jsou povinny pokyny dodržovat, "
+    "za tím účelem mu bude ze strany vedoucích zaměstnanců zúčastněných "
+    "zaměstnavatelů poskytnuta součinnost. Bezpečnost a ochrana zdraví "
+    "osob zaměstnanců musí být zajištěna v souladu s právními a "
+    "ostatními předpisy."
+)
+PROTOCOL_COORDINATOR_AGREEMENT_CHANGE = (
+    "Tato dohoda, uvedená v tomto odstavci, může být měněna pouze "
+    "písemnou dohodou všech zúčastněných zaměstnavatelů."
+)
+PROTOCOL_COORDINATOR_OBLIGATION = (
+    "Zaměstnanci zúčastněných stran jsou při práci povinni dodržovat "
+    "podmínky dle této dohody."
+)
+PROTOCOL_COORDINATOR_TRAINING = (
+    "Zástupci zaměstnavatelů na základě výše uvedeného zajistí řádné "
+    "a prokazatelné proškolení svých zaměstnanců."
+)
+PROTOCOL_COORDINATOR_TRAINING_CHECK = (
+    "Zaměstnanci uvedení v bodě č. 5 za {abbreviation} mohou vyžadovat "
+    "doložení o provedeném školení zaměstnanců zaměstnavatelů. "
+    "Zaměstnanci, kteří nebyli řádně a prokazatelně proškoleni nesmí "
+    "provádět výše uvedené činnosti a musí neprodleně opustit pracoviště."
+)
+PROTOCOL_CONCLUSION_5_TITLE = (
+    "Organizační zajištění z pohledu BOZP – Kontakty na důležité osoby:"
+)
+PROTOCOL_CONCLUSION_6_TITLE = "Mimořádné události:"
+PROTOCOL_CONCLUSION_7_TITLE = "Společná pravidla BOZP:"
+PROTOCOL_CONCLUSION_8_TITLE = "Závěrečná ustanovení:"
+PROTOCOL_FINAL_PROVISIONS = (
+    "Tento protokol byl vyhotoven ve dvou (podle počtu zúčastněných stran) "
+    "provedeních, pro každého ze zúčastněných zaměstnavatelů po jednom "
+    "vyhotovení. V případě, že by se na pracovišti uvedeném v bodě č. 1 "
+    "těchto závěrů z koordinační schůzky zástupců zúčastněných "
+    "zaměstnavatelů měly vyskytovat další osoby nad rámec zaměstnanců "
+    "zúčastněných zaměstnavatelů (např. další dodavatel některého ze "
+    "zúčastněných zaměstnavatelů, další akce realizovaná jiným "
+    "dodavatelem apod.), je povinností každého zúčastněného "
+    "zaměstnavatele, který je s touto skutečností srozuměn, informovat "
+    "o této skutečnosti koordinátora BOZP, který informuje ostatní "
+    "zúčastněné zaměstnavatele a dále budou všichni zúčastnění "
+    "zaměstnavatelé obratem postupovat dle ustanovení § 101 odst. 3 "
+    "zakoníku práce (dle pokynů koordinátora BOZP)."
+)
+PROTOCOL_AGREEMENT_CLOSING = (
+    "S protokolem souhlasí a současně uzavírají za zúčastněné "
+    "zaměstnavatele v rámci tohoto protokolu uvedenou dohodu "
+    "ve smyslu § 101 odst. 3 zákoníku práce:"
+)
+PROTOCOL_APPENDIX_OVERVIEW = "Přehled příloh"
+PROTOCOL_APPENDIX_OVERVIEW_INTRO = (
+    "Dokument odkazuje na následující přílohy:"
+)
+PROTOCOL_APPENDIX_A = "Příloha A – Pravidla bezpečné práce (PBP)"
+PROTOCOL_APPENDIX_B = "Příloha B – Přehled předaných rizik zaměstnavatelů"
+PROTOCOL_APPENDIX_C = "Příloha C+ – Další přiložené dokumenty"
+PROTOCOL_APPENDIX_C_INTRO = (
+    "Samotné soubory se k tomuto protokolu nepřipojují; níže je pouze seznam."
+)
+PROTOCOL_PBP_TITLE_TEMPLATE = (
+    "Pravidla bezpečné práce a informace o rizicích a opatřeních "
+    "proti jejich působení za {abbreviation}"
+)
+
 # UX-COORD-4d – klíče QSettings pro šířky sloupců.
 COORD_HEADER_LIST = "coordination/list/header"
 COORD_HEADER_EMPLOYERS = "coordination/employers/header"

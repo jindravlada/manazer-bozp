@@ -42,6 +42,8 @@ with patch.object(Path, "home", return_value=_TMP):
         CONTACT_TYPE_SHIFT_SUPERVISOR,
         CONTACT_TYPE_TECHNICAL,
         CONTACT_TYPE_WORK_START_END,
+        PROTOCOL_CONCLUSION_5_TITLE,
+        PROTOCOL_SECTION_CONCLUSIONS,
         TAB_CONTACTS,
     )
     from moduly.koordinace_bozp.modely.bozp_coordination import BozpCoordination
@@ -213,8 +215,9 @@ class UxCoord11ImportantContactsTestCase(unittest.TestCase):
         dialog.close()
 
     def test_output_title_and_empty_groups_omitted(self) -> None:
-        self.assertIn("Důležité kontakty", PROTOCOL_ODT_CHAPTER_TITLES)
-        self.assertNotIn("Kontakty", PROTOCOL_ODT_CHAPTER_TITLES)
+        self.assertIn(PROTOCOL_SECTION_CONCLUSIONS, PROTOCOL_ODT_CHAPTER_TITLES)
+        self.assertNotIn("Důležité kontakty", PROTOCOL_ODT_CHAPTER_TITLES)
+        self.assertNotIn("Kontakty a mimořádné události", PROTOCOL_ODT_CHAPTER_TITLES)
 
         coordination = bozp_coordination_service.create_coordination(
             subject="UX-COORD-11 output",
@@ -252,7 +255,7 @@ class UxCoord11ImportantContactsTestCase(unittest.TestCase):
         target = _TMP / "contacts.odt"
         coordination_protocol_odt_renderer.render_from_result(target, result)
         content = _odt_content(target)
-        self.assertIn("Důležité kontakty", content)
+        self.assertIn(PROTOCOL_CONCLUSION_5_TITLE, content)
         self.assertIn(CONTACT_TYPE_LABELS[CONTACT_TYPE_TECHNICAL], content)
         self.assertIn("Technik energií", content)
         self.assertIn(CONTACT_TYPE_LABELS[CONTACT_TYPE_SHIFT_SUPERVISOR], content)
@@ -268,14 +271,13 @@ class UxCoord11ImportantContactsTestCase(unittest.TestCase):
                 None,
                 coordination_id=coordination.id,
             )
-        titles = [
-            group.title()
-            for group in preview.findChildren(
-                __import__("PySide6.QtWidgets", fromlist=["QGroupBox"]).QGroupBox
-            )
-        ]
-        self.assertIn("Důležité kontakty", titles)
-        self.assertNotIn("Kontakty a mimořádné události", titles)
+        from PySide6.QtWidgets import QLabel
+
+        label_texts = [label.text() for label in preview.findChildren(QLabel)]
+        joined = "\n".join(label_texts)
+        self.assertIn(f"5. {PROTOCOL_CONCLUSION_5_TITLE}", joined)
+        self.assertIn("Technik energií", joined)
+        self.assertNotIn("Kontakty a mimořádné události", joined)
         preview.close()
 
 

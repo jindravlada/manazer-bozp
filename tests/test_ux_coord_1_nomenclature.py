@@ -49,6 +49,9 @@ with patch.object(Path, "home", return_value=_TMP):
         BozpCoordinationError,
         bozp_coordination_service,
     )
+    from moduly.koordinace_bozp.sluzby.coordination_protocol_document import (
+        build_protocol_document,
+    )
     from moduly.koordinace_bozp.sluzby.coordination_protocol_odt_renderer import (
         coordination_protocol_odt_renderer,
     )
@@ -154,27 +157,29 @@ class UxCoord1NomenclatureTestCase(unittest.TestCase):
 
     def test_export_uses_new_action_name_label(self) -> None:
         target = _TMP / "ux-coord-1-export.odt"
+        protocol_data = {
+            "basics": {
+                "coordination_number": "K-1",
+                "subject": "Akce ze dat",
+                "meeting_date": "2026-07-19",
+                "place": "Praha",
+            },
+            "employers": [],
+            "participants_by_employer": [],
+            "coordinator": None,
+            "workplaces": [],
+            "activities_by_employer": [],
+            "measures_by_category": [],
+            "contacts": [],
+            "emergency_procedures": {},
+            "risk_handovers": [],
+            "pbp_snapshot": None,
+            "attachments_by_group": [],
+        }
+        protocol_data["document"] = build_protocol_document(protocol_data)
         coordination_protocol_odt_renderer.render(
             target,
-            protocol_data={
-                "basics": {
-                    "coordination_number": "K-1",
-                    "subject": "Akce ze dat",
-                    "meeting_date": "2026-07-19",
-                    "place": "Praha",
-                },
-                "employers": [],
-                "participants_by_employer": [],
-                "coordinator": None,
-                "workplaces": [],
-                "activities_by_employer": [],
-                "measures_by_category": [],
-                "contacts": [],
-                "emergency_procedures": {},
-                "risk_handovers": [],
-                "pbp_snapshot": None,
-                "attachments_by_group": [],
-            },
+            protocol_data=protocol_data,
             warnings=[],
             summary={"warnings_total": 0},
         )

@@ -306,12 +306,10 @@ class UxCoord6bLifecycleUiTestCase(unittest.TestCase):
         preview_ready.close()
 
         result = coordination_protocol_builder.build(ready.id)
-        lines = coordination_protocol_odt_renderer._build_document_lines(
-            dict(result.protocol_data),
-            warnings=[item.to_dict() for item in result.warnings],
-            summary=result.summary.to_dict(),
+        lines = coordination_protocol_odt_renderer.plain_lines_from_protocol_data(
+            result.protocol_data
         )
-        self.assertIn(PROTOCOL_VERSION_MARK_READY, lines)
+        self.assertNotIn(PROTOCOL_VERSION_MARK_READY, lines)
 
         issued = coordination_lifecycle_service.transition(
             ready.id,

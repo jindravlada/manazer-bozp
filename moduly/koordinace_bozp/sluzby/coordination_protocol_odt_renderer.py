@@ -1,34 +1,45 @@
-"""Vykreslení koordinačního protokolu do ODT (COORD-011b).
+"""Vykreslení koordinačního protokolu do ODT (BUILDER-COORD-1).
 
-Renderer nepřistupuje k databázi, nepočítá data, nevytváří varování ani PBP.
-Vstupem jsou již připravená ``protocol_data``, ``warnings`` a ``summary``.
+Renderer nepřistupuje k databázi ani neskládá osnovu dokumentu.
+Vykresluje výhradně ``protocol_data["document"]["blocks"]``.
 """
 
 from __future__ import annotations
 
 import zipfile
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping
 
 from core.export.odt_engine import _sync_written_file
 from moduly.koordinace_bozp.constants import (
-    ATTACHMENT_TYPE_CONTRACTOR_RISKS,
-    ATTACHMENT_TYPE_MAIN_EMPLOYER_PBP,
-    ATTACHMENT_TYPE_OTHER,
-    PROTOCOL_WARNING_SEVERITY_CRITICAL,
-    PROTOCOL_WARNING_SEVERITY_INFO,
-    PROTOCOL_WARNING_SEVERITY_WARNING,
-)
-from moduly.koordinace_bozp.sluzby.coordination_lifecycle_service import (
-    protocol_version_mark,
+    PROTOCOL_APPENDIX_A,
+    PROTOCOL_APPENDIX_B,
+    PROTOCOL_APPENDIX_C,
+    PROTOCOL_APPENDIX_OVERVIEW,
+    PROTOCOL_SECTION_ACTIVITIES,
+    PROTOCOL_SECTION_BASICS,
+    PROTOCOL_SECTION_CONCLUSIONS,
+    PROTOCOL_SECTION_PARTICIPANTS,
+    PROTOCOL_SECTION_WORKPLACES,
+    PROTOCOL_TITLE,
 )
 from moduly.koordinace_bozp.sluzby.coordination_protocol_builder import (
     ProtocolBuildResult,
-    ProtocolSummary,
-    ProtocolWarning,
-    build_coordination_agreement_parts,
-    flatten_protocol_measure_bullets,
-    format_contacts_section_lines,
+)
+from moduly.koordinace_bozp.sluzby.coordination_protocol_document import (
+    BLOCK_KIND_BLANK,
+    BLOCK_KIND_BULLET,
+    BLOCK_KIND_HEADING,
+    BLOCK_KIND_NUMBERED_HEADING,
+    BLOCK_KIND_PARAGRAPH,
+    BLOCK_KIND_SIGNATURE_LINE,
+    BLOCK_KIND_SUBTITLE,
+    BLOCK_KIND_TITLE,
+    BLOCK_STYLE_BULLET,
+    BLOCK_STYLE_HEADING,
+    BLOCK_STYLE_TITLE,
+    document_blocks_from_dict,
+    render_blocks_to_plain_lines,
 )
 
 
@@ -36,97 +47,41 @@ class CoordinationProtocolOdtRendererError(ValueError):
     pass
 
 
-# Pořadí kapitol (bez volitelné „Upozornění“ a závěrečného „Souhrn“).
+# Hlavní nadpisy dokumentu – pro testy pořadí sekcí.
 PROTOCOL_ODT_CHAPTER_TITLES = (
-    "Titulní strana",
-    "Základní údaje koordinace",
-    "Zúčastnění zaměstnavatelé",
-    "Účastníci",
-    "Koordinátor BOZP",
-    "Místa výkonu práce",
-    "Činnosti na pracovišti",
-    "Dohoda o koordinaci BOZP",
-    "Společná pravidla BOZP",
-    "Důležité kontakty",
-    "Postupy při mimořádných událostech",
-    "Informace o předání rizik",
-    "Přehled příloh",
-    "Příloha A – Pravidla bezpečné práce (PBP)",
-    "Příloha B – Přehled předaných rizik zaměstnavatelů",
-    "Příloha C+ – Další přiložené dokumenty",
+    PROTOCOL_TITLE,
+    PROTOCOL_SECTION_BASICS,
+    PROTOCOL_SECTION_PARTICIPANTS,
+    PROTOCOL_SECTION_WORKPLACES,
+    PROTOCOL_SECTION_ACTIVITIES,
+    PROTOCOL_SECTION_CONCLUSIONS,
+    PROTOCOL_APPENDIX_OVERVIEW,
+    PROTOCOL_APPENDIX_A,
+    PROTOCOL_APPENDIX_B,
+    PROTOCOL_APPENDIX_C,
 )
 
 
-def _format_date(value: str | None) -> str:
-    if not value:
-        return "—"
-    parts = str(value).split("-")
-    if len(parts) == 3:
-        return f"{parts[2]}.{parts[1]}.{parts[0]}"
-    return str(value)
-
-
-def _as_warning_dicts(warnings: Sequence[Any] | None) -> list[dict]:
-    if not warnings:
-        return []
-    result = []
-    for item in warnings:
-        if isinstance(item, ProtocolWarning):
-            result.append(item.to_dict())
-        elif isinstance(item, Mapping):
-            result.append(dict(item))
-        else:
-            result.append(
-                {
-                    "code": getattr(item, "code", ""),
-                    "severity": getattr(item, "severity", ""),
-                    "message": getattr(item, "message", str(item)),
-                }
-            )
-    return result
-
-
-def _as_summary_dict(summary: Any | None) -> dict:
-    if summary is None:
-        return {}
-    if isinstance(summary, ProtocolSummary):
-        return summary.to_dict()
-    if isinstance(summary, Mapping):
-        data = dict(summary)
-        if "warnings_total" not in data:
-            data["warnings_total"] = (
-                int(data.get("warnings_info") or 0)
-                + int(data.get("warnings_warning") or 0)
-                + int(data.get("warnings_critical") or 0)
-            )
-        return data
-    return {}
-
-
 class CoordinationProtocolOdtRenderer:
-    """Vykreslí ODT výhradně z připravených dat protokolu."""
-
-    DOCUMENT_TITLE = "Koordinační protokol BOZP"
+    """Vykreslí ODT z připravených bloků protokolu."""
 
     def render(
         self,
         output_path: str | Path,
         *,
         protocol_data: Mapping[str, Any],
-        warnings: Sequence[Any] | None = None,
-        summary: Any | None = None,
+        warnings: Any = None,
+        summary: Any = None,
     ) -> Path:
+        del warnings, summary
         if protocol_data is None:
             raise CoordinationProtocolOdtRendererError("protocol_data je povinné.")
-        data = dict(protocol_data)
-        warning_rows = _as_warning_dicts(warnings)
-        summary_data = _as_summary_dict(summary)
-        lines = self._build_document_lines(
-            data,
-            warnings=warning_rows,
-            summary=summary_data,
-        )
-        return self._write_odt(Path(output_path), lines=lines)
+        blocks = document_blocks_from_dict(protocol_data.get("document"))
+        if not blocks:
+            raise CoordinationProtocolOdtRendererError(
+                "protocol_data neobsahuje dokument protokolu."
+            )
+        return self._write_odt(Path(output_path), blocks=blocks)
 
     def render_from_result(
         self,
@@ -134,12 +89,7 @@ class CoordinationProtocolOdtRenderer:
         result: ProtocolBuildResult | Mapping[str, Any],
     ) -> Path:
         if isinstance(result, ProtocolBuildResult):
-            return self.render(
-                output_path,
-                protocol_data=result.protocol_data,
-                warnings=result.warnings,
-                summary=result.summary,
-            )
+            return self.render(output_path, protocol_data=result.protocol_data)
         if not isinstance(result, Mapping):
             raise CoordinationProtocolOdtRendererError(
                 "Výsledek sestavení protokolu má neplatný tvar."
@@ -147,371 +97,68 @@ class CoordinationProtocolOdtRenderer:
         return self.render(
             output_path,
             protocol_data=result.get("protocol_data") or {},
-            warnings=result.get("warnings") or [],
-            summary=result.get("summary"),
         )
 
-    def _build_document_lines(
+    def render_blocks(
         self,
-        data: dict,
-        *,
-        warnings: list[dict],
-        summary: dict,
-    ) -> list[str]:
-        basics = data.get("basics") or {}
-        lines: list[str] = []
+        output_path: str | Path,
+        blocks: list,
+    ) -> Path:
+        return self._write_odt(Path(output_path), blocks=document_blocks_from_dict({"blocks": blocks}))
 
-        # Volitelná kapitola Upozornění na začátku dokumentu
-        if warnings:
-            lines.append("Upozornění")
-            lines.append("")
-            for item in warnings:
-                severity = item.get("severity") or ""
-                prefix = {
-                    PROTOCOL_WARNING_SEVERITY_CRITICAL: "[kritické]",
-                    PROTOCOL_WARNING_SEVERITY_WARNING: "[varování]",
-                    PROTOCOL_WARNING_SEVERITY_INFO: "[info]",
-                }.get(severity, "")
-                message = (item.get("message") or "").strip() or "—"
-                lines.append(f"{prefix} {message}".strip())
-            lines.append("")
+    def _style_for_block(self, block) -> str:
+        if block.kind == BLOCK_KIND_TITLE:
+            return "ProtocolTitle"
+        if block.kind in (BLOCK_KIND_HEADING, BLOCK_KIND_NUMBERED_HEADING):
+            return "ProtocolHeading"
+        if block.kind == BLOCK_KIND_SUBTITLE:
+            return "ProtocolSubtitle"
+        if block.kind == BLOCK_KIND_BULLET:
+            return "ProtocolBullet"
+        if block.style == BLOCK_STYLE_TITLE:
+            return "ProtocolTitle"
+        if block.style == BLOCK_STYLE_HEADING:
+            return "ProtocolHeading"
+        if block.style == BLOCK_STYLE_BULLET:
+            return "ProtocolBullet"
+        return "ProtocolBody"
 
-        # 1. Titulní strana
-        version_mark = protocol_version_mark(basics.get("status"))
-        title_lines = [
-            "Titulní strana",
-            "",
-            self.DOCUMENT_TITLE,
-            "",
-        ]
-        if version_mark:
-            title_lines.extend([version_mark, ""])
-        title_lines.extend(
-            [
-                f"Číslo: {basics.get('coordination_number') or '—'}",
-                f"Název akce: {basics.get('subject') or '—'}",
-                f"Datum schůzky: {_format_date(basics.get('meeting_date'))}",
-                f"Místo: {basics.get('place') or '—'}",
-                "",
-            ]
-        )
-        lines.extend(title_lines)
+    def _text_for_block(self, block) -> str:
+        text = (block.text or "").strip()
+        if block.kind == BLOCK_KIND_NUMBERED_HEADING:
+            return f"{block.level}. {text}" if text else f"{block.level}."
+        if block.kind == BLOCK_KIND_BULLET:
+            return f"• {text}" if text else "•"
+        return text
 
-        # 2. Základní údaje
-        lines.extend(
-            [
-                "Základní údaje koordinace",
-                "",
-                f"Číslo: {basics.get('coordination_number') or '—'}",
-                f"Datum schůzky: {_format_date(basics.get('meeting_date'))}",
-                f"Místo: {basics.get('place') or '—'}",
-                f"Název akce: {basics.get('subject') or '—'}",
-                f"Stav: {basics.get('status_label') or basics.get('status') or '—'}",
-                (
-                    f"Platnost: {_format_date(basics.get('valid_from'))}"
-                    f" – {_format_date(basics.get('valid_to'))}"
-                ),
-                f"Poznámka: {basics.get('note') or '—'}",
-                "",
-            ]
-        )
-
-        # 3. Zaměstnavatelé
-        lines.append("Zúčastnění zaměstnavatelé")
-        lines.append("")
-        employers = data.get("employers") or []
-        if employers:
-            for employer in employers:
-                role = "hlavní" if employer.get("is_main") else "zúčastněný"
-                ico = employer.get("ico") or ""
-                ico_part = f", IČO {ico}" if ico else ""
-                lines.append(
-                    f"• {employer.get('display_name') or '—'} ({role}{ico_part})"
-                )
-        else:
-            lines.append("—")
-        lines.append("")
-
-        # 4. Účastníci
-        lines.append("Účastníci")
-        lines.append("")
-        participants_groups = data.get("participants_by_employer") or []
-        has_participants = False
-        for group in participants_groups:
-            employer = group.get("employer") or {}
-            participants = group.get("participants") or []
-            if not participants:
+    def _blocks_to_paragraphs(self, blocks) -> list[tuple[str, str]]:
+        paragraphs: list[tuple[str, str]] = []
+        for block in blocks:
+            if block.kind == BLOCK_KIND_BLANK:
+                paragraphs.append(("ProtocolBody", ""))
                 continue
-            has_participants = True
-            lines.append(f"{employer.get('display_name') or '—'}:")
-            for participant in participants:
-                detail = participant.get("full_name") or "—"
-                if participant.get("role"):
-                    detail = f"{detail} – {participant['role']}"
-                extras = []
-                if participant.get("phone"):
-                    extras.append(participant["phone"])
-                if participant.get("email"):
-                    extras.append(participant["email"])
-                if extras:
-                    detail = f"{detail} ({', '.join(extras)})"
-                lines.append(f"  • {detail}")
-        if not has_participants:
-            lines.append("—")
-        lines.append("")
+            paragraphs.append(
+                (self._style_for_block(block), self._text_for_block(block))
+            )
+        return paragraphs
 
-        # 5. Koordinátor
-        lines.append("Koordinátor BOZP")
-        lines.append("")
-        coordinator = data.get("coordinator")
-        if not coordinator:
-            lines.append("Koordinátor není určen.")
-        else:
-            lines.append(f"Jméno: {coordinator.get('full_name') or '—'}")
-            if coordinator.get("employer_name"):
-                lines.append(f"Organizace: {coordinator['employer_name']}")
-            if coordinator.get("role"):
-                lines.append(f"Funkce: {coordinator['role']}")
-            if coordinator.get("phone"):
-                lines.append(f"Telefon: {coordinator['phone']}")
-            if coordinator.get("email"):
-                lines.append(f"E-mail: {coordinator['email']}")
-            note = (coordinator.get("note") or "").strip()
-            if note:
-                lines.append("")
-                lines.append("Další informace")
-                lines.append(note)
-        lines.append("")
-
-        # 6. Místa
-        lines.append("Místa výkonu práce")
-        lines.append("")
-        workplaces = data.get("workplaces") or []
-        if workplaces:
-            for item in workplaces:
-                line = f"• {item.get('label') or '—'}"
-                if item.get("note"):
-                    line = f"{line} – {item['note']}"
-                lines.append(line)
-        else:
-            lines.append("—")
-        lines.append("")
-
-        # 7. Činnosti
-        lines.append("Činnosti na pracovišti")
-        lines.append("")
-        activity_groups = data.get("activities_by_employer") or []
-        has_activities = False
-        for group in activity_groups:
-            employer = group.get("employer") or {}
-            activities = group.get("activities") or []
-            lines.append(f"{employer.get('display_name') or '—'}:")
-            if not activities:
-                lines.append("  — bez aktivní činnosti")
-                continue
-            has_activities = True
-            for activity in activities:
-                place = activity.get("workplace_label") or ""
-                suffix = f" ({place})" if place else ""
-                lines.append(
-                    f"  • {activity.get('activity_name') or '—'}{suffix}"
-                )
-                if activity.get("description"):
-                    lines.append(f"    {activity['description']}")
-        if not activity_groups and not has_activities:
-            lines.append("—")
-        lines.append("")
-
-        # 8. Dohoda o koordinaci BOZP (UX-COORD-9a)
-        agreement_parts = build_coordination_agreement_parts(data)
-        if agreement_parts:
-            lines.append("Dohoda o koordinaci BOZP")
-            lines.append("")
-            for part in agreement_parts:
-                lines.append(part["title"])
-                lines.append("")
-                lines.extend(part["lines"])
-                lines.append("")
-
-        # 9. Společná pravidla BOZP
-        measure_lines = flatten_protocol_measure_bullets(
-            data.get("measures_by_category") or []
-        )
-        if measure_lines:
-            lines.append("Společná pravidla BOZP")
-            lines.append("")
-            lines.extend(measure_lines)
-            lines.append("")
-
-        # 10. Důležité kontakty
-        lines.append("Důležité kontakty")
-        lines.append("")
-        contact_lines = format_contacts_section_lines(
-            data.get("contacts_by_type"),
-            data.get("contacts"),
-        )
-        if contact_lines:
-            lines.extend(contact_lines)
-        else:
-            lines.append("—")
-        lines.append("")
-
-        # 11. Postupy
-        procedures = data.get("emergency_procedures") or {}
-        lines.extend(
-            [
-                "Postupy při mimořádných událostech",
-                "",
-                f"Mimořádná událost: {procedures.get('emergency_reporting') or '—'}",
-                f"Pracovní úraz: {procedures.get('accident_reporting') or '—'}",
-                f"Požár: {procedures.get('fire_reporting') or '—'}",
-                f"Evakuace: {procedures.get('evacuation_instructions') or '—'}",
-                "",
-            ]
-        )
-
-        # 12. Předání rizik – pouze konečný stav (bez interních úkolů).
-        lines.append("Informace o předání rizik")
-        lines.append("")
-        risk_rows = data.get("risk_handovers") or []
-        if risk_rows:
-            for row in risk_rows:
-                employer = row.get("employer") or {}
-                status = row.get("handover_status_label") or row.get("handover_status") or "—"
-                lines.append(f"• {employer.get('display_name') or '—'}: {status}")
-        else:
-            lines.append("—")
-        lines.append("")
-
-        # 13. Přehled příloh
-        lines.append("Přehled příloh")
-        lines.append("")
-        lines.append("Dokument odkazuje na následující přílohy:")
-        lines.append("• A – Pravidla bezpečné práce (PBP)")
-        lines.append("• B – Přehled předaných rizik zaměstnavatelů")
-        lines.append("• C+ – Další přiložené dokumenty (pouze seznam)")
-        lines.append("")
-
-        # Příloha A
-        lines.append("Příloha A – Pravidla bezpečné práce (PBP)")
-        lines.append("")
-        pbp = data.get("pbp_snapshot")
-        if pbp:
-            lines.append(f"Název: {pbp.get('title') or 'Pravidla bezpečné práce'}")
-            lines.append(f"Revize: {pbp.get('revision_number') or '—'}")
-            lines.append(f"Počet pravidel: {pbp.get('rules_count') or 0}")
-            lines.append(f"Soubor: {pbp.get('stored_filename') or '—'}")
-            if pbp.get("created_at"):
-                lines.append(f"Vytvořeno: {pbp['created_at']}")
-            if pbp.get("created_by"):
-                lines.append(f"Vytvořil: {pbp['created_by']}")
-        else:
-            lines.append("Příloha PBP (snapshot) není k dispozici.")
-        lines.append("")
-
-        # Příloha B
-        lines.append("Příloha B – Přehled předaných rizik zaměstnavatelů")
-        lines.append("")
-        if risk_rows:
-            for row in risk_rows:
-                employer = row.get("employer") or {}
-                status = row.get("handover_status_label") or row.get("handover_status") or "—"
-                lines.append(f"• {employer.get('display_name') or '—'}: {status}")
-        else:
-            lines.append("—")
-        contractor_files = self._attachments_of_type(
-            data.get("attachments_by_group") or [],
-            ATTACHMENT_TYPE_CONTRACTOR_RISKS,
-        )
-        if contractor_files:
-            lines.append("")
-            lines.append("Soubory (seznam):")
-            for attachment in contractor_files:
-                name = (
-                    attachment.get("original_filename")
-                    or attachment.get("description")
-                    or "—"
-                )
-                lines.append(f"  • {name}")
-        lines.append("")
-
-        # Příloha C+
-        lines.append("Příloha C+ – Další přiložené dokumenty")
-        lines.append("")
-        lines.append(
-            "Samotné soubory se k tomuto protokolu nepřipojují; níže je pouze seznam."
-        )
-        other_files = self._attachments_of_type(
-            data.get("attachments_by_group") or [],
-            ATTACHMENT_TYPE_OTHER,
-        )
-        # Explicitní „other“ + případné neklasifikované mimo A/B
-        extra = []
-        for group in data.get("attachments_by_group") or []:
-            type_id = group.get("attachment_type")
-            if type_id in (
-                ATTACHMENT_TYPE_MAIN_EMPLOYER_PBP,
-                ATTACHMENT_TYPE_CONTRACTOR_RISKS,
-            ):
-                continue
-            for attachment in group.get("attachments") or []:
-                if attachment not in other_files and attachment not in extra:
-                    extra.append(attachment)
-        listed = other_files or extra
-        if listed:
-            for attachment in listed:
-                name = (
-                    attachment.get("original_filename")
-                    or attachment.get("description")
-                    or "—"
-                )
-                lines.append(f"• {name}")
-        else:
-            lines.append("—")
-        lines.append("")
-
-        # Souhrn
-        lines.extend(
-            [
-                "Souhrn",
-                "",
-                f"Počet zaměstnavatelů: {summary.get('active_employers', 0)}",
-                f"Počet účastníků: {summary.get('active_participants', 0)}",
-                f"Počet míst: {summary.get('active_workplaces', 0)}",
-                f"Počet činností: {summary.get('active_activities', 0)}",
-                (
-                    "Počet organizačních opatření: "
-                    f"{summary.get('active_measures', 0)}"
-                ),
-                f"Počet kontaktů: {summary.get('active_contacts', 0)}",
-                f"Počet pravidel PBP: {summary.get('pbp_rules_count', 0)}",
-                f"Počet příloh: {summary.get('active_attachments', 0)}",
-                f"Počet upozornění: {summary.get('warnings_total', 0)}",
-            ]
-        )
-        return lines
-
-    @staticmethod
-    def _attachments_of_type(groups: list, attachment_type: str) -> list[dict]:
-        for group in groups:
-            if group.get("attachment_type") == attachment_type:
-                return list(group.get("attachments") or [])
-        return []
-
-    def _write_odt(self, output_path: Path, *, lines: list[str]) -> Path:
+    def _write_odt(self, output_path: Path, *, blocks) -> Path:
+        paragraphs = self._blocks_to_paragraphs(blocks)
         paragraphs_xml = "".join(
             (
-                f'<text:p text:style-name="Standard">{self._escape_xml(line)}</text:p>'
-                if line
-                else '<text:p text:style-name="Standard"/>'
+                f'<text:p text:style-name="{style}">{self._escape_xml(text)}</text:p>'
+                if text
+                else f'<text:p text:style-name="{style}"/>'
             )
-            for line in lines
+            for style, text in paragraphs
         )
         content_xml = (
             '<?xml version="1.0" encoding="UTF-8"?>'
             '<office:document-content '
             'xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" '
+            'xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" '
             'xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" '
+            'xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" '
             'office:version="1.2">'
             "<office:body><office:text>"
             f"{paragraphs_xml}"
@@ -521,8 +168,32 @@ class CoordinationProtocolOdtRenderer:
             '<?xml version="1.0" encoding="UTF-8"?>'
             '<office:document-styles '
             'xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" '
+            'xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" '
+            'xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" '
+            'xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" '
             'office:version="1.2">'
-            "<office:styles/>"
+            "<office:styles>"
+            '<style:style style:name="ProtocolTitle" style:family="paragraph">'
+            '<style:text-properties fo:font-size="16pt" fo:font-weight="bold"/>'
+            '<style:paragraph-properties fo:text-align="center" fo:margin-bottom="0.35cm"/>'
+            "</style:style>"
+            '<style:style style:name="ProtocolSubtitle" style:family="paragraph">'
+            '<style:text-properties fo:font-size="12pt" fo:font-weight="bold"/>'
+            '<style:paragraph-properties fo:text-align="center" fo:margin-bottom="0.35cm"/>'
+            "</style:style>"
+            '<style:style style:name="ProtocolHeading" style:family="paragraph">'
+            '<style:text-properties fo:font-size="12pt" fo:font-weight="bold"/>'
+            '<style:paragraph-properties fo:margin-top="0.35cm" fo:margin-bottom="0.15cm"/>'
+            "</style:style>"
+            '<style:style style:name="ProtocolBody" style:family="paragraph">'
+            '<style:text-properties fo:font-size="11pt"/>'
+            '<style:paragraph-properties fo:margin-bottom="0.12cm"/>'
+            "</style:style>"
+            '<style:style style:name="ProtocolBullet" style:family="paragraph">'
+            '<style:text-properties fo:font-size="11pt"/>'
+            '<style:paragraph-properties fo:margin-left="0.75cm" fo:margin-bottom="0.08cm"/>'
+            "</style:style>"
+            "</office:styles>"
             "</office:document-styles>"
         )
         meta_xml = (
@@ -570,6 +241,13 @@ class CoordinationProtocolOdtRenderer:
             .replace(">", "&gt;")
             .replace('"', "&quot;")
         )
+
+    def plain_lines_from_protocol_data(
+        self,
+        protocol_data: Mapping[str, Any],
+    ) -> list[str]:
+        blocks = document_blocks_from_dict(protocol_data.get("document"))
+        return render_blocks_to_plain_lines(blocks)
 
 
 coordination_protocol_odt_renderer = CoordinationProtocolOdtRenderer()

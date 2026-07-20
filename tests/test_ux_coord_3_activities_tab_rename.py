@@ -28,7 +28,10 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
-    from moduly.koordinace_bozp.constants import TAB_EMPLOYER_ACTIVITIES
+    from moduly.koordinace_bozp.constants import (
+        PROTOCOL_SECTION_ACTIVITIES,
+        TAB_EMPLOYER_ACTIVITIES,
+    )
     from moduly.koordinace_bozp.sluzby.coordination_protocol_odt_renderer import (
         PROTOCOL_ODT_CHAPTER_TITLES,
     )
@@ -62,22 +65,17 @@ class UxCoord3ActivitiesTabRenameTestCase(unittest.TestCase):
         self.assertNotIn("Činnosti zaměstnavatelů", tab.unavailable_label.text())
 
     def test_preview_and_odt_chapter_titles(self) -> None:
-        self.assertIn("Činnosti na pracovišti", PROTOCOL_ODT_CHAPTER_TITLES)
+        self.assertIn(PROTOCOL_SECTION_ACTIVITIES, PROTOCOL_ODT_CHAPTER_TITLES)
         self.assertNotIn("Činnosti zaměstnavatelů", PROTOCOL_ODT_CHAPTER_TITLES)
 
-        preview_source = Path(
-            CoordinationProtocolPreviewDialog.__module__.replace(".", "/")
-        )
-        # Resolve from package file
         preview_file = Path(
             importlib.import_module(
                 "moduly.koordinace_bozp.ui.coordination_protocol_preview_dialog"
             ).__file__
         )
         text = preview_file.read_text(encoding="utf-8")
-        self.assertIn('"Činnosti na pracovišti"', text)
+        self.assertIn("document_blocks_from_dict", text)
         self.assertNotIn("Činnosti zaměstnavatelů", text)
-        del preview_source
 
         odt_file = Path(
             importlib.import_module(
@@ -85,7 +83,7 @@ class UxCoord3ActivitiesTabRenameTestCase(unittest.TestCase):
             ).__file__
         )
         odt_text = odt_file.read_text(encoding="utf-8")
-        self.assertEqual(odt_text.count("Činnosti na pracovišti"), 2)
+        self.assertIn("PROTOCOL_SECTION_ACTIVITIES", odt_text)
         self.assertNotIn("Činnosti zaměstnavatelů", odt_text)
 
 

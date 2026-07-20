@@ -11,7 +11,7 @@ from datetime import date
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication, QGroupBox, QLabel
+from PySide6.QtWidgets import QApplication, QLabel
 from sqlalchemy import delete
 
 _TMP = Path(tempfile.mkdtemp(prefix="ux-coord-9a-"))
@@ -33,13 +33,17 @@ with patch.object(Path, "home", return_value=_TMP):
 
     from core.database.session import get_session
     from moduly.koordinace_bozp.constants import (
-        AGREEMENT_FIXED_PART_ORDER,
-        AGREEMENT_PART_FINAL,
         AGREEMENT_PART_PPE,
-        AGREEMENT_PART_WORK_INTENT,
-        AGREEMENT_PART_WORKPLACE_HANDOVER,
-        AGREEMENT_SECTION_TITLE,
         COMMON_RULES_SECTION_TITLE,
+        PROTOCOL_CONCLUSION_1_TITLE,
+        PROTOCOL_CONCLUSION_2_TITLE,
+        PROTOCOL_CONCLUSION_3_OOPP_INTRO,
+        PROTOCOL_CONCLUSION_4_COORDINATOR_INTRO,
+        PROTOCOL_CONCLUSION_5_TITLE,
+        PROTOCOL_CONCLUSION_6_TITLE,
+        PROTOCOL_CONCLUSION_7_TITLE,
+        PROTOCOL_CONCLUSION_8_TITLE,
+        PROTOCOL_SECTION_CONCLUSIONS,
         TAB_MEASURES,
     )
     from moduly.koordinace_bozp.modely.bozp_coordination import BozpCoordination
@@ -74,10 +78,11 @@ with patch.object(Path, "home", return_value=_TMP):
         coordination_measure_service,
     )
     from moduly.koordinace_bozp.sluzby.coordination_protocol_builder import (
-        build_coordination_agreement_parts,
         coordination_protocol_builder,
         flatten_protocol_measure_bullets,
-        protocol_agreement_part_titles,
+    )
+    from moduly.koordinace_bozp.sluzby.coordination_protocol_document import (
+        render_blocks_to_plain_lines,
     )
     from moduly.koordinace_bozp.sluzby.coordination_protocol_odt_renderer import (
         PROTOCOL_ODT_CHAPTER_TITLES,
@@ -145,9 +150,10 @@ class UxCoord9aAgreementRulesTestCase(unittest.TestCase):
         self.assertNotIn("Organizační opatření", labels)
         dialog.close()
 
-        self.assertIn(AGREEMENT_SECTION_TITLE, PROTOCOL_ODT_CHAPTER_TITLES)
-        self.assertIn(COMMON_RULES_SECTION_TITLE, PROTOCOL_ODT_CHAPTER_TITLES)
+        self.assertIn(PROTOCOL_SECTION_CONCLUSIONS, PROTOCOL_ODT_CHAPTER_TITLES)
+        self.assertNotIn("Dohoda o koordinaci BOZP", PROTOCOL_ODT_CHAPTER_TITLES)
         self.assertNotIn("Organizační opatření", PROTOCOL_ODT_CHAPTER_TITLES)
+        self.assertNotIn("Souhrn", PROTOCOL_ODT_CHAPTER_TITLES)
 
     def test_four_texts_persist_and_reload(self) -> None:
         coordination = bozp_coordination_service.create_coordination(
@@ -212,7 +218,7 @@ class UxCoord9aAgreementRulesTestCase(unittest.TestCase):
         self.assertGreaterEqual(dialog.measures_tab.table.rowCount(), 1)
         dialog.close()
 
-    def test_empty_fixed_part_omitted_filled_printed(self) -> None:
+    def test_empty_conclusion_parts_keep_heading_filled_printed(self) -> None:
         coordination = bozp_coordination_service.create_coordination(
             subject="UX-COORD-9a empty",
             meeting_date=date.today(),
@@ -222,23 +228,22 @@ class UxCoord9aAgreementRulesTestCase(unittest.TestCase):
             final_provisions_text="",
         )
         result = coordination_protocol_builder.build(coordination.id)
-        titles = protocol_agreement_part_titles(result.protocol_data)
-        self.assertNotIn(AGREEMENT_PART_WORK_INTENT, titles)
-        self.assertIn(AGREEMENT_PART_PPE, titles)
-        self.assertNotIn(AGREEMENT_PART_WORKPLACE_HANDOVER, titles)
-        self.assertNotIn(AGREEMENT_PART_FINAL, titles)
-
-        parts = build_coordination_agreement_parts(result.protocol_data)
-        ppe = next(item for item in parts if item["title"] == AGREEMENT_PART_PPE)
-        self.assertEqual(ppe["lines"], ["Používat OOPP."])
+        lines = render_blocks_to_plain_lines(
+            result.protocol_data["document"]["blocks"]
+        )
+        joined = "\n".join(lines)
+        self.assertIn(f"1. {PROTOCOL_CONCLUSION_1_TITLE}", joined)
+        self.assertIn("—", joined)
+        self.assertIn("Používat OOPP.", joined)
+        self.assertNotIn("Předání pracoviště", joined)
 
         target = _TMP / "empty-parts.odt"
         coordination_protocol_odt_renderer.render_from_result(target, result)
         content = _odt_content(target)
-        self.assertIn(AGREEMENT_PART_PPE, content)
+        self.assertIn(PROTOCOL_CONCLUSION_3_OOPP_INTRO, content)
         self.assertIn("Používat OOPP.", content)
-        self.assertNotIn(AGREEMENT_PART_WORK_INTENT, content)
-        self.assertNotIn(AGREEMENT_PART_FINAL, content)
+        self.assertIn(PROTOCOL_CONCLUSION_1_TITLE, content)
+        self.assertNotIn("Předání pracoviště", content)
 
     def test_active_rules_as_bullets_inactive_hidden(self) -> None:
         coordination = bozp_coordination_service.create_coordination(
@@ -282,18 +287,25 @@ class UxCoord9aAgreementRulesTestCase(unittest.TestCase):
                 None,
                 coordination_id=coordination.id,
             )
-        section_texts = []
-        for group in dialog.findChildren(QGroupBox):
-            if group.title() == COMMON_RULES_SECTION_TITLE:
-                for label in group.findChildren(QLabel):
-                    section_texts.append(label.text())
-        joined = "\n".join(section_texts)
+        label_texts = [label.text() for label in dialog.findChildren(QLabel)]
+        joined = "\n".join(label_texts)
+        self.assertIn(f"7. {PROTOCOL_CONCLUSION_7_TITLE}", joined)
         self.assertIn("• Aktivní text", joined)
         self.assertNotIn("Neaktivní text", joined)
         dialog.close()
 
-    def test_eight_parts_order_stable(self) -> None:
-        self.assertEqual(len(AGREEMENT_FIXED_PART_ORDER), 8)
+    def test_eight_conclusions_order_stable(self) -> None:
+        expected_titles = (
+            PROTOCOL_CONCLUSION_1_TITLE,
+            PROTOCOL_CONCLUSION_2_TITLE,
+            PROTOCOL_CONCLUSION_3_OOPP_INTRO,
+            PROTOCOL_CONCLUSION_4_COORDINATOR_INTRO,
+            PROTOCOL_CONCLUSION_5_TITLE,
+            PROTOCOL_CONCLUSION_6_TITLE,
+            PROTOCOL_CONCLUSION_7_TITLE,
+            PROTOCOL_CONCLUSION_8_TITLE,
+        )
+        self.assertEqual(len(expected_titles), 8)
         coordination = bozp_coordination_service.create_coordination(
             subject="UX-COORD-9a order",
             meeting_date=date.today(),
@@ -303,38 +315,11 @@ class UxCoord9aAgreementRulesTestCase(unittest.TestCase):
             final_provisions_text="Závěr",
         )
         result = coordination_protocol_builder.build(coordination.id)
-        data = result.protocol_data
-        # Doplníme skládané části, aby všech 8 bylo přítomno.
-        data = dict(data)
-        data["coordinator"] = {
-            "full_name": "Jan Koordinátor",
-            "role": "koordinátor BOZP",
-            "employer_name": "Hlavní firma s.r.o.",
-            "phone": "",
-            "email": "",
-        }
-        data["contacts"] = [
-            {
-                "custom_name": "Ohlašovna",
-                "contact_type_label": "Mimořádná událost",
-                "phone": "+420",
-                "email": "",
-            }
-        ]
-        data["emergency_procedures"] = {
-            "emergency_reporting": "Hlásit",
-            "accident_reporting": "",
-            "fire_reporting": "",
-            "evacuation_instructions": "",
-        }
-        data["risk_handovers"] = [
-            {
-                "employer": {"display_name": "Dodavatel"},
-                "handover_status_label": "Předáno",
-            }
-        ]
-        titles = protocol_agreement_part_titles(data)
-        self.assertEqual(titles, list(AGREEMENT_FIXED_PART_ORDER))
+        lines = render_blocks_to_plain_lines(
+            result.protocol_data["document"]["blocks"]
+        )
+        for index, title in enumerate(expected_titles, start=1):
+            self.assertIn(f"{index}. {title}", lines)
 
 
 if __name__ == "__main__":

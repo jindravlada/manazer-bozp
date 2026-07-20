@@ -5,6 +5,7 @@ Náhled je read-only: neukládá data a nevytváří PBP revize.
 
 from __future__ import annotations
 
+import json
 from dataclasses import asdict, dataclass, field
 from datetime import date
 from typing import Any, Mapping
@@ -25,6 +26,8 @@ from moduly.koordinace_bozp.constants import (
     BOZP_COORDINATION_STATUS_ARCHIVED,
     CONTACT_TYPES,
     CONTACT_TYPE_LABELS,
+    COORDINATION_PBP_INFO_TEXT,
+    COORDINATION_PBP_INTRO_TEXT,
     MEASURE_CATEGORIES,
     MEASURE_CATEGORY_LABELS,
     PBP_FRESHNESS_NEEDS_UPDATE,
@@ -96,6 +99,15 @@ from moduly.koordinace_bozp.sluzby.coordination_validity import (
 )
 from moduly.koordinace_bozp.sluzby.coordination_workplace_service import (
     coordination_workplace_service,
+)
+from moduly.koordinace_bozp.sluzby.coordination_protocol_document import (
+    ProtocolDocumentBlock,
+    build_protocol_document,
+    document_blocks_from_dict,
+    render_blocks_to_plain_lines,
+)
+from moduly.koordinace_bozp.sluzby.coordination_contact_service import (
+    CONTACT_EMPLOYER_UNSPECIFIED,
 )
 
 
@@ -235,7 +247,10 @@ def format_contacts_section_lines(
             if not items:
                 continue
             employer_label = (employer_group.get("employer_label") or "").strip()
-            if employer_label:
+            if (
+                employer_label
+                and employer_label != CONTACT_EMPLOYER_UNSPECIFIED
+            ):
                 lines.append(employer_label)
             for contact in items:
                 lines.extend(_contact_block_lines(contact))
@@ -507,6 +522,7 @@ class CoordinationProtocolBuilder:
                 pbp_revision=pbp_revision,
             ),
         }
+        protocol_data["document"] = build_protocol_document(protocol_data)
 
         warnings = self._build_warnings(
             coordination=coordination,
@@ -793,6 +809,7 @@ class CoordinationProtocolBuilder:
             "company_name": employer.company_name or "",
             "display_name": display,
             "ico": employer.ico or "",
+            "address": employer.address or "",
             "is_main": bool(employer.is_main),
             "sort_order": employer.sort_order or 0,
             "active": bool(employer.active),
@@ -1051,6 +1068,32 @@ class CoordinationProtocolBuilder:
         }
 
     @staticmethod
+    def _pbp_content_lines(revision) -> list[str]:
+        if revision is None:
+            return []
+        rules: list[str] = []
+        raw = (revision.rules_json or "").strip()
+        if raw:
+            try:
+                parsed = json.loads(raw)
+                if isinstance(parsed, list):
+                    rules = [
+                        str(item.get("text") or "").strip()
+                        for item in parsed
+                        if isinstance(item, dict) and (item.get("text") or "").strip()
+                    ]
+            except json.JSONDecodeError:
+                rules = []
+        lines: list[str] = []
+        if COORDINATION_PBP_INTRO_TEXT:
+            lines.extend([COORDINATION_PBP_INTRO_TEXT, ""])
+        for index, text in enumerate(rules, start=1):
+            lines.append(f"{index}. {text}")
+        if rules and COORDINATION_PBP_INFO_TEXT:
+            lines.extend(["", COORDINATION_PBP_INFO_TEXT])
+        return lines
+
+    @staticmethod
     def _pbp_dict(revision) -> dict | None:
         if revision is None:
             return None
@@ -1067,6 +1110,9 @@ class CoordinationProtocolBuilder:
             ),
             "created_by": revision.created_by or "",
             "stored_filename": revision.stored_filename or "",
+            "content_lines": CoordinationProtocolBuilder._pbp_content_lines(
+                revision
+            ),
         }
 
     def _group_attachments(self, attachments, *, pbp_revision) -> list[dict]:

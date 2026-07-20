@@ -13,6 +13,7 @@ from moduly.koordinace_bozp.constants import (
     ATTACHMENT_TYPE_CONTRACTOR_RISKS,
     ATTACHMENT_TYPE_MAIN_EMPLOYER_PBP,
     ATTACHMENT_TYPE_OTHER,
+    PROTOCOL_TITLE,
     PROTOCOL_WARNING_MISSING_COORDINATOR,
     PROTOCOL_WARNING_SEVERITY_CRITICAL,
     PROTOCOL_WARNING_SEVERITY_WARNING,
@@ -21,6 +22,9 @@ from moduly.koordinace_bozp.sluzby.coordination_protocol_builder import (
     ProtocolBuildResult,
     ProtocolSummary,
     ProtocolWarning,
+)
+from moduly.koordinace_bozp.sluzby.coordination_protocol_document import (
+    build_protocol_document,
 )
 from moduly.koordinace_bozp.sluzby.coordination_protocol_odt_renderer import (
     PROTOCOL_ODT_CHAPTER_TITLES,
@@ -33,10 +37,15 @@ def _odt_content(path: Path) -> str:
         return zin.read("content.xml").decode("utf-8")
 
 
+def _with_document(data: dict) -> dict:
+    payload = dict(data)
+    payload["document"] = build_protocol_document(payload)
+    return payload
+
+
 def _chapter_positions(content: str) -> list[tuple[str, int]]:
-    titles = ("Upozornění",) + PROTOCOL_ODT_CHAPTER_TITLES + ("Souhrn",)
     found = []
-    for title in titles:
+    for title in PROTOCOL_ODT_CHAPTER_TITLES:
         needle = f">{title}</text:p>"
         pos = content.find(needle)
         if pos >= 0:
@@ -54,7 +63,7 @@ class KoordinaceBozpPhaseCoord011bTestCase(unittest.TestCase):
         self._tmpdir.cleanup()
 
     def _complete_protocol_data(self) -> dict:
-        return {
+        data = {
             "basics": {
                 "id": 1,
                 "coordination_number": "K-2026-001",
@@ -245,10 +254,15 @@ class KoordinaceBozpPhaseCoord011bTestCase(unittest.TestCase):
                 "revision_number": 1,
                 "title": "Pravidla bezpečné práce",
                 "content_hash": "abc",
-                "rules_count": 3,
+                "rules_count": 1,
                 "created_at": "2026-07-10 12:00",
                 "created_by": "tester",
                 "stored_filename": "pbp-rev1.odt",
+                "content_lines": [
+                    "Dodržujte následující pravidla bezpečné práce.",
+                    "",
+                    "1. Práce ve výškách provádějte s ochranou proti pádu.",
+                ],
             },
             "attachments_by_group": [
                 {
@@ -289,6 +303,7 @@ class KoordinaceBozpPhaseCoord011bTestCase(unittest.TestCase):
                 },
             ],
         }
+        return _with_document(data)
 
     def _complete_summary(self) -> ProtocolSummary:
         return ProtocolSummary(
@@ -315,20 +330,21 @@ class KoordinaceBozpPhaseCoord011bTestCase(unittest.TestCase):
         )
         self.assertTrue(path.exists())
         content = _odt_content(path)
-        self.assertIn("Koordinační protokol BOZP", content)
+        self.assertIn(PROTOCOL_TITLE, content)
         self.assertIn("K-2026-001", content)
         self.assertIn("Koordinace stavby", content)
         self.assertIn("Jan Koordinátor", content)
         self.assertIn("Provoz A / Hala 1", content)
         self.assertIn("Svařování", content)
-        self.assertIn("Hlásit události", content)
         self.assertIn("Ohlašovna", content)
         self.assertIn("Oznámit koordinátorovi.", content)
         self.assertIn("Předáno s přílohou", content)
-        self.assertIn("pbp-rev1.odt", content)
-        self.assertIn("rizika-dodavatele.pdf", content)
+        self.assertIn("Práce ve výškách provádějte s ochranou proti pádu.", content)
         self.assertIn("mapa.pdf", content)
         self.assertNotIn("Upozornění", content)
+        self.assertNotIn("pbp-rev1.odt", content)
+        self.assertNotIn("Stav:", content)
+        self.assertNotIn("Souhrn", content)
 
     def test_export_with_warnings(self) -> None:
         data = self._complete_protocol_data()
@@ -358,11 +374,10 @@ class KoordinaceBozpPhaseCoord011bTestCase(unittest.TestCase):
             summary=summary,
         )
         content = _odt_content(target)
-        self.assertIn("Upozornění", content)
-        self.assertIn("Není určen koordinátor BOZP.", content)
-        self.assertIn("[kritické]", content)
-        self.assertIn("Nejsou evidována žádná aktivní organizační opatření.", content)
-        self.assertIn("Počet upozornění: 2", content)
+        self.assertNotIn("Upozornění", content)
+        self.assertNotIn("Není určen koordinátor BOZP.", content)
+        self.assertNotIn("Počet upozornění", content)
+        self.assertIn(PROTOCOL_TITLE, content)
 
     def test_chapter_order(self) -> None:
         target = self.tmp / "poradi.odt"
@@ -381,11 +396,7 @@ class KoordinaceBozpPhaseCoord011bTestCase(unittest.TestCase):
         content = _odt_content(target)
         positions = _chapter_positions(content)
         titles = [title for title, _ in positions]
-        self.assertEqual(titles[0], "Upozornění")
-        self.assertEqual(titles[1], "Titulní strana")
-        expected_core = list(PROTOCOL_ODT_CHAPTER_TITLES)
-        self.assertEqual(titles[1 : 1 + len(expected_core)], expected_core)
-        self.assertEqual(titles[-1], "Souhrn")
+        self.assertEqual(titles, list(PROTOCOL_ODT_CHAPTER_TITLES))
         for index in range(1, len(positions)):
             self.assertLess(positions[index - 1][1], positions[index][1])
 
@@ -406,20 +417,16 @@ class KoordinaceBozpPhaseCoord011bTestCase(unittest.TestCase):
         target = self.tmp / "souhrn.odt"
         coordination_protocol_odt_renderer.render(
             target,
-            protocol_data={"basics": {"coordination_number": "X", "subject": "Y"}},
+            protocol_data=_with_document(
+                {"basics": {"coordination_number": "X", "subject": "Y"}}
+            ),
             warnings=[],
             summary=summary,
         )
         content = _odt_content(target)
-        self.assertIn("Počet zaměstnavatelů: 4", content)
-        self.assertIn("Počet účastníků: 5", content)
-        self.assertIn("Počet míst: 3", content)
-        self.assertIn("Počet činností: 6", content)
-        self.assertIn("Počet organizačních opatření: 7", content)
-        self.assertIn("Počet kontaktů: 2", content)
-        self.assertIn("Počet pravidel PBP: 9", content)
-        self.assertIn("Počet příloh: 8", content)
-        self.assertIn("Počet upozornění: 6", content)
+        self.assertNotIn("Počet zaměstnavatelů", content)
+        self.assertNotIn("Souhrn", content)
+        self.assertIn("X", content)
 
     def test_export_without_database_access(self) -> None:
         def _forbid_db(*_args, **_kwargs):
@@ -449,7 +456,7 @@ class KoordinaceBozpPhaseCoord011bTestCase(unittest.TestCase):
                 summary=self._complete_summary(),
             )
         self.assertTrue(path.exists())
-        self.assertIn("Koordinační protokol BOZP", _odt_content(path))
+        self.assertIn(PROTOCOL_TITLE, _odt_content(path))
 
     def test_renderer_uses_only_protocol_data(self) -> None:
         """Renderer bere hodnoty z protocol_data, ne z DB / builderu."""
@@ -491,7 +498,7 @@ class KoordinaceBozpPhaseCoord011bTestCase(unittest.TestCase):
         ):
             coordination_protocol_odt_renderer.render(
                 self.tmp / "jen-data.odt",
-                protocol_data=data,
+                protocol_data=_with_document(data),
                 warnings=[],
                 summary={"active_employers": 1, "warnings_total": 0},
             )
@@ -521,8 +528,6 @@ class KoordinaceBozpPhaseCoord011bTestCase(unittest.TestCase):
         mocked.assert_called_once()
         kwargs = mocked.call_args.kwargs
         self.assertIs(kwargs["protocol_data"], result.protocol_data)
-        self.assertIs(kwargs["warnings"], result.warnings)
-        self.assertIs(kwargs["summary"], result.summary)
         self.assertTrue(path.exists())
 
     def test_preview_dialog_keeps_cached_result_for_export(self) -> None:

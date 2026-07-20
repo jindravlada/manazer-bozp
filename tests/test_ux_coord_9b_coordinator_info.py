@@ -32,7 +32,10 @@ with patch.object(Path, "home", return_value=_TMP):
     initialize_database()
 
     from core.database.session import get_session
-    from moduly.koordinace_bozp.constants import AGREEMENT_PART_COORDINATOR
+    from moduly.koordinace_bozp.constants import (
+        PROTOCOL_CONCLUSION_4_COORDINATOR_INTRO,
+        PROTOCOL_SECTION_CONCLUSIONS,
+    )
     from moduly.koordinace_bozp.modely.bozp_coordination import BozpCoordination
     from moduly.koordinace_bozp.modely.coordination_attachment import (
         CoordinationAttachment,
@@ -65,8 +68,10 @@ with patch.object(Path, "home", return_value=_TMP):
         coordination_coordinator_service,
     )
     from moduly.koordinace_bozp.sluzby.coordination_protocol_builder import (
-        build_coordination_agreement_parts,
         coordination_protocol_builder,
+    )
+    from moduly.koordinace_bozp.sluzby.coordination_protocol_document import (
+        render_blocks_to_plain_lines,
     )
     from moduly.koordinace_bozp.sluzby.coordination_protocol_odt_renderer import (
         coordination_protocol_odt_renderer,
@@ -108,9 +113,9 @@ class UxCoord9bCoordinatorInfoTestCase(unittest.TestCase):
         )
 
     def test_ui_label_dalsi_informace(self) -> None:
-        self.assertEqual(
-            AGREEMENT_PART_COORDINATOR,
-            "Stanovení koordinátora na pracovišti a další ustanovení dohody",
+        self.assertIn(
+            "Stanovení koordinátora",
+            PROTOCOL_CONCLUSION_4_COORDINATOR_INTRO,
         )
         dialog = BozpCoordinationDialog(None)
         form = dialog.coordinator_tab.form
@@ -171,11 +176,9 @@ class UxCoord9bCoordinatorInfoTestCase(unittest.TestCase):
             note="Kontaktovat před vstupem na stavbu.",
         )
         result = coordination_protocol_builder.build(coordination.id)
-        parts = build_coordination_agreement_parts(result.protocol_data)
-        coordinator_part = next(
-            item for item in parts if item["title"] == AGREEMENT_PART_COORDINATOR
+        lines = render_blocks_to_plain_lines(
+            result.protocol_data["document"]["blocks"]
         )
-        lines = coordinator_part["lines"]
         self.assertIn("Jméno: Jan Koordinátor", lines)
         self.assertIn("Organizace: Hlavní firma s.r.o.", lines)
         self.assertIn("Funkce: koordinátor BOZP", lines)
@@ -185,12 +188,11 @@ class UxCoord9bCoordinatorInfoTestCase(unittest.TestCase):
         self.assertIn("Kontaktovat před vstupem na stavbu.", lines)
         info_index = lines.index("Další informace")
         self.assertEqual(lines[info_index + 1], "Kontaktovat před vstupem na stavbu.")
-        self.assertEqual(lines[info_index - 1], "")
 
         target = _TMP / "coord-info.odt"
         coordination_protocol_odt_renderer.render_from_result(target, result)
         content = _odt_content(target)
-        self.assertIn(AGREEMENT_PART_COORDINATOR, content)
+        self.assertIn(PROTOCOL_CONCLUSION_4_COORDINATOR_INTRO, content)
         self.assertIn("Další informace", content)
         self.assertIn("Kontaktovat před vstupem na stavbu.", content)
         self.assertIn("Organizace: Hlavní firma s.r.o.", content)
@@ -210,22 +212,15 @@ class UxCoord9bCoordinatorInfoTestCase(unittest.TestCase):
             note="",
         )
         result = coordination_protocol_builder.build(coordination.id)
-        parts = build_coordination_agreement_parts(result.protocol_data)
-        coordinator_part = next(
-            item for item in parts if item["title"] == AGREEMENT_PART_COORDINATOR
+        lines = render_blocks_to_plain_lines(
+            result.protocol_data["document"]["blocks"]
         )
-        lines = coordinator_part["lines"]
-        self.assertEqual(
-            lines,
-            [
-                "Jméno: Petr Bez Kontaktu",
-                "Organizace: Firma s.r.o.",
-            ],
-        )
+        self.assertIn("Jméno: Petr Bez Kontaktu", lines)
+        self.assertIn("Organizace: Firma s.r.o.", lines)
+        self.assertIn("Funkce: —", lines)
+        self.assertIn("Telefon: —", lines)
+        self.assertIn("E-mail: —", lines)
         self.assertNotIn("Další informace", lines)
-        self.assertNotIn("Telefon:", "\n".join(lines))
-        self.assertNotIn("E-mail:", "\n".join(lines))
-        self.assertNotIn("Funkce:", "\n".join(lines))
 
         target = _TMP / "coord-empty.odt"
         coordination_protocol_odt_renderer.render_from_result(target, result)
