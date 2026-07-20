@@ -124,6 +124,7 @@ class UxCoord9bCoordinatorInfoTestCase(unittest.TestCase):
                 labels.append(widget.text())
         self.assertIn("Další informace:", labels)
         self.assertNotIn("Poznámka:", labels)
+        dialog.mark_clean()
         dialog.close()
 
     def test_note_persists_as_additional_info(self) -> None:
@@ -152,6 +153,7 @@ class UxCoord9bCoordinatorInfoTestCase(unittest.TestCase):
             dialog.coordinator_tab.note.toPlainText(),
             "Starší uložená poznámka k dohodě.",
         )
+        dialog.mark_clean()
         dialog.close()
 
     def test_output_shows_coordinator_and_additional_info(self) -> None:

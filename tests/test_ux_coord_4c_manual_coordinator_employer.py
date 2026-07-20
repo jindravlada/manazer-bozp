@@ -146,7 +146,7 @@ class UxCoord4cManualCoordinatorEmployerTestCase(unittest.TestCase):
             tab.role.setText("koordinátor BOZP")
             tab.phone.setText("+420100")
             tab.email.setText("hlavni@example.com")
-            tab.save_coordinator()
+            self.assertTrue(dialog._save())
 
             loaded = coordination_coordinator_service.get_for_coordination(
                 coordination.id
@@ -157,6 +157,7 @@ class UxCoord4cManualCoordinatorEmployerTestCase(unittest.TestCase):
             self.assertEqual(loaded.full_name, "Koordinátor Hlavní")
             self.assertEqual(loaded.employer_name, main.company_name)
             self.assertEqual(loaded.role, "koordinátor BOZP")
+        dialog.mark_clean()
         dialog.close()
 
     def test_manual_with_supplier(self) -> None:
@@ -171,7 +172,7 @@ class UxCoord4cManualCoordinatorEmployerTestCase(unittest.TestCase):
             self.assertGreaterEqual(index, 0)
             tab.employer_combo.setCurrentIndex(index)
             tab.full_name.setText("Koordinátor Dodavatel")
-            tab.save_coordinator()
+            self.assertTrue(dialog._save())
 
             loaded = coordination_coordinator_service.get_for_coordination(
                 coordination.id
@@ -180,6 +181,7 @@ class UxCoord4cManualCoordinatorEmployerTestCase(unittest.TestCase):
             self.assertIsNone(loaded.employer_id)
             self.assertEqual(loaded.employer_name, "Dodavatel Stavby a.s.")
             self.assertEqual(loaded.full_name, "Koordinátor Dodavatel")
+        dialog.mark_clean()
         dialog.close()
 
     def test_manual_with_other_organization(self) -> None:
@@ -203,7 +205,7 @@ class UxCoord4cManualCoordinatorEmployerTestCase(unittest.TestCase):
             tab.full_name.setText("Externí Koordinátor")
             tab.employer_name.setText("Externí BOZP s.r.o.")
             tab.role.setText("externí")
-            tab.save_coordinator()
+            self.assertTrue(dialog._save())
 
             loaded = coordination_coordinator_service.get_for_coordination(
                 coordination.id
@@ -214,8 +216,9 @@ class UxCoord4cManualCoordinatorEmployerTestCase(unittest.TestCase):
             self.assertEqual(loaded.full_name, "Externí Koordinátor")
 
             tab.employer_name.clear()
-            tab.save_coordinator()
+            self.assertFalse(dialog._save())
             warning.assert_called()
+        dialog.mark_clean()
         dialog.close()
 
     def test_deactivated_employer_not_in_manual_combo(self) -> None:
@@ -227,6 +230,7 @@ class UxCoord4cManualCoordinatorEmployerTestCase(unittest.TestCase):
         ]
         self.assertNotIn(supplier.id, values)
         self.assertIn(COORDINATOR_MANUAL_OTHER_ORGANIZATION, values)
+        dialog.mark_clean()
         dialog.close()
 
     def test_snapshot_preserved_after_employer_deactivation(self) -> None:
@@ -256,6 +260,7 @@ class UxCoord4cManualCoordinatorEmployerTestCase(unittest.TestCase):
         )
         self.assertEqual(tab.employer_name.text(), "Dodavatel Stavby a.s.")
         self.assertEqual(tab.full_name.text(), "Snapshot Koordinátor")
+        dialog.mark_clean()
         dialog.close()
 
     def test_edit_restores_employer_selection(self) -> None:
@@ -291,6 +296,7 @@ class UxCoord4cManualCoordinatorEmployerTestCase(unittest.TestCase):
         )
         tab.refresh()
         self.assertEqual(tab.employer_combo.currentData(), main.id)
+        dialog.mark_clean()
         dialog.close()
 
     def test_preview_and_odt_show_organization(self) -> None:

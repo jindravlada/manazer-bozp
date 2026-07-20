@@ -247,12 +247,11 @@ class UxCoord2ManualCoordinatorTestCase(unittest.TestCase):
         tab = dialog.coordinator_tab
         self.assertTrue(hasattr(tab, "source_participant"))
         self.assertTrue(hasattr(tab, "source_manual"))
+        self.assertFalse(hasattr(tab, "save_btn"))
         self.assertEqual(tab.source_participant.text(), "Vybrat z účastníků")
         self.assertEqual(tab.source_manual.text(), "Zadat ručně")
 
         with patch(
-            "moduly.koordinace_bozp.ui.coordination_coordinator_tab.QMessageBox.information"
-        ), patch(
             "moduly.koordinace_bozp.ui.coordination_coordinator_tab.QMessageBox.warning"
         ):
             tab.source_manual.setChecked(True)
@@ -266,7 +265,7 @@ class UxCoord2ManualCoordinatorTestCase(unittest.TestCase):
             tab.role.setText("role")
             tab.phone.setText("+4201")
             tab.email.setText("ui@example.com")
-            tab.save_coordinator()
+            self.assertTrue(dialog._save())
 
             loaded = coordination_coordinator_service.get_for_coordination(
                 coordination.id
@@ -285,13 +284,14 @@ class UxCoord2ManualCoordinatorTestCase(unittest.TestCase):
             tab.participant_combo.setCurrentIndex(
                 tab.participant_combo.findData(participant.id)
             )
-            tab.save_coordinator()
+            self.assertTrue(dialog._save())
             loaded = coordination_coordinator_service.get_for_coordination(
                 coordination.id
             )
             assert loaded is not None
             self.assertEqual(loaded.participant_id, participant.id)
             self.assertEqual(loaded.full_name, "Jan Účastník")
+        dialog.mark_clean()
         dialog.close()
 
 

@@ -1,7 +1,7 @@
 from datetime import date
 
 from PySide6.QtCore import QDate, Qt
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QCloseEvent, QFont
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
@@ -104,6 +104,12 @@ def _date_from_qdate(value: QDate) -> date:
     return date(value.year(), value.month(), value.day())
 
 
+UNSAVED_PROMPT = "Máte neuložené změny."
+UNSAVED_SAVE = "Uložit"
+UNSAVED_DISCARD = "Zahodit"
+UNSAVED_CANCEL = "Zrušit"
+
+
 class BozpCoordinationDialog(QDialog):
     """Dialog koordinace BOZP – údaje, zaměstnavatelé a účastníci."""
 
@@ -113,6 +119,8 @@ class BozpCoordinationDialog(QDialog):
         self._sync_validity_from_meeting = coordination is None
         self._ready_edit_guard_armed = False
         self._applying_edit_policy = False
+        self._dirty = False
+        self._closing = False
         self.setWindowTitle(DIALOG_WINDOW_TITLE)
         configure_resizable_form_dialog(self, width=760, height=600, min_width=540, min_height=420)
 
@@ -180,6 +188,7 @@ class BozpCoordinationDialog(QDialog):
             self,
             coordination_id=coordination_id,
         )
+        self.coordinator_tab.set_dirty_callback(self.mark_dirty)
         self.tabs.addTab(self.coordinator_tab, TAB_COORDINATOR)
 
         self.workplaces_tab = CoordinationWorkplacesTab(
@@ -224,7 +233,12 @@ class BozpCoordinationDialog(QDialog):
         self.preview_btn.setEnabled(coordination_id is not None)
         self.preview_btn.clicked.connect(self.open_protocol_preview)
         self.buttons = create_save_cancel_box(self)
-        self.buttons.accepted.connect(self.accept)
+        self.save_button = self.buttons.button(QDialogButtonBox.StandardButton.Save)
+        self.close_button = self.buttons.button(QDialogButtonBox.StandardButton.Cancel)
+        if self.close_button is not None:
+            self.close_button.setText("Zavřít")
+        if self.save_button is not None:
+            self.save_button.clicked.connect(self._save)
         self.buttons.rejected.connect(self.reject)
         add_work_dialog_footer(
             layout,
@@ -237,6 +251,7 @@ class BozpCoordinationDialog(QDialog):
             self.place.setText(default_meeting_place_from_settings())
             self._apply_default_validity_from_meeting()
             self._refresh_status_ui(DEFAULT_BOZP_COORDINATION_STATUS)
+            self._set_detail_tabs_enabled(False)
         else:
             self.number_label.setText(coordination.coordination_number or "")
             if coordination.meeting_date:
@@ -249,6 +264,7 @@ class BozpCoordinationDialog(QDialog):
                 self.valid_to.setDate(_qdate_from_date(coordination.valid_to))
             self.note.setPlainText(coordination.note or "")
             self._refresh_status_ui(coordination.status)
+            self._set_detail_tabs_enabled(True)
 
         self.meeting_date.dateChanged.connect(self._on_meeting_date_changed)
         self.meeting_date.dateChanged.connect(self._on_content_edited)
@@ -257,8 +273,25 @@ class BozpCoordinationDialog(QDialog):
         self.valid_from.dateChanged.connect(self._on_content_edited)
         self.valid_to.dateChanged.connect(self._on_content_edited)
         self.note.textChanged.connect(self._on_content_edited)
+        self.place.textEdited.connect(self.mark_dirty)
+        self.subject.textEdited.connect(self.mark_dirty)
+        self.meeting_date.dateChanged.connect(self.mark_dirty)
+        self.valid_from.dateChanged.connect(self.mark_dirty)
+        self.valid_to.dateChanged.connect(self.mark_dirty)
+        self.note.textChanged.connect(self.mark_dirty)
         # UX-COORD-1: editor se otevírá maximalizovaný.
         self.setWindowState(self.windowState() | Qt.WindowState.WindowMaximized)
+
+    def is_dirty(self) -> bool:
+        return self._dirty
+
+    def mark_dirty(self, *_args) -> None:
+        if self._applying_edit_policy or self._closing:
+            return
+        self._dirty = True
+
+    def mark_clean(self) -> None:
+        self._dirty = False
 
     def _content_tabs(self):
         return (
@@ -272,6 +305,53 @@ class BozpCoordinationDialog(QDialog):
             self.risk_submissions_tab,
             self.pbp_attachment_tab,
         )
+
+    def _set_detail_tabs_enabled(self, enabled: bool) -> None:
+        """Záložky mimo Základní údaje – až po prvním uložení."""
+        for index in range(1, self.tabs.count()):
+            self.tabs.setTabEnabled(index, enabled)
+
+    def _bind_coordination_to_tabs(self) -> None:
+        coordination_id = self.coordination.id if self.coordination is not None else None
+        for tab in self._content_tabs():
+            tab.set_coordination_id(coordination_id)
+
+    def _become_existing(self, coordination) -> None:
+        """Po prvním uložení nové koordinace – aktivovat editor záložek."""
+        self.coordination = coordination
+        self._sync_validity_from_meeting = False
+        self.number_label.setText(coordination.coordination_number or "")
+        self.preview_btn.setEnabled(True)
+        self._bind_coordination_to_tabs()
+        self._set_detail_tabs_enabled(True)
+        self._refresh_status_ui(coordination.status)
+
+    def _save(self) -> bool:
+        """Uloží koordinaci (včetně koordinátora) a ponechá editor otevřený."""
+        if self.coordination is not None and is_strict_readonly(self.coordination.status):
+            return False
+        if self._ready_edit_guard_armed and not self.ensure_editable_for_content_change():
+            return False
+        data = self.get_data()
+        try:
+            if self.coordination is None:
+                created = bozp_coordination_service.create_coordination(**data)
+                self._become_existing(created)
+            else:
+                updated = bozp_coordination_service.update_coordination(
+                    self.coordination.id,
+                    **data,
+                )
+                if updated is not None:
+                    self.coordination = updated
+                    self._refresh_status_ui(updated.status)
+        except BozpCoordinationError as error:
+            QMessageBox.warning(self, DIALOG_WINDOW_TITLE, str(error))
+            return False
+        if not self.coordinator_tab.persist_coordinator():
+            return False
+        self.mark_clean()
+        return True
 
     def _refresh_status_ui(self, status: str | None) -> None:
         normalized = normalize_coordination_status(status)
@@ -303,7 +383,7 @@ class BozpCoordinationDialog(QDialog):
             self.valid_to.setEnabled(editable)
             self.note.setReadOnly(not editable)
 
-            save_btn = self.buttons.button(QDialogButtonBox.StandardButton.Save)
+            save_btn = self.save_button
             if save_btn is not None:
                 save_btn.setEnabled(editable or self.coordination is None)
                 save_btn.setVisible(editable or self.coordination is None)
@@ -394,6 +474,9 @@ class BozpCoordinationDialog(QDialog):
             return False
         if updated is not None:
             self.coordination = updated
+        if not self.coordinator_tab.persist_coordinator():
+            return False
+        self.mark_clean()
         return True
 
     def _run_lifecycle_action(self, action: LifecycleAction) -> None:
@@ -424,7 +507,7 @@ class BozpCoordinationDialog(QDialog):
         if widget is self.participants_tab:
             self.participants_tab.refresh_employers()
         elif widget is self.coordinator_tab:
-            self.coordinator_tab.refresh()
+            self.coordinator_tab.refresh_lookups()
         elif widget is self.workplaces_tab:
             self.workplaces_tab.refresh()
         elif widget is self.employer_activities_tab:
@@ -478,10 +561,55 @@ class BozpCoordinationDialog(QDialog):
             data.update(self.measures_tab.get_agreement_data())
         return data
 
-    def accept(self) -> None:
-        if self.coordination is not None and is_strict_readonly(self.coordination.status):
-            self.reject()
+    def _prompt_unsaved_close(self) -> str:
+        message = QMessageBox(self)
+        message.setWindowTitle(DIALOG_WINDOW_TITLE)
+        message.setText(UNSAVED_PROMPT)
+        message.setIcon(QMessageBox.Icon.Question)
+        save_btn = message.addButton(UNSAVED_SAVE, QMessageBox.ButtonRole.AcceptRole)
+        discard_btn = message.addButton(
+            UNSAVED_DISCARD,
+            QMessageBox.ButtonRole.DestructiveRole,
+        )
+        cancel_btn = message.addButton(
+            UNSAVED_CANCEL,
+            QMessageBox.ButtonRole.RejectRole,
+        )
+        message.setDefaultButton(cancel_btn)
+        message.exec()
+        clicked = message.clickedButton()
+        if clicked is save_btn:
+            return "save"
+        if clicked is discard_btn:
+            return "discard"
+        return "cancel"
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        if self._closing or not self.is_dirty():
+            self._closing = True
+            super().closeEvent(event)
             return
-        if self._ready_edit_guard_armed and not self.ensure_editable_for_content_change():
+        decision = self._prompt_unsaved_close()
+        if decision == "cancel":
+            event.ignore()
             return
-        super().accept()
+        if decision == "save":
+            if not self._save():
+                event.ignore()
+                return
+        self._closing = True
+        super().closeEvent(event)
+
+    def reject(self) -> None:
+        if self._closing:
+            super().reject()
+            return
+        if self.is_dirty():
+            decision = self._prompt_unsaved_close()
+            if decision == "cancel":
+                return
+            if decision == "save":
+                if not self._save():
+                    return
+        self._closing = True
+        super().reject()

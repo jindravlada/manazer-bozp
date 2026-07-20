@@ -300,6 +300,7 @@ class UxCoord5SelectionTestCase(unittest.TestCase):
         measures_tab.refresh()
         self.assertEqual(dialog.tabs.currentIndex(), measures_index)
         self.assertIs(tab, dialog.coordinator_tab)
+        dialog.mark_clean()
         dialog.close()
 
     def test_restore_uses_id_after_reorder(self) -> None:

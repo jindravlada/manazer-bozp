@@ -210,6 +210,8 @@ class KoordinaceBozpPhaseCoord005TestCase(unittest.TestCase):
             if isinstance(tab.participant_combo.itemData(i), int)
         ]
         self.assertEqual(participant_ids, [other_person.id])
+        dialog.mark_clean()
+        dialog.close()
 
     def test_cannot_select_inactive_participant(self) -> None:
         coordination, main, _other, main_person, _other_person = self._setup_coordination()
@@ -256,6 +258,8 @@ class KoordinaceBozpPhaseCoord005TestCase(unittest.TestCase):
         self.assertEqual(tab.participant_combo.currentData(), main_person.id)
         self.assertEqual(tab.note.toPlainText(), "uložený")
         self.assertFalse(tab.warning_label.isHidden())
+        dialog.mark_clean()
+        dialog.close()
 
 
 if __name__ == "__main__":

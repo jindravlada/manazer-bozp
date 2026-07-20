@@ -2,11 +2,9 @@ from PySide6.QtWidgets import (
     QButtonGroup,
     QComboBox,
     QFormLayout,
-    QHBoxLayout,
     QLabel,
     QLineEdit,
     QMessageBox,
-    QPushButton,
     QRadioButton,
     QTextEdit,
     QVBoxLayout,
@@ -35,7 +33,7 @@ from moduly.koordinace_bozp.ui.coordination_tab_edit_policy import (
 
 
 class CoordinationCoordinatorTab(CoordinationTabEditPolicyMixin, QWidget):
-    """Záložka pověřeného koordinátora BOZP (COORD-005 / UX-COORD-2 / 4c)."""
+    """Záložka pověřeného koordinátora BOZP (COORD-005 / UX-COORD-2 / 4c / 12c)."""
 
     def __init__(self, parent=None, coordination_id: int | None = None):
         super().__init__(parent)
@@ -44,6 +42,7 @@ class CoordinationCoordinatorTab(CoordinationTabEditPolicyMixin, QWidget):
         self._before_mutate = None
         self._loading = False
         self._last_participant_id: int | None = None
+        self._dirty_callback = None
 
         layout = QVBoxLayout(self)
 
@@ -98,12 +97,6 @@ class CoordinationCoordinatorTab(CoordinationTabEditPolicyMixin, QWidget):
         self.form.addRow("E-mail:", self.email)
         self.form.addRow("Další informace:", self.note)
         content_layout.addLayout(self.form)
-
-        buttons = QHBoxLayout()
-        self.save_btn = QPushButton("Uložit koordinátora")
-        buttons.addWidget(self.save_btn)
-        buttons.addStretch()
-        content_layout.addLayout(buttons)
         content_layout.addStretch()
         layout.addWidget(self.content)
 
@@ -111,9 +104,23 @@ class CoordinationCoordinatorTab(CoordinationTabEditPolicyMixin, QWidget):
         self.source_manual.toggled.connect(self._update_source_mode)
         self.employer_combo.currentIndexChanged.connect(self._on_employer_changed)
         self.participant_combo.currentIndexChanged.connect(self._on_participant_changed)
-        self.save_btn.clicked.connect(self.save_coordinator)
+        self.full_name.textEdited.connect(self._notify_dirty)
+        self.employer_name.textEdited.connect(self._notify_dirty)
+        self.role.textEdited.connect(self._notify_dirty)
+        self.phone.textEdited.connect(self._notify_dirty)
+        self.email.textEdited.connect(self._notify_dirty)
+        self.note.textChanged.connect(self._notify_dirty)
 
         self.set_coordination_id(coordination_id)
+
+    def set_dirty_callback(self, callback) -> None:
+        self._dirty_callback = callback
+
+    def _notify_dirty(self, *_args) -> None:
+        if self._loading:
+            return
+        if self._dirty_callback is not None:
+            self._dirty_callback()
 
     def set_coordination_id(self, coordination_id: int | None) -> None:
         self.coordination_id = coordination_id
@@ -126,6 +133,7 @@ class CoordinationCoordinatorTab(CoordinationTabEditPolicyMixin, QWidget):
             self._clear_form()
 
     def refresh(self) -> None:
+        """Načte uloženého koordinátora z DB do pracovní kopie."""
         if self.coordination_id is None:
             return
         self._loading = True
@@ -182,27 +190,87 @@ class CoordinationCoordinatorTab(CoordinationTabEditPolicyMixin, QWidget):
         finally:
             self._loading = False
 
-    def save_coordinator(self) -> None:
-        if self.coordination_id is None or not self.allow_mutate():
+    def refresh_lookups(self) -> None:
+        """Obnoví nabídky, zachová pracovní kopii formuláře."""
+        if self.coordination_id is None:
             return
+        self._loading = True
+        try:
+            from_participant = self.source_participant.isChecked()
+            employer_data = self.employer_combo.currentData()
+            participant_id = self.participant_combo.currentData()
+            identity = {
+                "full_name": self.full_name.text(),
+                "employer_name": self.employer_name.text(),
+                "role": self.role.text(),
+                "phone": self.phone.text(),
+                "email": self.email.text(),
+                "note": self.note.toPlainText(),
+            }
+            if from_participant:
+                preferred_employer = (
+                    employer_data if isinstance(employer_data, int) else None
+                )
+                preferred_participant = (
+                    participant_id if isinstance(participant_id, int) else None
+                )
+                self._reload_employers_for_participant(
+                    preferred_employer_id=preferred_employer
+                )
+                self._reload_participants(
+                    preferred_participant_id=preferred_participant
+                )
+                self._last_participant_id = preferred_participant
+            else:
+                preferred_org = None
+                if employer_data == COORDINATOR_MANUAL_OTHER_ORGANIZATION:
+                    preferred_org = identity["employer_name"]
+                elif isinstance(employer_data, int):
+                    employer = coordination_employer_service.get_by_id(employer_data)
+                    preferred_org = (
+                        (employer.company_name or "").strip()
+                        if employer is not None
+                        else None
+                    )
+                self._reload_employers_for_manual(
+                    preferred_organization=preferred_org
+                )
+                self._last_participant_id = None
+            self.full_name.setText(identity["full_name"])
+            self.employer_name.setText(identity["employer_name"])
+            self.role.setText(identity["role"])
+            self.phone.setText(identity["phone"])
+            self.email.setText(identity["email"])
+            self.note.setPlainText(identity["note"])
+            self._apply_source_mode_ui()
+            self._update_warning(None)
+        finally:
+            self._loading = False
+
+    def persist_coordinator(self) -> bool:
+        """Uloží pracovní kopii koordinátora do DB. False = chyba validace."""
+        if self.coordination_id is None:
+            return True
         try:
             if self.source_participant.isChecked():
                 employer_id = self.employer_combo.currentData()
                 participant_id = self.participant_combo.currentData()
+                if not isinstance(participant_id, int):
+                    if not isinstance(employer_id, int) and not self.full_name.text().strip():
+                        return True
+                    QMessageBox.warning(
+                        self,
+                        TAB_COORDINATOR,
+                        "Vyberte pověřenou osobu z účastníků schůzky.",
+                    )
+                    return False
                 if not isinstance(employer_id, int):
                     QMessageBox.warning(
                         self,
                         TAB_COORDINATOR,
                         "Vyberte pověřeného zaměstnavatele.",
                     )
-                    return
-                if not isinstance(participant_id, int):
-                    QMessageBox.warning(
-                        self,
-                        TAB_COORDINATOR,
-                        "Vyberte pověřenou osobu z účastníků schůzky.",
-                    )
-                    return
+                    return False
                 coordination_coordinator_service.set_coordinator(
                     self.coordination_id,
                     employer_id=employer_id,
@@ -210,9 +278,11 @@ class CoordinationCoordinatorTab(CoordinationTabEditPolicyMixin, QWidget):
                     note=self.note.toPlainText().strip(),
                 )
             else:
+                if not self.full_name.text().strip():
+                    return True
                 employer_name = self._resolve_manual_employer_name()
                 if employer_name is None:
-                    return
+                    return False
                 coordination_coordinator_service.set_coordinator(
                     self.coordination_id,
                     full_name=self.full_name.text(),
@@ -224,9 +294,8 @@ class CoordinationCoordinatorTab(CoordinationTabEditPolicyMixin, QWidget):
                 )
         except CoordinationCoordinatorError as error:
             QMessageBox.warning(self, TAB_COORDINATOR, str(error))
-            return
-        QMessageBox.information(self, TAB_COORDINATOR, "Koordinátor byl uložen.")
-        self.refresh()
+            return False
+        return True
 
     def _resolve_manual_employer_name(self) -> str | None:
         """Vrátí název organizace ze snapshotu, nebo None při chybě validace."""
@@ -272,6 +341,7 @@ class CoordinationCoordinatorTab(CoordinationTabEditPolicyMixin, QWidget):
             self._last_participant_id = None
         self._apply_source_mode_ui()
         self._update_warning(None)
+        self._notify_dirty()
 
     def _apply_source_mode_ui(self) -> None:
         from_participant = self.source_participant.isChecked()
@@ -307,11 +377,13 @@ class CoordinationCoordinatorTab(CoordinationTabEditPolicyMixin, QWidget):
             self._update_warning(None)
         else:
             self._sync_manual_organization_field(clear_other_text=True)
+        self._notify_dirty()
 
     def _on_participant_changed(self) -> None:
         if self._loading or not self.source_participant.isChecked():
             return
         self._apply_participant_snapshot(overwrite=True)
+        self._notify_dirty()
 
     def _sync_manual_organization_field(self, *, clear_other_text: bool = False) -> None:
         selection = self.employer_combo.currentData()
@@ -529,4 +601,3 @@ class CoordinationCoordinatorTab(CoordinationTabEditPolicyMixin, QWidget):
         self.phone.setEnabled(editable)
         self.email.setEnabled(editable)
         self.note.setEnabled(editable)
-        self.save_btn.setEnabled(editable)
