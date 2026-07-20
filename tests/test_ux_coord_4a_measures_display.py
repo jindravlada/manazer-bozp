@@ -89,6 +89,12 @@ def _odt_content(path: Path) -> str:
         return zin.read("content.xml").decode("utf-8")
 
 
+def _deactivate_template_measures(coordination_id: int) -> None:
+    for item in coordination_measure_service.list_for_coordination(coordination_id):
+        if item.template_code:
+            coordination_measure_service.deactivate(item.id)
+
+
 class UxCoord4aMeasuresDisplayTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -187,6 +193,7 @@ class UxCoord4aMeasuresDisplayTestCase(unittest.TestCase):
             subject="UX-COORD-4a pořadí",
             meeting_date=date.today(),
         )
+        _deactivate_template_measures(coordination.id)
         # Person movement je v MEASURE_CATEGORIES před communication.
         later_cat = coordination_measure_service.add(
             coordination.id,
@@ -236,6 +243,7 @@ class UxCoord4aMeasuresDisplayTestCase(unittest.TestCase):
             subject="UX-COORD-4a neaktivní",
             meeting_date=date.today(),
         )
+        _deactivate_template_measures(coordination.id)
         active = coordination_measure_service.add(
             coordination.id,
             title="Aktivní",

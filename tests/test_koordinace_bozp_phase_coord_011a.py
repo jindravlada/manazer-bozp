@@ -36,6 +36,7 @@ with patch.object(Path, "home", return_value=_TMP):
         ATTACHMENT_TYPE_MAIN_EMPLOYER_PBP,
         ATTACHMENT_TYPE_OTHER,
         BOZP_COORDINATION_STATUS_ARCHIVED,
+        DEFAULT_COMMON_BOZP_RULES,
         MEASURE_CATEGORY_COMMUNICATION,
         MEASURE_CATEGORY_PPE,
         PROTOCOL_WARNING_EMPLOYER_WITHOUT_ACTIVITY,
@@ -246,6 +247,11 @@ class KoordinaceBozpPhaseCoord011aTestCase(unittest.TestCase):
         }
         params.update(kwargs)
         return bozp_coordination_service.create_coordination(**params)
+
+    def _deactivate_template_measures(self, coordination_id: int) -> None:
+        for item in coordination_measure_service.list_for_coordination(coordination_id):
+            if item.template_code:
+                coordination_measure_service.deactivate(item.id)
 
     def _add_workplace(self, coordination_id: int):
         return coordination_workplace_service.add(
@@ -517,7 +523,10 @@ class KoordinaceBozpPhaseCoord011aTestCase(unittest.TestCase):
         self.assertEqual(summary.active_participants, 2)  # koordinátor + účastník
         self.assertEqual(summary.active_workplaces, 1)
         self.assertEqual(summary.active_activities, 2)
-        self.assertEqual(summary.active_measures, 1)
+        self.assertEqual(
+            summary.active_measures,
+            len(DEFAULT_COMMON_BOZP_RULES) + 1,
+        )
         self.assertEqual(summary.active_contacts, 1)
         self.assertGreaterEqual(summary.pbp_rules_count, 1)
         self.assertEqual(summary.active_attachments, 2)  # PBP revize + rizika
@@ -566,6 +575,7 @@ class KoordinaceBozpPhaseCoord011aTestCase(unittest.TestCase):
         self._add_activity(main.id, name="Hlavní činnost")
         self._add_activity(alfa.id, name="Alfa činnost")
         self._add_activity(beta.id, name="Beta činnost")
+        self._deactivate_template_measures(coordination.id)
         self._add_measure(
             coordination.id,
             title="PPE opatření",
@@ -685,6 +695,7 @@ class KoordinaceBozpPhaseCoord011aTestCase(unittest.TestCase):
     def test_missing_measures_warning(self) -> None:
         self._create_pbp_measure(description="Pravidlo")
         coordination = self._create_base_coordination()
+        self._deactivate_template_measures(coordination.id)
         self._add_workplace(coordination.id)
         main = coordination_employer_service.ensure_main_employer(coordination.id)
         self._set_coordinator(coordination.id, main.id)

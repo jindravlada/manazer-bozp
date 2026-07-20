@@ -95,6 +95,12 @@ def _odt_content(path: Path) -> str:
         return zin.read("content.xml").decode("utf-8")
 
 
+def _deactivate_template_measures(coordination_id: int) -> None:
+    for item in coordination_measure_service.list_for_coordination(coordination_id):
+        if item.template_code:
+            coordination_measure_service.deactivate(item.id)
+
+
 class UxCoord9aAgreementRulesTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -186,19 +192,24 @@ class UxCoord9aAgreementRulesTestCase(unittest.TestCase):
             subject="UX-COORD-9a measures",
             meeting_date=date.today(),
         )
+        _deactivate_template_measures(coordination.id)
         created = coordination_measure_service.add(
             coordination.id,
             title="Krátký název",
             description="Text opatření",
         )
         self.assertTrue(created.active)
-        listed = coordination_measure_service.list_for_coordination(coordination.id)
+        listed = coordination_measure_service.list_for_coordination(
+            coordination.id,
+            include_inactive=False,
+        )
         self.assertEqual(len(listed), 1)
         self.assertEqual(listed[0].title, "Krátký název")
 
         dialog = BozpCoordinationDialog(None, coordination=coordination)
         self.assertFalse(dialog.measures_tab.table.isHidden())
-        self.assertEqual(dialog.measures_tab.table.rowCount(), 1)
+        # Tabulka zobrazuje i neaktivní výchozí pravidla.
+        self.assertGreaterEqual(dialog.measures_tab.table.rowCount(), 1)
         dialog.close()
 
     def test_empty_fixed_part_omitted_filled_printed(self) -> None:
@@ -234,6 +245,7 @@ class UxCoord9aAgreementRulesTestCase(unittest.TestCase):
             subject="UX-COORD-9a rules",
             meeting_date=date.today(),
         )
+        _deactivate_template_measures(coordination.id)
         active = coordination_measure_service.add(
             coordination.id,
             title="Aktivní",

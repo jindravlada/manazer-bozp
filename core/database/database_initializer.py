@@ -249,6 +249,7 @@ def _ensure_thp_worker_title_columns() -> None:
     if "performs_controls" not in columns:
         _add_column("thp_workers", "performs_controls BOOLEAN DEFAULT 0")
 
+
 def _ensure_task_columns() -> None:
     columns = _table_columns("tasks")
     additions = {
@@ -2163,12 +2164,23 @@ def _ensure_bozp_coordinations_table() -> None:
         )
 
         CoordinationMeasure.__table__.create(bind=_db_engine(), checkfirst=True)
+        measure_columns = _table_columns("coordination_measures")
+    if measure_columns and "template_code" not in measure_columns:
+        _add_column("coordination_measures", "template_code VARCHAR(64)")
 
     _ensure_index(
         "idx_coordination_measures_coordination",
         """
         CREATE INDEX IF NOT EXISTS idx_coordination_measures_coordination
         ON coordination_measures (coordination_id)
+        """,
+    )
+    _ensure_index(
+        "idx_coordination_measures_template",
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_coordination_measures_template
+        ON coordination_measures (coordination_id, template_code)
+        WHERE template_code IS NOT NULL AND template_code != ''
         """,
     )
 

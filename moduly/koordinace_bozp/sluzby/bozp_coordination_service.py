@@ -187,8 +187,12 @@ class BozpCoordinationService:
         from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
             coordination_employer_service,
         )
+        from moduly.koordinace_bozp.sluzby.coordination_measure_service import (
+            coordination_measure_service,
+        )
 
         coordination_employer_service.ensure_main_employer(created.id)
+        coordination_measure_service.ensure_default_common_rules(created.id)
         return created
 
     def update_coordination(

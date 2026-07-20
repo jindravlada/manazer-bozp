@@ -392,6 +392,65 @@ MEASURE_CATEGORY_LABELS = {
     MEASURE_CATEGORY_OTHER: "Ostatní",
 }
 
+# UX-COORD-9d – malá sada výchozích společných pravidel (ne stará obecná sada).
+DEFAULT_COMMON_RULE_FOLLOW_COORDINATOR = "coord_rule_follow_coordinator"
+DEFAULT_COMMON_RULE_KEEP_ESCAPE_ROUTES = "coord_rule_keep_escape_routes_clear"
+DEFAULT_COMMON_RULE_PROTECTIVE_DEVICES = "coord_rule_protective_devices"
+DEFAULT_COMMON_RULE_RESTRICTED_AREAS = "coord_rule_restricted_areas"
+DEFAULT_COMMON_RULE_VEHICLE_PARKING = "coord_rule_vehicle_parking"
+
+DEFAULT_COMMON_BOZP_RULES = (
+    {
+        "template_code": DEFAULT_COMMON_RULE_FOLLOW_COORDINATOR,
+        "category": MEASURE_CATEGORY_COMMUNICATION,
+        "title": "Dodržovat pokyny koordinátora BOZP.",
+        "description": (
+            "Všichni zúčastnění zaměstnavatelé a jejich zaměstnanci jsou povinni "
+            "dodržovat pokyny koordinátora BOZP."
+        ),
+    },
+    {
+        "template_code": DEFAULT_COMMON_RULE_KEEP_ESCAPE_ROUTES,
+        "category": MEASURE_CATEGORY_PERSON_MOVEMENT,
+        "title": "Udržovat průjezdné únikové cesty.",
+        "description": (
+            "Únikové cesty, komunikace a východy musí být trvale volné a průjezdné; "
+            "nesmí se na nich ukládat materiál ani technika."
+        ),
+    },
+    {
+        "template_code": DEFAULT_COMMON_RULE_PROTECTIVE_DEVICES,
+        "category": MEASURE_CATEGORY_WORK_ORGANIZATION,
+        "title": "Nepřemisťovat ochranná zařízení bez souhlasu.",
+        "description": (
+            "Ochranná zařízení, zábrany a značení se nesmí přemisťovat ani odstraňovat "
+            "bez souhlasu odpovědné osoby hlavního zaměstnavatele."
+        ),
+    },
+    {
+        "template_code": DEFAULT_COMMON_RULE_RESTRICTED_AREAS,
+        "category": MEASURE_CATEGORY_PERSON_MOVEMENT,
+        "title": "Dodržovat zákaz vstupu do vyznačených prostor.",
+        "description": (
+            "Do prostor se zákazem vstupu nebo s omezeným přístupem smí vstupovat "
+            "pouze osoby k tomu oprávněné a vybavené."
+        ),
+    },
+    {
+        "template_code": DEFAULT_COMMON_RULE_VEHICLE_PARKING,
+        "category": MEASURE_CATEGORY_VEHICLE_MOVEMENT,
+        "title": "Parkovat vozidla pouze na určených místech.",
+        "description": (
+            "Vozidla a pracovní stroje lze odstavovat pouze na určených místech tak, "
+            "aby nebránila provozu, přístupu ani úniku osob."
+        ),
+    },
+)
+
+DEFAULT_COMMON_BOZP_RULE_CODES = tuple(
+    item["template_code"] for item in DEFAULT_COMMON_BOZP_RULES
+)
+
 COORDINATION_PBP_INTRO_TEXT = (
     "Dodržujte následující pravidla bezpečné práce. "
     "Jejich nedodržení může vést ke vzniku pracovního úrazu nebo mimořádné události."

@@ -33,6 +33,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
     from core.database.session import get_session
     from moduly.koordinace_bozp.constants import (
+        DEFAULT_COMMON_BOZP_RULES,
         MEASURE_CATEGORY_COMMUNICATION,
         MEASURE_EDITOR_HELP_TEXT,
         MEASURE_TABLE_HEADERS,
@@ -246,10 +247,10 @@ class UxCoord4bMeasureEditorTestCase(unittest.TestCase):
             QHeaderView.ResizeMode.Interactive,
         )
 
-    def test_new_coordination_starts_without_measures(self) -> None:
+    def test_new_coordination_starts_with_default_common_rules(self) -> None:
         coordination = self._create_coordination()
         items = coordination_measure_service.list_for_coordination(coordination.id)
-        self.assertEqual(items, [])
+        self.assertEqual(len(items), len(DEFAULT_COMMON_BOZP_RULES))
         dialog = BozpCoordinationDialog(None)
         self.assertFalse(hasattr(dialog, "insert_default_measures"))
         dialog.close()

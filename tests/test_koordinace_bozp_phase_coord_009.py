@@ -32,6 +32,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
     from core.database.session import get_session
     from moduly.koordinace_bozp.constants import (
+        DEFAULT_COMMON_BOZP_RULES,
         MEASURE_CATEGORY_COMMUNICATION,
         MEASURE_CATEGORY_EMERGENCIES,
         MEASURE_CATEGORY_LABELS,
@@ -72,6 +73,18 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.koordinace_bozp.ui.bozp_coordination_dialog import BozpCoordinationDialog
     from moduly.nastaveni.sluzby.settings_service import settings_service
+
+
+def _delete_template_measures(coordination_id: int) -> None:
+    with get_session() as session:
+        session.execute(
+            delete(CoordinationMeasure).where(
+                CoordinationMeasure.coordination_id == coordination_id,
+                CoordinationMeasure.template_code.is_not(None),
+                CoordinationMeasure.template_code != "",
+            )
+        )
+        session.commit()
 
 
 class KoordinaceBozpPhaseCoord009TestCase(unittest.TestCase):
@@ -125,17 +138,18 @@ class KoordinaceBozpPhaseCoord009TestCase(unittest.TestCase):
         coordination = self._create_coordination()
         measure = coordination_measure_service.add(
             coordination.id,
-            title="Dodržovat pokyny koordinátora BOZP.",
+            title="Ruční pokyn pro dodavatele.",
             description="Platí pro všechny dodavatele.",
             category=MEASURE_CATEGORY_COMMUNICATION,
         )
-        self.assertEqual(measure.title, "Dodržovat pokyny koordinátora BOZP.")
+        self.assertEqual(measure.title, "Ruční pokyn pro dodavatele.")
         self.assertEqual(measure.category, MEASURE_CATEGORY_COMMUNICATION)
         self.assertTrue(measure.active)
-        self.assertEqual(measure.sort_order, 1)
+        self.assertEqual(measure.sort_order, len(DEFAULT_COMMON_BOZP_RULES) + 1)
 
     def test_change_sort_order(self) -> None:
         coordination = self._create_coordination()
+        _delete_template_measures(coordination.id)
         first = coordination_measure_service.add(
             coordination.id,
             title="První",
@@ -210,13 +224,15 @@ class KoordinaceBozpPhaseCoord009TestCase(unittest.TestCase):
         self.assertTrue(coordination_measure_service.activate(measure.id))
         self.assertTrue(coordination_measure_service.get_by_id(measure.id).active)
 
-    def test_new_coordination_has_no_measures(self) -> None:
+    def test_new_coordination_has_default_common_rules(self) -> None:
         coordination = self._create_coordination()
         items = coordination_measure_service.list_for_coordination(coordination.id)
-        self.assertEqual(items, [])
+        self.assertEqual(len(items), len(DEFAULT_COMMON_BOZP_RULES))
+        self.assertTrue(all(item.template_code for item in items))
 
     def test_edit_manually_added_measures(self) -> None:
         coordination = self._create_coordination()
+        _delete_template_measures(coordination.id)
         first = coordination_measure_service.add(
             coordination.id,
             title="Pokyn koordinátora.",
@@ -248,6 +264,7 @@ class KoordinaceBozpPhaseCoord009TestCase(unittest.TestCase):
 
     def test_order_preserved_after_save(self) -> None:
         coordination = self._create_coordination()
+        _delete_template_measures(coordination.id)
         first = coordination_measure_service.add(
             coordination.id,
             title="První",
@@ -283,8 +300,12 @@ class KoordinaceBozpPhaseCoord009TestCase(unittest.TestCase):
         self.assertFalse(hasattr(edit_dialog, "insert_default_measures"))
         self.assertFalse(edit_dialog.measures_tab.content.isHidden())
         self.assertEqual(
-            coordination_measure_service.list_for_coordination(coordination.id),
-            [],
+            len(coordination_measure_service.list_for_coordination(coordination.id)),
+            len(DEFAULT_COMMON_BOZP_RULES),
+        )
+        self.assertEqual(
+            edit_dialog.measures_tab.table.rowCount(),
+            len(DEFAULT_COMMON_BOZP_RULES),
         )
 
 

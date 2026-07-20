@@ -50,3 +50,12 @@ class CoordinationMeasureRepository:
             )
             current = session.scalar(stmt)
             return (current or 0) + 1
+
+    def list_template_codes(self, coordination_id: int) -> set[str]:
+        with get_session() as session:
+            stmt = select(CoordinationMeasure.template_code).where(
+                CoordinationMeasure.coordination_id == coordination_id,
+                CoordinationMeasure.template_code.is_not(None),
+                CoordinationMeasure.template_code != "",
+            )
+            return {code for code in session.scalars(stmt) if code}

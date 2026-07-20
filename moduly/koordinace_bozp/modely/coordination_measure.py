@@ -1,4 +1,4 @@
-"""Organizační opatření koordinace (COORD-009)."""
+"""Organizační opatření koordinace (COORD-009 / UX-COORD-9d)."""
 
 from datetime import datetime
 
@@ -28,6 +28,7 @@ class CoordinationMeasure(Base):
         nullable=False,
         default=DEFAULT_MEASURE_CATEGORY,
     )
+    template_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)

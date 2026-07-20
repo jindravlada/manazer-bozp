@@ -1,4 +1,8 @@
-"""UX-COORD-7 – zrušení výchozích organizačních opatření."""
+"""UX-COORD-7 – zrušení velké výchozí sady organizačních opatření.
+
+UX-COORD-9d doplňuje malou pevnou sadu společných pravidel; tento test ověřuje,
+že se neobnovila stará obecná sada a že dialog nemá checkbox pro výchozí opatření.
+"""
 
 from __future__ import annotations
 
@@ -30,7 +34,11 @@ with patch.object(Path, "home", return_value=_TMP):
     initialize_database()
 
     from core.database.session import get_session
-    from moduly.koordinace_bozp.constants import MEASURE_CATEGORY_COMMUNICATION
+    from moduly.koordinace_bozp.constants import (
+        DEFAULT_COMMON_BOZP_RULE_CODES,
+        DEFAULT_COMMON_BOZP_RULES,
+        MEASURE_CATEGORY_COMMUNICATION,
+    )
     from moduly.koordinace_bozp.modely.bozp_coordination import BozpCoordination
     from moduly.koordinace_bozp.modely.coordination_attachment import (
         CoordinationAttachment,
@@ -87,15 +95,17 @@ class UxCoord7NoDefaultMeasuresTestCase(unittest.TestCase):
             session.execute(delete(BozpCoordination))
             session.commit()
 
-    def test_new_coordination_has_zero_measures(self) -> None:
+    def test_new_coordination_gets_only_small_common_rules_set(self) -> None:
         created = bozp_coordination_service.create_coordination(
-            subject="Bez výchozích opatření",
+            subject="Bez velké výchozí sady",
             meeting_date=date(2026, 7, 19),
             place="Místnost",
         )
+        measures = coordination_measure_service.list_for_coordination(created.id)
+        self.assertEqual(len(measures), len(DEFAULT_COMMON_BOZP_RULES))
         self.assertEqual(
-            coordination_measure_service.list_for_coordination(created.id),
-            [],
+            sorted(item.template_code for item in measures),
+            sorted(DEFAULT_COMMON_BOZP_RULE_CODES),
         )
 
     def test_create_dialog_has_no_default_checkbox(self) -> None:
@@ -104,7 +114,7 @@ class UxCoord7NoDefaultMeasuresTestCase(unittest.TestCase):
         self.assertNotIn("insert_default_measures", dialog.get_data())
         dialog.close()
 
-    def test_no_automatic_measure_records_on_create(self) -> None:
+    def test_create_inserts_exactly_default_common_rules(self) -> None:
         before = 0
         with get_session() as session:
             before = session.query(CoordinationMeasure).count()
@@ -115,7 +125,7 @@ class UxCoord7NoDefaultMeasuresTestCase(unittest.TestCase):
         )
         with get_session() as session:
             after = session.query(CoordinationMeasure).count()
-        self.assertEqual(after, before)
+        self.assertEqual(after, before + len(DEFAULT_COMMON_BOZP_RULES))
 
     def test_existing_measures_unchanged(self) -> None:
         coordination = bozp_coordination_service.create_coordination(
@@ -138,13 +148,11 @@ class UxCoord7NoDefaultMeasuresTestCase(unittest.TestCase):
         assert reloaded is not None
         self.assertEqual(reloaded.title, "Ruční opatření")
         self.assertEqual(reloaded.description, "Zůstane beze změny")
-        self.assertEqual(
-            coordination_measure_service.list_for_coordination(other.id),
-            [],
-        )
+        other_measures = coordination_measure_service.list_for_coordination(other.id)
+        self.assertEqual(len(other_measures), len(DEFAULT_COMMON_BOZP_RULES))
         self.assertEqual(
             len(coordination_measure_service.list_for_coordination(coordination.id)),
-            1,
+            len(DEFAULT_COMMON_BOZP_RULES) + 1,
         )
 
 

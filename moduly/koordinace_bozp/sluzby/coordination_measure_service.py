@@ -1,10 +1,11 @@
-"""Služba organizačních opatření koordinace (COORD-009)."""
+"""Služba organizačních opatření koordinace (COORD-009 / UX-COORD-9d)."""
 
 from __future__ import annotations
 
 from datetime import datetime
 
 from moduly.koordinace_bozp.constants import (
+    DEFAULT_COMMON_BOZP_RULES,
     DEFAULT_MEASURE_CATEGORY,
     MEASURE_CATEGORIES,
     MEASURE_CATEGORY_LABELS,
@@ -46,6 +47,30 @@ class CoordinationMeasureService:
     def category_label(self, category: str) -> str:
         return MEASURE_CATEGORY_LABELS.get(category, category or "")
 
+    def ensure_default_common_rules(
+        self,
+        coordination_id: int,
+    ) -> list[CoordinationMeasure]:
+        """Vloží výchozí společná pravidla; nezduplikuje podle template_code."""
+        if not coordination_id:
+            raise CoordinationMeasureError("Koordinace je povinná.")
+        existing_codes = self.repository.list_template_codes(coordination_id)
+        created: list[CoordinationMeasure] = []
+        for spec in DEFAULT_COMMON_BOZP_RULES:
+            code = spec["template_code"]
+            if code in existing_codes:
+                continue
+            created.append(
+                self.add(
+                    coordination_id,
+                    title=spec["title"],
+                    description=spec["description"],
+                    category=spec["category"],
+                    template_code=code,
+                )
+            )
+        return created
+
     def add(
         self,
         coordination_id: int,
@@ -54,16 +79,19 @@ class CoordinationMeasureService:
         description: str = "",
         category: str = DEFAULT_MEASURE_CATEGORY,
         active: bool = True,
+        template_code: str | None = None,
     ) -> CoordinationMeasure:
         if not coordination_id:
             raise CoordinationMeasureError("Koordinace je povinná.")
         normalized_title = self._validate_title(title)
         normalized_category = self._validate_category(category)
+        code = (template_code or "").strip() or None
         measure = CoordinationMeasure(
             coordination_id=coordination_id,
             title=normalized_title,
             description=(description or "").strip(),
             category=normalized_category,
+            template_code=code,
             active=active,
             sort_order=self.repository.next_sort_order(coordination_id),
         )
