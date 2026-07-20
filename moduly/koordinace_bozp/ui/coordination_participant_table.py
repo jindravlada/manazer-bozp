@@ -21,6 +21,10 @@ from moduly.koordinace_bozp.constants import (
     PART_COLUMN_COUNT,
     PARTICIPANT_TABLE_HEADERS,
 )
+from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
+    coordination_employer_service,
+    employer_tooltip_name,
+)
 from moduly.koordinace_bozp.sluzby.coordination_participant_service import (
     coordination_participant_service,
 )
@@ -48,6 +52,10 @@ class CoordinationParticipantTable(QTableWidget):
                 employer_label = coordination_participant_service.employer_short_label(
                     item.coordination_employer_id
                 )
+                employer = coordination_employer_service.get_by_id(
+                    item.coordination_employer_id
+                )
+                employer_tip = employer_tooltip_name(employer) or employer_label
                 self.setItem(
                     row,
                     PART_COL_ID,
@@ -62,7 +70,7 @@ class CoordinationParticipantTable(QTableWidget):
                     typed_text(employer_label),
                     stable_id=record_id,
                 )
-                apply_cell_tooltip(employer_item, employer_label)
+                apply_cell_tooltip(employer_item, employer_tip)
                 self.setItem(row, PART_COL_EMPLOYER, employer_item)
                 name_text = item.full_name or ""
                 name_item = create_typed_item(

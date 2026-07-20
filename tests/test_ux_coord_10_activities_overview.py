@@ -177,8 +177,11 @@ class UxCoord10ActivitiesOverviewTestCase(unittest.TestCase):
             tab.table.item(row, ACT_COL_EMPLOYER).text()
             for row in range(tab.table.rowCount())
         }
-        self.assertTrue(any("Hlavní firma" in text for text in employer_cells))
-        self.assertTrue(any("Dodavatel Alfa" in text or "ALF" in text for text in employer_cells))
+        self.assertTrue(any("ALF" in text for text in employer_cells))
+        self.assertFalse(any(" – " in text for text in employer_cells))
+        self.assertFalse(
+            any("Dodavatel Alfa" in text for text in employer_cells)
+        )
         tab.close()
 
     def test_sorting_employer_then_from_then_name(self) -> None:

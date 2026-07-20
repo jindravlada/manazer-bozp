@@ -12,7 +12,7 @@ from moduly.koordinace_bozp.repository.coordination_employer_activity_repository
 )
 from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
     coordination_employer_service,
-    employer_abbreviation,
+    employer_short_label,
 )
 from moduly.koordinace_bozp.sluzby.coordination_workplace_service import (
     coordination_workplace_service,
@@ -88,20 +88,11 @@ class CoordinationEmployerActivityService:
         return self.repository.get_by_id(activity_id)
 
     def employer_label(self, coordination_employer_id: int | None) -> str:
+        """Stručné označení zaměstnavatele (sdílený helper, ne zkratka i název)."""
         if not coordination_employer_id:
             return ""
         employer = coordination_employer_service.get_by_id(coordination_employer_id)
-        if employer is None:
-            return ""
-        name = (employer.company_name or "").strip()
-        abbr = employer_abbreviation(employer)
-        if abbr and name and abbr.casefold() != name.casefold():
-            label = f"{abbr} – {name}"
-        else:
-            label = name or abbr
-        if not employer.active:
-            label = f"{label} (neaktivní)" if label else "(neaktivní)"
-        return label
+        return employer_short_label(employer)
 
     def workplace_label(self, workplace_link_id: int | None) -> str:
         if not workplace_link_id:

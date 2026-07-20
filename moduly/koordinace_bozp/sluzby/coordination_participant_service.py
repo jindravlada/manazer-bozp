@@ -20,7 +20,7 @@ from moduly.koordinace_bozp.repository.coordination_participant_repository impor
 )
 from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
     coordination_employer_service,
-    employer_abbreviation,
+    employer_short_label as format_employer_short_label,
 )
 from moduly.nastaveni.sluzby.settings_service import settings_service
 
@@ -116,14 +116,7 @@ class CoordinationParticipantService:
         if not coordination_employer_id:
             return ""
         employer = coordination_employer_service.get_by_id(coordination_employer_id)
-        if employer is None:
-            return ""
-        label = employer_abbreviation(employer).strip()
-        if not label:
-            label = (employer.company_name or "").strip()
-        if not employer.active:
-            label = f"{label} (neaktivní)" if label else "(neaktivní)"
-        return label
+        return format_employer_short_label(employer)
 
     def default_employer_id(self, coordination_id: int) -> int | None:
         """První aktivní zúčastněný, jinak hlavní zaměstnavatel."""

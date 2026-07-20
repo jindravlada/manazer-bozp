@@ -28,6 +28,45 @@ def default_abbreviation(company_name: str) -> str:
     return "".join(word[0] for word in words[:4]).upper()
 
 
+def resolve_abbreviation(
+    abbreviation: str | None,
+    company_name: str | None = None,
+) -> str:
+    """Ruční zkratka má přednost; prázdná použije automatický algoritmus."""
+    manual = " ".join((abbreviation or "").strip().split())
+    if manual:
+        return manual
+    return default_abbreviation(company_name or "")
+
+
+def employer_abbreviation(employer: CoordinationEmployer | None) -> str:
+    if employer is None:
+        return ""
+    return resolve_abbreviation(employer.abbreviation, employer.company_name)
+
+
+def employer_short_label(employer: CoordinationEmployer | None) -> str:
+    """Stručné označení pro přehledové tabulky (jen zkratka, ne zkratka i název).
+
+    Pořadí: ruční zkratka → automatická zkratka → celý název.
+    """
+    if employer is None:
+        return ""
+    label = employer_abbreviation(employer).strip()
+    if not label:
+        label = (employer.company_name or "").strip()
+    if not employer.active:
+        label = f"{label} (neaktivní)" if label else "(neaktivní)"
+    return label
+
+
+def employer_tooltip_name(employer: CoordinationEmployer | None) -> str:
+    """Celý název zaměstnavatele pro tooltip buňky ve zkratce."""
+    if employer is None:
+        return ""
+    return (employer.company_name or "").strip()
+
+
 class CoordinationEmployerService:
     def __init__(self) -> None:
         self.repository = CoordinationEmployerRepository()
