@@ -13,6 +13,7 @@ from core.widgets.typed_table_sort import (
 )
 from moduly.koordinace_bozp.constants import (
     ACT_COL_ACTIVE,
+    ACT_COL_EMPLOYER,
     ACT_COL_FROM,
     ACT_COL_ID,
     ACT_COL_NAME,
@@ -45,6 +46,9 @@ class CoordinationEmployerActivityTable(QTableWidget):
             self.setRowCount(len(activities))
             for row, item in enumerate(activities):
                 record_id = int(item.id)
+                employer_label = coordination_employer_activity_service.employer_label(
+                    item.coordination_employer_id
+                )
                 place_label = coordination_employer_activity_service.workplace_label(
                     item.coordination_workplace_id
                 )
@@ -61,6 +65,13 @@ class CoordinationEmployerActivityTable(QTableWidget):
                         stable_id=record_id,
                     ),
                 )
+                employer_item = create_typed_item(
+                    employer_label,
+                    typed_text(employer_label),
+                    stable_id=record_id,
+                )
+                apply_cell_tooltip(employer_item, employer_label)
+                self.setItem(row, ACT_COL_EMPLOYER, employer_item)
                 name_text = item.activity_name or ""
                 name_item = create_typed_item(
                     name_text,

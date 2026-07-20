@@ -1,5 +1,4 @@
 from PySide6.QtWidgets import (
-    QComboBox,
     QHBoxLayout,
     QLabel,
     QMessageBox,
@@ -19,9 +18,6 @@ from moduly.koordinace_bozp.sluzby.coordination_employer_activity_service import
     CoordinationEmployerActivityError,
     coordination_employer_activity_service,
 )
-from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
-    coordination_employer_service,
-)
 from moduly.koordinace_bozp.ui.coordination_employer_activity_dialog import (
     CoordinationEmployerActivityDialog,
 )
@@ -34,7 +30,7 @@ from moduly.koordinace_bozp.ui.coordination_tab_edit_policy import (
 
 
 class CoordinationEmployerActivitiesTab(CoordinationTabEditPolicyMixin, QWidget):
-    """Záložka činností zúčastněných zaměstnavatelů (COORD-008)."""
+    """Záložka činností na pracovišti – společný přehled (COORD-008 / UX-COORD-10)."""
 
     def __init__(self, parent=None, coordination_id: int | None = None):
         super().__init__(parent)
@@ -54,13 +50,6 @@ class CoordinationEmployerActivitiesTab(CoordinationTabEditPolicyMixin, QWidget)
         content_layout = QVBoxLayout(self.content)
         content_layout.setContentsMargins(0, 0, 0, 0)
 
-        employer_row = QHBoxLayout()
-        employer_row.addWidget(QLabel("Zaměstnavatel:"))
-        self.employer_combo = QComboBox()
-        self.employer_combo.currentIndexChanged.connect(self._on_employer_changed)
-        employer_row.addWidget(self.employer_combo, 1)
-        content_layout.addLayout(employer_row)
-
         toolbar = QHBoxLayout()
         self.add_btn = QPushButton("Přidat")
         self.edit_btn = QPushButton("Upravit")
@@ -74,7 +63,9 @@ class CoordinationEmployerActivitiesTab(CoordinationTabEditPolicyMixin, QWidget)
         content_layout.addLayout(toolbar)
 
         self.table = CoordinationEmployerActivityTable()
-        configure_and_persist_table_columns(self.table, "coordination_employer_activities", COORD_HEADER_ACTIVITIES)
+        configure_and_persist_table_columns(
+            self.table, "coordination_employer_activities", COORD_HEADER_ACTIVITIES
+        )
         content_layout.addWidget(self.table)
         layout.addWidget(self.content)
 
@@ -100,37 +91,12 @@ class CoordinationEmployerActivitiesTab(CoordinationTabEditPolicyMixin, QWidget)
         self.unavailable_label.setVisible(not available)
         self.content.setVisible(available)
         if available:
-            self.refresh_employers()
+            self.refresh()
         else:
-            self.employer_combo.clear()
             self.table.setRowCount(0)
             self._update_action_buttons()
 
-    def refresh_employers(self) -> None:
-        if self.coordination_id is None:
-            return
-        coordination_employer_service.ensure_main_employer(self.coordination_id)
-        previous_id = self.current_employer_id()
-        employers = coordination_employer_service.list_for_coordination(
-            self.coordination_id,
-            include_inactive=True,
-        )
-        self.employer_combo.blockSignals(True)
-        self.employer_combo.clear()
-        for employer in employers:
-            label = f"{employer.abbreviation} – {employer.company_name}".strip(" –")
-            if not employer.active:
-                label = f"{label} (neaktivní)"
-            self.employer_combo.addItem(label, employer.id)
-        self.employer_combo.blockSignals(False)
-
-        if previous_id is not None:
-            index = self.employer_combo.findData(previous_id)
-            if index >= 0:
-                self.employer_combo.setCurrentIndex(index)
-        self.refresh_activities()
-
-    def refresh_activities(
+    def refresh(
         self,
         *,
         select_id: int | None = None,
@@ -138,10 +104,7 @@ class CoordinationEmployerActivitiesTab(CoordinationTabEditPolicyMixin, QWidget)
         preserve_scroll: bool = False,
         ensure_visible: bool = False,
     ) -> None:
-        employer_id = self.current_employer_id()
-        if employer_id is None:
-            self.table.setRowCount(0)
-            self._update_action_buttons()
+        if self.coordination_id is None:
             return
         scroll_value = (
             self.table.verticalScrollBar().value() if preserve_scroll else None
@@ -151,8 +114,8 @@ class CoordinationEmployerActivitiesTab(CoordinationTabEditPolicyMixin, QWidget)
             if select_id is not None
             else self.table.selected_activity_id()
         )
-        activities = coordination_employer_activity_service.list_for_employer(
-            employer_id,
+        activities = coordination_employer_activity_service.list_for_coordination(
+            self.coordination_id,
             include_inactive=True,
         )
         self.table.load_activities(activities)
@@ -169,38 +132,16 @@ class CoordinationEmployerActivitiesTab(CoordinationTabEditPolicyMixin, QWidget)
         )
         self._update_action_buttons()
 
-    def current_employer_id(self) -> int | None:
-        data = self.employer_combo.currentData()
-        return int(data) if isinstance(data, int) else None
-
-    def current_employer(self):
-        employer_id = self.current_employer_id()
-        if employer_id is None:
-            return None
-        return coordination_employer_service.get_by_id(employer_id)
+    # Zpětná kompatibilita pro přepínání záložek v dialogu.
+    def refresh_employers(self) -> None:
+        self.refresh()
 
     def add_activity(self) -> None:
         if self.coordination_id is None or not self.allow_mutate():
             return
-        employer = self.current_employer()
-        if employer is None:
-            QMessageBox.information(
-                self,
-                TAB_EMPLOYER_ACTIVITIES,
-                "Vyberte zaměstnavatele.",
-            )
-            return
-        if not employer.active:
-            QMessageBox.warning(
-                self,
-                TAB_EMPLOYER_ACTIVITIES,
-                "K deaktivovanému zaměstnavateli nelze přidat činnost.",
-            )
-            return
         dialog = CoordinationEmployerActivityDialog(
             self,
             coordination_id=self.coordination_id,
-            default_employer_id=employer.id,
         )
         if not dialog.exec():
             return
@@ -210,13 +151,7 @@ class CoordinationEmployerActivitiesTab(CoordinationTabEditPolicyMixin, QWidget)
         except CoordinationEmployerActivityError as error:
             QMessageBox.warning(self, TAB_EMPLOYER_ACTIVITIES, str(error))
             return
-        self.refresh_employers()
-        created_employer_id = data.get("coordination_employer_id")
-        if isinstance(created_employer_id, int):
-            index = self.employer_combo.findData(created_employer_id)
-            if index >= 0:
-                self.employer_combo.setCurrentIndex(index)
-        self.refresh_activities(select_id=created.id, ensure_visible=True)
+        self.refresh(select_id=created.id, ensure_visible=True)
 
     def edit_selected_activity(self) -> None:
         if self.coordination_id is None or not self.allow_mutate():
@@ -245,13 +180,7 @@ class CoordinationEmployerActivitiesTab(CoordinationTabEditPolicyMixin, QWidget)
         except CoordinationEmployerActivityError as error:
             QMessageBox.warning(self, TAB_EMPLOYER_ACTIVITIES, str(error))
             return
-        self.refresh_employers()
-        employer_id = data.get("coordination_employer_id")
-        if isinstance(employer_id, int):
-            index = self.employer_combo.findData(employer_id)
-            if index >= 0:
-                self.employer_combo.setCurrentIndex(index)
-        self.refresh_activities(select_id=activity.id, preserve_scroll=True)
+        self.refresh(select_id=activity.id, preserve_scroll=True)
 
     def activate_selected_activity(self) -> None:
         if not self.allow_mutate():
@@ -285,7 +214,7 @@ class CoordinationEmployerActivitiesTab(CoordinationTabEditPolicyMixin, QWidget)
         except CoordinationEmployerActivityError as error:
             QMessageBox.warning(self, TAB_EMPLOYER_ACTIVITIES, str(error))
             return
-        self.refresh_activities(select_id=activity.id, ensure_visible=True)
+        self.refresh(select_id=activity.id, ensure_visible=True)
 
     def deactivate_selected_activity(self) -> None:
         if not self.allow_mutate():
@@ -316,14 +245,11 @@ class CoordinationEmployerActivitiesTab(CoordinationTabEditPolicyMixin, QWidget)
             return
         row = current_table_row(self.table)
         coordination_employer_activity_service.deactivate(activity.id)
-        self.refresh_activities(
+        self.refresh(
             select_id=activity.id,
             fallback_row=row,
             ensure_visible=True,
         )
-
-    def _on_employer_changed(self) -> None:
-        self.refresh_activities()
 
     def _selected_activity(self):
         activity_id = self.table.selected_activity_id()
@@ -338,9 +264,7 @@ class CoordinationEmployerActivitiesTab(CoordinationTabEditPolicyMixin, QWidget)
             self.activate_btn.setEnabled(False)
             self.deactivate_btn.setEnabled(False)
             return
-        employer = self.current_employer()
-        can_add = employer is not None and bool(employer.active)
-        self.add_btn.setEnabled(can_add)
+        self.add_btn.setEnabled(self.coordination_id is not None)
 
         activity = self._selected_activity()
         has_selection = activity is not None

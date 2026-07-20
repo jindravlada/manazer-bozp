@@ -303,6 +303,13 @@ class KoordinaceBozpPhaseCoord008TestCase(unittest.TestCase):
             [item.activity_name for item in contractor_items],
             ["Činnost dodavatele"],
         )
+        all_items = coordination_employer_activity_service.list_for_coordination(
+            coordination.id
+        )
+        self.assertEqual(
+            {item.activity_name for item in all_items},
+            {"Činnost hlavního", "Činnost dodavatele"},
+        )
 
     def test_ui_tab_present(self) -> None:
         coordination = self._create_coordination()
@@ -310,6 +317,8 @@ class KoordinaceBozpPhaseCoord008TestCase(unittest.TestCase):
         labels = [dialog.tabs.tabText(i) for i in range(dialog.tabs.count())]
         self.assertIn(TAB_EMPLOYER_ACTIVITIES, labels)
         self.assertFalse(dialog.employer_activities_tab.content.isHidden())
+        self.assertFalse(hasattr(dialog.employer_activities_tab, "employer_combo"))
+        dialog.close()
 
 
 if __name__ == "__main__":

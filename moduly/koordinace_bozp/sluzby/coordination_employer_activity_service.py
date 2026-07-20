@@ -12,6 +12,7 @@ from moduly.koordinace_bozp.repository.coordination_employer_activity_repository
 )
 from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
     coordination_employer_service,
+    employer_abbreviation,
 )
 from moduly.koordinace_bozp.sluzby.coordination_workplace_service import (
     coordination_workplace_service,
@@ -41,10 +42,66 @@ class CoordinationEmployerActivityService:
             include_inactive=include_inactive,
         )
 
+    def list_for_coordination(
+        self,
+        coordination_id: int,
+        *,
+        include_inactive: bool = True,
+    ) -> list[CoordinationEmployerActivity]:
+        """Činnosti všech zaměstnavatelů koordinace (UX-COORD-10)."""
+        if not coordination_id:
+            return []
+        items = self.repository.list_for_coordination(
+            coordination_id,
+            include_inactive=include_inactive,
+        )
+        employers = {
+            employer.id: employer
+            for employer in coordination_employer_service.list_for_coordination(
+                coordination_id,
+                include_inactive=True,
+            )
+        }
+
+        def sort_key(item: CoordinationEmployerActivity) -> tuple:
+            employer = employers.get(item.coordination_employer_id)
+            if employer is None:
+                employer_key = (10_000, "", item.coordination_employer_id or 0)
+            else:
+                employer_key = (
+                    int(employer.sort_order or 0),
+                    (employer.company_name or "").casefold(),
+                    int(employer.id),
+                )
+            return (
+                employer_key,
+                item.planned_from or date.max,
+                normalize_activity_name(item.activity_name).casefold(),
+                item.id,
+            )
+
+        return sorted(items, key=sort_key)
+
     def get_by_id(self, activity_id: int | None) -> CoordinationEmployerActivity | None:
         if not activity_id:
             return None
         return self.repository.get_by_id(activity_id)
+
+    def employer_label(self, coordination_employer_id: int | None) -> str:
+        if not coordination_employer_id:
+            return ""
+        employer = coordination_employer_service.get_by_id(coordination_employer_id)
+        if employer is None:
+            return ""
+        name = (employer.company_name or "").strip()
+        abbr = employer_abbreviation(employer)
+        if abbr and name and abbr.casefold() != name.casefold():
+            label = f"{abbr} – {name}"
+        else:
+            label = name or abbr
+        if not employer.active:
+            label = f"{label} (neaktivní)" if label else "(neaktivní)"
+        return label
 
     def workplace_label(self, workplace_link_id: int | None) -> str:
         if not workplace_link_id:
