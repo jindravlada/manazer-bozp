@@ -17,6 +17,7 @@ from core.widgets.dialog_utils import (
 )
 from moduly.koordinace_bozp.constants import (
     CONTACT_TYPES,
+    CONTACT_TYPES_SELECTABLE,
     CONTACT_TYPE_LABELS,
     DEFAULT_CONTACT_TYPE,
 )
@@ -63,8 +64,12 @@ class CoordinationContactDialog(QDialog):
 
         self.participant = QComboBox()
         self.contact_type = QComboBox()
+        current_type = (
+            (contact.contact_type or "").strip() if contact is not None else ""
+        )
         for type_id in CONTACT_TYPES:
-            self.contact_type.addItem(CONTACT_TYPE_LABELS[type_id], type_id)
+            if type_id in CONTACT_TYPES_SELECTABLE or type_id == current_type:
+                self.contact_type.addItem(CONTACT_TYPE_LABELS[type_id], type_id)
         self.custom_name = QLineEdit()
         self.role = QLineEdit()
         self.phone = QLineEdit()

@@ -27,6 +27,7 @@ from moduly.koordinace_bozp.constants import (
     PROTOCOL_WARNING_SEVERITY_CRITICAL,
     PROTOCOL_WARNING_SEVERITY_INFO,
     PROTOCOL_WARNING_SEVERITY_WARNING,
+    TAB_CONTACTS,
 )
 from moduly.koordinace_bozp.sluzby.coordination_protocol_builder import (
     CoordinationProtocolBuilderError,
@@ -246,13 +247,19 @@ class CoordinationProtocolPreviewDialog(QDialog):
             )
 
         contacts = data.get("contacts") or []
+        contact_groups = data.get("contacts_by_type") or []
         procedures = data.get("emergency_procedures") or {}
         self._add_section(
-            "Kontakty a mimořádné události",
-            self._contacts_procedures_lines(contacts, procedures),
-            force=bool(contacts)
-            or any(procedures.values()),
+            TAB_CONTACTS,
+            self._contacts_grouped_lines(contact_groups, contacts),
+            force=bool(contacts) or bool(contact_groups),
         )
+        if any((value or "").strip() for value in procedures.values()):
+            self._add_section(
+                "Postupy při mimořádných událostech",
+                self._procedures_lines(procedures),
+                force=True,
+            )
 
         risks = data.get("risk_handovers") or []
         self._add_section(
@@ -403,34 +410,39 @@ class CoordinationProtocolPreviewDialog(QDialog):
         return lines
 
     @staticmethod
-    def _contacts_procedures_lines(contacts, procedures) -> list[str]:
-        lines = []
-        if contacts:
-            lines.append("Kontakty:")
-            for contact in contacts:
+    def _contacts_grouped_lines(contact_groups, contacts) -> list[str]:
+        groups = list(contact_groups or [])
+        if not groups and contacts:
+            groups = [{"contact_type_label": "", "contacts": list(contacts)}]
+        lines: list[str] = []
+        for group in groups:
+            type_label = (group.get("contact_type_label") or "").strip()
+            items = group.get("contacts") or []
+            if not items:
+                continue
+            if type_label:
+                lines.append(type_label)
+            for contact in items:
                 detail = contact.get("custom_name") or "—"
-                type_label = contact.get("contact_type_label") or ""
-                if type_label:
-                    detail = f"{detail} ({type_label})"
+                role = contact.get("role") or ""
+                if role:
+                    detail = f"{detail} – {role}"
                 phone = contact.get("phone") or ""
                 email = contact.get("email") or ""
                 extras = ", ".join(item for item in (phone, email) if item)
                 if extras:
                     detail = f"{detail} – {extras}"
-                lines.append(f"  • {detail}")
-            lines.append("")
-        lines.append("Postupy:")
-        lines.append(
-            f"Mimořádná událost: {procedures.get('emergency_reporting') or '—'}"
-        )
-        lines.append(
-            f"Pracovní úraz: {procedures.get('accident_reporting') or '—'}"
-        )
-        lines.append(f"Požár: {procedures.get('fire_reporting') or '—'}")
-        lines.append(
-            f"Evakuace: {procedures.get('evacuation_instructions') or '—'}"
-        )
-        return lines
+                lines.append(f"• {detail}")
+        return lines or ["—"]
+
+    @staticmethod
+    def _procedures_lines(procedures) -> list[str]:
+        return [
+            f"Mimořádná událost: {procedures.get('emergency_reporting') or '—'}",
+            f"Pracovní úraz: {procedures.get('accident_reporting') or '—'}",
+            f"Požár: {procedures.get('fire_reporting') or '—'}",
+            f"Evakuace: {procedures.get('evacuation_instructions') or '—'}",
+        ]
 
     @staticmethod
     def _risks_lines(rows) -> list[str]:

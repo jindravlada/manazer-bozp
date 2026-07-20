@@ -23,6 +23,7 @@ from moduly.koordinace_bozp.constants import (
     ATTACHMENT_TYPE_MAIN_EMPLOYER_PBP,
     ATTACHMENT_TYPE_OTHER,
     BOZP_COORDINATION_STATUS_ARCHIVED,
+    CONTACT_TYPES,
     CONTACT_TYPE_LABELS,
     MEASURE_CATEGORIES,
     MEASURE_CATEGORY_LABELS,
@@ -57,7 +58,7 @@ from moduly.koordinace_bozp.sluzby.coordination_attachment_service import (
     coordination_attachment_service,
 )
 from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
-    default_abbreviation,
+    employer_abbreviation,
 )
 from moduly.koordinace_bozp.sluzby.coordination_contact_service import (
     coordination_contact_service,
@@ -173,20 +174,44 @@ def _agreement_coordinator_lines(coordinator: Mapping[str, Any] | None) -> list[
     return lines
 
 
-def _agreement_contacts_lines(contacts: list | None) -> list[str]:
+def _format_contact_detail(contact: Mapping[str, Any]) -> str:
+    detail = (contact.get("custom_name") or "").strip()
+    role = (contact.get("role") or "").strip()
+    if role:
+        detail = f"{detail} – {role}" if detail else role
+    phone = (contact.get("phone") or "").strip()
+    email = (contact.get("email") or "").strip()
+    extras = ", ".join(item for item in (phone, email) if item)
+    if extras:
+        detail = f"{detail} – {extras}" if detail else extras
+    return detail
+
+
+def _agreement_contacts_lines(
+    contacts: list | None,
+    contacts_by_type: list | None = None,
+) -> list[str]:
+    groups = contacts_by_type
+    if not groups and contacts:
+        # Zpětná kompatibilita / ručně doplněný flat seznam bez contacts_by_type.
+        groups = [
+            {
+                "contact_type_label": "",
+                "contacts": list(contacts),
+            }
+        ]
     lines: list[str] = []
-    for contact in contacts or []:
-        detail = (contact.get("custom_name") or "").strip()
-        type_label = (contact.get("contact_type_label") or "").strip()
+    for group in groups or []:
+        type_label = (group.get("contact_type_label") or "").strip()
+        items = group.get("contacts") or []
+        if not items:
+            continue
         if type_label:
-            detail = f"{detail} ({type_label})" if detail else type_label
-        phone = (contact.get("phone") or "").strip()
-        email = (contact.get("email") or "").strip()
-        extras = ", ".join(item for item in (phone, email) if item)
-        if extras:
-            detail = f"{detail} – {extras}" if detail else extras
-        if detail:
-            lines.append(f"• {detail}")
+            lines.append(type_label)
+        for contact in items:
+            detail = _format_contact_detail(contact)
+            if detail:
+                lines.append(f"• {detail}")
     return lines
 
 
@@ -231,7 +256,10 @@ def build_coordination_agreement_parts(
         ),
         (
             AGREEMENT_PART_CONTACTS,
-            _agreement_contacts_lines(data.get("contacts")),
+            _agreement_contacts_lines(
+                data.get("contacts"),
+                data.get("contacts_by_type"),
+            ),
         ),
         (
             AGREEMENT_PART_WORKPLACE_HANDOVER,
@@ -431,6 +459,7 @@ class CoordinationProtocolBuilder:
                 "final_provisions_text": coordination.final_provisions_text or "",
             },
             "contacts": [self._contact_dict(item) for item in contacts],
+            "contacts_by_type": self._group_contacts(contacts),
             "emergency_procedures": {
                 "emergency_reporting": coordination.emergency_reporting or "",
                 "accident_reporting": coordination.accident_reporting or "",
@@ -707,9 +736,7 @@ class CoordinationProtocolBuilder:
 
     @staticmethod
     def _employer_dict(employer) -> dict:
-        abbr = (employer.abbreviation or "").strip() or default_abbreviation(
-            employer.company_name or ""
-        )
+        abbr = employer_abbreviation(employer)
         name = employer.company_name or abbr or f"#{employer.id}"
         display = name
         if abbr and abbr != name:
@@ -801,6 +828,28 @@ class CoordinationProtocolBuilder:
                     "category": category,
                     "category_label": MEASURE_CATEGORY_LABELS.get(category, category),
                     "measures": items,
+                }
+            )
+        return result
+
+    def _group_contacts(self, contacts) -> list[dict]:
+        by_type: dict[str, list] = {key: [] for key in CONTACT_TYPES}
+        for contact in contacts:
+            type_id = contact.contact_type if contact.contact_type in by_type else "other"
+            if type_id not in by_type:
+                by_type[type_id] = []
+            by_type[type_id].append(self._contact_dict(contact))
+        result = []
+        for type_id in CONTACT_TYPES:
+            items = by_type.get(type_id) or []
+            if not items:
+                continue
+            items.sort(key=lambda item: (item["sort_order"], item["id"]))
+            result.append(
+                {
+                    "contact_type": type_id,
+                    "contact_type_label": CONTACT_TYPE_LABELS.get(type_id, type_id),
+                    "contacts": items,
                 }
             )
         return result

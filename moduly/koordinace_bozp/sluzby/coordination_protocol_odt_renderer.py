@@ -46,7 +46,7 @@ PROTOCOL_ODT_CHAPTER_TITLES = (
     "Činnosti na pracovišti",
     "Dohoda o koordinaci BOZP",
     "Společná pravidla BOZP",
-    "Kontakty",
+    "Důležité kontakty",
     "Postupy při mimořádných událostech",
     "Informace o předání rizik",
     "Přehled příloh",
@@ -342,26 +342,34 @@ class CoordinationProtocolOdtRenderer:
             lines.extend(measure_lines)
             lines.append("")
 
-        # 10. Kontakty
-        lines.append("Kontakty")
+        # 10. Důležité kontakty
+        lines.append("Důležité kontakty")
         lines.append("")
-        contacts = data.get("contacts") or []
-        if contacts:
-            for contact in contacts:
-                detail = contact.get("custom_name") or "—"
-                type_label = contact.get("contact_type_label") or ""
+        contact_groups = data.get("contacts_by_type") or []
+        if not contact_groups and data.get("contacts"):
+            contact_groups = [
+                {
+                    "contact_type_label": "",
+                    "contacts": list(data.get("contacts") or []),
+                }
+            ]
+        if contact_groups:
+            for group in contact_groups:
+                type_label = (group.get("contact_type_label") or "").strip()
                 if type_label:
-                    detail = f"{detail} ({type_label})"
-                if contact.get("role"):
-                    detail = f"{detail} – {contact['role']}"
-                extras = []
-                if contact.get("phone"):
-                    extras.append(contact["phone"])
-                if contact.get("email"):
-                    extras.append(contact["email"])
-                if extras:
-                    detail = f"{detail}: {', '.join(extras)}"
-                lines.append(f"• {detail}")
+                    lines.append(type_label)
+                for contact in group.get("contacts") or []:
+                    detail = contact.get("custom_name") or "—"
+                    if contact.get("role"):
+                        detail = f"{detail} – {contact['role']}"
+                    extras = []
+                    if contact.get("phone"):
+                        extras.append(contact["phone"])
+                    if contact.get("email"):
+                        extras.append(contact["email"])
+                    if extras:
+                        detail = f"{detail}: {', '.join(extras)}"
+                    lines.append(f"• {detail}")
         else:
             lines.append("—")
         lines.append("")

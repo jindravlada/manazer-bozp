@@ -272,7 +272,7 @@ AGREEMENT_FIXED_PART_ORDER = (
     AGREEMENT_PART_EMERGENCIES,
     AGREEMENT_PART_FINAL,
 )
-TAB_CONTACTS = "Kontakty a mimořádné události"
+TAB_CONTACTS = "Důležité kontakty"
 TAB_RISK_SUBMISSIONS = "Předání rizik dodavatelů"
 TAB_PBP_ATTACHMENT = "Příloha PBP"
 
@@ -287,35 +287,63 @@ COORD_HEADER_CONTACTS = "coordination/contacts/header"
 COORD_HEADER_RISKS = "coordination/risks/header"
 COORD_HEADER_PBP = "coordination/pbp/header"
 
-# Kontakty a mimořádné události (COORD-010).
+# Důležité kontakty (COORD-010 / UX-COORD-11).
+CONTACT_TYPE_TECHNICAL = "technical_requirements"
+CONTACT_TYPE_ORGANIZATIONAL = "organizational_requirements"
+CONTACT_TYPE_WORK_START_END = "work_start_end_reporting"
+CONTACT_TYPE_SHIFT_SUPERVISOR = "shift_supervisor"
+CONTACT_TYPE_OTHER = "other"
+
+# Legacy typy – pouze pro stávající záznamy (nelze nově vybrat).
 CONTACT_TYPE_COORDINATION = "coordination"
 CONTACT_TYPE_WORKPLACE_HANDOVER = "workplace_handover"
 CONTACT_TYPE_OPERATION = "operation"
 CONTACT_TYPE_FIRST_AID = "first_aid"
 CONTACT_TYPE_FIRE = "fire"
 CONTACT_TYPE_EMERGENCY = "emergency"
-CONTACT_TYPE_OTHER = "other"
 
-CONTACT_TYPES = (
+CONTACT_TYPES_SELECTABLE = (
+    CONTACT_TYPE_TECHNICAL,
+    CONTACT_TYPE_ORGANIZATIONAL,
+    CONTACT_TYPE_WORK_START_END,
+    CONTACT_TYPE_SHIFT_SUPERVISOR,
+    CONTACT_TYPE_OTHER,
+)
+
+CONTACT_TYPES_DEPRECATED_FOR_NEW = frozenset(
+    {
+        CONTACT_TYPE_COORDINATION,
+        CONTACT_TYPE_WORKPLACE_HANDOVER,
+        CONTACT_TYPE_OPERATION,
+        CONTACT_TYPE_FIRST_AID,
+        CONTACT_TYPE_FIRE,
+        CONTACT_TYPE_EMERGENCY,
+    }
+)
+
+CONTACT_TYPES = CONTACT_TYPES_SELECTABLE + (
     CONTACT_TYPE_COORDINATION,
     CONTACT_TYPE_WORKPLACE_HANDOVER,
     CONTACT_TYPE_OPERATION,
     CONTACT_TYPE_FIRST_AID,
     CONTACT_TYPE_FIRE,
     CONTACT_TYPE_EMERGENCY,
-    CONTACT_TYPE_OTHER,
 )
 
 DEFAULT_CONTACT_TYPE = CONTACT_TYPE_OTHER
 
 CONTACT_TYPE_LABELS = {
+    CONTACT_TYPE_TECHNICAL: "Technické požadavky",
+    CONTACT_TYPE_ORGANIZATIONAL: "Organizační požadavky",
+    CONTACT_TYPE_WORK_START_END: "Ohlášení zahájení a ukončení prací",
+    CONTACT_TYPE_SHIFT_SUPERVISOR: "Kontakt na vedoucího směny",
+    CONTACT_TYPE_OTHER: "Ostatní",
     CONTACT_TYPE_COORDINATION: "Koordinace BOZP",
     CONTACT_TYPE_WORKPLACE_HANDOVER: "Předání pracoviště",
     CONTACT_TYPE_OPERATION: "Provoz / práce",
     CONTACT_TYPE_FIRST_AID: "První pomoc",
     CONTACT_TYPE_FIRE: "Požár",
     CONTACT_TYPE_EMERGENCY: "Mimořádná událost",
-    CONTACT_TYPE_OTHER: "Ostatní",
 }
 
 DEFAULT_EMERGENCY_REPORTING = (

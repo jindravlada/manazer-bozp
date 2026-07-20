@@ -43,7 +43,7 @@ from moduly.koordinace_bozp.ui.coordination_tab_edit_policy import (
 
 
 class CoordinationContactsTab(CoordinationTabEditPolicyMixin, QWidget):
-    """Záložka kontaktů a postupů při mimořádných událostech (COORD-010)."""
+    """Záložka důležitých kontaktů (COORD-010 / UX-COORD-11)."""
 
     def __init__(self, parent=None, coordination_id: int | None = None):
         super().__init__(parent)
@@ -53,7 +53,7 @@ class CoordinationContactsTab(CoordinationTabEditPolicyMixin, QWidget):
 
         layout = QVBoxLayout(self)
         self.unavailable_label = QLabel(
-            "Kontakty a postupy lze spravovat po uložení koordinace."
+            "Důležité kontakty lze spravovat po uložení koordinace."
         )
         self.unavailable_label.setWordWrap(True)
         layout.addWidget(self.unavailable_label)
