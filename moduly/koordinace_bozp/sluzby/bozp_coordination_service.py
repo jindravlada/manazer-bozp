@@ -127,7 +127,7 @@ class BozpCoordinationService:
         self,
         *,
         meeting_date: date | None = None,
-        place: str = "",
+        place: str | None = None,
         subject: str = "",
         status: str = DEFAULT_BOZP_COORDINATION_STATUS,
         note: str = "",
@@ -152,10 +152,15 @@ class BozpCoordinationService:
             valid_to=valid_to,
         )
         self._validate_validity_range(resolved_from, resolved_to)
+        # UX-COORD-9e: výchozí místo jen při vzniku; explicitní "" nepřepisovat.
+        if place is None:
+            resolved_place = default_meeting_place_from_settings()
+        else:
+            resolved_place = (place or "").strip()
         coordination = BozpCoordination(
             coordination_number=self.repository.allocate_next_number(),
             meeting_date=resolved_meeting,
-            place=(place or "").strip(),
+            place=resolved_place,
             subject=normalized_subject,
             status=DEFAULT_BOZP_COORDINATION_STATUS,
             note=(note or "").strip(),
@@ -292,6 +297,34 @@ class BozpCoordinationService:
     def _default_procedure_text(value: str | None, default: str) -> str:
         text = (value or "").strip()
         return text or default
+
+
+def compose_company_seat_address(
+    *,
+    street: str = "",
+    postal_code: str = "",
+    city: str = "",
+) -> str:
+    """Sestaví čitelnou adresu sídla bez prázdných částí a nadbytečných čárek."""
+    street_part = " ".join((street or "").split())
+    postal_part = " ".join((postal_code or "").split())
+    city_part = " ".join((city or "").split())
+    locality = " ".join(part for part in (postal_part, city_part) if part)
+    return ", ".join(part for part in (street_part, locality) if part)
+
+
+def default_meeting_place_from_settings() -> str:
+    """Adresa sídla z Nastavení → Zaměstnavatel (nebo prázdný řetězec)."""
+    from moduly.nastaveni.sluzby.settings_service import settings_service
+
+    employer = settings_service.get_employer()
+    if employer is None:
+        return ""
+    address = (employer.address or "").strip()
+    if not address:
+        return ""
+    # Uložená adresa je už jeden text (např. z ARES); nepoužívat doslovné „sídlo“.
+    return address
 
 
 bozp_coordination_service = BozpCoordinationService()

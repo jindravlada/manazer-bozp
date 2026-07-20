@@ -49,6 +49,7 @@ from moduly.koordinace_bozp.constants import (
 from moduly.koordinace_bozp.sluzby.bozp_coordination_service import (
     BozpCoordinationError,
     bozp_coordination_service,
+    default_meeting_place_from_settings,
 )
 from moduly.koordinace_bozp.sluzby.coordination_lifecycle_service import (
     LifecycleAction,
@@ -233,6 +234,7 @@ class BozpCoordinationDialog(QDialog):
 
         if coordination is None:
             self.number_label.setText(bozp_coordination_service.preview_next_number())
+            self.place.setText(default_meeting_place_from_settings())
             self._apply_default_validity_from_meeting()
             self._refresh_status_ui(DEFAULT_BOZP_COORDINATION_STATUS)
         else:
