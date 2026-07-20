@@ -254,7 +254,9 @@ AGREEMENT_PART_WORK_INTENT = (
 )
 AGREEMENT_PART_MUTUAL_RISKS = "Vzájemné informování o rizicích"
 AGREEMENT_PART_PPE = "Osobní ochranné pracovní prostředky"
-AGREEMENT_PART_COORDINATOR = "Stanovení koordinátora a další ustanovení"
+AGREEMENT_PART_COORDINATOR = (
+    "Stanovení koordinátora na pracovišti a další ustanovení dohody"
+)
 AGREEMENT_PART_CONTACTS = "Organizační zajištění a důležité kontakty"
 AGREEMENT_PART_WORKPLACE_HANDOVER = "Předání pracoviště"
 AGREEMENT_PART_EMERGENCIES = "Mimořádné události"

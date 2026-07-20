@@ -24,6 +24,7 @@ from moduly.koordinace_bozp.sluzby.coordination_coordinator_service import (
 )
 from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
     coordination_employer_service,
+    employer_abbreviation,
 )
 from moduly.koordinace_bozp.sluzby.coordination_participant_service import (
     coordination_participant_service,
@@ -95,7 +96,7 @@ class CoordinationCoordinatorTab(CoordinationTabEditPolicyMixin, QWidget):
         self.form.addRow("Funkce:", self.role)
         self.form.addRow("Telefon:", self.phone)
         self.form.addRow("E-mail:", self.email)
-        self.form.addRow("Poznámka:", self.note)
+        self.form.addRow("Další informace:", self.note)
         content_layout.addLayout(self.form)
 
         buttons = QHBoxLayout()
@@ -371,7 +372,9 @@ class CoordinationCoordinatorTab(CoordinationTabEditPolicyMixin, QWidget):
         for employer in employers:
             if not employer.active and employer.id != preferred_employer_id:
                 continue
-            label = f"{employer.abbreviation} – {employer.company_name}".strip(" –")
+            label = f"{employer_abbreviation(employer)} – {employer.company_name}".strip(
+                " –"
+            )
             if not employer.active:
                 label = f"{label} (neaktivní)"
             self.employer_combo.addItem(label, employer.id)
@@ -393,7 +396,9 @@ class CoordinationCoordinatorTab(CoordinationTabEditPolicyMixin, QWidget):
         self.employer_combo.blockSignals(True)
         self.employer_combo.clear()
         for employer in employers:
-            label = f"{employer.abbreviation} – {employer.company_name}".strip(" –")
+            label = f"{employer_abbreviation(employer)} – {employer.company_name}".strip(
+                " –"
+            )
             self.employer_combo.addItem(label, employer.id)
         self.employer_combo.addItem(
             COORDINATOR_MANUAL_OTHER_ORGANIZATION_LABEL,

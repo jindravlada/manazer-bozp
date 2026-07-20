@@ -152,18 +152,24 @@ def _agreement_coordinator_lines(coordinator: Mapping[str, Any] | None) -> list[
     name = (coordinator.get("full_name") or "").strip()
     if name:
         lines.append(f"Jméno: {name}")
-    role = (coordinator.get("role") or "").strip()
-    if role:
-        lines.append(f"Role: {role}")
     employer = (coordinator.get("employer_name") or "").strip()
     if employer:
-        lines.append(f"Zaměstnavatel: {employer}")
+        lines.append(f"Organizace: {employer}")
+    role = (coordinator.get("role") or "").strip()
+    if role:
+        lines.append(f"Funkce: {role}")
     phone = (coordinator.get("phone") or "").strip()
     if phone:
         lines.append(f"Telefon: {phone}")
     email = (coordinator.get("email") or "").strip()
     if email:
         lines.append(f"E-mail: {email}")
+    note = (coordinator.get("note") or "").strip()
+    if note:
+        if lines:
+            lines.append("")
+        lines.append("Další informace")
+        lines.append(note)
     return lines
 
 

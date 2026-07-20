@@ -353,15 +353,24 @@ class CoordinationProtocolPreviewDialog(QDialog):
     def _coordinator_lines(coordinator) -> list[str]:
         if not coordinator:
             return ["Koordinátor není určen."]
-        lines = [
-            f"Jméno: {coordinator.get('full_name') or '—'}",
-            f"Role: {coordinator.get('role') or '—'}",
-            f"Zaměstnavatel: {coordinator.get('employer_name') or '—'}",
-        ]
+        lines = []
+        name = (coordinator.get("full_name") or "").strip()
+        lines.append(f"Jméno: {name or '—'}")
+        employer = (coordinator.get("employer_name") or "").strip()
+        if employer:
+            lines.append(f"Organizace: {employer}")
+        role = (coordinator.get("role") or "").strip()
+        if role:
+            lines.append(f"Funkce: {role}")
         if coordinator.get("phone"):
             lines.append(f"Telefon: {coordinator['phone']}")
         if coordinator.get("email"):
             lines.append(f"E-mail: {coordinator['email']}")
+        note = (coordinator.get("note") or "").strip()
+        if note:
+            lines.append("")
+            lines.append("Další informace")
+            lines.append(note)
         return lines
 
     @staticmethod

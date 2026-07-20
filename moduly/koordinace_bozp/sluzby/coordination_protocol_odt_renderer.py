@@ -267,14 +267,19 @@ class CoordinationProtocolOdtRenderer:
             lines.append("Koordinátor není určen.")
         else:
             lines.append(f"Jméno: {coordinator.get('full_name') or '—'}")
-            lines.append(f"Role: {coordinator.get('role') or '—'}")
-            lines.append(f"Zaměstnavatel: {coordinator.get('employer_name') or '—'}")
+            if coordinator.get("employer_name"):
+                lines.append(f"Organizace: {coordinator['employer_name']}")
+            if coordinator.get("role"):
+                lines.append(f"Funkce: {coordinator['role']}")
             if coordinator.get("phone"):
                 lines.append(f"Telefon: {coordinator['phone']}")
             if coordinator.get("email"):
                 lines.append(f"E-mail: {coordinator['email']}")
-            if coordinator.get("note"):
-                lines.append(f"Poznámka: {coordinator['note']}")
+            note = (coordinator.get("note") or "").strip()
+            if note:
+                lines.append("")
+                lines.append("Další informace")
+                lines.append(note)
         lines.append("")
 
         # 6. Místa
