@@ -30,7 +30,7 @@ from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
 
 
 class CoordinationContactDialog(QDialog):
-    """Přidání / úprava kontaktu koordinace (COORD-010 / UX-COORD-12d)."""
+    """Přidání / úprava kontaktu koordinace (COORD-010 / UX-COORD-12d / UX-COORD-14)."""
 
     def __init__(
         self,
@@ -90,9 +90,9 @@ class CoordinationContactDialog(QDialog):
         form.addRow("Účastník:", self.participant)
         form.addRow("Zaměstnavatel *:", self.employer)
         form.addRow("Typ kontaktu *:", self.contact_type)
-        form.addRow("Jméno *:", self.custom_name)
+        form.addRow("Jméno:", self.custom_name)
         form.addRow("Funkce / role:", self.role)
-        form.addRow("Telefon:", self.phone)
+        form.addRow("Telefon *:", self.phone)
         form.addRow("E-mail:", self.email)
         form.addRow("Poznámka:", self.note)
         layout.addWidget(wrap_in_scroll_area(form_host), 1)

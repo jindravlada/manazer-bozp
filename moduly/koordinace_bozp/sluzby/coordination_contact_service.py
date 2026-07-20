@@ -1,4 +1,4 @@
-"""Služba kontaktů koordinace (COORD-010 / UX-COORD-12d)."""
+"""Služba kontaktů koordinace (COORD-010 / UX-COORD-12d / UX-COORD-14)."""
 
 from __future__ import annotations
 
@@ -345,15 +345,16 @@ class CoordinationContactService:
         email: str,
     ) -> tuple[str, str, str, str]:
         name = normalize_contact_name(custom_name)
+        role_value = (role or "").strip()
         phone_value = (phone or "").strip()
         email_value = (email or "").strip()
-        if not name:
-            raise CoordinationContactError("Jméno kontaktu je povinné.")
-        if not phone_value and not email_value:
+        if not name and not role_value:
             raise CoordinationContactError(
-                "Kontakt musí mít alespoň telefon nebo e-mail."
+                "Vyplňte alespoň Jméno nebo Funkci / roli."
             )
-        return name, (role or "").strip(), phone_value, email_value
+        if not phone_value:
+            raise CoordinationContactError("Telefon je povinný.")
+        return name, role_value, phone_value, email_value
 
     def _validate_contact_type(self, contact_type: str) -> str:
         normalized = (contact_type or "").strip()

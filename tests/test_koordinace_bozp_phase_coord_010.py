@@ -218,25 +218,27 @@ class KoordinaceBozpPhaseCoord010TestCase(unittest.TestCase):
         self.assertEqual(reloaded.phone, "+420100200300")
         self.assertEqual(reloaded.email, "puvodni@example.com")
 
-    def test_require_phone_or_email(self) -> None:
+    def test_require_phone_and_name_or_role(self) -> None:
         coordination = self._create_coordination()
         employer_id = self._main_employer_id(coordination.id)
         with self.assertRaises(CoordinationContactError) as ctx:
             coordination_contact_service.add(
                 coordination.id,
                 employer_id=employer_id,
-                custom_name="Bez kontaktu",
+                custom_name="Bez telefonu",
                 phone="",
-                email="",
+                email="a@b.cz",
             )
         self.assertIn("telefon", str(ctx.exception).casefold())
-        with self.assertRaises(CoordinationContactError):
+        with self.assertRaises(CoordinationContactError) as identity_ctx:
             coordination_contact_service.add(
                 coordination.id,
                 employer_id=employer_id,
                 custom_name="",
+                role="",
                 phone="+420111",
             )
+        self.assertIn("jméno", str(identity_ctx.exception).casefold())
         with self.assertRaises(CoordinationContactError) as employer_ctx:
             coordination_contact_service.add(
                 coordination.id,
@@ -244,6 +246,16 @@ class KoordinaceBozpPhaseCoord010TestCase(unittest.TestCase):
                 phone="+420111",
             )
         self.assertIn("zaměstnavatel", str(employer_ctx.exception).casefold())
+        # UX-COORD-14: stačí funkce + telefon (bez jména).
+        role_only = coordination_contact_service.add(
+            coordination.id,
+            employer_id=employer_id,
+            custom_name="",
+            role="Hradlař T1",
+            phone="+420111",
+        )
+        self.assertEqual(role_only.role, "Hradlař T1")
+        self.assertEqual(role_only.custom_name, "")
 
     def test_reject_inactive_participant_selection(self) -> None:
         coordination = self._create_coordination()
@@ -320,6 +332,7 @@ class KoordinaceBozpPhaseCoord010TestCase(unittest.TestCase):
             coordination.id,
             employer_id=self._main_employer_id(coordination.id),
             custom_name="Kontakt",
+            phone="+420111222333",
             email="a@b.cz",
         )
         self.assertTrue(coordination_contact_service.deactivate(contact.id))
