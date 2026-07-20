@@ -14,6 +14,7 @@ from moduly.koordinace_bozp.constants import (
     CONTACT_TABLE_HEADERS,
     CTC_COL_ACTIVE,
     CTC_COL_EMAIL,
+    CTC_COL_EMPLOYER,
     CTC_COL_ID,
     CTC_COL_NAME,
     CTC_COL_PHONE,
@@ -48,6 +49,13 @@ class CoordinationContactTable(QTableWidget):
                 type_label = coordination_contact_service.contact_type_label(
                     item.contact_type
                 )
+                employer_label = coordination_contact_service.employer_display_label(
+                    item
+                )
+                employer_tip = (
+                    coordination_contact_service.employer_display_tooltip(item)
+                    or employer_label
+                )
                 self.setItem(
                     row,
                     CTC_COL_ID,
@@ -66,6 +74,13 @@ class CoordinationContactTable(QTableWidget):
                         stable_id=record_id,
                     ),
                 )
+                employer_item = create_typed_item(
+                    employer_label,
+                    typed_text(employer_label),
+                    stable_id=record_id,
+                )
+                apply_cell_tooltip(employer_item, employer_tip)
+                self.setItem(row, CTC_COL_EMPLOYER, employer_item)
                 name_text = item.custom_name or ""
                 name_item = create_typed_item(
                     name_text,

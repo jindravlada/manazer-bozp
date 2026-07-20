@@ -35,6 +35,7 @@ from moduly.koordinace_bozp.sluzby.coordination_protocol_builder import (
     build_coordination_agreement_parts,
     coordination_protocol_builder,
     flatten_protocol_measure_bullets,
+    format_contacts_section_lines,
 )
 from moduly.koordinace_bozp.sluzby.coordination_lifecycle_service import (
     protocol_version_mark,
@@ -411,28 +412,7 @@ class CoordinationProtocolPreviewDialog(QDialog):
 
     @staticmethod
     def _contacts_grouped_lines(contact_groups, contacts) -> list[str]:
-        groups = list(contact_groups or [])
-        if not groups and contacts:
-            groups = [{"contact_type_label": "", "contacts": list(contacts)}]
-        lines: list[str] = []
-        for group in groups:
-            type_label = (group.get("contact_type_label") or "").strip()
-            items = group.get("contacts") or []
-            if not items:
-                continue
-            if type_label:
-                lines.append(type_label)
-            for contact in items:
-                detail = contact.get("custom_name") or "—"
-                role = contact.get("role") or ""
-                if role:
-                    detail = f"{detail} – {role}"
-                phone = contact.get("phone") or ""
-                email = contact.get("email") or ""
-                extras = ", ".join(item for item in (phone, email) if item)
-                if extras:
-                    detail = f"{detail} – {extras}"
-                lines.append(f"• {detail}")
+        lines = format_contacts_section_lines(contact_groups, contacts)
         return lines or ["—"]
 
     @staticmethod

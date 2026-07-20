@@ -12,8 +12,8 @@ from moduly.koordinace_bozp.constants import DEFAULT_CONTACT_TYPE
 class CoordinationContact(Base):
     """Důležitý kontakt pro průběh prací / mimořádné události.
 
-    Údaje jména, role, telefonu a e-mailu jsou snapshot – nezávisí na pozdější
-    změně účastníka schůzky.
+    Údaje jména, organizace, role, telefonu a e-mailu jsou snapshot – nezávisí
+    na pozdější změně účastníka schůzky nebo zaměstnavatele.
     """
 
     __tablename__ = "coordination_contacts"
@@ -31,12 +31,19 @@ class CoordinationContact(Base):
         nullable=True,
         index=True,
     )
+    employer_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("coordination_employers.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     contact_type: Mapped[str] = mapped_column(
         String(64),
         nullable=False,
         default=DEFAULT_CONTACT_TYPE,
     )
     custom_name: Mapped[str] = mapped_column(String(250), nullable=False, default="")
+    employer_name: Mapped[str] = mapped_column(String(250), default="")
     role: Mapped[str] = mapped_column(String(150), default="")
     phone: Mapped[str] = mapped_column(String(50), default="")
     email: Mapped[str] = mapped_column(String(150), default="")

@@ -301,6 +301,7 @@ class KoordinaceBozpPhaseCoord011aTestCase(unittest.TestCase):
         self._add_measure(coordination.id, title="Hlásit události")
         coordination_contact_service.add(
             coordination.id,
+            employer_id=main.id,
             custom_name="Ohlašovna",
             phone="+420999888777",
             email="",

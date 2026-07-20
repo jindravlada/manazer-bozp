@@ -75,6 +75,9 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.koordinace_bozp.sluzby.coordination_contact_service import (
         coordination_contact_service,
     )
+    from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
+        coordination_employer_service,
+    )
     from moduly.koordinace_bozp.sluzby.coordination_protocol_builder import (
         coordination_protocol_builder,
     )
@@ -167,9 +170,11 @@ class UxCoord11ImportantContactsTestCase(unittest.TestCase):
             subject="UX-COORD-11 legacy",
             meeting_date=date.today(),
         )
+        main = coordination_employer_service.ensure_main_employer(coordination.id)
         contact = coordination_contact_service.add(
             coordination.id,
             contact_type=CONTACT_TYPE_EMERGENCY,
+            employer_id=main.id,
             custom_name="Pohotovost",
             phone="+420111222333",
         )
@@ -194,6 +199,7 @@ class UxCoord11ImportantContactsTestCase(unittest.TestCase):
         fire = coordination_contact_service.add(
             coordination.id,
             contact_type=CONTACT_TYPE_FIRE,
+            employer_id=main.id,
             custom_name="Hasiči",
             phone="+420150",
         )
@@ -214,15 +220,18 @@ class UxCoord11ImportantContactsTestCase(unittest.TestCase):
             subject="UX-COORD-11 output",
             meeting_date=date.today(),
         )
+        main = coordination_employer_service.ensure_main_employer(coordination.id)
         coordination_contact_service.add(
             coordination.id,
             contact_type=CONTACT_TYPE_TECHNICAL,
+            employer_id=main.id,
             custom_name="Technik energií",
             phone="+420100",
         )
         coordination_contact_service.add(
             coordination.id,
             contact_type=CONTACT_TYPE_SHIFT_SUPERVISOR,
+            employer_id=main.id,
             custom_name="Vedoucí směny",
             phone="+420200",
         )

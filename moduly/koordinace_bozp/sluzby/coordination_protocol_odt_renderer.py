@@ -28,6 +28,7 @@ from moduly.koordinace_bozp.sluzby.coordination_protocol_builder import (
     ProtocolWarning,
     build_coordination_agreement_parts,
     flatten_protocol_measure_bullets,
+    format_contacts_section_lines,
 )
 
 
@@ -345,31 +346,12 @@ class CoordinationProtocolOdtRenderer:
         # 10. Důležité kontakty
         lines.append("Důležité kontakty")
         lines.append("")
-        contact_groups = data.get("contacts_by_type") or []
-        if not contact_groups and data.get("contacts"):
-            contact_groups = [
-                {
-                    "contact_type_label": "",
-                    "contacts": list(data.get("contacts") or []),
-                }
-            ]
-        if contact_groups:
-            for group in contact_groups:
-                type_label = (group.get("contact_type_label") or "").strip()
-                if type_label:
-                    lines.append(type_label)
-                for contact in group.get("contacts") or []:
-                    detail = contact.get("custom_name") or "—"
-                    if contact.get("role"):
-                        detail = f"{detail} – {contact['role']}"
-                    extras = []
-                    if contact.get("phone"):
-                        extras.append(contact["phone"])
-                    if contact.get("email"):
-                        extras.append(contact["email"])
-                    if extras:
-                        detail = f"{detail}: {', '.join(extras)}"
-                    lines.append(f"• {detail}")
+        contact_lines = format_contacts_section_lines(
+            data.get("contacts_by_type"),
+            data.get("contacts"),
+        )
+        if contact_lines:
+            lines.extend(contact_lines)
         else:
             lines.append("—")
         lines.append("")

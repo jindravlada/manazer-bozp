@@ -1,10 +1,10 @@
 from PySide6.QtWidgets import (
+    QButtonGroup,
     QComboBox,
     QDialog,
     QFormLayout,
     QLineEdit,
     QRadioButton,
-    QButtonGroup,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -24,10 +24,13 @@ from moduly.koordinace_bozp.constants import (
 from moduly.koordinace_bozp.sluzby.coordination_contact_service import (
     coordination_contact_service,
 )
+from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
+    employer_abbreviation,
+)
 
 
 class CoordinationContactDialog(QDialog):
-    """Přidání / úprava kontaktu koordinace (COORD-010)."""
+    """Přidání / úprava kontaktu koordinace (COORD-010 / UX-COORD-12d)."""
 
     def __init__(
         self,
@@ -46,9 +49,9 @@ class CoordinationContactDialog(QDialog):
         configure_resizable_form_dialog(
             self,
             width=560,
-            height=480,
+            height=520,
             min_width=440,
-            min_height=360,
+            min_height=380,
         )
 
         layout = QVBoxLayout(self)
@@ -63,6 +66,7 @@ class CoordinationContactDialog(QDialog):
         self.source_manual.setChecked(True)
 
         self.participant = QComboBox()
+        self.employer = QComboBox()
         self.contact_type = QComboBox()
         current_type = (
             (contact.contact_type or "").strip() if contact is not None else ""
@@ -84,6 +88,7 @@ class CoordinationContactDialog(QDialog):
         source_layout.addWidget(self.source_manual)
         form.addRow("Způsob zadání:", source_host)
         form.addRow("Účastník:", self.participant)
+        form.addRow("Zaměstnavatel *:", self.employer)
         form.addRow("Typ kontaktu *:", self.contact_type)
         form.addRow("Jméno *:", self.custom_name)
         form.addRow("Funkce / role:", self.role)
@@ -102,7 +107,9 @@ class CoordinationContactDialog(QDialog):
         self.participant.currentIndexChanged.connect(self._on_participant_changed)
 
         preserve_participant = contact.participant_id if contact is not None else None
+        preserve_employer = contact.employer_id if contact is not None else None
         self._reload_participants(preserve_id=preserve_participant)
+        self._reload_employers(preferred_id=preserve_employer)
 
         if contact is not None:
             if contact.participant_id:
@@ -148,28 +155,81 @@ class CoordinationContactDialog(QDialog):
         finally:
             self._loading = False
 
+    def _reload_employers(self, *, preferred_id: int | None = None) -> None:
+        self._loading = True
+        try:
+            self.employer.clear()
+            self.employer.addItem("— vyberte zaměstnavatele —", None)
+            employers = coordination_contact_service.list_selectable_employers(
+                self.coordination_id
+            )
+            found = False
+            for item in employers:
+                label = employer_abbreviation(item) or (item.company_name or "")
+                self.employer.addItem(label, item.id)
+                if preferred_id is not None and item.id == preferred_id:
+                    found = True
+            if preferred_id is not None and not found and self.contact is not None:
+                snapshot = (self.contact.employer_name or "").strip()
+                label = snapshot or f"Zaměstnavatel #{preferred_id}"
+                self.employer.addItem(f"{label} (neaktivní)", preferred_id)
+            if preferred_id is not None:
+                index = self.employer.findData(preferred_id)
+                if index >= 0:
+                    self.employer.setCurrentIndex(index)
+        finally:
+            self._loading = False
+
     def _update_source_mode(self) -> None:
         from_participant = self.source_participant.isChecked()
         self.participant.setEnabled(from_participant)
-        if (
-            from_participant
-            and self.participant.currentData() is not None
-            and self.contact is None
-        ):
-            self._apply_participant_snapshot(self.participant.currentData())
+        if from_participant:
+            participant_id = self.participant.currentData()
+            if isinstance(participant_id, int):
+                self._set_employer_from_participant(participant_id)
+                self.employer.setEnabled(False)
+                if self.contact is None or self.contact.participant_id != participant_id:
+                    if self.contact is None:
+                        self._apply_participant_snapshot(participant_id)
+            else:
+                self.employer.setEnabled(False)
+        else:
+            self.employer.setEnabled(True)
 
     def _on_participant_changed(self) -> None:
         if self._loading or not self.source_participant.isChecked():
             return
         participant_id = self.participant.currentData()
         if isinstance(participant_id, int):
-            # Nepřepisuj snapshot při editaci již uloženého kontaktu se stejným účastníkem.
+            self._set_employer_from_participant(participant_id)
+            self.employer.setEnabled(False)
             if (
                 self.contact is not None
                 and self.contact.participant_id == participant_id
             ):
                 return
             self._apply_participant_snapshot(participant_id)
+        else:
+            self.employer.setEnabled(False)
+
+    def _set_employer_from_participant(self, participant_id: int) -> None:
+        try:
+            snapshot = coordination_contact_service.snapshot_from_participant(
+                participant_id
+            )
+        except Exception:  # noqa: BLE001
+            return
+        employer_id = snapshot.get("employer_id")
+        if not isinstance(employer_id, int):
+            return
+        index = self.employer.findData(employer_id)
+        if index < 0:
+            self._reload_employers(preferred_id=employer_id)
+            index = self.employer.findData(employer_id)
+        if index >= 0:
+            self.employer.blockSignals(True)
+            self.employer.setCurrentIndex(index)
+            self.employer.blockSignals(False)
 
     def _apply_participant_snapshot(self, participant_id: int) -> None:
         try:
@@ -182,6 +242,7 @@ class CoordinationContactDialog(QDialog):
         self.role.setText(snapshot["role"])
         self.phone.setText(snapshot["phone"])
         self.email.setText(snapshot["email"])
+        self._set_employer_from_participant(participant_id)
 
     def get_data(self) -> dict:
         from_participant = self.source_participant.isChecked()
@@ -194,10 +255,20 @@ class CoordinationContactDialog(QDialog):
                 and self.contact.participant_id
             ):
                 participant_id = self.contact.participant_id
+        employer_id = self.employer.currentData()
+        if (
+            not isinstance(employer_id, int)
+            and self.contact is not None
+            and self.contact.employer_id
+        ):
+            employer_id = self.contact.employer_id
         return {
             "contact_type": self.contact_type.currentData() or DEFAULT_CONTACT_TYPE,
             "participant_id": (
                 int(participant_id) if isinstance(participant_id, int) else None
+            ),
+            "employer_id": (
+                int(employer_id) if isinstance(employer_id, int) else None
             ),
             "custom_name": self.custom_name.text(),
             "role": self.role.text(),

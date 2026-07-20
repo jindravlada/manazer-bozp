@@ -1,4 +1,4 @@
-"""Služba kontaktů koordinace (COORD-010)."""
+"""Služba kontaktů koordinace (COORD-010 / UX-COORD-12d)."""
 
 from __future__ import annotations
 
@@ -15,10 +15,15 @@ from moduly.koordinace_bozp.repository.coordination_contact_repository import (
 )
 from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
     coordination_employer_service,
+    employer_abbreviation,
+    employer_tooltip_name,
+    resolve_abbreviation,
 )
 from moduly.koordinace_bozp.sluzby.coordination_participant_service import (
     coordination_participant_service,
 )
+
+CONTACT_EMPLOYER_UNSPECIFIED = "Neuvedeno"
 
 
 class CoordinationContactError(ValueError):
@@ -52,6 +57,33 @@ class CoordinationContactService:
     def contact_type_label(self, contact_type: str) -> str:
         return CONTACT_TYPE_LABELS.get(contact_type, contact_type or "")
 
+    def employer_display_label(self, contact: CoordinationContact | None) -> str:
+        """Stručné označení zaměstnavatele pro tabulku / výstup."""
+        if contact is None:
+            return CONTACT_EMPLOYER_UNSPECIFIED
+        if contact.employer_id:
+            employer = coordination_employer_service.get_by_id(contact.employer_id)
+            if employer is not None:
+                label = employer_abbreviation(employer).strip()
+                if not label:
+                    label = (employer.company_name or "").strip()
+                if label:
+                    return label
+        name = (contact.employer_name or "").strip()
+        if name:
+            return resolve_abbreviation("", name) or name
+        return CONTACT_EMPLOYER_UNSPECIFIED
+
+    def employer_display_tooltip(self, contact: CoordinationContact | None) -> str:
+        """Celý název zaměstnavatele pro tooltip."""
+        if contact is None:
+            return ""
+        if contact.employer_id:
+            employer = coordination_employer_service.get_by_id(contact.employer_id)
+            if employer is not None:
+                return employer_tooltip_name(employer)
+        return (contact.employer_name or "").strip()
+
     def list_selectable_participants(self, coordination_id: int):
         """Aktivní účastníci schůzky pro výběr do kontaktu."""
         employers = coordination_employer_service.list_for_coordination(
@@ -69,12 +101,24 @@ class CoordinationContactService:
         participants.sort(key=lambda item: ((item.full_name or "").casefold(), item.id))
         return participants
 
+    def list_selectable_employers(self, coordination_id: int):
+        """Aktivní zúčastnění zaměstnavatelé koordinace."""
+        return [
+            item
+            for item in coordination_employer_service.list_for_coordination(
+                coordination_id,
+                include_inactive=False,
+            )
+            if item.active
+        ]
+
     def add(
         self,
         coordination_id: int,
         *,
         contact_type: str = DEFAULT_CONTACT_TYPE,
         participant_id: int | None = None,
+        employer_id: int | None = None,
         custom_name: str = "",
         role: str = "",
         phone: str = "",
@@ -87,6 +131,12 @@ class CoordinationContactService:
         resolved_participant_id = self._validate_participant_selection(
             participant_id,
         )
+        resolved_employer_id, employer_name = self._resolve_employer(
+            coordination_id,
+            employer_id=employer_id,
+            participant_id=resolved_participant_id,
+            require=True,
+        )
         name, role_value, phone_value, email_value = self._normalize_identity(
             custom_name=custom_name,
             role=role,
@@ -96,8 +146,10 @@ class CoordinationContactService:
         contact = CoordinationContact(
             coordination_id=coordination_id,
             participant_id=resolved_participant_id,
+            employer_id=resolved_employer_id,
             contact_type=self._validate_contact_type(contact_type),
             custom_name=name,
+            employer_name=employer_name,
             role=role_value,
             phone=phone_value,
             email=email_value,
@@ -113,6 +165,7 @@ class CoordinationContactService:
         *,
         contact_type: str = DEFAULT_CONTACT_TYPE,
         participant_id: int | None = None,
+        employer_id: int | None = None,
         custom_name: str = "",
         role: str = "",
         phone: str = "",
@@ -126,6 +179,13 @@ class CoordinationContactService:
             participant_id,
             allow_inactive_id=contact.participant_id,
         )
+        resolved_employer_id, employer_name = self._resolve_employer(
+            contact.coordination_id,
+            employer_id=employer_id,
+            participant_id=resolved_participant_id,
+            require=True,
+            allow_inactive_id=contact.employer_id,
+        )
         name, role_value, phone_value, email_value = self._normalize_identity(
             custom_name=custom_name,
             role=role,
@@ -133,8 +193,10 @@ class CoordinationContactService:
             email=email,
         )
         contact.participant_id = resolved_participant_id
+        contact.employer_id = resolved_employer_id
         contact.contact_type = self._validate_contact_type(contact_type)
         contact.custom_name = name
+        contact.employer_name = employer_name
         contact.role = role_value
         contact.phone = phone_value
         contact.email = email_value
@@ -169,8 +231,15 @@ class CoordinationContactService:
     def snapshot_from_participant(self, participant_id: int) -> dict:
         """Vrátí snapshot aktivního účastníka pro předvyplnění dialogu."""
         participant = self._require_active_participant(participant_id)
+        employer = coordination_employer_service.get_by_id(
+            participant.coordination_employer_id
+        )
+        if employer is None:
+            raise CoordinationContactError("Zaměstnavatel účastníka nebyl nalezen.")
         return {
             "participant_id": participant.id,
+            "employer_id": employer.id,
+            "employer_name": employer.company_name or "",
             "custom_name": participant.full_name or "",
             "role": participant.role or "",
             "phone": participant.phone or "",
@@ -199,6 +268,46 @@ class CoordinationContactService:
             item.updated_at = datetime.now()
             self.repository.update(item)
         return True
+
+    def _resolve_employer(
+        self,
+        coordination_id: int,
+        *,
+        employer_id: int | None,
+        participant_id: int | None,
+        require: bool,
+        allow_inactive_id: int | None = None,
+    ) -> tuple[int | None, str]:
+        resolved_id = employer_id
+        if participant_id and not resolved_id:
+            participant = coordination_participant_service.get_by_id(participant_id)
+            if participant is not None:
+                resolved_id = participant.coordination_employer_id
+        if not resolved_id:
+            if require:
+                raise CoordinationContactError("Zaměstnavatel je povinný.")
+            return None, ""
+        employer = coordination_employer_service.get_by_id(resolved_id)
+        if employer is None:
+            raise CoordinationContactError("Zaměstnavatel nebyl nalezen.")
+        if employer.coordination_id != coordination_id:
+            raise CoordinationContactError(
+                "Zaměstnavatel nepatří k této koordinaci."
+            )
+        if not employer.active and employer.id != allow_inactive_id:
+            raise CoordinationContactError(
+                "Nelze vybrat deaktivovaného zaměstnavatele."
+            )
+        if participant_id:
+            participant = coordination_participant_service.get_by_id(participant_id)
+            if (
+                participant is not None
+                and participant.coordination_employer_id != employer.id
+            ):
+                raise CoordinationContactError(
+                    "Účastník nepatří k vybranému zaměstnavateli."
+                )
+        return employer.id, (employer.company_name or "").strip()
 
     def _validate_participant_selection(
         self,

@@ -135,6 +135,7 @@ def initialize_database() -> None:
 
     create_database()
     _ensure_thp_worker_title_columns()
+    _ensure_employer_columns()
     _ensure_task_columns()
     _ensure_accident_columns()
     _ensure_investigation_columns()
@@ -248,6 +249,14 @@ def _ensure_thp_worker_title_columns() -> None:
         _add_column("thp_workers", "title_after VARCHAR(50) DEFAULT ''")
     if "performs_controls" not in columns:
         _add_column("thp_workers", "performs_controls BOOLEAN DEFAULT 0")
+
+
+def _ensure_employer_columns() -> None:
+    columns = _table_columns("employers")
+    if not columns:
+        return
+    if "abbreviation" not in columns:
+        _add_column("employers", "abbreviation VARCHAR(32) DEFAULT ''")
 
 
 def _ensure_task_columns() -> None:
@@ -2191,6 +2200,8 @@ def _ensure_bozp_coordinations_table() -> None:
         )
 
         CoordinationContact.__table__.create(bind=_db_engine(), checkfirst=True)
+    else:
+        _migrate_coordination_contacts_employer_ux_coord_12d()
 
     _ensure_index(
         "idx_coordination_contacts_coordination",
@@ -2204,6 +2215,13 @@ def _ensure_bozp_coordinations_table() -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_coordination_contacts_participant
         ON coordination_contacts (participant_id)
+        """,
+    )
+    _ensure_index(
+        "idx_coordination_contacts_employer",
+        """
+        CREATE INDEX IF NOT EXISTS idx_coordination_contacts_employer
+        ON coordination_contacts (employer_id)
         """,
     )
 
@@ -2296,6 +2314,23 @@ def _ensure_hazard_library_template_legal_links_table() -> None:
         ON hazard_library_template_legal_links (legal_document_id)
         """,
     )
+
+
+def _migrate_coordination_contacts_employer_ux_coord_12d() -> None:
+    """UX-COORD-12d: vazba kontaktu na zaměstnavatele + snapshot názvu."""
+    columns = _table_columns("coordination_contacts")
+    if not columns:
+        return
+    if "employer_id" not in columns:
+        _add_column(
+            "coordination_contacts",
+            "employer_id INTEGER",
+        )
+    if "employer_name" not in columns:
+        _add_column(
+            "coordination_contacts",
+            "employer_name VARCHAR(250) DEFAULT ''",
+        )
 
 
 def _migrate_coordination_coordinators_snapshot_ux_coord_2() -> None:

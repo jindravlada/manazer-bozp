@@ -127,14 +127,19 @@ class KoordinaceBozpPhaseCoord010TestCase(unittest.TestCase):
             note=kwargs.get("note", ""),
         )
 
+    def _main_employer_id(self, coordination_id: int) -> int:
+        return coordination_employer_service.ensure_main_employer(coordination_id).id
+
     def test_model_and_columns(self) -> None:
         contact_columns = _table_columns("coordination_contacts")
         for name in (
             "id",
             "coordination_id",
             "participant_id",
+            "employer_id",
             "contact_type",
             "custom_name",
+            "employer_name",
             "role",
             "phone",
             "email",
@@ -160,23 +165,28 @@ class KoordinaceBozpPhaseCoord010TestCase(unittest.TestCase):
             coordination.id,
             contact_type=CONTACT_TYPE_EMERGENCY,
             participant_id=participant.id,
+            employer_id=snapshot["employer_id"],
             **{k: snapshot[k] for k in ("custom_name", "role", "phone", "email")},
         )
         self.assertEqual(contact.participant_id, participant.id)
+        self.assertEqual(contact.employer_id, snapshot["employer_id"])
         self.assertEqual(contact.custom_name, "Jan Novák")
         self.assertEqual(contact.phone, "+420111222333")
 
     def test_manual_contact(self) -> None:
         coordination = self._create_coordination()
+        employer_id = self._main_employer_id(coordination.id)
         contact = coordination_contact_service.add(
             coordination.id,
             contact_type=CONTACT_TYPE_FIRE,
+            employer_id=employer_id,
             custom_name="Petr Hasič",
             role="ohlašovna",
             phone="+420999888777",
             email="",
         )
         self.assertIsNone(contact.participant_id)
+        self.assertEqual(contact.employer_id, employer_id)
         self.assertEqual(contact.custom_name, "Petr Hasič")
         self.assertEqual(contact.contact_type, CONTACT_TYPE_FIRE)
 
@@ -192,6 +202,7 @@ class KoordinaceBozpPhaseCoord010TestCase(unittest.TestCase):
         contact = coordination_contact_service.add(
             coordination.id,
             participant_id=participant.id,
+            employer_id=snapshot["employer_id"],
             **{k: snapshot[k] for k in ("custom_name", "role", "phone", "email")},
         )
         coordination_participant_service.update_participant(
@@ -209,9 +220,11 @@ class KoordinaceBozpPhaseCoord010TestCase(unittest.TestCase):
 
     def test_require_phone_or_email(self) -> None:
         coordination = self._create_coordination()
+        employer_id = self._main_employer_id(coordination.id)
         with self.assertRaises(CoordinationContactError) as ctx:
             coordination_contact_service.add(
                 coordination.id,
+                employer_id=employer_id,
                 custom_name="Bez kontaktu",
                 phone="",
                 email="",
@@ -220,18 +233,28 @@ class KoordinaceBozpPhaseCoord010TestCase(unittest.TestCase):
         with self.assertRaises(CoordinationContactError):
             coordination_contact_service.add(
                 coordination.id,
+                employer_id=employer_id,
                 custom_name="",
                 phone="+420111",
             )
+        with self.assertRaises(CoordinationContactError) as employer_ctx:
+            coordination_contact_service.add(
+                coordination.id,
+                custom_name="Bez zaměstnavatele",
+                phone="+420111",
+            )
+        self.assertIn("zaměstnavatel", str(employer_ctx.exception).casefold())
 
     def test_reject_inactive_participant_selection(self) -> None:
         coordination = self._create_coordination()
         participant = self._create_participant(coordination.id)
+        employer_id = self._main_employer_id(coordination.id)
         coordination_participant_service.deactivate(participant.id)
         with self.assertRaises(CoordinationContactError) as ctx:
             coordination_contact_service.add(
                 coordination.id,
                 participant_id=participant.id,
+                employer_id=employer_id,
                 custom_name="Jan Novák",
                 phone="+420111222333",
             )
@@ -244,6 +267,7 @@ class KoordinaceBozpPhaseCoord010TestCase(unittest.TestCase):
         contact = coordination_contact_service.add(
             coordination.id,
             participant_id=participant.id,
+            employer_id=snapshot["employer_id"],
             **{k: snapshot[k] for k in ("custom_name", "role", "phone", "email")},
         )
         coordination_participant_service.deactivate(participant.id)
@@ -256,6 +280,7 @@ class KoordinaceBozpPhaseCoord010TestCase(unittest.TestCase):
             contact.id,
             contact_type=CONTACT_TYPE_EMERGENCY,
             participant_id=participant.id,
+            employer_id=contact.employer_id,
             custom_name="Jan Novák",
             role="stavbyvedoucí",
             phone="+420111222333",
@@ -265,13 +290,16 @@ class KoordinaceBozpPhaseCoord010TestCase(unittest.TestCase):
 
     def test_move_order(self) -> None:
         coordination = self._create_coordination()
+        employer_id = self._main_employer_id(coordination.id)
         first = coordination_contact_service.add(
             coordination.id,
+            employer_id=employer_id,
             custom_name="A",
             phone="1",
         )
         second = coordination_contact_service.add(
             coordination.id,
+            employer_id=employer_id,
             custom_name="B",
             phone="2",
         )
@@ -290,6 +318,7 @@ class KoordinaceBozpPhaseCoord010TestCase(unittest.TestCase):
         coordination = self._create_coordination()
         contact = coordination_contact_service.add(
             coordination.id,
+            employer_id=self._main_employer_id(coordination.id),
             custom_name="Kontakt",
             email="a@b.cz",
         )

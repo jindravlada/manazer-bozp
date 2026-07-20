@@ -178,41 +178,71 @@ def _format_contact_detail(contact: Mapping[str, Any]) -> str:
     detail = (contact.get("custom_name") or "").strip()
     role = (contact.get("role") or "").strip()
     if role:
-        detail = f"{detail} – {role}" if detail else role
+        detail = f"{detail}, {role}" if detail else role
+    return detail
+
+
+def _contact_block_lines(contact: Mapping[str, Any]) -> list[str]:
+    """Jméno, role a spojení – bez řádku zaměstnavatele."""
+    lines: list[str] = []
+    detail = _format_contact_detail(contact)
+    if detail:
+        lines.append(detail)
     phone = (contact.get("phone") or "").strip()
     email = (contact.get("email") or "").strip()
-    extras = ", ".join(item for item in (phone, email) if item)
-    if extras:
-        detail = f"{detail} – {extras}" if detail else extras
-    return detail
+    if phone:
+        lines.append(f"Telefon: {phone}")
+    if email:
+        lines.append(f"E-mail: {email}")
+    return lines
+
+
+def format_contacts_section_lines(
+    contacts_by_type: list | None,
+    contacts: list | None = None,
+) -> list[str]:
+    """Řádky sekce důležitých kontaktů (typ → zaměstnavatel → kontakt)."""
+    groups = list(contacts_by_type or [])
+    if not groups and contacts:
+        groups = [
+            {
+                "contact_type_label": "",
+                "employer_groups": [
+                    {
+                        "employer_label": "",
+                        "contacts": list(contacts),
+                    }
+                ],
+            }
+        ]
+    lines: list[str] = []
+    for group in groups:
+        type_label = (group.get("contact_type_label") or "").strip()
+        employer_groups = group.get("employer_groups")
+        if not employer_groups:
+            flat = group.get("contacts") or []
+            if not flat:
+                continue
+            employer_groups = [{"employer_label": "", "contacts": flat}]
+        if type_label:
+            lines.append(type_label)
+        for employer_group in employer_groups:
+            items = employer_group.get("contacts") or []
+            if not items:
+                continue
+            employer_label = (employer_group.get("employer_label") or "").strip()
+            if employer_label:
+                lines.append(employer_label)
+            for contact in items:
+                lines.extend(_contact_block_lines(contact))
+    return lines
 
 
 def _agreement_contacts_lines(
     contacts: list | None,
     contacts_by_type: list | None = None,
 ) -> list[str]:
-    groups = contacts_by_type
-    if not groups and contacts:
-        # Zpětná kompatibilita / ručně doplněný flat seznam bez contacts_by_type.
-        groups = [
-            {
-                "contact_type_label": "",
-                "contacts": list(contacts),
-            }
-        ]
-    lines: list[str] = []
-    for group in groups or []:
-        type_label = (group.get("contact_type_label") or "").strip()
-        items = group.get("contacts") or []
-        if not items:
-            continue
-        if type_label:
-            lines.append(type_label)
-        for contact in items:
-            detail = _format_contact_detail(contact)
-            if detail:
-                lines.append(f"• {detail}")
-    return lines
+    return format_contacts_section_lines(contacts_by_type, contacts)
 
 
 def _agreement_emergency_lines(procedures: Mapping[str, Any] | None) -> list[str]:
@@ -846,18 +876,52 @@ class CoordinationProtocolBuilder:
             items = by_type.get(type_id) or []
             if not items:
                 continue
-            items.sort(key=lambda item: (item["sort_order"], item["id"]))
+            items.sort(
+                key=lambda item: (
+                    (item.get("employer_label") or "").casefold(),
+                    item["sort_order"],
+                    (item.get("custom_name") or "").casefold(),
+                    item["id"],
+                )
+            )
             result.append(
                 {
                     "contact_type": type_id,
                     "contact_type_label": CONTACT_TYPE_LABELS.get(type_id, type_id),
                     "contacts": items,
+                    "employer_groups": self._group_contacts_by_employer(items),
                 }
             )
         return result
 
     @staticmethod
+    def _group_contacts_by_employer(contact_dicts: list[dict]) -> list[dict]:
+        groups: list[dict] = []
+        current_key = object()
+        current: dict | None = None
+        for item in contact_dicts:
+            key = (
+                item.get("employer_id"),
+                (item.get("employer_label") or "").casefold(),
+            )
+            if current is None or key != current_key:
+                current_key = key
+                current = {
+                    "employer_id": item.get("employer_id"),
+                    "employer_label": item.get("employer_label") or "",
+                    "employer_name": item.get("employer_name") or "",
+                    "contacts": [],
+                }
+                groups.append(current)
+            current["contacts"].append(item)
+        return groups
+
+    @staticmethod
     def _contact_dict(contact) -> dict:
+        employer_label = coordination_contact_service.employer_display_label(contact)
+        employer_name = coordination_contact_service.employer_display_tooltip(contact)
+        if not employer_name:
+            employer_name = (getattr(contact, "employer_name", None) or "").strip()
         return {
             "id": contact.id,
             "contact_type": contact.contact_type,
@@ -865,6 +929,9 @@ class CoordinationProtocolBuilder:
                 contact.contact_type,
                 contact.contact_type,
             ),
+            "employer_id": getattr(contact, "employer_id", None),
+            "employer_label": employer_label,
+            "employer_name": employer_name,
             "custom_name": contact.custom_name or "",
             "role": contact.role or "",
             "phone": contact.phone or "",

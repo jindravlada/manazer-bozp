@@ -389,6 +389,7 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         from moduly.koordinace_bozp.constants import (
             CTC_COL_ACTIVE,
             CTC_COL_EMAIL,
+            CTC_COL_EMPLOYER,
             CTC_COL_NAME,
             CTC_COL_PHONE,
             CTC_COL_ROLE,
@@ -399,6 +400,7 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         table.setTextElideMode(Qt.TextElideMode.ElideRight)
         widths = {
             CTC_COL_TYPE: 140,
+            CTC_COL_EMPLOYER: 100,
             CTC_COL_NAME: 180,
             CTC_COL_ROLE: 160,
             CTC_COL_PHONE: 120,
@@ -408,7 +410,13 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
-        for column in (CTC_COL_TYPE, CTC_COL_PHONE, CTC_COL_EMAIL, CTC_COL_ACTIVE):
+        for column in (
+            CTC_COL_TYPE,
+            CTC_COL_EMPLOYER,
+            CTC_COL_PHONE,
+            CTC_COL_EMAIL,
+            CTC_COL_ACTIVE,
+        ):
             header.setSectionResizeMode(column, QHeaderView.Interactive)
         header.setSectionResizeMode(CTC_COL_NAME, QHeaderView.Stretch)
         header.setSectionResizeMode(CTC_COL_ROLE, QHeaderView.Stretch)
