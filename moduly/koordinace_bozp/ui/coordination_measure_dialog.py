@@ -17,13 +17,14 @@ from core.widgets.dialog_utils import (
 from moduly.koordinace_bozp.constants import (
     DEFAULT_MEASURE_CATEGORY,
     MEASURE_CATEGORIES,
+    MEASURE_CATEGORIES_SELECTABLE,
     MEASURE_CATEGORY_LABELS,
     MEASURE_EDITOR_HELP_TEXT,
 )
 
 
 class CoordinationMeasureDialog(QDialog):
-    """Přidání / úprava organizačního opatření (COORD-009 / UX-COORD-4b)."""
+    """Přidání / úprava organizačního opatření (COORD-009 / UX-COORD-4b / UX-COORD-9c)."""
 
     def __init__(self, parent=None, measure=None):
         super().__init__(parent)
@@ -44,8 +45,18 @@ class CoordinationMeasureDialog(QDialog):
         form = QFormLayout(form_host)
 
         self.category = QComboBox()
+        current_category = (
+            (measure.category or "").strip() if measure is not None else ""
+        )
         for category_id in MEASURE_CATEGORIES:
-            self.category.addItem(MEASURE_CATEGORY_LABELS[category_id], category_id)
+            if (
+                category_id in MEASURE_CATEGORIES_SELECTABLE
+                or category_id == current_category
+            ):
+                self.category.addItem(
+                    MEASURE_CATEGORY_LABELS[category_id],
+                    category_id,
+                )
         self.title = QLineEdit()
         self.description = QTextEdit()
         self.description.setMinimumHeight(110)
@@ -80,3 +91,9 @@ class CoordinationMeasureDialog(QDialog):
             "title": self.title.text(),
             "description": self.description.toPlainText(),
         }
+
+    def available_category_ids(self) -> list[str]:
+        return [
+            self.category.itemData(index)
+            for index in range(self.category.count())
+        ]
