@@ -28,13 +28,17 @@ from moduly.koordinace_bozp.sluzby.coordination_protocol_document import (
     BLOCK_KIND_BLANK,
     BLOCK_KIND_BULLET,
     BLOCK_KIND_HEADING,
+    BLOCK_KIND_INDENTED,
     BLOCK_KIND_NUMBERED_HEADING,
     BLOCK_KIND_PARAGRAPH,
+    BLOCK_KIND_PBP_RULE,
     BLOCK_KIND_SIGNATURE_LINE,
     BLOCK_KIND_SUBTITLE,
     BLOCK_KIND_TITLE,
     BLOCK_STYLE_BULLET,
+    BLOCK_STYLE_EMPLOYER_ABBR,
     BLOCK_STYLE_HEADING,
+    BLOCK_STYLE_LABEL,
     BLOCK_STYLE_TITLE,
     document_blocks_from_dict,
 )
@@ -169,10 +173,17 @@ class CoordinationProtocolPreviewDialog(QDialog):
             if block.kind == BLOCK_KIND_BLANK:
                 self.body_layout.addSpacing(8)
                 continue
-            label = QLabel(self._label_text(block))
+            label = QLabel()
             label.setWordWrap(True)
             label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
             font = QFont(label.font())
+            use_rich = bool(block.runs) and any(is_bold for _, is_bold in block.runs)
+            if use_rich:
+                label.setTextFormat(Qt.TextFormat.RichText)
+                label.setText(self._rich_text_from_runs(block.runs))
+            else:
+                label.setTextFormat(Qt.TextFormat.PlainText)
+                label.setText(self._label_text(block))
             if block.kind == BLOCK_KIND_TITLE or block.style == BLOCK_STYLE_TITLE:
                 font.setPointSize(font.pointSize() + 3)
                 font.setBold(True)
@@ -185,12 +196,46 @@ class CoordinationProtocolPreviewDialog(QDialog):
             elif block.kind == BLOCK_KIND_SUBTITLE:
                 font.setBold(True)
                 label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+            elif (
+                not use_rich
+                and (
+                    block.bold
+                    or block.style
+                    in (
+                        BLOCK_STYLE_EMPLOYER_ABBR,
+                        BLOCK_STYLE_LABEL,
+                    )
+                )
+            ):
+                font.setBold(True)
             elif block.kind == BLOCK_KIND_BULLET or block.style == BLOCK_STYLE_BULLET:
                 label.setContentsMargins(16, 0, 0, 0)
+            elif block.kind == BLOCK_KIND_INDENTED:
+                label.setContentsMargins(32, 0, 0, 0)
             elif block.kind == BLOCK_KIND_SIGNATURE_LINE:
                 label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
             label.setFont(font)
             self.body_layout.addWidget(label)
+
+    @staticmethod
+    def _escape_html(value: str) -> str:
+        return (
+            str(value)
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+        )
+
+    @classmethod
+    def _rich_text_from_runs(cls, runs) -> str:
+        parts = []
+        for text, is_bold in runs:
+            escaped = cls._escape_html(text)
+            if is_bold:
+                parts.append(f"<b>{escaped}</b>")
+            else:
+                parts.append(escaped)
+        return "".join(parts)
 
     @staticmethod
     def _label_text(block) -> str:
@@ -199,12 +244,17 @@ class CoordinationProtocolPreviewDialog(QDialog):
             return f"{block.level}. {text}" if text else f"{block.level}."
         if block.kind == BLOCK_KIND_BULLET:
             return f"• {text}" if text else "•"
+        if block.kind == BLOCK_KIND_INDENTED:
+            return text
+        if block.runs:
+            return "".join(str(item[0]) for item in block.runs)
         if block.kind in (
             BLOCK_KIND_PARAGRAPH,
             BLOCK_KIND_HEADING,
             BLOCK_KIND_SIGNATURE_LINE,
             BLOCK_KIND_TITLE,
             BLOCK_KIND_SUBTITLE,
+            BLOCK_KIND_PBP_RULE,
         ):
             return text
         return text

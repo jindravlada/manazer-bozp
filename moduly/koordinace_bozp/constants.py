@@ -318,7 +318,9 @@ PROTOCOL_COORDINATOR_NOMINATION = (
     "zaměstnavatelem, který koordinuje provádění opatření k ochraně "
     "bezpečnosti a zdraví zaměstnanců a postupy k jejich zajištění bude"
 )
+PROTOCOL_COORDINATOR_DETAILS_TITLE = "Koordinátor BOZP"
 PROTOCOL_COORDINATOR_ALIAS = '(dříve i dále též jen „koordinátor BOZP“).'
+PROTOCOL_PAGE_FOOTER = "Strana"
 PROTOCOL_COORDINATOR_DUTIES = (
     "Pověřený koordinátor BOZP má za povinnost koordinovat provádění "
     "opatření k ochraně bezpečnosti a zdraví zaměstnanců a osob. "

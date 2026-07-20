@@ -184,18 +184,19 @@ class UxCoord9bCoordinatorInfoTestCase(unittest.TestCase):
         self.assertIn("Funkce: koordinátor BOZP", lines)
         self.assertIn("Telefon: +420111", lines)
         self.assertIn("E-mail: jan@example.com", lines)
-        self.assertIn("Další informace", lines)
+        self.assertIn("Další informace:", lines)
         self.assertIn("Kontaktovat před vstupem na stavbu.", lines)
-        info_index = lines.index("Další informace")
+        info_index = lines.index("Další informace:")
         self.assertEqual(lines[info_index + 1], "Kontaktovat před vstupem na stavbu.")
 
         target = _TMP / "coord-info.odt"
         coordination_protocol_odt_renderer.render_from_result(target, result)
         content = _odt_content(target)
         self.assertIn(PROTOCOL_CONCLUSION_4_COORDINATOR_INTRO, content)
-        self.assertIn("Další informace", content)
+        self.assertIn("Další informace:", content)
         self.assertIn("Kontaktovat před vstupem na stavbu.", content)
-        self.assertIn("Organizace: Hlavní firma s.r.o.", content)
+        self.assertIn("Organizace:", content)
+        self.assertIn("Hlavní firma s.r.o.", content)
 
     def test_empty_note_and_contacts_omitted(self) -> None:
         coordination = bozp_coordination_service.create_coordination(
