@@ -3,10 +3,12 @@ from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QDialog,
     QFileDialog,
+    QFrame,
     QLabel,
     QMessageBox,
     QPushButton,
     QScrollArea,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -47,6 +49,8 @@ from moduly.koordinace_bozp.sluzby.coordination_protocol_odt_renderer import (
     coordination_protocol_odt_renderer,
 )
 
+_WARNINGS_PANEL_MAX_HEIGHT = 140
+
 
 class CoordinationProtocolPreviewDialog(QDialog):
     """Read-only náhled koordinačního protokolu (BUILDER-COORD-1)."""
@@ -82,6 +86,10 @@ class CoordinationProtocolPreviewDialog(QDialog):
         scroll.setWidget(self.body)
         layout.addWidget(scroll, 1)
 
+        self.warnings_panel = self._build_warnings_panel()
+        self.warnings_panel.setVisible(False)
+        layout.addWidget(self.warnings_panel, 0)
+
         self.export_btn = QPushButton("Export ODT")
         self.export_btn.setEnabled(False)
         self.export_btn.clicked.connect(self.export_odt)
@@ -96,6 +104,44 @@ class CoordinationProtocolPreviewDialog(QDialog):
 
         self._load()
 
+    def _build_warnings_panel(self) -> QWidget:
+        panel = QFrame()
+        panel.setObjectName("protocolWarningsPanel")
+        panel.setFrameShape(QFrame.Shape.StyledPanel)
+        panel.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Maximum,
+        )
+        panel_layout = QVBoxLayout(panel)
+        panel_layout.setContentsMargins(8, 6, 8, 6)
+        panel_layout.setSpacing(4)
+
+        self.warnings_title = QLabel()
+        title_font = QFont(self.warnings_title.font())
+        title_font.setBold(True)
+        self.warnings_title.setFont(title_font)
+        self.warnings_title.setStyleSheet("color: #ef6c00;")
+        panel_layout.addWidget(self.warnings_title)
+
+        self.warnings_scroll = QScrollArea()
+        self.warnings_scroll.setWidgetResizable(True)
+        self.warnings_scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.warnings_scroll.setMaximumHeight(_WARNINGS_PANEL_MAX_HEIGHT)
+        self.warnings_scroll.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Maximum,
+        )
+
+        self.warnings_body = QWidget()
+        self.warnings_body_layout = QVBoxLayout(self.warnings_body)
+        self.warnings_body_layout.setContentsMargins(4, 0, 4, 0)
+        self.warnings_body_layout.setSpacing(2)
+        self.warnings_scroll.setWidget(self.warnings_body)
+        panel_layout.addWidget(self.warnings_scroll)
+        return panel
+
     def _load(self) -> None:
         try:
             result = coordination_protocol_builder.build(self.coordination_id)
@@ -103,6 +149,7 @@ class CoordinationProtocolPreviewDialog(QDialog):
             self._build_result = None
             self.export_btn.setEnabled(False)
             self.status_label.setText(str(error))
+            self.warnings_panel.setVisible(False)
             return
         self._build_result = result
         self.export_btn.setEnabled(True)
@@ -167,6 +214,43 @@ class CoordinationProtocolPreviewDialog(QDialog):
         )
         self._render_document(blocks)
         self.body_layout.addStretch(1)
+        self._render_warnings_panel(result)
+
+    def _warning_messages(self, result: ProtocolBuildResult) -> list[str]:
+        """Texty upozornění z builderu – bez nového vyhodnocení."""
+        raw = (result.protocol_data or {}).get("warnings")
+        if raw is None:
+            raw = [item.to_dict() for item in (result.warnings or [])]
+        messages: list[str] = []
+        for item in raw or []:
+            if isinstance(item, dict):
+                text = (item.get("message") or "").strip()
+            else:
+                text = (getattr(item, "message", None) or "").strip()
+            if text:
+                messages.append(text)
+        return messages
+
+    def _render_warnings_panel(self, result: ProtocolBuildResult) -> None:
+        while self.warnings_body_layout.count():
+            item = self.warnings_body_layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+
+        messages = self._warning_messages(result)
+        if not messages:
+            self.warnings_panel.setVisible(False)
+            return
+
+        self.warnings_title.setText(f"Upozornění ({len(messages)})")
+        for message in messages:
+            label = QLabel(f"• {message}")
+            label.setWordWrap(True)
+            label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+            self.warnings_body_layout.addWidget(label)
+        self.warnings_body_layout.addStretch(1)
+        self.warnings_panel.setVisible(True)
 
     def _render_document(self, blocks) -> None:
         for block in blocks:

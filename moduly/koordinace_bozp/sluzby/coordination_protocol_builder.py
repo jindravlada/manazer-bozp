@@ -535,6 +535,8 @@ class CoordinationProtocolBuilder:
             risk_rows=risk_rows,
             today=current,
         )
+        # Pro náhled UI – mimo tělo dokumentu / ODT.
+        protocol_data["warnings"] = [item.to_dict() for item in warnings]
 
         summary = ProtocolSummary(
             active_employers=len(employers_sorted),
