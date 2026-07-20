@@ -241,7 +241,35 @@ COORDINATOR_MANUAL_OTHER_ORGANIZATION = "__other_organization__"
 COORDINATOR_MANUAL_OTHER_ORGANIZATION_LABEL = "Jiná organizace"
 TAB_WORKPLACES = "Místa výkonu práce"
 TAB_EMPLOYER_ACTIVITIES = "Činnosti na pracovišti"
-TAB_MEASURES = "Organizační opatření"
+TAB_MEASURES = "Dohoda a pravidla BOZP"
+
+# UX-COORD-9a – pevné části dohody a společná pravidla.
+AGREEMENT_SECTION_TITLE = "Dohoda o koordinaci BOZP"
+COMMON_RULES_SECTION_TITLE = "Společná pravidla BOZP"
+AGREEMENT_UI_SECTION_TITLE = "Dohoda o koordinaci"
+
+AGREEMENT_PART_WORK_INTENT = (
+    "Informování o záměru provádění prací a pohybu zaměstnanců / techniky "
+    "na pracovišti"
+)
+AGREEMENT_PART_MUTUAL_RISKS = "Vzájemné informování o rizicích"
+AGREEMENT_PART_PPE = "Osobní ochranné pracovní prostředky"
+AGREEMENT_PART_COORDINATOR = "Stanovení koordinátora a další ustanovení"
+AGREEMENT_PART_CONTACTS = "Organizační zajištění a důležité kontakty"
+AGREEMENT_PART_WORKPLACE_HANDOVER = "Předání pracoviště"
+AGREEMENT_PART_EMERGENCIES = "Mimořádné události"
+AGREEMENT_PART_FINAL = "Závěrečná ustanovení"
+
+AGREEMENT_FIXED_PART_ORDER = (
+    AGREEMENT_PART_WORK_INTENT,
+    AGREEMENT_PART_MUTUAL_RISKS,
+    AGREEMENT_PART_PPE,
+    AGREEMENT_PART_COORDINATOR,
+    AGREEMENT_PART_CONTACTS,
+    AGREEMENT_PART_WORKPLACE_HANDOVER,
+    AGREEMENT_PART_EMERGENCIES,
+    AGREEMENT_PART_FINAL,
+)
 TAB_CONTACTS = "Kontakty a mimořádné události"
 TAB_RISK_SUBMISSIONS = "Předání rizik dodavatelů"
 TAB_PBP_ATTACHMENT = "Příloha PBP"

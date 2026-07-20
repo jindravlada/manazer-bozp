@@ -198,6 +198,12 @@ class KoordinaceBozpPhaseCoord011bTestCase(unittest.TestCase):
                     ],
                 }
             ],
+            "coordination_agreement": {
+                "work_intent_information_text": "Informovat o vstupu na pracoviště.",
+                "ppe_text": "Používat přilbu a výstražnou vestu.",
+                "workplace_handover_text": "Předání pracoviště potvrdit zápisem.",
+                "final_provisions_text": "Tato dohoda nabývá účinnosti podpisem.",
+            },
             "contacts": [
                 {
                     "id": 1,

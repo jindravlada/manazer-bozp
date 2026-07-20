@@ -469,6 +469,11 @@ class BozpCoordinationDialog(QDialog):
             and self.contacts_tab.coordination_id is not None
         ):
             data.update(self.contacts_tab.get_procedures_data())
+        if (
+            self.coordination is not None
+            and self.measures_tab.coordination_id is not None
+        ):
+            data.update(self.measures_tab.get_agreement_data())
         return data
 
     def accept(self) -> None:

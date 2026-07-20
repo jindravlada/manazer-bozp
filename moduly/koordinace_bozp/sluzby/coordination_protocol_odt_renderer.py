@@ -26,6 +26,7 @@ from moduly.koordinace_bozp.sluzby.coordination_protocol_builder import (
     ProtocolBuildResult,
     ProtocolSummary,
     ProtocolWarning,
+    build_coordination_agreement_parts,
     flatten_protocol_measure_bullets,
 )
 
@@ -43,7 +44,8 @@ PROTOCOL_ODT_CHAPTER_TITLES = (
     "Koordinátor BOZP",
     "Místa výkonu práce",
     "Činnosti na pracovišti",
-    "Organizační opatření",
+    "Dohoda o koordinaci BOZP",
+    "Společná pravidla BOZP",
     "Kontakty",
     "Postupy při mimořádných událostech",
     "Informace o předání rizik",
@@ -314,19 +316,28 @@ class CoordinationProtocolOdtRenderer:
             lines.append("—")
         lines.append("")
 
-        # 8. Opatření
-        lines.append("Organizační opatření")
-        lines.append("")
+        # 8. Dohoda o koordinaci BOZP (UX-COORD-9a)
+        agreement_parts = build_coordination_agreement_parts(data)
+        if agreement_parts:
+            lines.append("Dohoda o koordinaci BOZP")
+            lines.append("")
+            for part in agreement_parts:
+                lines.append(part["title"])
+                lines.append("")
+                lines.extend(part["lines"])
+                lines.append("")
+
+        # 9. Společná pravidla BOZP
         measure_lines = flatten_protocol_measure_bullets(
             data.get("measures_by_category") or []
         )
         if measure_lines:
+            lines.append("Společná pravidla BOZP")
+            lines.append("")
             lines.extend(measure_lines)
-        else:
-            lines.append("—")
-        lines.append("")
+            lines.append("")
 
-        # 9. Kontakty
+        # 10. Kontakty
         lines.append("Kontakty")
         lines.append("")
         contacts = data.get("contacts") or []
@@ -350,7 +361,7 @@ class CoordinationProtocolOdtRenderer:
             lines.append("—")
         lines.append("")
 
-        # 10. Postupy
+        # 11. Postupy
         procedures = data.get("emergency_procedures") or {}
         lines.extend(
             [
@@ -364,7 +375,7 @@ class CoordinationProtocolOdtRenderer:
             ]
         )
 
-        # 11. Předání rizik
+        # 12. Předání rizik
         lines.append("Informace o předání rizik")
         lines.append("")
         risk_rows = data.get("risk_handovers") or []
@@ -391,7 +402,7 @@ class CoordinationProtocolOdtRenderer:
             lines.append("—")
         lines.append("")
 
-        # 12. Přehled příloh
+        # 13. Přehled příloh
         lines.append("Přehled příloh")
         lines.append("")
         lines.append("Dokument odkazuje na následující přílohy:")

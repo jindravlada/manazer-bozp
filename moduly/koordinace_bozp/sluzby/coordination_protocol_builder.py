@@ -10,6 +10,14 @@ from datetime import date
 from typing import Any, Mapping
 
 from moduly.koordinace_bozp.constants import (
+    AGREEMENT_PART_CONTACTS,
+    AGREEMENT_PART_COORDINATOR,
+    AGREEMENT_PART_EMERGENCIES,
+    AGREEMENT_PART_FINAL,
+    AGREEMENT_PART_MUTUAL_RISKS,
+    AGREEMENT_PART_PPE,
+    AGREEMENT_PART_WORK_INTENT,
+    AGREEMENT_PART_WORKPLACE_HANDOVER,
     ATTACHMENT_TYPE_CONTRACTOR_RISKS,
     ATTACHMENT_TYPE_LABELS,
     ATTACHMENT_TYPE_MAIN_EMPLOYER_PBP,
@@ -47,6 +55,9 @@ from moduly.koordinace_bozp.sluzby.bozp_coordination_service import (
 )
 from moduly.koordinace_bozp.sluzby.coordination_attachment_service import (
     coordination_attachment_service,
+)
+from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
+    default_abbreviation,
 )
 from moduly.koordinace_bozp.sluzby.coordination_contact_service import (
     coordination_contact_service,
@@ -102,8 +113,145 @@ def flatten_protocol_measure_bullets(
     lines: list[str] = []
     for group in measures_by_category or []:
         for measure in group.get("measures") or []:
-            lines.append(f"• {protocol_measure_display_text(measure)}")
+            text = protocol_measure_display_text(measure)
+            if text and text != "—":
+                lines.append(f"• {text}")
     return lines
+
+
+def _nonempty_text_lines(text: str | None) -> list[str]:
+    value = (text or "").strip()
+    if not value:
+        return []
+    return [value]
+
+
+def _agreement_risk_lines(risk_rows: list | None) -> list[str]:
+    lines: list[str] = []
+    for row in risk_rows or []:
+        employer = row.get("employer") or {}
+        name = (employer.get("display_name") or "").strip()
+        status = (
+            row.get("handover_status_label") or row.get("handover_status") or ""
+        ).strip()
+        if not name and not status:
+            continue
+        if name and status:
+            lines.append(f"• {name}: {status}")
+        elif name:
+            lines.append(f"• {name}")
+        else:
+            lines.append(f"• {status}")
+    return lines
+
+
+def _agreement_coordinator_lines(coordinator: Mapping[str, Any] | None) -> list[str]:
+    if not coordinator:
+        return []
+    lines: list[str] = []
+    name = (coordinator.get("full_name") or "").strip()
+    if name:
+        lines.append(f"Jméno: {name}")
+    role = (coordinator.get("role") or "").strip()
+    if role:
+        lines.append(f"Role: {role}")
+    employer = (coordinator.get("employer_name") or "").strip()
+    if employer:
+        lines.append(f"Zaměstnavatel: {employer}")
+    phone = (coordinator.get("phone") or "").strip()
+    if phone:
+        lines.append(f"Telefon: {phone}")
+    email = (coordinator.get("email") or "").strip()
+    if email:
+        lines.append(f"E-mail: {email}")
+    return lines
+
+
+def _agreement_contacts_lines(contacts: list | None) -> list[str]:
+    lines: list[str] = []
+    for contact in contacts or []:
+        detail = (contact.get("custom_name") or "").strip()
+        type_label = (contact.get("contact_type_label") or "").strip()
+        if type_label:
+            detail = f"{detail} ({type_label})" if detail else type_label
+        phone = (contact.get("phone") or "").strip()
+        email = (contact.get("email") or "").strip()
+        extras = ", ".join(item for item in (phone, email) if item)
+        if extras:
+            detail = f"{detail} – {extras}" if detail else extras
+        if detail:
+            lines.append(f"• {detail}")
+    return lines
+
+
+def _agreement_emergency_lines(procedures: Mapping[str, Any] | None) -> list[str]:
+    procedures = procedures or {}
+    rows = (
+        ("Mimořádná událost", procedures.get("emergency_reporting")),
+        ("Pracovní úraz", procedures.get("accident_reporting")),
+        ("Požár", procedures.get("fire_reporting")),
+        ("Evakuace", procedures.get("evacuation_instructions")),
+    )
+    lines: list[str] = []
+    for label, value in rows:
+        text = (value or "").strip()
+        if text:
+            lines.append(f"{label}: {text}")
+    return lines
+
+
+def build_coordination_agreement_parts(
+    protocol_data: Mapping[str, Any] | None,
+) -> list[dict[str, Any]]:
+    """Osm částí dohody; prázdné body se vynechají (UX-COORD-9a)."""
+    data = protocol_data or {}
+    agreement = data.get("coordination_agreement") or {}
+    parts_spec = (
+        (
+            AGREEMENT_PART_WORK_INTENT,
+            _nonempty_text_lines(agreement.get("work_intent_information_text")),
+        ),
+        (
+            AGREEMENT_PART_MUTUAL_RISKS,
+            _agreement_risk_lines(data.get("risk_handovers")),
+        ),
+        (
+            AGREEMENT_PART_PPE,
+            _nonempty_text_lines(agreement.get("ppe_text")),
+        ),
+        (
+            AGREEMENT_PART_COORDINATOR,
+            _agreement_coordinator_lines(data.get("coordinator")),
+        ),
+        (
+            AGREEMENT_PART_CONTACTS,
+            _agreement_contacts_lines(data.get("contacts")),
+        ),
+        (
+            AGREEMENT_PART_WORKPLACE_HANDOVER,
+            _nonempty_text_lines(agreement.get("workplace_handover_text")),
+        ),
+        (
+            AGREEMENT_PART_EMERGENCIES,
+            _agreement_emergency_lines(data.get("emergency_procedures")),
+        ),
+        (
+            AGREEMENT_PART_FINAL,
+            _nonempty_text_lines(agreement.get("final_provisions_text")),
+        ),
+    )
+    return [
+        {"title": title, "lines": lines}
+        for title, lines in parts_spec
+        if lines
+    ]
+
+
+def protocol_agreement_part_titles(
+    protocol_data: Mapping[str, Any] | None = None,
+) -> list[str]:
+    """Pořadí nadpisů částí, které se skutečně vytisknou."""
+    return [part["title"] for part in build_coordination_agreement_parts(protocol_data)]
 
 
 @dataclass(frozen=True)
@@ -266,6 +414,16 @@ class CoordinationProtocolBuilder:
             "workplaces": [self._workplace_dict(item) for item in workplaces],
             "activities_by_employer": activities_by_employer,
             "measures_by_category": self._group_measures(measures),
+            "coordination_agreement": {
+                "work_intent_information_text": (
+                    coordination.work_intent_information_text or ""
+                ),
+                "ppe_text": coordination.ppe_text or "",
+                "workplace_handover_text": (
+                    coordination.workplace_handover_text or ""
+                ),
+                "final_provisions_text": coordination.final_provisions_text or "",
+            },
             "contacts": [self._contact_dict(item) for item in contacts],
             "emergency_procedures": {
                 "emergency_reporting": coordination.emergency_reporting or "",
@@ -543,13 +701,16 @@ class CoordinationProtocolBuilder:
 
     @staticmethod
     def _employer_dict(employer) -> dict:
-        name = employer.company_name or employer.abbreviation or f"#{employer.id}"
+        abbr = (employer.abbreviation or "").strip() or default_abbreviation(
+            employer.company_name or ""
+        )
+        name = employer.company_name or abbr or f"#{employer.id}"
         display = name
-        if employer.abbreviation and employer.abbreviation != name:
-            display = f"{employer.abbreviation} – {name}"
+        if abbr and abbr != name:
+            display = f"{abbr} – {name}"
         return {
             "id": employer.id,
-            "abbreviation": employer.abbreviation or "",
+            "abbreviation": abbr,
             "company_name": employer.company_name or "",
             "display_name": display,
             "ico": employer.ico or "",

@@ -249,7 +249,6 @@ def _ensure_thp_worker_title_columns() -> None:
     if "performs_controls" not in columns:
         _add_column("thp_workers", "performs_controls BOOLEAN DEFAULT 0")
 
-
 def _ensure_task_columns() -> None:
     columns = _table_columns("tasks")
     additions = {
@@ -1930,6 +1929,23 @@ def _ensure_bozp_coordinations_table() -> None:
         _add_column(
             "bozp_coordinations",
             "evacuation_instructions TEXT DEFAULT ''",
+        )
+    if "work_intent_information_text" not in columns:
+        _add_column(
+            "bozp_coordinations",
+            "work_intent_information_text TEXT DEFAULT ''",
+        )
+    if "ppe_text" not in columns:
+        _add_column("bozp_coordinations", "ppe_text TEXT DEFAULT ''")
+    if "workplace_handover_text" not in columns:
+        _add_column(
+            "bozp_coordinations",
+            "workplace_handover_text TEXT DEFAULT ''",
+        )
+    if "final_provisions_text" not in columns:
+        _add_column(
+            "bozp_coordinations",
+            "final_provisions_text TEXT DEFAULT ''",
         )
     if "ready_at" not in columns:
         _add_column("bozp_coordinations", "ready_at DATETIME")

@@ -1,8 +1,13 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QFormLayout,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QMessageBox,
     QPushButton,
+    QSplitter,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -13,7 +18,19 @@ from core.widgets.table_selection import (
     current_table_row,
     refresh_and_restore_selection,
 )
-from moduly.koordinace_bozp.constants import COORD_HEADER_MEASURES, TAB_MEASURES
+from moduly.koordinace_bozp.constants import (
+    AGREEMENT_PART_FINAL,
+    AGREEMENT_PART_PPE,
+    AGREEMENT_PART_WORK_INTENT,
+    AGREEMENT_PART_WORKPLACE_HANDOVER,
+    AGREEMENT_UI_SECTION_TITLE,
+    COMMON_RULES_SECTION_TITLE,
+    COORD_HEADER_MEASURES,
+    TAB_MEASURES,
+)
+from moduly.koordinace_bozp.sluzby.bozp_coordination_service import (
+    bozp_coordination_service,
+)
 from moduly.koordinace_bozp.sluzby.coordination_measure_service import (
     CoordinationMeasureError,
     coordination_measure_service,
@@ -30,7 +47,7 @@ from moduly.koordinace_bozp.ui.coordination_tab_edit_policy import (
 
 
 class CoordinationMeasuresTab(CoordinationTabEditPolicyMixin, QWidget):
-    """Záložka organizačních opatření (COORD-009)."""
+    """Záložka Dohoda a pravidla BOZP (COORD-009 / UX-COORD-9a)."""
 
     def __init__(self, parent=None, coordination_id: int | None = None):
         super().__init__(parent)
@@ -40,7 +57,7 @@ class CoordinationMeasuresTab(CoordinationTabEditPolicyMixin, QWidget):
 
         layout = QVBoxLayout(self)
         self.unavailable_label = QLabel(
-            "Organizační opatření lze spravovat po uložení koordinace."
+            f"{TAB_MEASURES} lze spravovat po uložení koordinace."
         )
         self.unavailable_label.setWordWrap(True)
         layout.addWidget(self.unavailable_label)
@@ -48,6 +65,38 @@ class CoordinationMeasuresTab(CoordinationTabEditPolicyMixin, QWidget):
         self.content = QWidget()
         content_layout = QVBoxLayout(self.content)
         content_layout.setContentsMargins(0, 0, 0, 0)
+
+        splitter = QSplitter(Qt.Orientation.Vertical)
+
+        agreement_box = QGroupBox(AGREEMENT_UI_SECTION_TITLE)
+        agreement_layout = QFormLayout(agreement_box)
+        self.work_intent_information_text = QTextEdit()
+        self.work_intent_information_text.setMinimumHeight(70)
+        self.ppe_text = QTextEdit()
+        self.ppe_text.setMinimumHeight(70)
+        self.workplace_handover_text = QTextEdit()
+        self.workplace_handover_text.setMinimumHeight(70)
+        self.final_provisions_text = QTextEdit()
+        self.final_provisions_text.setMinimumHeight(70)
+        agreement_layout.addRow(
+            f"{AGREEMENT_PART_WORK_INTENT}:",
+            self.work_intent_information_text,
+        )
+        agreement_layout.addRow(f"{AGREEMENT_PART_PPE}:", self.ppe_text)
+        agreement_layout.addRow(
+            f"{AGREEMENT_PART_WORKPLACE_HANDOVER}:",
+            self.workplace_handover_text,
+        )
+        agreement_layout.addRow(
+            f"{AGREEMENT_PART_FINAL}:",
+            self.final_provisions_text,
+        )
+        splitter.addWidget(agreement_box)
+
+        rules_host = QWidget()
+        rules_layout = QVBoxLayout(rules_host)
+        rules_layout.setContentsMargins(0, 0, 0, 0)
+        rules_layout.addWidget(QLabel(COMMON_RULES_SECTION_TITLE))
 
         toolbar = QHBoxLayout()
         self.add_btn = QPushButton("Přidat")
@@ -63,11 +112,18 @@ class CoordinationMeasuresTab(CoordinationTabEditPolicyMixin, QWidget):
         toolbar.addWidget(self.activate_btn)
         toolbar.addWidget(self.deactivate_btn)
         toolbar.addStretch()
-        content_layout.addLayout(toolbar)
+        rules_layout.addLayout(toolbar)
 
         self.table = CoordinationMeasureTable()
-        configure_and_persist_table_columns(self.table, "coordination_measures", COORD_HEADER_MEASURES)
-        content_layout.addWidget(self.table)
+        configure_and_persist_table_columns(
+            self.table, "coordination_measures", COORD_HEADER_MEASURES
+        )
+        rules_layout.addWidget(self.table)
+        splitter.addWidget(rules_host)
+        splitter.setStretchFactor(0, 2)
+        splitter.setStretchFactor(1, 3)
+
+        content_layout.addWidget(splitter)
         layout.addWidget(self.content)
 
         self.add_btn.clicked.connect(self.add_measure)
@@ -97,7 +153,20 @@ class CoordinationMeasuresTab(CoordinationTabEditPolicyMixin, QWidget):
             self.refresh()
         else:
             self.table.setRowCount(0)
+            self._clear_agreement_fields()
             self._update_action_buttons()
+
+    def get_agreement_data(self) -> dict:
+        return {
+            "work_intent_information_text": (
+                self.work_intent_information_text.toPlainText().strip()
+            ),
+            "ppe_text": self.ppe_text.toPlainText().strip(),
+            "workplace_handover_text": (
+                self.workplace_handover_text.toPlainText().strip()
+            ),
+            "final_provisions_text": self.final_provisions_text.toPlainText().strip(),
+        }
 
     def refresh(
         self,
@@ -109,6 +178,7 @@ class CoordinationMeasuresTab(CoordinationTabEditPolicyMixin, QWidget):
     ) -> None:
         if self.coordination_id is None:
             return
+        self._load_agreement_fields()
         scroll_value = (
             self.table.verticalScrollBar().value() if preserve_scroll else None
         )
@@ -233,14 +303,50 @@ class CoordinationMeasuresTab(CoordinationTabEditPolicyMixin, QWidget):
                 ensure_visible=True,
             )
 
+    def _load_agreement_fields(self) -> None:
+        if self.coordination_id is None:
+            self._clear_agreement_fields()
+            return
+        coordination = bozp_coordination_service.get_by_id(self.coordination_id)
+        if coordination is None:
+            self._clear_agreement_fields()
+            return
+        self.work_intent_information_text.setPlainText(
+            coordination.work_intent_information_text or ""
+        )
+        self.ppe_text.setPlainText(coordination.ppe_text or "")
+        self.workplace_handover_text.setPlainText(
+            coordination.workplace_handover_text or ""
+        )
+        self.final_provisions_text.setPlainText(
+            coordination.final_provisions_text or ""
+        )
+
+    def _clear_agreement_fields(self) -> None:
+        self.work_intent_information_text.clear()
+        self.ppe_text.clear()
+        self.workplace_handover_text.clear()
+        self.final_provisions_text.clear()
+
     def _selected_measure(self):
         measure_id = self.table.selected_measure_id()
         if measure_id is None:
             return None
         return coordination_measure_service.get_by_id(measure_id)
 
+    def _agreement_editors(self) -> tuple[QTextEdit, ...]:
+        return (
+            self.work_intent_information_text,
+            self.ppe_text,
+            self.workplace_handover_text,
+            self.final_provisions_text,
+        )
+
     def _update_action_buttons(self) -> None:
-        if not getattr(self, "_content_editable", True):
+        editable = getattr(self, "_content_editable", True)
+        for editor in self._agreement_editors():
+            editor.setReadOnly(not editable)
+        if not editable:
             self.add_btn.setEnabled(False)
             self.edit_btn.setEnabled(False)
             self.up_btn.setEnabled(False)
@@ -250,6 +356,7 @@ class CoordinationMeasuresTab(CoordinationTabEditPolicyMixin, QWidget):
             return
         measure = self._selected_measure()
         has_selection = measure is not None
+        self.add_btn.setEnabled(True)
         self.edit_btn.setEnabled(has_selection)
         self.up_btn.setEnabled(has_selection)
         self.down_btn.setEnabled(has_selection)

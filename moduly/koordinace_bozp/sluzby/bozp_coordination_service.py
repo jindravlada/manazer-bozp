@@ -138,6 +138,10 @@ class BozpCoordinationService:
         accident_reporting: str | None = None,
         fire_reporting: str | None = None,
         evacuation_instructions: str | None = None,
+        work_intent_information_text: str = "",
+        ppe_text: str = "",
+        workplace_handover_text: str = "",
+        final_provisions_text: str = "",
     ) -> BozpCoordination:
         normalized_subject = self._validate_subject(subject)
         # UX-COORD-6a: nová koordinace vždy startuje jako Rozpracováno.
@@ -171,6 +175,10 @@ class BozpCoordinationService:
                 evacuation_instructions,
                 DEFAULT_EVACUATION_INSTRUCTIONS,
             ),
+            work_intent_information_text=(work_intent_information_text or "").strip(),
+            ppe_text=(ppe_text or "").strip(),
+            workplace_handover_text=(workplace_handover_text or "").strip(),
+            final_provisions_text=(final_provisions_text or "").strip(),
             valid_from=resolved_from,
             valid_to=resolved_to,
             active=active,
@@ -198,6 +206,10 @@ class BozpCoordinationService:
         accident_reporting: str | None = None,
         fire_reporting: str | None = None,
         evacuation_instructions: str | None = None,
+        work_intent_information_text: str | None = None,
+        ppe_text: str | None = None,
+        workplace_handover_text: str | None = None,
+        final_provisions_text: str | None = None,
     ) -> BozpCoordination | None:
         coordination = self.repository.get_by_id(coordination_id)
         if coordination is None:
@@ -217,6 +229,20 @@ class BozpCoordinationService:
         if evacuation_instructions is not None:
             coordination.evacuation_instructions = (
                 evacuation_instructions or ""
+            ).strip()
+        if work_intent_information_text is not None:
+            coordination.work_intent_information_text = (
+                work_intent_information_text or ""
+            ).strip()
+        if ppe_text is not None:
+            coordination.ppe_text = (ppe_text or "").strip()
+        if workplace_handover_text is not None:
+            coordination.workplace_handover_text = (
+                workplace_handover_text or ""
+            ).strip()
+        if final_provisions_text is not None:
+            coordination.final_provisions_text = (
+                final_provisions_text or ""
             ).strip()
         if valid_from is not None:
             coordination.valid_from = valid_from

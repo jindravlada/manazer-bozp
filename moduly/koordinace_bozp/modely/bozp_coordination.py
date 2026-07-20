@@ -45,6 +45,26 @@ class BozpCoordination(Base):
         default="",
         server_default="",
     )
+    work_intent_information_text: Mapped[str] = mapped_column(
+        Text,
+        default="",
+        server_default="",
+    )
+    ppe_text: Mapped[str] = mapped_column(
+        Text,
+        default="",
+        server_default="",
+    )
+    workplace_handover_text: Mapped[str] = mapped_column(
+        Text,
+        default="",
+        server_default="",
+    )
+    final_provisions_text: Mapped[str] = mapped_column(
+        Text,
+        default="",
+        server_default="",
+    )
     valid_from: Mapped[date | None] = mapped_column(Date, nullable=True)
     valid_to: Mapped[date | None] = mapped_column(Date, nullable=True)
     ready_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

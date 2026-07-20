@@ -288,7 +288,7 @@ class UxCoord4aMeasuresDisplayTestCase(unittest.TestCase):
             )
         section_texts = []
         for group in dialog.findChildren(QGroupBox):
-            if group.title() == "Organizační opatření":
+            if group.title() == "Společná pravidla BOZP":
                 for label in group.findChildren(QLabel):
                     section_texts.append(label.text())
         joined = "\n".join(section_texts)

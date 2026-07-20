@@ -18,6 +18,8 @@ from core.widgets.dialog_utils import (
     create_close_box,
 )
 from moduly.koordinace_bozp.constants import (
+    AGREEMENT_SECTION_TITLE,
+    COMMON_RULES_SECTION_TITLE,
     PROTOCOL_WARNING_EMPLOYER_WITHOUT_ACTIVITY,
     PROTOCOL_WARNING_MISSING_COORDINATOR,
     PROTOCOL_WARNING_MISSING_MEASURES,
@@ -29,6 +31,7 @@ from moduly.koordinace_bozp.constants import (
 from moduly.koordinace_bozp.sluzby.coordination_protocol_builder import (
     CoordinationProtocolBuilderError,
     ProtocolBuildResult,
+    build_coordination_agreement_parts,
     coordination_protocol_builder,
     flatten_protocol_measure_bullets,
 )
@@ -216,12 +219,31 @@ class CoordinationProtocolPreviewDialog(QDialog):
         )
 
         measures = data.get("measures_by_category") or []
-        self._add_section(
-            "Organizační opatření",
-            self._measures_lines(measures),
-            force=bool(measures)
-            or PROTOCOL_WARNING_MISSING_MEASURES in warning_codes,
-        )
+        agreement_parts = build_coordination_agreement_parts(data)
+        if agreement_parts:
+            agreement_lines: list[str] = []
+            for part in agreement_parts:
+                if agreement_lines:
+                    agreement_lines.append("")
+                agreement_lines.append(part["title"])
+                agreement_lines.extend(part["lines"])
+            self._add_section(
+                AGREEMENT_SECTION_TITLE,
+                agreement_lines,
+                force=True,
+                allow_empty_placeholder=False,
+            )
+
+        measure_lines = flatten_protocol_measure_bullets(measures)
+        if measure_lines or PROTOCOL_WARNING_MISSING_MEASURES in warning_codes:
+            self._add_section(
+                COMMON_RULES_SECTION_TITLE,
+                measure_lines
+                if measure_lines
+                else ["Nejsou evidována žádná aktivní společná pravidla BOZP."],
+                force=True,
+                allow_empty_placeholder=False,
+            )
 
         contacts = data.get("contacts") or []
         procedures = data.get("emergency_procedures") or {}
@@ -267,10 +289,19 @@ class CoordinationProtocolPreviewDialog(QDialog):
             lines.append(f"{prefix} {item.message}".strip())
         self._add_section("Upozornění", lines, force=True)
 
-    def _add_section(self, title: str, lines: list[str], *, force: bool) -> None:
+    def _add_section(
+        self,
+        title: str,
+        lines: list[str],
+        *,
+        force: bool,
+        allow_empty_placeholder: bool = True,
+    ) -> None:
         if not force:
             return
         if not lines:
+            if not allow_empty_placeholder:
+                return
             lines = ["—"]
         group = QGroupBox(title)
         group_layout = QVBoxLayout(group)
