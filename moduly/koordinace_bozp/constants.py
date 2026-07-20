@@ -356,10 +356,12 @@ PROTOCOL_CONCLUSION_5_TITLE = (
 PROTOCOL_CONCLUSION_6_TITLE = "Mimořádné události:"
 PROTOCOL_CONCLUSION_7_TITLE = "Společná pravidla BOZP:"
 PROTOCOL_CONCLUSION_8_TITLE = "Závěrečná ustanovení:"
-PROTOCOL_FINAL_PROVISIONS = (
-    "Tento protokol byl vyhotoven ve dvou (podle počtu zúčastněných stran) "
-    "provedeních, pro každého ze zúčastněných zaměstnavatelů po jednom "
-    "vyhotovení. V případě, že by se na pracovišti uvedeném v bodě č. 1 "
+PROTOCOL_FINAL_PROVISIONS_COPIES = (
+    "Tento protokol byl vyhotoven v počtu {count} ks, pro každého ze "
+    "zúčastněných zaměstnavatelů po jednom vyhotovení."
+)
+PROTOCOL_FINAL_PROVISIONS_CONTINUATION = (
+    "V případě, že by se na pracovišti uvedeném v bodě č. 1 "
     "těchto závěrů z koordinační schůzky zástupců zúčastněných "
     "zaměstnavatelů měly vyskytovat další osoby nad rámec zaměstnanců "
     "zúčastněných zaměstnavatelů (např. další dodavatel některého ze "
@@ -370,6 +372,17 @@ PROTOCOL_FINAL_PROVISIONS = (
     "zúčastněné zaměstnavatele a dále budou všichni zúčastnění "
     "zaměstnavatelé obratem postupovat dle ustanovení § 101 odst. 3 "
     "zakoníku práce (dle pokynů koordinátora BOZP)."
+)
+# Zpětná kompatibilita: starý konstantní text (bez dynamického počtu).
+PROTOCOL_FINAL_PROVISIONS = (
+    PROTOCOL_FINAL_PROVISIONS_COPIES.format(count="XX")
+    + " "
+    + PROTOCOL_FINAL_PROVISIONS_CONTINUATION
+)
+PROTOCOL_MAIN_RISKS_VIA_PBP = (
+    "Rizika a opatření proti jejich působení za hlavního zaměstnavatele "
+    "({abbreviation}) jsou předána formou Pravidel bezpečné práce, která "
+    "tvoří přílohu A této dohody."
 )
 PROTOCOL_AGREEMENT_CLOSING = (
     "S protokolem souhlasí a současně uzavírají za zúčastněné "

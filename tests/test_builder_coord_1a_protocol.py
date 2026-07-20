@@ -196,11 +196,15 @@ class BuilderCoord1aTypographyTestCase(unittest.TestCase):
         self.lines = render_blocks_to_plain_lines(self.document["blocks"])
         self.joined = "\n".join(self.lines)
 
-    def test_employer_split_on_two_lines(self) -> None:
+    def test_employer_abbr_only_as_group_heading(self) -> None:
         self.assertIn("ZX-ZF", self.lines)
-        self.assertIn("ZX - Zkušební firma, a.s.", self.lines)
+        # Pod zkratkou se v skupinových nadpisech neopakuje celý název.
+        participants_idx = self.lines.index("Účastníci koordinační schůzky:")
+        activities_idx = self.lines.index("Činnosti na pracovišti:")
+        chunk = self.lines[participants_idx:activities_idx]
+        self.assertIn("ZX-ZF", chunk)
+        self.assertNotIn("ZX - Zkušební firma, a.s.", chunk)
         self.assertNotIn("ZX-ZF – ZX - Zkušební firma, a.s.", self.joined)
-        self.assertNotIn("ZX-ZF – ZX - Zkušební firma, a.s.:", self.joined)
 
         abbr_blocks = [
             block

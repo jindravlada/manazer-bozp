@@ -31,8 +31,10 @@ from moduly.koordinace_bozp.constants import (
     PROTOCOL_COORDINATOR_OBLIGATION,
     PROTOCOL_COORDINATOR_TRAINING,
     PROTOCOL_COORDINATOR_TRAINING_CHECK,
-    PROTOCOL_FINAL_PROVISIONS,
+    PROTOCOL_FINAL_PROVISIONS_CONTINUATION,
+    PROTOCOL_FINAL_PROVISIONS_COPIES,
     PROTOCOL_INTRO_EMPLOYERS,
+    PROTOCOL_MAIN_RISKS_VIA_PBP,
     PROTOCOL_PBP_TITLE_TEMPLATE,
     PROTOCOL_SECTION_ACTIVITIES,
     PROTOCOL_SECTION_BASICS,
@@ -221,26 +223,17 @@ class _BlockList:
         )
 
     def employer_heading(self, employer: Mapping[str, Any] | None) -> None:
+        """Nadpis skupiny: pouze tučná zkratka (bez opakování celého názvu)."""
         abbr, name = _employer_abbr_and_name(employer)
-        if abbr:
-            self._blocks.append(
-                ProtocolDocumentBlock(
-                    BLOCK_KIND_PARAGRAPH,
-                    abbr,
-                    style=BLOCK_STYLE_EMPLOYER_ABBR,
-                    bold=True,
-                )
+        label = abbr or name or "—"
+        self._blocks.append(
+            ProtocolDocumentBlock(
+                BLOCK_KIND_PARAGRAPH,
+                label,
+                style=BLOCK_STYLE_EMPLOYER_ABBR,
+                bold=True,
             )
-        if name:
-            self._blocks.append(
-                ProtocolDocumentBlock(
-                    BLOCK_KIND_PARAGRAPH,
-                    name,
-                    style=BLOCK_STYLE_EMPLOYER_NAME,
-                )
-            )
-        if not abbr and not name:
-            self.paragraph("—")
+        )
 
     def employer_label_line(self, label: str) -> None:
         text = (label or "").strip()
@@ -388,11 +381,28 @@ def _employer_protocol_line(employer: Mapping[str, Any], index: int) -> str:
     return f"{index}) {line}"
 
 
+def _person_display_name(
+    *,
+    full_name: str | None = None,
+    role: str | None = None,
+) -> str:
+    """Jméno – funkce; bez pomlčky, pokud chybí jméno."""
+    name = (full_name or "").strip()
+    role_text = (role or "").strip()
+    if name and role_text:
+        return f"{name} – {role_text}"
+    if name:
+        return name
+    if role_text:
+        return role_text
+    return "—"
+
+
 def _participant_bullet(participant: Mapping[str, Any]) -> str:
-    detail = (participant.get("full_name") or "—").strip()
-    role = (participant.get("role") or "").strip()
-    if role:
-        detail = f"{detail} – {role}"
+    detail = _person_display_name(
+        full_name=participant.get("full_name"),
+        role=participant.get("role"),
+    )
     extras = []
     phone = (participant.get("phone") or "").strip()
     email = (participant.get("email") or "").strip()
@@ -406,11 +416,16 @@ def _participant_bullet(participant: Mapping[str, Any]) -> str:
 
 
 def _append_contact_blocks(out: _BlockList, contact: Mapping[str, Any]) -> None:
-    name = (contact.get("custom_name") or "").strip() or "—"
-    out.bullet(name)
+    name = (contact.get("custom_name") or "").strip()
     role = (contact.get("role") or "").strip()
-    if role:
-        out.indented(role)
+    if name:
+        out.bullet(name)
+        if role:
+            out.indented(role)
+    elif role:
+        out.bullet(role)
+    else:
+        out.bullet("—")
     phone = (contact.get("phone") or "").strip()
     if phone:
         out.indented(f"Tel.: {phone}")
@@ -522,6 +537,14 @@ def _append_risk_status(out: _BlockList, protocol_data: Mapping[str, Any]) -> No
         wrote = True
     if not wrote:
         out.paragraph("—")
+    pbp = protocol_data.get("pbp_snapshot")
+    if pbp:
+        main = _main_employer(protocol_data)
+        main_abbr = (main or {}).get("abbreviation") or "HL"
+        out.blank()
+        out.paragraph(
+            PROTOCOL_MAIN_RISKS_VIA_PBP.format(abbreviation=main_abbr)
+        )
 
 
 def _measure_bullets(protocol_data: Mapping[str, Any]) -> list[str]:
@@ -734,7 +757,11 @@ def build_protocol_document(protocol_data: Mapping[str, Any]) -> dict[str, Any]:
         out.paragraph("—")
 
     out.numbered_heading(8, PROTOCOL_CONCLUSION_8_TITLE)
-    out.paragraph(PROTOCOL_FINAL_PROVISIONS)
+    employer_count = len(protocol_data.get("employers") or [])
+    out.paragraph(
+        PROTOCOL_FINAL_PROVISIONS_COPIES.format(count=employer_count or 1)
+    )
+    out.paragraph(PROTOCOL_FINAL_PROVISIONS_CONTINUATION)
     final_text = (agreement.get("final_provisions_text") or "").strip()
     if final_text:
         out.paragraph(final_text)
