@@ -58,7 +58,7 @@ from moduly.koordinace_bozp.sluzby.coordination_attachment_service import (
     coordination_attachment_service,
 )
 from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
-    employer_abbreviation,
+    default_abbreviation,
 )
 from moduly.koordinace_bozp.sluzby.coordination_contact_service import (
     coordination_contact_service,
@@ -736,7 +736,9 @@ class CoordinationProtocolBuilder:
 
     @staticmethod
     def _employer_dict(employer) -> dict:
-        abbr = employer_abbreviation(employer)
+        abbr = (employer.abbreviation or "").strip() or default_abbreviation(
+            employer.company_name or ""
+        )
         name = employer.company_name or abbr or f"#{employer.id}"
         display = name
         if abbr and abbr != name:
