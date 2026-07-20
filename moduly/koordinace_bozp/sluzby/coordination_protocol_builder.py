@@ -48,7 +48,11 @@ from moduly.koordinace_bozp.constants import (
     RISK_HANDOVER_STATUS_LABELS,
     RISK_HANDOVER_STATUS_MAIN,
     RISK_HANDOVER_STATUS_NOT_SUBMITTED,
-    RISK_HANDOVER_STATUS_WITHOUT_ATTACHMENT,
+    RISK_HANDOVER_STATUS_UNSET,
+    RISK_SUBMISSION_COMPLETED_STATUSES,
+    RISK_SUBMISSION_PENDING_STATUSES,
+    RISK_SUBMISSION_STATUS_LABELS,
+    RISK_SUBMISSION_STATUS_STATED_AT_MEETING,
     VALIDITY_STATE_EXPIRED,
 )
 from moduly.koordinace_bozp.sluzby.bozp_coordination_service import (
@@ -723,32 +727,42 @@ class CoordinationProtocolBuilder:
             status = row["handover_status"]
             if status == RISK_HANDOVER_STATUS_MAIN:
                 continue
-            if status == RISK_HANDOVER_STATUS_NOT_SUBMITTED:
+            if status in (
+                RISK_HANDOVER_STATUS_UNSET,
+                RISK_HANDOVER_STATUS_NOT_SUBMITTED,
+            ) or status in RISK_SUBMISSION_PENDING_STATUSES:
                 warnings.append(
                     ProtocolWarning(
                         code=PROTOCOL_WARNING_RISKS_NOT_SUBMITTED,
                         severity=PROTOCOL_WARNING_SEVERITY_WARNING,
                         message=(
                             f"Dodavatel „{employer['display_name']}“ "
-                            "nepředal informace o rizicích."
+                            "dosud nepředal informace o rizicích "
+                            "(nebo je předání teprve plánováno)."
                         ),
                         related_entity_type="coordination_employer",
                         related_entity_id=employer["id"],
                     )
                 )
-            elif status == RISK_HANDOVER_STATUS_WITHOUT_ATTACHMENT:
-                warnings.append(
-                    ProtocolWarning(
-                        code=PROTOCOL_WARNING_RISKS_WITHOUT_ATTACHMENT,
-                        severity=PROTOCOL_WARNING_SEVERITY_WARNING,
-                        message=(
-                            f"Dodavatel „{employer['display_name']}“ "
-                            "předal rizika bez uložené přílohy."
-                        ),
-                        related_entity_type="coordination_employer",
-                        related_entity_id=employer["id"],
-                    )
+                continue
+            if status in RISK_SUBMISSION_COMPLETED_STATUSES:
+                attachments = coordination_attachment_service.list_for_employer(
+                    employer["id"],
+                    include_inactive=False,
                 )
+                if not attachments and status != RISK_SUBMISSION_STATUS_STATED_AT_MEETING:
+                    warnings.append(
+                        ProtocolWarning(
+                            code=PROTOCOL_WARNING_RISKS_WITHOUT_ATTACHMENT,
+                            severity=PROTOCOL_WARNING_SEVERITY_WARNING,
+                            message=(
+                                f"Dodavatel „{employer['display_name']}“ "
+                                "předal rizika bez uložené přílohy."
+                            ),
+                            related_entity_type="coordination_employer",
+                            related_entity_id=employer["id"],
+                        )
+                    )
 
         return warnings
 
@@ -1014,16 +1028,26 @@ class CoordinationProtocolBuilder:
     def _submission_dict(submission) -> dict | None:
         if submission is None:
             return None
+        status = submission.submission_method or ""
         return {
             "id": submission.id,
-            "submission_method": submission.submission_method or "",
+            "submission_method": status,
+            "submission_status": status,
+            "submission_status_label": RISK_SUBMISSION_STATUS_LABELS.get(
+                status,
+                status,
+            ),
             "submission_date": (
                 submission.submission_date.isoformat()
                 if submission.submission_date
                 else None
             ),
             "document_reference": submission.document_reference or "",
+            "expected_email": getattr(submission, "expected_email", "") or "",
+            "risks_text": getattr(submission, "risks_text", "") or "",
             "note": submission.note or "",
+            # Interní vazba na úkol se do protokolu netiskne.
+            "task_id": getattr(submission, "task_id", None),
         }
 
     @staticmethod

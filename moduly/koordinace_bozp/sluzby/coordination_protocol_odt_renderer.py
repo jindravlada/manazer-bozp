@@ -370,7 +370,7 @@ class CoordinationProtocolOdtRenderer:
             ]
         )
 
-        # 12. Předání rizik
+        # 12. Předání rizik – pouze konečný stav (bez interních úkolů).
         lines.append("Informace o předání rizik")
         lines.append("")
         risk_rows = data.get("risk_handovers") or []
@@ -379,20 +379,6 @@ class CoordinationProtocolOdtRenderer:
                 employer = row.get("employer") or {}
                 status = row.get("handover_status_label") or row.get("handover_status") or "—"
                 lines.append(f"• {employer.get('display_name') or '—'}: {status}")
-                submission = row.get("submission") or {}
-                if submission:
-                    method = submission.get("submission_method") or ""
-                    if method:
-                        lines.append(f"  Způsob: {method}")
-                    if submission.get("submission_date"):
-                        lines.append(
-                            "  Datum: "
-                            f"{_format_date(submission.get('submission_date'))}"
-                        )
-                    if submission.get("document_reference"):
-                        lines.append(
-                            f"  Reference: {submission['document_reference']}"
-                        )
         else:
             lines.append("—")
         lines.append("")

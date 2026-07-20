@@ -119,6 +119,7 @@ def initialize_database() -> None:
     )
     from moduly.koordinace_bozp.modely.coordination_employer_risk_submission import (  # noqa: F401
         CoordinationEmployerRiskSubmission,
+        CoordinationRiskSubmissionHistory,
     )
     from moduly.koordinace_bozp.modely.coordination_attachment import (  # noqa: F401
         CoordinationAttachment,
@@ -2229,9 +2230,27 @@ def _ensure_bozp_coordinations_table() -> None:
     if not risk_submission_columns:
         from moduly.koordinace_bozp.modely.coordination_employer_risk_submission import (
             CoordinationEmployerRiskSubmission,
+            CoordinationRiskSubmissionHistory,
         )
 
         CoordinationEmployerRiskSubmission.__table__.create(
+            bind=_db_engine(),
+            checkfirst=True,
+        )
+        CoordinationRiskSubmissionHistory.__table__.create(
+            bind=_db_engine(),
+            checkfirst=True,
+        )
+    else:
+        _migrate_coordination_risk_submissions_ux_coord_13()
+
+    history_columns = _table_columns("coordination_risk_submission_history")
+    if not history_columns:
+        from moduly.koordinace_bozp.modely.coordination_employer_risk_submission import (
+            CoordinationRiskSubmissionHistory,
+        )
+
+        CoordinationRiskSubmissionHistory.__table__.create(
             bind=_db_engine(),
             checkfirst=True,
         )
@@ -2241,6 +2260,13 @@ def _ensure_bozp_coordinations_table() -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_coordination_employer_risk_submissions_employer
         ON coordination_employer_risk_submissions (coordination_employer_id)
+        """,
+    )
+    _ensure_index(
+        "idx_coordination_risk_submission_history_submission",
+        """
+        CREATE INDEX IF NOT EXISTS idx_coordination_risk_submission_history_submission
+        ON coordination_risk_submission_history (submission_id)
         """,
     )
 
@@ -2314,6 +2340,51 @@ def _ensure_hazard_library_template_legal_links_table() -> None:
         ON hazard_library_template_legal_links (legal_document_id)
         """,
     )
+
+
+def _migrate_coordination_risk_submissions_ux_coord_13() -> None:
+    """UX-COORD-13: stavy předání, nová pole a remap starých způsobů."""
+    columns = _table_columns("coordination_employer_risk_submissions")
+    if not columns:
+        return
+    if "expected_email" not in columns:
+        _add_column(
+            "coordination_employer_risk_submissions",
+            "expected_email VARCHAR(150) DEFAULT ''",
+        )
+    if "risks_text" not in columns:
+        _add_column(
+            "coordination_employer_risk_submissions",
+            "risks_text TEXT DEFAULT ''",
+        )
+    if "task_id" not in columns:
+        _add_column(
+            "coordination_employer_risk_submissions",
+            "task_id INTEGER",
+        )
+
+    # Remap legacy technical methods → process statuses.
+    remap = {
+        "not_submitted": "will_send_email",
+        "attachment": "stated_at_meeting",
+        "email": "email_before_meeting",
+        "paper": "will_submit_paper",
+        "data_box": "submitted_earlier",
+        "other": "submitted_earlier",
+    }
+    with _db_engine().connect() as connection:
+        for old, new in remap.items():
+            connection.execute(
+                text(
+                    """
+                    UPDATE coordination_employer_risk_submissions
+                    SET submission_method = :new
+                    WHERE submission_method = :old
+                    """
+                ),
+                {"old": old, "new": new},
+            )
+        connection.commit()
 
 
 def _migrate_coordination_contacts_employer_ux_coord_12d() -> None:

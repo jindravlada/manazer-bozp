@@ -26,9 +26,13 @@ from moduly.koordinace_bozp.constants import (
     MAIN_EMPLOYER_RISK_HANDOVER_ATTACHMENT_TITLE,
     MAIN_EMPLOYER_RISK_HANDOVER_PROTOCOL_TEXT,
     RISK_HANDOVER_STATUS_LABELS,
-    RISK_SUBMISSION_METHOD_LABELS,
-    RISK_SUBMISSION_METHOD_NOT_SUBMITTED,
-    RISK_SUBMISSION_METHODS,
+    RISK_SUBMISSION_STATUS_EARLIER,
+    RISK_SUBMISSION_STATUS_EMAIL_BEFORE,
+    RISK_SUBMISSION_STATUS_LABELS,
+    RISK_SUBMISSION_STATUS_STATED_AT_MEETING,
+    RISK_SUBMISSION_STATUS_WILL_EMAIL,
+    RISK_SUBMISSION_STATUS_WILL_PAPER,
+    RISK_SUBMISSION_STATUSES,
     TAB_RISK_SUBMISSIONS,
 )
 from moduly.koordinace_bozp.sluzby.coordination_attachment_service import (
@@ -37,6 +41,7 @@ from moduly.koordinace_bozp.sluzby.coordination_attachment_service import (
 )
 from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
     coordination_employer_service,
+    employer_abbreviation,
 )
 from moduly.koordinace_bozp.sluzby.coordination_risk_submission_service import (
     CoordinationRiskSubmissionError,
@@ -51,7 +56,7 @@ from moduly.koordinace_bozp.ui.coordination_tab_edit_policy import (
 
 
 class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
-    """Záložka předání rizik dodavatelů (COORD-006)."""
+    """Záložka předání rizik dodavatelů (COORD-006 / UX-COORD-13)."""
 
     def __init__(self, parent=None, coordination_id: int | None = None):
         super().__init__(parent)
@@ -88,19 +93,32 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
         self.status_label = QLabel()
         content_layout.addWidget(self.status_label)
 
-        form = QFormLayout()
+        self.form = QFormLayout()
         self.submission_method = QComboBox()
-        for method in RISK_SUBMISSION_METHODS:
-            self.submission_method.addItem(RISK_SUBMISSION_METHOD_LABELS[method], method)
+        for status in RISK_SUBMISSION_STATUSES:
+            self.submission_method.addItem(
+                RISK_SUBMISSION_STATUS_LABELS[status],
+                status,
+            )
         self.submission_date = NullableDateEdit()
         self.document_reference = QLineEdit()
+        self.expected_email = QLineEdit()
+        self.risks_text = QTextEdit()
+        self.risks_text.setMinimumHeight(80)
         self.note = QTextEdit()
         self.note.setMinimumHeight(60)
-        form.addRow("Způsob předání:", self.submission_method)
-        form.addRow("Datum předání:", self.submission_date)
-        form.addRow("Označení dokumentu:", self.document_reference)
-        form.addRow("Poznámka:", self.note)
-        content_layout.addLayout(form)
+
+        self.form.addRow("Stav předání:", self.submission_method)
+        self._date_label = QLabel("Datum:")
+        self.form.addRow(self._date_label, self.submission_date)
+        self._document_label = QLabel("Identifikace:")
+        self.form.addRow(self._document_label, self.document_reference)
+        self._email_label = QLabel("Očekávaná e-mailová adresa *: ")
+        self.form.addRow(self._email_label, self.expected_email)
+        self._risks_label = QLabel("Text rizik:")
+        self.form.addRow(self._risks_label, self.risks_text)
+        self.form.addRow("Poznámka:", self.note)
+        content_layout.addLayout(self.form)
 
         save_row = QHBoxLayout()
         self.save_btn = QPushButton("Uložit předání")
@@ -129,6 +147,7 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
         layout.addWidget(self.content)
 
         self.employer_combo.currentIndexChanged.connect(self._on_employer_changed)
+        self.submission_method.currentIndexChanged.connect(self._on_status_changed)
         self.save_btn.clicked.connect(self.save_submission)
         self.add_attachment_btn.clicked.connect(self.add_attachment)
         self.open_attachment_btn.clicked.connect(self.open_attachment)
@@ -144,6 +163,7 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
         self.attachments_table.itemSelectionChanged.connect(self._update_attachment_buttons)
 
         self.set_coordination_id(coordination_id)
+        self._update_field_visibility()
 
     def set_coordination_id(self, coordination_id: int | None) -> None:
         self.coordination_id = coordination_id
@@ -172,7 +192,9 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
         self._loading = True
         self.employer_combo.clear()
         for employer in employers:
-            label = f"{employer.abbreviation} – {employer.company_name}".strip(" –")
+            label = f"{employer_abbreviation(employer)} – {employer.company_name}".strip(
+                " –"
+            )
             if not employer.active:
                 label = f"{label} (neaktivní)"
             self.employer_combo.addItem(label, employer.id)
@@ -197,14 +219,19 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
         self.save_btn.setEnabled(has_employer and editable)
         self.add_attachment_btn.setEnabled(has_employer and editable)
         if not has_employer:
+            self._loading = True
             self.submission_method.setCurrentIndex(
-                self.submission_method.findData(RISK_SUBMISSION_METHOD_NOT_SUBMITTED)
+                self.submission_method.findData(RISK_SUBMISSION_STATUS_STATED_AT_MEETING)
             )
             self.submission_date.clear_date()
             self.document_reference.clear()
+            self.expected_email.clear()
+            self.risks_text.clear()
             self.note.clear()
+            self._loading = False
             self.status_label.setText("")
             self.attachments_table.setRowCount(0)
+            self._update_field_visibility()
             self._update_attachment_buttons()
             return
 
@@ -224,12 +251,15 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
         self.status_label.setText(
             f"Stav: {RISK_HANDOVER_STATUS_LABELS.get(status, status)}"
         )
+        self._loading = True
         if submission is None:
             self.submission_method.setCurrentIndex(
-                self.submission_method.findData(RISK_SUBMISSION_METHOD_NOT_SUBMITTED)
+                self.submission_method.findData(RISK_SUBMISSION_STATUS_STATED_AT_MEETING)
             )
             self.submission_date.clear_date()
             self.document_reference.clear()
+            self.expected_email.clear()
+            self.risks_text.clear()
             self.note.clear()
         else:
             index = self.submission_method.findData(submission.submission_method)
@@ -239,7 +269,11 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
             else:
                 self.submission_date.clear_date()
             self.document_reference.setText(submission.document_reference or "")
+            self.expected_email.setText(submission.expected_email or "")
+            self.risks_text.setPlainText(submission.risks_text or "")
             self.note.setPlainText(submission.note or "")
+        self._loading = False
+        self._update_field_visibility()
 
         attachments = coordination_attachment_service.list_for_employer(
             employer_id,
@@ -273,6 +307,8 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
                 submission_method=self.submission_method.currentData(),
                 submission_date=self.submission_date.get_date(),
                 document_reference=self.document_reference.text().strip(),
+                expected_email=self.expected_email.text().strip(),
+                risks_text=self.risks_text.toPlainText().strip(),
                 note=self.note.toPlainText().strip(),
             )
         except CoordinationRiskSubmissionError as error:
@@ -353,6 +389,44 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
         if self._loading:
             return
         self.load_selected_employer()
+
+    def _on_status_changed(self) -> None:
+        if self._loading:
+            return
+        self._update_field_visibility()
+
+    def _update_field_visibility(self) -> None:
+        status = self.submission_method.currentData()
+        show_date = status in (
+            RISK_SUBMISSION_STATUS_EMAIL_BEFORE,
+            RISK_SUBMISSION_STATUS_EARLIER,
+            RISK_SUBMISSION_STATUS_WILL_EMAIL,
+            RISK_SUBMISSION_STATUS_WILL_PAPER,
+        )
+        show_document = status in (
+            RISK_SUBMISSION_STATUS_EMAIL_BEFORE,
+            RISK_SUBMISSION_STATUS_EARLIER,
+        )
+        show_email = status == RISK_SUBMISSION_STATUS_WILL_EMAIL
+        show_risks = status == RISK_SUBMISSION_STATUS_STATED_AT_MEETING
+
+        if status == RISK_SUBMISSION_STATUS_EMAIL_BEFORE:
+            self._date_label.setText("Datum doručení:")
+            self._document_label.setText("Identifikace e-mailu:")
+        elif status == RISK_SUBMISSION_STATUS_EARLIER:
+            self._date_label.setText("Datum původního předání:")
+            self._document_label.setText("Identifikace dokumentu:")
+        elif status == RISK_SUBMISSION_STATUS_WILL_EMAIL:
+            self._date_label.setText("Termín doručení *:")
+        elif status == RISK_SUBMISSION_STATUS_WILL_PAPER:
+            self._date_label.setText("Termín předání:")
+        else:
+            self._date_label.setText("Datum:")
+
+        self.form.setRowVisible(self.submission_date, show_date)
+        self.form.setRowVisible(self.document_reference, show_document)
+        self.form.setRowVisible(self.expected_email, show_email)
+        self.form.setRowVisible(self.risks_text, show_risks)
 
     def _update_attachment_buttons(self) -> None:
         attachment_id = self.attachments_table.selected_attachment_id()

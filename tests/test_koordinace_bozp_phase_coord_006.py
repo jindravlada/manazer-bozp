@@ -32,12 +32,10 @@ with patch.object(Path, "home", return_value=_TMP):
 
     from core.database.session import get_session
     from moduly.koordinace_bozp.constants import (
-        RISK_HANDOVER_STATUS_NOT_SUBMITTED,
-        RISK_HANDOVER_STATUS_WITH_ATTACHMENT,
-        RISK_HANDOVER_STATUS_WITHOUT_ATTACHMENT,
-        RISK_SUBMISSION_METHOD_ATTACHMENT,
-        RISK_SUBMISSION_METHOD_EMAIL,
-        RISK_SUBMISSION_METHOD_NOT_SUBMITTED,
+        RISK_HANDOVER_STATUS_UNSET,
+        RISK_SUBMISSION_STATUS_EMAIL_BEFORE,
+        RISK_SUBMISSION_STATUS_STATED_AT_MEETING,
+        RISK_SUBMISSION_STATUS_WILL_EMAIL,
         TAB_RISK_SUBMISSIONS,
         TAB_WORKPLACES,
     )
@@ -59,6 +57,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.koordinace_bozp.modely.coordination_employer import CoordinationEmployer
     from moduly.koordinace_bozp.modely.coordination_employer_risk_submission import (
         CoordinationEmployerRiskSubmission,
+        CoordinationRiskSubmissionHistory,
     )
     from moduly.koordinace_bozp.modely.coordination_participant import (
         CoordinationParticipant,
@@ -104,6 +103,7 @@ class KoordinaceBozpPhaseCoord006TestCase(unittest.TestCase):
         with get_session() as session:
             session.execute(delete(CoordinationPbpRevision))
             session.execute(delete(CoordinationAttachment))
+            session.execute(delete(CoordinationRiskSubmissionHistory))
             session.execute(delete(CoordinationEmployerRiskSubmission))
             session.execute(delete(CoordinationContact))
             session.execute(delete(CoordinationEmployerActivity))
@@ -272,7 +272,7 @@ class KoordinaceBozpPhaseCoord006TestCase(unittest.TestCase):
         with self.assertRaises(CoordinationRiskSubmissionError):
             coordination_risk_submission_service.save_submission(
                 main.id,
-                submission_method=RISK_SUBMISSION_METHOD_EMAIL,
+                submission_method=RISK_SUBMISSION_STATUS_EMAIL_BEFORE,
             )
 
     def test_save_submission_and_statuses(self) -> None:
@@ -284,17 +284,17 @@ class KoordinaceBozpPhaseCoord006TestCase(unittest.TestCase):
         )
         self.assertEqual(
             coordination_risk_submission_service.handover_status(contractor.id),
-            RISK_HANDOVER_STATUS_NOT_SUBMITTED,
+            RISK_HANDOVER_STATUS_UNSET,
         )
         coordination_risk_submission_service.save_submission(
             contractor.id,
-            submission_method=RISK_SUBMISSION_METHOD_EMAIL,
+            submission_method=RISK_SUBMISSION_STATUS_EMAIL_BEFORE,
             submission_date=date(2026, 7, 10),
             document_reference="e-mail č. 12",
         )
         self.assertEqual(
             coordination_risk_submission_service.handover_status(contractor.id),
-            RISK_HANDOVER_STATUS_WITHOUT_ATTACHMENT,
+            RISK_SUBMISSION_STATUS_EMAIL_BEFORE,
         )
 
         source = _TMP / "rizika-dodavatele.pdf"
@@ -312,7 +312,7 @@ class KoordinaceBozpPhaseCoord006TestCase(unittest.TestCase):
         self.assertFalse(Path(attachment.file_path).is_absolute())
         self.assertEqual(
             coordination_risk_submission_service.handover_status(contractor.id),
-            RISK_HANDOVER_STATUS_WITH_ATTACHMENT,
+            RISK_SUBMISSION_STATUS_EMAIL_BEFORE,
         )
 
         coordination_attachment_service.deactivate(attachment.id)
@@ -322,7 +322,7 @@ class KoordinaceBozpPhaseCoord006TestCase(unittest.TestCase):
         self.assertFalse(reloaded.active)
         self.assertEqual(
             coordination_risk_submission_service.handover_status(contractor.id),
-            RISK_HANDOVER_STATUS_WITHOUT_ATTACHMENT,
+            RISK_SUBMISSION_STATUS_EMAIL_BEFORE,
         )
 
     def test_open_attachment_resolves_copied_file(self) -> None:
