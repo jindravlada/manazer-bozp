@@ -34,6 +34,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.koordinace_bozp.constants import (
         COORDINATION_PARTICIPANT_SOURCE_EMPLOYEE,
         COORDINATION_PARTICIPANT_SOURCE_MANUAL,
+        PART_COL_EMPLOYER,
         PART_COL_FULL_NAME,
         PARTICIPANT_TABLE_HEADERS,
         TAB_BASICS,
@@ -284,7 +285,7 @@ class KoordinaceBozpPhaseCoord003TestCase(unittest.TestCase):
         listed = coordination_participant_service.list_for_employer(other.id)
         self.assertEqual(len(listed), 1)
 
-    def test_ui_filters_by_selected_employer(self) -> None:
+    def test_ui_shows_all_participants_without_employer_combo(self) -> None:
         coordination = self._create_coordination("UI filtr")
         main = self._main_employer(coordination.id)
         other = coordination_employer_service.add_participant(
@@ -302,26 +303,27 @@ class KoordinaceBozpPhaseCoord003TestCase(unittest.TestCase):
 
         tab = dialog.participants_tab
         self.assertFalse(tab.content.isHidden())
+        self.assertFalse(hasattr(tab, "employer_combo"))
         self.assertEqual(
-            [tab.table.horizontalHeaderItem(i).text() for i in range(6)],
+            [tab.table.horizontalHeaderItem(i).text() for i in range(7)],
             PARTICIPANT_TABLE_HEADERS,
         )
-
-        main_index = tab.employer_combo.findData(main.id)
-        other_index = tab.employer_combo.findData(other.id)
-        self.assertGreaterEqual(main_index, 0)
-        self.assertGreaterEqual(other_index, 0)
-
-        tab.employer_combo.setCurrentIndex(main_index)
-        self.assertEqual(tab.table.rowCount(), 1)
-        self.assertEqual(tab.table.item(0, PART_COL_FULL_NAME).text(), "Hlavní Osoba")
-
-        tab.employer_combo.setCurrentIndex(other_index)
-        self.assertEqual(tab.table.rowCount(), 1)
-        self.assertEqual(tab.table.item(0, PART_COL_FULL_NAME).text(), "Cizí Osoba")
+        self.assertEqual(tab.table.rowCount(), 2)
+        names = {
+            tab.table.item(row, PART_COL_FULL_NAME).text()
+            for row in range(tab.table.rowCount())
+        }
+        self.assertEqual(names, {"Hlavní Osoba", "Cizí Osoba"})
+        employers = {
+            tab.table.item(row, PART_COL_EMPLOYER).text()
+            for row in range(tab.table.rowCount())
+        }
+        self.assertTrue(any("BETA" in text for text in employers))
 
         new_dialog = BozpCoordinationDialog(None)
         self.assertTrue(new_dialog.participants_tab.content.isHidden())
+        dialog.close()
+        new_dialog.close()
 
 
 if __name__ == "__main__":

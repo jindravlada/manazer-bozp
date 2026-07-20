@@ -1,5 +1,4 @@
 from PySide6.QtWidgets import (
-    QComboBox,
     QHBoxLayout,
     QLabel,
     QMessageBox,
@@ -41,7 +40,7 @@ from moduly.koordinace_bozp.ui.coordination_tab_edit_policy import (
 
 
 class CoordinationParticipantsTab(CoordinationTabEditPolicyMixin, QWidget):
-    """Záložka účastníků koordinační schůzky (COORD-003)."""
+    """Záložka účastníků schůzky – společný přehled (COORD-003 / UX-COORD-12a)."""
 
     def __init__(self, parent=None, coordination_id: int | None = None):
         super().__init__(parent)
@@ -61,13 +60,6 @@ class CoordinationParticipantsTab(CoordinationTabEditPolicyMixin, QWidget):
         content_layout = QVBoxLayout(self.content)
         content_layout.setContentsMargins(0, 0, 0, 0)
 
-        employer_row = QHBoxLayout()
-        employer_row.addWidget(QLabel("Zaměstnavatel:"))
-        self.employer_combo = QComboBox()
-        self.employer_combo.currentIndexChanged.connect(self._on_employer_changed)
-        employer_row.addWidget(self.employer_combo, 1)
-        content_layout.addLayout(employer_row)
-
         toolbar = QHBoxLayout()
         self.add_btn = QPushButton("Přidat")
         self.edit_btn = QPushButton("Upravit")
@@ -81,7 +73,9 @@ class CoordinationParticipantsTab(CoordinationTabEditPolicyMixin, QWidget):
         content_layout.addLayout(toolbar)
 
         self.table = CoordinationParticipantTable()
-        configure_and_persist_table_columns(self.table, "coordination_participants", COORD_HEADER_PARTICIPANTS)
+        configure_and_persist_table_columns(
+            self.table, "coordination_participants", COORD_HEADER_PARTICIPANTS
+        )
         content_layout.addWidget(self.table)
         layout.addWidget(self.content)
 
@@ -107,37 +101,12 @@ class CoordinationParticipantsTab(CoordinationTabEditPolicyMixin, QWidget):
         self.unavailable_label.setVisible(not available)
         self.content.setVisible(available)
         if available:
-            self.refresh_employers()
+            self.refresh()
         else:
-            self.employer_combo.clear()
             self.table.setRowCount(0)
             self._update_action_buttons()
 
-    def refresh_employers(self) -> None:
-        if self.coordination_id is None:
-            return
-        coordination_employer_service.ensure_main_employer(self.coordination_id)
-        previous_id = self.current_employer_id()
-        employers = coordination_employer_service.list_for_coordination(
-            self.coordination_id,
-            include_inactive=True,
-        )
-        self.employer_combo.blockSignals(True)
-        self.employer_combo.clear()
-        for employer in employers:
-            label = f"{employer.abbreviation} – {employer.company_name}".strip(" –")
-            if not employer.active:
-                label = f"{label} (neaktivní)"
-            self.employer_combo.addItem(label, employer.id)
-        self.employer_combo.blockSignals(False)
-
-        if previous_id is not None:
-            index = self.employer_combo.findData(previous_id)
-            if index >= 0:
-                self.employer_combo.setCurrentIndex(index)
-        self.refresh_participants()
-
-    def refresh_participants(
+    def refresh(
         self,
         *,
         select_id: int | None = None,
@@ -145,11 +114,9 @@ class CoordinationParticipantsTab(CoordinationTabEditPolicyMixin, QWidget):
         preserve_scroll: bool = False,
         ensure_visible: bool = False,
     ) -> None:
-        employer_id = self.current_employer_id()
-        if employer_id is None:
-            self.table.setRowCount(0)
-            self._update_action_buttons()
+        if self.coordination_id is None:
             return
+        coordination_employer_service.ensure_main_employer(self.coordination_id)
         scroll_value = (
             self.table.verticalScrollBar().value() if preserve_scroll else None
         )
@@ -158,8 +125,8 @@ class CoordinationParticipantsTab(CoordinationTabEditPolicyMixin, QWidget):
             if select_id is not None
             else self.table.selected_participant_id()
         )
-        participants = coordination_participant_service.list_for_employer(
-            employer_id,
+        participants = coordination_participant_service.list_for_coordination(
+            self.coordination_id,
             include_inactive=True,
         )
         self.table.load_participants(participants)
@@ -176,37 +143,27 @@ class CoordinationParticipantsTab(CoordinationTabEditPolicyMixin, QWidget):
         )
         self._update_action_buttons()
 
-    def current_employer_id(self) -> int | None:
-        data = self.employer_combo.currentData()
-        return int(data) if isinstance(data, int) else None
-
-    def current_employer(self):
-        employer_id = self.current_employer_id()
-        if employer_id is None:
-            return None
-        return coordination_employer_service.get_by_id(employer_id)
+    # Zpětná kompatibilita pro přepínání záložek v dialogu.
+    def refresh_employers(self) -> None:
+        self.refresh()
 
     def add_participant(self) -> None:
-        if not self.allow_mutate():
-            return
-        employer = self.current_employer()
-        if employer is None:
-            QMessageBox.information(self, TAB_PARTICIPANTS, "Vyberte zaměstnavatele.")
-            return
-        if not employer.active:
-            QMessageBox.warning(
-                self,
-                TAB_PARTICIPANTS,
-                "K deaktivovanému zaměstnavateli nelze přidat účastníka.",
-            )
+        if self.coordination_id is None or not self.allow_mutate():
             return
         dialog = CoordinationParticipantDialog(
             self,
-            allow_employee_source=bool(employer.is_main),
+            coordination_id=self.coordination_id,
+            default_employer_id=coordination_participant_service.default_employer_id(
+                self.coordination_id
+            ),
         )
         if not dialog.exec():
             return
         data = dialog.get_data()
+        employer_id = data.get("coordination_employer_id")
+        if not isinstance(employer_id, int):
+            QMessageBox.warning(self, TAB_PARTICIPANTS, "Vyberte zaměstnavatele.")
+            return
         try:
             if data.get("person_source_type") == COORDINATION_PARTICIPANT_SOURCE_EMPLOYEE:
                 employee_id = data.get("employee_id")
@@ -215,7 +172,7 @@ class CoordinationParticipantsTab(CoordinationTabEditPolicyMixin, QWidget):
                         "Vyberte pracovníka z evidence THP."
                     )
                 created = coordination_participant_service.add_from_employee(
-                    employer.id,
+                    employer_id,
                     employee_id,
                     full_name=data["full_name"],
                     role=data["role"],
@@ -225,7 +182,7 @@ class CoordinationParticipantsTab(CoordinationTabEditPolicyMixin, QWidget):
                 )
             else:
                 created = coordination_participant_service.add_manual(
-                    employer.id,
+                    employer_id,
                     full_name=data["full_name"],
                     role=data["role"],
                     phone=data["phone"],
@@ -235,16 +192,20 @@ class CoordinationParticipantsTab(CoordinationTabEditPolicyMixin, QWidget):
         except CoordinationParticipantError as error:
             QMessageBox.warning(self, TAB_PARTICIPANTS, str(error))
             return
-        self.refresh_participants(select_id=created.id, ensure_visible=True)
+        self.refresh(select_id=created.id, ensure_visible=True)
 
     def edit_selected_participant(self) -> None:
-        if not self.allow_mutate():
+        if self.coordination_id is None or not self.allow_mutate():
             return
         participant = self._selected_participant()
         if participant is None:
             QMessageBox.information(self, TAB_PARTICIPANTS, "Vyberte účastníka.")
             return
-        dialog = CoordinationParticipantDialog(self, participant=participant)
+        dialog = CoordinationParticipantDialog(
+            self,
+            participant=participant,
+            coordination_id=self.coordination_id,
+        )
         if not dialog.exec():
             return
         try:
@@ -255,7 +216,7 @@ class CoordinationParticipantsTab(CoordinationTabEditPolicyMixin, QWidget):
         except CoordinationParticipantError as error:
             QMessageBox.warning(self, TAB_PARTICIPANTS, str(error))
             return
-        self.refresh_participants(select_id=participant.id, preserve_scroll=True)
+        self.refresh(select_id=participant.id, preserve_scroll=True)
 
     def activate_selected_participant(self) -> None:
         if not self.allow_mutate():
@@ -276,7 +237,7 @@ class CoordinationParticipantsTab(CoordinationTabEditPolicyMixin, QWidget):
         )
         if answer == QMessageBox.Yes:
             coordination_participant_service.activate(participant.id)
-            self.refresh_participants(select_id=participant.id, ensure_visible=True)
+            self.refresh(select_id=participant.id, ensure_visible=True)
 
     def deactivate_selected_participant(self) -> None:
         if not self.allow_mutate():
@@ -309,14 +270,11 @@ class CoordinationParticipantsTab(CoordinationTabEditPolicyMixin, QWidget):
                 "Účastník je pověřeným koordinátorem BOZP. "
                 "Vazba na koordinátora zůstává – koordinátora automaticky nerušíme.",
             )
-        self.refresh_participants(
+        self.refresh(
             select_id=participant.id,
             fallback_row=row,
             ensure_visible=True,
         )
-
-    def _on_employer_changed(self) -> None:
-        self.refresh_participants()
 
     def _selected_participant(self):
         participant_id = self.table.selected_participant_id()
@@ -331,9 +289,7 @@ class CoordinationParticipantsTab(CoordinationTabEditPolicyMixin, QWidget):
             self.activate_btn.setEnabled(False)
             self.deactivate_btn.setEnabled(False)
             return
-        employer = self.current_employer()
-        can_add = employer is not None and bool(employer.active)
-        self.add_btn.setEnabled(can_add)
+        self.add_btn.setEnabled(self.coordination_id is not None)
 
         participant = self._selected_participant()
         has_selection = participant is not None

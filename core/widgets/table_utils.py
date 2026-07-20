@@ -275,14 +275,17 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         from moduly.koordinace_bozp.constants import (
             PART_COL_ACTIVE,
             PART_COL_EMAIL,
+            PART_COL_EMPLOYER,
             PART_COL_FULL_NAME,
             PART_COL_PHONE,
             PART_COL_ROLE,
         )
 
+        # UX-COORD-12a: Zaměstnavatel / Telefon / Aktivní krátké; jméno, role, e-mail Stretch.
         table.setWordWrap(False)
         table.setTextElideMode(Qt.TextElideMode.ElideRight)
         widths = {
+            PART_COL_EMPLOYER: 120,
             PART_COL_FULL_NAME: 200,
             PART_COL_ROLE: 180,
             PART_COL_PHONE: 120,
@@ -292,10 +295,11 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
-        for column in (PART_COL_PHONE, PART_COL_EMAIL, PART_COL_ACTIVE):
+        for column in (PART_COL_EMPLOYER, PART_COL_PHONE, PART_COL_ACTIVE):
             header.setSectionResizeMode(column, QHeaderView.Interactive)
         header.setSectionResizeMode(PART_COL_FULL_NAME, QHeaderView.Stretch)
         header.setSectionResizeMode(PART_COL_ROLE, QHeaderView.Stretch)
+        header.setSectionResizeMode(PART_COL_EMAIL, QHeaderView.Stretch)
 
     elif profile == "coordination_workplaces":
         from moduly.koordinace_bozp.constants import (

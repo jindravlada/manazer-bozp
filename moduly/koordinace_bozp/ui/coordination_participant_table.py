@@ -13,12 +13,16 @@ from core.widgets.typed_table_sort import (
 from moduly.koordinace_bozp.constants import (
     PART_COL_ACTIVE,
     PART_COL_EMAIL,
+    PART_COL_EMPLOYER,
     PART_COL_FULL_NAME,
     PART_COL_ID,
     PART_COL_PHONE,
     PART_COL_ROLE,
     PART_COLUMN_COUNT,
     PARTICIPANT_TABLE_HEADERS,
+)
+from moduly.koordinace_bozp.sluzby.coordination_participant_service import (
+    coordination_participant_service,
 )
 
 
@@ -41,6 +45,9 @@ class CoordinationParticipantTable(QTableWidget):
             self.setRowCount(len(participants))
             for row, item in enumerate(participants):
                 record_id = int(item.id)
+                employer_label = coordination_participant_service.employer_short_label(
+                    item.coordination_employer_id
+                )
                 self.setItem(
                     row,
                     PART_COL_ID,
@@ -50,6 +57,13 @@ class CoordinationParticipantTable(QTableWidget):
                         stable_id=record_id,
                     ),
                 )
+                employer_item = create_typed_item(
+                    employer_label,
+                    typed_text(employer_label),
+                    stable_id=record_id,
+                )
+                apply_cell_tooltip(employer_item, employer_label)
+                self.setItem(row, PART_COL_EMPLOYER, employer_item)
                 name_text = item.full_name or ""
                 name_item = create_typed_item(
                     name_text,
@@ -75,15 +89,14 @@ class CoordinationParticipantTable(QTableWidget):
                         stable_id=record_id,
                     ),
                 )
-                self.setItem(
-                    row,
-                    PART_COL_EMAIL,
-                    create_typed_item(
-                        item.email or "",
-                        typed_text(item.email),
-                        stable_id=record_id,
-                    ),
+                email_text = item.email or ""
+                email_item = create_typed_item(
+                    email_text,
+                    typed_text(item.email),
+                    stable_id=record_id,
                 )
+                apply_cell_tooltip(email_item, email_text)
+                self.setItem(row, PART_COL_EMAIL, email_item)
                 active_item = create_typed_item(
                     "Ano" if item.active else "Ne",
                     typed_bool(bool(item.active)),
