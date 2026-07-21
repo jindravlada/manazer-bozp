@@ -390,6 +390,62 @@ class AudityDetailedReportFormattingTestCase(unittest.TestCase):
         )
         self.assertIn("Oddělené tvrzení", after.split("</text:p>", 1)[0] + "</text:p>")
 
+    def test_appendix_b_has_no_nested_text_paragraphs(self) -> None:
+        """Příloha B musí být sourozenci text:p, nikoli text:p uvnitř text:p."""
+        audit = self._create_finished_audit()
+        relative, _ = self._attach_photo(audit.id, "nested_check")
+        self._set_result(
+            audit.id,
+            control_point_id="nested_check",
+            label="Tvrzení bez vnoření",
+            result=CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
+            note="Poznámka bez vnoření",
+            photo_path=relative,
+        )
+        finding_service.create(
+            ENTITY_AUDITY,
+            audit.id,
+            finding_type=FINDING_TYPE_PRILEZITOST,
+            description="PKZ",
+            source_control_point_id="nested_check",
+            source_control_point_label="Tvrzení bez vnoření",
+            recommended_action="Doporučení bez vnoření",
+        )
+
+        path = protokol_audit_service.generate_detailed_report_for_audit(audit)
+        content = _odt_content(path)
+
+        # Surowy XML: otevřený text:p nesmí obsahovat další text:p před svým uzavřením.
+        nested_raw = re.search(
+            r"<text:p\b[^>]*(?<!/)>(?:(?!</text:p>).)*?<text:p\b",
+            content,
+            re.DOTALL,
+        )
+        self.assertIsNone(
+            nested_raw,
+            "content.xml obsahuje vnořené <text:p> (neplatné ODF): "
+            + (nested_raw.group(0)[:180] if nested_raw else ""),
+        )
+
+        root = ET.fromstring(content.encode("utf-8"))
+        for paragraph in root.findall(".//text:p", NS):
+            nested = paragraph.findall("text:p", NS)
+            self.assertEqual(
+                nested,
+                [],
+                f"Odstavec obsahuje vnořené text:p: {ET.tostring(paragraph, encoding='unicode')[:200]}",
+            )
+
+        appendix_b = content.split("Příloha B", 1)[-1]
+        for needle in (
+            "AuditCriterion",
+            "Tvrzení bez vnoření",
+            "Doporučení",
+            "Poznámka auditora",
+            "draw:frame",
+        ):
+            self.assertIn(needle, appendix_b)
+
     def test_tall_photo_respects_max_height(self) -> None:
         audit = self._create_finished_audit()
         relative, _ = self._attach_photo(audit.id, "tall", size=(600, 2400))

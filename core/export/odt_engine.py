@@ -16,14 +16,20 @@ class OdtExportError(Exception):
 # Příklad: "text\\n[[[ODT_IMAGE|/abs/cesta.jpg]]]\\ndalší text"
 ODT_IMAGE_MARKER_RE = re.compile(r"\[\[\[ODT_IMAGE\|(.+?)\]\]\]")
 
+# Placeholdér uvnitř běžného (ne self-closing) odstavce.
+# Self-closing <text:p ... /> nesmí být brán jako otevírací tag – jinak by
+# následující odstavec s placeholdérem byl chybně spárován a vznikly by
+# vnořené <text:p> (neplatné ODF).
 _PLACEHOLDER_PARA_RE = re.compile(
-    r"<text:p(?P<attrs>[^>]*)>"
+    r"<text:p(?![^>]*/>)(?P<attrs>[^>]*)>"
     r"(?P<before>(?:(?!</text:p>).)*?)"
     r"\$\{(?P<key>[A-Za-z0-9_]+)\}"
     r"(?P<after>(?:(?!</text:p>).)*?)"
     r"</text:p>",
     re.DOTALL,
 )
+
+_ODT_FRAGMENT_PREFIX = "[[[ODT_FRAGMENT]]]"
 
 _EXPORT_IMAGE_STYLE = "ExportImage"
 _AUDIT_NOTE_STYLE = "AuditNote"
@@ -206,7 +212,7 @@ class OdtExportEngine:
         rich_keys = {
             key
             for key, value in values.items()
-            if isinstance(value, str) and value.startswith("[[[ODT_FRAGMENT]]]")
+            if isinstance(value, str) and value.startswith(_ODT_FRAGMENT_PREFIX)
         }
 
         if rich_keys:
@@ -214,24 +220,27 @@ class OdtExportEngine:
                 key = match.group("key")
                 if key not in rich_keys:
                     return match.group(0)
-                before = match.group("before") or ""
-                after = match.group("after") or ""
-                if before.strip() or after.strip():
-                    # Placeholdér není sám v odstavci – vlož fragment inline.
-                    fragment = str(values.get(key, "")).removeprefix("[[[ODT_FRAGMENT]]]")
-                    return (
-                        f"<text:p{match.group('attrs')}>{before}"
-                        f"{fragment}{after}</text:p>"
-                    )
-                return str(values.get(key, "")).removeprefix("[[[ODT_FRAGMENT]]]")
+                fragment = str(values.get(key, "")).removeprefix(_ODT_FRAGMENT_PREFIX)
+                before = (match.group("before") or "").strip()
+                after = (match.group("after") or "").strip()
+                attrs = match.group("attrs") or ""
+                parts: list[str] = []
+                if before:
+                    parts.append(f"<text:p{attrs}>{before}</text:p>")
+                parts.append(fragment)
+                if after:
+                    parts.append(f"<text:p{attrs}>{after}</text:p>")
+                # Fragment je seznam sourozeneckých text:p – nikdy ne vnořovat.
+                return "".join(parts)
 
             xml = _PLACEHOLDER_PARA_RE.sub(replace_para, xml)
 
         def repl(match: re.Match[str]) -> str:
             key = match.group(1)
             value = values.get(key, "")
-            if isinstance(value, str) and value.startswith("[[[ODT_FRAGMENT]]]"):
-                # Odstavec s placeholdérem už byl nahrazen výše; zbytek vyprázdni.
+            if isinstance(value, str) and value.startswith(_ODT_FRAGMENT_PREFIX):
+                # Odstavec s placeholdérem už byl nahrazen výše; zbylý výskyt
+                # (např. mimo text:p) vyprázdni – nikdy nevkládej fragment inline.
                 return ""
             return "" if value is None else str(value)
 
@@ -247,7 +256,7 @@ class OdtExportEngine:
             parts.append(self._render_paragraph(paragraph, image_registry))
         if not parts:
             parts.append('<text:p text:style-name="Standard"/>')
-        return "[[[ODT_FRAGMENT]]]" + "".join(parts)
+        return _ODT_FRAGMENT_PREFIX + "".join(parts)
 
     def _render_paragraph(
         self,
