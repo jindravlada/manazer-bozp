@@ -212,8 +212,15 @@ class AudityDetailedReportExportTestCase(unittest.TestCase):
 
         self.assertIn("Poznámka auditora:", detailed)
         self.assertIn("Kontrola na místě", detailed)
-        block_without = detailed.split("Bez poznámky", 1)[1].split("\n\n", 1)[0]
-        self.assertNotIn("Poznámka auditora", block_without)
+        self.assertNotIn("    Poznámka auditora:", detailed)
+        with_note = detailed[
+            detailed.index("🟢 S poznámkou") : detailed.index("Kontrola na místě") + 20
+        ]
+        self.assertIn("Poznámka auditora:", with_note)
+        without_note = detailed[
+            detailed.index("🟢 Bez poznámky") : detailed.index("🟢 S poznámkou")
+        ]
+        self.assertNotIn("Poznámka auditora", without_note)
 
     def test_recommendation_only_for_partial_result(self) -> None:
         audit = self._create_finished_audit()
@@ -248,8 +255,10 @@ class AudityDetailedReportExportTestCase(unittest.TestCase):
         self.assertIn("🟡 S doporučením — Vyhovuje s doporučením", detailed)
         self.assertIn("Doporučení:", detailed)
         self.assertIn("Proškolit směnu A", detailed)
-        fail_block = detailed.split("Neshoda", 1)[1]
-        self.assertNotIn("Doporučení:", fail_block.split("\n\n", 1)[0])
+        fail_start = detailed.index("🔴 Neshoda")
+        fail_end = detailed.index("🟡 S doporučením")
+        fail_block = detailed[fail_start:fail_end]
+        self.assertNotIn("Doporučení:", fail_block)
         self.assertIn("Poznámka auditora:", fail_block)
 
     def test_photo_under_correct_assertion_and_order(self) -> None:

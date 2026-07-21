@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from datetime import date, datetime
+from typing import Any
 
-from core.export.odt_engine import odt_image_marker
+from core.export.odt_engine import OdtParagraph, OdtRichContent
 from core.shared.constants import (
     CONTROL_RESULT_NEKONTROLOVANO,
     CONTROL_RESULT_NELZE_POSOUDIT,
@@ -332,8 +333,21 @@ class AuditExportContext:
             return "Nejsou evidovány."
         return "\n".join(f"• {line}" for line in lines)
 
-    def appendix_processes_text(self) -> str:
+    def appendix_processes_text(self) -> str | OdtRichContent:
+        if self.config.detailed_assertions_appendix:
+            return self.detailed_appendix_processes()
         return self.processes_text()
+
+    def detailed_appendix_processes(self) -> OdtRichContent:
+        """Příloha A podrobné zprávy – názvy procesů tučně, každý jako samostatný odstavec."""
+        lines = self.processes_lines()
+        if not lines:
+            return OdtRichContent(
+                paragraphs=[OdtParagraph.text("Nejsou evidovány.")]
+            )
+        return OdtRichContent(
+            paragraphs=[OdtParagraph.bullet_bold_name(name) for name in lines]
+        )
 
     @staticmethod
     def _iter_knowledge_sections(sections: list) -> list[dict]:
@@ -435,9 +449,9 @@ class AuditExportContext:
 
         return filtered
 
-    def appendix_assertions_text(self) -> str:
+    def appendix_assertions_text(self) -> str | OdtRichContent:
         if self.config.detailed_assertions_appendix:
-            return self.detailed_appendix_assertions_text()
+            return self.detailed_appendix_assertions()
         return self.summary_appendix_assertions_text()
 
     def summary_appendix_assertions_text(self) -> str:
@@ -477,14 +491,18 @@ class AuditExportContext:
         return "\n\n".join(blocks)
 
     def detailed_appendix_assertions_text(self) -> str:
-        """Podrobná příloha B: tvrzení + výsledek + doporučení + poznámka + fotografie."""
+        """Textová reprezentace podrobné přílohy B (pro testy)."""
+        return self.detailed_appendix_assertions().plain_text()
+
+    def detailed_appendix_assertions(self) -> OdtRichContent:
+        """Podrobná příloha B: samostatné odstavce (kritérium, tvrzení, doporučení, poznámka, foto)."""
         results = self._assertion_control_results()
         if not results:
-            return ""
+            return OdtRichContent()
 
         recommendations = self._recommendation_by_control_point()
-        grouped: dict[str, list[str]] = {}
-        area_order: list[str] = []
+        paragraphs: list[OdtParagraph] = []
+        current_area: str | None = None
 
         for row in sorted(
             results,
@@ -502,31 +520,33 @@ class AuditExportContext:
             if not area:
                 continue
 
-            block_lines = self._format_detailed_assertion_block(
-                row,
-                recommendation=recommendations.get(
-                    str(row.source_control_point_id or "").strip(),
-                    "",
-                ),
+            if area != current_area:
+                if current_area is not None:
+                    paragraphs.append(OdtParagraph.blank_line())
+                paragraphs.append(OdtParagraph.text(area, style="AuditCriterion"))
+                current_area = area
+
+            paragraphs.extend(
+                self._format_detailed_assertion_paragraphs(
+                    row,
+                    recommendation=recommendations.get(
+                        str(row.source_control_point_id or "").strip(),
+                        "",
+                    ),
+                )
             )
-            if area not in grouped:
-                grouped[area] = []
-                area_order.append(area)
-            grouped[area].append("\n".join(block_lines))
 
-        blocks: list[str] = []
-        for area in area_order:
-            items = grouped.get(area) or []
-            if not items:
-                continue
-            blocks.append(f"{area}\n\n" + "\n\n".join(items))
-        return "\n\n".join(blocks)
+        return OdtRichContent(paragraphs=paragraphs)
 
-    def _format_detailed_assertion_block(self, row, *, recommendation: str) -> list[str]:
+    def _format_detailed_assertion_paragraphs(
+        self, row, *, recommendation: str
+    ) -> list[OdtParagraph]:
         assertion = _text(row.source_control_point_label)
         emoji = _ASSERTION_RESULT_EMOJI.get(row.result, "○")
         word = _ASSERTION_RESULT_WORDS.get(row.result, control_result_label(row.result))
-        lines = [f"{emoji} {assertion} — {word}"]
+        paragraphs: list[OdtParagraph] = [
+            OdtParagraph.text(f"{emoji} {assertion} — {word}")
+        ]
 
         note = _text(getattr(row, "note", ""))
         recommendation_text = recommendation
@@ -543,22 +563,18 @@ class AuditExportContext:
             row.result == CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM
             and recommendation_text
         ):
-            lines.append("")
-            lines.append("Doporučení:")
-            lines.extend(recommendation_text.splitlines() or [recommendation_text])
+            paragraphs.append(OdtParagraph.text("Doporučení:", bold=True))
+            paragraphs.append(OdtParagraph.text(recommendation_text))
 
         if note and note != recommendation_text:
-            lines.append("")
-            lines.append("    Poznámka auditora:")
-            for note_line in note.splitlines() or [note]:
-                lines.append(f"    {note_line}")
+            paragraphs.extend(OdtParagraph.note(note))
 
         photo_path = control_result_service.resolve_photo_path(row)
         if photo_path is not None and photo_path.is_file():
-            lines.append("")
-            lines.append(odt_image_marker(photo_path))
+            paragraphs.append(OdtParagraph.image(photo_path))
 
-        return lines
+        paragraphs.append(OdtParagraph.blank_line())
+        return paragraphs
 
     def _recommendation_by_control_point(self) -> dict[str, str]:
         """Doporučení z PKZ / zjištění navázaných na auditní tvrzení."""
@@ -950,7 +966,7 @@ class AuditExportContext:
             )
         return sentence
 
-    def placeholder_values(self) -> dict[str, str]:
+    def placeholder_values(self) -> dict[str, Any]:
         executive_summary = self.executive_summary_text()
         results_overview = self.results_overview_text()
         significant_findings = self.significant_findings_text()
