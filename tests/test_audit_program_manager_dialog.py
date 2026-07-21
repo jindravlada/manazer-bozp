@@ -37,6 +37,7 @@ with patch.object(Path, "home", return_value=_TMP):
         AUDIT_PROGRAM_DASHBOARD_TAB_FINDINGS,
         AUDIT_PROGRAM_WINDOW_TITLE,
         AUDIT_PROTOCOL_BUTTON_LABEL,
+        AUDIT_DETAILED_REPORT_BUTTON_LABEL,
         AUDIT_STANDARD_ISO_45001,
         AUDIT_STANDARD_ISO_9001,
     )
@@ -312,6 +313,10 @@ class AuditProgramManagerDialogTestCase(unittest.TestCase):
         self.assertFalse(dialog._open_audit_btn.isEnabled())
         self.assertFalse(dialog._protocol_btn.isEnabled())
         self.assertEqual(dialog._protocol_btn.text(), AUDIT_PROTOCOL_BUTTON_LABEL)
+        self.assertFalse(dialog._detailed_report_btn.isEnabled())
+        self.assertEqual(
+            dialog._detailed_report_btn.text(), AUDIT_DETAILED_REPORT_BUTTON_LABEL
+        )
 
     def test_open_audit_action_after_visit_linked(self) -> None:
         program = audit_program_service.create_program(
@@ -377,6 +382,7 @@ class AuditProgramManagerDialogTestCase(unittest.TestCase):
 
         self.assertTrue(dialog._open_audit_btn.isEnabled())
         self.assertTrue(dialog._protocol_btn.isEnabled())
+        self.assertTrue(dialog._detailed_report_btn.isEnabled())
 
     @patch(
         "moduly.audity.ui.audit_program_manager_dialog.protokol_audit_service.open_for_audit"

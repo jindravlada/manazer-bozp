@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import date, datetime
 
+from core.export.odt_engine import odt_image_marker
 from core.shared.constants import (
     CONTROL_RESULT_NEKONTROLOVANO,
     CONTROL_RESULT_NELZE_POSOUDIT,
@@ -8,6 +9,7 @@ from core.shared.constants import (
     CONTROL_RESULT_VYHOVUJE,
     CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
     ENTITY_AUDITY,
+    FINDING_TYPE_PRILEZITOST,
 )
 from core.shared.control_result_display import control_result_label, protocol_evaluation_results
 from core.shared.finding_display import finding_status_label, finding_type_label
@@ -110,12 +112,40 @@ _ASSERTION_RESULT_EMOJI = {
     CONTROL_RESULT_NEKONTROLOVANO: "○",
 }
 
+_ASSERTION_RESULT_WORDS = {
+    CONTROL_RESULT_VYHOVUJE: "Vyhovuje",
+    CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM: "Vyhovuje s doporučením",
+    CONTROL_RESULT_NEVYHOVUJE: "Nevyhovuje",
+    CONTROL_RESULT_NELZE_POSOUDIT: "Není relevantní",
+    CONTROL_RESULT_NEKONTROLOVANO: "Nekontrolováno",
+}
+
+
+@dataclass(frozen=True)
+class AuditExportDocumentConfig:
+    """Konfigurace výstupního dokumentu z auditu (protokol vs. podrobná zpráva)."""
+
+    include_signatures: bool = True
+    detailed_assertions_appendix: bool = False
+
+
+PROTOCOL_DOCUMENT_CONFIG = AuditExportDocumentConfig(
+    include_signatures=True,
+    detailed_assertions_appendix=False,
+)
+
+DETAILED_REPORT_DOCUMENT_CONFIG = AuditExportDocumentConfig(
+    include_signatures=False,
+    detailed_assertions_appendix=True,
+)
+
 
 @dataclass(frozen=True)
 class AuditExportContext:
-    """Sjednocený kontext exportu protokolu auditu."""
+    """Sjednocený kontext exportu protokolu / podrobné zprávy auditu."""
 
     audit: Audit
+    config: AuditExportDocumentConfig = PROTOCOL_DOCUMENT_CONFIG
 
     @property
     def audit_id(self) -> int:
@@ -406,6 +436,11 @@ class AuditExportContext:
         return filtered
 
     def appendix_assertions_text(self) -> str:
+        if self.config.detailed_assertions_appendix:
+            return self.detailed_appendix_assertions_text()
+        return self.summary_appendix_assertions_text()
+
+    def summary_appendix_assertions_text(self) -> str:
         results = self._assertion_control_results()
         if not results:
             return ""
@@ -440,6 +475,111 @@ class AuditExportContext:
                 continue
             blocks.append(f"{area}\n" + "\n".join(lines))
         return "\n\n".join(blocks)
+
+    def detailed_appendix_assertions_text(self) -> str:
+        """Podrobná příloha B: tvrzení + výsledek + doporučení + poznámka + fotografie."""
+        results = self._assertion_control_results()
+        if not results:
+            return ""
+
+        recommendations = self._recommendation_by_control_point()
+        grouped: dict[str, list[str]] = {}
+        area_order: list[str] = []
+
+        for row in sorted(
+            results,
+            key=lambda item: (
+                item.source_area_label or "",
+                item.source_section_label or "",
+                item.source_control_point_label or "",
+                item.id,
+            ),
+        ):
+            assertion = _text(row.source_control_point_label)
+            if not assertion:
+                continue
+            area = _text(row.source_section_label) or _text(row.source_area_label)
+            if not area:
+                continue
+
+            block_lines = self._format_detailed_assertion_block(
+                row,
+                recommendation=recommendations.get(
+                    str(row.source_control_point_id or "").strip(),
+                    "",
+                ),
+            )
+            if area not in grouped:
+                grouped[area] = []
+                area_order.append(area)
+            grouped[area].append("\n".join(block_lines))
+
+        blocks: list[str] = []
+        for area in area_order:
+            items = grouped.get(area) or []
+            if not items:
+                continue
+            blocks.append(f"{area}\n\n" + "\n\n".join(items))
+        return "\n\n".join(blocks)
+
+    def _format_detailed_assertion_block(self, row, *, recommendation: str) -> list[str]:
+        assertion = _text(row.source_control_point_label)
+        emoji = _ASSERTION_RESULT_EMOJI.get(row.result, "○")
+        word = _ASSERTION_RESULT_WORDS.get(row.result, control_result_label(row.result))
+        lines = [f"{emoji} {assertion} — {word}"]
+
+        note = _text(getattr(row, "note", ""))
+        recommendation_text = recommendation
+        if (
+            not recommendation_text
+            and row.result == CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM
+            and note
+        ):
+            # Bez PKZ slouží poznámka jako text doporučení.
+            recommendation_text = note
+            note = ""
+
+        if (
+            row.result == CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM
+            and recommendation_text
+        ):
+            lines.append("")
+            lines.append("Doporučení:")
+            lines.extend(recommendation_text.splitlines() or [recommendation_text])
+
+        if note and note != recommendation_text:
+            lines.append("")
+            lines.append("    Poznámka auditora:")
+            for note_line in note.splitlines() or [note]:
+                lines.append(f"    {note_line}")
+
+        photo_path = control_result_service.resolve_photo_path(row)
+        if photo_path is not None and photo_path.is_file():
+            lines.append("")
+            lines.append(odt_image_marker(photo_path))
+
+        return lines
+
+    def _recommendation_by_control_point(self) -> dict[str, str]:
+        """Doporučení z PKZ / zjištění navázaných na auditní tvrzení."""
+        mapping: dict[str, str] = {}
+        findings = sorted(
+            finding_service.get_for_entity(ENTITY_AUDITY, self.audit_id),
+            key=lambda item: (
+                0 if item.finding_type == FINDING_TYPE_PRILEZITOST else 1,
+                item.display_order,
+                item.id,
+            ),
+        )
+        for finding in findings:
+            control_point_id = str(finding.source_control_point_id or "").strip()
+            if not control_point_id:
+                continue
+            recommendation = _text(finding.recommended_action)
+            if not recommendation:
+                continue
+            mapping.setdefault(control_point_id, recommendation)
+        return mapping
 
     def appendix_assertions_summary_text(self) -> str:
         results = self._assertion_control_results()
@@ -817,7 +957,12 @@ class AuditExportContext:
         accepted_measures = self.accepted_measures_text()
         findings_detail = self.findings_detail_text()
         conclusion = self.conclusion_text()
-        signatures = self.signatures_text()
+        if self.config.include_signatures:
+            signatures = self.signatures_text()
+            union_signature = self.union_signature_block_text()
+        else:
+            signatures = ""
+            union_signature = ""
 
         return {
             "cislo_auditu": _text(self.audit.number),
@@ -848,7 +993,7 @@ class AuditExportContext:
             "vedouci_auditor": self.leader_auditor_name(),
             "zastupce_provozu": self.workplace_representative_name(),
             "zastupce_odborove_organizace": self.union_representative_name(),
-            "podpis_odboru_blok": self.union_signature_block_text(),
+            "podpis_odboru_blok": union_signature,
             "doporuceni_auditora": self.auditor_recommendation_text(),
             "silne_stranky_text": self.strengths_text(),
             "oblasti_pozornosti_text": self.attention_areas_text(),
@@ -870,10 +1015,17 @@ class AuditExportContext:
 
 
 class AuditExportContextService:
-    def build(self, audit: Audit) -> AuditExportContext:
+    def build(
+        self,
+        audit: Audit,
+        config: AuditExportDocumentConfig | None = None,
+    ) -> AuditExportContext:
         if audit is None or not getattr(audit, "id", None):
             raise ValueError("Není vybraný uložený audit.")
-        return AuditExportContext(audit=audit)
+        return AuditExportContext(
+            audit=audit,
+            config=config or PROTOCOL_DOCUMENT_CONFIG,
+        )
 
     def is_completed(self, audit: Audit) -> bool:
         return AuditExportContext(audit=audit).is_completed()

@@ -1,5 +1,6 @@
 """Dialog pro správu programů auditů."""
 
+import traceback
 from datetime import date
 
 from PySide6.QtCore import Qt
@@ -59,6 +60,8 @@ from moduly.audity.constants import (
     AUDIT_PROGRAM_SUPPLEMENT_WORKPLACES_BUTTON,
     AUDIT_PROGRAM_VISIT_STATUS_SKIPPED,
     AUDIT_PROGRAM_WINDOW_TITLE,
+    AUDIT_DETAILED_REPORT_BUTTON_LABEL,
+    AUDIT_DETAILED_REPORT_DIALOG_TITLE,
     AUDIT_PROTOCOL_BUTTON_LABEL,
     AUDIT_PROTOCOL_DIALOG_TITLE,
     AUDIT_STATUS_DOKONCENO,
@@ -307,6 +310,11 @@ class AuditProgramManagerDialog(QDialog):
         self._protocol_btn.setToolTip(
             "Export protokolu je dostupný pouze pro dokončené (uzavřené) audity."
         )
+        self._detailed_report_btn = QPushButton(AUDIT_DETAILED_REPORT_BUTTON_LABEL)
+        self._detailed_report_btn.setEnabled(False)
+        self._detailed_report_btn.setToolTip(
+            "Podrobná zpráva je dostupná pouze pro dokončené (uzavřené) audity."
+        )
         self._add_visit_btn.clicked.connect(self._create_visit_for_selection)
         self._edit_visit_btn.clicked.connect(self._edit_selected_visit)
         self._skip_visit_btn.clicked.connect(self._skip_selected_visit)
@@ -314,6 +322,9 @@ class AuditProgramManagerDialog(QDialog):
         self._start_audit_btn.clicked.connect(self._start_audit_for_selection)
         self._open_audit_btn.clicked.connect(self._open_audit_for_selection)
         self._protocol_btn.clicked.connect(self._export_protocol_for_selection)
+        self._detailed_report_btn.clicked.connect(
+            self._export_detailed_report_for_selection
+        )
         tree_toolbar.addWidget(self._add_visit_btn)
         tree_toolbar.addWidget(self._edit_visit_btn)
         tree_toolbar.addWidget(self._skip_visit_btn)
@@ -321,6 +332,7 @@ class AuditProgramManagerDialog(QDialog):
         tree_toolbar.addWidget(self._start_audit_btn)
         tree_toolbar.addWidget(self._open_audit_btn)
         tree_toolbar.addWidget(self._protocol_btn)
+        tree_toolbar.addWidget(self._detailed_report_btn)
         tree_toolbar.addStretch()
         layout.addLayout(tree_toolbar)
 
@@ -548,6 +560,9 @@ class AuditProgramManagerDialog(QDialog):
         self._protocol_btn.setEnabled(
             node_type == NODE_VISIT and self._visit_has_completed_audit(item)
         )
+        self._detailed_report_btn.setEnabled(
+            node_type == NODE_VISIT and self._visit_has_completed_audit(item)
+        )
 
     def _visit_can_be_edited(self, item) -> bool:
         visit = self._visit_for_tree_item(item)
@@ -589,6 +604,7 @@ class AuditProgramManagerDialog(QDialog):
         self._start_audit_btn.setEnabled(enabled)
         self._open_audit_btn.setEnabled(enabled)
         self._protocol_btn.setEnabled(enabled)
+        self._detailed_report_btn.setEnabled(enabled)
 
     def _show_plan_context_menu(self, position) -> None:
         item = self._plan_tree.itemAt(position)
@@ -611,6 +627,10 @@ class AuditProgramManagerDialog(QDialog):
                 menu.addAction(
                     AUDIT_PROTOCOL_BUTTON_LABEL,
                     self._export_protocol_for_selection,
+                )
+                menu.addAction(
+                    AUDIT_DETAILED_REPORT_BUTTON_LABEL,
+                    self._export_detailed_report_for_selection,
                 )
             if self._visit_can_be_edited(item):
                 menu.addAction(AUDIT_PROGRAM_SKIP_VISIT_BUTTON, self._skip_selected_visit)
@@ -806,10 +826,48 @@ class AuditProgramManagerDialog(QDialog):
         try:
             protokol_audit_service.open_for_audit(audit)
         except Exception as exc:
+            traceback.print_exc()
             QMessageBox.warning(
                 self,
                 AUDIT_PROTOCOL_DIALOG_TITLE,
                 f"Protokol se nepodařilo vygenerovat.\n\n{exc}",
+            )
+
+    def _export_detailed_report_for_selection(self) -> None:
+        item = self._selected_tree_item()
+        visit = self._visit_for_tree_item(item)
+        if visit is None or visit.audit_id is None:
+            QMessageBox.information(
+                self,
+                AUDIT_DETAILED_REPORT_DIALOG_TITLE,
+                "Vyberte návštěvu s dokončeným auditem.",
+            )
+            return
+
+        audit = audit_service.get_by_id(visit.audit_id)
+        if audit is None:
+            QMessageBox.warning(
+                self, AUDIT_DETAILED_REPORT_DIALOG_TITLE, "Audit nebyl nalezen."
+            )
+            self._refresh_selected_program_views()
+            return
+        if audit.status != AUDIT_STATUS_DOKONCENO:
+            QMessageBox.information(
+                self,
+                AUDIT_DETAILED_REPORT_DIALOG_TITLE,
+                "Podrobnou zprávu lze exportovat pouze u dokončeného (uzavřeného) auditu.",
+            )
+            self._update_plan_actions()
+            return
+
+        try:
+            protokol_audit_service.open_detailed_report_for_audit(audit)
+        except Exception as exc:
+            traceback.print_exc()
+            QMessageBox.warning(
+                self,
+                AUDIT_DETAILED_REPORT_DIALOG_TITLE,
+                f"Podrobnou zprávu se nepodařilo vygenerovat.\n\n{exc}",
             )
 
     def _open_audit_dialog(self, audit_id: int, *, visit_context=None) -> bool:

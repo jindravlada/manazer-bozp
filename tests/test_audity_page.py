@@ -34,6 +34,7 @@ with patch.object(Path, "home", return_value=_TMP):
         COMMISSION_RECORD_WORKPLACE,
         AUDIT_PROGRAM_BUTTON_LABEL,
         AUDIT_PROTOCOL_BUTTON_LABEL,
+        AUDIT_DETAILED_REPORT_BUTTON_LABEL,
         DEFAULT_AUDIT_STATUS_FILTER,
         KNOWLEDGE_EDITOR_BUTTON_LABEL,
         KNOWLEDGE_EDITOR_WINDOW_TITLE,
@@ -118,6 +119,8 @@ class AudityPageTestCase(unittest.TestCase):
         self.assertEqual(page.program_btn.text(), AUDIT_PROGRAM_BUTTON_LABEL)
         self.assertEqual(page.protocol_btn.text(), AUDIT_PROTOCOL_BUTTON_LABEL)
         self.assertFalse(page.protocol_btn.isEnabled())
+        self.assertEqual(page.detailed_report_btn.text(), AUDIT_DETAILED_REPORT_BUTTON_LABEL)
+        self.assertFalse(page.detailed_report_btn.isEnabled())
         self.assertTrue(hasattr(page, "report_btn"))
         self.assertFalse(hasattr(page, "plan_btn"))
 
@@ -141,12 +144,15 @@ class AudityPageTestCase(unittest.TestCase):
 
         page.table.selectRow(by_id[planned.id])
         self.assertFalse(page.protocol_btn.isEnabled())
+        self.assertFalse(page.detailed_report_btn.isEnabled())
 
         page.table.selectRow(by_id[in_progress.id])
         self.assertFalse(page.protocol_btn.isEnabled())
+        self.assertFalse(page.detailed_report_btn.isEnabled())
 
         page.table.selectRow(by_id[completed.id])
         self.assertTrue(page.protocol_btn.isEnabled())
+        self.assertTrue(page.detailed_report_btn.isEnabled())
         self.assertEqual(completed.status, AUDIT_STATUS_DOKONCENO)
 
     @patch("moduly.audity.ui.audity_page.protokol_audit_service.open_for_audit")

@@ -1,3 +1,4 @@
+import traceback
 from datetime import date
 
 from PySide6.QtWidgets import (
@@ -12,7 +13,13 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.nullable_date_edit import NullableDateEdit
-from moduly.audity.constants import AUDIT_COMPLETION_CONFIRM_MESSAGE
+from moduly.audity.constants import (
+    AUDIT_COMPLETION_CONFIRM_MESSAGE,
+    AUDIT_DETAILED_REPORT_BUTTON_LABEL,
+    AUDIT_DETAILED_REPORT_DIALOG_TITLE,
+    AUDIT_PROTOCOL_BUTTON_LABEL,
+    AUDIT_PROTOCOL_DIALOG_TITLE,
+)
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.audity.sluzby.protokol_audit_service import protokol_audit_service
 
@@ -65,9 +72,13 @@ class AuditConclusionWidget(QWidget):
         self.complete_btn.clicked.connect(self._complete_audit)
         layout.addWidget(self.complete_btn)
 
-        self.protocol_btn = QPushButton("Protokol z auditu")
+        self.protocol_btn = QPushButton(AUDIT_PROTOCOL_BUTTON_LABEL)
         self.protocol_btn.clicked.connect(self._export_protocol)
         layout.addWidget(self.protocol_btn)
+
+        self.detailed_report_btn = QPushButton(AUDIT_DETAILED_REPORT_BUTTON_LABEL)
+        self.detailed_report_btn.clicked.connect(self._export_detailed_report)
+        layout.addWidget(self.detailed_report_btn)
 
         layout.addStretch()
 
@@ -124,23 +135,50 @@ class AuditConclusionWidget(QWidget):
         enabled = self.audit is not None and self.audit.id is not None
         self.info_label.setVisible(not enabled)
         self.protocol_btn.setEnabled(enabled)
+        self.detailed_report_btn.setEnabled(enabled)
 
     def _export_protocol(self) -> None:
         if self.audit is None or self.audit.id is None:
-            QMessageBox.information(self, "Protokol z auditu", "Audit je nutné nejdříve uložit.")
+            QMessageBox.information(
+                self, AUDIT_PROTOCOL_DIALOG_TITLE, "Audit je nutné nejdříve uložit."
+            )
             return
 
-        warning = protokol_audit_service.incomplete_warning(self.audit)
-        if warning:
-            QMessageBox.warning(self, "Protokol z auditu", warning)
-
         try:
+            warning = protokol_audit_service.incomplete_warning(self.audit)
+            if warning:
+                QMessageBox.warning(self, AUDIT_PROTOCOL_DIALOG_TITLE, warning)
+
             protokol_audit_service.open_for_audit(self.audit)
         except Exception as exc:
+            traceback.print_exc()
             QMessageBox.warning(
                 self,
-                "Protokol z auditu",
+                AUDIT_PROTOCOL_DIALOG_TITLE,
                 f"Protokol se nepodařilo vygenerovat.\n\n{exc}",
+            )
+
+    def _export_detailed_report(self) -> None:
+        if self.audit is None or self.audit.id is None:
+            QMessageBox.information(
+                self,
+                AUDIT_DETAILED_REPORT_DIALOG_TITLE,
+                "Audit je nutné nejdříve uložit.",
+            )
+            return
+
+        try:
+            warning = protokol_audit_service.incomplete_warning(self.audit)
+            if warning:
+                QMessageBox.warning(self, AUDIT_DETAILED_REPORT_DIALOG_TITLE, warning)
+
+            protokol_audit_service.open_detailed_report_for_audit(self.audit)
+        except Exception as exc:
+            traceback.print_exc()
+            QMessageBox.warning(
+                self,
+                AUDIT_DETAILED_REPORT_DIALOG_TITLE,
+                f"Podrobnou zprávu se nepodařilo vygenerovat.\n\n{exc}",
             )
 
     def _complete_audit(self) -> None:

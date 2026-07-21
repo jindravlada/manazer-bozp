@@ -34,6 +34,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from core.shared.sluzby.control_result_service import ControlPointContext, control_result_service
     from core.shared.sluzby.finding_service import finding_service
     from core.shared.sluzby.finding_task_service import finding_task_service
+    from moduly.audity.constants import AUDIT_PROTOCOL_BUTTON_LABEL
     from moduly.audity.sluzby.audit_commission_service import audit_commission_service
     from moduly.audity.sluzby.audit_export_context_service import audit_export_context_service
     from moduly.audity.sluzby.audit_service import audit_service
@@ -170,7 +171,7 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         widget = AuditConclusionWidget()
         widget.load_audit(audit)
 
-        self.assertEqual(widget.protocol_btn.text(), "Protokol z auditu")
+        self.assertEqual(widget.protocol_btn.text(), AUDIT_PROTOCOL_BUTTON_LABEL)
         self.assertTrue(widget.protocol_btn.isEnabled())
 
     def test_generate_creates_odt_file(self) -> None:
