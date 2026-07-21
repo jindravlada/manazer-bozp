@@ -619,12 +619,18 @@ class AudityProcessesTestCase(unittest.TestCase):
             dialog.type_combo.itemText(index)
             for index in range(dialog.type_combo.count())
         }
-        self.assertEqual(combo_labels, {"Neshoda", "PKZ", "Pozorování"})
+        self.assertEqual(
+            combo_labels,
+            {"Neshoda", "Příležitost ke zlepšování", "Pozorování"},
+        )
         self.assertNotIn("Zjištění", combo_labels)
         self.assertEqual(dialog.type_combo.currentData(), FINDING_TYPE_NESHODA)
         self.assertEqual(dialog.type_combo.currentText(), "Neshoda")
         self.assertEqual(finding_type_label(FINDING_TYPE_NESHODA), "Neshoda")
-        self.assertEqual(FINDING_TYPE_LABELS[FINDING_TYPE_PRILEZITOST], "PKZ")
+        self.assertEqual(
+            FINDING_TYPE_LABELS[FINDING_TYPE_PRILEZITOST],
+            "Příležitost ke zlepšování",
+        )
         self.assertEqual(FINDING_TYPE_LABELS[FINDING_TYPE_POZOROVANI], "Pozorování")
         self.assertNotEqual(FINDING_TYPE_ZJISTENI, dialog.type_combo.currentData())
 
