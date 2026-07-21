@@ -33,6 +33,7 @@ with patch.object(Path, "home", return_value=_TMP):
         COMMISSION_RECORD_UNION,
         COMMISSION_RECORD_WORKPLACE,
         AUDIT_PROGRAM_BUTTON_LABEL,
+        AUDIT_PROTOCOL_BUTTON_LABEL,
         DEFAULT_AUDIT_STATUS_FILTER,
         KNOWLEDGE_EDITOR_BUTTON_LABEL,
         KNOWLEDGE_EDITOR_WINDOW_TITLE,
@@ -115,8 +116,55 @@ class AudityPageTestCase(unittest.TestCase):
         self.assertTrue(page.knowledge_editor_btn.isEnabled())
         self.assertEqual(page.knowledge_editor_btn.text(), KNOWLEDGE_EDITOR_BUTTON_LABEL)
         self.assertEqual(page.program_btn.text(), AUDIT_PROGRAM_BUTTON_LABEL)
+        self.assertEqual(page.protocol_btn.text(), AUDIT_PROTOCOL_BUTTON_LABEL)
+        self.assertFalse(page.protocol_btn.isEnabled())
+        self.assertTrue(hasattr(page, "report_btn"))
         self.assertFalse(hasattr(page, "plan_btn"))
-        self.assertFalse(hasattr(page, "report_btn"))
+
+    def test_protocol_action_enabled_only_for_completed_audit(self) -> None:
+        planned = audit_service.create_audit()
+        in_progress = audit_service.create_audit(started_at=date(2026, 3, 1))
+        completed = audit_service.create_audit(
+            started_at=date(2026, 2, 1),
+            finished_at=date(2026, 2, 20),
+        )
+
+        page = self._create_page()
+        page.status_filter.setCurrentText("Vše")
+        page.year_filter.setCurrentIndex(page.year_filter.findData(YEAR_FILTER_VSE))
+        page.refresh()
+
+        by_id = {
+            int(page.table.item(row, 0).text()): row
+            for row in range(page.table.rowCount())
+        }
+
+        page.table.selectRow(by_id[planned.id])
+        self.assertFalse(page.protocol_btn.isEnabled())
+
+        page.table.selectRow(by_id[in_progress.id])
+        self.assertFalse(page.protocol_btn.isEnabled())
+
+        page.table.selectRow(by_id[completed.id])
+        self.assertTrue(page.protocol_btn.isEnabled())
+        self.assertEqual(completed.status, AUDIT_STATUS_DOKONCENO)
+
+    @patch("moduly.audity.ui.audity_page.protokol_audit_service.open_for_audit")
+    def test_export_selected_protocol_opens_for_completed_audit(self, mock_open) -> None:
+        audit = audit_service.create_audit(
+            started_at=date(2026, 2, 1),
+            finished_at=date(2026, 2, 20),
+        )
+        page = self._create_page()
+        page.status_filter.setCurrentText("Vše")
+        page.year_filter.setCurrentIndex(page.year_filter.findData(YEAR_FILTER_VSE))
+        page.refresh()
+        page.table.selectRow(0)
+
+        page.export_selected_protocol()
+
+        mock_open.assert_called_once()
+        self.assertEqual(mock_open.call_args.args[0].id, audit.id)
 
     @patch("moduly.audity.ui.audity_page.exec_maximized")
     def test_open_knowledge_editor_opens_dialog(self, mock_exec) -> None:

@@ -36,11 +36,13 @@ with patch.object(Path, "home", return_value=_TMP):
         AUDIT_PROGRAM_STATUS_VISITS_GENERATED,
         AUDIT_PROGRAM_DASHBOARD_TAB_FINDINGS,
         AUDIT_PROGRAM_WINDOW_TITLE,
+        AUDIT_PROTOCOL_BUTTON_LABEL,
         AUDIT_STANDARD_ISO_45001,
         AUDIT_STANDARD_ISO_9001,
     )
     from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
     from moduly.audity.sluzby.audit_program_service import audit_program_service
+    from moduly.audity.sluzby.audit_service import audit_service
     from moduly.audity.ui.audit_program_plan_tree_widget import (
         NODE_PROCESS,
         NODE_VISIT,
@@ -308,6 +310,8 @@ class AuditProgramManagerDialogTestCase(unittest.TestCase):
 
         self.assertTrue(dialog._start_audit_btn.isEnabled())
         self.assertFalse(dialog._open_audit_btn.isEnabled())
+        self.assertFalse(dialog._protocol_btn.isEnabled())
+        self.assertEqual(dialog._protocol_btn.text(), AUDIT_PROTOCOL_BUTTON_LABEL)
 
     def test_open_audit_action_after_visit_linked(self) -> None:
         program = audit_program_service.create_program(
@@ -337,7 +341,81 @@ class AuditProgramManagerDialogTestCase(unittest.TestCase):
 
         self.assertFalse(dialog._start_audit_btn.isEnabled())
         self.assertTrue(dialog._open_audit_btn.isEnabled())
+        self.assertFalse(dialog._protocol_btn.isEnabled())
         self.assertIn("▶", visit_item.text(0))
+
+    def test_protocol_action_enabled_for_completed_audit(self) -> None:
+        program = audit_program_service.create_program(
+            name="Program auditů 2026–2029",
+            date_from=date(2026, 4, 1),
+            date_to=date(2029, 3, 31),
+        )
+        audit_program_service.add_workplace(
+            program.id,
+            workplace_id=self._workplace.id,
+            workplace_name=self._workplace.name,
+            audit_interval_months=6,
+        )
+        visit = audit_program_service.add_visit(
+            program.id,
+            workplace_id=self._workplace.id,
+            planned_year=2026,
+            planned_month=4,
+        )
+        audit = audit_program_service.create_audit_from_visit(visit.id)
+        audit_service.update_audit(
+            audit.id,
+            started_at=date(2026, 4, 10),
+            finished_at=date(2026, 4, 20),
+        )
+
+        dialog = self._create_dialog()
+        dialog._reload_program_list(select_program_id=program.id)
+        visit_item = dialog._plan_tree.topLevelItem(0).child(0)
+        dialog._plan_tree.setCurrentItem(visit_item)
+        QApplication.processEvents()
+
+        self.assertTrue(dialog._open_audit_btn.isEnabled())
+        self.assertTrue(dialog._protocol_btn.isEnabled())
+
+    @patch(
+        "moduly.audity.ui.audit_program_manager_dialog.protokol_audit_service.open_for_audit"
+    )
+    def test_export_protocol_opens_for_completed_audit(self, mock_open) -> None:
+        program = audit_program_service.create_program(
+            name="Program auditů 2026–2029",
+            date_from=date(2026, 4, 1),
+            date_to=date(2029, 3, 31),
+        )
+        audit_program_service.add_workplace(
+            program.id,
+            workplace_id=self._workplace.id,
+            workplace_name=self._workplace.name,
+            audit_interval_months=6,
+        )
+        visit = audit_program_service.add_visit(
+            program.id,
+            workplace_id=self._workplace.id,
+            planned_year=2026,
+            planned_month=4,
+        )
+        audit = audit_program_service.create_audit_from_visit(visit.id)
+        audit_service.update_audit(
+            audit.id,
+            started_at=date(2026, 4, 10),
+            finished_at=date(2026, 4, 20),
+        )
+
+        dialog = self._create_dialog()
+        dialog._reload_program_list(select_program_id=program.id)
+        visit_item = dialog._plan_tree.topLevelItem(0).child(0)
+        dialog._plan_tree.setCurrentItem(visit_item)
+        QApplication.processEvents()
+
+        dialog._export_protocol_for_selection()
+
+        mock_open.assert_called_once()
+        self.assertEqual(mock_open.call_args.args[0].id, audit.id)
 
     def test_manager_has_dashboard_tabs(self) -> None:
         program = audit_program_service.create_program(

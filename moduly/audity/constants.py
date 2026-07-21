@@ -282,6 +282,8 @@ AUDIT_PROGRAM_STATUS_AUDIT_COMPLETED = "✓ Audit dokončen."
 
 AUDIT_PROGRAM_START_AUDIT_BUTTON = "Zahájit audit..."
 AUDIT_PROGRAM_OPEN_AUDIT_BUTTON = "Otevřít audit"
+AUDIT_PROTOCOL_BUTTON_LABEL = "Protokol z auditu..."
+AUDIT_PROTOCOL_DIALOG_TITLE = "Protokol z auditu"
 AUDIT_PROGRAM_VISIT_HAS_AUDIT = "Návštěva už má vytvořený audit."
 AUDIT_PROGRAM_VISIT_NO_AUDIT = "Návštěva nemá vytvořený audit."
 

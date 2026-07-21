@@ -59,6 +59,8 @@ from moduly.audity.constants import (
     AUDIT_PROGRAM_SUPPLEMENT_WORKPLACES_BUTTON,
     AUDIT_PROGRAM_VISIT_STATUS_SKIPPED,
     AUDIT_PROGRAM_WINDOW_TITLE,
+    AUDIT_PROTOCOL_BUTTON_LABEL,
+    AUDIT_PROTOCOL_DIALOG_TITLE,
     AUDIT_STATUS_DOKONCENO,
     PROCESS_PANEL_LEFT_WIDTH,
 )
@@ -69,6 +71,7 @@ from moduly.audity.sluzby.audit_program_service import (
     AuditProgramOverview,
     audit_program_service,
 )
+from moduly.audity.sluzby.protokol_audit_service import protokol_audit_service
 from moduly.audity.ui.audit_dialog import AuditDialog
 from moduly.audity.ui.audit_program_create_dialog import AuditProgramCreateDialog
 from moduly.audity.ui.audit_program_dashboard_widget import AuditProgramDashboardWidget
@@ -299,18 +302,25 @@ class AuditProgramManagerDialog(QDialog):
         self._move_process_btn = QPushButton(AUDIT_PROGRAM_MOVE_PROCESS_BUTTON)
         self._start_audit_btn = QPushButton(AUDIT_PROGRAM_START_AUDIT_BUTTON)
         self._open_audit_btn = QPushButton(AUDIT_PROGRAM_OPEN_AUDIT_BUTTON)
+        self._protocol_btn = QPushButton(AUDIT_PROTOCOL_BUTTON_LABEL)
+        self._protocol_btn.setEnabled(False)
+        self._protocol_btn.setToolTip(
+            "Export protokolu je dostupný pouze pro dokončené (uzavřené) audity."
+        )
         self._add_visit_btn.clicked.connect(self._create_visit_for_selection)
         self._edit_visit_btn.clicked.connect(self._edit_selected_visit)
         self._skip_visit_btn.clicked.connect(self._skip_selected_visit)
         self._move_process_btn.clicked.connect(self._move_selected_process)
         self._start_audit_btn.clicked.connect(self._start_audit_for_selection)
         self._open_audit_btn.clicked.connect(self._open_audit_for_selection)
+        self._protocol_btn.clicked.connect(self._export_protocol_for_selection)
         tree_toolbar.addWidget(self._add_visit_btn)
         tree_toolbar.addWidget(self._edit_visit_btn)
         tree_toolbar.addWidget(self._skip_visit_btn)
         tree_toolbar.addWidget(self._move_process_btn)
         tree_toolbar.addWidget(self._start_audit_btn)
         tree_toolbar.addWidget(self._open_audit_btn)
+        tree_toolbar.addWidget(self._protocol_btn)
         tree_toolbar.addStretch()
         layout.addLayout(tree_toolbar)
 
@@ -535,6 +545,9 @@ class AuditProgramManagerDialog(QDialog):
         self._open_audit_btn.setEnabled(
             node_type == NODE_VISIT and self._visit_has_audit(item)
         )
+        self._protocol_btn.setEnabled(
+            node_type == NODE_VISIT and self._visit_has_completed_audit(item)
+        )
 
     def _visit_can_be_edited(self, item) -> bool:
         visit = self._visit_for_tree_item(item)
@@ -555,6 +568,13 @@ class AuditProgramManagerDialog(QDialog):
         visit = self._visit_for_tree_item(item)
         return visit is not None and visit.audit_id is not None
 
+    def _visit_has_completed_audit(self, item) -> bool:
+        visit = self._visit_for_tree_item(item)
+        if visit is None or visit.audit_id is None:
+            return False
+        audit = audit_service.get_by_id(visit.audit_id)
+        return audit is not None and audit.status == AUDIT_STATUS_DOKONCENO
+
     def _visit_for_tree_item(self, item):
         visit_id = AuditProgramPlanTreeWidget.node_id(item)
         if visit_id is None or AuditProgramPlanTreeWidget.node_type(item) != NODE_VISIT:
@@ -568,6 +588,7 @@ class AuditProgramManagerDialog(QDialog):
         self._move_process_btn.setEnabled(enabled)
         self._start_audit_btn.setEnabled(enabled)
         self._open_audit_btn.setEnabled(enabled)
+        self._protocol_btn.setEnabled(enabled)
 
     def _show_plan_context_menu(self, position) -> None:
         item = self._plan_tree.itemAt(position)
@@ -586,6 +607,11 @@ class AuditProgramManagerDialog(QDialog):
                 menu.addAction(AUDIT_PROGRAM_START_AUDIT_BUTTON, self._start_audit_for_selection)
             if self._visit_has_audit(item):
                 menu.addAction(AUDIT_PROGRAM_OPEN_AUDIT_BUTTON, self._open_audit_for_selection)
+            if self._visit_has_completed_audit(item):
+                menu.addAction(
+                    AUDIT_PROTOCOL_BUTTON_LABEL,
+                    self._export_protocol_for_selection,
+                )
             if self._visit_can_be_edited(item):
                 menu.addAction(AUDIT_PROGRAM_SKIP_VISIT_BUTTON, self._skip_selected_visit)
         elif node_type == NODE_PROCESS:
@@ -751,6 +777,40 @@ class AuditProgramManagerDialog(QDialog):
 
         visit_context = audit_program_service.get_visit_audit_context(visit.id)
         self._open_audit_dialog(visit.audit_id, visit_context=visit_context)
+
+    def _export_protocol_for_selection(self) -> None:
+        item = self._selected_tree_item()
+        visit = self._visit_for_tree_item(item)
+        if visit is None or visit.audit_id is None:
+            QMessageBox.information(
+                self,
+                AUDIT_PROTOCOL_DIALOG_TITLE,
+                "Vyberte návštěvu s dokončeným auditem.",
+            )
+            return
+
+        audit = audit_service.get_by_id(visit.audit_id)
+        if audit is None:
+            QMessageBox.warning(self, AUDIT_PROTOCOL_DIALOG_TITLE, "Audit nebyl nalezen.")
+            self._refresh_selected_program_views()
+            return
+        if audit.status != AUDIT_STATUS_DOKONCENO:
+            QMessageBox.information(
+                self,
+                AUDIT_PROTOCOL_DIALOG_TITLE,
+                "Protokol lze exportovat pouze u dokončeného (uzavřeného) auditu.",
+            )
+            self._update_plan_actions()
+            return
+
+        try:
+            protokol_audit_service.open_for_audit(audit)
+        except Exception as exc:
+            QMessageBox.warning(
+                self,
+                AUDIT_PROTOCOL_DIALOG_TITLE,
+                f"Protokol se nepodařilo vygenerovat.\n\n{exc}",
+            )
 
     def _open_audit_dialog(self, audit_id: int, *, visit_context=None) -> bool:
         audit = audit_service.get_by_id(audit_id)

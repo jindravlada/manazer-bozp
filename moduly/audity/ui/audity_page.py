@@ -14,17 +14,21 @@ from core.widgets.dialog_utils import exec_maximized
 from core.widgets.table_utils import configure_table_columns
 from moduly.audity.constants import (
     AUDIT_STATUS_BY_FILTER,
+    AUDIT_STATUS_DOKONCENO,
     AUDIT_STATUS_FILTER_DOKONCENE,
     AUDIT_STATUS_FILTER_PLANOVANE,
     AUDIT_STATUS_FILTER_PROBIHAJICI,
     AUDIT_STATUS_FILTER_VSE,
     AUDIT_PROGRAM_BUTTON_LABEL,
+    AUDIT_PROTOCOL_BUTTON_LABEL,
+    AUDIT_PROTOCOL_DIALOG_TITLE,
     DEFAULT_AUDIT_STATUS_FILTER,
     KNOWLEDGE_EDITOR_BUTTON_LABEL,
     MODULE_NAME,
     YEAR_FILTER_VSE,
 )
 from moduly.audity.sluzby.audit_service import audit_service
+from moduly.audity.sluzby.protokol_audit_service import protokol_audit_service
 from moduly.audity.ui.audit_dialog import AuditDialog
 from moduly.audity.ui.audit_program_manager_banner_widget import (
     AuditProgramManagerBannerWidget,
@@ -50,9 +54,16 @@ class AudityPage(QWidget):
         self.edit_btn = QPushButton("Upravit")
         self.delete_btn = QPushButton("Smazat")
         self.refresh_btn = QPushButton("Obnovit")
+        self.protocol_btn = QPushButton(AUDIT_PROTOCOL_BUTTON_LABEL)
+        self.protocol_btn.setEnabled(False)
+        self.protocol_btn.setToolTip(
+            "Export protokolu je dostupný pouze pro dokončené (uzavřené) audity."
+        )
         self.knowledge_editor_btn = QPushButton(KNOWLEDGE_EDITOR_BUTTON_LABEL)
         self.report_btn = QPushButton("Roční zpráva")
-        self.report_btn.setToolTip("Roční zpráva z interních auditů za vybraný kalendářní rok.")
+        self.report_btn.setToolTip(
+            "Roční zpráva z interních auditů za vybraný kalendářní rok."
+        )
 
         self.status_filter = QComboBox()
         self.status_filter.addItems([
@@ -71,6 +82,7 @@ class AudityPage(QWidget):
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.delete_btn)
         toolbar.addWidget(self.refresh_btn)
+        toolbar.addWidget(self.protocol_btn)
         toolbar.addWidget(self.knowledge_editor_btn)
         toolbar.addWidget(self.report_btn)
         toolbar.addStretch()
@@ -94,9 +106,13 @@ class AudityPage(QWidget):
         self.edit_btn.clicked.connect(self.open_selected_audit)
         self.delete_btn.clicked.connect(self.delete_selected_audit)
         self.refresh_btn.clicked.connect(self.refresh)
+        self.protocol_btn.clicked.connect(self.export_selected_protocol)
         self.knowledge_editor_btn.clicked.connect(self.open_knowledge_editor)
         self.report_btn.clicked.connect(self.open_annual_report)
         self.table.doubleClicked.connect(self.open_selected_audit)
+        self.table.selectionModel().selectionChanged.connect(
+            self._update_protocol_action
+        )
         self.status_filter.currentIndexChanged.connect(self.refresh)
         self.year_filter.currentIndexChanged.connect(self.refresh)
 
@@ -107,6 +123,7 @@ class AudityPage(QWidget):
         self.table.load_audits(audits)
         configure_table_columns(self.table, "audity")
         self._program_manager_banner.refresh()
+        self._update_protocol_action()
 
     def _populate_year_filter(self) -> None:
         current_year = date.today().year
@@ -148,6 +165,18 @@ class AudityPage(QWidget):
         item = self.table.item(selected[0].row(), 0)
         return int(item.text()) if item else None
 
+    def _selected_audit(self):
+        audit_id = self._selected_audit_id()
+        if audit_id is None:
+            return None
+        return audit_service.get_by_id(audit_id)
+
+    def _update_protocol_action(self, *_args) -> None:
+        audit = self._selected_audit()
+        self.protocol_btn.setEnabled(
+            audit is not None and audit.status == AUDIT_STATUS_DOKONCENO
+        )
+
     def new_audit(self) -> None:
         dialog = AuditDialog(self)
         if exec_maximized(dialog):
@@ -180,6 +209,29 @@ class AudityPage(QWidget):
             )
             dialog.save_commission_members(audit_id, data)
             self.refresh()
+
+    def export_selected_protocol(self) -> None:
+        audit = self._selected_audit()
+        if audit is None:
+            QMessageBox.information(self, AUDIT_PROTOCOL_DIALOG_TITLE, "Vyberte audit.")
+            return
+        if audit.status != AUDIT_STATUS_DOKONCENO:
+            QMessageBox.information(
+                self,
+                AUDIT_PROTOCOL_DIALOG_TITLE,
+                "Protokol lze exportovat pouze u dokončeného (uzavřeného) auditu.",
+            )
+            self._update_protocol_action()
+            return
+
+        try:
+            protokol_audit_service.open_for_audit(audit)
+        except Exception as exc:
+            QMessageBox.warning(
+                self,
+                AUDIT_PROTOCOL_DIALOG_TITLE,
+                f"Protokol se nepodařilo vygenerovat.\n\n{exc}",
+            )
 
     def open_knowledge_editor(self) -> None:
         exec_maximized(AudityKnowledgeEditorDialog(self))
