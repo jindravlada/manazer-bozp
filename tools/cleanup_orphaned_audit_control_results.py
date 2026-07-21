@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Jednorázové odstranění osiřelých výsledků auditních tvrzení.
+"""Jednorázové odstranění osiřelých výsledků auditních tvrzení z celé DB.
 
 Skript NENÍ volán aplikací ani migrací — spouští se ručně.
 
-Osiřelý záznam = řádek ``control_results`` pro daný audit, jehož
-``source_control_point_id`` už není mezi aktuálními auditními tvrzeními
-sekce v metodice (stejné kritérium jako filtr A12.3 v exportu protokolu).
+Výchozí režim: projde všechny řádky ``control_results`` s ``entity_type='audity'``
+a odstraní ty, jejichž ``source_control_point_id`` už není mezi aktuálními
+auditními tvrzeními dané sekce v metodice (stejné kritérium jako A12.3).
+
+Volitelně lze omezit na jeden audit přes ``--audit``.
 
 Platné výsledky se nemažou jen proto, že mají stav „Není relevantní“
 (``nelze_posoudit``).
@@ -17,6 +19,7 @@ import argparse
 import shutil
 import sqlite3
 import sys
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -33,6 +36,8 @@ from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 @dataclass(frozen=True)
 class OrphanCandidate:
     id: int
+    audit_id: int
+    audit_number: str
     assertion_id: str
     assertion_text: str
     result: str
@@ -119,14 +124,25 @@ def resolve_audit_id(connection: sqlite3.Connection, audit_ref: str) -> int:
     return int(row[0])
 
 
+def _load_audit_numbers(connection: sqlite3.Connection) -> dict[int, str]:
+    return {
+        int(row[0]): str(row[1] or "")
+        for row in connection.execute("SELECT id, number FROM audits")
+    }
+
+
 def find_orphaned_candidates(
     connection: sqlite3.Connection,
-    audit_id: int,
+    *,
+    audit_id: int | None = None,
 ) -> list[OrphanCandidate]:
-    rows = connection.execute(
-        """
+    """Najde osiřelé výsledky — výchozí: celá DB (všechny audity)."""
+    audit_numbers = _load_audit_numbers(connection)
+
+    sql = """
         SELECT
             id,
+            entity_id,
             source_area_id,
             source_area_label,
             source_section_id,
@@ -136,18 +152,21 @@ def find_orphaned_candidates(
             result
         FROM control_results
         WHERE entity_type = ?
-          AND entity_id = ?
-        ORDER BY id
-        """,
-        (ENTITY_AUDITY, audit_id),
-    ).fetchall()
+    """
+    params: list[object] = [ENTITY_AUDITY]
+    if audit_id is not None:
+        sql += " AND entity_id = ?"
+        params.append(audit_id)
+    sql += " ORDER BY entity_id, id"
 
+    rows = connection.execute(sql, params).fetchall()
     section_cache: dict[tuple[str, str], set[str] | None] = {}
     orphans: list[OrphanCandidate] = []
 
     for row in rows:
         (
             result_id,
+            entity_id,
             area_id,
             area_label,
             section_id,
@@ -160,6 +179,7 @@ def find_orphaned_candidates(
         section_id = str(section_id or "").strip()
         assertion_id = str(assertion_id or "").strip()
         result = str(result or "").strip()
+        entity_id = int(entity_id)
 
         # Musí odkazovat na konkrétní tvrzení.
         if not assertion_id:
@@ -179,6 +199,8 @@ def find_orphaned_candidates(
         orphans.append(
             OrphanCandidate(
                 id=int(result_id),
+                audit_id=entity_id,
+                audit_number=audit_numbers.get(entity_id, ""),
                 assertion_id=assertion_id,
                 assertion_text=str(assertion_text or "").strip(),
                 result=result,
@@ -193,20 +215,34 @@ def find_orphaned_candidates(
     return orphans
 
 
-def print_candidates(audit_id: int, candidates: list[OrphanCandidate]) -> None:
-    print(f"Audit ID: {audit_id}")
+def print_candidates(
+    candidates: list[OrphanCandidate],
+    *,
+    scope_label: str,
+) -> None:
+    print(f"Rozsah: {scope_label}")
     print(f"Kandidátů na odstranění: {len(candidates)}")
     if not candidates:
         return
-    print()
+
+    by_audit: dict[int, list[OrphanCandidate]] = defaultdict(list)
     for item in candidates:
-        area = item.section_label or item.area_label or item.section_id or item.area_id
-        print(f"- result_id={item.id}")
-        print(f"  assertion_id={item.assertion_id}")
-        print(f"  text={item.assertion_text or '—'}")
-        print(f"  stav={item.result} ({item.result_label})")
-        print(f"  oblast/sekce={area} [{item.area_id}/{item.section_id}]")
-        print()
+        by_audit[item.audit_id].append(item)
+
+    print(f"Dotčených auditů: {len(by_audit)}")
+    print()
+    for audit_id in sorted(by_audit):
+        group = by_audit[audit_id]
+        number = group[0].audit_number or "—"
+        print(f"=== Audit {number} (id={audit_id}) — {len(group)} záznam(ů) ===")
+        for item in group:
+            area = item.section_label or item.area_label or item.section_id or item.area_id
+            print(f"- result_id={item.id}")
+            print(f"  assertion_id={item.assertion_id}")
+            print(f"  text={item.assertion_text or '—'}")
+            print(f"  stav={item.result} ({item.result_label})")
+            print(f"  oblast/sekce={area} [{item.area_id}/{item.section_id}]")
+            print()
 
 
 def create_backup(db_path: Path) -> Path:
@@ -259,7 +295,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Bezpečné odstranění osiřelých control_results auditních tvrzení "
-            "pro jeden zvolený audit (jednorázový nástroj)."
+            "z celé SQLite databáze (jednorázový nástroj)."
         ),
     )
     parser.add_argument(
@@ -270,8 +306,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--audit",
-        required=True,
-        help="ID auditu (číslo) nebo číslo auditu (např. 3/2027).",
+        default=None,
+        help=(
+            "Volitelně omezit na jeden audit (ID nebo číslo, např. 3/2027). "
+            "Bez tohoto přepínače se čistí celá databáze."
+        ),
     )
     parser.add_argument(
         "--data-dir",
@@ -317,13 +356,19 @@ def main(argv: list[str] | None = None) -> int:
 
     connection = sqlite3.connect(db_path)
     try:
-        audit_id = resolve_audit_id(connection, args.audit)
-        candidates = find_orphaned_candidates(connection, audit_id)
+        audit_id: int | None = None
+        if args.audit:
+            audit_id = resolve_audit_id(connection, args.audit)
+            scope_label = f"jeden audit (id={audit_id})"
+        else:
+            scope_label = "celá databáze (všechny audity)"
+
+        candidates = find_orphaned_candidates(connection, audit_id=audit_id)
         mode = "APPLY" if apply_changes else "DRY-RUN"
         print(f"Režim: {mode}")
         print(f"Databáze: {db_path}")
         print(f"Metodika (ciselniky): {data_dir / 'ciselniky' / 'audity'}")
-        print_candidates(audit_id, candidates)
+        print_candidates(candidates, scope_label=scope_label)
 
         if dry_run:
             print("Dry-run: žádné změny nebyly provedeny.")

@@ -1,4 +1,4 @@
-"""Test jednorázového nástroje AUDIT-DATA-CLEANUP-1."""
+"""Test jednorázového nástroje AUDIT-DATA-CLEANUP-1 (celá DB)."""
 
 from __future__ import annotations
 
@@ -46,15 +46,7 @@ class CleanupOrphanedAuditControlResultsTestCase(unittest.TestCase):
         for audit in audit_service.get_all():
             audit_service.delete_audit(audit.id)
 
-    def _create_audit_with_orphan_and_valid(self) -> tuple[int, int, int]:
-        workplace = settings_service.save_workplace(name="Provoz Cleanup")
-        audit = audit_service.create_audit(
-            workplace_id=workplace.id,
-            workplace_name=workplace.name,
-            year=2026,
-            planned_month=7,
-        )
-
+    def _add_orphan_and_valid(self, audit_id: int) -> tuple[int, int]:
         process = audit_knowledge_service.get_process_by_id("bezpecnostni_kultura")
         self.assertIsNotNone(process)
         knowledge = audit_knowledge_service.load_process_knowledge(process)
@@ -76,20 +68,20 @@ class CleanupOrphanedAuditControlResultsTestCase(unittest.TestCase):
 
         orphan = control_result_service.set_result(
             ENTITY_AUDITY,
-            audit.id,
+            audit_id,
             ControlPointContext(
                 area_id="bezpecnostni_kultura",
                 area_label="Bezpečnostní kultura",
                 section_id="postoj_vedeni",
                 section_label="Postoj vedení k BOZP",
-                control_point_id="legacy_cleanup_orphan_assertion",
+                control_point_id=f"legacy_cleanup_orphan_{audit_id}",
                 control_point_label="Staré testovací tvrzení ze starší metodiky.",
             ),
             result=CONTROL_RESULT_NELZE_POSOUDIT,
         )
         valid = control_result_service.set_result(
             ENTITY_AUDITY,
-            audit.id,
+            audit_id,
             ControlPointContext(
                 area_id="bezpecnostni_kultura",
                 area_label="Bezpečnostní kultura",
@@ -101,27 +93,36 @@ class CleanupOrphanedAuditControlResultsTestCase(unittest.TestCase):
             result=CONTROL_RESULT_VYHOVUJE,
         )
         assert orphan is not None and valid is not None
-        return audit.id, orphan.id, valid.id
+        return orphan.id, valid.id
 
-    def test_dry_run_and_apply_on_temporary_db_copy(self) -> None:
-        audit_id, orphan_id, valid_id = self._create_audit_with_orphan_and_valid()
+    def test_apply_cleans_entire_database_without_audit_filter(self) -> None:
+        workplace = settings_service.save_workplace(name="Provoz Cleanup")
+        audit_a = audit_service.create_audit(
+            workplace_id=workplace.id,
+            workplace_name=workplace.name,
+            year=2026,
+            planned_month=7,
+        )
+        audit_b = audit_service.create_audit(
+            workplace_id=workplace.id,
+            workplace_name=workplace.name,
+            year=2027,
+            planned_month=1,
+        )
+        orphan_a, valid_a = self._add_orphan_and_valid(audit_a.id)
+        orphan_b, valid_b = self._add_orphan_and_valid(audit_b.id)
 
         live_db = storage_module.storage_service.database_path
-        self.assertTrue(live_db.is_file())
-
         work_dir = Path(tempfile.mkdtemp())
         db_copy = work_dir / "manager_bozp.db"
         shutil.copy2(live_db, db_copy)
-
-        # Data dir must expose the same ciselniky as the live test home.
         data_dir = _TMP / ".local" / "share" / "manazer-bozp"
 
+        # Bez --audit = celá databáze.
         exit_dry = cleanup_module.main(
             [
                 "--db",
                 str(db_copy),
-                "--audit",
-                str(audit_id),
                 "--data-dir",
                 str(data_dir),
                 "--dry-run",
@@ -133,19 +134,16 @@ class CleanupOrphanedAuditControlResultsTestCase(unittest.TestCase):
             ids = {
                 int(row[0])
                 for row in connection.execute(
-                    "SELECT id FROM control_results WHERE entity_type=? AND entity_id=?",
-                    (ENTITY_AUDITY, audit_id),
+                    "SELECT id FROM control_results WHERE entity_type=?",
+                    (ENTITY_AUDITY,),
                 )
             }
-        self.assertIn(orphan_id, ids)
-        self.assertIn(valid_id, ids)
+        self.assertEqual(ids, {orphan_a, valid_a, orphan_b, valid_b})
 
         exit_apply = cleanup_module.main(
             [
                 "--db",
                 str(db_copy),
-                "--audit",
-                str(audit_id),
                 "--data-dir",
                 str(data_dir),
                 "--apply",
@@ -157,29 +155,26 @@ class CleanupOrphanedAuditControlResultsTestCase(unittest.TestCase):
             ids = {
                 int(row[0])
                 for row in connection.execute(
-                    "SELECT id FROM control_results WHERE entity_type=? AND entity_id=?",
-                    (ENTITY_AUDITY, audit_id),
+                    "SELECT id FROM control_results WHERE entity_type=?",
+                    (ENTITY_AUDITY,),
                 )
             }
             integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
-        self.assertNotIn(orphan_id, ids)
-        self.assertIn(valid_id, ids)
+        self.assertEqual(ids, {valid_a, valid_b})
+        self.assertNotIn(orphan_a, ids)
+        self.assertNotIn(orphan_b, ids)
         self.assertEqual(integrity, "ok")
+        self.assertEqual(len(list(work_dir.glob("manager_bozp.cleanup-orphans-*.db"))), 1)
 
-        backups = list(work_dir.glob("manager_bozp.cleanup-orphans-*.db"))
-        self.assertEqual(len(backups), 1)
-
-        # Live DB must remain untouched.
         with sqlite3.connect(live_db) as connection:
             live_ids = {
                 int(row[0])
                 for row in connection.execute(
-                    "SELECT id FROM control_results WHERE entity_type=? AND entity_id=?",
-                    (ENTITY_AUDITY, audit_id),
+                    "SELECT id FROM control_results WHERE entity_type=?",
+                    (ENTITY_AUDITY,),
                 )
             }
-        self.assertIn(orphan_id, live_ids)
-        self.assertIn(valid_id, live_ids)
+        self.assertEqual(live_ids, {orphan_a, valid_a, orphan_b, valid_b})
 
 
 if __name__ == "__main__":
