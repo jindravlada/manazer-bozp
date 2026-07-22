@@ -1,4 +1,4 @@
-"""Společný dialog pro výběr fotografie s náhledy (UX-PHOTO-1 / UX-PHOTO-2)."""
+"""Společný dialog pro výběr fotografie s náhledy (UX-PHOTO-1 / UX-PHOTO-2 / UX-PHOTO-3)."""
 
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QIcon, QImage, QKeySequence, QPainter, QPixmap, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
+    QCheckBox,
     QComboBox,
     QDialog,
     QDialogButtonBox,
@@ -27,6 +28,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QListWidget,
     QListWidgetItem,
+    QMessageBox,
     QPushButton,
     QSplitter,
     QVBoxLayout,
@@ -44,6 +46,15 @@ PHOTO_PICKER_CANCEL_LABEL = "Zrušit"
 PHOTO_PICKER_UP_LABEL = "O úroveň výš"
 PHOTO_PICKER_BROWSE_LABEL = "Vybrat složku"
 PHOTO_PICKER_REFRESH_LABEL = "Obnovit"
+PHOTO_PICKER_ROTATE_LEFT_LABEL = "⟲ Otočit vlevo"
+PHOTO_PICKER_ROTATE_RIGHT_LABEL = "⟳ Otočit vpravo"
+PHOTO_PICKER_ROTATE_UNSUPPORTED = "Otočení tohoto formátu není podporováno."
+PHOTO_PICKER_ROTATE_CONFIRM_TITLE = "Otočení fotografie"
+PHOTO_PICKER_ROTATE_CONFIRM_TEXT = (
+    "Fotografie bude otočena přímo v původním souboru.\n\nPokračovat?"
+)
+PHOTO_PICKER_ROTATE_DONT_ASK = "Příště se již neptat."
+PHOTO_PICKER_ROTATE_ERROR_TITLE = "Otočení fotografie"
 
 # Veřejné konstanty velikosti miniatur (testy / případné ladění UI).
 THUMB_ICON_SIZE = 160
@@ -52,6 +63,8 @@ THUMB_GRID_SIZE = (190, 215)
 PHOTO_EXTENSIONS = frozenset(
     {".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"}
 )
+# Formáty, které umíme bezpečně přepsat přes Pillow (bez nových závislostí).
+ROTATABLE_EXTENSIONS = frozenset({".jpg", ".jpeg", ".png", ".webp"})
 _HEIC_EXTENSIONS = frozenset({".heic", ".heif"})
 
 SORT_NAME = "name"
@@ -63,10 +76,16 @@ _GRID_WIDTH = THUMB_GRID_SIZE[0]
 _GRID_HEIGHT = THUMB_GRID_SIZE[1]
 _SETTINGS_FILE = "ui.ini"
 _LAST_DIRECTORY_KEY = "photo_picker/last_directory"
+_SKIP_ROTATE_CONFIRM_KEY = "photo_picker/skip_rotate_confirm"
+_EXIF_ORIENTATION = 274
 _ROLE_PATH = Qt.ItemDataRole.UserRole
 _ROLE_MTIME = Qt.ItemDataRole.UserRole + 1
 _ROLE_SIZE = Qt.ItemDataRole.UserRole + 2
 _ROLE_PREVIEW_OK = Qt.ItemDataRole.UserRole + 3
+
+
+class PhotoRotateError(Exception):
+    """Chyba při otočení / přepisu fotografie na disku."""
 
 
 def is_supported_photo(path: str | Path) -> bool:
@@ -125,6 +144,20 @@ def set_last_photo_directory(directory: str | Path) -> None:
     settings.sync()
 
 
+def get_skip_rotate_confirm() -> bool:
+    raw = photo_picker_settings().value(_SKIP_ROTATE_CONFIRM_KEY, False)
+    if isinstance(raw, bool):
+        return raw
+    text = str(raw).strip().lower()
+    return text in {"1", "true", "yes", "on"}
+
+
+def set_skip_rotate_confirm(skip: bool) -> None:
+    settings = photo_picker_settings()
+    settings.setValue(_SKIP_ROTATE_CONFIRM_KEY, bool(skip))
+    settings.sync()
+
+
 def resolve_initial_directory(initial_directory: str | Path | None = None) -> Path:
     """Pořadí: initial → poslední uložená → Obrázky/home."""
     if initial_directory is not None:
@@ -135,6 +168,127 @@ def resolve_initial_directory(initial_directory: str | Path | None = None) -> Pa
     if last is not None:
         return last
     return default_pictures_directory().resolve()
+
+
+def is_rotation_supported(path: str | Path) -> bool:
+    """True, pokud formát umíme bezpečně přepsat při otočení."""
+    return Path(path).suffix.lower() in ROTATABLE_EXTENSIONS
+
+
+def _normalize_exif_orientation(exif) -> object | None:
+    """Nastaví Orientation=1 (normální). Vrátí upravený Exif, nebo None."""
+    if not exif:
+        return None
+    try:
+        exif[_EXIF_ORIENTATION] = 1
+    except Exception:
+        return None
+    return exif
+
+
+def _save_rotated_image(image, path: Path, *, suffix: str, exif=None) -> None:
+    """Uloží otočený obrázek do path se zachováním formátu a kvality."""
+    save_kwargs: dict = {}
+    icc = image.info.get("icc_profile")
+    if icc:
+        save_kwargs["icc_profile"] = icc
+
+    normalized = _normalize_exif_orientation(exif)
+    if suffix in {".jpg", ".jpeg"}:
+        save_kwargs["format"] = "JPEG"
+        save_kwargs["quality"] = 95
+        save_kwargs["optimize"] = True
+        if normalized is not None:
+            save_kwargs["exif"] = normalized
+    elif suffix == ".png":
+        save_kwargs["format"] = "PNG"
+        save_kwargs["optimize"] = True
+        if normalized is not None:
+            save_kwargs["exif"] = normalized
+    elif suffix == ".webp":
+        save_kwargs["format"] = "WEBP"
+        save_kwargs["quality"] = 95
+        save_kwargs["method"] = 6
+        if normalized is not None:
+            save_kwargs["exif"] = normalized
+    else:
+        raise PhotoRotateError(PHOTO_PICKER_ROTATE_UNSUPPORTED)
+
+    tmp_path = path.with_name(f".{path.name}.rotate-tmp")
+    try:
+        image.save(tmp_path, **save_kwargs)
+        tmp_path.replace(path)
+    except OSError as exc:
+        if tmp_path.exists():
+            try:
+                tmp_path.unlink()
+            except OSError:
+                pass
+        raise PhotoRotateError(
+            f"Soubor se nepodařilo přepsat:\n{path}\n\n{exc}"
+        ) from exc
+    except Exception as exc:
+        if tmp_path.exists():
+            try:
+                tmp_path.unlink()
+            except OSError:
+                pass
+        raise PhotoRotateError(
+            f"Otočení fotografie se nezdařilo:\n{path}\n\n{exc}"
+        ) from exc
+
+
+def rotate_photo_file(path: str | Path, degrees: int) -> Path:
+    """Otočí fotografii přímo v původním souboru o ±90°.
+
+    degrees: -90 (vlevo / CCW) nebo +90 (vpravo / CW).
+    Vrátí Path ke stejnému souboru. EXIF Orientation nastaví na normální.
+    """
+    if degrees not in (-90, 90):
+        raise PhotoRotateError("Podporováno je pouze otočení o ±90°.")
+
+    target = Path(path)
+    if not target.is_file():
+        raise PhotoRotateError(f"Soubor neexistuje:\n{target}")
+    if not is_rotation_supported(target):
+        raise PhotoRotateError(PHOTO_PICKER_ROTATE_UNSUPPORTED)
+
+    try:
+        from PIL import Image, ImageOps
+    except Exception as exc:
+        raise PhotoRotateError(
+            "Pro otočení fotografie je potřeba knihovna Pillow."
+        ) from exc
+
+    suffix = target.suffix.lower()
+    preserved_exif = None
+    try:
+        with Image.open(target) as opened:
+            try:
+                preserved_exif = opened.getexif()
+            except Exception:
+                preserved_exif = None
+            # Nejdřív aplikovat EXIF Orientation do pixelů, pak otočit.
+            image = ImageOps.exif_transpose(opened) or opened
+            image.load()
+            image = image.copy()
+    except Exception as exc:
+        raise PhotoRotateError(
+            f"Fotografii se nepodařilo načíst:\n{target}\n\n{exc}"
+        ) from exc
+
+    try:
+        if degrees == -90:
+            rotated = image.transpose(Image.Transpose.ROTATE_90)
+        else:
+            rotated = image.transpose(Image.Transpose.ROTATE_270)
+    except Exception as exc:
+        raise PhotoRotateError(
+            f"Otočení fotografie se nezdařilo:\n{target}\n\n{exc}"
+        ) from exc
+
+    _save_rotated_image(rotated, target, suffix=suffix, exif=preserved_exif)
+    return target.resolve()
 
 
 @dataclass(frozen=True)
@@ -405,6 +559,22 @@ class PhotoPickerDialog(QDialog):
         ):
             right_layout.addWidget(label)
 
+        rotate_row = QHBoxLayout()
+        self._rotate_left_btn = QPushButton(PHOTO_PICKER_ROTATE_LEFT_LABEL)
+        self._rotate_right_btn = QPushButton(PHOTO_PICKER_ROTATE_RIGHT_LABEL)
+        self._rotate_left_btn.setEnabled(False)
+        self._rotate_right_btn.setEnabled(False)
+        rotate_row.addWidget(self._rotate_left_btn)
+        rotate_row.addWidget(self._rotate_right_btn)
+        rotate_row.addStretch()
+        right_layout.addLayout(rotate_row)
+
+        self._rotate_hint = QLabel("")
+        self._rotate_hint.setObjectName("InfoText")
+        self._rotate_hint.setWordWrap(True)
+        self._rotate_hint.hide()
+        right_layout.addWidget(self._rotate_hint)
+
         self._preview = QLabel()
         self._preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._preview.setMinimumSize(280, 280)
@@ -436,6 +606,8 @@ class PhotoPickerDialog(QDialog):
         self._sort_combo.currentIndexChanged.connect(self._on_sort_changed)
         self._list.itemSelectionChanged.connect(self._on_selection_changed)
         self._list.itemDoubleClicked.connect(self._on_item_double_clicked)
+        self._rotate_left_btn.clicked.connect(lambda: self._rotate_selected(-90))
+        self._rotate_right_btn.clicked.connect(lambda: self._rotate_selected(90))
 
     def _wire_shortcuts(self) -> None:
         QShortcut(QKeySequence(Qt.Key.Key_Escape), self, activated=self.reject)
@@ -665,6 +837,7 @@ class PhotoPickerDialog(QDialog):
             self._preview.setText("")
             self._selected_path = path
             self._select_btn.setEnabled(True)
+            self._update_rotate_controls(path)
             return
 
         self._info_dims.setText("Rozměry: —")
@@ -677,6 +850,18 @@ class PhotoPickerDialog(QDialog):
             self._preview.setText(PHOTO_PICKER_PREVIEW_BROKEN)
             self._selected_path = None
             self._select_btn.setEnabled(False)
+        self._update_rotate_controls(self._selected_path)
+
+    def _update_rotate_controls(self, path: Path | None) -> None:
+        supported = bool(path is not None and path.is_file() and is_rotation_supported(path))
+        self._rotate_left_btn.setEnabled(supported)
+        self._rotate_right_btn.setEnabled(supported)
+        if path is not None and path.is_file() and not supported:
+            self._rotate_hint.setText(PHOTO_PICKER_ROTATE_UNSUPPORTED)
+            self._rotate_hint.show()
+        else:
+            self._rotate_hint.hide()
+            self._rotate_hint.clear()
 
     def _clear_preview(self) -> None:
         self._preview.setPixmap(QPixmap())
@@ -686,6 +871,108 @@ class PhotoPickerDialog(QDialog):
         self._info_size.setText("Velikost: —")
         self._info_mtime.setText("Změněno: —")
         self._info_taken.setText("Pořízeno: —")
+        self._update_rotate_controls(None)
+
+    def _confirm_rotate(self) -> bool:
+        if get_skip_rotate_confirm():
+            return True
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Question)
+        box.setWindowTitle(PHOTO_PICKER_ROTATE_CONFIRM_TITLE)
+        box.setText(PHOTO_PICKER_ROTATE_CONFIRM_TEXT)
+        checkbox = QCheckBox(PHOTO_PICKER_ROTATE_DONT_ASK)
+        box.setCheckBox(checkbox)
+        box.setStandardButtons(
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        box.setDefaultButton(QMessageBox.StandardButton.No)
+        answer = box.exec()
+        if answer != QMessageBox.StandardButton.Yes:
+            return False
+        if checkbox.isChecked():
+            set_skip_rotate_confirm(True)
+        return True
+
+    def _rotate_selected(self, degrees: int) -> None:
+        path = self._selected_path
+        if path is None or not path.is_file():
+            return
+        if not is_rotation_supported(path):
+            QMessageBox.information(
+                self,
+                PHOTO_PICKER_ROTATE_ERROR_TITLE,
+                PHOTO_PICKER_ROTATE_UNSUPPORTED,
+            )
+            return
+        if not self._confirm_rotate():
+            return
+
+        try:
+            rotate_photo_file(path, degrees)
+        except PhotoRotateError as exc:
+            QMessageBox.warning(
+                self,
+                PHOTO_PICKER_ROTATE_ERROR_TITLE,
+                str(exc),
+            )
+            return
+
+        self._refresh_item_after_rotate(path)
+
+    def _invalidate_thumb_cache_for_path(self, path_text: str) -> None:
+        stale = [key for key in self._thumb_cache if key.path == path_text]
+        for key in stale:
+            del self._thumb_cache[key]
+
+    def _refresh_item_after_rotate(self, path: Path) -> None:
+        """Obnoví miniaturu a náhled bez změny výběru / pozice ve výpisu."""
+        path_text = str(path.resolve())
+        self._invalidate_thumb_cache_for_path(path_text)
+
+        item: QListWidgetItem | None = None
+        for index in range(self._list.count()):
+            candidate = self._list.item(index)
+            if candidate is not None and candidate.data(_ROLE_PATH) == path_text:
+                item = candidate
+                break
+        if item is None:
+            return
+
+        try:
+            stat = path.stat()
+        except OSError:
+            self._update_preview_for_item(item)
+            return
+
+        item.setData(_ROLE_MTIME, int(stat.st_mtime_ns))
+        item.setData(_ROLE_SIZE, int(stat.st_size))
+
+        # Okamžitá obnova miniatury (bez workeru – jen vybraná fotografie).
+        pixmap: QPixmap | None = None
+        preview_ok = False
+        suffix = path.suffix.lower()
+        if suffix in _HEIC_EXTENSIONS:
+            preview_ok = True
+        else:
+            loaded = QImage(str(path))
+            if not loaded.isNull():
+                pixmap = QPixmap.fromImage(fit_image_on_canvas(loaded, _THUMB_SIZE))
+                preview_ok = True
+
+        key = _CacheKey(path_text, int(stat.st_mtime_ns), int(stat.st_size))
+        self._thumb_cache[key] = (pixmap, preview_ok)
+        item.setData(_ROLE_PREVIEW_OK, preview_ok)
+        if pixmap is not None and not pixmap.isNull():
+            item.setIcon(QIcon(pixmap))
+        else:
+            item.setIcon(self._placeholder_icon)
+
+        # Zachovat výběr a scroll – jen obnovit náhled.
+        if self._list.currentItem() is not item:
+            self._list.setCurrentItem(item)
+        self._selected_path = path.resolve()
+        self._update_preview_for_item(item)
+        self._list.scrollToItem(item)
 
     def _on_item_double_clicked(self, item: QListWidgetItem) -> None:
         self._update_preview_for_item(item)

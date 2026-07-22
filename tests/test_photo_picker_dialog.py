@@ -1,4 +1,4 @@
-"""UX-PHOTO-1 / UX-PHOTO-2 – testy společného PhotoPickerDialog."""
+"""UX-PHOTO-1 / UX-PHOTO-2 / UX-PHOTO-3 – testy společného PhotoPickerDialog."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from unittest.mock import patch
 from PIL import Image
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QImage
-from PySide6.QtWidgets import QApplication, QDialog
+from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 
 _TMP = Path(tempfile.mkdtemp(prefix="ux-photo-1a-"))
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -24,16 +24,21 @@ with patch.object(Path, "home", return_value=_TMP):
     storage_module.storage_service.ensure_structure()
 
     from core.ui.photo_picker_dialog import (
+        PHOTO_PICKER_ROTATE_UNSUPPORTED,
         PHOTO_PICKER_SELECT_LABEL,
         THUMB_GRID_SIZE,
         THUMB_ICON_SIZE,
         PhotoPickerDialog,
+        PhotoRotateError,
         fit_image_on_canvas,
         get_last_photo_directory,
+        get_skip_rotate_confirm,
         is_supported_photo,
         list_photo_files,
         resolve_initial_directory,
+        rotate_photo_file,
         set_last_photo_directory,
+        set_skip_rotate_confirm,
     )
 
 
@@ -62,6 +67,14 @@ class PhotoPickerDialogTestCase(unittest.TestCase):
     def _make_jpg(self, name: str, size=(40, 30), color=(10, 80, 160)) -> Path:
         path = self.photos_dir / name
         Image.new("RGB", size, color=color).save(path, format="JPEG")
+        return path
+
+    def _make_marker_png(self, name: str, size=(40, 20)) -> Path:
+        """PNG s červeným pixelem vlevo nahoře pro kontrolu směru otočení."""
+        path = self.photos_dir / name
+        img = Image.new("RGB", size, color=(0, 0, 0))
+        img.putpixel((0, 0), (255, 0, 0))
+        img.save(path, format="PNG")
         return path
 
     def test_filter_supported_extensions(self) -> None:
@@ -265,6 +278,157 @@ class PhotoPickerDialogTestCase(unittest.TestCase):
         # Okraje plátna zůstávají průhledné (obrázek je vystředěn).
         corner = canvas.pixelColor(0, 0)
         self.assertEqual(corner.alpha(), 0)
+
+    # --- UX-PHOTO-3: otočení ---
+
+    def test_rotate_left(self) -> None:
+        photo = self._make_marker_png("left.png", size=(40, 20))
+        rotate_photo_file(photo, -90)
+        with Image.open(photo) as img:
+            self.assertEqual(img.size, (20, 40))
+            # Červený pixel z TL → po CCW dole vlevo.
+            self.assertEqual(img.getpixel((0, 39)), (255, 0, 0))
+
+    def test_rotate_right(self) -> None:
+        photo = self._make_marker_png("right.png", size=(40, 20))
+        rotate_photo_file(photo, 90)
+        with Image.open(photo) as img:
+            self.assertEqual(img.size, (20, 40))
+            # Červený pixel z TL → po CW vpravo nahoře.
+            self.assertEqual(img.getpixel((19, 0)), (255, 0, 0))
+
+    def test_rotate_keeps_filename_and_location(self) -> None:
+        photo = self._make_jpg("keep_name.jpg", size=(30, 20))
+        original_name = photo.name
+        original_parent = photo.parent.resolve()
+        result = rotate_photo_file(photo, 90)
+        self.assertEqual(result.name, original_name)
+        self.assertEqual(result.parent, original_parent)
+        self.assertTrue(photo.exists())
+        self.assertEqual(photo.resolve(), result)
+
+    def test_rotate_fixes_exif_orientation(self) -> None:
+        photo = self.photos_dir / "orient.jpg"
+        img = Image.new("RGB", (60, 30), color=(12, 34, 56))
+        exif = img.getexif()
+        exif[274] = 6  # rotate 90 CW via tag
+        img.save(photo, format="JPEG", quality=95, exif=exif)
+
+        rotate_photo_file(photo, -90)
+        with Image.open(photo) as out:
+            orientation = out.getexif().get(274)
+            self.assertIn(orientation, (None, 1))
+
+    def test_rotate_refreshes_thumbnail_and_preview_keeps_selection(self) -> None:
+        photo = self._make_jpg("refresh.jpg", size=(80, 40))
+        set_skip_rotate_confirm(True)
+        dialog = PhotoPickerDialog(initial_directory=self.photos_dir)
+        self.addCleanup(dialog.close)
+        dialog._list.setCurrentRow(0)
+        item = dialog._list.currentItem()
+        assert item is not None
+        self.assertFalse(dialog._preview.pixmap() is None or dialog._preview.pixmap().isNull())
+
+        dialog._rotate_selected(-90)
+
+        self.assertEqual(dialog._list.currentRow(), 0)
+        self.assertEqual(dialog.selected_path(), photo.resolve())
+        item_after = dialog._list.currentItem()
+        assert item_after is not None
+        self.assertFalse(item_after.icon().isNull())
+        self.assertFalse(dialog._preview.pixmap() is None or dialog._preview.pixmap().isNull())
+        # Rozměry po otočení: 40×80
+        self.assertIn("40", dialog._info_dims.text())
+        self.assertIn("80", dialog._info_dims.text())
+
+    def test_rotate_write_error_keeps_file_and_continues(self) -> None:
+        photo = self._make_jpg("readonly.jpg", size=(20, 10))
+        before = photo.read_bytes()
+        set_skip_rotate_confirm(True)
+        dialog = PhotoPickerDialog(initial_directory=self.photos_dir)
+        self.addCleanup(dialog.close)
+        dialog._list.setCurrentRow(0)
+
+        with patch(
+            "core.ui.photo_picker_dialog.rotate_photo_file",
+            side_effect=PhotoRotateError("Soubor se nepodařilo přepsat"),
+        ), patch(
+            "core.ui.photo_picker_dialog.QMessageBox.warning"
+        ) as warn:
+            dialog._rotate_selected(90)
+
+        warn.assert_called_once()
+        self.assertEqual(photo.read_bytes(), before)
+        self.assertEqual(dialog.selected_path(), photo.resolve())
+        self.assertEqual(dialog.result(), 0)  # dialog stále otevřený
+
+    def test_rotate_confirm_dialog_shown_once_then_skipped(self) -> None:
+        self._make_jpg("ask.jpg", size=(24, 16))
+        self.assertFalse(get_skip_rotate_confirm())
+
+        dialog = PhotoPickerDialog(initial_directory=self.photos_dir)
+        self.addCleanup(dialog.close)
+        dialog._list.setCurrentRow(0)
+
+        class _TrackingBox(QMessageBox):
+            def exec(self):  # noqa: A003
+                checkbox = self.checkBox()
+                if checkbox is not None:
+                    checkbox.setChecked(True)
+                return QMessageBox.StandardButton.Yes
+
+        with patch("core.ui.photo_picker_dialog.QMessageBox", _TrackingBox):
+            self.assertTrue(dialog._confirm_rotate())
+
+        self.assertTrue(get_skip_rotate_confirm())
+        # Další volání už QMessageBox neotevírá.
+        with patch("core.ui.photo_picker_dialog.QMessageBox") as box_cls:
+            self.assertTrue(dialog._confirm_rotate())
+            box_cls.assert_not_called()
+
+    def test_rotate_confirm_cancel_does_not_rotate(self) -> None:
+        photo = self._make_jpg("cancel_rot.jpg", size=(24, 16))
+        before = photo.read_bytes()
+        dialog = PhotoPickerDialog(initial_directory=self.photos_dir)
+        self.addCleanup(dialog.close)
+        dialog._list.setCurrentRow(0)
+
+        with patch.object(dialog, "_confirm_rotate", return_value=False), patch(
+            "core.ui.photo_picker_dialog.rotate_photo_file"
+        ) as rotate_mock:
+            dialog._rotate_selected(-90)
+
+        rotate_mock.assert_not_called()
+        self.assertEqual(photo.read_bytes(), before)
+
+    def test_rotate_buttons_disabled_for_heic(self) -> None:
+        heic = self.photos_dir / "phone.heic"
+        heic.write_bytes(b"heic-placeholder")
+        dialog = PhotoPickerDialog(initial_directory=self.photos_dir)
+        self.addCleanup(dialog.close)
+        dialog._list.setCurrentRow(0)
+        self.assertFalse(dialog._rotate_left_btn.isEnabled())
+        self.assertFalse(dialog._rotate_right_btn.isEnabled())
+        self.assertEqual(dialog._rotate_hint.text(), PHOTO_PICKER_ROTATE_UNSUPPORTED)
+
+    def test_rotate_buttons_above_preview(self) -> None:
+        self._make_jpg("layout.jpg")
+        dialog = PhotoPickerDialog(initial_directory=self.photos_dir)
+        self.addCleanup(dialog.close)
+        right_layout = dialog._preview.parentWidget().layout()
+        left_idx = right_layout.indexOf(dialog._rotate_left_btn)
+        preview_idx = right_layout.indexOf(dialog._preview)
+        rotate_row_idx = None
+        for i in range(right_layout.count()):
+            item = right_layout.itemAt(i)
+            if item is not None and item.layout() is not None:
+                layout = item.layout()
+                if layout.indexOf(dialog._rotate_left_btn) >= 0:
+                    rotate_row_idx = i
+                    break
+        self.assertIsNotNone(rotate_row_idx)
+        self.assertLess(rotate_row_idx, preview_idx)
+        self.assertEqual(left_idx, -1)  # tlačítko není přímo v right_layout
 
 
 if __name__ == "__main__":
