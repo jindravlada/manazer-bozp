@@ -1,4 +1,4 @@
-"""Společný dialog pro výběr fotografie s náhledy (UX-PHOTO-1)."""
+"""Společný dialog pro výběr fotografie s náhledy (UX-PHOTO-1 / UX-PHOTO-2)."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from PySide6.QtCore import (
     Signal,
     Slot,
 )
-from PySide6.QtGui import QIcon, QImage, QKeySequence, QPixmap, QShortcut
+from PySide6.QtGui import QIcon, QImage, QKeySequence, QPainter, QPixmap, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -27,7 +27,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QListWidget,
     QListWidgetItem,
-    QMessageBox,
     QPushButton,
     QSplitter,
     QVBoxLayout,
@@ -46,6 +45,10 @@ PHOTO_PICKER_UP_LABEL = "O úroveň výš"
 PHOTO_PICKER_BROWSE_LABEL = "Vybrat složku"
 PHOTO_PICKER_REFRESH_LABEL = "Obnovit"
 
+# Veřejné konstanty velikosti miniatur (testy / případné ladění UI).
+THUMB_ICON_SIZE = 160
+THUMB_GRID_SIZE = (190, 215)
+
 PHOTO_EXTENSIONS = frozenset(
     {".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"}
 )
@@ -55,9 +58,9 @@ SORT_NAME = "name"
 SORT_DATE_NEWEST = "date_newest"
 SORT_DATE_OLDEST = "date_oldest"
 
-_THUMB_SIZE = 128
-_GRID_WIDTH = 155
-_GRID_HEIGHT = 175
+_THUMB_SIZE = THUMB_ICON_SIZE
+_GRID_WIDTH = THUMB_GRID_SIZE[0]
+_GRID_HEIGHT = THUMB_GRID_SIZE[1]
 _SETTINGS_FILE = "ui.ini"
 _LAST_DIRECTORY_KEY = "photo_picker/last_directory"
 _ROLE_PATH = Qt.ItemDataRole.UserRole
@@ -167,12 +170,7 @@ class _ThumbnailJob(QRunnable):
             else:
                 loaded = QImage(str(self.path))
                 if not loaded.isNull():
-                    image = loaded.scaled(
-                        _THUMB_SIZE,
-                        _THUMB_SIZE,
-                        Qt.AspectRatioMode.KeepAspectRatio,
-                        Qt.TransformationMode.SmoothTransformation,
-                    )
+                    image = fit_image_on_canvas(loaded, _THUMB_SIZE)
                     preview_ok = True
         except Exception:
             image = None
@@ -183,6 +181,30 @@ class _ThumbnailJob(QRunnable):
             image,
             preview_ok,
         )
+
+
+def fit_image_on_canvas(image: QImage, size: int = _THUMB_SIZE) -> QImage:
+    """Zmenší obrázek na jednotné plátno se zachováním poměru stran."""
+    if image.isNull() or size <= 0:
+        canvas = QImage(size, size, QImage.Format.Format_ARGB32)
+        canvas.fill(Qt.GlobalColor.transparent)
+        return canvas
+
+    scaled = image.scaled(
+        size,
+        size,
+        Qt.AspectRatioMode.KeepAspectRatio,
+        Qt.TransformationMode.SmoothTransformation,
+    )
+    canvas = QImage(size, size, QImage.Format.Format_ARGB32)
+    canvas.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(canvas)
+    painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
+    x = (size - scaled.width()) // 2
+    y = (size - scaled.height()) // 2
+    painter.drawImage(x, y, scaled)
+    painter.end()
+    return canvas
 
 
 def _format_size(num_bytes: int) -> str:
@@ -243,6 +265,7 @@ class PhotoPickerDialog(QDialog):
         self.setWindowTitle(PHOTO_PICKER_TITLE)
         self.setMinimumSize(1000, 650)
         self.resize(1100, 700)
+        self._focus_list_pending = True
 
         self._directory = resolve_initial_directory(initial_directory)
         self._sort_mode = SORT_NAME
@@ -264,9 +287,18 @@ class PhotoPickerDialog(QDialog):
         initial_directory: str | Path | None = None,
     ) -> Path | None:
         dialog = cls(parent=parent, initial_directory=initial_directory)
+        dialog.showMaximized()
         if dialog.exec() == QDialog.DialogCode.Accepted:
             return dialog.selected_path()
         return None
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        if not self.isMaximized():
+            self.showMaximized()
+        if self._focus_list_pending:
+            self._focus_list_pending = False
+            self._list.setFocus(Qt.FocusReason.OtherFocusReason)
 
     def selected_path(self) -> Path | None:
         return self._selected_path
@@ -320,7 +352,23 @@ class PhotoPickerDialog(QDialog):
         self._list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
         self._list.setWordWrap(True)
         self._list.setUniformItemSizes(True)
-        self._list.setSpacing(6)
+        self._list.setSpacing(8)
+        self._list.setStyleSheet(
+            """
+            QListWidget::item {
+                border: 2px solid transparent;
+                border-radius: 4px;
+                padding: 2px;
+            }
+            QListWidget::item:selected {
+                border: 2px solid palette(highlight);
+                background: palette(midlight);
+            }
+            QListWidget::item:hover {
+                border: 2px solid palette(mid);
+            }
+            """
+        )
         left_layout.addWidget(self._list)
         self._empty_label = QLabel(PHOTO_PICKER_EMPTY)
         self._empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -332,28 +380,38 @@ class PhotoPickerDialog(QDialog):
         right = QWidget()
         right_layout = QVBoxLayout(right)
         right_layout.setContentsMargins(8, 0, 0, 0)
-        self._preview = QLabel()
-        self._preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._preview.setMinimumSize(280, 280)
-        self._preview.setText("Vyberte fotografii")
-        self._preview.setObjectName("InfoText")
-        right_layout.addWidget(self._preview, 1)
+        right_layout.setSpacing(8)
 
         self._info_name = QLabel("—")
         self._info_name.setWordWrap(True)
+        self._info_name.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+        )
+        font = self._info_name.font()
+        font.setBold(True)
+        font.setPointSize(max(font.pointSize() + 2, 12))
+        self._info_name.setFont(font)
+        right_layout.addWidget(self._info_name)
+
         self._info_dims = QLabel("Rozměry: —")
         self._info_size = QLabel("Velikost: —")
         self._info_mtime = QLabel("Změněno: —")
         self._info_taken = QLabel("Pořízeno: —")
         for label in (
-            self._info_name,
             self._info_dims,
             self._info_size,
             self._info_mtime,
             self._info_taken,
         ):
             right_layout.addWidget(label)
-        right_layout.addStretch()
+
+        self._preview = QLabel()
+        self._preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._preview.setMinimumSize(280, 280)
+        self._preview.setText("Vyberte fotografii")
+        self._preview.setObjectName("InfoText")
+        right_layout.addWidget(self._preview, 1)
+        right_layout.addStretch(0)
         splitter.addWidget(right)
         splitter.setStretchFactor(0, 3)
         splitter.setStretchFactor(1, 2)
@@ -444,7 +502,7 @@ class PhotoPickerDialog(QDialog):
             return 0.0
 
     @staticmethod
-    def _elide_name(name: str, limit: int = 22) -> str:
+    def _elide_name(name: str, limit: int = 26) -> str:
         if len(name) <= limit:
             return name
         stem = Path(name).stem

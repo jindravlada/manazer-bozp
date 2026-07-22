@@ -1,4 +1,4 @@
-"""UX-PHOTO-1a – testy společného PhotoPickerDialog."""
+"""UX-PHOTO-1 / UX-PHOTO-2 – testy společného PhotoPickerDialog."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 from PIL import Image
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QApplication, QDialog
 
 _TMP = Path(tempfile.mkdtemp(prefix="ux-photo-1a-"))
@@ -24,7 +25,10 @@ with patch.object(Path, "home", return_value=_TMP):
 
     from core.ui.photo_picker_dialog import (
         PHOTO_PICKER_SELECT_LABEL,
+        THUMB_GRID_SIZE,
+        THUMB_ICON_SIZE,
         PhotoPickerDialog,
+        fit_image_on_canvas,
         get_last_photo_directory,
         is_supported_photo,
         list_photo_files,
@@ -195,6 +199,72 @@ class PhotoPickerDialogTestCase(unittest.TestCase):
             for i in range(dialog._list.count())
         ]
         self.assertEqual(names, ["b.jpg"])
+
+    def test_dialog_opens_maximized(self) -> None:
+        self._make_jpg("max.jpg")
+        dialog = PhotoPickerDialog(initial_directory=self.photos_dir)
+        self.addCleanup(dialog.close)
+        dialog.show()
+        self._app.processEvents()
+        self.assertTrue(dialog.isMaximized())
+
+    def test_icon_size_matches_new_setting(self) -> None:
+        self._make_jpg("size.jpg")
+        dialog = PhotoPickerDialog(initial_directory=self.photos_dir)
+        self.addCleanup(dialog.close)
+        self.assertEqual(dialog._list.iconSize().width(), THUMB_ICON_SIZE)
+        self.assertEqual(dialog._list.iconSize().height(), THUMB_ICON_SIZE)
+        self.assertEqual(dialog._list.gridSize().width(), THUMB_GRID_SIZE[0])
+        self.assertEqual(dialog._list.gridSize().height(), THUMB_GRID_SIZE[1])
+
+    def test_filename_is_shown_above_metadata(self) -> None:
+        photo = self._make_jpg("IMG_20260716_123702.jpg")
+        dialog = PhotoPickerDialog(initial_directory=self.photos_dir)
+        self.addCleanup(dialog.close)
+        dialog._list.setCurrentRow(0)
+        self.assertEqual(dialog._info_name.text(), photo.name)
+        self.assertTrue(dialog._info_name.font().bold())
+
+        right_layout = dialog._info_name.parentWidget().layout()
+        name_idx = right_layout.indexOf(dialog._info_name)
+        dims_idx = right_layout.indexOf(dialog._info_dims)
+        preview_idx = right_layout.indexOf(dialog._preview)
+        self.assertLess(name_idx, dims_idx)
+        self.assertLess(dims_idx, preview_idx)
+
+    def test_focus_is_on_photo_list_after_open(self) -> None:
+        self._make_jpg("focus.jpg")
+        dialog = PhotoPickerDialog(initial_directory=self.photos_dir)
+        self.addCleanup(dialog.close)
+        dialog.show()
+        self._app.processEvents()
+        self.assertIs(dialog.focusWidget(), dialog._list)
+
+    def test_selection_cleared_after_directory_change(self) -> None:
+        self._make_jpg("keep.jpg")
+        nested = self.photos_dir / "subdir"
+        nested.mkdir()
+        Image.new("RGB", (24, 24), color=(4, 5, 6)).save(
+            nested / "other.jpg", format="JPEG"
+        )
+        dialog = PhotoPickerDialog(initial_directory=self.photos_dir)
+        self.addCleanup(dialog.close)
+        dialog._list.setCurrentRow(0)
+        self.assertIsNotNone(dialog.selected_path())
+        dialog._load_directory(nested)
+        self.assertIsNone(dialog.selected_path())
+        self.assertFalse(dialog._select_btn.isEnabled())
+        self.assertEqual(dialog._info_name.text(), "—")
+
+    def test_thumbnail_canvas_keeps_aspect_ratio(self) -> None:
+        wide = QImage(320, 80, QImage.Format.Format_RGB32)
+        wide.fill(Qt.GlobalColor.blue)
+        canvas = fit_image_on_canvas(wide, THUMB_ICON_SIZE)
+        self.assertEqual(canvas.width(), THUMB_ICON_SIZE)
+        self.assertEqual(canvas.height(), THUMB_ICON_SIZE)
+        # Okraje plátna zůstávají průhledné (obrázek je vystředěn).
+        corner = canvas.pixelColor(0, 0)
+        self.assertEqual(corner.alpha(), 0)
 
 
 if __name__ == "__main__":
