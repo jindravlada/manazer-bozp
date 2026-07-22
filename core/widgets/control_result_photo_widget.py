@@ -5,7 +5,6 @@ from pathlib import Path
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
-    QFileDialog,
     QHBoxLayout,
     QLabel,
     QMessageBox,
@@ -16,6 +15,7 @@ from PySide6.QtWidgets import (
 
 from core.services.control_result_photo_service import control_result_photo_service
 from core.shared.sluzby.control_result_service import ControlPointContext, control_result_service
+from core.ui.photo_picker_dialog import PhotoPickerDialog
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.image_viewer_dialog import ImageViewerDialog
 
@@ -23,7 +23,6 @@ PHOTO_SECTION_LABEL = "Fotografie"
 PHOTO_ADD_LABEL = "📷 Přidat fotografii"
 PHOTO_REMOVE_LABEL = "🗑 Odebrat"
 PHOTO_VIEW_LABEL = "🔍 Zobrazit"
-PHOTO_FILTER = "Obrázky (*.jpg *.jpeg *.png *.webp *.heic *.heif);;Všechny soubory (*.*)"
 
 
 class _ClickablePhotoLabel(QLabel):
@@ -156,13 +155,8 @@ class ControlResultPhotoWidget(QWidget):
             QMessageBox.information(self, PHOTO_SECTION_LABEL, self._must_be_saved_message)
             return
 
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Vyberte fotografii",
-            "",
-            PHOTO_FILTER,
-        )
-        if not file_path:
+        selected = PhotoPickerDialog.get_photo(parent=self)
+        if selected is None:
             return
 
         try:
@@ -170,7 +164,7 @@ class ControlResultPhotoWidget(QWidget):
                 self._entity_type,
                 self._entity_id,
                 self._context,
-                Path(file_path),
+                Path(selected),
             )
         except Exception as exc:
             QMessageBox.warning(
