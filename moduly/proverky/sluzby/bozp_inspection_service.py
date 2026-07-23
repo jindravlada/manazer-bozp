@@ -12,6 +12,7 @@ from core.shared.sluzby.finding_service import finding_service
 from core.shared.sluzby.control_result_service import control_result_service
 from moduly.proverky.constants import (
     DEFAULT_INSPECTION_TYPE,
+    INSPECTION_INVALID_DATE_ORDER_MESSAGE,
     INSPECTION_SPIS_STATUSES,
     INSPECTION_STATUS_DOKONCENO,
     INSPECTION_STATUS_PLANOVANO,
@@ -263,6 +264,7 @@ class BozpInspectionService:
 
         started_at = data.get("started_at")
         finished_at = data.get("finished_at")
+        self.validate_date_order(started_at, finished_at)
         status = self.derive_status(started_at, finished_at)
         if status not in INSPECTION_SPIS_STATUSES:
             raise ValueError(f"Neplatný stav prověrky: {status}")
@@ -281,6 +283,16 @@ class BozpInspectionService:
             "silne_stranky": data["silne_stranky"],
             "doporuceni_vedouciho": data["doporuceni_vedouciho"],
         }
+
+    @staticmethod
+    def validate_date_order(
+        started_at: date | None,
+        finished_at: date | None,
+    ) -> None:
+        if started_at is None or finished_at is None:
+            return
+        if finished_at < started_at:
+            raise ValueError(INSPECTION_INVALID_DATE_ORDER_MESSAGE)
 
     @staticmethod
     def _make_number(inspection_id: int, year: int | None) -> str:

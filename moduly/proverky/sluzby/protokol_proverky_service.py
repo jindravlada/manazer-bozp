@@ -15,6 +15,7 @@ from moduly.proverky.sluzby.bozp_inspection_export_context_service import (
     InspectionExportDocumentConfig,
     bozp_inspection_export_context_service,
 )
+from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 
 PROTOCOL_INCOMPLETE_WARNING = (
     "Prověrka ještě není dokončená. Protokol bude vygenerován v aktuálním stavu."
@@ -96,6 +97,11 @@ class ProtokolProverkyService:
     ) -> Path:
         if inspection is None or not getattr(inspection, "id", None):
             raise ValueError("Není vybraná uložená prověrka.")
+
+        bozp_inspection_service.validate_date_order(
+            inspection.started_at,
+            inspection.finished_at,
+        )
 
         template = self.template_path(detailed=detailed)
         if not template.exists():

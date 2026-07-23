@@ -193,13 +193,14 @@ class ProverkyCommissionSaveTestCase(unittest.TestCase):
         self.assertIn("Petr Svoboda", content)
         self.assertIn("Tomáš Malý", content)
 
-        # V bloku Podpisy zůstávají jen vedoucí a zástupce provozu.
+        # Podpisy: vedoucí, zástupce provozu a (pokud existuje) zástupce odborů.
         signatures = content.split("Podpisy", 1)[1]
         self.assertIn("Vedoucí prověrky", signatures)
         self.assertIn("Zástupce provozu", signatures)
+        self.assertIn("Zástupce odborové organizace", signatures)
         self.assertIn("Jan Novák", signatures)
         self.assertIn("Eva Králová", signatures)
-        self.assertNotIn("Lucie Horáková", signatures)
+        self.assertIn("Lucie Horáková", signatures)
         self.assertNotIn("Petr Svoboda", signatures)
         self.assertNotIn("Tomáš Malý", signatures)
         self.assertNotIn("Členové komise", signatures)

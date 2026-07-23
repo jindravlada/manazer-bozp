@@ -278,9 +278,10 @@ class InspectionReport2TestCase(unittest.TestCase):
         )
         path = protokol_proverky_service.generate_detailed_report_for_inspection(inspection)
         content = _odt_content(path)
-        self.assertIn("Přehled zjištění", content)
         self.assertIn("Závada", content)
         self.assertNotIn("neshoda", content.casefold())
+        self.assertIn("Významná zjištění", content)
+        self.assertNotIn("Přehled zjištění", content)
 
     def test_appendix_a_and_b_in_detailed_report(self) -> None:
         inspection = self._create_inspection()

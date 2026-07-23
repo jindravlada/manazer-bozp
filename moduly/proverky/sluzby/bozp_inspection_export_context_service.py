@@ -4,6 +4,8 @@ from typing import Any
 
 from core.export.commission_display import (
     COMMISSION_LABEL_LEADER_INSPECTION,
+    COMMISSION_LABEL_UNION,
+    COMMISSION_LABEL_WORKPLACE,
     build_commission_sections,
     commission_sections_text,
 )
@@ -179,6 +181,43 @@ class InspectionExportContext:
         name = self.commission_member_name(COMMISSION_RECORD_UNION)
         return "" if name == "—" else name
 
+    def union_signature_block_text(self) -> str:
+        name = self.union_representative_name()
+        if not name:
+            return ""
+        return "\n".join(
+            [
+                COMMISSION_LABEL_UNION,
+                name,
+                "........................................",
+                "podpis",
+            ]
+        )
+
+    def signatures_text(self) -> str:
+        blocks = [
+            "\n".join(
+                [
+                    COMMISSION_LABEL_LEADER_INSPECTION,
+                    self.leader_name(),
+                    "........................................",
+                    "podpis",
+                ]
+            ),
+            "\n".join(
+                [
+                    COMMISSION_LABEL_WORKPLACE,
+                    self.workplace_representative_name(),
+                    "........................................",
+                    "podpis",
+                ]
+            ),
+        ]
+        union_block = self.union_signature_block_text()
+        if union_block:
+            blocks.append(union_block)
+        return "\n\n".join(blocks)
+
     def controlled_operation_label(self) -> str:
         """Kontrolovaný provoz = hodnota kontrolovaného pracoviště."""
         return _text(self.inspection.workplace_name) or "—"
@@ -336,7 +375,10 @@ class InspectionExportContext:
 
     def findings_overview_text(self) -> str:
         lines = self.findings_overview_lines()
-        return _join_blocks(lines) if lines else "Nejsou evidovány závady ani doporučení."
+        return _join_blocks(lines) if lines else "Nejsou evidována významná zjištění."
+
+    def significant_findings_text(self) -> str:
+        return self.findings_overview_text()
 
     def _activity_statistics(self):
         return control_activity_statistics_service.compute(ENTITY_PROVERKY, self.inspection_id)
@@ -542,6 +584,11 @@ class InspectionExportContext:
         summary = self.summary_text()
         commission = self.commission_text()
         findings_overview = self.findings_overview_text()
+        signatures = ""
+        union_signature = ""
+        if self.config.include_signatures:
+            signatures = self.signatures_text()
+            union_signature = self.union_signature_block_text()
 
         return {
             "cislo_proverky": _text(self.inspection.number),
@@ -569,9 +616,12 @@ class InspectionExportContext:
             "zastupce_odborove_organizace": self.union_representative_name(),
             "clenove_komise_text": self.members_text(),
             "prizvane_osoby_text": self.invited_text(),
+            "podpis_odboru_blok": union_signature,
+            "podpisy_text": signatures,
             "celkove_hodnoceni_text": self.overall_assessment_text(),
             "prehled_vysledku_text": results_overview,
             "prehled_zjisteni_text": findings_overview,
+            "vyznamna_zjisteni_text": findings_overview,
             "silne_stranky_text": self.strengths_text(),
             "oblasti_pozornosti_text": self.attention_areas_text(),
             "doporuceni_vedouciho": self.leader_recommendation_text(),

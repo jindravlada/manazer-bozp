@@ -401,7 +401,7 @@ class InspectionReport1TestCase(unittest.TestCase):
 
         path = protokol_proverky_service.generate_for_inspection(inspection)
         content = _odt_content(path)
-        self.assertIn("Příloha B – Výsledky jednotlivých kontrolních bodů", content)
+        self.assertIn("Příloha B – Kontrolní body", content)
         self.assertIn("🟢", content)
         self.assertIn("🟡", content)
         self.assertIn("🔴", content)

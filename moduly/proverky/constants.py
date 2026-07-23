@@ -138,6 +138,9 @@ INSPECTION_PROTOCOL_REQUIRES_COMPLETED = (
 INSPECTION_DETAILED_REPORT_REQUIRES_COMPLETED = (
     "Podrobnou zprávu lze exportovat pouze u dokončené prověrky."
 )
+INSPECTION_INVALID_DATE_ORDER_MESSAGE = (
+    "Datum ukončení nesmí být dříve než datum zahájení."
+)
 
 CONTROL_POINT_HISTORY_EMPTY = "Zatím bez historie."
 CONTROL_POINT_HISTORY_SELECT = "Vyberte kontrolní bod vlevo."

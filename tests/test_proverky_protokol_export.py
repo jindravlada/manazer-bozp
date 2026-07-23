@@ -381,9 +381,12 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
             "zastupce_odborove_organizace",
             "clenove_komise_text",
             "prizvane_osoby_text",
+            "podpis_odboru_blok",
+            "podpisy_text",
             "celkove_hodnoceni_text",
             "prehled_vysledku_text",
             "prehled_zjisteni_text",
+            "vyznamna_zjisteni_text",
             "silne_stranky_text",
             "oblasti_pozornosti_text",
             "doporuceni_vedouciho",
@@ -446,18 +449,21 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
             "Přehled výsledků",
             "Silné stránky systému",
             "Oblasti vyžadující pozornost",
+            "Významná zjištění",
             "Doporučení vedoucího prověrky",
             "Rozsah prověrky",
             "Detail zjištění",
             "Přijatá opatření / úkoly",
             "Podpisy",
             "Příloha A – Kontrolované oblasti",
-            "Příloha B – Výsledky jednotlivých kontrolních bodů",
+            "Příloha B – Kontrolní body",
         ):
             self.assertIn(heading, content)
 
         self.assertNotIn("Protokol o prověrce BOZP", content)
         self.assertNotIn("Příloha – Kontrolované oblasti", content.replace("Příloha A – Kontrolované oblasti", ""))
+        self.assertNotIn("Přehled zjištění", content)
+        self.assertNotIn("Příloha B – Výsledky jednotlivých kontrolních bodů", content)
 
     def test_strengths_and_attention_areas_in_output(self) -> None:
         inspection = self._create_inspection_with_leader()

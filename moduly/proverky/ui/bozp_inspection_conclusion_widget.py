@@ -218,6 +218,15 @@ class BozpInspectionConclusionWidget(QWidget):
             finished_at = date.today()
             self.finished_at_edit.set_date_value(finished_at)
 
+        try:
+            bozp_inspection_service.validate_date_order(
+                getattr(self.inspection, "started_at", None),
+                finished_at,
+            )
+        except ValueError as exc:
+            QMessageBox.warning(self, "Dokončení prověrky", str(exc))
+            return
+
         if self._on_complete is None:
             return
 
