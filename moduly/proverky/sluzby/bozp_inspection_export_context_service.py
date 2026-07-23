@@ -1,6 +1,13 @@
 from dataclasses import dataclass
 from datetime import date, datetime
+from typing import Any
 
+from core.export.control_point_appendix import (
+    ControlPointAppendixItem,
+    build_areas_appendix,
+    build_detailed_control_points_appendix,
+)
+from core.export.odt_engine import OdtRichContent
 from core.shared.constants import (
     CONTROL_RESULT_NEVYHOVUJE,
     CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
@@ -14,7 +21,10 @@ from core.shared.sluzby.control_result_service import control_result_service
 from core.shared.sluzby.finding_service import finding_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.proverky.constants import (
+    COMMISSION_RECORD_INVITED,
     COMMISSION_RECORD_LEADER,
+    COMMISSION_RECORD_MEMBER,
+    COMMISSION_RECORD_UNION,
     COMMISSION_RECORD_WORKPLACE,
     PLANNED_MONTH_NAMES,
     PLANNED_MONTH_NOT_SET_LABEL,
@@ -61,6 +71,23 @@ def _format_labeled_block(
 
 def _join_blocks(blocks: list[str]) -> str:
     return "\n\n".join(blocks)
+
+
+def _zavady_phrase(count: int) -> str:
+    if count == 1:
+        return "1 závada"
+    if 2 <= count <= 4:
+        return f"{count} závady"
+    return f"{count} závad"
+
+
+_COMMISSION_ROLE_LABELS = {
+    COMMISSION_RECORD_LEADER: "Vedoucí prověrky",
+    COMMISSION_RECORD_WORKPLACE: "Zástupce provozu",
+    COMMISSION_RECORD_UNION: "Zástupce odborové organizace",
+    COMMISSION_RECORD_MEMBER: "Členové komise",
+    COMMISSION_RECORD_INVITED: "Přizvané osoby",
+}
 
 
 @dataclass(frozen=True)
@@ -112,11 +139,90 @@ class InspectionExportContext:
     def workplace_representative_name(self) -> str:
         return self.commission_member_name(COMMISSION_RECORD_WORKPLACE)
 
+    def union_representative_name(self) -> str:
+        name = self.commission_member_name(COMMISSION_RECORD_UNION)
+        return "" if name == "—" else name
+
     def controlled_operation_label(self) -> str:
-        return self.employer_name() or "—"
+        """Kontrolovaný provoz = hodnota kontrolovaného pracoviště."""
+        return _text(self.inspection.workplace_name) or "—"
 
     def controlled_workplace_label(self) -> str:
-        return _text(self.inspection.workplace_name) or "—"
+        return self.controlled_operation_label()
+
+    def inspection_start_date_text(self) -> str:
+        return _fmt_date(self.inspection.started_at)
+
+    def inspection_end_date_text(self) -> str:
+        if not self.inspection.finished_at:
+            return "Dosud neukončena"
+        return _fmt_date(self.inspection.finished_at)
+
+    def _commission_members(self):
+        return bozp_inspection_commission_service.get_for_inspection(self.inspection_id)
+
+    def _commission_names_for_type(self, record_type: str) -> list[str]:
+        names: list[str] = []
+        for member in sorted(
+            self._commission_members(),
+            key=lambda item: (item.display_order, item.id),
+        ):
+            if member.record_type != record_type:
+                continue
+            name = _text(member.display_name)
+            if name:
+                names.append(name)
+        return names
+
+    def commission_lines(self) -> list[str]:
+        """Kompletní složení komise – bez prázdných sekcí."""
+        sections: list[str] = []
+
+        leader = self._commission_names_for_type(COMMISSION_RECORD_LEADER)
+        if leader:
+            sections.append(
+                f"{_COMMISSION_ROLE_LABELS[COMMISSION_RECORD_LEADER]}\n{leader[0]}"
+            )
+
+        workplace = self._commission_names_for_type(COMMISSION_RECORD_WORKPLACE)
+        if workplace:
+            sections.append(
+                f"{_COMMISSION_ROLE_LABELS[COMMISSION_RECORD_WORKPLACE]}\n{workplace[0]}"
+            )
+
+        union = self._commission_names_for_type(COMMISSION_RECORD_UNION)
+        if union:
+            sections.append(
+                f"{_COMMISSION_ROLE_LABELS[COMMISSION_RECORD_UNION]}\n{union[0]}"
+            )
+
+        members = self._commission_names_for_type(COMMISSION_RECORD_MEMBER)
+        if members:
+            body = "\n".join(f"• {name}" for name in members)
+            sections.append(
+                f"{_COMMISSION_ROLE_LABELS[COMMISSION_RECORD_MEMBER]}\n{body}"
+            )
+
+        invited = self._commission_names_for_type(COMMISSION_RECORD_INVITED)
+        if invited:
+            body = "\n".join(f"• {name}" for name in invited)
+            sections.append(
+                f"{_COMMISSION_ROLE_LABELS[COMMISSION_RECORD_INVITED]}\n{body}"
+            )
+
+        return sections
+
+    def commission_text(self) -> str:
+        lines = self.commission_lines()
+        return "\n\n".join(lines) if lines else "Nejsou evidováni."
+
+    def members_text(self) -> str:
+        names = self._commission_names_for_type(COMMISSION_RECORD_MEMBER)
+        return "\n".join(names)
+
+    def invited_text(self) -> str:
+        names = self._commission_names_for_type(COMMISSION_RECORD_INVITED)
+        return "\n".join(names)
 
     def controlled_areas_lines(self) -> list[str]:
         seen: set[str] = set()
@@ -134,6 +240,47 @@ class InspectionExportContext:
         if not lines:
             return "Nejsou evidovány."
         return "\n".join(f"• {line}" for line in lines)
+
+    def appendix_areas_text(self) -> OdtRichContent:
+        """Příloha A – Kontrolované oblasti (stejný styl jako u auditu)."""
+        return build_areas_appendix(self.controlled_areas_lines())
+
+    def _control_point_results(self):
+        return control_result_service.get_for_entity(ENTITY_PROVERKY, self.inspection_id)
+
+    def appendix_control_points_text(self) -> OdtRichContent:
+        """Příloha B – Výsledky jednotlivých kontrolních bodů (podrobně, s fotografiemi)."""
+        results = self._control_point_results()
+        items: list[ControlPointAppendixItem] = []
+        for row in sorted(
+            results,
+            key=lambda item: (
+                item.source_area_label or "",
+                item.source_section_label or "",
+                item.source_control_point_label or "",
+                item.id,
+            ),
+        ):
+            control_point = _text(row.source_control_point_label)
+            area = _text(row.source_area_label) or _text(row.source_section_label)
+            if not control_point or not area:
+                continue
+            photo_path = control_result_service.resolve_photo_path(row)
+            items.append(
+                ControlPointAppendixItem(
+                    area_label=area,
+                    control_point_label=control_point,
+                    result=row.result,
+                    note=_text(getattr(row, "note", "")),
+                    photo_path=photo_path if photo_path and photo_path.is_file() else None,
+                )
+            )
+        return build_detailed_control_points_appendix(
+            items,
+            note_label="Komentář:",
+            include_recommendation=False,
+            empty_message="Nejsou evidovány.",
+        )
 
     def _activity_statistics(self):
         return control_activity_statistics_service.compute(ENTITY_PROVERKY, self.inspection_id)
@@ -157,10 +304,8 @@ class InspectionExportContext:
             )
 
         detail_parts: list[str] = []
-        if stats.ratings_nevyhovuje == 1:
-            detail_parts.append("1 neshoda")
-        elif stats.ratings_nevyhovuje > 1:
-            detail_parts.append(f"{stats.ratings_nevyhovuje} neshody")
+        if stats.ratings_nevyhovuje:
+            detail_parts.append(_zavady_phrase(stats.ratings_nevyhovuje))
         if stats.ratings_vyhovuje_s_doporucenim == 1:
             detail_parts.append("1 příležitost ke zlepšení")
         elif stats.ratings_vyhovuje_s_doporucenim > 1:
@@ -215,7 +360,7 @@ class InspectionExportContext:
         return "\n".join(lines) if lines else "—"
 
     def attention_areas_text(self) -> str:
-        results = control_result_service.get_for_entity(ENTITY_PROVERKY, self.inspection_id)
+        results = self._control_point_results()
         lines: list[str] = []
         for row in sorted(
             results,
@@ -249,7 +394,8 @@ class InspectionExportContext:
     def inspection_scope_text(self) -> str:
         return (
             "Prověrka byla provedena v souladu s plánem kontrol BOZP.\n"
-            "Kontrolované oblasti jsou uvedeny v příloze této zprávy."
+            "Kontrolované oblasti jsou uvedeny v příloze A této zprávy.\n"
+            "Výsledky jednotlivých kontrolních bodů jsou uvedeny v příloze B."
         )
 
     def findings_lines(self) -> list[str]:
@@ -270,7 +416,6 @@ class InspectionExportContext:
                         ("Oblast", finding.source_area_label),
                         ("Sekce", finding.source_section_label),
                         ("Kontrolní bod", finding.source_control_point_label),
-                        ("Reference", finding.reference_label),
                         ("Popis", finding.description),
                         ("Doporučení", finding.recommended_action),
                         ("Termín", _fmt_date(finding.due_date)),
@@ -334,30 +479,37 @@ class InspectionExportContext:
             ]
         )
 
-    def placeholder_values(self) -> dict[str, str]:
+    def placeholder_values(self) -> dict[str, Any]:
         results_overview = self.results_overview_text()
         findings_detail = self.findings_detail_text()
         accepted_measures = self.accepted_measures_text()
         summary = self.summary_text()
+        commission = self.commission_text()
 
         return {
             "cislo_proverky": _text(self.inspection.number),
             "zamestnavatel_nazev": self.employer_name(),
-            "pracoviste": self.controlled_workplace_label(),
+            "pracoviste": self.controlled_operation_label(),
             "provoz": self.controlled_operation_label(),
             "program_proverek": self.program_label(),
             "rok": str(self.inspection.year or ""),
             "planovany_mesic": self.planned_month_label(),
             "typ_proverky": _text(self.inspection.inspection_type),
-            "datum_proverky": _fmt_date(self.inspection.inspection_date),
-            "datum_zahajeni": _fmt_date(self.inspection.started_at),
-            "datum_ukonceni": _fmt_date(self.inspection.finished_at),
+            "datum_proverky": self.inspection_start_date_text(),
+            "datum_zahajeni": self.inspection_start_date_text(),
+            "datum_ukonceni": self.inspection_end_date_text(),
+            "datum_zahajeni_proverky": self.inspection_start_date_text(),
+            "datum_ukonceni_proverky": self.inspection_end_date_text(),
             "stav": self.status_label(),
-            "komise_text": self._legacy_commission_text(),
+            "komise_text": commission,
             "kontrolovany_provoz": self.controlled_operation_label(),
-            "kontrolovane_pracoviste": self.controlled_workplace_label(),
+            "kontrolovane_pracoviste": self.controlled_operation_label(),
             "vedouci_proverky": self.leader_name(),
             "zastupce_pracoviste": self.workplace_representative_name(),
+            "zastupce_provozu": self.workplace_representative_name(),
+            "zastupce_odboru": self.union_representative_name(),
+            "clenove_komise_text": self.members_text(),
+            "prizvane_osoby_text": self.invited_text(),
             "celkove_hodnoceni_text": self.overall_assessment_text(),
             "prehled_vysledku_text": results_overview,
             "silne_stranky_text": self.strengths_text(),
@@ -367,20 +519,14 @@ class InspectionExportContext:
             "rozsah_proverky_text": self.inspection_scope_text(),
             "detail_zjisteni_text": findings_detail,
             "prijata_opatreni_text": accepted_measures,
-            "priloha_oblasti_text": self.controlled_areas_text(),
+            "priloha_oblasti_text": self.appendix_areas_text(),
+            "priloha_kontrolni_body_text": self.appendix_control_points_text(),
             "zjisteni_text": findings_detail,
             "ukoly_text": accepted_measures,
             "statistika_text": results_overview,
             "souhrn_text": summary,
             "datum_vygenerovani": datetime.now().strftime("%d.%m.%Y"),
         }
-
-    def _legacy_commission_text(self) -> str:
-        members = bozp_inspection_commission_service.get_for_inspection(self.inspection_id)
-        if not members:
-            return "Nejsou evidováni."
-        lines = [f"• {member.display_name}" for member in members]
-        return "\n".join(lines)
 
 
 class BozpInspectionExportContextService:

@@ -2,7 +2,12 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
 
-from core.export.odt_engine import OdtParagraph, OdtRichContent
+from core.export.control_point_appendix import (
+    ControlPointAppendixItem,
+    build_areas_appendix,
+    build_detailed_control_points_appendix,
+)
+from core.export.odt_engine import OdtRichContent
 from core.shared.constants import (
     CONTROL_RESULT_NEKONTROLOVANO,
     CONTROL_RESULT_NELZE_POSOUDIT,
@@ -340,14 +345,7 @@ class AuditExportContext:
 
     def detailed_appendix_processes(self) -> OdtRichContent:
         """Příloha A podrobné zprávy – názvy procesů tučně, každý jako samostatný odstavec."""
-        lines = self.processes_lines()
-        if not lines:
-            return OdtRichContent(
-                paragraphs=[OdtParagraph.text("Nejsou evidovány.")]
-            )
-        return OdtRichContent(
-            paragraphs=[OdtParagraph.bullet_bold_name(name) for name in lines]
-        )
+        return build_areas_appendix(self.processes_lines())
 
     @staticmethod
     def _iter_knowledge_sections(sections: list) -> list[dict]:
@@ -501,9 +499,7 @@ class AuditExportContext:
             return OdtRichContent()
 
         recommendations = self._recommendation_by_control_point()
-        paragraphs: list[OdtParagraph] = []
-        current_area: str | None = None
-
+        items: list[ControlPointAppendixItem] = []
         for row in sorted(
             results,
             key=lambda item: (
@@ -519,62 +515,28 @@ class AuditExportContext:
             area = _text(row.source_section_label) or _text(row.source_area_label)
             if not area:
                 continue
-
-            if area != current_area:
-                if current_area is not None:
-                    paragraphs.append(OdtParagraph.blank_line())
-                paragraphs.append(OdtParagraph.text(area, style="AuditCriterion"))
-                current_area = area
-
-            paragraphs.extend(
-                self._format_detailed_assertion_paragraphs(
-                    row,
+            photo_path = control_result_service.resolve_photo_path(row)
+            items.append(
+                ControlPointAppendixItem(
+                    area_label=area,
+                    control_point_label=assertion,
+                    result=row.result,
+                    note=_text(getattr(row, "note", "")),
                     recommendation=recommendations.get(
                         str(row.source_control_point_id or "").strip(),
                         "",
                     ),
+                    photo_path=photo_path if photo_path and photo_path.is_file() else None,
                 )
             )
 
-        return OdtRichContent(paragraphs=paragraphs)
-
-    def _format_detailed_assertion_paragraphs(
-        self, row, *, recommendation: str
-    ) -> list[OdtParagraph]:
-        assertion = _text(row.source_control_point_label)
-        emoji = _ASSERTION_RESULT_EMOJI.get(row.result, "○")
-        word = _ASSERTION_RESULT_WORDS.get(row.result, control_result_label(row.result))
-        paragraphs: list[OdtParagraph] = [
-            OdtParagraph.text(f"{emoji} {assertion} — {word}")
-        ]
-
-        note = _text(getattr(row, "note", ""))
-        recommendation_text = recommendation
-        if (
-            not recommendation_text
-            and row.result == CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM
-            and note
-        ):
-            # Bez PKZ slouží poznámka jako text doporučení.
-            recommendation_text = note
-            note = ""
-
-        if (
-            row.result == CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM
-            and recommendation_text
-        ):
-            paragraphs.append(OdtParagraph.text("Doporučení:", bold=True))
-            paragraphs.append(OdtParagraph.text(recommendation_text))
-
-        if note and note != recommendation_text:
-            paragraphs.extend(OdtParagraph.note(note))
-
-        photo_path = control_result_service.resolve_photo_path(row)
-        if photo_path is not None and photo_path.is_file():
-            paragraphs.append(OdtParagraph.image(photo_path))
-
-        paragraphs.append(OdtParagraph.blank_line())
-        return paragraphs
+        return build_detailed_control_points_appendix(
+            items,
+            result_emoji=_ASSERTION_RESULT_EMOJI,
+            result_words=_ASSERTION_RESULT_WORDS,
+            note_label="Poznámka auditora:",
+            include_recommendation=True,
+        )
 
     def _recommendation_by_control_point(self) -> dict[str, str]:
         """Doporučení z PKZ / zjištění navázaných na auditní tvrzení."""

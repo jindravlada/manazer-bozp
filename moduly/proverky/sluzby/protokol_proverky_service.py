@@ -25,7 +25,9 @@ class ProtokolProverkyService:
 
     def template_path(self) -> Path:
         storage_service.ensure_structure()
-        return storage_service.template_file(self.TEMPLATE_SUBDIR, self.TEMPLATE_NAME)
+        return storage_service.resolve_editable_template(
+            self.TEMPLATE_SUBDIR, self.TEMPLATE_NAME
+        )
 
     def generate_for_inspection(self, inspection: BozpInspection) -> Path:
         if inspection is None or not getattr(inspection, "id", None):

@@ -80,12 +80,17 @@ class OdtParagraph:
         )
 
     @classmethod
-    def note(cls, body: str) -> list["OdtParagraph"]:
-        """Poznámka auditora jako samostatné odstavce se stylem AuditNote."""
+    def note(
+        cls,
+        body: str,
+        *,
+        label: str = "Poznámka auditora:",
+    ) -> list["OdtParagraph"]:
+        """Poznámka / komentář jako samostatné odstavce se stylem AuditNote."""
         paragraphs = [
             cls(
                 style=_AUDIT_NOTE_STYLE,
-                runs=[OdtTextRun("Poznámka auditora:", bold=True)],
+                runs=[OdtTextRun(label, bold=True)],
             )
         ]
         note_text = str(body or "").strip()

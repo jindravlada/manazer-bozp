@@ -151,6 +151,7 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
             planned_month=5,
             inspection_date=date(2026, 5, 12),
             started_at=date(2026, 5, 10),
+            finished_at=date(2026, 5, 11),
             inspection_type="Mimořádná",
             workplace_id=workplace.id,
             workplace_name=workplace.name,
@@ -161,13 +162,18 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
         content = _odt_content(path)
 
         self.assertIn(inspection.number, content)
-        self.assertIn("Test Zaměstnavatel s.r.o.", content)
         self.assertIn("Sklad B", content)
         self.assertIn("Prověrky BOZP 2026", content)
         self.assertIn("Mimořádná", content)
-        self.assertIn("12.05.2026", content)
+        self.assertIn("10.05.2026", content)
+        self.assertIn("11.05.2026", content)
         self.assertIn("Jan Novák", content)
         self.assertIn("Eva Králová", content)
+        self.assertNotIn("Kontrolované pracoviště", content)
+        self.assertIn("Kontrolovaný provoz", content)
+        self.assertIn("Datum zahájení prověrky", content)
+        self.assertIn("Datum ukončení prověrky", content)
+        self.assertNotIn("Datum prověrky", content.replace("Datum zahájení prověrky", "").replace("Datum ukončení prověrky", ""))
 
     def test_commission_in_output(self) -> None:
         leader_id = self._create_leader()
@@ -216,8 +222,12 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
 
         self.assertIn("Jan Novák", content)
         self.assertIn("Eva Králová", content)
-        self.assertNotIn("Lucie Horáková", content)
-        self.assertNotIn("Petr Svoboda", content)
+        self.assertIn("Lucie Horáková", content)
+        self.assertIn("Petr Svoboda", content)
+        self.assertIn("Vedoucí prověrky", content)
+        self.assertIn("Zástupce provozu", content)
+        self.assertIn("Zástupce odborové organizace", content)
+        self.assertIn("Členové komise", content)
 
     def test_findings_in_output(self) -> None:
         inspection = self._create_inspection_with_leader()
@@ -357,12 +367,18 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
             "datum_proverky",
             "datum_zahajeni",
             "datum_ukonceni",
+            "datum_zahajeni_proverky",
+            "datum_ukonceni_proverky",
             "stav",
             "komise_text",
             "kontrolovany_provoz",
             "kontrolovane_pracoviste",
             "vedouci_proverky",
             "zastupce_pracoviste",
+            "zastupce_provozu",
+            "zastupce_odboru",
+            "clenove_komise_text",
+            "prizvane_osoby_text",
             "celkove_hodnoceni_text",
             "prehled_vysledku_text",
             "silne_stranky_text",
@@ -373,6 +389,7 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
             "detail_zjisteni_text",
             "prijata_opatreni_text",
             "priloha_oblasti_text",
+            "priloha_kontrolni_body_text",
             "zjisteni_text",
             "ukoly_text",
             "statistika_text",
@@ -431,11 +448,13 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
             "Detail zjištění",
             "Přijatá opatření / úkoly",
             "Podpisy",
-            "Příloha – Kontrolované oblasti",
+            "Příloha A – Kontrolované oblasti",
+            "Příloha B – Výsledky jednotlivých kontrolních bodů",
         ):
             self.assertIn(heading, content)
 
         self.assertNotIn("Protokol o prověrce BOZP", content)
+        self.assertNotIn("Příloha – Kontrolované oblasti", content.replace("Příloha A – Kontrolované oblasti", ""))
 
     def test_strengths_and_attention_areas_in_output(self) -> None:
         inspection = self._create_inspection_with_leader()
@@ -483,7 +502,8 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
         self.assertIn("Doporučuje se dokončit otevřená nápravná opatření.", content)
         self.assertIn("🔴 Chybí označení únikových východů.", content)
         self.assertIn("🟡 Evidence preventivních opatření není vždy úplná.", content)
-        self.assertIn("Kontrolované oblasti jsou uvedeny v příloze této zprávy.", content)
+        self.assertIn("Kontrolované oblasti jsou uvedeny v příloze A této zprávy.", content)
+        self.assertIn("Výsledky jednotlivých kontrolních bodů jsou uvedeny v příloze B.", content)
 
 
 if __name__ == "__main__":
