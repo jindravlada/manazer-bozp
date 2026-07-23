@@ -3,6 +3,10 @@ from pathlib import Path
 
 from core.export import OdtExportEngine, open_export_file
 from core.services.storage_service import storage_service
+from moduly.proverky.constants import (
+    INSPECTION_DETAILED_REPORT_DIALOG_TITLE,
+    INSPECTION_PROTOCOL_DIALOG_TITLE,
+)
 from moduly.proverky.modely.bozp_inspection import BozpInspection
 from moduly.proverky.sluzby.bozp_inspection_export_context_service import (
     DETAILED_REPORT_DOCUMENT_CONFIG,
@@ -59,14 +63,14 @@ class ProtokolProverkyService:
 
     def open_for_inspection(self, inspection: BozpInspection) -> Path:
         path = self.generate_for_inspection(inspection)
-        open_export_file(path, title="Protokol prověrky")
+        open_export_file(path, title=INSPECTION_PROTOCOL_DIALOG_TITLE)
         return path
 
     def open_detailed_report_for_inspection(
         self, inspection: BozpInspection
     ) -> Path:
         path = self.generate_detailed_report_for_inspection(inspection)
-        open_export_file(path, title="Podrobná zpráva z prověrky BOZP")
+        open_export_file(path, title=INSPECTION_DETAILED_REPORT_DIALOG_TITLE)
         return path
 
     def incomplete_warning(

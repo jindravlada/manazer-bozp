@@ -305,7 +305,7 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
 
         path = protokol_proverky_service.open_for_inspection(inspection)
 
-        mock_open.assert_called_once_with(path, title="Protokol prověrky")
+        mock_open.assert_called_once_with(path, title="Zpráva z prověrky BOZP")
 
     @patch("moduly.proverky.ui.bozp_inspection_conclusion_widget.QMessageBox.warning")
     @patch("moduly.proverky.ui.bozp_inspection_conclusion_widget.protokol_proverky_service.open_for_inspection")
