@@ -2,6 +2,13 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
 
+from core.export.commission_display import (
+    COMMISSION_LABEL_INVITED,
+    COMMISSION_LABEL_LEADER_AUDIT,
+    COMMISSION_LABEL_MEMBERS,
+    COMMISSION_LABEL_UNION,
+    COMMISSION_LABEL_WORKPLACE,
+)
 from core.export.control_point_appendix import (
     ControlPointAppendixItem,
     build_areas_appendix,
@@ -95,11 +102,11 @@ def _join_blocks(blocks: list[str]) -> str:
 
 
 _COMMISSION_ROLE_LABELS = {
-    COMMISSION_RECORD_LEADER: "Vedoucí komise",
-    COMMISSION_RECORD_WORKPLACE: "Zástupce pracoviště",
-    COMMISSION_RECORD_UNION: "Zástupce odborové organizace",
-    COMMISSION_RECORD_MEMBER: "Člen komise",
-    COMMISSION_RECORD_INVITED: "Přizvaná osoba",
+    COMMISSION_RECORD_LEADER: COMMISSION_LABEL_LEADER_AUDIT,
+    COMMISSION_RECORD_WORKPLACE: COMMISSION_LABEL_WORKPLACE,
+    COMMISSION_RECORD_UNION: COMMISSION_LABEL_UNION,
+    COMMISSION_RECORD_MEMBER: COMMISSION_LABEL_MEMBERS,
+    COMMISSION_RECORD_INVITED: COMMISSION_LABEL_INVITED,
 }
 
 _COMMISSION_EXPORT_ORDER = {
@@ -296,7 +303,7 @@ class AuditExportContext:
             return ""
         return "\n".join(
             [
-                "Zástupce odborové organizace",
+                COMMISSION_LABEL_UNION,
                 name,
                 "........................................",
                 "podpis",
@@ -760,7 +767,7 @@ class AuditExportContext:
         blocks = [
             "\n".join(
                 [
-                    "Vedoucí auditor",
+                    COMMISSION_LABEL_LEADER_AUDIT,
                     self.leader_auditor_name(),
                     "........................................",
                     "podpis",
@@ -768,7 +775,7 @@ class AuditExportContext:
             ),
             "\n".join(
                 [
-                    "Zástupce auditovaného provozu",
+                    COMMISSION_LABEL_WORKPLACE,
                     self.workplace_representative_name(),
                     "........................................",
                     "podpis",

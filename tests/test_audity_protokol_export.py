@@ -468,7 +468,7 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         self.assertIn("Lucie Horáková", content)
         self.assertIn("Datum zahájení auditu", content)
         self.assertIn("Datum ukončení auditu", content)
-        self.assertIn("Členové auditorské komise", content)
+        self.assertIn("Členové komise", content)
         self.assertIn("Zástupce odborové organizace", content)
         self.assertIn("Dosud neukončen", content)
         self.assertNotIn("Příloha – Auditované procesy", content)
@@ -813,7 +813,7 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         self.assertIn("Adam Testovací", content)
         self.assertIn("Vladimír Jindra", content)
         self.assertIn("Boris Testovací", content)
-        commission_block = content.split("Členové auditorské komise", 1)[1].split(
+        commission_block = content.split("Členové komise", 1)[1].split(
             "CELKOVÉ HODNOCENÍ",
             1,
         )[0]
@@ -888,15 +888,15 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         basic = content.split("Základní informace", 1)[1].split("CELKOVÉ HODNOCENÍ", 1)[0]
         order_labels = [
             "Vedoucí auditor",
-            "Zástupce auditovaného provozu",
+            "Zástupce provozu",
             "Zástupce odborové organizace",
-            "Členové auditorské komise",
+            "Členové komise",
         ]
         positions = [basic.find(label) for label in order_labels]
         self.assertTrue(all(pos >= 0 for pos in positions))
         self.assertEqual(positions, sorted(positions))
 
-        members_cell = basic.split("Členové auditorské komise", 1)[1]
+        members_cell = basic.split("Členové komise", 1)[1]
         self.assertIn("Petr Svoboda", members_cell)
         self.assertNotIn("Eva Králová", members_cell.split("Petr Svoboda", 1)[0])
         self.assertNotIn("Jan Novák", members_cell)

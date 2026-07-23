@@ -185,11 +185,25 @@ class ProverkyCommissionSaveTestCase(unittest.TestCase):
         workplace_pos = content.index("Eva Králová")
 
         self.assertIn("Vedoucí prověrky", content)
-        self.assertIn("Zástupce kontrolovaného pracoviště", content)
+        self.assertIn("Zástupce provozu", content)
         self.assertLess(leader_pos, workplace_pos)
-        self.assertNotIn("Lucie Horáková", content)
-        self.assertNotIn("Petr Svoboda", content)
-        self.assertNotIn("Tomáš Malý", content)
+
+        # V základních informacích jsou i ostatní role.
+        self.assertIn("Lucie Horáková", content)
+        self.assertIn("Petr Svoboda", content)
+        self.assertIn("Tomáš Malý", content)
+
+        # V bloku Podpisy zůstávají jen vedoucí a zástupce provozu.
+        signatures = content.split("Podpisy", 1)[1]
+        self.assertIn("Vedoucí prověrky", signatures)
+        self.assertIn("Zástupce provozu", signatures)
+        self.assertIn("Jan Novák", signatures)
+        self.assertIn("Eva Králová", signatures)
+        self.assertNotIn("Lucie Horáková", signatures)
+        self.assertNotIn("Petr Svoboda", signatures)
+        self.assertNotIn("Tomáš Malý", signatures)
+        self.assertNotIn("Členové komise", signatures)
+        self.assertNotIn("Přizvané osoby", signatures)
 
 
 if __name__ == "__main__":

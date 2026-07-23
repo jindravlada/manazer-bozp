@@ -85,19 +85,19 @@ COMMISSION_RECORD_TYPES = frozenset(
 )
 
 COMMISSION_REQUIRES_LEADER_MESSAGE = "Audit musí mít právě jednoho vedoucího auditora."
-COMMISSION_REQUIRES_WORKPLACE_MESSAGE = "Audit musí mít právě jednoho zástupce auditovaného provozu."
+COMMISSION_REQUIRES_WORKPLACE_MESSAGE = "Audit musí mít právě jednoho zástupce provozu."
 COMMISSION_REQUIRES_UNION_MESSAGE = "Audit musí mít právě jednoho zástupce odborové organizace."
 COMMISSION_UNKNOWN_RECORD_TYPE_MESSAGE = "Neznámý typ záznamu auditního týmu: {record_type}"
 COMMISSION_MEMBER_NAME_REQUIRED_MESSAGE = "Každý člen auditního týmu musí mít vyplněné jméno."
 COMMISSION_THP_ROLE_REQUIRED_MESSAGE = (
-    "Vedoucí auditor, zástupce auditovaného provozu a auditoři musí být THP pracovníci."
+    "Vedoucí auditor, zástupce provozu a auditoři musí být THP pracovníci."
 )
 COMMISSION_PERSON_ROLE_REQUIRED_MESSAGE = (
     "Zástupce odborové organizace a přizvané osoby musí být ze seznamu osob."
 )
 
 COMMISSION_MISSING_LEADER_MESSAGE = "Vyberte vedoucího auditora z THP pracovníků."
-COMMISSION_MISSING_WORKPLACE_MESSAGE = "Vyberte zástupce auditovaného provozu z THP pracovníků."
+COMMISSION_MISSING_WORKPLACE_MESSAGE = "Vyberte zástupce provozu z THP pracovníků."
 COMMISSION_MISSING_UNION_MESSAGE = "Vyberte zástupce odborové organizace ze seznamu osob."
 
 COMMISSION_DEFAULT_ROLE_MEMBER = "Auditor"
@@ -106,7 +106,7 @@ COMMISSION_DUPLICATE_PERSON_MESSAGE = "Tato osoba je již v auditním týmu zař
 
 COMMISSION_LABEL_LEADER = "Vedoucí auditor"
 COMMISSION_LABEL_MEMBER = "Auditor"
-COMMISSION_LABEL_WORKPLACE = "Zástupce auditovaného provozu"
+COMMISSION_LABEL_WORKPLACE = "Zástupce provozu"
 COMMISSION_LABEL_UNION = "Zástupce odborové organizace"
 COMMISSION_LABEL_INVITED = "Přizvané osoby"
 

@@ -378,6 +378,7 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
             "zastupce_pracoviste",
             "zastupce_provozu",
             "zastupce_odboru",
+            "zastupce_odborove_organizace",
             "clenove_komise_text",
             "prizvane_osoby_text",
             "celkove_hodnoceni_text",

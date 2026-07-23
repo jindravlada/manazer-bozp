@@ -144,7 +144,12 @@ class OdtExportEngine:
     _IMAGE_STYLE_NAME = _EXPORT_IMAGE_STYLE
 
     def render(
-        self, template_path: str | Path, output_path: str | Path, values: Mapping[str, Any]
+        self,
+        template_path: str | Path,
+        output_path: str | Path,
+        values: Mapping[str, Any],
+        *,
+        omit_empty_placeholder_rows: Sequence[str] | None = None,
     ) -> Path:
         template = Path(template_path)
         output = Path(output_path)
@@ -159,9 +164,10 @@ class OdtExportEngine:
 
         image_registry: list[tuple[str, Path]] = []
         needs_export_styles = False
+        raw_values = dict(values or {})
         normalized_values: dict[str, Any] = {}
 
-        for key, value in dict(values or {}).items():
+        for key, value in raw_values.items():
             key_text = str(key)
             if isinstance(value, OdtRichContent):
                 normalized_values[key_text] = self._render_rich_content(
@@ -177,6 +183,8 @@ class OdtExportEngine:
         if image_registry:
             needs_export_styles = True
 
+        omit_keys = tuple(omit_empty_placeholder_rows or ())
+
         try:
             with zipfile.ZipFile(template, "r") as zin, zipfile.ZipFile(output, "w") as zout:
                 written_names: set[str] = set()
@@ -188,6 +196,10 @@ class OdtExportEngine:
                         if needs_export_styles or image_registry:
                             xml = self._ensure_drawing_namespaces(xml)
                             xml = self._inject_automatic_styles(xml)
+                        if omit_keys:
+                            xml = self._omit_empty_placeholder_rows(
+                                xml, raw_values, omit_keys
+                            )
                         xml = self._replace_placeholders(xml, normalized_values)
                         data = xml.encode("utf-8")
                     elif item.filename in {"styles.xml", "meta.xml"}:
@@ -212,6 +224,33 @@ class OdtExportEngine:
 
         _sync_written_file(output)
         return output.resolve()
+
+    @staticmethod
+    def _omit_empty_placeholder_rows(
+        xml: str,
+        values: Mapping[str, Any],
+        keys: Sequence[str],
+    ) -> str:
+        """Odstraní řádky tabulky, jejichž placeholder je prázdný."""
+        result = xml
+        for key in keys:
+            value = values.get(key)
+            if isinstance(value, OdtRichContent):
+                if value.paragraphs:
+                    continue
+            else:
+                if str(value or "").strip():
+                    continue
+            pattern = re.compile(
+                r"<table:table-row\b[^>]*>"
+                r"(?:(?!</table:table-row>).)*?"
+                rf"\$\{{{re.escape(str(key))}\}}"
+                r"(?:(?!</table:table-row>).)*?"
+                r"</table:table-row>",
+                re.DOTALL,
+            )
+            result = pattern.sub("", result, count=1)
+        return result
 
     def _replace_placeholders(self, xml: str, values: Mapping[str, Any]) -> str:
         rich_keys = {

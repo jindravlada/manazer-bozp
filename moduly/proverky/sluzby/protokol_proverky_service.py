@@ -2,6 +2,7 @@ from datetime import datetime
 from pathlib import Path
 
 from core.export import OdtExportEngine, open_export_file
+from core.export.commission_display import INSPECTION_OPTIONAL_COMMISSION_PLACEHOLDERS
 from core.services.storage_service import storage_service
 from moduly.proverky.constants import (
     INSPECTION_DETAILED_REPORT_DIALOG_TITLE,
@@ -113,7 +114,12 @@ class ProtokolProverkyService:
             export_subdir,
             self._output_filename(inspection, detailed=detailed),
         )
-        return self.engine.render(template, output_path, values)
+        return self.engine.render(
+            template,
+            output_path,
+            values,
+            omit_empty_placeholder_rows=INSPECTION_OPTIONAL_COMMISSION_PLACEHOLDERS,
+        )
 
     def _output_filename(
         self, inspection: BozpInspection, *, detailed: bool = False

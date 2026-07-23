@@ -2,6 +2,11 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
 
+from core.export.commission_display import (
+    COMMISSION_LABEL_LEADER_INSPECTION,
+    build_commission_sections,
+    commission_sections_text,
+)
 from core.export.control_point_appendix import (
     ControlPointAppendixItem,
     build_areas_appendix,
@@ -84,14 +89,6 @@ def _zavady_phrase(count: int) -> str:
         return f"{count} závady"
     return f"{count} závad"
 
-
-_COMMISSION_ROLE_LABELS = {
-    COMMISSION_RECORD_LEADER: "Vedoucí prověrky",
-    COMMISSION_RECORD_WORKPLACE: "Zástupce provozu",
-    COMMISSION_RECORD_UNION: "Zástupce odborové organizace",
-    COMMISSION_RECORD_MEMBER: "Členové komise",
-    COMMISSION_RECORD_INVITED: "Přizvané osoby",
-}
 
 _OVERVIEW_RESULT_TITLES = {
     CONTROL_RESULT_NEVYHOVUJE: "Závada",
@@ -213,47 +210,25 @@ class InspectionExportContext:
                 names.append(name)
         return names
 
+    def commission_sections(self):
+        """Sekce komise ve stejném pořadí a formátu jako u auditu (bez prázdných)."""
+        return build_commission_sections(
+            leader_label=COMMISSION_LABEL_LEADER_INSPECTION,
+            leader_names=self._commission_names_for_type(COMMISSION_RECORD_LEADER),
+            workplace_names=self._commission_names_for_type(
+                COMMISSION_RECORD_WORKPLACE
+            ),
+            union_names=self._commission_names_for_type(COMMISSION_RECORD_UNION),
+            member_names=self._commission_names_for_type(COMMISSION_RECORD_MEMBER),
+            invited_names=self._commission_names_for_type(COMMISSION_RECORD_INVITED),
+        )
+
     def commission_lines(self) -> list[str]:
         """Kompletní složení komise – bez prázdných sekcí."""
-        sections: list[str] = []
-
-        leader = self._commission_names_for_type(COMMISSION_RECORD_LEADER)
-        if leader:
-            sections.append(
-                f"{_COMMISSION_ROLE_LABELS[COMMISSION_RECORD_LEADER]}\n{leader[0]}"
-            )
-
-        workplace = self._commission_names_for_type(COMMISSION_RECORD_WORKPLACE)
-        if workplace:
-            sections.append(
-                f"{_COMMISSION_ROLE_LABELS[COMMISSION_RECORD_WORKPLACE]}\n{workplace[0]}"
-            )
-
-        union = self._commission_names_for_type(COMMISSION_RECORD_UNION)
-        if union:
-            sections.append(
-                f"{_COMMISSION_ROLE_LABELS[COMMISSION_RECORD_UNION]}\n{union[0]}"
-            )
-
-        members = self._commission_names_for_type(COMMISSION_RECORD_MEMBER)
-        if members:
-            body = "\n".join(f"• {name}" for name in members)
-            sections.append(
-                f"{_COMMISSION_ROLE_LABELS[COMMISSION_RECORD_MEMBER]}\n{body}"
-            )
-
-        invited = self._commission_names_for_type(COMMISSION_RECORD_INVITED)
-        if invited:
-            body = "\n".join(f"• {name}" for name in invited)
-            sections.append(
-                f"{_COMMISSION_ROLE_LABELS[COMMISSION_RECORD_INVITED]}\n{body}"
-            )
-
-        return sections
+        return [section.as_text() for section in self.commission_sections()]
 
     def commission_text(self) -> str:
-        lines = self.commission_lines()
-        return "\n\n".join(lines) if lines else "Nejsou evidováni."
+        return commission_sections_text(self.commission_sections())
 
     def members_text(self) -> str:
         names = self._commission_names_for_type(COMMISSION_RECORD_MEMBER)
@@ -591,6 +566,7 @@ class InspectionExportContext:
             "zastupce_pracoviste": self.workplace_representative_name(),
             "zastupce_provozu": self.workplace_representative_name(),
             "zastupce_odboru": self.union_representative_name(),
+            "zastupce_odborove_organizace": self.union_representative_name(),
             "clenove_komise_text": self.members_text(),
             "prizvane_osoby_text": self.invited_text(),
             "celkove_hodnoceni_text": self.overall_assessment_text(),
