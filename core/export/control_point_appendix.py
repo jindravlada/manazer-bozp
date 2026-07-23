@@ -43,6 +43,23 @@ class ControlPointAppendixItem:
     note: str = ""
     recommendation: str = ""
     photo_path: Path | None = None
+    photo_paths: tuple[Path, ...] = ()
+
+    def resolved_photo_paths(self) -> list[Path]:
+        paths: list[Path] = []
+        seen: set[str] = set()
+        candidates = list(self.photo_paths)
+        if self.photo_path is not None:
+            candidates.insert(0, self.photo_path)
+        for candidate in candidates:
+            path = Path(candidate)
+            key = str(path.resolve()) if path.exists() else str(path)
+            if key in seen:
+                continue
+            if path.is_file():
+                seen.add(key)
+                paths.append(path)
+        return paths
 
 
 def build_areas_appendix(names: Sequence[str]) -> OdtRichContent:
@@ -116,8 +133,8 @@ def build_detailed_control_points_appendix(
         if note and note != recommendation:
             paragraphs.extend(OdtParagraph.note(note, label=note_label))
 
-        if item.photo_path is not None and Path(item.photo_path).is_file():
-            paragraphs.append(OdtParagraph.image(item.photo_path))
+        for photo in item.resolved_photo_paths():
+            paragraphs.append(OdtParagraph.image(photo))
 
         paragraphs.append(OdtParagraph.blank_line())
 

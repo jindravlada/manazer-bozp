@@ -12,7 +12,13 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.nullable_date_edit import NullableDateEdit
-from moduly.proverky.constants import INSPECTION_COMPLETION_CONFIRM_MESSAGE
+from moduly.proverky.constants import (
+    INSPECTION_COMPLETION_CONFIRM_MESSAGE,
+    INSPECTION_DETAILED_REPORT_BUTTON_LABEL,
+    INSPECTION_DETAILED_REPORT_DIALOG_TITLE,
+    INSPECTION_PROTOCOL_BUTTON_LABEL,
+    INSPECTION_PROTOCOL_DIALOG_TITLE,
+)
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 from moduly.proverky.sluzby.protokol_proverky_service import protokol_proverky_service
 
@@ -75,9 +81,13 @@ class BozpInspectionConclusionWidget(QWidget):
         self.complete_btn.clicked.connect(self._complete_inspection)
         layout.addWidget(self.complete_btn)
 
-        self.protocol_btn = QPushButton("Protokol prověrky")
+        self.protocol_btn = QPushButton(INSPECTION_PROTOCOL_BUTTON_LABEL)
         self.protocol_btn.clicked.connect(self._export_protocol)
         layout.addWidget(self.protocol_btn)
+
+        self.detailed_report_btn = QPushButton(INSPECTION_DETAILED_REPORT_BUTTON_LABEL)
+        self.detailed_report_btn.clicked.connect(self._export_detailed_report)
+        layout.addWidget(self.detailed_report_btn)
 
         layout.addStretch()
 
@@ -137,23 +147,52 @@ class BozpInspectionConclusionWidget(QWidget):
         enabled = self.inspection is not None and self.inspection.id is not None
         self.info_label.setVisible(not enabled)
         self.protocol_btn.setEnabled(enabled)
+        self.detailed_report_btn.setEnabled(enabled)
 
     def _export_protocol(self) -> None:
         if self.inspection is None or self.inspection.id is None:
-            QMessageBox.information(self, "Protokol prověrky", "Prověrku je nutné nejdříve uložit.")
+            QMessageBox.information(
+                self,
+                INSPECTION_PROTOCOL_DIALOG_TITLE,
+                "Prověrku je nutné nejdříve uložit.",
+            )
             return
 
         warning = protokol_proverky_service.incomplete_warning(self.inspection)
         if warning:
-            QMessageBox.warning(self, "Protokol prověrky", warning)
+            QMessageBox.warning(self, INSPECTION_PROTOCOL_DIALOG_TITLE, warning)
 
         try:
             protokol_proverky_service.open_for_inspection(self.inspection)
         except Exception as exc:
             QMessageBox.warning(
                 self,
-                "Protokol prověrky",
+                INSPECTION_PROTOCOL_DIALOG_TITLE,
                 f"Protokol se nepodařilo vygenerovat.\n\n{exc}",
+            )
+
+    def _export_detailed_report(self) -> None:
+        if self.inspection is None or self.inspection.id is None:
+            QMessageBox.information(
+                self,
+                INSPECTION_DETAILED_REPORT_DIALOG_TITLE,
+                "Prověrku je nutné nejdříve uložit.",
+            )
+            return
+
+        warning = protokol_proverky_service.incomplete_warning(
+            self.inspection, detailed=True
+        )
+        if warning:
+            QMessageBox.warning(self, INSPECTION_DETAILED_REPORT_DIALOG_TITLE, warning)
+
+        try:
+            protokol_proverky_service.open_detailed_report_for_inspection(self.inspection)
+        except Exception as exc:
+            QMessageBox.warning(
+                self,
+                INSPECTION_DETAILED_REPORT_DIALOG_TITLE,
+                f"Podrobnou zprávu se nepodařilo vygenerovat.\n\n{exc}",
             )
 
     def _complete_inspection(self) -> None:

@@ -357,6 +357,7 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
 
         expected_keys = {
             "cislo_proverky",
+            "nazev_proverky",
             "zamestnavatel_nazev",
             "pracoviste",
             "provoz",
@@ -381,6 +382,7 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
             "prizvane_osoby_text",
             "celkove_hodnoceni_text",
             "prehled_vysledku_text",
+            "prehled_zjisteni_text",
             "silne_stranky_text",
             "oblasti_pozornosti_text",
             "doporuceni_vedouciho",

@@ -13,6 +13,10 @@ from core.shared.constants import (
     CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
     ENTITY_PROVERKY,
 )
+from core.shared.control_result_display import (
+    control_result_label,
+    protocol_evaluation_results,
+)
 from core.shared.finding_display import finding_status_label, finding_type_label
 from core.shared.sluzby.control_activity_statistics_service import (
     control_activity_statistics_service,
@@ -89,12 +93,37 @@ _COMMISSION_ROLE_LABELS = {
     COMMISSION_RECORD_INVITED: "Přizvané osoby",
 }
 
+_OVERVIEW_RESULT_TITLES = {
+    CONTROL_RESULT_NEVYHOVUJE: "Závada",
+    CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM: "Doporučení",
+}
+
+
+@dataclass(frozen=True)
+class InspectionExportDocumentConfig:
+    """Konfigurace výstupního dokumentu z prověrky (protokol vs. podrobná zpráva)."""
+
+    include_signatures: bool = True
+    detailed_report: bool = False
+
+
+PROTOCOL_DOCUMENT_CONFIG = InspectionExportDocumentConfig(
+    include_signatures=True,
+    detailed_report=False,
+)
+
+DETAILED_REPORT_DOCUMENT_CONFIG = InspectionExportDocumentConfig(
+    include_signatures=False,
+    detailed_report=True,
+)
+
 
 @dataclass(frozen=True)
 class InspectionExportContext:
-    """Sjednocený kontext exportu zprávy z prověrky BOZP."""
+    """Sjednocený kontext exportu protokolu / podrobné zprávy z prověrky BOZP."""
 
     inspection: BozpInspection
+    config: InspectionExportDocumentConfig = PROTOCOL_DOCUMENT_CONFIG
 
     @property
     def inspection_id(self) -> int:
@@ -126,6 +155,16 @@ class InspectionExportContext:
         if year:
             return f"Prověrky BOZP {year}"
         return "Prověrky BOZP"
+
+    def inspection_title_label(self) -> str:
+        title = _text(self.inspection.title)
+        if title:
+            return title
+        typ = _text(self.inspection.inspection_type)
+        workplace = self.controlled_operation_label()
+        if typ and workplace and workplace != "—":
+            return f"{typ} – {workplace}"
+        return typ or workplace or "Prověrka BOZP"
 
     def commission_member_name(self, record_type: str) -> str:
         for member in bozp_inspection_commission_service.get_for_inspection(self.inspection_id):
@@ -281,6 +320,48 @@ class InspectionExportContext:
             include_recommendation=False,
             empty_message="Nejsou evidovány.",
         )
+
+    def findings_overview_lines(self) -> list[str]:
+        """Souhrn závad a doporučení pro podrobnou zprávu."""
+        included = protocol_evaluation_results()
+        lines: list[str] = []
+        for index, row in enumerate(
+            sorted(
+                (
+                    item
+                    for item in self._control_point_results()
+                    if item.result in included
+                ),
+                key=lambda item: (
+                    0 if item.result == CONTROL_RESULT_NEVYHOVUJE else 1,
+                    item.source_area_label or "",
+                    item.source_control_point_label or "",
+                    item.id,
+                ),
+            ),
+            start=1,
+        ):
+            title = _OVERVIEW_RESULT_TITLES.get(
+                row.result,
+                control_result_label(row.result),
+            )
+            lines.append(
+                _format_labeled_block(
+                    index,
+                    title,
+                    [
+                        ("Oblast", row.source_area_label),
+                        ("Kontrolní bod", row.source_control_point_label),
+                        ("Výsledek", control_result_label(row.result)),
+                        ("Komentář", row.note),
+                    ],
+                )
+            )
+        return lines
+
+    def findings_overview_text(self) -> str:
+        lines = self.findings_overview_lines()
+        return _join_blocks(lines) if lines else "Nejsou evidovány závady ani doporučení."
 
     def _activity_statistics(self):
         return control_activity_statistics_service.compute(ENTITY_PROVERKY, self.inspection_id)
@@ -485,9 +566,11 @@ class InspectionExportContext:
         accepted_measures = self.accepted_measures_text()
         summary = self.summary_text()
         commission = self.commission_text()
+        findings_overview = self.findings_overview_text()
 
         return {
             "cislo_proverky": _text(self.inspection.number),
+            "nazev_proverky": self.inspection_title_label(),
             "zamestnavatel_nazev": self.employer_name(),
             "pracoviste": self.controlled_operation_label(),
             "provoz": self.controlled_operation_label(),
@@ -512,6 +595,7 @@ class InspectionExportContext:
             "prizvane_osoby_text": self.invited_text(),
             "celkove_hodnoceni_text": self.overall_assessment_text(),
             "prehled_vysledku_text": results_overview,
+            "prehled_zjisteni_text": findings_overview,
             "silne_stranky_text": self.strengths_text(),
             "oblasti_pozornosti_text": self.attention_areas_text(),
             "doporuceni_vedouciho": self.leader_recommendation_text(),
@@ -530,10 +614,17 @@ class InspectionExportContext:
 
 
 class BozpInspectionExportContextService:
-    def build(self, inspection: BozpInspection) -> InspectionExportContext:
+    def build(
+        self,
+        inspection: BozpInspection,
+        config: InspectionExportDocumentConfig | None = None,
+    ) -> InspectionExportContext:
         if inspection is None or not getattr(inspection, "id", None):
             raise ValueError("Není vybraná uložená prověrka.")
-        return InspectionExportContext(inspection=inspection)
+        return InspectionExportContext(
+            inspection=inspection,
+            config=config or PROTOCOL_DOCUMENT_CONFIG,
+        )
 
     def is_completed(self, inspection: BozpInspection) -> bool:
         return InspectionExportContext(inspection=inspection).is_completed()

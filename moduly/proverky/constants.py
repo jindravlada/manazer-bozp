@@ -122,6 +122,11 @@ FINDING_DUPLICATE_MESSAGE = "Pro tento kontrolní bod už existuje zjištění. 
 INSPECTION_MUST_BE_SAVED_MESSAGE = "Prověrku je nutné nejdříve uložit."
 FINDING_REQUIRES_NONCOMPLIANCE_MESSAGE = "Zjištění lze založit pouze u kontrolního bodu s výsledkem „Nevyhovuje“."
 
+INSPECTION_PROTOCOL_BUTTON_LABEL = "Protokol prověrky"
+INSPECTION_PROTOCOL_DIALOG_TITLE = "Protokol prověrky"
+INSPECTION_DETAILED_REPORT_BUTTON_LABEL = "Podrobná zpráva z prověrky BOZP"
+INSPECTION_DETAILED_REPORT_DIALOG_TITLE = "Podrobná zpráva z prověrky BOZP"
+
 CONTROL_POINT_HISTORY_EMPTY = "Zatím bez historie."
 CONTROL_POINT_HISTORY_SELECT = "Vyberte kontrolní bod vlevo."
 CONTROL_POINT_HISTORY_LIMIT = 5
