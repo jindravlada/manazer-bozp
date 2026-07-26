@@ -33,9 +33,6 @@ from moduly.proverky.constants import (
     INSPECTION_STATUS_FILTER_VSE,
     KNOWLEDGE_EDITOR_BUTTON_LABEL,
     MODULE_NAME,
-    TERRAIN_CHECKLIST_BUTTON_LABEL,
-    TERRAIN_CHECKLIST_DIALOG_TITLE,
-    TERRAIN_CHECKLIST_TOOLTIP,
     YEAR_FILTER_VSE,
 )
 from moduly.proverky.ui.proverky_knowledge_editor_dialog import ProverkyKnowledgeEditorDialog
@@ -44,7 +41,6 @@ from moduly.proverky.sluzby.bozp_inspection_commission_service import (
 )
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 from moduly.proverky.sluzby.protokol_proverky_service import protokol_proverky_service
-from moduly.proverky.sluzby.terrain_checklist_service import terrain_checklist_service
 from moduly.proverky.ui.bozp_inspection_dialog import BozpInspectionDialog
 from moduly.proverky.ui.bozp_inspection_table import BozpInspectionTable
 from moduly.proverky.ui.generate_inspections_dialog import GenerateInspectionsDialog
@@ -85,9 +81,6 @@ class ProverkyPage(QWidget):
         self.detailed_report_btn = QPushButton(INSPECTION_DETAILED_REPORT_BUTTON_LABEL)
         self.detailed_report_btn.setEnabled(False)
         self.detailed_report_btn.setToolTip(INSPECTION_DETAILED_REPORT_TOOLTIP)
-        self.terrain_checklist_btn = QPushButton(TERRAIN_CHECKLIST_BUTTON_LABEL)
-        self.terrain_checklist_btn.setEnabled(False)
-        self.terrain_checklist_btn.setToolTip(TERRAIN_CHECKLIST_TOOLTIP)
         self.report_btn = QPushButton("Roční zpráva")
         self.report_btn.setToolTip("Roční zpráva o stavu BOZP za vybraný kalendářní rok.")
         self.knowledge_editor_btn = QPushButton(KNOWLEDGE_EDITOR_BUTTON_LABEL)
@@ -111,7 +104,6 @@ class ProverkyPage(QWidget):
         toolbar.addWidget(self.generate_btn)
         toolbar.addWidget(self.protocol_btn)
         toolbar.addWidget(self.detailed_report_btn)
-        toolbar.addWidget(self.terrain_checklist_btn)
         toolbar.addWidget(self.report_btn)
         toolbar.addWidget(self.knowledge_editor_btn)
         toolbar.addStretch()
@@ -136,7 +128,6 @@ class ProverkyPage(QWidget):
         self.generate_btn.clicked.connect(self.generate_inspections)
         self.protocol_btn.clicked.connect(self.export_selected_protocol)
         self.detailed_report_btn.clicked.connect(self.export_selected_detailed_report)
-        self.terrain_checklist_btn.clicked.connect(self.export_selected_terrain_checklist)
         self.report_btn.clicked.connect(self.show_annual_report)
         self.knowledge_editor_btn.clicked.connect(self.open_knowledge_editor)
         self.table.doubleClicked.connect(self.open_selected_inspection)
@@ -211,7 +202,6 @@ class ProverkyPage(QWidget):
         )
         self.protocol_btn.setEnabled(completed)
         self.detailed_report_btn.setEnabled(completed)
-        self.terrain_checklist_btn.setEnabled(inspection is not None)
 
     def _show_table_context_menu(self, position) -> None:
         index = self.table.indexAt(position)
@@ -224,21 +214,16 @@ class ProverkyPage(QWidget):
         menu.addAction("Smazat", self.delete_selected_inspection)
 
         inspection = self._selected_inspection()
-        if inspection is not None:
+        if inspection is not None and inspection.status == INSPECTION_STATUS_DOKONCENO:
             menu.addSeparator()
             menu.addAction(
-                TERRAIN_CHECKLIST_BUTTON_LABEL,
-                self.export_selected_terrain_checklist,
+                INSPECTION_PROTOCOL_BUTTON_LABEL,
+                self.export_selected_protocol,
             )
-            if inspection.status == INSPECTION_STATUS_DOKONCENO:
-                menu.addAction(
-                    INSPECTION_PROTOCOL_BUTTON_LABEL,
-                    self.export_selected_protocol,
-                )
-                menu.addAction(
-                    INSPECTION_DETAILED_REPORT_BUTTON_LABEL,
-                    self.export_selected_detailed_report,
-                )
+            menu.addAction(
+                INSPECTION_DETAILED_REPORT_BUTTON_LABEL,
+                self.export_selected_detailed_report,
+            )
 
         menu.exec(self.table.viewport().mapToGlobal(position))
 
@@ -343,25 +328,6 @@ class ProverkyPage(QWidget):
                 self,
                 INSPECTION_DETAILED_REPORT_DIALOG_TITLE,
                 f"Podrobnou zprávu se nepodařilo vygenerovat.\n\n{exc}",
-            )
-
-    def export_selected_terrain_checklist(self) -> None:
-        inspection = self._selected_inspection()
-        if inspection is None:
-            QMessageBox.information(
-                self,
-                TERRAIN_CHECKLIST_DIALOG_TITLE,
-                "Vyberte prověrku.",
-            )
-            return
-
-        try:
-            terrain_checklist_service.open_for_inspection(inspection)
-        except Exception as exc:
-            QMessageBox.warning(
-                self,
-                TERRAIN_CHECKLIST_DIALOG_TITLE,
-                f"Terénní checklist se nepodařilo vygenerovat.\n\n{exc}",
             )
 
     def delete_selected_inspection(self) -> None:

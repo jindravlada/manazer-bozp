@@ -205,7 +205,7 @@ MOVE_VERIFICATION_TYPE_TOOLTIP = (
     "Změní typ ověření jen pro tuto prověrku. Metodika zůstane beze změny."
 )
 
-TERRAIN_CHECKLIST_BUTTON_LABEL = "Terénní checklist"
+TERRAIN_CHECKLIST_BUTTON_LABEL = "Vytisknout terénní checklist"
 TERRAIN_CHECKLIST_DIALOG_TITLE = "Terénní checklist"
 TERRAIN_CHECKLIST_TOOLTIP = (
     "Pracovní checklist kontrolních bodů pro ověření v provozu."
@@ -216,6 +216,7 @@ TERRAIN_TAB_HINT = (
     "Kontrolní body určené k ověření v provozu. "
     "Po pochůzce doplňte hodnocení, poznámku a případně fotografie."
 )
+TERRAIN_CHECKLIST_REQUIRES_SAVED = "Prověrku je nutné nejdříve uložit."
 
 
 @dataclass(frozen=True)

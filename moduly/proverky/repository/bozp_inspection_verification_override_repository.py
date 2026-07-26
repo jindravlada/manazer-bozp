@@ -99,3 +99,16 @@ class BozpInspectionVerificationOverrideRepository:
             session.delete(row)
             session.commit()
             return True
+
+    def delete_for_inspection(self, inspection_id: int) -> int:
+        with SessionLocal() as session:
+            rows = session.scalars(
+                select(BozpInspectionVerificationOverride).where(
+                    BozpInspectionVerificationOverride.inspection_id == inspection_id
+                )
+            ).all()
+            count = len(rows)
+            for row in rows:
+                session.delete(row)
+            session.commit()
+            return count

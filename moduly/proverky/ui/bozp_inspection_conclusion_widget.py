@@ -18,12 +18,9 @@ from moduly.proverky.constants import (
     INSPECTION_DETAILED_REPORT_DIALOG_TITLE,
     INSPECTION_PROTOCOL_BUTTON_LABEL,
     INSPECTION_PROTOCOL_DIALOG_TITLE,
-    TERRAIN_CHECKLIST_BUTTON_LABEL,
-    TERRAIN_CHECKLIST_DIALOG_TITLE,
 )
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 from moduly.proverky.sluzby.protokol_proverky_service import protokol_proverky_service
-from moduly.proverky.sluzby.terrain_checklist_service import terrain_checklist_service
 
 
 class BozpInspectionConclusionWidget(QWidget):
@@ -92,10 +89,6 @@ class BozpInspectionConclusionWidget(QWidget):
         self.detailed_report_btn.clicked.connect(self._export_detailed_report)
         layout.addWidget(self.detailed_report_btn)
 
-        self.terrain_checklist_btn = QPushButton(TERRAIN_CHECKLIST_BUTTON_LABEL)
-        self.terrain_checklist_btn.clicked.connect(self._export_terrain_checklist)
-        layout.addWidget(self.terrain_checklist_btn)
-
         layout.addStretch()
 
         self._update_state()
@@ -155,7 +148,6 @@ class BozpInspectionConclusionWidget(QWidget):
         self.info_label.setVisible(not enabled)
         self.protocol_btn.setEnabled(enabled)
         self.detailed_report_btn.setEnabled(enabled)
-        self.terrain_checklist_btn.setEnabled(enabled)
 
     def _export_protocol(self) -> None:
         if self.inspection is None or self.inspection.id is None:
@@ -201,24 +193,6 @@ class BozpInspectionConclusionWidget(QWidget):
                 self,
                 INSPECTION_DETAILED_REPORT_DIALOG_TITLE,
                 f"Podrobnou zprávu se nepodařilo vygenerovat.\n\n{exc}",
-            )
-
-    def _export_terrain_checklist(self) -> None:
-        if self.inspection is None or self.inspection.id is None:
-            QMessageBox.information(
-                self,
-                TERRAIN_CHECKLIST_DIALOG_TITLE,
-                "Prověrku je nutné nejdříve uložit.",
-            )
-            return
-
-        try:
-            terrain_checklist_service.open_for_inspection(self.inspection)
-        except Exception as exc:
-            QMessageBox.warning(
-                self,
-                TERRAIN_CHECKLIST_DIALOG_TITLE,
-                f"Terénní checklist se nepodařilo vygenerovat.\n\n{exc}",
             )
 
     def _complete_inspection(self) -> None:

@@ -32,6 +32,10 @@ from moduly.proverky.constants import (
     INSPECTION_MUST_BE_SAVED_MESSAGE,
     MOVE_TO_DOCUMENTATION_LABEL,
     MOVE_VERIFICATION_TYPE_TOOLTIP,
+    TERRAIN_CHECKLIST_BUTTON_LABEL,
+    TERRAIN_CHECKLIST_DIALOG_TITLE,
+    TERRAIN_CHECKLIST_REQUIRES_SAVED,
+    TERRAIN_CHECKLIST_TOOLTIP,
     TERRAIN_TAB_EMPTY,
     TERRAIN_TAB_HINT,
     VERIFICATION_TYPE_DOCUMENTATION,
@@ -44,6 +48,7 @@ from moduly.proverky.sluzby.inspection_verification_service import (
     inspection_verification_service,
 )
 from moduly.proverky.sluzby.proverky_knowledge_service import proverky_knowledge_service
+from moduly.proverky.sluzby.terrain_checklist_service import terrain_checklist_service
 
 _SEVERITY_LABELS = dict(CONTROL_POINT_SEVERITY_OPTIONS)
 
@@ -75,10 +80,18 @@ class BozpInspectionTerrainWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
 
+        header = QHBoxLayout()
+        header.setContentsMargins(0, 0, 0, 0)
+        header.setSpacing(8)
         hint = QLabel(TERRAIN_TAB_HINT)
         hint.setObjectName("InfoText")
         hint.setWordWrap(True)
-        layout.addWidget(hint)
+        header.addWidget(hint, 1)
+        self.checklist_btn = QPushButton(TERRAIN_CHECKLIST_BUTTON_LABEL)
+        self.checklist_btn.setToolTip(TERRAIN_CHECKLIST_TOOLTIP)
+        self.checklist_btn.clicked.connect(self._export_terrain_checklist)
+        header.addWidget(self.checklist_btn, 0, Qt.AlignmentFlag.AlignTop)
+        layout.addLayout(header)
 
         self._scroll = QScrollArea()
         self._scroll.setWidgetResizable(True)
@@ -96,10 +109,36 @@ class BozpInspectionTerrainWidget(QWidget):
 
     def set_inspection_id(self, inspection_id: int | None) -> None:
         self._inspection_id = inspection_id
+        self.checklist_btn.setEnabled(inspection_id is not None)
         self.refresh()
 
     def set_on_finding_saved(self, callback) -> None:
         self._on_finding_saved = callback
+
+    def _export_terrain_checklist(self) -> None:
+        if self._inspection_id is None:
+            QMessageBox.information(
+                self,
+                TERRAIN_CHECKLIST_DIALOG_TITLE,
+                TERRAIN_CHECKLIST_REQUIRES_SAVED,
+            )
+            return
+        inspection = bozp_inspection_service.get_by_id(self._inspection_id)
+        if inspection is None:
+            QMessageBox.warning(
+                self,
+                TERRAIN_CHECKLIST_DIALOG_TITLE,
+                "Prověrka nebyla nalezena.",
+            )
+            return
+        try:
+            terrain_checklist_service.open_for_inspection(inspection)
+        except Exception as exc:
+            QMessageBox.warning(
+                self,
+                TERRAIN_CHECKLIST_DIALOG_TITLE,
+                f"Terénní checklist se nepodařilo vygenerovat.\n\n{exc}",
+            )
 
     def refresh(self) -> None:
         while self._content_layout.count():

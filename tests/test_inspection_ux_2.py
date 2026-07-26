@@ -63,7 +63,7 @@ class InspectionUx2TestCase(unittest.TestCase):
         )
         self.assertFalse(page.protocol_btn.isEnabled())
         self.assertFalse(page.detailed_report_btn.isEnabled())
-        self.assertFalse(page.terrain_checklist_btn.isEnabled())
+        self.assertFalse(hasattr(page, "terrain_checklist_btn"))
 
     def test_export_actions_disabled_for_in_progress_inspection(self) -> None:
         planned = bozp_inspection_service.create_inspection()
@@ -79,12 +79,10 @@ class InspectionUx2TestCase(unittest.TestCase):
         page.table.selectRow(by_id[planned.id])
         self.assertFalse(page.protocol_btn.isEnabled())
         self.assertFalse(page.detailed_report_btn.isEnabled())
-        self.assertTrue(page.terrain_checklist_btn.isEnabled())
 
         page.table.selectRow(by_id[in_progress.id])
         self.assertFalse(page.protocol_btn.isEnabled())
         self.assertFalse(page.detailed_report_btn.isEnabled())
-        self.assertTrue(page.terrain_checklist_btn.isEnabled())
 
     def test_export_actions_enabled_for_completed_inspection(self) -> None:
         completed = bozp_inspection_service.create_inspection(

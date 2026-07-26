@@ -113,6 +113,11 @@ class BozpInspectionService:
         finding_service.delete_for_entity(ENTITY_PROVERKY, inspection_id)
         control_result_service.delete_for_entity(ENTITY_PROVERKY, inspection_id)
         bozp_inspection_commission_service.delete_for_inspection(inspection_id)
+        from moduly.proverky.sluzby.inspection_verification_service import (
+            inspection_verification_service,
+        )
+
+        inspection_verification_service.repository.delete_for_inspection(inspection_id)
         return self.repository.delete(inspection_id)
 
     def resolve_workplace_name(self, workplace_id: int | None) -> str:
