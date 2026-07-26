@@ -1,5 +1,5 @@
 {
-  "verze": 2,
+  "verze": 3,
   "id": "stroje",
   "nazev": "Stroje a technická zařízení",
   "popis": "Bezpečnost strojů — kryty, ovládání, technický stav, údržba, obsluha a evidence.",
@@ -64,7 +64,8 @@
           "popis": "Pevné kryty jsou upevněné a nejsou poškozené.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pohyblive_kryty",
@@ -72,7 +73,8 @@
           "popis": "Pohyblivé kryty správně fungují a nejsou poškozené.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "blokovani",
@@ -80,7 +82,8 @@
           "popis": "Otevření krytu zastaví nebo zablokuje nebezpečné pohyby.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "ochrana_kontaktu",
@@ -88,7 +91,8 @@
           "popis": "Pohyblivé a ostré části nejsou přístupné za provozu.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "demontovane_kryty",
@@ -96,7 +100,8 @@
           "popis": "Ochranné kryty nejsou trvale demontované ani nahrazené nevhodnými úpravami.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -104,7 +109,8 @@
           "popis": "Blokování není zajištěno drátem, páskou nebo jiným obcházením.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -278,7 +284,8 @@
           "popis": "Hlavní vypínač je snadno dostupný a spolehlivě odstaví stroj.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "start_stop",
@@ -286,7 +293,8 @@
           "popis": "Tlačítka fungují, jsou označená a na vhodném místě.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "nouzove_zastaveni",
@@ -294,7 +302,8 @@
           "popis": "Nouzové zastavení spolehlivě zastaví nebezpečné pohyby stroje.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "oznaceni",
@@ -302,7 +311,8 @@
           "popis": "Ovládací prvky a nouzové zastavení jsou viditelně označeny.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pristupnost",
@@ -310,7 +320,8 @@
           "popis": "Ovládání je dosažitelné z pracovní polohy bez nebezpečných pohybů.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -318,7 +329,8 @@
           "popis": "Oslovená obsluha ukáže nebo popíše nouzové zastavení.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -492,7 +504,8 @@
           "popis": "Rám, kryty a pohyblivé části nemají poškození ohrožující bezpečnost.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "netesnosti",
@@ -500,7 +513,8 @@
           "popis": "Stroj neteče kapalinou nebo plynem ohrožujícím bezpečnost.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "vibrace",
@@ -508,7 +522,8 @@
           "popis": "Stroj nevibruje nadměrně naznačující závadu.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "hlucnost",
@@ -516,7 +531,8 @@
           "popis": "Stroj nevydává neobvyklé zvuky signalizující poruchu.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "chybejici_casti",
@@ -524,7 +540,8 @@
           "popis": "Stroj nemá chybějící nebo uvolněné součásti ovlivňující bezpečnost.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -532,7 +549,8 @@
           "popis": "Při prohlídce nejsou viditelné závady bránící bezpečnému provozu.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -706,7 +724,8 @@
           "popis": "Pro stroje je plán údržby a probíhá v intervalech.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "provadeni_oprav",
@@ -714,7 +733,8 @@
           "popis": "Opravy provádějí kvalifikované osoby podle požadavků.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "odstranovani_zavad",
@@ -722,7 +742,8 @@
           "popis": "Zjištěné závady nejsou dlouhodobě ignorovány.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "odstaveni_stroju",
@@ -730,7 +751,8 @@
           "popis": "Stroj se závadou ohrožující bezpečnost je včas odstaven.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "dokumentace_oprav",
@@ -738,7 +760,8 @@
           "popis": "Provedené opravy a údržba jsou zaznamenány.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -746,7 +769,8 @@
           "popis": "Závady z evidence odpovídají stavu na stroji a jsou řešeny.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -920,7 +944,8 @@
           "popis": "Stroj má čitelný výrobní štítek s identifikačními údaji.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "piktogramy",
@@ -928,7 +953,8 @@
           "popis": "Výstražné piktogramy na stroji jsou čitelné a na místě.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "navody",
@@ -936,7 +962,8 @@
           "popis": "Návod k obsluze je dostupný u stroje nebo v dokumentaci.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "oznaceni_ovladani",
@@ -944,7 +971,8 @@
           "popis": "Ovládací prvky mají čitelné popisky nebo symboly.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "dostupnost_informaci",
@@ -952,7 +980,8 @@
           "popis": "Obsluha ví, kde najde návod a bezpečnostní informace.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -960,7 +989,8 @@
           "popis": "Oslovená obsluha ukáže nebo popíše, kde je návod ke stroji.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1134,7 +1164,8 @@
           "popis": "U stroje je dost místa pro bezpečný výkon práce.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "poradek",
@@ -1142,7 +1173,8 @@
           "popis": "Okolí stroje není zahlceno materiálem nebo odpadem.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "osvetleni",
@@ -1150,7 +1182,8 @@
           "popis": "Pracoviště u stroje je dostatečně osvětlené.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pristup",
@@ -1158,7 +1191,8 @@
           "popis": "Přístup k ovládání není ztížen překážkami.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "manipulace_material",
@@ -1166,7 +1200,8 @@
           "popis": "Manipulace u stroje nevyžaduje nebezpečné pohyby do rizikové zóny.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1174,7 +1209,8 @@
           "popis": "Obsluha nemusí sahat nebo couvat do nebezpečné zóny stroje.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1348,7 +1384,8 @@
           "popis": "Obsluha má oprávnění nebo pověření k provozu stroje.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "skoleni",
@@ -1356,7 +1393,8 @@
           "popis": "Obsluha absolvovala školení nebo instruktáž ke stroji.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "oopp",
@@ -1364,7 +1402,8 @@
           "popis": "Obsluha používá předepsané OOPP při práci se strojem.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pracovni_postupy",
@@ -1372,7 +1411,8 @@
           "popis": "Obsluha pracuje podle stanovených bezpečných postupů.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "odstaveni_stroje",
@@ -1380,7 +1420,8 @@
           "popis": "Obsluha popíše postup bezpečného odstavení stroje.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1388,7 +1429,8 @@
           "popis": "Oslovená obsluha ukáže hlavní vypínač nebo postup odstavení.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1562,7 +1604,8 @@
           "popis": "Pro stroj je vedena aktuální provozní dokumentace.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pravidelne_kontroly",
@@ -1570,7 +1613,8 @@
           "popis": "Plánované kontroly probíhají a jsou zaznamenány.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "revize",
@@ -1578,7 +1622,8 @@
           "popis": "Požadované revize proběhly v předepsané lhůtě.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "zaznamy_oprav",
@@ -1586,7 +1631,8 @@
           "popis": "Opravy a údržba jsou zaznamenány v dokumentaci.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "porovnani_stavu",
@@ -1594,7 +1640,8 @@
           "popis": "Záznamy odpovídají skutečným úpravám a stavu stroje.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1602,7 +1649,8 @@
           "popis": "Stroj s propadlou povinnou revizí není v provozu.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [

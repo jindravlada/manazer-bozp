@@ -1,5 +1,5 @@
 {
-  "verze": 2,
+  "verze": 3,
   "id": "oopp",
   "nazev": "Osobní ochranné pracovní prostředky (OOPP)",
   "popis": "Přidělení, používání, údržba, evidence a školení v oblasti OOPP.",
@@ -64,7 +64,8 @@
           "popis": "Rizika pracovních míst jsou vyhodnocena a zohledněna při určení OOPP.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "seznam_oopp",
@@ -72,7 +73,8 @@
           "popis": "Existuje přehled OOPP podle profesí, pracovišť nebo činností.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prideleni_profese",
@@ -80,7 +82,8 @@
           "popis": "Zaměstnanec má OOPP odpovídající svým pracovním úkolům.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prevzeti_dokumentovano",
@@ -88,7 +91,8 @@
           "popis": "Převzetí OOPP je zaznamenáno podpisem nebo v evidenci.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "dostupnost",
@@ -96,7 +100,8 @@
           "popis": "Požadované OOPP jsou zaměstnancům včas k dispozici.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "znalost_zamestnance",
@@ -104,7 +109,8 @@
           "popis": "Oslovený zaměstnanec uvede OOPP pro svou práci.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         }
       ],
       "typicke_zavady": [
@@ -278,7 +284,8 @@
           "popis": "Zaměstnanec používá OOPP podle návodu a určení.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "spravne_nasazeni",
@@ -286,7 +293,8 @@
           "popis": "OOPP jsou utaženy, seřízeny a sedí na těle.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "po_celou_dobu",
@@ -294,7 +302,8 @@
           "popis": "OOPP nejsou během rizikové činnosti odloženy.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "kombinace",
@@ -302,7 +311,8 @@
           "popis": "Používaná kombinace odpovídá požadavkům dané činnosti.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "vhodny_typ",
@@ -310,7 +320,8 @@
           "popis": "OOPP odpovídá identifikovanému riziku na pracovišti.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "znalost_zamestnance",
@@ -318,7 +329,8 @@
           "popis": "Oslovený zaměstnanec vysvětlí, proč OOPP používá.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         }
       ],
       "typicke_zavady": [
@@ -492,7 +504,8 @@
           "popis": "OOPP nemají trhliny, díry ani jiné poškození snižující ochranu.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pripustne_opotrebeni",
@@ -500,7 +513,8 @@
           "popis": "OOPP nejsou opotřebené nad míru umožňující bezpečné použití.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "cistota",
@@ -508,7 +522,8 @@
           "popis": "OOPP nejsou znečištěné natolik, že brání použití.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "skladovani",
@@ -516,7 +531,8 @@
           "popis": "OOPP jsou uloženy v suchu a mimo přímé slunce.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "vymena",
@@ -524,7 +540,8 @@
           "popis": "Poškozené nebo prošlé OOPP jsou vyměněny bez odkladu.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "znalost_vymeny",
@@ -532,7 +549,8 @@
           "popis": "Oslovený zaměstnanec uvede, kdy OOPP vyměnit.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         }
       ],
       "typicke_zavady": [
@@ -706,7 +724,8 @@
           "popis": "Pokud se používají, postroje nejsou poškozené a revize jsou platné.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "respiratory",
@@ -714,7 +733,8 @@
           "popis": "Pokud se používají, filtry jsou platné a maska těsní.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "dychaci_pristroje",
@@ -722,7 +742,8 @@
           "popis": "Pokud se používají, plnění a kontroly jsou platné.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "chemicke_oopp",
@@ -730,7 +751,8 @@
           "popis": "Pokud se používají, odpovídají druhu nebezpečné látky.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "svarecske_oopp",
@@ -738,7 +760,8 @@
           "popis": "Pokud se používají, štít, rukavice a oděv chrání před riziky sváření.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "protiporezove",
@@ -746,7 +769,8 @@
           "popis": "Pokud se používají, nejsou prořezané a odpovídají riziku.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "revize_kontroly",
@@ -754,7 +778,8 @@
           "popis": "Předepsané kontroly a revize proběhly v lhůtě.",
           "poradi": 70,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "proskoleni_uzivatele",
@@ -762,7 +787,8 @@
           "popis": "Zaměstnanci používající speciální OOPP mají platné školení.",
           "poradi": 80,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         }
       ],
       "typicke_zavady": [
@@ -936,7 +962,8 @@
           "popis": "Seznam odpovídá současným pracovištím a činnostem.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "smernice",
@@ -944,7 +971,8 @@
           "popis": "Interní předpisy k OOPP jsou platné a dostupné.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "evidence_vydeje",
@@ -952,7 +980,8 @@
           "popis": "Každý výdej OOPP je zaznamenán v evidenci.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "podpisy",
@@ -960,7 +989,8 @@
           "popis": "Převzetí OOPP je potvrzeno podpisem nebo jiným záznamem.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "evidence_vymen",
@@ -968,7 +998,8 @@
           "popis": "Výměny a vyřazení OOPP jsou zaznamenány.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "znalost_vedouciho",
@@ -976,7 +1007,8 @@
           "popis": "Oslovený vedoucí ukáže nebo popíše, kde je evidence OOPP.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         }
       ],
       "typicke_zavady": [
@@ -1150,7 +1182,8 @@
           "popis": "Zaměstnanec absolvoval školení k používání svých OOPP.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "evidence_skoleni",
@@ -1158,7 +1191,8 @@
           "popis": "Lze doložit termín, účastníka a obsah školení.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "znalost_pouziti",
@@ -1166,7 +1200,8 @@
           "popis": "Oslovený zaměstnanec umí správně nasadit své OOPP.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "znalost_udrzby",
@@ -1174,7 +1209,8 @@
           "popis": "Zaměstnanec zná, jak OOPP čistit a kdy vyměnit.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "znalost_omezeni",
@@ -1182,7 +1218,8 @@
           "popis": "Zaměstnanec zná limity ochrany svých OOPP.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_znalost",
@@ -1190,7 +1227,8 @@
           "popis": "Oslovený zaměstnanec popíše správné použití svých OOPP.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         }
       ],
       "typicke_zavady": [

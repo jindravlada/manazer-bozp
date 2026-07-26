@@ -29,6 +29,8 @@ _CATALOG_DIR = "proverky"
 _OBLASTI_FILE = f"{_CATALOG_DIR}/oblasti.json"
 _ZAVAZNOST_SEED_SYNC_KEY = "zavaznost_seed_sync"
 _ZAVAZNOST_SEED_SYNC_VERSION = 1
+_VERIFICATION_TYPE_SEED_SYNC_KEY = "verification_type_seed_sync"
+_VERIFICATION_TYPE_SEED_SYNC_VERSION = 1
 
 KNOWLEDGE_NODE_AREA = "area"
 KNOWLEDGE_NODE_SECTION = "section"
@@ -437,6 +439,10 @@ class ProverkyKnowledgeService:
         user_sections = self._sections_by_id(user.get("sekce"))
         seed_sections = self._sections_by_id(seed.get("sekce"))
         full_severity_sync = int(user.get(_ZAVAZNOST_SEED_SYNC_KEY) or 0) < _ZAVAZNOST_SEED_SYNC_VERSION
+        full_verification_sync = (
+            int(user.get(_VERIFICATION_TYPE_SEED_SYNC_KEY) or 0)
+            < _VERIFICATION_TYPE_SEED_SYNC_VERSION
+        )
 
         for section_id, seed_section in seed_sections.items():
             user_section = user_sections.get(section_id)
@@ -461,6 +467,13 @@ class ProverkyKnowledgeService:
             ):
                 changed = True
 
+            if self._merge_control_point_verification_type_from_seed(
+                user_section,
+                seed_section,
+                full_sync=full_verification_sync,
+            ):
+                changed = True
+
             if self._text_field_is_empty(user_section.get("popis")):
                 seed_popis = str(seed_section.get("popis") or "").strip()
                 if seed_popis:
@@ -469,6 +482,10 @@ class ProverkyKnowledgeService:
 
         if full_severity_sync:
             user[_ZAVAZNOST_SEED_SYNC_KEY] = _ZAVAZNOST_SEED_SYNC_VERSION
+            changed = True
+
+        if full_verification_sync:
+            user[_VERIFICATION_TYPE_SEED_SYNC_KEY] = _VERIFICATION_TYPE_SEED_SYNC_VERSION
             changed = True
 
         seed_verze = int(seed.get("verze") or 0)
@@ -514,6 +531,46 @@ class ProverkyKnowledgeService:
             new_severity = seed_by_id[item_id]
             if user_item.get("zavaznost") != new_severity:
                 user_item["zavaznost"] = new_severity
+                changed = True
+
+        return changed
+
+    def _merge_control_point_verification_type_from_seed(
+        self,
+        user_section: dict,
+        seed_section: dict,
+        *,
+        full_sync: bool,
+    ) -> bool:
+        user_items = user_section.get("kontrolni_body") or []
+        seed_items = seed_section.get("kontrolni_body") or []
+        if not user_items or not seed_items:
+            return False
+
+        seed_by_id: dict[str, str] = {}
+        for seed_item in seed_items:
+            if not isinstance(seed_item, dict):
+                continue
+            item_id = str(seed_item.get("id") or "").strip()
+            if item_id:
+                seed_by_id[item_id] = self.normalize_verification_type(
+                    seed_item.get("verification_type")
+                )
+
+        changed = False
+        for user_item in user_items:
+            if not isinstance(user_item, dict):
+                continue
+            item_id = str(user_item.get("id") or "").strip()
+            if not item_id or item_id not in seed_by_id:
+                continue
+
+            if not full_sync and user_item.get("verification_type") not in (None, ""):
+                continue
+
+            new_type = seed_by_id[item_id]
+            if self.normalize_verification_type(user_item.get("verification_type")) != new_type:
+                user_item["verification_type"] = new_type
                 changed = True
 
         return changed

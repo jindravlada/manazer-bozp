@@ -1,5 +1,5 @@
 {
-  "verze": 2,
+  "verze": 3,
   "id": "elektricka_zarizeni",
   "nazev": "Elektrická zařízení",
   "popis": "Bezpečnost rozvaděčů, rozvodů, spotřebičů, revizí, prací na EE a dokumentace.",
@@ -64,7 +64,8 @@
           "popis": "Rozvaděče jsou uzavřené a nepřístupné neoprávněným osobám.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "oznaceni",
@@ -72,7 +73,8 @@
           "popis": "Rozvaděče a obvody mají srozumitelné označení.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pristupnost",
@@ -80,7 +82,8 @@
           "popis": "K rozvaděči lze bezpečně dojít pro obsluhu a údržbu.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "mechanicke_poskozeni",
@@ -88,7 +91,8 @@
           "popis": "Skříň, dveře a kryty nejsou poškozené tak, aby byly přístupné živé části.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "vystrazne_tabulky",
@@ -96,7 +100,8 @@
           "popis": "Tabulky jsou na místě, čitelné a odpovídají zařízení.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -104,7 +109,8 @@
           "popis": "Před rozvaděčem není materiál bránící obsluze.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -278,7 +284,8 @@
           "popis": "Zásuvky nemají prasklé kryty ani viditelné poškození.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "uvolneni",
@@ -286,7 +293,8 @@
           "popis": "Zásuvky nejsou uvolněné ve zdi nebo krabici.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "kryti",
@@ -294,7 +302,8 @@
           "popis": "Zásuvky mají kryt a chybí záslepky u nepoužívaných otvorů.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "mechanicke_poskozeni",
@@ -302,7 +311,8 @@
           "popis": "Lišty, kabely a instalační krabice nejsou poškozené.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "provizorni_opravy",
@@ -310,7 +320,8 @@
           "popis": "Rozvody nejsou opraveny izolační páskou nebo provizorně spojeny.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -318,7 +329,8 @@
           "popis": "Poškozené zásuvky jsou odpojené nebo označené jako nefunkční.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -492,7 +504,8 @@
           "popis": "Skříň a kryty nejsou poškozené tak, aby hrozil úraz.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "privodni_snury",
@@ -500,7 +513,8 @@
           "popis": "Šňůra není prořezaná, zpuchřelá ani opravená páskou.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "zastrcky",
@@ -508,7 +522,8 @@
           "popis": "Zástrčka není prasklá, uvolněná ani neodborně upravená.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "oznaceni",
@@ -516,7 +531,8 @@
           "popis": "Spotřebič má čitelný štítek a potřebné informace.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pouzivani",
@@ -524,7 +540,8 @@
           "popis": "Spotřebič se používá podle určení a bez nebezpečných úprav.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -532,7 +549,8 @@
           "popis": "Spotřebič se zjevnou závadou není v provozu.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -706,7 +724,8 @@
           "popis": "Na přívod nebo rozdvojku není zapojeno víc spotřebičů, než unese.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "poskozeni",
@@ -714,7 +733,8 @@
           "popis": "Kabel, zástrčka a rozdvojka nemají viditelné poškození.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "navinute_kabely",
@@ -722,7 +742,8 @@
           "popis": "Za provozu není kabel navinutý do smyčky pod zátěží.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "provizorni_opravy",
@@ -730,7 +751,8 @@
           "popis": "Přívod není opraven izolační páskou nebo spojen neodborně.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "spravne_pouzivani",
@@ -738,7 +760,8 @@
           "popis": "Přívody jsou na volném povrchu, nepod kobercem ani ve vlhku.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -746,7 +769,8 @@
           "popis": "Prodlužovací přívod nenahrazuje pevný rozvod.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -920,7 +944,8 @@
           "popis": "Zařízení se používají podle určení a bez nebezpečných úprav.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pristupnost",
@@ -928,7 +953,8 @@
           "popis": "K zařízení lze bezpečně dojít pro obsluhu.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "cistota",
@@ -936,7 +962,8 @@
           "popis": "Zařízení není zaneseno prachem bránícím chlazení.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "vetraci_otvory",
@@ -944,7 +971,8 @@
           "popis": "Větrací otvory nejsou zakryté materiálem.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "neodborne_zasahy",
@@ -952,7 +980,8 @@
           "popis": "Do zařízení nezasahují neoprávněné osoby.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -960,7 +989,8 @@
           "popis": "Při pozorování nejsou vidět nebezpečné zásahy do EE.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1134,7 +1164,8 @@
           "popis": "Požadované revize proběhly v předepsané lhůtě.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "evidence",
@@ -1142,7 +1173,8 @@
           "popis": "Revizní zprávy jsou v evidenci a dohledatelné.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "odstraneni_zavad",
@@ -1150,7 +1182,8 @@
           "popis": "Závady z revizní zprávy jsou včas řešeny.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "terminy",
@@ -1158,7 +1191,8 @@
           "popis": "Plánované revize probíhají včas.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "porovnani_stavu",
@@ -1166,7 +1200,8 @@
           "popis": "Zpráva odpovídá skutečnému stavu zařízení.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1174,7 +1209,8 @@
           "popis": "Zařízení s propadlou povinnou revizí není v provozu.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1348,7 +1384,8 @@
           "popis": "Práce provádí osoba s příslušnou kvalifikací nebo pod dohledem.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "odpojeni_napeti",
@@ -1356,7 +1393,8 @@
           "popis": "Před prací je spolehlivě odpojeno napětí a ověřeno.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "oznaceni_pracoviste",
@@ -1364,7 +1402,8 @@
           "popis": "Pracoviště je označeno a varováno před nebezpečím.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "oopp",
@@ -1372,7 +1411,8 @@
           "popis": "Při pracích se používají předepsané OOPP.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "zajisteni_proti_zapnuti",
@@ -1380,7 +1420,8 @@
           "popis": "Zařízení je uzamčeno nebo jinak zajištěno proti zapnutí.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1388,7 +1429,8 @@
           "popis": "Oslovená osoba má kvalifikaci nebo je pod dohledem oprávněné osoby.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1562,7 +1604,8 @@
           "popis": "Schémata rozvodů jsou dostupná a odpovídají provozu.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "revizni_zpravy",
@@ -1570,7 +1613,8 @@
           "popis": "Revizní zprávy jsou uložené a dohledatelné.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "navody",
@@ -1578,7 +1622,8 @@
           "popis": "Návody k obsluze a údržbě jsou dostupné.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "provozni_predpisy",
@@ -1586,7 +1631,8 @@
           "popis": "Místní předpisy pro EE jsou stanoveny a dostupné.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "dokumentace_zmen",
@@ -1594,7 +1640,8 @@
           "popis": "Úpravy rozvodů nebo zařízení jsou zaznamenány.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1602,7 +1649,8 @@
           "popis": "Schéma a revize odpovídají skutečnému stavu zařízení.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [

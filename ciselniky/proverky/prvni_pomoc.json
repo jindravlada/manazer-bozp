@@ -1,5 +1,5 @@
 {
-  "verze": 7,
+  "verze": 8,
   "id": "prvni_pomoc",
   "nazev": "První pomoc",
   "popis": "Lékárničky, oční sprchy, proškolené osoby a důležitá telefonní čísla.",
@@ -64,7 +64,8 @@
           "popis": "Umístění odpovídá plánu první pomoci.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "oznaceni",
@@ -72,7 +73,8 @@
           "popis": "Symbol první pomoci je viditelný a čitelný.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pristupnost",
@@ -80,7 +82,8 @@
           "popis": "Lékárnička není zakrytá materiálem ani uzamčená bez přístupu.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "obsah",
@@ -88,7 +91,8 @@
           "popis": "V lékárničce jsou všechny požadované prostředky.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "expirace",
@@ -96,7 +100,8 @@
           "popis": "Obvazy, desinfekce a další materiál mají platnou expiraci.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "evidence_kontrol",
@@ -104,7 +109,8 @@
           "popis": "Existuje záznam poslední kontroly s datem a jménem kontrolora.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         }
       ],
       "typicke_zavady": [
@@ -250,7 +256,8 @@
           "popis": "Umístění odpovídá dokumentaci pracoviště.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "oznaceni",
@@ -258,7 +265,8 @@
           "popis": "Označení je viditelné a čitelné.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pristup",
@@ -266,7 +274,8 @@
           "popis": "Zařízení není zastavěné materiálem ani zařízením.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "funkcnost",
@@ -274,7 +283,8 @@
           "popis": "Spuštění a výplach fungují při zkušebním testu.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "voda",
@@ -282,7 +292,8 @@
           "popis": "Voda je čistá nebo výplachové lahve mají platnou expiraci.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "evidence",
@@ -290,7 +301,8 @@
           "popis": "Existuje záznam poslední kontroly s datem a výsledkem.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         }
       ],
       "typicke_zavady": [
@@ -464,7 +476,8 @@
           "popis": "Zaměstnavatel má písemně určené osoby pro první pomoc.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "platna_skoleni",
@@ -472,7 +485,8 @@
           "popis": "Určené osoby mají platné školení první pomoci.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "dostatecny_pocet",
@@ -480,7 +494,8 @@
           "popis": "Počet odpovídá velikosti pracoviště a charakteru rizik.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "dostupnost",
@@ -488,7 +503,8 @@
           "popis": "Na směně je dostupná alespoň jedna určená osoba.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "zverejneny_seznam",
@@ -496,7 +512,8 @@
           "popis": "Zaměstnanci snadno najdou, kdo poskytuje první pomoc.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "evidence_skoleni",
@@ -504,7 +521,8 @@
           "popis": "Jsou doloženy termíny školení a opakovací školení.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         }
       ],
       "typicke_zavady": [
@@ -678,7 +696,8 @@
           "popis": "Seznam je na viditelném místě na pracovišti.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "aktualni",
@@ -686,7 +705,8 @@
           "popis": "Uvedená čísla odpovídají současnému stavu organizace.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "citelna",
@@ -694,7 +714,8 @@
           "popis": "Seznam není poškozený ani zakrytý.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "nizka"
+          "zavaznost": "nizka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "cisla_izs",
@@ -702,7 +723,8 @@
           "popis": "Minimálně 112, 150, 155 a 158.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "interni_kontakty",
@@ -710,7 +732,8 @@
           "popis": "Vedoucí, první pomoc, ostraha nebo další osoby dle místních podmínek.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "znalost_zamestnancu",
@@ -718,7 +741,8 @@
           "popis": "Oslovený zaměstnanec uvede správné číslo pro přivolání pomoci.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         }
       ],
       "typicke_zavady": [

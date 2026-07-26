@@ -1,5 +1,5 @@
 {
-  "verze": 2,
+  "verze": 3,
   "id": "doprava",
   "nazev": "Manipulace a skladování",
   "popis": "Ruční manipulace, regály, skladování, palety, komunikace, technika, nakládka a školení.",
@@ -64,7 +64,8 @@
           "popis": "Břemena nepřekračují stanovené limity pro jednotlivce ani dvojici.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "ergonomie",
@@ -72,7 +73,8 @@
           "popis": "Pracovníci nezvedají břemena s výrazným sklonem nebo otáčením trupu.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pomucky",
@@ -80,7 +82,8 @@
           "popis": "Tam, kde je to vhodné, pracovníci používají vozíky nebo jiné pomůcky.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "cetnost",
@@ -88,7 +91,8 @@
           "popis": "Ruční manipulace není nepřetržitá bez střídání úkolů.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pracovni_polohy",
@@ -96,7 +100,8 @@
           "popis": "Práce není dlouhodobě v kliku, nad hlavou nebo v natažené poloze.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -104,7 +109,8 @@
           "popis": "Při pozorování pracovník zvedá břemeno z výšky kolen s rovnými zády.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -278,7 +284,8 @@
           "popis": "Sloupky a traverzy nejsou prohnuté, prasklé ani výrazně korodované.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "kotveni",
@@ -286,7 +293,8 @@
           "popis": "Kotvy jsou na místě a dotažené podle požadavků výrobce.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "oznaceni_nosnosti",
@@ -294,7 +302,8 @@
           "popis": "U regálu je viditelně uvedena nosnost polic nebo pole.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pretezovani",
@@ -302,7 +311,8 @@
           "popis": "Materiál na policích nepřekračuje deklarovanou nosnost.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pravidelne_kontroly",
@@ -310,7 +320,8 @@
           "popis": "Kontroly regálů jsou zaznamenány v evidenci.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -318,7 +329,8 @@
           "popis": "Při obchůzce nenajdete vychýlený sloupek nebo prasklý nosník.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -492,7 +504,8 @@
           "popis": "Stohy nejsou nakloněné a materiál nestojí na hraně.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "vyska_stohu",
@@ -500,7 +513,8 @@
           "popis": "Výška stohů nepřekračuje stanovené nebo rozumné limity.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "oddeleni",
@@ -508,7 +522,8 @@
           "popis": "Různé druhy materiálu jsou skladovány odděleně podle potřeby.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "bezpecne_ukladani",
@@ -516,7 +531,8 @@
           "popis": "Uložený materiál neohrožuje pracovníky ani průchod.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pristupnost",
@@ -524,7 +540,8 @@
           "popis": "Materiál lze vyjmout bez nebezpečného sahání nad hlavu.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -532,7 +549,8 @@
           "popis": "Při obchůzce nenajdete stoh nebo kus hrozící sesuvem.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -706,7 +724,8 @@
           "popis": "Palety nemají prasklé desky, ulomené kostice ani výrazné poškození.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "stav_obalu",
@@ -714,7 +733,8 @@
           "popis": "Obaly nejsou protržené tak, aby hrozil únik nebo pád obsahu.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "stabilita_nakladu",
@@ -722,7 +742,8 @@
           "popis": "Náklad na paletě je rovnoměrně uložen a nehrozí sesunutí.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "spravne_ulozeni",
@@ -730,7 +751,8 @@
           "popis": "Palety stojí stabilně, prázdné jsou složené bez převrácení.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "kontrola_jednotek",
@@ -738,7 +760,8 @@
           "popis": "Kontroly stavu palet jsou zaznamenány.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -746,7 +769,8 @@
           "popis": "Při obchůzce nenajdete prasklou nebo ulomenou paletu v provozu.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -920,7 +944,8 @@
           "popis": "Šířka umožňuje bezpečný průjezd techniky i průchod osob.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pruchodnost",
@@ -928,7 +953,8 @@
           "popis": "V průchodu není trvale uložený materiál ani zařízení.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "oznaceni",
@@ -936,7 +962,8 @@
           "popis": "Trasy nebo zóny jsou viditelně vyznačeny.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "oddeleni_pesich",
@@ -944,7 +971,8 @@
           "popis": "Pěší pohyb je oddělen od jízdy VZV nebo vozíků.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "cistota",
@@ -952,7 +980,8 @@
           "popis": "Povrch není kluzký, poškozený ani znečištěný tak, aby hrozil pád.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -960,7 +989,8 @@
           "popis": "Při obchůzce projdete komunikací bez obcházení palet nebo materiálu.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1134,7 +1164,8 @@
           "popis": "VZV nemají viditelné vady brzd, vidlic ani ochrany obsluhy.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "rucni_voziky",
@@ -1142,7 +1173,8 @@
           "popis": "Kola, vidlice a rám ručních vozíků nejsou poškozené.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "elektricke_voziky",
@@ -1150,7 +1182,8 @@
           "popis": "Elektrická technika nemá poškozené kabely ani nefunkční brzdy.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "technicky_stav",
@@ -1158,7 +1191,8 @@
           "popis": "Porouchaná technika je vyřazena z provozu.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "denni_kontroly",
@@ -1166,7 +1200,8 @@
           "popis": "Obsluha vyplňuje kontrolu před zahájením směny.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1174,7 +1209,8 @@
           "popis": "VZV není odstaven se zdviženými vidlicemi ani s viditelnou poruchou.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1348,7 +1384,8 @@
           "popis": "Místo nakládky je osvětlené a bez překážek.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "zajisteni_vozidel",
@@ -1356,7 +1393,8 @@
           "popis": "Nákladní vozidlo je zabrzděné a zajištěné klínem proti pojedu.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "stabilita_nakladu",
@@ -1364,7 +1402,8 @@
           "popis": "Náklad při nakládce nehrozí sesunutím na pracovníky.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "organizace_prace",
@@ -1372,7 +1411,8 @@
           "popis": "Nakládka probíhá s určenou odpovědnou osobou.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "komunikace",
@@ -1380,7 +1420,8 @@
           "popis": "Obsluha a řidič se domluví signály před zahájením.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1388,7 +1429,8 @@
           "popis": "Při pozorování vozidlo i náklad zůstávají stabilní.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1562,7 +1604,8 @@
           "popis": "Pracovníci mají platné vstupní nebo periodické školení.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "opravneni_obsluh",
@@ -1570,7 +1613,8 @@
           "popis": "Obsluha VZV má platný průkaz v evidenci.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pracovni_postupy",
@@ -1578,7 +1622,8 @@
           "popis": "Pro hlavní manipulační činnosti jsou sepsané postupy.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "mistni_pravidla",
@@ -1586,7 +1631,8 @@
           "popis": "Pracovníci znají pravidla skladu a nakládacího místa.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "evidence",
@@ -1594,7 +1640,8 @@
           "popis": "Prezenční listiny a průkazy jsou aktuální.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1602,7 +1649,8 @@
           "popis": "Oslovený pracovník popíše základní pravidla bezpečné manipulace.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [

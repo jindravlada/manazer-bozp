@@ -1,5 +1,5 @@
 {
-  "verze": 2,
+  "verze": 3,
   "id": "dokumentace",
   "nazev": "Dokumentace",
   "popis": "Právní a místní předpisy, evidence školení, dokumentace kontrol a revizí, postupy, rizika, dodavatelé a archivace.",
@@ -64,7 +64,8 @@
           "popis": "Potřebné předpisy jsou k dispozici vedoucím a odpovědným osobám.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "aktualnost",
@@ -72,7 +73,8 @@
           "popis": "Používané verze odpovídají platné legislativě.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "navaznost",
@@ -80,7 +82,8 @@
           "popis": "Přehled předpisů odpovídá činnostem v kontrolované oblasti.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "odpovednost",
@@ -88,7 +91,8 @@
           "popis": "Je určena osoba za sledování novelizací předpisů.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prehled",
@@ -96,7 +100,8 @@
           "popis": "Je veden seznam používaných právních a ostatních předpisů.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -104,7 +109,8 @@
           "popis": "U kontrolované činnosti lze najít příslušný právní předpis.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -271,7 +277,8 @@
           "popis": "Pro pracoviště jsou sepsány místní bezpečnostní předpisy.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "aktualnost",
@@ -279,7 +286,8 @@
           "popis": "Místní předpisy odpovídají aktuálnímu provozu a technologii.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "seznameni",
@@ -287,7 +295,8 @@
           "popis": "Zaměstnanci byli seznámeni s místními předpisy a je to doloženo.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "soulad",
@@ -295,7 +304,8 @@
           "popis": "Pravidla v předpisech odpovídají skutečnému stavu pracoviště.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "dostupnost",
@@ -303,7 +313,8 @@
           "popis": "Místní předpisy jsou k dispozici na pracovišti nebo v systému.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -311,7 +322,8 @@
           "popis": "Kontrolovaný zaměstnanec zná relevantní pravidla z místních předpisů.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -485,7 +497,8 @@
           "popis": "U zaměstnanců jsou zapsána absolvovaná školení BOZP.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "periodicka_skoleni",
@@ -493,7 +506,8 @@
           "popis": "Periodická školení proběhla v požadovaných intervalech.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "podpisy",
@@ -501,7 +515,8 @@
           "popis": "Školení je potvrzeno podpisem nebo záznamem v evidenci.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "aktualnost",
@@ -509,7 +524,8 @@
           "popis": "Evidence obsahuje aktuální zaměstnance v kontrolované oblasti.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "uplnost",
@@ -517,7 +533,8 @@
           "popis": "Všichni dotčení zaměstnanci jsou v evidenci školení.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -525,7 +542,8 @@
           "popis": "Kontrolovaný zaměstnanec má aktuální záznam o požadovaném školení.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -699,7 +717,8 @@
           "popis": "Evidence obsahuje všechna zařízení vyžadující revizi nebo kontrolu.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "terminy",
@@ -707,7 +726,8 @@
           "popis": "U zařízení jsou zapsány termíny poslední a příští kontroly.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "odstraneni_zavad",
@@ -715,7 +735,8 @@
           "popis": "U závad z revizí existuje záznam o odstranění nebo vyřazení.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "archivace",
@@ -723,7 +744,8 @@
           "popis": "Revizní zprávy a protokoly kontrol jsou systematicky uloženy.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "dohledatelnost",
@@ -731,7 +753,8 @@
           "popis": "Ke každému zařízení lze najít historii revizí a kontrol.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -739,7 +762,8 @@
           "popis": "U kontrolovaného zařízení lze bez prodlení dohledat poslední protokol.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -906,7 +930,8 @@
           "popis": "Pracovní postupy a návody jsou k dispozici tam, kde se práce provádí.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "aktualnost",
@@ -914,7 +939,8 @@
           "popis": "Postupy odpovídají aktuální technologii a uspořádání pracoviště.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pouzivani",
@@ -922,7 +948,8 @@
           "popis": "Zaměstnanci při práci postupují podle platného postupu.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "srozumitelnost",
@@ -930,7 +957,8 @@
           "popis": "Postupy jsou psány srozumitelně pro pracovníky vykonávající činnost.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "nizka"
+          "zavaznost": "nizka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "uplnost",
@@ -938,7 +966,8 @@
           "popis": "Pro rizikové činnosti v oblasti jsou sepsány pracovní postupy.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -946,7 +975,8 @@
           "popis": "U kontrolované činnosti lze najít aktuální pracovní postup nebo návod.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1120,7 +1150,8 @@
           "popis": "Hodnocení rizik odpovídá aktuálnímu stavu pracoviště a technologie.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prijata_opatreni",
@@ -1128,7 +1159,8 @@
           "popis": "Opatření z hodnocení rizik jsou zapsána s termínem a odpovědností.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "navaznost",
@@ -1136,7 +1168,8 @@
           "popis": "Popis rizik v dokumentaci odpovídá skutečnosti na pracovišti.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "nova_rizika",
@@ -1144,7 +1177,8 @@
           "popis": "Rizika z nových činností nebo zařízení jsou v hodnocení zahrnuta.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "sledovani",
@@ -1152,7 +1186,8 @@
           "popis": "Stav plnění opatření je průběžně kontrolován a zapisován.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1160,7 +1195,8 @@
           "popis": "Opatření z hodnocení rizik jsou na místě skutečně provedena.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1334,7 +1370,8 @@
           "popis": "Externí osoby mají záznam o požadovaném seznámení nebo školení.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "predani_informaci",
@@ -1342,7 +1379,8 @@
           "popis": "Externistům byly předány informace o rizicích a pravidlech na místě.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "opravneni",
@@ -1350,7 +1388,8 @@
           "popis": "Externí osoby mají platná oprávnění pro vykonávanou činnost.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "doklady",
@@ -1358,7 +1397,8 @@
           "popis": "Pojištění a další požadované doklady jsou k dispozici.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "evidence",
@@ -1366,7 +1406,8 @@
           "popis": "Dodavatelé a externí osoby jsou zapsáni v evidenci.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1374,7 +1415,8 @@
           "popis": "Kontrolovaná externí osoba má doklady odpovídající své práci.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1541,7 +1583,8 @@
           "popis": "Dokumenty BOZP jsou ukládány systematicky podle druhu a data.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "dohledatelnost",
@@ -1549,7 +1592,8 @@
           "popis": "Požadované dokumenty lze najít bez zbytečného hledání.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "ochrana",
@@ -1557,7 +1601,8 @@
           "popis": "Dokumenty jsou chráněny před ztrátou, poškozením a neoprávněnou úpravou.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "odpovednost",
@@ -1565,7 +1610,8 @@
           "popis": "Je určena osoba odpovědná za archivaci a správu dokumentace.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prehled",
@@ -1573,7 +1619,8 @@
           "popis": "Je veden seznam nebo rejstřík archivované dokumentace BOZP.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "nizka"
+          "zavaznost": "nizka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1581,7 +1628,8 @@
           "popis": "Požadovaný dokument lze během prověrky dohledat bez dlouhého hledání.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "nizka"
+          "zavaznost": "nizka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [

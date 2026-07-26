@@ -1,5 +1,5 @@
 {
-  "verze": 2,
+  "verze": 3,
   "id": "dodavatele",
   "nazev": "Dodavatelé a externí osoby",
   "popis": "Výběr dodavatelů, předání pracoviště, seznámení, koordinace, kontrola BOZP, dokumentace a ukončení prací.",
@@ -64,7 +64,8 @@
           "popis": "Dodavatel má pro danou činnost potřebnou odbornou způsobilost.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "opravneni",
@@ -72,7 +73,8 @@
           "popis": "Certifikáty a průkazy pracovníků jsou platné pro vykonávanou práci.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pojisteni",
@@ -80,7 +82,8 @@
           "popis": "Pojištění odpovědnosti za škodu je v požadovaném rozsahu.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "kvalifikace_pracovniku",
@@ -88,7 +91,8 @@
           "popis": "Pracovníci na místě mají kvalifikaci odpovídající své práci.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "hodnoceni_dodavatele",
@@ -96,7 +100,8 @@
           "popis": "Dodavatel prošel schvalovacím řízením před zahájením prací.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -104,7 +109,8 @@
           "popis": "Při kontrole doklady odpovídají skutečně prováděné činnosti.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -278,7 +284,8 @@
           "popis": "Před zahájením prací proběhlo předání pracoviště dodavateli.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "vymezeni_prostoru",
@@ -286,7 +293,8 @@
           "popis": "Dodavatel ví, kde smí pracovat a kde je provoz objednatele.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "predani_informaci",
@@ -294,7 +302,8 @@
           "popis": "Dodavatel obdržel informace o rizicích, energiích a omezeních místa.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "odpovednosti",
@@ -302,7 +311,8 @@
           "popis": "Je určena odpovědná osoba objednatele i dodavatele.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "protokol",
@@ -310,7 +320,8 @@
           "popis": "Předání pracoviště je zaznamenáno v protokolu nebo formuláři.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -318,7 +329,8 @@
           "popis": "Oslovený pracovník dodavatele popíše rozsah a omezení pracoviště.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -492,7 +504,8 @@
           "popis": "Pracovníci dodavatele byli seznámeni s místními riziky před prací.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "unikove_cesty",
@@ -500,7 +513,8 @@
           "popis": "Pracovníci vědí, kudy evakuovat a kde je shromažďovací místo.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prvni_pomoc",
@@ -508,7 +522,8 @@
           "popis": "Pracovníci vědí, kde je lékárnička a koho volat při úrazu.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pozarni_ochrana",
@@ -516,7 +531,8 @@
           "popis": "Pracovníci vědí, kde jsou hydranty nebo hasicí přístroje.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "dokumentace_seznameni",
@@ -524,7 +540,8 @@
           "popis": "Seznámení je potvrzeno podpisem nebo záznamem.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -532,7 +549,8 @@
           "popis": "Oslovený pracovník dodavatele popíše alespoň jedno riziko pracoviště.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -706,7 +724,8 @@
           "popis": "Jsou identifikována místa a časy souběžných prací.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "koordinace",
@@ -714,7 +733,8 @@
           "popis": "Práce dodavatele a provozu jsou sladěny v čase a prostoru.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "komunikace",
@@ -722,7 +742,8 @@
           "popis": "Odpovědné osoby se pravidelně informují o průběhu prací.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "odpovedne_osoby",
@@ -730,7 +751,8 @@
           "popis": "Je jmenován koordinátor za objednatele i kontakt u dodavatele.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "plan_praci",
@@ -738,7 +760,8 @@
           "popis": "Souběžné práce jsou plánovány v kalendáři nebo denním plánu.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -746,7 +769,8 @@
           "popis": "Při obchůzce nenajdete kolizi dodavatele s provozem bez koordinace.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -920,7 +944,8 @@
           "popis": "Pracovníci dodavatele nosí OOPP podle rizika a pravidel objednatele.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pracovni_postupy",
@@ -928,7 +953,8 @@
           "popis": "Dodavatel pracuje podle dohodnutého postupu, ne zkratkami.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "poradek",
@@ -936,7 +962,8 @@
           "popis": "Pracoviště dodavatele není zbytečně zaneřáděno materiálem.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "zabezpeceni",
@@ -944,7 +971,8 @@
           "popis": "Nebezpečné zóny dodavatele jsou ohraničeny páskou nebo zábranou.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "dodrzeni_pravidel",
@@ -952,7 +980,8 @@
           "popis": "Dodavatel respektuje zákazy kouření, vstupu a pohybu v areálu.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -960,7 +989,8 @@
           "popis": "Při pozorování dodavatel nedělá zjevné porušení pravidel objednatele.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1134,7 +1164,8 @@
           "popis": "Pracovníci mají platné doklady o BOZP školení.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "opravneni",
@@ -1142,7 +1173,8 @@
           "popis": "Průkazy a certifikáty jsou platné a uložené v evidenci.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "povoleni",
@@ -1150,7 +1182,8 @@
           "popis": "Pro rizikové práce existuje platné povolení k práci.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "doklady",
@@ -1158,7 +1191,8 @@
           "popis": "U dodavatele jsou k dispozici všechny požadované doklady.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "aktualnost",
@@ -1166,7 +1200,8 @@
           "popis": "Prošlé doklady jsou vyměněny nebo dodavatel z pracoviště vyřazen.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1174,7 +1209,8 @@
           "popis": "Při kontrole lze na místě nebo v evidenci dohledat požadované doklady.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1348,7 +1384,8 @@
           "popis": "Dodavatel ve výšce používá jištění a odpovídající OOPP.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "svarovani",
@@ -1356,7 +1393,8 @@
           "popis": "Svařování probíhá s povolením, dohledem a hasicím prostředkem.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "uzavrene_prostory",
@@ -1364,7 +1402,8 @@
           "popis": "Vstup dodavatele do uzavřeného prostoru je povolen a měřen.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "vykopove_prace",
@@ -1372,7 +1411,8 @@
           "popis": "Výkop dodavatele je pažen nebo ohraničen.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "jine_rizikove",
@@ -1380,7 +1420,8 @@
           "popis": "U dalších rizikových prací jsou stanovená opatření a dohled.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1388,7 +1429,8 @@
           "popis": "Při obchůzce nenajdete rizikovou práci dodavatele bez povolení a opatření.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1562,7 +1604,8 @@
           "popis": "Po dodavateli nezůstal materiál, odpad ani nepořádek v průchodu.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "docasna_zarizeni",
@@ -1570,7 +1613,8 @@
           "popis": "Lešení, zábrany a dočasné rozvody dodavatele jsou odstraněny.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "predani_zpet",
@@ -1578,7 +1622,8 @@
           "popis": "Dodavatel formálně předal pracoviště zpět objednateli.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "odstraneni_zavad",
@@ -1586,7 +1631,8 @@
           "popis": "Nebezpečné stavy z prací dodavatele jsou odstraněny.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "protokol_ukonceni",
@@ -1594,7 +1640,8 @@
           "popis": "Ukončení prací je zaznamenáno v protokolu.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1602,7 +1649,8 @@
           "popis": "Po odchodu dodavatele lze místo bezpečně uvést do provozu.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [

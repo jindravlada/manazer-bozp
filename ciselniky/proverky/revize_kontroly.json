@@ -1,5 +1,5 @@
 {
-  "verze": 2,
+  "verze": 3,
   "id": "revize",
   "nazev": "Revize a kontroly",
   "popis": "Revize a kontroly VTZ, EE, PBZ, pracovních prostředků, vázací techniky, lhůty, odstraňování závad a evidence.",
@@ -64,7 +64,8 @@
           "popis": "Tlaková zařízení nejsou provozována po propadlé revizi nebo kontrole.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "plynova_zarizeni",
@@ -72,7 +73,8 @@
           "popis": "Plynová zařízení mají aktuální kontroly dle požadavků.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "elektricka_vtz",
@@ -80,7 +82,8 @@
           "popis": "Elektrická VTZ a rozvody mají platnou revizi.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "zdvihaci_zarizeni",
@@ -88,7 +91,8 @@
           "popis": "Zdvihací zařízení nejsou provozována bez platné revize.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "provozni_dokumentace",
@@ -96,7 +100,8 @@
           "popis": "U VTZ je k dispozici provozní dokumentace a záznamy kontrol.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -104,7 +109,8 @@
           "popis": "Na místě nejsou provozována VTZ s propadlou revizí nebo zákazem používání.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -278,7 +284,8 @@
           "popis": "Elektrická zařízení a rozvody mají platnou revizi.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "kontroly",
@@ -286,7 +293,8 @@
           "popis": "Přenosné spotřebiče mají aktuální pravidelnou kontrolu.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "oznaceni",
@@ -294,7 +302,8 @@
           "popis": "Zařízení mají štítek podle poslední revize nebo kontroly.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "evidence",
@@ -302,7 +311,8 @@
           "popis": "Elektrická zařízení a spotřebiče jsou v evidenci s termíny.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "odstraneni_zavad",
@@ -310,7 +320,8 @@
           "popis": "Závady z revizní zprávy jsou vyřešeny nebo zařízení je vyřazeno z provozu.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -318,7 +329,8 @@
           "popis": "Kontrolované zařízení má platný doklad a odpovídající označení.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -492,7 +504,8 @@
           "popis": "Hasicí přístroje mají aktuální pravidelnou kontrolu.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "hydranty",
@@ -500,7 +513,8 @@
           "popis": "Hydranty jsou provozuschopné a mají aktuální kontrolu.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "eps",
@@ -508,7 +522,8 @@
           "popis": "Evakuační a požární signalizace má aktuální kontrolu.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "shz",
@@ -516,7 +531,8 @@
           "popis": "Stabilní hasicí zařízení má aktuální kontrolu a záznamy.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "ostatni_pbz",
@@ -524,7 +540,8 @@
           "popis": "Dveře, klapky a další PBZ mají provedené předepsané kontroly.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -532,7 +549,8 @@
           "popis": "Kontrolované PBZ má platný doklad a není blokováno nebo nefunkční.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -706,7 +724,8 @@
           "popis": "Žebříky jsou pravidelně kontrolovány a nejsou poškozené.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "schudky",
@@ -714,7 +733,8 @@
           "popis": "Schůdky a plošiny jsou v dobrém stavu a kontrolovány.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "rucni_naradi",
@@ -722,7 +742,8 @@
           "popis": "Ruční nářadí je pravidelně kontrolováno a bez závad.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "stroje",
@@ -730,7 +751,8 @@
           "popis": "Stroje mají provedené kontroly dle návodu nebo předpisu.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "ostatni_prostredky",
@@ -738,7 +760,8 @@
           "popis": "Ostatní pracovní prostředky mají pravidelné kontroly.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -746,7 +769,8 @@
           "popis": "V provozu nejsou poškozené žebříky, nářadí ani stroje se závadou.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -920,7 +944,8 @@
           "popis": "Řetězové prostředky jsou kontrolovány, označeny a bez poškození.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "lana",
@@ -928,7 +953,8 @@
           "popis": "Lana jsou pravidelně kontrolována a bez poškození drátů.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "popruhy",
@@ -936,7 +962,8 @@
           "popis": "Popruhy nevykazují poškození, řezy ani opotřebení švů.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "haky",
@@ -944,7 +971,8 @@
           "popis": "Háky a spojovací prvky jsou kontrolovány a bez deformací.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "zavesna_zarizeni",
@@ -952,7 +980,8 @@
           "popis": "Traverzy a závěsná zařízení mají aktuální kontrolu.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -960,7 +989,8 @@
           "popis": "V provozu nejsou poškozené nebo neoznačené vázací prostředky.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1134,7 +1164,8 @@
           "popis": "Revize a kontroly probíhají ve stanovených lhůtách.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "plan_kontrol",
@@ -1142,7 +1173,8 @@
           "popis": "Je zpracován plán revizí a kontrol a sleduje se jeho plnění.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prehled_revizi",
@@ -1150,7 +1182,8 @@
           "popis": "Přehled obsahuje všechna zařízení vyžadující revizi nebo kontrolu.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "odpovedne_osoby",
@@ -1158,7 +1191,8 @@
           "popis": "Je určena osoba odpovědná za plnění plánu revizí a kontrol.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "upozorneni",
@@ -1166,7 +1200,8 @@
           "popis": "Blížící se termíny jsou včas signalizovány odpovědným osobám.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1174,7 +1209,8 @@
           "popis": "Kontrolované zařízení není provozováno po propadlé revizi nebo kontrole.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1348,7 +1384,8 @@
           "popis": "Každá závada z revize nebo kontroly je zapsána v evidenci.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "terminy_odstraneni",
@@ -1356,7 +1393,8 @@
           "popis": "U závad jsou určeny termíny odstranění podle závažnosti.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "odpovedne_osoby",
@@ -1364,7 +1402,8 @@
           "popis": "U každé závady je určena osoba odpovědná za odstranění.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "overeni",
@@ -1372,7 +1411,8 @@
           "popis": "Po nápravě je závada doložena protokolem nebo kontrolou.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prioritizace",
@@ -1380,7 +1420,8 @@
           "popis": "Závady ohrožující bezpečnost mají přednost před drobnými nedostatky.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1388,7 +1429,8 @@
           "popis": "Zařízení se závadou není provozováno, dokud není závada odstraněna.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1562,7 +1604,8 @@
           "popis": "Evidence obsahuje všechna zařízení vyžadující revizi nebo kontrolu.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "archivace",
@@ -1570,7 +1613,8 @@
           "popis": "Revizní zprávy a protokoly kontrol jsou systematicky uloženy.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "dohledatelnost",
@@ -1578,7 +1622,8 @@
           "popis": "Ke každému zařízení lze najít historii revizí a kontrol.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "aktualnost",
@@ -1586,7 +1631,8 @@
           "popis": "Evidence odpovídá posledním provedeným revizím a kontrolám.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "propojeni",
@@ -1594,7 +1640,8 @@
           "popis": "Každé zařízení v provozu má záznam v evidenci revizí.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1602,7 +1649,8 @@
           "popis": "U kontrolovaného zařízení lze bez prodlení najít poslední protokol.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [

@@ -1,5 +1,5 @@
 {
-  "verze": 2,
+  "verze": 3,
   "id": "chemie",
   "nazev": "Chemické látky a směsi",
   "popis": "Evidence, bezpečnostní listy, označování, skladování, manipulace, havarie, odpad a školení.",
@@ -64,7 +64,8 @@
           "popis": "Je veden seznam všech chemických látek a směsí na pracovišti.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "uplnost",
@@ -72,7 +73,8 @@
           "popis": "U každé látky jsou uvedeny identifikační a bezpečnostní údaje.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "aktualnost",
@@ -80,7 +82,8 @@
           "popis": "Seznam je aktualizován po změně sortimentu nebo dodavatele.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "soulad_stav",
@@ -88,7 +91,8 @@
           "popis": "Seznam sedí s látkami nalezenými v provozu.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "neevidovane_latky",
@@ -96,7 +100,8 @@
           "popis": "Na pracovišti se nepoužívají chemické látky mimo evidenci.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -104,7 +109,8 @@
           "popis": "Látka nalezená při obchůzce odpovídá záznamu v evidenci.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -278,7 +284,8 @@
           "popis": "Ke každé používané látce existuje bezpečnostní list.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "aktualnost",
@@ -286,7 +293,8 @@
           "popis": "BL odpovídá verzi od dodavatele, ne starší kopii.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "cesky_jazyk",
@@ -294,7 +302,8 @@
           "popis": "Bezpečnostní listy jsou v češtině nebo s českým překladem.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pristup_zamestnancu",
@@ -302,7 +311,8 @@
           "popis": "BL jsou dostupné během práce, ne jen v administrativě.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "umisteni_bl",
@@ -310,7 +320,8 @@
           "popis": "Složka nebo systém s BL je označen a známý.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -318,7 +329,8 @@
           "popis": "Vedoucí pracoviště ukáže, kde najde BL ke konkrétní látce.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -492,7 +504,8 @@
           "popis": "Originální nádoby mají úplné etikety podle CLP.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "ghs_piktogramy",
@@ -500,7 +513,8 @@
           "popis": "Piktogramy odpovídají nebezpečnosti látky.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prelite_nadoby",
@@ -508,7 +522,8 @@
           "popis": "Přelité nádoby mají název látky, piktogramy a varovná slova.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "citelnost",
@@ -516,7 +531,8 @@
           "popis": "Etikety nejsou smazané, oškrábané ani uvolněné.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "soulad_bl",
@@ -524,7 +540,8 @@
           "popis": "Údaje na etiketě sedí s bezpečnostním listem.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -532,7 +549,8 @@
           "popis": "Při obchůzce nenajdete nádobu bez označení obsahu.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -706,7 +724,8 @@
           "popis": "Látky, které se nesmí skladovat spolu, jsou v oddělených sekcích.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "kompatibilita",
@@ -714,7 +733,8 @@
           "popis": "Skladování odpovídá tabulce kompatibility nebo BL.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "zachytne_vany",
@@ -722,7 +742,8 @@
           "popis": "Nádoby stojí v záchytných vanách nebo na zachycující podlaze.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "vetrani",
@@ -730,7 +751,8 @@
           "popis": "Sklad má přirozené nebo nucené větrání bez zápachu hromadícího se výparu.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "zabezpeceni",
@@ -738,7 +760,8 @@
           "popis": "Do skladu mají přístup jen oprávnění pracovníci.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -746,7 +769,8 @@
           "popis": "Při obchůzce nenajdete kyselinu vedle louhu nebo hořlavinu u oxidantů.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -920,7 +944,8 @@
           "popis": "U manipulace jsou k dispozici rukavice, brýle a další OOPP z BL.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pracovni_postupy",
@@ -928,7 +953,8 @@
           "popis": "Manipulace probíhá podle psaného nebo ustáleného postupu.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "davkovani",
@@ -936,7 +962,8 @@
           "popis": "Látka se odměřuje vhodnými pomůckami, ne odhadem.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prelevani",
@@ -944,7 +971,8 @@
           "popis": "Přelévá se nad vanou nebo záchytným prostorem vhodnými nádobami.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "uniky",
@@ -952,7 +980,8 @@
           "popis": "Pracovníci vědí, co udělat při rozlití při manipulaci.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -960,7 +989,8 @@
           "popis": "Při pozorování pracovníka manipuluje s OOPP podle BL.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1134,7 +1164,8 @@
           "popis": "Sorbenty odpovídají látkám na pracovišti a jsou v použitelném stavu.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "neutralizacni_prostredky",
@@ -1142,7 +1173,8 @@
           "popis": "Pro kyseliny a louhy jsou k dispozici vhodné neutralizéry.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "havarijni_postupy",
@@ -1150,7 +1182,8 @@
           "popis": "Postup při úniku je sepsán a dostupný u rizikových míst.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "vybaveni",
@@ -1158,7 +1191,8 @@
           "popis": "Souprava je kompletní, nepoškozená a na označeném místě.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "skoleni_havarie",
@@ -1166,7 +1200,8 @@
           "popis": "Pracovníci znají postup a místo havarijní soupravy.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1174,7 +1209,8 @@
           "popis": "Oslovený pracovník popíše první kroky při rozlití chemické látky.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1348,7 +1384,8 @@
           "popis": "Nádoby nesou popis druhu odpadu a příslušné piktogramy.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "trideni",
@@ -1356,7 +1393,8 @@
           "popis": "Různé druhy nebezpečného odpadu nejsou smíchány.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "uzavreni_nadobi",
@@ -1364,7 +1402,8 @@
           "popis": "Nádoby s odpadem jsou uzavřené a netečou.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "evidence_odpadu",
@@ -1372,7 +1411,8 @@
           "popis": "Evidence odpadu odpovídá skutečně uskladněnému množství.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "obaly_latky",
@@ -1380,7 +1420,8 @@
           "popis": "Prázdné obaly po nebezpečných látkách nekončí v běžném odpadu.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1388,7 +1429,8 @@
           "popis": "Při obchůzce nenajdete nebezpečný odpad v běžné popelnici.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1562,7 +1604,8 @@
           "popis": "Každý pracovník s chemickými látkami má platné školení.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "znalost_rizik",
@@ -1570,7 +1613,8 @@
           "popis": "Pracovník zná hlavní nebezpečí látek, se kterými pracuje.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prvni_pomoc",
@@ -1578,7 +1622,8 @@
           "popis": "Pracovník ví, co udělat při stříknutí, vdechnutí nebo polití látkou.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "oopp_skoleni",
@@ -1586,7 +1631,8 @@
           "popis": "Pracovník zná požadované OOPP a používá je při práci.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "dokumentace_skoleni",
@@ -1594,7 +1640,8 @@
           "popis": "V prezenční listině jsou záznamy o školeních v požadovaných intervalech.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1602,7 +1649,8 @@
           "popis": "Oslovený pracovník popíše hlavní nebezpečí látky, se kterou pracuje.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [

@@ -1,5 +1,5 @@
 {
-  "verze": 2,
+  "verze": 3,
   "id": "rizikova_pracoviste",
   "nazev": "Rizikové práce a pracoviště",
   "popis": "Práce ve výškách, nad hloubkou, v uzavřených prostorech, horké práce, výkopy, pád předmětů, osamocená práce a povolení.",
@@ -64,7 +64,8 @@
           "popis": "Práce ve výšce probíhá se zábradlím, sítí nebo osobním jištěním.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "zabradli",
@@ -72,7 +73,8 @@
           "popis": "Zábradlí má madlo, područí a soklíkovou lištu, není poškozené.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "kotvici_body",
@@ -80,7 +82,8 @@
           "popis": "Kotvicí body jsou pevné a určené pro zachycení pádu.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "oopp",
@@ -88,7 +91,8 @@
           "popis": "Pracovníci ve výšce mají postroj, helmu a další předepsané OOPP.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pristupova_zarizeni",
@@ -96,7 +100,8 @@
           "popis": "Žebříky a lešení nejsou poškozené ani nestabilní.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -104,7 +109,8 @@
           "popis": "Při pozorování pracovník ve výšce nepohybuje bez ochrany proti pádu.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -278,7 +284,8 @@
           "popis": "Každý otvor má zábranu nebo pevné zakrytí proti pádu.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "zakryti",
@@ -286,7 +293,8 @@
           "popis": "Zakrytí je upevněné a unese váhu osoby.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "zabrany",
@@ -294,7 +302,8 @@
           "popis": "U otevřených hran jsou zábrany s madellem a soklíkem.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "oznaceni",
@@ -302,7 +311,8 @@
           "popis": "Místa s nebezpečím pádu mají výstražné značení.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pravidelna_kontrola",
@@ -310,7 +320,8 @@
           "popis": "Kontroly otvorů jsou zaznamenány v evidenci.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -318,7 +329,8 @@
           "popis": "Při obchůzce nenajdete otevřený otvor bez ochrany.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -492,7 +504,8 @@
           "popis": "Vstup do uzavřeného prostoru probíhá jen s platným povolením.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "mereni_atmosfery",
@@ -500,7 +513,8 @@
           "popis": "Před vstupem a během prací se měří kyslík a nebezpečné plyny.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "jisteni_osob",
@@ -508,7 +522,8 @@
           "popis": "Pracovník v prostoru je jištěn lanem nebo je u vstupu stojan.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "komunikace",
@@ -516,7 +531,8 @@
           "popis": "Dohlížející osoba udržuje spojení s pracovníkem uvnitř.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "zachranne_prostredky",
@@ -524,7 +540,8 @@
           "popis": "U vstupu je připraveno vybavení pro vytažení nebo ventilaci.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -532,7 +549,8 @@
           "popis": "Při obchůzce nenajdete vstup bez měření, dohledu a povolení.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -706,7 +724,8 @@
           "popis": "Horké práce probíhají na základě platného povolení.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pozarni_dohled",
@@ -714,7 +733,8 @@
           "popis": "Po celou dobu prací je přítomna osoba pro požární dohled.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "odstraneni_horlavin",
@@ -722,7 +742,8 @@
           "popis": "V okruhu 11 m od místa svaru nejsou hořlavé materiály.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "hasicí_prostredky",
@@ -730,7 +751,8 @@
           "popis": "U místa prací je funkční hasicí přístroj nebo jiný prostředek.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "kontrola_po_praci",
@@ -738,7 +760,8 @@
           "popis": "Po ukončení prací probíhá hlídka místa po stanovenou dobu.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -746,7 +769,8 @@
           "popis": "Při pozorování svařování probíhá s dohledem a bez hořlavin v dosahu.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -920,7 +944,8 @@
           "popis": "Stěny výkopu jsou paženy nebo svah má bezpečný sklon.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "vstupy",
@@ -928,7 +953,8 @@
           "popis": "Do výkopu vede bezpečný vstup, ne skok z okraje.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "oznaceni",
@@ -936,7 +962,8 @@
           "popis": "Okraj výkopu má výstražné značení nebo pásku.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "zabezpeceni_vykopu",
@@ -944,7 +971,8 @@
           "popis": "Okraj výkopu je chráněn zábranou nebo pažením proti pádu.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pohyb_osob",
@@ -952,7 +980,8 @@
           "popis": "U nezabezpečeného okraje se nepohybují nepovolané osoby.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -960,7 +989,8 @@
           "popis": "Při obchůzce nenajdete otevřený výkop bez pažení nebo zábrany.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1134,7 +1164,8 @@
           "popis": "Plocha pod prací ve výšce je ohraničena páskou nebo zábranou.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "ochranne_pristresky",
@@ -1142,7 +1173,8 @@
           "popis": "Nad chodníkem je střešní kryt nebo ochranná síť.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "zabezpeceni_materialu",
@@ -1150,7 +1182,8 @@
           "popis": "Nástroje a materiál ve výšce jsou zajištěny proti pádu.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prilby",
@@ -1158,7 +1191,8 @@
           "popis": "Pracovníci v rizikové zóně nosí ochranné přilby.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "oznaceni_zony",
@@ -1166,7 +1200,8 @@
           "popis": "Zóna nebezpečí pádu předmětů má výstražné značení.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1174,7 +1209,8 @@
           "popis": "Při pozorování pod místem práci ve výšce nejsou chodci.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1348,7 +1384,8 @@
           "popis": "Osamocený pracovník je kontrolován v stanovených intervalech.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "spojeni",
@@ -1356,7 +1393,8 @@
           "popis": "Pracovník má funkční radiotelefon nebo telefon.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "privolani_pomoci",
@@ -1364,7 +1402,8 @@
           "popis": "Pracovník zná a může použít tlačítko nebo telefon pro přivolání pomoci.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "organizace_prace",
@@ -1372,7 +1411,8 @@
           "popis": "Osamocená práce je naplánována a schválena před zahájením.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "posouzeni_rizik",
@@ -1380,7 +1420,8 @@
           "popis": "Pro osamocenou práci existuje písemné posouzení rizik.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1388,7 +1429,8 @@
           "popis": "Oslovený pracovník popíše, jak rychle přivolá pomoc.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1562,7 +1604,8 @@
           "popis": "Pro rizikové práce je zaveden formulář a postup povolení k práci.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "schvalovani",
@@ -1570,7 +1613,8 @@
           "popis": "Povolení je vydáno a podepsáno před zahájením rizikové práce.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "ukonceni_praci",
@@ -1578,7 +1622,8 @@
           "popis": "Po dokončení prací je povolení uzavřeno a podepsáno.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "archivace",
@@ -1586,7 +1631,8 @@
           "popis": "Vydaná povolení jsou uložena a dohledatelná.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "obsah_povoleni",
@@ -1594,7 +1640,8 @@
           "popis": "Povolení obsahuje místo, druh práce, opatření a dobu platnosti.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1602,7 +1649,8 @@
           "popis": "Při obchůzce u probíhající rizikové práce najdete platné povolení.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [

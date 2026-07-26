@@ -1,5 +1,5 @@
 {
-  "verze": 2,
+  "verze": 3,
   "id": "pracovni_prostredi",
   "nazev": "Pracovní prostředí",
   "popis": "Komunikace, pořádek, osvětlení, větrání, mikroklima, sociální zařízení, zázemí a pitný režim.",
@@ -64,7 +64,8 @@
           "popis": "Podlahy nemají výtluky, uvolněné díly ani výrazné nerovnosti.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "kluzkost",
@@ -72,7 +73,8 @@
           "popis": "Povrch není kluzký od vody, mastnoty nebo nevhodné údržby.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prekazky",
@@ -80,7 +82,8 @@
           "popis": "V průchodech není materiál, zařízení ani jiné překážky.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pruchodnost",
@@ -88,7 +91,8 @@
           "popis": "Šířka a volný prostor umožňují bezpečný pohyb a evakuaci.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "oznaceni",
@@ -96,7 +100,8 @@
           "popis": "Směry a nebezpečná místa jsou viditelně označeny.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_prochazka",
@@ -104,7 +109,8 @@
           "popis": "Hlavní trasu lze projít bez obcházení překážek.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         }
       ],
       "typicke_zavady": [
@@ -278,7 +284,8 @@
           "popis": "Pracovní plochy nejsou zbytečně zahlcené materiálem.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "skladovani",
@@ -286,7 +293,8 @@
           "popis": "Materiál a nástroje jsou na určených místech, ne v průchodech.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "odpad",
@@ -294,7 +302,8 @@
           "popis": "Odpad je v nádobách a pravidelně odvážen.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "unikove_prostory",
@@ -302,7 +311,8 @@
           "popis": "Únikové cesty nejsou zastavěné materiálem ani zařízením.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "cistota",
@@ -310,7 +320,8 @@
           "popis": "Pracoviště není dlouhodobě znečištěné prachem nebo mastnotou.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -318,7 +329,8 @@
           "popis": "Na vybraném pracovišti není nepořádek bránící bezpečné práci.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -492,7 +504,8 @@
           "popis": "Svítidla svítí a osvětlují pracovní plochy.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "poskozena_svitidla",
@@ -500,7 +513,8 @@
           "popis": "Poškozená nebo nefunkční svítidla jsou opravená nebo vyměněná.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "dostatecnost",
@@ -508,7 +522,8 @@
           "popis": "Intenzita osvětlení odpovídá charakteru práce.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "oslneni",
@@ -516,7 +531,8 @@
           "popis": "Pracovní plochy nejsou nadměrně oslňované.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "nouzove_osvetleni",
@@ -524,7 +540,8 @@
           "popis": "Nouzové osvětlení funguje nebo není poškozené.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -532,7 +549,8 @@
           "popis": "Zaměstnanec nepoužívá vlastní lampu kvůli tmě na pracovišti.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -706,7 +724,8 @@
           "popis": "Pracoviště je větráno přirozeně nebo nuceně.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "odsavani",
@@ -714,7 +733,8 @@
           "popis": "Místní odsávání u rizikových prací funguje a je zapnuté.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "vzduchotechnika",
@@ -722,7 +742,8 @@
           "popis": "Vzduchotechnická zařízení jsou funkční a udržovaná.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prasnost",
@@ -730,7 +751,8 @@
           "popis": "Na pracovišti není viditelná nadměrná prašnost.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "zapach",
@@ -738,7 +760,8 @@
           "popis": "V ovzduší není cítit nepříjemný nebo neobvyklý zápach.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -746,7 +769,8 @@
           "popis": "Prostor není dusivý a ovzduší působí svěže.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -920,7 +944,8 @@
           "popis": "Teplota nevyvolává zjevné nepohodlí při práci.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "vlhkost",
@@ -928,7 +953,8 @@
           "popis": "Vlhkost nezpůsobuje nepohodlí ani viditelnou kondenzaci.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "pruvan",
@@ -936,7 +962,8 @@
           "popis": "Zaměstnanci nejsou vystaveni nepříjemnému proudění vzduchu.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "salave_teplo",
@@ -944,7 +971,8 @@
           "popis": "U prací se sálavým teplem jsou zajištěna ochranná opatření.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "chlad",
@@ -952,7 +980,8 @@
           "popis": "V chladných prostorech jsou zajištěna ochranná opatření.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -960,7 +989,8 @@
           "popis": "Zaměstnanci nemají zjevné potíže způsobené teplotou nebo průvanem.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1134,7 +1164,8 @@
           "popis": "Toalety jsou v provozu a udržované v čistotě.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "umyvárny",
@@ -1142,7 +1173,8 @@
           "popis": "Umývárny mají teplou vodu a fungující baterie.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "hygienicke_prostredky",
@@ -1150,7 +1182,8 @@
           "popis": "Mýdlo, ručníky nebo sušič a toaletní papír jsou k dispozici.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "cistota",
@@ -1158,7 +1191,8 @@
           "popis": "Prostory jsou pravidelně uklízeny.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "funkcnost",
@@ -1166,7 +1200,8 @@
           "popis": "Splachování, baterie a osvětlení fungují.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1174,7 +1209,8 @@
           "popis": "Počet zařízení odpovídá počtu zaměstnanců na pracovišti.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1348,7 +1384,8 @@
           "popis": "Zaměstnanec má skříňku pro odložení oděvu.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "oddeleni_odevu",
@@ -1356,7 +1393,8 @@
           "popis": "Tam, kde je to požadováno, jsou oděvy uloženy odděleně.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "cistota",
@@ -1364,7 +1402,8 @@
           "popis": "Prostory šaten jsou v přijatelném stavu čistoty.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "odpocinkove_prostory",
@@ -1372,7 +1411,8 @@
           "popis": "Odpočinkové prostory jsou čisté a využitelné.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "dostupnost",
@@ -1380,7 +1420,8 @@
           "popis": "Šatny jsou dostupné po celou pracovní směnu.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1388,7 +1429,8 @@
           "popis": "V šatnách je dostatek místa a soukromí pro převlékání.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "nizka"
+          "zavaznost": "nizka",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
@@ -1562,7 +1604,8 @@
           "popis": "Zaměstnanci mají na pracovišti pitnou vodu.",
           "poradi": 10,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "oznaceni",
@@ -1570,7 +1613,8 @@
           "popis": "Výdejní místa pitné vody jsou viditelně označena.",
           "poradi": 20,
           "aktivni": true,
-          "zavaznost": "nizka"
+          "zavaznost": "nizka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "cistota",
@@ -1578,7 +1622,8 @@
           "popis": "Výdejní místa jsou udržovaná v čistotě.",
           "poradi": 30,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "dokumentace"
         },
         {
           "id": "dostupnost_behem_smeny",
@@ -1586,7 +1631,8 @@
           "popis": "Voda je k dispozici po celou pracovní směnu.",
           "poradi": 40,
           "aktivni": true,
-          "zavaznost": "vysoka"
+          "zavaznost": "vysoka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "horka_prace",
@@ -1594,7 +1640,8 @@
           "popis": "U prací v horku je k dispozici dostatek vody a přestávky.",
           "poradi": 50,
           "aktivni": true,
-          "zavaznost": "kriticka"
+          "zavaznost": "kriticka",
+          "verification_type": "dokumentace"
         },
         {
           "id": "prakticka_kontrola",
@@ -1602,7 +1649,8 @@
           "popis": "Oslovený zaměstnanec ukáže nejbližší místo s pitnou vodou.",
           "poradi": 60,
           "aktivni": true,
-          "zavaznost": "stredni"
+          "zavaznost": "stredni",
+          "verification_type": "teren"
         }
       ],
       "typicke_zavady": [
