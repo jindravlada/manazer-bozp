@@ -33,6 +33,7 @@ from moduly.proverky.constants import (
     CONTROL_POINT_SEVERITY_OPTIONS,
     KNOWLEDGE_EDITOR_SECTION_CONTROL_PROCESS_LABEL,
     REFERENCE_PHOTO_FILTER,
+    VERIFICATION_TYPE_LABELS,
 )
 from moduly.proverky.sluzby.proverky_knowledge_service import (
     EDITABLE_SECTION_LIST_FIELDS,
@@ -108,7 +109,13 @@ class _ControlPointListRow(QWidget):
 def _format_control_point_label(item: dict) -> str:
     prefix = "[neaktivní] " if not item.get("aktivni", True) else ""
     nazev = str(item.get("nazev") or "—")
-    return f"{prefix}{nazev}"
+    type_label = VERIFICATION_TYPE_LABELS.get(
+        proverky_knowledge_service.normalize_verification_type(
+            item.get("verification_type")
+        ),
+        "Dokumentace",
+    )
+    return f"{prefix}{nazev} ({type_label})"
 
 
 class _CollapsibleSection(QWidget):
@@ -749,6 +756,8 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
             title="Přidat položku",
             existing_ids=self._existing_ids(list_widget),
             include_zavaznost=self._field_by_list.get(list_widget) == "kontrolni_body",
+            include_verification_type=self._field_by_list.get(list_widget)
+            == "kontrolni_body",
         )
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
@@ -812,6 +821,8 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
             item=current,
             existing_ids=self._existing_ids(list_widget, exclude_row=row),
             include_zavaznost=self._field_by_list.get(list_widget) == "kontrolni_body",
+            include_verification_type=self._field_by_list.get(list_widget)
+            == "kontrolni_body",
         )
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return

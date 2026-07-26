@@ -44,13 +44,20 @@ from moduly.proverky.constants import (
     INSPECTION_MUST_BE_SAVED_MESSAGE,
     KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT,
     KNOWLEDGE_REFERENCE_PHOTOS_TITLE,
+    MOVE_TO_TERRAIN_LABEL,
+    MOVE_VERIFICATION_TYPE_TOOLTIP,
     REFERENCE_PHOTO_PLACEHOLDER_ICON_SIZE_PX,
     REFERENCE_PHOTO_PLACEHOLDER_WIDTH,
     REFERENCE_PHOTO_THUMBNAIL_SIZE,
+    VERIFICATION_TYPE_DOCUMENTATION,
+    VERIFICATION_TYPE_TERRAIN,
     ProverkyFindingKnowledgeContext,
 )
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 from moduly.proverky.sluzby.control_point_history_service import control_point_history_service
+from moduly.proverky.sluzby.inspection_verification_service import (
+    inspection_verification_service,
+)
 from moduly.proverky.sluzby.proverky_knowledge_service import proverky_knowledge_service
 from moduly.proverky.sluzby.proverky_reference_photo_service import proverky_reference_photo_service
 
@@ -106,6 +113,8 @@ class _ControlPointSeverityBadge(QLabel):
 class BozpKnowledgeSectionWidget(QWidget):
     """Vykreslí znalostní uzel sekce — popis a tematické bloky z JSON."""
 
+    verification_type_changed = Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -121,6 +130,7 @@ class BozpKnowledgeSectionWidget(QWidget):
         self._history_point_label: QLabel | None = None
         self._workplace_history_host: QWidget | None = None
         self._shared_experiences_host: QWidget | None = None
+        self._overrides_cache: dict[tuple[str, str, str], str] | None = None
 
         self._content_host = QWidget()
         self._content_layout = QVBoxLayout(self._content_host)
@@ -148,14 +158,32 @@ class BozpKnowledgeSectionWidget(QWidget):
 
     def set_inspection_id(self, inspection_id: int | None) -> None:
         self._inspection_id = inspection_id
+        self._overrides_cache = None
         self.refresh()
 
     def set_on_finding_saved(self, callback) -> None:
         self._on_finding_saved = callback
 
     def refresh(self) -> None:
+        self._overrides_cache = None
         self._rebuild_content()
 
+    def _overrides(self) -> dict[tuple[str, str, str], str]:
+        if self._overrides_cache is None:
+            self._overrides_cache = inspection_verification_service.overrides_map(
+                self._inspection_id
+            )
+        return self._overrides_cache
+
+    def _effective_type(self, item: dict) -> str:
+        return inspection_verification_service.effective_verification_type(
+            self._inspection_id,
+            area_id=self._area_id,
+            section_id=self._section_id,
+            control_point_id=str(item.get("id") or "").strip(),
+            item=item,
+            overrides=self._overrides(),
+        )
     def _rebuild_content(self) -> None:
         section = self._current_section
         self._clear_content()
@@ -584,6 +612,11 @@ class BozpKnowledgeSectionWidget(QWidget):
         layout.addWidget(header)
 
         items = proverky_knowledge_service.get_active_items(section.get("kontrolni_body"))
+        items = [
+            item
+            for item in items
+            if self._effective_type(item) == VERIFICATION_TYPE_DOCUMENTATION
+        ]
         if not items:
             layout.addWidget(self._build_info_label(KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT))
         else:
@@ -653,6 +686,17 @@ class BozpKnowledgeSectionWidget(QWidget):
             must_be_saved_message=INSPECTION_MUST_BE_SAVED_MESSAGE,
         )
         row_layout.addWidget(photo_widget)
+
+        move_row = QHBoxLayout()
+        move_row.setContentsMargins(0, 0, 0, 0)
+        move_btn = QPushButton(MOVE_TO_TERRAIN_LABEL)
+        move_btn.setToolTip(MOVE_VERIFICATION_TYPE_TOOLTIP)
+        move_btn.clicked.connect(
+            lambda _checked=False, cp=item: self._move_to_terrain(cp)
+        )
+        move_row.addWidget(move_btn)
+        move_row.addStretch()
+        row_layout.addLayout(move_row)
 
         finding_host = QWidget()
         finding_layout = QVBoxLayout(finding_host)
@@ -735,6 +779,29 @@ class BozpKnowledgeSectionWidget(QWidget):
         button = QPushButton(FINDING_CREATE_FROM_CONTROL_POINT_LABEL)
         button.clicked.connect(lambda _checked=False, item=control_point: self._create_finding(item))
         return button
+
+    def _move_to_terrain(self, control_point: dict) -> None:
+        if self._inspection_id is None:
+            QMessageBox.information(
+                self,
+                MOVE_TO_TERRAIN_LABEL,
+                INSPECTION_MUST_BE_SAVED_MESSAGE,
+            )
+            return
+        cp_id = str(control_point.get("id") or "").strip()
+        if not cp_id:
+            return
+        inspection_verification_service.set_override(
+            self._inspection_id,
+            area_id=self._area_id,
+            section_id=self._section_id,
+            control_point_id=cp_id,
+            verification_type=VERIFICATION_TYPE_TERRAIN,
+            item=control_point,
+        )
+        self._overrides_cache = None
+        self.verification_type_changed.emit()
+        self.refresh()
 
     def _build_linked_finding_block(self, finding, context: ProverkyFindingKnowledgeContext) -> QWidget:
         panel = QFrame()

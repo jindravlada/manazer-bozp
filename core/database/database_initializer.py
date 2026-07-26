@@ -45,6 +45,9 @@ def initialize_database() -> None:
     from moduly.proverky.modely.bozp_inspection_commission_member import (  # noqa: F401
         BozpInspectionCommissionMember,
     )
+    from moduly.proverky.modely.bozp_inspection_verification_override import (  # noqa: F401
+        BozpInspectionVerificationOverride,
+    )
     from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement  # noqa: F401
     from moduly.pravni_pozadavky.modely.legal_requirement_check import (  # noqa: F401
         LegalRequirementCheck,
@@ -148,6 +151,7 @@ def initialize_database() -> None:
     _ensure_audit_commission_table()
     _ensure_bozp_inspection_commission_table()
     _ensure_bozp_inspection_columns()
+    _ensure_bozp_inspection_verification_override_table()
     _ensure_bozp_annual_report_table()
     _ensure_audit_annual_report_table()
     _ensure_audit_process_maturity_snapshot_table()
@@ -434,6 +438,19 @@ def _ensure_bozp_inspection_columns() -> None:
         _add_column("bozp_inspections", "silne_stranky TEXT DEFAULT '' NOT NULL")
     if "doporuceni_vedouciho" not in columns:
         _add_column("bozp_inspections", "doporuceni_vedouciho TEXT DEFAULT '' NOT NULL")
+
+
+def _ensure_bozp_inspection_verification_override_table() -> None:
+    columns = _table_columns("bozp_inspection_verification_overrides")
+    if columns:
+        return
+    from moduly.proverky.modely.bozp_inspection_verification_override import (
+        BozpInspectionVerificationOverride,
+    )
+
+    BozpInspectionVerificationOverride.__table__.create(
+        bind=_db_engine(), checkfirst=True
+    )
 
 
 def _ensure_bozp_annual_report_table() -> None:

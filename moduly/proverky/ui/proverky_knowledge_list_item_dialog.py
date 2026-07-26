@@ -1,16 +1,23 @@
 from PySide6.QtWidgets import (
+    QButtonGroup,
     QCheckBox,
     QComboBox,
     QDialog,
     QFormLayout,
+    QHBoxLayout,
     QLineEdit,
     QMessageBox,
+    QRadioButton,
     QTextEdit,
     QVBoxLayout,
+    QWidget,
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
-from moduly.proverky.constants import CONTROL_POINT_SEVERITY_OPTIONS
+from moduly.proverky.constants import (
+    CONTROL_POINT_SEVERITY_OPTIONS,
+    VERIFICATION_TYPE_OPTIONS,
+)
 from moduly.proverky.sluzby.proverky_knowledge_service import proverky_knowledge_service
 
 
@@ -25,11 +32,12 @@ class ProverkyKnowledgeListItemDialog(QDialog):
         item: dict | None = None,
         existing_ids: set[str] | None = None,
         include_zavaznost: bool = False,
+        include_verification_type: bool = False,
     ):
         super().__init__(parent)
 
         self.setWindowTitle(title)
-        self.resize(560, 360)
+        self.resize(560, 420 if include_verification_type else 360)
 
         self._original_id = str((item or {}).get("id") or "").strip()
         self._existing_ids = set(existing_ids or set())
@@ -67,11 +75,34 @@ class ProverkyKnowledgeListItemDialog(QDialog):
             if index >= 0:
                 self._zavaznost_combo.setCurrentIndex(index)
 
+        self._verification_group: QButtonGroup | None = None
+        verification_host: QWidget | None = None
+        if include_verification_type:
+            verification_host = QWidget()
+            verification_layout = QHBoxLayout(verification_host)
+            verification_layout.setContentsMargins(0, 0, 0, 0)
+            self._verification_group = QButtonGroup(self)
+            current_type = proverky_knowledge_service.normalize_verification_type(
+                (item or {}).get("verification_type")
+            )
+            for value, label in VERIFICATION_TYPE_OPTIONS:
+                radio = QRadioButton(label)
+                radio.setProperty("verification_type", value)
+                self._verification_group.addButton(radio)
+                verification_layout.addWidget(radio)
+                if value == current_type:
+                    radio.setChecked(True)
+            if self._verification_group.checkedButton() is None:
+                self._verification_group.buttons()[0].setChecked(True)
+            verification_layout.addStretch()
+
         form.addRow("Identifikátor:", self._id_edit)
         form.addRow("Název:", self._nazev_edit)
         form.addRow("Popis:", self._popis_edit)
         if self._zavaznost_combo is not None:
             form.addRow("Závažnost:", self._zavaznost_combo)
+        if verification_host is not None:
+            form.addRow("Typ ověření:", verification_host)
         form.addRow("", self._aktivni_check)
         layout.addLayout(form)
 
@@ -96,6 +127,12 @@ class ProverkyKnowledgeListItemDialog(QDialog):
         if self._zavaznost_combo is not None:
             data["zavaznost"] = proverky_knowledge_service.normalize_control_point_severity(
                 self._zavaznost_combo.currentData()
+            )
+        if self._verification_group is not None:
+            checked = self._verification_group.checkedButton()
+            value = checked.property("verification_type") if checked is not None else None
+            data["verification_type"] = proverky_knowledge_service.normalize_verification_type(
+                value
             )
         return data
 

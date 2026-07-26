@@ -13,6 +13,7 @@ from moduly.proverky.constants import (
     CONTROL_POINT_SEVERITY_NIZKA,
     CONTROL_POINT_SEVERITY_STREDNI,
     CONTROL_POINT_SEVERITY_VYSOKA,
+    VERIFICATION_TYPE_DEFAULT,
 )
 
 _VALID_CONTROL_POINT_SEVERITIES = frozenset(
@@ -727,9 +728,37 @@ class ProverkyKnowledgeService:
                     "poradi": (index + 1) * 10,
                     "aktivni": bool(raw.get("aktivni", True)),
                     "zavaznost": cls.normalize_control_point_severity(raw.get("zavaznost")),
+                    "verification_type": cls.normalize_verification_type(
+                        raw.get("verification_type")
+                    ),
                 }
             )
         return normalized
+
+    @staticmethod
+    def normalize_verification_type(value) -> str:
+        from moduly.proverky.constants import (
+            VERIFICATION_TYPE_DOCUMENTATION,
+            VERIFICATION_TYPE_TERRAIN,
+        )
+
+        normalized = str(value or "").strip().lower()
+        if normalized in {
+            VERIFICATION_TYPE_DOCUMENTATION,
+            VERIFICATION_TYPE_TERRAIN,
+        }:
+            return normalized
+        if normalized in {"dokumentace", "documentation", "doc"}:
+            return VERIFICATION_TYPE_DOCUMENTATION
+        if normalized in {"terén", "teren", "terrain", "field"}:
+            return VERIFICATION_TYPE_TERRAIN
+        return VERIFICATION_TYPE_DEFAULT
+
+    @classmethod
+    def get_verification_type(cls, item: dict | None) -> str:
+        if not isinstance(item, dict):
+            return VERIFICATION_TYPE_DEFAULT
+        return cls.normalize_verification_type(item.get("verification_type"))
 
     @staticmethod
     def normalize_list_items(items: list[dict]) -> list[dict]:

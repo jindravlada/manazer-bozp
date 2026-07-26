@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
-from moduly.proverky.constants import TAB_KONTROLOVANE_OBLASTI
+from moduly.proverky.constants import TAB_KONTROLOVANE_OBLASTI, TAB_TEREN
 from moduly.proverky.sluzby.bozp_inspection_commission_service import (
     bozp_inspection_commission_service,
 )
@@ -17,6 +17,7 @@ from moduly.proverky.ui.bozp_inspection_conclusion_widget import BozpInspectionC
 from moduly.proverky.ui.bozp_inspection_findings_widget import BozpInspectionFindingsWidget
 from moduly.proverky.ui.bozp_inspection_spis_widget import BozpInspectionSpisWidget
 from moduly.proverky.ui.bozp_inspection_tasks_widget import BozpInspectionTasksWidget
+from moduly.proverky.ui.bozp_inspection_terrain_widget import BozpInspectionTerrainWidget
 
 
 class BozpInspectionDialog(QDialog):
@@ -39,6 +40,8 @@ class BozpInspectionDialog(QDialog):
         self.tabs.addTab(self.commission_widget, "Komise")
         self.areas_widget = BozpInspectionAreasWidget()
         self.tabs.addTab(self.areas_widget, TAB_KONTROLOVANE_OBLASTI)
+        self.terrain_widget = BozpInspectionTerrainWidget()
+        self.tabs.addTab(self.terrain_widget, TAB_TEREN)
         self.findings_widget = BozpInspectionFindingsWidget()
         self.tabs.addTab(self.findings_widget, "Zjištění")
         self.tasks_widget = BozpInspectionTasksWidget()
@@ -55,6 +58,9 @@ class BozpInspectionDialog(QDialog):
         inspection_id = inspection.id if inspection is not None else None
         self.set_inspection_id(inspection_id)
         self.areas_widget.set_on_finding_saved(self._on_finding_changed)
+        self.terrain_widget.set_on_finding_saved(self._on_finding_changed)
+        self.areas_widget.set_on_verification_type_changed(self._on_verification_type_changed)
+        self.terrain_widget.verification_type_changed.connect(self._on_verification_type_changed)
         self.findings_widget.set_on_task_changed(self._on_related_data_changed)
         self.conclusion_widget.set_complete_handler(self._complete_inspection)
         self.spis_widget.load_inspection(inspection)
@@ -63,12 +69,18 @@ class BozpInspectionDialog(QDialog):
 
     def set_inspection_id(self, inspection_id: int | None) -> None:
         self.areas_widget.set_inspection_id(inspection_id)
+        self.terrain_widget.set_inspection_id(inspection_id)
         self.findings_widget.set_inspection_id(inspection_id)
         self.tasks_widget.set_inspection_id(inspection_id)
 
     def _on_finding_changed(self) -> None:
         self._on_related_data_changed()
         self.areas_widget.refresh_findings_display()
+        self.terrain_widget.refresh()
+
+    def _on_verification_type_changed(self) -> None:
+        self.areas_widget.refresh_findings_display()
+        self.terrain_widget.refresh()
 
     def _on_related_data_changed(self) -> None:
         self.findings_widget.refresh()

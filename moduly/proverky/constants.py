@@ -74,6 +74,7 @@ YEAR_FILTER_VSE = "Vše"
 ROCNI_ZPRAVA_TOOLTIP = "Bude dostupné po dokončení statistik a ročních přehledů."
 
 TAB_KONTROLOVANE_OBLASTI = "Kontrolované oblasti"
+TAB_TEREN = "Terén"
 
 COMMISSION_RECORD_LEADER = "vedouci_komise"
 COMMISSION_RECORD_WORKPLACE = "zastupce_pracoviste"
@@ -103,6 +104,7 @@ TAB_LABELS = (
     "Spis",
     "Komise",
     TAB_KONTROLOVANE_OBLASTI,
+    TAB_TEREN,
     "Zjištění",
     "Úkoly",
     "Závěr",
@@ -184,6 +186,35 @@ CONTROL_POINT_SEVERITY_OPTIONS = (
     (CONTROL_POINT_SEVERITY_VYSOKA, "Vysoká"),
     (CONTROL_POINT_SEVERITY_STREDNI, "Střední"),
     (CONTROL_POINT_SEVERITY_NIZKA, "Nízká"),
+)
+
+VERIFICATION_TYPE_DOCUMENTATION = "dokumentace"
+VERIFICATION_TYPE_TERRAIN = "teren"
+VERIFICATION_TYPE_DEFAULT = VERIFICATION_TYPE_DOCUMENTATION
+
+VERIFICATION_TYPE_OPTIONS = (
+    (VERIFICATION_TYPE_DOCUMENTATION, "Dokumentace"),
+    (VERIFICATION_TYPE_TERRAIN, "Terén"),
+)
+
+VERIFICATION_TYPE_LABELS = dict(VERIFICATION_TYPE_OPTIONS)
+
+MOVE_TO_TERRAIN_LABEL = "→ Terén"
+MOVE_TO_DOCUMENTATION_LABEL = "→ Dokumentace"
+MOVE_VERIFICATION_TYPE_TOOLTIP = (
+    "Změní typ ověření jen pro tuto prověrku. Metodika zůstane beze změny."
+)
+
+TERRAIN_CHECKLIST_BUTTON_LABEL = "Terénní checklist"
+TERRAIN_CHECKLIST_DIALOG_TITLE = "Terénní checklist"
+TERRAIN_CHECKLIST_TOOLTIP = (
+    "Pracovní checklist kontrolních bodů pro ověření v provozu."
+)
+TERRAIN_CHECKLIST_EMPTY = "Nejsou žádné kontrolní body typu Terén."
+TERRAIN_TAB_EMPTY = "Žádné kontrolní body pro terénní ověření."
+TERRAIN_TAB_HINT = (
+    "Kontrolní body určené k ověření v provozu. "
+    "Po pochůzce doplňte hodnocení, poznámku a případně fotografie."
 )
 
 

@@ -106,6 +106,9 @@ class BozpInspectionAreasWidget(QWidget):
     def set_on_finding_saved(self, callback) -> None:
         self.knowledge_widget.set_on_finding_saved(callback)
 
+    def set_on_verification_type_changed(self, callback) -> None:
+        self.knowledge_widget.section_widget.verification_type_changed.connect(callback)
+
     def refresh_findings_display(self) -> None:
         self.knowledge_widget.refresh_findings_display()
 
