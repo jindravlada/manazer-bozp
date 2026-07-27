@@ -19,6 +19,7 @@ from core.shared.sluzby.finding_task_service import finding_task_service
 from core.shared.task_source_display import task_source_label, task_type_label
 from core.widgets.attachment_widget import AttachmentWidget
 from core.widgets.dialog_utils import create_save_cancel_box, configure_resizable_form_dialog, wrap_in_scroll_area
+from core.widgets.editor_dialog_controller import EditorDialogController
 from core.widgets.task_finding_source_panel import TaskFindingSourcePanel
 from moduly.ukoly.constants import TASK_TYPE_INVESTIGATION_ACTION
 from core.widgets.date_edit import DateEdit
@@ -80,11 +81,16 @@ class TaskDialog(QDialog):
 
         main_layout.addWidget(self.tabs, 1)
 
-        buttons = create_save_cancel_box(self)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-
+        buttons = create_save_cancel_box(self, is_new=task is None)
         main_layout.addWidget(buttons)
+        self._editor = EditorDialogController(
+            self,
+            buttons,
+            is_new=task is None,
+            title=self.windowTitle(),
+        )
+        self._editor.set_snapshot_provider(self.get_data)
+        self._editor.install_auto_dirty_tracking()
 
         self.completed_checkbox.stateChanged.connect(self._completed_changed)
         self.requires_verification_checkbox.stateChanged.connect(self._verification_changed)
@@ -114,6 +120,7 @@ class TaskDialog(QDialog):
 
         self._verification_changed()
         self._refresh_status()
+        self._editor.capture_baseline()
 
     def _should_show_source_open_button(self) -> bool:
         if self._finding is None:

@@ -163,7 +163,7 @@ class HazardLibraryUxSave1bTestCase(unittest.TestCase):
             [],
         )
 
-    def test_close_prompt_save_discard_stay(self) -> None:
+    def test_close_prompt_save_discard_cancel(self) -> None:
         from PySide6.QtGui import QCloseEvent
         from PySide6.QtWidgets import QMessageBox
 
@@ -174,7 +174,7 @@ class HazardLibraryUxSave1bTestCase(unittest.TestCase):
             name="Dirty event",
         )
 
-        with patch.object(dialog, "_prompt_unsaved_close", return_value="stay"):
+        with patch.object(dialog, "_prompt_unsaved_close", return_value="cancel"):
             event = QCloseEvent()
             dialog.closeEvent(event)
             self.assertTrue(event.isAccepted() is False or not event.isAccepted())

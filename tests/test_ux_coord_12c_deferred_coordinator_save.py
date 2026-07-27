@@ -70,11 +70,13 @@ with patch.object(Path, "home", return_value=_TMP):
         coordination_participant_service,
     )
     from moduly.koordinace_bozp.ui.bozp_coordination_dialog import (
-        UNSAVED_CANCEL,
-        UNSAVED_DISCARD,
-        UNSAVED_PROMPT,
-        UNSAVED_SAVE,
         BozpCoordinationDialog,
+    )
+    from core.widgets.editor_dialog_controller import (
+        EDITOR_UNSAVED_ABORT_LABEL,
+        EDITOR_UNSAVED_DISCARD_LABEL,
+        EDITOR_UNSAVED_PROMPT,
+        EDITOR_UNSAVED_SAVE_LABEL,
     )
     from moduly.nastaveni.sluzby.settings_service import settings_service
 
@@ -222,10 +224,10 @@ class UxCoord12cDeferredCoordinatorSaveTestCase(unittest.TestCase):
         self.assertEqual(loaded.employer_name, main.company_name)
 
     def test_prompt_labels(self) -> None:
-        self.assertEqual(UNSAVED_PROMPT, "Máte neuložené změny.")
-        self.assertEqual(UNSAVED_SAVE, "Uložit")
-        self.assertEqual(UNSAVED_DISCARD, "Zahodit")
-        self.assertEqual(UNSAVED_CANCEL, "Zrušit")
+        self.assertEqual(EDITOR_UNSAVED_PROMPT, "Uložit změny před zavřením?")
+        self.assertEqual(EDITOR_UNSAVED_SAVE_LABEL, "Uložit")
+        self.assertEqual(EDITOR_UNSAVED_DISCARD_LABEL, "Neukládat")
+        self.assertEqual(EDITOR_UNSAVED_ABORT_LABEL, "Zrušit")
 
         coordination, _main, _participant = self._setup()
         dialog = BozpCoordinationDialog(None, coordination=coordination)

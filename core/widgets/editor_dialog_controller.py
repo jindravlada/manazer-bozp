@@ -1,0 +1,311 @@
+"""UX-DIALOG-2 – jednotná logika tlačítek editorů (Uložit / Zrušit / Zavřít)."""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import Literal
+
+from PySide6.QtCore import QObject
+from PySide6.QtGui import QCloseEvent, QIcon
+from PySide6.QtWidgets import (
+    QApplication,
+    QCheckBox,
+    QComboBox,
+    QDateEdit,
+    QDialog,
+    QDialogButtonBox,
+    QLineEdit,
+    QMessageBox,
+    QPlainTextEdit,
+    QPushButton,
+    QSpinBox,
+    QStyle,
+    QTextEdit,
+    QWidget,
+)
+
+EDITOR_SAVE_LABEL = "Uložit"
+EDITOR_CANCEL_LABEL = "Zrušit"
+EDITOR_CLOSE_LABEL = "Zavřít"
+EDITOR_UNSAVED_PROMPT = "Uložit změny před zavřením?"
+EDITOR_UNSAVED_SAVE_LABEL = "Uložit"
+EDITOR_UNSAVED_DISCARD_LABEL = "Neukládat"
+EDITOR_UNSAVED_ABORT_LABEL = "Zrušit"
+
+UnsavedCloseDecision = Literal["save", "discard", "cancel"]
+
+
+def _standard_icon(pixmap: QStyle.StandardPixmap) -> QIcon:
+    return QApplication.style().standardIcon(pixmap)
+
+
+def confirm_unsaved_editor_close(parent: QWidget | None, *, title: str) -> UnsavedCloseDecision:
+    """Standardní dialog neuložených změn. Vrací ``save`` / ``discard`` / ``cancel``."""
+    message = QMessageBox(parent)
+    message.setWindowTitle(title)
+    message.setText(EDITOR_UNSAVED_PROMPT)
+    message.setIcon(QMessageBox.Icon.Question)
+
+    save_btn = message.addButton(
+        EDITOR_UNSAVED_SAVE_LABEL,
+        QMessageBox.ButtonRole.AcceptRole,
+    )
+    discard_btn = message.addButton(
+        EDITOR_UNSAVED_DISCARD_LABEL,
+        QMessageBox.ButtonRole.DestructiveRole,
+    )
+    cancel_btn = message.addButton(
+        EDITOR_UNSAVED_ABORT_LABEL,
+        QMessageBox.ButtonRole.RejectRole,
+    )
+    message.setDefaultButton(cancel_btn)
+    message.exec()
+
+    clicked = message.clickedButton()
+    if clicked is save_btn:
+        return "save"
+    if clicked is discard_btn:
+        return "discard"
+    return "cancel"
+
+
+def configure_editor_close_button(
+    button: QPushButton | None,
+    *,
+    is_new: bool,
+) -> None:
+    """Zrušit (nový) ↔ Zavřít (existující / po prvním uložení)."""
+    if button is None:
+        return
+    if is_new:
+        button.setText(EDITOR_CANCEL_LABEL)
+        button.setIcon(_standard_icon(QStyle.StandardPixmap.SP_DialogCancelButton))
+    else:
+        button.setText(EDITOR_CLOSE_LABEL)
+        button.setIcon(_standard_icon(QStyle.StandardPixmap.SP_DialogCloseButton))
+
+
+def configure_editor_save_button(button: QPushButton | None) -> None:
+    if button is None:
+        return
+    button.setText(EDITOR_SAVE_LABEL)
+    button.setIcon(_standard_icon(QStyle.StandardPixmap.SP_DialogSaveButton))
+
+
+def configure_editor_buttons(
+    buttons: QDialogButtonBox,
+    *,
+    is_new: bool,
+) -> None:
+    """Nastaví popisky Uložit + Zrušit/Zavřít podle režimu editoru."""
+    configure_editor_save_button(buttons.button(QDialogButtonBox.StandardButton.Save))
+    ok_btn = buttons.button(QDialogButtonBox.StandardButton.Ok)
+    if ok_btn is not None:
+        configure_editor_save_button(ok_btn)
+    configure_editor_close_button(
+        buttons.button(QDialogButtonBox.StandardButton.Cancel),
+        is_new=is_new,
+    )
+
+
+def create_editor_button_box(
+    parent: QWidget | None = None,
+    *,
+    is_new: bool = True,
+) -> QDialogButtonBox:
+    buttons = QDialogButtonBox(
+        QDialogButtonBox.StandardButton.Cancel | QDialogButtonBox.StandardButton.Save,
+        parent=parent,
+    )
+    configure_editor_buttons(buttons, is_new=is_new)
+    return buttons
+
+
+def set_editor_save_enabled(buttons: QDialogButtonBox, enabled: bool) -> None:
+    for role in (
+        QDialogButtonBox.StandardButton.Save,
+        QDialogButtonBox.StandardButton.Ok,
+    ):
+        button = buttons.button(role)
+        if button is not None:
+            button.setEnabled(enabled)
+
+
+class EditorDialogController(QObject):
+    """Řídí Uložit / Zrušit|Zavřít a dotaz při neuložených změnách.
+
+    Stay-open editory: po úspěšném vytvoření zavolejte ``become_existing()``.
+    Modalní editory (Uložit = accept): stačí ``is_new`` + dirty tracking.
+    """
+
+    def __init__(
+        self,
+        dialog: QDialog,
+        buttons: QDialogButtonBox,
+        *,
+        is_new: bool,
+        title: str,
+        on_save: Callable[[], bool] | None = None,
+        is_dirty: Callable[[], bool] | None = None,
+        parent: QObject | None = None,
+    ):
+        super().__init__(parent or dialog)
+        self._dialog = dialog
+        self._buttons = buttons
+        self._is_new = bool(is_new)
+        self._title = title
+        self._on_save = on_save
+        self._is_dirty_fn = is_dirty
+        self._dirty = bool(is_new)
+        self._closing = False
+        self._baseline: object | None = None
+        self._snapshot_fn: Callable[[], object] | None = None
+
+        self.save_button = buttons.button(QDialogButtonBox.StandardButton.Save)
+        if self.save_button is None:
+            self.save_button = buttons.button(QDialogButtonBox.StandardButton.Ok)
+        self.close_button = buttons.button(QDialogButtonBox.StandardButton.Cancel)
+
+        configure_editor_buttons(buttons, is_new=self._is_new)
+        self._refresh_save_enabled()
+
+        # Odpoj výchozí accept/reject – řídíme sami (pokud byly napojené).
+        for signal in (buttons.accepted, buttons.rejected):
+            try:
+                signal.disconnect()
+            except (TypeError, RuntimeError):
+                pass
+
+        if self.save_button is not None:
+            self.save_button.clicked.connect(self._handle_save_clicked)
+        if self.close_button is not None:
+            self.close_button.clicked.connect(self._handle_close_clicked)
+
+        dialog.installEventFilter(self)
+
+    @property
+    def is_new(self) -> bool:
+        return self._is_new
+
+    def set_save_handler(self, on_save: Callable[[], bool]) -> None:
+        self._on_save = on_save
+
+    def set_dirty_checker(self, is_dirty: Callable[[], bool]) -> None:
+        self._is_dirty_fn = is_dirty
+        self._refresh_save_enabled()
+
+    def set_snapshot_provider(self, snapshot_fn: Callable[[], object]) -> None:
+        """Dirty = snapshot() != baseline. Po načtení volejte ``capture_baseline()``."""
+        self._snapshot_fn = snapshot_fn
+
+    def capture_baseline(self) -> None:
+        if self._snapshot_fn is not None:
+            self._baseline = self._snapshot_fn()
+        if not self._is_new:
+            self._dirty = False
+        self._refresh_save_enabled()
+
+    def mark_dirty(self, *_args) -> None:
+        self._dirty = True
+        self._refresh_save_enabled()
+
+    def mark_clean(self) -> None:
+        self._dirty = False
+        if self._snapshot_fn is not None:
+            self._baseline = self._snapshot_fn()
+        self._refresh_save_enabled()
+
+    def become_existing(self) -> None:
+        """Po prvním úspěšném uložení nového záznamu: Zrušit → Zavřít."""
+        self._is_new = False
+        configure_editor_close_button(self.close_button, is_new=False)
+        self.mark_clean()
+
+    def is_dirty(self) -> bool:
+        if self._is_dirty_fn is not None:
+            return bool(self._is_dirty_fn())
+        if self._snapshot_fn is not None:
+            return self._snapshot_fn() != self._baseline
+        return self._dirty
+
+    def install_auto_dirty_tracking(self, root: QWidget | None = None) -> None:
+        """Napojí běžné editační widgety na ``mark_dirty``."""
+        host = root or self._dialog
+        for widget in host.findChildren(QLineEdit):
+            widget.textChanged.connect(self.mark_dirty)
+        for widget in host.findChildren(QTextEdit):
+            widget.textChanged.connect(self.mark_dirty)
+        for widget in host.findChildren(QPlainTextEdit):
+            widget.textChanged.connect(self.mark_dirty)
+        for widget in host.findChildren(QComboBox):
+            widget.currentIndexChanged.connect(self.mark_dirty)
+        for widget in host.findChildren(QCheckBox):
+            widget.stateChanged.connect(self.mark_dirty)
+        for widget in host.findChildren(QDateEdit):
+            widget.dateChanged.connect(self.mark_dirty)
+        for widget in host.findChildren(QSpinBox):
+            widget.valueChanged.connect(self.mark_dirty)
+
+    def request_close(self) -> bool:
+        """Zpracuje požadavek na zavření. ``True`` = smí se zavřít."""
+        if self._closing:
+            return True
+        if not self.is_dirty():
+            return True
+
+        decision = confirm_unsaved_editor_close(self._dialog, title=self._title)
+        if decision == "cancel":
+            return False
+        if decision == "save":
+            return self._run_save()
+        # discard
+        return True
+
+    def force_close(self) -> None:
+        self._closing = True
+        self._dialog.reject()
+
+    def _refresh_save_enabled(self) -> None:
+        if self._is_new:
+            set_editor_save_enabled(self._buttons, True)
+            return
+        set_editor_save_enabled(self._buttons, self.is_dirty())
+
+    def _run_save(self) -> bool:
+        if self._on_save is None:
+            self._dialog.accept()
+            return True
+        ok = bool(self._on_save())
+        if not ok:
+            return False
+        if self._is_new:
+            self.become_existing()
+        else:
+            self.mark_clean()
+        return True
+
+    def _handle_save_clicked(self) -> None:
+        if self._on_save is None:
+            # Klasický modal: parent uloží po accept().
+            if not self._is_new and not self.is_dirty():
+                return
+            self._dialog.accept()
+            return
+        self._run_save()
+
+    def _handle_close_clicked(self) -> None:
+        if not self.request_close():
+            return
+        self._closing = True
+        self._dialog.reject()
+
+    def eventFilter(self, watched, event):  # noqa: N802
+        dialog = getattr(self, "_dialog", None)
+        if dialog is not None and watched is dialog and isinstance(event, QCloseEvent):
+            if self._closing:
+                return False
+            if not self.request_close():
+                event.ignore()
+                return True
+            self._closing = True
+        return super().eventFilter(watched, event)

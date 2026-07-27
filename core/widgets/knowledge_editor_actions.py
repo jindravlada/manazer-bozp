@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (
     QApplication,
     QHBoxLayout,
     QLabel,
-    QMessageBox,
     QPushButton,
     QSizePolicy,
     QStyle,
@@ -94,33 +93,10 @@ def create_knowledge_editor_footer(
 
 
 def confirm_close_with_unsaved_changes(parent: QWidget, *, title: str) -> str:
-    """Vrátí ``save``, ``discard`` nebo ``cancel``."""
-    message = QMessageBox(parent)
-    message.setWindowTitle(title)
-    message.setText(KNOWLEDGE_EDITOR_UNSAVED_PROMPT)
-    message.setIcon(QMessageBox.Icon.Question)
+    """Vrátí ``save``, ``discard`` nebo ``cancel`` (UX-DIALOG-2)."""
+    from core.widgets.editor_dialog_controller import confirm_unsaved_editor_close
 
-    save_btn = message.addButton(
-        KNOWLEDGE_EDITOR_SAVE_LABEL,
-        QMessageBox.ButtonRole.AcceptRole,
-    )
-    discard_btn = message.addButton(
-        KNOWLEDGE_EDITOR_DISCARD_LABEL,
-        QMessageBox.ButtonRole.DestructiveRole,
-    )
-    cancel_btn = message.addButton(
-        KNOWLEDGE_EDITOR_CANCEL_LABEL,
-        QMessageBox.ButtonRole.RejectRole,
-    )
-    message.setDefaultButton(cancel_btn)
-
-    message.exec()
-    clicked = message.clickedButton()
-    if clicked is save_btn:
-        return "save"
-    if clicked is discard_btn:
-        return "discard"
-    return "cancel"
+    return confirm_unsaved_editor_close(parent, title=title)
 
 
 def show_unsaved_status(status_label: QLabel) -> None:

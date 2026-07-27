@@ -114,7 +114,7 @@ class LegalRequirementDialog(QDialog):
         )
         self.tabs.addTab(wrap_in_scroll_area(self.process_index_widget), "Index procesu")
         layout.addWidget(self.tabs, 1)
-        add_save_cancel_footer(layout, self)
+        add_save_cancel_footer(layout, self, is_new=requirement is None)
 
         if requirement is not None:
             self._load_requirement(requirement)

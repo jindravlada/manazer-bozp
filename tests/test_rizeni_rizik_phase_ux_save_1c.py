@@ -326,14 +326,14 @@ class HazardIdentificationUxSave1cTestCase(unittest.TestCase):
         dialog._closing = True
         dialog.close()
 
-    def test_close_prompt_stay_keeps_dirty(self) -> None:
+    def test_close_prompt_cancel_keeps_dirty(self) -> None:
         dialog = HazardIdentificationDialog(identification=self.identification)
         assert dialog._identification_store is not None
         dialog._identification_store.create_item(
             category=HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
             name="Zůstat",
         )
-        with patch.object(dialog, "_prompt_unsaved_close", return_value="stay"):
+        with patch.object(dialog, "_prompt_unsaved_close", return_value="cancel"):
             from PySide6.QtGui import QCloseEvent
 
             event = QCloseEvent()

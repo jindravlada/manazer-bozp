@@ -8,14 +8,14 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
+from core.widgets.editor_dialog_controller import (
+    configure_editor_close_button,
+    confirm_unsaved_editor_close,
+)
 from moduly.rizeni_rizik.constants import (
     DIALOG_WINDOW_TITLE,
     HAZARD_IDENTIFICATION_CANCEL_CONFIRM,
     HAZARD_IDENTIFICATION_SAVE_SUCCESS,
-    HAZARD_IDENTIFICATION_UNSAVED_DISCARD,
-    HAZARD_IDENTIFICATION_UNSAVED_PROMPT,
-    HAZARD_IDENTIFICATION_UNSAVED_SAVE,
-    HAZARD_IDENTIFICATION_UNSAVED_STAY,
     TAB_BASICS,
     TAB_INVENTORY,
     TAB_PHOTOS,
@@ -76,13 +76,13 @@ class HazardIdentificationDialog(QDialog):
 
         layout.addWidget(self.tabs)
 
-        self.buttons = create_save_cancel_box(self)
+        self.buttons = create_save_cancel_box(self, is_new=identification is None)
         self.save_button = self.buttons.button(QDialogButtonBox.StandardButton.Save)
-        cancel_button = self.buttons.button(QDialogButtonBox.StandardButton.Cancel)
+        self.cancel_button = self.buttons.button(QDialogButtonBox.StandardButton.Cancel)
         if self.save_button is not None:
             self.save_button.clicked.connect(self._save_all)
-        if cancel_button is not None:
-            cancel_button.clicked.connect(self._on_cancel_clicked)
+        if self.cancel_button is not None:
+            self.cancel_button.clicked.connect(self._on_cancel_clicked)
         layout.addWidget(self.buttons)
 
         self._connect_basics_change_signals()
@@ -200,7 +200,7 @@ class HazardIdentificationDialog(QDialog):
     def _handle_open_library_template(self, template_id: int) -> None:
         if self.is_dirty():
             decision = self._prompt_unsaved_close()
-            if decision == "stay":
+            if decision == "cancel":
                 return
             if decision == "save":
                 if not self._save_all():
@@ -258,6 +258,7 @@ class HazardIdentificationDialog(QDialog):
         self._sync_inventory_context()
         self._sync_risk_assessment_context()
         self._refresh_child_widgets()
+        configure_editor_close_button(self.cancel_button, is_new=False)
         self._update_save_enabled()
         QMessageBox.information(self, DIALOG_WINDOW_TITLE, HAZARD_IDENTIFICATION_SAVE_SUCCESS)
         return True
@@ -296,30 +297,7 @@ class HazardIdentificationDialog(QDialog):
         self.reject()
 
     def _prompt_unsaved_close(self) -> str:
-        message = QMessageBox(self)
-        message.setWindowTitle(DIALOG_WINDOW_TITLE)
-        message.setText(HAZARD_IDENTIFICATION_UNSAVED_PROMPT)
-        message.setIcon(QMessageBox.Icon.Question)
-        save_btn = message.addButton(
-            HAZARD_IDENTIFICATION_UNSAVED_SAVE,
-            QMessageBox.ButtonRole.AcceptRole,
-        )
-        discard_btn = message.addButton(
-            HAZARD_IDENTIFICATION_UNSAVED_DISCARD,
-            QMessageBox.ButtonRole.DestructiveRole,
-        )
-        stay_btn = message.addButton(
-            HAZARD_IDENTIFICATION_UNSAVED_STAY,
-            QMessageBox.ButtonRole.RejectRole,
-        )
-        message.setDefaultButton(stay_btn)
-        message.exec()
-        clicked = message.clickedButton()
-        if clicked is save_btn:
-            return "save"
-        if clicked is discard_btn:
-            return "discard"
-        return "stay"
+        return confirm_unsaved_editor_close(self, title=DIALOG_WINDOW_TITLE)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         if self._closing or not self.is_dirty():
@@ -327,7 +305,7 @@ class HazardIdentificationDialog(QDialog):
             super().closeEvent(event)
             return
         decision = self._prompt_unsaved_close()
-        if decision == "stay":
+        if decision == "cancel":
             event.ignore()
             return
         if decision == "save":
@@ -344,7 +322,7 @@ class HazardIdentificationDialog(QDialog):
             return
         if self.is_dirty():
             decision = self._prompt_unsaved_close()
-            if decision == "stay":
+            if decision == "cancel":
                 return
             if decision == "save":
                 if not self._save_all():

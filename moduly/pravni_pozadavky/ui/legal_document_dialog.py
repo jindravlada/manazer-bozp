@@ -50,7 +50,7 @@ class LegalDocumentDialog(QDialog):
                 "Zdroje rizik",
             )
         layout.addWidget(self.tabs, 1)
-        add_save_cancel_footer(layout, self)
+        add_save_cancel_footer(layout, self, is_new=document is None)
 
         if document is not None:
             self._load_document(document)

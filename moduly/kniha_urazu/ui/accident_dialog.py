@@ -71,7 +71,7 @@ class AccidentDialog(QDialog):
 
         layout.addWidget(self.tabs, 1)
 
-        buttons = create_save_cancel_box(self)
+        buttons = create_save_cancel_box(self, is_new=accident is None)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)

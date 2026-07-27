@@ -38,7 +38,7 @@ class ResponsibilityRoleDialog(QDialog):
 
         layout.addWidget(wrap_in_scroll_area(form_host), 1)
 
-        buttons = create_save_cancel_box(self)
+        buttons = create_save_cancel_box(self, is_new=role is None)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)

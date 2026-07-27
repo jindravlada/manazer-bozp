@@ -63,7 +63,7 @@ class ControlDialog(QDialog):
 
         layout.addLayout(form)
 
-        buttons = create_save_cancel_box(self)
+        buttons = create_save_cancel_box(self, is_new=control is None)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)

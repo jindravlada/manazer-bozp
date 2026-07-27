@@ -26,6 +26,10 @@ from core.widgets.dialog_utils import (
     create_save_cancel_box,
     wrap_in_scroll_area,
 )
+from core.widgets.editor_dialog_controller import (
+    configure_editor_close_button,
+    confirm_unsaved_editor_close,
+)
 from moduly.koordinace_bozp.constants import (
     BOZP_COORDINATION_STATUS_DRAFT,
     BOZP_COORDINATION_STATUS_READY,
@@ -102,12 +106,6 @@ def _qdate_from_date(value: date) -> QDate:
 
 def _date_from_qdate(value: QDate) -> date:
     return date(value.year(), value.month(), value.day())
-
-
-UNSAVED_PROMPT = "Máte neuložené změny."
-UNSAVED_SAVE = "Uložit"
-UNSAVED_DISCARD = "Zahodit"
-UNSAVED_CANCEL = "Zrušit"
 
 
 class BozpCoordinationDialog(QDialog):
@@ -232,11 +230,9 @@ class BozpCoordinationDialog(QDialog):
         self.preview_btn = QPushButton("Náhled protokolu")
         self.preview_btn.setEnabled(coordination_id is not None)
         self.preview_btn.clicked.connect(self.open_protocol_preview)
-        self.buttons = create_save_cancel_box(self)
+        self.buttons = create_save_cancel_box(self, is_new=coordination is None)
         self.save_button = self.buttons.button(QDialogButtonBox.StandardButton.Save)
         self.close_button = self.buttons.button(QDialogButtonBox.StandardButton.Cancel)
-        if self.close_button is not None:
-            self.close_button.setText("Zavřít")
         if self.save_button is not None:
             self.save_button.clicked.connect(self._save)
         self.buttons.rejected.connect(self.reject)
@@ -289,9 +285,22 @@ class BozpCoordinationDialog(QDialog):
         if self._applying_edit_policy or self._closing:
             return
         self._dirty = True
+        self._update_save_enabled()
 
     def mark_clean(self) -> None:
         self._dirty = False
+        self._update_save_enabled()
+
+    def _update_save_enabled(self) -> None:
+        if self.save_button is None:
+            return
+        if self.coordination is None:
+            self.save_button.setEnabled(True)
+            self.save_button.setVisible(True)
+            return
+        editable = is_content_editable(self.coordination.status)
+        self.save_button.setVisible(editable)
+        self.save_button.setEnabled(editable and self.is_dirty())
 
     def _content_tabs(self):
         return (
@@ -324,6 +333,7 @@ class BozpCoordinationDialog(QDialog):
         self.preview_btn.setEnabled(True)
         self._bind_coordination_to_tabs()
         self._set_detail_tabs_enabled(True)
+        configure_editor_close_button(self.close_button, is_new=False)
         self._refresh_status_ui(coordination.status)
 
     def _save(self) -> bool:
@@ -383,10 +393,7 @@ class BozpCoordinationDialog(QDialog):
             self.valid_to.setEnabled(editable)
             self.note.setReadOnly(not editable)
 
-            save_btn = self.save_button
-            if save_btn is not None:
-                save_btn.setEnabled(editable or self.coordination is None)
-                save_btn.setVisible(editable or self.coordination is None)
+            self._update_save_enabled()
 
             before_mutate = (
                 self.ensure_editable_for_content_change
@@ -562,27 +569,7 @@ class BozpCoordinationDialog(QDialog):
         return data
 
     def _prompt_unsaved_close(self) -> str:
-        message = QMessageBox(self)
-        message.setWindowTitle(DIALOG_WINDOW_TITLE)
-        message.setText(UNSAVED_PROMPT)
-        message.setIcon(QMessageBox.Icon.Question)
-        save_btn = message.addButton(UNSAVED_SAVE, QMessageBox.ButtonRole.AcceptRole)
-        discard_btn = message.addButton(
-            UNSAVED_DISCARD,
-            QMessageBox.ButtonRole.DestructiveRole,
-        )
-        cancel_btn = message.addButton(
-            UNSAVED_CANCEL,
-            QMessageBox.ButtonRole.RejectRole,
-        )
-        message.setDefaultButton(cancel_btn)
-        message.exec()
-        clicked = message.clickedButton()
-        if clicked is save_btn:
-            return "save"
-        if clicked is discard_btn:
-            return "discard"
-        return "cancel"
+        return confirm_unsaved_editor_close(self, title=DIALOG_WINDOW_TITLE)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         if self._closing or not self.is_dirty():

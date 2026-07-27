@@ -21,6 +21,10 @@ from core.ai_oponentni.ui.ai_peer_review_widget import (
     catalog_peer_review_export_dialog_config,
 )
 from core.widgets.dialog_utils import create_save_cancel_box
+from core.widgets.editor_dialog_controller import (
+    configure_editor_close_button,
+    confirm_unsaved_editor_close,
+)
 from moduly.rizeni_rizik.constants_library import (
     DEFAULT_HAZARD_LIBRARY_SCOPE,
     DEFAULT_HAZARD_LIBRARY_VERSION,
@@ -40,10 +44,6 @@ from moduly.rizeni_rizik.constants_library import (
     HAZARD_LIBRARY_TAB_CONTENT,
     HAZARD_LIBRARY_TAB_HISTORY,
     HAZARD_LIBRARY_TAB_USAGE,
-    HAZARD_LIBRARY_UNSAVED_DISCARD,
-    HAZARD_LIBRARY_UNSAVED_PROMPT,
-    HAZARD_LIBRARY_UNSAVED_SAVE,
-    HAZARD_LIBRARY_UNSAVED_STAY,
 )
 from moduly.rizeni_rizik.sluzby.catalog_editor_session import CatalogEditorSession
 from moduly.rizeni_rizik.sluzby.hazard_catalog_source_peer_review_provider import (
@@ -153,13 +153,13 @@ class HazardLibraryTemplateDialog(QDialog):
 
         layout.addWidget(self.tabs)
 
-        self.buttons = create_save_cancel_box(self)
+        self.buttons = create_save_cancel_box(self, is_new=template is None)
         self.save_button = self.buttons.button(QDialogButtonBox.StandardButton.Save)
-        cancel_button = self.buttons.button(QDialogButtonBox.StandardButton.Cancel)
+        self.cancel_button = self.buttons.button(QDialogButtonBox.StandardButton.Cancel)
         if self.save_button is not None:
             self.save_button.clicked.connect(self._save_all)
-        if cancel_button is not None:
-            cancel_button.clicked.connect(self._on_cancel_clicked)
+        if self.cancel_button is not None:
+            self.cancel_button.clicked.connect(self._on_cancel_clicked)
         layout.addWidget(self.buttons)
 
         self.content_widget.content_changed.connect(self._on_content_changed)
@@ -274,6 +274,7 @@ class HazardLibraryTemplateDialog(QDialog):
                         self.content_widget.refresh()
                         self.history_widget.refresh()
                         self.ai_peer_review_widget.refresh()
+                        configure_editor_close_button(self.cancel_button, is_new=False)
                         self._update_save_enabled()
                         if self._on_template_persisted is not None:
                             self._on_template_persisted(existing)
@@ -325,6 +326,7 @@ class HazardLibraryTemplateDialog(QDialog):
         self.content_widget.refresh()
         self.history_widget.refresh()
         self.ai_peer_review_widget.refresh()
+        configure_editor_close_button(self.cancel_button, is_new=False)
         self._update_save_enabled()
         QMessageBox.information(self, HAZARD_LIBRARY_DIALOG_TITLE, HAZARD_LIBRARY_SAVE_SUCCESS)
         if self._on_template_persisted is not None and self.template is not None:
@@ -381,30 +383,7 @@ class HazardLibraryTemplateDialog(QDialog):
         self.reject()
 
     def _prompt_unsaved_close(self) -> str:
-        message = QMessageBox(self)
-        message.setWindowTitle(HAZARD_LIBRARY_DIALOG_TITLE)
-        message.setText(HAZARD_LIBRARY_UNSAVED_PROMPT)
-        message.setIcon(QMessageBox.Icon.Question)
-        save_btn = message.addButton(
-            HAZARD_LIBRARY_UNSAVED_SAVE,
-            QMessageBox.ButtonRole.AcceptRole,
-        )
-        discard_btn = message.addButton(
-            HAZARD_LIBRARY_UNSAVED_DISCARD,
-            QMessageBox.ButtonRole.DestructiveRole,
-        )
-        stay_btn = message.addButton(
-            HAZARD_LIBRARY_UNSAVED_STAY,
-            QMessageBox.ButtonRole.RejectRole,
-        )
-        message.setDefaultButton(stay_btn)
-        message.exec()
-        clicked = message.clickedButton()
-        if clicked is save_btn:
-            return "save"
-        if clicked is discard_btn:
-            return "discard"
-        return "stay"
+        return confirm_unsaved_editor_close(self, title=HAZARD_LIBRARY_DIALOG_TITLE)
 
     def _update_content_tab_enabled(self) -> None:
         self.tabs.setTabEnabled(self.content_tab_index, self.template is not None)
@@ -488,7 +467,7 @@ class HazardLibraryTemplateDialog(QDialog):
             super().closeEvent(event)
             return
         decision = self._prompt_unsaved_close()
-        if decision == "stay":
+        if decision == "cancel":
             event.ignore()
             return
         if decision == "save":
@@ -505,7 +484,7 @@ class HazardLibraryTemplateDialog(QDialog):
             return
         if self.is_dirty():
             decision = self._prompt_unsaved_close()
-            if decision == "stay":
+            if decision == "cancel":
                 return
             if decision == "save":
                 if not self._save_all():

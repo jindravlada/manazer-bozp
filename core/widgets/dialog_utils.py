@@ -12,6 +12,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.widgets.editor_dialog_controller import (
+    configure_editor_buttons,
+    create_editor_button_box,
+)
+
 
 def _app_style() -> QStyle:
     return QApplication.style()
@@ -21,21 +26,13 @@ def _standard_icon(pixmap: QStyle.StandardPixmap) -> QIcon:
     return _app_style().standardIcon(pixmap)
 
 
-def configure_save_cancel_buttons(buttons: QDialogButtonBox) -> None:
-    save_btn = buttons.button(QDialogButtonBox.StandardButton.Save)
-    if save_btn is not None:
-        save_btn.setText("Uložit")
-        save_btn.setIcon(_standard_icon(QStyle.StandardPixmap.SP_DialogSaveButton))
-
-    ok_btn = buttons.button(QDialogButtonBox.StandardButton.Ok)
-    if ok_btn is not None:
-        ok_btn.setText("Uložit")
-        ok_btn.setIcon(_standard_icon(QStyle.StandardPixmap.SP_DialogSaveButton))
-
-    cancel_btn = buttons.button(QDialogButtonBox.StandardButton.Cancel)
-    if cancel_btn is not None:
-        cancel_btn.setText("Zrušit")
-        cancel_btn.setIcon(_standard_icon(QStyle.StandardPixmap.SP_DialogCancelButton))
+def configure_save_cancel_buttons(
+    buttons: QDialogButtonBox,
+    *,
+    is_new: bool = True,
+) -> None:
+    """UX-DIALOG-2: Uložit + Zrušit (nový) / Zavřít (existující)."""
+    configure_editor_buttons(buttons, is_new=is_new)
 
 
 def configure_close_button(buttons: QDialogButtonBox) -> None:
@@ -58,13 +55,12 @@ def configure_navigate_button(button: QPushButton) -> None:
     button.setIcon(icon)
 
 
-def create_save_cancel_box(parent: QWidget | None = None) -> QDialogButtonBox:
-    buttons = QDialogButtonBox(
-        QDialogButtonBox.StandardButton.Cancel | QDialogButtonBox.StandardButton.Save,
-        parent=parent,
-    )
-    configure_save_cancel_buttons(buttons)
-    return buttons
+def create_save_cancel_box(
+    parent: QWidget | None = None,
+    *,
+    is_new: bool = True,
+) -> QDialogButtonBox:
+    return create_editor_button_box(parent, is_new=is_new)
 
 
 def create_close_box(parent: QWidget | None = None) -> QDialogButtonBox:
@@ -78,9 +74,10 @@ def add_work_dialog_footer(
     *,
     work_widgets: list[QWidget] | None = None,
     buttons: QDialogButtonBox | None = None,
+    is_new: bool = True,
 ) -> QDialogButtonBox:
     if buttons is None:
-        buttons = create_save_cancel_box()
+        buttons = create_save_cancel_box(is_new=is_new)
 
     row = QHBoxLayout()
     for widget in work_widgets or []:
@@ -91,8 +88,13 @@ def add_work_dialog_footer(
     return buttons
 
 
-def add_save_cancel_footer(parent_layout, dialog: QDialog) -> QDialogButtonBox:
-    buttons = create_save_cancel_box(dialog)
+def add_save_cancel_footer(
+    parent_layout,
+    dialog: QDialog,
+    *,
+    is_new: bool = True,
+) -> QDialogButtonBox:
+    buttons = create_save_cancel_box(dialog, is_new=is_new)
     buttons.accepted.connect(dialog.accept)
     buttons.rejected.connect(dialog.reject)
     parent_layout.addWidget(buttons)

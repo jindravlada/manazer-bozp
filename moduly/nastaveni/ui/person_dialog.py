@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box, configure_resizable_form_dialog, wrap_in_scroll_area
+from core.widgets.editor_dialog_controller import EditorDialogController
 
 
 class PersonDialog(QDialog):
@@ -50,10 +51,16 @@ class PersonDialog(QDialog):
 
         layout.addWidget(wrap_in_scroll_area(form_host), 1)
 
-        buttons = create_save_cancel_box(self)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
+        buttons = create_save_cancel_box(self, is_new=person is None)
         layout.addWidget(buttons)
+        self._editor = EditorDialogController(
+            self,
+            buttons,
+            is_new=person is None,
+            title=self.windowTitle(),
+        )
+        self._editor.set_snapshot_provider(self.get_data)
+        self._editor.install_auto_dirty_tracking()
 
         if person is not None:
             self.title_before.setText(person.title_before or "")
@@ -67,6 +74,8 @@ class PersonDialog(QDialog):
             self.note.setPlainText(person.note or "")
             self.is_employee_checkbox.setChecked(person.is_employee)
             self.active_checkbox.setChecked(person.active)
+
+        self._editor.capture_baseline()
 
     def get_data(self) -> dict:
         return {

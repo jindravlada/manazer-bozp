@@ -41,10 +41,12 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.ui.hazard_source_categories_management_dialog import (
         COL_NAME,
         CategoryDraft,
-        UNSAVED_CANCEL_CLOSE,
-        UNSAVED_DISCARD,
-        UNSAVED_SAVE,
         HazardSourceCategoriesManagementDialog,
+    )
+    from core.widgets.editor_dialog_controller import (
+        EDITOR_UNSAVED_ABORT_LABEL,
+        EDITOR_UNSAVED_DISCARD_LABEL,
+        EDITOR_UNSAVED_SAVE_LABEL,
     )
 
 
@@ -256,7 +258,7 @@ class UxRisk3aCategoryManagerTests(unittest.TestCase):
                 cancel = next(
                     button
                     for button in self.buttons()
-                    if button.text() == UNSAVED_CANCEL_CLOSE
+                    if button.text() == EDITOR_UNSAVED_ABORT_LABEL
                 )
                 self.clickedButton = lambda: cancel  # type: ignore[method-assign]
                 return int(QMessageBox.StandardButton.Cancel)
@@ -267,7 +269,11 @@ class UxRisk3aCategoryManagerTests(unittest.TestCase):
             self.assertEqual(result, "cancel")
             self.assertEqual(
                 set(captured["texts"]),
-                {UNSAVED_SAVE, UNSAVED_DISCARD, UNSAVED_CANCEL_CLOSE},
+                {
+                    EDITOR_UNSAVED_SAVE_LABEL,
+                    EDITOR_UNSAVED_DISCARD_LABEL,
+                    EDITOR_UNSAVED_ABORT_LABEL,
+                },
             )
         finally:
             self._close_dialog(dialog)

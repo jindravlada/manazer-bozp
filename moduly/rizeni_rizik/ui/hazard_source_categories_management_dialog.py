@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import configure_close_push_button
+from core.widgets.editor_dialog_controller import confirm_unsaved_editor_close
 from core.widgets.filter_bar import FilterBar
 from core.widgets.info_tooltip import set_widget_tooltip
 from moduly.rizeni_rizik.sluzby.hazard_source_category_service import (
@@ -33,10 +34,6 @@ from moduly.rizeni_rizik.sluzby.hazard_source_category_service import (
 from moduly.rizeni_rizik.ui.hazard_source_category_dialog import HazardSourceCategoryDialog
 
 DIALOG_TITLE = "Kategorie zdrojů rizik"
-UNSAVED_PROMPT = "Máte neuložené změny. Co chcete udělat?"
-UNSAVED_SAVE = "Uložit"
-UNSAVED_DISCARD = "Zahodit změny"
-UNSAVED_CANCEL_CLOSE = "Zrušit zavření"
 
 COL_NAME = 0
 COL_DESCRIPTION = 1
@@ -385,27 +382,7 @@ class HazardSourceCategoriesManagementDialog(QDialog):
         return True
 
     def _prompt_unsaved_close(self) -> str:
-        message = QMessageBox(self)
-        message.setWindowTitle(DIALOG_TITLE)
-        message.setText(UNSAVED_PROMPT)
-        message.setIcon(QMessageBox.Icon.Question)
-        save_btn = message.addButton(UNSAVED_SAVE, QMessageBox.ButtonRole.AcceptRole)
-        discard_btn = message.addButton(
-            UNSAVED_DISCARD,
-            QMessageBox.ButtonRole.DestructiveRole,
-        )
-        cancel_btn = message.addButton(
-            UNSAVED_CANCEL_CLOSE,
-            QMessageBox.ButtonRole.RejectRole,
-        )
-        message.setDefaultButton(cancel_btn)
-        message.exec()
-        clicked = message.clickedButton()
-        if clicked is save_btn:
-            return "save"
-        if clicked is discard_btn:
-            return "discard"
-        return "cancel"
+        return confirm_unsaved_editor_close(self, title=DIALOG_TITLE)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         if self._closing or not self.is_dirty():
