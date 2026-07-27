@@ -45,9 +45,10 @@ def _centered_checkbox(*, checked: bool, enabled: bool, on_changed) -> QWidget:
 class RiskMeasureReviewChecklistWidget(QWidget):
     """Kompaktní terénní checklist (A4): Vyhovuje / Poznámka č. / Foto."""
 
-    def __init__(self, parent=None, on_changed=None):
+    def __init__(self, parent=None, on_changed=None, on_note_number_committed=None):
         super().__init__(parent)
         self._on_changed = on_changed
+        self._on_note_number_committed = on_note_number_committed
         self._read_only = False
         self.setObjectName("riskMeasureReviewChecklist")
 
@@ -145,6 +146,9 @@ class RiskMeasureReviewChecklistWidget(QWidget):
             note_number.setAlignment(Qt.AlignmentFlag.AlignCenter)
             note_number.setReadOnly(self._read_only)
             note_number.textChanged.connect(self._emit_changed)
+            note_number.editingFinished.connect(
+                lambda edit=note_number: self._emit_note_number_committed(edit.text())
+            )
             self.table.setCellWidget(
                 row_index,
                 RISK_MEASURE_REVIEW_ITEM_COL_NOTE_NUMBER,
@@ -202,3 +206,7 @@ class RiskMeasureReviewChecklistWidget(QWidget):
     def _emit_changed(self, *_args) -> None:
         if callable(self._on_changed):
             self._on_changed()
+
+    def _emit_note_number_committed(self, note_number: str) -> None:
+        if callable(self._on_note_number_committed):
+            self._on_note_number_committed(note_number)

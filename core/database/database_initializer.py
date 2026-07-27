@@ -78,6 +78,7 @@ def initialize_database() -> None:
     from moduly.rizeni_rizik.modely.risk_measure_review_item import (  # noqa: F401
         RiskMeasureReviewItem,
     )
+    from moduly.rizeni_rizik.modely.risk_measure_finding import RiskMeasureFinding  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_identification_photo import (  # noqa: F401
         HazardIdentificationPhoto,
     )
@@ -189,6 +190,7 @@ def initialize_database() -> None:
     _ensure_hazard_required_measures_table()
     _ensure_risk_measure_reviews_table()
     _ensure_risk_measure_review_items_table()
+    _ensure_risk_measure_findings_table()
     _ensure_hazard_identification_photos_table()
     _ensure_hazard_library_templates_table()
     _ensure_hazard_library_template_operations_table()
@@ -1450,6 +1452,14 @@ def _ensure_risk_measure_review_items_table() -> None:
         _add_column("risk_measure_review_items", "note_number VARCHAR(16) DEFAULT ''")
     if "has_photo" not in columns:
         _add_column("risk_measure_review_items", "has_photo BOOLEAN DEFAULT 0")
+
+
+def _ensure_risk_measure_findings_table() -> None:
+    columns = _table_columns("risk_measure_findings")
+    if not columns:
+        from moduly.rizeni_rizik.modely.risk_measure_finding import RiskMeasureFinding
+
+        RiskMeasureFinding.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_hazard_identification_photos_table() -> None:

@@ -707,6 +707,31 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         ):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 
+    elif profile == "risk_measure_findings":
+        from moduly.rizeni_rizik.constants import (
+            RISK_MEASURE_FINDING_COL_NUMBER,
+            RISK_MEASURE_FINDING_COL_RECOMMENDATION,
+            RISK_MEASURE_FINDING_COL_SEVERITY,
+            RISK_MEASURE_FINDING_COL_TITLE,
+        )
+
+        widths = {
+            RISK_MEASURE_FINDING_COL_NUMBER: 70,
+            RISK_MEASURE_FINDING_COL_TITLE: 220,
+            RISK_MEASURE_FINDING_COL_SEVERITY: 120,
+            RISK_MEASURE_FINDING_COL_RECOMMENDATION: 260,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        header.setSectionResizeMode(RISK_MEASURE_FINDING_COL_TITLE, QHeaderView.Stretch)
+        for column in (
+            RISK_MEASURE_FINDING_COL_NUMBER,
+            RISK_MEASURE_FINDING_COL_SEVERITY,
+            RISK_MEASURE_FINDING_COL_RECOMMENDATION,
+        ):
+            header.setSectionResizeMode(column, QHeaderView.Fixed)
+
     elif profile == "risk_measure_reviews":
         from moduly.rizeni_rizik.constants import (
             RISK_MEASURE_REVIEW_COL_DATE,

@@ -568,3 +568,12 @@ Zjednodušení checklistu pro terén:
 - sloupce Navazující opatření / Vyhovuje / Poznámka č. / Foto
 - sekce Poznámky pod checklistem (zatím jen rozvržení)
 - kompaktní rozložení vhodné pro A4
+
+## RISK-REVIEW-3
+
+Evidence zjištění:
+
+- entita `RiskMeasureFinding` vázaná na číslo poznámky v checklistu
+- automatické vytvoření zjištění při zadání nového čísla
+- záložka Zjištění v editoru přezkoumání
+- upozornění při neúplném názvu (uložení se nezakazuje)
