@@ -49,6 +49,7 @@ with patch.object(Path, "home", return_value=_TMP):
         RISK_ASSESSMENT_COL_ID,
         RISK_ASSESSMENT_STATUS_COMPLETED,
         RISK_ASSESSMENT_STATUS_DRAFT,
+        RISK_LIST_FILTER_ALL,
         RISK_SEVERITY_MINOR,
         RISK_SEVERITY_MODERATE,
     )
@@ -280,6 +281,7 @@ class UxTable1bRiskRegisterSortTests(unittest.TestCase):
         )
 
         page = HazardLibraryPage()
+        page.active_filter.setCurrentIndex(page.active_filter.findData(RISK_LIST_FILTER_ALL))
         table = page.table
         table.sortItems(HAZARD_LIBRARY_COL_ACTIVE, Qt.SortOrder.AscendingOrder)
         self.assertEqual(

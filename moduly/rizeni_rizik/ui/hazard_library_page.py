@@ -1,5 +1,7 @@
 from PySide6.QtWidgets import (
+    QComboBox,
     QHBoxLayout,
+    QLabel,
     QMessageBox,
     QPushButton,
     QTableWidget,
@@ -17,6 +19,12 @@ from core.widgets.typed_table_sort import (
     typed_bool,
     typed_int,
     typed_text,
+)
+from moduly.rizeni_rizik.constants import (
+    RISK_IDENTIFICATION_DEFAULT_ACTIVE_FILTER,
+    RISK_LIST_FILTER_ACTIVE,
+    RISK_LIST_FILTER_ALL,
+    RISK_LIST_FILTER_INACTIVE,
 )
 from moduly.rizeni_rizik.constants_library import (
     HAZARD_LIBRARY_COL_ACTIVE,
@@ -63,6 +71,16 @@ class HazardLibraryPage(QWidget):
         toolbar.addWidget(self.deactivate_btn)
         toolbar.addWidget(self.manage_categories_btn)
         toolbar.addStretch()
+        toolbar.addWidget(QLabel("Aktivní:"))
+        self.active_filter = QComboBox()
+        self.active_filter.addItem(RISK_LIST_FILTER_ACTIVE, RISK_LIST_FILTER_ACTIVE)
+        self.active_filter.addItem(RISK_LIST_FILTER_INACTIVE, RISK_LIST_FILTER_INACTIVE)
+        self.active_filter.addItem(RISK_LIST_FILTER_ALL, RISK_LIST_FILTER_ALL)
+        default_index = self.active_filter.findData(RISK_IDENTIFICATION_DEFAULT_ACTIVE_FILTER)
+        if default_index >= 0:
+            self.active_filter.setCurrentIndex(default_index)
+        self.active_filter.currentIndexChanged.connect(self.refresh)
+        toolbar.addWidget(self.active_filter)
 
         self.table = QTableWidget()
         self.table.setColumnCount(HAZARD_LIBRARY_COLUMN_COUNT)
@@ -91,6 +109,11 @@ class HazardLibraryPage(QWidget):
 
     def refresh(self) -> None:
         rows = hazard_library_template_service.get_all_rows(include_inactive=True)
+        mode = self.active_filter.currentData()
+        if mode == RISK_LIST_FILTER_ACTIVE:
+            rows = [row for row in rows if row.template.active]
+        elif mode == RISK_LIST_FILTER_INACTIVE:
+            rows = [row for row in rows if not row.template.active]
         with sorting_paused(self.table):
             self.table.setRowCount(len(rows))
             for row_index, row in enumerate(rows):
