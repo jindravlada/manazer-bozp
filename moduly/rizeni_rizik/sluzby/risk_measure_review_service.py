@@ -14,9 +14,14 @@ from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.rizeni_rizik.constants import (
     ENTITY_RISK_MEASURE_REVIEW,
     ENTITY_RISK_MEASURE_REVIEW_ITEM,
+    RISK_MEASURE_REVIEW_ITEM_RESOLUTION_MEASURE_REVISION,
+    RISK_MEASURE_REVIEW_ITEM_RESOLUTION_TASK,
+    RISK_MEASURE_REVIEW_ITEM_RESOLUTION_UNRESOLVED,
+    RISK_MEASURE_REVIEW_ITEM_RESOLUTIONS,
     RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT,
     RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT,
     RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED,
+    RISK_MEASURE_REVIEW_RESOLUTION_REQUIRED,
     RISK_MEASURE_REVIEW_STATUS_ARCHIVED,
     RISK_MEASURE_REVIEW_STATUS_COMPLETED,
     RISK_MEASURE_REVIEW_STATUS_DRAFT,
@@ -30,8 +35,12 @@ from moduly.rizeni_rizik.repository.risk_measure_review_item_repository import (
 from moduly.rizeni_rizik.repository.risk_measure_review_repository import (
     RiskMeasureReviewRepository,
 )
+from moduly.rizeni_rizik.sluzby.hazard_event_service import hazard_event_service
 from moduly.rizeni_rizik.sluzby.hazard_identification_service import (
     hazard_identification_service,
+)
+from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import (
+    hazard_inventory_item_service,
 )
 from moduly.rizeni_rizik.sluzby.hazard_required_measure_service import (
     hazard_required_measure_service,
@@ -58,6 +67,7 @@ class RiskMeasureReviewChecklistRow:
     photo_count: int
     has_photo: bool
     sort_order: int
+    resolution: str = RISK_MEASURE_REVIEW_ITEM_RESOLUTION_UNRESOLVED
 
     @property
     def compliant(self) -> bool:
@@ -71,6 +81,13 @@ class RiskMeasureReviewChecklistRow:
     def result_text(self) -> str:
         """Zpětná kompatibilita – dříve „výsledek“, nyní poznámka."""
         return self.note
+
+    @property
+    def is_resolved(self) -> bool:
+        return self.resolution in {
+            RISK_MEASURE_REVIEW_ITEM_RESOLUTION_TASK,
+            RISK_MEASURE_REVIEW_ITEM_RESOLUTION_MEASURE_REVISION,
+        }
 
 
 class RiskMeasureReviewService:
@@ -180,6 +197,8 @@ class RiskMeasureReviewService:
             return None
         if review.archived_at is not None and status != RISK_MEASURE_REVIEW_STATUS_ARCHIVED:
             review.archived_at = None
+        if checklist_updates is not None:
+            self._apply_checklist_updates(review_id, checklist_updates)
         resolved = self._validate_and_resolve(
             review_date=review_date,
             reviewer_person_id=reviewer_person_id,
@@ -188,15 +207,14 @@ class RiskMeasureReviewService:
             workplace_part_id=workplace_part_id,
             status=status,
         )
+        if status == RISK_MEASURE_REVIEW_STATUS_COMPLETED:
+            self.assert_non_compliant_points_resolved(review_id)
         review.review_date = review_date
         review.note = note.strip()
         for key, value in resolved.items():
             setattr(review, key, value)
         review.updated_at = datetime.now()
-        updated = self.repository.update(review)
-        if checklist_updates is not None:
-            self._apply_checklist_updates(updated.id, checklist_updates)
-        return updated
+        return self.repository.update(review)
 
     def get_tasks_for_review(self, review_id: int) -> list[Task]:
         """Úkoly navázané na přezkoumání (source_module + source_record_id)."""
@@ -261,17 +279,139 @@ class RiskMeasureReviewService:
                     photo_count=photo_count,
                     has_photo=photo_count > 0 or bool(getattr(item, "has_photo", False)),
                     sort_order=int(item.sort_order or 0),
+                    resolution=self._normalize_item_resolution(item, result=result),
                 )
             )
         return rows
+
+    def list_non_compliant_rows(
+        self,
+        review_id: int,
+    ) -> list[RiskMeasureReviewChecklistRow]:
+        """Nevyhovující kontrolní body pro záložku Úkoly."""
+        return [row for row in self.list_checklist_rows(review_id) if row.non_compliant]
+
+    def set_item_resolution(self, item_id: int, resolution: str) -> RiskMeasureReviewItem:
+        item = self.item_repository.get_by_id(item_id)
+        if item is None:
+            raise RiskMeasureReviewError("Kontrolní bod nebyl nalezen.")
+        cleaned = str(resolution or "").strip()
+        if cleaned not in RISK_MEASURE_REVIEW_ITEM_RESOLUTIONS:
+            raise RiskMeasureReviewError("Neplatný způsob řešení kontrolního bodu.")
+        result = self._normalize_item_result(item)
+        if cleaned and result != RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT:
+            raise RiskMeasureReviewError(
+                "Způsob řešení lze nastavit jen u nevyhovujícího kontrolního bodu."
+            )
+        item.resolution = cleaned
+        item.updated_at = datetime.now()
+        return self.item_repository.update(item)
+
+    def create_task_for_checklist_item(
+        self,
+        review_id: int,
+        item_id: int,
+        *,
+        title: str,
+        description: str = "",
+        due_date: date | None = None,
+        responsible_person_id: int | None = None,
+        workplace_id: int | None = None,
+    ) -> Task:
+        """Založí úkol k nevyhovujícímu bodu a označí řešení jako úkol."""
+        item = self.item_repository.get_by_id(item_id)
+        if item is None or int(item.review_id) != int(review_id):
+            raise RiskMeasureReviewError("Kontrolní bod nepatří k tomuto přezkoumání.")
+        if self._normalize_item_result(item) != RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT:
+            raise RiskMeasureReviewError(
+                "Úkol lze založit jen u nevyhovujícího kontrolního bodu."
+            )
+        task = self.create_task_for_review(
+            review_id,
+            title=title,
+            description=description,
+            due_date=due_date,
+            responsible_person_id=responsible_person_id,
+            workplace_id=workplace_id,
+            source_check_code=f"item:{int(item_id)}",
+        )
+        self.set_item_resolution(item_id, RISK_MEASURE_REVIEW_ITEM_RESOLUTION_TASK)
+        return task
+
+    def mark_measure_revision_for_item(self, item_id: int) -> RiskMeasureReviewItem:
+        """Označí, že uživatel zvolil revizi opatření proti riziku."""
+        return self.set_item_resolution(
+            item_id,
+            RISK_MEASURE_REVIEW_ITEM_RESOLUTION_MEASURE_REVISION,
+        )
+
+    def resolve_context_for_measure(self, follow_up_measure_id: int) -> dict:
+        """Vrátí identifikaci / posouzení pro otevření revize opatření."""
+        measure = hazard_required_measure_service.get_by_id(follow_up_measure_id)
+        if measure is None:
+            raise RiskMeasureReviewError("Navazující opatření nebylo nalezeno.")
+        assessment = hazard_risk_assessment_service.get_by_id(
+            measure.hazard_risk_assessment_id
+        )
+        if assessment is None:
+            raise RiskMeasureReviewError("Posouzení rizika nebylo nalezeno.")
+        event = hazard_event_service.get_by_id(assessment.hazard_event_id)
+        if event is None:
+            raise RiskMeasureReviewError("Událost rizika nebyla nalezena.")
+        inventory_item = hazard_inventory_item_service.get_by_id(event.inventory_item_id)
+        if inventory_item is None:
+            raise RiskMeasureReviewError("Zdroj rizika nebyl nalezen.")
+        identification = hazard_identification_service.get_by_id(
+            inventory_item.hazard_identification_id
+        )
+        if identification is None:
+            raise RiskMeasureReviewError("Identifikace rizik nebyla nalezena.")
+        return {
+            "measure": measure,
+            "assessment": assessment,
+            "event": event,
+            "inventory_item": inventory_item,
+            "identification": identification,
+        }
+
+    def assert_non_compliant_points_resolved(self, review_id: int) -> None:
+        unresolved = [
+            row
+            for row in self.list_non_compliant_rows(review_id)
+            if not row.is_resolved
+        ]
+        if unresolved:
+            raise RiskMeasureReviewError(RISK_MEASURE_REVIEW_RESOLUTION_REQUIRED)
 
     def ensure_checklist(self, review_id: int) -> list[RiskMeasureReviewChecklistRow]:
         """Načte/vygeneruje checklist pro provedení přezkoumání."""
         review = self.repository.get_by_id(review_id)
         if review is None:
             return []
-        self._generate_checklist(review)
+        items = self._generate_checklist(review)
+        self._repair_accidental_all_non_compliant(items)
         return self.list_checklist_rows(review_id)
+
+    def _repair_accidental_all_non_compliant(
+        self,
+        items: list[RiskMeasureReviewItem],
+    ) -> None:
+        """Oprava historického defaultu: všechno „Nevyhovuje“ bez poznámek/fotek."""
+        if not items:
+            return
+        if any(
+            self._normalize_item_result(item)
+            != RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT
+            for item in items
+        ):
+            return
+        if any((item.note or "").strip() or bool(item.has_photo) for item in items):
+            return
+        for item in items:
+            item.result = RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED
+            item.compliant = False
+            item.updated_at = datetime.now()
+            self.item_repository.update(item)
 
     def archive(self, review_id: int) -> bool:
         review = self.repository.get_by_id(review_id)
@@ -376,6 +516,12 @@ class RiskMeasureReviewService:
             result = self._result_from_payload(payload, item)
             item.result = result
             item.compliant = result == RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT
+            if result != RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT:
+                item.resolution = RISK_MEASURE_REVIEW_ITEM_RESOLUTION_UNRESOLVED
+            elif "resolution" in payload:
+                cleaned = str(payload.get("resolution") or "").strip()
+                if cleaned in RISK_MEASURE_REVIEW_ITEM_RESOLUTIONS:
+                    item.resolution = cleaned
             if "note" in payload:
                 item.note = str(payload.get("note") or "").strip()
             elif "result_text" in payload:
@@ -388,6 +534,20 @@ class RiskMeasureReviewService:
             changed.append(item)
         for item in changed:
             self.item_repository.update(item)
+
+    @staticmethod
+    def _normalize_item_resolution(
+        item: RiskMeasureReviewItem,
+        *,
+        result: str | None = None,
+    ) -> str:
+        normalized_result = result or RiskMeasureReviewService._normalize_item_result(item)
+        if normalized_result != RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT:
+            return RISK_MEASURE_REVIEW_ITEM_RESOLUTION_UNRESOLVED
+        value = str(getattr(item, "resolution", "") or "").strip()
+        if value in RISK_MEASURE_REVIEW_ITEM_RESOLUTIONS:
+            return value
+        return RISK_MEASURE_REVIEW_ITEM_RESOLUTION_UNRESOLVED
 
     @staticmethod
     def _normalize_item_result(item: RiskMeasureReviewItem) -> str:
@@ -419,10 +579,11 @@ class RiskMeasureReviewService:
                 return RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT
             return RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED
         if "compliant" in payload:
+            # Samotné compliant=False už neznamená „Nevyhovuje“ (tri-state).
             return (
                 RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT
                 if bool(payload.get("compliant"))
-                else RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT
+                else RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED
             )
         return cls._normalize_item_result(item)
 

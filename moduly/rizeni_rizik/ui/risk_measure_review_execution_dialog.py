@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,
     QHBoxLayout,
@@ -44,6 +45,7 @@ class RiskMeasureReviewExecutionDialog(QDialog):
             f"{RISK_MEASURE_REVIEW_EXECUTE_DIALOG_TITLE} {review.review_number or ''}".strip()
         )
         configure_resizable_form_dialog(self, width=820, height=720, min_width=680, min_height=560)
+        self.setWindowState(self.windowState() | Qt.WindowState.WindowMaximized)
 
         layout = QVBoxLayout(self)
 
@@ -70,6 +72,7 @@ class RiskMeasureReviewExecutionDialog(QDialog):
         self.tabs.addTab(checklist_page, RISK_MEASURE_REVIEW_CHECKLIST_TITLE)
 
         self.tasks = RiskMeasureReviewTasksWidget()
+        self.tasks.set_persist_checklist(self._persist_checklist_for_resolution)
         self.tabs.addTab(self.tasks, RISK_MEASURE_REVIEW_TASKS_TITLE)
         layout.addWidget(self.tabs)
 
@@ -95,10 +98,49 @@ class RiskMeasureReviewExecutionDialog(QDialog):
         rows = risk_measure_review_service.ensure_checklist(review.id)
         self.checklist.load_rows(rows)
         self.tasks.set_review_id(review.id)
+        self.tasks.sync_from_checklist_updates(self.checklist.get_updates())
         self._editor.capture_baseline()
 
     def get_data(self) -> dict:
         return {"checklist_updates": self.checklist.get_updates()}
+
+    def _persist_checklist_for_resolution(self) -> bool:
+        """Uloží checklist před založením úkolu / otevřením revize."""
+        data = self.get_data()
+        try:
+            updated = risk_measure_review_service.update_review(
+                self.review.id,
+                review_date=self.review.review_date,
+                reviewer_person_id=self.review.reviewer_person_id,
+                operation_id=self.review.operation_id,
+                workplace_id=self.review.workplace_id,
+                workplace_part_id=self.review.workplace_part_id,
+                status=self.review.status,
+                note=self.review.note or "",
+                checklist_updates=data["checklist_updates"],
+            )
+        except RiskMeasureReviewError as error:
+            QMessageBox.warning(
+                self,
+                RISK_MEASURE_REVIEW_EXECUTE_DIALOG_TITLE,
+                str(error),
+            )
+            return False
+        if updated is None:
+            QMessageBox.warning(
+                self,
+                RISK_MEASURE_REVIEW_EXECUTE_DIALOG_TITLE,
+                "Přezkoumání nebylo nalezeno.",
+            )
+            return False
+        self.review = updated
+        self.checklist.load_rows(
+            risk_measure_review_service.list_checklist_rows(updated.id)
+        )
+        self.tasks.sync_from_checklist_updates(self.checklist.get_updates())
+        if hasattr(self, "_editor"):
+            self._editor.capture_baseline()
+        return True
 
     def _save(self) -> bool:
         data = self.get_data()
@@ -126,6 +168,7 @@ class RiskMeasureReviewExecutionDialog(QDialog):
                 risk_measure_review_service.list_checklist_rows(updated.id)
             )
             self.tasks.set_review_id(updated.id)
+            self.tasks.sync_from_checklist_updates(self.checklist.get_updates())
         except RiskMeasureReviewError as error:
             QMessageBox.warning(
                 self,
@@ -145,6 +188,8 @@ class RiskMeasureReviewExecutionDialog(QDialog):
                 f"Checklist se nepodařilo vytvořit.\n\n{error}",
             )
 
-    def _on_changed(self) -> None:
+    def _on_changed(self, *_args) -> None:
         if hasattr(self, "_editor"):
             self._editor.mark_dirty()
+        if hasattr(self, "tasks"):
+            self.tasks.sync_from_checklist_updates(self.checklist.get_updates())

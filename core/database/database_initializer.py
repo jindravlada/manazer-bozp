@@ -1450,6 +1450,11 @@ def _ensure_risk_measure_review_items_table() -> None:
         _add_column("risk_measure_review_items", "note_number VARCHAR(16) DEFAULT ''")
     if "has_photo" not in columns:
         _add_column("risk_measure_review_items", "has_photo BOOLEAN DEFAULT 0")
+    if "resolution" not in columns:
+        _add_column(
+            "risk_measure_review_items",
+            "resolution VARCHAR(32) NOT NULL DEFAULT ''",
+        )
 
 
 def _ensure_hazard_identification_photos_table() -> None:

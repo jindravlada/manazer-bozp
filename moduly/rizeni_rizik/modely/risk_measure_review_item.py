@@ -4,7 +4,7 @@ from sqlalchemy import Boolean, DateTime, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database.base import Base
-from moduly.rizeni_rizik.constants import RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT
+from moduly.rizeni_rizik.constants import RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED
 
 
 class RiskMeasureReviewItem(Base):
@@ -21,13 +21,15 @@ class RiskMeasureReviewItem(Base):
     note_number: Mapped[str] = mapped_column(String(16), nullable=False, default="")
     # Příznak, že k položce byla pořízena fotografie (samotné foto v další fázi).
     has_photo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    # Zpětná kompatibilita s RISK-REVIEW-2 (sync z compliant).
+    # Výchozí: nehodnoceno – uživatel zaškrtne ručně.
     result: Mapped[str] = mapped_column(
         String(32),
         nullable=False,
-        default=RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT,
+        default=RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED,
     )
     note: Mapped[str] = mapped_column(Text, default="")
+    # RISK-REVIEW-5: způsob řešení nevyhovujícího bodu ("" / task / measure_revision).
+    resolution: Mapped[str] = mapped_column(String(32), nullable=False, default="")
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(

@@ -152,7 +152,6 @@ class RiskReview3aTestCase(unittest.TestCase):
         widget = RiskMeasureReviewTasksWidget()
         widget.set_review_id(self.review.id)
         self.assertEqual(widget.table.rowCount(), 2)
-        self.assertEqual(widget.content_stack.currentIndex(), 1)
 
         titles = {
             widget.table.item(row, 1).text()
@@ -166,7 +165,6 @@ class RiskReview3aTestCase(unittest.TestCase):
         widget = RiskMeasureReviewTasksWidget()
         widget.set_review_id(self.review.id)
         self.assertEqual(widget.table.rowCount(), 0)
-        self.assertEqual(widget.content_stack.currentIndex(), 0)
         self.assertEqual(widget.empty_label.text(), "Přezkoumání zatím nemá žádné úkoly.")
 
     def test_no_finding_entities_in_service_api(self) -> None:
