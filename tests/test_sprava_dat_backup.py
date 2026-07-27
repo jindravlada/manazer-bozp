@@ -77,9 +77,9 @@ class DataManagementSettingsServiceTestCase(unittest.TestCase):
     def test_last_backup_persists_and_reloads(self) -> None:
         record = BackupRecord(
             created_at="2026-07-10T10:15:30",
-            path=str(storage_module.storage_service.backups_dir / "demo.zip"),
+            path=str(storage_module.storage_service.backups_dir / "demo.mbbackup"),
             manifest={"verified": True, "file_count": 3},
-            backup_type=BACKUP_TYPE_FULL,
+            backup_type="instance_backup",
         )
         data_management_settings_service.save_last_backup(record)
 
@@ -88,7 +88,20 @@ class DataManagementSettingsServiceTestCase(unittest.TestCase):
         assert loaded is not None
         self.assertEqual(loaded.path, record.path)
         self.assertEqual(loaded.manifest["file_count"], 3)
-        self.assertEqual(loaded.backup_type, BACKUP_TYPE_FULL)
+        self.assertEqual(loaded.backup_type, "instance_backup")
+
+    def test_zip_last_backup_is_ignored(self) -> None:
+        data_management_settings_service.save_last_backup(
+            BackupRecord(
+                created_at="2026-07-10T10:15:30",
+                path=str(storage_module.storage_service.backups_dir / "legacy.zip"),
+                manifest={"verified": True},
+                backup_type=BACKUP_TYPE_FULL,
+            )
+        )
+        self.assertIsNone(data_management_settings_service.get_last_backup())
+        self.assertTrue(data_management_settings_service.clear_stale_zip_last_backup())
+        self.assertIsNone(data_management_settings_service.get_last_backup())
 
 
 class BackupTabTestCase(unittest.TestCase):
@@ -139,7 +152,8 @@ class LegacyZipWorkflowServiceTestCase(unittest.TestCase):
         self.service = full_backup_workflow_service
         self.parent = BackupTab()
 
-    def test_create_backup_uses_existing_service_and_persists_last_backup(self) -> None:
+    def test_create_backup_does_not_set_product_last_backup(self) -> None:
+        """Legacy ZIP workflow nesmí přepsat poslední kompletní zálohu (*.mbbackup)."""
         target = storage_module.storage_service.backups_dir / "sprava-dat-test.zip"
 
         with patch(
@@ -149,11 +163,8 @@ class LegacyZipWorkflowServiceTestCase(unittest.TestCase):
             with patch("moduly.sprava_dat.sluzby.full_backup_workflow_service.QMessageBox.information"):
                 self.service.create_full_backup(self.parent)
 
-        record = data_management_settings_service.get_last_backup()
-        self.assertIsNotNone(record)
-        assert record is not None
-        self.assertTrue(Path(record.path).is_file())
-        self.assertTrue(record.manifest.get("verified"))
+        self.assertTrue(target.is_file())
+        self.assertIsNone(data_management_settings_service.get_last_backup())
 
     def test_failed_verification_does_not_save_last_backup(self) -> None:
         target = storage_module.storage_service.backups_dir / "invalid-backup.zip"

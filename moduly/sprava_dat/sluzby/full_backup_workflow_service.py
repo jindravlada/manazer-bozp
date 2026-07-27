@@ -53,13 +53,7 @@ class FullBackupWorkflowService:
             )
             return False
 
-        record = BackupRecord(
-            created_at=datetime.now().isoformat(timespec="seconds"),
-            path=str(Path(result_path).resolve()),
-            manifest=manifest,
-            backup_type=BACKUP_TYPE_FULL,
-        )
-        data_management_settings_service.save_last_backup(record)
+        # ZIP není zdroj poslední kompletní zálohy ve Správě dat (BACKUP-UX-1: *.mbbackup).
 
         warnings = manifest.get("attachment_warnings") or []
         if manifest.get("backup_health") == "warning":

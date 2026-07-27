@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
@@ -19,8 +21,13 @@ from moduly.sprava_dat.ui.ui_styles import apply_card_group_style
 class BackupTab(QWidget):
     """Záložka úplné zálohy a obnovy (*.mbbackup)."""
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        on_status_changed: Callable[[], None] | None = None,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
+        self._on_status_changed = on_status_changed
         self._build_ui()
         self.refresh()
 
@@ -105,9 +112,17 @@ class BackupTab(QWidget):
             )
             self.recovery_status_label.setStyleSheet("")
 
+    def _notify_status_changed(self) -> None:
+        if self._on_status_changed is not None:
+            self._on_status_changed()
+        else:
+            self.refresh()
+
     def _create_instance_backup(self) -> None:
-        instance_backup_workflow_service.create_instance_backup_ui(self)
-        self.refresh()
+        if instance_backup_workflow_service.create_instance_backup_ui(self):
+            self._notify_status_changed()
+        else:
+            self.refresh()
 
     def _verify_instance_backup(self) -> None:
         instance_backup_workflow_service.verify_instance_backup_ui(self)

@@ -229,18 +229,25 @@ class AttachmentBackupPhase92bTestCase(unittest.TestCase):
         self.assertIn("control_results", version_info["obsah"])
 
     def test_summary_shows_backup_warning_status(self) -> None:
+        from core.backup.constants import BACKUP_EXTENSION
+        from moduly.sprava_dat.sluzby.data_management_settings_service import (
+            BACKUP_TYPE_INSTANCE,
+        )
+
         attachment = self._create_attachment()
         resolved = attachment_service.resolve_path(attachment)
         resolved.unlink()
 
         backup_path = backup_service.create_backup(backup_type=BACKUP_TYPE_FULL)
         manifest = backup_manifest_service.build_manifest(backup_path)
+        mb_path = backup_path.with_name(backup_path.stem + BACKUP_EXTENSION)
+        backup_path.rename(mb_path)
         data_management_settings_service.save_last_backup(
             BackupRecord(
                 created_at="2026-07-10T12:00:00",
-                path=str(backup_path),
+                path=str(mb_path),
                 manifest=manifest,
-                backup_type=BACKUP_TYPE_FULL,
+                backup_type=BACKUP_TYPE_INSTANCE,
             )
         )
 

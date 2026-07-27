@@ -3,9 +3,13 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+from core.backup.constants import BACKUP_EXTENSION
 from core.services.storage_service import storage_service
 
 SETTINGS_FILE = "sprava_dat.json"
+
+# Kompletní záloha aplikace (Souhrn / Stav dat) – pouze *.mbbackup.
+BACKUP_TYPE_INSTANCE = "instance_backup"
 
 
 @dataclass(frozen=True)
@@ -166,12 +170,38 @@ class DataManagementSettingsService:
         )
 
     def get_last_backup(self) -> BackupRecord | None:
-        return BackupRecord.from_dict(self._load().get("last_backup"))
+        """Poslední kompletní záloha (*.mbbackup). Starý ZIP záznam se ignoruje."""
+        record = BackupRecord.from_dict(self._load().get("last_backup"))
+        if record is None:
+            return None
+        if not self._is_instance_backup_record(record):
+            return None
+        return record
 
     def save_last_backup(self, record: BackupRecord) -> None:
         payload = self._load()
         payload["last_backup"] = record.to_dict()
         self._save(payload)
+
+    @staticmethod
+    def _is_instance_backup_record(record: BackupRecord) -> bool:
+        path = str(record.path or "").strip().lower()
+        return path.endswith(BACKUP_EXTENSION)
+
+    def clear_stale_zip_last_backup(self) -> bool:
+        """Odstraní z metadat zastaralý ZIP záznam poslední kompletní zálohy."""
+        payload = self._load()
+        raw = payload.get("last_backup")
+        if not isinstance(raw, dict):
+            return False
+        path = str(raw.get("path") or "").strip().lower()
+        if path.endswith(BACKUP_EXTENSION):
+            return False
+        if path.endswith(".zip") or str(raw.get("backup_type") or "") == "celkova":
+            payload["last_backup"] = None
+            self._save(payload)
+            return True
+        return False
 
     def get_last_pre_restore_backup(self) -> BackupRecord | None:
         return BackupRecord.from_dict(self._load().get("last_pre_restore_backup"))

@@ -23,7 +23,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
-    from core.services.backup_service import BACKUP_TYPE_FULL, backup_service
+    from core.services.backup_service import BACKUP_TYPE_FULL
     from moduly.sprava_dat.sluzby.data_management_settings_service import (
         BackupRecord,
         data_management_settings_service,
@@ -59,17 +59,31 @@ class DataManagementStatusServiceTestCase(unittest.TestCase):
         self.assertTrue(any("diagnostika" in warning.lower() for warning in warnings))
 
     def test_missing_backup_file_is_problem(self) -> None:
+        missing = storage_module.storage_service.backups_dir / "missing.mbbackup"
         data_management_settings_service.save_last_backup(
             BackupRecord(
                 created_at="2026-07-10T10:00:00",
-                path=str(storage_module.storage_service.backups_dir / "missing.zip"),
+                path=str(missing),
                 manifest={"verified": True},
-                backup_type=BACKUP_TYPE_FULL,
+                backup_type="instance_backup",
             )
         )
         status, warnings = data_management_status_service.compute_status()
         self.assertEqual(status, "Vyžaduje pozornost")
         self.assertTrue(any("nebyl nalezen" in warning for warning in warnings))
+
+    def test_stale_zip_last_backup_is_not_treated_as_missing_file(self) -> None:
+        data_management_settings_service.save_last_backup(
+            BackupRecord(
+                created_at="2026-07-10T10:00:00",
+                path=str(storage_module.storage_service.backups_dir / "legacy.zip"),
+                manifest={"verified": True},
+                backup_type=BACKUP_TYPE_FULL,
+            )
+        )
+        _status, warnings = data_management_status_service.compute_status()
+        self.assertTrue(any("dosud nebyla vytvořena" in warning for warning in warnings))
+        self.assertFalse(any("nebyl nalezen" in warning for warning in warnings))
 
 
 class SummaryTabTestCase(unittest.TestCase):
@@ -91,14 +105,19 @@ class SummaryTabTestCase(unittest.TestCase):
         self.assertIn("záloha", self.tab.warnings_label.text().lower())
 
     def test_shows_last_backup_details(self) -> None:
-        backup_path = backup_service.create_backup(backup_type=BACKUP_TYPE_FULL)
-        manifest = backup_service.verify_backup_integrity(backup_path, backup_type=BACKUP_TYPE_FULL)
+        from core.backup.constants import BACKUP_EXTENSION
+        from moduly.sprava_dat.sluzby.data_management_settings_service import (
+            BACKUP_TYPE_INSTANCE,
+        )
+
+        backup_path = storage_module.storage_service.backups_dir / f"demo{BACKUP_EXTENSION}"
+        backup_path.write_bytes(b"mbbackup")
         data_management_settings_service.save_last_backup(
             BackupRecord(
                 created_at="2026-07-10T12:00:00",
                 path=str(backup_path),
-                manifest=manifest,
-                backup_type=BACKUP_TYPE_FULL,
+                manifest={"verified": True, "backup_format": "mbbackup"},
+                backup_type=BACKUP_TYPE_INSTANCE,
             )
         )
         self.tab.refresh()

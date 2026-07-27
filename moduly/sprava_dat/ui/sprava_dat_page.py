@@ -39,7 +39,7 @@ class SpravaDatPage(QWidget):
 
         self.tabs = QTabWidget()
         self.summary_tab = SummaryTab(navigate_callback=self.navigate_to_tab)
-        self.backup_tab = BackupTab()
+        self.backup_tab = BackupTab(on_status_changed=self.refresh_backup_status)
         self.transfer_tab = LegalRegistryTransferTab()
         self.codebooks_tab = CodebooksTab()
         self.diagnostics_tab = LegalRegistryDiagnosticsTab()
@@ -57,6 +57,11 @@ class SpravaDatPage(QWidget):
         self.tabs.setCurrentIndex(TAB_ORDER.index(tab_key))
 
     def refresh_backup_status(self) -> None:
+        from moduly.sprava_dat.sluzby.data_management_settings_service import (
+            data_management_settings_service,
+        )
+
+        data_management_settings_service.clear_stale_zip_last_backup()
         self.summary_tab.refresh()
         self.backup_tab.refresh()
 

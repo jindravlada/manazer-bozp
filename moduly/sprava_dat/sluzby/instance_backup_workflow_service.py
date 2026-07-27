@@ -15,6 +15,7 @@ from core.backup import (
     RESTORE_ERR_FAILED_AFTER_SWAP_ROLLED_BACK,
     RESTORE_ERR_FAILED_BEFORE_SWAP,
     RESTORE_ERR_ROLLBACK_FAILED,
+    CreateInstanceBackupResult,
     InstanceBackupError,
     InstanceRestoreError,
     create_instance_backup,
@@ -25,6 +26,11 @@ from core.backup import (
     restore_instance_backup,
 )
 from core.services.storage_service import storage_service
+from moduly.sprava_dat.sluzby.data_management_settings_service import (
+    BACKUP_TYPE_INSTANCE,
+    BackupRecord,
+    data_management_settings_service,
+)
 from moduly.sprava_dat.ui.instance_backup_dialogs import (
     BackupProgressDialog,
     MessageWithDetailsDialog,
@@ -212,6 +218,8 @@ class InstanceBackupWorkflowService:
             progress.allow_close()
             progress.close()
 
+        self.persist_last_instance_backup(result)
+
         meta = result.metadata
         summary = (
             f"<b>Záloha byla úspěšně vytvořena.</b><br><br>"
@@ -233,6 +241,29 @@ class InstanceBackupWorkflowService:
             ),
         ).exec()
         return True
+
+    @staticmethod
+    def persist_last_instance_backup(result: CreateInstanceBackupResult) -> BackupRecord:
+        """Uloží metadata poslední kompletní zálohy (*.mbbackup) pro Souhrn / Stav dat."""
+        meta = result.metadata
+        record = BackupRecord(
+            created_at=str(
+                meta.created_at or datetime.now().isoformat(timespec="seconds")
+            ),
+            path=str(Path(result.path).resolve()),
+            manifest={
+                "verified": bool(result.verified),
+                "package_kind": meta.package_kind,
+                "format_version": meta.format_version,
+                "app_version": meta.app_version,
+                "file_count": len(meta.files),
+                "database_integrity": result.database_integrity,
+                "backup_format": "mbbackup",
+            },
+            backup_type=BACKUP_TYPE_INSTANCE,
+        )
+        data_management_settings_service.save_last_backup(record)
+        return record
 
     def verify_instance_backup_ui(self, parent: QWidget) -> bool:
         file_path, _ = QFileDialog.getOpenFileName(

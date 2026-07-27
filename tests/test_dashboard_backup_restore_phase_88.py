@@ -23,7 +23,6 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
-    from core.services.backup_service import BACKUP_TYPE_FULL, backup_service
     from moduly.dashboard.ui.complete_backup_dialog import (
         ACTION_GO_TO_SPRAVA_DAT,
         ACTION_PROCEED,
@@ -36,7 +35,6 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.dashboard.ui.dashboard_page import DashboardPage
     from moduly.sprava_dat.sluzby.data_management_settings_service import (
-        BackupRecord,
         data_management_settings_service,
     )
     from moduly.sprava_dat.ui.sprava_dat_page import SpravaDatPage
@@ -213,23 +211,37 @@ class DashboardBackupRestorePhase88TestCase(unittest.TestCase):
         self.assertTrue(hasattr(sprava_page.backup_tab, "create_mbbackup_button"))
 
     def test_workflow_service_persists_backup_record(self) -> None:
-        from moduly.sprava_dat.sluzby.full_backup_workflow_service import full_backup_workflow_service
+        from core.backup.constants import BACKUP_EXTENSION
+        from moduly.sprava_dat.sluzby.data_management_settings_service import (
+            BACKUP_TYPE_INSTANCE,
+        )
+        from moduly.sprava_dat.sluzby.instance_backup_workflow_service import (
+            instance_backup_workflow_service,
+        )
 
-        target = storage_module.storage_service.backups_dir / "workflow-shared.zip"
-        widget = DashboardPage()
+        target = storage_module.storage_service.backups_dir / f"workflow-shared{BACKUP_EXTENSION}"
+        target.write_bytes(b"mbbackup")
+        meta = MagicMock()
+        meta.created_at = "2026-07-10T12:00:00"
+        meta.app_version = "3.1.1"
+        meta.files = []
+        meta.format_version = 1
+        meta.package_kind = "instance_backup"
+        result = MagicMock(
+            path=target,
+            metadata=meta,
+            verified=True,
+            database_integrity="ok",
+        )
 
-        with patch(
-            "moduly.sprava_dat.sluzby.full_backup_workflow_service.QFileDialog.getSaveFileName",
-            return_value=(str(target), ""),
-        ):
-            with patch("moduly.sprava_dat.sluzby.full_backup_workflow_service.QMessageBox.information"):
-                self.assertTrue(full_backup_workflow_service.create_full_backup(widget))
-
-        record = data_management_settings_service.get_last_backup()
-        self.assertIsNotNone(record)
-        assert record is not None
-        self.assertEqual(record.backup_type, BACKUP_TYPE_FULL)
-        self.assertTrue(record.manifest.get("verified"))
+        record = instance_backup_workflow_service.persist_last_instance_backup(result)
+        loaded = data_management_settings_service.get_last_backup()
+        self.assertIsNotNone(loaded)
+        assert loaded is not None
+        self.assertEqual(record.backup_type, BACKUP_TYPE_INSTANCE)
+        self.assertEqual(loaded.path, str(target.resolve()))
+        self.assertTrue(loaded.manifest.get("verified"))
+        self.assertTrue(loaded.path.endswith(BACKUP_EXTENSION))
 
 
 if __name__ == "__main__":

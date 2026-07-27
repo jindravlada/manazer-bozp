@@ -101,7 +101,16 @@ class InstanceBackupUiTestCase(unittest.TestCase):
         self.assertTrue(hasattr(self.parent, "restore_mbbackup_button"))
 
     def test_create_backup_from_ui(self) -> None:
+        from moduly.sprava_dat.sluzby.data_management_settings_service import (
+            data_management_settings_service,
+        )
+
+        settings_path = data_management_settings_service.settings_path()
+        if settings_path.exists():
+            settings_path.unlink()
+
         target = _TMP / f"ui-create{BACKUP_EXTENSION}"
+        target.write_bytes(b"mbbackup")
         with patch.object(
             wf_mod.QFileDialog, "getSaveFileName", return_value=(str(target), "")
         ):
@@ -118,11 +127,17 @@ class InstanceBackupUiTestCase(unittest.TestCase):
                     mock_create.return_value = MagicMock(
                         path=target,
                         metadata=meta,
+                        verified=True,
                         database_integrity="ok",
                     )
                     ok = self.service.create_instance_backup_ui(self.parent)
         self.assertTrue(ok)
         mock_create.assert_called_once()
+        record = data_management_settings_service.get_last_backup()
+        self.assertIsNotNone(record)
+        assert record is not None
+        self.assertTrue(record.path.endswith(BACKUP_EXTENSION))
+        self.assertTrue(record.manifest.get("verified"))
 
     def test_cancel_save_dialog(self) -> None:
         with patch.object(wf_mod.QFileDialog, "getSaveFileName", return_value=("", "")):
