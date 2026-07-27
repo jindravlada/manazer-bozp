@@ -4,10 +4,27 @@ from datetime import date, datetime, timedelta
 from core.shared.constants import ENTITY_ACCIDENT
 from moduly.kniha_urazu.modely.accident import Accident
 from moduly.kniha_urazu.repository.accident_repository import AccidentRepository
+from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
+    dpn_calendar_days,
+    is_dpn_kind_mismatch,
+)
 from moduly.nastaveni.sluzby.settings_service import settings_service
 
 
-VERIFY_ACCIDENT_KIND_TASK_TITLE = "Ověřit druh pracovního úrazu"
+VERIFY_ACCIDENT_KIND_TASK_TITLE_PREFIX = "Ověřit druh pracovního úrazu"
+# Úkol vytvářet jen při zápisu do 3 kalendářních dnů od data úrazu (zpoždění 0–3).
+VERIFY_KIND_TASK_MAX_RECORDING_DELAY_DAYS = 3
+
+
+def verify_accident_kind_task_title(number: str) -> str:
+    return f"{VERIFY_ACCIDENT_KIND_TASK_TITLE_PREFIX} č. {number}"
+
+
+def is_verify_accident_kind_task_title(title: str) -> bool:
+    text = (title or "").strip()
+    return text == VERIFY_ACCIDENT_KIND_TASK_TITLE_PREFIX or text.startswith(
+        f"{VERIFY_ACCIDENT_KIND_TASK_TITLE_PREFIX} č."
+    )
 
 
 @dataclass(frozen=True)
@@ -88,15 +105,43 @@ class AccidentService:
             if hasattr(accident, key):
                 setattr(accident, key, value)
 
-        return self.repository.update(accident)
+        saved = self.repository.update(accident)
+        self._resolve_verify_kind_task_if_matched(saved)
+        return saved
+
+    def should_create_verify_kind_task(
+        self,
+        accident: Accident,
+        *,
+        today: date | None = None,
+    ) -> bool:
+        """Nevytvářet úkol při zápisu se zpožděním 4+ kalendářních dnů."""
+        if accident.accident_date is None:
+            return True
+        reference = today or date.today()
+        delay_days = (reference - accident.accident_date).days
+        return delay_days <= VERIFY_KIND_TASK_MAX_RECORDING_DELAY_DAYS
+
+    def accident_kind_matches_known_dpn(self, accident: Accident) -> bool:
+        """True, pokud je délka DPN známá a druh úrazu jí odpovídá."""
+        druh = (accident.druh_urazu or "").strip()
+        if not druh:
+            return False
+        days = dpn_calendar_days(accident.dpn_od, accident.dpn_do)
+        if days is None:
+            return False
+        return not is_dpn_kind_mismatch(druh, days)
 
     def _create_verify_kind_task(self, accident: Accident) -> None:
+        if not self.should_create_verify_kind_task(accident):
+            return
+
         from moduly.ukoly.sluzby.task_service import task_service
 
         number = (accident.number or "").strip() or self._make_number(accident.id, accident.year)
         base_date = accident.accident_date or date.today()
         task_service.create_task(
-            title=VERIFY_ACCIDENT_KIND_TASK_TITLE,
+            title=verify_accident_kind_task_title(number),
             description=(
                 f"Ověřit pracovní úraz č. {number} a případně upravit druh "
                 "pracovního úrazu podle skutečné délky pracovní neschopnosti."
@@ -107,6 +152,30 @@ class AccidentService:
             source_record_id=accident.id,
             requires_verification=False,
         )
+
+    def _resolve_verify_kind_task_if_matched(self, accident: Accident) -> None:
+        if not self.accident_kind_matches_known_dpn(accident):
+            return
+
+        from moduly.ukoly.sluzby.task_service import task_service
+
+        open_task = self._find_open_verify_kind_task(accident.id)
+        if open_task is None:
+            return
+        task_service.mark_completed(open_task.id)
+
+    def _find_open_verify_kind_task(self, accident_id: int):
+        from moduly.ukoly.sluzby.task_service import task_service
+
+        for task in task_service.repository.list_by_source(
+            source_module=ENTITY_ACCIDENT,
+            source_record_id=accident_id,
+        ):
+            if task.completed or task.canceled:
+                continue
+            if is_verify_accident_kind_task_title(task.title):
+                return task
+        return None
 
     def _sync_legacy_fields(self, data: dict) -> None:
         """

@@ -42,7 +42,7 @@ with patch.object(Path, "home", return_value=_TMP):
         is_no_pn_kind,
     )
     from moduly.kniha_urazu.sluzby.accident_service import (
-        VERIFY_ACCIDENT_KIND_TASK_TITLE,
+        verify_accident_kind_task_title,
         accident_service,
     )
     from moduly.kniha_urazu.ui.accident_dialog import AccidentDialog
@@ -172,11 +172,11 @@ class KuUx12TestCase(unittest.TestCase):
         self.assertIn(DPN_KIND_MISMATCH_BLOCK_MESSAGE, mock_warning.call_args.args[2])
 
     def test_create_accident_creates_verify_kind_task(self) -> None:
-        accident_date = date(2026, 6, 1)
+        accident_date = date.today()
         accident = accident_service.create_accident(
             jmeno_prijmeni="Jan Novák",
             accident_date=accident_date,
-            year=2026,
+            year=accident_date.year,
         )
 
         tasks = [
@@ -186,7 +186,7 @@ class KuUx12TestCase(unittest.TestCase):
         ]
         self.assertEqual(len(tasks), 1)
         task = tasks[0]
-        self.assertEqual(task.title, VERIFY_ACCIDENT_KIND_TASK_TITLE)
+        self.assertEqual(task.title, verify_accident_kind_task_title(accident.number))
         self.assertEqual(task.due_date, accident_date + timedelta(days=5))
         self.assertIn(f"č. {accident.number}", task.description)
         self.assertIn("upravit druh pracovního úrazu", task.description)

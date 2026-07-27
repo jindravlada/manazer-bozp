@@ -23,6 +23,8 @@ def task_source_short_label(task) -> str:
         return "Právní pož."
     if source_module == ENTITY_MU_INVESTIGATION:
         return _entity_source_short_label(ENTITY_MU_INVESTIGATION)
+    if source_module == ENTITY_ACCIDENT:
+        return _entity_source_short_label(ENTITY_ACCIDENT)
     if source_module == ENTITY_RISK_MEASURE_REVIEW:
         return "Přezkoumání"
     if source_module == ENTITY_FINDING and task.source_record_id:
@@ -37,7 +39,7 @@ def task_source_short_label(task) -> str:
 def _entity_source_short_label(entity_type: str) -> str:
     labels = {
         ENTITY_AUDITY: "Audit",
-        ENTITY_ACCIDENT: "Administrace",
+        ENTITY_ACCIDENT: "Úraz",
         ENTITY_MU_INVESTIGATION: "MU",
         ENTITY_PROVERKY: "Prověrka",
     }
@@ -57,6 +59,7 @@ def _legacy_source_short_label(source: str) -> str:
         "proverka": "Prověrka",
         "proverky": "Prověrka",
         "kontrola": "Kontrola",
+        ENTITY_ACCIDENT: "Úraz",
         ENTITY_FINDING: "Zjištění",
         ENTITY_MU_INVESTIGATION: "MU",
         ENTITY_LEGAL_REQUIREMENT: "Právní pož.",
@@ -73,6 +76,8 @@ def task_source_label(task) -> str:
         return _legal_requirement_source_label(task.source_record_id)
     if source_module == ENTITY_MU_INVESTIGATION and task.source_record_id:
         return _finding_entity_source_label(ENTITY_MU_INVESTIGATION, task.source_record_id)
+    if source_module == ENTITY_ACCIDENT and task.source_record_id:
+        return _finding_entity_source_label(ENTITY_ACCIDENT, task.source_record_id)
     if source_module == ENTITY_RISK_MEASURE_REVIEW and task.source_record_id:
         return _risk_measure_review_source_label(task.source_record_id)
     if source_module == ENTITY_FINDING and task.source_record_id:
@@ -110,7 +115,7 @@ def _legal_requirement_source_label(requirement_id: int) -> str:
 def _finding_entity_source_label(entity_type: str, entity_id: int) -> str:
     labels = {
         ENTITY_AUDITY: "Audit systému řízení",
-        ENTITY_ACCIDENT: "Administrace úrazu",
+        ENTITY_ACCIDENT: "Úraz",
         ENTITY_MU_INVESTIGATION: "Vyšetřování MU",
         ENTITY_PROVERKY: "Prověrka BOZP",
     }
@@ -157,6 +162,7 @@ def _legacy_source_label(source: str) -> str:
         "proverka": "Prověrka",
         "proverky": "Prověrka BOZP",
         "kontrola": "Kontrola",
+        ENTITY_ACCIDENT: "Úraz",
         ENTITY_FINDING: "Zjištění",
         ENTITY_MU_INVESTIGATION: "Vyšetřování MU",
         ENTITY_LEGAL_REQUIREMENT: "Právní požadavek",
