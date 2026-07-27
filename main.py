@@ -1,17 +1,22 @@
 import sys
 
-from PySide6.QtWidgets import QApplication, QMessageBox
+from PySide6.QtWidgets import QApplication
 
 from core.database.upgrade_guard import (
     MigrationGuardError,
     prepare_database_for_startup,
+)
+from core.dialogs.message_box import (
+    configure_application_for_dialogs,
+    install_unified_message_boxes,
+    show_critical,
 )
 from core.services.app_runtime_service import mark_application_started
 from core.settings.settings_manager import settings
 from core.theme import theme
 from core.theme.app_style import apply_app_style
 from core.resources.app_icon import load_app_icon
-from core.version import APP_NAME, APP_VERSION, app_display_name
+from core.version import APP_VERSION
 from core.windows.main_window import MainWindow
 
 
@@ -19,9 +24,10 @@ def _show_startup_error(title: str, message: str) -> None:
     app = QApplication.instance()
     if app is None:
         app = QApplication(sys.argv)
-        app.setApplicationName(APP_NAME)
         app.setApplicationVersion(APP_VERSION)
-    QMessageBox.critical(None, title, message)
+        configure_application_for_dialogs(app)
+        install_unified_message_boxes(app)
+    show_critical(None, title, message)
 
 
 def main():
@@ -37,9 +43,12 @@ def main():
     theme.load(settings.get("theme", "default"))
 
     app = QApplication.instance() or QApplication(sys.argv)
-    app.setApplicationName(APP_NAME)
     app.setApplicationVersion(APP_VERSION)
-    app.setApplicationDisplayName(app_display_name())
+    # UX-DIALOG-1: prázdný display name + technický applicationName
+    # → WM nepřidává „ — Manažer BOZP“ do dialogů.
+    # Titulek hlavního okna zůstává app_display_name() přes setWindowTitle.
+    configure_application_for_dialogs(app)
+    install_unified_message_boxes(app)
     apply_app_style(app)
 
     app_icon = load_app_icon()

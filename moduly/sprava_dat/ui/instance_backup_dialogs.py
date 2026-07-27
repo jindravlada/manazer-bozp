@@ -110,9 +110,14 @@ class MessageWithDetailsDialog(QDialog):
         level: str = "info",
     ) -> None:
         super().__init__(parent)
-        self.setWindowTitle(title)
+        from core.dialogs.message_box import (
+            MESSAGE_BOX_MIN_WIDTH,
+            strip_application_title_suffix,
+        )
+
+        self.setWindowTitle(strip_application_title_suffix(title))
         self.setModal(True)
-        self.setMinimumWidth(480)
+        self.setMinimumWidth(max(480, MESSAGE_BOX_MIN_WIDTH))
 
         layout = QVBoxLayout(self)
         body = QLabel(message)
@@ -139,6 +144,9 @@ class MessageWithDetailsDialog(QDialog):
             layout.addWidget(self._details_edit)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
+        ok_btn = buttons.button(QDialogButtonBox.StandardButton.Ok)
+        if ok_btn is not None:
+            ok_btn.setText("OK")
         buttons.accepted.connect(self.accept)
         layout.addWidget(buttons)
 
