@@ -180,6 +180,7 @@ def initialize_database() -> None:
     _ensure_hazard_risk_assessments_table()
     _ensure_hazard_risk_assessment_exposed_groups_table()
     _migrate_hazard_risk_assessment_groups_and_drop_consequence()
+    _migrate_exposed_target_source_type_columns()
     _ensure_hazard_existing_measures_table()
     _ensure_hazard_required_measures_table()
     _ensure_hazard_identification_photos_table()
@@ -1085,6 +1086,33 @@ def _ensure_hazard_risk_assessment_exposed_groups_table() -> None:
         ON hazard_risk_assessment_exposed_groups (assessment_id)
         """,
     )
+
+
+def _migrate_exposed_target_source_type_columns() -> None:
+    """RISK-UX-6: source_type na vazebních tabulkách ohrožených skupin."""
+    for table_name in (
+        "hazard_risk_assessment_exposed_groups",
+        "hazard_library_template_assessment_exposed_groups",
+    ):
+        columns = _table_columns(table_name)
+        if not columns:
+            continue
+        if "source_type" not in columns:
+            _add_column(
+                table_name,
+                "source_type VARCHAR(32) NOT NULL DEFAULT 'hazard_group'",
+            )
+        with _db_engine().connect() as connection:
+            connection.execute(
+                text(
+                    f"""
+                    UPDATE {table_name}
+                    SET source_type = 'hazard_group'
+                    WHERE source_type IS NULL OR TRIM(source_type) = ''
+                    """
+                ),
+            )
+            connection.commit()
 
 
 def _migrate_hazard_risk_assessment_groups_and_drop_consequence() -> None:

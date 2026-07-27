@@ -167,6 +167,7 @@ class MultiExposedGroupsR20cTestCase(unittest.TestCase):
         join_columns = _table_columns("hazard_risk_assessment_exposed_groups")
         self.assertIn("assessment_id", join_columns)
         self.assertIn("exposed_group_id", join_columns)
+        self.assertIn("source_type", join_columns)
         self.assertIn("sort_order", join_columns)
 
     def test_create_assessment_with_multiple_groups(self) -> None:

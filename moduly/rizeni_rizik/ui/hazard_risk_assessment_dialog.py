@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
-from core.widgets.multi_exposed_group_selector import MultiExposedGroupSelector
+from core.widgets.multi_exposed_target_selector import MultiExposedTargetSelector
 from core.widgets.severity_tooltips import (
     bind_severity_combo_tooltip,
     populate_severity_combo,
@@ -28,6 +28,11 @@ from moduly.rizeni_rizik.constants import (
     RISK_ASSESSMENT_STATUS_DRAFT,
     RISK_ASSESSMENT_STATUSES,
     RISK_ASSESSMENT_STATUS_LABELS,
+)
+from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
+    SOURCE_TYPE_HAZARD_GROUP,
+    ExposedTargetRef,
+    refs_from_legacy_group_ids,
 )
 from moduly.rizeni_rizik.sluzby.hazard_identification_working_copy import (
     find_identification_working_copy,
@@ -64,7 +69,7 @@ class HazardRiskAssessmentDialog(QDialog):
         self._populate_events(default_hazard_event_id)
 
         group_row = QHBoxLayout()
-        self.exposed_groups = MultiExposedGroupSelector(self)
+        self.exposed_groups = MultiExposedTargetSelector(self)
         self.manage_groups_btn = QPushButton("Spravovat číselník…")
         self.manage_groups_btn.clicked.connect(self._open_groups_management)
         group_row.addWidget(self.exposed_groups, 1)
@@ -109,14 +114,19 @@ class HazardRiskAssessmentDialog(QDialog):
             store = find_identification_working_copy(self)
             if store is not None:
                 wc_assessment = store.get_assessment(assessment.id)
-                group_ids = list(wc_assessment.exposed_group_ids) if wc_assessment else []
-                if not group_ids and wc_assessment and wc_assessment.exposed_group_id:
-                    group_ids = [wc_assessment.exposed_group_id]
+                refs = list(getattr(wc_assessment, "target_refs", []) or []) if wc_assessment else []
+                if not refs and wc_assessment:
+                    refs = refs_from_legacy_group_ids(
+                        wc_assessment.exposed_group_ids,
+                        legacy_single_id=wc_assessment.exposed_group_id,
+                    )
             else:
-                group_ids = hazard_risk_assessment_service.get_group_ids(assessment.id)
-                if not group_ids and assessment.exposed_group_id:
-                    group_ids = [assessment.exposed_group_id]
-            self.exposed_groups.set_group_ids(group_ids)
+                refs = hazard_risk_assessment_service.get_target_refs(assessment.id)
+                if not refs and assessment.exposed_group_id:
+                    refs = [
+                        ExposedTargetRef(SOURCE_TYPE_HAZARD_GROUP, assessment.exposed_group_id)
+                    ]
+            self.exposed_groups.set_refs(refs)
             severity_index = self.severity.findData(assessment.severity)
             if severity_index >= 0:
                 self.severity.setCurrentIndex(severity_index)
@@ -150,10 +160,10 @@ class HazardRiskAssessmentDialog(QDialog):
             buttons.button(QDialogButtonBox.StandardButton.Save).setEnabled(False)
 
     def _open_groups_management(self) -> None:
-        selected_ids = self.exposed_groups.selected_group_ids()
+        selected_refs = self.exposed_groups.selected_refs()
         dialog = ExposedGroupsManagementDialog(self)
         dialog.exec()
-        self.exposed_groups.reload(preserve_ids=selected_ids)
+        self.exposed_groups.reload(preserve_refs=selected_refs)
 
     def _populate_events(self, default_hazard_event_id: int | None) -> None:
         store = find_identification_working_copy(self)
@@ -185,7 +195,7 @@ class HazardRiskAssessmentDialog(QDialog):
             return
 
         data = self.get_data()
-        if not data["exposed_group_ids"]:
+        if not data["target_refs"]:
             QMessageBox.warning(
                 self,
                 HAZARD_RISK_ASSESSMENT_DIALOG_TITLE,
@@ -254,7 +264,7 @@ class HazardRiskAssessmentDialog(QDialog):
     def get_data(self) -> dict:
         return {
             "hazard_event_id": self.event.currentData(),
-            "exposed_group_ids": self.exposed_groups.selected_group_ids(),
+            "target_refs": self.exposed_groups.selected_refs(),
             "severity": self.severity.currentData(),
             "assessment_status": self.assessment_status.currentData(),
             "conclusion": self.conclusion.toPlainText().strip(),

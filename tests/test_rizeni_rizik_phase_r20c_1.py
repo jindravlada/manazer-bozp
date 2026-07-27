@@ -26,6 +26,7 @@ with patch.object(Path, "home", return_value=_TMP):
     initialize_database()
 
     from core.widgets.multi_exposed_group_selector import MultiExposedGroupSelector
+    from core.widgets.multi_exposed_target_selector import MultiExposedTargetSelector
     from moduly.nastaveni.constants.workplace_hierarchy_constants import (
         WORKPLACE_ITEM_TYPE_OPERATION,
         WORKPLACE_ITEM_TYPE_WORKPLACE,
@@ -41,6 +42,10 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.modely.hazard_risk_assessment import HazardRiskAssessment
     from moduly.rizeni_rizik.modely.hazard_risk_assessment_exposed_group import (
         HazardRiskAssessmentExposedGroup,
+    )
+    from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
+        SOURCE_TYPE_HAZARD_GROUP,
+        ExposedTargetRef,
     )
     from moduly.rizeni_rizik.sluzby.hazard_event_service import hazard_event_service
     from moduly.rizeni_rizik.sluzby.hazard_identification_service import (
@@ -127,16 +132,24 @@ class MultiExposedGroupSelectorR20c1TestCase(unittest.TestCase):
             hazard_identification_id=self.identification.id,
             default_hazard_event_id=self.event.id,
         )
-        dialog.exposed_groups.selector.set_group_id(self.group_a.id)
+        self.assertIsInstance(dialog.exposed_groups, MultiExposedTargetSelector)
+        dialog.exposed_groups.selector.set_ref(
+            ExposedTargetRef(SOURCE_TYPE_HAZARD_GROUP, self.group_a.id)
+        )
         dialog.exposed_groups.add_current()
-        dialog.exposed_groups.selector.set_group_id(self.group_b.id)
+        dialog.exposed_groups.selector.set_ref(
+            ExposedTargetRef(SOURCE_TYPE_HAZARD_GROUP, self.group_b.id)
+        )
         # Druhá skupina zůstane jen v selectoru (bez kliknutí na Přidat).
         data = dialog.get_data()
         self.assertEqual(
-            data["exposed_group_ids"],
-            [self.group_a.id, self.group_b.id],
+            [(ref.source_type, ref.source_id) for ref in data["target_refs"]],
+            [
+                (SOURCE_TYPE_HAZARD_GROUP, self.group_a.id),
+                (SOURCE_TYPE_HAZARD_GROUP, self.group_b.id),
+            ],
         )
-        self.assertTrue(data["exposed_group_ids"])
+        self.assertTrue(data["target_refs"])
 
         dialog.accept()
         rows = hazard_risk_assessment_service.get_for_identification(

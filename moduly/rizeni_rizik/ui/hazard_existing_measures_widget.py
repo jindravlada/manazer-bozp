@@ -98,21 +98,24 @@ class HazardExistingMeasuresWidget(QWidget):
             update()
 
     def _assessment_header_text(self) -> str:
+        from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
+            format_exposed_target_names,
+            refs_from_legacy_group_ids,
+        )
+
         store = self._store()
         if store is not None and self._assessment is not None:
             wc_assessment = store.get_assessment(self._assessment.id)
             if wc_assessment is not None:
-                names = [
-                    exposed_group_service.display_name(group_id) or f"#{group_id}"
-                    for group_id in wc_assessment.exposed_group_ids
-                ]
-                if not names and wc_assessment.exposed_group_id:
-                    names = [
-                        exposed_group_service.display_name(wc_assessment.exposed_group_id)
-                        or f"#{wc_assessment.exposed_group_id}",
-                    ]
+                refs = list(getattr(wc_assessment, "target_refs", []) or [])
+                if not refs:
+                    refs = refs_from_legacy_group_ids(
+                        wc_assessment.exposed_group_ids,
+                        legacy_single_id=wc_assessment.exposed_group_id,
+                    )
+                names = format_exposed_target_names(refs)
                 if names:
-                    return ", ".join(names)
+                    return names
                 if wc_assessment.exposed_group:
                     return wc_assessment.exposed_group
                 return "—"

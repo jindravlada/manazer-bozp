@@ -70,6 +70,14 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_legal_link_service impor
 from moduly.rizeni_rizik.sluzby.hazard_library_template_required_measure_service import (
     HazardLibraryTemplateRequiredMeasureError,
 )
+from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
+    SOURCE_TYPE_HAZARD_GROUP,
+    ExposedTargetRef,
+    format_exposed_target_names,
+    legacy_exposed_group_id,
+    refs_from_legacy_group_ids,
+    resolve_exposed_target_display_name,
+)
 
 
 @dataclass
@@ -88,6 +96,7 @@ class WcAssessment:
     template_event_id: int
     exposed_group_id: int | None
     exposed_group_ids: list[int] = field(default_factory=list)
+    target_refs: list[ExposedTargetRef] = field(default_factory=list)
     severity: str = ""
     conclusion: str = ""
     note: str = ""
@@ -171,9 +180,10 @@ class HazardLibraryTemplateWorkingCopy:
                     ),
                 )
                 for assessment in assessments:
-                    group_ids = list(
-                        session.scalars(
+                    join_rows = list(
+                        session.execute(
                             select(
+                                HazardLibraryTemplateAssessmentExposedGroup.source_type,
                                 HazardLibraryTemplateAssessmentExposedGroup.exposed_group_id,
                             )
                             .where(
@@ -183,13 +193,31 @@ class HazardLibraryTemplateWorkingCopy:
                             .order_by(HazardLibraryTemplateAssessmentExposedGroup.sort_order),
                         ),
                     )
-                    if not group_ids and assessment.exposed_group_id:
-                        group_ids = [int(assessment.exposed_group_id)]
+                    target_refs = [
+                        ExposedTargetRef(
+                            str(source_type or SOURCE_TYPE_HAZARD_GROUP),
+                            int(source_id),
+                        )
+                        for source_type, source_id in join_rows
+                    ]
+                    if not target_refs and assessment.exposed_group_id:
+                        target_refs = [
+                            ExposedTargetRef(
+                                SOURCE_TYPE_HAZARD_GROUP,
+                                int(assessment.exposed_group_id),
+                            )
+                        ]
+                    group_ids = [
+                        ref.source_id
+                        for ref in target_refs
+                        if ref.source_type == SOURCE_TYPE_HAZARD_GROUP
+                    ]
                     wc_assessment = WcAssessment(
                         id=int(assessment.id),
                         template_event_id=int(event.id),
-                        exposed_group_id=int(group_ids[0]) if group_ids else None,
-                        exposed_group_ids=[int(g) for g in group_ids],
+                        exposed_group_id=legacy_exposed_group_id(target_refs),
+                        exposed_group_ids=group_ids,
+                        target_refs=target_refs,
                         severity=assessment.severity or "",
                         conclusion=assessment.conclusion or "",
                         note=assessment.note or "",
@@ -439,6 +467,18 @@ class HazardLibraryTemplateWorkingCopy:
             return []
         return list(assessment.exposed_group_ids)
 
+    def get_target_refs(self, assessment_id: int) -> list[ExposedTargetRef]:
+        assessment = self.get_assessment(assessment_id)
+        if assessment is None:
+            return []
+        refs = list(assessment.target_refs)
+        if refs:
+            return refs
+        return refs_from_legacy_group_ids(
+            assessment.exposed_group_ids,
+            legacy_single_id=assessment.exposed_group_id,
+        )
+
     def get_assessments_for_event(
         self,
         template_event_id: int,
@@ -463,10 +503,13 @@ class HazardLibraryTemplateWorkingCopy:
         )
 
     def _to_assessment_row(self, assessment: WcAssessment) -> HazardLibraryTemplateAssessmentRow:
-        names = [
-            exposed_group_service.display_name(group_id) or f"#{group_id}"
-            for group_id in assessment.exposed_group_ids
-        ]
+        refs = list(assessment.target_refs)
+        if not refs:
+            refs = refs_from_legacy_group_ids(
+                assessment.exposed_group_ids,
+                legacy_single_id=assessment.exposed_group_id,
+            )
+        names = format_exposed_target_names(refs)
         proxy = HazardLibraryTemplateAssessment(
             id=assessment.id,
             template_event_id=assessment.template_event_id,
@@ -479,9 +522,12 @@ class HazardLibraryTemplateWorkingCopy:
         )
         return HazardLibraryTemplateAssessmentRow(
             assessment=proxy,
-            exposed_group_name=", ".join(names) if names else "—",
+            exposed_group_name=names if names else "—",
             severity_label=format_risk_severity_label(assessment.severity),
-            exposed_group_ids=tuple(assessment.exposed_group_ids),
+            exposed_group_ids=tuple(
+                ref.source_id for ref in refs if ref.source_type == SOURCE_TYPE_HAZARD_GROUP
+            ),
+            target_refs=tuple(refs),
         )
 
     def create_assessment(
@@ -489,6 +535,7 @@ class HazardLibraryTemplateWorkingCopy:
         *,
         template_id: int,
         template_event_id: int,
+        target_refs: list[ExposedTargetRef] | tuple[ExposedTargetRef, ...] | None = None,
         exposed_group_ids: list[int] | tuple[int, ...] | None = None,
         exposed_group_id: int | None = None,
         severity: str,
@@ -500,12 +547,15 @@ class HazardLibraryTemplateWorkingCopy:
         event = self.get_event(template_event_id)
         if event is None:
             raise HazardLibraryTemplateAssessmentError("Událost neexistuje.")
-        group_ids = self._normalize_group_ids(exposed_group_ids, exposed_group_id)
+        refs = self._normalize_target_refs(target_refs, exposed_group_ids, exposed_group_id)
+        group_ids = [
+            ref.source_id for ref in refs if ref.source_type == SOURCE_TYPE_HAZARD_GROUP
+        ]
         if severity not in RISK_SEVERITIES:
             raise HazardLibraryTemplateAssessmentError("Neplatná závažnost rizika.")
-        self._validate_unique_groups(
+        self._validate_unique_refs(
             template_event_id,
-            group_ids,
+            refs,
             exclude_assessment_id=None,
             active=active,
         )
@@ -513,8 +563,9 @@ class HazardLibraryTemplateWorkingCopy:
         assessment = WcAssessment(
             id=self._alloc_id(),
             template_event_id=template_event_id,
-            exposed_group_id=group_ids[0],
+            exposed_group_id=legacy_exposed_group_id(refs),
             exposed_group_ids=list(group_ids),
+            target_refs=list(refs),
             severity=severity,
             conclusion=conclusion.strip(),
             note=note.strip(),
@@ -531,6 +582,7 @@ class HazardLibraryTemplateWorkingCopy:
         *,
         template_id: int,
         template_event_id: int,
+        target_refs: list[ExposedTargetRef] | tuple[ExposedTargetRef, ...] | None = None,
         exposed_group_ids: list[int] | tuple[int, ...] | None = None,
         exposed_group_id: int | None = None,
         severity: str,
@@ -546,17 +598,21 @@ class HazardLibraryTemplateWorkingCopy:
             raise HazardLibraryTemplateAssessmentError(
                 "Posouzení nepatří do zvolené události.",
             )
-        group_ids = self._normalize_group_ids(exposed_group_ids, exposed_group_id)
+        refs = self._normalize_target_refs(target_refs, exposed_group_ids, exposed_group_id)
+        group_ids = [
+            ref.source_id for ref in refs if ref.source_type == SOURCE_TYPE_HAZARD_GROUP
+        ]
         if severity not in RISK_SEVERITIES:
             raise HazardLibraryTemplateAssessmentError("Neplatná závažnost rizika.")
-        self._validate_unique_groups(
+        self._validate_unique_refs(
             template_event_id,
-            group_ids,
+            refs,
             exclude_assessment_id=assessment_id,
             active=active,
         )
-        assessment.exposed_group_id = group_ids[0]
+        assessment.exposed_group_id = legacy_exposed_group_id(refs)
         assessment.exposed_group_ids = list(group_ids)
+        assessment.target_refs = list(refs)
         assessment.severity = severity
         assessment.conclusion = conclusion.strip()
         assessment.note = note.strip()
@@ -568,9 +624,13 @@ class HazardLibraryTemplateWorkingCopy:
         assessment = self.get_assessment(assessment_id)
         if assessment is None:
             return False
-        self._validate_unique_groups(
-            assessment.template_event_id,
+        refs = list(assessment.target_refs) or refs_from_legacy_group_ids(
             assessment.exposed_group_ids,
+            legacy_single_id=assessment.exposed_group_id,
+        )
+        self._validate_unique_refs(
+            assessment.template_event_id,
+            refs,
             exclude_assessment_id=assessment_id,
             active=True,
         )
@@ -598,30 +658,44 @@ class HazardLibraryTemplateWorkingCopy:
             sort_order=assessment.sort_order,
         )
 
+    def _normalize_target_refs(
+        self,
+        target_refs: list[ExposedTargetRef] | tuple[ExposedTargetRef, ...] | None,
+        exposed_group_ids: list[int] | tuple[int, ...] | None,
+        legacy_single_id: int | None,
+    ) -> list[ExposedTargetRef]:
+        if target_refs:
+            values = list(target_refs)
+        else:
+            values = refs_from_legacy_group_ids(
+                exposed_group_ids,
+                legacy_single_id=legacy_single_id,
+            )
+        unique: list[ExposedTargetRef] = []
+        seen: set[tuple[str, int]] = set()
+        for ref in values:
+            if ref.key in seen:
+                continue
+            seen.add(ref.key)
+            unique.append(ref)
+        if not unique:
+            raise HazardLibraryTemplateAssessmentError("Vyberte alespoň jednu ohroženou skupinu.")
+        return unique
+
     def _normalize_group_ids(
         self,
         exposed_group_ids: list[int] | tuple[int, ...] | None,
         legacy_single_id: int | None,
     ) -> list[int]:
-        ids: list[int] = []
-        seen: set[int] = set()
-        candidates = list(exposed_group_ids or ())
-        if legacy_single_id is not None:
-            candidates.insert(0, int(legacy_single_id))
-        for group_id in candidates:
-            value = int(group_id)
-            if value in seen:
-                continue
-            seen.add(value)
-            ids.append(value)
-        if not ids:
-            raise HazardLibraryTemplateAssessmentError("Vyberte alespoň jednu ohroženou skupinu.")
-        return ids
+        refs = self._normalize_target_refs(None, exposed_group_ids, legacy_single_id)
+        return [
+            ref.source_id for ref in refs if ref.source_type == SOURCE_TYPE_HAZARD_GROUP
+        ]
 
-    def _validate_unique_groups(
+    def _validate_unique_refs(
         self,
         template_event_id: int,
-        group_ids: list[int],
+        target_refs: list[ExposedTargetRef],
         *,
         exclude_assessment_id: int | None,
         active: bool,
@@ -631,17 +705,35 @@ class HazardLibraryTemplateWorkingCopy:
         event = self.get_event(template_event_id)
         if event is None:
             return
-        wanted = set(group_ids)
+        wanted = {ref.key for ref in target_refs}
         for assessment in event.assessments:
             if exclude_assessment_id is not None and assessment.id == exclude_assessment_id:
                 continue
             if not assessment.active:
                 continue
-            overlap = wanted.intersection(assessment.exposed_group_ids)
-            if overlap:
+            other = list(assessment.target_refs) or refs_from_legacy_group_ids(
+                assessment.exposed_group_ids,
+                legacy_single_id=assessment.exposed_group_id,
+            )
+            if wanted.intersection({ref.key for ref in other}):
                 raise HazardLibraryTemplateAssessmentError(
                     "Aktivní posouzení se stejným ohroženým skupinami již existuje.",
                 )
+
+    def _validate_unique_groups(
+        self,
+        template_event_id: int,
+        group_ids: list[int],
+        *,
+        exclude_assessment_id: int | None,
+        active: bool,
+    ) -> None:
+        self._validate_unique_refs(
+            template_event_id,
+            refs_from_legacy_group_ids(group_ids),
+            exclude_assessment_id=exclude_assessment_id,
+            active=active,
+        )
 
     # --- Measures ---------------------------------------------------------------
 
@@ -1197,11 +1289,16 @@ class HazardLibraryTemplateWorkingCopy:
                 == assessment_db_id,
             ),
         )
-        for sort_order, group_id in enumerate(assessment.exposed_group_ids, start=1):
+        refs = list(assessment.target_refs) or refs_from_legacy_group_ids(
+            assessment.exposed_group_ids,
+            legacy_single_id=assessment.exposed_group_id,
+        )
+        for sort_order, ref in enumerate(refs, start=1):
             session.add(
                 HazardLibraryTemplateAssessmentExposedGroup(
                     assessment_id=assessment_db_id,
-                    exposed_group_id=group_id,
+                    exposed_group_id=ref.source_id,
+                    source_type=ref.source_type,
                     sort_order=sort_order,
                 ),
             )

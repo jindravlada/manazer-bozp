@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
-from core.widgets.multi_exposed_group_selector import MultiExposedGroupSelector
+from core.widgets.multi_exposed_target_selector import MultiExposedTargetSelector
 from core.widgets.severity_tooltips import (
     bind_severity_combo_tooltip,
     populate_severity_combo,
@@ -22,6 +22,10 @@ from core.widgets.severity_tooltips import (
 from moduly.nastaveni.ui.exposed_groups_management_dialog import ExposedGroupsManagementDialog
 from moduly.rizeni_rizik.constants import DEFAULT_RISK_SEVERITY
 from moduly.rizeni_rizik.constants_library import HAZARD_LIBRARY_ASSESSMENT_DIALOG_TITLE
+from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
+    SOURCE_TYPE_HAZARD_GROUP,
+    ExposedTargetRef,
+)
 from moduly.rizeni_rizik.sluzby.hazard_library_template_assessment_service import (
     HazardLibraryTemplateAssessmentError,
     hazard_library_template_assessment_service,
@@ -56,7 +60,7 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
         form = QFormLayout()
 
         group_row = QHBoxLayout()
-        self.exposed_groups = MultiExposedGroupSelector(self)
+        self.exposed_groups = MultiExposedTargetSelector(self)
         self.manage_groups_btn = QPushButton("Spravovat číselník…")
         self.manage_groups_btn.clicked.connect(self._open_groups_management)
         group_row.addWidget(self.exposed_groups, 1)
@@ -92,14 +96,16 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
         if assessment is not None:
             store = find_catalog_working_copy(self)
             if store is not None:
-                group_ids = store.get_group_ids(assessment.id)
+                refs = store.get_target_refs(assessment.id)
             else:
-                group_ids = hazard_library_template_assessment_service.get_group_ids(
+                refs = hazard_library_template_assessment_service.get_target_refs(
                     assessment.id,
                 )
-            if not group_ids and assessment.exposed_group_id:
-                group_ids = [assessment.exposed_group_id]
-            self.exposed_groups.set_group_ids(group_ids)
+            if not refs and assessment.exposed_group_id:
+                refs = [
+                    ExposedTargetRef(SOURCE_TYPE_HAZARD_GROUP, assessment.exposed_group_id)
+                ]
+            self.exposed_groups.set_refs(refs)
             severity_index = self.severity.findData(assessment.severity)
             if severity_index >= 0:
                 self.severity.setCurrentIndex(severity_index)
@@ -121,10 +127,10 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
             buttons.button(QDialogButtonBox.StandardButton.Save).setEnabled(False)
 
     def _open_groups_management(self) -> None:
-        selected_ids = self.exposed_groups.selected_group_ids()
+        selected_refs = self.exposed_groups.selected_refs()
         dialog = ExposedGroupsManagementDialog(self)
         dialog.exec()
-        self.exposed_groups.reload(preserve_ids=selected_ids)
+        self.exposed_groups.reload(preserve_refs=selected_refs)
 
     def _update_severity_description(self) -> None:
         self.severity_description.setText(severity_description_for_combo(self.severity))
@@ -135,7 +141,7 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
             return
 
         data = self.get_data()
-        if not data["exposed_group_ids"]:
+        if not data["target_refs"]:
             QMessageBox.warning(
                 self,
                 HAZARD_LIBRARY_ASSESSMENT_DIALOG_TITLE,
@@ -183,7 +189,7 @@ class HazardLibraryTemplateAssessmentDialog(QDialog):
 
     def get_data(self) -> dict:
         return {
-            "exposed_group_ids": self.exposed_groups.selected_group_ids(),
+            "target_refs": self.exposed_groups.selected_refs(),
             "severity": self.severity.currentData(),
             "conclusion": self.conclusion.toPlainText().strip(),
             "note": self.note.toPlainText().strip(),
