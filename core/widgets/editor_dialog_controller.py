@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Callable
 from typing import Literal
 
@@ -131,6 +132,22 @@ def set_editor_save_enabled(buttons: QDialogButtonBox, enabled: bool) -> None:
             button.setEnabled(enabled)
 
 
+def _safe_disconnect(signal, slot) -> None:
+    """Odpojí konkrétní slot. Idempotentní vůči již neexistujícímu spojení."""
+    with warnings.catch_warnings():
+        # PySide 6.7+ při chybějícím spojení často jen vypíše RuntimeWarning
+        # (bez výjimky). Potlačujeme pouze toto konkrétní hlášení u jednoho volání.
+        warnings.filterwarnings(
+            "ignore",
+            category=RuntimeWarning,
+            message=r".*Failed to disconnect.*",
+        )
+        try:
+            signal.disconnect(slot)
+        except (TypeError, RuntimeError):
+            pass
+
+
 class EditorDialogController(QObject):
     """Řídí Uložit / Zrušit|Zavřít a dotaz při neuložených změnách.
 
@@ -158,8 +175,10 @@ class EditorDialogController(QObject):
         self._is_dirty_fn = is_dirty
         self._dirty = bool(is_new)
         self._closing = False
+        self._cleaned = False
         self._baseline: object | None = None
         self._snapshot_fn: Callable[[], object] | None = None
+        self._connections: list[tuple[object, Callable]] = []
 
         self.save_button = buttons.button(QDialogButtonBox.StandardButton.Save)
         if self.save_button is None:
@@ -169,19 +188,35 @@ class EditorDialogController(QObject):
         configure_editor_buttons(buttons, is_new=self._is_new)
         self._refresh_save_enabled()
 
-        # Odpoj výchozí accept/reject – řídíme sami (pokud byly napojené).
-        for signal in (buttons.accepted, buttons.rejected):
-            try:
-                signal.disconnect()
-            except (TypeError, RuntimeError):
-                pass
-
         if self.save_button is not None:
-            self.save_button.clicked.connect(self._handle_save_clicked)
+            self._connect(self.save_button.clicked, self._handle_save_clicked)
         if self.close_button is not None:
-            self.close_button.clicked.connect(self._handle_close_clicked)
+            self._connect(self.close_button.clicked, self._handle_close_clicked)
 
+        # finished se neeviduje – cleanup se z něj volá a musí zůstat bezpečný i po úklidu.
+        dialog.finished.connect(self.cleanup)
         dialog.installEventFilter(self)
+
+    def _connect(self, signal, slot: Callable) -> None:
+        signal.connect(slot)
+        self._connections.append((signal, slot))
+
+    def cleanup(self, *_args) -> None:
+        """Odpojí pouze sloty, které controller sám připojil. Idempotentní."""
+        if self._cleaned:
+            return
+        self._cleaned = True
+        connections = list(self._connections)
+        self._connections.clear()
+        for signal, slot in connections:
+            _safe_disconnect(signal, slot)
+        dialog = getattr(self, "_dialog", None)
+        if dialog is not None:
+            try:
+                dialog.removeEventFilter(self)
+            except RuntimeError:
+                pass
+            # finished→cleanup necháváme; další volání jsou no-op díky ``_cleaned``.
 
     @property
     def is_new(self) -> bool:
@@ -232,19 +267,19 @@ class EditorDialogController(QObject):
         """Napojí běžné editační widgety na ``mark_dirty``."""
         host = root or self._dialog
         for widget in host.findChildren(QLineEdit):
-            widget.textChanged.connect(self.mark_dirty)
+            self._connect(widget.textChanged, self.mark_dirty)
         for widget in host.findChildren(QTextEdit):
-            widget.textChanged.connect(self.mark_dirty)
+            self._connect(widget.textChanged, self.mark_dirty)
         for widget in host.findChildren(QPlainTextEdit):
-            widget.textChanged.connect(self.mark_dirty)
+            self._connect(widget.textChanged, self.mark_dirty)
         for widget in host.findChildren(QComboBox):
-            widget.currentIndexChanged.connect(self.mark_dirty)
+            self._connect(widget.currentIndexChanged, self.mark_dirty)
         for widget in host.findChildren(QCheckBox):
-            widget.stateChanged.connect(self.mark_dirty)
+            self._connect(widget.stateChanged, self.mark_dirty)
         for widget in host.findChildren(QDateEdit):
-            widget.dateChanged.connect(self.mark_dirty)
+            self._connect(widget.dateChanged, self.mark_dirty)
         for widget in host.findChildren(QSpinBox):
-            widget.valueChanged.connect(self.mark_dirty)
+            self._connect(widget.valueChanged, self.mark_dirty)
 
     def request_close(self) -> bool:
         """Zpracuje požadavek na zavření. ``True`` = smí se zavřít."""
