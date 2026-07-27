@@ -7,6 +7,7 @@ from core.shared.sluzby.finding_service import finding_service
 # Cílové chování navigace pro ENTITY_ACCIDENT
 ACCIDENT_OPEN_RECORD = "record"
 ACCIDENT_OPEN_INVESTIGATION = "investigation"
+ACCIDENT_OPEN_ADMINISTRATION = "administration"
 
 
 @dataclass(frozen=True)
@@ -65,6 +66,8 @@ class SourceNavigator:
         self._host._show(route.module_key)
         if entity_type == ENTITY_ACCIDENT and accident_target == ACCIDENT_OPEN_RECORD:
             page.open_accident(entity_id)
+        elif entity_type == ENTITY_ACCIDENT and accident_target == ACCIDENT_OPEN_ADMINISTRATION:
+            page.open_investigation(entity_id)
         else:
             route.opener(page, entity_id)
         return True

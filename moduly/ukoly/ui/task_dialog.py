@@ -13,14 +13,21 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.shared.constants import ENTITY_AUDITY, ENTITY_MU_INVESTIGATION
-from core.navigation.source_navigator import source_navigator
+from core.shared.constants import ENTITY_ACCIDENT, ENTITY_AUDITY, ENTITY_MU_INVESTIGATION
+from core.navigation.source_navigator import (
+    ACCIDENT_OPEN_ADMINISTRATION,
+    ACCIDENT_OPEN_RECORD,
+    source_navigator,
+)
 from core.shared.sluzby.finding_task_service import finding_task_service
 from core.shared.task_source_display import task_source_label, task_type_label
 from core.widgets.attachment_widget import AttachmentWidget
 from core.widgets.dialog_utils import create_save_cancel_box, configure_resizable_form_dialog, wrap_in_scroll_area
 from core.widgets.editor_dialog_controller import EditorDialogController
 from core.widgets.task_finding_source_panel import TaskFindingSourcePanel
+from moduly.kniha_urazu.sluzby.accident_reporting_task_service import (
+    is_accident_reporting_task_title,
+)
 from moduly.ukoly.constants import TASK_TYPE_INVESTIGATION_ACTION
 from core.widgets.date_edit import DateEdit
 from core.widgets.nullable_date_edit import NullableDateEdit
@@ -70,6 +77,21 @@ class TaskDialog(QDialog):
             )
             if source_navigator.can_open(ENTITY_MU_INVESTIGATION, task.source_record_id):
                 self.source_panel.open_button.clicked.connect(self._open_mu_investigation)
+            else:
+                self.source_panel.open_button.setVisible(False)
+            main_layout.addWidget(self.source_panel)
+        elif (
+            task is not None
+            and task.source_module == ENTITY_ACCIDENT
+            and task.source_record_id
+        ):
+            self.source_panel = TaskFindingSourcePanel()
+            self.source_panel.set_content(
+                task_source_label(task),
+                (task.description or "").strip(),
+            )
+            if source_navigator.can_open(ENTITY_ACCIDENT, task.source_record_id):
+                self.source_panel.open_button.clicked.connect(self._open_accident_source)
             else:
                 self.source_panel.open_button.setVisible(False)
             main_layout.addWidget(self.source_panel)
@@ -159,6 +181,25 @@ class TaskDialog(QDialog):
                 self,
                 "Navigace",
                 "Vyšetřování se nepodařilo otevřít.",
+            )
+
+    def _open_accident_source(self) -> None:
+        if self.task is None or self.task.source_record_id is None:
+            return
+
+        target = ACCIDENT_OPEN_RECORD
+        if is_accident_reporting_task_title(self.task.title or ""):
+            target = ACCIDENT_OPEN_ADMINISTRATION
+
+        if not source_navigator.open(
+            ENTITY_ACCIDENT,
+            self.task.source_record_id,
+            accident_target=target,
+        ):
+            QMessageBox.warning(
+                self,
+                "Navigace",
+                "Pracovní úraz se nepodařilo otevřít.",
             )
 
     def _main_tab(self):

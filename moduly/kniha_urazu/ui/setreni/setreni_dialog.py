@@ -123,6 +123,15 @@ class SetreniDialog(QDialog):
             updated = accident_service.update_accident(self.accident.id, closed=closed)
             if updated is not None:
                 self.accident = updated
+        from moduly.kniha_urazu.sluzby.accident_reporting_task_service import (
+            accident_reporting_task_service,
+        )
+
+        accident_reporting_task_service.sync_for_accident(
+            self.accident,
+            saved_data=merged,
+        )
+        self._zajisteni_saved_data = merged
 
     def _open_mu_investigation(self) -> None:
         if self.accident is None:

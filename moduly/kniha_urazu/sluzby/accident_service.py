@@ -94,6 +94,7 @@ class AccidentService:
         saved.number = self._make_number(saved.id, saved.year)
         saved = self.repository.update(saved)
         self._create_verify_kind_task(saved)
+        self._sync_reporting_tasks(saved)
         return saved
 
     def update_accident(self, accident_id: int, **data):
@@ -110,7 +111,15 @@ class AccidentService:
 
         saved = self.repository.update(accident)
         self._resolve_verify_kind_task_if_needed(saved)
+        self._sync_reporting_tasks(saved)
         return saved
+
+    def _sync_reporting_tasks(self, accident: Accident) -> None:
+        from moduly.kniha_urazu.sluzby.accident_reporting_task_service import (
+            accident_reporting_task_service,
+        )
+
+        accident_reporting_task_service.sync_for_accident(accident)
 
     def should_create_verify_kind_task(
         self,

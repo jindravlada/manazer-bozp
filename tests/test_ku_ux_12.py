@@ -186,7 +186,9 @@ class KuUx12TestCase(unittest.TestCase):
         tasks = [
             task
             for task in task_service.get_all_tasks()
-            if task.source_module == ENTITY_ACCIDENT and task.source_record_id == accident.id
+            if task.source_module == ENTITY_ACCIDENT
+            and task.source_record_id == accident.id
+            and (task.title or "").startswith("Ověřit druh pracovního úrazu")
         ]
         self.assertEqual(len(tasks), 1)
         task = tasks[0]
