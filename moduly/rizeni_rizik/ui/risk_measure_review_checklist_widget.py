@@ -1,48 +1,27 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QCheckBox,
+    QButtonGroup,
+    QFrame,
     QHBoxLayout,
     QLabel,
-    QPlainTextEdit,
+    QLineEdit,
     QPushButton,
+    QRadioButton,
+    QScrollArea,
     QSizePolicy,
-    QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
-from core.widgets.table_utils import configure_table_columns, create_preview_table_item
 from moduly.rizeni_rizik.constants import (
     RISK_MEASURE_REVIEW_CHECKLIST_EMPTY,
-    RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT,
-    RISK_MEASURE_REVIEW_ITEM_COL_ID,
-    RISK_MEASURE_REVIEW_ITEM_COL_MEASURE,
-    RISK_MEASURE_REVIEW_ITEM_COL_NON_COMPLIANT,
-    RISK_MEASURE_REVIEW_ITEM_COL_NOTE,
-    RISK_MEASURE_REVIEW_ITEM_COL_PHOTO,
-    RISK_MEASURE_REVIEW_ITEM_COLUMN_COUNT,
     RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT,
     RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT,
     RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED,
-    RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS,
 )
 from moduly.rizeni_rizik.ui.risk_measure_review_item_photos_dialog import (
     RiskMeasureReviewItemPhotosDialog,
 )
-
-
-def _centered_checkbox(*, checked: bool, enabled: bool) -> QWidget:
-    host = QWidget()
-    layout = QHBoxLayout(host)
-    layout.setContentsMargins(0, 0, 0, 0)
-    layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    checkbox = QCheckBox()
-    checkbox.setChecked(checked)
-    checkbox.setEnabled(enabled)
-    layout.addWidget(checkbox)
-    host._checkbox = checkbox  # noqa: SLF001 – přístup z widgetu tabulky
-    return host
 
 
 def _photo_button_label(count: int) -> str:
@@ -51,13 +30,124 @@ def _photo_button_label(count: int) -> str:
     return f"📷 ({count})"
 
 
+class RiskMeasureReviewChecklistPointWidget(QFrame):
+    """Jeden kontrolní bod checklistu."""
+
+    def __init__(self, row, *, read_only: bool = False, on_changed=None, parent=None):
+        super().__init__(parent)
+        self.item_id = int(row.item_id)
+        self._on_changed = on_changed
+        self._read_only = bool(read_only)
+        self._photo_count = int(row.photo_count or 0)
+        self.setObjectName("riskMeasureReviewChecklistPoint")
+        self.setFrameShape(QFrame.Shape.NoFrame)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 4, 0, 8)
+        layout.setSpacing(4)
+
+        title = (row.measure_title or "—").strip() or "—"
+        self.measure_label = QLabel(title)
+        self.measure_label.setWordWrap(True)
+        self.measure_label.setToolTip(title)
+        self.measure_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        self.measure_label.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Minimum,
+        )
+        layout.addWidget(self.measure_label)
+
+        controls = QHBoxLayout()
+        controls.setContentsMargins(0, 0, 0, 0)
+        controls.setSpacing(12)
+
+        self.compliant_radio = QRadioButton("Vyhovuje")
+        self.non_compliant_radio = QRadioButton("Nevyhovuje")
+        self._result_group = QButtonGroup(self)
+        self._result_group.setExclusive(True)
+        self._result_group.addButton(self.compliant_radio)
+        self._result_group.addButton(self.non_compliant_radio)
+
+        result = str(getattr(row, "result", "") or "")
+        if result == RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT:
+            self.compliant_radio.setChecked(True)
+        elif result == RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT:
+            self.non_compliant_radio.setChecked(True)
+        # NOT_CHECKED / jiné → nic nezaškrtnuto
+
+        self.compliant_radio.setEnabled(not self._read_only)
+        self.non_compliant_radio.setEnabled(not self._read_only)
+        self.compliant_radio.toggled.connect(self._emit_changed)
+        self.non_compliant_radio.toggled.connect(self._emit_changed)
+
+        controls.addWidget(self.compliant_radio)
+        controls.addWidget(self.non_compliant_radio)
+
+        controls.addWidget(QLabel("Foto"))
+        self.photo_btn = QPushButton(_photo_button_label(self._photo_count))
+        self.photo_btn.setFlat(True)
+        self.photo_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.photo_btn.setEnabled(not self._read_only)
+        self.photo_btn.clicked.connect(self._open_photos)
+        controls.addWidget(self.photo_btn)
+
+        controls.addWidget(QLabel("Poznámka:"))
+        self.note_edit = QLineEdit(row.note or "")
+        self.note_edit.setReadOnly(self._read_only)
+        self.note_edit.setClearButtonEnabled(False)
+        self.note_edit.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
+        self.note_edit.textChanged.connect(self._emit_changed)
+        controls.addWidget(self.note_edit, 1)
+
+        layout.addLayout(controls)
+
+    def set_read_only(self, read_only: bool) -> None:
+        self._read_only = bool(read_only)
+        self.compliant_radio.setEnabled(not self._read_only)
+        self.non_compliant_radio.setEnabled(not self._read_only)
+        self.photo_btn.setEnabled(not self._read_only)
+        self.note_edit.setReadOnly(self._read_only)
+
+    def get_update(self) -> dict:
+        if self.compliant_radio.isChecked():
+            result = RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT
+        elif self.non_compliant_radio.isChecked():
+            result = RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT
+        else:
+            result = RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED
+        return {
+            "item_id": self.item_id,
+            "result": result,
+            "compliant": self.compliant_radio.isChecked(),
+            "non_compliant": self.non_compliant_radio.isChecked(),
+            "note": self.note_edit.text().strip(),
+            "photo_count": self._photo_count,
+            "has_photo": self._photo_count > 0,
+        }
+
+    def _open_photos(self) -> None:
+        dialog = RiskMeasureReviewItemPhotosDialog(self, item_id=self.item_id)
+        dialog.exec()
+        self._photo_count = dialog.photo_count()
+        self.photo_btn.setText(_photo_button_label(self._photo_count))
+        self._emit_changed()
+
+    def _emit_changed(self, *_args) -> None:
+        if callable(self._on_changed):
+            self._on_changed()
+
+
 class RiskMeasureReviewChecklistWidget(QWidget):
-    """Checklist: opatření / Vyhovuje / Nevyhovuje / Foto / Poznámka."""
+    """Checklist: seznam kontrolních bodů bez tabulkové hlavičky."""
 
     def __init__(self, parent=None, on_changed=None):
         super().__init__(parent)
         self._on_changed = on_changed
         self._read_only = False
+        self._points: list[RiskMeasureReviewChecklistPointWidget] = []
         self.setObjectName("riskMeasureReviewChecklist")
 
         layout = QVBoxLayout(self)
@@ -68,183 +158,63 @@ class RiskMeasureReviewChecklistWidget(QWidget):
         self.empty_label.setWordWrap(True)
         layout.addWidget(self.empty_label)
 
-        self.table = QTableWidget()
-        self.table.setObjectName("riskMeasureReviewChecklistTable")
-        self.table.setColumnCount(RISK_MEASURE_REVIEW_ITEM_COLUMN_COUNT)
-        self.table.setHorizontalHeaderLabels(RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS)
-        self.table.setColumnHidden(RISK_MEASURE_REVIEW_ITEM_COL_ID, True)
-        self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
-        self.table.setAlternatingRowColors(True)
-        self.table.verticalHeader().setVisible(False)
-        self.table.setShowGrid(True)
-        self.table.setWordWrap(True)
-        self.table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        layout.addWidget(self.table)
+        self.scroll = QScrollArea()
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.scroll.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
 
-        configure_table_columns(self.table, "risk_measure_review_items")
+        self.list_host = QWidget()
+        self.list_host.setObjectName("riskMeasureReviewChecklistList")
+        self.list_layout = QVBoxLayout(self.list_host)
+        self.list_layout.setContentsMargins(0, 0, 0, 0)
+        self.list_layout.setSpacing(10)
+        self.list_layout.addStretch(1)
+        self.scroll.setWidget(self.list_host)
+        layout.addWidget(self.scroll)
+
+    @property
+    def points(self) -> list[RiskMeasureReviewChecklistPointWidget]:
+        return list(self._points)
+
+    def point_count(self) -> int:
+        return len(self._points)
 
     def set_read_only(self, read_only: bool) -> None:
         self._read_only = bool(read_only)
-        for row in range(self.table.rowCount()):
-            for column in (
-                RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT,
-                RISK_MEASURE_REVIEW_ITEM_COL_NON_COMPLIANT,
-            ):
-                host = self.table.cellWidget(row, column)
-                checkbox = getattr(host, "_checkbox", None) if host is not None else None
-                if isinstance(checkbox, QCheckBox):
-                    checkbox.setEnabled(not self._read_only)
-            note_edit = self.table.cellWidget(row, RISK_MEASURE_REVIEW_ITEM_COL_NOTE)
-            if isinstance(note_edit, QPlainTextEdit):
-                note_edit.setReadOnly(self._read_only)
-            photo_btn = self.table.cellWidget(row, RISK_MEASURE_REVIEW_ITEM_COL_PHOTO)
-            if isinstance(photo_btn, QPushButton):
-                photo_btn.setEnabled(not self._read_only)
+        for point in self._points:
+            point.set_read_only(self._read_only)
 
     def load_rows(self, rows) -> None:
-        self.table.setRowCount(0)
+        while self.list_layout.count():
+            item = self.list_layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+        self._points = []
+
         self.empty_label.setVisible(not rows)
-        self.table.setVisible(bool(rows))
+        self.scroll.setVisible(bool(rows))
         if not rows:
-            configure_table_columns(self.table, "risk_measure_review_items")
+            self.list_layout.addStretch(1)
             return
 
-        self.table.setRowCount(len(rows))
-        for row_index, row in enumerate(rows):
-            self.table.setItem(
-                row_index,
-                RISK_MEASURE_REVIEW_ITEM_COL_ID,
-                QTableWidgetItem(str(row.item_id)),
+        for row in rows:
+            point = RiskMeasureReviewChecklistPointWidget(
+                row,
+                read_only=self._read_only,
+                on_changed=self._emit_changed,
+                parent=self.list_host,
             )
-            self.table.setItem(
-                row_index,
-                RISK_MEASURE_REVIEW_ITEM_COL_MEASURE,
-                create_preview_table_item(row.measure_title),
-            )
-
-            compliant_host = _centered_checkbox(
-                checked=row.result == RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT,
-                enabled=not self._read_only,
-            )
-            non_compliant_host = _centered_checkbox(
-                checked=row.result == RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT,
-                enabled=not self._read_only,
-            )
-            self._wire_exclusive_checkboxes(compliant_host, non_compliant_host)
-            self.table.setCellWidget(
-                row_index,
-                RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT,
-                compliant_host,
-            )
-            self.table.setCellWidget(
-                row_index,
-                RISK_MEASURE_REVIEW_ITEM_COL_NON_COMPLIANT,
-                non_compliant_host,
-            )
-
-            photo_btn = QPushButton(_photo_button_label(int(row.photo_count or 0)))
-            photo_btn.setEnabled(not self._read_only)
-            photo_btn._photo_count = int(row.photo_count or 0)  # noqa: SLF001
-            photo_btn.clicked.connect(
-                lambda _checked=False, r=row_index: self._open_photos(r)
-            )
-            self.table.setCellWidget(row_index, RISK_MEASURE_REVIEW_ITEM_COL_PHOTO, photo_btn)
-
-            note_edit = QPlainTextEdit(row.note or "")
-            note_edit.setPlaceholderText("Poznámka z kontroly…")
-            note_edit.setReadOnly(self._read_only)
-            note_edit.setMaximumHeight(72)
-            note_edit.setTabChangesFocus(True)
-            note_edit.textChanged.connect(self._emit_changed)
-            self.table.setCellWidget(row_index, RISK_MEASURE_REVIEW_ITEM_COL_NOTE, note_edit)
-
-            self.table.setRowHeight(row_index, 78)
-
-        configure_table_columns(self.table, "risk_measure_review_items")
+            self._points.append(point)
+            self.list_layout.addWidget(point)
+        self.list_layout.addStretch(1)
 
     def get_updates(self) -> list[dict]:
-        updates: list[dict] = []
-        for row in range(self.table.rowCount()):
-            id_item = self.table.item(row, RISK_MEASURE_REVIEW_ITEM_COL_ID)
-            if id_item is None:
-                continue
-            compliant_host = self.table.cellWidget(row, RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT)
-            non_compliant_host = self.table.cellWidget(
-                row,
-                RISK_MEASURE_REVIEW_ITEM_COL_NON_COMPLIANT,
-            )
-            note_edit = self.table.cellWidget(row, RISK_MEASURE_REVIEW_ITEM_COL_NOTE)
-            photo_btn = self.table.cellWidget(row, RISK_MEASURE_REVIEW_ITEM_COL_PHOTO)
-            compliant_box = getattr(compliant_host, "_checkbox", None)
-            non_compliant_box = getattr(non_compliant_host, "_checkbox", None)
-            compliant = (
-                bool(compliant_box.isChecked())
-                if isinstance(compliant_box, QCheckBox)
-                else False
-            )
-            non_compliant = (
-                bool(non_compliant_box.isChecked())
-                if isinstance(non_compliant_box, QCheckBox)
-                else False
-            )
-            if compliant:
-                result = RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT
-            elif non_compliant:
-                result = RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT
-            else:
-                result = RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED
-            photo_count = int(getattr(photo_btn, "_photo_count", 0) or 0)
-            updates.append(
-                {
-                    "item_id": int(id_item.text()),
-                    "result": result,
-                    "compliant": compliant,
-                    "non_compliant": non_compliant,
-                    "note": (
-                        note_edit.toPlainText().strip()
-                        if isinstance(note_edit, QPlainTextEdit)
-                        else ""
-                    ),
-                    "photo_count": photo_count,
-                    "has_photo": photo_count > 0,
-                }
-            )
-        return updates
-
-    def _wire_exclusive_checkboxes(self, compliant_host: QWidget, non_compliant_host: QWidget) -> None:
-        compliant_box = compliant_host._checkbox
-        non_compliant_box = non_compliant_host._checkbox
-
-        def on_compliant(state: int) -> None:
-            if state == Qt.CheckState.Checked.value or state == Qt.CheckState.Checked:
-                non_compliant_box.blockSignals(True)
-                non_compliant_box.setChecked(False)
-                non_compliant_box.blockSignals(False)
-            self._emit_changed()
-
-        def on_non_compliant(state: int) -> None:
-            if state == Qt.CheckState.Checked.value or state == Qt.CheckState.Checked:
-                compliant_box.blockSignals(True)
-                compliant_box.setChecked(False)
-                compliant_box.blockSignals(False)
-            self._emit_changed()
-
-        compliant_box.stateChanged.connect(on_compliant)
-        non_compliant_box.stateChanged.connect(on_non_compliant)
-
-    def _open_photos(self, row: int) -> None:
-        id_item = self.table.item(row, RISK_MEASURE_REVIEW_ITEM_COL_ID)
-        if id_item is None:
-            return
-        dialog = RiskMeasureReviewItemPhotosDialog(self, item_id=int(id_item.text()))
-        dialog.exec()
-        count = dialog.photo_count()
-        photo_btn = self.table.cellWidget(row, RISK_MEASURE_REVIEW_ITEM_COL_PHOTO)
-        if isinstance(photo_btn, QPushButton):
-            photo_btn.setText(_photo_button_label(count))
-            photo_btn._photo_count = count  # noqa: SLF001
-        self._emit_changed()
+        return [point.get_update() for point in self._points]
 
     def _emit_changed(self, *_args) -> None:
         if callable(self._on_changed):

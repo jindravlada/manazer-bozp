@@ -1,4 +1,4 @@
-"""RISK-REVIEW-2a: zjednodušení checklistu přezkoumání opatření."""
+"""RISK-REVIEW-4a: dotažení UX checklistu přezkoumání."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from datetime import date
 from pathlib import Path
 from unittest.mock import patch
 
-_TMP = Path(tempfile.mkdtemp(prefix="risk-review-2a-"))
+_TMP = Path(tempfile.mkdtemp(prefix="risk-review-4a-"))
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 with patch.object(Path, "home", return_value=_TMP):
@@ -23,7 +23,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
     importlib.reload(session_module)
 
-    from core.database.database_initializer import _table_columns, initialize_database
+    from core.database.database_initializer import initialize_database
 
     initialize_database()
 
@@ -37,7 +37,9 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.rizeni_rizik.constants import (
         HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
-        RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS,
+        RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT,
+        RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT,
+        RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED,
         RISK_SEVERITY_MODERATE,
     )
     from moduly.rizeni_rizik.modely.risk_measure_review import RiskMeasureReview
@@ -55,19 +57,19 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import (
         hazard_risk_assessment_service,
     )
+    from moduly.rizeni_rizik.sluzby.risk_measure_review_checklist_export_service import (
+        risk_measure_review_checklist_export_service,
+    )
     from moduly.rizeni_rizik.sluzby.risk_measure_review_service import (
         risk_measure_review_service,
     )
     from moduly.rizeni_rizik.ui.risk_measure_review_checklist_widget import (
         RiskMeasureReviewChecklistWidget,
     )
-    from moduly.rizeni_rizik.ui.risk_measure_review_execution_dialog import (
-        RiskMeasureReviewExecutionDialog,
-    )
     from tests.rizeni_rizik_test_helpers import ensure_exposed_group
 
 
-class RiskReview2aTestCase(unittest.TestCase):
+class RiskReview4aTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls._app = QApplication.instance() or QApplication([])
@@ -97,11 +99,11 @@ class RiskReview2aTestCase(unittest.TestCase):
             session.commit()
 
         self.operation = settings_service.save_workplace(
-            name="Provoz RR2a",
+            name="Provoz RR4a",
             item_type=WORKPLACE_ITEM_TYPE_OPERATION,
         )
         self.workplace = settings_service.save_workplace(
-            name="Dílna RR2a",
+            name="Dílna RR4a",
             item_type=WORKPLACE_ITEM_TYPE_WORKPLACE,
             parent_id=self.operation.id,
         )
@@ -109,15 +111,14 @@ class RiskReview2aTestCase(unittest.TestCase):
             first_name="Eva",
             last_name="Terén",
         )
-        self.group = ensure_exposed_group("Skupina RR2a")
-
+        self.group = ensure_exposed_group("Skupina RR4a")
         identification = hazard_identification_service.create_identification(
             operation_id=self.operation.id,
             workplace_id=self.workplace.id,
         )
         item = hazard_inventory_item_service.create_item(
             hazard_identification_id=identification.id,
-            name="Soustruh",
+            name="Frézka",
             category=HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
         )
         event = hazard_event_service.create_event(
@@ -131,10 +132,10 @@ class RiskReview2aTestCase(unittest.TestCase):
             exposed_group_ids=[self.group.id],
             severity=RISK_SEVERITY_MODERATE,
         )
-        self.measure = hazard_required_measure_service.create_measure(
+        hazard_required_measure_service.create_measure(
             hazard_identification_id=identification.id,
             hazard_risk_assessment_id=assessment.id,
-            title="Ochranný kryt",
+            title="Ochranný kryt frézky s dlouhým názvem pro zalomení textu",
         )
         self.review = risk_measure_review_service.create_review(
             review_date=date.today(),
@@ -143,31 +144,14 @@ class RiskReview2aTestCase(unittest.TestCase):
             workplace_id=self.workplace.id,
         )
 
-    def test_item_table_has_simplified_columns(self) -> None:
-        columns = _table_columns("risk_measure_review_items")
-        self.assertIn("compliant", columns)
-        self.assertIn("note_number", columns)
-        self.assertIn("has_photo", columns)
-        self.assertIn("follow_up_measure_id", columns)
-
-        self.assertEqual(
-            RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS,
-            ["ID", "Navazující opatření", "Vyhovuje", "Nevyhovuje", "Foto", "Poznámka"],
-        )
-        self.assertNotIn("Riziko", RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS)
-        self.assertNotIn("Poznámka č.", RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS)
-        self.assertNotIn("Výsledek přezkoumání", RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS)
-
-    def test_checklist_widget_layout(self) -> None:
-        rows = risk_measure_review_service.list_checklist_rows(self.review.id)
+    def test_no_table_header_and_point_layout(self) -> None:
         widget = RiskMeasureReviewChecklistWidget()
-        widget.load_rows(rows)
-
+        widget.load_rows(risk_measure_review_service.list_checklist_rows(self.review.id))
         self.assertFalse(hasattr(widget, "table"))
         self.assertEqual(widget.point_count(), 1)
         point = widget.points[0]
-        self.assertEqual(point.measure_label.text(), "Ochranný kryt")
         self.assertTrue(point.measure_label.wordWrap())
+        self.assertTrue(point.measure_label.toolTip())
         self.assertIsInstance(point.compliant_radio, QRadioButton)
         self.assertIsInstance(point.non_compliant_radio, QRadioButton)
         self.assertIsInstance(point.note_edit, QLineEdit)
@@ -175,7 +159,29 @@ class RiskReview2aTestCase(unittest.TestCase):
         self.assertFalse(point.compliant_radio.isChecked())
         self.assertFalse(point.non_compliant_radio.isChecked())
 
-    def test_database_links_preserved_after_checkbox_save(self) -> None:
+    def test_radios_mutual_exclusive_default_unchecked(self) -> None:
+        rows = risk_measure_review_service.list_checklist_rows(self.review.id)
+        self.assertEqual(rows[0].result, RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED)
+
+        widget = RiskMeasureReviewChecklistWidget()
+        widget.load_rows(rows)
+        point = widget.points[0]
+        self.assertFalse(point.compliant_radio.isChecked())
+        self.assertFalse(point.non_compliant_radio.isChecked())
+
+        point.compliant_radio.setChecked(True)
+        self.assertTrue(point.compliant_radio.isChecked())
+        self.assertFalse(point.non_compliant_radio.isChecked())
+
+        point.non_compliant_radio.setChecked(True)
+        self.assertFalse(point.compliant_radio.isChecked())
+        self.assertTrue(point.non_compliant_radio.isChecked())
+        self.assertEqual(
+            point.get_update()["result"],
+            RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT,
+        )
+
+    def test_print_layout_without_table_header(self) -> None:
         rows = risk_measure_review_service.list_checklist_rows(self.review.id)
         risk_measure_review_service.update_review(
             self.review.id,
@@ -186,27 +192,26 @@ class RiskReview2aTestCase(unittest.TestCase):
             checklist_updates=[
                 {
                     "item_id": rows[0].item_id,
-                    "compliant": True,
-                    "note": "OK",
+                    "result": RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT,
+                    "note": "Bez závad",
                 }
             ],
         )
-        reloaded = risk_measure_review_service.list_checklist_rows(self.review.id)
-        self.assertEqual(reloaded[0].follow_up_measure_id, self.measure.id)
-        self.assertTrue(reloaded[0].compliant)
-        self.assertEqual(reloaded[0].note, "OK")
-
-    def test_execution_dialog_uses_simplified_checklist(self) -> None:
-        dialog = RiskMeasureReviewExecutionDialog(
-            review=risk_measure_review_service.get_by_id(self.review.id),
+        review = risk_measure_review_service.get_by_id(self.review.id)
+        text = str(
+            risk_measure_review_checklist_export_service.build_context(review)[
+                "checklist_text"
+            ]
         )
-        self.assertEqual(dialog.checklist.point_count(), 1)
-        point = dialog.checklist.points[0]
-        self.assertEqual(point.measure_label.text(), "Ochranný kryt")
-        self.assertIsInstance(point.compliant_radio, QRadioButton)
-        self.assertIsInstance(point.note_edit, QLineEdit)
-        dialog._editor.mark_clean()
-        dialog.close()
+        self.assertNotIn(
+            "Navazující opatření | Vyhovuje | Nevyhovuje | Foto | Poznámka",
+            text,
+        )
+        self.assertIn("Ochranný kryt frézky", text)
+        self.assertIn("Vyhovuje ☑", text)
+        self.assertIn("Nevyhovuje ☐", text)
+        self.assertIn("Foto ☐", text)
+        self.assertIn("Poznámka: Bez závad", text)
 
 
 if __name__ == "__main__":

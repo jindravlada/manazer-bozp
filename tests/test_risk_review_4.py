@@ -28,7 +28,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
-    from PySide6.QtWidgets import QApplication, QPlainTextEdit
+    from PySide6.QtWidgets import QApplication, QLineEdit, QRadioButton
 
     from core.services.attachment_service import attachment_service
     from moduly.nastaveni.constants.workplace_hierarchy_constants import (
@@ -40,11 +40,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.constants import (
         ENTITY_RISK_MEASURE_REVIEW_ITEM,
         HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
-        RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT,
-        RISK_MEASURE_REVIEW_ITEM_COL_MEASURE,
-        RISK_MEASURE_REVIEW_ITEM_COL_NON_COMPLIANT,
-        RISK_MEASURE_REVIEW_ITEM_COL_NOTE,
-        RISK_MEASURE_REVIEW_ITEM_COL_PHOTO,
         RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT,
         RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT,
         RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED,
@@ -167,32 +162,21 @@ class RiskReview4TestCase(unittest.TestCase):
         widget = RiskMeasureReviewChecklistWidget()
         rows = risk_measure_review_service.list_checklist_rows(self.review.id)
         widget.load_rows(rows)
-        headers = [
-            widget.table.horizontalHeaderItem(column).text()
-            for column in range(widget.table.columnCount())
-        ]
-        self.assertEqual(headers, RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS)
-        self.assertEqual(
-            [
-                RISK_MEASURE_REVIEW_ITEM_COL_MEASURE,
-                RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT,
-                RISK_MEASURE_REVIEW_ITEM_COL_NON_COMPLIANT,
-                RISK_MEASURE_REVIEW_ITEM_COL_PHOTO,
-                RISK_MEASURE_REVIEW_ITEM_COL_NOTE,
-            ],
-            [1, 2, 3, 4, 5],
-        )
+        self.assertFalse(hasattr(widget, "table"))
+        self.assertEqual(widget.point_count(), 1)
+        point = widget.points[0]
+        self.assertEqual(point.measure_label.text(), "Dvouruční ovládání")
+        self.assertTrue(point.measure_label.wordWrap())
+        self.assertIsInstance(point.compliant_radio, QRadioButton)
+        self.assertIsInstance(point.non_compliant_radio, QRadioButton)
+        self.assertIsInstance(point.note_edit, QLineEdit)
 
     def test_compliant_non_compliant_mutual_exclusivity(self) -> None:
         widget = RiskMeasureReviewChecklistWidget()
         widget.load_rows(risk_measure_review_service.list_checklist_rows(self.review.id))
-        compliant_host = widget.table.cellWidget(0, RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT)
-        non_compliant_host = widget.table.cellWidget(
-            0,
-            RISK_MEASURE_REVIEW_ITEM_COL_NON_COMPLIANT,
-        )
-        compliant = compliant_host._checkbox
-        non_compliant = non_compliant_host._checkbox
+        point = widget.points[0]
+        compliant = point.compliant_radio
+        non_compliant = point.non_compliant_radio
 
         self.assertFalse(compliant.isChecked())
         self.assertFalse(non_compliant.isChecked())
@@ -205,7 +189,10 @@ class RiskReview4TestCase(unittest.TestCase):
         self.assertFalse(compliant.isChecked())
         self.assertTrue(non_compliant.isChecked())
 
+        # Exclusive QRadioButton: clear selection via temporary non-exclusive mode.
+        point._result_group.setExclusive(False)
         non_compliant.setChecked(False)
+        point._result_group.setExclusive(True)
         self.assertFalse(compliant.isChecked())
         self.assertFalse(non_compliant.isChecked())
 
@@ -234,9 +221,11 @@ class RiskReview4TestCase(unittest.TestCase):
 
         widget = RiskMeasureReviewChecklistWidget()
         widget.load_rows(reloaded)
-        note_edit = widget.table.cellWidget(0, RISK_MEASURE_REVIEW_ITEM_COL_NOTE)
-        self.assertIsInstance(note_edit, QPlainTextEdit)
-        self.assertEqual(note_edit.toPlainText(), "Chybí kryt")
+        note_edit = widget.points[0].note_edit
+        self.assertIsInstance(note_edit, QLineEdit)
+        self.assertEqual(note_edit.text(), "Chybí kryt")
+        self.assertTrue(widget.points[0].non_compliant_radio.isChecked())
+        self.assertFalse(widget.points[0].compliant_radio.isChecked())
 
     def test_open_photo_manager_and_save_photo(self) -> None:
         rows = risk_measure_review_service.list_checklist_rows(self.review.id)
@@ -263,12 +252,12 @@ class RiskReview4TestCase(unittest.TestCase):
 
         widget = RiskMeasureReviewChecklistWidget()
         widget.load_rows(risk_measure_review_service.list_checklist_rows(self.review.id))
-        photo_btn = widget.table.cellWidget(0, RISK_MEASURE_REVIEW_ITEM_COL_PHOTO)
+        photo_btn = widget.points[0].photo_btn
         self.assertIn("(1)", photo_btn.text())
 
         with patch.object(RiskMeasureReviewItemPhotosDialog, "exec", return_value=0):
             with patch.object(RiskMeasureReviewItemPhotosDialog, "photo_count", return_value=1):
-                widget._open_photos(0)
+                widget.points[0]._open_photos()
         self.assertIn("(1)", photo_btn.text())
 
     def test_print_checklist_odt(self) -> None:

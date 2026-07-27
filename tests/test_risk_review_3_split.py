@@ -38,9 +38,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.rizeni_rizik.constants import (
         HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
-        RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT,
-        RISK_MEASURE_REVIEW_ITEM_COL_MEASURE,
-        RISK_MEASURE_REVIEW_ITEM_COL_NOTE,
         RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS,
         RISK_MEASURE_REVIEW_PRINT_BUTTON,
         RISK_SEVERITY_MODERATE,
@@ -183,22 +180,12 @@ class RiskReview3SplitTestCase(unittest.TestCase):
             workplace_id=self.workplace.id,
         )
         dialog = RiskMeasureReviewExecutionDialog(review=review)
-        self.assertEqual(dialog.checklist.table.rowCount(), 1)
-        measure_item = dialog.checklist.table.item(0, RISK_MEASURE_REVIEW_ITEM_COL_MEASURE)
-        self.assertIsNotNone(measure_item)
-        self.assertEqual(measure_item.text(), "Kontrola krytu")
-        self.assertEqual(
-            dialog.checklist.table.horizontalHeaderItem(
-                RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT
-            ).text(),
-            "Vyhovuje",
-        )
-        self.assertEqual(
-            dialog.checklist.table.horizontalHeaderItem(
-                RISK_MEASURE_REVIEW_ITEM_COL_NOTE
-            ).text(),
-            "Poznámka",
-        )
+        self.assertEqual(dialog.checklist.point_count(), 1)
+        point = dialog.checklist.points[0]
+        self.assertEqual(point.measure_label.text(), "Kontrola krytu")
+        self.assertEqual(point.compliant_radio.text(), "Vyhovuje")
+        self.assertEqual(point.non_compliant_radio.text(), "Nevyhovuje")
+        self.assertFalse(hasattr(dialog.checklist, "table"))
         self.assertEqual(dialog.print_btn.text(), RISK_MEASURE_REVIEW_PRINT_BUTTON)
         rows = risk_measure_review_service.list_checklist_rows(review.id)
         self.assertEqual(rows[0].follow_up_measure_id, measure.id)

@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from core.export import OdtExportEngine, OdtParagraph, OdtRichContent, OdtTextRun, open_export_file
+from core.export import OdtExportEngine, OdtParagraph, OdtRichContent, open_export_file
 from core.services.storage_service import storage_service
 from moduly.rizeni_rizik.constants import (
     RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT,
@@ -88,33 +88,22 @@ class RiskMeasureReviewChecklistExportService:
                 paragraphs=[OdtParagraph.text(RISK_MEASURE_REVIEW_PRINT_EMPTY)]
             )
 
-        paragraphs: list[OdtParagraph] = [
-            OdtParagraph(
-                style="AuditCriterion",
-                runs=[
-                    OdtTextRun(
-                        "Navazující opatření | Vyhovuje | Nevyhovuje | Foto | Poznámka",
-                        bold=True,
-                    )
-                ],
-            )
-        ]
+        paragraphs: list[OdtParagraph] = []
         for index, row in enumerate(rows):
             if index > 0:
                 paragraphs.append(OdtParagraph.blank_line())
             paragraphs.append(
                 OdtParagraph.text(row.measure_title or "—", style="AuditCriterion")
             )
+            note = (row.note or "").strip()
+            photo_mark = "☑" if int(row.photo_count or 0) > 0 else "☐"
             paragraphs.append(
                 OdtParagraph.text(
-                    f"Vyhovuje: {_mark(row.result == RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT)}    "
-                    f"Nevyhovuje: {_mark(row.result == RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT)}    "
-                    f"Foto: {int(row.photo_count or 0)}"
+                    f"Vyhovuje {_mark(row.result == RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT)}    "
+                    f"Nevyhovuje {_mark(row.result == RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT)}    "
+                    f"Foto {photo_mark}    "
+                    f"Poznámka: {note}"
                 )
-            )
-            note = (row.note or "").strip()
-            paragraphs.append(
-                OdtParagraph.text(f"Poznámka: {note}" if note else "Poznámka: —")
             )
         return OdtRichContent(paragraphs=paragraphs)
 
