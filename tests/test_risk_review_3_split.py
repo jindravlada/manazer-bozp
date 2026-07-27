@@ -46,7 +46,6 @@ with patch.object(Path, "home", return_value=_TMP):
         RISK_SEVERITY_MODERATE,
     )
     from moduly.rizeni_rizik.modely.hazard_required_measure import HazardRequiredMeasure
-    from moduly.rizeni_rizik.modely.risk_measure_finding import RiskMeasureFinding
     from moduly.rizeni_rizik.modely.risk_measure_review import RiskMeasureReview
     from moduly.rizeni_rizik.modely.risk_measure_review_item import RiskMeasureReviewItem
     from moduly.rizeni_rizik.sluzby.hazard_event_service import hazard_event_service
@@ -91,7 +90,6 @@ class RiskReview3SplitTestCase(unittest.TestCase):
         )
 
         with get_session() as session:
-            session.execute(delete(RiskMeasureFinding))
             session.execute(delete(RiskMeasureReviewItem))
             session.execute(delete(RiskMeasureReview))
             session.execute(delete(HazardRequiredMeasure))

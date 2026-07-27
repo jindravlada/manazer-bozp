@@ -39,6 +39,23 @@ class TaskRepository:
                 stmt = stmt.where(Task.title == title)
             return session.scalars(stmt).first()
 
+    def list_by_source(
+        self,
+        *,
+        source_module: str,
+        source_record_id: int,
+    ) -> list[Task]:
+        with get_session() as session:
+            stmt = (
+                select(Task)
+                .where(
+                    Task.source_module == source_module,
+                    Task.source_record_id == source_record_id,
+                )
+                .order_by(Task.due_date, Task.id)
+            )
+            return list(session.scalars(stmt))
+
     def add(self, task: Task) -> Task:
         with get_session() as session:
             session.add(task)

@@ -12,6 +12,7 @@ from moduly.nastaveni.constants.workplace_hierarchy_constants import (
 from moduly.nastaveni.sluzby.person_service import person_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.rizeni_rizik.constants import (
+    ENTITY_RISK_MEASURE_REVIEW,
     RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT,
     RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT,
     RISK_MEASURE_REVIEW_STATUS_ARCHIVED,
@@ -19,12 +20,8 @@ from moduly.rizeni_rizik.constants import (
     RISK_MEASURE_REVIEW_STATUS_DRAFT,
     RISK_MEASURE_REVIEW_STATUSES,
 )
-from moduly.rizeni_rizik.modely.risk_measure_finding import RiskMeasureFinding
 from moduly.rizeni_rizik.modely.risk_measure_review import RiskMeasureReview
 from moduly.rizeni_rizik.modely.risk_measure_review_item import RiskMeasureReviewItem
-from moduly.rizeni_rizik.repository.risk_measure_finding_repository import (
-    RiskMeasureFindingRepository,
-)
 from moduly.rizeni_rizik.repository.risk_measure_review_item_repository import (
     RiskMeasureReviewItemRepository,
 )
@@ -40,6 +37,8 @@ from moduly.rizeni_rizik.sluzby.hazard_required_measure_service import (
 from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import (
     hazard_risk_assessment_service,
 )
+from moduly.ukoly.modely.task import Task
+from moduly.ukoly.sluzby.task_service import task_service
 
 
 class RiskMeasureReviewError(ValueError):
@@ -62,7 +61,6 @@ class RiskMeasureReviewService:
     def __init__(self) -> None:
         self.repository = RiskMeasureReviewRepository()
         self.item_repository = RiskMeasureReviewItemRepository()
-        self.finding_repository = RiskMeasureFindingRepository()
 
     def get_all(self, *, include_archived: bool = True) -> list[RiskMeasureReview]:
         return self.repository.get_all(include_archived=include_archived)
@@ -182,100 +180,47 @@ class RiskMeasureReviewService:
         updated = self.repository.update(review)
         if checklist_updates is not None:
             self._apply_checklist_updates(updated.id, checklist_updates)
-            self.sync_findings_from_checklist(updated.id)
         return updated
 
-    def list_findings(self, review_id: int) -> list[RiskMeasureFinding]:
-        findings = self.finding_repository.list_for_review(review_id)
-        return sorted(findings, key=self._note_number_sort_key)
+    def get_tasks_for_review(self, review_id: int) -> list[Task]:
+        """Úkoly navázané na přezkoumání (source_module + source_record_id)."""
+        tasks = task_service.repository.list_by_source(
+            source_module=ENTITY_RISK_MEASURE_REVIEW,
+            source_record_id=review_id,
+        )
+        return sorted(tasks, key=lambda item: (item.due_date or date.max, item.id))
 
-    def get_finding(self, finding_id: int | None) -> RiskMeasureFinding | None:
-        if not finding_id:
-            return None
-        return self.finding_repository.get_by_id(finding_id)
-
-    def ensure_finding_for_note_number(
+    def create_task_for_review(
         self,
         review_id: int,
-        note_number: str,
-    ) -> RiskMeasureFinding | None:
-        normalized = self._normalize_note_number(note_number)
-        if not normalized:
-            return None
-        existing = self.finding_repository.get_by_review_and_note_number(
-            review_id,
-            normalized,
-        )
-        if existing is not None:
-            return existing
-        finding = RiskMeasureFinding(
-            review_id=review_id,
-            note_number=normalized,
-            title="",
-            description="",
-            recommendation="",
-            severity="",
-        )
-        return self.finding_repository.add(finding)
-
-    def sync_findings_from_checklist(self, review_id: int) -> list[RiskMeasureFinding]:
-        note_numbers: set[str] = set()
-        for item in self.item_repository.list_for_review(review_id):
-            normalized = self._normalize_note_number(item.note_number)
-            if normalized:
-                note_numbers.add(normalized)
-        created_or_existing: list[RiskMeasureFinding] = []
-        for note_number in sorted(note_numbers, key=self._note_number_sort_key):
-            finding = self.ensure_finding_for_note_number(review_id, note_number)
-            if finding is not None:
-                created_or_existing.append(finding)
-        return created_or_existing
-
-    def update_finding(
-        self,
-        finding_id: int,
         *,
         title: str,
         description: str = "",
-        recommendation: str = "",
-        severity: str = "",
-    ) -> RiskMeasureFinding | None:
-        finding = self.finding_repository.get_by_id(finding_id)
-        if finding is None:
-            return None
-        finding.title = (title or "").strip()
-        finding.description = (description or "").strip()
-        finding.recommendation = (recommendation or "").strip()
-        finding.severity = (severity or "").strip()
-        finding.updated_at = datetime.now()
-        return self.finding_repository.update(finding)
-
-    def list_incomplete_findings(self, review_id: int) -> list[RiskMeasureFinding]:
-        """Zjištění odkazovaná z checklistu bez vyplněného názvu."""
-        referenced = {
-            self._normalize_note_number(item.note_number)
-            for item in self.item_repository.list_for_review(review_id)
-            if self._normalize_note_number(item.note_number)
-        }
-        incomplete: list[RiskMeasureFinding] = []
-        for finding in self.finding_repository.list_for_review(review_id):
-            if finding.note_number not in referenced:
-                continue
-            if not (finding.title or "").strip():
-                incomplete.append(finding)
-        return sorted(incomplete, key=self._note_number_sort_key)
-
-    @staticmethod
-    def _normalize_note_number(value: str | None) -> str:
-        return str(value or "").strip()[:16]
-
-    @staticmethod
-    def _note_number_sort_key(item) -> tuple:
-        number = item if isinstance(item, str) else getattr(item, "note_number", "") or ""
-        text = str(number).strip()
-        if text.isdigit():
-            return (0, int(text), text)
-        return (1, 0, text.casefold())
+        due_date: date | None = None,
+        responsible_person_id: int | None = None,
+        workplace_id: int | None = None,
+        source_check_code: str = "",
+    ) -> Task:
+        """
+        Vytvoří úkol navázaný na přezkoumání.
+        source_check_code připravuje budoucí vazbu na kontrolní bod checklistu.
+        """
+        review = self.repository.get_by_id(review_id)
+        if review is None:
+            raise RiskMeasureReviewError("Přezkoumání nebylo nalezeno.")
+        cleaned_title = (title or "").strip()
+        if not cleaned_title:
+            raise RiskMeasureReviewError("Název úkolu je povinný.")
+        return task_service.create_task(
+            title=cleaned_title[:200],
+            description=(description or "").strip(),
+            due_date=due_date,
+            responsible_person_id=responsible_person_id,
+            workplace_id=workplace_id if workplace_id is not None else review.workplace_id,
+            source_module=ENTITY_RISK_MEASURE_REVIEW,
+            source_record_id=review_id,
+            source_check_code=(source_check_code or "").strip()[:100],
+        )
 
     def list_checklist_rows(self, review_id: int) -> list[RiskMeasureReviewChecklistRow]:
         items = self.item_repository.list_for_review(review_id)

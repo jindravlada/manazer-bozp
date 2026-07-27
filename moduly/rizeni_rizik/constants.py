@@ -519,29 +519,10 @@ RISK_MEASURE_REVIEW_PRINT_STUB_MESSAGE = (
     "Tisk checklistu bude doplněn v další fázi."
 )
 
-# --- Zjištění (RISK-REVIEW-3) ---
+# --- Úkoly přezkoumání (RISK-REVIEW-3a) ---
 
-RISK_MEASURE_FINDINGS_TITLE = "Zjištění"
-RISK_MEASURE_FINDING_DIALOG_TITLE = "Zjištění"
-RISK_MEASURE_FINDING_INCOMPLETE_WARNING = (
-    "Některá čísla poznámek v checklistu nemají vyplněný název zjištění.\n"
-    "Uložení je možné; doplňte zjištění po návratu do kanceláře."
-)
-
-RISK_MEASURE_FINDING_COL_ID = 0
-RISK_MEASURE_FINDING_COL_NUMBER = 1
-RISK_MEASURE_FINDING_COL_TITLE = 2
-RISK_MEASURE_FINDING_COL_SEVERITY = 3
-RISK_MEASURE_FINDING_COL_RECOMMENDATION = 4
-RISK_MEASURE_FINDING_COLUMN_COUNT = 5
-
-RISK_MEASURE_FINDING_TABLE_HEADERS = [
-    "ID",
-    "Číslo",
-    "Název",
-    "Závažnost",
-    "Doporučení",
-]
+ENTITY_RISK_MEASURE_REVIEW = "risk_measure_review"
+RISK_MEASURE_REVIEW_TASKS_TITLE = "Úkoly"
 
 RISK_MEASURE_REVIEW_COL_ID = 0
 RISK_MEASURE_REVIEW_COL_NUMBER = 1

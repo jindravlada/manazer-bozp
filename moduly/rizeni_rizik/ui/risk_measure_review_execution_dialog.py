@@ -14,25 +14,26 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import create_save_cancel_box, configure_resizable_form_dialog
 from core.widgets.editor_dialog_controller import EditorDialogController
 from moduly.rizeni_rizik.constants import (
-    RISK_MEASURE_FINDING_INCOMPLETE_WARNING,
-    RISK_MEASURE_FINDINGS_TITLE,
     RISK_MEASURE_REVIEW_CHECKLIST_TITLE,
     RISK_MEASURE_REVIEW_EXECUTE_DIALOG_TITLE,
     RISK_MEASURE_REVIEW_PRINT_BUTTON,
     RISK_MEASURE_REVIEW_PRINT_STUB_MESSAGE,
+    RISK_MEASURE_REVIEW_TASKS_TITLE,
 )
 from moduly.rizeni_rizik.sluzby.risk_measure_review_service import (
     RiskMeasureReviewError,
     risk_measure_review_service,
 )
-from moduly.rizeni_rizik.ui.risk_measure_findings_widget import RiskMeasureFindingsWidget
 from moduly.rizeni_rizik.ui.risk_measure_review_checklist_widget import (
     RiskMeasureReviewChecklistWidget,
+)
+from moduly.rizeni_rizik.ui.risk_measure_review_tasks_widget import (
+    RiskMeasureReviewTasksWidget,
 )
 
 
 class RiskMeasureReviewExecutionDialog(QDialog):
-    """Provedení přezkoumání – checklist a zjištění (oddělené od evidence)."""
+    """Provedení přezkoumání – checklist (pracovní) + úkoly (jako Audit)."""
 
     def __init__(self, parent=None, *, review):
         super().__init__(parent)
@@ -66,12 +67,8 @@ class RiskMeasureReviewExecutionDialog(QDialog):
         checklist_layout.addWidget(self.checklist)
         self.tabs.addTab(checklist_page, RISK_MEASURE_REVIEW_CHECKLIST_TITLE)
 
-        findings_page = QWidget()
-        findings_layout = QVBoxLayout(findings_page)
-        findings_layout.setContentsMargins(0, 8, 0, 0)
-        self.findings = RiskMeasureFindingsWidget(on_changed=self._on_changed)
-        findings_layout.addWidget(self.findings)
-        self.tabs.addTab(findings_page, RISK_MEASURE_FINDINGS_TITLE)
+        self.tasks = RiskMeasureReviewTasksWidget()
+        self.tabs.addTab(self.tasks, RISK_MEASURE_REVIEW_TASKS_TITLE)
         layout.addWidget(self.tabs)
 
         action_row = QHBoxLayout()
@@ -92,11 +89,10 @@ class RiskMeasureReviewExecutionDialog(QDialog):
         )
         self._editor.set_snapshot_provider(self.get_data)
         self._editor.install_auto_dirty_tracking()
-        self._wrap_close_with_finding_warning()
 
         rows = risk_measure_review_service.ensure_checklist(review.id)
         self.checklist.load_rows(rows)
-        self.findings.set_review_id(review.id)
+        self.tasks.set_review_id(review.id)
         self._editor.capture_baseline()
 
     def get_data(self) -> dict:
@@ -127,7 +123,7 @@ class RiskMeasureReviewExecutionDialog(QDialog):
             self.checklist.load_rows(
                 risk_measure_review_service.list_checklist_rows(updated.id)
             )
-            self.findings.set_review_id(updated.id)
+            self.tasks.set_review_id(updated.id)
         except RiskMeasureReviewError as error:
             QMessageBox.warning(
                 self,
@@ -135,7 +131,6 @@ class RiskMeasureReviewExecutionDialog(QDialog):
                 str(error),
             )
             return False
-        self._warn_incomplete_findings()
         return True
 
     def _print_checklist_stub(self) -> None:
@@ -148,25 +143,3 @@ class RiskMeasureReviewExecutionDialog(QDialog):
     def _on_changed(self) -> None:
         if hasattr(self, "_editor"):
             self._editor.mark_dirty()
-
-    def _wrap_close_with_finding_warning(self) -> None:
-        original = self._editor.request_close
-
-        def request_close_with_warning() -> bool:
-            if not self._editor.is_dirty():
-                self._warn_incomplete_findings()
-                return True
-            return original()
-
-        self._editor.request_close = request_close_with_warning  # type: ignore[method-assign]
-
-    def _warn_incomplete_findings(self) -> None:
-        incomplete = risk_measure_review_service.list_incomplete_findings(self.review.id)
-        if not incomplete:
-            return
-        numbers = ", ".join(finding.note_number for finding in incomplete)
-        QMessageBox.information(
-            self,
-            RISK_MEASURE_FINDINGS_TITLE,
-            f"{RISK_MEASURE_FINDING_INCOMPLETE_WARNING}\n\nČísla: {numbers}",
-        )

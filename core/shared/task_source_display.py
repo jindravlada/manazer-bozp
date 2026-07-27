@@ -16,11 +16,15 @@ def task_type_label(task) -> str:
 
 
 def task_source_short_label(task) -> str:
+    from moduly.rizeni_rizik.constants import ENTITY_RISK_MEASURE_REVIEW
+
     source_module = task.source_module or ""
     if source_module == ENTITY_LEGAL_REQUIREMENT:
         return "Právní pož."
     if source_module == ENTITY_MU_INVESTIGATION:
         return _entity_source_short_label(ENTITY_MU_INVESTIGATION)
+    if source_module == ENTITY_RISK_MEASURE_REVIEW:
+        return "Přezkoumání"
     if source_module == ENTITY_FINDING and task.source_record_id:
         finding = finding_service.get_by_id(task.source_record_id)
         if finding is not None:
@@ -41,6 +45,8 @@ def _entity_source_short_label(entity_type: str) -> str:
 
 
 def _legacy_source_short_label(source: str) -> str:
+    from moduly.rizeni_rizik.constants import ENTITY_RISK_MEASURE_REVIEW
+
     mapping = {
         "manual": "Ručně",
         "uraz": "Úrazy",
@@ -54,22 +60,40 @@ def _legacy_source_short_label(source: str) -> str:
         ENTITY_FINDING: "Zjištění",
         ENTITY_MU_INVESTIGATION: "MU",
         ENTITY_LEGAL_REQUIREMENT: "Právní pož.",
+        ENTITY_RISK_MEASURE_REVIEW: "Přezkoumání",
     }
     return mapping.get(source or "", source or "—")
 
 
 def task_source_label(task) -> str:
+    from moduly.rizeni_rizik.constants import ENTITY_RISK_MEASURE_REVIEW
+
     source_module = task.source_module or ""
     if source_module == ENTITY_LEGAL_REQUIREMENT and task.source_record_id:
         return _legal_requirement_source_label(task.source_record_id)
     if source_module == ENTITY_MU_INVESTIGATION and task.source_record_id:
         return _finding_entity_source_label(ENTITY_MU_INVESTIGATION, task.source_record_id)
+    if source_module == ENTITY_RISK_MEASURE_REVIEW and task.source_record_id:
+        return _risk_measure_review_source_label(task.source_record_id)
     if source_module == ENTITY_FINDING and task.source_record_id:
         finding = finding_service.get_by_id(task.source_record_id)
         if finding is not None:
             return _finding_entity_source_label(finding.entity_type, finding.entity_id)
 
     return _legacy_source_label(source_module)
+
+
+def _risk_measure_review_source_label(review_id: int) -> str:
+    from moduly.rizeni_rizik.sluzby.risk_measure_review_service import (
+        risk_measure_review_service,
+    )
+
+    review = risk_measure_review_service.get_by_id(review_id)
+    if review is None:
+        return "Přezkoumání opatření"
+    if review.review_number:
+        return f"Přezkoumání opatření {review.review_number}"
+    return f"Přezkoumání opatření #{review_id}"
 
 
 def _legal_requirement_source_label(requirement_id: int) -> str:
@@ -121,6 +145,8 @@ def _entity_record_detail(entity_type: str, entity_id: int) -> str:
 
 
 def _legacy_source_label(source: str) -> str:
+    from moduly.rizeni_rizik.constants import ENTITY_RISK_MEASURE_REVIEW
+
     mapping = {
         "manual": "Ručně",
         "uraz": "Kniha úrazů",
@@ -134,5 +160,6 @@ def _legacy_source_label(source: str) -> str:
         ENTITY_FINDING: "Zjištění",
         ENTITY_MU_INVESTIGATION: "Vyšetřování MU",
         ENTITY_LEGAL_REQUIREMENT: "Právní požadavek",
+        ENTITY_RISK_MEASURE_REVIEW: "Přezkoumání opatření",
     }
     return mapping.get(source or "", source or "—")
