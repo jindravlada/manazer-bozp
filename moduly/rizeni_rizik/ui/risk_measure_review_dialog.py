@@ -39,7 +39,7 @@ class RiskMeasureReviewDialog(QDialog):
         super().__init__(parent)
         self.review = review
         self.setWindowTitle(RISK_MEASURE_REVIEW_DIALOG_TITLE)
-        configure_resizable_form_dialog(self, width=780, height=680, min_width=640, min_height=520)
+        configure_resizable_form_dialog(self, width=720, height=720, min_width=600, min_height=560)
 
         layout = QVBoxLayout(self)
         form = QFormLayout()

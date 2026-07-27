@@ -560,3 +560,11 @@ Generování checklistu přezkoumání:
 - při vytvoření přezkoumání se z rozsahu Provoz/Pracoviště/Část vygenerují položky checklistu
 - položky odkazují na `follow_up_measure_id`; při znovuotevření se negenerují znovu
 - editor zobrazuje tabulku Riziko / Navazující opatření / Výsledek / Poznámka
+
+## RISK-REVIEW-2a
+
+Zjednodušení checklistu pro terén:
+
+- sloupce Navazující opatření / Vyhovuje / Poznámka č. / Foto
+- sekce Poznámky pod checklistem (zatím jen rozvržení)
+- kompaktní rozložení vhodné pro A4

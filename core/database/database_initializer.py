@@ -1434,6 +1434,22 @@ def _ensure_risk_measure_review_items_table() -> None:
         from moduly.rizeni_rizik.modely.risk_measure_review_item import RiskMeasureReviewItem
 
         RiskMeasureReviewItem.__table__.create(bind=_db_engine(), checkfirst=True)
+        return
+
+    if "compliant" not in columns:
+        _add_column("risk_measure_review_items", "compliant BOOLEAN DEFAULT 0")
+        with _db_engine().connect() as connection:
+            connection.execute(
+                text(
+                    "UPDATE risk_measure_review_items "
+                    "SET compliant = 1 WHERE result = 'compliant'"
+                )
+            )
+            connection.commit()
+    if "note_number" not in columns:
+        _add_column("risk_measure_review_items", "note_number VARCHAR(16) DEFAULT ''")
+    if "has_photo" not in columns:
+        _add_column("risk_measure_review_items", "has_photo BOOLEAN DEFAULT 0")
 
 
 def _ensure_hazard_identification_photos_table() -> None:

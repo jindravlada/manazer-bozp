@@ -38,9 +38,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.rizeni_rizik.constants import (
         HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
-        RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT,
-        RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT,
-        RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED,
         RISK_SEVERITY_MODERATE,
     )
     from moduly.rizeni_rizik.modely.hazard_required_measure import HazardRequiredMeasure
@@ -194,8 +191,9 @@ class RiskReview2TestCase(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0].follow_up_measure_id, measure.id)
         self.assertEqual(rows[0].measure_title, "Ochranné brýle")
-        self.assertEqual(rows[0].result, RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED)
-        self.assertIn("Fréza", rows[0].risk_label)
+        self.assertFalse(rows[0].compliant)
+        self.assertEqual(rows[0].note_number, "")
+        self.assertFalse(rows[0].has_photo)
 
     def test_scope_operation_includes_all_workplaces(self) -> None:
         first = self._create_scoped_measure(
@@ -340,14 +338,16 @@ class RiskReview2TestCase(unittest.TestCase):
             checklist_updates=[
                 {
                     "item_id": rows[0].item_id,
-                    "result": RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT,
-                    "note": "OK",
+                    "compliant": True,
+                    "note_number": "1",
+                    "has_photo": True,
                 }
             ],
         )
         reloaded = risk_measure_review_service.list_checklist_rows(review.id)
-        self.assertEqual(reloaded[0].result, RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT)
-        self.assertEqual(reloaded[0].note, "OK")
+        self.assertTrue(reloaded[0].compliant)
+        self.assertEqual(reloaded[0].note_number, "1")
+        self.assertTrue(reloaded[0].has_photo)
         self.assertEqual(reloaded[0].follow_up_measure_id, measure.id)
 
         stored = RiskMeasureReviewItemRepository().list_for_review(review.id)
@@ -363,10 +363,7 @@ class RiskReview2TestCase(unittest.TestCase):
         renamed_rows = risk_measure_review_service.list_checklist_rows(review.id)
         self.assertEqual(renamed_rows[0].measure_title, "Přejmenováno")
         self.assertEqual(renamed_rows[0].follow_up_measure_id, measure.id)
-        self.assertNotEqual(
-            renamed_rows[0].result,
-            RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT,
-        )
+        self.assertTrue(renamed_rows[0].compliant)
 
 
 if __name__ == "__main__":

@@ -12,8 +12,8 @@ from moduly.nastaveni.constants.workplace_hierarchy_constants import (
 from moduly.nastaveni.sluzby.person_service import person_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.rizeni_rizik.constants import (
-    RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED,
-    RISK_MEASURE_REVIEW_ITEM_RESULTS,
+    RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT,
+    RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT,
     RISK_MEASURE_REVIEW_STATUS_ARCHIVED,
     RISK_MEASURE_REVIEW_STATUS_COMPLETED,
     RISK_MEASURE_REVIEW_STATUS_DRAFT,
@@ -27,12 +27,8 @@ from moduly.rizeni_rizik.repository.risk_measure_review_item_repository import (
 from moduly.rizeni_rizik.repository.risk_measure_review_repository import (
     RiskMeasureReviewRepository,
 )
-from moduly.rizeni_rizik.sluzby.hazard_event_service import hazard_event_service
 from moduly.rizeni_rizik.sluzby.hazard_identification_service import (
     hazard_identification_service,
-)
-from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import (
-    hazard_inventory_item_service,
 )
 from moduly.rizeni_rizik.sluzby.hazard_required_measure_service import (
     hazard_required_measure_service,
@@ -50,10 +46,10 @@ class RiskMeasureReviewError(ValueError):
 class RiskMeasureReviewChecklistRow:
     item_id: int
     follow_up_measure_id: int
-    risk_label: str
     measure_title: str
-    result: str
-    note: str
+    compliant: bool
+    note_number: str
+    has_photo: bool
     sort_order: int
 
 
@@ -188,15 +184,17 @@ class RiskMeasureReviewService:
         for item in items:
             measure = hazard_required_measure_service.get_by_id(item.follow_up_measure_id)
             measure_title = measure.display_title() if measure is not None else "—"
-            risk_label = self._risk_label_for_measure(measure) if measure is not None else "—"
+            compliant = bool(getattr(item, "compliant", False))
+            if not compliant and item.result == RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT:
+                compliant = True
             rows.append(
                 RiskMeasureReviewChecklistRow(
                     item_id=int(item.id),
                     follow_up_measure_id=int(item.follow_up_measure_id),
-                    risk_label=risk_label,
                     measure_title=measure_title,
-                    result=item.result or RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED,
-                    note=item.note or "",
+                    compliant=compliant,
+                    note_number=(getattr(item, "note_number", None) or "").strip(),
+                    has_photo=bool(getattr(item, "has_photo", False)),
                     sort_order=int(item.sort_order or 0),
                 )
             )
@@ -280,7 +278,10 @@ class RiskMeasureReviewService:
                 RiskMeasureReviewItem(
                     review_id=review.id,
                     follow_up_measure_id=int(measure.id),
-                    result=RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED,
+                    compliant=False,
+                    note_number="",
+                    has_photo=False,
+                    result=RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT,
                     note="",
                     sort_order=index + 1,
                 )
@@ -299,28 +300,19 @@ class RiskMeasureReviewService:
             item = by_id.get(int(item_id))
             if item is None:
                 continue
-            result = payload.get("result", item.result)
-            if result not in RISK_MEASURE_REVIEW_ITEM_RESULTS:
-                raise RiskMeasureReviewError("Neplatný výsledek položky checklistu.")
-            item.result = result
-            item.note = str(payload.get("note", item.note) or "").strip()
+            compliant = bool(payload.get("compliant", item.compliant))
+            item.compliant = compliant
+            item.result = (
+                RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT
+                if compliant
+                else RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT
+            )
+            item.note_number = str(payload.get("note_number", item.note_number) or "").strip()[:16]
+            item.has_photo = bool(payload.get("has_photo", item.has_photo))
             item.updated_at = datetime.now()
             changed.append(item)
         for item in changed:
             self.item_repository.update(item)
-
-    @staticmethod
-    def _risk_label_for_measure(measure) -> str:
-        assessment = hazard_risk_assessment_service.get_by_id(measure.hazard_risk_assessment_id)
-        if assessment is None:
-            return "—"
-        event = hazard_event_service.get_by_id(assessment.hazard_event_id)
-        if event is None:
-            return "—"
-        item = hazard_inventory_item_service.get_by_id(event.inventory_item_id)
-        item_name = (item.name if item is not None else "") or "—"
-        event_name = (event.name or "").strip() or "—"
-        return f"{item_name} — {event_name}"
 
     @staticmethod
     def _identification_in_scope(

@@ -683,25 +683,29 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
 
     elif profile == "risk_measure_review_items":
         from moduly.rizeni_rizik.constants import (
+            RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT,
             RISK_MEASURE_REVIEW_ITEM_COL_MEASURE,
-            RISK_MEASURE_REVIEW_ITEM_COL_NOTE,
-            RISK_MEASURE_REVIEW_ITEM_COL_RESULT,
-            RISK_MEASURE_REVIEW_ITEM_COL_RISK,
+            RISK_MEASURE_REVIEW_ITEM_COL_NOTE_NUMBER,
+            RISK_MEASURE_REVIEW_ITEM_COL_PHOTO,
         )
 
+        # Kompaktní šířky vhodné pro tisk A4.
         widths = {
-            RISK_MEASURE_REVIEW_ITEM_COL_RISK: 220,
-            RISK_MEASURE_REVIEW_ITEM_COL_MEASURE: 220,
-            RISK_MEASURE_REVIEW_ITEM_COL_RESULT: 130,
-            RISK_MEASURE_REVIEW_ITEM_COL_NOTE: 180,
+            RISK_MEASURE_REVIEW_ITEM_COL_MEASURE: 360,
+            RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT: 80,
+            RISK_MEASURE_REVIEW_ITEM_COL_NOTE_NUMBER: 90,
+            RISK_MEASURE_REVIEW_ITEM_COL_PHOTO: 55,
         }
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
         header.setSectionResizeMode(RISK_MEASURE_REVIEW_ITEM_COL_MEASURE, QHeaderView.Stretch)
-        for column in widths:
-            if column != RISK_MEASURE_REVIEW_ITEM_COL_MEASURE:
-                header.setSectionResizeMode(column, QHeaderView.Fixed)
+        for column in (
+            RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT,
+            RISK_MEASURE_REVIEW_ITEM_COL_NOTE_NUMBER,
+            RISK_MEASURE_REVIEW_ITEM_COL_PHOTO,
+        ):
+            header.setSectionResizeMode(column, QHeaderView.Fixed)
 
     elif profile == "risk_measure_reviews":
         from moduly.rizeni_rizik.constants import (
