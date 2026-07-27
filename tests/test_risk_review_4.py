@@ -167,6 +167,7 @@ class RiskReview4TestCase(unittest.TestCase):
         point = widget.points[0]
         self.assertEqual(point.measure_label.text(), "Dvouruční ovládání")
         self.assertTrue(point.measure_label.wordWrap())
+        self.assertTrue(point.measure_label.font().bold())
         self.assertIsInstance(point.compliant_radio, QRadioButton)
         self.assertIsInstance(point.non_compliant_radio, QRadioButton)
         self.assertIsInstance(point.note_edit, QLineEdit)

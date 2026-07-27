@@ -350,9 +350,19 @@ class OdtExportEngine:
     @staticmethod
     def _escape_plain_text(text: str) -> str:
         escaped = html.escape(text, quote=False)
-        return escaped.replace("\r\n", "\n").replace("\r", "\n").replace(
+        escaped = escaped.replace("\r\n", "\n").replace("\r", "\n").replace(
             "\n", "<text:line-break/>"
         )
+        # ODT ignoruje běžné tabulátory/vícenásobné mezery – musí jít o elementy.
+        escaped = escaped.replace("\t", "<text:tab/>")
+
+        def _spaces(match: re.Match[str]) -> str:
+            count = len(match.group(0))
+            if count == 1:
+                return " "
+            return f'<text:s text:c="{count}"/>'
+
+        return re.sub(r" {2,}", _spaces, escaped)
 
     def _image_frame_xml(
         self, path_text: str, image_registry: list[tuple[str, Path]]

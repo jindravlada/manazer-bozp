@@ -27,6 +27,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
+    from PySide6.QtCore import Qt
     from PySide6.QtWidgets import QApplication, QLineEdit, QRadioButton
 
     from moduly.nastaveni.constants.workplace_hierarchy_constants import (
@@ -65,6 +66,9 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.rizeni_rizik.ui.risk_measure_review_checklist_widget import (
         RiskMeasureReviewChecklistWidget,
+    )
+    from moduly.rizeni_rizik.ui.risk_measure_review_execution_dialog import (
+        RiskMeasureReviewExecutionDialog,
     )
     from tests.rizeni_rizik_test_helpers import ensure_exposed_group
 
@@ -151,6 +155,7 @@ class RiskReview4aTestCase(unittest.TestCase):
         self.assertEqual(widget.point_count(), 1)
         point = widget.points[0]
         self.assertTrue(point.measure_label.wordWrap())
+        self.assertTrue(point.measure_label.font().bold())
         self.assertTrue(point.measure_label.toolTip())
         self.assertIsInstance(point.compliant_radio, QRadioButton)
         self.assertIsInstance(point.non_compliant_radio, QRadioButton)
@@ -181,7 +186,7 @@ class RiskReview4aTestCase(unittest.TestCase):
             RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT,
         )
 
-    def test_print_layout_without_table_header(self) -> None:
+    def test_print_layout_paper_only_note_number(self) -> None:
         rows = risk_measure_review_service.list_checklist_rows(self.review.id)
         risk_measure_review_service.update_review(
             self.review.id,
@@ -208,10 +213,35 @@ class RiskReview4aTestCase(unittest.TestCase):
             text,
         )
         self.assertIn("Ochranný kryt frézky", text)
-        self.assertIn("Vyhovuje ☑", text)
-        self.assertIn("Nevyhovuje ☐", text)
-        self.assertIn("Foto ☐", text)
-        self.assertIn("Poznámka: Bez závad", text)
+        self.assertIn(
+            "Vyhovuje ☐\tNevyhovuje ☐\tFoto ☐\tPoznámka č.:",
+            text,
+        )
+        self.assertNotIn("Bez závad", text)
+        self.assertNotIn("Poznámka: Bez závad", text)
+
+        # V ODT musí být tabulátory jako <text:tab/>, jinak se řádek „slepí“.
+        with patch(
+            "moduly.rizeni_rizik.sluzby.risk_measure_review_checklist_export_service.open_export_file"
+        ):
+            path = risk_measure_review_checklist_export_service.generate_for_review(review)
+        import zipfile
+
+        with zipfile.ZipFile(path) as archive:
+            xml = archive.read("content.xml").decode("utf-8")
+        self.assertIn("Vyhovuje ☐", xml)
+        self.assertIn("<text:tab/>", xml)
+        self.assertIn("Poznámka č.:", xml)
+        # Nesmí zůstat naplácané bez oddělovačů.
+        self.assertNotIn("Vyhovuje ☐ Nevyhovuje ☐ Foto ☐", xml)
+
+    def test_execution_dialog_opens_maximized(self) -> None:
+        dialog = RiskMeasureReviewExecutionDialog(
+            review=risk_measure_review_service.get_by_id(self.review.id),
+        )
+        self.assertTrue(bool(dialog.windowState() & Qt.WindowState.WindowMaximized))
+        dialog._editor.mark_clean()
+        dialog.close()
 
 
 if __name__ == "__main__":

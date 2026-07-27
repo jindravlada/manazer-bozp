@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QHBoxLayout, QMessageBox, QPushButton, QVBoxLayout, QWidget
 
+from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
 from moduly.rizeni_rizik.constants import (
@@ -89,7 +90,7 @@ class RiskMeasureReviewsTab(QWidget):
             )
             return
         dialog = RiskMeasureReviewExecutionDialog(self, review=review)
-        dialog.exec()
+        exec_maximized(dialog)
         self.refresh()
 
     def archive_selected_review(self) -> None:

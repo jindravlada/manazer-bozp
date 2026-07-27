@@ -8,8 +8,6 @@ from pathlib import Path
 from core.export import OdtExportEngine, OdtParagraph, OdtRichContent, open_export_file
 from core.services.storage_service import storage_service
 from moduly.rizeni_rizik.constants import (
-    RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT,
-    RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT,
     RISK_MEASURE_REVIEW_PRINT_DIALOG_TITLE,
     RISK_MEASURE_REVIEW_PRINT_EMPTY,
 )
@@ -31,8 +29,10 @@ def _format_date(value) -> str:
     return _text(value) or "—"
 
 
-def _mark(checked: bool) -> str:
-    return "☑" if checked else "☐"
+# Papírový checklist do terénu – vždy prázdná políčka k ručnímu vyplnění.
+# „Poznámka č.“ se nikdy neplní z elektronické evidence.
+# Oddělovač: tabulátor → v ODT se renderuje jako <text:tab/> (rozestup přes řádek).
+_CHECKLIST_CONTROL_LINE = "Vyhovuje ☐\tNevyhovuje ☐\tFoto ☐\tPoznámka č.:"
 
 
 class RiskMeasureReviewChecklistExportService:
@@ -95,16 +95,7 @@ class RiskMeasureReviewChecklistExportService:
             paragraphs.append(
                 OdtParagraph.text(row.measure_title or "—", style="AuditCriterion")
             )
-            note = (row.note or "").strip()
-            photo_mark = "☑" if int(row.photo_count or 0) > 0 else "☐"
-            paragraphs.append(
-                OdtParagraph.text(
-                    f"Vyhovuje {_mark(row.result == RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT)}    "
-                    f"Nevyhovuje {_mark(row.result == RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT)}    "
-                    f"Foto {photo_mark}    "
-                    f"Poznámka: {note}"
-                )
-            )
+            paragraphs.append(OdtParagraph.text(_CHECKLIST_CONTROL_LINE))
         return OdtRichContent(paragraphs=paragraphs)
 
 
