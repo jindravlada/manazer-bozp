@@ -130,8 +130,23 @@ def wrap_in_scroll_area(content: QWidget) -> QScrollArea:
     scroll.setFrameShape(QScrollArea.Shape.NoFrame)
     scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
     scroll.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+    scroll.setFocusPolicy(Qt.FocusPolicy.NoFocus)
     scroll.setWidget(content)
     return scroll
+
+
+def configure_form_tab_navigation(root: QWidget) -> None:
+    """Tab / Shift+Tab přesouvají fokus mezi poli; v QTextEdit nevkládají odsazení."""
+    from PySide6.QtWidgets import QLabel, QPlainTextEdit, QScrollArea, QTextEdit
+
+    for widget in root.findChildren(QTextEdit):
+        widget.setTabChangesFocus(True)
+    for widget in root.findChildren(QPlainTextEdit):
+        widget.setTabChangesFocus(True)
+    for widget in root.findChildren(QLabel):
+        widget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+    for widget in root.findChildren(QScrollArea):
+        widget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
 
 def prepare_work_dialog_maximized(dialog: QDialog) -> None:

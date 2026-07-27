@@ -33,7 +33,7 @@ from PySide6.QtWidgets import (
 )
 
 
-from core.widgets.dialog_utils import create_save_cancel_box
+from core.widgets.dialog_utils import create_save_cancel_box, configure_form_tab_navigation
 from moduly.kniha_urazu.ui.setreni.accident_findings_widget import AccidentFindingsWidget
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     OBLIGATION_OO_OHLASENI,
@@ -102,6 +102,8 @@ class SetreniDialog(QDialog):
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
+
+        configure_form_tab_navigation(self)
 
     def accept(self):
         self._save_administrativa()

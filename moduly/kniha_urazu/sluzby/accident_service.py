@@ -5,8 +5,11 @@ from core.shared.constants import ENTITY_ACCIDENT
 from moduly.kniha_urazu.modely.accident import Accident
 from moduly.kniha_urazu.repository.accident_repository import AccidentRepository
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
-    dpn_calendar_days,
-    is_dpn_kind_mismatch,
+    has_pn,
+    is_dpn_over_3_kind,
+    is_dpn_up_to_3_kind,
+    is_fatal_accident,
+    is_serious_accident,
 )
 from moduly.nastaveni.sluzby.settings_service import settings_service
 
@@ -106,7 +109,7 @@ class AccidentService:
                 setattr(accident, key, value)
 
         saved = self.repository.update(accident)
-        self._resolve_verify_kind_task_if_matched(saved)
+        self._resolve_verify_kind_task_if_needed(saved)
         return saved
 
     def should_create_verify_kind_task(
@@ -115,22 +118,27 @@ class AccidentService:
         *,
         today: date | None = None,
     ) -> bool:
-        """Nevytvářet úkol při zápisu se zpožděním 4+ kalendářních dnů."""
+        """Úkol jen pro úraz s DPN do 3 dnů, bez závažného/smrtelného a bez zpoždění 4+ dní."""
+        if is_serious_accident(accident) or is_fatal_accident(accident):
+            return False
+        if not is_dpn_up_to_3_kind(getattr(accident, "druh_urazu", "") or ""):
+            return False
+        if not has_pn(accident):
+            return False
         if accident.accident_date is None:
             return True
         reference = today or date.today()
         delay_days = (reference - accident.accident_date).days
         return delay_days <= VERIFY_KIND_TASK_MAX_RECORDING_DELAY_DAYS
 
-    def accident_kind_matches_known_dpn(self, accident: Accident) -> bool:
-        """True, pokud je délka DPN známá a druh úrazu jí odpovídá."""
-        druh = (accident.druh_urazu or "").strip()
-        if not druh:
-            return False
-        days = dpn_calendar_days(accident.dpn_od, accident.dpn_do)
-        if days is None:
-            return False
-        return not is_dpn_kind_mismatch(druh, days)
+    def should_resolve_verify_kind_task(self, accident: Accident) -> bool:
+        """Dokončit úkol při změně druhu na >3 dny / závažný / smrtelný (bez čekání na DPN do)."""
+        druh = getattr(accident, "druh_urazu", "") or ""
+        if is_dpn_over_3_kind(druh):
+            return True
+        if is_serious_accident(accident) or is_fatal_accident(accident):
+            return True
+        return False
 
     def _create_verify_kind_task(self, accident: Accident) -> None:
         if not self.should_create_verify_kind_task(accident):
@@ -153,8 +161,8 @@ class AccidentService:
             requires_verification=False,
         )
 
-    def _resolve_verify_kind_task_if_matched(self, accident: Accident) -> None:
-        if not self.accident_kind_matches_known_dpn(accident):
+    def _resolve_verify_kind_task_if_needed(self, accident: Accident) -> None:
+        if not self.should_resolve_verify_kind_task(accident):
             return
 
         from moduly.ukoly.sluzby.task_service import task_service

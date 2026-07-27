@@ -177,6 +177,10 @@ class KuUx12TestCase(unittest.TestCase):
             jmeno_prijmeni="Jan Novák",
             accident_date=accident_date,
             year=accident_date.year,
+            druh_urazu=(
+                "pracovní úraz s pracovní neschopností nepřesahující 3 kalendářní dny"
+            ),
+            dpn_od=accident_date,
         )
 
         tasks = [

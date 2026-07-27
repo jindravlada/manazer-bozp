@@ -15,7 +15,12 @@ from PySide6.QtWidgets import (
 
 from core.shared.constants import ENTITY_ACCIDENT
 from core.widgets.attachment_widget import AttachmentWidget
-from core.widgets.dialog_utils import create_save_cancel_box, configure_resizable_form_dialog, wrap_in_scroll_area
+from core.widgets.dialog_utils import (
+    configure_form_tab_navigation,
+    create_save_cancel_box,
+    configure_resizable_form_dialog,
+    wrap_in_scroll_area,
+)
 
 from core.widgets.date_edit import DateEdit
 from core.widgets.nullable_date_edit import NullableDateEdit
@@ -91,6 +96,7 @@ class AccidentDialog(QDialog):
             self._load(accident)
 
         self._refresh_logic()
+        configure_form_tab_navigation(self)
 
     def accept(self):
         validations = [
