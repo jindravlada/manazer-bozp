@@ -22,8 +22,17 @@ from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.workplace_selector import WorkplaceSelector
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     ACCIDENT_DATE_FUTURE_MESSAGE,
+    DPN_END_BEFORE_START_MESSAGE,
+    DPN_END_IN_FUTURE_MESSAGE,
+    DPN_KIND_MISMATCH_BLOCK_MESSAGE,
+    DPN_START_BEFORE_ACCIDENT_MESSAGE,
     RECORD_DATE_BEFORE_ACCIDENT_MESSAGE,
+    dpn_calendar_days,
     is_accident_date_in_future,
+    is_dpn_end_before_start,
+    is_dpn_end_in_future,
+    is_dpn_kind_mismatch,
+    is_dpn_start_before_accident,
     is_record_date_before_accident,
 )
 from moduly.kniha_urazu.sluzby.breath_alcohol import (
@@ -177,6 +186,56 @@ class AccidentDialog(QDialog):
                 self,
                 "Nelze uložit pracovní úraz",
                 RECORD_DATE_BEFORE_ACCIDENT_MESSAGE,
+            )
+            return False
+
+        if not self._validate_dpn_rules(accident_date):
+            return False
+
+        return True
+
+    def _validate_dpn_rules(self, accident_date: date | None) -> bool:
+        dpn_od = self.tab_zamestnanec_widget.dpn_od.get_date()
+        dpn_do = self.tab_zamestnanec_widget.dpn_do.get_date()
+
+        if is_dpn_start_before_accident(dpn_od, accident_date):
+            self._focus_tab_containing(self.tab_zamestnanec_widget)
+            self.tab_zamestnanec_widget.dpn_od.setFocus()
+            QMessageBox.warning(
+                self,
+                "Nelze uložit pracovní úraz",
+                DPN_START_BEFORE_ACCIDENT_MESSAGE,
+            )
+            return False
+
+        if is_dpn_end_before_start(dpn_od, dpn_do):
+            self._focus_tab_containing(self.tab_zamestnanec_widget)
+            self.tab_zamestnanec_widget.dpn_do.setFocus()
+            QMessageBox.warning(
+                self,
+                "Nelze uložit pracovní úraz",
+                DPN_END_BEFORE_START_MESSAGE,
+            )
+            return False
+
+        if is_dpn_end_in_future(dpn_do):
+            self._focus_tab_containing(self.tab_zamestnanec_widget)
+            self.tab_zamestnanec_widget.dpn_do.setFocus()
+            QMessageBox.warning(
+                self,
+                "Nelze uložit pracovní úraz",
+                DPN_END_IN_FUTURE_MESSAGE,
+            )
+            return False
+
+        days = dpn_calendar_days(dpn_od, dpn_do)
+        druh_urazu = self.tab_uraz_widget.druh_urazu.value()
+        if is_dpn_kind_mismatch(druh_urazu, days):
+            self._focus_tab_containing(self.tab_zamestnanec_widget)
+            QMessageBox.warning(
+                self,
+                "Nelze uložit pracovní úraz",
+                DPN_KIND_MISMATCH_BLOCK_MESSAGE,
             )
             return False
 

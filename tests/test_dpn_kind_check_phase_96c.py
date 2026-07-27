@@ -111,15 +111,17 @@ class DpnKindCheckPhase96cTestCase(unittest.TestCase):
         dialog._refresh_dpn_kind_warning()
         self.assertFalse(dialog.tab_zamestnanec_widget.dpn_kind_warning_label.isHidden())
 
-    def test_save_is_not_blocked_by_warning(self) -> None:
+    def test_save_is_not_blocked_when_dpn_length_unknown(self) -> None:
+        """Prvotní zápis: délka DPN ještě není známá → uložení nesmí blokovat."""
         dialog = AccidentDialog()
+        dialog.tab_uraz_widget.accident_date.set_date_iso(date(2026, 3, 1).isoformat())
+        dialog.tab_podatel_widget.datum_zapisu.set_date_value(date(2026, 3, 1))
         dialog.tab_uraz_widget.druh_urazu.set_value(KIND_UP_TO_3)
         dialog.tab_zamestnanec_widget.dpn_od.set_date_value(date(2026, 3, 1))
-        dialog.tab_zamestnanec_widget.dpn_do.set_date_value(date(2026, 3, 25))
+        # dpn_do prázdné = DPN stále trvá / délka neznámá
         dialog._refresh_dpn_kind_warning()
-        self.assertFalse(dialog.tab_zamestnanec_widget.dpn_kind_warning_label.isHidden())
+        self.assertTrue(dialog.tab_zamestnanec_widget.dpn_kind_warning_label.isHidden())
 
-        # Bypass other required-field validation; ensure warning itself does not reject.
         for tab in (
             dialog.tab_podatel_widget,
             dialog.tab_zamestnanec_widget,
@@ -135,6 +137,34 @@ class DpnKindCheckPhase96cTestCase(unittest.TestCase):
             dialog.accept()
 
         mock_accept.assert_called_once()
+
+    def test_save_is_blocked_when_known_dpn_mismatches_kind(self) -> None:
+        dialog = AccidentDialog()
+        dialog.tab_uraz_widget.accident_date.set_date_iso(date(2026, 3, 1).isoformat())
+        dialog.tab_podatel_widget.datum_zapisu.set_date_value(date(2026, 3, 1))
+        dialog.tab_uraz_widget.druh_urazu.set_value(KIND_UP_TO_3)
+        dialog.tab_zamestnanec_widget.dpn_od.set_date_value(date(2026, 3, 1))
+        dialog.tab_zamestnanec_widget.dpn_do.set_date_value(date(2026, 3, 25))
+        dialog._refresh_dpn_kind_warning()
+        self.assertFalse(dialog.tab_zamestnanec_widget.dpn_kind_warning_label.isHidden())
+
+        for tab in (
+            dialog.tab_podatel_widget,
+            dialog.tab_zamestnanec_widget,
+            dialog.tab_uraz_widget,
+            dialog.tab_pracoviste_widget,
+            dialog.tab_dalsi_widget,
+            dialog.tab_svedci_widget,
+        ):
+            if hasattr(tab, "validate"):
+                tab.validate = MagicMock(return_value=[])
+
+        with patch("moduly.kniha_urazu.ui.accident_dialog.QMessageBox.warning") as mock_warning:
+            with patch.object(QDialog, "accept", return_value=None) as mock_accept:
+                dialog.accept()
+
+        mock_accept.assert_not_called()
+        self.assertTrue(mock_warning.called)
 
 
 if __name__ == "__main__":

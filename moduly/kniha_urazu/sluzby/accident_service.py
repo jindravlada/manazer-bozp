@@ -1,9 +1,13 @@
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 
+from core.shared.constants import ENTITY_ACCIDENT
 from moduly.kniha_urazu.modely.accident import Accident
 from moduly.kniha_urazu.repository.accident_repository import AccidentRepository
 from moduly.nastaveni.sluzby.settings_service import settings_service
+
+
+VERIFY_ACCIDENT_KIND_TASK_TITLE = "Ověřit druh pracovního úrazu"
 
 
 @dataclass(frozen=True)
@@ -68,7 +72,9 @@ class AccidentService:
 
         saved = self.repository.add(accident)
         saved.number = self._make_number(saved.id, saved.year)
-        return self.repository.update(saved)
+        saved = self.repository.update(saved)
+        self._create_verify_kind_task(saved)
+        return saved
 
     def update_accident(self, accident_id: int, **data):
         accident = self.repository.get_by_id(accident_id)
@@ -83,6 +89,24 @@ class AccidentService:
                 setattr(accident, key, value)
 
         return self.repository.update(accident)
+
+    def _create_verify_kind_task(self, accident: Accident) -> None:
+        from moduly.ukoly.sluzby.task_service import task_service
+
+        number = (accident.number or "").strip() or self._make_number(accident.id, accident.year)
+        base_date = accident.accident_date or date.today()
+        task_service.create_task(
+            title=VERIFY_ACCIDENT_KIND_TASK_TITLE,
+            description=(
+                f"Ověřit pracovní úraz č. {number} a případně upravit druh "
+                "pracovního úrazu podle skutečné délky pracovní neschopnosti."
+            ),
+            due_date=base_date + timedelta(days=5),
+            workplace_id=accident.workplace_id,
+            source_module=ENTITY_ACCIDENT,
+            source_record_id=accident.id,
+            requires_verification=False,
+        )
 
     def _sync_legacy_fields(self, data: dict) -> None:
         """

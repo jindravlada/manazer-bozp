@@ -120,11 +120,33 @@ def dpn_calendar_days(dpn_od: date | None, dpn_do: date | None) -> int | None:
 DPN_KIND_MISMATCH_MESSAGE = (
     "⚠ Druh pracovního úrazu pravděpodobně neodpovídá délce pracovní neschopnosti."
 )
+DPN_KIND_MISMATCH_BLOCK_MESSAGE = (
+    "Druh pracovního úrazu neodpovídá délce pracovní neschopnosti.\n\n"
+    "• Při DPN delší než 3 kalendářní dny nelze zvolit druh "
+    "s pracovní neschopností do 3 kalendářních dnů.\n"
+    "• Při DPN 0–3 kalendářní dny musí druh úrazu odpovídat "
+    "zadané délce (bez PN / do 3 dnů)."
+)
+
+DPN_START_BEFORE_ACCIDENT_MESSAGE = (
+    "Datum zahájení DPN nesmí být před datem pracovního úrazu."
+)
+DPN_END_BEFORE_START_MESSAGE = (
+    "Datum ukončení DPN nesmí být před datem zahájení DPN."
+)
+DPN_END_IN_FUTURE_MESSAGE = (
+    "Datum ukončení DPN nesmí být v budoucnosti."
+)
 
 
 def is_dpn_up_to_3_kind(druh_urazu: str) -> bool:
     text = (druh_urazu or "").lower()
-    return "nepřesahující 3" in text or "nepresahujici 3" in text
+    return (
+        "nepřesahující 3" in text
+        or "nepresahujici 3" in text
+        or "do 3 kalendářních" in text
+        or "do 3 kalendarnich" in text
+    )
 
 
 def is_dpn_over_3_kind(druh_urazu: str) -> bool:
@@ -132,15 +154,54 @@ def is_dpn_over_3_kind(druh_urazu: str) -> bool:
     return "delší než 3" in text or "delsi nez 3" in text or "nad 3" in text
 
 
+def is_no_pn_kind(druh_urazu: str) -> bool:
+    text = (druh_urazu or "").lower()
+    return "bez pracovní neschopnosti" in text or "bez pn" in text
+
+
 def is_dpn_kind_mismatch(druh_urazu: str, days: int | None) -> bool:
-    """True, pokud zvolený druh úrazu neodpovídá délce DPN (pouze vizuální kontrola)."""
+    """True, pokud zvolený druh úrazu neodpovídá známé délce DPN.
+
+    Pokud délka DPN není známá (``days is None``), neshodu nehlásí –
+    při prvotním zápisu délka často ještě není zjištěná.
+    """
     if days is None:
         return False
     if is_dpn_up_to_3_kind(druh_urazu) and days > 3:
         return True
     if is_dpn_over_3_kind(druh_urazu) and days <= 3:
         return True
+    if is_no_pn_kind(druh_urazu) and days > 0:
+        return True
     return False
+
+
+def is_dpn_start_before_accident(
+    dpn_od: date | None,
+    accident_date: date | None,
+) -> bool:
+    if dpn_od is None or accident_date is None:
+        return False
+    return dpn_od < accident_date
+
+
+def is_dpn_end_before_start(
+    dpn_od: date | None,
+    dpn_do: date | None,
+) -> bool:
+    if dpn_od is None or dpn_do is None:
+        return False
+    return dpn_do < dpn_od
+
+
+def is_dpn_end_in_future(
+    dpn_do: date | None,
+    *,
+    today: date | None = None,
+) -> bool:
+    if dpn_do is None:
+        return False
+    return dpn_do > (today or date.today())
 
 
 ACCIDENT_DATE_FUTURE_MESSAGE = "Datum pracovního úrazu nemůže být v budoucnosti."
