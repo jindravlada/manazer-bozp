@@ -111,6 +111,27 @@ class UxDialog1TestCase(unittest.TestCase):
         self.assertEqual(discard_btn.text(), "Neukládat")
         self.assertEqual(cancel_btn.text(), "Zrušit")
 
+    def test_short_message_keeps_width_for_title(self) -> None:
+        """Regrese: „Zdroj rizika“ se nesmí useknout na „Zdr“ u krátkého textu."""
+        box = QMessageBox()
+        box.setWindowTitle("Zdroj rizika")
+        box.setText("Změny byly uloženy.")
+        box.setIcon(QMessageBox.Icon.Information)
+        box.setStandardButtons(QMessageBox.StandardButton.Ok)
+        polish_message_box(box)
+
+        self.assertEqual(box.windowTitle(), "Zdroj rizika")
+        self.assertGreaterEqual(box.minimumWidth(), MESSAGE_BOX_MIN_WIDTH)
+        self.assertGreaterEqual(box.width(), MESSAGE_BOX_MIN_WIDTH)
+        # sizeHint Qt u krátkého textu je ~200 px – nesmí vyhrát.
+        self.assertGreater(box.width(), box.sizeHint().width())
+        title_width = box.fontMetrics().horizontalAdvance(box.windowTitle())
+        self.assertLess(
+            title_width + 80,
+            box.minimumWidth(),
+            msg="Titulek musí mít v dialogu rezervu na ovládací prvky okna",
+        )
+
     def test_long_text_widens_dialog(self) -> None:
         short = QMessageBox()
         short.setWindowTitle("Info")

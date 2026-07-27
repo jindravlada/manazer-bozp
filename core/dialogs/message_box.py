@@ -5,17 +5,17 @@ from __future__ import annotations
 import re
 from typing import cast
 
-from PySide6.QtCore import QEvent, QObject, Qt
-from PySide6.QtGui import QFontMetrics
-from PySide6.QtWidgets import QApplication, QMessageBox, QWidget
+from PySide6.QtCore import QEvent, QObject, QTimer, Qt
+from PySide6.QtGui import QFont, QFontMetrics
+from PySide6.QtWidgets import QApplication, QLabel, QMessageBox, QWidget
 
 from core.version import APP_NAME, app_display_name
 
-# Rozměry: dost široké pro běžné věty, bez obřích prázdných ploch.
-MESSAGE_BOX_MIN_WIDTH = 440
-MESSAGE_BOX_MAX_WIDTH = 720
-MESSAGE_BOX_SIDE_PADDING = 100  # ikona + okraje kolem textu
-MESSAGE_BOX_TITLE_CHROME = 140  # ovládací prvky titulku
+# Rozměry: titulek i krátký text musí vejít včetně ovládacích prvků okna (KDE).
+MESSAGE_BOX_MIN_WIDTH = 520
+MESSAGE_BOX_MAX_WIDTH = 760
+MESSAGE_BOX_SIDE_PADDING = 120  # ikona + okraje kolem textu
+MESSAGE_BOX_TITLE_CHROME = 220  # min/max/close + okraje titulku (CSD)
 
 _TITLE_APP_SUFFIX_RE = re.compile(
     rf"\s*[—–-]\s*{re.escape(APP_NAME)}(?:\s+\d+(?:\.\d+)*)?\s*$",
@@ -65,16 +65,21 @@ def strip_application_title_suffix(title: str) -> str:
 
 
 def preferred_message_box_width(box: QMessageBox) -> int:
-    """Šířka podle titulku a textu – běžné věty se zbytečně nelámou."""
-    metrics = QFontMetrics(box.font())
+    """Šířka podle titulku a textu – běžné věty a titulek se neusekávají."""
+    content_metrics = QFontMetrics(box.font())
+    title_font = QFont(box.font())
+    if title_font.pointSize() > 0:
+        title_font.setBold(True)
+    title_metrics = QFontMetrics(title_font)
+
     title = strip_application_title_suffix(box.windowTitle())
     parts = [box.text() or "", box.informativeText() or ""]
     longest_line = 0
     for part in parts:
         for line in str(part).splitlines() or [""]:
-            longest_line = max(longest_line, metrics.horizontalAdvance(line))
+            longest_line = max(longest_line, content_metrics.horizontalAdvance(line))
 
-    title_width = metrics.horizontalAdvance(title) + MESSAGE_BOX_TITLE_CHROME
+    title_width = title_metrics.horizontalAdvance(title) + MESSAGE_BOX_TITLE_CHROME
     content_width = longest_line + MESSAGE_BOX_SIDE_PADDING
     width = max(MESSAGE_BOX_MIN_WIDTH, title_width, content_width)
     screen = QApplication.primaryScreen()
@@ -106,6 +111,20 @@ def apply_standard_button_labels(box: QMessageBox) -> None:
         button.setText(label)
 
 
+def _enforce_message_box_width(box: QMessageBox, width: int) -> None:
+    """Vynutí šířku i proti sizeHint (~200 px u krátkých textů)."""
+    box.setMinimumWidth(width)
+    box.setMaximumWidth(MESSAGE_BOX_MAX_WIDTH)
+
+    text_label = box.findChild(QLabel, "qt_msgbox_label")
+    if text_label is not None:
+        text_label.setWordWrap(True)
+        text_label.setMinimumWidth(max(280, width - MESSAGE_BOX_SIDE_PADDING))
+
+    hint_h = max(box.sizeHint().height(), box.height())
+    box.resize(width, hint_h)
+
+
 def polish_message_box(box: QMessageBox) -> None:
     """Sjednotí titulek, tlačítka a šířku jednoho QMessageBox."""
     title = strip_application_title_suffix(box.windowTitle())
@@ -115,12 +134,7 @@ def polish_message_box(box: QMessageBox) -> None:
     apply_standard_button_labels(box)
 
     width = preferred_message_box_width(box)
-    box.setMinimumWidth(width)
-    # Necháme Qt dopočítat výšku podle obsahu – bez umělé min. výšky (prázdné plochy).
-    box.setMaximumWidth(MESSAGE_BOX_MAX_WIDTH)
-    box.adjustSize()
-    if box.width() < width:
-        box.resize(width, box.height())
+    _enforce_message_box_width(box, width)
 
 
 def _build_box(
@@ -220,8 +234,15 @@ class _MessageBoxPolishFilter(QObject):
     """Zachytí i ručně sestavené QMessageBox (nejen statické helpery)."""
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:  # noqa: N802
-        if event.type() == QEvent.Type.Show and isinstance(watched, QMessageBox):
+        if isinstance(watched, QMessageBox) and event.type() in (
+            QEvent.Type.Show,
+            QEvent.Type.Polish,
+            QEvent.Type.LayoutRequest,
+        ):
             polish_message_box(watched)
+            if event.type() == QEvent.Type.Show:
+                # Po zobrazení ještě jednou – některé styly přepíší šířku při mapování okna.
+                QTimer.singleShot(0, lambda b=watched: polish_message_box(b) if b is not None else None)
         return super().eventFilter(watched, event)
 
 
@@ -245,10 +266,11 @@ def install_unified_message_boxes(app: QApplication | None = None) -> None:
     QMessageBox.question = staticmethod(show_question)  # type: ignore[method-assign]
 
     application = app or QApplication.instance()
-    if application is not None and _filter is None:
-        _filter = _MessageBoxPolishFilter(application)
-        application.installEventFilter(_filter)
+    if application is not None:
         configure_application_for_dialogs(application)
+        if _filter is None:
+            _filter = _MessageBoxPolishFilter(application)
+            application.installEventFilter(_filter)
 
     _installed = True
 
