@@ -18,8 +18,34 @@ class HazardRequiredMeasureError(ValueError):
     pass
 
 
-def normalize_required_measure_description(description: str) -> str:
-    return " ".join(description.strip().split()).casefold()
+def normalize_required_measure_title(title: str) -> str:
+    return " ".join(title.strip().split()).casefold()
+
+
+# Zpětná kompatibilita se starším názvem helperu.
+normalize_required_measure_description = normalize_required_measure_title
+
+
+def resolve_required_measure_fields(
+    *,
+    title: str | None = None,
+    description: str | None = None,
+    note: str | None = None,
+) -> tuple[str, str]:
+    """Vrátí (title, description) s ohledem na starší volání description=název, note=popis."""
+    resolved_title = (title if title is not None else "").strip()
+    resolved_description = (description if description is not None else "").strip()
+    legacy_note = (note if note is not None else "").strip()
+
+    if not resolved_title and resolved_description and not legacy_note:
+        # Starší API: description = název, note chybí / prázdný.
+        return resolved_description, ""
+    if not resolved_title and resolved_description and legacy_note:
+        # Starší API: description = název, note = popis.
+        return resolved_description, legacy_note
+    if resolved_title and not resolved_description and legacy_note:
+        return resolved_title, legacy_note
+    return resolved_title, resolved_description
 
 
 class HazardRequiredMeasureService:
@@ -60,26 +86,32 @@ class HazardRequiredMeasureService:
         *,
         hazard_identification_id: int,
         hazard_risk_assessment_id: int,
-        description: str,
-        note: str = "",
+        title: str | None = None,
+        description: str | None = None,
+        note: str | None = None,
         active: bool = True,
     ) -> HazardRequiredMeasure:
-        normalized_description = description.strip()
-        if not normalized_description:
-            raise HazardRequiredMeasureError("Popis opatření je povinný.")
+        resolved_title, resolved_description = resolve_required_measure_fields(
+            title=title,
+            description=description,
+            note=note,
+        )
+        if not resolved_title:
+            raise HazardRequiredMeasureError("Název opatření je povinný.")
 
         self._validate_assessment(hazard_identification_id, hazard_risk_assessment_id)
-        self._validate_unique_active_description(
+        self._validate_unique_active_title(
             hazard_risk_assessment_id,
-            description=normalized_description,
+            title=resolved_title,
             exclude_measure_id=None,
             active=active,
         )
 
         measure = HazardRequiredMeasure(
             hazard_risk_assessment_id=hazard_risk_assessment_id,
-            description=normalized_description,
-            note=note.strip(),
+            title=resolved_title,
+            description=resolved_title,
+            note=resolved_description,
             active=active,
             sort_order=self.repository.next_sort_order(hazard_risk_assessment_id),
         )
@@ -92,29 +124,35 @@ class HazardRequiredMeasureService:
         *,
         hazard_identification_id: int,
         hazard_risk_assessment_id: int,
-        description: str,
-        note: str = "",
+        title: str | None = None,
+        description: str | None = None,
+        note: str | None = None,
         active: bool = True,
     ) -> HazardRequiredMeasure | None:
         measure = self.repository.get_by_id(measure_id)
         if measure is None:
             return None
 
-        normalized_description = description.strip()
-        if not normalized_description:
-            raise HazardRequiredMeasureError("Popis opatření je povinný.")
+        resolved_title, resolved_description = resolve_required_measure_fields(
+            title=title,
+            description=description,
+            note=note,
+        )
+        if not resolved_title:
+            raise HazardRequiredMeasureError("Název opatření je povinný.")
 
         self._validate_assessment(hazard_identification_id, hazard_risk_assessment_id)
-        self._validate_unique_active_description(
+        self._validate_unique_active_title(
             hazard_risk_assessment_id,
-            description=normalized_description,
+            title=resolved_title,
             exclude_measure_id=measure_id,
             active=active,
         )
 
         measure.hazard_risk_assessment_id = hazard_risk_assessment_id
-        measure.description = normalized_description
-        measure.note = note.strip()
+        measure.title = resolved_title
+        measure.description = resolved_title
+        measure.note = resolved_description
         measure.active = active
         measure.updated_at = datetime.now()
         mark_required_measure_modified_if_catalog_instance(measure)
@@ -125,9 +163,9 @@ class HazardRequiredMeasureService:
         if measure is None:
             return False
 
-        self._validate_unique_active_description(
+        self._validate_unique_active_title(
             measure.hazard_risk_assessment_id,
-            description=measure.description,
+            title=measure.display_title(),
             exclude_measure_id=measure_id,
             active=True,
         )
@@ -168,18 +206,18 @@ class HazardRequiredMeasureService:
                 "Posouzení rizika musí patřit ke stejné identifikaci."
             )
 
-    def _validate_unique_active_description(
+    def _validate_unique_active_title(
         self,
         hazard_risk_assessment_id: int,
         *,
-        description: str,
+        title: str,
         exclude_measure_id: int | None,
         active: bool,
     ) -> None:
         if not active:
             return
 
-        normalized = normalize_required_measure_description(description)
+        normalized = normalize_required_measure_title(title)
         for measure in self.repository.get_for_assessment(
             hazard_risk_assessment_id,
             include_inactive=True,
@@ -188,10 +226,10 @@ class HazardRequiredMeasureService:
                 continue
             if not measure.active:
                 continue
-            if normalize_required_measure_description(measure.description) == normalized:
+            if normalize_required_measure_title(measure.display_title()) == normalized:
                 raise HazardRequiredMeasureError(
-                    f"U vybraného posouzení již existuje aktivní potřebné opatření "
-                    f"s popisem „{description.strip()}“."
+                    f"U vybraného posouzení již existuje aktivní navazující opatření "
+                    f"s názvem „{title.strip()}“."
                 )
 
 

@@ -39,9 +39,9 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.constants import (
         EXISTING_MEASURES_TITLE,
         REQUIRED_MEASURES_TITLE,
-        RISK_MEASURE_REVIEW_CHECKLIST_PLACEHOLDER,
-        RISK_MEASURE_REVIEW_CHECKLIST_TITLE,
-        RISK_MEASURE_REVIEW_STATUS_ARCHIVED,
+    RISK_MEASURE_REVIEW_CHECKLIST_EMPTY,
+    RISK_MEASURE_REVIEW_CHECKLIST_TITLE,
+    RISK_MEASURE_REVIEW_STATUS_ARCHIVED,
         RISK_MEASURE_REVIEW_STATUS_COMPLETED,
         RISK_MEASURE_REVIEW_STATUS_DRAFT,
         RISK_MEASURE_REVIEW_TAB_TITLE,
@@ -265,7 +265,7 @@ class RiskReview1TestCase(unittest.TestCase):
         titles = [group.title() for group in groups]
         self.assertIn(RISK_MEASURE_REVIEW_CHECKLIST_TITLE, titles)
         labels = [label.text() for label in dialog.findChildren(QLabel)]
-        self.assertIn(RISK_MEASURE_REVIEW_CHECKLIST_PLACEHOLDER, labels)
+        self.assertIn(RISK_MEASURE_REVIEW_CHECKLIST_EMPTY, labels)
         dialog.close()
 
     def test_editor_dirty_tracking(self) -> None:

@@ -19,10 +19,8 @@ from core.widgets.dialog_utils import create_save_cancel_box, configure_resizabl
 from core.widgets.editor_dialog_controller import EditorDialogController
 from core.widgets.person_selector import PersonSelector
 from moduly.rizeni_rizik.constants import (
-    RISK_MEASURE_REVIEW_CHECKLIST_PLACEHOLDER,
     RISK_MEASURE_REVIEW_CHECKLIST_TITLE,
     RISK_MEASURE_REVIEW_DIALOG_TITLE,
-    RISK_MEASURE_REVIEW_STATUS_COMPLETED,
     RISK_MEASURE_REVIEW_STATUS_DRAFT,
     RISK_MEASURE_REVIEW_STATUS_LABELS,
     RISK_MEASURE_REVIEW_STATUSES,
@@ -31,6 +29,9 @@ from moduly.rizeni_rizik.sluzby.risk_measure_review_service import (
     RiskMeasureReviewError,
     risk_measure_review_service,
 )
+from moduly.rizeni_rizik.ui.risk_measure_review_checklist_widget import (
+    RiskMeasureReviewChecklistWidget,
+)
 
 
 class RiskMeasureReviewDialog(QDialog):
@@ -38,7 +39,7 @@ class RiskMeasureReviewDialog(QDialog):
         super().__init__(parent)
         self.review = review
         self.setWindowTitle(RISK_MEASURE_REVIEW_DIALOG_TITLE)
-        configure_resizable_form_dialog(self, width=640, height=560, min_width=520, min_height=420)
+        configure_resizable_form_dialog(self, width=780, height=680, min_width=640, min_height=520)
 
         layout = QVBoxLayout(self)
         form = QFormLayout()
@@ -57,7 +58,7 @@ class RiskMeasureReviewDialog(QDialog):
         for status in RISK_MEASURE_REVIEW_STATUSES:
             self.status.addItem(RISK_MEASURE_REVIEW_STATUS_LABELS[status], status)
         self.note = QPlainTextEdit()
-        self.note.setMinimumHeight(80)
+        self.note.setMinimumHeight(60)
 
         form.addRow("Číslo přezkoumání:", self.number_label)
         form.addRow("Datum *:", self.review_date)
@@ -71,9 +72,10 @@ class RiskMeasureReviewDialog(QDialog):
 
         checklist = QGroupBox(RISK_MEASURE_REVIEW_CHECKLIST_TITLE)
         checklist_layout = QVBoxLayout(checklist)
-        placeholder = QLabel(RISK_MEASURE_REVIEW_CHECKLIST_PLACEHOLDER)
-        placeholder.setWordWrap(True)
-        checklist_layout.addWidget(placeholder)
+        self.checklist = RiskMeasureReviewChecklistWidget(
+            on_changed=self._on_checklist_changed,
+        )
+        checklist_layout.addWidget(self.checklist)
         layout.addWidget(checklist)
 
         buttons = create_save_cancel_box(self, is_new=review is None)
@@ -111,19 +113,21 @@ class RiskMeasureReviewDialog(QDialog):
             )
             self._select_combo(self.workplace_part, review.workplace_part_id)
             status_index = self.status.findData(review.status)
-            if status_index < 0 and review.status == RISK_MEASURE_REVIEW_STATUS_DRAFT:
-                status_index = self.status.findData(RISK_MEASURE_REVIEW_STATUS_DRAFT)
             if status_index >= 0:
                 self.status.setCurrentIndex(status_index)
             elif review.status not in RISK_MEASURE_REVIEW_STATUSES:
-                # Archivované – zobrazit jako Rozpracováno pro editaci po obnovení.
                 self.status.setCurrentIndex(
                     self.status.findData(RISK_MEASURE_REVIEW_STATUS_DRAFT)
                 )
             self.note.setPlainText(review.note or "")
+            self._set_scope_editable(False)
+            self.checklist.load_rows(
+                risk_measure_review_service.list_checklist_rows(review.id)
+            )
         else:
             self.number_label.setText(risk_measure_review_service.preview_next_number())
             self.status.setCurrentIndex(self.status.findData(RISK_MEASURE_REVIEW_STATUS_DRAFT))
+            self.checklist.load_rows([])
 
         self._editor.capture_baseline()
 
@@ -137,17 +141,27 @@ class RiskMeasureReviewDialog(QDialog):
             "workplace_part_id": self.workplace_part.currentData(),
             "status": self.status.currentData() or RISK_MEASURE_REVIEW_STATUS_DRAFT,
             "note": self.note.toPlainText().strip(),
+            "checklist_updates": self.checklist.get_updates(),
         }
 
     def _save(self) -> bool:
         data = self.get_data()
+        checklist_updates = data.pop("checklist_updates", [])
         try:
             if self.review is None:
                 created = risk_measure_review_service.create_review(**data)
                 self.review = created
                 self.number_label.setText(created.review_number or "—")
+                self._set_scope_editable(False)
+                self.checklist.load_rows(
+                    risk_measure_review_service.list_checklist_rows(created.id)
+                )
             else:
-                updated = risk_measure_review_service.update_review(self.review.id, **data)
+                updated = risk_measure_review_service.update_review(
+                    self.review.id,
+                    checklist_updates=checklist_updates,
+                    **data,
+                )
                 if updated is None:
                     QMessageBox.warning(
                         self,
@@ -156,16 +170,32 @@ class RiskMeasureReviewDialog(QDialog):
                     )
                     return False
                 self.review = updated
+                self.checklist.load_rows(
+                    risk_measure_review_service.list_checklist_rows(updated.id)
+                )
         except RiskMeasureReviewError as error:
             QMessageBox.warning(self, RISK_MEASURE_REVIEW_DIALOG_TITLE, str(error))
             return False
         return True
 
+    def _on_checklist_changed(self) -> None:
+        if hasattr(self, "_editor"):
+            self._editor.mark_dirty()
+
+    def _set_scope_editable(self, editable: bool) -> None:
+        self.operation.setEnabled(editable)
+        self.workplace.setEnabled(editable)
+        self.workplace_part.setEnabled(editable)
+
     def _on_operation_changed(self) -> None:
+        if self.review is not None:
+            return
         self._reload_workplaces(self.operation.currentData())
         self._reset_workplace_parts()
 
     def _on_workplace_changed(self) -> None:
+        if self.review is not None:
+            return
         self._reload_workplace_parts(self.workplace.currentData())
 
     def _reload_operations(self, *, preserve_id: int | None = None) -> None:

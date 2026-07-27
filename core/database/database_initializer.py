@@ -1406,6 +1406,18 @@ def _ensure_hazard_required_measures_table() -> None:
         return
     if "modified" not in columns:
         _add_column("hazard_required_measures", "modified BOOLEAN DEFAULT 0")
+    if "title" not in columns:
+        _add_column("hazard_required_measures", "title TEXT DEFAULT ''")
+        with _db_engine().connect() as connection:
+            # RISK-REVIEW-2: dřívější description = Název → title (description ponecháme)
+            connection.execute(
+                text(
+                    "UPDATE hazard_required_measures "
+                    "SET title = description "
+                    "WHERE title IS NULL OR TRIM(title) = ''"
+                )
+            )
+            connection.commit()
 
 
 def _ensure_risk_measure_reviews_table() -> None:

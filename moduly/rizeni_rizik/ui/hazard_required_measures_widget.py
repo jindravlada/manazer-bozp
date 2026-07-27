@@ -16,7 +16,7 @@ from moduly.rizeni_rizik.constants import (
     REQUIRED_MEASURE_COL_ACTIVE,
     REQUIRED_MEASURE_COL_DESCRIPTION,
     REQUIRED_MEASURE_COL_ID,
-    REQUIRED_MEASURE_COL_NOTE,
+    REQUIRED_MEASURE_COL_TITLE,
     REQUIRED_MEASURE_COLUMN_COUNT,
     REQUIRED_MEASURE_SELECT_ASSESSMENT,
     REQUIRED_MEASURE_TABLE_HEADERS,
@@ -288,13 +288,24 @@ class HazardRequiredMeasuresWidget(QWidget):
             )
             self.table.setItem(
                 row_index,
-                REQUIRED_MEASURE_COL_DESCRIPTION,
-                create_preview_table_item(measure.description),
+                REQUIRED_MEASURE_COL_TITLE,
+                create_preview_table_item(
+                    measure.display_title()
+                    if hasattr(measure, "display_title")
+                    else (
+                        getattr(measure, "title", None) or measure.description or ""
+                    )
+                ),
             )
+            popis = ""
+            if hasattr(measure, "display_description"):
+                popis = measure.display_description()
+            else:
+                popis = getattr(measure, "note", None) or ""
             self.table.setItem(
                 row_index,
-                REQUIRED_MEASURE_COL_NOTE,
-                create_preview_table_item(measure.note or ""),
+                REQUIRED_MEASURE_COL_DESCRIPTION,
+                create_preview_table_item(popis),
             )
             self.table.setItem(
                 row_index,

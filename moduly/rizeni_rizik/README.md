@@ -551,3 +551,12 @@ Přezkoumání opatření rizik:
 - entity `RiskMeasureReview` a `RiskMeasureReviewItem` (vazba na `hazard_required_measures.id`)
 - editor hlavičky (checklist se generuje v další fázi)
 - UI přejmenování: Zásady bezpečné práce / Navazující opatření
+
+## RISK-REVIEW-2
+
+Generování checklistu přezkoumání:
+
+- Navazující opatření mají `title` (Název) a volitelný popis (`note`)
+- při vytvoření přezkoumání se z rozsahu Provoz/Pracoviště/Část vygenerují položky checklistu
+- položky odkazují na `follow_up_measure_id`; při znovuotevření se negenerují znovu
+- editor zobrazuje tabulku Riziko / Navazující opatření / Výsledek / Poznámka

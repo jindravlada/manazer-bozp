@@ -553,19 +553,19 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         from moduly.rizeni_rizik.constants import (
             REQUIRED_MEASURE_COL_ACTIVE,
             REQUIRED_MEASURE_COL_DESCRIPTION,
-            REQUIRED_MEASURE_COL_NOTE,
+            REQUIRED_MEASURE_COL_TITLE,
         )
 
         widths = {
-            REQUIRED_MEASURE_COL_DESCRIPTION: 260,
-            REQUIRED_MEASURE_COL_NOTE: 220,
+            REQUIRED_MEASURE_COL_TITLE: 260,
+            REQUIRED_MEASURE_COL_DESCRIPTION: 220,
             REQUIRED_MEASURE_COL_ACTIVE: 80,
         }
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
-        header.setSectionResizeMode(REQUIRED_MEASURE_COL_DESCRIPTION, QHeaderView.Stretch)
-        for column in (REQUIRED_MEASURE_COL_NOTE, REQUIRED_MEASURE_COL_ACTIVE):
+        header.setSectionResizeMode(REQUIRED_MEASURE_COL_TITLE, QHeaderView.Stretch)
+        for column in (REQUIRED_MEASURE_COL_DESCRIPTION, REQUIRED_MEASURE_COL_ACTIVE):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 
     elif profile == "hazard_identification_photos":
@@ -679,6 +679,28 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         header.setSectionResizeMode(COL_WORKPLACE_PART, QHeaderView.Stretch)
         for column in widths:
             if column != COL_WORKPLACE_PART:
+                header.setSectionResizeMode(column, QHeaderView.Fixed)
+
+    elif profile == "risk_measure_review_items":
+        from moduly.rizeni_rizik.constants import (
+            RISK_MEASURE_REVIEW_ITEM_COL_MEASURE,
+            RISK_MEASURE_REVIEW_ITEM_COL_NOTE,
+            RISK_MEASURE_REVIEW_ITEM_COL_RESULT,
+            RISK_MEASURE_REVIEW_ITEM_COL_RISK,
+        )
+
+        widths = {
+            RISK_MEASURE_REVIEW_ITEM_COL_RISK: 220,
+            RISK_MEASURE_REVIEW_ITEM_COL_MEASURE: 220,
+            RISK_MEASURE_REVIEW_ITEM_COL_RESULT: 130,
+            RISK_MEASURE_REVIEW_ITEM_COL_NOTE: 180,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        header.setSectionResizeMode(RISK_MEASURE_REVIEW_ITEM_COL_MEASURE, QHeaderView.Stretch)
+        for column in widths:
+            if column != RISK_MEASURE_REVIEW_ITEM_COL_MEASURE:
                 header.setSectionResizeMode(column, QHeaderView.Fixed)
 
     elif profile == "risk_measure_reviews":

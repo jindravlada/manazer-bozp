@@ -3,6 +3,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QFormLayout,
+    QLineEdit,
     QMessageBox,
     QPlainTextEdit,
     QVBoxLayout,
@@ -42,15 +43,14 @@ class HazardRequiredMeasureDialog(QDialog):
         layout = QVBoxLayout(self)
         form = QFormLayout()
 
+        self.title_edit = QLineEdit()
         self.description = QPlainTextEdit()
         self.description.setMinimumHeight(100)
-        self.note = QPlainTextEdit()
-        self.note.setMinimumHeight(60)
         self.active_checkbox = QCheckBox("Aktivní")
         self.active_checkbox.setChecked(True)
 
-        form.addRow("Popis opatření *:", self.description)
-        form.addRow("Poznámka:", self.note)
+        form.addRow("Název *:", self.title_edit)
+        form.addRow("Popis:", self.description)
         form.addRow("", self.active_checkbox)
 
         layout.addLayout(form)
@@ -61,13 +61,26 @@ class HazardRequiredMeasureDialog(QDialog):
         layout.addWidget(buttons)
 
         if measure is not None:
-            self.description.setPlainText(measure.description)
-            self.note.setPlainText(measure.note or "")
+            title = ""
+            if hasattr(measure, "display_title"):
+                title = measure.display_title()
+            else:
+                title = (getattr(measure, "title", None) or measure.description or "").strip()
+            description = ""
+            if hasattr(measure, "display_description"):
+                description = measure.display_description()
+            else:
+                description = (getattr(measure, "note", None) or "").strip()
+                stored_description = (getattr(measure, "description", None) or "").strip()
+                if getattr(measure, "title", None) and stored_description != title:
+                    description = stored_description or description
+            self.title_edit.setText(title)
+            self.description.setPlainText(description)
             self.active_checkbox.setChecked(bool(measure.active))
 
         if read_only:
+            self.title_edit.setReadOnly(True)
             self.description.setReadOnly(True)
-            self.note.setReadOnly(True)
             self.active_checkbox.setEnabled(False)
             buttons.button(QDialogButtonBox.StandardButton.Save).setEnabled(False)
 
@@ -111,7 +124,7 @@ class HazardRequiredMeasureDialog(QDialog):
 
     def get_data(self) -> dict:
         return {
+            "title": self.title_edit.text().strip(),
             "description": self.description.toPlainText().strip(),
-            "note": self.note.toPlainText().strip(),
             "active": self.active_checkbox.isChecked(),
         }

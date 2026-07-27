@@ -102,9 +102,25 @@ class IdWcMeasure:
     hazard_risk_assessment_id: int
     description: str
     note: str = ""
+    title: str = ""
     active: bool = True
     modified: bool = False
     sort_order: int = 0
+
+    def display_title(self) -> str:
+        return (self.title or self.description or "").strip()
+
+    def display_description(self) -> str:
+        title = (self.title or "").strip()
+        description = (self.description or "").strip()
+        note = (self.note or "").strip()
+        if note and note != title:
+            return note
+        if title and description and description != title:
+            return description
+        if not title:
+            return note
+        return ""
 
 
 @dataclass
@@ -336,6 +352,7 @@ class HazardIdentificationWorkingCopy:
                                 )
                                 .order_by(
                                     HazardRequiredMeasure.sort_order,
+                                    HazardRequiredMeasure.title,
                                     HazardRequiredMeasure.description,
                                     HazardRequiredMeasure.id,
                                 ),
@@ -346,8 +363,9 @@ class HazardIdentificationWorkingCopy:
                                 IdWcMeasure(
                                     id=int(measure.id),
                                     hazard_risk_assessment_id=int(db_assessment.id),
-                                    description=measure.description or "",
-                                    note=measure.note or "",
+                                    title=measure.display_title(),
+                                    description=measure.display_title(),
+                                    note=measure.display_description(),
                                     active=bool(measure.active),
                                     modified=bool(measure.modified),
                                     sort_order=int(measure.sort_order or 0),
@@ -1282,14 +1300,25 @@ class HazardIdentificationWorkingCopy:
         self,
         *,
         hazard_risk_assessment_id: int,
-        description: str,
-        note: str = "",
+        title: str | None = None,
+        description: str | None = None,
+        note: str | None = None,
         active: bool = True,
     ) -> IdWcMeasure:
-        return self._create_measure(
-            hazard_risk_assessment_id,
+        from moduly.rizeni_rizik.sluzby.hazard_required_measure_service import (
+            resolve_required_measure_fields,
+        )
+
+        resolved_title, resolved_description = resolve_required_measure_fields(
+            title=title,
             description=description,
             note=note,
+        )
+        return self._create_measure(
+            hazard_risk_assessment_id,
+            title=resolved_title,
+            description=resolved_description,
+            note=resolved_description,
             active=active,
             existing=False,
         )
@@ -1317,15 +1346,26 @@ class HazardIdentificationWorkingCopy:
         measure_id: int,
         *,
         hazard_risk_assessment_id: int,
-        description: str,
-        note: str = "",
+        title: str | None = None,
+        description: str | None = None,
+        note: str | None = None,
         active: bool = True,
     ) -> IdWcMeasure | None:
+        from moduly.rizeni_rizik.sluzby.hazard_required_measure_service import (
+            resolve_required_measure_fields,
+        )
+
+        resolved_title, resolved_description = resolve_required_measure_fields(
+            title=title,
+            description=description,
+            note=note,
+        )
         return self._update_measure(
             measure_id,
             hazard_risk_assessment_id=hazard_risk_assessment_id,
-            description=description,
-            note=note,
+            title=resolved_title,
+            description=resolved_description,
+            note=resolved_description,
             active=active,
             existing=False,
         )
@@ -1350,6 +1390,7 @@ class HazardIdentificationWorkingCopy:
         note: str,
         active: bool,
         existing: bool,
+        title: str = "",
     ) -> IdWcMeasure:
         assessment = self.get_assessment(hazard_risk_assessment_id)
         if assessment is None:
@@ -1359,17 +1400,25 @@ class HazardIdentificationWorkingCopy:
                 else HazardRequiredMeasureError
             )("Posouzení rizika neexistuje.")
         self._validate_assessment_for_measure(assessment)
-        normalized = description.strip()
-        if not normalized:
-            raise (
-                HazardExistingMeasureError
-                if existing
-                else HazardRequiredMeasureError
-            )("Popis opatření je povinný.")
+        if existing:
+            normalized = description.strip()
+            if not normalized:
+                raise HazardExistingMeasureError("Popis opatření je povinný.")
+            measure_title = ""
+            measure_description = normalized
+            measure_note = note.strip()
+            unique_key = normalized
+        else:
+            measure_title = (title or description).strip()
+            if not measure_title:
+                raise HazardRequiredMeasureError("Název opatření je povinný.")
+            measure_description = measure_title
+            measure_note = note.strip()
+            unique_key = measure_title
         bucket = assessment.existing_measures if existing else assessment.required_measures
         self._validate_unique_measure(
             bucket,
-            description=normalized,
+            description=unique_key,
             exclude_measure_id=None,
             active=active,
             existing=existing,
@@ -1378,8 +1427,9 @@ class HazardIdentificationWorkingCopy:
         measure = IdWcMeasure(
             id=self._alloc_id(),
             hazard_risk_assessment_id=hazard_risk_assessment_id,
-            description=normalized,
-            note=note.strip(),
+            title=measure_title,
+            description=measure_description,
+            note=measure_note,
             active=active,
             sort_order=sort_order,
         )
@@ -1414,6 +1464,7 @@ class HazardIdentificationWorkingCopy:
         note: str,
         active: bool,
         existing: bool,
+        title: str = "",
     ) -> IdWcMeasure | None:
         measure = (
             self._get_existing_measure(measure_id)
@@ -1430,17 +1481,25 @@ class HazardIdentificationWorkingCopy:
                 else HazardRequiredMeasureError
             )("Opatření nepatří do zvoleného posouzení.")
         self._validate_assessment_for_measure(assessment)
-        normalized = description.strip()
-        if not normalized:
-            raise (
-                HazardExistingMeasureError
-                if existing
-                else HazardRequiredMeasureError
-            )("Popis opatření je povinný.")
+        if existing:
+            normalized = description.strip()
+            if not normalized:
+                raise HazardExistingMeasureError("Popis opatření je povinný.")
+            unique_key = normalized
+            measure_title = ""
+            measure_description = normalized
+            measure_note = note.strip()
+        else:
+            measure_title = (title or description).strip()
+            if not measure_title:
+                raise HazardRequiredMeasureError("Název opatření je povinný.")
+            unique_key = measure_title
+            measure_description = measure_title
+            measure_note = note.strip()
         bucket = assessment.existing_measures if existing else assessment.required_measures
         self._validate_unique_measure(
             bucket,
-            description=normalized,
+            description=unique_key,
             exclude_measure_id=measure_id,
             active=active,
             existing=existing,
@@ -1455,17 +1514,22 @@ class HazardIdentificationWorkingCopy:
         ):
             if existing:
                 current_assessment.existing_measures = [
-                    row for row in current_bucket if row.id != measure_id
+                    row
+                    for row in current_assessment.existing_measures
+                    if row.id != measure_id
                 ]
                 assessment.existing_measures.append(measure)
             else:
                 current_assessment.required_measures = [
-                    row for row in current_bucket if row.id != measure_id
+                    row
+                    for row in current_assessment.required_measures
+                    if row.id != measure_id
                 ]
                 assessment.required_measures.append(measure)
             measure.hazard_risk_assessment_id = hazard_risk_assessment_id
-        measure.description = normalized
-        measure.note = note.strip()
+        measure.title = measure_title
+        measure.description = measure_description
+        measure.note = measure_note
         measure.active = active
         self._mark_measure_modified(measure, assessment)
         self._touch()
@@ -1486,7 +1550,7 @@ class HazardIdentificationWorkingCopy:
             bucket = assessment.existing_measures if existing else assessment.required_measures
             self._validate_unique_measure(
                 bucket,
-                description=measure.description,
+                description=measure.display_title() if not existing else measure.description,
                 exclude_measure_id=measure_id,
                 active=True,
                 existing=existing,
@@ -1528,13 +1592,14 @@ class HazardIdentificationWorkingCopy:
                 continue
             if not measure.active:
                 continue
-            if normalize_fn(measure.description) == key:
+            candidate = measure.display_title() if not existing else measure.description
+            if normalize_fn(candidate) == key:
                 message = (
                     f"U vybraného posouzení již existuje aktivní opatření "
                     f"s popisem „{description.strip()}“."
                     if existing
-                    else f"U vybraného posouzení již existuje aktivní potřebné opatření "
-                    f"s popisem „{description.strip()}“."
+                    else f"U vybraného posouzení již existuje aktivní navazující opatření "
+                    f"s názvem „{description.strip()}“."
                 )
                 raise (
                     HazardExistingMeasureError if existing else HazardRequiredMeasureError
@@ -1808,8 +1873,9 @@ class HazardIdentificationWorkingCopy:
                         IdWcMeasure(
                             id=self._alloc_id(),
                             hazard_risk_assessment_id=wc_assessment.id,
-                            description=measure.description,
-                            note=measure.note or "",
+                            title=(measure.description or "").strip(),
+                            description=(measure.note or "").strip(),
+                            note=(measure.note or "").strip(),
                             active=measure.active if include_inactive else True,
                             modified=False,
                             sort_order=measure.sort_order,
@@ -1974,8 +2040,9 @@ class HazardIdentificationWorkingCopy:
                         IdWcMeasure(
                             id=self._alloc_id(),
                             hazard_risk_assessment_id=wc_assessment.id,
-                            description=measure.description,
-                            note=measure.note or "",
+                            title=(measure.description or "").strip(),
+                            description=(measure.note or "").strip(),
+                            note=(measure.note or "").strip(),
                             active=measure.active if include_inactive else True,
                             modified=False,
                             sort_order=measure.sort_order,
@@ -2262,21 +2329,37 @@ class HazardIdentificationWorkingCopy:
             if db_measure is None:
                 return
             db_measure.hazard_risk_assessment_id = assessment_db_id
-            db_measure.description = measure.description
-            db_measure.note = measure.note
+            if existing:
+                db_measure.description = measure.description
+                db_measure.note = measure.note
+            else:
+                db_measure.title = measure.display_title()
+                db_measure.description = measure.display_title()
+                db_measure.note = measure.display_description()
             db_measure.active = measure.active
             db_measure.modified = measure.modified
             db_measure.sort_order = measure.sort_order
             db_measure.updated_at = datetime.now()
             return
-        db_measure = model_cls(
-            hazard_risk_assessment_id=assessment_db_id,
-            description=measure.description,
-            note=measure.note,
-            active=measure.active,
-            modified=measure.modified,
-            sort_order=measure.sort_order,
-        )
+        if existing:
+            db_measure = model_cls(
+                hazard_risk_assessment_id=assessment_db_id,
+                description=measure.description,
+                note=measure.note,
+                active=measure.active,
+                modified=measure.modified,
+                sort_order=measure.sort_order,
+            )
+        else:
+            db_measure = model_cls(
+                hazard_risk_assessment_id=assessment_db_id,
+                title=measure.display_title(),
+                description=measure.display_title(),
+                note=measure.display_description(),
+                active=measure.active,
+                modified=measure.modified,
+                sort_order=measure.sort_order,
+            )
         session.add(db_measure)
         session.flush()
         id_map[measure.id] = int(db_measure.id)

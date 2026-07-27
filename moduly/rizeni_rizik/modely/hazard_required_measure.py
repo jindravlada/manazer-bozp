@@ -11,7 +11,8 @@ class HazardRequiredMeasure(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     hazard_risk_assessment_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    description: Mapped[str] = mapped_column(Text, nullable=False)
+    title: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     note: Mapped[str] = mapped_column(Text, default="")
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     modified: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -22,3 +23,20 @@ class HazardRequiredMeasure(Base):
         default=datetime.now,
         onupdate=datetime.now,
     )
+
+    def display_title(self) -> str:
+        """Název opatření (title, zpětně kompatibilní s description)."""
+        return (self.title or self.description or "").strip()
+
+    def display_description(self) -> str:
+        """Volitelný popis (note; případně description odlišný od title)."""
+        title = (self.title or "").strip()
+        description = (self.description or "").strip()
+        note = (self.note or "").strip()
+        if note and note != title:
+            return note
+        if title and description and description != title:
+            return description
+        if not title:
+            return note
+        return ""

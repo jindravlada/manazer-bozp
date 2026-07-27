@@ -17,6 +17,17 @@ class RiskMeasureReviewItemRepository:
             )
             return list(session.scalars(stmt))
 
+    def get_by_id(self, item_id: int) -> RiskMeasureReviewItem | None:
+        with get_session() as session:
+            return session.get(RiskMeasureReviewItem, item_id)
+
+    def update(self, item: RiskMeasureReviewItem) -> RiskMeasureReviewItem:
+        with get_session() as session:
+            item = session.merge(item)
+            session.commit()
+            session.refresh(item)
+            return item
+
     def replace_items(
         self,
         review_id: int,

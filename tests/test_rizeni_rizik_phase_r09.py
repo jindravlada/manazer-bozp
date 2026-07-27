@@ -35,7 +35,7 @@ with patch.object(Path, "home", return_value=_TMP):
         EXISTING_MEASURE_COL_DESCRIPTION,
         HAZARD_IDENTIFICATION_STATUS_COMPLETED,
         HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
-        REQUIRED_MEASURE_COL_DESCRIPTION,
+        REQUIRED_MEASURE_COL_TITLE,
         RISK_ASSESSMENT_COL_EXPOSED_GROUP,
         RISK_SEVERITY_MODERATE,
     )
@@ -282,7 +282,7 @@ class HazardRequiredMeasurePhaseR09TestCase(unittest.TestCase):
         )
         required_item = widget.required_measures_widget.table.item(
             0,
-            REQUIRED_MEASURE_COL_DESCRIPTION,
+            REQUIRED_MEASURE_COL_TITLE,
         )
         assert existing_item is not None and required_item is not None
         self.assertEqual(existing_item.text(), "Výstražná tabule")
