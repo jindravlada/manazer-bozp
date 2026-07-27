@@ -681,6 +681,34 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             if column != COL_WORKPLACE_PART:
                 header.setSectionResizeMode(column, QHeaderView.Fixed)
 
+    elif profile == "risk_measure_reviews":
+        from moduly.rizeni_rizik.constants import (
+            RISK_MEASURE_REVIEW_COL_DATE,
+            RISK_MEASURE_REVIEW_COL_NUMBER,
+            RISK_MEASURE_REVIEW_COL_OPERATION,
+            RISK_MEASURE_REVIEW_COL_REVIEWER,
+            RISK_MEASURE_REVIEW_COL_STATUS,
+            RISK_MEASURE_REVIEW_COL_WORKPLACE,
+            RISK_MEASURE_REVIEW_COL_WORKPLACE_PART,
+        )
+
+        widths = {
+            RISK_MEASURE_REVIEW_COL_NUMBER: 100,
+            RISK_MEASURE_REVIEW_COL_DATE: 110,
+            RISK_MEASURE_REVIEW_COL_OPERATION: 120,
+            RISK_MEASURE_REVIEW_COL_WORKPLACE: 160,
+            RISK_MEASURE_REVIEW_COL_WORKPLACE_PART: 200,
+            RISK_MEASURE_REVIEW_COL_REVIEWER: 160,
+            RISK_MEASURE_REVIEW_COL_STATUS: 120,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        header.setSectionResizeMode(RISK_MEASURE_REVIEW_COL_WORKPLACE_PART, QHeaderView.Stretch)
+        for column in widths:
+            if column != RISK_MEASURE_REVIEW_COL_WORKPLACE_PART:
+                header.setSectionResizeMode(column, QHeaderView.Fixed)
+
     elif profile == "hazard_library_templates":
         from moduly.rizeni_rizik.constants_library import (
             HAZARD_LIBRARY_COL_ACTIVE,

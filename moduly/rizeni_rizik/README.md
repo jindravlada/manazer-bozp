@@ -137,20 +137,20 @@ Rozšíření posouzení rizika o závažnost a více ohrožených skupin:
 
 ## Fáze R08
 
-Existující opatření u posouzení rizika:
+Existující opatření u posouzení rizika (UI: Zásady bezpečné práce):
 
 - model `HazardExistingMeasure` v tabulce `hazard_existing_measures`
-- sekce Existující opatření po výběru posouzení v záložce Posouzení rizik
+- sekce Zásady bezpečné práce po výběru posouzení v záložce Posouzení rizik
 - samostatné ukládání opatření, počty aktivních opatření u posouzení
 - režim pouze pro čtení u dokončené nebo archivované identifikace
 
 ## Fáze R09
 
-Potřebná další opatření u posouzení rizika:
+Potřebná další opatření u posouzení rizika (UI: Navazující opatření):
 
 - model `HazardRequiredMeasure` v tabulce `hazard_required_measures`
-- sekce Potřebná další opatření pod existujícími opatřeními v záložce Posouzení rizik
-- samostatné ukládání opatření, počty aktivních potřebných opatření u posouzení
+- sekce Navazující opatření pod zásadami bezpečné práce v záložce Posouzení rizik
+- samostatné ukládání opatření, počty aktivních navazujících opatření u posouzení
 - režim pouze pro čtení u dokončené nebo archivované identifikace
 
 ## Fáze R10
@@ -542,3 +542,12 @@ Zapracování návrhů AI do MASTER obsahu katalogu:
 - hromadné zapracování v jedné transakci se zvýšením Revize o 1
 - historie změn s důvodem „Převzaty návrhy AI“
 - detekce duplicit s volbami Přeskočit / Sloučit / Upravit / Zrušit
+
+## RISK-REVIEW-1
+
+Přezkoumání opatření rizik:
+
+- záložka Přezkoumání opatření v modulu Řízení rizik
+- entity `RiskMeasureReview` a `RiskMeasureReviewItem` (vazba na `hazard_required_measures.id`)
+- editor hlavičky (checklist se generuje v další fázi)
+- UI přejmenování: Zásady bezpečné práce / Navazující opatření

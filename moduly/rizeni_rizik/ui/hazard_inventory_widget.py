@@ -353,8 +353,8 @@ class HazardInventoryWidget(QWidget):
             f"Název zdroje: {result.item.name}\n"
             f"Nežádoucí události: {result.event_count}\n"
             f"Posouzení: {result.assessment_count}\n"
-            f"Existující opatření: {result.existing_measure_count}\n"
-            f"Potřebná opatření: {result.required_measure_count}"
+            f"Zásady bezpečné práce: {result.existing_measure_count}\n"
+            f"Navazující opatření: {result.required_measure_count}"
         )
         message = QMessageBox(self)
         message.setIcon(QMessageBox.Icon.Information)

@@ -257,7 +257,7 @@ class HazardRequiredMeasuresWidget(QWidget):
             QMessageBox.information(
                 self,
                 HAZARD_REQUIRED_MEASURE_DIALOG_TITLE,
-                "Potřebná opatření jsou u dokončené nebo archivované identifikace "
+                "Navazující opatření jsou u dokončené nebo archivované identifikace "
                 "pouze pro čtení.",
             )
             return False

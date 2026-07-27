@@ -74,6 +74,10 @@ def initialize_database() -> None:
     from moduly.rizeni_rizik.modely.hazard_risk_assessment import HazardRiskAssessment  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_existing_measure import HazardExistingMeasure  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_required_measure import HazardRequiredMeasure  # noqa: F401
+    from moduly.rizeni_rizik.modely.risk_measure_review import RiskMeasureReview  # noqa: F401
+    from moduly.rizeni_rizik.modely.risk_measure_review_item import (  # noqa: F401
+        RiskMeasureReviewItem,
+    )
     from moduly.rizeni_rizik.modely.hazard_identification_photo import (  # noqa: F401
         HazardIdentificationPhoto,
     )
@@ -183,6 +187,8 @@ def initialize_database() -> None:
     _migrate_exposed_target_source_type_columns()
     _ensure_hazard_existing_measures_table()
     _ensure_hazard_required_measures_table()
+    _ensure_risk_measure_reviews_table()
+    _ensure_risk_measure_review_items_table()
     _ensure_hazard_identification_photos_table()
     _ensure_hazard_library_templates_table()
     _ensure_hazard_library_template_operations_table()
@@ -1400,6 +1406,22 @@ def _ensure_hazard_required_measures_table() -> None:
         return
     if "modified" not in columns:
         _add_column("hazard_required_measures", "modified BOOLEAN DEFAULT 0")
+
+
+def _ensure_risk_measure_reviews_table() -> None:
+    columns = _table_columns("risk_measure_reviews")
+    if not columns:
+        from moduly.rizeni_rizik.modely.risk_measure_review import RiskMeasureReview
+
+        RiskMeasureReview.__table__.create(bind=_db_engine(), checkfirst=True)
+
+
+def _ensure_risk_measure_review_items_table() -> None:
+    columns = _table_columns("risk_measure_review_items")
+    if not columns:
+        from moduly.rizeni_rizik.modely.risk_measure_review_item import RiskMeasureReviewItem
+
+        RiskMeasureReviewItem.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_hazard_identification_photos_table() -> None:

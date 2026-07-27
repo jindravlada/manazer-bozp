@@ -3,13 +3,14 @@ from PySide6.QtWidgets import QHBoxLayout, QMessageBox, QPushButton, QTabWidget,
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
-from moduly.rizeni_rizik.constants import DIALOG_WINDOW_TITLE
+from moduly.rizeni_rizik.constants import DIALOG_WINDOW_TITLE, RISK_MEASURE_REVIEW_TAB_TITLE
 from moduly.rizeni_rizik.constants_library import HAZARD_LIBRARY_PAGE_TITLE
 from moduly.rizeni_rizik.sluzby.hazard_identification_service import hazard_identification_service
 from moduly.rizeni_rizik.ui.hazard_identification_dialog import HazardIdentificationDialog
 from moduly.rizeni_rizik.ui.hazard_identification_table import HazardIdentificationTable
 from moduly.rizeni_rizik.ui.hazard_library_page import HazardLibraryPage
 from moduly.rizeni_rizik.ui.pravidla_bezpecne_prace_dialog import PravidlaBezpecnePraceDialog
+from moduly.rizeni_rizik.ui.risk_measure_reviews_tab import RiskMeasureReviewsTab
 
 
 class HazardIdentificationsTab(QWidget):
@@ -150,8 +151,10 @@ class RizeniRizikPage(QWidget):
             on_open_library_template=self.open_library_template,
         )
         self.library_page = HazardLibraryPage()
+        self.reviews_tab = RiskMeasureReviewsTab()
         self.tabs.addTab(self.identifications_tab, "Identifikace")
         self.tabs.addTab(self.library_page, HAZARD_LIBRARY_PAGE_TITLE)
+        self.tabs.addTab(self.reviews_tab, RISK_MEASURE_REVIEW_TAB_TITLE)
         layout.addWidget(self.tabs)
 
     def open_library_template(self, template_id: int) -> None:
@@ -165,3 +168,4 @@ class RizeniRizikPage(QWidget):
     def refresh(self) -> None:
         self.identifications_tab.refresh()
         self.library_page.refresh()
+        self.reviews_tab.refresh()

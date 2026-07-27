@@ -257,7 +257,7 @@ class HazardExistingMeasuresWidget(QWidget):
             QMessageBox.information(
                 self,
                 HAZARD_EXISTING_MEASURE_DIALOG_TITLE,
-                "Existující opatření jsou u dokončené nebo archivované identifikace "
+                "Zásady bezpečné práce jsou u dokončené nebo archivované identifikace "
                 "pouze pro čtení.",
             )
             return False
