@@ -10,9 +10,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QMessageBox,
     QPlainTextEdit,
-    QTabWidget,
     QVBoxLayout,
-    QWidget,
 )
 
 from core.widgets.date_edit import DateEdit
@@ -20,9 +18,6 @@ from core.widgets.dialog_utils import create_save_cancel_box, configure_resizabl
 from core.widgets.editor_dialog_controller import EditorDialogController
 from core.widgets.person_selector import PersonSelector
 from moduly.rizeni_rizik.constants import (
-    RISK_MEASURE_FINDING_INCOMPLETE_WARNING,
-    RISK_MEASURE_FINDINGS_TITLE,
-    RISK_MEASURE_REVIEW_CHECKLIST_TITLE,
     RISK_MEASURE_REVIEW_DIALOG_TITLE,
     RISK_MEASURE_REVIEW_STATUS_DRAFT,
     RISK_MEASURE_REVIEW_STATUS_LABELS,
@@ -32,18 +27,16 @@ from moduly.rizeni_rizik.sluzby.risk_measure_review_service import (
     RiskMeasureReviewError,
     risk_measure_review_service,
 )
-from moduly.rizeni_rizik.ui.risk_measure_review_checklist_widget import (
-    RiskMeasureReviewChecklistWidget,
-)
-from moduly.rizeni_rizik.ui.risk_measure_findings_widget import RiskMeasureFindingsWidget
 
 
 class RiskMeasureReviewDialog(QDialog):
+    """Evidence přezkoumání – pouze hlavička (bez checklistu)."""
+
     def __init__(self, parent=None, review=None):
         super().__init__(parent)
         self.review = review
         self.setWindowTitle(RISK_MEASURE_REVIEW_DIALOG_TITLE)
-        configure_resizable_form_dialog(self, width=760, height=760, min_width=640, min_height=580)
+        configure_resizable_form_dialog(self, width=560, height=420, min_width=480, min_height=360)
 
         layout = QVBoxLayout(self)
         form = QFormLayout()
@@ -62,7 +55,7 @@ class RiskMeasureReviewDialog(QDialog):
         for status in RISK_MEASURE_REVIEW_STATUSES:
             self.status.addItem(RISK_MEASURE_REVIEW_STATUS_LABELS[status], status)
         self.note = QPlainTextEdit()
-        self.note.setMinimumHeight(50)
+        self.note.setMinimumHeight(80)
 
         form.addRow("Číslo přezkoumání:", self.number_label)
         form.addRow("Datum *:", self.review_date)
@@ -73,25 +66,6 @@ class RiskMeasureReviewDialog(QDialog):
         form.addRow("Stav:", self.status)
         form.addRow("Poznámka:", self.note)
         layout.addLayout(form)
-
-        self.tabs = QTabWidget()
-        checklist_page = QWidget()
-        checklist_layout = QVBoxLayout(checklist_page)
-        checklist_layout.setContentsMargins(0, 8, 0, 0)
-        self.checklist = RiskMeasureReviewChecklistWidget(
-            on_changed=self._on_checklist_changed,
-            on_note_number_committed=self._on_note_number_committed,
-        )
-        checklist_layout.addWidget(self.checklist)
-        self.tabs.addTab(checklist_page, RISK_MEASURE_REVIEW_CHECKLIST_TITLE)
-
-        findings_page = QWidget()
-        findings_layout = QVBoxLayout(findings_page)
-        findings_layout.setContentsMargins(0, 8, 0, 0)
-        self.findings = RiskMeasureFindingsWidget(on_changed=self._on_findings_changed)
-        findings_layout.addWidget(self.findings)
-        self.tabs.addTab(findings_page, RISK_MEASURE_FINDINGS_TITLE)
-        layout.addWidget(self.tabs)
 
         buttons = create_save_cancel_box(self, is_new=review is None)
         layout.addWidget(buttons)
@@ -104,7 +78,6 @@ class RiskMeasureReviewDialog(QDialog):
         )
         self._editor.set_snapshot_provider(self.get_data)
         self._editor.install_auto_dirty_tracking()
-        self._wrap_close_with_finding_warning()
 
         self.operation.currentIndexChanged.connect(self._on_operation_changed)
         self.workplace.currentIndexChanged.connect(self._on_workplace_changed)
@@ -137,15 +110,9 @@ class RiskMeasureReviewDialog(QDialog):
                 )
             self.note.setPlainText(review.note or "")
             self._set_scope_editable(False)
-            self.checklist.load_rows(
-                risk_measure_review_service.list_checklist_rows(review.id)
-            )
-            self.findings.set_review_id(review.id)
         else:
             self.number_label.setText(risk_measure_review_service.preview_next_number())
             self.status.setCurrentIndex(self.status.findData(RISK_MEASURE_REVIEW_STATUS_DRAFT))
-            self.checklist.load_rows([])
-            self.findings.set_review_id(None)
 
         self._editor.capture_baseline()
 
@@ -159,26 +126,19 @@ class RiskMeasureReviewDialog(QDialog):
             "workplace_part_id": self.workplace_part.currentData(),
             "status": self.status.currentData() or RISK_MEASURE_REVIEW_STATUS_DRAFT,
             "note": self.note.toPlainText().strip(),
-            "checklist_updates": self.checklist.get_updates(),
         }
 
     def _save(self) -> bool:
         data = self.get_data()
-        checklist_updates = data.pop("checklist_updates", [])
         try:
             if self.review is None:
                 created = risk_measure_review_service.create_review(**data)
                 self.review = created
                 self.number_label.setText(created.review_number or "—")
                 self._set_scope_editable(False)
-                self.checklist.load_rows(
-                    risk_measure_review_service.list_checklist_rows(created.id)
-                )
-                self.findings.set_review_id(created.id)
             else:
                 updated = risk_measure_review_service.update_review(
                     self.review.id,
-                    checklist_updates=checklist_updates,
                     **data,
                 )
                 if updated is None:
@@ -189,81 +149,10 @@ class RiskMeasureReviewDialog(QDialog):
                     )
                     return False
                 self.review = updated
-                self.checklist.load_rows(
-                    risk_measure_review_service.list_checklist_rows(updated.id)
-                )
-                self.findings.set_review_id(updated.id)
         except RiskMeasureReviewError as error:
             QMessageBox.warning(self, RISK_MEASURE_REVIEW_DIALOG_TITLE, str(error))
             return False
-
-        self._warn_incomplete_findings()
         return True
-
-    def _wrap_close_with_finding_warning(self) -> None:
-        original = self._editor.request_close
-
-        def request_close_with_warning() -> bool:
-            if not self._editor.is_dirty():
-                self._warn_incomplete_findings()
-                return True
-            return original()
-
-        self._editor.request_close = request_close_with_warning  # type: ignore[method-assign]
-
-    def _warn_incomplete_findings(self) -> None:
-        if self.review is None:
-            return
-        incomplete = risk_measure_review_service.list_incomplete_findings(self.review.id)
-        if not incomplete:
-            return
-        numbers = ", ".join(finding.note_number for finding in incomplete)
-        QMessageBox.information(
-            self,
-            RISK_MEASURE_FINDINGS_TITLE,
-            f"{RISK_MEASURE_FINDING_INCOMPLETE_WARNING}\n\nČísla: {numbers}",
-        )
-
-    def _on_checklist_changed(self) -> None:
-        if hasattr(self, "_editor"):
-            self._editor.mark_dirty()
-
-    def _on_findings_changed(self) -> None:
-        if hasattr(self, "_editor"):
-            self._editor.mark_dirty()
-
-    def _on_note_number_committed(self, note_number: str) -> None:
-        if self.review is None:
-            return
-        normalized = (note_number or "").strip()
-        if not normalized:
-            return
-        # Nejprve uložit aktuální checklist hodnoty, aby vazba existovala v DB.
-        data = self.get_data()
-        checklist_updates = data.pop("checklist_updates", [])
-        try:
-            risk_measure_review_service.update_review(
-                self.review.id,
-                checklist_updates=checklist_updates,
-                review_date=data["review_date"],
-                reviewer_person_id=data["reviewer_person_id"],
-                operation_id=data["operation_id"],
-                workplace_id=data["workplace_id"],
-                workplace_part_id=data["workplace_part_id"],
-                status=data["status"],
-                note=data["note"],
-            )
-        except RiskMeasureReviewError:
-            return
-        finding = risk_measure_review_service.ensure_finding_for_note_number(
-            self.review.id,
-            normalized,
-        )
-        self.findings.refresh()
-        if finding is not None:
-            self.findings.open_by_note_number(finding.note_number)
-        if hasattr(self, "_editor"):
-            self._editor.capture_baseline()
 
     def _set_scope_editable(self, editable: bool) -> None:
         self.operation.setEnabled(editable)

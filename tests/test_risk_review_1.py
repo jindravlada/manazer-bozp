@@ -39,9 +39,8 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.constants import (
         EXISTING_MEASURES_TITLE,
         REQUIRED_MEASURES_TITLE,
-    RISK_MEASURE_REVIEW_CHECKLIST_EMPTY,
-    RISK_MEASURE_REVIEW_CHECKLIST_TITLE,
-    RISK_MEASURE_REVIEW_STATUS_ARCHIVED,
+        RISK_MEASURE_REVIEW_CHECKLIST_TITLE,
+        RISK_MEASURE_REVIEW_STATUS_ARCHIVED,
         RISK_MEASURE_REVIEW_STATUS_COMPLETED,
         RISK_MEASURE_REVIEW_STATUS_DRAFT,
         RISK_MEASURE_REVIEW_TAB_TITLE,
@@ -248,9 +247,7 @@ class RiskReview1TestCase(unittest.TestCase):
         self.assertIsNone(restored.archived_at)
         self.assertEqual(restored.status, RISK_MEASURE_REVIEW_STATUS_DRAFT)
 
-    def test_editor_defaults_and_checklist_placeholder(self) -> None:
-        from PySide6.QtWidgets import QLabel
-
+    def test_editor_defaults_header_only(self) -> None:
         dialog = RiskMeasureReviewDialog()
         self.assertEqual(
             date(
@@ -261,11 +258,10 @@ class RiskReview1TestCase(unittest.TestCase):
             date.today(),
         )
         self.assertEqual(dialog.status.currentData(), RISK_MEASURE_REVIEW_STATUS_DRAFT)
+        self.assertFalse(hasattr(dialog, "checklist"))
         groups = dialog.findChildren(QGroupBox)
         titles = [group.title() for group in groups]
-        self.assertIn(RISK_MEASURE_REVIEW_CHECKLIST_TITLE, titles)
-        labels = [label.text() for label in dialog.findChildren(QLabel)]
-        self.assertIn(RISK_MEASURE_REVIEW_CHECKLIST_EMPTY, labels)
+        self.assertNotIn(RISK_MEASURE_REVIEW_CHECKLIST_TITLE, titles)
         dialog.close()
 
     def test_editor_dirty_tracking(self) -> None:

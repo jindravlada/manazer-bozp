@@ -685,16 +685,13 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         from moduly.rizeni_rizik.constants import (
             RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT,
             RISK_MEASURE_REVIEW_ITEM_COL_MEASURE,
-            RISK_MEASURE_REVIEW_ITEM_COL_NOTE_NUMBER,
-            RISK_MEASURE_REVIEW_ITEM_COL_PHOTO,
+            RISK_MEASURE_REVIEW_ITEM_COL_RESULT_TEXT,
         )
 
-        # Kompaktní šířky vhodné pro tisk A4.
         widths = {
-            RISK_MEASURE_REVIEW_ITEM_COL_MEASURE: 360,
+            RISK_MEASURE_REVIEW_ITEM_COL_MEASURE: 320,
             RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT: 80,
-            RISK_MEASURE_REVIEW_ITEM_COL_NOTE_NUMBER: 90,
-            RISK_MEASURE_REVIEW_ITEM_COL_PHOTO: 55,
+            RISK_MEASURE_REVIEW_ITEM_COL_RESULT_TEXT: 260,
         }
         for column, width in widths.items():
             table.setColumnWidth(column, width)
@@ -702,8 +699,7 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         header.setSectionResizeMode(RISK_MEASURE_REVIEW_ITEM_COL_MEASURE, QHeaderView.Stretch)
         for column in (
             RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT,
-            RISK_MEASURE_REVIEW_ITEM_COL_NOTE_NUMBER,
-            RISK_MEASURE_REVIEW_ITEM_COL_PHOTO,
+            RISK_MEASURE_REVIEW_ITEM_COL_RESULT_TEXT,
         ):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 

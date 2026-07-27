@@ -52,6 +52,7 @@ class RiskMeasureReviewChecklistRow:
     follow_up_measure_id: int
     measure_title: str
     compliant: bool
+    result_text: str
     note_number: str
     has_photo: bool
     sort_order: int
@@ -291,12 +292,21 @@ class RiskMeasureReviewService:
                     follow_up_measure_id=int(item.follow_up_measure_id),
                     measure_title=measure_title,
                     compliant=compliant,
+                    result_text=(item.note or "").strip(),
                     note_number=(getattr(item, "note_number", None) or "").strip(),
                     has_photo=bool(getattr(item, "has_photo", False)),
                     sort_order=int(item.sort_order or 0),
                 )
             )
         return rows
+
+    def ensure_checklist(self, review_id: int) -> list[RiskMeasureReviewChecklistRow]:
+        """Načte/vygeneruje checklist pro provedení přezkoumání."""
+        review = self.repository.get_by_id(review_id)
+        if review is None:
+            return []
+        self._generate_checklist(review)
+        return self.list_checklist_rows(review_id)
 
     def archive(self, review_id: int) -> bool:
         review = self.repository.get_by_id(review_id)
@@ -407,6 +417,10 @@ class RiskMeasureReviewService:
             )
             item.note_number = str(payload.get("note_number", item.note_number) or "").strip()[:16]
             item.has_photo = bool(payload.get("has_photo", item.has_photo))
+            if "result_text" in payload:
+                item.note = str(payload.get("result_text") or "").strip()
+            elif "note" in payload:
+                item.note = str(payload.get("note") or "").strip()
             item.updated_at = datetime.now()
             changed.append(item)
         for item in changed:

@@ -27,7 +27,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
-    from PySide6.QtWidgets import QApplication, QCheckBox, QGroupBox, QLineEdit
+    from PySide6.QtWidgets import QApplication, QCheckBox, QLineEdit
 
     from moduly.nastaveni.constants.workplace_hierarchy_constants import (
         WORKPLACE_ITEM_TYPE_OPERATION,
@@ -39,10 +39,8 @@ with patch.object(Path, "home", return_value=_TMP):
         HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
         RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT,
         RISK_MEASURE_REVIEW_ITEM_COL_MEASURE,
-        RISK_MEASURE_REVIEW_ITEM_COL_NOTE_NUMBER,
-        RISK_MEASURE_REVIEW_ITEM_COL_PHOTO,
+        RISK_MEASURE_REVIEW_ITEM_COL_RESULT_TEXT,
         RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS,
-        RISK_MEASURE_REVIEW_NOTES_TITLE,
         RISK_SEVERITY_MODERATE,
     )
     from moduly.rizeni_rizik.modely.risk_measure_review import RiskMeasureReview
@@ -66,7 +64,9 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.ui.risk_measure_review_checklist_widget import (
         RiskMeasureReviewChecklistWidget,
     )
-    from moduly.rizeni_rizik.ui.risk_measure_review_dialog import RiskMeasureReviewDialog
+    from moduly.rizeni_rizik.ui.risk_measure_review_execution_dialog import (
+        RiskMeasureReviewExecutionDialog,
+    )
     from tests.rizeni_rizik_test_helpers import ensure_exposed_group
 
 
@@ -155,11 +155,11 @@ class RiskReview2aTestCase(unittest.TestCase):
 
         self.assertEqual(
             RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS,
-            ["ID", "Navazující opatření", "Vyhovuje", "Poznámka č.", "Foto"],
+            ["ID", "Navazující opatření", "Vyhovuje", "Výsledek přezkoumání"],
         )
         self.assertNotIn("Riziko", RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS)
-        self.assertNotIn("Výsledek", RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS)
-        self.assertNotIn("Poznámka", RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS)
+        self.assertNotIn("Poznámka č.", RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS)
+        self.assertNotIn("Foto", RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS)
 
     def test_checklist_widget_layout(self) -> None:
         rows = risk_measure_review_service.list_checklist_rows(self.review.id)
@@ -174,24 +174,13 @@ class RiskReview2aTestCase(unittest.TestCase):
         self.assertEqual(widget.table.rowCount(), 1)
 
         compliant_host = widget.table.cellWidget(0, RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT)
-        note_number = widget.table.cellWidget(0, RISK_MEASURE_REVIEW_ITEM_COL_NOTE_NUMBER)
-        photo_host = widget.table.cellWidget(0, RISK_MEASURE_REVIEW_ITEM_COL_PHOTO)
+        result_edit = widget.table.cellWidget(0, RISK_MEASURE_REVIEW_ITEM_COL_RESULT_TEXT)
         measure_item = widget.table.item(0, RISK_MEASURE_REVIEW_ITEM_COL_MEASURE)
 
         self.assertIsNotNone(measure_item)
         self.assertEqual(measure_item.text(), "Ochranný kryt")
         self.assertIsInstance(getattr(compliant_host, "_checkbox", None), QCheckBox)
-        self.assertIsInstance(note_number, QLineEdit)
-        self.assertEqual(note_number.placeholderText(), "____")
-        self.assertIsInstance(getattr(photo_host, "_checkbox", None), QCheckBox)
-
-        notes = [
-            group
-            for group in widget.findChildren(QGroupBox)
-            if group.title() == RISK_MEASURE_REVIEW_NOTES_TITLE
-        ]
-        self.assertEqual(len(notes), 1)
-        self.assertGreaterEqual(len(widget.note_lines), 3)
+        self.assertIsInstance(result_edit, QLineEdit)
 
     def test_database_links_preserved_after_checkbox_save(self) -> None:
         rows = risk_measure_review_service.list_checklist_rows(self.review.id)
@@ -205,19 +194,17 @@ class RiskReview2aTestCase(unittest.TestCase):
                 {
                     "item_id": rows[0].item_id,
                     "compliant": True,
-                    "note_number": "2",
-                    "has_photo": True,
+                    "result_text": "OK",
                 }
             ],
         )
         reloaded = risk_measure_review_service.list_checklist_rows(self.review.id)
         self.assertEqual(reloaded[0].follow_up_measure_id, self.measure.id)
         self.assertTrue(reloaded[0].compliant)
-        self.assertEqual(reloaded[0].note_number, "2")
-        self.assertTrue(reloaded[0].has_photo)
+        self.assertEqual(reloaded[0].result_text, "OK")
 
-    def test_dialog_uses_simplified_checklist(self) -> None:
-        dialog = RiskMeasureReviewDialog(
+    def test_execution_dialog_uses_simplified_checklist(self) -> None:
+        dialog = RiskMeasureReviewExecutionDialog(
             review=risk_measure_review_service.get_by_id(self.review.id),
         )
         headers = [
@@ -225,12 +212,6 @@ class RiskReview2aTestCase(unittest.TestCase):
             for column in range(dialog.checklist.table.columnCount())
         ]
         self.assertEqual(headers, RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS)
-        self.assertTrue(
-            any(
-                group.title() == RISK_MEASURE_REVIEW_NOTES_TITLE
-                for group in dialog.checklist.findChildren(QGroupBox)
-            )
-        )
         dialog._editor.mark_clean()
         dialog.close()
 

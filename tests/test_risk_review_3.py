@@ -61,7 +61,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.sluzby.risk_measure_review_service import (
         risk_measure_review_service,
     )
-    from moduly.rizeni_rizik.ui.risk_measure_review_dialog import RiskMeasureReviewDialog
     from tests.rizeni_rizik_test_helpers import ensure_exposed_group
 
 
@@ -265,7 +264,11 @@ class RiskReview3TestCase(unittest.TestCase):
             [],
         )
 
-    def test_dialog_has_findings_tab_and_warns(self) -> None:
+    def test_execution_dialog_has_findings_tab_and_warns(self) -> None:
+        from moduly.rizeni_rizik.ui.risk_measure_review_execution_dialog import (
+            RiskMeasureReviewExecutionDialog,
+        )
+
         rows = risk_measure_review_service.list_checklist_rows(self.review.id)
         risk_measure_review_service.update_review(
             self.review.id,
@@ -282,7 +285,7 @@ class RiskReview3TestCase(unittest.TestCase):
                 }
             ],
         )
-        dialog = RiskMeasureReviewDialog(
+        dialog = RiskMeasureReviewExecutionDialog(
             review=risk_measure_review_service.get_by_id(self.review.id),
         )
         titles = [dialog.tabs.tabText(index) for index in range(dialog.tabs.count())]
