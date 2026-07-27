@@ -1,11 +1,25 @@
-from PySide6.QtWidgets import QHBoxLayout, QMessageBox, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
 from moduly.rizeni_rizik.constants import (
+    RISK_MEASURE_REVIEW_DEFAULT_STATUS_FILTER,
     RISK_MEASURE_REVIEW_DIALOG_TITLE,
     RISK_MEASURE_REVIEW_EXECUTE_DIALOG_TITLE,
+    RISK_MEASURE_REVIEW_FILTER_ALL,
+    RISK_MEASURE_REVIEW_STATUS_ARCHIVED,
+    RISK_MEASURE_REVIEW_STATUS_COMPLETED,
+    RISK_MEASURE_REVIEW_STATUS_DRAFT,
+    RISK_MEASURE_REVIEW_STATUS_LABELS,
 )
 from moduly.rizeni_rizik.sluzby.risk_measure_review_service import (
     risk_measure_review_service,
@@ -36,6 +50,26 @@ class RiskMeasureReviewsTab(QWidget):
         toolbar.addWidget(self.archive_btn)
         toolbar.addWidget(self.restore_btn)
         toolbar.addStretch()
+        toolbar.addWidget(QLabel("Stav:"))
+        self.status_filter = QComboBox()
+        self.status_filter.addItem(
+            RISK_MEASURE_REVIEW_STATUS_LABELS[RISK_MEASURE_REVIEW_STATUS_DRAFT],
+            RISK_MEASURE_REVIEW_STATUS_DRAFT,
+        )
+        self.status_filter.addItem(
+            RISK_MEASURE_REVIEW_STATUS_LABELS[RISK_MEASURE_REVIEW_STATUS_COMPLETED],
+            RISK_MEASURE_REVIEW_STATUS_COMPLETED,
+        )
+        self.status_filter.addItem(
+            RISK_MEASURE_REVIEW_STATUS_LABELS[RISK_MEASURE_REVIEW_STATUS_ARCHIVED],
+            RISK_MEASURE_REVIEW_STATUS_ARCHIVED,
+        )
+        self.status_filter.addItem(RISK_MEASURE_REVIEW_FILTER_ALL, RISK_MEASURE_REVIEW_FILTER_ALL)
+        default_index = self.status_filter.findData(RISK_MEASURE_REVIEW_DEFAULT_STATUS_FILTER)
+        if default_index >= 0:
+            self.status_filter.setCurrentIndex(default_index)
+        self.status_filter.currentIndexChanged.connect(self.refresh)
+        toolbar.addWidget(self.status_filter)
 
         self.table = RiskMeasureReviewTable()
         configure_table_columns(self.table, "risk_measure_reviews")
@@ -159,6 +193,9 @@ class RiskMeasureReviewsTab(QWidget):
 
     def refresh(self) -> None:
         reviews = risk_measure_review_service.get_all(include_archived=True)
+        mode = self.status_filter.currentData()
+        if mode != RISK_MEASURE_REVIEW_FILTER_ALL:
+            reviews = [review for review in reviews if review.status == mode]
         self.table.load_reviews(reviews)
         configure_table_columns(self.table, "risk_measure_reviews")
         self.text_filter.update_count()

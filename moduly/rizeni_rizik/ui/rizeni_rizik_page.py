@@ -1,9 +1,25 @@
-from PySide6.QtWidgets import QHBoxLayout, QMessageBox, QPushButton, QTabWidget, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
-from moduly.rizeni_rizik.constants import DIALOG_WINDOW_TITLE, RISK_MEASURE_REVIEW_TAB_TITLE
+from moduly.rizeni_rizik.constants import (
+    DIALOG_WINDOW_TITLE,
+    RISK_IDENTIFICATION_DEFAULT_ACTIVE_FILTER,
+    RISK_LIST_FILTER_ACTIVE,
+    RISK_LIST_FILTER_ALL,
+    RISK_LIST_FILTER_INACTIVE,
+    RISK_MEASURE_REVIEW_TAB_TITLE,
+)
 from moduly.rizeni_rizik.constants_library import HAZARD_LIBRARY_PAGE_TITLE
 from moduly.rizeni_rizik.sluzby.hazard_identification_service import hazard_identification_service
 from moduly.rizeni_rizik.ui.hazard_identification_dialog import HazardIdentificationDialog
@@ -33,6 +49,16 @@ class HazardIdentificationsTab(QWidget):
         toolbar.addWidget(self.deactivate_btn)
         toolbar.addWidget(self.pravidla_btn)
         toolbar.addStretch()
+        toolbar.addWidget(QLabel("Aktivní:"))
+        self.active_filter = QComboBox()
+        self.active_filter.addItem(RISK_LIST_FILTER_ACTIVE, RISK_LIST_FILTER_ACTIVE)
+        self.active_filter.addItem(RISK_LIST_FILTER_INACTIVE, RISK_LIST_FILTER_INACTIVE)
+        self.active_filter.addItem(RISK_LIST_FILTER_ALL, RISK_LIST_FILTER_ALL)
+        default_index = self.active_filter.findData(RISK_IDENTIFICATION_DEFAULT_ACTIVE_FILTER)
+        if default_index >= 0:
+            self.active_filter.setCurrentIndex(default_index)
+        self.active_filter.currentIndexChanged.connect(self.refresh)
+        toolbar.addWidget(self.active_filter)
 
         self.table = HazardIdentificationTable()
         configure_table_columns(self.table, "hazard_identifications")
@@ -134,7 +160,12 @@ class HazardIdentificationsTab(QWidget):
         return hazard_identification_service.get_by_id(identification_id)
 
     def refresh(self) -> None:
+        mode = self.active_filter.currentData()
         identifications = hazard_identification_service.get_all(include_inactive=True)
+        if mode == RISK_LIST_FILTER_ACTIVE:
+            identifications = [item for item in identifications if item.active]
+        elif mode == RISK_LIST_FILTER_INACTIVE:
+            identifications = [item for item in identifications if not item.active]
         self.table.load_identifications(identifications)
         configure_table_columns(self.table, "hazard_identifications")
         self.text_filter.update_count()
