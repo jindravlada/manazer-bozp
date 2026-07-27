@@ -17,8 +17,10 @@ from moduly.rizeni_rizik.constants import (
     RISK_MEASURE_REVIEW_CHECKLIST_TITLE,
     RISK_MEASURE_REVIEW_EXECUTE_DIALOG_TITLE,
     RISK_MEASURE_REVIEW_PRINT_BUTTON,
-    RISK_MEASURE_REVIEW_PRINT_STUB_MESSAGE,
     RISK_MEASURE_REVIEW_TASKS_TITLE,
+)
+from moduly.rizeni_rizik.sluzby.risk_measure_review_checklist_export_service import (
+    risk_measure_review_checklist_export_service,
 )
 from moduly.rizeni_rizik.sluzby.risk_measure_review_service import (
     RiskMeasureReviewError,
@@ -73,7 +75,7 @@ class RiskMeasureReviewExecutionDialog(QDialog):
 
         action_row = QHBoxLayout()
         self.print_btn = QPushButton(RISK_MEASURE_REVIEW_PRINT_BUTTON)
-        self.print_btn.clicked.connect(self._print_checklist_stub)
+        self.print_btn.clicked.connect(self._print_checklist)
         action_row.addWidget(self.print_btn)
         action_row.addStretch()
         layout.addLayout(action_row)
@@ -133,12 +135,15 @@ class RiskMeasureReviewExecutionDialog(QDialog):
             return False
         return True
 
-    def _print_checklist_stub(self) -> None:
-        QMessageBox.information(
-            self,
-            RISK_MEASURE_REVIEW_PRINT_BUTTON,
-            RISK_MEASURE_REVIEW_PRINT_STUB_MESSAGE,
-        )
+    def _print_checklist(self) -> None:
+        try:
+            risk_measure_review_checklist_export_service.open_for_review(self.review)
+        except Exception as error:
+            QMessageBox.warning(
+                self,
+                RISK_MEASURE_REVIEW_PRINT_BUTTON,
+                f"Checklist se nepodařilo vytvořit.\n\n{error}",
+            )
 
     def _on_changed(self) -> None:
         if hasattr(self, "_editor"):

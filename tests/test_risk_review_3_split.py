@@ -27,7 +27,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
-    from PySide6.QtWidgets import QApplication, QMessageBox, QTabWidget
+    from PySide6.QtWidgets import QApplication, QTabWidget
 
     from moduly.nastaveni.constants.workplace_hierarchy_constants import (
         WORKPLACE_ITEM_TYPE_OPERATION,
@@ -40,7 +40,7 @@ with patch.object(Path, "home", return_value=_TMP):
         HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
         RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT,
         RISK_MEASURE_REVIEW_ITEM_COL_MEASURE,
-        RISK_MEASURE_REVIEW_ITEM_COL_RESULT_TEXT,
+        RISK_MEASURE_REVIEW_ITEM_COL_NOTE,
         RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS,
         RISK_MEASURE_REVIEW_PRINT_BUTTON,
         RISK_SEVERITY_MODERATE,
@@ -195,9 +195,9 @@ class RiskReview3SplitTestCase(unittest.TestCase):
         )
         self.assertEqual(
             dialog.checklist.table.horizontalHeaderItem(
-                RISK_MEASURE_REVIEW_ITEM_COL_RESULT_TEXT
+                RISK_MEASURE_REVIEW_ITEM_COL_NOTE
             ).text(),
-            "Výsledek přezkoumání",
+            "Poznámka",
         )
         self.assertEqual(dialog.print_btn.text(), RISK_MEASURE_REVIEW_PRINT_BUTTON)
         rows = risk_measure_review_service.list_checklist_rows(review.id)
@@ -249,13 +249,13 @@ class RiskReview3SplitTestCase(unittest.TestCase):
                 {
                     "item_id": rows[0].item_id,
                     "compliant": True,
-                    "result_text": "Bez závad",
+                    "note": "Bez závad",
                 }
             ],
         )
         reloaded = risk_measure_review_service.list_checklist_rows(review.id)
         self.assertTrue(reloaded[0].compliant)
-        self.assertEqual(reloaded[0].result_text, "Bez závad")
+        self.assertEqual(reloaded[0].note, "Bez závad")
         self.assertEqual(reloaded[0].follow_up_measure_id, measure.id)
         linked = hazard_required_measure_service.get_by_id(measure.id)
         assert linked is not None
@@ -268,19 +268,22 @@ class RiskReview3SplitTestCase(unittest.TestCase):
             operation_id=self.operation.id,
         )
         dialog = RiskMeasureReviewExecutionDialog(review=review)
-        with patch.object(QMessageBox, "information") as info:
-            dialog._print_checklist_stub()
-            info.assert_called_once()
+        with patch(
+            "moduly.rizeni_rizik.ui.risk_measure_review_execution_dialog."
+            "risk_measure_review_checklist_export_service.open_for_review"
+        ) as open_print:
+            dialog._print_checklist()
+            open_print.assert_called_once()
         dialog._editor.mark_clean()
         dialog.close()
 
     def test_checklist_headers_without_paper_columns(self) -> None:
         self.assertEqual(
             RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS,
-            ["ID", "Navazující opatření", "Vyhovuje", "Výsledek přezkoumání"],
+            ["ID", "Navazující opatření", "Vyhovuje", "Nevyhovuje", "Foto", "Poznámka"],
         )
         self.assertNotIn("Poznámka č.", RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS)
-        self.assertNotIn("Foto", RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS)
+        self.assertNotIn("Výsledek přezkoumání", RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS)
 
 
 if __name__ == "__main__":

@@ -27,7 +27,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
-    from PySide6.QtWidgets import QApplication, QCheckBox, QLineEdit
+    from PySide6.QtWidgets import QApplication, QCheckBox, QPlainTextEdit
 
     from moduly.nastaveni.constants.workplace_hierarchy_constants import (
         WORKPLACE_ITEM_TYPE_OPERATION,
@@ -39,7 +39,7 @@ with patch.object(Path, "home", return_value=_TMP):
         HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
         RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT,
         RISK_MEASURE_REVIEW_ITEM_COL_MEASURE,
-        RISK_MEASURE_REVIEW_ITEM_COL_RESULT_TEXT,
+        RISK_MEASURE_REVIEW_ITEM_COL_NOTE,
         RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS,
         RISK_SEVERITY_MODERATE,
     )
@@ -155,11 +155,11 @@ class RiskReview2aTestCase(unittest.TestCase):
 
         self.assertEqual(
             RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS,
-            ["ID", "Navazující opatření", "Vyhovuje", "Výsledek přezkoumání"],
+            ["ID", "Navazující opatření", "Vyhovuje", "Nevyhovuje", "Foto", "Poznámka"],
         )
         self.assertNotIn("Riziko", RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS)
         self.assertNotIn("Poznámka č.", RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS)
-        self.assertNotIn("Foto", RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS)
+        self.assertNotIn("Výsledek přezkoumání", RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS)
 
     def test_checklist_widget_layout(self) -> None:
         rows = risk_measure_review_service.list_checklist_rows(self.review.id)
@@ -174,13 +174,13 @@ class RiskReview2aTestCase(unittest.TestCase):
         self.assertEqual(widget.table.rowCount(), 1)
 
         compliant_host = widget.table.cellWidget(0, RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT)
-        result_edit = widget.table.cellWidget(0, RISK_MEASURE_REVIEW_ITEM_COL_RESULT_TEXT)
+        note_edit = widget.table.cellWidget(0, RISK_MEASURE_REVIEW_ITEM_COL_NOTE)
         measure_item = widget.table.item(0, RISK_MEASURE_REVIEW_ITEM_COL_MEASURE)
 
         self.assertIsNotNone(measure_item)
         self.assertEqual(measure_item.text(), "Ochranný kryt")
         self.assertIsInstance(getattr(compliant_host, "_checkbox", None), QCheckBox)
-        self.assertIsInstance(result_edit, QLineEdit)
+        self.assertIsInstance(note_edit, QPlainTextEdit)
 
     def test_database_links_preserved_after_checkbox_save(self) -> None:
         rows = risk_measure_review_service.list_checklist_rows(self.review.id)
@@ -194,14 +194,14 @@ class RiskReview2aTestCase(unittest.TestCase):
                 {
                     "item_id": rows[0].item_id,
                     "compliant": True,
-                    "result_text": "OK",
+                    "note": "OK",
                 }
             ],
         )
         reloaded = risk_measure_review_service.list_checklist_rows(self.review.id)
         self.assertEqual(reloaded[0].follow_up_measure_id, self.measure.id)
         self.assertTrue(reloaded[0].compliant)
-        self.assertEqual(reloaded[0].result_text, "OK")
+        self.assertEqual(reloaded[0].note, "OK")
 
     def test_execution_dialog_uses_simplified_checklist(self) -> None:
         dialog = RiskMeasureReviewExecutionDialog(

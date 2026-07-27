@@ -685,21 +685,27 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         from moduly.rizeni_rizik.constants import (
             RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT,
             RISK_MEASURE_REVIEW_ITEM_COL_MEASURE,
-            RISK_MEASURE_REVIEW_ITEM_COL_RESULT_TEXT,
+            RISK_MEASURE_REVIEW_ITEM_COL_NON_COMPLIANT,
+            RISK_MEASURE_REVIEW_ITEM_COL_NOTE,
+            RISK_MEASURE_REVIEW_ITEM_COL_PHOTO,
         )
 
         widths = {
-            RISK_MEASURE_REVIEW_ITEM_COL_MEASURE: 320,
+            RISK_MEASURE_REVIEW_ITEM_COL_MEASURE: 260,
             RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT: 80,
-            RISK_MEASURE_REVIEW_ITEM_COL_RESULT_TEXT: 260,
+            RISK_MEASURE_REVIEW_ITEM_COL_NON_COMPLIANT: 90,
+            RISK_MEASURE_REVIEW_ITEM_COL_PHOTO: 70,
+            RISK_MEASURE_REVIEW_ITEM_COL_NOTE: 220,
         }
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
         header.setSectionResizeMode(RISK_MEASURE_REVIEW_ITEM_COL_MEASURE, QHeaderView.Stretch)
+        header.setSectionResizeMode(RISK_MEASURE_REVIEW_ITEM_COL_NOTE, QHeaderView.Stretch)
         for column in (
             RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT,
-            RISK_MEASURE_REVIEW_ITEM_COL_RESULT_TEXT,
+            RISK_MEASURE_REVIEW_ITEM_COL_NON_COMPLIANT,
+            RISK_MEASURE_REVIEW_ITEM_COL_PHOTO,
         ):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 

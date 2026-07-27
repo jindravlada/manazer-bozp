@@ -13,8 +13,10 @@ from moduly.nastaveni.sluzby.person_service import person_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.rizeni_rizik.constants import (
     ENTITY_RISK_MEASURE_REVIEW,
+    ENTITY_RISK_MEASURE_REVIEW_ITEM,
     RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT,
     RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT,
+    RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED,
     RISK_MEASURE_REVIEW_STATUS_ARCHIVED,
     RISK_MEASURE_REVIEW_STATUS_COMPLETED,
     RISK_MEASURE_REVIEW_STATUS_DRAFT,
@@ -39,6 +41,7 @@ from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import (
 )
 from moduly.ukoly.modely.task import Task
 from moduly.ukoly.sluzby.task_service import task_service
+from core.services.attachment_service import attachment_service
 
 
 class RiskMeasureReviewError(ValueError):
@@ -50,11 +53,24 @@ class RiskMeasureReviewChecklistRow:
     item_id: int
     follow_up_measure_id: int
     measure_title: str
-    compliant: bool
-    result_text: str
-    note_number: str
+    result: str
+    note: str
+    photo_count: int
     has_photo: bool
     sort_order: int
+
+    @property
+    def compliant(self) -> bool:
+        return self.result == RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT
+
+    @property
+    def non_compliant(self) -> bool:
+        return self.result == RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT
+
+    @property
+    def result_text(self) -> str:
+        """Zpětná kompatibilita – dříve „výsledek“, nyní poznámka."""
+        return self.note
 
 
 class RiskMeasureReviewService:
@@ -228,18 +244,22 @@ class RiskMeasureReviewService:
         for item in items:
             measure = hazard_required_measure_service.get_by_id(item.follow_up_measure_id)
             measure_title = measure.display_title() if measure is not None else "—"
-            compliant = bool(getattr(item, "compliant", False))
-            if not compliant and item.result == RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT:
-                compliant = True
+            result = self._normalize_item_result(item)
+            photo_count = len(
+                attachment_service.get_for_entity(
+                    ENTITY_RISK_MEASURE_REVIEW_ITEM,
+                    int(item.id),
+                )
+            )
             rows.append(
                 RiskMeasureReviewChecklistRow(
                     item_id=int(item.id),
                     follow_up_measure_id=int(item.follow_up_measure_id),
                     measure_title=measure_title,
-                    compliant=compliant,
-                    result_text=(item.note or "").strip(),
-                    note_number=(getattr(item, "note_number", None) or "").strip(),
-                    has_photo=bool(getattr(item, "has_photo", False)),
+                    result=result,
+                    note=(item.note or "").strip(),
+                    photo_count=photo_count,
+                    has_photo=photo_count > 0 or bool(getattr(item, "has_photo", False)),
                     sort_order=int(item.sort_order or 0),
                 )
             )
@@ -334,7 +354,7 @@ class RiskMeasureReviewService:
                     compliant=False,
                     note_number="",
                     has_photo=False,
-                    result=RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT,
+                    result=RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED,
                     note="",
                     sort_order=index + 1,
                 )
@@ -353,23 +373,58 @@ class RiskMeasureReviewService:
             item = by_id.get(int(item_id))
             if item is None:
                 continue
-            compliant = bool(payload.get("compliant", item.compliant))
-            item.compliant = compliant
-            item.result = (
-                RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT
-                if compliant
-                else RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT
-            )
-            item.note_number = str(payload.get("note_number", item.note_number) or "").strip()[:16]
-            item.has_photo = bool(payload.get("has_photo", item.has_photo))
-            if "result_text" in payload:
-                item.note = str(payload.get("result_text") or "").strip()
-            elif "note" in payload:
+            result = self._result_from_payload(payload, item)
+            item.result = result
+            item.compliant = result == RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT
+            if "note" in payload:
                 item.note = str(payload.get("note") or "").strip()
+            elif "result_text" in payload:
+                item.note = str(payload.get("result_text") or "").strip()
+            if "has_photo" in payload:
+                item.has_photo = bool(payload.get("has_photo"))
+            elif "photo_count" in payload:
+                item.has_photo = int(payload.get("photo_count") or 0) > 0
             item.updated_at = datetime.now()
             changed.append(item)
         for item in changed:
             self.item_repository.update(item)
+
+    @staticmethod
+    def _normalize_item_result(item: RiskMeasureReviewItem) -> str:
+        result = str(getattr(item, "result", "") or "").strip()
+        if result in {
+            RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED,
+            RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT,
+            RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT,
+        }:
+            return result
+        if bool(getattr(item, "compliant", False)):
+            return RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT
+        return RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED
+
+    @classmethod
+    def _result_from_payload(cls, payload: dict, item: RiskMeasureReviewItem) -> str:
+        if "result" in payload:
+            result = str(payload.get("result") or "").strip()
+            if result in {
+                RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED,
+                RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT,
+                RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT,
+            }:
+                return result
+        if "compliant" in payload and "non_compliant" in payload:
+            if bool(payload.get("compliant")):
+                return RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT
+            if bool(payload.get("non_compliant")):
+                return RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT
+            return RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED
+        if "compliant" in payload:
+            return (
+                RISK_MEASURE_REVIEW_ITEM_RESULT_COMPLIANT
+                if bool(payload.get("compliant"))
+                else RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT
+            )
+        return cls._normalize_item_result(item)
 
     @staticmethod
     def _identification_in_scope(

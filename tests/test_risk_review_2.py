@@ -192,7 +192,7 @@ class RiskReview2TestCase(unittest.TestCase):
         self.assertEqual(rows[0].follow_up_measure_id, measure.id)
         self.assertEqual(rows[0].measure_title, "Ochranné brýle")
         self.assertFalse(rows[0].compliant)
-        self.assertEqual(rows[0].note_number, "")
+        self.assertEqual(rows[0].note, "")
         self.assertFalse(rows[0].has_photo)
 
     def test_scope_operation_includes_all_workplaces(self) -> None:
@@ -339,14 +339,14 @@ class RiskReview2TestCase(unittest.TestCase):
                 {
                     "item_id": rows[0].item_id,
                     "compliant": True,
-                    "note_number": "1",
+                    "note": "1",
                     "has_photo": True,
                 }
             ],
         )
         reloaded = risk_measure_review_service.list_checklist_rows(review.id)
         self.assertTrue(reloaded[0].compliant)
-        self.assertEqual(reloaded[0].note_number, "1")
+        self.assertEqual(reloaded[0].note, "1")
         self.assertTrue(reloaded[0].has_photo)
         self.assertEqual(reloaded[0].follow_up_measure_id, measure.id)
 
