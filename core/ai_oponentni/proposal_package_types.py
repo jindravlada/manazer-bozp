@@ -81,6 +81,8 @@ class AiProposalPackageAssessment:
     exposed_group_id: int | None = None
     exposed_groups: tuple[str, ...] = ()
     exposed_group_ids: tuple[int, ...] = ()
+    # RISK-AI-15 – volitelný výběr uživatele (AI je sama nepředvyplní)
+    responsibility_role_ids: tuple[int, ...] = ()
 
     def __post_init__(self) -> None:
         groups = _normalize_exposed_groups(
@@ -88,10 +90,12 @@ class AiProposalPackageAssessment:
             exposed_groups=self.exposed_groups,
         )
         ids = _normalize_exposed_group_ids(self.exposed_group_ids, self.exposed_group_id)
+        role_ids = _normalize_exposed_group_ids(self.responsibility_role_ids)
         object.__setattr__(self, "exposed_groups", groups)
         object.__setattr__(self, "exposed_group", groups[0] if groups else "")
         object.__setattr__(self, "exposed_group_ids", ids)
         object.__setattr__(self, "exposed_group_id", ids[0] if ids else self.exposed_group_id)
+        object.__setattr__(self, "responsibility_role_ids", role_ids)
 
 
 @dataclass(frozen=True)
@@ -209,6 +213,7 @@ class AiProposalPackage:
                     "conclusion": assessment.conclusion,
                     "exposed_group_id": assessment.exposed_group_id,
                     "exposed_group_ids": list(assessment.exposed_group_ids),
+                    "responsibility_role_ids": list(assessment.responsibility_role_ids),
                     "existing_measures": [
                         {"description": measure.description, "note": measure.note}
                         for measure in assessment.existing_measures
@@ -262,6 +267,14 @@ class AiProposalPackage:
                         for value in (
                             _optional_int(raw)
                             for raw in (item.get("exposed_group_ids") or [])
+                        )
+                        if value is not None
+                    ),
+                    responsibility_role_ids=tuple(
+                        value
+                        for value in (
+                            _optional_int(raw)
+                            for raw in (item.get("responsibility_role_ids") or [])
                         )
                         if value is not None
                     ),

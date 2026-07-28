@@ -1723,8 +1723,13 @@ class AiPeerReviewWidget(QWidget):
         except (HazardCatalogPackageIncorporateError, ValueError) as error:
             QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
             return
+
         self._load_proposals_table()
         self._select_proposal_row(record_id)
+        if dialog.incorporate_requested():
+            self._incorporate_selected_package()
+            return
+
         self._load_package_detail()
         if self._package_session is not None and self._on_catalog_incorporated is not None:
             self._on_catalog_incorporated(None)

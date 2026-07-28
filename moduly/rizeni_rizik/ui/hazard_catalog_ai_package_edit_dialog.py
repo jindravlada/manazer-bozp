@@ -41,6 +41,7 @@ from core.ai_oponentni.repository.ai_proposal_package_repository import (
 from core.widgets.dialog_utils import create_save_cancel_box
 from core.widgets.multi_exposed_group_selector import MultiExposedGroupSelector
 from core.widgets.multi_legal_document_selector import MultiLegalDocumentSelector
+from core.widgets.multi_responsibility_role_selector import MultiResponsibilityRoleSelector
 from core.widgets.severity_tooltips import bind_severity_combo_tooltip, populate_severity_combo
 from moduly.nastaveni.sluzby.exposed_group_service import ExposedGroupMatchKind, exposed_group_service
 from moduly.nastaveni.ui.exposed_groups_management_dialog import ExposedGroupsManagementDialog
@@ -48,6 +49,7 @@ from moduly.rizeni_rizik.constants import DEFAULT_RISK_SEVERITY, RISK_SEVERITIES
 from moduly.rizeni_rizik.constants_library import (
     CATALOG_AI_PACKAGE_EDIT_DIALOG_TITLE,
     CATALOG_AI_PACKAGE_EDIT_SAVE_BUTTON,
+    CATALOG_AI_PACKAGE_INCORPORATE_BUTTON,
     CATALOG_AI_PACKAGE_SUMMARY_TITLE,
 )
 from moduly.rizeni_rizik.sluzby.hazard_catalog_package_incorporate_service import (
@@ -210,6 +212,8 @@ class _AssessmentEditor(QWidget):
         group_row.addWidget(self.exposed_groups, 1)
         group_row.addWidget(self.manage_groups_btn)
 
+        self.responsibility_roles = MultiResponsibilityRoleSelector(self)
+
         self.severity = QComboBox()
         populate_severity_combo(
             self.severity,
@@ -230,6 +234,7 @@ class _AssessmentEditor(QWidget):
         _configure_plain_text(self.required_measures, min_height=60)
 
         layout.addRow("Ohrožené skupiny *:", group_row)
+        layout.addRow("Profese / role:", self.responsibility_roles)
         layout.addRow("Závažnost *:", self.severity)
         layout.addRow("Závěr:", self.conclusion)
         layout.addRow("Zásady bezpečné práce:", self.existing_measures)
@@ -247,6 +252,10 @@ class _AssessmentEditor(QWidget):
                     if match.kind == ExposedGroupMatchKind.ACTIVE and match.groups:
                         group_ids.append(int(match.groups[0].id))
             self.exposed_groups.reload(preserve_ids=group_ids)
+            # ROLE IDs only from explicit user storage – never from AI text.
+            self.responsibility_roles.reload(
+                preserve_ids=list(assessment.responsibility_role_ids or ()),
+            )
             self.conclusion.setPlainText(assessment.conclusion)
             self.existing_measures.setPlainText(
                 "\n".join(m.description for m in assessment.existing_measures),
@@ -256,6 +265,7 @@ class _AssessmentEditor(QWidget):
             )
         else:
             self.exposed_groups.reload()
+            self.responsibility_roles.reload()
 
     def _open_groups_management(self) -> None:
         dialog = ExposedGroupsManagementDialog(self)
@@ -276,6 +286,7 @@ class _AssessmentEditor(QWidget):
             conclusion=self.conclusion.toPlainText().strip(),
             exposed_group_id=group_ids[0] if group_ids else None,
             exposed_group_ids=tuple(group_ids),
+            responsibility_role_ids=tuple(self.responsibility_roles.selected_role_ids()),
             existing_measures=tuple(
                 AiProposalPackageMeasure(description=line.strip())
                 for line in self.existing_measures.toPlainText().splitlines()
@@ -369,6 +380,7 @@ class HazardCatalogAiPackageEditDialog(QDialog):
         self.setMinimumHeight(520)
         self.resize(640, 720)
         self.setSizeGripEnabled(True)
+        self._incorporate_after_save = False
 
         root = QVBoxLayout(self)
         root.setContentsMargins(12, 12, 12, 12)
@@ -520,12 +532,82 @@ class HazardCatalogAiPackageEditDialog(QDialog):
         save_button = buttons.button(QDialogButtonBox.StandardButton.Save)
         if save_button is not None:
             save_button.setText(CATALOG_AI_PACKAGE_EDIT_SAVE_BUTTON)
-        buttons.accepted.connect(self.accept)
+        self.incorporate_button = buttons.addButton(
+            CATALOG_AI_PACKAGE_INCORPORATE_BUTTON,
+            QDialogButtonBox.ButtonRole.ActionRole,
+        )
+        self.incorporate_button.clicked.connect(self._accept_and_incorporate)
+        buttons.accepted.connect(self._accept_save_only)
         buttons.rejected.connect(self.reject)
         root.addWidget(buttons)
 
         self._scroll = scroll
         self._buttons = buttons
+
+    def incorporate_requested(self) -> bool:
+        return bool(self._incorporate_after_save)
+
+    def _accept_save_only(self) -> None:
+        self._finish_accept(incorporate=False)
+
+    def _accept_and_incorporate(self) -> None:
+        self._finish_accept(incorporate=True)
+
+    def _finish_accept(self, *, incorporate: bool) -> None:
+        assessments: list[AiProposalPackageAssessment] = []
+        for index, editor in enumerate(self._assessment_editors, start=1):
+            assessment = editor.to_assessment()
+            if not assessment.exposed_group.strip() and not assessment.exposed_group_ids:
+                QMessageBox.warning(
+                    self,
+                    self.windowTitle(),
+                    "Vyberte alespoň jednu ohroženou skupinu.",
+                )
+                return
+            if index - 1 < len(self._assessment_sections):
+                self._assessment_sections[index - 1].set_title(
+                    assessment_section_title(index, assessment),
+                )
+            assessments.append(assessment)
+        if not assessments:
+            QMessageBox.warning(self, self.windowTitle(), "Balík musí mít alespoň jedno posouzení.")
+            return
+
+        event = None
+        target_event = None
+        if self._package.package_type == AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT:
+            name = self.event_name.text().strip()
+            if not name:
+                QMessageBox.warning(self, self.windowTitle(), "Vyplňte název události.")
+                return
+            event = AiProposalPackageEvent(
+                name=name,
+                description=self.event_description.toPlainText().strip(),
+                note=self.event_note.toPlainText().strip(),
+            )
+        else:
+            target_event = self._target_event_export_id or self.target_event.text().strip() or None
+            if not target_event:
+                QMessageBox.warning(self, self.windowTitle(), "Vyplňte cílovou událost EVENT-…")
+                return
+            if self.event_name.text().strip():
+                event = AiProposalPackageEvent(
+                    name=self.event_name.text().strip(),
+                    description=self.event_description.toPlainText().strip(),
+                    note=self.event_note.toPlainText().strip(),
+                )
+
+        self._result_package = AiProposalPackage(
+            package_id=self._package.package_id,
+            package_type=self._package.package_type,
+            target_event_export_id=target_event,
+            event=event,
+            assessments=tuple(assessments),
+            legal_links=self._build_legal_links(),
+            reasoning=self.reasoning.toPlainText().strip(),
+        )
+        self._incorporate_after_save = incorporate
+        super().accept()
 
     @property
     def _assessment_editors(self) -> list[_AssessmentEditor]:
@@ -584,56 +666,4 @@ class HazardCatalogAiPackageEditDialog(QDialog):
         return self._result_package
 
     def accept(self) -> None:
-        assessments: list[AiProposalPackageAssessment] = []
-        for index, editor in enumerate(self._assessment_editors, start=1):
-            assessment = editor.to_assessment()
-            if not assessment.exposed_group.strip() and not assessment.exposed_group_ids:
-                QMessageBox.warning(
-                    self,
-                    self.windowTitle(),
-                    "Vyberte alespoň jednu ohroženou skupinu.",
-                )
-                return
-            if index - 1 < len(self._assessment_sections):
-                self._assessment_sections[index - 1].set_title(
-                    assessment_section_title(index, assessment),
-                )
-            assessments.append(assessment)
-        if not assessments:
-            QMessageBox.warning(self, self.windowTitle(), "Balík musí mít alespoň jedno posouzení.")
-            return
-
-        event = None
-        target_event = None
-        if self._package.package_type == AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT:
-            name = self.event_name.text().strip()
-            if not name:
-                QMessageBox.warning(self, self.windowTitle(), "Vyplňte název události.")
-                return
-            event = AiProposalPackageEvent(
-                name=name,
-                description=self.event_description.toPlainText().strip(),
-                note=self.event_note.toPlainText().strip(),
-            )
-        else:
-            target_event = self._target_event_export_id or self.target_event.text().strip() or None
-            if not target_event:
-                QMessageBox.warning(self, self.windowTitle(), "Vyplňte cílovou událost EVENT-…")
-                return
-            if self.event_name.text().strip():
-                event = AiProposalPackageEvent(
-                    name=self.event_name.text().strip(),
-                    description=self.event_description.toPlainText().strip(),
-                    note=self.event_note.toPlainText().strip(),
-                )
-
-        self._result_package = AiProposalPackage(
-            package_id=self._package.package_id,
-            package_type=self._package.package_type,
-            target_event_export_id=target_event,
-            event=event,
-            assessments=tuple(assessments),
-            legal_links=self._build_legal_links(),
-            reasoning=self.reasoning.toPlainText().strip(),
-        )
-        super().accept()
+        self._finish_accept(incorporate=False)

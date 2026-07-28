@@ -69,6 +69,13 @@ from moduly.rizeni_rizik.sluzby.hazard_catalog_legal_requirement_resolver import
     LegalDocumentMatchKind,
     hazard_catalog_legal_document_resolver,
 )
+from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
+    SOURCE_TYPE_HAZARD_GROUP,
+    SOURCE_TYPE_ROLE,
+    ExposedTargetRef,
+    refs_from_legacy_group_ids,
+    role_ref,
+)
 from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_incorporate_service import (
     HazardCatalogProposalIncorporateService,
 )
@@ -685,6 +692,11 @@ class HazardCatalogPackageIncorporateService:
                 assessment=assessment,
                 package_reasoning=package_reasoning,
             )
+            self._ensure_assessment_role_refs(
+                session,
+                assessment_id=int(target.id),
+                assessment=assessment,
+            )
             existing_added += added_existing
             required_added += added_required
             merged_count += 1
@@ -941,18 +953,87 @@ class HazardCatalogPackageIncorporateService:
         session.add(row)
         session.flush()
 
-        for sort_order, group_id in enumerate(
-            dict.fromkeys(resolved_group_ids),
-            start=1,
-        ):
+        sort_order = 1
+        for group_id in dict.fromkeys(resolved_group_ids):
             session.add(
                 HazardLibraryTemplateAssessmentExposedGroup(
                     assessment_id=int(row.id),
                     exposed_group_id=group_id,
+                    source_type=SOURCE_TYPE_HAZARD_GROUP,
                     sort_order=sort_order,
                 ),
             )
+            sort_order += 1
+        for role_id in self._resolve_responsibility_role_ids(assessment):
+            session.add(
+                HazardLibraryTemplateAssessmentExposedGroup(
+                    assessment_id=int(row.id),
+                    exposed_group_id=role_id,
+                    source_type=SOURCE_TYPE_ROLE,
+                    sort_order=sort_order,
+                ),
+            )
+            sort_order += 1
         return int(row.id)
+
+    def _resolve_responsibility_role_ids(self, assessment) -> list[int]:
+        ids: list[int] = []
+        seen: set[int] = set()
+        for raw in getattr(assessment, "responsibility_role_ids", ()) or ():
+            try:
+                role_id = int(raw)
+            except (TypeError, ValueError):
+                continue
+            if role_id in seen:
+                continue
+            seen.add(role_id)
+            ids.append(role_id)
+        return ids
+
+    def _assessment_target_refs(
+        self,
+        assessment,
+        *,
+        group_ids: list[int] | None = None,
+    ) -> list[ExposedTargetRef]:
+        resolved_groups = (
+            list(group_ids)
+            if group_ids is not None
+            else self._resolve_exposed_group_ids(assessment)
+        )
+        refs = refs_from_legacy_group_ids(resolved_groups)
+        for role_id in self._resolve_responsibility_role_ids(assessment):
+            refs.append(role_ref(role_id))
+        return refs
+
+    def _ensure_assessment_role_refs(self, session, *, assessment_id: int, assessment) -> None:
+        role_ids = self._resolve_responsibility_role_ids(assessment)
+        if not role_ids:
+            return
+        existing = session.scalars(
+            select(HazardLibraryTemplateAssessmentExposedGroup).where(
+                HazardLibraryTemplateAssessmentExposedGroup.assessment_id == assessment_id,
+            ),
+        ).all()
+        known = {
+            (row.source_type or SOURCE_TYPE_HAZARD_GROUP, int(row.exposed_group_id))
+            for row in existing
+        }
+        sort_order = max((int(row.sort_order or 0) for row in existing), default=0) + 1
+        for role_id in role_ids:
+            key = (SOURCE_TYPE_ROLE, role_id)
+            if key in known:
+                continue
+            session.add(
+                HazardLibraryTemplateAssessmentExposedGroup(
+                    assessment_id=assessment_id,
+                    exposed_group_id=role_id,
+                    source_type=SOURCE_TYPE_ROLE,
+                    sort_order=sort_order,
+                ),
+            )
+            known.add(key)
+            sort_order += 1
 
     def _resolve_exposed_group_ids(self, assessment) -> list[int]:
         ids: list[int] = []
@@ -1284,6 +1365,11 @@ class HazardCatalogPackageIncorporateService:
                 assessment=assessment,
                 package_reasoning=package_reasoning,
             )
+            self._wc_ensure_assessment_role_refs(
+                working_copy,
+                target=target,
+                assessment=assessment,
+            )
             existing_added += added_existing
             required_added += added_required
             merged_count += 1
@@ -1293,7 +1379,10 @@ class HazardCatalogPackageIncorporateService:
             created = working_copy.create_assessment(
                 template_id=working_copy.template_id,
                 template_event_id=template_event_id,
-                exposed_group_ids=new_group_ids,
+                target_refs=self._assessment_target_refs(
+                    assessment,
+                    group_ids=new_group_ids,
+                ),
                 severity=(
                     assessment.severity
                     if assessment.severity in RISK_SEVERITIES
@@ -1399,6 +1488,33 @@ class HazardCatalogPackageIncorporateService:
             existing=False,
         )
         return existing_added, required_added
+
+    def _wc_ensure_assessment_role_refs(self, working_copy, *, target, assessment) -> None:
+        role_ids = self._resolve_responsibility_role_ids(assessment)
+        if not role_ids:
+            return
+        refs = list(getattr(target, "target_refs", None) or [])
+        known = {ref.key for ref in refs}
+        changed = False
+        for role_id in role_ids:
+            ref = role_ref(role_id)
+            if ref.key in known:
+                continue
+            refs.append(ref)
+            known.add(ref.key)
+            changed = True
+        if not changed:
+            return
+        working_copy.update_assessment(
+            int(target.id),
+            template_id=working_copy.template_id,
+            template_event_id=int(target.template_event_id),
+            target_refs=refs,
+            severity=target.severity,
+            conclusion=target.conclusion or "",
+            note=target.note or "",
+            active=bool(target.active),
+        )
 
     def _wc_add_unique_measures(
         self,
