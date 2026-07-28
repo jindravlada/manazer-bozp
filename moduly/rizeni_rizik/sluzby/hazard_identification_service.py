@@ -85,12 +85,17 @@ class HazardIdentificationService:
     ) -> None:
         if not operation_id:
             raise HazardIdentificationError("Provoz je povinný.")
-        if not workplace_id:
-            raise HazardIdentificationError("Pracoviště je povinné.")
 
         operation = settings_service.get_workplace_by_id(operation_id)
         if operation is None or operation.item_type != WORKPLACE_ITEM_TYPE_OPERATION:
             raise HazardIdentificationError("Vyberte platný provoz.")
+
+        if workplace_id is None:
+            if workplace_part_id is not None:
+                raise HazardIdentificationError(
+                    "Část pracoviště nelze zvolit bez pracoviště.",
+                )
+            return
 
         workplace = settings_service.get_workplace_by_id(workplace_id)
         if workplace is None or workplace.item_type != WORKPLACE_ITEM_TYPE_WORKPLACE:

@@ -34,7 +34,7 @@ class HazardIdentificationBasicsWidget(QWidget):
 
         form.addRow("Číslo identifikace:", self.identification_number_label)
         form.addRow("Provoz *:", self.operation)
-        form.addRow("Pracoviště *:", self.workplace)
+        form.addRow("Pracoviště:", self.workplace)
         form.addRow("Část pracoviště:", self.workplace_part)
         form.addRow("Odpovědná osoba:", self.responsible_person)
         form.addRow("Datum zahájení:", self.started_at)
@@ -117,7 +117,7 @@ class HazardIdentificationBasicsWidget(QWidget):
             self.workplace,
             workplaces,
             preserve_id=preserve_id,
-            required=True,
+            required=False,
         )
         self.workplace.setEnabled(operation_id is not None)
 
@@ -140,7 +140,7 @@ class HazardIdentificationBasicsWidget(QWidget):
         self.workplace_part.setEnabled(workplace_id is not None)
 
     def _reset_workplaces(self) -> None:
-        self._populate_workplace_combo(self.workplace, [], required=True)
+        self._populate_workplace_combo(self.workplace, [], required=False)
         self.workplace.setEnabled(False)
 
     def _reset_workplace_parts(self) -> None:
