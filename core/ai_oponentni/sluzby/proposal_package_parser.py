@@ -7,6 +7,11 @@ import re
 from dataclasses import dataclass, field
 
 from core.ai_oponentni.constants import (
+    AI_MEASURE_REC_EDIT_EXISTING,
+    AI_MEASURE_REC_EDIT_REQUIRED,
+    AI_MEASURE_REC_NEW_REQUIRED,
+    AI_MEASURE_REC_NO_CHANGE,
+    AI_MEASURE_RECOMMENDATION_TYPES,
     AI_PEER_REVIEW_FORMAT_JSON_2_0,
     AI_PEER_REVIEW_FORMAT_TEXT_2_0,
     AI_PEER_REVIEW_PACKAGE_TYPE_EXTEND_EVENT,
@@ -29,8 +34,14 @@ _PACKAGE_TYPE_RE = re.compile(r"^typ\s*:\s*(.+)$", re.IGNORECASE)
 _TARGET_EVENT_RE = re.compile(r"^cílová\s+událost\s*:\s*(.+)$", re.IGNORECASE)
 _EVENT_SECTION_RE = re.compile(r"^událost\s*:\s*$", re.IGNORECASE)
 _ASSESSMENT_SECTION_RE = re.compile(r"^posouzení\s*:\s*$", re.IGNORECASE)
-_EXISTING_MEASURES_RE = re.compile(r"^existující\s+opatření\s*:\s*$", re.IGNORECASE)
-_REQUIRED_MEASURES_RE = re.compile(r"^potřebná\s+opatření\s*:\s*$", re.IGNORECASE)
+_EXISTING_MEASURES_RE = re.compile(
+    r"^(existující\s+opatření|zásady\s+bezpečné\s+práce)\s*:\s*$",
+    re.IGNORECASE,
+)
+_REQUIRED_MEASURES_RE = re.compile(
+    r"^(potřebná\s+opatření|navazující\s+opatření)\s*:\s*$",
+    re.IGNORECASE,
+)
 _LEGAL_LINKS_RE = re.compile(r"^právní\s+vazby\s*:\s*$", re.IGNORECASE)
 _REASONING_SECTION_RE = re.compile(r"^zdůvodnění\s*:\s*(.*)$", re.IGNORECASE)
 _EXPOSED_GROUP_RE = re.compile(r"^ohrožená\s+skupina\s*:\s*(.+)$", re.IGNORECASE)
@@ -96,7 +107,7 @@ def _looks_like_package_schema_response(payload: dict) -> bool:
     schema_version = str(payload.get("schema_version") or "")
     if schema_version == AI_PEER_REVIEW_SCHEMA_VERSION_2_0:
         return True
-    return "proposal_packages" in payload
+    return "proposal_packages" in payload or "measure_recommendations" in payload
 
 
 def _parse_json_package_response(
@@ -126,19 +137,125 @@ def _parse_json_package_response(
             )
 
     packages_raw = payload.get("proposal_packages")
-    if packages_raw is None:
-        raise AiPeerReviewParseError("V JSON odpovědi chybí pole proposal_packages.")
-    if not isinstance(packages_raw, list):
+    recommendations_raw = payload.get("measure_recommendations")
+    if packages_raw is None and recommendations_raw is None:
+        raise AiPeerReviewParseError(
+            "V JSON odpovědi chybí pole proposal_packages "
+            "nebo measure_recommendations."
+        )
+    if packages_raw is not None and not isinstance(packages_raw, list):
         raise AiPeerReviewParseError("Pole proposal_packages musí být pole (array).")
+    if recommendations_raw is not None and not isinstance(recommendations_raw, list):
+        raise AiPeerReviewParseError(
+            "Pole measure_recommendations musí být pole (array)."
+        )
 
     outcome = _PackageParseOutcome()
-    for index, item in enumerate(packages_raw, start=1):
+    for index, item in enumerate(packages_raw or [], start=1):
         package, reason = _parse_one_json_package(item, index=index)
         if package is None:
             outcome.skip_reasons.append(reason or f"Balík #{index}: neplatný.")
             continue
         outcome.packages.append(package)
+
+    for index, item in enumerate(recommendations_raw or [], start=1):
+        package, reason = _parse_one_measure_recommendation(item, index=index)
+        if package is None:
+            outcome.skip_reasons.append(
+                reason or f"Doporučení k opatření #{index}: neplatné."
+            )
+            continue
+        outcome.packages.append(package)
     return outcome
+
+
+def _parse_one_measure_recommendation(
+    item: object,
+    *,
+    index: int,
+) -> tuple[AiProposalPackage | None, str | None]:
+    label = f"Doporučení k opatření #{index}"
+    if not isinstance(item, dict):
+        return None, f"{label}: není objekt."
+
+    recommendation_id = str(
+        item.get("recommendation_id") or item.get("package_id") or ""
+    ).strip()
+    if not recommendation_id:
+        return None, f"{label}: chybí recommendation_id."
+
+    rec_type = _normalize_measure_recommendation_type(item.get("typ") or item.get("type"))
+    if rec_type is None:
+        return None, f"{label}: neplatný typ doporučení."
+
+    reasoning = str(item.get("reasoning") or "").strip()
+    if not reasoning:
+        return None, f"{label}: chybí reasoning."
+
+    proposed_text = str(
+        item.get("proposed_text")
+        or item.get("proposed_wording")
+        or item.get("description")
+        or ""
+    ).strip()
+    target_export_id = _normalize_target_event(
+        item.get("target_export_id") or item.get("parent_export_id")
+    )
+
+    if rec_type in {
+        AI_MEASURE_REC_EDIT_REQUIRED,
+        AI_MEASURE_REC_EDIT_EXISTING,
+    }:
+        if not target_export_id:
+            return None, f"{label}: úprava vyžaduje target_export_id."
+        if not proposed_text:
+            return None, f"{label}: úprava vyžaduje proposed_text."
+    elif rec_type == AI_MEASURE_REC_NEW_REQUIRED:
+        if not target_export_id:
+            return None, f"{label}: nové opatření vyžaduje target_export_id (ASSESSMENT-…)."
+        if not proposed_text:
+            return None, f"{label}: nové opatření vyžaduje proposed_text."
+
+    return (
+        AiProposalPackage(
+            package_id=recommendation_id,
+            package_type=rec_type,
+            target_event_export_id=None,
+            event=None,
+            assessments=(),
+            legal_links=(),
+            reasoning=reasoning,
+            target_export_id=target_export_id,
+            proposed_text=proposed_text,
+        ),
+        None,
+    )
+
+
+def _normalize_measure_recommendation_type(value: object) -> str | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    normalized = value.strip().casefold().replace(" ", "_").replace("-", "_")
+    aliases = {
+        "beze_zmen": AI_MEASURE_REC_NO_CHANGE,
+        "bez_zmen": AI_MEASURE_REC_NO_CHANGE,
+        "no_change": AI_MEASURE_REC_NO_CHANGE,
+        "upravit_navazujici_opatreni": AI_MEASURE_REC_EDIT_REQUIRED,
+        "upravit_navazujici": AI_MEASURE_REC_EDIT_REQUIRED,
+        "edit_required_measure": AI_MEASURE_REC_EDIT_REQUIRED,
+        "upravit_zasady_bezpecne_prace": AI_MEASURE_REC_EDIT_EXISTING,
+        "upravit_zasady": AI_MEASURE_REC_EDIT_EXISTING,
+        "edit_existing_measure": AI_MEASURE_REC_EDIT_EXISTING,
+        "nove_navazujici_opatreni": AI_MEASURE_REC_NEW_REQUIRED,
+        "nove_navazujici": AI_MEASURE_REC_NEW_REQUIRED,
+        "new_required_measure": AI_MEASURE_REC_NEW_REQUIRED,
+    }
+    resolved = aliases.get(normalized)
+    if resolved is not None:
+        return resolved
+    if normalized in AI_MEASURE_RECOMMENDATION_TYPES:
+        return normalized
+    return None
 
 
 def _parse_one_json_package(
@@ -297,6 +414,9 @@ def _validate_package(
     assessments: tuple[AiProposalPackageAssessment, ...],
     label: str,
 ) -> str | None:
+    if package_type in AI_MEASURE_RECOMMENDATION_TYPES:
+        return None
+
     if package_type == AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT:
         if event is None or not event.name.strip():
             return f"{label}: nová událost musí mít název."

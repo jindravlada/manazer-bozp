@@ -315,8 +315,8 @@ class AiPeerReviewPhaseR112TestCase(unittest.TestCase):
         self.assertIn("[EVENT-001]", content.data_text)
         self.assertIn("Posouzení", content.data_text)
         self.assertIn("[ASSESSMENT-001]", content.data_text)
-        self.assertIn("Existující opatření", content.data_text)
-        self.assertIn("Potřebná opatření", content.data_text)
+        self.assertIn("Zásady bezpečné práce", content.data_text)
+        self.assertIn("Navazující opatření", content.data_text)
         # Neaktivní položka nesmí být v hierarchii
         self.assertNotIn("Neaktivní zařízení", content.data_text)
 

@@ -74,9 +74,11 @@ AI_PEER_REVIEW_OBJECTIVE_LABELS = {
     AI_PEER_REVIEW_OBJECTIVE_MISSING_EVENTS: "Hledat chybějící nežádoucí události",
     AI_PEER_REVIEW_OBJECTIVE_MISSING_GROUPS: "Hledat chybějící ohrožené skupiny",
     AI_PEER_REVIEW_OBJECTIVE_EXISTING_MEASURES: (
-        "Navrhnout existující opatření k ověření"
+        "Posoudit Zásady bezpečné práce a navrhnout úpravy, jsou-li potřeba"
     ),
-    AI_PEER_REVIEW_OBJECTIVE_REQUIRED_MEASURES: "Navrhnout další potřebná opatření",
+    AI_PEER_REVIEW_OBJECTIVE_REQUIRED_MEASURES: (
+        "Posoudit Navazující opatření a navrhnout úpravy nebo doplnění"
+    ),
     AI_PEER_REVIEW_OBJECTIVE_LEGAL_REQUIREMENTS: (
         "Navrhnout související právní požadavky"
     ),
@@ -144,9 +146,26 @@ AI_PEER_REVIEW_SCHEMA_VERSION_2_0 = "2.0"
 AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT = "new_event"
 AI_PEER_REVIEW_PACKAGE_TYPE_EXTEND_EVENT = "extend_event"
 
+# RISK-AI-12 – doporučení k opatřením (revize stávajících / nové)
+AI_MEASURE_REC_NO_CHANGE = "beze_zmen"
+AI_MEASURE_REC_EDIT_REQUIRED = "upravit_navazujici_opatreni"
+AI_MEASURE_REC_EDIT_EXISTING = "upravit_zasady_bezpecne_prace"
+AI_MEASURE_REC_NEW_REQUIRED = "nove_navazujici_opatreni"
+
+AI_MEASURE_RECOMMENDATION_TYPES = (
+    AI_MEASURE_REC_NO_CHANGE,
+    AI_MEASURE_REC_EDIT_REQUIRED,
+    AI_MEASURE_REC_EDIT_EXISTING,
+    AI_MEASURE_REC_NEW_REQUIRED,
+)
+
 AI_PEER_REVIEW_PACKAGE_TYPE_LABELS = {
     AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT: "Nová událost",
     AI_PEER_REVIEW_PACKAGE_TYPE_EXTEND_EVENT: "Doplnění události",
+    AI_MEASURE_REC_NO_CHANGE: "Beze změn",
+    AI_MEASURE_REC_EDIT_REQUIRED: "Úprava Navazujícího opatření",
+    AI_MEASURE_REC_EDIT_EXISTING: "Úprava Zásad bezpečné práce",
+    AI_MEASURE_REC_NEW_REQUIRED: "Nové Navazující opatření",
 }
 
 AI_PEER_REVIEW_FORMAT_JSON_1_1 = "JSON 1.1"
@@ -159,7 +178,7 @@ AI_PEER_REVIEW_PARSE_NO_PROPOSALS = (
 )
 AI_PEER_REVIEW_PARSE_NO_PACKAGES = (
     "V odpovědi AI se nepodařilo najít žádný platný návrhový balík "
-    "ve formátu schema 2.0."
+    "ani doporučení k opatřením ve formátu schema 2.0."
 )
 AI_PEER_REVIEW_CATALOG_REQUIRES_SCHEMA_2_0 = (
     "Katalog zdrojů rizik vyžaduje odpověď ve formátu schema 2.0 "
@@ -293,13 +312,26 @@ AI_PEER_REVIEW_RESPONSE_SCHEMA = {
                     "type": "string",
                     "description": (
                         "Oblast návrhu, např. Analýza pracoviště, "
-                        "Nežádoucí událost, Ohrožená skupina, Existující opatření, "
-                        "Potřebné opatření."
+                        "Nežádoucí událost, Ohrožená skupina, "
+                        "Zásady bezpečné práce, Navazující opatření."
                     ),
                 },
                 "name": {
                     "type": "string",
                     "description": "Navržená položka.",
+                },
+                "typ": {
+                    "type": "string",
+                    "enum": [
+                        "beze_zmen",
+                        "upravit_navazujici_opatreni",
+                        "upravit_zasady_bezpecne_prace",
+                        "nove_navazujici_opatreni",
+                    ],
+                    "description": (
+                        "Volitelný typ doporučení k opatřením (RISK-AI-12). "
+                        "Zpětně kompatibilní – starší odpovědi pole nemají."
+                    ),
                 },
                 "parent_export_id": {
                     "type": ["string", "null"],
@@ -322,13 +354,13 @@ AI_PEER_REVIEW_RESPONSE_SCHEMA_2_0 = {
     "schema_version": "2.0",
     "description": (
         "Očekávaný formát odpovědi AI pro oponentní posouzení katalogu zdrojů rizik. "
-        "Každý návrh je ucelený balík: událost, posouzení, opatření a právní vazby."
+        "Návrhové balíky (událost / posouzení) a/nebo doporučení k opatřením "
+        "(revize Zásad bezpečné práce a Navazujících opatření)."
     ),
     "type": "object",
     "required": [
         "schema_version",
         "source_reference",
-        "proposal_packages",
     ],
     "properties": {
         "schema_version": {
@@ -346,9 +378,59 @@ AI_PEER_REVIEW_RESPONSE_SCHEMA_2_0 = {
         "proposal_packages": {
             "type": "array",
             "items": {"$ref": "#/$defs/proposal_package"},
+            "description": (
+                "Ucelené balíky pro nové nebo doplněné události. "
+                "Volitelné, pokud jsou vyplněna measure_recommendations."
+            ),
+        },
+        "measure_recommendations": {
+            "type": "array",
+            "items": {"$ref": "#/$defs/measure_recommendation"},
+            "description": (
+                "Doporučení k stávajícím nebo novým opatřením "
+                "(Zásady bezpečné práce / Navazující opatření)."
+            ),
         },
     },
     "$defs": {
+        "measure_recommendation": {
+            "type": "object",
+            "required": ["recommendation_id", "typ", "reasoning"],
+            "properties": {
+                "recommendation_id": {
+                    "type": "string",
+                    "description": "Stabilní identifikátor doporučení v rámci odpovědi.",
+                },
+                "typ": {
+                    "type": "string",
+                    "enum": [
+                        "beze_zmen",
+                        "upravit_navazujici_opatreni",
+                        "upravit_zasady_bezpecne_prace",
+                        "nove_navazujici_opatreni",
+                    ],
+                },
+                "target_export_id": {
+                    "type": ["string", "null"],
+                    "description": (
+                        "Exportní ID stávajícího opatření "
+                        "(REQUIRED-MEASURE-… / EXISTING-MEASURE-…) "
+                        "nebo posouzení (ASSESSMENT-…) u nového Navazujícího opatření."
+                    ),
+                },
+                "proposed_text": {
+                    "type": "string",
+                    "description": (
+                        "Navrhované nové znění nebo text nového opatření "
+                        "(u typu beze_zmen může zůstat prázdné)."
+                    ),
+                },
+                "reasoning": {
+                    "type": "string",
+                    "description": "Stručné odborné zdůvodnění.",
+                },
+            },
+        },
         "measure": {
             "type": "object",
             "required": ["description"],

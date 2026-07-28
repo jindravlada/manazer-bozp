@@ -20,6 +20,26 @@ from core.ai_oponentni.constants import (
 # Kapitola AI-RISK-OP-2 – společná pro identifikaci i katalog.
 MEASURE_FORMULATION_STYLE_HEADING = "=== Styl formulace opatření ==="
 
+# Kapitola RISK-AI-12 – pořadí posouzení stávajících opatření.
+MEASURE_REVIEW_ORDER_HEADING = "=== Posouzení stávajících opatření ==="
+
+
+def measure_review_order_section() -> list[str]:
+    """Pokyny pro revizi Zásad a Navazujících opatření (RISK-AI-12)."""
+    return [
+        MEASURE_REVIEW_ORDER_HEADING,
+        "",
+        "Posuzuj opatření v tomto pořadí:",
+        "1. Nejprve posuď stávající Navazující opatření.",
+        "2. Následně posuď Zásady bezpečné práce.",
+        "3. Teprve potom zvažuj návrh nových Navazujících opatření.",
+        "",
+        "Nenavrhuj nové opatření, pokud lze stejného cíle dosáhnout "
+        "úpravou stávajícího opatření nebo Zásad bezpečné práce.",
+        "",
+        "Pokud jsou stávající opatření dostatečná, nenavrhuj jejich změnu.",
+    ]
+
 
 def measure_formulation_style_section() -> list[str]:
     """Samostatná kapitola o stylu formulace opatření (AI-RISK-OP-2)."""
@@ -202,7 +222,7 @@ def build_ai_peer_review_prompt(
         "Podklady jsou hierarchické:\n"
         "\n"
         "Analýza pracoviště → Nežádoucí události → Posouzení\n"
-        "→ Existující opatření → Potřebná opatření\n"
+        "→ Zásady bezpečné práce → Navazující opatření\n"
         "\n"
         "Každý objekt má stabilní exportní ID (ITEM-…, EVENT-…, ASSESSMENT-…).\n"
         "Při návrhu doplnění uveď rodiče pomocí tohoto ID (pole Rodič)."
@@ -213,8 +233,7 @@ def build_ai_peer_review_prompt(
     lines.append("-" * 40)
     rules = [
         "Nehodnoť závažnost rizik.",
-        "Neměň existující položky.",
-        "Neopakuj již existující položky z exportu.",
+        "Neopakuj již existující položky z exportu bez důvodu.",
         "Nenavrhuj zjevně nereálné scénáře.",
         "Nevymýšlej technologie, zařízení ani činnosti, které nejsou z exportu "
         "ani z charakteristiky pracoviště patrné.",
@@ -230,6 +249,8 @@ def build_ai_peer_review_prompt(
         lines.append(f"- {rule}")
     lines.append("")
 
+    lines.extend(measure_review_order_section())
+    lines.append("")
     lines.extend(measure_formulation_style_section())
     lines.append("")
 
@@ -239,7 +260,9 @@ def build_ai_peer_review_prompt(
         "Jsou v analýze všechny významné zdroje?",
         "Chybí některé běžné nežádoucí události?",
         "Chybí některé skupiny ohrožených osob?",
-        "Chybí některá běžná opatření?",
+        "Jsou stávající Navazující opatření dostatečná?",
+        "Jsou Zásady bezpečné práce dostatečné, nebo vyžadují úpravu?",
+        "Chybí skutečně nové Navazující opatření, které nelze nahradit úpravou?",
         "Chybí některé důležité právní požadavky?",
         "Na co se při podobných pracovištích nejčastěji zapomíná?",
     ]
@@ -257,7 +280,11 @@ def build_ai_peer_review_prompt(
         "Rodič: <exportní ID rodiče, nebo —>\n"
         "Zdůvodnění: <stručné odborné zdůvodnění>\n"
         "\n"
-        "Odděl jednotlivé návrhy prázdným řádkem."
+        "Odděl jednotlivé návrhy prázdným řádkem.\n"
+        "\n"
+        "U návrhů k opatřením uveď volitelně typ doporučení "
+        "(beze_zmen / upravit_navazujici_opatreni / "
+        "upravit_zasady_bezpecne_prace / nove_navazujici_opatreni)."
     )
     return "\n".join(lines).rstrip() + "\n"
 
@@ -323,30 +350,32 @@ def build_catalog_source_ai_peer_review_prompt(
         "Podklady jsou hierarchické:\n"
         "\n"
         "Zdroj rizika → Nežádoucí události → Posouzení\n"
-        "→ Existující opatření → Potřebná opatření\n"
+        "→ Zásady bezpečné práce → Navazující opatření\n"
         "\n"
         "Každý objekt má stabilní exportní ID "
         "(SOURCE-…, EVENT-…, ASSESSMENT-…, EXISTING-MEASURE-…, REQUIRED-MEASURE-…).\n"
-        "Při návrhu doplnění uveď rodiče pomocí tohoto ID (pole Rodič)."
+        "Při návrhu doplnění uveď rodiče pomocí tohoto ID."
     )
     lines.append("")
 
     lines.append("PRAVIDLA")
     lines.append("-" * 40)
     rules = [
-        "Nevracej izolovaná opatření bez kompletního posouzení.",
+        "Nevracej izolovaná opatření bez kompletního posouzení "
+        "(u nových událostí v proposal_packages).",
         "Nevracej izolované ohrožené skupiny bez události a následku.",
-        "Každý návrh musí být jeden ucelený balík s úplným odborným kontextem.",
-        "Každé opomenutí popiš jako kompletní scénář: co se může stát → komu → "
-        "jaký může být následek → jaká opatření existují nebo mají být přijata → "
+        "Každý návrh nové události musí být jeden ucelený balík "
+        "s úplným odborným kontextem.",
+        "Každé opomenutí události popiš jako kompletní scénář: "
+        "co se může stát → komu → jaký může být následek → "
+        "jaká opatření existují nebo mají být přijata → "
         "jaká legislativa může souviset.",
-        "Neměň existující položky.",
-        "Neopakuj již existující položky z exportu.",
+        "Neopakuj již existující položky z exportu bez důvodu.",
         "Nenavrhuj zjevně nereálné scénáře.",
         "Nevymýšlej technologie, zařízení ani činnosti, které nejsou z exportu "
         "ani z obecného kontextu zdroje patrné.",
         "Respektuj skutečný charakter katalogového zdroje rizika.",
-        "Ke každému balíku napiš stručné odborné zdůvodnění.",
+        "Ke každému balíku i doporučení k opatřením napiš stručné odborné zdůvodnění.",
         "Právní předpisy uváděj pouze jako návrh k odbornému ověření.",
         "Nevydávej návrhy za úplné ani definitivní.",
         "Odpověď strukturoj podle schema_odpovedi.json "
@@ -356,6 +385,8 @@ def build_catalog_source_ai_peer_review_prompt(
         lines.append(f"- {rule}")
     lines.append("")
 
+    lines.extend(measure_review_order_section())
+    lines.append("")
     lines.extend(measure_formulation_style_section())
     lines.append("")
 
@@ -365,7 +396,9 @@ def build_catalog_source_ai_peer_review_prompt(
         "Jsou v katalogovém zdroji popsány všechny významné nežádoucí události?",
         "Chybí některé běžné nežádoucí události?",
         "Chybí některé skupiny ohrožených osob?",
-        "Chybí některá běžná opatření?",
+        "Jsou stávající Navazující opatření dostatečná?",
+        "Jsou Zásady bezpečné práce dostatečné, nebo vyžadují úpravu?",
+        "Chybí skutečně nové Navazující opatření, které nelze nahradit úpravou?",
         "Chybí některé důležité právní požadavky?",
         "Na co se u podobných zdrojů rizika nejčastěji zapomíná?",
     ]
@@ -376,12 +409,24 @@ def build_catalog_source_ai_peer_review_prompt(
     lines.append("FORMÁT ODPOVĚDI")
     lines.append("-" * 40)
     lines.append(
-        "Vrať ucelené návrhové balíky (schema 2.0). Každý balík musí obsahovat "
-        "událost nebo vazbu na existující EVENT-…, alespoň jedno kompletní posouzení "
-        "(jedna nebo více ohrožených skupin a závažnost), volitelně opatření uvnitř posouzení "
-        "a volitelně právní vazby k celému balíku.\n"
+        "Vrať schema 2.0 s proposal_packages (nové/doplněné události) a/nebo "
+        "measure_recommendations (revize opatření).\n"
         "\n"
-        "Textový fallback (použij přesně tuto strukturu u každého balíku):\n"
+        "Každý prvek measure_recommendations musí obsahovat:\n"
+        "- recommendation_id\n"
+        "- typ: beze_zmen | upravit_navazujici_opatreni | "
+        "upravit_zasady_bezpecne_prace | nove_navazujici_opatreni\n"
+        "- reasoning (stručné odborné zdůvodnění)\n"
+        "- proposed_text (navrhované znění; u beze_zmen může být prázdné)\n"
+        "- target_export_id: REQUIRED-MEASURE-… / EXISTING-MEASURE-… "
+        "při úpravě, ASSESSMENT-… při novém Navazujícím opatření\n"
+        "\n"
+        "Ucelené návrhové balíky (proposal_packages) používej pro nové události. "
+        "Každý balík musí obsahovat událost nebo vazbu na existující EVENT-…, "
+        "alespoň jedno kompletní posouzení (ohrožené skupiny a závažnost), "
+        "volitelně opatření uvnitř posouzení a volitelně právní vazby.\n"
+        "\n"
+        "Textový fallback pro balíky událostí:\n"
         "\n"
         "BALÍK: PACKAGE-001\n"
         "TYP: Nová událost\n"
@@ -394,10 +439,10 @@ def build_catalog_source_ai_peer_review_prompt(
         "Ohrožená skupina: ...\n"
         "Závažnost: moderate\n"
         "\n"
-        "EXISTUJÍCÍ OPATŘENÍ:\n"
+        "ZÁSADY BEZPEČNÉ PRÁCE:\n"
         "- ...\n"
         "\n"
-        "POTŘEBNÁ OPATŘENÍ:\n"
+        "NAVAZUJÍCÍ OPATŘENÍ:\n"
         "- ...\n"
         "\n"
         "PRÁVNÍ VAZBY:\n"

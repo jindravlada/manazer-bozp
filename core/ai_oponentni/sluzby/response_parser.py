@@ -68,7 +68,11 @@ def parse_ai_peer_review_response(
     if isinstance(loaded, dict) and _looks_like_schema_response(loaded):
         schema_version = str(loaded.get("schema_version") or "")
         if schema_version == AI_PEER_REVIEW_SCHEMA_VERSION_2_0 or (
-            require_proposal_packages and "proposal_packages" in loaded
+            require_proposal_packages
+            and (
+                "proposal_packages" in loaded
+                or "measure_recommendations" in loaded
+            )
         ):
             package_result = parse_ai_proposal_packages_response(
                 raw,
@@ -199,7 +203,12 @@ def parse_ai_peer_review_text_response(text: str) -> list[AiProposal]:
 
 
 def _looks_like_schema_response(payload: dict) -> bool:
-    return "schema_version" in payload or "proposals" in payload
+    return (
+        "schema_version" in payload
+        or "proposals" in payload
+        or "proposal_packages" in payload
+        or "measure_recommendations" in payload
+    )
 
 
 def _parse_json_schema_response(

@@ -118,16 +118,34 @@ class AiProposalPackage:
     assessments: tuple[AiProposalPackageAssessment, ...]
     legal_links: tuple[AiProposalPackageLegalLink, ...] = ()
     reasoning: str = ""
+    # RISK-AI-12 – doporučení k opatřením (volitelné; starší balíky nemají)
+    target_export_id: str | None = None
+    proposed_text: str = ""
+
+    @property
+    def is_measure_recommendation(self) -> bool:
+        from core.ai_oponentni.constants import AI_MEASURE_RECOMMENDATION_TYPES
+
+        return self.package_type in AI_MEASURE_RECOMMENDATION_TYPES
 
     @property
     def event_name(self) -> str:
         """Lidský název události pro UI (bez technického EVENT-XXX)."""
+        if self.proposed_text.strip():
+            return self.proposed_text.strip()
         if self.event is not None and self.event.name.strip():
             return self.event.name.strip()
         return "—"
 
     def display_event_label(self, *, resolved_target_name: str | None = None) -> str:
-        """Text sloupce Událost: název nové události nebo cílové události."""
+        """Text sloupce Událost: název nové události, cílové události nebo text opatření."""
+        if self.is_measure_recommendation:
+            text = self.proposed_text.strip()
+            if text:
+                return text
+            if self.package_type == "beze_zmen":
+                return "Beze změn opatření"
+            return "—"
         if self.event is not None and self.event.name.strip():
             return self.event.name.strip()
         name = (resolved_target_name or "").strip()
@@ -143,10 +161,17 @@ class AiProposalPackage:
 
     @property
     def existing_measure_count(self) -> int:
+        if self.package_type == "upravit_zasady_bezpecne_prace":
+            return 1 if self.proposed_text.strip() else 0
         return sum(len(item.existing_measures) for item in self.assessments)
 
     @property
     def required_measure_count(self) -> int:
+        if self.package_type in {
+            "upravit_navazujici_opatreni",
+            "nove_navazujici_opatreni",
+        }:
+            return 1 if self.proposed_text.strip() else 0
         return sum(len(item.required_measures) for item in self.assessments)
 
     @property
@@ -158,6 +183,8 @@ class AiProposalPackage:
             "package_id": self.package_id,
             "package_type": self.package_type,
             "target_event_export_id": self.target_event_export_id,
+            "target_export_id": self.target_export_id,
+            "proposed_text": self.proposed_text,
             "event": (
                 {
                     "name": self.event.name,
@@ -263,6 +290,10 @@ class AiProposalPackage:
         normalized_target = None
         if isinstance(target_event, str) and target_event.strip():
             normalized_target = target_event.strip()
+        target_export = payload.get("target_export_id")
+        normalized_target_export = None
+        if isinstance(target_export, str) and target_export.strip():
+            normalized_target_export = target_export.strip()
         return cls(
             package_id=str(payload.get("package_id") or "").strip(),
             package_type=str(payload.get("package_type") or "").strip(),
@@ -271,6 +302,8 @@ class AiProposalPackage:
             assessments=tuple(assessments),
             legal_links=legal_links,
             reasoning=str(payload.get("reasoning") or "").strip(),
+            target_export_id=normalized_target_export,
+            proposed_text=str(payload.get("proposed_text") or "").strip(),
         )
 
 

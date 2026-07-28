@@ -33,6 +33,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from core.ai_oponentni.sluzby.ai_peer_review_service import ai_peer_review_service
     from core.ai_oponentni.sluzby.prompt_builder import (
         MEASURE_FORMULATION_STYLE_HEADING,
+        MEASURE_REVIEW_ORDER_HEADING,
         build_ai_peer_review_prompt,
         build_catalog_source_ai_peer_review_prompt,
         measure_formulation_style_section,
@@ -117,13 +118,18 @@ class AiRiskOp2MeasureFormulationPromptTestCase(unittest.TestCase):
         for section in _LEGACY_PROMPT_SECTIONS:
             self.assertIn(section, prompt)
         self.assertIn("Nehodnoť závažnost rizik.", prompt)
-        self.assertIn("Neměň existující položky.", prompt)
+        self.assertIn("Pokud jsou stávající opatření dostatečná, nenavrhuj jejich změnu.", prompt)
+        self.assertIn(
+            "Nenavrhuj nové opatření, pokud lze stejného cíle dosáhnout",
+            prompt,
+        )
         self.assertIn("Oblast: <název oblasti>", prompt)
-        # Nová kapitola je mezi PRAVIDLA a OTÁZKY.
+        # Nová kapitola stylu je mezi posouzením opatření a OTÁZKY.
         rules_idx = prompt.find("PRAVIDLA")
+        review_idx = prompt.find(MEASURE_REVIEW_ORDER_HEADING)
         style_idx = prompt.find(MEASURE_FORMULATION_STYLE_HEADING)
         questions_idx = prompt.find("OTÁZKY K POSOUZENÍ")
-        self.assertTrue(0 <= rules_idx < style_idx < questions_idx)
+        self.assertTrue(0 <= rules_idx < review_idx < style_idx < questions_idx)
 
     def test_legacy_catalog_instructions_preserved(self) -> None:
         prompt = build_catalog_source_ai_peer_review_prompt()

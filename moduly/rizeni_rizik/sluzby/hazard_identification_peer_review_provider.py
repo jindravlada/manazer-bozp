@@ -693,7 +693,11 @@ class HazardIdentificationPeerReviewProvider:
                 "focus_areas": list(briefing["focus_areas"]),
                 "rules": [
                     "Nehodnotit závažnost rizik.",
-                    "Neměnit existující položky.",
+                    "Nejprve posoudit Navazující opatření, poté Zásady bezpečné práce, "
+                    "teprve potom zvažovat nová opatření.",
+                    "Nenavrhovat nové opatření, pokud lze stejného cíle dosáhnout "
+                    "úpravou stávajícího opatření nebo Zásad bezpečné práce.",
+                    "Pokud jsou stávající opatření dostatečná, nenavrhovat jejich změnu.",
                     "U návrhů uvádět parent_export_id (ITEM/EVENT/ASSESSMENT).",
                     "Ke každému návrhu uvést stručné odborné zdůvodnění.",
                     "Posuzovat podle aktuálně platných právních předpisů ČR v oblasti BOZP.",
@@ -800,7 +804,7 @@ class HazardIdentificationPeerReviewProvider:
         lines.append("-" * 40)
         lines.append(
             "Analýza pracoviště → Nežádoucí události → Posouzení "
-            "→ Existující opatření → Potřebná opatření"
+            "→ Zásady bezpečné práce → Navazující opatření"
         )
         lines.append("")
 
@@ -851,7 +855,7 @@ class HazardIdentificationPeerReviewProvider:
                             f"{assessment['conclusion']}"
                         )
 
-                    lines.append("                    Existující opatření")
+                    lines.append("                    Zásady bezpečné práce")
                     if assessment["existing_measures"]:
                         for measure in assessment["existing_measures"]:
                             lines.append(
@@ -860,7 +864,7 @@ class HazardIdentificationPeerReviewProvider:
                     else:
                         lines.append("                        (žádná)")
 
-                    lines.append("                    Potřebná opatření")
+                    lines.append("                    Navazující opatření")
                     if assessment["required_measures"]:
                         for measure in assessment["required_measures"]:
                             lines.append(
@@ -885,8 +889,8 @@ class HazardIdentificationPeerReviewProvider:
             f"Položky analýzy: {counts['items']}",
             f"Nežádoucí události: {counts['events']}",
             f"Posouzení rizik: {counts['assessments']}",
-            f"Existující opatření: {counts['existing_measures']}",
-            f"Potřebná opatření: {counts['required_measures']}",
+            f"Zásady bezpečné práce: {counts['existing_measures']}",
+            f"Navazující opatření: {counts['required_measures']}",
         ]
         overview = "\n".join(
             [

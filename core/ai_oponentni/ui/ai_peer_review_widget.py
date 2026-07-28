@@ -466,10 +466,10 @@ class AiPeerReviewWidget(QWidget):
             self.proposals_table.setHorizontalHeaderLabels(
                 [
                     "Typ",
-                    "Událost",
+                    "Událost / text",
                     "Posouzení",
-                    "Exist. opatření",
-                    "Potřebná opatření",
+                    "Zásady",
+                    "Navazující",
                     "Právní vazby",
                     "Zdůvodnění",
                     "Stav",
@@ -1199,10 +1199,10 @@ class AiPeerReviewWidget(QWidget):
         self.proposals_table.setHorizontalHeaderLabels(
             [
                 "Typ",
-                "Událost",
+                "Událost / text",
                 "Posouzení",
-                "Exist. opatření",
-                "Potřebná opatření",
+                "Zásady",
+                "Navazující",
                 "Právní vazby",
                 "Zdůvodnění",
                 "Stav",
@@ -1511,6 +1511,14 @@ class AiPeerReviewWidget(QWidget):
                 self._load_proposals_table()
                 return
             package = item.package
+            if package.is_measure_recommendation:
+                QMessageBox.information(
+                    self,
+                    AI_PEER_REVIEW_DIALOG_TITLE,
+                    "Doporučení k opatřením nelze editovat jako balík události. "
+                    "Převzít nebo zamítnout lze přímo ze seznamu.",
+                )
+                return
             dialog = HazardCatalogAiPackageEditDialog(
                 self,
                 package=package,
@@ -1528,6 +1536,14 @@ class AiPeerReviewWidget(QWidget):
                 self._load_proposals_table()
                 return
             package = ai_peer_review_service.package_repository.package_from_record(record)
+            if package.is_measure_recommendation:
+                QMessageBox.information(
+                    self,
+                    AI_PEER_REVIEW_DIALOG_TITLE,
+                    "Doporučení k opatřením nelze editovat jako balík události. "
+                    "Převzít nebo zamítnout lze přímo ze seznamu.",
+                )
+                return
             dialog = HazardCatalogAiPackageEditDialog(
                 self,
                 package=package,

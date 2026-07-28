@@ -19,6 +19,23 @@ def format_proposal_package_detail(
     )
     lines.append(f"Balík: {package.package_id}")
     lines.append(f"Typ: {type_label}")
+
+    if package.is_measure_recommendation:
+        if package.target_export_id:
+            lines.append(f"Cíl (exportní ID): {package.target_export_id}")
+        lines.append("")
+        lines.append("NAVRHOVANÉ ZNĚNÍ")
+        lines.append("-" * 40)
+        if package.package_type == "beze_zmen":
+            lines.append("(beze změn – stávající opatření jsou dostatečná)")
+        else:
+            lines.append(package.proposed_text.strip() or "—")
+        lines.append("")
+        lines.append("ZDŮVODNĚNÍ AI")
+        lines.append("-" * 40)
+        lines.append(package.reasoning.strip() or "—")
+        return "\n".join(lines).rstrip() + "\n"
+
     if package.target_event_export_id:
         target_name = (resolved_target_event_name or "").strip()
         if target_name:
@@ -62,7 +79,7 @@ def format_proposal_package_detail(
         if assessment.conclusion.strip():
             lines.append(f"Závěr: {assessment.conclusion.strip()}")
         lines.append("")
-        lines.append("Existující opatření:")
+        lines.append("Zásady bezpečné práce:")
         if assessment.existing_measures:
             for measure in assessment.existing_measures:
                 lines.append(f"- {measure.description}")
@@ -71,7 +88,7 @@ def format_proposal_package_detail(
         else:
             lines.append("- (žádná)")
         lines.append("")
-        lines.append("Potřebná opatření:")
+        lines.append("Navazující opatření:")
         if assessment.required_measures:
             for measure in assessment.required_measures:
                 lines.append(f"- {measure.description}")

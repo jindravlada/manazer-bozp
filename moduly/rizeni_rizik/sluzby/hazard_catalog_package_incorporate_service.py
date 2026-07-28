@@ -9,6 +9,11 @@ from datetime import datetime
 from sqlalchemy import select
 
 from core.ai_oponentni.constants import (
+    AI_MEASURE_REC_EDIT_EXISTING,
+    AI_MEASURE_REC_EDIT_REQUIRED,
+    AI_MEASURE_REC_NEW_REQUIRED,
+    AI_MEASURE_REC_NO_CHANGE,
+    AI_MEASURE_RECOMMENDATION_TYPES,
     AI_PEER_REVIEW_PACKAGE_TYPE_EXTEND_EVENT,
     AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT,
 )
@@ -198,6 +203,14 @@ class HazardCatalogPackageIncorporateService:
             for group_id, assessment_id in (group_assessment_overrides or {}).items()
         }
 
+        if package.package_type in AI_MEASURE_RECOMMENDATION_TYPES:
+            return self._incorporate_measure_recommendation_master(
+                template_id=template_id,
+                package_record_id=package_record_id,
+                package=package,
+                export_id_map=export_id_map,
+            )
+
         event_count = 0
         assessment_count = 0
         merged_assessment_count = 0
@@ -289,6 +302,281 @@ class HazardCatalogPackageIncorporateService:
             required_measure_count=required_measure_count,
             legal_link_count=legal_link_count,
             merged_assessment_count=merged_assessment_count,
+        )
+
+    def _incorporate_measure_recommendation_master(
+        self,
+        *,
+        template_id: int,
+        package_record_id: int,
+        package: AiProposalPackage,
+        export_id_map: dict[str, dict],
+    ) -> CatalogPackageIncorporateResult:
+        existing_measure_count = 0
+        required_measure_count = 0
+        new_revision_number = 0
+        review_id = 0
+
+        session = get_session()
+        try:
+            db_template = session.get(HazardLibraryTemplate, template_id)
+            if db_template is None:
+                raise HazardCatalogPackageIncorporateError(
+                    CATALOG_INCORPORATE_ERROR_SOURCE_MISSING,
+                )
+            db_record = session.get(AiProposalPackageRecord, package_record_id)
+            if db_record is None or db_record.status != PACKAGE_STATUS_PENDING:
+                raise HazardCatalogPackageIncorporateError("Návrhový balík neexistuje.")
+            review_id = int(db_record.ai_peer_review_id)
+
+            counts = self._apply_measure_recommendation_to_session(
+                session,
+                package=package,
+                export_id_map=export_id_map,
+                template_id=template_id,
+            )
+            existing_measure_count = counts[0]
+            required_measure_count = counts[1]
+
+            db_record.status = PACKAGE_STATUS_INCORPORATED
+            db_template.version_number += 1
+            db_template.updated_at = datetime.now()
+            new_revision_number = int(db_template.version_number)
+            session.add(
+                HazardLibraryTemplateRevision(
+                    template_id=template_id,
+                    revision_number=new_revision_number,
+                    change_reason=HAZARD_LIBRARY_REVISION_REASON_AI_PROPOSALS,
+                    comment=package.reasoning or None,
+                ),
+            )
+            session.commit()
+        except HazardCatalogPackageIncorporateError:
+            session.rollback()
+            raise
+        except Exception as error:
+            session.rollback()
+            raise HazardCatalogPackageIncorporateError(str(error)) from error
+        finally:
+            session.close()
+
+        if review_id:
+            self._refresh_review_counts(review_id)
+
+        return CatalogPackageIncorporateResult(
+            package_record_id=package_record_id,
+            new_revision_number=new_revision_number,
+            event_count=0,
+            assessment_count=0,
+            existing_measure_count=existing_measure_count,
+            required_measure_count=required_measure_count,
+            legal_link_count=0,
+        )
+
+    def _incorporate_measure_recommendation_working_copy(
+        self,
+        working_copy,
+        *,
+        editor_session,
+        package_record_id: int,
+        package: AiProposalPackage,
+        export_id_map: dict[str, dict],
+    ) -> CatalogPackageIncorporateResult:
+        from moduly.rizeni_rizik.sluzby.catalog_editor_session import CatalogEditorSession
+
+        existing_measure_count = 0
+        required_measure_count = 0
+
+        if package.package_type == AI_MEASURE_REC_NO_CHANGE:
+            pass
+        elif package.package_type == AI_MEASURE_REC_EDIT_EXISTING:
+            target = self._resolve_export_target(
+                export_id_map,
+                package.target_export_id,
+                expected_kind="existing_measure",
+            )
+            measure_id = int(target["id"])
+            assessment_id = self._wc_assessment_id_for_measure(
+                working_copy,
+                measure_id,
+                existing=True,
+            )
+            updated = working_copy.update_existing_measure(
+                measure_id,
+                template_id=working_copy.template_id,
+                template_assessment_id=assessment_id,
+                description=package.proposed_text.strip(),
+                note=self._join_notes(package.reasoning),
+                active=True,
+            )
+            if updated is None:
+                raise HazardCatalogPackageIncorporateError(
+                    "Cílové Zásady bezpečné práce nebyly nalezeny."
+                )
+            existing_measure_count = 1
+        elif package.package_type == AI_MEASURE_REC_EDIT_REQUIRED:
+            target = self._resolve_export_target(
+                export_id_map,
+                package.target_export_id,
+                expected_kind="required_measure",
+            )
+            measure_id = int(target["id"])
+            assessment_id = self._wc_assessment_id_for_measure(
+                working_copy,
+                measure_id,
+                existing=False,
+            )
+            updated = working_copy.update_required_measure(
+                measure_id,
+                template_id=working_copy.template_id,
+                template_assessment_id=assessment_id,
+                description=package.proposed_text.strip(),
+                note=self._join_notes(package.reasoning),
+                active=True,
+            )
+            if updated is None:
+                raise HazardCatalogPackageIncorporateError(
+                    "Cílové Navazující opatření nebylo nalezeno."
+                )
+            required_measure_count = 1
+        elif package.package_type == AI_MEASURE_REC_NEW_REQUIRED:
+            target = self._resolve_export_target(
+                export_id_map,
+                package.target_export_id,
+                expected_kind="assessment",
+            )
+            working_copy.create_required_measure(
+                template_id=working_copy.template_id,
+                template_assessment_id=int(target["id"]),
+                description=package.proposed_text.strip(),
+                note=self._join_notes(package.reasoning),
+                active=True,
+            )
+            required_measure_count = 1
+        else:
+            raise HazardCatalogPackageIncorporateError(
+                f"Nepodporovaný typ doporučení k opatření: {package.package_type}"
+            )
+
+        if editor_session is not None and isinstance(editor_session, CatalogEditorSession):
+            editor_session.stage_for_incorporation(package_record_id)
+        else:
+            working_copy.queue_package_incorporate(package_record_id)
+
+        return CatalogPackageIncorporateResult(
+            package_record_id=package_record_id,
+            new_revision_number=0,
+            event_count=0,
+            assessment_count=0,
+            existing_measure_count=existing_measure_count,
+            required_measure_count=required_measure_count,
+            legal_link_count=0,
+        )
+
+    def _apply_measure_recommendation_to_session(
+        self,
+        session,
+        *,
+        package: AiProposalPackage,
+        export_id_map: dict[str, dict],
+        template_id: int,
+    ) -> tuple[int, int]:
+        del template_id
+        if package.package_type == AI_MEASURE_REC_NO_CHANGE:
+            return 0, 0
+
+        if package.package_type == AI_MEASURE_REC_EDIT_EXISTING:
+            target = self._resolve_export_target(
+                export_id_map,
+                package.target_export_id,
+                expected_kind="existing_measure",
+            )
+            measure = session.get(HazardLibraryTemplateExistingMeasure, int(target["id"]))
+            if measure is None or not measure.active:
+                raise HazardCatalogPackageIncorporateError(
+                    "Cílové Zásady bezpečné práce nebyly nalezeny."
+                )
+            measure.description = package.proposed_text.strip()
+            measure.note = self._join_notes(measure.note or "", package.reasoning)
+            measure.updated_at = datetime.now()
+            return 1, 0
+
+        if package.package_type == AI_MEASURE_REC_EDIT_REQUIRED:
+            target = self._resolve_export_target(
+                export_id_map,
+                package.target_export_id,
+                expected_kind="required_measure",
+            )
+            measure = session.get(HazardLibraryTemplateRequiredMeasure, int(target["id"]))
+            if measure is None or not measure.active:
+                raise HazardCatalogPackageIncorporateError(
+                    "Cílové Navazující opatření nebylo nalezeno."
+                )
+            measure.description = package.proposed_text.strip()
+            measure.note = self._join_notes(measure.note or "", package.reasoning)
+            measure.updated_at = datetime.now()
+            return 0, 1
+
+        if package.package_type == AI_MEASURE_REC_NEW_REQUIRED:
+            target = self._resolve_export_target(
+                export_id_map,
+                package.target_export_id,
+                expected_kind="assessment",
+            )
+            assessment_id = int(target["id"])
+            session.add(
+                HazardLibraryTemplateRequiredMeasure(
+                    template_assessment_id=assessment_id,
+                    description=package.proposed_text.strip(),
+                    note=self._join_notes(package.reasoning),
+                    active=True,
+                    sort_order=self._order._next_required_measure_sort_order(
+                        session,
+                        assessment_id,
+                    ),
+                ),
+            )
+            return 0, 1
+
+        raise HazardCatalogPackageIncorporateError(
+            f"Nepodporovaný typ doporučení k opatření: {package.package_type}"
+        )
+
+    @staticmethod
+    def _resolve_export_target(
+        export_id_map: dict[str, dict],
+        export_id: str | None,
+        *,
+        expected_kind: str,
+    ) -> dict:
+        key = (export_id or "").strip()
+        if not key:
+            raise HazardCatalogPackageIncorporateError(
+                "Doporučení k opatření postrádá target_export_id."
+            )
+        target = export_id_map.get(key)
+        if not isinstance(target, dict) or target.get("kind") != expected_kind:
+            raise HazardCatalogPackageIncorporateError(
+                f"Exportní ID „{key}“ neodpovídá očekávanému typu „{expected_kind}“."
+            )
+        if target.get("id") is None:
+            raise HazardCatalogPackageIncorporateError(
+                f"Exportní ID „{key}“ nemá platný interní odkaz."
+            )
+        return target
+
+    @staticmethod
+    def _wc_assessment_id_for_measure(working_copy, measure_id: int, *, existing: bool) -> int:
+        for event in working_copy.events:
+            for assessment in event.assessments:
+                bucket = (
+                    assessment.existing_measures if existing else assessment.required_measures
+                )
+                for measure in bucket:
+                    if int(measure.id) == int(measure_id):
+                        return int(assessment.id)
+        raise HazardCatalogPackageIncorporateError(
+            "Cílové opatření nebylo nalezeno v pracovní kopii."
         )
 
     def _resolve_or_create_event(
@@ -813,6 +1101,15 @@ class HazardCatalogPackageIncorporateService:
             int(group_id): int(assessment_id)
             for group_id, assessment_id in (group_assessment_overrides or {}).items()
         }
+
+        if resolved_package.package_type in AI_MEASURE_RECOMMENDATION_TYPES:
+            return self._incorporate_measure_recommendation_working_copy(
+                working_copy,
+                editor_session=editor_session,
+                package_record_id=package_record_id,
+                package=resolved_package,
+                export_id_map=export_id_map,
+            )
 
         event_count = 0
         assessment_count = 0
