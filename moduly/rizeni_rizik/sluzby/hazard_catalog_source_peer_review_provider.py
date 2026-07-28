@@ -170,6 +170,7 @@ class HazardCatalogSourcePeerReviewProvider:
                 status=PACKAGE_STATUS_PENDING,
             )
             for package in packages
+            if package.requires_user_decision
         ]
         if records:
             AiProposalPackageRepository().add_many(records)

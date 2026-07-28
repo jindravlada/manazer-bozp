@@ -442,6 +442,8 @@ class AiPeerReviewService:
         duplicates: list[str] = []
         seen_in_batch: set[str] = set()
         for package in packages:
+            if not package.requires_user_decision:
+                continue
             package_id = (package.package_id or "").strip()
             if package_id and (package_id in existing or package_id in seen_in_batch):
                 duplicates.append(package_id)

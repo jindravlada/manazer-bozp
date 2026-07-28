@@ -144,6 +144,9 @@ class HazardCatalogPackageIncorporateService:
         record = self.package_repository.get_by_id(package_record_id)
         if record is None or record.status != PACKAGE_STATUS_PENDING:
             return False
+        package = self.package_repository.package_from_record(record)
+        if not package.requires_user_decision:
+            return False
         record.status = PACKAGE_STATUS_REJECTED
         self.package_repository.update(record)
         self._refresh_review_counts(record.ai_peer_review_id)
@@ -388,7 +391,9 @@ class HazardCatalogPackageIncorporateService:
         required_measure_count = 0
 
         if package.package_type == AI_MEASURE_REC_NO_CHANGE:
-            pass
+            raise HazardCatalogPackageIncorporateError(
+                "Doporučení „Beze změn“ nelze převzít – nevyžaduje rozhodnutí."
+            )
         elif package.package_type == AI_MEASURE_REC_EDIT_EXISTING:
             target = self._resolve_export_target(
                 export_id_map,
@@ -484,7 +489,9 @@ class HazardCatalogPackageIncorporateService:
     ) -> tuple[int, int]:
         del template_id
         if package.package_type == AI_MEASURE_REC_NO_CHANGE:
-            return 0, 0
+            raise HazardCatalogPackageIncorporateError(
+                "Doporučení „Beze změn“ nelze převzít – nevyžaduje rozhodnutí."
+            )
 
         if package.package_type == AI_MEASURE_REC_EDIT_EXISTING:
             target = self._resolve_export_target(
@@ -1444,14 +1451,24 @@ class HazardCatalogPackageIncorporateService:
         review = self.review_repository.get_by_id(review_id)
         if review is None:
             return
+
+        def _actionable(record) -> bool:
+            return self.package_repository.package_from_record(record).requires_user_decision
+
         review.pending_proposals_count = sum(
-            1 for item in packages if item.status == PACKAGE_STATUS_PENDING
+            1
+            for item in packages
+            if item.status == PACKAGE_STATUS_PENDING and _actionable(item)
         )
         review.rejected_count = sum(
-            1 for item in packages if item.status == PACKAGE_STATUS_REJECTED
+            1
+            for item in packages
+            if item.status == PACKAGE_STATUS_REJECTED and _actionable(item)
         )
         review.accepted_count = sum(
-            1 for item in packages if item.status == PACKAGE_STATUS_INCORPORATED
+            1
+            for item in packages
+            if item.status == PACKAGE_STATUS_INCORPORATED and _actionable(item)
         )
         review.unassigned_count = 0
         self.review_repository.update(review)

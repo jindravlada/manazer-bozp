@@ -129,6 +129,13 @@ class AiProposalPackage:
         return self.package_type in AI_MEASURE_RECOMMENDATION_TYPES
 
     @property
+    def requires_user_decision(self) -> bool:
+        """True, pokud položka patří do fronty ke zpracování (RISK-AI-14)."""
+        from core.ai_oponentni.constants import AI_MEASURE_REC_NO_CHANGE
+
+        return self.package_type != AI_MEASURE_REC_NO_CHANGE
+
+    @property
     def event_name(self) -> str:
         """Lidský název události pro UI (bez technického EVENT-XXX)."""
         if self.proposed_text.strip():

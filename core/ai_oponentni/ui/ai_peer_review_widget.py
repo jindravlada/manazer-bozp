@@ -50,6 +50,8 @@ from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_IMPORT_BUTTON,
     AI_PEER_REVIEW_IMPORT_INTRO_EVIDENCE,
     AI_PEER_REVIEW_INTRO_TEXT,
+    AI_PEER_REVIEW_NO_CHANGE_CANNOT_DECIDE_MESSAGE,
+    AI_PEER_REVIEW_NO_CHANGE_FOUND_MESSAGE,
     AI_PEER_REVIEW_OBJECTIVE_LABELS,
     AI_PEER_REVIEW_PACKAGE_TYPE_LABELS,
     AI_PEER_REVIEW_RESPONSE_DIALOG_TITLE,
@@ -794,6 +796,24 @@ class AiPeerReviewWidget(QWidget):
                     )
                     if (
                         import_result.loaded_count == 0
+                        and import_result.no_change_count > 0
+                        and import_result.duplicate_count == 0
+                    ):
+                        # Ulož response_text / model i bez pending položek.
+                        self._package_session.sync_review_stats(
+                            review.id,
+                            loaded_packages_count=0,
+                        )
+                        QMessageBox.information(
+                            self,
+                            AI_PEER_REVIEW_DIALOG_TITLE,
+                            AI_PEER_REVIEW_NO_CHANGE_FOUND_MESSAGE,
+                        )
+                        self.refresh()
+                        self._select_review_row(review.id)
+                        return True
+                    if (
+                        import_result.loaded_count == 0
                         and import_result.duplicate_count > 0
                     ):
                         QMessageBox.information(
@@ -843,6 +863,33 @@ class AiPeerReviewWidget(QWidget):
                             packages=list(parse_result.packages),
                         )
                     )
+                    no_change_only = (
+                        not accepted_packages
+                        and not duplicate_ids
+                        and any(
+                            not package.requires_user_decision
+                            for package in parse_result.packages
+                        )
+                    )
+                    if no_change_only:
+                        updated = ai_peer_review_service.finalize_package_import(
+                            provider=self._provider,
+                            source_id=self._source_id,
+                            review_id=review.id,
+                            response_text=response_text,
+                            ai_model=ai_model,
+                            accepted=[],
+                            rejected=[],
+                            loaded_packages_count=0,
+                        )
+                        QMessageBox.information(
+                            self,
+                            AI_PEER_REVIEW_DIALOG_TITLE,
+                            AI_PEER_REVIEW_NO_CHANGE_FOUND_MESSAGE,
+                        )
+                        self.refresh()
+                        self._select_review_row(updated.id)
+                        return True
                     if not accepted_packages and duplicate_ids:
                         QMessageBox.information(
                             self,
@@ -1523,6 +1570,24 @@ class AiPeerReviewWidget(QWidget):
             return None
         return selected[0]
 
+    def _selected_package_requires_no_decision(self, record_id: int) -> bool:
+        if self._package_session is not None:
+            item = self._package_session.get_package(record_id)
+            if item is not None:
+                return not item.package.requires_user_decision
+        for record in ai_peer_review_service.get_packages_for_review(
+            self._selected_review_id() or 0
+        ):
+            if int(record.id) != int(record_id):
+                continue
+            from core.ai_oponentni.repository.ai_proposal_package_repository import (
+                AiProposalPackageRepository,
+            )
+
+            package = AiProposalPackageRepository.package_from_record(record)
+            return not package.requires_user_decision
+        return False
+
     def _load_package_detail(self) -> None:
         if self.package_detail is None:
             return
@@ -1686,6 +1751,13 @@ class AiPeerReviewWidget(QWidget):
                 CATALOG_AI_PACKAGE_SELECT_ONE,
             )
             return
+        if self._selected_package_requires_no_decision(record_id):
+            QMessageBox.information(
+                self,
+                AI_PEER_REVIEW_DIALOG_TITLE,
+                AI_PEER_REVIEW_NO_CHANGE_CANNOT_DECIDE_MESSAGE,
+            )
+            return
 
         overrides: dict[int, int] = {}
         while True:
@@ -1748,6 +1820,13 @@ class AiPeerReviewWidget(QWidget):
                 self,
                 AI_PEER_REVIEW_DIALOG_TITLE,
                 CATALOG_AI_PACKAGE_SELECT_ONE,
+            )
+            return
+        if self._selected_package_requires_no_decision(record_id):
+            QMessageBox.information(
+                self,
+                AI_PEER_REVIEW_DIALOG_TITLE,
+                AI_PEER_REVIEW_NO_CHANGE_CANNOT_DECIDE_MESSAGE,
             )
             return
         if self._package_session is not None:

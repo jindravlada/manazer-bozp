@@ -79,6 +79,7 @@ class ImportPackagesResult:
 
     created: list[CatalogSessionPackage]
     duplicate_package_ids: tuple[str, ...] = ()
+    no_change_count: int = 0
 
     @property
     def loaded_count(self) -> int:
@@ -120,6 +121,8 @@ class CatalogEditorSession:
         for review in reviews:
             for record in repo.get_pending_for_review(review.id):
                 package = repo.package_from_record(record)
+                if not package.requires_user_decision:
+                    continue
                 self.packages[int(record.id)] = CatalogSessionPackage(
                     local_id=int(record.id),
                     review_id=int(record.ai_peer_review_id),
@@ -159,6 +162,7 @@ class CatalogEditorSession:
             item
             for item in self.packages.values()
             if item.session_status == SESSION_PACKAGE_PENDING
+            and item.package.requires_user_decision
             and (review_id is None or item.review_id == review_id)
         ]
         return sorted(
@@ -186,7 +190,12 @@ class CatalogEditorSession:
         known_ids = self._known_package_ids_for_review(review_id)
         created: list[CatalogSessionPackage] = []
         duplicates: list[str] = []
+        no_change_count = 0
         for package in packages:
+            if not package.requires_user_decision:
+                # RISK-AI-14: beze_zmen zůstává v response_text, ne ve frontě.
+                no_change_count += 1
+                continue
             package_id = (package.package_id or "").strip()
             if package_id and package_id in known_ids:
                 duplicates.append(package_id)
@@ -218,6 +227,7 @@ class CatalogEditorSession:
         return ImportPackagesResult(
             created=created,
             duplicate_package_ids=tuple(duplicates),
+            no_change_count=no_change_count,
         )
 
     def _known_package_ids_for_review(self, review_id: int) -> set[str]:
@@ -243,6 +253,8 @@ class CatalogEditorSession:
         for item in self.packages.values():
             if item.review_id != review_id:
                 continue
+            if not item.package.requires_user_decision:
+                continue
             if item.db_id is not None:
                 tracked_db_ids.add(int(item.db_id))
             if item.session_status == SESSION_PACKAGE_PENDING:
@@ -253,6 +265,9 @@ class CatalogEditorSession:
                 staged += 1
         for record in AiProposalPackageRepository().get_for_review(review_id):
             if int(record.id) in tracked_db_ids:
+                continue
+            package = AiProposalPackageRepository.package_from_record(record)
+            if not package.requires_user_decision:
                 continue
             if record.status == PACKAGE_STATUS_PENDING:
                 pending += 1
@@ -305,6 +320,10 @@ class CatalogEditorSession:
         item = self.packages.get(local_id)
         if item is None:
             raise ValueError("Návrhový balík neexistuje v pracovní session.")
+        if not item.package.requires_user_decision:
+            raise ValueError(
+                "Doporučení „Beze změn“ nelze převzít – nevyžaduje rozhodnutí."
+            )
         if item.session_status != SESSION_PACKAGE_PENDING:
             raise ValueError("Zapracovat lze pouze balík čekající na odborné posouzení.")
         item.session_status = SESSION_PACKAGE_STAGED
@@ -315,6 +334,8 @@ class CatalogEditorSession:
     def reject_package(self, local_id: int) -> bool:
         item = self.packages.get(local_id)
         if item is None:
+            return False
+        if not item.package.requires_user_decision:
             return False
         if item.session_status != SESSION_PACKAGE_PENDING:
             return False

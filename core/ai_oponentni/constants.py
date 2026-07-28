@@ -152,6 +152,12 @@ AI_MEASURE_REC_EDIT_REQUIRED = "upravit_navazujici_opatreni"
 AI_MEASURE_REC_EDIT_EXISTING = "upravit_zasady_bezpecne_prace"
 AI_MEASURE_REC_NEW_REQUIRED = "nove_navazujici_opatreni"
 
+# RISK-AI-14 – doporučení beze změn nepatří do fronty ke zpracování.
+AI_PEER_REVIEW_NO_CHANGE_FOUND_MESSAGE = "AI nenašla žádné návrhy změn."
+AI_PEER_REVIEW_NO_CHANGE_CANNOT_DECIDE_MESSAGE = (
+    "Doporučení „Beze změn“ nevyžaduje převzetí ani zamítnutí."
+)
+
 AI_MEASURE_RECOMMENDATION_TYPES = (
     AI_MEASURE_REC_NO_CHANGE,
     AI_MEASURE_REC_EDIT_REQUIRED,
