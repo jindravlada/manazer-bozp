@@ -15,8 +15,16 @@ from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem
 from moduly.rizeni_rizik.modely.hazard_library_template import HazardLibraryTemplate
 from moduly.rizeni_rizik.modely.hazard_required_measure import HazardRequiredMeasure
 from moduly.rizeni_rizik.modely.hazard_risk_assessment import HazardRiskAssessment
+from moduly.rizeni_rizik.modely.hazard_risk_assessment_exposed_group import (
+    HazardRiskAssessmentExposedGroup,
+)
 from moduly.rizeni_rizik.repository.hazard_library_template_repository import (
     HazardLibraryTemplateOperationRepository,
+)
+from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
+    effective_target_refs,
+    has_exposed_target_refs,
+    legacy_exposed_group_id,
 )
 from moduly.rizeni_rizik.sluzby.hazard_identification_service import (
     hazard_identification_service,
@@ -212,7 +220,12 @@ class HazardLibraryTemplateApplyService:
                 if include_inactive or assessment.active
             ]
             for assessment in assessments:
-                if assessment.exposed_group_id is None:
+                if not has_exposed_target_refs(
+                    hazard_library_template_assessment_service.get_target_refs(
+                        assessment.id,
+                    ),
+                    legacy_exposed_group_id=assessment.exposed_group_id,
+                ):
                     raise HazardLibraryTemplateApplyError(
                         f"Posouzení události „{event.name}“ nemá přiřazenou ohroženou skupinu."
                     )
@@ -280,14 +293,15 @@ class HazardLibraryTemplateApplyService:
                 event_count += 1
 
                 for assessment in event_assessments[event.id]:
-                    group_ids = hazard_library_template_assessment_service.get_group_ids(
-                        assessment.id,
+                    target_refs = effective_target_refs(
+                        hazard_library_template_assessment_service.get_target_refs(
+                            assessment.id,
+                        ),
+                        legacy_exposed_group_id=assessment.exposed_group_id,
                     )
-                    if not group_ids and assessment.exposed_group_id:
-                        group_ids = [assessment.exposed_group_id]
                     hazard_assessment = HazardRiskAssessment(
                         hazard_event_id=hazard_event.id,
-                        exposed_group_id=group_ids[0] if group_ids else None,
+                        exposed_group_id=legacy_exposed_group_id(target_refs),
                         exposed_group="",
                         severity=assessment.severity,
                         note=assessment.note or "",
@@ -299,15 +313,13 @@ class HazardLibraryTemplateApplyService:
                     )
                     session.add(hazard_assessment)
                     session.flush()
-                    from moduly.rizeni_rizik.modely.hazard_risk_assessment_exposed_group import (
-                        HazardRiskAssessmentExposedGroup,
-                    )
 
-                    for sort_order, group_id in enumerate(group_ids, start=1):
+                    for sort_order, ref in enumerate(target_refs, start=1):
                         session.add(
                             HazardRiskAssessmentExposedGroup(
                                 assessment_id=hazard_assessment.id,
-                                exposed_group_id=group_id,
+                                exposed_group_id=ref.source_id,
+                                source_type=ref.source_type,
                                 sort_order=sort_order,
                             ),
                         )

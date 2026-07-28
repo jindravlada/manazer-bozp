@@ -65,6 +65,32 @@ def legacy_exposed_group_id(refs: list[ExposedTargetRef]) -> int | None:
     return None
 
 
+def effective_target_refs(
+    refs: list[ExposedTargetRef] | tuple[ExposedTargetRef, ...] | None,
+    *,
+    legacy_exposed_group_id: int | None = None,
+) -> list[ExposedTargetRef]:
+    """Vazební tabulka je zdroj pravdy; legacy sloupec jen při prázdné tabulce."""
+    values = list(refs or [])
+    if not values and legacy_exposed_group_id is not None:
+        values = [hazard_group_ref(legacy_exposed_group_id)]
+    return values
+
+
+def has_exposed_target_refs(
+    refs: list[ExposedTargetRef] | tuple[ExposedTargetRef, ...] | None,
+    *,
+    legacy_exposed_group_id: int | None = None,
+) -> bool:
+    """Posouzení má platnou ohroženou skupinu/roli (hazard_group nebo role)."""
+    return bool(
+        effective_target_refs(
+            refs,
+            legacy_exposed_group_id=legacy_exposed_group_id,
+        )
+    )
+
+
 def resolve_exposed_target_display_name(ref: ExposedTargetRef) -> str:
     if ref.source_type == SOURCE_TYPE_ROLE:
         from moduly.nastaveni.sluzby.responsibility_role_service import (

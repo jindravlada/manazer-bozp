@@ -89,7 +89,9 @@ from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import (
 from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
     SOURCE_TYPE_HAZARD_GROUP,
     ExposedTargetRef,
+    effective_target_refs,
     format_exposed_target_names,
+    has_exposed_target_refs,
     legacy_exposed_group_id,
     refs_from_legacy_group_ids,
     resolve_exposed_target_display_name,
@@ -1774,7 +1776,12 @@ class HazardIdentificationWorkingCopy:
                 if include_inactive or assessment.active
             ]
             for assessment in assessments:
-                if assessment.exposed_group_id is None:
+                if not has_exposed_target_refs(
+                    hazard_library_template_assessment_service.get_target_refs(
+                        assessment.id,
+                    ),
+                    legacy_exposed_group_id=assessment.exposed_group_id,
+                ):
                     raise HazardLibraryTemplateApplyError(
                         f"Posouzení události „{event.name}“ nemá přiřazenou ohroženou skupinu.",
                     )
@@ -1834,16 +1841,23 @@ class HazardIdentificationWorkingCopy:
             event_count += 1
 
             for assessment in event_assessments[event.id]:
-                group_ids = hazard_library_template_assessment_service.get_group_ids(
-                    assessment.id,
+                target_refs = effective_target_refs(
+                    hazard_library_template_assessment_service.get_target_refs(
+                        assessment.id,
+                    ),
+                    legacy_exposed_group_id=assessment.exposed_group_id,
                 )
-                if not group_ids and assessment.exposed_group_id:
-                    group_ids = [assessment.exposed_group_id]
+                group_ids = [
+                    ref.source_id
+                    for ref in target_refs
+                    if ref.source_type == SOURCE_TYPE_HAZARD_GROUP
+                ]
                 wc_assessment = IdWcAssessment(
                     id=self._alloc_id(),
                     hazard_event_id=wc_event.id,
-                    exposed_group_id=group_ids[0] if group_ids else None,
+                    exposed_group_id=legacy_exposed_group_id(target_refs),
                     exposed_group_ids=[int(g) for g in group_ids],
+                    target_refs=list(target_refs),
                     severity=assessment.severity,
                     note=assessment.note or "",
                     conclusion=assessment.conclusion or "",
@@ -1950,7 +1964,12 @@ class HazardIdentificationWorkingCopy:
                 if include_inactive or assessment.active
             ]
             for assessment in assessments:
-                if assessment.exposed_group_id is None:
+                if not has_exposed_target_refs(
+                    hazard_library_template_assessment_service.get_target_refs(
+                        assessment.id,
+                    ),
+                    legacy_exposed_group_id=assessment.exposed_group_id,
+                ):
                     raise HazardLibraryTemplateApplyError(
                         f"Posouzení události „{event.name}“ nemá přiřazenou ohroženou skupinu.",
                     )
@@ -2002,16 +2021,23 @@ class HazardIdentificationWorkingCopy:
             )
             event_count += 1
             for assessment in event_assessments[event.id]:
-                group_ids = hazard_library_template_assessment_service.get_group_ids(
-                    assessment.id,
+                target_refs = effective_target_refs(
+                    hazard_library_template_assessment_service.get_target_refs(
+                        assessment.id,
+                    ),
+                    legacy_exposed_group_id=assessment.exposed_group_id,
                 )
-                if not group_ids and assessment.exposed_group_id:
-                    group_ids = [assessment.exposed_group_id]
+                group_ids = [
+                    ref.source_id
+                    for ref in target_refs
+                    if ref.source_type == SOURCE_TYPE_HAZARD_GROUP
+                ]
                 wc_assessment = IdWcAssessment(
                     id=self._alloc_id(),
                     hazard_event_id=wc_event.id,
-                    exposed_group_id=group_ids[0] if group_ids else None,
+                    exposed_group_id=legacy_exposed_group_id(target_refs),
                     exposed_group_ids=[int(g) for g in group_ids],
+                    target_refs=list(target_refs),
                     severity=assessment.severity,
                     note=assessment.note or "",
                     conclusion=assessment.conclusion or "",

@@ -862,13 +862,22 @@ class HazardCatalogPackageIncorporateService:
         session,
         assessment: HazardLibraryTemplateAssessment,
     ) -> set[int]:
-        join_ids = session.scalars(
-            select(HazardLibraryTemplateAssessmentExposedGroup.exposed_group_id).where(
+        from moduly.rizeni_rizik.sluzby.exposed_target_ref import SOURCE_TYPE_HAZARD_GROUP
+
+        join_ids = session.execute(
+            select(
+                HazardLibraryTemplateAssessmentExposedGroup.exposed_group_id,
+                HazardLibraryTemplateAssessmentExposedGroup.source_type,
+            ).where(
                 HazardLibraryTemplateAssessmentExposedGroup.assessment_id
                 == assessment.id,
             ),
         ).all()
-        ids = {int(value) for value in join_ids}
+        ids = {
+            int(source_id)
+            for source_id, source_type in join_ids
+            if (source_type or SOURCE_TYPE_HAZARD_GROUP) == SOURCE_TYPE_HAZARD_GROUP
+        }
         if not ids and assessment.exposed_group_id:
             ids = {int(assessment.exposed_group_id)}
         return ids

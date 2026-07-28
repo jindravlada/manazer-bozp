@@ -44,6 +44,11 @@ from moduly.rizeni_rizik.sluzby.hazard_required_measure_service import (
 from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import (
     hazard_risk_assessment_service,
 )
+from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
+    effective_target_refs,
+    has_exposed_target_refs,
+    legacy_exposed_group_id,
+)
 
 
 class HazardLibraryTemplateImportError(ValueError):
@@ -147,7 +152,10 @@ class HazardLibraryTemplateImportService:
                 if include_inactive or assessment.active
             ]
             for assessment in assessments:
-                if assessment.exposed_group_id is None:
+                if not has_exposed_target_refs(
+                    hazard_risk_assessment_service.get_target_refs(assessment.id),
+                    legacy_exposed_group_id=assessment.exposed_group_id,
+                ):
                     raise HazardLibraryTemplateImportError(
                         f"Posouzení události „{event.name}“ nemá přiřazenou ohroženou skupinu."
                     )
@@ -223,12 +231,13 @@ class HazardLibraryTemplateImportService:
                     event_assessments[event.id],
                     start=1,
                 ):
-                    group_ids = hazard_risk_assessment_service.get_group_ids(assessment.id)
-                    if not group_ids and assessment.exposed_group_id:
-                        group_ids = [assessment.exposed_group_id]
+                    target_refs = effective_target_refs(
+                        hazard_risk_assessment_service.get_target_refs(assessment.id),
+                        legacy_exposed_group_id=assessment.exposed_group_id,
+                    )
                     template_assessment = HazardLibraryTemplateAssessment(
                         template_event_id=template_event.id,
-                        exposed_group_id=group_ids[0] if group_ids else assessment.exposed_group_id,
+                        exposed_group_id=legacy_exposed_group_id(target_refs),
                         severity=assessment.severity,
                         conclusion=assessment.conclusion or "",
                         note=assessment.note or "",
@@ -241,11 +250,12 @@ class HazardLibraryTemplateImportService:
                         HazardLibraryTemplateAssessmentExposedGroup,
                     )
 
-                    for group_sort, group_id in enumerate(group_ids, start=1):
+                    for group_sort, ref in enumerate(target_refs, start=1):
                         session.add(
                             HazardLibraryTemplateAssessmentExposedGroup(
                                 assessment_id=template_assessment.id,
-                                exposed_group_id=group_id,
+                                exposed_group_id=ref.source_id,
+                                source_type=ref.source_type,
                                 sort_order=group_sort,
                             ),
                         )

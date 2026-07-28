@@ -5,7 +5,6 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass, field
 
-from moduly.nastaveni.sluzby.exposed_group_service import exposed_group_service
 from moduly.rizeni_rizik.constants_library import (
     CATALOG_COMPARE_KIND_ADDED,
     CATALOG_COMPARE_KIND_CHANGED,
@@ -211,7 +210,7 @@ class HazardCatalogInstanceCompareService:
         pairs, master_unmatched, local_unmatched = self._match_by_key(
             master_assessments,
             local_assessments,
-            key_fn=lambda assessment: str(assessment.exposed_group_id or ""),
+            key_fn=self._assessment_match_key,
             sort_key=lambda assessment: assessment.id or 0,
         )
 
@@ -375,11 +374,37 @@ class HazardCatalogInstanceCompareService:
             local_unmatched.extend(local_list[len(master_list) :])
         return pairs, master_unmatched, local_unmatched
 
+    def _assessment_match_key(self, assessment) -> str:
+        refs = self._assessment_target_refs(assessment)
+        if not refs:
+            return ""
+        return "|".join(sorted(f"{ref.source_type}:{ref.source_id}" for ref in refs))
+
+    def _assessment_target_refs(self, assessment):
+        from moduly.rizeni_rizik.modely.hazard_library_template_assessment import (
+            HazardLibraryTemplateAssessment,
+        )
+        from moduly.rizeni_rizik.sluzby.exposed_target_ref import effective_target_refs
+
+        if isinstance(assessment, HazardLibraryTemplateAssessment):
+            refs = hazard_library_template_assessment_service.get_target_refs(
+                assessment.id,
+            )
+        else:
+            refs = hazard_risk_assessment_service.get_target_refs(assessment.id)
+        return effective_target_refs(
+            refs,
+            legacy_exposed_group_id=assessment.exposed_group_id,
+        )
+
     def _assessment_group_label(self, assessment) -> str:
-        if assessment.exposed_group_id:
-            name = exposed_group_service.display_name(assessment.exposed_group_id)
-            if name:
-                return name
+        from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
+            format_exposed_target_names,
+        )
+
+        names = format_exposed_target_names(self._assessment_target_refs(assessment))
+        if names:
+            return names
         if getattr(assessment, "exposed_group", ""):
             return assessment.exposed_group
         return "—"

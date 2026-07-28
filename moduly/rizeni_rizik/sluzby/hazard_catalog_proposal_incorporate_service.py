@@ -455,7 +455,18 @@ class HazardCatalogProposalIncorporateService:
                 export_id = export_id_by_assessment_id.get(assessment.id)
                 if export_id is None:
                     export_id = self.ensure_assessment_export_id(review_id, assessment.id)
-                group_name = exposed_group_service.display_name(assessment.exposed_group_id)
+                from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
+                    effective_target_refs,
+                    format_exposed_target_names,
+                )
+
+                refs = effective_target_refs(
+                    hazard_library_template_assessment_service.get_target_refs(
+                        assessment.id,
+                    ),
+                    legacy_exposed_group_id=assessment.exposed_group_id,
+                )
+                group_name = format_exposed_target_names(refs)
                 candidates.append(
                     CatalogAssessmentCandidate(
                         export_id=export_id,
@@ -602,12 +613,27 @@ class HazardCatalogProposalIncorporateService:
                 return None
             if proposal.exposed_group_id is None:
                 return None
+            proposal_group_id = int(proposal.exposed_group_id)
             for assessment in self._active_assessments(int(parent["id"])):
-                if assessment.exposed_group_id != proposal.exposed_group_id:
+                group_ids = hazard_library_template_assessment_service.get_group_ids(
+                    assessment.id,
+                )
+                if not group_ids and assessment.exposed_group_id:
+                    group_ids = [int(assessment.exposed_group_id)]
+                if proposal_group_id not in group_ids:
                     continue
-                from moduly.nastaveni.sluzby.exposed_group_service import exposed_group_service
+                from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
+                    effective_target_refs,
+                    format_exposed_target_names,
+                )
 
-                group_name = exposed_group_service.display_name(assessment.exposed_group_id)
+                refs = effective_target_refs(
+                    hazard_library_template_assessment_service.get_target_refs(
+                        assessment.id,
+                    ),
+                    legacy_exposed_group_id=assessment.exposed_group_id,
+                )
+                group_name = format_exposed_target_names(refs)
                 return CatalogProposalDuplicate(
                     kind=kind,
                     match_type=CATALOG_DUPLICATE_MATCH_EXACT,
