@@ -29,6 +29,22 @@ def _format_date(value) -> str:
     return _text(value) or "—"
 
 
+def split_checklist_measure_lines(text: str) -> list[str]:
+    """Rozdělí text navazujícího opatření na položky checklistu (RISK-CHECKLIST-1).
+
+    Hranice = Enter (``\\n`` / ``\\r\\n`` / ``\\r``). Prázdné řádky a okolní
+    mezery se vynechají / oříznou.
+    """
+    if not text:
+        return []
+    lines: list[str] = []
+    for raw_line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
+        line = raw_line.strip()
+        if line:
+            lines.append(line)
+    return lines
+
+
 # Papírový checklist do terénu – vždy prázdná políčka k ručnímu vyplnění.
 # „Poznámka č.“ se nikdy neplní z elektronické evidence.
 # Oddělovač: tabulátor → v ODT se renderuje jako <text:tab/> (rozestup přes řádek).
@@ -89,13 +105,17 @@ class RiskMeasureReviewChecklistExportService:
             )
 
         paragraphs: list[OdtParagraph] = []
-        for index, row in enumerate(rows):
-            if index > 0:
-                paragraphs.append(OdtParagraph.blank_line())
-            paragraphs.append(
-                OdtParagraph.text(row.measure_title or "—", style="AuditCriterion")
-            )
-            paragraphs.append(OdtParagraph.text(_CHECKLIST_CONTROL_LINE))
+        first_item = True
+        for row in rows:
+            lines = split_checklist_measure_lines(row.measure_title or "")
+            if not lines:
+                lines = ["—"]
+            for line in lines:
+                if not first_item:
+                    paragraphs.append(OdtParagraph.blank_line())
+                first_item = False
+                paragraphs.append(OdtParagraph.text(line, style="AuditCriterion"))
+                paragraphs.append(OdtParagraph.text(_CHECKLIST_CONTROL_LINE))
         return OdtRichContent(paragraphs=paragraphs)
 
 
