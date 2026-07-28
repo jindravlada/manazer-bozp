@@ -1,0 +1,467 @@
+{
+  "schema_version": "2.0",
+  "source_reference": "KZR-0001",
+  "generated_at": "2026-07-28T10:45:00+02:00",
+  "proposal_packages": [
+    {
+      "package_id": "PACKAGE-001",
+      "package_type": "extend_event",
+      "target_event_export_id": "EVENT-001",
+      "event": null,
+      "assessments": [
+        {
+          "exposed_group": "Návštěvy a jiné osoby bez běžné znalosti provozu v kolejišti",
+          "exposed_groups": [
+            "Návštěvy",
+            "Externí osoby bez běžné znalosti provozu"
+          ],
+          "severity": "critical",
+          "conclusion": "Osoba neznalá místních podmínek může vstoupit do průjezdného průřezu, přehlédnout pohyb vozidla nebo nesprávně vyhodnotit návěst a únikovou cestu. Možným následkem je smrtelné sražení nebo přejetí. Návrh doplňuje dosud chybějící skupinu; konkrétní režim vstupu je nutné ověřit na pracovišti.",
+          "existing_measures": [
+            {
+              "description": "Vstupujte do kolejiště pouze s určeným doprovodem a dodržujte jeho pokyny.",
+              "note": "Pravidlo je určeno návštěvám a jiným osobám bez platného školení pro samostatný pohyb v kolejišti."
+            },
+            {
+              "description": "Používejte po celou dobu pobytu v kolejišti řádně zapnutý výstražný oděv a uzavřenou obuv.",
+              "note": "Upřesnit podle místních pravidel, zda je návštěvám vstup do kolejiště vůbec povolován."
+            },
+            {
+              "description": "Nevzdalujte se od určené trasy a nevstupujte mezi drážní vozidla ani do jejich bezprostřední blízkosti.",
+              "note": "Opatření omezuje nepředvídatelný pohyb osoby neznalé provozu."
+            }
+          ],
+          "required_measures": []
+        }
+      ],
+      "legal_links": [
+        {
+          "reference": "Zákon č. 262/2006 Sb., zákoník práce, § 101 odst. 3 až 5 a § 102",
+          "reasoning": "Návrh k odbornému ověření pro koordinaci zaměstnavatelů, ochranu dalších osob na pracovišti a prevenci rizik."
+        },
+        {
+          "reference": "Zákon č. 266/1994 Sb., o dráhách, § 22",
+          "reasoning": "Návrh k odbornému ověření ve vztahu k bezpečnému provozování dráhy a povinnostem osob v obvodu dráhy."
+        }
+      ],
+      "reasoning": "Událost již zahrnuje zaměstnance a dodavatele, nikoli však návštěvy a další osoby bez znalosti drážního provozu. U nich nelze předpokládat samostatné vyhodnocení návěstí, rychlosti vozidla ani bezpečného odstupu."
+    },
+    {
+      "package_id": "PACKAGE-002",
+      "package_type": "new_event",
+      "target_event_export_id": null,
+      "event": {
+        "name": "Přimáčknutí nebo sevření při spojování a rozpojování drážních vozidel",
+        "description": "Při svěšování, odvěšování nebo jiné manipulaci se spojovacím ústrojím může dojít k přimáčknutí osoby mezi vozidly, zachycení končetiny mezi pohybujícími se částmi nebo k neočekávanému pohybu jednoho z vozidel.",
+        "note": "Scénář je odlišný od sražení osoby v kolejišti; rozhodující je práce v prostoru mezi vozidly a u spojovacího ústrojí."
+      },
+      "assessments": [
+        {
+          "exposed_group": "Vlakvedoucí, vedoucí posunu, vozmistr a další osoby provádějící spojování nebo rozpojování vozidel",
+          "exposed_groups": [
+            "Vlakvedoucí - vedoucí posunu",
+            "Vozmistr - vlakvedoucí, vedoucí posunu",
+            "Členové posunové čety",
+            "Strojvedoucí",
+            "Strojvedoucí externí"
+          ],
+          "severity": "critical",
+          "conclusion": "Přimáčknutí mezi vozidly nebo nárazníky může způsobit smrtelné poranění; zachycení ruky ve spojovacím ústrojí může vést k těžkému poranění končetiny. Konečné posouzení musí zohlednit používaný typ spřáhla a místní technologický postup.",
+          "existing_measures": [
+            {
+              "description": "Vstupujte mezi vozidla pouze po jejich zastavení, po vzájemném dotyku nárazníků a po souhlasu osoby řídící posun.",
+              "note": "Navazuje na pravidlo již uvedené u EXISTING-MEASURE-003, ale při samostatné události jej spojuje přímo s činností svěšování."
+            },
+            {
+              "description": "Před zahájením spojování nebo rozpojování si ověřte, že osoba řídící pohyb vozidel o vašem vstupu mezi vozidla ví.",
+              "note": "Způsob potvrzení musí odpovídat místnímu provoznímu předpisu."
+            },
+            {
+              "description": "Nevkládejte ruce mezi pohybující se části spojovacího ústrojí a neuvolňujte jeho závadu během pohybu vozidel.",
+              "note": "Konkrétní místa bezpečného úchopu musí vycházet z konstrukce používaných vozidel."
+            }
+          ],
+          "required_measures": [
+            {
+              "description": "Přerušte spojování nebo rozpojování, pokud se vozidla neočekávaně pohnou nebo ztratíte spojení s osobou řídící posun.",
+              "note": "Pohyb lze obnovit až po novém jednoznačném dorozumění."
+            }
+          ]
+        }
+      ],
+      "legal_links": [
+        {
+          "reference": "Vyhláška č. 173/1995 Sb., dopravní řád drah, zejména § 16 odst. 11 a 12",
+          "reasoning": "Návrh k odbornému ověření pro zajištění odstavených vozidel proti ujetí a technologické postupy při posunu, včetně provozu na vlečce."
+        },
+        {
+          "reference": "Nařízení vlády č. 378/2001 Sb., zejména § 3",
+          "reasoning": "Návrh k odbornému ověření pro ochranu před zachycením pohybujícími se částmi a bezpečné používání zařízení; přednost mají zvláštní drážní předpisy."
+        }
+      ],
+      "reasoning": "Stávající opatření okrajově zakazuje vstup mezi nezastavené vozy, ale katalog nemá samostatnou událost pro sevření při vlastní manipulaci se spojovacím ústrojím. Jde o běžný a závažný scénář práce s drážními vozidly."
+    },
+    {
+      "package_id": "PACKAGE-003",
+      "package_type": "new_event",
+      "target_event_export_id": null,
+      "event": {
+        "name": "Úraz elektrickým proudem nebo elektrickým obloukem při práci na střeše drážního vozidla",
+        "description": "Při výstupu na střechu elektrického drážního vozidla, zbrojení nebo údržbě se osoba přiblíží k živé části trakčního vedení nebo k elektrické části vozidla pod napětím. Může dojít k zásahu elektrickým proudem, vzniku elektrického oblouku, popálení a následnému pádu z výšky.",
+        "note": "Podklady výslovně uvádějí zbrojení elektrických lokomotiv na střeše; elektrické ohrožení však dosud není samostatně posouzeno."
+      },
+      "assessments": [
+        {
+          "exposed_group": "Strojvedoucí, elektrikáři a opraváři hnacích kolejových vozidel, včetně externích pracovníků",
+          "exposed_groups": [
+            "Strojvedoucí",
+            "Strojvedoucí externí",
+            "Elektrikář HKV",
+            "Opravář HKV - zámečník",
+            "Dodavatelé údržby"
+          ],
+          "severity": "critical",
+          "conclusion": "Kontakt s trakčním vedením nebo přiblížení na nebezpečnou vzdálenost může mít smrtelný následek i bez přímého dotyku. Závažnost je kritická; konkrétní opatření musí odpovídat napájecí soustavě, zařízení pracoviště a schválenému technologickému postupu.",
+          "existing_measures": [
+            {
+              "description": "Považujte trakční vedení a elektrické části vozidla za živé, dokud nebylo stanoveným postupem potvrzeno jejich vypnutí a zajištění.",
+              "note": "Pravidlo nesmí být nahrazeno pouhým předpokladem, že vozidlo nebo kolej nejsou v provozu."
+            },
+            {
+              "description": "Nevystupujte na střechu drážního vozidla pod trakčním vedením bez předání pracoviště a potvrzení podmínek bezpečné práce oprávněnou osobou.",
+              "note": "Konkrétní způsob vypnutí, zajištění a případného uzemnění musí určit drážní a elektrotechnický předpis pracoviště."
+            },
+            {
+              "description": "Dodržujte vyznačené hranice pracoviště a nevstupujte do prostoru, pro který nebylo potvrzeno bezpečné provádění práce.",
+              "note": "Platí také pro externí pracovníky."
+            }
+          ],
+          "required_measures": [
+            {
+              "description": "Přerušte práci a sestupte bezpečným způsobem, pokud zanikne platnost předání pracoviště, změní se poloha vozidla nebo vznikne pochybnost o vypnutí elektrického zařízení.",
+              "note": "Práce může pokračovat až po novém potvrzení oprávněnou osobou."
+            },
+            {
+              "description": "Nepřibližujte se k poškozenému nebo spadlému trakčnímu vedení a upozorněte na nebezpečí všechny osoby v okolí.",
+              "note": "Místo oznamte osobě řídící drážní provoz nebo jiné určené odpovědné osobě."
+            }
+          ]
+        }
+      ],
+      "legal_links": [
+        {
+          "reference": "Nařízení vlády č. 378/2001 Sb., § 3 odst. 1 písm. f)",
+          "reasoning": "Návrh k odbornému ověření pro ochranu před nebezpečným dotykem a účinky elektřiny; použije se, pokud zvláštní drážní předpis nestanoví požadavky jinak."
+        },
+        {
+          "reference": "Nařízení vlády č. 362/2005 Sb.",
+          "reasoning": "Návrh k odbornému ověření pro souběžné riziko pádu při práci na střeše vozidla."
+        },
+        {
+          "reference": "Vyhláška č. 173/1995 Sb., dopravní řád drah, příloha č. 1 – návěsti pro elektrický provoz",
+          "reasoning": "Návrh k odbornému ověření ve vztahu k elektrickému provozu a trakčnímu vedení."
+        }
+      ],
+      "reasoning": "Evidence obsahuje pouze pád ze střechy. U elektrických lokomotiv je však současně významné a potenciálně smrtelné elektrické ohrožení, které vyžaduje samostatný scénář."
+    },
+    {
+      "package_id": "PACKAGE-004",
+      "package_type": "new_event",
+      "target_event_export_id": null,
+      "event": {
+        "name": "Neočekávaný pohyb nebo spuštění drážního vozidla při údržbě",
+        "description": "Při prohlídce, čištění, odstraňování závady nebo opravě se vozidlo neočekávaně pohne, dojde k uvedení pohonu či jiné pohyblivé části do činnosti nebo k obnovení energie. Osoba může být sražena, přimáčknuta, zachycena nebo zasažena pohybující se částí.",
+        "note": "Událost se týká údržby vozidla, nikoli běžného posunu."
+      },
+      "assessments": [
+        {
+          "exposed_group": "Opraváři, elektrikáři, strojvedoucí provádějící kontrolu a dodavatelé údržby",
+          "exposed_groups": [
+            "Opravář HKV - zámečník",
+            "Elektrikář HKV",
+            "Strojvedoucí",
+            "Strojvedoucí externí",
+            "Dodavatelé údržby"
+          ],
+          "severity": "critical",
+          "conclusion": "Neočekávaný pohyb těžkého vozidla nebo pohyblivé části může způsobit smrtelné rozdrcení či zachycení. Rozsah potřebného odpojení a zajištění energií musí vycházet z typu vozidla, průvodní dokumentace a technologického postupu.",
+          "existing_measures": [
+            {
+              "description": "Před zahájením údržby odstavte vozidlo na určeném místě a zajistěte je proti pohybu způsobem stanoveným pro daný typ vozidla a kolej.",
+              "note": "Zajištění musí předcházet vstupu do nebezpečného prostoru."
+            },
+            {
+              "description": "Před vstupem k pohyblivým nebo elektrickým částem vypněte a zajistěte zdroje energie postupem stanoveným v provozní dokumentaci vozidla.",
+              "note": "Nevyžaduje zavedení konkrétní technologie; způsob zajištění určí dokumentace a místní postup."
+            },
+            {
+              "description": "Nezahajujte údržbu, dokud jste nepřevzali vozidlo k práci a nebyli informováni o jeho technickém stavu a rozsahu zajištění.",
+              "note": "Platí i pro dodavatele."
+            }
+          ],
+          "required_measures": [
+            {
+              "description": "Před obnovením energie nebo pohybu zkontrolujte, že všichni pracovníci opustili nebezpečný prostor a že jsou namontovány odstraněné ochranné kryty.",
+              "note": "Obnovení provozu musí proběhnout podle předávacího postupu."
+            },
+            {
+              "description": "Přerušte práci, pokud zjistíte neúplné zajištění vozidla nebo zásah jiné osoby do ovládání.",
+              "note": "Pokračujte až po obnovení všech stanovených podmínek."
+            }
+          ]
+        }
+      ],
+      "legal_links": [
+        {
+          "reference": "Nařízení vlády č. 378/2001 Sb., § 2 a § 3",
+          "reasoning": "Návrh k odbornému ověření pro bezpečné opravy, údržbu, čištění, práci v nebezpečném prostoru a ochranu před pohybujícími se částmi."
+        },
+        {
+          "reference": "Vyhláška č. 173/1995 Sb., dopravní řád drah, § 64 a příloha č. 5",
+          "reasoning": "Návrh k odbornému ověření pro technické kontroly drážních vozidel; konkrétní rozsah se řídí druhem vozidla a dokumentací."
+        }
+      ],
+      "reasoning": "Podklady zmiňují opraváře a elektrikáře pouze u pádu ze střechy. Chybí obecný scénář údržby, při němž je zásadní zajištění vozidla a energií proti neočekávanému uvedení do pohybu."
+    },
+    {
+      "package_id": "PACKAGE-005",
+      "package_type": "new_event",
+      "target_event_export_id": null,
+      "event": {
+        "name": "Zasažení pohybující se bočnicí, víkem nebo jinou otevíranou částí vozu",
+        "description": "Při otevírání, zavírání nebo uvolňování bočnice či víka vozu dojde k neočekávanému pohybu, pádu nebo prudkému otevření části vozidla. Osoba může být zasažena, přimáčknuta nebo může v důsledku rázu spadnout.",
+        "note": "Podklady potvrzují práci s bočnicemi vozů u vykládací rampy a otevírání či zavírání vík na vozech."
+      },
+      "assessments": [
+        {
+          "exposed_group": "Vykladači paliva, obsluha zařízení, zaměstnanci provozu a pracovníci údržby",
+          "exposed_groups": [
+            "Vykladač paliva",
+            "Obsluha zařízení",
+            "Zaměstnanci daného pracoviště",
+            "Pracovníci údržby",
+            "Dodavatelé údržby"
+          ],
+          "severity": "serious",
+          "conclusion": "Těžká bočnice nebo víko může způsobit závažné zhmoždění, zlomeniny či pád z vozidla. Konečné hodnocení závisí na konstrukci vozu, hmotnosti části, způsobu jištění a místě obsluhy.",
+          "existing_measures": [
+            {
+              "description": "Před uvolněním bočnice nebo víka se postavte mimo prostor jejich možného pohybu a pádu.",
+              "note": "Bezpečný prostor musí být určen pro konkrétní konstrukci vozu."
+            },
+            {
+              "description": "Neotevírejte ani nezavírejte bočnici nebo víko s poškozeným zámkem, závěsem, dorazem nebo ovládáním.",
+              "note": "Závadu oznamte určené odpovědné osobě."
+            },
+            {
+              "description": "Nevstupujte mezi uvolněnou bočnici vozu a vykládací rampu.",
+              "note": "Doplňuje stávající EXISTING-MEASURE-002 o stav po uvolnění bočnice."
+            }
+          ],
+          "required_measures": [
+            {
+              "description": "Přerušte manipulaci, pokud bočnice nebo víko neudrží stanovenou polohu nebo se pohybují nepravidelně.",
+              "note": "Nepokoušejte se pohyb zastavit rukou ani tělem."
+            }
+          ]
+        }
+      ],
+      "legal_links": [
+        {
+          "reference": "Nařízení vlády č. 378/2001 Sb., zejména § 3",
+          "reasoning": "Návrh k odbornému ověření pro ochranu před zachycením pohyblivými částmi a používání zařízení v souladu s provozní dokumentací."
+        },
+        {
+          "reference": "Zákon č. 262/2006 Sb., zákoník práce, § 102",
+          "reasoning": "Návrh k odbornému ověření pro obecnou prevenci rizik."
+        }
+      ],
+      "reasoning": "Současné posouzení řeší pouze přiražení bočnicí k rampě a pád osoby při práci na víku. Neřeší přímé zasažení nebo sevření neočekávaně se pohybující částí vozu."
+    },
+    {
+      "package_id": "PACKAGE-006",
+      "package_type": "extend_event",
+      "target_event_export_id": "EVENT-005",
+      "event": null,
+      "assessments": [
+        {
+          "exposed_group": "Osoby jedoucí na drážním vozidle a osoby pracující v bezprostřední blízkosti koleje",
+          "exposed_groups": [
+            "Strojvedoucí",
+            "Strojvedoucí externí",
+            "Vlakvedoucí - vedoucí posunu",
+            "Vozmistr - vlakvedoucí, vedoucí posunu",
+            "Zaměstnanci daného pracoviště",
+            "Dodavatelé"
+          ],
+          "severity": "serious",
+          "conclusion": "Vykolejení nemusí způsobit pouze materiální škodu. Osoby ve vozidle nebo poblíž koleje mohou utrpět poranění pádem, nárazem, převrácením vozidla nebo posunem nákladu. Závažnost je nutné ověřit podle rychlosti, typu vozidla, nákladu a uspořádání kolejiště.",
+          "existing_measures": [
+            {
+              "description": "Před zahájením pohybu zkontrolujte z místa s bezpečným rozhledem, zda je kolej volná a průjezdný průřez není narušen.",
+              "note": "Navazuje na EXISTING-MEASURE-008 a zpřesňuje způsob provedení kontroly."
+            },
+            {
+              "description": "Nezahajujte pohyb, pokud je na koleji překážka, kolej je viditelně poškozená nebo nelze stav posunové cesty spolehlivě ověřit.",
+              "note": "Zjištěný stav oznamte osobě řídící drážní provoz."
+            }
+          ],
+          "required_measures": [
+            {
+              "description": "Po vykolejení zastavte další pohyb, upozorněte osoby v okolí a opusťte vozidlo pouze tehdy, vede-li cesta do prostoru bezpečného před provozem na sousedních kolejích.",
+              "note": "Další postup se řídí místním postupem pro mimořádné události."
+            }
+          ]
+        }
+      ],
+      "legal_links": [
+        {
+          "reference": "Vyhláška č. 173/1995 Sb., dopravní řád drah, § 74 a § 75",
+          "reasoning": "Návrh k odbornému ověření pro záchranná opatření, zabránění dalších škod a první pomoc po mimořádné události."
+        },
+        {
+          "reference": "Zákon č. 266/1994 Sb., o dráhách, § 49",
+          "reasoning": "Návrh k odbornému ověření pro oznámení, zajištění místa a další povinnosti při mimořádné události."
+        }
+      ],
+      "reasoning": "Stávající posouzení hodnotí vykolejení jako lehké s převahou materiální škody. To může platit pro konkrétní činnost vykládky, nikoli však obecně pro osoby na vozidle a v jeho okolí. Proto je doplněno samostatné posouzení jiné ohrožené skupiny."
+    },
+    {
+      "package_id": "PACKAGE-007",
+      "package_type": "new_event",
+      "target_event_export_id": null,
+      "event": {
+        "name": "Sekundární ohrožení osob po srážce, vykolejení nebo požáru drážního vozidla",
+        "description": "Po mimořádné události osoby vstoupí k nestabilnímu vozidlu, do sousední koleje, k posunutému nákladu nebo k poškozenému elektrickému či jinému zařízení dříve, než je zastaven okolní provoz a vymezen nebezpečný prostor. Může dojít k dalšímu pohybu vozidla, pádu nákladu, střetu na sousední koleji, zásahu elektrickým proudem nebo opětovnému rozvoji požáru.",
+        "note": "Událost pokrývá fázi bezprostředně po nehodě, která v dosavadním katalogu není samostatně řešena."
+      },
+      "assessments": [
+        {
+          "exposed_group": "Posunová četa, strojvedoucí, pracovníci údržby, dodavatelé, návštěvy a další přítomné osoby",
+          "exposed_groups": [
+            "Strojvedoucí",
+            "Strojvedoucí externí",
+            "Vlakvedoucí - vedoucí posunu",
+            "Vozmistr - vlakvedoucí, vedoucí posunu",
+            "Pracovníci údržby",
+            "Dodavatelé",
+            "Návštěvy"
+          ],
+          "severity": "critical",
+          "conclusion": "Sekundární pohyb vozidla či nákladu, provoz na sousední koleji nebo poškozené elektrické zařízení mohou způsobit smrtelné poranění. Konkrétní nebezpečný prostor a postup musí určit osoba řídící zásah podle skutečného stavu.",
+          "existing_measures": [
+            {
+              "description": "Po vzniku mimořádné události zastavte další pohyb vozidel, přivolejte pomoc a postupujte podle místního ohlašovacího a záchranného postupu.",
+              "note": "Pokyn je určen osobě, která událost zjistí a má oprávnění ovlivnit provoz."
+            },
+            {
+              "description": "Nevstupujte k vykolejenému, poškozenému nebo hořícímu vozidlu, dokud nebyl zastaven provoz na dotčených a sousedních kolejích a nebyl vymezen bezpečný přístup.",
+              "note": "Při bezprostřední záchraně života se postupuje podle pokynů velitele zásahu."
+            },
+            {
+              "description": "Nemanipulujte s vozidlem, nákladem ani poškozeným zařízením před pokynem osoby řídící zásah.",
+              "note": "Opatření omezuje sekundární pohyb a současně chrání stav místa pro šetření události."
+            }
+          ],
+          "required_measures": [
+            {
+              "description": "Upozorněte zasahující osoby na poškozené trakční vedení, únik provozních látek, nestabilní náklad a další zjištěná nebezpečí.",
+              "note": "Uvádějte pouze skutečně zjištěné nebo důvodně předpokládané stavy."
+            },
+            {
+              "description": "Nevstupujte do sousední koleje, dokud osoba řídící drážní provoz nepotvrdí její zajištění proti jízdě vozidel.",
+              "note": "Platí i tehdy, když na sousední koleji není vozidlo právě vidět."
+            }
+          ]
+        }
+      ],
+      "legal_links": [
+        {
+          "reference": "Zákon č. 266/1994 Sb., o dráhách, § 49",
+          "reasoning": "Návrh k odbornému ověření pro definici mimořádné události, její oznámení, zajištění místa a dokumentaci."
+        },
+        {
+          "reference": "Vyhláška č. 173/1995 Sb., dopravní řád drah, § 74 a § 75",
+          "reasoning": "Návrh k odbornému ověření pro záchranná opatření, zabránění dalších škod, provoz na sousední koleji a první pomoc."
+        },
+        {
+          "reference": "Zákon č. 262/2006 Sb., zákoník práce, § 102 odst. 6",
+          "reasoning": "Návrh k odbornému ověření pro opatření při mimořádných událostech, evakuaci a první pomoc."
+        }
+      ],
+      "reasoning": "Katalog řeší vznik srážky, vykolejení a požáru, nikoli následnou fázi, kdy mohou osoby při neřízeném zásahu utrpět další úraz. Doplňující zaměření zadání výslovně požaduje mimořádné situace, dodavatele a návštěvy."
+    }
+  ],
+  "measure_recommendations": [
+    {
+      "recommendation_id": "RECOMMENDATION-001",
+      "typ": "upravit_navazujici_opatreni",
+      "target_export_id": "REQUIRED-MEASURE-001",
+      "proposed_text": "Před povolením vstupu zaměstnanců dodavatele do kolejiště ověřte platnost jejich školení pro pohyb v kolejišti a rozsah oprávnění k prováděné práci.",
+      "reasoning": "Stávající text je pouze jmenná fráze „Kontrola školení“. Navržené znění určuje adresáta, okamžik kontroly i její obsah."
+    },
+    {
+      "recommendation_id": "RECOMMENDATION-002",
+      "typ": "upravit_navazujici_opatreni",
+      "target_export_id": "REQUIRED-MEASURE-002",
+      "proposed_text": "Před vstupem do kolejiště si řádně upněte pracovní oděv a zkontrolujte čistotu a neporušenost jeho reflexních prvků.\nPřed odvěšením nebo odstavením vozidla je zajistěte proti ujetí způsobem stanoveným pro danou kolej a vozidlo.",
+      "reasoning": "Stávající opatření obsahuje tři obecné kontroly bez adresáta. Návrh je převádí na konkrétní pravidla bezpečného chování; zajištění vozidla je odděleno od kontroly oděvu."
+    },
+    {
+      "recommendation_id": "RECOMMENDATION-003",
+      "typ": "upravit_navazujici_opatreni",
+      "target_export_id": "REQUIRED-MEASURE-003",
+      "proposed_text": "Před jízdou zkontrolujte upevnění a neporušenost sedačky; poškozenou nebo uvolněnou sedačku nepoužívejte a závadu oznamte.",
+      "reasoning": "Původní text „Kontrola stavu sedaček“ neurčuje, kdo a kdy kontrolu provádí ani jak postupovat při závadě."
+    },
+    {
+      "recommendation_id": "RECOMMENDATION-004",
+      "typ": "upravit_zasady_bezpecne_prace",
+      "target_export_id": "EXISTING-MEASURE-005",
+      "proposed_text": "Na střechu nebo horní část drážního vozidla vstupujte pouze z určeného bezpečného přístupu a po zajištění vozidla proti pohybu.\nPoužívejte stanovený systém ochrany proti pádu a připojujte se pouze k určenému kotevnímu bodu.\nUdržujte obuv řádně upevněnou a její podrážku bez bláta, oleje, sněhu a námrazy.\nPřerušte práci při námraze, silném větru, bouřce nebo jiné změně podmínek, která znemožňuje bezpečný pohyb a jištění.",
+      "reasoning": "Stávající text obsahuje neurčité výzvy „dodržovat podmínky“ a „nepodceňovat riziko“. Návrh je nahrazuje konkrétními pokyny. Elektrické ohrožení je řešeno samostatným návrhovým balíkem."
+    },
+    {
+      "recommendation_id": "RECOMMENDATION-005",
+      "typ": "upravit_zasady_bezpecne_prace",
+      "target_export_id": "EXISTING-MEASURE-006",
+      "proposed_text": "Na střechu elektrické lokomotivy vstupujte pouze z určeného bezpečného přístupu, po zajištění vozidla proti pohybu a po potvrzení podmínek bezpečné práce oprávněnou osobou.\nPoužívejte stanovený systém ochrany proti pádu a připojujte se pouze k určenému kotevnímu bodu.\nPřerušte práci při námraze, silném větru, bouřce nebo jiné změně podmínek, která znemožňuje bezpečný pohyb a jištění.",
+      "reasoning": "Původní opatření je obecné a obsahuje hodnotící formulace. Návrh je použitelný jako pravidlo bezpečné práce a váže vstup na zajištění vozidla i předání pracoviště."
+    },
+    {
+      "recommendation_id": "RECOMMENDATION-006",
+      "typ": "upravit_navazujici_opatreni",
+      "target_export_id": "REQUIRED-MEASURE-004",
+      "proposed_text": "Před zbrojením na střeše elektrické lokomotivy si ověřte zajištění vozidla proti pohybu, platnost předání pracoviště a funkčnost stanoveného systému ochrany proti pádu.",
+      "reasoning": "Původní formulace pouze opakuje požadavek „dodržování práce ve výškách“ a není samostatně použitelným pokynem."
+    },
+    {
+      "recommendation_id": "RECOMMENDATION-007",
+      "typ": "upravit_navazujici_opatreni",
+      "target_export_id": "REQUIRED-MEASURE-005",
+      "proposed_text": "Před povolením jízdy zkontrolujte z místa s bezpečným rozhledem volnost průjezdného průřezu; při zjištění dřevin, materiálu nebo jiné překážky jízdu nepovolujte a závadu oznamte.",
+      "reasoning": "Stávající text je jmenná fráze. Nové znění stanoví okamžik kontroly a postup při nálezu překážky."
+    },
+    {
+      "recommendation_id": "RECOMMENDATION-008",
+      "typ": "upravit_navazujici_opatreni",
+      "target_export_id": "REQUIRED-MEASURE-006",
+      "proposed_text": "Před zahájením posunu zkontrolujte volnost koleje a průjezdného průřezu; při zjištění překážky, viditelného poškození koleje nebo narušení průjezdného průřezu posun nezahajujte a stav oznamte.",
+      "reasoning": "Původní text pouze pojmenovává předmět kontroly. Návrh určuje bezpečné rozhodnutí při zjištění závady."
+    },
+    {
+      "recommendation_id": "RECOMMENDATION-009",
+      "typ": "upravit_zasady_bezpecne_prace",
+      "target_export_id": "EXISTING-MEASURE-009",
+      "proposed_text": "Při jízdě na stanovišti drážního vozidla se držte určeného madla a stůjte pouze na místě určeném pro jízdu osob.\nNastupujte a sestupujte čelem k vozidlu a udržujte současně tři body opory.\nNenastupujte ani nesestupujte za pohybu vozidla, pokud konkrétní činnost a podmínky výslovně neupravuje platný technologický postup.\nNepoužívejte poškozená nebo znečištěná madla, schůdky a ochozy; závadu oznamte před použitím.\nPoužívejte řádně upevněnou pracovní obuv a před výstupem očistěte její podrážku od bláta, oleje, sněhu a námrazy.",
+      "reasoning": "Původní text obsahuje neúplnou větu „Udržovat madla“ a neurčitou výjimku z nastupování za jízdy. Návrh zpřesňuje bezpečné chování a postup při závadě."
+    },
+    {
+      "recommendation_id": "RECOMMENDATION-010",
+      "typ": "upravit_navazujici_opatreni",
+      "target_export_id": "REQUIRED-MEASURE-007",
+      "proposed_text": "Před nástupem na drážní vozidlo si upevněte pracovní obuv a očistěte její podrážku od bláta, oleje, sněhu a námrazy.",
+      "reasoning": "Původní text je pouze seznam kontrolovaných znaků. Navržené znění je konkrétní pokyn zaměstnanci a neopakuje obecné hodnocení."
+    }
+  ]
+}

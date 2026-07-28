@@ -73,6 +73,22 @@ class _PendingReviewMeta:
     loaded_packages_count: int = 0
 
 
+@dataclass
+class ImportPackagesResult:
+    """Výsledek načtení balíků do editorové session."""
+
+    created: list[CatalogSessionPackage]
+    duplicate_package_ids: tuple[str, ...] = ()
+
+    @property
+    def loaded_count(self) -> int:
+        return len(self.created)
+
+    @property
+    def duplicate_count(self) -> int:
+        return len(self.duplicate_package_ids)
+
+
 class CatalogEditorSession:
     """Jediný zdroj pravdy pro obsah katalogu a AI balíky během editace."""
 
@@ -166,9 +182,17 @@ class CatalogEditorSession:
         packages: list[AiProposalPackage],
         response_text: str = "",
         ai_model: str = "",
-    ) -> list[CatalogSessionPackage]:
+    ) -> ImportPackagesResult:
+        known_ids = self._known_package_ids_for_review(review_id)
         created: list[CatalogSessionPackage] = []
+        duplicates: list[str] = []
         for package in packages:
+            package_id = (package.package_id or "").strip()
+            if package_id and package_id in known_ids:
+                duplicates.append(package_id)
+                continue
+            if package_id:
+                known_ids.add(package_id)
             local_id = self._alloc_temp_id()
             item = CatalogSessionPackage(
                 local_id=local_id,
@@ -188,10 +212,83 @@ class CatalogEditorSession:
         meta = self._pending_review_meta.get(review_id) or _PendingReviewMeta()
         meta.response_text = response_text
         meta.ai_model = ai_model
-        meta.loaded_packages_count = len(packages)
+        meta.loaded_packages_count = len(created)
         self._pending_review_meta[review_id] = meta
         self._packages_dirty = True
-        return created
+        return ImportPackagesResult(
+            created=created,
+            duplicate_package_ids=tuple(duplicates),
+        )
+
+    def _known_package_ids_for_review(self, review_id: int) -> set[str]:
+        known: set[str] = set()
+        for item in self.packages.values():
+            if item.review_id != review_id:
+                continue
+            package_id = (item.package.package_id or "").strip()
+            if package_id:
+                known.add(package_id)
+        for record in AiProposalPackageRepository().get_for_review(review_id):
+            package_id = (record.package_id or "").strip()
+            if package_id:
+                known.add(package_id)
+        return known
+
+    def count_packages_by_status(self, review_id: int) -> tuple[int, int, int]:
+        """Vrátí (pending, rejected, staged/accepted) pro konzultaci v session."""
+        pending = 0
+        rejected = 0
+        staged = 0
+        tracked_db_ids: set[int] = set()
+        for item in self.packages.values():
+            if item.review_id != review_id:
+                continue
+            if item.db_id is not None:
+                tracked_db_ids.add(int(item.db_id))
+            if item.session_status == SESSION_PACKAGE_PENDING:
+                pending += 1
+            elif item.session_status == SESSION_PACKAGE_REJECTED:
+                rejected += 1
+            elif item.session_status == SESSION_PACKAGE_STAGED:
+                staged += 1
+        for record in AiProposalPackageRepository().get_for_review(review_id):
+            if int(record.id) in tracked_db_ids:
+                continue
+            if record.status == PACKAGE_STATUS_PENDING:
+                pending += 1
+            elif record.status == PACKAGE_STATUS_REJECTED:
+                rejected += 1
+            elif record.status == PACKAGE_STATUS_INCORPORATED:
+                staged += 1
+        return pending, rejected, staged
+
+    def sync_review_stats(
+        self,
+        review_id: int,
+        *,
+        loaded_packages_count: int | None = None,
+    ) -> AiPeerReview | None:
+        """Zapíše počty konzultace podle aktuálního stavu session (+ DB)."""
+        review = AiPeerReviewRepository().get_by_id(review_id)
+        if review is None:
+            return None
+        pending, rejected, accepted = self.count_packages_by_status(review_id)
+        meta = self._pending_review_meta.get(review_id)
+        if loaded_packages_count is not None:
+            review.loaded_proposals_count = int(loaded_packages_count)
+        elif meta is not None and meta.loaded_packages_count:
+            review.loaded_proposals_count = int(meta.loaded_packages_count)
+        if meta is not None:
+            if meta.response_text:
+                review.response_text = meta.response_text.strip()
+                review.response_loaded_at = datetime.now()
+            if meta.ai_model:
+                review.ai_model = meta.ai_model.strip()
+        review.pending_proposals_count = pending
+        review.rejected_count = rejected
+        review.accepted_count = accepted
+        review.unassigned_count = 0
+        return AiPeerReviewRepository().update(review)
 
     def update_package(self, local_id: int, package: AiProposalPackage) -> CatalogSessionPackage:
         item = self.packages.get(local_id)
@@ -221,10 +318,7 @@ class CatalogEditorSession:
             return False
         if item.session_status != SESSION_PACKAGE_PENDING:
             return False
-        if item.is_new:
-            del self.packages[local_id]
-        else:
-            item.session_status = SESSION_PACKAGE_REJECTED
+        item.session_status = SESSION_PACKAGE_REJECTED
         self._packages_dirty = True
         return True
 
@@ -265,8 +359,6 @@ class CatalogEditorSession:
 
             for item in list(self.packages.values()):
                 review_ids.add(item.review_id)
-                if item.is_new and item.session_status == SESSION_PACKAGE_REJECTED:
-                    continue
                 if item.is_new and item.session_status == SESSION_PACKAGE_PENDING:
                     db_status = PACKAGE_STATUS_PENDING
                 elif item.session_status == SESSION_PACKAGE_STAGED:
@@ -277,8 +369,6 @@ class CatalogEditorSession:
                     db_status = PACKAGE_STATUS_PENDING
 
                 if item.is_new:
-                    if item.session_status == SESSION_PACKAGE_REJECTED:
-                        continue
                     record = AiProposalPackageRepository.record_from_package(
                         review_id=item.review_id,
                         source_type=item.source_type,
@@ -289,6 +379,7 @@ class CatalogEditorSession:
                     session.add(record)
                     session.flush()
                     item.db_id = int(record.id)
+                    item.is_new = False
                 else:
                     assert item.db_id is not None
                     record = session.get(AiProposalPackageRecord, item.db_id)

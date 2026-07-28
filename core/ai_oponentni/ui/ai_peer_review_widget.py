@@ -760,34 +760,124 @@ class AiPeerReviewWidget(QWidget):
             )
 
         if parse_result.uses_proposal_packages:
-            if not parse_result.packages:
+            if not parse_result.packages and not parse_result.skip_reasons:
                 QMessageBox.warning(
                     self,
                     AI_PEER_REVIEW_DIALOG_TITLE,
                     "Odpověď AI neobsahuje žádný platný návrhový balík.",
                 )
                 return False
+            if not parse_result.packages and parse_result.skip_reasons:
+                reasons = "\n".join(
+                    f"- {reason}" for reason in parse_result.skip_reasons[:12]
+                )
+                extra = ""
+                if len(parse_result.skip_reasons) > 12:
+                    extra = f"\n… a dalších {len(parse_result.skip_reasons) - 12}."
+                QMessageBox.warning(
+                    self,
+                    AI_PEER_REVIEW_DIALOG_TITLE,
+                    (
+                        "Odpověď AI neobsahuje žádný platný návrhový balík.\n\n"
+                        f"Důvody přeskočení:\n{reasons}{extra}"
+                    ),
+                )
+                return False
             try:
                 if self._package_session is not None:
-                    self._package_session.import_packages(
+                    import_result = self._package_session.import_packages(
                         review_id=review.id,
                         source_type=self._provider.source_type,
                         packages=list(parse_result.packages),
                         response_text=response_text,
                         ai_model=ai_model,
                     )
-                    updated = review
+                    if (
+                        import_result.loaded_count == 0
+                        and import_result.duplicate_count > 0
+                    ):
+                        QMessageBox.information(
+                            self,
+                            AI_PEER_REVIEW_DIALOG_TITLE,
+                            (
+                                "Žádný nový balík nebyl načten.\n\n"
+                                f"Všechny položky z odpovědi už jsou u této "
+                                f"konzultace evidované (duplicit: "
+                                f"{import_result.duplicate_count})."
+                            ),
+                        )
+                        return False
+                    if import_result.loaded_count == 0:
+                        QMessageBox.warning(
+                            self,
+                            AI_PEER_REVIEW_DIALOG_TITLE,
+                            "Odpověď AI neobsahuje žádný nový platný návrhový balík.",
+                        )
+                        return False
+                    updated = self._package_session.sync_review_stats(
+                        review.id,
+                        loaded_packages_count=import_result.loaded_count,
+                    )
+                    if updated is None:
+                        updated = review
+                        updated.loaded_proposals_count = import_result.loaded_count
+                        pending, rejected, accepted = (
+                            self._package_session.count_packages_by_status(review.id)
+                        )
+                        updated.pending_proposals_count = pending
+                        updated.rejected_count = rejected
+                        updated.accepted_count = accepted
+                    if import_result.duplicate_count:
+                        QMessageBox.information(
+                            self,
+                            AI_PEER_REVIEW_DIALOG_TITLE,
+                            (
+                                f"Přeskočeno duplicitních balíků: "
+                                f"{import_result.duplicate_count}."
+                            ),
+                        )
                 else:
+                    accepted_packages, duplicate_ids = (
+                        ai_peer_review_service.filter_new_packages_for_review(
+                            review_id=review.id,
+                            packages=list(parse_result.packages),
+                        )
+                    )
+                    if not accepted_packages and duplicate_ids:
+                        QMessageBox.information(
+                            self,
+                            AI_PEER_REVIEW_DIALOG_TITLE,
+                            (
+                                "Žádný nový balík nebyl načten.\n\n"
+                                f"Všechny položky z odpovědi už jsou u této "
+                                f"konzultace evidované (duplicit: "
+                                f"{len(duplicate_ids)})."
+                            ),
+                        )
+                        return False
+                    if not accepted_packages:
+                        QMessageBox.warning(
+                            self,
+                            AI_PEER_REVIEW_DIALOG_TITLE,
+                            "Odpověď AI neobsahuje žádný nový platný návrhový balík.",
+                        )
+                        return False
                     updated = ai_peer_review_service.finalize_package_import(
                         provider=self._provider,
                         source_id=self._source_id,
                         review_id=review.id,
                         response_text=response_text,
                         ai_model=ai_model,
-                        accepted=list(parse_result.packages),
+                        accepted=accepted_packages,
                         rejected=[],
-                        loaded_packages_count=len(parse_result.packages),
+                        loaded_packages_count=len(accepted_packages),
                     )
+                    if duplicate_ids:
+                        QMessageBox.information(
+                            self,
+                            AI_PEER_REVIEW_DIALOG_TITLE,
+                            f"Přeskočeno duplicitních balíků: {len(duplicate_ids)}.",
+                        )
             except AiPeerReviewError as error:
                 QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
                 return False
@@ -1663,6 +1753,9 @@ class AiPeerReviewWidget(QWidget):
         if self._package_session is not None:
             if not self._package_session.reject_package(record_id):
                 return
+            review_id = self._selected_review_id()
+            if review_id is not None:
+                self._package_session.sync_review_stats(review_id)
         elif not hazard_catalog_package_incorporate_service.reject_package(record_id):
             return
         self.refresh()

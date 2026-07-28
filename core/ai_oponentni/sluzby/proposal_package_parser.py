@@ -186,7 +186,8 @@ def _parse_one_measure_recommendation(
 
     rec_type = _normalize_measure_recommendation_type(item.get("typ") or item.get("type"))
     if rec_type is None:
-        return None, f"{label}: neplatný typ doporučení."
+        raw_type = item.get("typ") if "typ" in item else item.get("type")
+        return None, f"{label}: neznámý typ doporučení „{raw_type}“."
 
     reasoning = str(item.get("reasoning") or "").strip()
     if not reasoning:

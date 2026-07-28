@@ -426,6 +426,31 @@ class AiPeerReviewService:
     def provider_uses_proposal_packages(provider: AiPeerReviewProvider) -> bool:
         return bool(getattr(provider, "uses_proposal_packages", False))
 
+    def filter_new_packages_for_review(
+        self,
+        *,
+        review_id: int,
+        packages: list[AiProposalPackage],
+    ) -> tuple[list[AiProposalPackage], list[str]]:
+        """Oddělí nové balíky od duplicit podle package_id v rámci konzultace."""
+        existing = {
+            (record.package_id or "").strip()
+            for record in self.package_repository.get_for_review(review_id)
+            if (record.package_id or "").strip()
+        }
+        accepted: list[AiProposalPackage] = []
+        duplicates: list[str] = []
+        seen_in_batch: set[str] = set()
+        for package in packages:
+            package_id = (package.package_id or "").strip()
+            if package_id and (package_id in existing or package_id in seen_in_batch):
+                duplicates.append(package_id)
+                continue
+            if package_id:
+                seen_in_batch.add(package_id)
+            accepted.append(package)
+        return accepted, duplicates
+
     def store_rejected_packages(
         self,
         *,

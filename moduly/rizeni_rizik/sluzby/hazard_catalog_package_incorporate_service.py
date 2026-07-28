@@ -459,7 +459,8 @@ class HazardCatalogPackageIncorporateService:
             )
 
         if editor_session is not None and isinstance(editor_session, CatalogEditorSession):
-            editor_session.stage_for_incorporation(package_record_id)
+            item = editor_session.stage_for_incorporation(package_record_id)
+            editor_session.sync_review_stats(item.review_id)
         else:
             working_copy.queue_package_incorporate(package_record_id)
 
@@ -1166,7 +1167,8 @@ class HazardCatalogPackageIncorporateService:
             legal_link_count += 1
 
         if editor_session is not None:
-            editor_session.stage_for_incorporation(package_record_id)
+            item = editor_session.stage_for_incorporation(package_record_id)
+            editor_session.sync_review_stats(item.review_id)
         else:
             working_copy.queue_package_incorporate(package_record_id)
         return CatalogPackageIncorporateResult(
