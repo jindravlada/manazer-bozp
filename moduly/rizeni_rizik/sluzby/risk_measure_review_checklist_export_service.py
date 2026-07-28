@@ -14,6 +14,7 @@ from moduly.rizeni_rizik.constants import (
 from moduly.rizeni_rizik.modely.risk_measure_review import RiskMeasureReview
 from moduly.rizeni_rizik.sluzby.risk_measure_review_service import (
     risk_measure_review_service,
+    split_checklist_measure_lines,
 )
 
 
@@ -27,22 +28,6 @@ def _format_date(value) -> str:
     if hasattr(value, "strftime"):
         return value.strftime("%d.%m.%Y")
     return _text(value) or "—"
-
-
-def split_checklist_measure_lines(text: str) -> list[str]:
-    """Rozdělí text navazujícího opatření na položky checklistu (RISK-CHECKLIST-1).
-
-    Hranice = Enter (``\\n`` / ``\\r\\n`` / ``\\r``). Prázdné řádky a okolní
-    mezery se vynechají / oříznou.
-    """
-    if not text:
-        return []
-    lines: list[str] = []
-    for raw_line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
-        line = raw_line.strip()
-        if line:
-            lines.append(line)
-    return lines
 
 
 # Papírový checklist do terénu – vždy prázdná políčka k ručnímu vyplnění.

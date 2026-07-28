@@ -78,6 +78,22 @@ def resolve_current_thp_worker_id() -> int | None:
     return None
 
 
+def split_checklist_measure_lines(text: str) -> list[str]:
+    """Rozdělí text navazujícího opatření na kontrolní body (RISK-CHECKLIST-1/2).
+
+    Hranice = Enter (``\\n`` / ``\\r\\n`` / ``\\r``). Prázdné řádky a okolní
+    mezery se vynechají / oříznou.
+    """
+    if not text:
+        return []
+    lines: list[str] = []
+    for raw_line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
+        line = raw_line.strip()
+        if line:
+            lines.append(line)
+    return lines
+
+
 class RiskMeasureReviewError(ValueError):
     pass
 
@@ -286,7 +302,7 @@ class RiskMeasureReviewService:
         rows: list[RiskMeasureReviewChecklistRow] = []
         for item in items:
             measure = hazard_required_measure_service.get_by_id(item.follow_up_measure_id)
-            measure_title = measure.display_title() if measure is not None else "—"
+            measure_title = self._checklist_item_title(measure, item)
             result = self._normalize_item_result(item)
             photo_count = len(
                 attachment_service.get_for_entity(
@@ -511,22 +527,50 @@ class RiskMeasureReviewService:
             workplace_part_id=review.workplace_part_id,
         )
         items: list[RiskMeasureReviewItem] = []
-        for index, measure in enumerate(measures):
-            items.append(
-                RiskMeasureReviewItem(
-                    review_id=review.id,
-                    follow_up_measure_id=int(measure.id),
-                    compliant=False,
-                    note_number="",
-                    has_photo=False,
-                    result=RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED,
-                    note="",
-                    sort_order=index + 1,
+        sort_order = 0
+        for measure in measures:
+            lines = split_checklist_measure_lines(measure.display_title())
+            if not lines:
+                lines = ["—"]
+            multi = len(lines) > 1
+            for line_index, _line in enumerate(lines):
+                sort_order += 1
+                items.append(
+                    RiskMeasureReviewItem(
+                        review_id=review.id,
+                        follow_up_measure_id=int(measure.id),
+                        compliant=False,
+                        # Index řádku v rámci víceřádkového opatření (RISK-CHECKLIST-2).
+                        note_number=str(line_index) if multi else "",
+                        has_photo=False,
+                        result=RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CHECKED,
+                        note="",
+                        sort_order=sort_order,
+                    )
                 )
-            )
         if items:
             self.item_repository.replace_items(review.id, items)
         return self.item_repository.list_for_review(review.id)
+
+    @staticmethod
+    def _checklist_item_title(measure, item: RiskMeasureReviewItem) -> str:
+        """Text kontrolního bodu – u víceřádkových opatření jeden řádek."""
+        if measure is None:
+            return "—"
+        full_title = measure.display_title()
+        lines = split_checklist_measure_lines(full_title)
+        line_key = (item.note_number or "").strip()
+        if line_key.isdigit() and lines:
+            index = int(line_key)
+            if 0 <= index < len(lines):
+                return lines[index]
+            return lines[0]
+        if len(lines) == 1:
+            return lines[0]
+        if lines:
+            # Starší checklist (jedna položka na celé opatření) – ponechat celý text.
+            return full_title
+        return "—"
 
     def _apply_checklist_updates(self, review_id: int, updates: list[dict]) -> None:
         by_id = {item.id: item for item in self.item_repository.list_for_review(review_id)}
