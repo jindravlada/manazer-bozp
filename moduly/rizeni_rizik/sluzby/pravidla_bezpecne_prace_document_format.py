@@ -19,6 +19,23 @@ if TYPE_CHECKING:
     )
 
 
+def split_rule_lines(text: str) -> list[str]:
+    """Vrátí neprázdné řádky pravidla (hranice = Enter)."""
+    if not text:
+        return []
+    lines: list[str] = []
+    for raw_line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
+        line = raw_line.strip()
+        if line:
+            lines.append(line)
+    return lines
+
+
+def rule_line_dedupe_key(line: str) -> str:
+    """Klíč textové deduplikace řádku – ořez a sjednocení mezer, bez změny zobrazení."""
+    return " ".join((line or "").split())
+
+
 def format_change_sections(
     comparison: PravidlaBezpecnePraceComparison | None,
     *,
@@ -83,7 +100,7 @@ def format_bullet_valid_rules(
     rules: list[PravidloBezpecnePrace],
     comparison: PravidlaBezpecnePraceComparison | None,
 ) -> list[str]:
-    """Odrážková platná pravidla; při změnách označí nová (🟢) a změněná (🟡)."""
+    """Odrážky po řádcích (Enter); při změnách označí nová (🟢) a změněná (🟡)."""
     new_norms: set[str] = set()
     changed_norms: set[str] = set()
     if comparison is not None and comparison.has_changes and not comparison.is_first_edition:
@@ -93,17 +110,20 @@ def format_bullet_valid_rules(
         }
 
     lines: list[str] = []
+    seen_keys: set[str] = set()
     for rule in rules:
-        text = (rule.text or "").strip()
-        if not text:
-            continue
-        key = text.casefold()
-        if key in new_norms:
-            lines.append(f"• 🟢 {text}")
-        elif key in changed_norms:
-            lines.append(f"• 🟡 {text}")
-        else:
-            lines.append(f"• {text}")
+        marker = ""
+        rule_key = (rule.text or "").casefold()
+        if rule_key in new_norms:
+            marker = "🟢 "
+        elif rule_key in changed_norms:
+            marker = "🟡 "
+        for line in split_rule_lines(rule.text or ""):
+            dedupe = rule_line_dedupe_key(line)
+            if not dedupe or dedupe in seen_keys:
+                continue
+            seen_keys.add(dedupe)
+            lines.append(f"• {marker}{line}")
     return lines
 
 

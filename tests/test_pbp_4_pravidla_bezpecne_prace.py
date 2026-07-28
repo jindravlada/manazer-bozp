@@ -75,7 +75,19 @@ class NormalizeRuleTextTestCase(unittest.TestCase):
     def test_collapse_spaces_and_empty_lines(self) -> None:
         self.assertEqual(
             normalize_rule_text("  Používej   helmu  \n\n  vždy  "),
-            "Používej helmu vždy.",
+            "Používej helmu.\nvždy.",
+        )
+
+    def test_preserves_line_breaks_as_separate_rules(self) -> None:
+        self.assertEqual(
+            normalize_rule_text(
+                "Řádně sledovat provoz.\n"
+                "Bezodkladně zastavit.\n"
+                "Dodržovat radiovou komunikaci."
+            ),
+            "Řádně sledovat provoz.\n"
+            "Bezodkladně zastavit.\n"
+            "Dodržovat radiovou komunikaci.",
         )
 
     def test_unify_trailing_period(self) -> None:

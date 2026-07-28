@@ -115,24 +115,25 @@ _EMPTY_ZMENY_PARAGRAPH_RE = re.compile(
 
 
 def normalize_rule_text(text: str) -> str:
-    """Sjednotí mezery, odstraní prázdné řádky a zajistí jednu tečku na konci."""
+    """Normalizuje každý řádek zvlášť a zachová zalomení (RISK-RULES-1b).
+
+    Enter (``\\n`` / ``\\r\\n`` / ``\\r``) zůstává hranicí mezi samostatnými
+    pravidly. Prázdné řádky se vynechají. Každý neprázdný řádek dostane
+    sjednocené mezery a jednu tečku na konci.
+    """
     if not text:
         return ""
 
     lines: list[str] = []
     for raw_line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
         collapsed = " ".join(raw_line.split())
+        if not collapsed:
+            continue
+        collapsed = _TRAILING_END_PUNCT_RE.sub("", collapsed).rstrip()
         if collapsed:
-            lines.append(collapsed)
+            lines.append(f"{collapsed}.")
 
-    body = " ".join(lines).strip()
-    if not body:
-        return ""
-
-    body = _TRAILING_END_PUNCT_RE.sub("", body).rstrip()
-    if not body:
-        return ""
-    return f"{body}."
+    return "\n".join(lines)
 
 
 def is_unsuitable_employee_rule(text: str) -> bool:
@@ -358,13 +359,20 @@ class PravidlaBezpecnePraceService:
                         source_event_id=row.assessment.hazard_event_id,
                         severity=severity,
                     )
+                    unsuitable = any(
+                        is_unsuitable_employee_rule(line)
+                        for line in text.replace("\r\n", "\n")
+                        .replace("\r", "\n")
+                        .split("\n")
+                        if line.strip()
+                    )
                     collected.append(
                         PravidloBezpecnePrace(
                             measure_id=measure.id,
                             text=text,
                             source_hazard_id=identification.id,
                             source_event_id=row.assessment.hazard_event_id,
-                            unsuitable_for_employee=is_unsuitable_employee_rule(text),
+                            unsuitable_for_employee=unsuitable,
                             severity=severity,
                             severity_rank=rank,
                             sources=(source,),
@@ -490,6 +498,7 @@ class PravidlaBezpecnePraceService:
         rendered = self.engine.render(template, output_path, values)
         self._strip_empty_workplace_rows(rendered)
         self._strip_empty_change_section_paragraph(rendered)
+        self._ensure_rules_heading(rendered)
 
         issued_dt: datetime
         if issued_at is None:
@@ -547,6 +556,17 @@ class PravidlaBezpecnePraceService:
         PravidlaBezpecnePraceService._rewrite_odt_content(
             odt_path,
             lambda content_xml: _EMPTY_ZMENY_PARAGRAPH_RE.sub("", content_xml),
+        )
+
+    @staticmethod
+    def _ensure_rules_heading(odt_path: Path) -> None:
+        """Sjednotí nadpis sekce pravidel na DODRŽUJTE TATO PRAVIDLA."""
+        PravidlaBezpecnePraceService._rewrite_odt_content(
+            odt_path,
+            lambda content_xml: content_xml.replace(
+                "PLATNÁ PRAVIDLA BEZPEČNÉ PRÁCE",
+                "DODRŽUJTE TATO PRAVIDLA",
+            ),
         )
 
     @staticmethod
