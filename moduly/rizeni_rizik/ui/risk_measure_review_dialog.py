@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
 from core.widgets.date_edit import DateEdit
 from core.widgets.dialog_utils import create_save_cancel_box, configure_resizable_form_dialog
 from core.widgets.editor_dialog_controller import EditorDialogController
-from core.widgets.person_selector import PersonSelector
+from core.widgets.thp_worker_selector import ThpWorkerSelector
 from moduly.rizeni_rizik.constants import (
     RISK_MEASURE_REVIEW_DIALOG_TITLE,
     RISK_MEASURE_REVIEW_STATUS_DRAFT,
@@ -25,6 +25,7 @@ from moduly.rizeni_rizik.constants import (
 )
 from moduly.rizeni_rizik.sluzby.risk_measure_review_service import (
     RiskMeasureReviewError,
+    resolve_current_thp_worker_id,
     risk_measure_review_service,
 )
 
@@ -32,7 +33,13 @@ from moduly.rizeni_rizik.sluzby.risk_measure_review_service import (
 class RiskMeasureReviewDialog(QDialog):
     """Evidence přezkoumání – pouze hlavička (bez checklistu)."""
 
-    def __init__(self, parent=None, review=None):
+    def __init__(
+        self,
+        parent=None,
+        review=None,
+        *,
+        current_thp_worker_id: int | None = None,
+    ):
         super().__init__(parent)
         self.review = review
         self.setWindowTitle(RISK_MEASURE_REVIEW_DIALOG_TITLE)
@@ -43,10 +50,9 @@ class RiskMeasureReviewDialog(QDialog):
 
         self.number_label = QLabel("—")
         self.review_date = DateEdit()
-        self.reviewer = PersonSelector(
+        self.reviewer = ThpWorkerSelector(
             include_empty=True,
             allow_custom_value=False,
-            allow_add_new=True,
         )
         self.operation = QComboBox()
         self.workplace = QComboBox()
@@ -113,8 +119,16 @@ class RiskMeasureReviewDialog(QDialog):
         else:
             self.number_label.setText(risk_measure_review_service.preview_next_number())
             self.status.setCurrentIndex(self.status.findData(RISK_MEASURE_REVIEW_STATUS_DRAFT))
+            self._prefill_reviewer(current_thp_worker_id)
 
         self._editor.capture_baseline()
+
+    def _prefill_reviewer(self, current_thp_worker_id: int | None) -> None:
+        worker_id = current_thp_worker_id
+        if worker_id is None:
+            worker_id = resolve_current_thp_worker_id()
+        if worker_id is not None:
+            self.reviewer.set_person_id(worker_id)
 
     def get_data(self) -> dict:
         qdate = self.review_date.date()

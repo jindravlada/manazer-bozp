@@ -34,7 +34,6 @@ with patch.object(Path, "home", return_value=_TMP):
         WORKPLACE_ITEM_TYPE_WORKPLACE,
         WORKPLACE_ITEM_TYPE_WORKPLACE_PART,
     )
-    from moduly.nastaveni.sluzby.person_service import person_service
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.rizeni_rizik.constants import (
         HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
@@ -114,7 +113,7 @@ class RiskReview2TestCase(unittest.TestCase):
             item_type=WORKPLACE_ITEM_TYPE_WORKPLACE,
             parent_id=self.operation.id,
         )
-        self.reviewer = person_service.create_person(
+        self.reviewer = settings_service.save_worker(
             first_name="Jana",
             last_name="Kontrola",
         )

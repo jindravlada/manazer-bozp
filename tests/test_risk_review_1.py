@@ -34,8 +34,8 @@ with patch.object(Path, "home", return_value=_TMP):
         WORKPLACE_ITEM_TYPE_WORKPLACE,
         WORKPLACE_ITEM_TYPE_WORKPLACE_PART,
     )
-    from moduly.nastaveni.sluzby.person_service import person_service
     from moduly.nastaveni.sluzby.settings_service import settings_service
+    from core.widgets.thp_worker_selector import ThpWorkerSelector
     from moduly.rizeni_rizik.constants import (
         EXISTING_MEASURES_TITLE,
         REQUIRED_MEASURES_TITLE,
@@ -99,7 +99,7 @@ class RiskReview1TestCase(unittest.TestCase):
             item_type=WORKPLACE_ITEM_TYPE_WORKPLACE,
             parent_id=self.other_operation.id,
         )
-        self.reviewer = person_service.create_person(
+        self.reviewer = settings_service.save_worker(
             first_name="Karel",
             last_name="Kontrolní",
         )
@@ -249,6 +249,7 @@ class RiskReview1TestCase(unittest.TestCase):
 
     def test_editor_defaults_header_only(self) -> None:
         dialog = RiskMeasureReviewDialog()
+        self.assertIsInstance(dialog.reviewer, ThpWorkerSelector)
         self.assertEqual(
             date(
                 dialog.review_date.date().year(),

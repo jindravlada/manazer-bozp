@@ -1,15 +1,16 @@
 from __future__ import annotations
 
+import getpass
 from dataclasses import dataclass
 from datetime import date, datetime
 
+from core.services.attachment_service import attachment_service
 from core.utils.czech_sort import czech_sorted
 from moduly.nastaveni.constants.workplace_hierarchy_constants import (
     WORKPLACE_ITEM_TYPE_OPERATION,
     WORKPLACE_ITEM_TYPE_WORKPLACE,
     WORKPLACE_ITEM_TYPE_WORKPLACE_PART,
 )
-from moduly.nastaveni.sluzby.person_service import person_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.rizeni_rizik.constants import (
     ENTITY_RISK_MEASURE_REVIEW,
@@ -50,7 +51,31 @@ from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import (
 )
 from moduly.ukoly.modely.task import Task
 from moduly.ukoly.sluzby.task_service import task_service
-from core.services.attachment_service import attachment_service
+
+
+def resolve_current_thp_worker_id() -> int | None:
+    """Vrátí ID aktivního THP pracovníka odpovídajícího aktuálnímu uživateli OS.
+
+    Shoda je podle lokální části e-mailu nebo podle křestního jména / příjmení
+    (case-insensitive). Při nejednoznačnosti nebo bez shody vrací ``None``.
+    """
+    username = (getpass.getuser() or "").strip().casefold()
+    if not username:
+        return None
+
+    matches: list[int] = []
+    for worker in settings_service.get_workers(include_inactive=False):
+        email = (getattr(worker, "email", None) or "").strip()
+        local = email.split("@", 1)[0].casefold() if email else ""
+        first = (worker.first_name or "").strip().casefold()
+        last = (worker.last_name or "").strip().casefold()
+        candidates = {local, first, last, f"{first}.{last}".replace(" ", "")}
+        candidates.discard("")
+        if username in candidates:
+            matches.append(int(worker.id))
+    if len(matches) == 1:
+        return matches[0]
+    return None
 
 
 class RiskMeasureReviewError(ValueError):
@@ -617,8 +642,8 @@ class RiskMeasureReviewService:
             raise RiskMeasureReviewError("Datum přezkoumání je povinné.")
         if not reviewer_person_id:
             raise RiskMeasureReviewError("Vyberte kontrolující osobu.")
-        person = person_service.get_by_id(reviewer_person_id)
-        if person is None:
+        reviewer_name = self._resolve_reviewer_display_name(reviewer_person_id)
+        if not reviewer_name:
             raise RiskMeasureReviewError("Kontrolující osoba neexistuje.")
 
         if not operation_id:
@@ -670,7 +695,7 @@ class RiskMeasureReviewService:
 
         return {
             "reviewer_person_id": int(reviewer_person_id),
-            "reviewer_person_name": person_service.display_name(reviewer_person_id),
+            "reviewer_person_name": reviewer_name,
             "operation_id": int(operation_id),
             "operation_name": operation.name or "",
             "workplace_id": resolved_workplace_id,
@@ -679,6 +704,14 @@ class RiskMeasureReviewService:
             "workplace_part_name": workplace_part_name,
             "status": status,
         }
+
+    @staticmethod
+    def _resolve_reviewer_display_name(reviewer_person_id: int) -> str:
+        """Jméno kontrolujícího z číselníku THP (stejné ID jako v dialogu)."""
+        worker = settings_service.get_worker_by_id(reviewer_person_id)
+        if worker is None:
+            return ""
+        return (worker.display_name or "").strip()
 
 
 risk_measure_review_service = RiskMeasureReviewService()

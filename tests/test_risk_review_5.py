@@ -33,7 +33,6 @@ with patch.object(Path, "home", return_value=_TMP):
         WORKPLACE_ITEM_TYPE_OPERATION,
         WORKPLACE_ITEM_TYPE_WORKPLACE,
     )
-    from moduly.nastaveni.sluzby.person_service import person_service
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.rizeni_rizik.constants import (
         ENTITY_RISK_MEASURE_REVIEW,
@@ -112,7 +111,7 @@ class RiskReview5TestCase(unittest.TestCase):
             item_type=WORKPLACE_ITEM_TYPE_WORKPLACE,
             parent_id=self.operation.id,
         )
-        self.reviewer = person_service.create_person(
+        self.reviewer = settings_service.save_worker(
             first_name="Dana",
             last_name="Řešitelka",
         )
