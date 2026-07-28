@@ -59,6 +59,7 @@ from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_ROLE_LABELS,
     AI_PEER_REVIEW_ROLES,
     AI_PEER_REVIEW_TABLE_HEADERS,
+    format_ai_peer_review_user_error,
 )
 from core.ai_oponentni.modely.ai_proposal_package import (
     PACKAGE_STATUS_LABELS,
@@ -353,7 +354,7 @@ class AiPeerReviewResponseDialog(QDialog):
             else:
                 self.response.setPlainText(file_path.read_text(encoding="utf-8"))
         except OSError as error:
-            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, format_ai_peer_review_user_error(error))
 
     def _load_from_zip(self, zip_path: Path) -> None:
         from core.ai_oponentni.sluzby.response_zip_loader import (
@@ -373,7 +374,7 @@ class AiPeerReviewResponseDialog(QDialog):
                         QMessageBox.warning(
                             self,
                             AI_PEER_REVIEW_DIALOG_TITLE,
-                            str(error),
+                            format_ai_peer_review_user_error(error),
                         )
                         return
                     label, ok = QInputDialog.getItem(
@@ -388,7 +389,7 @@ class AiPeerReviewResponseDialog(QDialog):
                         return
                     entry_name = label
                     continue
-                QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+                QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, format_ai_peer_review_user_error(error))
                 return
 
         self.response.setPlainText(result.text)
@@ -609,7 +610,7 @@ class AiPeerReviewWidget(QWidget):
         try:
             source_choices = self._provider.get_export_source_choices(self._source_id)
         except Exception as error:  # pragma: no cover - defensive
-            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, format_ai_peer_review_user_error(error))
             return False
 
         options_dialog = AiPeerReviewExportOptionsDialog(
@@ -627,10 +628,10 @@ class AiPeerReviewWidget(QWidget):
                 options=options,
             )
         except AiPeerReviewError as error:
-            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, format_ai_peer_review_user_error(error))
             return False
         except Exception as error:  # pragma: no cover - defensive
-            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, format_ai_peer_review_user_error(error))
             return False
 
         default_name = ai_peer_review_service.default_export_filename(
@@ -658,7 +659,7 @@ class AiPeerReviewWidget(QWidget):
                 options=options,
             )
         except AiPeerReviewError as error:
-            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, format_ai_peer_review_user_error(error))
             return False
 
         self.refresh()
@@ -737,7 +738,7 @@ class AiPeerReviewWidget(QWidget):
                 require_proposal_packages=self._uses_proposal_packages,
             )
         except AiPeerReviewError as error:
-            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, format_ai_peer_review_user_error(error))
             return False
 
         if parse_result.skipped_count:
@@ -926,10 +927,10 @@ class AiPeerReviewWidget(QWidget):
                             f"Přeskočeno duplicitních balíků: {len(duplicate_ids)}.",
                         )
             except AiPeerReviewError as error:
-                QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+                QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, format_ai_peer_review_user_error(error))
                 return False
             except Exception as error:
-                QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+                QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, format_ai_peer_review_user_error(error))
                 return False
         else:
             import_dialog = AiPeerReviewImportDialog(
@@ -966,7 +967,7 @@ class AiPeerReviewWidget(QWidget):
                     loaded_proposals_count=len(parse_result.proposals),
                 )
             except AiPeerReviewError as error:
-                QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+                QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, format_ai_peer_review_user_error(error))
                 return False
 
         self.refresh()
@@ -1021,7 +1022,7 @@ class AiPeerReviewWidget(QWidget):
             try:
                 return ai_peer_review_service.clone_consultation_for_new_import(review.id)
             except AiPeerReviewError as error:
-                QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+                QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, format_ai_peer_review_user_error(error))
                 return None
         if clicked is replace_button:
             ai_peer_review_service.delete_import_data_for_review(review.id)
@@ -1721,7 +1722,7 @@ class AiPeerReviewWidget(QWidget):
                     updated,
                 )
         except (HazardCatalogPackageIncorporateError, ValueError) as error:
-            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, format_ai_peer_review_user_error(error))
             return
 
         self._load_proposals_table()
@@ -1788,7 +1789,7 @@ class AiPeerReviewWidget(QWidget):
                     return
                 overrides[error.group_id] = dialog.selected_assessment_id
             except HazardCatalogPackageIncorporateError as error:
-                QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+                QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, format_ai_peer_review_user_error(error))
                 return
 
         self.refresh()
@@ -1927,7 +1928,7 @@ class AiPeerReviewWidget(QWidget):
                 resolutions=resolutions,
             )
         except HazardCatalogProposalIncorporateError as error:
-            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, format_ai_peer_review_user_error(error))
             return None
 
         self.refresh()
@@ -2514,7 +2515,7 @@ class AiPeerReviewWidget(QWidget):
                         resolutions=resolutions,
                     )
                 except HazardCatalogProposalIncorporateError as error:
-                    QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+                    QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, format_ai_peer_review_user_error(error))
                     return None
             else:
                 step_result = CatalogIncorporateResult(
@@ -2601,7 +2602,7 @@ class AiPeerReviewWidget(QWidget):
                 pending_proposal_ids=final_plan.pending_proposal_ids,
             )
         except HazardCatalogProposalIncorporateError as error:
-            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, str(error))
+            QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, format_ai_peer_review_user_error(error))
             return
 
         self.refresh()

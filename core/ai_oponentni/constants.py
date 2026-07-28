@@ -11,6 +11,25 @@ AI_PEER_REVIEW_INTRO_TEXT = (
 AI_PEER_REVIEW_EXPORT_BUTTON = "Exportovat podklady pro AI"
 AI_PEER_REVIEW_IMPORT_BUTTON = "Načíst odpověď AI"
 AI_PEER_REVIEW_DIALOG_TITLE = "Oponentní posouzení AI"
+AI_PEER_REVIEW_INTERNAL_DATA_ERROR = (
+    "Interní data AI oponentury jsou neúplná nebo poškozená. "
+    "Zkuste obnovit export a načíst odpověď znovu."
+)
+
+
+def format_ai_peer_review_user_error(error: BaseException) -> str:
+    """Srozumitelná zpráva pro UI – nikdy nevrací surový název interního pole."""
+    if isinstance(error, KeyError):
+        return AI_PEER_REVIEW_INTERNAL_DATA_ERROR
+    text = str(error).strip()
+    if not text:
+        return AI_PEER_REVIEW_INTERNAL_DATA_ERROR
+    # KeyError často končí jako „'field_name'“ bez dalšího textu.
+    if len(text) >= 3 and text[0] == text[-1] == "'" and " " not in text:
+        return AI_PEER_REVIEW_INTERNAL_DATA_ERROR
+    return text
+
+
 AI_PEER_REVIEW_RESPONSE_DIALOG_TITLE = "Načíst odpověď AI"
 AI_PEER_REVIEW_RESPONSE_PLACEHOLDER = (
     "Vložte odpověď AI ve formátu JSON 2.0 (návrhové balíky), "

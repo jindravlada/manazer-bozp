@@ -516,9 +516,13 @@ class HazardCatalogSourcePeerReviewProvider:
         if not risk_source.get("legal_links"):
             lines.append("        (žádné)")
         for legal_link in risk_source.get("legal_links") or []:
+            label = (
+                str(legal_link.get("legal_document_label") or "").strip()
+                or str(legal_link.get("legal_requirement_label") or "").strip()
+                or "—"
+            )
             lines.append(
-                f"        [{legal_link['export_id']}] "
-                f"{legal_link['legal_requirement_label']}"
+                f"        [{legal_link.get('export_id') or '—'}] {label}"
             )
             if legal_link.get("note"):
                 lines.append(f"            Poznámka: {legal_link['note']}")
