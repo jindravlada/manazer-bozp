@@ -109,7 +109,7 @@ _EMPTY_INFO_ROW_RE = re.compile(
 
 _EMPTY_ZMENY_PARAGRAPH_RE = re.compile(
     r"<text:p[^>]*>\s*</text:p>\s*"
-    r"(?=<text:p[^>]*>PLATNÁ PRAVIDLA BEZPEČNÉ PRÁCE</text:p>)",
+    r"(?=<text:p[^>]*>DODRŽUJTE TATO PRAVIDLA</text:p>)",
 )
 
 
@@ -543,7 +543,7 @@ class PravidlaBezpecnePraceService:
 
     @staticmethod
     def _strip_empty_change_section_paragraph(odt_path: Path) -> None:
-        """Odstraní prázdný odstavec změnových sekcí před PLATNÁ PRAVIDLA."""
+        """Odstraní prázdný odstavec změnových sekcí před DODRŽUJTE TATO PRAVIDLA."""
         PravidlaBezpecnePraceService._rewrite_odt_content(
             odt_path,
             lambda content_xml: _EMPTY_ZMENY_PARAGRAPH_RE.sub("", content_xml),
@@ -615,7 +615,7 @@ class PravidlaBezpecnePraceService:
         issued_at: date | datetime,
         role_ids: list[int] | None = None,
         group_ids: list[int] | None = None,
-    ) -> dict[str, str]:
+    ) -> dict[str, object]:
         rozsah_label, rozsah_nazev = self._format_scope_label(
             profession_id=profession_id,
             endangered_group_id=endangered_group_id,
@@ -623,10 +623,23 @@ class PravidlaBezpecnePraceService:
             group_ids=group_ids or [],
         )
         comparison = self.last_comparison
+        from core.export.odt_engine import OdtParagraph, OdtRichContent
         from moduly.rizeni_rizik.sluzby.pravidla_bezpecne_prace_document_format import (
+            format_bullet_valid_rules,
             format_change_sections,
-            format_numbered_valid_rules,
         )
+
+        bullet_lines = format_bullet_valid_rules(rules, comparison)
+        platna_pravidla_text: object
+        if bullet_lines:
+            platna_pravidla_text = OdtRichContent(
+                paragraphs=[
+                    OdtParagraph.text(line, style="PbpRuleBullet")
+                    for line in bullet_lines
+                ]
+            )
+        else:
+            platna_pravidla_text = ""
 
         return {
             "rozsah_label": rozsah_label,
@@ -640,7 +653,7 @@ class PravidlaBezpecnePraceService:
                 current_issued_at=issued_at,
                 date_formatter=self._fmt_date,
             ),
-            "platna_pravidla_text": format_numbered_valid_rules(rules, comparison),
+            "platna_pravidla_text": platna_pravidla_text,
         }
 
     @staticmethod
@@ -670,19 +683,16 @@ class PravidlaBezpecnePraceService:
                 exposed_group_service.display_name(endangered_group_id),
             )
         if role_names and not group_names:
-            label = "Profese / role" if len(role_names) > 1 else "Profese / role"
-            return label, ", ".join(role_names)
+            return "Profese", ", ".join(role_names)
         if group_names and not role_names:
-            label = (
-                "Ohrožené skupiny" if len(group_names) > 1 else "Ohrožená skupina"
-            )
-            return label, ", ".join(group_names)
+            # RISK-RULES-1a: i samotné ohrožené skupiny mají popisek „Profese“.
+            return "Profese", ", ".join(group_names)
         parts = []
         if role_names:
             parts.append(", ".join(role_names))
         if group_names:
             parts.append(", ".join(group_names))
-        return "Cíl", "; ".join(parts)
+        return "Profese", "; ".join(parts)
 
     @staticmethod
     def _workplace_name(workplace_id: int | None) -> str:

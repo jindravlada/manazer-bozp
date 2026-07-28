@@ -174,8 +174,8 @@ class PravidlaBezpecnePracePhasePbp5dTestCase(unittest.TestCase):
     def test_first_edition_has_no_change_sections(self) -> None:
         self._seed(description="Používej helmu", event_name="First")
         content = _odt_content(self._export(issued_at=date(2026, 7, 1)))
-        self.assertIn("PLATNÁ PRAVIDLA BEZPEČNÉ PRÁCE", content)
-        self.assertIn("1. Používej helmu.", content)
+        self.assertIn("DODRŽUJTE TATO PRAVIDLA", content)
+        self.assertIn("• Používej helmu.", content)
         self.assertNotIn("Shrnutí změn", content)
         self.assertNotIn("🟢", content)
         self.assertNotIn("🟡", content)
@@ -186,8 +186,8 @@ class PravidlaBezpecnePracePhasePbp5dTestCase(unittest.TestCase):
         self._seed(description="Používej helmu", event_name="Same")
         self._record_baseline(issued_at=datetime(2026, 7, 1, 10, 0, 0))
         content = _odt_content(self._export(issued_at=date(2026, 7, 10)))
-        self.assertIn("PLATNÁ PRAVIDLA BEZPEČNÉ PRÁCE", content)
-        self.assertIn("1. Používej helmu.", content)
+        self.assertIn("DODRŽUJTE TATO PRAVIDLA", content)
+        self.assertIn("• Používej helmu.", content)
         self.assertNotIn("Shrnutí změn", content)
         self.assertNotIn("🟢", content)
 
@@ -205,11 +205,11 @@ class PravidlaBezpecnePracePhasePbp5dTestCase(unittest.TestCase):
         self.assertIn("🟢 Používej brýle.", content)
         self.assertNotIn("🟡 Změněná pravidla", content)
         self.assertNotIn("🔴 Zrušená pravidla", content)
-        self.assertRegex(content, r"\d+\. 🟢 Používej brýle\.")
-        self.assertRegex(content, r"\d+\. Používej helmu\.")
+        self.assertIn("• 🟢 Používej brýle.", content)
+        self.assertIn("• Používej helmu.", content)
         self.assertNotRegex(
-            content.split("PLATNÁ PRAVIDLA BEZPEČNÉ PRÁCE", 1)[1],
-            r"\d+\. 🟢 Používej helmu\.",
+            content.split("DODRŽUJTE TATO PRAVIDLA", 1)[1],
+            r"• 🟢 Používej helmu\.",
         )
 
     def test_only_changed_rules(self) -> None:
@@ -235,9 +235,9 @@ class PravidlaBezpecnePracePhasePbp5dTestCase(unittest.TestCase):
         self.assertIn("🟡 Používej ochrannou přilbu.", content)
         self.assertNotIn("🟢 Nová pravidla", content)
         self.assertNotIn("🔴 Zrušená pravidla", content)
-        self.assertIn("1. 🟡 Používej ochrannou přilbu.", content)
+        self.assertIn("• 🟡 Používej ochrannou přilbu.", content)
         # Změnová sekce bez číslování.
-        self.assertNotIn("1. 🟡 Používej ochrannou přilbu.", content.split("PLATNÁ")[0])
+        self.assertNotIn("• 🟡 Používej ochrannou přilbu.", content.split("DODRŽUJTE")[0])
 
     def test_only_removed_rules(self) -> None:
         keep, _ = self._seed(description="Používej helmu", event_name="KeepR")
@@ -251,8 +251,8 @@ class PravidlaBezpecnePracePhasePbp5dTestCase(unittest.TestCase):
         self.assertIn("🔴 Používej brýle.", content)
         self.assertNotIn("🟢 Nová pravidla", content)
         self.assertNotIn("🟡 Změněná pravidla", content)
-        self.assertIn("1. Používej helmu.", content)
-        self.assertNotIn("Používej brýle.", content.split("PLATNÁ")[-1])
+        self.assertIn("• Používej helmu.", content)
+        self.assertNotIn("Používej brýle.", content.split("DODRŽUJTE")[-1])
         self.assertEqual(keep.id, keep.id)  # keep used
 
     def test_combination_of_all_change_types_and_section_order(self) -> None:
@@ -278,7 +278,7 @@ class PravidlaBezpecnePracePhasePbp5dTestCase(unittest.TestCase):
         new_sec = content.find("🟢 Nová pravidla")
         chg_sec = content.find("🟡 Změněná pravidla")
         rem_sec = content.find("🔴 Zrušená pravidla")
-        valid = content.find("PLATNÁ PRAVIDLA BEZPEČNÉ PRÁCE")
+        valid = content.find("DODRŽUJTE TATO PRAVIDLA")
         self.assertTrue(0 <= summary < new_sec < chg_sec < rem_sec < valid)
 
         self.assertIn("Nová pravidla: 1", content)
@@ -289,26 +289,26 @@ class PravidlaBezpecnePracePhasePbp5dTestCase(unittest.TestCase):
         self.assertIn("🟡 Používej ochranné rukavice.", content)
         self.assertIn("🔴 Používej brýle.", content)
 
-        platna = content.split("PLATNÁ PRAVIDLA BEZPEČNÉ PRÁCE", 1)[1]
+        platna = content.split("DODRŽUJTE TATO PRAVIDLA", 1)[1]
         self.assertIn("🟢 Noste vestu.", platna)
         self.assertIn("🟡 Používej ochranné rukavice.", platna)
         self.assertIn(f"Používej helmu.", platna)
         self.assertNotIn("🔴", platna)
-        self.assertRegex(platna, r"\d+\. 🟢 Noste vestu\.")
-        self.assertRegex(platna, r"\d+\. 🟡 Používej ochranné rukavice\.")
-        self.assertRegex(platna, r"\d+\. Používej helmu\.")
+        self.assertIn("• 🟢 Noste vestu.", platna)
+        self.assertIn("• 🟡 Používej ochranné rukavice.", platna)
+        self.assertIn("• Používej helmu.", platna)
         _ = keep
 
-    def test_change_sections_unnumbered_valid_rules_numbered(self) -> None:
+    def test_change_sections_unnumbered_valid_rules_bulleted(self) -> None:
         self._seed(description="Používej helmu", event_name="NumKeep")
         self._record_baseline(issued_at=datetime(2026, 6, 4, 8, 0, 0))
         self._seed(description="Používej brýle", event_name="NumNew")
         content = _odt_content(self._export(issued_at=date(2026, 7, 19)))
-        before, after = content.split("PLATNÁ PRAVIDLA BEZPEČNÉ PRÁCE", 1)
+        before, after = content.split("DODRŽUJTE TATO PRAVIDLA", 1)
         self.assertIn("🟢 Používej brýle.", before)
-        self.assertNotRegex(before, r"\d+\.\s*🟢")
-        self.assertRegex(after, r"\d+\.\s*🟢 Používej brýle\.")
-        self.assertRegex(after, r"\d+\.\s*Používej helmu\.")
+        self.assertNotRegex(before, r"•\s*🟢")
+        self.assertIn("• 🟢 Používej brýle.", after)
+        self.assertIn("• Používej helmu.", after)
 
     def test_previous_and_current_edition_dates(self) -> None:
         self._seed(description="Používej helmu", event_name="Dates")

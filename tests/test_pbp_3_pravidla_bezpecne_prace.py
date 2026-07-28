@@ -145,7 +145,7 @@ class PravidlaBezpecnePracePhasePbp3TestCase(unittest.TestCase):
         template = pravidla_bezpecne_prace_service.template_path()
         self.assertTrue(template.exists(), template)
         content = _odt_content(template)
-        self.assertIn("PLATNÁ PRAVIDLA BEZPEČNÉ PRÁCE", content)
+        self.assertIn("DODRŽUJTE TATO PRAVIDLA", content)
         self.assertIn("${platna_pravidla_text}", content)
         self.assertNotIn("🟢", content)
         self.assertNotIn("🟡", content)
@@ -165,7 +165,7 @@ class PravidlaBezpecnePracePhasePbp3TestCase(unittest.TestCase):
             self.assertEqual(rule.source_hazard_id, identification.id)
             self.assertEqual(rule.source_event_id, event.id)
 
-    def test_export_creates_odt_with_header_and_numbered_rules(self) -> None:
+    def test_export_creates_odt_with_header_and_bullet_rules(self) -> None:
         self._seed_rules()
         path = pravidla_bezpecne_prace_service.export_document(
             endangered_group_id=self.group.id,
@@ -185,9 +185,9 @@ class PravidlaBezpecnePracePhasePbp3TestCase(unittest.TestCase):
         self.assertIn("PBP3 pracoviště", content)
         self.assertIn("PBP3 část", content)
         self.assertIn("19.07.2026", content)
-        self.assertIn("PLATNÁ PRAVIDLA BEZPEČNÉ PRÁCE", content)
-        self.assertIn("1. Používej ochrannou přilbu.", content)
-        self.assertIn("2. Zákaz vstupu pod břemeno.", content)
+        self.assertIn("DODRŽUJTE TATO PRAVIDLA", content)
+        self.assertIn("• Používej ochrannou přilbu.", content)
+        self.assertIn("• Zákaz vstupu pod břemeno.", content)
         self.assertNotIn("🟢", content)
         self.assertNotIn("${", content)
 

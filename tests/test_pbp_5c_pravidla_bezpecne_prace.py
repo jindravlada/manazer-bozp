@@ -346,8 +346,6 @@ class PravidlaBezpecnePracePhasePbp5cTestCase(unittest.TestCase):
         self.assertEqual(comparison.unchanged_rules[0].text, "Používej helmu.")
 
     def test_inactive_profession_or_group_not_offered(self) -> None:
-        from PySide6.QtCore import Qt
-
         from moduly.nastaveni.sluzby.responsibility_role_service import (
             responsibility_role_service,
         )
@@ -356,21 +354,18 @@ class PravidlaBezpecnePracePhasePbp5cTestCase(unittest.TestCase):
         responsibility_role_service.deactivate(role.id)
 
         dialog = PravidlaBezpecnePraceDialog()
-        listed_role_ids = [
-            int(dialog.roles_list.item(index).data(Qt.ItemDataRole.UserRole))
-            for index in range(dialog.roles_list.count())
-        ]
-        self.assertNotIn(role.id, listed_role_ids)
+        self.assertNotIn(role.id, dialog.roles.available_role_ids())
         self.assertEqual(dialog.selected_role_ids(), [])
 
         exposed_group_service.deactivate(self.group_b.id)
-        dialog._reload_groups()
-        listed_group_ids = [
-            int(dialog.groups_list.item(index).data(Qt.ItemDataRole.UserRole))
-            for index in range(dialog.groups_list.count())
+        dialog.groups.reload()
+        available_group_ids = [
+            int(dialog.groups.selector.itemData(index))
+            for index in range(dialog.groups.selector.count())
+            if dialog.groups.selector.itemData(index) is not None
         ]
-        self.assertNotIn(self.group_b.id, listed_group_ids)
-        self.assertIn(self.group_a.id, listed_group_ids)
+        self.assertNotIn(self.group_b.id, available_group_ids)
+        self.assertIn(self.group_a.id, available_group_ids)
 
         profession_service.deactivate(self.profession.id)
         active_ids = {item.id for item in profession_service.get_active_all()}
@@ -413,8 +408,9 @@ class PravidlaBezpecnePracePhasePbp5cTestCase(unittest.TestCase):
         assert path is not None
         with zipfile.ZipFile(path) as archive:
             content = archive.read("content.xml").decode("utf-8")
-        self.assertIn("Ohrožená skupina", content)
+        self.assertIn("Profese", content)
         self.assertIn("PBP5c zaměstnanci", content)
+        self.assertNotIn("Ohrožená skupina", content)
 
 
 if __name__ == "__main__":

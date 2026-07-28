@@ -79,11 +79,39 @@ def format_change_sections(
     return "\n".join(parts).rstrip() + "\n"
 
 
+def format_bullet_valid_rules(
+    rules: list[PravidloBezpecnePrace],
+    comparison: PravidlaBezpecnePraceComparison | None,
+) -> list[str]:
+    """Odrážková platná pravidla; při změnách označí nová (🟢) a změněná (🟡)."""
+    new_norms: set[str] = set()
+    changed_norms: set[str] = set()
+    if comparison is not None and comparison.has_changes and not comparison.is_first_edition:
+        new_norms = {rule.text.casefold() for rule in comparison.new_rules}
+        changed_norms = {
+            changed.current_text.casefold() for changed in comparison.changed_rules
+        }
+
+    lines: list[str] = []
+    for rule in rules:
+        text = (rule.text or "").strip()
+        if not text:
+            continue
+        key = text.casefold()
+        if key in new_norms:
+            lines.append(f"• 🟢 {text}")
+        elif key in changed_norms:
+            lines.append(f"• 🟡 {text}")
+        else:
+            lines.append(f"• {text}")
+    return lines
+
+
 def format_numbered_valid_rules(
     rules: list[PravidloBezpecnePrace],
     comparison: PravidlaBezpecnePraceComparison | None,
 ) -> str:
-    """Číslovaná platná pravidla; při změnách označí nová (🟢) a změněná (🟡)."""
+    """Číslovaná platná pravidla (koordinace BOZP a starší volající)."""
     new_norms: set[str] = set()
     changed_norms: set[str] = set()
     if comparison is not None and comparison.has_changes and not comparison.is_first_edition:
@@ -94,11 +122,14 @@ def format_numbered_valid_rules(
 
     lines: list[str] = []
     for index, rule in enumerate(rules, start=1):
-        key = rule.text.casefold()
+        text = (rule.text or "").strip()
+        if not text:
+            continue
+        key = text.casefold()
         if key in new_norms:
-            lines.append(f"{index}. 🟢 {rule.text}")
+            lines.append(f"{index}. 🟢 {text}")
         elif key in changed_norms:
-            lines.append(f"{index}. 🟡 {rule.text}")
+            lines.append(f"{index}. 🟡 {text}")
         else:
-            lines.append(f"{index}. {rule.text}")
+            lines.append(f"{index}. {text}")
     return "\n".join(lines)
