@@ -11,6 +11,14 @@ from .nullable_date_edit import NullableDateEdit
 from .code_selector import CodeSelector
 from .attachment_widget import AttachmentWidget
 from .notes_widget import NotesWidget
+from .no_wheel_guards import (
+    NoWheelComboBox,
+    NoWheelDoubleSpinBox,
+    NoWheelSpinBox,
+    form_wheel_guards_installed,
+    install_form_wheel_guards,
+    uninstall_form_wheel_guards,
+)
 from .table_utils import configure_table_columns, create_preview_table_item
 from .typed_table_sort import (
     TYPED_SORT_ROLE,

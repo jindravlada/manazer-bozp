@@ -1,14 +1,17 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QComboBox, QCompleter, QSizePolicy
 
+from core.widgets.no_wheel_guards import NoWheelComboBox
 
-class SearchComboBox(QComboBox):
+
+class SearchComboBox(NoWheelComboBox):
     """
     Jednotný rozbalovací výběr s našeptávačem.
 
     - šipka pro rozbalení celého seznamu
     - možnost psát vlastní text
     - našeptávání podle části textu bez ohledu na velikost písmen
+    - UX-FORMS-1: kolečko nemění hodnotu při zavřeném seznamu
     """
 
     def __init__(self, values: list[str] | None = None, parent=None, allow_custom_value: bool = True):

@@ -11,6 +11,7 @@ from core.dialogs.message_box import (
     install_unified_message_boxes,
     show_critical,
 )
+from core.widgets.no_wheel_guards import install_form_wheel_guards
 from core.services.app_runtime_service import mark_application_started
 from core.settings.settings_manager import settings
 from core.theme import theme
@@ -27,6 +28,7 @@ def _show_startup_error(title: str, message: str) -> None:
         app.setApplicationVersion(APP_VERSION)
         configure_application_for_dialogs(app)
         install_unified_message_boxes(app)
+        install_form_wheel_guards(app)
     show_critical(None, title, message)
 
 
@@ -49,6 +51,8 @@ def main():
     # Titulek hlavního okna zůstává app_display_name() přes setWindowTitle.
     configure_application_for_dialogs(app)
     install_unified_message_boxes(app)
+    # UX-FORMS-1: kolečko myši nemění hodnoty combo/spin při rolování formuláře.
+    install_form_wheel_guards(app)
     apply_app_style(app)
 
     app_icon = load_app_icon()

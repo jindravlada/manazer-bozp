@@ -1,8 +1,10 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QComboBox, QCompleter
+from PySide6.QtWidgets import QCompleter
+
+from core.widgets.no_wheel_guards import NoWheelComboBox
 
 
-class CodeSelector(QComboBox):
+class CodeSelector(NoWheelComboBox):
     """Univerzální výběr hodnoty z číselníku s našeptávačem."""
 
     def __init__(self, values: list[str] | None = None, parent=None):

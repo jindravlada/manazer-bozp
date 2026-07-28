@@ -1,10 +1,9 @@
-from PySide6.QtWidgets import QComboBox
-
 from core.utils.czech_sort import czech_sorted
+from core.widgets.no_wheel_guards import NoWheelComboBox
 from moduly.nastaveni.sluzby.responsibility_role_service import responsibility_role_service
 
 
-class ResponsibilityRoleSelector(QComboBox):
+class ResponsibilityRoleSelector(NoWheelComboBox):
     def __init__(self, parent=None, include_empty: bool = True):
         super().__init__(parent)
 
