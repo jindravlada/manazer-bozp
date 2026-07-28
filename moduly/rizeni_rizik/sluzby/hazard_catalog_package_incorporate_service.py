@@ -643,6 +643,13 @@ class HazardCatalogPackageIncorporateService:
         group_assessment_overrides: dict[int, int],
     ) -> tuple[int, int, int, int]:
         group_ids = self._resolve_exposed_group_ids(assessment)
+        role_ids = self._resolve_responsibility_role_ids(assessment)
+        if not group_ids and not role_ids:
+            raise HazardCatalogPackageIncorporateError(
+                CATALOG_INCORPORATE_ERROR_ASSESSMENT_GROUP.format(
+                    name=assessment.exposed_group or "posouzení",
+                ),
+            )
         merge_targets: dict[int, HazardLibraryTemplateAssessment] = {}
         new_group_ids: list[int] = []
 
@@ -702,13 +709,19 @@ class HazardCatalogPackageIncorporateService:
             merged_count += 1
 
         created_count = 0
+        create_group_ids: list[int] | None = None
         if new_group_ids:
+            create_group_ids = new_group_ids
+        elif not merge_targets and role_ids:
+            create_group_ids = []
+
+        if create_group_ids is not None:
             assessment_id = self._create_assessment(
                 session,
                 template_event_id=template_event_id,
                 assessment=assessment,
                 package_reasoning=package_reasoning,
-                group_ids=new_group_ids,
+                group_ids=create_group_ids,
             )
             created_count = 1
             for measure in assessment.existing_measures:
@@ -929,8 +942,13 @@ class HazardCatalogPackageIncorporateService:
         package_reasoning: str,
         group_ids: list[int] | None = None,
     ) -> int:
-        resolved_group_ids = group_ids or self._resolve_exposed_group_ids(assessment)
-        if not resolved_group_ids:
+        resolved_group_ids = (
+            list(group_ids)
+            if group_ids is not None
+            else self._resolve_exposed_group_ids(assessment)
+        )
+        role_ids = self._resolve_responsibility_role_ids(assessment)
+        if not resolved_group_ids and not role_ids:
             raise HazardCatalogPackageIncorporateError(
                 CATALOG_INCORPORATE_ERROR_ASSESSMENT_GROUP.format(
                     name=assessment.exposed_group or "posouzení",
@@ -943,7 +961,7 @@ class HazardCatalogPackageIncorporateService:
         )
         row = HazardLibraryTemplateAssessment(
             template_event_id=template_event_id,
-            exposed_group_id=resolved_group_ids[0],
+            exposed_group_id=resolved_group_ids[0] if resolved_group_ids else None,
             severity=severity,
             conclusion=(assessment.conclusion or "").strip(),
             note=(package_reasoning or "").strip(),
@@ -964,7 +982,7 @@ class HazardCatalogPackageIncorporateService:
                 ),
             )
             sort_order += 1
-        for role_id in self._resolve_responsibility_role_ids(assessment):
+        for role_id in role_ids:
             session.add(
                 HazardLibraryTemplateAssessmentExposedGroup(
                     assessment_id=int(row.id),
@@ -1004,6 +1022,12 @@ class HazardCatalogPackageIncorporateService:
         refs = refs_from_legacy_group_ids(resolved_groups)
         for role_id in self._resolve_responsibility_role_ids(assessment):
             refs.append(role_ref(role_id))
+        if not refs:
+            raise HazardCatalogPackageIncorporateError(
+                CATALOG_INCORPORATE_ERROR_ASSESSMENT_GROUP.format(
+                    name=assessment.exposed_group or "posouzení",
+                ),
+            )
         return refs
 
     def _ensure_assessment_role_refs(self, session, *, assessment_id: int, assessment) -> None:
@@ -1058,16 +1082,17 @@ class HazardCatalogPackageIncorporateService:
                 if group_id not in seen:
                     seen.add(group_id)
                     ids.append(group_id)
+        return ids
+
+    def _resolve_exposed_group_id(self, assessment) -> int:
+        ids = self._resolve_exposed_group_ids(assessment)
         if not ids:
             raise HazardCatalogPackageIncorporateError(
                 CATALOG_INCORPORATE_ERROR_ASSESSMENT_GROUP.format(
                     name=assessment.exposed_group or "posouzení",
                 ),
             )
-        return ids
-
-    def _resolve_exposed_group_id(self, assessment) -> int:
-        return self._resolve_exposed_group_ids(assessment)[0]
+        return ids[0]
 
     def _resolve_legal_document_id(self, link) -> int:
         if link.legal_document_id is not None:
@@ -1316,6 +1341,13 @@ class HazardCatalogPackageIncorporateService:
         group_assessment_overrides: dict[int, int],
     ) -> tuple[int, int, int, int]:
         group_ids = self._resolve_exposed_group_ids(assessment)
+        role_ids = self._resolve_responsibility_role_ids(assessment)
+        if not group_ids and not role_ids:
+            raise HazardCatalogPackageIncorporateError(
+                CATALOG_INCORPORATE_ERROR_ASSESSMENT_GROUP.format(
+                    name=assessment.exposed_group or "posouzení",
+                ),
+            )
         merge_targets = {}
         new_group_ids: list[int] = []
 
@@ -1375,13 +1407,19 @@ class HazardCatalogPackageIncorporateService:
             merged_count += 1
 
         created_count = 0
+        create_group_ids: list[int] | None = None
         if new_group_ids:
+            create_group_ids = new_group_ids
+        elif not merge_targets and role_ids:
+            create_group_ids = []
+
+        if create_group_ids is not None:
             created = working_copy.create_assessment(
                 template_id=working_copy.template_id,
                 template_event_id=template_event_id,
                 target_refs=self._assessment_target_refs(
                     assessment,
-                    group_ids=new_group_ids,
+                    group_ids=create_group_ids,
                 ),
                 severity=(
                     assessment.severity

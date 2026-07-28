@@ -239,6 +239,9 @@ CATALOG_AI_PACKAGE_REJECT_BUTTON = "Zamítnout balík"
 CATALOG_AI_PACKAGE_EDIT_DIALOG_TITLE = "Úprava návrhového balíku"
 CATALOG_AI_PACKAGE_EDIT_SAVE_BUTTON = "Uložit změny"
 CATALOG_AI_PACKAGE_SUMMARY_TITLE = "Souhrn balíku"
+CATALOG_AI_PACKAGE_TARGETS_REQUIRED = (
+    "Vyberte alespoň jednu ohroženou skupinu nebo profesi/roli."
+)
 CATALOG_AI_PACKAGE_INCORPORATE_SUCCESS = (
     "Balík byl zapracován do MASTER obsahu. Revize zdroje: {revision}."
 )
@@ -352,7 +355,7 @@ CATALOG_INCORPORATE_ERROR_ASSESSMENT_PARENT = (
     "Návrh posouzení „{name}“ nelze zařadit k nežádoucí události."
 )
 CATALOG_INCORPORATE_ERROR_ASSESSMENT_GROUP = (
-    "Návrh posouzení „{name}“ nemá určenou ohroženou skupinu."
+    "Návrh posouzení „{name}“ nemá určenou ohroženou skupinu ani profesi/roli."
 )
 CATALOG_INCORPORATE_ERROR_MEASURE_PARENT = (
     "Návrh opatření „{name}“ nelze zařadit k posouzení rizika."

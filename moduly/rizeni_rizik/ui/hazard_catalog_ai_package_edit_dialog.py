@@ -51,6 +51,10 @@ from moduly.rizeni_rizik.constants_library import (
     CATALOG_AI_PACKAGE_EDIT_SAVE_BUTTON,
     CATALOG_AI_PACKAGE_INCORPORATE_BUTTON,
     CATALOG_AI_PACKAGE_SUMMARY_TITLE,
+    CATALOG_AI_PACKAGE_TARGETS_REQUIRED,
+)
+from moduly.nastaveni.sluzby.responsibility_role_service import (
+    responsibility_role_service,
 )
 from moduly.rizeni_rizik.sluzby.hazard_catalog_package_incorporate_service import (
     hazard_catalog_package_incorporate_service,
@@ -140,7 +144,7 @@ def resolve_target_event_name(
 
 
 def assessment_section_title(index: int, assessment: AiProposalPackageAssessment | None) -> str:
-    groups: list[str] = []
+    labels: list[str] = []
     if assessment is not None:
         groups = [
             name.strip()
@@ -154,8 +158,20 @@ def assessment_section_title(index: int, assessment: AiProposalPackageAssessment
                 name = exposed_group_service.display_name(int(group_id))
                 if name:
                     groups.append(name)
-    group_label = ", ".join(groups) if groups else "bez skupiny"
-    return f"Posouzení {index} – {group_label}"
+        labels.extend(groups)
+        for role_id in assessment.responsibility_role_ids or ():
+            role = responsibility_role_service.get_by_id(int(role_id))
+            if role is not None and (role.name or "").strip():
+                labels.append(role.name.strip())
+    target_label = ", ".join(labels) if labels else "bez cíle"
+    return f"Posouzení {index} – {target_label}"
+
+
+def assessment_has_targets(assessment: AiProposalPackageAssessment) -> bool:
+    """True, pokud je zvolena alespoň skupina nebo profese/role."""
+    if assessment.exposed_group_ids or assessment.exposed_group_id is not None:
+        return True
+    return bool(assessment.responsibility_role_ids)
 
 
 def format_package_summary(
@@ -205,14 +221,40 @@ class _AssessmentEditor(QWidget):
         layout = QFormLayout(self)
         layout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
 
-        group_row = QHBoxLayout()
         self.exposed_groups = MultiExposedGroupSelector(self)
         self.manage_groups_btn = QPushButton("Spravovat číselník…")
         self.manage_groups_btn.clicked.connect(self._open_groups_management)
-        group_row.addWidget(self.exposed_groups, 1)
-        group_row.addWidget(self.manage_groups_btn)
-
         self.responsibility_roles = MultiResponsibilityRoleSelector(self)
+
+        list_height = 100
+        self.exposed_groups.list_widget.setMinimumHeight(list_height)
+        self.responsibility_roles.list_widget.setMinimumHeight(list_height)
+
+        groups_col = QVBoxLayout()
+        groups_col.setContentsMargins(0, 0, 0, 0)
+        groups_header = QHBoxLayout()
+        groups_header.addWidget(QLabel("Ohrožené skupiny"))
+        groups_header.addStretch(1)
+        groups_header.addWidget(self.manage_groups_btn)
+        groups_col.addLayout(groups_header)
+        groups_col.addWidget(self.exposed_groups, 1)
+        groups_box = QWidget()
+        groups_box.setLayout(groups_col)
+
+        roles_col = QVBoxLayout()
+        roles_col.setContentsMargins(0, 0, 0, 0)
+        roles_col.addWidget(QLabel("Profese / role"))
+        roles_col.addWidget(self.responsibility_roles, 1)
+        roles_box = QWidget()
+        roles_box.setLayout(roles_col)
+
+        targets_row = QHBoxLayout()
+        targets_row.setContentsMargins(0, 0, 0, 0)
+        targets_row.setSpacing(12)
+        targets_row.addWidget(groups_box, 1)
+        targets_row.addWidget(roles_box, 1)
+        targets_wrap = QWidget()
+        targets_wrap.setLayout(targets_row)
 
         self.severity = QComboBox()
         populate_severity_combo(
@@ -233,8 +275,7 @@ class _AssessmentEditor(QWidget):
         self.required_measures.setPlaceholderText("Jedno opatření na řádek")
         _configure_plain_text(self.required_measures, min_height=60)
 
-        layout.addRow("Ohrožené skupiny *:", group_row)
-        layout.addRow("Profese / role:", self.responsibility_roles)
+        layout.addRow(targets_wrap)
         layout.addRow("Závažnost *:", self.severity)
         layout.addRow("Závěr:", self.conclusion)
         layout.addRow("Zásady bezpečné práce:", self.existing_measures)
@@ -557,11 +598,11 @@ class HazardCatalogAiPackageEditDialog(QDialog):
         assessments: list[AiProposalPackageAssessment] = []
         for index, editor in enumerate(self._assessment_editors, start=1):
             assessment = editor.to_assessment()
-            if not assessment.exposed_group.strip() and not assessment.exposed_group_ids:
+            if not assessment_has_targets(assessment):
                 QMessageBox.warning(
                     self,
                     self.windowTitle(),
-                    "Vyberte alespoň jednu ohroženou skupinu.",
+                    CATALOG_AI_PACKAGE_TARGETS_REQUIRED,
                 )
                 return
             if index - 1 < len(self._assessment_sections):
