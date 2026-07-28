@@ -4,83 +4,110 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QDialogButtonBox,
     QFormLayout,
     QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
     QMessageBox,
     QPushButton,
-    QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
 
+from core.utils.czech_sort import czech_sorted
 from core.widgets.dialog_utils import create_save_cancel_box
-from core.widgets.exposed_group_selector import ExposedGroupSelector
+from moduly.nastaveni.sluzby.exposed_group_service import exposed_group_service
+from moduly.nastaveni.sluzby.responsibility_role_service import (
+    responsibility_role_service,
+)
+from moduly.nastaveni.ui.responsibility_roles_management_dialog import (
+    ResponsibilityRolesManagementDialog,
+)
 from moduly.rizeni_rizik.sluzby.hazard_identification_service import (
     hazard_identification_service,
 )
 from moduly.rizeni_rizik.sluzby.pravidla_bezpecne_prace_service import (
     pravidla_bezpecne_prace_service,
 )
-from moduly.rizeni_rizik.sluzby.profession_service import profession_service
-from moduly.rizeni_rizik.ui.professions_management_dialog import (
-    ProfessionsManagementDialog,
-)
 
 DIALOG_TITLE = "Pravidla bezpečné práce"
 
+# Zpětná kompatibilita pro starší testy.
 MODE_PROFESSION = "profession"
 MODE_GROUP = "group"
 
 
 class PravidlaBezpecnePraceDialog(QDialog):
-    """Výběr profese nebo ohrožené skupiny a hierarchie pracoviště pro PBP."""
+    """Výběr rolí a ohrožených skupin + hierarchie pracoviště pro PBP."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(DIALOG_TITLE)
-        self.resize(520, 300)
+        self.resize(560, 520)
         self._last_result: list | None = None
         self._last_export_path: Path | None = None
 
         layout = QVBoxLayout(self)
         form = QFormLayout()
 
-        self.mode = QComboBox()
-        self.mode.addItem("Profese", MODE_PROFESSION)
-        self.mode.addItem("Ohrožená skupina", MODE_GROUP)
+        roles_box = QWidget()
+        roles_layout = QVBoxLayout(roles_box)
+        roles_layout.setContentsMargins(0, 0, 0, 0)
+        roles_toolbar = QHBoxLayout()
+        self.roles_count_label = QLabel("Vybráno: 0")
+        manage_roles_btn = QPushButton("Správa…")
+        manage_roles_btn.clicked.connect(self._manage_roles)
+        clear_roles_btn = QPushButton("Vyčistit")
+        clear_roles_btn.clicked.connect(self._clear_roles)
+        roles_toolbar.addWidget(self.roles_count_label)
+        roles_toolbar.addStretch()
+        roles_toolbar.addWidget(clear_roles_btn)
+        roles_toolbar.addWidget(manage_roles_btn)
+        self.roles_list = QListWidget()
+        self.roles_list.setSelectionMode(QListWidget.SelectionMode.NoSelection)
+        self.roles_list.itemChanged.connect(self._update_selection_counts)
+        roles_layout.addLayout(roles_toolbar)
+        roles_layout.addWidget(self.roles_list)
 
-        self.scope_stack = QStackedWidget()
-        profession_page = QWidget()
-        profession_layout = QHBoxLayout(profession_page)
-        profession_layout.setContentsMargins(0, 0, 0, 0)
-        self.profession = QComboBox()
-        manage_professions_btn = QPushButton("Správa…")
-        manage_professions_btn.clicked.connect(self._manage_professions)
-        profession_layout.addWidget(self.profession, 1)
-        profession_layout.addWidget(manage_professions_btn)
-        self.scope_stack.addWidget(profession_page)
-
-        group_page = QWidget()
-        group_layout = QHBoxLayout(group_page)
-        group_layout.setContentsMargins(0, 0, 0, 0)
-        self.endangered_group = ExposedGroupSelector(self)
-        group_layout.addWidget(self.endangered_group, 1)
-        self.scope_stack.addWidget(group_page)
+        groups_box = QWidget()
+        groups_layout = QVBoxLayout(groups_box)
+        groups_layout.setContentsMargins(0, 0, 0, 0)
+        groups_toolbar = QHBoxLayout()
+        self.groups_count_label = QLabel("Vybráno: 0")
+        clear_groups_btn = QPushButton("Vyčistit")
+        clear_groups_btn.clicked.connect(self._clear_groups)
+        groups_toolbar.addWidget(self.groups_count_label)
+        groups_toolbar.addStretch()
+        groups_toolbar.addWidget(clear_groups_btn)
+        self.groups_list = QListWidget()
+        self.groups_list.setSelectionMode(QListWidget.SelectionMode.NoSelection)
+        self.groups_list.itemChanged.connect(self._update_selection_counts)
+        groups_layout.addLayout(groups_toolbar)
+        groups_layout.addWidget(self.groups_list)
 
         self.operation = QComboBox()
         self.workplace = QComboBox()
         self.workplace_part = QComboBox()
 
-        form.addRow("Režim výběru:", self.mode)
-        form.addRow("Cíl *:", self.scope_stack)
+        form.addRow("Profese / role:", roles_box)
+        form.addRow("Ohrožené skupiny:", groups_box)
         form.addRow("Provoz *:", self.operation)
         form.addRow("Pracoviště:", self.workplace)
         form.addRow("Část pracoviště:", self.workplace_part)
         layout.addLayout(form)
+
+        hint = QLabel(
+            "Vyberte alespoň jednu profesi/roli nebo ohroženou skupinu. "
+            "Obě sekce lze kombinovat."
+        )
+        hint.setWordWrap(True)
+        layout.addWidget(hint)
 
         buttons = create_save_cancel_box(self)
         generate_btn = buttons.button(QDialogButtonBox.StandardButton.Save)
@@ -93,15 +120,15 @@ class PravidlaBezpecnePraceDialog(QDialog):
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
-        self.mode.currentIndexChanged.connect(self._on_mode_changed)
         self.operation.currentIndexChanged.connect(self._on_operation_changed)
         self.workplace.currentIndexChanged.connect(self._on_workplace_changed)
 
-        self._reload_professions()
+        self._reload_roles()
+        self._reload_groups()
         self._reload_operations()
         self._reset_workplaces()
         self._reset_workplace_parts()
-        self._on_mode_changed()
+        self._update_selection_counts()
 
     @property
     def last_result(self) -> list | None:
@@ -111,20 +138,34 @@ class PravidlaBezpecnePraceDialog(QDialog):
     def last_export_path(self) -> Path | None:
         return self._last_export_path
 
-    def _current_mode(self) -> str:
-        return self.mode.currentData() or MODE_PROFESSION
+    def selected_role_ids(self) -> list[int]:
+        return self._checked_ids(self.roles_list)
 
-    def _on_mode_changed(self) -> None:
-        if self._current_mode() == MODE_PROFESSION:
-            self.scope_stack.setCurrentIndex(0)
-        else:
-            self.scope_stack.setCurrentIndex(1)
+    def selected_group_ids(self) -> list[int]:
+        return self._checked_ids(self.groups_list)
 
-    def _manage_professions(self) -> None:
-        current_id = self.profession.currentData()
-        dialog = ProfessionsManagementDialog(self)
+    def set_selected_role_ids(self, role_ids: list[int] | tuple[int, ...] | None) -> None:
+        self._set_checked_ids(self.roles_list, role_ids)
+        self._update_selection_counts()
+
+    def set_selected_group_ids(
+        self,
+        group_ids: list[int] | tuple[int, ...] | None,
+    ) -> None:
+        self._set_checked_ids(self.groups_list, group_ids)
+        self._update_selection_counts()
+
+    def _manage_roles(self) -> None:
+        current = self.selected_role_ids()
+        dialog = ResponsibilityRolesManagementDialog(self)
         dialog.exec()
-        self._reload_professions(prefer_id=current_id)
+        self._reload_roles(prefer_ids=current)
+
+    def _clear_roles(self) -> None:
+        self.set_selected_role_ids([])
+
+    def _clear_groups(self) -> None:
+        self.set_selected_group_ids([])
 
     def _generate(self) -> None:
         operation_id = self.operation.currentData()
@@ -137,39 +178,19 @@ class PravidlaBezpecnePraceDialog(QDialog):
         if workplace_id is None:
             workplace_part_id = None
 
-        profession_id: int | None = None
-        endangered_group_id: int | None = None
-
-        if self._current_mode() == MODE_PROFESSION:
-            profession_id = self.profession.currentData()
-            if profession_id is None:
-                QMessageBox.warning(self, DIALOG_TITLE, "Vyberte profesi.")
-                return
-            profession = profession_service.get_by_id(profession_id)
-            if profession is None or not profession.active:
-                QMessageBox.warning(
-                    self,
-                    DIALOG_TITLE,
-                    "Vybraná profese není aktivní. Vyberte jinou profesi.",
-                )
-                self._reload_professions()
-                return
-            if not profession_service.get_active_exposed_group_ids(profession_id):
-                QMessageBox.warning(
-                    self,
-                    DIALOG_TITLE,
-                    "Vybraná profese nemá žádnou aktivní ohroženou skupinu.",
-                )
-                return
-        else:
-            endangered_group_id = self.endangered_group.current_group_id()
-            if endangered_group_id is None:
-                QMessageBox.warning(self, DIALOG_TITLE, "Vyberte ohroženou skupinu.")
-                return
+        role_ids = self.selected_role_ids()
+        group_ids = self.selected_group_ids()
+        if not role_ids and not group_ids:
+            QMessageBox.warning(
+                self,
+                DIALOG_TITLE,
+                "Vyberte alespoň jednu profesi, roli nebo ohroženou skupinu.",
+            )
+            return
 
         self._last_result = pravidla_bezpecne_prace_service.generate(
-            endangered_group_id=endangered_group_id,
-            profession_id=profession_id,
+            role_ids=role_ids or None,
+            endangered_group_ids=group_ids or None,
             operation_id=operation_id,
             workplace_id=workplace_id,
             workplace_part_id=workplace_part_id,
@@ -186,8 +207,8 @@ class PravidlaBezpecnePraceDialog(QDialog):
             return
 
         self._last_export_path = pravidla_bezpecne_prace_service.open_document(
-            endangered_group_id=endangered_group_id,
-            profession_id=profession_id,
+            role_ids=role_ids or None,
+            endangered_group_ids=group_ids or None,
             operation_id=operation_id,
             workplace_id=workplace_id,
             workplace_part_id=workplace_part_id,
@@ -215,19 +236,59 @@ class PravidlaBezpecnePraceDialog(QDialog):
     def _on_workplace_changed(self) -> None:
         self._reload_workplace_parts(self.workplace.currentData())
 
-    def _reload_professions(self, prefer_id: int | None = None) -> None:
-        self.profession.blockSignals(True)
-        self.profession.clear()
-        for item in profession_service.get_active_all():
-            self.profession.addItem(item.name, item.id)
-        if prefer_id is not None:
-            index = self.profession.findData(prefer_id)
-            self.profession.setCurrentIndex(index if index >= 0 else -1)
-        elif self.profession.count() == 1:
-            self.profession.setCurrentIndex(0)
-        else:
-            self.profession.setCurrentIndex(-1)
-        self.profession.blockSignals(False)
+    def _reload_roles(self, prefer_ids: list[int] | None = None) -> None:
+        selected = set(prefer_ids or self.selected_role_ids())
+        self.roles_list.blockSignals(True)
+        self.roles_list.clear()
+        roles = czech_sorted(
+            responsibility_role_service.get_all(include_inactive=False),
+            key=lambda role: role.name.casefold(),
+        )
+        for role in roles:
+            item = QListWidgetItem(role.name)
+            item.setData(Qt.ItemDataRole.UserRole, int(role.id))
+            item.setFlags(
+                item.flags()
+                | Qt.ItemFlag.ItemIsUserCheckable
+                | Qt.ItemFlag.ItemIsEnabled
+            )
+            item.setCheckState(
+                Qt.CheckState.Checked
+                if int(role.id) in selected
+                else Qt.CheckState.Unchecked
+            )
+            self.roles_list.addItem(item)
+        self.roles_list.blockSignals(False)
+        self._update_selection_counts()
+
+    def _reload_groups(self, prefer_ids: list[int] | None = None) -> None:
+        selected = set(prefer_ids or self.selected_group_ids())
+        self.groups_list.blockSignals(True)
+        self.groups_list.clear()
+        groups = czech_sorted(
+            exposed_group_service.get_active_all(),
+            key=lambda group: group.name.casefold(),
+        )
+        for group in groups:
+            item = QListWidgetItem(group.name)
+            item.setData(Qt.ItemDataRole.UserRole, int(group.id))
+            item.setFlags(
+                item.flags()
+                | Qt.ItemFlag.ItemIsUserCheckable
+                | Qt.ItemFlag.ItemIsEnabled
+            )
+            item.setCheckState(
+                Qt.CheckState.Checked
+                if int(group.id) in selected
+                else Qt.CheckState.Unchecked
+            )
+            self.groups_list.addItem(item)
+        self.groups_list.blockSignals(False)
+        self._update_selection_counts()
+
+    def _update_selection_counts(self, *_args) -> None:
+        self.roles_count_label.setText(f"Vybráno: {len(self.selected_role_ids())}")
+        self.groups_count_label.setText(f"Vybráno: {len(self.selected_group_ids())}")
 
     def _reload_operations(self) -> None:
         self._populate_combo(
@@ -259,6 +320,43 @@ class PravidlaBezpecnePraceDialog(QDialog):
     def _reset_workplace_parts(self) -> None:
         self._populate_combo(self.workplace_part, [], required=False)
         self.workplace_part.setEnabled(False)
+
+    @staticmethod
+    def _checked_ids(list_widget: QListWidget) -> list[int]:
+        values: list[int] = []
+        for index in range(list_widget.count()):
+            item = list_widget.item(index)
+            if item is None or item.checkState() != Qt.CheckState.Checked:
+                continue
+            raw = item.data(Qt.ItemDataRole.UserRole)
+            try:
+                values.append(int(raw))
+            except (TypeError, ValueError):
+                continue
+        return values
+
+    @staticmethod
+    def _set_checked_ids(
+        list_widget: QListWidget,
+        ids: list[int] | tuple[int, ...] | None,
+    ) -> None:
+        wanted = {int(value) for value in (ids or ())}
+        list_widget.blockSignals(True)
+        for index in range(list_widget.count()):
+            item = list_widget.item(index)
+            if item is None:
+                continue
+            raw = item.data(Qt.ItemDataRole.UserRole)
+            try:
+                item_id = int(raw)
+            except (TypeError, ValueError):
+                continue
+            item.setCheckState(
+                Qt.CheckState.Checked
+                if item_id in wanted
+                else Qt.CheckState.Unchecked
+            )
+        list_widget.blockSignals(False)
 
     @staticmethod
     def _populate_combo(combo: QComboBox, items, *, required: bool) -> None:

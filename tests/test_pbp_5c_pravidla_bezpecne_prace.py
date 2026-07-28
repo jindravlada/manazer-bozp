@@ -79,8 +79,6 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.rizeni_rizik.sluzby.profession_service import profession_service
     from moduly.rizeni_rizik.ui.pravidla_bezpecne_prace_dialog import (
-        MODE_GROUP,
-        MODE_PROFESSION,
         PravidlaBezpecnePraceDialog,
     )
     from tests.rizeni_rizik_test_helpers import ensure_exposed_group
@@ -348,29 +346,35 @@ class PravidlaBezpecnePracePhasePbp5cTestCase(unittest.TestCase):
         self.assertEqual(comparison.unchanged_rules[0].text, "Používej helmu.")
 
     def test_inactive_profession_or_group_not_offered(self) -> None:
+        from PySide6.QtCore import Qt
+
+        from moduly.nastaveni.sluzby.responsibility_role_service import (
+            responsibility_role_service,
+        )
+
+        role = responsibility_role_service.create_role(name="PBP5c role neaktivní")
+        responsibility_role_service.deactivate(role.id)
+
+        dialog = PravidlaBezpecnePraceDialog()
+        listed_role_ids = [
+            int(dialog.roles_list.item(index).data(Qt.ItemDataRole.UserRole))
+            for index in range(dialog.roles_list.count())
+        ]
+        self.assertNotIn(role.id, listed_role_ids)
+        self.assertEqual(dialog.selected_role_ids(), [])
+
+        exposed_group_service.deactivate(self.group_b.id)
+        dialog._reload_groups()
+        listed_group_ids = [
+            int(dialog.groups_list.item(index).data(Qt.ItemDataRole.UserRole))
+            for index in range(dialog.groups_list.count())
+        ]
+        self.assertNotIn(self.group_b.id, listed_group_ids)
+        self.assertIn(self.group_a.id, listed_group_ids)
+
         profession_service.deactivate(self.profession.id)
         active_ids = {item.id for item in profession_service.get_active_all()}
         self.assertNotIn(self.profession.id, active_ids)
-
-        dialog = PravidlaBezpecnePraceDialog()
-        profession_ids = [
-            dialog.profession.itemData(index)
-            for index in range(dialog.profession.count())
-        ]
-        self.assertNotIn(self.profession.id, profession_ids)
-        self.assertEqual(dialog.mode.currentData(), MODE_PROFESSION)
-
-        exposed_group_service.deactivate(self.group_b.id)
-        profession_service.activate(self.profession.id)
-        active_groups = profession_service.get_active_exposed_group_ids(
-            self.profession.id
-        )
-        self.assertEqual(active_groups, [self.group_a.id])
-        self.assertNotIn(self.group_b.id, active_groups)
-
-        # Přímý režim skupiny v dialogu zůstává dostupný.
-        dialog.mode.setCurrentIndex(dialog.mode.findData(MODE_GROUP))
-        self.assertEqual(dialog._current_mode(), MODE_GROUP)
 
     def test_odt_header_uses_profession_label(self) -> None:
         self._seed(

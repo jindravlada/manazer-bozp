@@ -23,10 +23,18 @@ from core.export.odt_engine import _sync_written_file
 from core.services.storage_service import storage_service
 from core.utils.czech_sort import czech_sort_key
 from moduly.nastaveni.sluzby.exposed_group_service import exposed_group_service
+from moduly.nastaveni.sluzby.responsibility_role_service import (
+    responsibility_role_service,
+)
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.rizeni_rizik.constants import (
     DEFAULT_RISK_SEVERITY,
     RISK_SEVERITIES,
+)
+from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
+    SOURCE_TYPE_HAZARD_GROUP,
+    SOURCE_TYPE_ROLE,
+    effective_target_refs,
 )
 from moduly.rizeni_rizik.sluzby.hazard_existing_measure_service import (
     hazard_existing_measure_service,
@@ -220,51 +228,94 @@ class PravidlaBezpecnePraceService:
         workplace_part_id: int | None = None,
         *,
         profession_id: int | None = None,
+        role_ids: list[int] | tuple[int, ...] | None = None,
+        endangered_group_ids: list[int] | tuple[int, ...] | None = None,
     ) -> list[PravidloBezpecnePrace]:
-        """Vrátí platná pravidla pro ohroženou skupinu nebo profesi a rozsah pracoviště.
+        """Vrátí platná pravidla pro vybrané cíle a rozsah pracoviště.
 
         Platná = aktivní **existující** opatření (realizovaná).
         Potřebná další / neaktivní opatření se nezahrnují.
         Texty se normalizují; nevhodné formulace zůstávají ve výsledku
         a mají ``unsuitable_for_employee=True``.
 
-        Při výběru profese se sjednotí pravidla ze všech jejích aktivních
-        ohrožených skupin (deduplikace, nejvyšší závažnost, všechny zdroje).
+        Cíle mohou být kombinací:
+        - rolí/profesí (vazby typu ``role`` v posouzení),
+        - ohrožených skupin (vazby typu ``hazard_group``),
+        - legacy ``profession_id`` (rozvine se na přiřazené skupiny).
         """
         if operation_id is None:
             raise ValueError("operation_id je povinný.")
         if workplace_id is None:
             workplace_part_id = None
 
-        if profession_id is not None:
-            group_ids = profession_service.get_active_exposed_group_ids(profession_id)
-            if not group_ids:
-                return []
-            return self._generate_for_groups(
-                group_ids=group_ids,
-                operation_id=operation_id,
-                workplace_id=workplace_id,
-                workplace_part_id=workplace_part_id,
+        resolved_role_ids, resolved_group_ids = self._resolve_target_ids(
+            endangered_group_id=endangered_group_id,
+            profession_id=profession_id,
+            role_ids=role_ids,
+            endangered_group_ids=endangered_group_ids,
+        )
+        if not resolved_role_ids and not resolved_group_ids:
+            raise ValueError(
+                "Je nutné zadat alespoň jednu roli, ohroženou skupinu nebo profesi."
             )
 
-        if endangered_group_id is None:
-            raise ValueError("Je nutné zadat endangered_group_id nebo profession_id.")
-
-        return self._generate_for_groups(
-            group_ids=[endangered_group_id],
+        return self._generate_for_targets(
+            role_ids=resolved_role_ids,
+            group_ids=resolved_group_ids,
             operation_id=operation_id,
             workplace_id=workplace_id,
             workplace_part_id=workplace_part_id,
         )
 
-    def _generate_for_groups(
+    @staticmethod
+    def _resolve_target_ids(
+        *,
+        endangered_group_id: int | None,
+        profession_id: int | None,
+        role_ids: list[int] | tuple[int, ...] | None,
+        endangered_group_ids: list[int] | tuple[int, ...] | None,
+    ) -> tuple[list[int], list[int]]:
+        roles: list[int] = []
+        seen_roles: set[int] = set()
+        for role_id in role_ids or ():
+            value = int(role_id)
+            if value in seen_roles:
+                continue
+            seen_roles.add(value)
+            roles.append(value)
+
+        groups: list[int] = []
+        seen_groups: set[int] = set()
+
+        def _add_group(group_id: int | None) -> None:
+            if group_id is None:
+                return
+            value = int(group_id)
+            if value in seen_groups:
+                return
+            seen_groups.add(value)
+            groups.append(value)
+
+        for group_id in endangered_group_ids or ():
+            _add_group(group_id)
+        _add_group(endangered_group_id)
+
+        if profession_id is not None:
+            for group_id in profession_service.get_active_exposed_group_ids(profession_id):
+                _add_group(group_id)
+
+        return roles, groups
+
+    def _generate_for_targets(
         self,
         *,
+        role_ids: list[int],
         group_ids: list[int],
         operation_id: int,
         workplace_id: int | None,
         workplace_part_id: int | None,
     ) -> list[PravidloBezpecnePrace]:
+        target_roles = set(role_ids)
         target_groups = set(group_ids)
         collected: list[PravidloBezpecnePrace] = []
         for identification in hazard_identification_service.get_all(
@@ -282,9 +333,10 @@ class PravidlaBezpecnePraceService:
                 identification.id,
                 include_inactive=False,
             ):
-                if not self._assessment_matches_any_group(
+                if not self._assessment_matches_targets(
                     row.assessment.id,
-                    target_groups,
+                    role_ids=target_roles,
+                    group_ids=target_groups,
                     legacy_exposed_group_id=row.assessment.exposed_group_id,
                 ):
                     continue
@@ -319,9 +371,25 @@ class PravidlaBezpecnePraceService:
                         )
                     )
 
-        # Stabilní „první nalezená“ = nejnižší measure_id (dřívější záznam).
         collected.sort(key=lambda item: item.measure_id)
         return self._dedupe_and_sort(collected)
+
+    def _generate_for_groups(
+        self,
+        *,
+        group_ids: list[int],
+        operation_id: int,
+        workplace_id: int | None,
+        workplace_part_id: int | None,
+    ) -> list[PravidloBezpecnePrace]:
+        """Zpětná kompatibilita – generování jen podle ohrožených skupin."""
+        return self._generate_for_targets(
+            role_ids=[],
+            group_ids=group_ids,
+            operation_id=operation_id,
+            workplace_id=workplace_id,
+            workplace_part_id=workplace_part_id,
+        )
 
     def quality_warnings(
         self, rules: list[PravidloBezpecnePrace]
@@ -339,15 +407,26 @@ class PravidlaBezpecnePraceService:
         workplace_part_id: int | None = None,
         rules: list[PravidloBezpecnePrace] | None = None,
         issued_at: date | datetime | None = None,
+        role_ids: list[int] | tuple[int, ...] | None = None,
+        endangered_group_ids: list[int] | tuple[int, ...] | None = None,
     ) -> Path | None:
         """Vytvoří ODT dokument. Při prázdném seznamu pravidel nic nevytváří."""
         if workplace_id is None:
             workplace_part_id = None
 
+        resolved_role_ids, resolved_group_ids = self._resolve_target_ids(
+            endangered_group_id=endangered_group_id,
+            profession_id=profession_id,
+            role_ids=role_ids,
+            endangered_group_ids=endangered_group_ids,
+        )
+
         if rules is None:
             rules = self.generate(
                 endangered_group_id=endangered_group_id,
                 profession_id=profession_id,
+                role_ids=role_ids,
+                endangered_group_ids=endangered_group_ids,
                 operation_id=operation_id,
                 workplace_id=workplace_id,
                 workplace_part_id=workplace_part_id,
@@ -362,23 +441,36 @@ class PravidlaBezpecnePraceService:
                 f"Šablona Pravidel bezpečné práce nebyla nalezena: {template}"
             )
 
-        # Porovnání s posledním vydáním (PBP-5b) – před ODT i před uložením evidence.
         from moduly.rizeni_rizik.sluzby.pravidla_bezpecne_prace_edition_service import (
             pravidla_bezpecne_prace_edition_service,
         )
 
-        self.last_comparison = pravidla_bezpecne_prace_edition_service.compare_to_latest(
-            endangered_group_id=endangered_group_id,
+        edition_group_id, edition_profession_id = self._edition_scope_ids(
             profession_id=profession_id,
-            operation_id=operation_id,
-            workplace_id=workplace_id,
-            workplace_part_id=workplace_part_id,
-            rules=rules,
+            role_ids=resolved_role_ids,
+            group_ids=resolved_group_ids,
+            endangered_group_id=endangered_group_id,
         )
+
+        if edition_group_id is not None or edition_profession_id is not None:
+            self.last_comparison = (
+                pravidla_bezpecne_prace_edition_service.compare_to_latest(
+                    endangered_group_id=edition_group_id,
+                    profession_id=edition_profession_id,
+                    operation_id=operation_id,
+                    workplace_id=workplace_id,
+                    workplace_part_id=workplace_part_id,
+                    rules=rules,
+                )
+            )
+        else:
+            self.last_comparison = None
 
         values = self._placeholder_values(
             endangered_group_id=endangered_group_id,
             profession_id=profession_id,
+            role_ids=resolved_role_ids,
+            group_ids=resolved_group_ids,
             operation_id=operation_id,
             workplace_id=workplace_id,
             workplace_part_id=workplace_part_id,
@@ -390,6 +482,8 @@ class PravidlaBezpecnePraceService:
             self._output_filename(
                 endangered_group_id=endangered_group_id,
                 profession_id=profession_id,
+                role_ids=resolved_role_ids,
+                group_ids=resolved_group_ids,
                 operation_id=operation_id,
             ),
         )
@@ -397,7 +491,6 @@ class PravidlaBezpecnePraceService:
         self._strip_empty_workplace_rows(rendered)
         self._strip_empty_change_section_paragraph(rendered)
 
-        # Evidence vydání až po úspěšném porovnání i ODT (PBP-5a/5b).
         issued_dt: datetime
         if issued_at is None:
             issued_dt = datetime.now()
@@ -406,17 +499,39 @@ class PravidlaBezpecnePraceService:
         else:
             issued_dt = datetime.combine(issued_at, datetime.min.time())
 
-        pravidla_bezpecne_prace_edition_service.record_edition(
-            endangered_group_id=endangered_group_id,
-            profession_id=profession_id,
-            operation_id=operation_id,
-            workplace_id=workplace_id,
-            workplace_part_id=workplace_part_id,
-            rules=rules,
-            export_path=rendered,
-            issued_at=issued_dt,
-        )
+        if edition_group_id is not None or edition_profession_id is not None:
+            pravidla_bezpecne_prace_edition_service.record_edition(
+                endangered_group_id=edition_group_id,
+                profession_id=edition_profession_id,
+                operation_id=operation_id,
+                workplace_id=workplace_id,
+                workplace_part_id=workplace_part_id,
+                rules=rules,
+                export_path=rendered,
+                issued_at=issued_dt,
+            )
         return rendered
+
+    @staticmethod
+    def _edition_scope_ids(
+        *,
+        profession_id: int | None,
+        role_ids: list[int],
+        group_ids: list[int],
+        endangered_group_id: int | None,
+    ) -> tuple[int | None, int | None]:
+        """Evidence vydání jen pro jednoznačný legacy rozsah (1 skupina / 1 profese)."""
+        if profession_id is not None and not role_ids:
+            return None, profession_id
+        if not role_ids and len(group_ids) == 1:
+            return group_ids[0], None
+        if (
+            not role_ids
+            and not group_ids
+            and endangered_group_id is not None
+        ):
+            return endangered_group_id, None
+        return None, None
 
     @staticmethod
     def _strip_empty_workplace_rows(odt_path: Path) -> None:
@@ -470,10 +585,14 @@ class PravidlaBezpecnePraceService:
         workplace_id: int | None = None,
         workplace_part_id: int | None = None,
         rules: list[PravidloBezpecnePrace] | None = None,
+        role_ids: list[int] | tuple[int, ...] | None = None,
+        endangered_group_ids: list[int] | tuple[int, ...] | None = None,
     ) -> Path | None:
         path = self.export_document(
             endangered_group_id=endangered_group_id,
             profession_id=profession_id,
+            role_ids=role_ids,
+            endangered_group_ids=endangered_group_ids,
             operation_id=operation_id,
             workplace_id=workplace_id,
             workplace_part_id=workplace_part_id,
@@ -494,13 +613,15 @@ class PravidlaBezpecnePraceService:
         workplace_part_id: int | None,
         rules: list[PravidloBezpecnePrace],
         issued_at: date | datetime,
+        role_ids: list[int] | None = None,
+        group_ids: list[int] | None = None,
     ) -> dict[str, str]:
-        if profession_id is not None:
-            rozsah_label = "Profese"
-            rozsah_nazev = profession_service.display_name(profession_id)
-        else:
-            rozsah_label = "Ohrožená skupina"
-            rozsah_nazev = exposed_group_service.display_name(endangered_group_id)
+        rozsah_label, rozsah_nazev = self._format_scope_label(
+            profession_id=profession_id,
+            endangered_group_id=endangered_group_id,
+            role_ids=role_ids or [],
+            group_ids=group_ids or [],
+        )
         comparison = self.last_comparison
         from moduly.rizeni_rizik.sluzby.pravidla_bezpecne_prace_document_format import (
             format_change_sections,
@@ -523,6 +644,47 @@ class PravidlaBezpecnePraceService:
         }
 
     @staticmethod
+    def _format_scope_label(
+        *,
+        profession_id: int | None,
+        endangered_group_id: int | None,
+        role_ids: list[int],
+        group_ids: list[int],
+    ) -> tuple[str, str]:
+        # Legacy číselník profesí (PBP-5c): vždy zobrazit název profese,
+        # i když se interně rozvine na více ohrožených skupin.
+        if profession_id is not None and not role_ids:
+            return "Profese", profession_service.display_name(profession_id)
+
+        role_names = [
+            responsibility_role_service.display_name(role_id) or f"#{role_id}"
+            for role_id in role_ids
+        ]
+        group_names = [
+            exposed_group_service.display_name(group_id) or f"#{group_id}"
+            for group_id in group_ids
+        ]
+        if not role_names and not group_names and endangered_group_id is not None:
+            return (
+                "Ohrožená skupina",
+                exposed_group_service.display_name(endangered_group_id),
+            )
+        if role_names and not group_names:
+            label = "Profese / role" if len(role_names) > 1 else "Profese / role"
+            return label, ", ".join(role_names)
+        if group_names and not role_names:
+            label = (
+                "Ohrožené skupiny" if len(group_names) > 1 else "Ohrožená skupina"
+            )
+            return label, ", ".join(group_names)
+        parts = []
+        if role_names:
+            parts.append(", ".join(role_names))
+        if group_names:
+            parts.append(", ".join(group_names))
+        return "Cíl", "; ".join(parts)
+
+    @staticmethod
     def _workplace_name(workplace_id: int | None) -> str:
         if workplace_id is None:
             return ""
@@ -543,12 +705,23 @@ class PravidlaBezpecnePraceService:
         operation_id: int,
         endangered_group_id: int | None = None,
         profession_id: int | None = None,
+        role_ids: list[int] | None = None,
+        group_ids: list[int] | None = None,
     ) -> str:
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        if profession_id is not None:
+        if profession_id is not None and not (role_ids or []):
             scope = f"p{profession_id}"
-        else:
+        elif role_ids and not (group_ids or []):
+            scope = "r" + "-".join(str(role_id) for role_id in role_ids[:5])
+        elif (group_ids or []) and not (role_ids or []):
+            if len(group_ids) == 1:
+                scope = f"g{group_ids[0]}"
+            else:
+                scope = "g" + "-".join(str(group_id) for group_id in group_ids[:5])
+        elif endangered_group_id is not None:
             scope = f"g{endangered_group_id}"
+        else:
+            scope = "multi"
         return f"PravidlaBezpecnePrace-{scope}-o{operation_id}_{stamp}.odt"
 
     @staticmethod
@@ -574,9 +747,10 @@ class PravidlaBezpecnePraceService:
         *,
         legacy_exposed_group_id: int | None,
     ) -> bool:
-        return PravidlaBezpecnePraceService._assessment_matches_any_group(
+        return PravidlaBezpecnePraceService._assessment_matches_targets(
             assessment_id,
-            {endangered_group_id},
+            role_ids=set(),
+            group_ids={endangered_group_id},
             legacy_exposed_group_id=legacy_exposed_group_id,
         )
 
@@ -587,30 +761,47 @@ class PravidlaBezpecnePraceService:
         *,
         legacy_exposed_group_id: int | None,
     ) -> bool:
-        if not endangered_group_ids:
+        return PravidlaBezpecnePraceService._assessment_matches_targets(
+            assessment_id,
+            role_ids=set(),
+            group_ids=endangered_group_ids,
+            legacy_exposed_group_id=legacy_exposed_group_id,
+        )
+
+    @staticmethod
+    def _assessment_matches_targets(
+        assessment_id: int,
+        *,
+        role_ids: set[int],
+        group_ids: set[int],
+        legacy_exposed_group_id: int | None,
+    ) -> bool:
+        if not role_ids and not group_ids:
             return False
-        group_ids = hazard_risk_assessment_service.get_group_ids(assessment_id)
-        if group_ids:
-            return bool(endangered_group_ids.intersection(group_ids))
-        if legacy_exposed_group_id is not None:
-            return legacy_exposed_group_id in endangered_group_ids
+        refs = effective_target_refs(
+            hazard_risk_assessment_service.get_target_refs(assessment_id),
+            legacy_exposed_group_id=legacy_exposed_group_id,
+        )
+        for ref in refs:
+            if ref.source_type == SOURCE_TYPE_ROLE and ref.source_id in role_ids:
+                return True
+            if (
+                ref.source_type == SOURCE_TYPE_HAZARD_GROUP
+                and ref.source_id in group_ids
+            ):
+                return True
         return False
 
     @staticmethod
     def _dedupe_and_sort(
         items: list[PravidloBezpecnePrace],
     ) -> list[PravidloBezpecnePrace]:
-        """Sloučí duplicity, vezme nejvyšší závažnost a seřadí severity → abeceda."""
-        merged: dict[str, PravidloBezpecnePrace] = {}
-        for item in items:
-            key = item.text.casefold()
-            if not key:
-                continue
-            existing = merged.get(key)
-            if existing is None:
-                merged[key] = item
-                continue
+        """Sloučí duplicity: primárně measure_id, poté shoda normalizovaného textu."""
 
+        def _merge_pair(
+            existing: PravidloBezpecnePrace,
+            item: PravidloBezpecnePrace,
+        ) -> PravidloBezpecnePrace:
             sources = existing.sources + tuple(
                 source
                 for source in item.sources
@@ -618,7 +809,7 @@ class PravidlaBezpecnePraceService:
                 not in {s.measure_id for s in existing.sources}
             )
             if item.severity_rank > existing.severity_rank:
-                merged[key] = PravidloBezpecnePrace(
+                return PravidloBezpecnePrace(
                     measure_id=existing.measure_id,
                     text=existing.text,
                     source_hazard_id=item.source_hazard_id,
@@ -628,21 +819,39 @@ class PravidlaBezpecnePraceService:
                     severity_rank=item.severity_rank,
                     sources=sources,
                 )
-            else:
-                merged[key] = PravidloBezpecnePrace(
-                    measure_id=existing.measure_id,
-                    text=existing.text,
-                    source_hazard_id=existing.source_hazard_id,
-                    source_event_id=existing.source_event_id,
-                    unsuitable_for_employee=existing.unsuitable_for_employee,
-                    severity=existing.severity,
-                    severity_rank=existing.severity_rank,
-                    sources=sources,
-                )
+            return PravidloBezpecnePrace(
+                measure_id=existing.measure_id,
+                text=existing.text,
+                source_hazard_id=existing.source_hazard_id,
+                source_event_id=existing.source_event_id,
+                unsuitable_for_employee=existing.unsuitable_for_employee,
+                severity=existing.severity,
+                severity_rank=existing.severity_rank,
+                sources=sources,
+            )
 
-        unique = list(merged.values())
+        by_measure: dict[int, PravidloBezpecnePrace] = {}
+        for item in items:
+            measure_id = int(item.measure_id)
+            existing = by_measure.get(measure_id)
+            if existing is None:
+                by_measure[measure_id] = item
+                continue
+            by_measure[measure_id] = _merge_pair(existing, item)
+
+        by_text: dict[str, PravidloBezpecnePrace] = {}
+        for item in by_measure.values():
+            key = item.text.casefold()
+            if not key:
+                continue
+            existing = by_text.get(key)
+            if existing is None:
+                by_text[key] = item
+                continue
+            by_text[key] = _merge_pair(existing, item)
+
         return sorted(
-            unique,
+            by_text.values(),
             key=lambda item: (-item.severity_rank, czech_sort_key(item.text)),
         )
 
