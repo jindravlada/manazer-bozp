@@ -664,22 +664,29 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             COL_WORKPLACE_PART,
         )
 
+        # UX-RISK-4: Provoz/Pracoviště stejně široké; Část pracoviště Stretch;
+        # Odpovědná osoba širší; Datum a Stav úzké. Interactive = ruční změna.
         widths = {
-            COL_OPERATION: 120,
-            COL_WORKPLACE: 160,
-            COL_WORKPLACE_PART: 220,
-            COL_STARTED_AT: 110,
-            COL_RESPONSIBLE_PERSON: 160,
-            COL_STATUS: 110,
+            COL_OPERATION: 200,
+            COL_WORKPLACE: 200,
+            COL_WORKPLACE_PART: 280,
+            COL_STARTED_AT: 100,
+            COL_RESPONSIBLE_PERSON: 200,
+            COL_STATUS: 100,
         }
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
         table.setColumnHidden(COL_IDENTIFICATION, True)
+        for column in (
+            COL_OPERATION,
+            COL_WORKPLACE,
+            COL_STARTED_AT,
+            COL_RESPONSIBLE_PERSON,
+            COL_STATUS,
+        ):
+            header.setSectionResizeMode(column, QHeaderView.Interactive)
         header.setSectionResizeMode(COL_WORKPLACE_PART, QHeaderView.Stretch)
-        for column in widths:
-            if column != COL_WORKPLACE_PART:
-                header.setSectionResizeMode(column, QHeaderView.Fixed)
 
     elif profile == "risk_measure_review_items":
         from moduly.rizeni_rizik.constants import (
@@ -720,22 +727,30 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             RISK_MEASURE_REVIEW_COL_WORKPLACE_PART,
         )
 
+        # UX-RISK-4: Provoz/Pracoviště stejně široké; Část pracoviště Stretch;
+        # Kontrolující širší; Číslo, Datum a Stav úzké. Interactive = ruční změna.
         widths = {
             RISK_MEASURE_REVIEW_COL_NUMBER: 100,
-            RISK_MEASURE_REVIEW_COL_DATE: 110,
-            RISK_MEASURE_REVIEW_COL_OPERATION: 120,
-            RISK_MEASURE_REVIEW_COL_WORKPLACE: 160,
-            RISK_MEASURE_REVIEW_COL_WORKPLACE_PART: 200,
-            RISK_MEASURE_REVIEW_COL_REVIEWER: 160,
-            RISK_MEASURE_REVIEW_COL_STATUS: 120,
+            RISK_MEASURE_REVIEW_COL_DATE: 100,
+            RISK_MEASURE_REVIEW_COL_OPERATION: 200,
+            RISK_MEASURE_REVIEW_COL_WORKPLACE: 200,
+            RISK_MEASURE_REVIEW_COL_WORKPLACE_PART: 280,
+            RISK_MEASURE_REVIEW_COL_REVIEWER: 200,
+            RISK_MEASURE_REVIEW_COL_STATUS: 110,
         }
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
+        for column in (
+            RISK_MEASURE_REVIEW_COL_NUMBER,
+            RISK_MEASURE_REVIEW_COL_DATE,
+            RISK_MEASURE_REVIEW_COL_OPERATION,
+            RISK_MEASURE_REVIEW_COL_WORKPLACE,
+            RISK_MEASURE_REVIEW_COL_REVIEWER,
+            RISK_MEASURE_REVIEW_COL_STATUS,
+        ):
+            header.setSectionResizeMode(column, QHeaderView.Interactive)
         header.setSectionResizeMode(RISK_MEASURE_REVIEW_COL_WORKPLACE_PART, QHeaderView.Stretch)
-        for column in widths:
-            if column != RISK_MEASURE_REVIEW_COL_WORKPLACE_PART:
-                header.setSectionResizeMode(column, QHeaderView.Fixed)
 
     elif profile == "hazard_library_templates":
         from moduly.rizeni_rizik.constants_library import (
