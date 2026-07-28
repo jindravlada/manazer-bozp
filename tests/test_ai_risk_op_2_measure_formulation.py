@@ -87,17 +87,21 @@ _LEGACY_CATALOG_PROMPT_SECTIONS = (
 
 _STYLE_MARKERS = (
     MEASURE_FORMULATION_STYLE_HEADING,
-    "jednoznačný pokyn zaměstnanci",
+    "Zásady bezpečné práce jsou určeny zaměstnanci",
+    "přímé pokyny zaměstnanci",
     "Pravidla bezpečné práce",
     "Nepoužívejte pouze jmenné fráze",
-    "administrativní formulace",
+    "Navazující opatření nejsou pokyny zaměstnanci",
+    "Kontrola řádného uvázání pracovní obuvi",
+    "nikoliv jako přímý příkaz zaměstnanci",
+    "Je text určen zaměstnanci?",
+    "takový návrh nesmíte navrhnout",
     "Zakázané formulace",
     "Preferujte aktivní věty",
     "vhodně",
     "Nepopisujte organizaci práce zaměstnavatele",
     "raději opatření vůbec nenavrhujte",
     "Používejte...",
-    "Zajistit...",
     "Riziko je zřejmé.",
 )
 
