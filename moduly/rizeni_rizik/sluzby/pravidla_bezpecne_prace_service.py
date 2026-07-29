@@ -425,10 +425,30 @@ class PravidlaBezpecnePraceService:
         )
 
     def quality_warnings(
-        self, rules: list[PravidloBezpecnePrace]
+        self,
+        rules: list[PravidloBezpecnePrace],
+        *,
+        include_approved: bool = False,
     ) -> list[PravidloBezpecnePrace]:
-        """Vrátí pravidla označená jako nevhodně formulovaná pro zaměstnance."""
-        return [rule for rule in rules if rule.unsuitable_for_employee]
+        """Vrátí pravidla označená jako nevhodně formulovaná pro zaměstnance.
+
+        Platná uživatelská schválení (stejné znění + stejné validační pravidlo)
+        se ve výchozím režimu vynechají.
+        """
+        from moduly.rizeni_rizik.sluzby.pbp_validation_approval_service import (
+            pbp_validation_approval_service,
+        )
+
+        result: list[PravidloBezpecnePrace] = []
+        for rule in rules:
+            if not rule.unsuitable_for_employee:
+                continue
+            if pbp_validation_approval_service.is_rule_approved(rule):
+                if include_approved:
+                    result.append(rule)
+                continue
+            result.append(rule)
+        return result
 
     def apply_rule_text(
         self,

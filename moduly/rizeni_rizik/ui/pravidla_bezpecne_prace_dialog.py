@@ -205,10 +205,13 @@ class PravidlaBezpecnePraceDialog(QDialog):
                 "workplace_part_id": workplace_part_id,
             }
 
-            def _regenerate_warnings():
+            def _regenerate_warnings(*, include_approved: bool = False):
                 rules = pravidla_bezpecne_prace_service.generate(**generate_kwargs)
                 self._last_result = rules
-                return pravidla_bezpecne_prace_service.quality_warnings(rules)
+                return pravidla_bezpecne_prace_service.quality_warnings(
+                    rules,
+                    include_approved=include_approved,
+                )
 
             results = PbpValidationResultsDialog(
                 self,

@@ -94,6 +94,9 @@ def initialize_database() -> None:
     from moduly.rizeni_rizik.modely.hazard_library_template_legal_link import (  # noqa: F401
         HazardLibraryTemplateLegalLink,
     )
+    from moduly.rizeni_rizik.modely.pbp_validation_approval import (  # noqa: F401
+        PbpValidationApproval,
+    )
     from moduly.rizeni_rizik.modely.pravidla_bezpecne_prace_edition import (  # noqa: F401
         PravidlaBezpecnePraceEdition,
         PravidlaBezpecnePraceEditionRule,
@@ -201,6 +204,7 @@ def initialize_database() -> None:
     _ensure_hazard_library_template_revisions_table()
     _ensure_hazard_library_template_legal_links_table()
     _ensure_pravidla_bezpecne_prace_editions_tables()
+    _ensure_pbp_validation_approvals_table()
     _ensure_bozp_coordinations_table()
     _ensure_ai_peer_reviews_table()
     _ensure_ai_peer_review_batches_table()
@@ -2014,6 +2018,24 @@ def _ensure_pravidla_bezpecne_prace_editions_tables() -> None:
             workplace_part_id,
             issued_at
         )
+        """,
+    )
+
+
+def _ensure_pbp_validation_approvals_table() -> None:
+    columns = _table_columns("pbp_validation_approvals")
+    if not columns:
+        from moduly.rizeni_rizik.modely.pbp_validation_approval import (
+            PbpValidationApproval,
+        )
+
+        PbpValidationApproval.__table__.create(bind=_db_engine(), checkfirst=True)
+
+    _ensure_index(
+        "idx_pbp_validation_approvals_measure",
+        """
+        CREATE INDEX IF NOT EXISTS idx_pbp_validation_approvals_measure
+        ON pbp_validation_approvals (measure_id)
         """,
     )
 
