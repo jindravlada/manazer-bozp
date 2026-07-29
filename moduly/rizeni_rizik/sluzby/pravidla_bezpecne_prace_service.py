@@ -76,19 +76,77 @@ _UNSUITABLE_PHRASES = (
     "není nutná žádná opatření",
 )
 
+# Imperativy / 2. osoba – typické pokyny pro zaměstnance (kladné i záporné).
+_IMPERATIVE_STEMS = (
+    "používej",
+    "používejte",
+    "použij",
+    "použijte",
+    "dodržuj",
+    "dodržujte",
+    "oznam",
+    "oznamuj",
+    "oznamujte",
+    "oznamte",
+    "přeruš",
+    "přerušte",
+    "přerušuj",
+    "přerušujte",
+    "ukonč",
+    "ukončete",
+    "ukonči",
+    "ukončuj",
+    "ukončujte",
+    "vstupuj",
+    "vstupujte",
+    "vstoup",
+    "vstupte",
+    "prováděj",
+    "provádějte",
+    "odstraňuj",
+    "odstraňujte",
+    "podléhej",
+    "podléhejte",
+    "nastupuj",
+    "nastupujte",
+    "noste",
+    "nos",
+    "zkontroluj",
+    "zkontrolujte",
+    "kontroluj",
+    "kontrolujte",
+    "vypni",
+    "vypněte",
+    "zapni",
+    "zapněte",
+    "odpoj",
+    "odpojte",
+    "připoj",
+    "připojte",
+    "ohlás",
+    "ohlaste",
+    "ohláš",
+    "ujisti",
+    "ujistěte",
+    "přesvědči",
+    "přesvědčete",
+)
+
+# Jmenné začátky bez slovesného pokynu (např. „Kontrola stavu…“, „Evidence závad.“).
+_UNSUITABLE_NOUN_STARTERS = (
+    "kontrola",
+    "evidence",
+    "provádění",
+    "zajištění",
+    "poučení",
+    "používání",
+    "dodržování",
+    "umístění",
+)
+
 # Imperativy / 2. osoba – typické pokyny pro zaměstnance.
 _EMPLOYEE_VERB_RE = re.compile(
-    r"\b("
-    r"používej|používejte|použij|použijte|"
-    r"noste|nos|"
-    r"vstupuj|vstupujte|vstoup|"
-    r"dodržuj|dodržujte|"
-    r"zkontroluj|zkontrolujte|kontroluj|kontrolujte|"
-    r"vypni|vypněte|zapni|zapněte|"
-    r"odpoj|odpojte|připoj|připojte|"
-    r"ohlás|ohlaste|ohláš|"
-    r"ujisti|ujistěte|přesvědči|přesvědčete"
-    r")\w*\b",
+    r"\b(" + "|".join(re.escape(stem) for stem in _IMPERATIVE_STEMS) + r")\w*\b",
     re.IGNORECASE,
 )
 
@@ -137,6 +195,41 @@ def normalize_rule_text(text: str) -> str:
     return "\n".join(lines)
 
 
+def _first_word(lowered: str) -> str:
+    body = _TRAILING_END_PUNCT_RE.sub("", lowered).strip()
+    if not body:
+        return ""
+    return body.split()[0]
+
+
+def _starts_with_employee_imperative(lowered: str) -> bool:
+    """True, pokud věta začíná kladným nebo záporným rozkazovacím způsobem."""
+    first = _first_word(lowered)
+    if not first:
+        return False
+
+    if first.startswith("ne") and len(first) > 2:
+        without_ne = first[2:]
+        for stem in _IMPERATIVE_STEMS:
+            if without_ne.startswith(stem.casefold()):
+                return True
+
+    for stem in _IMPERATIVE_STEMS:
+        if first.startswith(stem.casefold()):
+            return True
+    return False
+
+
+def _starts_with_unsuitable_noun_form(lowered: str) -> bool:
+    """True, pokud věta začíná jmennou / slovesnou jmennou formulací."""
+    first = _first_word(lowered)
+    if not first:
+        return False
+    if first in _UNSUITABLE_NOUN_STARTERS:
+        return True
+    return bool(_VERBAL_NOUN_RE.search(first))
+
+
 def is_unsuitable_employee_rule(text: str) -> bool:
     """True, pokud text není vhodně formulován jako pravidlo pro zaměstnance."""
     lowered = (text or "").casefold().lstrip()
@@ -154,6 +247,12 @@ def is_unsuitable_employee_rule(text: str) -> bool:
         rest = lowered[len(needle) :]
         if not rest or not rest[0].isalnum():
             return True
+
+    if _starts_with_employee_imperative(lowered):
+        return False
+
+    if _starts_with_unsuitable_noun_form(lowered):
+        return True
 
     if _is_short_noun_phrase_without_verb(lowered):
         return True
@@ -195,6 +294,8 @@ def severity_rank(severity: str | None) -> int:
 
 def _is_short_noun_phrase_without_verb(lowered: str) -> bool:
     """Detekuje krátké jmenné fráze bez slovesného pokynu (např. „Poučení obsluhy.“)."""
+    if _starts_with_employee_imperative(lowered):
+        return False
     body = _TRAILING_END_PUNCT_RE.sub("", lowered).strip()
     words = body.split()
     if len(words) < 2 or len(words) > 10:
