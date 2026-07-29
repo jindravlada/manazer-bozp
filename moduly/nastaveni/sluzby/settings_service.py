@@ -12,6 +12,10 @@ from moduly.nastaveni.sluzby.workplace_hierarchy_service import (
 )
 
 
+class SettingsEmployerError(ValueError):
+    pass
+
+
 class SettingsService:
     def __init__(self):
         self.repository = SettingsRepository()
@@ -22,6 +26,11 @@ class SettingsService:
 
     def save_employer(self, **data) -> Employer:
         employer = self.repository.get_employer()
+        if "abbreviation" in data:
+            data["abbreviation"] = self._validate_abbreviation(
+                data.get("abbreviation"),
+                exclude_employer_id=employer.id if employer is not None else None,
+            )
 
         if employer is None:
             employer = Employer(**data)
@@ -31,6 +40,28 @@ class SettingsService:
                     setattr(employer, key, value)
 
         return self.repository.save_employer(employer)
+
+    def _validate_abbreviation(
+        self,
+        abbreviation: str | None,
+        *,
+        exclude_employer_id: int | None = None,
+    ) -> str:
+        stored = " ".join((abbreviation or "").strip().split())
+        if len(stored) > 32:
+            raise SettingsEmployerError("Zkratka může mít nejvýše 32 znaků.")
+        if not stored:
+            return ""
+
+        for item in self.repository.list_employers():
+            if exclude_employer_id is not None and item.id == exclude_employer_id:
+                continue
+            other = " ".join((item.abbreviation or "").strip().split())
+            if other and other.casefold() == stored.casefold():
+                raise SettingsEmployerError(
+                    f"Zkratka „{stored}“ je již použita."
+                )
+        return stored
 
     # THP pracovníci
     def get_workers(self, include_inactive: bool = False) -> list[ThpWorker]:

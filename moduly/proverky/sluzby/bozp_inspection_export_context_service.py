@@ -10,11 +10,12 @@ from core.export.commission_display import (
     commission_sections_text,
 )
 from core.export.control_point_appendix import (
+    DEFAULT_RESULT_EMOJI,
     ControlPointAppendixItem,
     build_areas_appendix,
     build_detailed_control_points_appendix,
 )
-from core.export.odt_engine import OdtRichContent
+from core.export.odt_engine import OdtParagraph, OdtRichContent
 from core.shared.constants import (
     CONTROL_RESULT_NEVYHOVUJE,
     CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
@@ -295,14 +296,61 @@ class InspectionExportContext:
         return "\n".join(f"• {line}" for line in lines)
 
     def appendix_areas_text(self) -> OdtRichContent:
-        """Příloha A – Kontrolované oblasti (stejný styl jako u auditu)."""
+        """Příloha A – Kontrolované oblasti (netučné odrážky jako u protokolu auditu)."""
         return build_areas_appendix(self.controlled_areas_lines())
 
     def _control_point_results(self):
         return control_result_service.get_for_entity(ENTITY_PROVERKY, self.inspection_id)
 
     def appendix_control_points_text(self) -> OdtRichContent:
-        """Příloha B – Výsledky jednotlivých kontrolních bodů (podrobně, s fotografiemi)."""
+        """Příloha B – protokol: jen kontrolní otázky; podrobná zpráva: i komentáře a foto."""
+        if self.config.detailed_report:
+            return self.detailed_appendix_control_points()
+        return self.summary_appendix_control_points()
+
+    def summary_appendix_control_points(self) -> OdtRichContent:
+        """Příloha B protokolu – oblasti a kontrolní otázky s výsledkem, bez komentářů a fotek."""
+        results = self._control_point_results()
+        if not results:
+            return OdtRichContent(paragraphs=[OdtParagraph.text("Nejsou evidovány.")])
+
+        grouped: dict[str, list[str]] = {}
+        area_order: list[str] = []
+        for row in sorted(
+            results,
+            key=lambda item: (
+                item.source_area_label or "",
+                item.source_section_label or "",
+                item.source_control_point_label or "",
+                item.id,
+            ),
+        ):
+            control_point = _text(row.source_control_point_label)
+            area = _text(row.source_area_label) or _text(row.source_section_label)
+            if not control_point or not area:
+                continue
+            emoji = DEFAULT_RESULT_EMOJI.get(row.result, "○")
+            if area not in grouped:
+                grouped[area] = []
+                area_order.append(area)
+            grouped[area].append(f"{emoji} {control_point}")
+
+        paragraphs: list[OdtParagraph] = []
+        for index, area in enumerate(area_order):
+            lines = grouped.get(area) or []
+            if not lines:
+                continue
+            if index > 0:
+                paragraphs.append(OdtParagraph.blank_line())
+            paragraphs.append(OdtParagraph.text(area, style="AuditCriterion"))
+            for line in lines:
+                paragraphs.append(OdtParagraph.text(line))
+        if not paragraphs:
+            return OdtRichContent(paragraphs=[OdtParagraph.text("Nejsou evidovány.")])
+        return OdtRichContent(paragraphs=paragraphs)
+
+    def detailed_appendix_control_points(self) -> OdtRichContent:
+        """Příloha B podrobné zprávy – kontrolní body s komentáři a fotografiemi."""
         results = self._control_point_results()
         items: list[ControlPointAppendixItem] = []
         for row in sorted(

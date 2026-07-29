@@ -136,7 +136,7 @@ class AudityDetailedReportExportTestCase(unittest.TestCase):
         context = audit_export_context_service.build(
             audit, config=PROTOCOL_DOCUMENT_CONFIG
         )
-        appendix = context.appendix_assertions_text()
+        appendix = context.appendix_assertions_text().plain_text()
         self.assertIn("🟢 Tvrzení jedna", appendix)
         self.assertNotIn("Vyhovuje", appendix.split("Tvrzení jedna", 1)[-1][:20])
         self.assertNotIn("Poznámka auditora", appendix)

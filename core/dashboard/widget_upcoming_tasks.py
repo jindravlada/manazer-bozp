@@ -1,4 +1,4 @@
-"""Panel Vyžaduje pozornost – úkoly, plánované audity a prověrky."""
+"""Panel Nadcházející události a úkoly."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 
 from core.dashboard.attention_item import (
     ITEM_TYPE_AUDIT,
-    ITEM_TYPE_BOZP_INSPECTION,
+    ITEM_TYPE_INSPECTION,
     ITEM_TYPE_TASK,
     PRIORITY_RANK,
     AttentionItem,
@@ -38,10 +38,10 @@ from core.widgets.typed_table_sort import (
 _TYPE_STABLE_PREFIX = {
     ITEM_TYPE_TASK: 1,
     ITEM_TYPE_AUDIT: 2,
-    ITEM_TYPE_BOZP_INSPECTION: 3,
+    ITEM_TYPE_INSPECTION: 3,
 }
 
-_EMPTY_TEXT = "Aktuálně není nic, co by vyžadovalo pozornost."
+_EMPTY_TEXT = "Nejsou evidovány žádné nadcházející události ani úkoly."
 
 COL_TYPE = 0
 COL_DUE = 1
@@ -59,7 +59,7 @@ _APPROACHING_DAYS = 7
 
 
 class UpcomingTasksWidget(DashboardPanel):
-    """Historický název třídy; panel zobrazuje Vyžaduje pozornost."""
+    """Historický název třídy; panel zobrazuje nadcházející události a úkoly."""
 
     def __init__(
         self,
@@ -67,7 +67,7 @@ class UpcomingTasksWidget(DashboardPanel):
         open_task_callback=None,
         open_attention_callback=None,
     ):
-        super().__init__("Vyžaduje pozornost")
+        super().__init__("Nadcházející události a úkoly")
         self.open_tasks_callback = open_tasks_callback
         self.open_task_callback = open_task_callback
         self.open_attention_callback = open_attention_callback
@@ -97,6 +97,11 @@ class UpcomingTasksWidget(DashboardPanel):
         self.table.doubleClicked.connect(self._open_selected)
         self.table.itemSelectionChanged.connect(self._update_open_button)
         enable_typed_sorting(self.table)
+        # Výchozí řazení podle termínu (nejbližší / po termínu nahoře), ne podle Typu.
+        self.table.horizontalHeader().setSortIndicator(
+            COL_DUE,
+            Qt.SortOrder.AscendingOrder,
+        )
 
         buttons = QWidget()
         buttons_layout = QHBoxLayout(buttons)
@@ -178,11 +183,7 @@ class UpcomingTasksWidget(DashboardPanel):
                 )
                 type_item.setData(_ROLE_ITEM, attention)
 
-                due_text = (
-                    "bez termínu"
-                    if attention.due_date is None
-                    else attention.due_date.strftime("%d.%m.%Y")
-                )
+                due_text = self._format_due_text(attention.due_date, today)
                 due_item = create_typed_item(
                     due_text,
                     typed_date(attention.due_date),
@@ -224,3 +225,11 @@ class UpcomingTasksWidget(DashboardPanel):
 
         self.table.resizeRowsToContents()
         self._update_open_button()
+
+    def _format_due_text(self, due_date: date | None, today: date) -> str:
+        if due_date is None:
+            return "bez termínu"
+        text = f"{due_date.day}. {due_date.month}. {due_date.year}"
+        if due_date < today:
+            return f"{text} (Po termínu)"
+        return text

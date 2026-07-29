@@ -3,7 +3,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_LABELS, VALID_DOCUMENT_TYPES
+from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_LABELS
+from moduly.pravni_pozadavky.legal_document_type_utils import resolve_document_type
 from moduly.pravni_pozadavky.parser.legal_document_parser_models import (
     LegalDocumentParseResult,
     ParsedLegalSection,
@@ -116,11 +117,14 @@ class LegalDocumentParser:
         title: str,
         short_title: str = "",
     ) -> LegalDocumentParseResult:
-        normalized_type = self._normalize_document_type(document_type)
+        resolved_type = resolve_document_type(
+            explicit=document_type,
+            title=title,
+        )
         sections = self._parse_sections(text)
         result = LegalDocumentParseResult(
             document={
-                "document_type": DOCUMENT_TYPE_LABELS.get(normalized_type, normalized_type),
+                "document_type": DOCUMENT_TYPE_LABELS.get(resolved_type, resolved_type),
                 "number": (number or "").strip(),
                 "year": year,
                 "title": (title or "").strip(),
@@ -352,17 +356,6 @@ class LegalDocumentParser:
             or section.title.strip()
             or section.text.strip()
         )
-
-    def _normalize_document_type(self, value: str) -> str:
-        normalized = (value or "").strip().lower()
-        if normalized in VALID_DOCUMENT_TYPES:
-            return normalized
-
-        by_label = {label.lower(): key for key, label in DOCUMENT_TYPE_LABELS.items()}
-        if normalized in by_label:
-            return by_label[normalized]
-
-        return normalized or "zakon"
 
 
 legal_document_parser = LegalDocumentParser()

@@ -1,4 +1,4 @@
-"""Prezentační model položky panelu Vyžaduje pozornost (bez DB tabulky)."""
+"""Prezentační model položky panelu Nadcházející události a úkoly."""
 
 from __future__ import annotations
 
@@ -9,12 +9,14 @@ from typing import Any
 
 ITEM_TYPE_TASK = "task"
 ITEM_TYPE_AUDIT = "audit"
-ITEM_TYPE_BOZP_INSPECTION = "bozp_inspection"
+ITEM_TYPE_INSPECTION = "inspection"
+# Zpětná kompatibilita staršího interního názvu.
+ITEM_TYPE_BOZP_INSPECTION = ITEM_TYPE_INSPECTION
 
 TYPE_LABELS = {
     ITEM_TYPE_TASK: "Úkol",
     ITEM_TYPE_AUDIT: "Audit",
-    ITEM_TYPE_BOZP_INSPECTION: "Prověrka",
+    ITEM_TYPE_INSPECTION: "Prověrka",
 }
 
 SOURCE_LABEL_AUDIT = "Audit systému řízení"
@@ -31,11 +33,12 @@ PRIORITY_RANK = {
 @dataclass(frozen=True)
 class AttentionItem:
     item_type: str
-    entity_id: int
+    source_id: int
     title: str
-    due_date: date | None
-    source_label: str
+    date: date | None
+    subtitle: str
     status: str
+    source_type: str = ""
     priority: str = ""
     open_metadata: dict[str, Any] = field(default_factory=dict)
     sort_key: tuple = ()
@@ -43,3 +46,18 @@ class AttentionItem:
     @property
     def type_label(self) -> str:
         return TYPE_LABELS.get(self.item_type, self.item_type)
+
+    @property
+    def entity_id(self) -> int:
+        """Zpětná kompatibilita pro starší volání."""
+        return self.source_id
+
+    @property
+    def due_date(self) -> date | None:
+        """Zpětná kompatibilita pro starší volání."""
+        return self.date
+
+    @property
+    def source_label(self) -> str:
+        """Zpětná kompatibilita pro starší volání."""
+        return self.subtitle

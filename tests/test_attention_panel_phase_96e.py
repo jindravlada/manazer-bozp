@@ -1,4 +1,4 @@
-"""Fáze 96e – panel Vyžaduje pozornost (úkoly, audity, prověrky)."""
+"""Fáze 96e/ Dashboard-1 – panel Nadcházející události a úkoly."""
 
 from __future__ import annotations
 
@@ -60,19 +60,18 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
 
     def test_panel_title_requires_attention(self) -> None:
         widget = UpcomingTasksWidget()
-        self.assertEqual(widget.title_label.text(), "Vyžaduje pozornost")
-        self.assertNotEqual(widget.title_label.text(), "Nejbližší úkoly")
+        self.assertEqual(widget.title_label.text(), "Nadcházející události a úkoly")
 
     def test_empty_state_message(self) -> None:
         widget = UpcomingTasksWidget()
         labels = [
             label.text()
             for label in widget.findChildren(QLabel)
-            if "vyžadovalo pozornost" in label.text()
+            if "nadcházející události ani úkoly" in label.text()
         ]
         self.assertTrue(labels)
         self.assertIn(
-            "Aktuálně není nic, co by vyžadovalo pozornost.",
+            "Nejsou evidovány žádné nadcházející události ani úkoly.",
             labels,
         )
         self.assertEqual(widget.table.rowCount(), 0)
@@ -106,7 +105,7 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
         audit_date = date.today() + timedelta(days=10)
         audit = audit_service.create_audit(
             workplace_name="Testovací pracoviště",
-            audit_date=audit_date,
+            started_at=audit_date,
         )
 
         items = get_attention_items()
@@ -117,10 +116,11 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
         self.assertEqual(match.source_label, SOURCE_LABEL_AUDIT)
         self.assertEqual(match.type_label, "Audit")
 
-    def test_completed_audit_is_hidden(self) -> None:
+    def test_completed_audit_with_start_date_is_hidden(self) -> None:
         audit = audit_service.create_audit(
             workplace_name="Dokončený provoz",
             audit_date=date.today() + timedelta(days=2),
+            started_at=date.today() + timedelta(days=1),
             finished_at=date.today(),
         )
 
@@ -137,7 +137,7 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
         inspection_date = date.today() + timedelta(days=20)
         inspection = bozp_inspection_service.create_inspection(
             workplace_name="Provoz A",
-            inspection_date=inspection_date,
+            started_at=inspection_date,
         )
 
         items = get_attention_items()
@@ -148,17 +148,18 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
         self.assertEqual(match.source_label, SOURCE_LABEL_INSPECTION)
         self.assertEqual(match.type_label, "Prověrka")
 
-    def test_completed_inspection_is_hidden(self) -> None:
+    def test_completed_inspection_with_start_date_is_hidden(self) -> None:
         inspection = bozp_inspection_service.create_inspection(
             workplace_name="Dokončená prověrka",
             inspection_date=date.today() + timedelta(days=5),
+            started_at=date.today() + timedelta(days=1),
             finished_at=date.today(),
         )
 
         items = get_attention_items()
         self.assertFalse(any(item.entity_id == inspection.id for item in items))
 
-    def test_items_sorted_by_due_date_buckets(self) -> None:
+    def test_items_sorted_by_due_date(self) -> None:
         today = date.today()
         future = task_service.create_task(
             title="Budoucí úkol",
@@ -177,17 +178,14 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
         )
         audit = audit_service.create_audit(
             workplace_name="Audit brzy",
-            audit_date=today + timedelta(days=1),
+            started_at=today + timedelta(days=1),
         )
         no_date = task_service.create_task(title="Bez termínu", priority="Kritická")
 
         items = get_attention_items(today=today)
         ids = [item.entity_id for item in items]
 
-        self.assertEqual(ids[0], overdue.id)
-        self.assertEqual(ids[1], due_today.id)
-        self.assertEqual(ids[2], audit.id)
-        self.assertEqual(ids[3], future.id)
+        self.assertEqual(ids[:4], [overdue.id, due_today.id, audit.id, future.id])
         self.assertEqual(ids[-1], no_date.id)
 
     def test_same_date_higher_priority_first(self) -> None:
@@ -293,6 +291,48 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
         ]
         self.assertIn("Typ", headers)
         self.assertEqual(table.item(0, 0).text(), "Úkol")
+
+    def test_widget_defaults_to_due_date_sort(self) -> None:
+        today = date.today()
+        future_task = task_service.create_task(
+            title="Pozdější úkol",
+            due_date=today + timedelta(days=10),
+        )
+        audit_service.create_audit(
+            workplace_name="Brzký audit",
+            started_at=today + timedelta(days=1),
+        )
+        task_service.create_task(
+            title="Dnešní úkol",
+            due_date=today,
+        )
+
+        widget = UpcomingTasksWidget()
+        header = widget.table.horizontalHeader()
+        self.assertEqual(header.sortIndicatorSection(), 1)  # Termín
+        self.assertEqual(header.sortIndicatorOrder(), Qt.SortOrder.AscendingOrder)
+
+        due_texts = [
+            widget.table.item(row, 1).text()
+            for row in range(widget.table.rowCount())
+        ]
+        self.assertEqual(
+            due_texts[:3],
+            [
+                f"{today.day}. {today.month}. {today.year}",
+                f"{(today + timedelta(days=1)).day}. {(today + timedelta(days=1)).month}. {(today + timedelta(days=1)).year}",
+                f"{(today + timedelta(days=10)).day}. {(today + timedelta(days=10)).month}. {(today + timedelta(days=10)).year}",
+            ],
+        )
+        # Pořadí není seskupené podle typu (Úkol by jinak byl nahoře před Auditem).
+        types = [widget.table.item(row, 0).text() for row in range(3)]
+        self.assertEqual(types[0], "Úkol")
+        self.assertEqual(types[1], "Audit")
+        self.assertEqual(types[2], "Úkol")
+        self.assertEqual(
+            widget.table.item(2, 0).data(Qt.ItemDataRole.UserRole).entity_id,
+            future_task.id,
+        )
 
 
 if __name__ == "__main__":

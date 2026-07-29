@@ -28,7 +28,10 @@ from moduly.nastaveni.constants.workplace_hierarchy_constants import (
     WORKPLACE_ITEM_TYPE_WORKPLACE,
     WORKPLACE_ITEM_TYPE_WORKPLACE_PART,
 )
-from moduly.nastaveni.sluzby.settings_service import settings_service
+from moduly.nastaveni.sluzby.settings_service import (
+    SettingsEmployerError,
+    settings_service,
+)
 from moduly.nastaveni.sluzby.workplace_hierarchy_service import WorkplaceHierarchyError
 from moduly.nastaveni.ui.person_dialog import PersonDialog
 from moduly.nastaveni.ui.exposed_group_dialog import ExposedGroupDialog
@@ -63,6 +66,8 @@ class NastaveniPage(QWidget):
         self.employer_ico = QLineEdit()
         self.employer_name = QLineEdit()
         self.employer_address = QLineEdit()
+        self.employer_abbreviation = QLineEdit()
+        self.employer_abbreviation.setMaxLength(32)
         self.employer_nace = QComboBox()
         self.employer_nace.setEditable(True)
 
@@ -70,6 +75,7 @@ class NastaveniPage(QWidget):
 
         form.addRow("IČO:", self.employer_ico)
         form.addRow("Název:", self.employer_name)
+        form.addRow("Zkratka:", self.employer_abbreviation)
         form.addRow("Adresa:", self.employer_address)
         form.addRow("Hlavní CZ-NACE:", self.employer_nace)
 
@@ -84,15 +90,31 @@ class NastaveniPage(QWidget):
         buttons.addWidget(self.save_employer_button)
         buttons.addStretch()
 
-        note = QLabel("CZ-NACE lze vybrat z ARES nebo ručně psát s našeptávačem.")
+        note = QLabel(
+            "Zkratka je nepovinná. Pokud není vyplněná, použije se automatická "
+            "zkratka z názvu. CZ-NACE lze vybrat z ARES nebo ručně psát s našeptávačem."
+        )
+        note.setWordWrap(True)
 
         layout.addLayout(form)
         layout.addLayout(buttons)
         layout.addWidget(note)
         layout.addStretch()
 
+        self.employer_name.textChanged.connect(self._update_employer_abbreviation_placeholder)
+        self._update_employer_abbreviation_placeholder()
+
         return tab
 
+    def _update_employer_abbreviation_placeholder(self) -> None:
+        from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
+            default_abbreviation,
+        )
+
+        suggested = default_abbreviation(self.employer_name.text())
+        self.employer_abbreviation.setPlaceholderText(
+            f"automaticky: {suggested}" if suggested else ""
+        )
     def _setup_cz_nace_completer(self):
         displays = cz_nace_service.get_all_displays()
 
@@ -408,12 +430,17 @@ class NastaveniPage(QWidget):
         self.employer_nace.setEditText(data.get("nace", ""))
 
     def save_employer(self):
-        settings_service.save_employer(
-            ico=self.employer_ico.text().strip(),
-            name=self.employer_name.text().strip(),
-            address=self.employer_address.text().strip(),
-            nace=self.employer_nace.currentText().strip(),
-        )
+        try:
+            settings_service.save_employer(
+                ico=self.employer_ico.text().strip(),
+                name=self.employer_name.text().strip(),
+                address=self.employer_address.text().strip(),
+                nace=self.employer_nace.currentText().strip(),
+                abbreviation=self.employer_abbreviation.text().strip(),
+            )
+        except SettingsEmployerError as exc:
+            QMessageBox.warning(self, "Zaměstnavatel", str(exc))
+            return
         self.refresh()
 
     def add_worker(self):
@@ -824,7 +851,9 @@ class NastaveniPage(QWidget):
             self.employer_ico.setText(employer.ico)
             self.employer_name.setText(employer.name)
             self.employer_address.setText(employer.address)
+            self.employer_abbreviation.setText(getattr(employer, "abbreviation", "") or "")
             self.employer_nace.setEditText(employer.nace)
+        self._update_employer_abbreviation_placeholder()
 
         self.refresh_workers()
         self.refresh_persons()

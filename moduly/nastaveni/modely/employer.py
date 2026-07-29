@@ -15,6 +15,7 @@ class Employer(Base):
     name: Mapped[str] = mapped_column(String(250), nullable=False)
     address: Mapped[str] = mapped_column(String(300), default="")
     nace: Mapped[str] = mapped_column(String(50), default="")
+    abbreviation: Mapped[str] = mapped_column(String(32), default="")
 
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)

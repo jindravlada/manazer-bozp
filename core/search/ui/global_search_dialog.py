@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import logging
-
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QKeyEvent
 from PySide6.QtWidgets import (
@@ -23,29 +21,24 @@ from core.search.constants import MIN_QUERY_LENGTH
 from core.search.global_search_result import GlobalSearchResult
 from core.search.global_search_service import GlobalSearchService
 
-logger = logging.getLogger(__name__)
-
 _RESULT_ROLE = Qt.ItemDataRole.UserRole
 
 
 class GlobalSearchDialog(QDialog):
     STATUS_QUERY_TOO_SHORT = "Zadejte alespoň 2 znaky."
     STATUS_EMPTY = "Pro zadaný text nebyly nalezeny žádné výsledky."
-    STATUS_OPEN_FAILED = "Výsledek nelze otevřít."
     STATUS_OPEN_UNSUPPORTED = "Tento typ výsledku zatím nelze otevřít."
-    STATUS_OPEN_ERROR = "Chyba při otevírání výsledku."
 
     def __init__(
         self,
         parent: QWidget | None = None,
         *,
         search_service: GlobalSearchService | None = None,
-        host=None,
         initial_query: str = "",
     ) -> None:
         super().__init__(parent)
         self._service = search_service or global_search_service
-        self._host = host if host is not None else parent
+        self._accepted_result: GlobalSearchResult | None = None
 
         self.setWindowTitle("Globální vyhledávání")
         self.setMinimumSize(640, 480)
@@ -196,7 +189,11 @@ class GlobalSearchDialog(QDialog):
                 return item
         return None
 
-    def _selected_result(self) -> GlobalSearchResult | None:
+    @property
+    def selected_result(self) -> GlobalSearchResult | None:
+        return self._accepted_result
+
+    def _current_list_result(self) -> GlobalSearchResult | None:
         item = self._results_list.currentItem()
         if item is None:
             return None
@@ -206,33 +203,22 @@ class GlobalSearchDialog(QDialog):
         return None
 
     def _open_selected_result(self) -> None:
-        result = self._selected_result()
+        result = self._current_list_result()
         if result is not None:
-            self._open_result(result)
+            self._accept_result(result)
 
     def _on_result_item_activated(self, item: QListWidgetItem) -> None:
         result = item.data(_RESULT_ROLE)
         if isinstance(result, GlobalSearchResult):
-            self._open_result(result)
+            self._accept_result(result)
 
-    def _open_result(self, result: GlobalSearchResult) -> None:
-        try:
-            if not self._service.can_open_result(result):
-                self._status_label.setText(self.STATUS_OPEN_UNSUPPORTED)
-                return
+    def _accept_result(self, result: GlobalSearchResult) -> None:
+        if not self._service.can_open_result(result):
+            self._status_label.setText(self.STATUS_OPEN_UNSUPPORTED)
+            return
 
-            if self._service.open_result(result, self._host):
-                self.accept()
-                return
-
-            self._status_label.setText(self.STATUS_OPEN_FAILED)
-        except Exception:
-            logger.exception(
-                "Failed to open search result %s/%s from dialog",
-                result.entity_type,
-                result.entity_id,
-            )
-            self._status_label.setText(self.STATUS_OPEN_ERROR)
+        self._accepted_result = result
+        self.accept()
 
     def result_items(self) -> list[GlobalSearchResult]:
         items: list[GlobalSearchResult] = []

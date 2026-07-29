@@ -266,7 +266,7 @@ class MainWindow(QMainWindow):
     def _open_attention_item(self, item) -> None:
         from core.dashboard.attention_item import (
             ITEM_TYPE_AUDIT,
-            ITEM_TYPE_BOZP_INSPECTION,
+            ITEM_TYPE_INSPECTION,
             ITEM_TYPE_TASK,
         )
 
@@ -278,10 +278,20 @@ class MainWindow(QMainWindow):
         if item_type == ITEM_TYPE_AUDIT and entity_id is not None:
             self._open_audit_by_id(entity_id)
             return
-        if item_type == ITEM_TYPE_BOZP_INSPECTION and entity_id is not None:
+        if item_type == ITEM_TYPE_INSPECTION and entity_id is not None:
             self._open_inspection_by_id(entity_id)
 
     def _open_audit_by_id(self, audit_id: int) -> None:
+        from moduly.audity.sluzby.audit_service import audit_service
+
+        audit = audit_service.get_by_id(audit_id)
+        if audit is None:
+            QMessageBox.warning(self, "Audity", "Audit nebyl nalezen.")
+            dashboard = self._page_widgets.get("dashboard")
+            if dashboard is not None and hasattr(dashboard, "refresh"):
+                dashboard.refresh()
+            return
+
         self._show("audity")
         page = self._page_widgets.get("audity")
         if page is not None and hasattr(page, "open_audit"):
@@ -292,6 +302,16 @@ class MainWindow(QMainWindow):
             dashboard.refresh()
 
     def _open_inspection_by_id(self, inspection_id: int) -> None:
+        from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
+
+        inspection = bozp_inspection_service.get_by_id(inspection_id)
+        if inspection is None:
+            QMessageBox.warning(self, "Prověrky", "Prověrka nebyla nalezena.")
+            dashboard = self._page_widgets.get("dashboard")
+            if dashboard is not None and hasattr(dashboard, "refresh"):
+                dashboard.refresh()
+            return
+
         self._show("proverky")
         page = self._page_widgets.get("proverky")
         if page is not None and hasattr(page, "open_inspection"):

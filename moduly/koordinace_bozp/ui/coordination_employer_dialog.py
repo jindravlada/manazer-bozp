@@ -59,7 +59,7 @@ class CoordinationEmployerDialog(QDialog):
         form.addRow("IČO:", ico_host)
         form.addRow("Název *:", self.company_name)
         form.addRow("Adresa:", self.address)
-        form.addRow("Zkratka *:", self.abbreviation)
+        form.addRow("Zkratka:", self.abbreviation)
         form.addRow("Poznámka:", self.note)
 
         if employer is None:
@@ -84,6 +84,8 @@ class CoordinationEmployerDialog(QDialog):
             self.abbreviation.setText(employer.abbreviation or "")
             self.note.setPlainText(employer.note or "")
 
+        self._update_abbreviation_placeholder()
+
         if self.main_only_abbreviation:
             self.ico.setReadOnly(True)
             self.company_name.setReadOnly(True)
@@ -98,14 +100,13 @@ class CoordinationEmployerDialog(QDialog):
             main_hint.setWordWrap(True)
             layout.insertWidget(0, main_hint)
 
-        self.company_name.editingFinished.connect(self._suggest_abbreviation)
+        self.company_name.textChanged.connect(self._update_abbreviation_placeholder)
 
-    def _suggest_abbreviation(self) -> None:
-        if self.abbreviation.text().strip():
-            return
+    def _update_abbreviation_placeholder(self) -> None:
         suggested = default_abbreviation(self.company_name.text())
-        if suggested:
-            self.abbreviation.setText(suggested)
+        self.abbreviation.setPlaceholderText(
+            f"automaticky: {suggested}" if suggested else ""
+        )
 
     def load_from_ares(self) -> None:
         ico = self.ico.text().strip()
@@ -127,8 +128,7 @@ class CoordinationEmployerDialog(QDialog):
         self.ico.setText(str(data.get("ico") or ico))
         self.company_name.setText(data.get("name") or "")
         self.address.setText(data.get("address") or "")
-        if not self.abbreviation.text().strip():
-            self.abbreviation.setText(default_abbreviation(self.company_name.text()))
+        self._update_abbreviation_placeholder()
 
     def get_data(self) -> dict:
         if self.main_only_abbreviation:

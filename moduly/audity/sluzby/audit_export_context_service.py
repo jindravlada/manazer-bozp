@@ -14,7 +14,7 @@ from core.export.control_point_appendix import (
     build_areas_appendix,
     build_detailed_control_points_appendix,
 )
-from core.export.odt_engine import OdtRichContent
+from core.export.odt_engine import OdtParagraph, OdtRichContent
 from core.shared.constants import (
     CONTROL_RESULT_NEKONTROLOVANO,
     CONTROL_RESULT_NELZE_POSOUDIT,
@@ -351,8 +351,8 @@ class AuditExportContext:
         return self.processes_text()
 
     def detailed_appendix_processes(self) -> OdtRichContent:
-        """Příloha A podrobné zprávy – názvy procesů tučně, každý jako samostatný odstavec."""
-        return build_areas_appendix(self.processes_lines())
+        """Příloha A podrobné zprávy – názvy procesů netučně (jako u protokolu)."""
+        return build_areas_appendix(self.processes_lines(), bold_names=False)
 
     @staticmethod
     def _iter_knowledge_sections(sections: list) -> list[dict]:
@@ -457,12 +457,16 @@ class AuditExportContext:
     def appendix_assertions_text(self) -> str | OdtRichContent:
         if self.config.detailed_assertions_appendix:
             return self.detailed_appendix_assertions()
-        return self.summary_appendix_assertions_text()
+        return self.summary_appendix_assertions()
 
     def summary_appendix_assertions_text(self) -> str:
+        return self.summary_appendix_assertions().plain_text()
+
+    def summary_appendix_assertions(self) -> OdtRichContent:
+        """Příloha B protokolu – nadpisy sekcí tučně (jako u prověrek)."""
         results = self._assertion_control_results()
         if not results:
-            return ""
+            return OdtRichContent()
 
         grouped: dict[str, list[str]] = {}
         area_order: list[str] = []
@@ -487,13 +491,17 @@ class AuditExportContext:
                 area_order.append(area)
             grouped[area].append(f"{emoji} {assertion}")
 
-        blocks: list[str] = []
-        for area in area_order:
+        paragraphs: list[OdtParagraph] = []
+        for index, area in enumerate(area_order):
             lines = grouped.get(area) or []
             if not lines:
                 continue
-            blocks.append(f"{area}\n" + "\n".join(lines))
-        return "\n\n".join(blocks)
+            if index > 0:
+                paragraphs.append(OdtParagraph.blank_line())
+            paragraphs.append(OdtParagraph.text(area, style="AuditCriterion"))
+            for line in lines:
+                paragraphs.append(OdtParagraph.text(line))
+        return OdtRichContent(paragraphs=paragraphs)
 
     def detailed_appendix_assertions_text(self) -> str:
         """Textová reprezentace podrobné přílohy B (pro testy)."""

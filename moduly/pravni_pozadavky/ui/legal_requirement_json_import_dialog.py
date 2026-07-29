@@ -89,7 +89,8 @@ class LegalRequirementJsonImportDialog(QDialog):
     def _show_summary(self, summary: LegalRequirementJsonImportSummary) -> None:
         message = (
             f"Celkem: {summary.total}\n"
-            f"OK: {summary.ok_count}\n"
+            f"Vytvořeno: {summary.created_count}\n"
+            f"Rozšířeno: {summary.extended_count}\n"
             f"Přeskočeno: {summary.skipped_count}\n"
             f"Chyby: {summary.error_count}"
         )

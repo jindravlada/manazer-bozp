@@ -639,7 +639,7 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         self.assertNotIn("Lucie Horáková", members_text)
         self.assertNotIn("Jan Novák", members_text)
 
-        assertions_text = context.appendix_assertions_text()
+        assertions_text = context.appendix_assertions_text().plain_text()
         self.assertIn("Dokumentace rizik", assertions_text)
         self.assertIn("🟢 Rizika jsou identifikována.", assertions_text)
         self.assertIn("🟡 Evidence opatření je neúplná.", assertions_text)
@@ -981,7 +981,7 @@ class AudityProtokolExportTestCase(unittest.TestCase):
             result=CONTROL_RESULT_VYHOVUJE,
         )
 
-        text = audit_export_context_service.build(audit).appendix_assertions_text()
+        text = audit_export_context_service.build(audit).appendix_assertions_text().plain_text()
         self.assertIn("Sekce A", text)
         self.assertIn("🟢 Tvrzení A", text)
         self.assertNotIn("Sekce B", text)
@@ -1042,7 +1042,7 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         )
 
         context = audit_export_context_service.build(audit)
-        text = context.appendix_assertions_text()
+        text = context.appendix_assertions_text().plain_text()
         self.assertIn("Postoj vedení k BOZP", text)
         self.assertIn(f"🟢 {current_text}", text)
         self.assertNotIn("Staré BOZP tvrzení ze starší metodiky.", text)

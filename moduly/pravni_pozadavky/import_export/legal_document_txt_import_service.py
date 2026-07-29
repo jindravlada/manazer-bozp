@@ -4,6 +4,7 @@ from moduly.pravni_pozadavky.import_export.legal_document_json_import_service im
     LegalDocumentJsonImportResult,
     legal_document_json_import_service,
 )
+from moduly.pravni_pozadavky.legal_document_type_utils import resolve_document_type
 from moduly.pravni_pozadavky.parser.legal_document_parser import legal_document_parser
 
 
@@ -16,7 +17,7 @@ class LegalDocumentTxtImportService:
         self,
         path: str | Path,
         *,
-        document_type: str,
+        document_type: str = "",
         number: str = "",
         year: int | None = None,
         title: str,
@@ -32,17 +33,18 @@ class LegalDocumentTxtImportService:
         except OSError as exc:
             raise ValueError("Soubor pro import nelze načíst.") from exc
 
-        normalized_type = (document_type or "").strip()
-        if not normalized_type:
-            raise ValueError("Typ předpisu je povinný.")
-
         normalized_title = (title or "").strip()
         if not normalized_title:
             raise ValueError("Název předpisu je povinný.")
 
+        resolved_type = resolve_document_type(
+            explicit=document_type,
+            title=normalized_title,
+        )
+
         parsed = legal_document_parser.parse_text(
             raw_text,
-            document_type=normalized_type,
+            document_type=resolved_type,
             number=(number or "").strip(),
             year=year,
             title=normalized_title,

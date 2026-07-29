@@ -44,6 +44,7 @@ from moduly.proverky.constants import (
     INSPECTION_MUST_BE_SAVED_MESSAGE,
     KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT,
     KNOWLEDGE_REFERENCE_PHOTOS_TITLE,
+    MOVE_TO_DOCUMENTATION_LABEL,
     MOVE_TO_TERRAIN_LABEL,
     MOVE_VERIFICATION_TYPE_TOOLTIP,
     REFERENCE_PHOTO_PLACEHOLDER_ICON_SIZE_PX,
@@ -131,6 +132,7 @@ class BozpKnowledgeSectionWidget(QWidget):
         self._workplace_history_host: QWidget | None = None
         self._shared_experiences_host: QWidget | None = None
         self._overrides_cache: dict[tuple[str, str, str], str] | None = None
+        self._verification_filter = VERIFICATION_TYPE_DOCUMENTATION
 
         self._content_host = QWidget()
         self._content_layout = QVBoxLayout(self._content_host)
@@ -140,6 +142,12 @@ class BozpKnowledgeSectionWidget(QWidget):
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.addWidget(self._content_host, 1)
+
+    def set_verification_filter(self, verification_type: str) -> None:
+        self._verification_filter = inspection_verification_service.normalize_verification_type(
+            verification_type
+        )
+        self.refresh()
 
     def set_section(
         self,
@@ -615,7 +623,7 @@ class BozpKnowledgeSectionWidget(QWidget):
         items = [
             item
             for item in items
-            if self._effective_type(item) == VERIFICATION_TYPE_DOCUMENTATION
+            if self._effective_type(item) == self._verification_filter
         ]
         if not items:
             layout.addWidget(self._build_info_label(KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT))
@@ -689,10 +697,18 @@ class BozpKnowledgeSectionWidget(QWidget):
 
         move_row = QHBoxLayout()
         move_row.setContentsMargins(0, 0, 0, 0)
-        move_btn = QPushButton(MOVE_TO_TERRAIN_LABEL)
+        if self._verification_filter == VERIFICATION_TYPE_TERRAIN:
+            move_label = MOVE_TO_DOCUMENTATION_LABEL
+            move_target = VERIFICATION_TYPE_DOCUMENTATION
+        else:
+            move_label = MOVE_TO_TERRAIN_LABEL
+            move_target = VERIFICATION_TYPE_TERRAIN
+        move_btn = QPushButton(move_label)
         move_btn.setToolTip(MOVE_VERIFICATION_TYPE_TOOLTIP)
         move_btn.clicked.connect(
-            lambda _checked=False, cp=item: self._move_to_terrain(cp)
+            lambda _checked=False, cp=item, target=move_target, label=move_label: (
+                self._move_verification_type(cp, target, label)
+            )
         )
         move_row.addWidget(move_btn)
         move_row.addStretch()
@@ -780,11 +796,16 @@ class BozpKnowledgeSectionWidget(QWidget):
         button.clicked.connect(lambda _checked=False, item=control_point: self._create_finding(item))
         return button
 
-    def _move_to_terrain(self, control_point: dict) -> None:
+    def _move_verification_type(
+        self,
+        control_point: dict,
+        target_type: str,
+        button_label: str,
+    ) -> None:
         if self._inspection_id is None:
             QMessageBox.information(
                 self,
-                MOVE_TO_TERRAIN_LABEL,
+                button_label,
                 INSPECTION_MUST_BE_SAVED_MESSAGE,
             )
             return
@@ -796,7 +817,7 @@ class BozpKnowledgeSectionWidget(QWidget):
             area_id=self._area_id,
             section_id=self._section_id,
             control_point_id=cp_id,
-            verification_type=VERIFICATION_TYPE_TERRAIN,
+            verification_type=target_type,
             item=control_point,
         )
         self._overrides_cache = None

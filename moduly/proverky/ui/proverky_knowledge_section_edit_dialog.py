@@ -33,7 +33,7 @@ from moduly.proverky.constants import (
     CONTROL_POINT_SEVERITY_OPTIONS,
     KNOWLEDGE_EDITOR_SECTION_CONTROL_PROCESS_LABEL,
     REFERENCE_PHOTO_FILTER,
-    VERIFICATION_TYPE_LABELS,
+    VERIFICATION_TYPE_OPTIONS,
 )
 from moduly.proverky.sluzby.proverky_knowledge_service import (
     EDITABLE_SECTION_LIST_FIELDS,
@@ -60,11 +60,19 @@ _SECTION_SPACING = 20
 
 
 class _ControlPointListRow(QWidget):
-    """Řádek kontrolního bodu v editoru se jmenovkou a editovatelnou závažností."""
+    """Řádek kontrolního bodu — závažnost a typ ověření (Dokumentace / Terén)."""
 
-    def __init__(self, item: dict, *, on_severity_changed, parent=None):
+    def __init__(
+        self,
+        item: dict,
+        *,
+        on_severity_changed,
+        on_verification_type_changed,
+        parent=None,
+    ):
         super().__init__(parent)
         self._on_severity_changed = on_severity_changed
+        self._on_verification_type_changed = on_verification_type_changed
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(4, 4, 4, 4)
@@ -73,28 +81,48 @@ class _ControlPointListRow(QWidget):
         self._label = QLabel()
         self._label.setWordWrap(True)
 
+        self._verification_combo = QComboBox()
+        self._verification_combo.setFixedWidth(128)
+        self._verification_combo.setToolTip(
+            "Závazné pro všechny prověrky. Ad hoc přesun v jedné prověrce metodiku nemění."
+        )
+        for value, label in VERIFICATION_TYPE_OPTIONS:
+            self._verification_combo.addItem(label, value)
+
         self._severity_combo = QComboBox()
         self._severity_combo.setFixedWidth(128)
         for value, label in CONTROL_POINT_SEVERITY_OPTIONS:
             self._severity_combo.addItem(label, value)
 
+        self._verification_combo.currentIndexChanged.connect(self._emit_verification_type_changed)
         self._severity_combo.currentIndexChanged.connect(self._emit_severity_changed)
         layout.addWidget(self._label, 1)
+        layout.addWidget(self._verification_combo, 0, Qt.AlignmentFlag.AlignTop)
         layout.addWidget(self._severity_combo, 0, Qt.AlignmentFlag.AlignTop)
 
         self.set_item(item, block_signals=True)
 
     def set_item(self, item: dict, *, block_signals: bool = False) -> None:
         if block_signals:
+            self._verification_combo.blockSignals(True)
             self._severity_combo.blockSignals(True)
 
         self._label.setText(_format_control_point_label(item))
+
+        verification_type = proverky_knowledge_service.normalize_verification_type(
+            item.get("verification_type")
+        )
+        verification_index = self._verification_combo.findData(verification_type)
+        if verification_index >= 0:
+            self._verification_combo.setCurrentIndex(verification_index)
+
         severity = proverky_knowledge_service.normalize_control_point_severity(item.get("zavaznost"))
-        index = self._severity_combo.findData(severity)
-        if index >= 0:
-            self._severity_combo.setCurrentIndex(index)
+        severity_index = self._severity_combo.findData(severity)
+        if severity_index >= 0:
+            self._severity_combo.setCurrentIndex(severity_index)
 
         if block_signals:
+            self._verification_combo.blockSignals(False)
             self._severity_combo.blockSignals(False)
 
     def current_severity(self) -> str:
@@ -102,20 +130,22 @@ class _ControlPointListRow(QWidget):
             self._severity_combo.currentData()
         )
 
+    def current_verification_type(self) -> str:
+        return proverky_knowledge_service.normalize_verification_type(
+            self._verification_combo.currentData()
+        )
+
     def _emit_severity_changed(self) -> None:
         self._on_severity_changed(self.current_severity())
+
+    def _emit_verification_type_changed(self) -> None:
+        self._on_verification_type_changed(self.current_verification_type())
 
 
 def _format_control_point_label(item: dict) -> str:
     prefix = "[neaktivní] " if not item.get("aktivni", True) else ""
     nazev = str(item.get("nazev") or "—")
-    type_label = VERIFICATION_TYPE_LABELS.get(
-        proverky_knowledge_service.normalize_verification_type(
-            item.get("verification_type")
-        ),
-        "Dokumentace",
-    )
-    return f"{prefix}{nazev} ({type_label})"
+    return f"{prefix}{nazev}"
 
 
 class _CollapsibleSection(QWidget):
@@ -537,6 +567,9 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         normalized["zavaznost"] = proverky_knowledge_service.normalize_control_point_severity(
             normalized.get("zavaznost")
         )
+        normalized["verification_type"] = proverky_knowledge_service.normalize_verification_type(
+            normalized.get("verification_type")
+        )
 
         row = QListWidgetItem()
         row.setData(Qt.ItemDataRole.UserRole, normalized)
@@ -548,6 +581,13 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
                 lw,
                 r,
                 severity,
+            ),
+            on_verification_type_changed=lambda verification_type, r=row, lw=list_widget: (
+                self._on_control_point_verification_type_changed(
+                    lw,
+                    r,
+                    verification_type,
+                )
             ),
         )
         row.setSizeHint(row_widget.sizeHint())
@@ -572,6 +612,31 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
                 self,
                 self.windowTitle(),
                 "Závažnost se nepodařilo uložit.",
+            )
+            self._mark_modified()
+            return
+        self._mark_saved()
+
+    def _on_control_point_verification_type_changed(
+        self,
+        list_widget: QListWidget,
+        row_item: QListWidgetItem,
+        verification_type: str,
+    ) -> None:
+        data = row_item.data(Qt.ItemDataRole.UserRole)
+        if not isinstance(data, dict):
+            return
+
+        updated = deepcopy(data)
+        updated["verification_type"] = proverky_knowledge_service.normalize_verification_type(
+            verification_type
+        )
+        row_item.setData(Qt.ItemDataRole.UserRole, updated)
+        if not self._persist_section_changes():
+            QMessageBox.warning(
+                self,
+                self.windowTitle(),
+                "Typ ověření se nepodařilo uložit.",
             )
             self._mark_modified()
             return

@@ -353,6 +353,10 @@ class InspectionReport1TestCase(unittest.TestCase):
         self.assertIn("Požární ochrana", content)
         self.assertIn("Ergonomie", content)
         self.assertIn("fo:break-before", content)
+        # Příloha A: netučné odrážky (stejně jako protokol auditu).
+        appendix_a = content.split("Příloha A", 1)[1].split("Příloha B", 1)[0]
+        self.assertNotIn('text:style-name="AuditBold"', appendix_a)
+        self.assertNotIn('fo:font-weight="bold"', appendix_a)
 
     def test_appendix_b_colored_results_and_comment(self) -> None:
         inspection = self._create_full_commission_inspection()
@@ -394,19 +398,22 @@ class InspectionReport1TestCase(unittest.TestCase):
         context = bozp_inspection_export_context_service.build(inspection)
         appendix = context.appendix_control_points_text().plain_text()
         self.assertIn("BOZP oblast", appendix)
-        for _cp_id, label, _result, emoji, word in samples:
-            self.assertIn(f"{emoji} {label} — {word}", appendix)
-            self.assertIn(f"Komentář k {_cp_id}", appendix)
-        self.assertIn("Komentář:", appendix)
+        for _cp_id, label, _result, emoji, _word in samples:
+            self.assertIn(f"{emoji} {label}", appendix)
+            self.assertNotIn(f"Komentář k {_cp_id}", appendix)
+        self.assertNotIn("Komentář:", appendix)
+        self.assertNotIn(" — Vyhovuje", appendix)
 
         path = protokol_proverky_service.generate_for_inspection(inspection)
         content = _odt_content(path)
+        appendix_b = content.split("Příloha B", 1)[1]
         self.assertIn("Příloha B – Kontrolní body", content)
-        self.assertIn("🟢", content)
-        self.assertIn("🟡", content)
-        self.assertIn("🔴", content)
-        self.assertIn("Nehodnoceno", content)
-        self.assertIn("Komentář:", content)
+        self.assertIn("🟢", appendix_b)
+        self.assertIn("🟡", appendix_b)
+        self.assertIn("🔴", appendix_b)
+        self.assertIn("Bod nehodnocen", appendix_b)
+        self.assertNotIn("Komentář:", appendix_b)
+        self.assertNotIn("draw:frame", appendix_b)
 
     def test_appendix_b_includes_photo(self) -> None:
         inspection = self._create_full_commission_inspection()
@@ -438,17 +445,46 @@ class InspectionReport1TestCase(unittest.TestCase):
             photo_path=relative,
         )
 
-        context = bozp_inspection_export_context_service.build(inspection)
-        plain = context.appendix_control_points_text().plain_text()
-        self.assertTrue(ODT_IMAGE_MARKER_RE.search(plain))
+        # Protokol: bez fotografií a komentářů.
+        protocol_context = bozp_inspection_export_context_service.build(inspection)
+        protocol_plain = protocol_context.appendix_control_points_text().plain_text()
+        self.assertIn("Bod s fotografií", protocol_plain)
+        self.assertFalse(ODT_IMAGE_MARKER_RE.search(protocol_plain))
+        self.assertNotIn("Viz foto", protocol_plain)
+        self.assertNotIn("Komentář:", protocol_plain)
 
-        path = protokol_proverky_service.generate_for_inspection(inspection)
-        with zipfile.ZipFile(path, "r") as archive:
-            names = archive.namelist()
-        self.assertTrue(any(name.startswith("Pictures/") for name in names))
-        content = _odt_content(path)
-        self.assertIn("Bod s fotografií", content)
-        self.assertIn("draw:frame", content)
+        protocol_path = protokol_proverky_service.generate_for_inspection(inspection)
+        with zipfile.ZipFile(protocol_path, "r") as archive:
+            protocol_names = archive.namelist()
+        self.assertFalse(any(name.startswith("Pictures/") for name in protocol_names))
+        protocol_content = _odt_content(protocol_path)
+        protocol_appendix_b = protocol_content.split("Příloha B", 1)[1]
+        self.assertIn("Bod s fotografií", protocol_appendix_b)
+        self.assertNotIn("draw:frame", protocol_appendix_b)
+        self.assertNotIn("Komentář:", protocol_appendix_b)
+
+        # Podrobná zpráva: fotografie a komentáře zůstávají.
+        from moduly.proverky.sluzby.bozp_inspection_export_context_service import (
+            DETAILED_REPORT_DOCUMENT_CONFIG,
+        )
+
+        detailed_context = bozp_inspection_export_context_service.build(
+            inspection, config=DETAILED_REPORT_DOCUMENT_CONFIG
+        )
+        detailed_plain = detailed_context.appendix_control_points_text().plain_text()
+        self.assertTrue(ODT_IMAGE_MARKER_RE.search(detailed_plain))
+        self.assertIn("Viz foto", detailed_plain)
+
+        detailed_path = (
+            protokol_proverky_service.generate_detailed_report_for_inspection(inspection)
+        )
+        with zipfile.ZipFile(detailed_path, "r") as archive:
+            detailed_names = archive.namelist()
+        self.assertTrue(any(name.startswith("Pictures/") for name in detailed_names))
+        detailed_content = _odt_content(detailed_path)
+        self.assertIn("Bod s fotografií", detailed_content)
+        self.assertIn("draw:frame", detailed_content)
+        self.assertIn("Komentář:", detailed_content)
 
 
 if __name__ == "__main__":

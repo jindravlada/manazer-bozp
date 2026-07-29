@@ -1,10 +1,8 @@
 import re
 from dataclasses import dataclass
 
-from moduly.pravni_pozadavky.constants import (
-    DOCUMENT_TYPE_NARIZENI_VLADY,
-    DOCUMENT_TYPE_VYHLASKA,
-    DOCUMENT_TYPE_ZAKON,
+from moduly.pravni_pozadavky.legal_document_type_utils import (
+    detect_document_type_from_bulk_prefix,
 )
 
 _NUMBER_YEAR_PATTERN = re.compile(
@@ -34,8 +32,11 @@ def parse_bulk_import_line(line: str) -> BulkInternetImportLine:
     if match is None:
         raise ValueError("Nepodařilo se rozpoznat číslo a rok předpisu.")
 
-    prefix = stripped[: match.start()].strip().casefold()
-    document_type = _detect_document_type(prefix)
+    document_type = detect_document_type_from_bulk_prefix(stripped)
+    if document_type is None:
+        from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_ZAKON
+
+        document_type = DOCUMENT_TYPE_ZAKON
 
     return BulkInternetImportLine(
         source_line=stripped,
@@ -43,15 +44,3 @@ def parse_bulk_import_line(line: str) -> BulkInternetImportLine:
         number=match.group("number"),
         year=int(match.group("year")),
     )
-
-
-def _detect_document_type(prefix: str) -> str:
-    if not prefix:
-        return DOCUMENT_TYPE_ZAKON
-    if prefix == "nv" or "nařízení vlády" in prefix:
-        return DOCUMENT_TYPE_NARIZENI_VLADY
-    if "vyhláška" in prefix:
-        return DOCUMENT_TYPE_VYHLASKA
-    if "zákon" in prefix:
-        return DOCUMENT_TYPE_ZAKON
-    return DOCUMENT_TYPE_ZAKON

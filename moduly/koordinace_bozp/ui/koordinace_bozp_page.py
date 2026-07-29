@@ -193,14 +193,9 @@ class KoordinaceBozpPage(QWidget):
     def new_coordination(self) -> None:
         dialog = BozpCoordinationDialog(self)
         dialog.showMaximized()
-        if not dialog.exec():
-            return
-        try:
-            created = bozp_coordination_service.create_coordination(**dialog.get_data())
-        except BozpCoordinationError as error:
-            QMessageBox.warning(self, DIALOG_WINDOW_TITLE, str(error))
-            return
-        self.refresh(select_id=created.id, ensure_visible=True)
+        dialog.exec()
+        if dialog.coordination is not None:
+            self.refresh(select_id=dialog.coordination.id, ensure_visible=True)
 
     def open_selected_coordination(self) -> None:
         coordination = self._selected_coordination()
@@ -209,21 +204,11 @@ class KoordinaceBozpPage(QWidget):
             return
         dialog = BozpCoordinationDialog(self, coordination=coordination)
         dialog.showMaximized()
-        if not dialog.exec():
-            self.refresh(select_id=coordination.id, preserve_scroll=True)
-            return
-        if is_strict_readonly((dialog.coordination or coordination).status):
-            self.refresh(select_id=coordination.id, preserve_scroll=True)
-            return
-        try:
-            bozp_coordination_service.update_coordination(
-                coordination.id,
-                **dialog.get_data(),
-            )
-        except BozpCoordinationError as error:
-            QMessageBox.warning(self, DIALOG_WINDOW_TITLE, str(error))
-            return
-        self.refresh(select_id=coordination.id, preserve_scroll=True)
+        dialog.exec()
+        self.refresh(
+            select_id=(dialog.coordination or coordination).id,
+            preserve_scroll=True,
+        )
 
     def activate_selected_coordination(self) -> None:
         coordination = self._selected_coordination()

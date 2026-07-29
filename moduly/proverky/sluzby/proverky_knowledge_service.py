@@ -30,7 +30,8 @@ _OBLASTI_FILE = f"{_CATALOG_DIR}/oblasti.json"
 _ZAVAZNOST_SEED_SYNC_KEY = "zavaznost_seed_sync"
 _ZAVAZNOST_SEED_SYNC_VERSION = 1
 _VERIFICATION_TYPE_SEED_SYNC_KEY = "verification_type_seed_sync"
-_VERIFICATION_TYPE_SEED_SYNC_VERSION = 1
+# 2 = znovu propsat Dokumentace/Terén ze seedu (prakticka_kontrola → terén)
+_VERIFICATION_TYPE_SEED_SYNC_VERSION = 2
 
 KNOWLEDGE_NODE_AREA = "area"
 KNOWLEDGE_NODE_SECTION = "section"
@@ -569,7 +570,9 @@ class ProverkyKnowledgeService:
                 continue
 
             new_type = seed_by_id[item_id]
-            if self.normalize_verification_type(user_item.get("verification_type")) != new_type:
+            current = user_item.get("verification_type")
+            # Chybějící klíč zapiš i když default = dokumentace (jinak UI/JSON vypadá „prázdně“).
+            if current in (None, "") or self.normalize_verification_type(current) != new_type:
                 user_item["verification_type"] = new_type
                 changed = True
 

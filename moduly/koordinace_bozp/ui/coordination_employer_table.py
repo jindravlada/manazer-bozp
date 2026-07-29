@@ -22,6 +22,9 @@ from moduly.koordinace_bozp.constants import (
     EMPLOYER_TABLE_HEADERS,
     RISK_HANDOVER_STATUS_LABELS,
 )
+from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
+    employer_abbreviation,
+)
 from moduly.koordinace_bozp.sluzby.coordination_risk_submission_service import (
     coordination_risk_submission_service,
 )
@@ -57,12 +60,13 @@ class CoordinationEmployerTable(QTableWidget):
                         stable_id=record_id,
                     ),
                 )
+                abbr = employer_abbreviation(item)
                 self.setItem(
                     row,
                     EMP_COL_ABBREVIATION,
                     create_typed_item(
-                        item.abbreviation or "",
-                        typed_text(item.abbreviation),
+                        abbr,
+                        typed_text(abbr),
                         stable_id=record_id,
                     ),
                 )

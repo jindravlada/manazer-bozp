@@ -46,7 +46,11 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.proverky.ui.proverky_knowledge_list_item_dialog import (
         ProverkyKnowledgeListItemDialog,
     )
+    from moduly.proverky.ui.proverky_knowledge_section_edit_dialog import (
+        ProverkyKnowledgeSectionEditDialog,
+    )
     from moduly.proverky.ui.proverky_page import ProverkyPage
+    from PySide6.QtWidgets import QComboBox, QListWidget
 
 
 def _assert_valid_odt_package(path: Path) -> None:
@@ -246,6 +250,28 @@ class InspectionTerrain1TestCase(unittest.TestCase):
             VERIFICATION_TYPE_TERRAIN,
         )
 
+    def test_terrain_tab_uses_same_editor_as_documentation(self) -> None:
+        inspection = bozp_inspection_service.create_inspection()
+        dialog = BozpInspectionDialog(inspection=inspection)
+        self.assertTrue(hasattr(dialog.areas_widget, "knowledge_tree"))
+        self.assertTrue(hasattr(dialog.terrain_widget, "knowledge_tree"))
+        self.assertTrue(hasattr(dialog.areas_widget, "knowledge_widget"))
+        self.assertTrue(hasattr(dialog.terrain_widget, "knowledge_widget"))
+        self.assertEqual(
+            dialog.areas_widget.knowledge_widget.section_widget._verification_filter,
+            VERIFICATION_TYPE_DOCUMENTATION,
+        )
+        self.assertEqual(
+            dialog.terrain_widget.knowledge_widget.section_widget._verification_filter,
+            VERIFICATION_TYPE_TERRAIN,
+        )
+        self.assertIsNone(dialog.areas_widget.checklist_btn)
+        self.assertIsNotNone(dialog.terrain_widget.checklist_btn)
+        self.assertEqual(
+            dialog.terrain_widget.checklist_btn.text(),
+            TERRAIN_CHECKLIST_BUTTON_LABEL,
+        )
+
     def test_checklist_button_is_on_terrain_tab(self) -> None:
         inspection = bozp_inspection_service.create_inspection()
         dialog = BozpInspectionDialog(inspection=inspection)
@@ -302,12 +328,137 @@ class InspectionTerrain1TestCase(unittest.TestCase):
         assert data is not None
         self.assertEqual(data["verification_type"], VERIFICATION_TYPE_TERRAIN)
 
-    def test_terrain_widget_has_same_evaluation_controls_api(self) -> None:
+    def test_knowledge_section_editor_has_inline_verification_type(self) -> None:
+        from PySide6.QtCore import Qt
+
+        area_id, section_id, item = self._sample_control_point(
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION
+        )
+        dialog = ProverkyKnowledgeSectionEditDialog(
+            area_id=area_id,
+            section_id=section_id,
+        )
+        list_widget = dialog._lists_by_field.get("kontrolni_body")
+        self.assertIsInstance(list_widget, QListWidget)
+        assert isinstance(list_widget, QListWidget)
+        self.assertGreater(list_widget.count(), 0)
+
+        target_row = None
+        for row in range(list_widget.count()):
+            raw = list_widget.item(row).data(Qt.ItemDataRole.UserRole)
+            if isinstance(raw, dict) and raw.get("id") == item.get("id"):
+                target_row = row
+                break
+        self.assertIsNotNone(target_row)
+        assert target_row is not None
+
+        row_item = list_widget.item(target_row)
+        row_widget = list_widget.itemWidget(row_item)
+        self.assertIsNotNone(row_widget)
+        combos = row_widget.findChildren(QComboBox)
+        self.assertGreaterEqual(len(combos), 2)
+        verification_combo = combos[0]
+        self.assertEqual(verification_combo.count(), 2)
+        self.assertEqual(verification_combo.itemData(0), VERIFICATION_TYPE_DOCUMENTATION)
+        self.assertEqual(verification_combo.itemData(1), VERIFICATION_TYPE_TERRAIN)
+
+        terrain_index = verification_combo.findData(VERIFICATION_TYPE_TERRAIN)
+        self.assertGreaterEqual(terrain_index, 0)
+        verification_combo.setCurrentIndex(terrain_index)
+
+        saved = proverky_knowledge_service.get_section(area_id, section_id)
+        self.assertIsNotNone(saved)
+        assert saved is not None
+        saved_item = next(
+            (
+                raw
+                for raw in (saved.get("kontrolni_body") or [])
+                if isinstance(raw, dict) and raw.get("id") == item.get("id")
+            ),
+            None,
+        )
+        self.assertIsNotNone(saved_item)
+        assert saved_item is not None
+        self.assertEqual(saved_item.get("verification_type"), VERIFICATION_TYPE_TERRAIN)
+
+        # vrať metodiku zpět, ať ostatní testy nejsou ovlivněné
+        verification_combo.setCurrentIndex(
+            verification_combo.findData(VERIFICATION_TYPE_DOCUMENTATION)
+        )
+
+    def test_seed_marks_prakticka_kontrola_as_terrain(self) -> None:
+        found = False
+        for area in proverky_knowledge_service.get_areas():
+            knowledge = proverky_knowledge_service.load_area_knowledge(area)
+            if not knowledge:
+                continue
+            for section in knowledge.get("sekce") or []:
+                if not isinstance(section, dict):
+                    continue
+                for raw in section.get("kontrolni_body") or []:
+                    if not isinstance(raw, dict):
+                        continue
+                    if raw.get("id") != "prakticka_kontrola":
+                        continue
+                    found = True
+                    self.assertEqual(
+                        proverky_knowledge_service.get_verification_type(raw),
+                        VERIFICATION_TYPE_TERRAIN,
+                        msg=f"{area.id}/{section.get('id')}/prakticka_kontrola",
+                    )
+        self.assertTrue(found, "V metodice chybí prakticka_kontrola")
+
+    def test_adhoc_override_does_not_change_methodology(self) -> None:
+        area_id, section_id, item = self._sample_control_point(
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION
+        )
+        point_id = str(item.get("id") or "")
+        methodology_before = inspection_verification_service.methodology_verification_type(item)
+
+        inspection = bozp_inspection_service.create_inspection()
+        inspection_verification_service.set_override(
+            inspection_id=inspection.id,
+            area_id=area_id,
+            section_id=section_id,
+            control_point_id=point_id,
+            verification_type=VERIFICATION_TYPE_TERRAIN,
+            item=item,
+        )
+
+        section_after = proverky_knowledge_service.get_section(area_id, section_id)
+        self.assertIsNotNone(section_after)
+        assert section_after is not None
+        item_after = next(
+            (
+                raw
+                for raw in (section_after.get("kontrolni_body") or [])
+                if isinstance(raw, dict) and raw.get("id") == point_id
+            ),
+            None,
+        )
+        self.assertIsNotNone(item_after)
+        self.assertEqual(
+            inspection_verification_service.methodology_verification_type(item_after),
+            methodology_before,
+        )
+        self.assertEqual(
+            inspection_verification_service.effective_verification_type(
+                inspection.id,
+                area_id=area_id,
+                section_id=section_id,
+                control_point_id=point_id,
+                item=item_after,
+            ),
+            VERIFICATION_TYPE_TERRAIN,
+        )
+
+    def test_terrain_widget_has_checklist_button(self) -> None:
         widget = BozpInspectionTerrainWidget()
         inspection = bozp_inspection_service.create_inspection()
         widget.set_inspection_id(inspection.id)
-        self.assertTrue(hasattr(widget, "checklist_btn"))
+        self.assertIsNotNone(widget.checklist_btn)
         self.assertEqual(widget.checklist_btn.text(), TERRAIN_CHECKLIST_BUTTON_LABEL)
+        self.assertTrue(hasattr(widget, "knowledge_tree"))
 
 
 if __name__ == "__main__":

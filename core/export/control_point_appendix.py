@@ -62,14 +62,20 @@ class ControlPointAppendixItem:
         return paths
 
 
-def build_areas_appendix(names: Sequence[str]) -> OdtRichContent:
-    """Příloha A – přehled oblastí (tučné odrážky)."""
+def build_areas_appendix(
+    names: Sequence[str],
+    *,
+    bold_names: bool = False,
+) -> OdtRichContent:
+    """Příloha A – přehled oblastí / procesů (volitelně tučné názvy)."""
     cleaned = [str(name or "").strip() for name in names if str(name or "").strip()]
     if not cleaned:
         return OdtRichContent(paragraphs=[OdtParagraph.text("Nejsou evidovány.")])
-    return OdtRichContent(
-        paragraphs=[OdtParagraph.bullet_bold_name(name) for name in cleaned]
-    )
+    if bold_names:
+        paragraphs = [OdtParagraph.bullet_bold_name(name) for name in cleaned]
+    else:
+        paragraphs = [OdtParagraph.text(f"• {name}") for name in cleaned]
+    return OdtRichContent(paragraphs=paragraphs)
 
 
 def build_detailed_control_points_appendix(

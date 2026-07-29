@@ -17,6 +17,7 @@ from moduly.koordinace_bozp.constants import COORD_HEADER_EMPLOYERS, TAB_EMPLOYE
 from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
     CoordinationEmployerError,
     coordination_employer_service,
+    employer_abbreviation,
 )
 from moduly.koordinace_bozp.ui.coordination_employer_dialog import (
     CoordinationEmployerDialog,
@@ -180,7 +181,8 @@ class CoordinationEmployersTab(CoordinationTabEditPolicyMixin, QWidget):
         answer = QMessageBox.question(
             self,
             "Aktivovat",
-            f"Opravdu aktivovat zaměstnavatele {employer.abbreviation or employer.company_name}?",
+            f"Opravdu aktivovat zaměstnavatele "
+            f"{employer_abbreviation(employer) or employer.company_name}?",
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )
@@ -212,7 +214,8 @@ class CoordinationEmployersTab(CoordinationTabEditPolicyMixin, QWidget):
         answer = QMessageBox.question(
             self,
             "Deaktivovat",
-            f"Opravdu deaktivovat zaměstnavatele {employer.abbreviation or employer.company_name}?",
+            f"Opravdu deaktivovat zaměstnavatele "
+            f"{employer_abbreviation(employer) or employer.company_name}?",
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )

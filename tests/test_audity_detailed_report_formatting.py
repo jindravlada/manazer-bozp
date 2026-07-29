@@ -162,7 +162,7 @@ class AudityDetailedReportFormattingTestCase(unittest.TestCase):
         Image.new("RGB", size, color=(20, 120, 200)).save(absolute, format="JPEG")
         return relative, absolute
 
-    def test_protocol_appendix_still_plain_line_breaks(self) -> None:
+    def test_protocol_appendix_b_uses_bold_section_headings(self) -> None:
         audit = self._create_finished_audit()
         self._set_result(
             audit.id,
@@ -175,17 +175,21 @@ class AudityDetailedReportFormattingTestCase(unittest.TestCase):
             audit, config=PROTOCOL_DOCUMENT_CONFIG
         )
         appendix = context.appendix_assertions_text()
-        self.assertIsInstance(appendix, str)
-        self.assertIn("🟢 Tvrzení protokol", appendix)
-        self.assertNotIn("Poznámka auditora", appendix)
+        from core.export.odt_engine import OdtRichContent
+
+        self.assertIsInstance(appendix, OdtRichContent)
+        plain = appendix.plain_text()
+        self.assertIn("🟢 Tvrzení protokol", plain)
+        self.assertNotIn("Poznámka auditora", plain)
 
         path = protokol_audit_service.generate_for_audit(audit)
         content = _odt_content(path)
         self.assertIn("Tvrzení protokol", content)
         self.assertNotIn('draw:style-name="ExportImage"', content)
-        self.assertNotIn("AuditNote", content)
-        # Protokol zůstává v jednom odstavci s line-break.
-        self.assertIn("<text:line-break/>", content)
+        # Nadpisy sekcí v příloze B jsou tučné (AuditCriterion), stejně jako u prověrek.
+        appendix_b = content.split("Příloha B", 1)[1]
+        self.assertIn('text:style-name="AuditCriterion"', appendix_b)
+        self.assertNotIn('text:style-name="AuditNote"', appendix_b)
 
     def test_photo_odt_structure_styles_manifest_and_aspect_ratio(self) -> None:
         audit = self._create_finished_audit()
@@ -338,7 +342,7 @@ class AudityDetailedReportFormattingTestCase(unittest.TestCase):
         )
         self.assertEqual(margin_left, "0.7cm")
 
-    def test_appendix_a_process_names_are_bold(self) -> None:
+    def test_appendix_a_process_names_are_not_bold(self) -> None:
         audit = self._create_finished_audit()
         # Bez plánovaných procesů builder vezme názvy z control_results.
         self._set_result(
@@ -350,20 +354,17 @@ class AudityDetailedReportFormattingTestCase(unittest.TestCase):
         path = protokol_audit_service.generate_detailed_report_for_audit(audit)
         content = _odt_content(path)
 
-        self.assertIn('text:style-name="AuditBold"', content)
-        self.assertRegex(
-            content,
-            r'<text:span text:style-name="AuditBold">Řízení rizik</text:span>',
-        )
-        # Odrážka samotná není uvnitř tučného spanu.
-        self.assertRegex(
-            content,
-            r">• <text:span text:style-name=\"AuditBold\">Řízení rizik</text:span>",
-        )
+        appendix_a = content.split("Příloha A", 1)[1].split("Příloha B", 1)[0]
+        self.assertIn("• Řízení rizik", appendix_a)
+        self.assertNotIn('text:style-name="AuditBold"', appendix_a)
+        self.assertNotIn('fo:font-weight="bold"', appendix_a)
 
         protocol_path = protokol_audit_service.generate_for_audit(audit)
         protocol_content = _odt_content(protocol_path)
-        self.assertNotIn('text:style-name="AuditBold"', protocol_content)
+        protocol_a = protocol_content.split("Příloha A", 1)[1].split("Příloha B", 1)[0]
+        self.assertNotIn('text:style-name="AuditBold"', protocol_a)
+        # Příloha B protokolu: nadpisy sekcí tučně (stejně jako u prověrek).
+        self.assertIn('text:style-name="AuditCriterion"', protocol_content)
 
     def test_detailed_appendix_uses_separate_paragraphs(self) -> None:
         audit = self._create_finished_audit()

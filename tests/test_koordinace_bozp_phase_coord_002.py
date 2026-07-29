@@ -75,6 +75,8 @@ with patch.object(Path, "home", return_value=_TMP):
         CoordinationEmployerError,
         coordination_employer_service,
         default_abbreviation,
+        employer_abbreviation,
+        resolve_abbreviation,
     )
     from moduly.koordinace_bozp.ui.bozp_coordination_dialog import BozpCoordinationDialog
     from moduly.nastaveni.sluzby.settings_service import settings_service
@@ -104,6 +106,7 @@ class KoordinaceBozpPhaseCoord002TestCase(unittest.TestCase):
             name="Hlavní firma s.r.o.",
             address="Praha 1",
             nace="",
+            abbreviation="",
         )
 
     def test_model_and_table(self) -> None:
@@ -141,7 +144,11 @@ class KoordinaceBozpPhaseCoord002TestCase(unittest.TestCase):
         self.assertEqual(main.address, "Praha 1")
         self.assertTrue(main.active)
         self.assertEqual(main.sort_order, 1)
-        self.assertEqual(main.abbreviation, default_abbreviation("Hlavní firma s.r.o."))
+        self.assertEqual(main.abbreviation, "")
+        self.assertEqual(
+            employer_abbreviation(main),
+            default_abbreviation("Hlavní firma s.r.o."),
+        )
 
     def test_main_employer_cannot_be_deactivated(self) -> None:
         coordination = bozp_coordination_service.create_coordination(
@@ -250,9 +257,9 @@ class KoordinaceBozpPhaseCoord002TestCase(unittest.TestCase):
         )
         employers = coordination_employer_service.list_for_coordination(coordination.id)
         self.assertEqual(
-            [item.abbreviation for item in employers],
+            [employer_abbreviation(item) for item in employers],
             [
-                employers[0].abbreviation,
+                employer_abbreviation(employers[0]),
                 "AAA",
                 "BBB",
             ],
@@ -272,8 +279,57 @@ class KoordinaceBozpPhaseCoord002TestCase(unittest.TestCase):
             coordination_employer_service.add_participant(
                 coordination.id,
                 company_name="Kopie",
-                abbreviation=main.abbreviation,
+                abbreviation=employer_abbreviation(main),
             )
+
+    def test_manual_abbreviation_has_priority(self) -> None:
+        coordination = bozp_coordination_service.create_coordination(
+            subject="Ruční zkratka",
+            meeting_date=date.today(),
+        )
+        participant = coordination_employer_service.add_participant(
+            coordination.id,
+            company_name="Stavební společnost Alfa",
+            abbreviation="RUCNI",
+        )
+        self.assertEqual(participant.abbreviation, "RUCNI")
+        self.assertEqual(employer_abbreviation(participant), "RUCNI")
+        self.assertNotEqual(
+            employer_abbreviation(participant),
+            default_abbreviation("Stavební společnost Alfa"),
+        )
+
+    def test_empty_abbreviation_uses_automatic(self) -> None:
+        coordination = bozp_coordination_service.create_coordination(
+            subject="Automatická zkratka",
+            meeting_date=date.today(),
+        )
+        participant = coordination_employer_service.add_participant(
+            coordination.id,
+            company_name="Beta stavební a.s.",
+            abbreviation="",
+        )
+        self.assertEqual(participant.abbreviation, "")
+        self.assertEqual(
+            employer_abbreviation(participant),
+            default_abbreviation("Beta stavební a.s."),
+        )
+        self.assertEqual(
+            resolve_abbreviation("", "Beta stavební a.s."),
+            "BSA",
+        )
+
+        main = coordination_employer_service.list_for_coordination(coordination.id)[0]
+        cleared = coordination_employer_service.update_employer(
+            main.id,
+            abbreviation="",
+        )
+        assert cleared is not None
+        self.assertEqual(cleared.abbreviation, "")
+        self.assertEqual(
+            employer_abbreviation(cleared),
+            default_abbreviation("Hlavní firma s.r.o."),
+        )
 
     def test_dialog_employers_tab(self) -> None:
         coordination = bozp_coordination_service.create_coordination(

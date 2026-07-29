@@ -75,7 +75,7 @@ class DashboardPhase97aTestCase(unittest.TestCase):
         self.assertIn("Aktivita 2", text)
         self.assertNotIn("Aktivita 0", text)
 
-    def test_audit_uses_start_date_after_started(self) -> None:
+    def test_audit_with_start_date_is_shown(self) -> None:
         planned = date.today() + timedelta(days=10)
         started = date.today() - timedelta(days=1)
         audit = audit_service.create_audit(
@@ -88,16 +88,15 @@ class DashboardPhase97aTestCase(unittest.TestCase):
         )
         self.assertEqual(match.due_date, started)
 
-    def test_audit_uses_planned_date_before_start(self) -> None:
+    def test_audit_without_start_date_is_not_in_attention(self) -> None:
         planned = date.today() + timedelta(days=8)
         audit = audit_service.create_audit(
             workplace_name="Plánovaný",
             audit_date=planned,
         )
-        match = next(
-            item for item in get_attention_items() if item.entity_id == audit.id
+        self.assertFalse(
+            any(item.entity_id == audit.id for item in get_attention_items())
         )
-        self.assertEqual(match.due_date, planned)
 
     def test_inspection_uses_start_date_after_started(self) -> None:
         planned = date.today() + timedelta(days=12)
@@ -140,7 +139,7 @@ class DashboardPhase97aTestCase(unittest.TestCase):
         task_service.create_task(title="Objednat měření", due_date=due)
         audit_service.create_audit(
             workplace_name="Provoz Delta",
-            audit_date=due,
+            started_at=due,
         )
         panel = CalendarPlaceholderWidget()
         events = panel.calendar._day_events.get(due, [])

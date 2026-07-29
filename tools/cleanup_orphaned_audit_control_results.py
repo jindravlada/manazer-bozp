@@ -3,19 +3,25 @@
 
 Skript NENÍ volán aplikací ani migrací — spouští se ručně.
 
+Stačí systémový Python 3 (bez .venv, bez SQLAlchemy / PySide6).
+Čte jen SQLite databázi a JSON metodiku v ``ciselniky/audity/``.
+
 Výchozí režim: projde všechny řádky ``control_results`` s ``entity_type='audity'``
 a odstraní ty, jejichž ``source_control_point_id`` už není mezi aktuálními
 auditními tvrzeními dané sekce v metodice (stejné kritérium jako A12.3).
 
 Volitelně lze omezit na jeden audit přes ``--audit``.
 
-Platné výsledky se nemažou jen proto, že mají stav „Není relevantní“
-(``nelze_posoudit``).
+Příklad na notebooku bez venv::
+
+    python3 tools/cleanup_orphaned_audit_control_results.py --dry-run
+    python3 tools/cleanup_orphaned_audit_control_results.py --apply
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import shutil
 import sqlite3
 import sys
@@ -24,13 +30,18 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+ENTITY_AUDITY = "audity"
 
-from core.shared.constants import ENTITY_AUDITY, CONTROL_RESULT_LABELS
-from core.services.storage_service import storage_service
-from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
+CONTROL_RESULT_LABELS: dict[str, str] = {
+    "nekontrolovano": "○ Nekontrolováno",
+    "vyhovuje": "🟢 Vyhovuje",
+    "vyhovuje_s_doporucenim": "🟡 Vyhovuje s doporučením",
+    "nevyhovuje": "🔴 Nevyhovuje",
+    "nelze_posoudit": "⚪ Nelze posoudit",
+}
+
+DEFAULT_DATA_DIR = Path.home() / ".local" / "share" / "manazer-bozp"
+DEFAULT_DB_PATH = DEFAULT_DATA_DIR / "databaze" / "manager_bozp.db"
 
 
 @dataclass(frozen=True)
@@ -48,6 +59,14 @@ class OrphanCandidate:
     section_label: str
 
 
+def _load_json(path: Path) -> dict | list | None:
+    try:
+        with path.open(encoding="utf-8") as handle:
+            return json.load(handle)
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        return None
+
+
 def _iter_knowledge_sections(sections: list) -> list[dict]:
     collected: list[dict] = []
     for section in sections:
@@ -60,46 +79,123 @@ def _iter_knowledge_sections(sections: list) -> list[dict]:
     return collected
 
 
+def _get_active_items(items: list | None) -> list[dict]:
+    active = [
+        item
+        for item in (items or [])
+        if isinstance(item, dict) and item.get("aktivni", True)
+    ]
+    active.sort(
+        key=lambda item: (
+            int(item.get("poradi") or 0),
+            str(item.get("nazev") or item.get("text") or "").lower(),
+        )
+    )
+    return active
+
+
+def _audit_questions_from_section(section: dict) -> list[dict]:
+    auditni_tvrzeni = section.get("auditni_tvrzeni")
+    if auditni_tvrzeni:
+        normalized: list[dict] = []
+        for raw in _get_active_items(auditni_tvrzeni):
+            item_id = str(raw.get("id") or "").strip()
+            text = str(raw.get("text") or raw.get("nazev") or "").strip()
+            if item_id and text:
+                normalized.append({"id": item_id, "text": text})
+        return normalized
+
+    for field in ("navodne_otazky", "kontrolni_body", "auditni_otazky"):
+        items = section.get(field)
+        if items:
+            return _get_active_items(items)
+    return []
+
+
+class MethodologyIndex:
+    """Načte aktuální ID auditních tvrzení z ``ciselniky/audity`` (jen stdlib)."""
+
+    def __init__(self, audity_dir: Path) -> None:
+        self.audity_dir = audity_dir
+        self._process_files: dict[str, str] = {}
+        self._knowledge_cache: dict[str, dict | None] = {}
+        self._section_cache: dict[tuple[str, str], set[str] | None] = {}
+        self._load_processes()
+
+    def _load_processes(self) -> None:
+        payload = _load_json(self.audity_dir / "procesy.json")
+        if not isinstance(payload, dict):
+            return
+        for process in payload.get("procesy") or []:
+            if not isinstance(process, dict):
+                continue
+            process_id = str(process.get("id") or "").strip()
+            knowledge_file = str(process.get("soubor_znalosti") or "").strip()
+            if process_id and knowledge_file:
+                self._process_files[process_id] = knowledge_file
+
+    def _load_knowledge(self, process_id: str) -> dict | None:
+        if process_id in self._knowledge_cache:
+            return self._knowledge_cache[process_id]
+        relative = self._process_files.get(process_id)
+        if not relative:
+            self._knowledge_cache[process_id] = None
+            return None
+        path = self.audity_dir / relative
+        if not path.is_file():
+            self._knowledge_cache[process_id] = None
+            return None
+        payload = _load_json(path)
+        knowledge = payload if isinstance(payload, dict) else None
+        self._knowledge_cache[process_id] = knowledge
+        return knowledge
+
+    def section_assertion_ids(self, process_id: str, section_id: str) -> set[str] | None:
+        """Vrátí ID aktuálních tvrzení sekce, nebo None pokud sekce v metodice není."""
+        key = (process_id, section_id)
+        if key in self._section_cache:
+            return self._section_cache[key]
+
+        if not process_id or not section_id:
+            self._section_cache[key] = None
+            return None
+
+        knowledge = self._load_knowledge(process_id)
+        if not knowledge:
+            self._section_cache[key] = None
+            return None
+
+        for section in _iter_knowledge_sections(knowledge.get("sekce") or []):
+            if str(section.get("id") or "").strip() != section_id:
+                continue
+            if not section.get("aktivni", True):
+                self._section_cache[key] = set()
+                return self._section_cache[key]
+            self._section_cache[key] = {
+                str(item.get("id") or "").strip()
+                for item in _audit_questions_from_section(section)
+                if str(item.get("id") or "").strip()
+            }
+            return self._section_cache[key]
+
+        self._section_cache[key] = None
+        return None
+
+
+# Kompatibilita se stávajícími testy (stejné jméno helperu).
 def _section_assertion_ids(
     process_id: str,
     section_id: str,
     *,
     cache: dict[tuple[str, str], set[str] | None],
+    methodology: MethodologyIndex,
 ) -> set[str] | None:
-    """Vrátí ID aktuálních tvrzení sekce, nebo None pokud sekce v metodice není."""
     key = (process_id, section_id)
     if key in cache:
         return cache[key]
-
-    if not process_id or not section_id:
-        cache[key] = None
-        return None
-
-    process = audit_knowledge_service.get_process_by_id(process_id, ensure=False)
-    if process is None:
-        cache[key] = None
-        return None
-
-    knowledge = audit_knowledge_service.load_process_knowledge(process, ensure=False)
-    if not knowledge:
-        cache[key] = None
-        return None
-
-    for section in _iter_knowledge_sections(knowledge.get("sekce") or []):
-        if str(section.get("id") or "").strip() != section_id:
-            continue
-        if not section.get("aktivni", True):
-            cache[key] = set()
-            return cache[key]
-        cache[key] = {
-            str(item.get("id") or "").strip()
-            for item in audit_knowledge_service.get_audit_questions(section)
-            if str(item.get("id") or "").strip()
-        }
-        return cache[key]
-
-    cache[key] = None
-    return None
+    value = methodology.section_assertion_ids(process_id, section_id)
+    cache[key] = value
+    return value
 
 
 def resolve_audit_id(connection: sqlite3.Connection, audit_ref: str) -> int:
@@ -133,6 +229,7 @@ def _load_audit_numbers(connection: sqlite3.Connection) -> dict[int, str]:
 
 def find_orphaned_candidates(
     connection: sqlite3.Connection,
+    methodology: MethodologyIndex,
     *,
     audit_id: int | None = None,
 ) -> list[OrphanCandidate]:
@@ -181,7 +278,6 @@ def find_orphaned_candidates(
         result = str(result or "").strip()
         entity_id = int(entity_id)
 
-        # Musí odkazovat na konkrétní tvrzení.
         if not assertion_id:
             continue
 
@@ -189,6 +285,7 @@ def find_orphaned_candidates(
             area_id,
             section_id,
             cache=section_cache,
+            methodology=methodology,
         )
         if assertion_ids is None:
             # Proces/sekce v metodice neexistuje — ponechat (není bezpečně osiřelé).
@@ -279,30 +376,27 @@ def integrity_ok(connection: sqlite3.Connection) -> tuple[bool, str]:
 
 def resolve_data_dir(db_path: Path, data_dir: Path | None) -> Path:
     if data_dir is not None:
-        return data_dir.resolve()
+        return data_dir.expanduser().resolve()
     if db_path.parent.name == "databaze":
         return db_path.parent.parent.resolve()
-    return storage_service.base.resolve()
-
-
-def configure_knowledge_root(data_dir: Path) -> None:
-    """Nasměruje knowledge service na číselníky vedle zvolené databáze."""
-    storage_service.base = data_dir
-    (data_dir / "ciselniky").mkdir(parents=True, exist_ok=True)
+    return DEFAULT_DATA_DIR.resolve()
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Bezpečné odstranění osiřelých control_results auditních tvrzení "
-            "z celé SQLite databáze (jednorázový nástroj)."
+            "z celé SQLite databáze (jednorázový nástroj, jen stdlib)."
         ),
     )
     parser.add_argument(
         "--db",
-        required=True,
         type=Path,
-        help="Cesta k SQLite databázi (např. .../databaze/manager_bozp.db).",
+        default=DEFAULT_DB_PATH,
+        help=(
+            "Cesta k SQLite databázi "
+            f"(výchozí: {DEFAULT_DB_PATH})."
+        ),
     )
     parser.add_argument(
         "--audit",
@@ -317,8 +411,8 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=None,
         help=(
-            "Kořen uživatelských dat s ciselniky/ (výchozí: rodič adresáře databaze/). "
-            "Slouží k načtení aktuální metodiky auditu."
+            "Kořen uživatelských dat s ciselniky/ "
+            "(výchozí: rodič adresáře databaze/)."
         ),
     )
     parser.add_argument(
@@ -348,11 +442,18 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     apply_changes = bool(args.apply)
-    # Bez --apply vždy dry-run (i když uživatel nepřepne --dry-run).
     dry_run = not apply_changes
 
     data_dir = resolve_data_dir(db_path, args.data_dir)
-    configure_knowledge_root(data_dir)
+    audity_dir = data_dir / "ciselniky" / "audity"
+    if not (audity_dir / "procesy.json").is_file():
+        print(
+            f"CHYBA: Nenalezena metodika auditu: {audity_dir / 'procesy.json'}",
+            file=sys.stderr,
+        )
+        return 2
+
+    methodology = MethodologyIndex(audity_dir)
 
     connection = sqlite3.connect(db_path)
     try:
@@ -363,11 +464,15 @@ def main(argv: list[str] | None = None) -> int:
         else:
             scope_label = "celá databáze (všechny audity)"
 
-        candidates = find_orphaned_candidates(connection, audit_id=audit_id)
+        candidates = find_orphaned_candidates(
+            connection,
+            methodology,
+            audit_id=audit_id,
+        )
         mode = "APPLY" if apply_changes else "DRY-RUN"
         print(f"Režim: {mode}")
         print(f"Databáze: {db_path}")
-        print(f"Metodika (ciselniky): {data_dir / 'ciselniky' / 'audity'}")
+        print(f"Metodika (ciselniky): {audity_dir}")
         print_candidates(candidates, scope_label=scope_label)
 
         if dry_run:

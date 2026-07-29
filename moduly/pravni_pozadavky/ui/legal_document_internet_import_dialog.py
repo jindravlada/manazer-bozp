@@ -1,7 +1,6 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QApplication,
-    QComboBox,
     QDialog,
     QFormLayout,
     QLabel,
@@ -16,7 +15,6 @@ from core.widgets.dialog_utils import (
     configure_resizable_form_dialog,
     wrap_in_scroll_area,
 )
-from moduly.pravni_pozadavky.constants import DOCUMENT_TYPE_LABELS, VALID_DOCUMENT_TYPES
 from moduly.pravni_pozadavky.import_export.legal_document_json_import_service import (
     LegalDocumentJsonImportResult,
 )
@@ -45,15 +43,13 @@ class LegalDocumentInternetImportDialog(QDialog):
         form_widget = QWidget()
         form = QFormLayout(form_widget)
 
-        self.document_type = QComboBox()
-        self.document_type.addItem("— vyberte —", "")
-        for key in sorted(DOCUMENT_TYPE_LABELS, key=lambda item: DOCUMENT_TYPE_LABELS[item]):
-            self.document_type.addItem(DOCUMENT_TYPE_LABELS[key], key)
+        self.type_hint = QLabel("Typ předpisu se určí automaticky podle údajů z e-Sbírky.")
+        self.type_hint.setWordWrap(True)
 
         self.number = QLineEdit()
         self.year = QLineEdit()
 
-        form.addRow("Typ předpisu:", self.document_type)
+        form.addRow("Typ předpisu:", self.type_hint)
         form.addRow("Číslo:", self.number)
         form.addRow("Rok:", self.year)
         return form_widget
@@ -62,13 +58,11 @@ class LegalDocumentInternetImportDialog(QDialog):
         year_text = self.year.text().strip()
         year = int(year_text) if year_text else None
         return {
-            "document_type": self.document_type.currentData() or "",
             "number": self.number.text().strip(),
             "year": year,
         }
 
     def _set_import_in_progress(self, active: bool) -> None:
-        self.document_type.setEnabled(not active)
         self.number.setEnabled(not active)
         self.year.setEnabled(not active)
         self.button_box.setEnabled(not active)
@@ -83,9 +77,6 @@ class LegalDocumentInternetImportDialog(QDialog):
 
     def accept(self) -> None:
         data = self.get_data()
-        if data["document_type"] not in VALID_DOCUMENT_TYPES:
-            QMessageBox.warning(self, "Import Internet", "Typ předpisu je povinný.")
-            return
         if not data["number"]:
             QMessageBox.warning(self, "Import Internet", "Číslo předpisu je povinné.")
             return
@@ -98,7 +89,6 @@ class LegalDocumentInternetImportDialog(QDialog):
 
         try:
             self.import_result = legal_document_internet_import_service.import_from_internet(
-                document_type=data["document_type"],
                 number=data["number"],
                 year=data["year"],
                 on_status=self._update_status,

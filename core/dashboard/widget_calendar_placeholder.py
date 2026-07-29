@@ -5,15 +5,11 @@ from PySide6.QtGui import QColor, QPainter, QTextCharFormat
 from PySide6.QtWidgets import QCalendarWidget, QSizePolicy, QTableView, QToolTip
 
 from core.dashboard.attention_service import (
-    audit_attention_due_date,
     audit_title,
-    inspection_attention_due_date,
     inspection_title,
 )
 from core.dashboard.widget_base import DashboardPanel
-from moduly.audity.constants import AUDIT_STATUS_DOKONCENO
 from moduly.audity.sluzby.audit_service import audit_service
-from moduly.proverky.constants import INSPECTION_STATUS_DOKONCENO
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 from moduly.ukoly.sluzby.task_service import task_service
 
@@ -277,20 +273,13 @@ class CalendarPlaceholderWidget(DashboardPanel):
                 day_events.setdefault(done_date, []).append(label)
 
         for audit in audit_service.get_all():
-            if audit.status == AUDIT_STATUS_DOKONCENO or audit.finished_at is not None:
-                continue
-            due = audit_attention_due_date(audit)
+            due = audit.started_at
             if due is None:
                 continue
             day_events.setdefault(due, []).append(audit_title(audit))
 
         for inspection in bozp_inspection_service.get_all():
-            if (
-                inspection.status == INSPECTION_STATUS_DOKONCENO
-                or inspection.finished_at is not None
-            ):
-                continue
-            due = inspection_attention_due_date(inspection)
+            due = inspection.started_at
             if due is None:
                 continue
             day_events.setdefault(due, []).append(inspection_title(inspection))

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from moduly.pravni_pozadavky.constants import (
     DEFAULT_PROCESSING_STATUS,
+    SECTION_ATTACHMENT,
     SECTION_LETTER,
     SECTION_PARAGRAPH,
     SECTION_SUBSECTION,
@@ -19,16 +20,22 @@ from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
 from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
 from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
 
-REQUIREMENT_IMPORT_STATUS_OK = "OK"
+REQUIREMENT_IMPORT_STATUS_CREATED = "Vytvořeno"
+REQUIREMENT_IMPORT_STATUS_EXTENDED = "Rozšířeno"
 REQUIREMENT_IMPORT_STATUS_ERROR = "Chyba"
 REQUIREMENT_IMPORT_STATUS_SKIPPED = "Přeskočeno"
 
+REQUIREMENT_IMPORT_STATUS_OK = REQUIREMENT_IMPORT_STATUS_CREATED
+
 DUPLICATE_SKIP_MESSAGE = "Požadavek již existuje"
+ALL_SOURCES_ALREADY_LINKED_MESSAGE = "Všechny podklady již existují"
+ARCHIVED_PROCESS_CODE_MESSAGE = "Proces s tímto kódem je archivovaný."
 
 _IMPORTABLE_SECTION_TYPES = frozenset({
     SECTION_PARAGRAPH,
     SECTION_SUBSECTION,
     SECTION_LETTER,
+    SECTION_ATTACHMENT,
 })
 
 _ProvisionProgressCallback = Callable[[int, int, str], None]
@@ -47,10 +54,12 @@ class LegalRequirementJsonImportItem:
     document_year: int
     provision_label: str
     sources: tuple[LegalRequirementJsonImportSource, ...]
+    process_code: str
     title: str
     fulfillment_text: str
     note: str
     processing_status: str
+    update_processing_status: bool
 
 
 @dataclass(frozen=True)
@@ -64,10 +73,15 @@ class LegalRequirementJsonImportRowResult:
 @dataclass(frozen=True)
 class LegalRequirementJsonImportSummary:
     total: int
-    ok_count: int
+    created_count: int
+    extended_count: int
     error_count: int
     skipped_count: int
     rows: list[LegalRequirementJsonImportRowResult]
+
+    @property
+    def ok_count(self) -> int:
+        return self.created_count
 
 
 def normalize_document_number(value: str) -> str:
@@ -175,17 +189,28 @@ def parse_import_items(data) -> list[LegalRequirementJsonImportItem]:
                     f"Položka {index}, podklad {source_index}: provision_label je povinné.",
                 )
 
-        processing_status = str(raw_item.get("processing_status", "")).strip()
+        raw_processing_status = raw_item.get("processing_status")
+        if raw_processing_status is None:
+            processing_status = DEFAULT_PROCESSING_STATUS
+            update_processing_status = False
+        else:
+            processing_status = str(raw_processing_status).strip()
+            update_processing_status = bool(processing_status)
+            if not processing_status:
+                processing_status = DEFAULT_PROCESSING_STATUS
+
         items.append(
             LegalRequirementJsonImportItem(
                 document_number=document_number,
                 document_year=document_year,
                 provision_label=provision_label,
                 sources=sources,
+                process_code=str(raw_item.get("process_code", "")).strip(),
                 title=str(raw_item.get("title", "")).strip(),
                 fulfillment_text=str(raw_item.get("fulfillment_text", "")).strip(),
                 note=str(raw_item.get("note", "")).strip(),
-                processing_status=processing_status or DEFAULT_PROCESSING_STATUS,
+                processing_status=processing_status,
+                update_processing_status=update_processing_status,
             ),
         )
     return items
@@ -241,7 +266,12 @@ class LegalRequirementJsonImportService:
 
         return LegalRequirementJsonImportSummary(
             total=total,
-            ok_count=sum(1 for row in rows if row.status == REQUIREMENT_IMPORT_STATUS_OK),
+            created_count=sum(
+                1 for row in rows if row.status == REQUIREMENT_IMPORT_STATUS_CREATED
+            ),
+            extended_count=sum(
+                1 for row in rows if row.status == REQUIREMENT_IMPORT_STATUS_EXTENDED
+            ),
             error_count=sum(1 for row in rows if row.status == REQUIREMENT_IMPORT_STATUS_ERROR),
             skipped_count=sum(
                 1 for row in rows if row.status == REQUIREMENT_IMPORT_STATUS_SKIPPED
@@ -251,17 +281,47 @@ class LegalRequirementJsonImportService:
 
     def _import_item(self, item: LegalRequirementJsonImportItem) -> LegalRequirementJsonImportRowResult:
         item_label = self._item_label(item)
-        resolved_sections = []
-        for source in item.sources:
-            document = self._find_active_document(source.document_number, source.document_year)
-            if document is None:
-                raise ValueError("Právní předpis nebyl nalezen.")
+        resolved_sections = self._resolve_sections(item)
 
-            section = self._find_section_by_provision_label(document.id, source.provision_label)
-            if section is None:
-                raise ValueError("Ustanovení nebylo nalezeno.")
-            resolved_sections.append((document, section))
+        if item.process_code:
+            return self._import_item_with_process_code(item, item_label, resolved_sections)
+        return self._import_item_legacy(item, item_label, resolved_sections)
 
+    def _import_item_with_process_code(
+        self,
+        item: LegalRequirementJsonImportItem,
+        item_label: str,
+        resolved_sections: list[tuple],
+    ) -> LegalRequirementJsonImportRowResult:
+        existing = legal_requirement_service.get_by_process_code(item.process_code)
+        if existing is not None:
+            return self._extend_existing_process(
+                existing,
+                item,
+                item_label,
+                resolved_sections,
+            )
+
+        archived = legal_requirement_service.get_by_process_code(
+            item.process_code,
+            active_only=False,
+        )
+        if archived is not None:
+            raise ValueError(ARCHIVED_PROCESS_CODE_MESSAGE)
+
+        return self._create_new_process(
+            item,
+            item_label,
+            resolved_sections,
+            process_code=item.process_code,
+        )
+
+    def _import_item_legacy(
+        self,
+        item: LegalRequirementJsonImportItem,
+        item_label: str,
+        resolved_sections: list[tuple],
+    ) -> LegalRequirementJsonImportRowResult:
         for _document, section in resolved_sections:
             existing = legal_requirement_service.get_by_source_section_id(section.id)
             if existing is not None:
@@ -272,11 +332,64 @@ class LegalRequirementJsonImportService:
                     error=DUPLICATE_SKIP_MESSAGE,
                 )
 
+        return self._create_new_process(item, item_label, resolved_sections)
+
+    def _extend_existing_process(
+        self,
+        requirement,
+        item: LegalRequirementJsonImportItem,
+        item_label: str,
+        resolved_sections: list[tuple],
+    ) -> LegalRequirementJsonImportRowResult:
+        attached_count = 0
+        skipped_count = 0
+
+        for _document, section in resolved_sections:
+            existing = legal_requirement_service.get_by_source_section_id(section.id)
+            if existing is not None:
+                if existing.id == requirement.id:
+                    skipped_count += 1
+                    continue
+                raise ValueError("Ustanovení je již přiřazeno jinému procesu.")
+            legal_requirement_service.attach_source_section(requirement.id, section.id)
+            attached_count += 1
+
+        display_title = requirement.title or requirement.regulation_name or item.title
+
+        if attached_count == 0:
+            return LegalRequirementJsonImportRowResult(
+                item_label=item_label,
+                status=REQUIREMENT_IMPORT_STATUS_SKIPPED,
+                title=display_title,
+                error=ALL_SOURCES_ALREADY_LINKED_MESSAGE,
+            )
+
+        self._apply_optional_updates(requirement.id, item)
+        detail_parts = [f"Připojeno podkladů: {attached_count}"]
+        if skipped_count:
+            detail_parts.append(f"Přeskočeno duplicit: {skipped_count}")
+
+        return LegalRequirementJsonImportRowResult(
+            item_label=item_label,
+            status=REQUIREMENT_IMPORT_STATUS_EXTENDED,
+            title=display_title,
+            error="; ".join(detail_parts),
+        )
+
+    def _create_new_process(
+        self,
+        item: LegalRequirementJsonImportItem,
+        item_label: str,
+        resolved_sections: list[tuple],
+        *,
+        process_code: str = "",
+    ) -> LegalRequirementJsonImportRowResult:
         primary_document, primary_section = resolved_sections[0]
         sections_by_id = legal_section_service.build_sections_map([primary_section])
         source_section_ids = [section.id for _document, section in resolved_sections]
         legal_requirement_service.create_requirement(
             title=item.title,
+            process_code=process_code or None,
             regulation_name=(primary_document.title or "").strip(),
             regulation_number=legal_document_regulation_number(primary_document),
             provision=legal_section_provision_label(primary_section, sections_by_id=sections_by_id),
@@ -290,9 +403,33 @@ class LegalRequirementJsonImportService:
         )
         return LegalRequirementJsonImportRowResult(
             item_label=item_label,
-            status=REQUIREMENT_IMPORT_STATUS_OK,
+            status=REQUIREMENT_IMPORT_STATUS_CREATED,
             title=item.title,
             error="",
+        )
+
+    def _resolve_sections(
+        self,
+        item: LegalRequirementJsonImportItem,
+    ) -> list[tuple]:
+        resolved_sections = []
+        for source in item.sources:
+            document = self._find_active_document(source.document_number, source.document_year)
+            if document is None:
+                raise ValueError("Právní předpis nebyl nalezen.")
+
+            section = self._find_section_by_provision_label(document.id, source.provision_label)
+            if section is None:
+                raise ValueError("Ustanovení nebylo nalezeno.")
+            resolved_sections.append((document, section))
+        return resolved_sections
+
+    def _apply_optional_updates(self, requirement_id: int, item: LegalRequirementJsonImportItem) -> None:
+        legal_requirement_service.patch_import_metadata(
+            requirement_id,
+            requirement_summary=item.fulfillment_text or None,
+            note=item.note or None,
+            processing_status=item.processing_status if item.update_processing_status else None,
         )
 
     def _find_active_document(self, document_number: str, document_year: int):
@@ -340,16 +477,17 @@ class LegalRequirementJsonImportService:
         return max(versions, key=lambda version: version.id)
 
     def _item_label(self, item: LegalRequirementJsonImportItem) -> str:
+        process_prefix = f"{item.process_code} – " if item.process_code else ""
         if len(item.sources) == 1:
             source = item.sources[0]
             number = normalize_document_number(source.document_number)
-            return f"{number}/{source.document_year} – {source.provision_label}"
+            return f"{process_prefix}{number}/{source.document_year} – {source.provision_label}"
         labels = []
         for source in item.sources:
             number = normalize_document_number(source.document_number)
             labels.append(f"{number}/{source.document_year} – {source.provision_label}")
         title = item.title or "Požadavek"
-        return f"{title} ({len(item.sources)} podkladů: {', '.join(labels)})"
+        return f"{process_prefix}{title} ({len(item.sources)} podkladů: {', '.join(labels)})"
 
     def _notify_progress(
         self,

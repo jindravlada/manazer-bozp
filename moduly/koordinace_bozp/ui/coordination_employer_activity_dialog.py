@@ -19,6 +19,7 @@ from moduly.koordinace_bozp.sluzby.coordination_employer_activity_service import
 )
 from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
     coordination_employer_service,
+    employer_abbreviation,
 )
 from moduly.koordinace_bozp.sluzby.coordination_workplace_service import (
     coordination_workplace_service,
@@ -107,7 +108,7 @@ class CoordinationEmployerActivityDialog(QDialog):
         for item in employers:
             if not item.active and item.id != preserve_id:
                 continue
-            label = f"{item.abbreviation} – {item.company_name}".strip(" –")
+            label = f"{employer_abbreviation(item)} – {item.company_name}".strip(" –")
             if not item.active:
                 label = f"{label} (neaktivní)"
             self.employer.addItem(label, item.id)

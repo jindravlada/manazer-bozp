@@ -2,17 +2,19 @@
 
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
+from moduly.proverky.constants import VERIFICATION_TYPE_DOCUMENTATION
 from moduly.proverky.ui.bozp_knowledge_section_widget import BozpKnowledgeSectionWidget
 
 
 class BozpAreaKnowledgeWidget(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, *, verification_filter: str = VERIFICATION_TYPE_DOCUMENTATION):
         super().__init__(parent)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.section_widget = BozpKnowledgeSectionWidget()
+        self.section_widget.set_verification_filter(verification_filter)
         layout.addWidget(self.section_widget)
 
     def show_section(
@@ -35,6 +37,9 @@ class BozpAreaKnowledgeWidget(QWidget):
 
     def set_inspection_id(self, inspection_id: int | None) -> None:
         self.section_widget.set_inspection_id(inspection_id)
+
+    def set_verification_filter(self, verification_type: str) -> None:
+        self.section_widget.set_verification_filter(verification_type)
 
     def set_on_finding_saved(self, callback) -> None:
         self.section_widget.set_on_finding_saved(callback)

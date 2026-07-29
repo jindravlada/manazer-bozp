@@ -13,6 +13,10 @@ class SettingsRepository:
             stmt = select(Employer).limit(1)
             return session.scalars(stmt).first()
 
+    def list_employers(self) -> list[Employer]:
+        with get_session() as session:
+            return list(session.scalars(select(Employer)))
+
     def save_employer(self, employer: Employer) -> Employer:
         with get_session() as session:
             employer = session.merge(employer)

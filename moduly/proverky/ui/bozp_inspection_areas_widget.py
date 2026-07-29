@@ -17,11 +17,21 @@ from moduly.proverky.constants import (
     AREA_NOT_IMPLEMENTED_TEXT,
     KNOWLEDGE_CONTROL_PROCEDURE_BUTTON_LABEL,
     KNOWLEDGE_EDIT_FROM_CARD_LABEL,
+    TAB_KONTROLOVANE_OBLASTI,
+    TAB_TEREN,
+    TERRAIN_CHECKLIST_BUTTON_LABEL,
+    TERRAIN_CHECKLIST_DIALOG_TITLE,
+    TERRAIN_CHECKLIST_REQUIRES_SAVED,
+    TERRAIN_CHECKLIST_TOOLTIP,
+    VERIFICATION_TYPE_DOCUMENTATION,
+    VERIFICATION_TYPE_TERRAIN,
 )
+from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 from moduly.proverky.sluzby.proverky_knowledge_service import (
     KnowledgeTreeNode,
     proverky_knowledge_service,
 )
+from moduly.proverky.sluzby.terrain_checklist_service import terrain_checklist_service
 from moduly.proverky.ui.bozp_area_knowledge_widget import BozpAreaKnowledgeWidget
 from moduly.proverky.ui.bozp_knowledge_tree_widget import BozpKnowledgeTreeWidget
 from moduly.proverky.ui.proverky_control_procedure_dialog import ProverkyControlProcedureDialog
@@ -29,14 +39,30 @@ from moduly.proverky.ui.proverky_knowledge_editor_dialog import ProverkyKnowledg
 
 
 class BozpInspectionAreasWidget(QWidget):
-    """Záložka Kontrolované oblasti — znalostní strom a pracovní karta."""
+    """Záložka Kontrolované oblasti / Terén — stejný strom a pracovní karta."""
 
     _PAGE_HINT = 0
     _PAGE_PLACEHOLDER = 1
     _PAGE_KNOWLEDGE = 2
 
-    def __init__(self, parent=None):
+    def __init__(
+        self,
+        parent=None,
+        *,
+        verification_type: str = VERIFICATION_TYPE_DOCUMENTATION,
+        show_checklist_button: bool = False,
+    ):
         super().__init__(parent)
+
+        self._verification_type = (
+            VERIFICATION_TYPE_TERRAIN
+            if verification_type == VERIFICATION_TYPE_TERRAIN
+            else VERIFICATION_TYPE_DOCUMENTATION
+        )
+        self._tab_title = (
+            TAB_TEREN if self._verification_type == VERIFICATION_TYPE_TERRAIN else TAB_KONTROLOVANE_OBLASTI
+        )
+        self._inspection_id: int | None = None
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -73,8 +99,28 @@ class BozpInspectionAreasWidget(QWidget):
         self.control_procedure_btn.setEnabled(False)
 
         header_row.addWidget(self.area_title_label, 1)
-        header_row.addWidget(self.control_procedure_btn, 0, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
-        header_row.addWidget(self.edit_knowledge_btn, 0, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+        header_row.addWidget(
+            self.control_procedure_btn,
+            0,
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop,
+        )
+        header_row.addWidget(
+            self.edit_knowledge_btn,
+            0,
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop,
+        )
+
+        self.checklist_btn: QPushButton | None = None
+        if show_checklist_button:
+            self.checklist_btn = QPushButton(TERRAIN_CHECKLIST_BUTTON_LABEL)
+            self.checklist_btn.setToolTip(TERRAIN_CHECKLIST_TOOLTIP)
+            self.checklist_btn.setEnabled(False)
+            self.checklist_btn.clicked.connect(self._export_terrain_checklist)
+            header_row.addWidget(
+                self.checklist_btn,
+                0,
+                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop,
+            )
 
         self.area_description_label = QLabel()
         self.area_description_label.setObjectName("InfoText")
@@ -83,7 +129,9 @@ class BozpInspectionAreasWidget(QWidget):
         self.content_stack = QStackedWidget()
         self.content_stack.addWidget(self._build_hint_page())
         self.content_stack.addWidget(self._build_placeholder_page())
-        self.knowledge_widget = BozpAreaKnowledgeWidget()
+        self.knowledge_widget = BozpAreaKnowledgeWidget(
+            verification_filter=self._verification_type
+        )
         self.content_stack.addWidget(self.knowledge_widget)
 
         detail_layout.addLayout(header_row)
@@ -101,7 +149,10 @@ class BozpInspectionAreasWidget(QWidget):
         self.reload_areas()
 
     def set_inspection_id(self, inspection_id: int | None) -> None:
+        self._inspection_id = inspection_id
         self.knowledge_widget.set_inspection_id(inspection_id)
+        if self.checklist_btn is not None:
+            self.checklist_btn.setEnabled(inspection_id is not None)
 
     def set_on_finding_saved(self, callback) -> None:
         self.knowledge_widget.set_on_finding_saved(callback)
@@ -112,9 +163,37 @@ class BozpInspectionAreasWidget(QWidget):
     def refresh_findings_display(self) -> None:
         self.knowledge_widget.refresh_findings_display()
 
+    def refresh(self) -> None:
+        self.refresh_findings_display()
+
     def reload_areas(self) -> None:
         self.knowledge_tree.reload_tree()
         self._show_hint()
+
+    def _export_terrain_checklist(self) -> None:
+        if self._inspection_id is None:
+            QMessageBox.information(
+                self,
+                TERRAIN_CHECKLIST_DIALOG_TITLE,
+                TERRAIN_CHECKLIST_REQUIRES_SAVED,
+            )
+            return
+        inspection = bozp_inspection_service.get_by_id(self._inspection_id)
+        if inspection is None:
+            QMessageBox.warning(
+                self,
+                TERRAIN_CHECKLIST_DIALOG_TITLE,
+                "Prověrka nebyla nalezena.",
+            )
+            return
+        try:
+            terrain_checklist_service.open_for_inspection(inspection)
+        except Exception as exc:
+            QMessageBox.warning(
+                self,
+                TERRAIN_CHECKLIST_DIALOG_TITLE,
+                f"Terénní checklist se nepodařilo vygenerovat.\n\n{exc}",
+            )
 
     def _build_hint_page(self) -> QWidget:
         page = QWidget()
@@ -217,7 +296,7 @@ class BozpInspectionAreasWidget(QWidget):
         self._current_section_id = ""
         self._current_section_label = ""
         self.control_procedure_btn.setEnabled(False)
-        self.area_title_label.setText("Kontrolované oblasti")
+        self.area_title_label.setText(self._tab_title)
         self.area_description_label.setText("Vyberte sekci ve stromu znalostí vlevo.")
         self.area_description_label.setVisible(True)
         self.knowledge_widget.clear_section()

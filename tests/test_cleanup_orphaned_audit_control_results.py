@@ -60,7 +60,7 @@ class CleanupOrphanedAuditControlResultsTestCase(unittest.TestCase):
                 section = candidate
                 break
         self.assertIsNotNone(section)
-        questions = audit_knowledge_service.get_audit_questions(section)
+        questions = cleanup_module._audit_questions_from_section(section)
         self.assertTrue(questions)
         current = questions[0]
         current_id = str(current.get("id") or "").strip()
