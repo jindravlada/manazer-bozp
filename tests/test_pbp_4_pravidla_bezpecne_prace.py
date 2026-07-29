@@ -246,16 +246,15 @@ class PravidlaBezpecnePracePhasePbp4TestCase(unittest.TestCase):
                 return_value=Path("/tmp/pbp4.odt"),
             ),
             patch(
-                "moduly.rizeni_rizik.ui.pravidla_bezpecne_prace_dialog.QMessageBox.information"
-            ) as info,
+                "moduly.rizeni_rizik.ui.pravidla_bezpecne_prace_dialog.PbpValidationResultsDialog"
+            ) as results_cls,
         ):
             dialog._generate()
 
-        info.assert_called_once()
-        message = info.call_args.args[2]
-        self.assertIn("nejsou formulována", message)
-        self.assertIn("Počet nalezených pravidel:\n3", message)
-        self.assertIn("Nevhodně formulovaných:\n2", message)
+        results_cls.assert_called_once()
+        warnings = results_cls.call_args.kwargs["warnings"]
+        self.assertEqual(len(warnings), 2)
+        results_cls.return_value.exec.assert_called_once()
 
     def test_dialog_skips_quality_warning_when_all_ok(self) -> None:
         dialog = PravidlaBezpecnePraceDialog()
@@ -275,12 +274,12 @@ class PravidlaBezpecnePracePhasePbp4TestCase(unittest.TestCase):
                 return_value=Path("/tmp/pbp4-ok.odt"),
             ),
             patch(
-                "moduly.rizeni_rizik.ui.pravidla_bezpecne_prace_dialog.QMessageBox.information"
-            ) as info,
+                "moduly.rizeni_rizik.ui.pravidla_bezpecne_prace_dialog.PbpValidationResultsDialog"
+            ) as results_cls,
         ):
             dialog._generate()
 
-        info.assert_not_called()
+        results_cls.assert_not_called()
 
 
 if __name__ == "__main__":

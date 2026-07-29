@@ -36,6 +36,7 @@ from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
     SOURCE_TYPE_ROLE,
     effective_target_refs,
 )
+from moduly.rizeni_rizik.sluzby.hazard_event_service import hazard_event_service
 from moduly.rizeni_rizik.sluzby.hazard_existing_measure_service import (
     hazard_existing_measure_service,
 )
@@ -157,6 +158,30 @@ def is_unsuitable_employee_rule(text: str) -> bool:
     if _is_short_noun_phrase_without_verb(lowered):
         return True
     return False
+
+
+UNSUITABLE_EMPLOYEE_RULE_REASON = (
+    "Formulace není vhodná jako pravidlo bezpečné práce pro zaměstnance."
+)
+
+
+def unsuitable_employee_rule_reason(text: str) -> str:
+    """Důvod nevhodnosti – bez změny detekčních pravidel."""
+    if not is_unsuitable_employee_rule(text):
+        return ""
+    return UNSUITABLE_EMPLOYEE_RULE_REASON
+
+
+def rule_text_is_unsuitable(text: str) -> bool:
+    """Stejná logika jako při generování: jakýkoli nevhodný řádek → True."""
+    normalized = normalize_rule_text(text)
+    if not normalized:
+        return False
+    return any(
+        is_unsuitable_employee_rule(line)
+        for line in normalized.split("\n")
+        if line.strip()
+    )
 
 
 def severity_rank(severity: str | None) -> int:
@@ -404,6 +429,71 @@ class PravidlaBezpecnePraceService:
     ) -> list[PravidloBezpecnePrace]:
         """Vrátí pravidla označená jako nevhodně formulovaná pro zaměstnance."""
         return [rule for rule in rules if rule.unsuitable_for_employee]
+
+    def apply_rule_text(
+        self,
+        rule: PravidloBezpecnePrace,
+        new_text: str,
+    ) -> PravidloBezpecnePrace:
+        """Přepíše popis zdrojových opatření a vrátí aktualizované pravidlo."""
+        from dataclasses import replace
+
+        normalized = normalize_rule_text(new_text)
+        if not normalized:
+            raise ValueError("Text pravidla nesmí být prázdný.")
+
+        measure_ids = [int(source.measure_id) for source in rule.sources]
+        if not measure_ids:
+            measure_ids = [int(rule.measure_id)]
+
+        for measure_id in measure_ids:
+            measure = hazard_existing_measure_service.get_by_id(measure_id)
+            if measure is None:
+                raise ValueError(f"Opatření #{measure_id} nebylo nalezeno.")
+            identification_id = rule.source_hazard_id
+            for source in rule.sources:
+                if int(source.measure_id) == measure_id and source.source_hazard_id:
+                    identification_id = source.source_hazard_id
+                    break
+            if identification_id is None:
+                from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import (
+                    hazard_inventory_item_service,
+                )
+
+                assessment = hazard_risk_assessment_service.get_by_id(
+                    int(measure.hazard_risk_assessment_id)
+                )
+                if assessment is None:
+                    raise ValueError(
+                        f"Posouzení pro opatření #{measure_id} nebylo nalezeno."
+                    )
+                event = hazard_event_service.get_by_id(assessment.hazard_event_id)
+                if event is None:
+                    raise ValueError(
+                        f"Událost pro opatření #{measure_id} nebyla nalezena."
+                    )
+                inventory_item = hazard_inventory_item_service.get_by_id(
+                    event.inventory_item_id
+                )
+                if inventory_item is None:
+                    raise ValueError(
+                        f"Zdroj rizika pro opatření #{measure_id} nebyl nalezen."
+                    )
+                identification_id = inventory_item.hazard_identification_id
+            hazard_existing_measure_service.update_measure(
+                measure_id,
+                hazard_identification_id=int(identification_id),
+                hazard_risk_assessment_id=int(measure.hazard_risk_assessment_id),
+                description=normalized,
+                note=measure.note or "",
+                active=bool(measure.active),
+            )
+
+        return replace(
+            rule,
+            text=normalized,
+            unsuitable_for_employee=rule_text_is_unsuitable(normalized),
+        )
 
     def export_document(
         self,

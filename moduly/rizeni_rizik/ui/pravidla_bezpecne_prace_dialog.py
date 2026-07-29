@@ -31,6 +31,9 @@ from moduly.rizeni_rizik.sluzby.hazard_identification_service import (
 from moduly.rizeni_rizik.sluzby.pravidla_bezpecne_prace_service import (
     pravidla_bezpecne_prace_service,
 )
+from moduly.rizeni_rizik.ui.pbp_validation_results_dialog import (
+    PbpValidationResultsDialog,
+)
 
 DIALOG_TITLE = "Pravidla bezpečné práce"
 
@@ -194,15 +197,25 @@ class PravidlaBezpecnePraceDialog(QDialog):
 
         warnings = pravidla_bezpecne_prace_service.quality_warnings(self._last_result)
         if warnings:
-            QMessageBox.information(
+            generate_kwargs = {
+                "role_ids": role_ids or None,
+                "endangered_group_ids": group_ids or None,
+                "operation_id": operation_id,
+                "workplace_id": workplace_id,
+                "workplace_part_id": workplace_part_id,
+            }
+
+            def _regenerate_warnings():
+                rules = pravidla_bezpecne_prace_service.generate(**generate_kwargs)
+                self._last_result = rules
+                return pravidla_bezpecne_prace_service.quality_warnings(rules)
+
+            results = PbpValidationResultsDialog(
                 self,
-                DIALOG_TITLE,
-                "Byla nalezena opatření, která nejsou formulována\n"
-                "jako pravidla bezpečné práce pro zaměstnance.\n\n"
-                "Doporučujeme upravit jejich znění.\n\n"
-                f"Počet nalezených pravidel:\n{len(self._last_result)}\n\n"
-                f"Nevhodně formulovaných:\n{len(warnings)}",
+                warnings=warnings,
+                regenerate_warnings=_regenerate_warnings,
             )
+            results.exec()
 
         self.accept()
 
