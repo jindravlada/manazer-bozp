@@ -135,6 +135,16 @@ AI_PEER_REVIEW_ZIP_FILES = (
     "schema_odpovedi.json",
 )
 
+# RISK-AI-17: soubory exportu zadání nejsou odpovědí AI.
+AI_PEER_REVIEW_EXPORT_RESPONSE_BASENAMES = frozenset(
+    name.casefold() for name in AI_PEER_REVIEW_ZIP_FILES
+)
+
+AI_PEER_REVIEW_NOT_AI_RESPONSE = (
+    "Vybrali jste exportní ZIP pro AI. "
+    "Pro import výsledků vyberte soubor *_odpoved.json."
+)
+
 AI_PEER_REVIEW_SCHEMA_VERSION = "1.1"
 AI_PEER_REVIEW_EXPORT_TYPE = "hazard_identification_ai_peer_review"
 AI_CATALOG_PEER_REVIEW_EXPORT_TYPE = "hazard_catalog_source_ai_peer_review"

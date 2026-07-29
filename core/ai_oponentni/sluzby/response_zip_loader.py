@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
 from core.ai_oponentni.constants import (
+    AI_PEER_REVIEW_EXPORT_RESPONSE_BASENAMES,
+    AI_PEER_REVIEW_NOT_AI_RESPONSE,
     AI_PEER_REVIEW_RESPONSE_ZIP_MAX_UNCOMPRESSED_BYTES,
     AI_PEER_REVIEW_RESPONSE_ZIP_PREFERRED_NAMES,
     AI_PEER_REVIEW_ZIP_CORRUPT,
@@ -39,8 +41,10 @@ class AiPeerReviewZipLoadResult:
 
 def discover_zip_response_entries(zip_path: Path) -> AiPeerReviewZipDiscovery:
     """Vrátí kandidáty a případně jediný soubor pro automatické načtení."""
-    entries = _list_supported_entries(zip_path)
+    entries, had_export_files = _list_supported_entries(zip_path)
     if not entries:
+        if had_export_files:
+            raise AiPeerReviewZipLoadError(AI_PEER_REVIEW_NOT_AI_RESPONSE)
         raise AiPeerReviewZipLoadError(AI_PEER_REVIEW_ZIP_NO_RESPONSE)
     auto_entry = _pick_auto_entry(entries)
     return AiPeerReviewZipDiscovery(entries=tuple(entries), auto_entry=auto_entry)
@@ -75,15 +79,22 @@ def load_response_from_zip(
     return AiPeerReviewZipLoadResult(text=text, entry_name=selected)
 
 
-def _list_supported_entries(zip_path: Path) -> list[str]:
+def _list_supported_entries(zip_path: Path) -> tuple[list[str], bool]:
+    """Vrátí (kandidáti odpovědi, zda ZIP obsahuje soubory exportu zadání)."""
     try:
         with zipfile.ZipFile(zip_path, "r") as zf:
             total_uncompressed = 0
             candidates: list[str] = []
+            had_export_files = False
             for info in zf.infolist():
                 if info.is_dir():
                     continue
                 if not _is_safe_zip_entry(info.filename):
+                    continue
+                basename = PurePosixPath(info.filename).name.casefold()
+                if basename in AI_PEER_REVIEW_EXPORT_RESPONSE_BASENAMES:
+                    # RISK-AI-17: export zadání nikdy není odpověď AI.
+                    had_export_files = True
                     continue
                 suffix = PurePosixPath(info.filename).suffix.casefold()
                 if suffix not in _SUPPORTED_SUFFIXES:
@@ -100,7 +111,7 @@ def _list_supported_entries(zip_path: Path) -> list[str]:
     except OSError as error:
         raise AiPeerReviewZipLoadError(AI_PEER_REVIEW_ZIP_CORRUPT) from error
 
-    return sorted(candidates, key=_entry_sort_key)
+    return sorted(candidates, key=_entry_sort_key), had_export_files
 
 
 def _read_zip_entry_text(zip_path: Path, entry_name: str) -> str:

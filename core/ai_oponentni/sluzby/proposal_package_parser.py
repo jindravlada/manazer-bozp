@@ -14,6 +14,7 @@ from core.ai_oponentni.constants import (
     AI_MEASURE_RECOMMENDATION_TYPES,
     AI_PEER_REVIEW_FORMAT_JSON_2_0,
     AI_PEER_REVIEW_FORMAT_TEXT_2_0,
+    AI_PEER_REVIEW_NOT_AI_RESPONSE,
     AI_PEER_REVIEW_PACKAGE_TYPE_EXTEND_EVENT,
     AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT,
     AI_PEER_REVIEW_SCHEMA_VERSION_2_0,
@@ -94,6 +95,9 @@ def parse_ai_proposal_packages_response(
             skip_reasons=outcome.skip_reasons,
         )
 
+    if isinstance(loaded, dict) and _looks_like_export_or_response_schema(loaded):
+        raise AiPeerReviewParseError(AI_PEER_REVIEW_NOT_AI_RESPONSE)
+
     text_packages, skip_reasons = _parse_text_package_response(raw)
     return AiProposalPackageParseResult(
         packages=text_packages,
@@ -104,10 +108,27 @@ def parse_ai_proposal_packages_response(
 
 
 def _looks_like_package_schema_response(payload: dict) -> bool:
-    schema_version = str(payload.get("schema_version") or "")
-    if schema_version == AI_PEER_REVIEW_SCHEMA_VERSION_2_0:
-        return True
+    """True jen pro instanci odpovědi AI (ne JSON Schema ani zadání)."""
+    source_reference = payload.get("source_reference")
+    if source_reference is None or not str(source_reference).strip():
+        return False
     return "proposal_packages" in payload or "measure_recommendations" in payload
+
+
+def _looks_like_export_or_response_schema(payload: dict) -> bool:
+    """Exportní ZIP (zadani/schema) nebo JSON Schema – není odpověď AI."""
+    if "$defs" in payload:
+        return True
+    if payload.get("type") == "object" and isinstance(payload.get("properties"), dict):
+        return True
+    if "export_type" in payload:
+        return True
+    if "catalog_source" in payload and "source_reference" not in payload:
+        return True
+    if str(payload.get("schema_version") or "") == AI_PEER_REVIEW_SCHEMA_VERSION_2_0:
+        if "proposal_packages" not in payload and "measure_recommendations" not in payload:
+            return True
+    return False
 
 
 def _parse_json_package_response(
