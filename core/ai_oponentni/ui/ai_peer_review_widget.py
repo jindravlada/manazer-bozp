@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
     QRadioButton,
     QScrollArea,
     QTableWidget,
+    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
@@ -404,6 +405,9 @@ class AiPeerReviewResponseDialog(QDialog):
 class AiPeerReviewWidget(QWidget):
     """Obecný widget oponentního posouzení – hostí libovolný doménový provider."""
 
+    _HISTORY_ROW_HEIGHT = 29
+    _HISTORY_HEADER_HEIGHT = 32
+
     def __init__(
         self,
         parent=None,
@@ -456,6 +460,9 @@ class AiPeerReviewWidget(QWidget):
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setAlternatingRowColors(True)
+        self.table.verticalHeader().setDefaultSectionSize(self._HISTORY_ROW_HEIGHT)
+        self.table.verticalHeader().setMinimumSectionSize(self._HISTORY_ROW_HEIGHT)
+        self.table.horizontalHeader().setFixedHeight(self._HISTORY_HEADER_HEIGHT)
         configure_table_columns(self.table, "ai_peer_reviews")
         enable_typed_sorting(self.table)
         self.table.itemSelectionChanged.connect(self._load_proposals_table)
@@ -1415,7 +1422,7 @@ class AiPeerReviewWidget(QWidget):
                 self.table.setItem(
                     row_index,
                     AI_PEER_REVIEW_COL_LOADED,
-                    create_typed_item(
+                    self._centered_history_item(
                         str(review.loaded_proposals_count),
                         typed_int(review.loaded_proposals_count),
                         stable_id=record_id,
@@ -1424,7 +1431,7 @@ class AiPeerReviewWidget(QWidget):
                 self.table.setItem(
                     row_index,
                     AI_PEER_REVIEW_COL_PENDING,
-                    create_typed_item(
+                    self._centered_history_item(
                         str(review.pending_proposals_count),
                         typed_int(review.pending_proposals_count),
                         stable_id=record_id,
@@ -1433,7 +1440,7 @@ class AiPeerReviewWidget(QWidget):
                 self.table.setItem(
                     row_index,
                     AI_PEER_REVIEW_COL_ACCEPTED,
-                    create_typed_item(
+                    self._centered_history_item(
                         str(review.accepted_count),
                         typed_int(review.accepted_count),
                         stable_id=record_id,
@@ -1442,7 +1449,7 @@ class AiPeerReviewWidget(QWidget):
                 self.table.setItem(
                     row_index,
                     AI_PEER_REVIEW_COL_REJECTED,
-                    create_typed_item(
+                    self._centered_history_item(
                         str(review.rejected_count),
                         typed_int(review.rejected_count),
                         stable_id=record_id,
@@ -1451,7 +1458,7 @@ class AiPeerReviewWidget(QWidget):
                 self.table.setItem(
                     row_index,
                     AI_PEER_REVIEW_COL_UNASSIGNED,
-                    create_typed_item(
+                    self._centered_history_item(
                         str(review.unassigned_count),
                         typed_int(review.unassigned_count),
                         stable_id=record_id,
@@ -1465,6 +1472,20 @@ class AiPeerReviewWidget(QWidget):
         configure_table_columns(self.table, "ai_peer_reviews")
         if rows:
             self.table.selectRow(0)
+
+    @staticmethod
+    def _centered_history_item(
+        text: str,
+        sort_value,
+        *,
+        stable_id: int,
+    ) -> QTableWidgetItem:
+        item = create_typed_item(text, sort_value, stable_id=stable_id)
+        item.setData(
+            Qt.ItemDataRole.TextAlignmentRole,
+            int(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter),
+        )
+        return item
 
     def _selected_proposal_ids(self) -> list[int]:
         selected_rows = self.proposals_table.selectionModel().selectedRows()

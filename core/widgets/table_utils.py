@@ -601,6 +601,7 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             AI_PEER_REVIEW_COL_ACCEPTED,
             AI_PEER_REVIEW_COL_EXPORT_DATE,
             AI_PEER_REVIEW_COL_FILENAME,
+            AI_PEER_REVIEW_COL_ID,
             AI_PEER_REVIEW_COL_LOADED,
             AI_PEER_REVIEW_COL_MODEL,
             AI_PEER_REVIEW_COL_PENDING,
@@ -610,19 +611,20 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         )
 
         widths = {
-            AI_PEER_REVIEW_COL_EXPORT_DATE: 130,
-            AI_PEER_REVIEW_COL_RESPONSE_DATE: 130,
-            AI_PEER_REVIEW_COL_MODEL: 120,
-            AI_PEER_REVIEW_COL_LOADED: 90,
-            AI_PEER_REVIEW_COL_PENDING: 90,
-            AI_PEER_REVIEW_COL_ACCEPTED: 80,
-            AI_PEER_REVIEW_COL_REJECTED: 80,
-            AI_PEER_REVIEW_COL_UNASSIGNED: 90,
-            AI_PEER_REVIEW_COL_FILENAME: 220,
+            AI_PEER_REVIEW_COL_EXPORT_DATE: 132,
+            AI_PEER_REVIEW_COL_RESPONSE_DATE: 156,
+            AI_PEER_REVIEW_COL_MODEL: 128,
+            AI_PEER_REVIEW_COL_LOADED: 88,
+            AI_PEER_REVIEW_COL_PENDING: 96,
+            AI_PEER_REVIEW_COL_ACCEPTED: 88,
+            AI_PEER_REVIEW_COL_REJECTED: 88,
+            AI_PEER_REVIEW_COL_UNASSIGNED: 92,
+            AI_PEER_REVIEW_COL_FILENAME: 280,
         }
         for column, width in widths.items():
             table.setColumnWidth(column, width)
-        table.setColumnHidden(0, True)
+        table.setColumnHidden(AI_PEER_REVIEW_COL_ID, True)
+        header.setSectionResizeMode(AI_PEER_REVIEW_COL_ID, QHeaderView.Fixed)
         header.setSectionResizeMode(AI_PEER_REVIEW_COL_FILENAME, QHeaderView.Stretch)
         for column in widths:
             if column != AI_PEER_REVIEW_COL_FILENAME:
