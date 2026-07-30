@@ -41,6 +41,7 @@ from moduly.vysetrovani_mu.constants import (
 )
 from moduly.vysetrovani_mu.ui.mu_findings_widget import MuFindingsWidget
 from moduly.vysetrovani_mu.ui.mu_investigation_source_panel import MuInvestigationSourcePanel
+from moduly.vysetrovani_mu.ui.mu_ishikawa_widget import MuIshikawaWidget
 from moduly.vysetrovani_mu.ui.mu_ohledani_mista_widget import MuOhledaniMistaWidget
 from moduly.vysetrovani_mu.ui.mu_oznameni_widget import MuOznameniWidget
 from moduly.vysetrovani_mu.ui.mu_source_selector_widget import MuSourceSelectorWidget
@@ -93,6 +94,9 @@ class MuInvestigationDialog(QDialog):
         self.tabs.addTab(self.dodrzovani_predpisu_widget, "Dodržování předpisů")
         self.kontrola_souladu_widget = MuKontrolaSouladuWidget()
         self.tabs.addTab(self.kontrola_souladu_widget, "Kontrola souladu")
+        # MU-UX-HYPOTHESIS-TABS-2 – hlavní záložky; mezi ně lze později vložit Bariéry.
+        self.ishikawa_widget = MuIshikawaWidget(on_findings_changed=self._refresh_findings_tab)
+        self.tabs.addTab(self.ishikawa_widget, "Hypotézy")
         self.findings_widget = MuFindingsWidget()
         self.tabs.addTab(self.findings_widget, "Zjištění")
         self.zaver_widget = MuZaverWidget()
@@ -116,6 +120,7 @@ class MuInvestigationDialog(QDialog):
         self.zajisteni_dukazu_widget.dukazy_cas_fotek.textChanged.connect(self._sync_casova_osa_zajisteni)
 
         investigation_id = investigation.id if investigation is not None else None
+        self.ishikawa_widget.set_investigation_id(investigation_id)
         self.findings_widget.set_investigation_id(investigation_id)
         self.zaver_widget.set_investigation_id(investigation_id)
 
@@ -145,7 +150,7 @@ class MuInvestigationDialog(QDialog):
                 getattr(investigation, "dodrzovani_predpisu_json", "") or ""
             )
             self.kontrola_souladu_widget.load_json(getattr(investigation, "kontrola_souladu_json", "") or "")
-            self.findings_widget.load_ishikawa_json(getattr(investigation, "ishikawa_json", "") or "")
+            self.ishikawa_widget.load_json(getattr(investigation, "ishikawa_json", "") or "")
             self.oznameni_widget.load_from_investigation(investigation)
         elif accident_id is not None:
             self._preset_from_accident(accident_id)
@@ -189,10 +194,15 @@ class MuInvestigationDialog(QDialog):
             )
         self.accept()
 
+    def _refresh_findings_tab(self) -> None:
+        self.findings_widget.refresh()
+
     def _on_tab_changed(self, index: int) -> None:
         if self.tabs.widget(index) is self.zaver_widget:
             self._refresh_zaver_sources()
             self.zaver_widget.refresh_measures_summary()
+        elif self.tabs.widget(index) is self.findings_widget:
+            self.findings_widget.refresh()
 
     def _refresh_zaver_sources(self) -> None:
         worker = self.lead_thp_worker_selector.current_person()
@@ -546,13 +556,6 @@ class MuInvestigationDialog(QDialog):
             if focused is not None:
                 return
 
-        # MU-UX-HYPOTHESIS-TABS-1 – vnitřní podzáložky Hypotézy / Zjištění.
-        if tab_name == "Zjištění" and field_name:
-            focused = self.findings_widget.focus_field(field_name)
-            if focused is not None:
-                self._focus_widget(focused)
-                return
-
         widget = self._field_widget(field_name)
         self._focus_widget(widget)
 
@@ -580,7 +583,7 @@ class MuInvestigationDialog(QDialog):
             "svedci": lambda: self.svedci_widget.pocet_svedku,
             "svedci_vyjadreni": lambda: self.svedci_widget.svedci_obsah,
             "casova_osa": lambda: self.casova_osa_widget.chronologie_table,
-            "ishikawa": lambda: self.findings_widget.ishikawa_widget.table,
+            "ishikawa": lambda: self.ishikawa_widget.table,
             "zjištění": lambda: self.findings_widget.table,
             "odpovedna_osoba": lambda: self.findings_widget.table,
             "termin": lambda: self.findings_widget.table,
@@ -633,7 +636,13 @@ class MuInvestigationDialog(QDialog):
             findings = finding_service.get_for_entity(ENTITY_MU_INVESTIGATION, investigation_id)
 
         try:
-            causes = json.loads(self.findings_widget.get_ishikawa_json() or "[]")
+            raw_causes = json.loads(self.ishikawa_widget.get_json() or "{}")
+            if isinstance(raw_causes, dict):
+                causes = raw_causes.get("causes") or []
+            elif isinstance(raw_causes, list):
+                causes = raw_causes
+            else:
+                causes = []
         except Exception:
             causes = []
 
@@ -712,6 +721,6 @@ class MuInvestigationDialog(QDialog):
             "dodrzovani_predpisu_json": self.dodrzovani_predpisu_widget.get_json(),
             "kontrola_souladu_json": self.kontrola_souladu_widget.get_json(),
             "zaver_json": self.zaver_widget.get_json(),
-            "ishikawa_json": self.findings_widget.get_ishikawa_json(),
+            "ishikawa_json": self.ishikawa_widget.get_json(),
             **self.oznameni_widget.get_data(),
         }

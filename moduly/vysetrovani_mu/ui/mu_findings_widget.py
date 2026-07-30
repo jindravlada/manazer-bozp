@@ -7,7 +7,6 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QStackedWidget,
-    QTabWidget,
     QTableWidget,
     QVBoxLayout,
     QWidget,
@@ -42,12 +41,6 @@ from core.widgets.typed_table_sort import (
     typed_text,
 )
 from moduly.vysetrovani_mu.constants import MU_INVESTIGATION_FINDING_TYPES
-from moduly.vysetrovani_mu.ui.mu_ishikawa_widget import MuIshikawaWidget
-
-# MU-UX-HYPOTHESIS-TABS-1 – vnitřní podzáložky (Bariéry lze později vložit mezi ně).
-INNER_TAB_HYPOTHESES = "Hypotézy"
-INNER_TAB_FINDINGS = "Zjištění"
-# Budoucí slot: INNER_TAB_BARRIERS = "Bariéry"
 
 _FINDING_STATUS_ORDER = (
     FINDING_STATUS_OTEVRENE,
@@ -71,43 +64,14 @@ def _text_or_empty(display: str):
 
 
 class MuFindingsWidget(QWidget):
+    """Hlavní záložka Zjištění – pouze editor zjištění (bez Ishikawa+)."""
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
         self.investigation_id: int | None = None
 
-        outer = QVBoxLayout(self)
-        outer.setContentsMargins(0, 0, 0, 0)
-
-        self.inner_tabs = QTabWidget()
-        self.inner_tabs.setObjectName("muFindingsInnerTabs")
-        self.ishikawa_widget = MuIshikawaWidget(on_findings_changed=self.refresh)
-
-        # Pořadí: Hypotézy → (později Bariéry) → Zjištění.
-        self.inner_tabs.addTab(self._build_hypotheses_page(), INNER_TAB_HYPOTHESES)
-        self.inner_tabs.addTab(self._build_findings_page(), INNER_TAB_FINDINGS)
-        outer.addWidget(self.inner_tabs)
-
-        self.add_btn.clicked.connect(self.add_finding)
-        self.edit_btn.clicked.connect(self.edit_finding)
-        self.delete_btn.clicked.connect(self.delete_finding)
-        self.table.doubleClicked.connect(self.edit_finding)
-        self.table.itemSelectionChanged.connect(self.task_actions.update_state)
-
-        self._update_state()
-        self.task_actions.update_state()
-
-    def _build_hypotheses_page(self) -> QWidget:
-        page = QWidget()
-        layout = QVBoxLayout(page)
-        layout.setContentsMargins(8, 8, 8, 8)
-        layout.addWidget(self.ishikawa_widget)
-        return page
-
-    def _build_findings_page(self) -> QWidget:
-        page = QWidget()
-        layout = QVBoxLayout(page)
-        layout.setContentsMargins(8, 8, 8, 8)
+        layout = QVBoxLayout(self)
 
         self.summary_panel = FindingSummaryPanel()
         self.info_label = QLabel("Zjištění lze přidat až po uložení vyšetřování.")
@@ -176,37 +140,20 @@ class MuFindingsWidget(QWidget):
         layout.addWidget(self.info_label)
         layout.addLayout(toolbar)
         layout.addWidget(self.content_stack, 1)
-        return page
 
-    def focus_field(self, field_name: str | None) -> QWidget | None:
-        """Přepne vnitřní podzáložku a vrátí widget pro zaměření (Kontrola spisu)."""
-        if not field_name:
-            return None
-        if field_name == "ishikawa":
-            self._show_inner_tab(INNER_TAB_HYPOTHESES)
-            return self.ishikawa_widget.table
-        if field_name in {"zjištění", "odpovedna_osoba", "termin"}:
-            self._show_inner_tab(INNER_TAB_FINDINGS)
-            return self.table
-        return None
+        self.add_btn.clicked.connect(self.add_finding)
+        self.edit_btn.clicked.connect(self.edit_finding)
+        self.delete_btn.clicked.connect(self.delete_finding)
+        self.table.doubleClicked.connect(self.edit_finding)
+        self.table.itemSelectionChanged.connect(self.task_actions.update_state)
 
-    def _show_inner_tab(self, title: str) -> None:
-        for index in range(self.inner_tabs.count()):
-            if self.inner_tabs.tabText(index) == title:
-                self.inner_tabs.setCurrentIndex(index)
-                return
+        self._update_state()
+        self.task_actions.update_state()
 
     def set_investigation_id(self, investigation_id: int | None) -> None:
         self.investigation_id = investigation_id
-        self.ishikawa_widget.set_investigation_id(investigation_id)
         self.refresh()
         self._update_state()
-
-    def load_ishikawa_json(self, raw_json: str) -> None:
-        self.ishikawa_widget.load_json(raw_json)
-
-    def get_ishikawa_json(self) -> str:
-        return self.ishikawa_widget.get_json()
 
     def refresh(self) -> None:
         findings = []

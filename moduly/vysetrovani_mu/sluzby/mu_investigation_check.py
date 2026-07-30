@@ -136,8 +136,8 @@ _CHECK_NAVIGATION: dict[str, tuple[str, str]] = {
     "casova_osa.events_missing": ("Časová osa", "casova_osa"),
     "casova_osa.sequence_error": ("Časová osa", "casova_osa"),
     "casova_osa.sequence_ok": ("Časová osa", "casova_osa"),
-    "ishikawa.none": ("Zjištění", "ishikawa"),
-    "ishikawa.rejected_chain": ("Zjištění", "ishikawa"),
+    "ishikawa.none": ("Hypotézy", "ishikawa"),
+    "ishikawa.rejected_chain": ("Hypotézy", "ishikawa"),
     "findings.unsaved": ("Zjištění", ""),
     "findings.none": ("Zjištění", "zjištění"),
     "findings.present": ("Zjištění", "zjištění"),
@@ -156,7 +156,7 @@ def _navigation_for(check_code: str, tab_name: str) -> tuple[str, str]:
         return _CHECK_NAVIGATION[check_code]
 
     prefixes = (
-        ("ishikawa.", ("Zjištění", "ishikawa")),
+        ("ishikawa.", ("Hypotézy", "ishikawa")),
         ("findings.responsible_missing", ("Zjištění", "odpovedna_osoba")),
         ("findings.due_missing", ("Zjištění", "termin")),
         ("findings.task_missing", ("Zjištění", "zjištění")),
@@ -812,7 +812,7 @@ def _check_ishikawa(snapshot: dict) -> list[InvestigationCheckResult]:
                 CHECK_SEVERITY_WARNING,
                 title="Nejsou zadány příčiny",
                 message="V Ishikawa+ není zadána žádná příčina.",
-                tab_name="Zjištění",
+                tab_name="Hypotézy",
                 check_code="ishikawa.none",
             )
         )
@@ -827,7 +827,7 @@ def _check_ishikawa(snapshot: dict) -> list[InvestigationCheckResult]:
                     CHECK_SEVERITY_WARNING,
                     title="Neplatný stav příčiny",
                     message=f"Příčina „{label}“ má neplatný nebo chybějící stav.",
-                    tab_name="Zjištění",
+                    tab_name="Hypotézy",
                     check_code=f"ishikawa.status_{cause.get('id', '')}",
                 )
             )
@@ -838,7 +838,7 @@ def _check_ishikawa(snapshot: dict) -> list[InvestigationCheckResult]:
                     CHECK_SEVERITY_WARNING,
                     title="Chybí stav příčiny",
                     message=f"Příčina „{label}“ nemá uveden stav.",
-                    tab_name="Zjištění",
+                    tab_name="Hypotézy",
                     check_code=f"ishikawa.status_missing_{cause.get('id', '')}",
                 )
             )
@@ -850,7 +850,7 @@ def _check_ishikawa(snapshot: dict) -> list[InvestigationCheckResult]:
                     CHECK_SEVERITY_WARNING,
                     title="Potvrzená příčina bez důkazů",
                     message=f"Příčina „{label}“ je potvrzena, ale chybí popis důkazů.",
-                    tab_name="Zjištění",
+                    tab_name="Hypotézy",
                     check_code=f"ishikawa.evidence_{cause.get('id', '')}",
                     suggested_task_title=f"Doplnit důkazy k příčině {label}",
                     suggested_task_description="Doplnit důkazní materiál nebo popis důkazů u potvrzené příčiny.",
@@ -863,7 +863,7 @@ def _check_ishikawa(snapshot: dict) -> list[InvestigationCheckResult]:
                 CHECK_SEVERITY_WARNING,
                 title="Navazující příčina na vyvrácené",
                 message=warning,
-                tab_name="Zjištění",
+                tab_name="Hypotézy",
                 check_code="ishikawa.rejected_chain",
             )
         )
@@ -881,7 +881,7 @@ def _check_ishikawa(snapshot: dict) -> list[InvestigationCheckResult]:
                     CHECK_SEVERITY_RECOMMENDATION,
                     title="Kořenová příčina bez zjištění",
                     message=f"Potvrzená příčina „{label}“ nemá navázané zjištění ani opatření.",
-                    tab_name="Zjištění",
+                    tab_name="Hypotézy",
                     check_code=f"ishikawa.root_no_finding_{cause.get('id', '')}",
                     suggested_task_title=f"Vytvořit zjištění k příčině {label}",
                     suggested_task_description="Z potvrzené kořenové příčiny vytvořit zjištění a navrhnout opatření.",
