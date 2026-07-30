@@ -196,22 +196,24 @@ class InstanceBackupUiTestCase(unittest.TestCase):
             warnings=[],
             notes=[],
         )
+        safety = MagicMock(path=str(storage_module.storage_service.backups_dir / "AUTO.mbbackup"))
         with patch.object(
             wf_mod.QFileDialog, "getOpenFileName", return_value=("/ok.mbbackup", "")
         ):
             with patch.object(wf_mod, "inspect_backup_integrity", return_value=report):
                 with patch.object(wf_mod.RestoreConfirmDialog, "exec", return_value=QDialog.DialogCode.Accepted):
-                    with patch.object(wf_mod, "dispose_database_engine", create=True):
-                        with patch(
-                            "core.database.session.dispose_database_engine"
-                        ):
-                            with patch.object(
-                                wf_mod, "restore_instance_backup", return_value=result
+                    with patch.object(wf_mod, "create_instance_backup", return_value=safety):
+                        with patch.object(wf_mod, "dispose_database_engine", create=True):
+                            with patch(
+                                "core.database.session.dispose_database_engine"
                             ):
-                                with patch.object(wf_mod.MessageWithDetailsDialog, "exec", return_value=1):
-                                    with patch.object(wf_mod.QMessageBox, "information"):
-                                        with patch.object(QApplication, "quit") as quit_mock:
-                                            ok = self.service.restore_instance_backup_ui(self.parent)
+                                with patch.object(
+                                    wf_mod, "restore_instance_backup", return_value=result
+                                ):
+                                    with patch.object(wf_mod.MessageWithDetailsDialog, "exec", return_value=1):
+                                        with patch.object(wf_mod.QMessageBox, "information"):
+                                            with patch.object(QApplication, "quit") as quit_mock:
+                                                ok = self.service.restore_instance_backup_ui(self.parent)
         self.assertTrue(ok)
         quit_mock.assert_called_once()
 
@@ -244,6 +246,7 @@ class InstanceBackupUiTestCase(unittest.TestCase):
             shown["kwargs"] = kwargs
             QDialog.__init__(self_dlg, parent)
 
+        safety = MagicMock(path=str(storage_module.storage_service.backups_dir / "AUTO.mbbackup"))
         with patch.object(
             wf_mod.QFileDialog, "getOpenFileName", return_value=("/ok.mbbackup", "")
         ):
@@ -251,13 +254,14 @@ class InstanceBackupUiTestCase(unittest.TestCase):
                 with patch.object(
                     wf_mod.RestoreConfirmDialog, "exec", return_value=QDialog.DialogCode.Accepted
                 ):
-                    with patch("core.database.session.dispose_database_engine"):
-                        with patch.object(wf_mod, "restore_instance_backup", side_effect=err):
-                            with patch.object(
-                                wf_mod.MessageWithDetailsDialog, "__init__", capture_init
-                            ):
-                                with patch.object(wf_mod.MessageWithDetailsDialog, "exec", return_value=1):
-                                    ok = self.service.restore_instance_backup_ui(self.parent)
+                    with patch.object(wf_mod, "create_instance_backup", return_value=safety):
+                        with patch("core.database.session.dispose_database_engine"):
+                            with patch.object(wf_mod, "restore_instance_backup", side_effect=err):
+                                with patch.object(
+                                    wf_mod.MessageWithDetailsDialog, "__init__", capture_init
+                                ):
+                                    with patch.object(wf_mod.MessageWithDetailsDialog, "exec", return_value=1):
+                                        ok = self.service.restore_instance_backup_ui(self.parent)
         self.assertFalse(ok)
         self.assertIn("nebyla změněna", shown["kwargs"]["message"])
 
@@ -276,6 +280,7 @@ class InstanceBackupUiTestCase(unittest.TestCase):
             shown["kwargs"] = kwargs
             QDialog.__init__(self_dlg, parent)
 
+        safety = MagicMock(path=str(storage_module.storage_service.backups_dir / "AUTO.mbbackup"))
         with patch.object(
             wf_mod.QFileDialog, "getOpenFileName", return_value=("/ok.mbbackup", "")
         ):
@@ -283,13 +288,14 @@ class InstanceBackupUiTestCase(unittest.TestCase):
                 with patch.object(
                     wf_mod.RestoreConfirmDialog, "exec", return_value=QDialog.DialogCode.Accepted
                 ):
-                    with patch("core.database.session.dispose_database_engine"):
-                        with patch.object(wf_mod, "restore_instance_backup", side_effect=err):
-                            with patch.object(
-                                wf_mod.MessageWithDetailsDialog, "__init__", capture_init
-                            ):
-                                with patch.object(wf_mod.MessageWithDetailsDialog, "exec", return_value=1):
-                                    self.service.restore_instance_backup_ui(self.parent)
+                    with patch.object(wf_mod, "create_instance_backup", return_value=safety):
+                        with patch("core.database.session.dispose_database_engine"):
+                            with patch.object(wf_mod, "restore_instance_backup", side_effect=err):
+                                with patch.object(
+                                    wf_mod.MessageWithDetailsDialog, "__init__", capture_init
+                                ):
+                                    with patch.object(wf_mod.MessageWithDetailsDialog, "exec", return_value=1):
+                                        self.service.restore_instance_backup_ui(self.parent)
         self.assertIn("vrácena", shown.get("kwargs", {}).get("message", "").lower())
 
     def test_rollback_failed_shows_marker(self) -> None:
@@ -307,18 +313,20 @@ class InstanceBackupUiTestCase(unittest.TestCase):
             shown["kwargs"] = kwargs
             QDialog.__init__(self_dlg, parent)
 
+        safety = MagicMock(path=str(storage_module.storage_service.backups_dir / "AUTO.mbbackup"))
         with patch.object(
             wf_mod.QFileDialog, "getOpenFileName", return_value=("/ok.mbbackup", "")
         ):
             with patch.object(wf_mod, "inspect_backup_integrity", return_value=report):
                 with patch.object(wf_mod.RestoreConfirmDialog, "exec", return_value=QDialog.DialogCode.Accepted):
-                    with patch("core.database.session.dispose_database_engine"):
-                        with patch.object(wf_mod, "restore_instance_backup", side_effect=err):
-                            with patch.object(
-                                wf_mod.MessageWithDetailsDialog, "__init__", capture_init
-                            ):
-                                with patch.object(wf_mod.MessageWithDetailsDialog, "exec", return_value=1):
-                                    self.service.restore_instance_backup_ui(self.parent)
+                    with patch.object(wf_mod, "create_instance_backup", return_value=safety):
+                        with patch("core.database.session.dispose_database_engine"):
+                            with patch.object(wf_mod, "restore_instance_backup", side_effect=err):
+                                with patch.object(
+                                    wf_mod.MessageWithDetailsDialog, "__init__", capture_init
+                                ):
+                                    with patch.object(wf_mod.MessageWithDetailsDialog, "exec", return_value=1):
+                                        self.service.restore_instance_backup_ui(self.parent)
         msg = shown.get("kwargs", {}).get("message", "")
         self.assertIn("mbrestore-in-progress", msg)
 

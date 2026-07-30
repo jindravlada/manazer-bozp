@@ -66,6 +66,7 @@ from core.backup.package_create import (
     DEFAULT_WORKSPACE_INCLUDE_DIRS,
     CreateInstanceBackupResult,
     InstanceBackupError,
+    auto_before_restore_backup_filename,
     create_instance_backup,
     default_instance_backup_filename,
 )
@@ -170,6 +171,7 @@ __all__ = [
     "build_file_entry",
     "component_for_archive_path",
     "create_backup_metadata",
+    "auto_before_restore_backup_filename",
     "create_instance_backup",
     "create_sqlite_snapshot",
     "default_instance_backup_filename",

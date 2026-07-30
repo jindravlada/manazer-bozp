@@ -101,6 +101,14 @@ def default_instance_backup_filename(timestamp: str | None = None) -> str:
     return f"manazer-bozp-instance-{stamp}{BACKUP_EXTENSION}"
 
 
+def auto_before_restore_backup_filename(timestamp: str | None = None) -> str:
+    """Název automatické nouzové zálohy před obnovou (BACKUP-RESTORE-SAFE-1)."""
+    from datetime import datetime
+
+    stamp = timestamp or datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    return f"AUTO_BEFORE_RESTORE_{stamp}{BACKUP_EXTENSION}"
+
+
 def resolve_settings_file(settings_path: Path | None = None) -> Path | None:
     """Vrátí existující soubor UI nastavení, nebo ``None``."""
     if settings_path is not None:

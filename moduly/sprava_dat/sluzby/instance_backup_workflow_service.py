@@ -18,6 +18,7 @@ from core.backup import (
     CreateInstanceBackupResult,
     InstanceBackupError,
     InstanceRestoreError,
+    auto_before_restore_backup_filename,
     create_instance_backup,
     default_instance_backup_filename,
     find_recovery_markers,
@@ -376,7 +377,9 @@ class InstanceBackupWorkflowService:
             f"Datum vytvoření zálohy: <b>{created}</b><br>"
             f"Verze aplikace v záloze: <b>{app_ver}</b><br><br>"
             f"Současná pracovní data (databáze, přílohy, nastavení…) "
-            f"<b>budou nahrazena</b> obsahem této zálohy."
+            f"<b>budou nahrazena</b> obsahem této zálohy.<br><br>"
+            f"Před obnovou bude automaticky vytvořena kompletní bezpečnostní "
+            f"záloha aktuálních dat."
             f"{warning_note}"
         )
         confirm = RestoreConfirmDialog(parent, summary_text=summary)
@@ -384,14 +387,43 @@ class InstanceBackupWorkflowService:
             return False
 
         progress = BackupProgressDialog(parent, title="Probíhá obnova")
-        progress.set_status("Uzavírám databázová připojení…")
+        progress.set_status("Vytvářím automatickou bezpečnostní zálohu…")
         progress.show()
         QApplication.processEvents()
         self._operation_running = True
 
+        safety_path: Path | None = None
+        try:
+
+            def on_safety_progress(message: str) -> None:
+                progress.set_status(message)
+                QApplication.processEvents()
+
+            safety_path = self._create_auto_before_restore_backup(
+                progress_callback=on_safety_progress
+            )
+        except Exception as exc:  # noqa: BLE001
+            progress.allow_close()
+            progress.close()
+            self._operation_running = False
+            MessageWithDetailsDialog(
+                parent,
+                title="Obnova ze zálohy",
+                message=(
+                    "<b>Obnova nebyla spuštěna.</b><br><br>"
+                    "Nepodařilo se vytvořit automatickou bezpečnostní zálohu "
+                    "aktuálních dat. Bez této zálohy nelze obnovu provést."
+                ),
+                details=str(exc),
+                level="critical",
+            ).exec()
+            return False
+
         try:
             from core.database.session import dispose_database_engine
 
+            progress.set_status("Uzavírám databázová připojení…")
+            QApplication.processEvents()
             dispose_database_engine()
 
             def on_progress(message: str) -> None:
@@ -431,6 +463,15 @@ class InstanceBackupWorkflowService:
                 f"• {w}" for w in result.warnings
             )
 
+        safety_text = ""
+        if safety_path is not None:
+            safety_text = (
+                "<br><br>Před obnovou byla automaticky vytvořena bezpečnostní "
+                "záloha aktuálních dat.<br>"
+                f"Soubor: <code>{safety_path.name}</code><br>"
+                f"Umístění: <code>{safety_path.parent}</code>"
+            )
+
         MessageWithDetailsDialog(
             parent,
             title="Obnova dokončena",
@@ -439,6 +480,7 @@ class InstanceBackupWorkflowService:
                 f"Workspace: <code>{result.workspace_root}</code><br>"
                 f"Integrita DB: {result.database_integrity}<br>"
                 "Pro načtení obnovených dat je nutný <b>restart aplikace</b>."
+                f"{safety_text}"
                 f"{warnings_text}"
             ),
             details="\n".join(result.notes or []),
@@ -452,6 +494,23 @@ class InstanceBackupWorkflowService:
         )
         QApplication.quit()
         return True
+
+    def _create_auto_before_restore_backup(
+        self,
+        *,
+        progress_callback=None,
+    ) -> Path:
+        """Kompletní nouzová záloha aktuálních dat před obnovou (BACKUP-RESTORE-SAFE-1).
+
+        Soubor se nikdy automaticky nemaže – ani při úspěšné, ani při neúspěšné obnově.
+        """
+        storage_service.ensure_structure()
+        target = storage_service.backups_dir / auto_before_restore_backup_filename()
+        result = create_instance_backup(
+            target,
+            progress_callback=progress_callback,
+        )
+        return Path(result.path).resolve()
 
     def _show_restore_error(self, parent: QWidget, exc: InstanceRestoreError) -> None:
         code = exc.code
