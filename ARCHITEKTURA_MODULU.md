@@ -254,6 +254,10 @@ Hromadná údržba kvality dat: nabídka **Nástroje → Analýza podobností...
 (`core/ui/similarity_analysis_dialog.py`, SIMILARITY-2). Porovnává párově
 všechny vybrané záznamy; v tomto sprintu pouze kontrolní otázky prověrek.
 
+Zkontrolované dvojice (SIMILARITY-3): tabulka `similarity_checked_pairs`,
+služba `core/shared/sluzby/similarity_checked_pair_service.py`. ID se
+normalizují (`min`/`max`); stejná evidence slouží i budoucím typům entit.
+
 ---
 
 ## 19. Cíl

@@ -68,6 +68,7 @@ def initialize_database() -> None:
     from moduly.pravni_pozadavky.modely.legal_check_run import LegalCheckRun  # noqa: F401
     from core.shared.modely.entity_link import EntityLink  # noqa: F401
     from core.shared.modely.control_result import ControlResult  # noqa: F401
+    from core.shared.modely.similarity_checked_pair import SimilarityCheckedPair  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_identification import HazardIdentification  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_event import HazardEvent  # noqa: F401
