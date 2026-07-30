@@ -82,8 +82,23 @@ from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_incorporate_service impo
 from moduly.rizeni_rizik.sluzby.hazard_library_template_existing_measure_service import (
     normalize_template_measure_description,
 )
+from moduly.rizeni_rizik.sluzby.hazard_library_template_event_service import (
+    HazardLibraryTemplateEventError,
+    normalize_template_event_name,
+)
 from moduly.rizeni_rizik.sluzby.hazard_library_template_service import (
     hazard_library_template_service,
+)
+
+CATALOG_INCORPORATE_ERROR_DUPLICATE_EVENT = (
+    "Balík se nepodařilo zapracovat.\n"
+    "Ve zdroji již existuje aktivní událost se stejným názvem.\n"
+    "Nebyly provedeny žádné změny."
+)
+CATALOG_INCORPORATE_ERROR_EMPTY_RESULT = (
+    "Balík se nepodařilo zapracovat.\n"
+    "Nebyla zapracována žádná položka.\n"
+    "Nebyly provedeny žádné změny."
 )
 
 
@@ -1162,13 +1177,14 @@ class HazardCatalogPackageIncorporateService:
         review_id: int | None = None,
         editor_session=None,
     ) -> CatalogPackageIncorporateResult:
-        """Zapracuje balík pouze do pracovní kopie; stav balíku až při Uložit."""
+        """Zapracuje balík pouze do pracovní kopie; stav balíku až při Uložit.
+
+        Operace je atomická: buď se změní celá pracovní kopie a balík se
+        označí jako staged, nebo zůstane původní obsah i stav beze změny.
+        """
         from moduly.rizeni_rizik.sluzby.catalog_editor_session import (
             SESSION_PACKAGE_PENDING,
             CatalogEditorSession,
-        )
-        from moduly.rizeni_rizik.sluzby.hazard_library_template_working_copy import (
-            WcLegalLink,
         )
 
         template = hazard_library_template_service.get_by_id(template_id)
@@ -1177,7 +1193,6 @@ class HazardCatalogPackageIncorporateService:
         if not template.active:
             raise HazardCatalogPackageIncorporateError(CATALOG_INCORPORATE_ERROR_SOURCE_INACTIVE)
 
-        session_pkg = None
         if editor_session is not None:
             if not isinstance(editor_session, CatalogEditorSession):
                 raise HazardCatalogPackageIncorporateError("Neplatná editorová session.")
@@ -1225,14 +1240,191 @@ class HazardCatalogPackageIncorporateService:
             for group_id, assessment_id in (group_assessment_overrides or {}).items()
         }
 
-        if resolved_package.package_type in AI_MEASURE_RECOMMENDATION_TYPES:
-            return self._incorporate_measure_recommendation_working_copy(
+        # Předvalidace nad původní kopií – žádné mutace.
+        self._validate_package_for_working_copy(
+            working_copy,
+            package=resolved_package,
+            export_id_map=export_id_map,
+            group_assessment_overrides=overrides,
+        )
+
+        candidate = working_copy.clone()
+        try:
+            if resolved_package.package_type in AI_MEASURE_RECOMMENDATION_TYPES:
+                result = self._apply_measure_recommendation_working_copy(
+                    candidate,
+                    package_record_id=package_record_id,
+                    package=resolved_package,
+                    export_id_map=export_id_map,
+                )
+            else:
+                result = self._apply_package_to_working_copy(
+                    candidate,
+                    package=resolved_package,
+                    export_id_map=export_id_map,
+                    group_assessment_overrides=overrides,
+                    package_record_id=package_record_id,
+                )
+        except HazardLibraryTemplateEventError as error:
+            message = str(error).strip()
+            if "stejným názvem" in message.casefold():
+                raise HazardCatalogPackageIncorporateError(
+                    CATALOG_INCORPORATE_ERROR_DUPLICATE_EVENT,
+                ) from error
+            raise HazardCatalogPackageIncorporateError(message) from error
+
+        # Teprve po úspěchu přeneseme změny a změníme stav balíku.
+        working_copy.replace_content_from(candidate)
+        if editor_session is not None:
+            item = editor_session.stage_for_incorporation(package_record_id)
+            editor_session.sync_review_stats(item.review_id)
+        else:
+            working_copy.queue_package_incorporate(package_record_id)
+        return result
+
+    def _validate_package_for_working_copy(
+        self,
+        working_copy,
+        *,
+        package: AiProposalPackage,
+        export_id_map: dict[str, dict],
+        group_assessment_overrides: dict[int, int],
+    ) -> None:
+        """Kompletní validace bez změny pracovní kopie."""
+        if package.package_type in AI_MEASURE_RECOMMENDATION_TYPES:
+            self._validate_measure_recommendation_for_working_copy(
                 working_copy,
-                editor_session=editor_session,
-                package_record_id=package_record_id,
-                package=resolved_package,
+                package=package,
                 export_id_map=export_id_map,
             )
+            return
+
+        event_id = self._wc_resolve_event_id(
+            working_copy,
+            package=package,
+            export_id_map=export_id_map,
+            create_if_missing=False,
+        )
+
+        for assessment in package.assessments:
+            group_ids = self._resolve_exposed_group_ids(assessment)
+            role_ids = self._resolve_responsibility_role_ids(assessment)
+            if not group_ids and not role_ids:
+                raise HazardCatalogPackageIncorporateError(
+                    CATALOG_INCORPORATE_ERROR_ASSESSMENT_GROUP.format(
+                        name=assessment.exposed_group or "posouzení",
+                    ),
+                )
+            if event_id is None:
+                continue
+            for group_id in group_ids:
+                matches = self._wc_find_active_assessments_containing_group(
+                    working_copy,
+                    template_event_id=event_id,
+                    group_id=group_id,
+                )
+                override_id = group_assessment_overrides.get(group_id)
+                if override_id is not None:
+                    override = working_copy.get_assessment(override_id)
+                    if (
+                        override is None
+                        or not override.active
+                        or int(override.template_event_id) != int(event_id)
+                    ):
+                        raise HazardCatalogPackageIncorporateError(
+                            "Vybrané cílové posouzení pro ohroženou skupinu není platné.",
+                        )
+                    matches = [override]
+                if len(matches) > 1:
+                    group_name = (
+                        exposed_group_service.display_name(group_id) or f"#{group_id}"
+                    )
+                    raise HazardCatalogPackageAmbiguousGroupError(
+                        group_id=group_id,
+                        group_name=group_name,
+                        candidates=tuple(
+                            self._wc_to_ambiguous_candidate(row) for row in matches
+                        ),
+                    )
+
+        for link in package.legal_links:
+            self._resolve_legal_document_id(link)
+
+    def _validate_measure_recommendation_for_working_copy(
+        self,
+        working_copy,
+        *,
+        package: AiProposalPackage,
+        export_id_map: dict[str, dict],
+    ) -> None:
+        if package.package_type == AI_MEASURE_REC_NO_CHANGE:
+            raise HazardCatalogPackageIncorporateError(
+                "Doporučení „Beze změn“ nelze převzít – nevyžaduje rozhodnutí."
+            )
+        if package.package_type == AI_MEASURE_REC_EDIT_EXISTING:
+            target = self._resolve_export_target(
+                export_id_map,
+                package.target_export_id,
+                expected_kind="existing_measure",
+            )
+            self._wc_assessment_id_for_measure(
+                working_copy,
+                int(target["id"]),
+                existing=True,
+            )
+            if not (package.proposed_text or "").strip():
+                raise HazardCatalogPackageIncorporateError(
+                    "Doporučení musí obsahovat text opatření."
+                )
+            return
+        if package.package_type == AI_MEASURE_REC_EDIT_REQUIRED:
+            target = self._resolve_export_target(
+                export_id_map,
+                package.target_export_id,
+                expected_kind="required_measure",
+            )
+            self._wc_assessment_id_for_measure(
+                working_copy,
+                int(target["id"]),
+                existing=False,
+            )
+            if not (package.proposed_text or "").strip():
+                raise HazardCatalogPackageIncorporateError(
+                    "Doporučení musí obsahovat text opatření."
+                )
+            return
+        if package.package_type == AI_MEASURE_REC_NEW_REQUIRED:
+            target = self._resolve_export_target(
+                export_id_map,
+                package.target_export_id,
+                expected_kind="assessment",
+            )
+            assessment = working_copy.get_assessment(int(target["id"]))
+            if assessment is None or not assessment.active:
+                raise HazardCatalogPackageIncorporateError(
+                    "Cílové posouzení pro nové Navazující opatření nebylo nalezeno."
+                )
+            if not (package.proposed_text or "").strip():
+                raise HazardCatalogPackageIncorporateError(
+                    "Doporučení musí obsahovat text opatření."
+                )
+            return
+        raise HazardCatalogPackageIncorporateError(
+            f"Nepodporovaný typ doporučení k opatření: {package.package_type}"
+        )
+
+    def _apply_package_to_working_copy(
+        self,
+        working_copy,
+        *,
+        package: AiProposalPackage,
+        export_id_map: dict[str, dict],
+        group_assessment_overrides: dict[int, int],
+        package_record_id: int,
+    ) -> CatalogPackageIncorporateResult:
+        from moduly.rizeni_rizik.sluzby.hazard_library_template_working_copy import (
+            WcLegalLink,
+        )
 
         event_count = 0
         assessment_count = 0
@@ -1241,37 +1433,46 @@ class HazardCatalogPackageIncorporateService:
         required_measure_count = 0
         legal_link_count = 0
 
+        existing_event_id = self._wc_resolve_event_id(
+            working_copy,
+            package=package,
+            export_id_map=export_id_map,
+            create_if_missing=False,
+        )
         event_id = self._wc_resolve_or_create_event(
             working_copy,
-            package=resolved_package,
+            package=package,
             export_id_map=export_id_map,
         )
-        if resolved_package.package_type == AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT:
+        if (
+            package.package_type == AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT
+            and existing_event_id is None
+        ):
             event_count = 1
 
-        for assessment in resolved_package.assessments:
+        for assessment in package.assessments:
             created, merged, existing_added, required_added = self._wc_incorporate_assessment(
                 working_copy,
                 template_event_id=event_id,
                 assessment=assessment,
-                package_reasoning=resolved_package.reasoning,
-                group_assessment_overrides=overrides,
+                package_reasoning=package.reasoning,
+                group_assessment_overrides=group_assessment_overrides,
             )
             assessment_count += created
             merged_assessment_count += merged
             existing_measure_count += existing_added
             required_measure_count += required_added
 
-        for link in resolved_package.legal_links:
+        for link in package.legal_links:
             document_id = self._resolve_legal_document_id(link)
             sort_order = max((row.sort_order for row in working_copy.legal_links), default=0) + 1
             working_copy.legal_links.append(
                 WcLegalLink(
                     id=working_copy._alloc_id(),
-                    template_id=template_id,
+                    template_id=working_copy.template_id,
                     legal_document_id=document_id,
                     legal_requirement_id=None,
-                    note=self._build_legal_note(link, resolved_package.reasoning),
+                    note=self._build_legal_note(link, package.reasoning),
                     active=True,
                     sort_order=sort_order,
                 ),
@@ -1279,11 +1480,17 @@ class HazardCatalogPackageIncorporateService:
             working_copy._touch()
             legal_link_count += 1
 
-        if editor_session is not None:
-            item = editor_session.stage_for_incorporation(package_record_id)
-            editor_session.sync_review_stats(item.review_id)
-        else:
-            working_copy.queue_package_incorporate(package_record_id)
+        total = (
+            event_count
+            + assessment_count
+            + merged_assessment_count
+            + existing_measure_count
+            + required_measure_count
+            + legal_link_count
+        )
+        if total <= 0:
+            raise HazardCatalogPackageIncorporateError(CATALOG_INCORPORATE_ERROR_EMPTY_RESULT)
+
         return CatalogPackageIncorporateResult(
             package_record_id=package_record_id,
             new_revision_number=0,
@@ -1295,7 +1502,109 @@ class HazardCatalogPackageIncorporateService:
             merged_assessment_count=merged_assessment_count,
         )
 
-    def _wc_resolve_or_create_event(self, working_copy, *, package, export_id_map) -> int:
+    def _apply_measure_recommendation_working_copy(
+        self,
+        working_copy,
+        *,
+        package_record_id: int,
+        package: AiProposalPackage,
+        export_id_map: dict[str, dict],
+    ) -> CatalogPackageIncorporateResult:
+        """Mutuje pouze kandidátní kopii; staging dělá volající po úspěchu."""
+        existing_measure_count = 0
+        required_measure_count = 0
+
+        if package.package_type == AI_MEASURE_REC_NO_CHANGE:
+            raise HazardCatalogPackageIncorporateError(
+                "Doporučení „Beze změn“ nelze převzít – nevyžaduje rozhodnutí."
+            )
+        if package.package_type == AI_MEASURE_REC_EDIT_EXISTING:
+            target = self._resolve_export_target(
+                export_id_map,
+                package.target_export_id,
+                expected_kind="existing_measure",
+            )
+            measure_id = int(target["id"])
+            assessment_id = self._wc_assessment_id_for_measure(
+                working_copy,
+                measure_id,
+                existing=True,
+            )
+            updated = working_copy.update_existing_measure(
+                measure_id,
+                template_id=working_copy.template_id,
+                template_assessment_id=assessment_id,
+                description=package.proposed_text.strip(),
+                note=self._join_notes(package.reasoning),
+                active=True,
+            )
+            if updated is None:
+                raise HazardCatalogPackageIncorporateError(
+                    "Cílové Zásady bezpečné práce nebyly nalezeny."
+                )
+            existing_measure_count = 1
+        elif package.package_type == AI_MEASURE_REC_EDIT_REQUIRED:
+            target = self._resolve_export_target(
+                export_id_map,
+                package.target_export_id,
+                expected_kind="required_measure",
+            )
+            measure_id = int(target["id"])
+            assessment_id = self._wc_assessment_id_for_measure(
+                working_copy,
+                measure_id,
+                existing=False,
+            )
+            updated = working_copy.update_required_measure(
+                measure_id,
+                template_id=working_copy.template_id,
+                template_assessment_id=assessment_id,
+                description=package.proposed_text.strip(),
+                note=self._join_notes(package.reasoning),
+                active=True,
+            )
+            if updated is None:
+                raise HazardCatalogPackageIncorporateError(
+                    "Cílové Navazující opatření nebylo nalezeno."
+                )
+            required_measure_count = 1
+        elif package.package_type == AI_MEASURE_REC_NEW_REQUIRED:
+            target = self._resolve_export_target(
+                export_id_map,
+                package.target_export_id,
+                expected_kind="assessment",
+            )
+            working_copy.create_required_measure(
+                template_id=working_copy.template_id,
+                template_assessment_id=int(target["id"]),
+                description=package.proposed_text.strip(),
+                note=self._join_notes(package.reasoning),
+                active=True,
+            )
+            required_measure_count = 1
+        else:
+            raise HazardCatalogPackageIncorporateError(
+                f"Nepodporovaný typ doporučení k opatření: {package.package_type}"
+            )
+
+        return CatalogPackageIncorporateResult(
+            package_record_id=package_record_id,
+            new_revision_number=0,
+            event_count=0,
+            assessment_count=0,
+            existing_measure_count=existing_measure_count,
+            required_measure_count=required_measure_count,
+            legal_link_count=0,
+        )
+
+    def _wc_resolve_event_id(
+        self,
+        working_copy,
+        *,
+        package: AiProposalPackage,
+        export_id_map: dict[str, dict],
+        create_if_missing: bool,
+    ) -> int | None:
         if package.package_type == AI_PEER_REVIEW_PACKAGE_TYPE_EXTEND_EVENT:
             export_id = (package.target_event_export_id or "").strip()
             parent = export_id_map.get(export_id) if export_id else None
@@ -1322,13 +1631,54 @@ class HazardCatalogPackageIncorporateService:
             raise HazardCatalogPackageIncorporateError(
                 "Balík typu nová událost musí obsahovat název události.",
             )
-        event = working_copy.create_event(
-            template_id=working_copy.template_id,
-            name=package.event.name.strip(),
-            description=(package.event.description or "").strip(),
-            note=self._join_notes(package.event.note, package.reasoning),
-            active=True,
+
+        key = normalize_template_event_name(package.event.name)
+        matches = [
+            event
+            for event in working_copy.events
+            if event.active and normalize_template_event_name(event.name) == key
+        ]
+        if len(matches) == 1:
+            return int(matches[0].id)
+        if len(matches) > 1:
+            raise HazardCatalogPackageIncorporateError(CATALOG_INCORPORATE_ERROR_DUPLICATE_EVENT)
+        if create_if_missing:
+            return None
+        return None
+
+    def _wc_resolve_or_create_event(self, working_copy, *, package, export_id_map) -> int:
+        existing_id = self._wc_resolve_event_id(
+            working_copy,
+            package=package,
+            export_id_map=export_id_map,
+            create_if_missing=False,
         )
+        if existing_id is not None:
+            return existing_id
+
+        if package.package_type != AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT:
+            raise HazardCatalogPackageIncorporateError(
+                f"Nepodporovaný typ balíku „{package.package_type}“.",
+            )
+        if package.event is None or not package.event.name.strip():
+            raise HazardCatalogPackageIncorporateError(
+                "Balík typu nová událost musí obsahovat název události.",
+            )
+        try:
+            event = working_copy.create_event(
+                template_id=working_copy.template_id,
+                name=package.event.name.strip(),
+                description=(package.event.description or "").strip(),
+                note=self._join_notes(package.event.note, package.reasoning),
+                active=True,
+            )
+        except HazardLibraryTemplateEventError as error:
+            message = str(error).strip()
+            if "stejným názvem" in message.casefold():
+                raise HazardCatalogPackageIncorporateError(
+                    CATALOG_INCORPORATE_ERROR_DUPLICATE_EVENT,
+                ) from error
+            raise
         return int(event.id)
 
     def _wc_incorporate_assessment(

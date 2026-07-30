@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from pathlib import Path
 
@@ -97,6 +98,8 @@ from core.widgets.typed_table_sort import (
 _PACKAGE_TYPE_ORDER = tuple(AI_PEER_REVIEW_PACKAGE_TYPE_LABELS.keys())
 _PACKAGE_STATUS_ORDER = tuple(PACKAGE_STATUS_LABELS.keys())
 _PROPOSAL_STATUS_ORDER = tuple(PROPOSAL_STATUS_LABELS.keys())
+
+logger = logging.getLogger(__name__)
 
 
 def _order_status(value: str, order: tuple[str, ...]):
@@ -1810,7 +1813,29 @@ class AiPeerReviewWidget(QWidget):
                     return
                 overrides[error.group_id] = dialog.selected_assessment_id
             except HazardCatalogPackageIncorporateError as error:
-                QMessageBox.warning(self, AI_PEER_REVIEW_DIALOG_TITLE, format_ai_peer_review_user_error(error))
+                logger.warning(
+                    "Zapracování AI balíku selhalo (package_id=%s): %s",
+                    record_id,
+                    error,
+                )
+                QMessageBox.warning(
+                    self,
+                    AI_PEER_REVIEW_DIALOG_TITLE,
+                    format_ai_peer_review_user_error(error),
+                )
+                self.refresh()
+                return
+            except Exception as error:
+                logger.exception(
+                    "Neočekávaná chyba při zapracování AI balíku (package_id=%s)",
+                    record_id,
+                )
+                QMessageBox.warning(
+                    self,
+                    AI_PEER_REVIEW_DIALOG_TITLE,
+                    format_ai_peer_review_user_error(error),
+                )
+                self.refresh()
                 return
 
         self.refresh()

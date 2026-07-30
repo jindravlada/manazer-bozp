@@ -6,6 +6,7 @@ Do DB se zapisuje až při finálním Uložit v jedné transakci.
 
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -337,6 +338,28 @@ class HazardLibraryTemplateWorkingCopy:
         if package_record_id not in self._pending_package_ids:
             self._pending_package_ids.append(package_record_id)
         self._touch(change_reason=HAZARD_LIBRARY_REVISION_REASON_AI_PROPOSALS)
+
+    def clone(self) -> HazardLibraryTemplateWorkingCopy:
+        """Bezpečně oddělená kopie pro atomické zapracování AI balíku."""
+        cloned = HazardLibraryTemplateWorkingCopy(self.template_id)
+        cloned.events = copy.deepcopy(self.events)
+        cloned.legal_links = copy.deepcopy(self.legal_links)
+        cloned._next_temp_id = self._next_temp_id
+        cloned._dirty = self._dirty
+        cloned._pending_package_ids = list(self._pending_package_ids)
+        cloned._pending_change_reason = self._pending_change_reason
+        return cloned
+
+    def replace_content_from(self, other: HazardLibraryTemplateWorkingCopy) -> None:
+        """Nahradí obsah této instance výsledkem kandidátní kopie."""
+        if other.template_id != self.template_id:
+            raise ValueError("Nelze nahradit obsah z jiné šablony.")
+        self.events = other.events
+        self.legal_links = other.legal_links
+        self._next_temp_id = other._next_temp_id
+        self._dirty = other._dirty
+        self._pending_package_ids = list(other._pending_package_ids)
+        self._pending_change_reason = other._pending_change_reason
 
     # --- Events -----------------------------------------------------------------
 
