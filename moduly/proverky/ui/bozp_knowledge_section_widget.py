@@ -34,6 +34,10 @@ from moduly.proverky.constants import (
     CONTROL_POINT_SHARED_EXPERIENCES_TITLE,
     CONTROL_POINT_HISTORY_WORKPLACE_NO_WORKPLACE,
     CONTROL_POINT_HISTORY_WORKPLACE_TITLE,
+    CONTROL_POINTS_EMPTY_AREA_NONE,
+    CONTROL_POINTS_EMPTY_CURRENT_PART,
+    CONTROL_POINTS_EMPTY_SEE_DOCUMENTATION,
+    CONTROL_POINTS_EMPTY_SEE_TERRAIN,
     FINDING_CREATE_FROM_CONTROL_POINT_LABEL,
     FINDING_CREATED_LABEL,
     FINDING_DIALOG_TITLE,
@@ -216,14 +220,38 @@ class BozpKnowledgeSectionWidget(QWidget):
             if self._effective_type(item) == self._verification_filter
         ]
 
+    def _control_points_by_verification_type(self, section: dict) -> tuple[list[dict], list[dict]]:
+        documentation: list[dict] = []
+        terrain: list[dict] = []
+        for item in proverky_knowledge_service.get_active_items(section.get("kontrolni_body")):
+            effective = self._effective_type(item)
+            if effective == VERIFICATION_TYPE_TERRAIN:
+                terrain.append(item)
+            else:
+                documentation.append(item)
+        return documentation, terrain
+
+    def _empty_control_points_messages(self, section: dict) -> tuple[str, ...]:
+        """Informační texty pro prázdný stav panelu Kontrolní body."""
+        documentation, terrain = self._control_points_by_verification_type(section)
+        if self._verification_filter == VERIFICATION_TYPE_TERRAIN:
+            current = terrain
+            other = documentation
+            other_hint = CONTROL_POINTS_EMPTY_SEE_DOCUMENTATION
+        else:
+            current = documentation
+            other = terrain
+            other_hint = CONTROL_POINTS_EMPTY_SEE_TERRAIN
+
+        if current:
+            return ()
+        if other:
+            return (CONTROL_POINTS_EMPTY_CURRENT_PART, other_hint)
+        return (CONTROL_POINTS_EMPTY_AREA_NONE,)
+
     def _build_columns(self, section: dict) -> QWidget:
         right_host = self._build_right_column(section)
-        filtered = self._filtered_control_points(section)
-        if not filtered:
-            # Prázdná část Dokumentace/Terén: panel Kontrolní body vůbec nevytvářet.
-            return wrap_in_scroll_area(right_host)
-
-        left_scroll = self._build_control_points_scroll_area(filtered)
+        left_scroll = self._build_control_points_scroll_area(section)
 
         splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.setObjectName("KnowledgeSectionSplitter")
@@ -618,7 +646,7 @@ class BozpKnowledgeSectionWidget(QWidget):
             frame.style().polish(frame)
         self._refresh_control_point_history(context)
 
-    def _build_control_points_scroll_area(self, filtered: list[dict]) -> QScrollArea:
+    def _build_control_points_scroll_area(self, section: dict) -> QScrollArea:
         scroll = QScrollArea()
         scroll.setObjectName("ControlPointsPanel")
         scroll.setWidgetResizable(True)
@@ -634,18 +662,36 @@ class BozpKnowledgeSectionWidget(QWidget):
         header.setObjectName("SectionTitle")
         layout.addWidget(header)
 
-        first_context: ProverkyFindingKnowledgeContext | None = None
-        for item in filtered:
-            context = self._context_for_control_point(item)
-            if first_context is None:
-                first_context = context
-            layout.addWidget(self._build_control_point_row(item))
-        if first_context is not None:
-            self._select_control_point(first_context)
+        filtered = self._filtered_control_points(section)
+        if filtered:
+            first_context: ProverkyFindingKnowledgeContext | None = None
+            for item in filtered:
+                context = self._context_for_control_point(item)
+                if first_context is None:
+                    first_context = context
+                layout.addWidget(self._build_control_point_row(item))
+            if first_context is not None:
+                self._select_control_point(first_context)
+        else:
+            layout.addWidget(self._build_control_points_empty_info(section))
 
         layout.addStretch()
         scroll.setWidget(content)
         return scroll
+
+    def _build_control_points_empty_info(self, section: dict) -> QWidget:
+        panel = QFrame()
+        panel.setObjectName("ModulePanel")
+        panel.setProperty("controlPointsEmptyInfo", True)
+        panel_layout = QVBoxLayout(panel)
+        panel_layout.setContentsMargins(12, 10, 12, 10)
+        panel_layout.setSpacing(6)
+
+        for text in self._empty_control_points_messages(section):
+            label = self._build_info_label(text)
+            panel_layout.addWidget(label)
+
+        return panel
 
     def _build_control_point_row(self, item: dict) -> QWidget:
         context = self._context_for_control_point(item)

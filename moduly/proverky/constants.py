@@ -116,6 +116,18 @@ AREA_PART_NOT_IMPLEMENTED_TEXT = "Tato část bude doplněna."
 AREA_PART_NO_CONTROL_QUESTIONS_TEXT = (
     "Pro tuto část nejsou evidovány žádné kontrolní otázky."
 )
+CONTROL_POINTS_EMPTY_CURRENT_PART = (
+    "V této části nejsou evidovány žádné kontrolní body."
+)
+CONTROL_POINTS_EMPTY_SEE_DOCUMENTATION = (
+    "Kontrola této oblasti probíhá v části Dokumentace."
+)
+CONTROL_POINTS_EMPTY_SEE_TERRAIN = (
+    "Kontrola této oblasti probíhá v části Terén."
+)
+CONTROL_POINTS_EMPTY_AREA_NONE = (
+    "Pro tuto oblast zatím nejsou vytvořeny žádné kontrolní body."
+)
 KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT = "Tato část bude doplněna."
 
 FINDING_SOURCE_LABEL = "Prověrka BOZP"

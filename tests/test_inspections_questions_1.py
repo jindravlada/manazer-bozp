@@ -31,6 +31,8 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.proverky.constants import (
         AREA_NOT_IMPLEMENTED_TEXT,
         AREA_PART_NO_CONTROL_QUESTIONS_TEXT,
+        CONTROL_POINTS_EMPTY_CURRENT_PART,
+        CONTROL_POINTS_EMPTY_SEE_TERRAIN,
         VERIFICATION_TYPE_DOCUMENTATION,
         VERIFICATION_TYPE_TERRAIN,
     )
@@ -204,7 +206,7 @@ class InspectionsQuestions1TestCase(unittest.TestCase):
         )
         self.assertTrue(ok, errors)
 
-    def test_empty_part_hides_control_points_panel(self) -> None:
+    def test_empty_part_shows_smart_info_card(self) -> None:
         section = self._set_all_points_type(self._bl_section(), VERIFICATION_TYPE_TERRAIN)
         widget = BozpKnowledgeSectionWidget()
         widget.set_verification_filter(VERIFICATION_TYPE_DOCUMENTATION)
@@ -217,8 +219,10 @@ class InspectionsQuestions1TestCase(unittest.TestCase):
         labels = [label.text() for label in widget.findChildren(QLabel)]
         self.assertNotIn(AREA_PART_NO_CONTROL_QUESTIONS_TEXT, labels)
         self.assertNotIn(AREA_NOT_IMPLEMENTED_TEXT, labels)
-        self.assertNotIn("Kontrolní body", labels)
-        self.assertIsNone(widget.findChild(QScrollArea, "ControlPointsPanel"))
+        self.assertIn("Kontrolní body", labels)
+        self.assertIsNotNone(widget.findChild(QScrollArea, "ControlPointsPanel"))
+        self.assertIn(CONTROL_POINTS_EMPTY_CURRENT_PART, labels)
+        self.assertIn(CONTROL_POINTS_EMPTY_SEE_TERRAIN, labels)
 
     def test_area_with_questions_not_marked_unimplemented(self) -> None:
         self._set_all_points_type(self._bl_section(), VERIFICATION_TYPE_TERRAIN)

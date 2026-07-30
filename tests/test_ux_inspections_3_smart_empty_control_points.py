@@ -1,8 +1,4 @@
-"""UX-INSPECTIONS-2 / UX-INSPECTIONS-3: panel Kontrolní body a prázdný stav.
-
-UX-INSPECTIONS-2 původně panel skrývalo. UX-INSPECTIONS-3 panel vždy zobrazuje
-a při prázdné části doplní informační kartu.
-"""
+"""UX-INSPECTIONS-3: inteligentní prázdný stav panelu Kontrolní body."""
 
 from __future__ import annotations
 
@@ -15,11 +11,15 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PySide6.QtWidgets import QApplication, QFrame, QLabel, QScrollArea
 
 from moduly.proverky.constants import (
+    AREA_NOT_IMPLEMENTED_TEXT,
+    CONTROL_POINTS_EMPTY_AREA_NONE,
     CONTROL_POINTS_EMPTY_CURRENT_PART,
+    CONTROL_POINTS_EMPTY_SEE_DOCUMENTATION,
     CONTROL_POINTS_EMPTY_SEE_TERRAIN,
     VERIFICATION_TYPE_DOCUMENTATION,
     VERIFICATION_TYPE_TERRAIN,
 )
+from moduly.proverky.ui.bozp_inspection_areas_widget import BozpInspectionAreasWidget
 from moduly.proverky.ui.bozp_knowledge_section_widget import BozpKnowledgeSectionWidget
 
 
@@ -62,7 +62,7 @@ def _section_with_points(*, documentation: int, terrain: int) -> dict:
     }
 
 
-class UxInspections2HideEmptyControlPointsTestCase(unittest.TestCase):
+class UxInspections3SmartEmptyControlPointsTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls._app = QApplication.instance() or QApplication([])
@@ -83,11 +83,11 @@ class UxInspections2HideEmptyControlPointsTestCase(unittest.TestCase):
         return widget
 
     @staticmethod
-    def _has_control_points_panel(widget: BozpKnowledgeSectionWidget) -> bool:
-        return widget.findChild(QScrollArea, "ControlPointsPanel") is not None
+    def _panel(widget: BozpKnowledgeSectionWidget) -> QScrollArea | None:
+        return widget.findChild(QScrollArea, "ControlPointsPanel")
 
     @staticmethod
-    def _control_point_titles(widget: BozpKnowledgeSectionWidget) -> list[str]:
+    def _titles(widget: BozpKnowledgeSectionWidget) -> list[str]:
         return [
             label.text()
             for label in widget.findChildren(QLabel)
@@ -95,55 +95,89 @@ class UxInspections2HideEmptyControlPointsTestCase(unittest.TestCase):
         ]
 
     @staticmethod
+    def _label_texts(widget: BozpKnowledgeSectionWidget) -> list[str]:
+        return [label.text() for label in widget.findChildren(QLabel)]
+
+    @staticmethod
     def _empty_info_texts(widget: BozpKnowledgeSectionWidget) -> list[str]:
+        texts: list[str] = []
         panel = widget.findChild(QScrollArea, "ControlPointsPanel")
         if panel is None:
-            return []
-        texts: list[str] = []
+            return texts
         for frame in panel.findChildren(QFrame):
             if frame.property("controlPointsEmptyInfo"):
                 texts.extend(label.text() for label in frame.findChildren(QLabel))
         return texts
 
-    def test_section_with_control_points_shows_panel(self) -> None:
-        section = _section_with_points(documentation=2, terrain=0)
+    def test_current_part_with_points_shows_list(self) -> None:
+        section = _section_with_points(documentation=2, terrain=1)
         widget = self._show(section, VERIFICATION_TYPE_DOCUMENTATION)
-        self.assertTrue(self._has_control_points_panel(widget))
-        self.assertEqual(len(self._control_point_titles(widget)), 2)
-        labels = [label.text() for label in widget.findChildren(QLabel)]
-        self.assertIn("Kontrolní body", labels)
+        self.assertIsNotNone(self._panel(widget))
+        self.assertEqual(len(self._titles(widget)), 2)
         self.assertEqual(self._empty_info_texts(widget), [])
+        self.assertIn("Kontrolní body", self._label_texts(widget))
 
-    def test_section_without_control_points_shows_info_card(self) -> None:
-        section = _section_with_points(documentation=0, terrain=3)
+    def test_points_only_in_documentation_shows_redirect_on_terrain(self) -> None:
+        section = _section_with_points(documentation=3, terrain=0)
+        widget = self._show(section, VERIFICATION_TYPE_TERRAIN)
+        self.assertIsNotNone(self._panel(widget))
+        self.assertEqual(self._titles(widget), [])
+        self.assertEqual(
+            self._empty_info_texts(widget),
+            [CONTROL_POINTS_EMPTY_CURRENT_PART, CONTROL_POINTS_EMPTY_SEE_DOCUMENTATION],
+        )
+
+    def test_points_only_in_terrain_shows_redirect_on_documentation(self) -> None:
+        section = _section_with_points(documentation=0, terrain=2)
         widget = self._show(section, VERIFICATION_TYPE_DOCUMENTATION)
-        self.assertTrue(self._has_control_points_panel(widget))
-        self.assertEqual(self._control_point_titles(widget), [])
-        labels = [label.text() for label in widget.findChildren(QLabel)]
-        self.assertIn("Kontrolní body", labels)
+        self.assertIsNotNone(self._panel(widget))
+        self.assertEqual(self._titles(widget), [])
         self.assertEqual(
             self._empty_info_texts(widget),
             [CONTROL_POINTS_EMPTY_CURRENT_PART, CONTROL_POINTS_EMPTY_SEE_TERRAIN],
         )
-        self.assertTrue(any("Závada" in text for text in labels))
 
-    def test_switch_documentation_terrain_shows_list_or_info_card(self) -> None:
+    def test_area_without_any_points_shows_none_message(self) -> None:
+        section = _section_with_points(documentation=0, terrain=0)
+        widget = self._show(section, VERIFICATION_TYPE_DOCUMENTATION)
+        self.assertIsNotNone(self._panel(widget))
+        self.assertEqual(self._empty_info_texts(widget), [CONTROL_POINTS_EMPTY_AREA_NONE])
+        self.assertNotIn(AREA_NOT_IMPLEMENTED_TEXT, self._empty_info_texts(widget))
+
+    def test_unimplemented_area_keeps_original_message(self) -> None:
+        from moduly.proverky.sluzby.proverky_knowledge_service import (
+            KNOWLEDGE_NODE_AREA,
+            KnowledgeTreeNode,
+        )
+
+        widget = BozpInspectionAreasWidget(verification_type=VERIFICATION_TYPE_DOCUMENTATION)
+        unimplemented = KnowledgeTreeNode(
+            node_type=KNOWLEDGE_NODE_AREA,
+            node_id="neexistujici_oblast",
+            label="Neexistující oblast",
+            area_id="neexistujici_oblast",
+            area_label="Neexistující oblast",
+            children=(),
+        )
+        widget._on_area_selected(unimplemented)
+        self.assertEqual(widget.content_stack.currentIndex(), widget._PAGE_PLACEHOLDER)
+        labels = [label.text() for label in widget.findChildren(QLabel)]
+        self.assertIn(AREA_NOT_IMPLEMENTED_TEXT, labels)
+
+    def test_switch_documentation_terrain_updates_empty_card(self) -> None:
         section = _section_with_points(documentation=0, terrain=2)
         widget = self._show(section, VERIFICATION_TYPE_DOCUMENTATION)
-        self.assertTrue(self._has_control_points_panel(widget))
         self.assertEqual(
             self._empty_info_texts(widget),
             [CONTROL_POINTS_EMPTY_CURRENT_PART, CONTROL_POINTS_EMPTY_SEE_TERRAIN],
         )
 
         widget.set_verification_filter(VERIFICATION_TYPE_TERRAIN)
-        self.assertTrue(self._has_control_points_panel(widget))
-        self.assertEqual(len(self._control_point_titles(widget)), 2)
+        self.assertEqual(len(self._titles(widget)), 2)
         self.assertEqual(self._empty_info_texts(widget), [])
 
         widget.set_verification_filter(VERIFICATION_TYPE_DOCUMENTATION)
-        self.assertTrue(self._has_control_points_panel(widget))
-        self.assertEqual(self._control_point_titles(widget), [])
+        self.assertEqual(self._titles(widget), [])
         self.assertEqual(
             self._empty_info_texts(widget),
             [CONTROL_POINTS_EMPTY_CURRENT_PART, CONTROL_POINTS_EMPTY_SEE_TERRAIN],
