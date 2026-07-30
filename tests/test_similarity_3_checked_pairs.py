@@ -239,7 +239,7 @@ class Similarity3UiTestCase(unittest.TestCase):
         dialog._show_checked_results.blockSignals(False)
         dialog._show_results()
         dialog._results_table.selectRow(0)
-        self.assertIn("Zkontrolováno", dialog._results_table.item(0, 0).text())
+        self.assertIn("Zkontrolováno", dialog._results_table.item(0, 1).text())
 
         dialog._unmark_selected_checked()
         self.assertFalse(

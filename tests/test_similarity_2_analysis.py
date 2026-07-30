@@ -142,7 +142,8 @@ class Similarity2UiTestCase(unittest.TestCase):
         dialog._show_results()
         self.assertFalse(dialog._empty_label.isHidden())
         self.assertTrue(dialog._results_table.isHidden())
-        self.assertIn("0", dialog._results_summary.text())
+        self.assertIn("Celkem nalezeno: 0", dialog._results_counts.text())
+        self.assertIn("Analýza dokončena", dialog._results_summary.text())
 
     def test_results_show_location_and_sorted_pairs(self) -> None:
         dialog = SimilarityAnalysisDialog()
@@ -165,9 +166,9 @@ class Similarity2UiTestCase(unittest.TestCase):
         dialog._cancelled = False
         dialog._show_results()
         self.assertEqual(dialog._results_table.rowCount(), 2)
-        self.assertIn("100 %", dialog._results_table.item(0, 1).text())
-        self.assertIn("Prověrky BOZP", dialog._results_table.item(0, 3).text())
-        self.assertIn("Prověrky BOZP", dialog._results_table.item(0, 5).text())
+        self.assertIn("100 %", dialog._results_table.item(0, 2).text())
+        self.assertIn("Prověrky BOZP", dialog._results_table.item(0, 4).text())
+        self.assertIn("Prověrky BOZP", dialog._results_table.item(0, 6).text())
 
 
 if __name__ == "__main__":

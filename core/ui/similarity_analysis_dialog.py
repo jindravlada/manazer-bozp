@@ -45,8 +45,22 @@ SCOPE_RISKS = "rizika"
 SCOPE_MEASURES = "opatreni"
 SCOPE_LEGAL = "pravni_pozadavky"
 
-# Textové sloupce výsledků: První otázka, Umístění první, Druhá otázka, Umístění druhé
-_RESULT_TEXT_COLUMNS = (2, 3, 4, 5)
+# Sloupce výsledkové tabulky (SIMILARITY-UX-4 přidává výběr na začátek).
+_COL_SELECT = 0
+_COL_STATUS = 1
+_COL_SIMILARITY = 2
+_COL_LEFT_TEXT = 3
+_COL_LEFT_LOCATION = 4
+_COL_RIGHT_TEXT = 5
+_COL_RIGHT_LOCATION = 6
+
+# Textové sloupce s ElideRight + tooltipem
+_RESULT_TEXT_COLUMNS = (
+    _COL_LEFT_TEXT,
+    _COL_LEFT_LOCATION,
+    _COL_RIGHT_TEXT,
+    _COL_RIGHT_LOCATION,
+)
 
 SIMILARITY_SCOPE_DEFS = (
     (SCOPE_PBP, "PBP", False),
@@ -212,10 +226,23 @@ class SimilarityAnalysisDialog(QDialog):
         self._results_summary.setObjectName("InfoText")
         layout.addWidget(self._results_summary)
 
+        self._results_counts = QLabel()
+        self._results_counts.setWordWrap(True)
+        self._results_counts.setObjectName("InfoText")
+        layout.addWidget(self._results_counts)
+
         self._show_checked_results = QCheckBox("Zobrazit již zkontrolované dvojice")
         self._show_checked_results.setChecked(False)
         self._show_checked_results.toggled.connect(self._on_show_checked_toggled)
         layout.addWidget(self._show_checked_results)
+
+        self._bulk_hint = QLabel(
+            "ℹ Zaškrtněte dvojice, které jsou v pořádku (nejde o skutečné duplicity). "
+            "Po dokončení je můžete jedním kliknutím skrýt z dalších analýz."
+        )
+        self._bulk_hint.setWordWrap(True)
+        self._bulk_hint.setObjectName("InfoText")
+        layout.addWidget(self._bulk_hint)
 
         self._empty_label = QLabel("Nebyly nalezeny žádné podobné záznamy.")
         self._empty_label.setWordWrap(True)
@@ -223,9 +250,10 @@ class SimilarityAnalysisDialog(QDialog):
         self._empty_label.setVisible(False)
         layout.addWidget(self._empty_label)
 
-        self._results_table = QTableWidget(0, 6)
+        self._results_table = QTableWidget(0, 7)
         self._results_table.setHorizontalHeaderLabels(
             [
+                "",
                 "Stav",
                 "Podobnost",
                 "První otázka",
@@ -241,14 +269,28 @@ class SimilarityAnalysisDialog(QDialog):
         self._results_table.setTextElideMode(Qt.TextElideMode.ElideRight)
         self._results_table.verticalHeader().setVisible(False)
         header = self._results_table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(_COL_SELECT, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(_COL_STATUS, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(
+            _COL_SIMILARITY, QHeaderView.ResizeMode.ResizeToContents
+        )
+        header.setSectionResizeMode(_COL_LEFT_TEXT, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(_COL_LEFT_LOCATION, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(_COL_RIGHT_TEXT, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(
+            _COL_RIGHT_LOCATION, QHeaderView.ResizeMode.Stretch
+        )
         header.sectionResized.connect(self._refresh_result_tooltips)
+        self._results_table.itemChanged.connect(self._on_result_item_changed)
         layout.addWidget(self._results_table, 1)
+
+        bulk_row = QHBoxLayout()
+        self._bulk_mark_btn = QPushButton("Označit vybrané jako zkontrolované")
+        self._bulk_mark_btn.setEnabled(False)
+        self._bulk_mark_btn.clicked.connect(self._mark_selected_rows_checked)
+        bulk_row.addWidget(self._bulk_mark_btn)
+        bulk_row.addStretch()
+        layout.addLayout(bulk_row)
 
         actions = QHBoxLayout()
         self._open_first_btn = QPushButton("Otevřít první")
@@ -286,7 +328,6 @@ class SimilarityAnalysisDialog(QDialog):
         close_btn.clicked.connect(self.accept)
         layout.addWidget(buttons)
         return page
-
     def _start_analysis(self) -> None:
         if not self._scope_checks[SCOPE_PROVERKY].isChecked():
             QMessageBox.information(
@@ -373,35 +414,66 @@ class SimilarityAnalysisDialog(QDialog):
 
     def _show_results(self) -> None:
         status = "Analýza byla zrušena." if self._cancelled else "Analýza dokončena."
-        self._results_summary.setText(
-            f"{status} Nalezeno kandidátních dvojic: {len(self._pairs)}."
-        )
+        self._results_summary.setText(status)
+        self._results_table.blockSignals(True)
         self._results_table.setRowCount(0)
 
-        if not self._pairs:
-            self._empty_label.setVisible(True)
-            self._results_table.setVisible(False)
-        else:
-            self._empty_label.setVisible(False)
-            self._results_table.setVisible(True)
+        has_pairs = bool(self._pairs)
+        self._empty_label.setVisible(not has_pairs)
+        self._results_table.setVisible(has_pairs)
+        self._bulk_hint.setVisible(has_pairs)
+        self._bulk_mark_btn.setVisible(has_pairs)
+
+        if has_pairs:
             self._results_table.setRowCount(len(self._pairs))
             for row, pair in enumerate(self._pairs):
+                select_item = QTableWidgetItem()
+                select_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                if pair.checked:
+                    select_item.setFlags(
+                        Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
+                    )
+                    select_item.setCheckState(Qt.CheckState.Unchecked)
+                    select_item.setToolTip("Dvojice je již evidována jako zkontrolovaná.")
+                else:
+                    select_item.setFlags(
+                        Qt.ItemFlag.ItemIsUserCheckable
+                        | Qt.ItemFlag.ItemIsEnabled
+                        | Qt.ItemFlag.ItemIsSelectable
+                    )
+                    select_item.setCheckState(Qt.CheckState.Unchecked)
+                    select_item.setToolTip(
+                        "Tato dvojice je v pořádku a již ji nechci při dalších "
+                        "analýzách zobrazovat."
+                    )
+
                 status_text = "✓ Zkontrolováno" if pair.checked else ""
                 similarity = f"{pair.score_percent} % — {pair.match_label}"
-                self._results_table.setItem(row, 0, QTableWidgetItem(status_text))
-                self._results_table.setItem(row, 1, QTableWidgetItem(similarity))
-                self._results_table.setItem(row, 2, QTableWidgetItem(pair.left.text))
+                status_item = QTableWidgetItem(status_text)
+                status_item.setData(Qt.ItemDataRole.UserRole, pair)
+
+                self._results_table.setItem(row, _COL_SELECT, select_item)
+                self._results_table.setItem(row, _COL_STATUS, status_item)
                 self._results_table.setItem(
-                    row, 3, QTableWidgetItem(pair.left.location_label)
+                    row, _COL_SIMILARITY, QTableWidgetItem(similarity)
                 )
-                self._results_table.setItem(row, 4, QTableWidgetItem(pair.right.text))
                 self._results_table.setItem(
-                    row, 5, QTableWidgetItem(pair.right.location_label)
+                    row, _COL_LEFT_TEXT, QTableWidgetItem(pair.left.text)
                 )
-                self._results_table.item(row, 0).setData(
-                    Qt.ItemDataRole.UserRole, pair
+                self._results_table.setItem(
+                    row, _COL_LEFT_LOCATION, QTableWidgetItem(pair.left.location_label)
+                )
+                self._results_table.setItem(
+                    row, _COL_RIGHT_TEXT, QTableWidgetItem(pair.right.text)
+                )
+                self._results_table.setItem(
+                    row,
+                    _COL_RIGHT_LOCATION,
+                    QTableWidgetItem(pair.right.location_label),
                 )
 
+        self._results_table.blockSignals(False)
+        self._update_counts()
         self._update_action_buttons()
         self._stack.setCurrentWidget(self._results_page)
         self._refresh_result_tooltips()
@@ -409,15 +481,46 @@ class SimilarityAnalysisDialog(QDialog):
     def _refresh_result_tooltips(self, *_args) -> None:
         refresh_elided_cell_tooltips(self._results_table, _RESULT_TEXT_COLUMNS)
 
-    def _selected_pair(self) -> ControlPointSimilarityPair | None:
-        rows = self._results_table.selectionModel().selectedRows()
-        if not rows:
-            return None
-        item = self._results_table.item(rows[0].row(), 0)
+    def _on_result_item_changed(self, item: QTableWidgetItem) -> None:
+        if item is None or item.column() != _COL_SELECT:
+            return
+        self._update_counts()
+
+    def _selected_row_indexes(self) -> list[int]:
+        selected: list[int] = []
+        for row in range(self._results_table.rowCount()):
+            item = self._results_table.item(row, _COL_SELECT)
+            if item is None:
+                continue
+            if not (item.flags() & Qt.ItemFlag.ItemIsUserCheckable):
+                continue
+            if item.checkState() == Qt.CheckState.Checked:
+                selected.append(row)
+        return selected
+
+    def _pair_at_row(self, row: int) -> ControlPointSimilarityPair | None:
+        item = self._results_table.item(row, _COL_STATUS)
         if item is None:
             return None
         pair = item.data(Qt.ItemDataRole.UserRole)
         return pair if isinstance(pair, ControlPointSimilarityPair) else None
+
+    def _update_counts(self) -> None:
+        total = len(self._pairs)
+        selected = len(self._selected_row_indexes())
+        remaining = total - selected
+        self._results_counts.setText(
+            f"Celkem nalezeno: {total}\n"
+            f"Vybráno: {selected}\n"
+            f"Zbývá k posouzení: {remaining}"
+        )
+        self._bulk_mark_btn.setEnabled(selected > 0)
+
+    def _selected_pair(self) -> ControlPointSimilarityPair | None:
+        rows = self._results_table.selectionModel().selectedRows()
+        if not rows:
+            return None
+        return self._pair_at_row(rows[0].row())
 
     def _update_action_buttons(self) -> None:
         pair = self._selected_pair()
@@ -427,6 +530,7 @@ class SimilarityAnalysisDialog(QDialog):
         self._open_both_btn.setEnabled(enabled)
         self._mark_checked_btn.setEnabled(enabled and pair is not None and not pair.checked)
         self._unmark_checked_btn.setEnabled(enabled and pair is not None and pair.checked)
+        self._update_counts()
 
     def _open_selected(self, which: str) -> None:
         pair = self._selected_pair()
@@ -464,6 +568,32 @@ class SimilarityAnalysisDialog(QDialog):
             item
             for item in self._pairs
             if item.normalized_ids != pair.normalized_ids
+        ]
+        self._show_results()
+
+    def _mark_selected_rows_checked(self) -> None:
+        rows = self._selected_row_indexes()
+        if not rows:
+            return
+
+        pairs: list[ControlPointSimilarityPair] = []
+        for row in rows:
+            pair = self._pair_at_row(row)
+            if pair is None or pair.checked:
+                continue
+            pairs.append(pair)
+        if not pairs:
+            return
+
+        marked_ids = {pair.normalized_ids for pair in pairs}
+        for pair in pairs:
+            similarity_checked_pair_service.mark_checked(
+                SIMILARITY_ENTITY_PROVERKY_CONTROL_POINT,
+                pair.left.composite_id,
+                pair.right.composite_id,
+            )
+        self._pairs = [
+            item for item in self._pairs if item.normalized_ids not in marked_ids
         ]
         self._show_results()
 
