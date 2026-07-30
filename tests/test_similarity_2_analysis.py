@@ -1,0 +1,182 @@
+"""SIMILARITY-2: hromadná analýza podobností."""
+
+from __future__ import annotations
+
+import os
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+_TMP = Path(tempfile.mkdtemp(prefix="similarity-2-"))
+_HOME = _TMP
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
+with patch.object(Path, "home", return_value=_HOME):
+    from PySide6.QtWidgets import QApplication, QDialog
+
+    from core.services.text_similarity_service import (
+        SimilarityCandidate,
+        find_similar_pairs,
+    )
+    from core.ui.similarity_analysis_dialog import (
+        SCOPE_PROVERKY,
+        SimilarityAnalysisDialog,
+    )
+    from core.windows.main_window import MainWindow
+    from moduly.proverky.sluzby.control_point_similarity_analysis import (
+        ControlPointSimilarityPair,
+        analyze_control_point_similarities,
+    )
+    from moduly.proverky.sluzby.control_point_similarity_service import (
+        ControlPointSimilarityCandidate,
+    )
+
+
+def _app() -> QApplication:
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication([])
+    return app
+
+
+def _candidate(item_id: str, text: str, *, area: str = "a", section: str = "s"):
+    return ControlPointSimilarityCandidate(
+        composite_id=f"{area}::{section}::{item_id}",
+        area_id=area,
+        area_name="Oblast",
+        section_id=section,
+        section_name="Sekce",
+        item_id=item_id,
+        text=text,
+    )
+
+
+class Similarity2ServiceTestCase(unittest.TestCase):
+    def test_find_pairs_and_sort_desc(self) -> None:
+        pairs, cancelled = find_similar_pairs(
+            [
+                SimilarityCandidate("1", "Dodržujte bezpečnostní předpisy"),
+                SimilarityCandidate("2", "Dodržujte bezpečnostní předpisy."),
+                SimilarityCandidate("3", "Dodržujte předpisy BOZP"),
+                SimilarityCandidate("4", "Evidence školení řidičů VZV"),
+            ]
+        )
+        self.assertFalse(cancelled)
+        self.assertGreaterEqual(len(pairs), 2)
+        scores = [item.score for item in pairs]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+        self.assertEqual(pairs[0].score_percent, 100)
+        ids = {(item.left_id, item.right_id) for item in pairs}
+        self.assertIn(("1", "2"), ids)
+
+    def test_cancel_stops_analysis(self) -> None:
+        cancel = {"flag": False}
+
+        def should_cancel():
+            return cancel["flag"]
+
+        def on_progress(current, total, found):
+            if current >= 1:
+                cancel["flag"] = True
+
+        pairs, cancelled = find_similar_pairs(
+            [
+                SimilarityCandidate(str(i), f"Kontrola OOPP varianta {i}")
+                for i in range(20)
+            ],
+            progress_callback=on_progress,
+            should_cancel=should_cancel,
+        )
+        self.assertTrue(cancelled)
+
+    def test_analyze_control_points_uses_locations(self) -> None:
+        catalog = [
+            _candidate("a1", "Kontrola hasicích přístrojů"),
+            _candidate("a2", "Kontrola hasicích přístrojů."),
+            _candidate("b1", "Úplně jiný text o chemii"),
+        ]
+        with patch(
+            "moduly.proverky.sluzby.control_point_similarity_analysis.collect_control_point_candidates",
+            return_value=catalog,
+        ):
+            pairs, cancelled = analyze_control_point_similarities()
+        self.assertFalse(cancelled)
+        self.assertEqual(len(pairs), 1)
+        self.assertIsInstance(pairs[0], ControlPointSimilarityPair)
+        self.assertIn("Prověrky BOZP", pairs[0].left.location_label)
+        self.assertIn("Oblast", pairs[0].left.location_label)
+        self.assertIn("Sekce", pairs[0].right.location_label)
+        self.assertEqual(pairs[0].score_percent, 100)
+
+    def test_empty_result(self) -> None:
+        with patch(
+            "moduly.proverky.sluzby.control_point_similarity_analysis.collect_control_point_candidates",
+            return_value=[
+                _candidate("x", "Alpha unikátní text"),
+                _candidate("y", "Beta úplně jiné znění"),
+            ],
+        ):
+            pairs, cancelled = analyze_control_point_similarities()
+        self.assertFalse(cancelled)
+        self.assertEqual(pairs, [])
+
+
+class Similarity2UiTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        _app()
+
+    def test_tools_menu_contains_analysis_action(self) -> None:
+        with patch.object(MainWindow, "_load_modules"):
+            window = MainWindow()
+        self.assertTrue(hasattr(window, "tools_menu"))
+        tool_actions = [action.text() for action in window.tools_menu.actions()]
+        self.assertIn("Analýza podobností...", tool_actions)
+
+    def test_dialog_scope_only_proverky_enabled(self) -> None:
+        dialog = SimilarityAnalysisDialog()
+        self.assertTrue(dialog._scope_checks[SCOPE_PROVERKY].isChecked())
+        self.assertTrue(dialog._scope_checks[SCOPE_PROVERKY].isEnabled())
+        for key, check in dialog._scope_checks.items():
+            if key == SCOPE_PROVERKY:
+                continue
+            self.assertFalse(check.isEnabled())
+
+    def test_empty_results_page(self) -> None:
+        dialog = SimilarityAnalysisDialog()
+        dialog._pairs = []
+        dialog._cancelled = False
+        dialog._show_results()
+        self.assertFalse(dialog._empty_label.isHidden())
+        self.assertTrue(dialog._results_table.isHidden())
+        self.assertIn("0", dialog._results_summary.text())
+
+    def test_results_show_location_and_sorted_pairs(self) -> None:
+        dialog = SimilarityAnalysisDialog()
+        dialog._pairs = [
+            ControlPointSimilarityPair(
+                score=1.0,
+                match_type="exact",
+                match_label="Přesná shoda",
+                left=_candidate("1", "Kontrola OOPP"),
+                right=_candidate("2", "Kontrola OOPP."),
+            ),
+            ControlPointSimilarityPair(
+                score=0.85,
+                match_type="possible",
+                match_label="Možná podobnost",
+                left=_candidate("3", "Dodržujte bezpečnostní předpisy"),
+                right=_candidate("4", "Dodržujte předpisy BOZP"),
+            ),
+        ]
+        dialog._cancelled = False
+        dialog._show_results()
+        self.assertEqual(dialog._results_table.rowCount(), 2)
+        self.assertIn("100 %", dialog._results_table.item(0, 0).text())
+        self.assertIn("Prověrky BOZP", dialog._results_table.item(0, 2).text())
+        self.assertIn("Prověrky BOZP", dialog._results_table.item(0, 4).text())
+
+
+if __name__ == "__main__":
+    unittest.main()

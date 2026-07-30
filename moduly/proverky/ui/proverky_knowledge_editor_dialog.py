@@ -48,6 +48,7 @@ class ProverkyKnowledgeEditorDialog(QDialog):
         *,
         area_id: str | None = None,
         section_id: str | None = None,
+        control_point_id: str | None = None,
     ):
         super().__init__(parent)
 
@@ -61,7 +62,9 @@ class ProverkyKnowledgeEditorDialog(QDialog):
         self._modified = False
         self._section_editor: ProverkyKnowledgeSectionEditDialog | None = None
         self._drafts: dict[tuple[str, str], dict] = {}
-        self._pending_control_point_id: str | None = None
+        self._pending_control_point_id: str | None = (
+            (control_point_id or "").strip() or None
+        )
 
         proverky_knowledge_service.ensure_catalogs()
 

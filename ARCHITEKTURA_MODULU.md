@@ -250,6 +250,10 @@ Rozšíření na další typy záznamů:
 
 První nasazení: metodika Prověrky BOZP → kontrolní body (`Najít podobné otázky`).
 
+Hromadná údržba kvality dat: nabídka **Nástroje → Analýza podobností...**
+(`core/ui/similarity_analysis_dialog.py`, SIMILARITY-2). Porovnává párově
+všechny vybrané záznamy; v tomto sprintu pouze kontrolní otázky prověrek.
+
 ---
 
 ## 19. Cíl
