@@ -7,12 +7,14 @@ from PySide6.QtWidgets import (
 )
 from moduly.sprava_dat.ui.backup_tab import BackupTab
 from moduly.sprava_dat.ui.codebooks_tab import CodebooksTab
+from moduly.sprava_dat.ui.data_quality_tab import DataQualityTab
 from moduly.sprava_dat.ui.legal_registry_diagnostics_tab import LegalRegistryDiagnosticsTab
 from moduly.sprava_dat.ui.legal_registry_transfer_tab import LegalRegistryTransferTab
 from moduly.sprava_dat.ui.summary_tab import SummaryTab
 from moduly.sprava_dat.ui.tab_constants import (
     TAB_BACKUP,
     TAB_CODEBOOKS,
+    TAB_DATA_QUALITY,
     TAB_DIAGNOSTICS,
     TAB_ORDER,
     TAB_SUMMARY,
@@ -43,12 +45,14 @@ class SpravaDatPage(QWidget):
         self.transfer_tab = LegalRegistryTransferTab()
         self.codebooks_tab = CodebooksTab()
         self.diagnostics_tab = LegalRegistryDiagnosticsTab()
+        self.data_quality_tab = DataQualityTab()
 
         self.tabs.addTab(self.summary_tab, TAB_SUMMARY)
         self.tabs.addTab(self.backup_tab, TAB_BACKUP)
         self.tabs.addTab(self.transfer_tab, TAB_TRANSFER)
         self.tabs.addTab(self.codebooks_tab, TAB_CODEBOOKS)
         self.tabs.addTab(self.diagnostics_tab, TAB_DIAGNOSTICS)
+        self.tabs.addTab(self.data_quality_tab, TAB_DATA_QUALITY)
         layout.addWidget(self.tabs)
 
     def navigate_to_tab(self, tab_key: str) -> None:

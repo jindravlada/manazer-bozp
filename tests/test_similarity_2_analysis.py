@@ -23,7 +23,6 @@ with patch.object(Path, "home", return_value=_HOME):
         SCOPE_PROVERKY,
         SimilarityAnalysisDialog,
     )
-    from core.windows.main_window import MainWindow
     from moduly.proverky.sluzby.control_point_similarity_analysis import (
         ControlPointSimilarityPair,
         analyze_control_point_similarities,
@@ -126,13 +125,6 @@ class Similarity2UiTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         _app()
-
-    def test_tools_menu_contains_analysis_action(self) -> None:
-        with patch.object(MainWindow, "_load_modules"):
-            window = MainWindow()
-        self.assertTrue(hasattr(window, "tools_menu"))
-        tool_actions = [action.text() for action in window.tools_menu.actions()]
-        self.assertIn("Analýza podobností...", tool_actions)
 
     def test_dialog_scope_only_proverky_enabled(self) -> None:
         dialog = SimilarityAnalysisDialog()

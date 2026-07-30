@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtCore import Qt, QThread, QTimer, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
@@ -44,7 +44,7 @@ SCOPE_RISKS = "rizika"
 SCOPE_MEASURES = "opatreni"
 SCOPE_LEGAL = "pravni_pozadavky"
 
-_SCOPE_DEFS = (
+SIMILARITY_SCOPE_DEFS = (
     (SCOPE_PBP, "PBP", False),
     (SCOPE_PROVERKY, "Kontrolní otázky prověrek", True),
     (SCOPE_AUDIT, "Auditní tvrzení", False),
@@ -86,7 +86,13 @@ class _ControlPointAnalysisWorker(QThread):
 class SimilarityAnalysisDialog(QDialog):
     """Nástroj údržby: výběr oblastí → průběh → kandidáti podobnosti."""
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        parent: QWidget | None = None,
+        *,
+        include_checked: bool | None = None,
+        auto_start: bool = False,
+    ) -> None:
         super().__init__(parent)
         self.setWindowTitle("Analýza podobností")
         self.setModal(True)
@@ -109,6 +115,15 @@ class SimilarityAnalysisDialog(QDialog):
 
         self._stack.setCurrentWidget(self._setup_page)
 
+        if include_checked is not None:
+            self._show_checked_setup.setChecked(include_checked)
+            self._show_checked_results.blockSignals(True)
+            self._show_checked_results.setChecked(include_checked)
+            self._show_checked_results.blockSignals(False)
+
+        if auto_start:
+            QTimer.singleShot(0, self._start_analysis)
+
     def _build_setup_page(self) -> QWidget:
         page = QWidget()
         layout = QVBoxLayout(page)
@@ -123,7 +138,7 @@ class SimilarityAnalysisDialog(QDialog):
 
         form = QFormLayout()
         self._scope_checks: dict[str, QCheckBox] = {}
-        for key, label, implemented in _SCOPE_DEFS:
+        for key, label, implemented in SIMILARITY_SCOPE_DEFS:
             check = QCheckBox(label)
             check.setChecked(implemented)
             check.setEnabled(implemented)

@@ -39,6 +39,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.sprava_dat.ui.tab_constants import (
         TAB_BACKUP,
         TAB_CODEBOOKS,
+        TAB_DATA_QUALITY,
         TAB_DIAGNOSTICS,
         TAB_ORDER,
         TAB_SUMMARY,
@@ -153,7 +154,13 @@ class SpravaDatPageSummaryTestCase(unittest.TestCase):
         tabs = page.findChild(QTabWidget)
         assert tabs is not None
 
-        for tab_key in (TAB_BACKUP, TAB_TRANSFER, TAB_CODEBOOKS, TAB_DIAGNOSTICS):
+        for tab_key in (
+            TAB_BACKUP,
+            TAB_TRANSFER,
+            TAB_CODEBOOKS,
+            TAB_DIAGNOSTICS,
+            TAB_DATA_QUALITY,
+        ):
             page.navigate_to_tab(tab_key)
             self.assertEqual(tabs.tabText(tabs.currentIndex()), tab_key)
 

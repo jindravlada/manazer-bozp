@@ -28,6 +28,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.sprava_dat.ui.tab_constants import (
         TAB_BACKUP,
         TAB_CODEBOOKS,
+        TAB_DATA_QUALITY,
         TAB_DIAGNOSTICS,
         TAB_ORDER,
         TAB_SUMMARY,
@@ -43,7 +44,7 @@ class SpravaDatPageTestCase(unittest.TestCase):
 
         cls._app = QApplication.instance() or QApplication([])
 
-    def test_page_contains_five_tabs(self) -> None:
+    def test_page_contains_expected_tabs(self) -> None:
         page = SpravaDatPage()
         tabs = page.findChild(QTabWidget)
         self.assertIsNotNone(tabs)
@@ -52,6 +53,7 @@ class SpravaDatPageTestCase(unittest.TestCase):
             [tabs.tabText(index) for index in range(tabs.count())],
             list(TAB_ORDER),
         )
+        self.assertIn(TAB_DATA_QUALITY, TAB_ORDER)
 
     def test_page_opens_on_summary_tab(self) -> None:
         page = SpravaDatPage()

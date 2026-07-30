@@ -1,7 +1,7 @@
 from datetime import date
 
 from PySide6.QtCore import QStringListModel, Qt
-from PySide6.QtGui import QAction, QKeySequence, QShortcut
+from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QCompleter,
     QDialog,
@@ -22,7 +22,6 @@ from PySide6.QtWidgets import (
 
 from core.modules.module_manager import ModuleManager
 from core.navigation.source_navigator import source_navigator
-from core.ui.similarity_analysis_dialog import SimilarityAnalysisDialog
 from core.version import app_brand_label, app_display_name
 from core.windows.about_dialog import AboutDialog
 from core.search import global_search_service
@@ -43,7 +42,6 @@ class MainWindow(QMainWindow):
         self._page_widgets = {}
         self._search_results = []
 
-        self._create_menus()
         self._create_toolbar()
 
         central = QWidget()
@@ -106,15 +104,6 @@ class MainWindow(QMainWindow):
         toolbar.addWidget(QLabel(self._format_today_cs()))
 
         self.addToolBar(toolbar)
-
-    def _create_menus(self) -> None:
-        self.tools_menu = self.menuBar().addMenu("Nástroje")
-        analysis_action = QAction("Analýza podobností...", self)
-        analysis_action.triggered.connect(self._open_similarity_analysis)
-        self.tools_menu.addAction(analysis_action)
-
-    def _open_similarity_analysis(self) -> None:
-        SimilarityAnalysisDialog(self).exec()
 
     def _format_today_cs(self) -> str:
         days = ["Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek", "Sobota", "Neděle"]
