@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLineEdit,
     QMessageBox,
+    QPushButton,
     QRadioButton,
     QTextEdit,
     QVBoxLayout,
@@ -18,7 +19,12 @@ from moduly.proverky.constants import (
     CONTROL_POINT_SEVERITY_OPTIONS,
     VERIFICATION_TYPE_OPTIONS,
 )
+from moduly.proverky.sluzby.control_point_similarity_service import (
+    find_similar_control_points,
+    make_control_point_composite_id,
+)
 from moduly.proverky.sluzby.proverky_knowledge_service import proverky_knowledge_service
+from moduly.proverky.ui.similar_control_points_dialog import SimilarControlPointsDialog
 
 
 class ProverkyKnowledgeListItemDialog(QDialog):
@@ -33,16 +39,28 @@ class ProverkyKnowledgeListItemDialog(QDialog):
         existing_ids: set[str] | None = None,
         include_zavaznost: bool = False,
         include_verification_type: bool = False,
+        enable_similarity_check: bool = False,
+        similarity_area_id: str = "",
+        similarity_section_id: str = "",
+        similarity_section_items: list[dict] | None = None,
+        on_open_similar=None,
     ):
         super().__init__(parent)
 
         self.setWindowTitle(title)
-        self.resize(560, 420 if include_verification_type else 360)
+        self.resize(560, 460 if include_verification_type or enable_similarity_check else 360)
 
         self._original_id = str((item or {}).get("id") or "").strip()
         self._existing_ids = set(existing_ids or set())
         if self._original_id:
             self._existing_ids.discard(self._original_id)
+
+        self._enable_similarity_check = enable_similarity_check
+        self._similarity_area_id = str(similarity_area_id or "").strip()
+        self._similarity_section_id = str(similarity_section_id or "").strip()
+        self._similarity_section_items = list(similarity_section_items or [])
+        self._on_open_similar = on_open_similar
+        self.opened_similar_match = None
 
         layout = QVBoxLayout(self)
 
@@ -106,6 +124,14 @@ class ProverkyKnowledgeListItemDialog(QDialog):
         form.addRow("", self._aktivni_check)
         layout.addLayout(form)
 
+        if self._enable_similarity_check:
+            similarity_row = QHBoxLayout()
+            self.find_similar_btn = QPushButton("Najít podobné otázky")
+            self.find_similar_btn.clicked.connect(self._find_similar_questions)
+            similarity_row.addWidget(self.find_similar_btn)
+            similarity_row.addStretch()
+            layout.addLayout(similarity_row)
+
         buttons = create_save_cancel_box(self)
         buttons.accepted.connect(self._accept)
         buttons.rejected.connect(self.reject)
@@ -135,6 +161,59 @@ class ProverkyKnowledgeListItemDialog(QDialog):
                 value
             )
         return data
+
+    def _current_exclude_ids(self) -> list[str]:
+        exclude: list[str] = []
+        item_id = self._id_edit.text().strip() or self._original_id
+        if (
+            item_id
+            and self._similarity_area_id
+            and self._similarity_section_id
+        ):
+            exclude.append(
+                make_control_point_composite_id(
+                    self._similarity_area_id,
+                    self._similarity_section_id,
+                    item_id,
+                )
+            )
+        return exclude
+
+    def _find_similar_questions(self) -> None:
+        query = self._nazev_edit.text().strip()
+        if not query:
+            QMessageBox.information(
+                self,
+                "Podobné kontrolní otázky",
+                "Nejdříve vyplňte název kontrolní otázky.",
+            )
+            return
+
+        overrides = None
+        if self._similarity_area_id and self._similarity_section_id:
+            overrides = {
+                (self._similarity_area_id, self._similarity_section_id): (
+                    self._similarity_section_items
+                )
+            }
+
+        matches = find_similar_control_points(
+            query,
+            exclude_composite_ids=self._current_exclude_ids(),
+            override_section_items=overrides,
+        )
+        dialog = SimilarControlPointsDialog(self, matches=matches)
+        dialog.exec()
+        if dialog.opened_match is None:
+            return
+        self.opened_similar_match = dialog.opened_match
+        self.reject()
+        if self._on_open_similar is not None:
+            from PySide6.QtCore import QTimer
+
+            match = dialog.opened_match
+            callback = self._on_open_similar
+            QTimer.singleShot(0, lambda: callback(match))
 
     def _accept(self) -> None:
         data = self.get_data()

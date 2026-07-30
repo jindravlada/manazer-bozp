@@ -61,6 +61,7 @@ class ProverkyKnowledgeEditorDialog(QDialog):
         self._modified = False
         self._section_editor: ProverkyKnowledgeSectionEditDialog | None = None
         self._drafts: dict[tuple[str, str], dict] = {}
+        self._pending_control_point_id: str | None = None
 
         proverky_knowledge_service.ensure_catalogs()
 
@@ -152,6 +153,48 @@ class ProverkyKnowledgeEditorDialog(QDialog):
             )
         else:
             self._show_hint()
+
+    def navigate_to_control_point(
+        self,
+        area_id: str,
+        section_id: str,
+        control_point_id: str,
+    ) -> bool:
+        """Přepne editor na sekci a otevře zvolený kontrolní bod."""
+        area_id = str(area_id or "").strip()
+        section_id = str(section_id or "").strip()
+        control_point_id = str(control_point_id or "").strip()
+        if not area_id or not section_id or not control_point_id:
+            return False
+
+        if (
+            self._current_area_id == area_id
+            and self._current_section_id == section_id
+            and self._section_editor is not None
+        ):
+            return self._section_editor.select_control_point(control_point_id)
+
+        self._pending_control_point_id = control_point_id
+        if not self.knowledge_tree.select_node(area_id, section_id):
+            self._pending_control_point_id = None
+            QMessageBox.information(
+                self,
+                self.windowTitle(),
+                (
+                    "Sekci s podobnou kontrolní otázkou se nepodařilo otevřít.\n\n"
+                    f"Oblast: {area_id}\nSekce: {section_id}\n"
+                    f"Kontrolní bod: {control_point_id}"
+                ),
+            )
+            return False
+        return True
+
+    def _apply_pending_control_point(self) -> None:
+        pending = self._pending_control_point_id
+        self._pending_control_point_id = None
+        if not pending or self._section_editor is None:
+            return
+        self._section_editor.select_control_point(pending)
 
     def _apply_initial_context(self, area_id: str, section_id: str | None) -> None:
         if section_id and self.knowledge_tree.select_node(area_id, section_id):
@@ -371,6 +414,7 @@ class ProverkyKnowledgeEditorDialog(QDialog):
         if not self._has_unsaved_changes():
             clear_save_status(self._status_label)
         self._update_action_buttons()
+        self._apply_pending_control_point()
 
     def _on_section_content_saved(self) -> None:
         key = None

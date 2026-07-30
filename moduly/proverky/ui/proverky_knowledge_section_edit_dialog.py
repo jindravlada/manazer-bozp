@@ -331,6 +331,69 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
     def section_id(self) -> str:
         return self._section_id
 
+    def _similarity_kwargs(self, list_widget: QListWidget) -> dict:
+        if self._field_by_list.get(list_widget) != "kontrolni_body":
+            return {}
+        return {
+            "enable_similarity_check": True,
+            "similarity_area_id": self._area_id,
+            "similarity_section_id": self._section_id,
+            "similarity_section_items": self._current_control_point_items(),
+            "on_open_similar": self._open_similar_control_point,
+        }
+
+    def _current_control_point_items(self) -> list[dict]:
+        list_widget = self._lists_by_field.get("kontrolni_body")
+        if list_widget is None:
+            return []
+        return self._collect_list_items(list_widget, "kontrolni_body")
+
+    def select_control_point(self, control_point_id: str) -> bool:
+        """Vybere kontrolní bod v seznamu a otevře editor položky."""
+        list_widget = self._lists_by_field.get("kontrolni_body")
+        if list_widget is None:
+            return False
+        target = str(control_point_id or "").strip()
+        if not target:
+            return False
+        for row in range(list_widget.count()):
+            item = list_widget.item(row)
+            data = item.data(Qt.ItemDataRole.UserRole) if item is not None else None
+            if not isinstance(data, dict):
+                continue
+            if str(data.get("id") or "").strip() != target:
+                continue
+            list_widget.setCurrentRow(row)
+            list_widget.scrollToItem(item)
+            self._edit_item(list_widget)
+            return True
+        return False
+
+    def _open_similar_control_point(self, match) -> None:
+        from moduly.proverky.ui.proverky_knowledge_editor_dialog import (
+            ProverkyKnowledgeEditorDialog,
+        )
+
+        editor = self.parent()
+        while editor is not None and not isinstance(editor, ProverkyKnowledgeEditorDialog):
+            editor = editor.parent()
+        if editor is None:
+            QMessageBox.information(
+                self,
+                "Podobné kontrolní otázky",
+                (
+                    "Podobnou otázku se nepodařilo otevřít přímo.\n\n"
+                    f"Umístění: {match.location_label}\n"
+                    f"Identifikátor: {match.candidate.item_id}"
+                ),
+            )
+            return
+        editor.navigate_to_control_point(
+            match.candidate.area_id,
+            match.candidate.section_id,
+            match.candidate.item_id,
+        )
+
     @property
     def is_modified(self) -> bool:
         return self._modified
@@ -828,6 +891,7 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
             include_zavaznost=self._field_by_list.get(list_widget) == "kontrolni_body",
             include_verification_type=self._field_by_list.get(list_widget)
             == "kontrolni_body",
+            **self._similarity_kwargs(list_widget),
         )
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
@@ -893,6 +957,7 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
             include_zavaznost=self._field_by_list.get(list_widget) == "kontrolni_body",
             include_verification_type=self._field_by_list.get(list_widget)
             == "kontrolni_body",
+            **self._similarity_kwargs(list_widget),
         )
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
