@@ -546,6 +546,13 @@ class MuInvestigationDialog(QDialog):
             if focused is not None:
                 return
 
+        # MU-UX-HYPOTHESIS-TABS-1 – vnitřní podzáložky Hypotézy / Zjištění.
+        if tab_name == "Zjištění" and field_name:
+            focused = self.findings_widget.focus_field(field_name)
+            if focused is not None:
+                self._focus_widget(focused)
+                return
+
         widget = self._field_widget(field_name)
         self._focus_widget(widget)
 
