@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QHeaderView, QTableWidget, QTableWidgetItem
+from PySide6.QtWidgets import QHeaderView, QStyle, QTableWidget, QTableWidgetItem
 
 from core.widgets.info_tooltip import set_widget_tooltip
 from core.widgets.text_preview import DEFAULT_TEXT_PREVIEW_LENGTH, truncate_text_preview
@@ -14,6 +14,48 @@ def apply_cell_tooltip(item: QTableWidgetItem | None, text: str | None) -> None:
         set_widget_tooltip(item, full_text)
     else:
         item.setToolTip("")
+
+
+def _table_cell_content_width(table: QTableWidget, column: int) -> int:
+    """Šířka dostupná pro text buňky (sloupec minus okraje stylu)."""
+    style = table.style()
+    padding = (
+        2 * style.pixelMetric(QStyle.PixelMetric.PM_FocusFrameHMargin, None, table)
+        + 2 * style.pixelMetric(QStyle.PixelMetric.PM_LayoutHorizontalSpacing, None, table)
+        + 8
+    )
+    return max(0, table.columnWidth(column) - max(padding, 12))
+
+
+def table_cell_text_is_elided(table: QTableWidget, row: int, column: int) -> bool:
+    """True, pokud by se text buňky při ElideRight zkrátil."""
+    item = table.item(row, column)
+    if item is None:
+        return False
+    text = item.text() or ""
+    if not text:
+        return False
+    available = _table_cell_content_width(table, column)
+    metrics = table.fontMetrics()
+    elided = metrics.elidedText(text, Qt.TextElideMode.ElideRight, available)
+    return elided != text
+
+
+def refresh_elided_cell_tooltips(
+    table: QTableWidget,
+    columns: tuple[int, ...] | list[int],
+) -> None:
+    """Nastaví tooltip s celým textem jen u sloupců, kde je text zkrácen."""
+    for row in range(table.rowCount()):
+        for column in columns:
+            item = table.item(row, column)
+            if item is None:
+                continue
+            full_text = item.text() or ""
+            if full_text.strip() and table_cell_text_is_elided(table, row, column):
+                set_widget_tooltip(item, full_text)
+            else:
+                item.setToolTip("")
 
 
 def create_preview_table_item(

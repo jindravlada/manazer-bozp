@@ -27,7 +27,8 @@ from core.shared.sluzby.similarity_checked_pair_service import (
     SIMILARITY_ENTITY_PROVERKY_CONTROL_POINT,
     similarity_checked_pair_service,
 )
-from core.widgets.dialog_utils import exec_maximized
+from core.widgets.dialog_utils import exec_maximized, prepare_work_dialog_maximized
+from core.widgets.table_utils import refresh_elided_cell_tooltips
 from moduly.proverky.sluzby.control_point_similarity_analysis import (
     ControlPointSimilarityPair,
     analyze_control_point_similarities,
@@ -43,6 +44,9 @@ SCOPE_AUDIT = "auditni_tvrzeni"
 SCOPE_RISKS = "rizika"
 SCOPE_MEASURES = "opatreni"
 SCOPE_LEGAL = "pravni_pozadavky"
+
+# Textové sloupce výsledků: První otázka, Umístění první, Druhá otázka, Umístění druhé
+_RESULT_TEXT_COLUMNS = (2, 3, 4, 5)
 
 SIMILARITY_SCOPE_DEFS = (
     (SCOPE_PBP, "PBP", False),
@@ -123,6 +127,10 @@ class SimilarityAnalysisDialog(QDialog):
 
         if auto_start:
             QTimer.singleShot(0, self._start_analysis)
+
+    def exec(self) -> int:  # noqa: A003
+        prepare_work_dialog_maximized(self)
+        return super().exec()
 
     def _build_setup_page(self) -> QWidget:
         page = QWidget()
@@ -229,6 +237,8 @@ class SimilarityAnalysisDialog(QDialog):
         self._results_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self._results_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self._results_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self._results_table.setWordWrap(False)
+        self._results_table.setTextElideMode(Qt.TextElideMode.ElideRight)
         self._results_table.verticalHeader().setVisible(False)
         header = self._results_table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
@@ -237,6 +247,7 @@ class SimilarityAnalysisDialog(QDialog):
         header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
+        header.sectionResized.connect(self._refresh_result_tooltips)
         layout.addWidget(self._results_table, 1)
 
         actions = QHBoxLayout()
@@ -393,6 +404,10 @@ class SimilarityAnalysisDialog(QDialog):
 
         self._update_action_buttons()
         self._stack.setCurrentWidget(self._results_page)
+        self._refresh_result_tooltips()
+
+    def _refresh_result_tooltips(self, *_args) -> None:
+        refresh_elided_cell_tooltips(self._results_table, _RESULT_TEXT_COLUMNS)
 
     def _selected_pair(self) -> ControlPointSimilarityPair | None:
         rows = self._results_table.selectionModel().selectedRows()
