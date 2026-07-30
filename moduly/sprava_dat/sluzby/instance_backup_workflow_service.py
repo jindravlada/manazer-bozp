@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 from pathlib import Path
 
@@ -34,9 +35,12 @@ from moduly.sprava_dat.sluzby.data_management_settings_service import (
 )
 from moduly.sprava_dat.ui.instance_backup_dialogs import (
     BackupProgressDialog,
+    ContinueWithoutSafetyBackupDialog,
     MessageWithDetailsDialog,
     RestoreConfirmDialog,
 )
+
+logger = logging.getLogger(__name__)
 
 _STATUS_LABELS = {
     INTEGRITY_VALID: "Platná",
@@ -406,18 +410,22 @@ class InstanceBackupWorkflowService:
             progress.allow_close()
             progress.close()
             self._operation_running = False
-            MessageWithDetailsDialog(
-                parent,
-                title="Obnova ze zálohy",
-                message=(
-                    "<b>Obnova nebyla spuštěna.</b><br><br>"
-                    "Nepodařilo se vytvořit automatickou bezpečnostní zálohu "
-                    "aktuálních dat. Bez této zálohy nelze obnovu provést."
-                ),
-                details=str(exc),
-                level="critical",
-            ).exec()
-            return False
+            logger.warning(
+                "Automatická bezpečnostní záloha před obnovou selhala: %s",
+                exc,
+            )
+            crisis = ContinueWithoutSafetyBackupDialog(parent)
+            if crisis.exec() != ContinueWithoutSafetyBackupDialog.DialogCode.Accepted:
+                return False
+            logger.warning(
+                "Uživatel vědomě pokračoval v obnově bez vytvoření "
+                "automatické bezpečnostní zálohy."
+            )
+            progress = BackupProgressDialog(parent, title="Probíhá obnova")
+            progress.set_status("Pokračuji obnovou bez bezpečnostní zálohy…")
+            progress.show()
+            QApplication.processEvents()
+            self._operation_running = True
 
         try:
             from core.database.session import dispose_database_engine

@@ -161,10 +161,12 @@ class BackupRestoreSafe1TestCase(unittest.TestCase):
                         "create_instance_backup",
                         side_effect=InstanceBackupError("disk full"),
                     ):
-                        with patch.object(wf_mod, "restore_instance_backup") as mock_restore:
-                            with patch.object(
-                                wf_mod.MessageWithDetailsDialog, "exec", return_value=1
-                            ):
+                        with patch.object(
+                            wf_mod.ContinueWithoutSafetyBackupDialog,
+                            "exec",
+                            return_value=QDialog.DialogCode.Rejected,
+                        ):
+                            with patch.object(wf_mod, "restore_instance_backup") as mock_restore:
                                 ok = self.service.restore_instance_backup_ui(self.parent)
         self.assertFalse(ok)
         mock_restore.assert_not_called()
@@ -173,7 +175,6 @@ class BackupRestoreSafe1TestCase(unittest.TestCase):
         case_dir = _TMP / "keep-success"
         case_dir.mkdir(parents=True, exist_ok=True)
         ws, db, settings = _make_ws(case_dir, note="current")
-        backups = ws / "zalohy"
         package = case_dir / f"to-restore{BACKUP_EXTENSION}"
         create_instance_backup(
             package,
@@ -181,15 +182,13 @@ class BackupRestoreSafe1TestCase(unittest.TestCase):
             database_path=db,
             settings_path=settings,
         )
-        # Přepiš workspace jinými daty, ať je co zálohovat před obnovou.
         (ws / "prilohy" / "a.txt").write_text("changed-before-restore", encoding="utf-8")
 
-        safety = self.service._create_auto_before_restore_backup()
-        self.assertTrue(safety.is_file())
-        self.assertTrue(safety.name.startswith("AUTO_BEFORE_RESTORE_"))
-        self.assertEqual(safety.parent, storage_module.storage_service.backups_dir.resolve())
+        safety = storage_module.storage_service.backups_dir / (
+            f"AUTO_BEFORE_RESTORE_kept{BACKUP_EXTENSION}"
+        )
+        safety.write_bytes(b"safety-keep")
 
-        # Obnova cílového balíčku nesmí smazat nouzovou zálohu.
         from core.backup import restore_instance_backup
 
         restore_instance_backup(
@@ -198,6 +197,7 @@ class BackupRestoreSafe1TestCase(unittest.TestCase):
             settings_path=settings,
         )
         self.assertTrue(safety.is_file())
+        self.assertEqual(safety.read_bytes(), b"safety-keep")
 
     def test_safety_backup_kept_after_failed_restore(self) -> None:
         safety_file = storage_module.storage_service.backups_dir / (
