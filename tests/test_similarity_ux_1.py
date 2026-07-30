@@ -87,7 +87,7 @@ class SimilarityUx1PageTestCase(unittest.TestCase):
         self.assertEqual(tab.start_analysis_btn.text(), "Spustit analýzu")
         self.assertTrue(tab._scope_checks[SCOPE_PROVERKY].isEnabled())
         self.assertTrue(tab._scope_checks[SCOPE_PROVERKY].isChecked())
-        self.assertFalse(tab._show_checked.isChecked())
+        self.assertFalse(hasattr(tab, "_show_checked"))
         for key, check in tab._scope_checks.items():
             if key == SCOPE_PROVERKY:
                 continue
@@ -101,20 +101,13 @@ class SimilarityUx1LaunchTestCase(unittest.TestCase):
 
     def test_start_opens_existing_similarity_dialog(self) -> None:
         tab = DataQualityTab()
-        tab._show_checked.setChecked(True)
 
         created: list[SimilarityAnalysisDialog] = []
         original_init = SimilarityAnalysisDialog.__init__
 
-        def tracking_init(self, parent=None, *, include_checked=None, auto_start=False):
-            original_init(
-                self,
-                parent,
-                include_checked=include_checked,
-                auto_start=False,
-            )
+        def tracking_init(self, parent=None, *, auto_start=False):
+            original_init(self, parent, auto_start=False)
             created.append(self)
-            self._include_checked_arg = include_checked
             self._auto_start_arg = auto_start
 
         with patch.object(SimilarityAnalysisDialog, "__init__", tracking_init), patch.object(
@@ -124,11 +117,10 @@ class SimilarityUx1LaunchTestCase(unittest.TestCase):
 
         self.assertEqual(len(created), 1)
         self.assertTrue(created[0]._auto_start_arg)
-        self.assertTrue(created[0]._include_checked_arg)
         exec_mock.assert_called_once()
 
     def test_start_uses_analyze_control_point_similarities(self) -> None:
-        dialog = SimilarityAnalysisDialog(include_checked=False, auto_start=False)
+        dialog = SimilarityAnalysisDialog(auto_start=False)
         with patch(
             "core.ui.similarity_analysis_dialog.analyze_control_point_similarities",
             return_value=([], False),

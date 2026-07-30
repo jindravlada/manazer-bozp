@@ -75,10 +75,6 @@ class DataQualityTab(QWidget):
             form.addRow(check)
         layout.addLayout(form)
 
-        self._show_checked = QCheckBox("Zobrazit již zkontrolované dvojice")
-        self._show_checked.setChecked(False)
-        layout.addWidget(self._show_checked)
-
         buttons = QHBoxLayout()
         self.start_analysis_btn = QPushButton("Spustit analýzu")
         self.start_analysis_btn.clicked.connect(self._start_similarity_analysis)
@@ -98,9 +94,5 @@ class DataQualityTab(QWidget):
             )
             return
 
-        dialog = SimilarityAnalysisDialog(
-            self,
-            include_checked=self._show_checked.isChecked(),
-            auto_start=True,
-        )
+        dialog = SimilarityAnalysisDialog(self, auto_start=True)
         dialog.exec()

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from dataclasses import replace
-
 from PySide6.QtCore import Qt, QThread, QTimer, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -27,6 +25,7 @@ from core.shared.sluzby.similarity_checked_pair_service import (
     SIMILARITY_ENTITY_PROVERKY_CONTROL_POINT,
     similarity_checked_pair_service,
 )
+from core.ui.similarity_checked_pairs_dialog import SimilarityCheckedPairsDialog
 from core.widgets.dialog_utils import exec_maximized, prepare_work_dialog_maximized
 from core.widgets.table_utils import refresh_elided_cell_tooltips
 from moduly.proverky.sluzby.control_point_similarity_analysis import (
@@ -78,10 +77,9 @@ class _ControlPointAnalysisWorker(QThread):
     finished_ok = Signal(object, bool)  # pairs, cancelled
     failed = Signal(str)
 
-    def __init__(self, *, include_checked: bool, parent=None) -> None:
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self._cancel_requested = False
-        self._include_checked = include_checked
 
     def request_cancel(self) -> None:
         self._cancel_requested = True
@@ -89,7 +87,7 @@ class _ControlPointAnalysisWorker(QThread):
     def run(self) -> None:
         try:
             pairs, cancelled = analyze_control_point_similarities(
-                include_checked=self._include_checked,
+                include_checked=False,
                 progress_callback=self._on_progress,
                 should_cancel=lambda: self._cancel_requested,
             )
@@ -109,7 +107,6 @@ class SimilarityAnalysisDialog(QDialog):
         self,
         parent: QWidget | None = None,
         *,
-        include_checked: bool | None = None,
         auto_start: bool = False,
     ) -> None:
         super().__init__(parent)
@@ -135,12 +132,6 @@ class SimilarityAnalysisDialog(QDialog):
 
         self._stack.setCurrentWidget(self._setup_page)
 
-        if include_checked is not None:
-            self._show_checked_setup.setChecked(include_checked)
-            self._show_checked_results.blockSignals(True)
-            self._show_checked_results.setChecked(include_checked)
-            self._show_checked_results.blockSignals(False)
-
         if auto_start:
             QTimer.singleShot(0, self._start_analysis)
 
@@ -154,7 +145,7 @@ class SimilarityAnalysisDialog(QDialog):
 
         intro = QLabel(
             "Hromadná kontrola kvality dat. Analýza může trvat i několik minut. "
-            "Zkontrolované dvojice se ve výchozím stavu znovu nenabízejí."
+            "Zkontrolované dvojice se při analýze znovu nenabízejí."
         )
         intro.setWordWrap(True)
         intro.setObjectName("InfoText")
@@ -171,20 +162,21 @@ class SimilarityAnalysisDialog(QDialog):
             self._scope_checks[key] = check
             form.addRow(check)
         layout.addLayout(form)
-
-        self._show_checked_setup = QCheckBox("Zobrazit již zkontrolované dvojice")
-        self._show_checked_setup.setChecked(False)
-        layout.addWidget(self._show_checked_setup)
         layout.addStretch()
 
         buttons = QDialogButtonBox()
         self._start_btn = buttons.addButton(
             "Spustit analýzu", QDialogButtonBox.ButtonRole.AcceptRole
         )
+        self._manage_checked_setup_btn = buttons.addButton(
+            "Správa zkontrolovaných dvojic...",
+            QDialogButtonBox.ButtonRole.ActionRole,
+        )
         close_btn = buttons.addButton(
             "Zavřít", QDialogButtonBox.ButtonRole.RejectRole
         )
         self._start_btn.clicked.connect(self._start_analysis)
+        self._manage_checked_setup_btn.clicked.connect(self._open_checked_pairs_manager)
         close_btn.clicked.connect(self.reject)
         layout.addWidget(buttons)
         return page
@@ -232,11 +224,6 @@ class SimilarityAnalysisDialog(QDialog):
         self._results_counts.setWordWrap(True)
         self._results_counts.setObjectName("InfoText")
         layout.addWidget(self._results_counts)
-
-        self._show_checked_results = QCheckBox("Zobrazit již zkontrolované dvojice")
-        self._show_checked_results.setChecked(False)
-        self._show_checked_results.toggled.connect(self._on_show_checked_toggled)
-        layout.addWidget(self._show_checked_results)
 
         self._bulk_hint = QLabel(
             "ℹ Zaškrtněte dvojice, které jsou v pořádku (nejde o skutečné duplicity). "
@@ -299,18 +286,15 @@ class SimilarityAnalysisDialog(QDialog):
         self._open_second_btn = QPushButton("Otevřít druhou")
         self._open_both_btn = QPushButton("Otevřít obě")
         self._mark_checked_btn = QPushButton("Označit jako zkontrolované")
-        self._unmark_checked_btn = QPushButton("Zrušit označení")
         self._open_first_btn.clicked.connect(lambda: self._open_selected("first"))
         self._open_second_btn.clicked.connect(lambda: self._open_selected("second"))
         self._open_both_btn.clicked.connect(lambda: self._open_selected("both"))
         self._mark_checked_btn.clicked.connect(self._mark_selected_checked)
-        self._unmark_checked_btn.clicked.connect(self._unmark_selected_checked)
         for btn in (
             self._open_first_btn,
             self._open_second_btn,
             self._open_both_btn,
             self._mark_checked_btn,
-            self._unmark_checked_btn,
         ):
             btn.setEnabled(False)
             actions.addWidget(btn)
@@ -323,10 +307,17 @@ class SimilarityAnalysisDialog(QDialog):
         again_btn = buttons.addButton(
             "Nová analýza", QDialogButtonBox.ButtonRole.ActionRole
         )
+        self._manage_checked_results_btn = buttons.addButton(
+            "Správa zkontrolovaných dvojic...",
+            QDialogButtonBox.ButtonRole.ActionRole,
+        )
         close_btn = buttons.addButton(
             "Zavřít", QDialogButtonBox.ButtonRole.RejectRole
         )
         again_btn.clicked.connect(self._back_to_setup)
+        self._manage_checked_results_btn.clicked.connect(
+            self._open_checked_pairs_manager
+        )
         close_btn.clicked.connect(self._request_close)
         layout.addWidget(buttons)
         return page
@@ -343,10 +334,6 @@ class SimilarityAnalysisDialog(QDialog):
 
         self._pairs = []
         self._cancelled = False
-        include_checked = self._show_checked_setup.isChecked()
-        self._show_checked_results.blockSignals(True)
-        self._show_checked_results.setChecked(include_checked)
-        self._show_checked_results.blockSignals(False)
 
         self._progress_bar.setValue(0)
         self._progress_count_label.setText("0 / 0")
@@ -354,10 +341,7 @@ class SimilarityAnalysisDialog(QDialog):
         self._cancel_btn.setEnabled(True)
         self._stack.setCurrentWidget(self._progress_page)
 
-        self._worker = _ControlPointAnalysisWorker(
-            include_checked=include_checked,
-            parent=self,
-        )
+        self._worker = _ControlPointAnalysisWorker(parent=self)
         self._worker.progress.connect(self._on_progress)
         self._worker.finished_ok.connect(self._on_finished)
         self._worker.failed.connect(self._on_failed)
@@ -392,28 +376,8 @@ class SimilarityAnalysisDialog(QDialog):
         )
         self._stack.setCurrentWidget(self._setup_page)
 
-    def _on_show_checked_toggled(self, checked: bool) -> None:
-        if not self._pairs and not checked:
-            self._show_results()
-            return
-        # Přepnutí vyžaduje znovunačtení včetně zkontrolovaných.
-        if checked and not any(pair.checked for pair in self._pairs):
-            self._reload_with_checked(include_checked=True)
-            return
-        if not checked:
-            self._pairs = [pair for pair in self._pairs if not pair.checked]
-        self._show_results()
-
-    def _reload_with_checked(self, *, include_checked: bool) -> None:
-        try:
-            pairs, _cancelled = analyze_control_point_similarities(
-                include_checked=include_checked,
-            )
-        except Exception as exc:  # noqa: BLE001
-            QMessageBox.warning(self, self.windowTitle(), str(exc))
-            return
-        self._pairs = pairs
-        self._show_results()
+    def _open_checked_pairs_manager(self) -> None:
+        SimilarityCheckedPairsDialog(self).exec()
 
     def _show_results(self) -> None:
         status = "Analýza byla zrušena." if self._cancelled else "Analýza dokončena."
@@ -421,37 +385,34 @@ class SimilarityAnalysisDialog(QDialog):
         self._results_table.blockSignals(True)
         self._results_table.setRowCount(0)
 
-        has_pairs = bool(self._pairs)
+        # Analýza zobrazuje pouze nevyřešené dvojice (SIMILARITY-UX-8).
+        pairs = [pair for pair in self._pairs if not pair.checked]
+        self._pairs = pairs
+
+        has_pairs = bool(pairs)
         self._empty_label.setVisible(not has_pairs)
         self._results_table.setVisible(has_pairs)
         self._bulk_hint.setVisible(has_pairs)
         self._bulk_mark_btn.setVisible(has_pairs)
 
         if has_pairs:
-            self._results_table.setRowCount(len(self._pairs))
-            for row, pair in enumerate(self._pairs):
+            self._results_table.setRowCount(len(pairs))
+            for row, pair in enumerate(pairs):
                 # Checkbox = pouze aktuální výběr uživatele (nikdy stav z DB).
                 select_item = QTableWidgetItem()
                 select_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 select_item.setCheckState(Qt.CheckState.Unchecked)
-                if pair.checked:
-                    # Již zkontrolované nelze znovu hromadně označit.
-                    select_item.setFlags(
-                        Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
-                    )
-                else:
-                    select_item.setFlags(
-                        Qt.ItemFlag.ItemIsUserCheckable
-                        | Qt.ItemFlag.ItemIsEnabled
-                        | Qt.ItemFlag.ItemIsSelectable
-                    )
-                    select_item.setToolTip(
-                        "Tuto dvojici chci nyní hromadně označit jako zkontrolovanou."
-                    )
+                select_item.setFlags(
+                    Qt.ItemFlag.ItemIsUserCheckable
+                    | Qt.ItemFlag.ItemIsEnabled
+                    | Qt.ItemFlag.ItemIsSelectable
+                )
+                select_item.setToolTip(
+                    "Tuto dvojici chci nyní hromadně označit jako zkontrolovanou."
+                )
 
-                status_text = "✓ Zkontrolováno" if pair.checked else ""
                 similarity = f"{pair.score_percent} % — {pair.match_label}"
-                status_item = QTableWidgetItem(status_text)
+                status_item = QTableWidgetItem("")
                 status_item.setData(Qt.ItemDataRole.UserRole, pair)
 
                 self._results_table.setItem(row, _COL_SELECT, select_item)
@@ -530,8 +491,7 @@ class SimilarityAnalysisDialog(QDialog):
         self._open_first_btn.setEnabled(enabled)
         self._open_second_btn.setEnabled(enabled)
         self._open_both_btn.setEnabled(enabled)
-        self._mark_checked_btn.setEnabled(enabled and pair is not None and not pair.checked)
-        self._unmark_checked_btn.setEnabled(enabled and pair is not None and pair.checked)
+        self._mark_checked_btn.setEnabled(enabled)
         self._update_counts()
 
     def _open_selected(self, which: str) -> None:
@@ -545,7 +505,7 @@ class SimilarityAnalysisDialog(QDialog):
 
     def _mark_selected_checked(self) -> None:
         pair = self._selected_pair()
-        if pair is None or pair.checked:
+        if pair is None:
             return
         answer = QMessageBox.question(
             self,
@@ -581,7 +541,7 @@ class SimilarityAnalysisDialog(QDialog):
         pairs: list[ControlPointSimilarityPair] = []
         for row in rows:
             pair = self._pair_at_row(row)
-            if pair is None or pair.checked:
+            if pair is None:
                 continue
             pairs.append(pair)
         if not pairs:
@@ -597,25 +557,6 @@ class SimilarityAnalysisDialog(QDialog):
         self._pairs = [
             item for item in self._pairs if item.normalized_ids not in marked_ids
         ]
-        self._show_results()
-
-    def _unmark_selected_checked(self) -> None:
-        pair = self._selected_pair()
-        if pair is None or not pair.checked:
-            return
-        similarity_checked_pair_service.unmark_checked(
-            SIMILARITY_ENTITY_PROVERKY_CONTROL_POINT,
-            pair.left.composite_id,
-            pair.right.composite_id,
-        )
-        updated = replace(pair, checked=False)
-        self._pairs = [
-            updated if item.normalized_ids == pair.normalized_ids else item
-            for item in self._pairs
-        ]
-        if not self._show_checked_results.isChecked():
-            # Po zrušení označení zůstane dvojice ve výsledcích aktuální analýzy.
-            pass
         self._show_results()
 
     def _open_control_point(self, candidate: ControlPointSimilarityCandidate) -> None:

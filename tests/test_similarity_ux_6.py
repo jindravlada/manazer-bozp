@@ -96,40 +96,29 @@ class SimilarityUx6SeparationTestCase(unittest.TestCase):
 
     def test_checkbox_is_only_for_current_selection(self) -> None:
         dialog = SimilarityAnalysisDialog()
-        dialog._pairs = [_pair("1", "2"), _pair("3", "4", checked=True)]
+        dialog._pairs = [_pair("1", "2"), _pair("3", "4")]
         dialog._show_results()
 
-        unchecked_select = dialog._results_table.item(0, _COL_SELECT)
-        checked_select = dialog._results_table.item(1, _COL_SELECT)
-
-        self.assertEqual(unchecked_select.checkState(), Qt.CheckState.Unchecked)
-        self.assertTrue(unchecked_select.flags() & Qt.ItemFlag.ItemIsUserCheckable)
-        unchecked_select.setCheckState(Qt.CheckState.Checked)
-        self.assertEqual(unchecked_select.checkState(), Qt.CheckState.Checked)
+        select = dialog._results_table.item(0, _COL_SELECT)
+        self.assertEqual(select.checkState(), Qt.CheckState.Unchecked)
+        self.assertTrue(select.flags() & Qt.ItemFlag.ItemIsUserCheckable)
+        select.setCheckState(Qt.CheckState.Checked)
+        self.assertEqual(select.checkState(), Qt.CheckState.Checked)
         self.assertEqual(dialog._results_table.item(0, _COL_STATUS).text(), "")
+        self.assertNotIn("Zkontrolováno", select.text())
 
-        # Již zkontrolovaná: checkbox nikdy nezobrazuje stav z DB.
-        self.assertEqual(checked_select.checkState(), Qt.CheckState.Unchecked)
-        self.assertFalse(checked_select.flags() & Qt.ItemFlag.ItemIsUserCheckable)
-        self.assertIn("Zkontrolováno", dialog._results_table.item(1, _COL_STATUS).text())
-        self.assertNotIn("Zkontrolováno", checked_select.text())
-
-    def test_checked_status_only_in_status_column(self) -> None:
+    def test_analysis_filters_out_checked_pairs(self) -> None:
+        """UX-8: zkontrolované dvojice se v analýze nezobrazují (Stav zůstává prázdný)."""
         dialog = SimilarityAnalysisDialog()
-        dialog._pairs = [_pair("10", "20", checked=True)]
-        dialog._show_checked_results.blockSignals(True)
-        dialog._show_checked_results.setChecked(True)
-        dialog._show_checked_results.blockSignals(False)
+        dialog._pairs = [_pair("10", "20", checked=True), _pair("11", "21")]
         dialog._show_results()
 
+        self.assertEqual(dialog._results_table.rowCount(), 1)
         self.assertEqual(
             dialog._results_table.item(0, _COL_SELECT).checkState(),
             Qt.CheckState.Unchecked,
         )
-        self.assertEqual(
-            dialog._results_table.item(0, _COL_STATUS).text(),
-            "✓ Zkontrolováno",
-        )
+        self.assertEqual(dialog._results_table.item(0, _COL_STATUS).text(), "")
 
     def test_bulk_mark_still_works(self) -> None:
         dialog = SimilarityAnalysisDialog()
@@ -147,7 +136,7 @@ class SimilarityUx6SeparationTestCase(unittest.TestCase):
             )
         )
 
-    def test_status_after_list_refresh(self) -> None:
+    def test_status_empty_after_mark_and_refresh(self) -> None:
         dialog = SimilarityAnalysisDialog()
         pair = _pair("5", "6")
         dialog._pairs = [pair]
@@ -160,19 +149,10 @@ class SimilarityUx6SeparationTestCase(unittest.TestCase):
             pair.right.composite_id,
         )
         dialog._pairs = [_pair("5", "6", checked=True)]
-        dialog._show_checked_results.blockSignals(True)
-        dialog._show_checked_results.setChecked(True)
-        dialog._show_checked_results.blockSignals(False)
         dialog._show_results()
 
-        self.assertEqual(
-            dialog._results_table.item(0, _COL_SELECT).checkState(),
-            Qt.CheckState.Unchecked,
-        )
-        self.assertEqual(
-            dialog._results_table.item(0, _COL_STATUS).text(),
-            "✓ Zkontrolováno",
-        )
+        self.assertEqual(dialog._results_table.rowCount(), 0)
+        self.assertEqual(dialog._pairs, [])
 
 
 if __name__ == "__main__":

@@ -213,44 +213,10 @@ class Similarity3UiTestCase(unittest.TestCase):
             )
         )
 
-    def test_show_checked_checkbox_default_off(self) -> None:
+    def test_analysis_has_no_show_checked_checkbox(self) -> None:
         dialog = SimilarityAnalysisDialog()
-        self.assertFalse(dialog._show_checked_setup.isChecked())
-        self.assertFalse(dialog._show_checked_results.isChecked())
-
-    def test_unmark_action_updates_row(self) -> None:
-        dialog = SimilarityAnalysisDialog()
-        pair = ControlPointSimilarityPair(
-            score=1.0,
-            match_type="exact",
-            match_label="Přesná shoda",
-            left=_candidate("3", "Text A"),
-            right=_candidate("4", "Text A."),
-            checked=True,
-        )
-        similarity_checked_pair_service.mark_checked(
-            SIMILARITY_ENTITY_PROVERKY_CONTROL_POINT,
-            pair.left.composite_id,
-            pair.right.composite_id,
-        )
-        dialog._pairs = [pair]
-        dialog._show_checked_results.blockSignals(True)
-        dialog._show_checked_results.setChecked(True)
-        dialog._show_checked_results.blockSignals(False)
-        dialog._show_results()
-        dialog._results_table.selectRow(0)
-        self.assertIn("Zkontrolováno", dialog._results_table.item(0, 2).text())
-
-        dialog._unmark_selected_checked()
-        self.assertFalse(
-            similarity_checked_pair_service.is_checked(
-                SIMILARITY_ENTITY_PROVERKY_CONTROL_POINT,
-                pair.left.composite_id,
-                pair.right.composite_id,
-            )
-        )
-        self.assertEqual(len(dialog._pairs), 1)
-        self.assertFalse(dialog._pairs[0].checked)
+        self.assertFalse(hasattr(dialog, "_show_checked_setup"))
+        self.assertFalse(hasattr(dialog, "_show_checked_results"))
 
 
 if __name__ == "__main__":
