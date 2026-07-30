@@ -113,6 +113,9 @@ TAB_LABELS = (
 AREA_PANEL_LEFT_WIDTH = 260
 AREA_NOT_IMPLEMENTED_TEXT = "Tato oblast zatím není implementována."
 AREA_PART_NOT_IMPLEMENTED_TEXT = "Tato část bude doplněna."
+AREA_PART_NO_CONTROL_QUESTIONS_TEXT = (
+    "Pro tuto část nejsou evidovány žádné kontrolní otázky."
+)
 KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT = "Tato část bude doplněna."
 
 FINDING_SOURCE_LABEL = "Prověrka BOZP"

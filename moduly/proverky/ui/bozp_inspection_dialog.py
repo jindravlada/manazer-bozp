@@ -67,6 +67,8 @@ class BozpInspectionDialog(QDialog):
         self.terrain_widget.set_on_finding_saved(self._on_finding_changed)
         self.areas_widget.set_on_verification_type_changed(self._on_verification_type_changed)
         self.terrain_widget.set_on_verification_type_changed(self._on_verification_type_changed)
+        self.areas_widget.set_on_knowledge_changed(self._on_knowledge_changed)
+        self.terrain_widget.set_on_knowledge_changed(self._on_knowledge_changed)
         self.findings_widget.set_on_task_changed(self._on_related_data_changed)
         self.conclusion_widget.set_complete_handler(self._complete_inspection)
         self.spis_widget.load_inspection(inspection)
@@ -87,6 +89,11 @@ class BozpInspectionDialog(QDialog):
     def _on_verification_type_changed(self) -> None:
         self.areas_widget.refresh_findings_display()
         self.terrain_widget.refresh_findings_display()
+
+    def _on_knowledge_changed(self) -> None:
+        """Po uložení metodiky obnoví obě záložky Dokumentace i Terén."""
+        self.areas_widget.reload_knowledge()
+        self.terrain_widget.reload_knowledge()
 
     def _on_related_data_changed(self) -> None:
         self.findings_widget.refresh()

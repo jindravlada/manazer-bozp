@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
 from moduly.proverky.constants import (
@@ -18,10 +19,34 @@ from moduly.proverky.sluzby.proverky_knowledge_service import (
     proverky_knowledge_service,
 )
 
+logger = logging.getLogger(__name__)
+
 _VALID_VERIFICATION_TYPES = frozenset(
     {
         VERIFICATION_TYPE_DOCUMENTATION,
         VERIFICATION_TYPE_TERRAIN,
+    }
+)
+
+# Historické / alternativní zápisy → kanonické hodnoty projektu (dokumentace / teren).
+_DOCUMENTATION_ALIASES = frozenset(
+    {
+        VERIFICATION_TYPE_DOCUMENTATION,
+        "dokumentace",
+        "documentation",
+        "document",
+        "docs",
+        "doc",
+    }
+)
+_TERRAIN_ALIASES = frozenset(
+    {
+        VERIFICATION_TYPE_TERRAIN,
+        "teren",
+        "terén",
+        "terrain",
+        "field",
+        "teren",
     }
 )
 
@@ -58,20 +83,63 @@ class InspectionVerificationService:
 
     @staticmethod
     def normalize_verification_type(value) -> str:
-        normalized = str(value or "").strip().lower()
-        if normalized in _VALID_VERIFICATION_TYPES:
-            return normalized
-        # Accept Czech labels used in UI / older drafts.
-        if normalized in {"dokumentace", "documentation", "doc"}:
+        """Sjednotí typ ověření na kanonické hodnoty projektu (dokumentace / teren)."""
+        raw = str(value or "").strip()
+        normalized = raw.casefold()
+        if normalized in _DOCUMENTATION_ALIASES:
             return VERIFICATION_TYPE_DOCUMENTATION
-        if normalized in {"terén", "teren", "terrain", "field"}:
+        if normalized in _TERRAIN_ALIASES:
             return VERIFICATION_TYPE_TERRAIN
+        if raw:
+            logger.warning(
+                "Neznámý typ ověření kontrolního bodu %r – použito výchozí %s.",
+                value,
+                VERIFICATION_TYPE_DEFAULT,
+            )
         return VERIFICATION_TYPE_DEFAULT
 
     def methodology_verification_type(self, item: dict | None) -> str:
         if not isinstance(item, dict):
             return VERIFICATION_TYPE_DEFAULT
         return self.normalize_verification_type(item.get("verification_type"))
+
+    def partition_active_control_points(
+        self,
+        items: list | None,
+    ) -> tuple[list[dict], list[dict], list[dict]]:
+        """Rozdělí aktivní body na dokumentaci, terén a nerozpoznané (po normalizaci)."""
+        documentation: list[dict] = []
+        terrain: list[dict] = []
+        unknown: list[dict] = []
+        for item in proverky_knowledge_service.get_active_items(items):
+            raw = item.get("verification_type")
+            if raw not in (None, "") and str(raw).strip().casefold() not in (
+                _DOCUMENTATION_ALIASES | _TERRAIN_ALIASES
+            ):
+                unknown.append(item)
+                logger.warning(
+                    "Kontrolní bod %s má nerozpoznaný typ ověření %r.",
+                    item.get("id"),
+                    raw,
+                )
+            normalized = self.normalize_verification_type(raw)
+            if normalized == VERIFICATION_TYPE_TERRAIN:
+                terrain.append(item)
+            else:
+                documentation.append(item)
+        return documentation, terrain, unknown
+
+    def filter_active_control_points(
+        self,
+        items: list | None,
+        *,
+        verification_type: str,
+    ) -> list[dict]:
+        wanted = self.normalize_verification_type(verification_type)
+        documentation, terrain, _unknown = self.partition_active_control_points(items)
+        if wanted == VERIFICATION_TYPE_TERRAIN:
+            return terrain
+        return documentation
 
     def overrides_map(self, inspection_id: int | None) -> dict[tuple[str, str, str], str]:
         if inspection_id is None:

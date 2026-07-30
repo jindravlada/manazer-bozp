@@ -83,6 +83,7 @@ class BozpInspectionAreasWidget(QWidget):
         self._current_section_id = ""
         self._current_section_label = ""
         self._procedure_dialog: ProverkyControlProcedureDialog | None = None
+        self._on_knowledge_changed = None
 
         header_row = QHBoxLayout()
         header_row.setContentsMargins(0, 0, 0, 0)
@@ -160,6 +161,13 @@ class BozpInspectionAreasWidget(QWidget):
     def set_on_verification_type_changed(self, callback) -> None:
         self.knowledge_widget.section_widget.verification_type_changed.connect(callback)
 
+    def set_on_knowledge_changed(self, callback) -> None:
+        self._on_knowledge_changed = callback
+
+    def reload_knowledge(self) -> None:
+        """Znovu načte strom a aktuální sekci z metodiky (bez cache)."""
+        self._refresh_after_knowledge_edit()
+
     def refresh_findings_display(self) -> None:
         self.knowledge_widget.refresh_findings_display()
 
@@ -226,11 +234,14 @@ class BozpInspectionAreasWidget(QWidget):
                 area_id=self._current_area_id,
                 section_id=self._current_section_id,
             )
-            if exec_maximized(dialog) == QDialog.DialogCode.Accepted:
-                self._refresh_after_knowledge_edit()
-            return
+        else:
+            dialog = ProverkyKnowledgeEditorDialog(self)
 
-        exec_maximized(ProverkyKnowledgeEditorDialog(self))
+        if exec_maximized(dialog) == QDialog.DialogCode.Accepted:
+            if self._on_knowledge_changed is not None:
+                self._on_knowledge_changed()
+            else:
+                self._refresh_after_knowledge_edit()
 
     def _open_control_procedure_dialog(self) -> None:
         if not self._current_area_id or not self._current_section_id:
@@ -322,7 +333,18 @@ class BozpInspectionAreasWidget(QWidget):
             self.area_description_label.setVisible(True)
 
         self.knowledge_widget.clear_section()
-        if area_def and area_def.has_knowledge_file and node.children:
+        has_implemented_content = bool(
+            area_def
+            and area_def.has_knowledge_file
+            and (
+                node.children
+                or proverky_knowledge_service.list_sections(
+                    node.area_id,
+                    include_inactive=False,
+                )
+            )
+        )
+        if has_implemented_content:
             self.content_stack.setCurrentIndex(self._PAGE_HINT)
         else:
             self.content_stack.setCurrentIndex(self._PAGE_PLACEHOLDER)
@@ -331,7 +353,10 @@ class BozpInspectionAreasWidget(QWidget):
         if node is None:
             return
 
-        section = node.section
+        # Vždy načíst aktuální sekci z metodiky – strom může držet zastaralý snímek.
+        section = proverky_knowledge_service.get_section(node.area_id, node.node_id)
+        if section is None:
+            section = node.section
         if section is None:
             self._show_hint()
             return

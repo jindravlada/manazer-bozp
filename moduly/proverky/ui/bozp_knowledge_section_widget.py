@@ -43,6 +43,7 @@ from moduly.proverky.constants import (
     FINDING_SOURCE_LABEL,
     INSPECTION_MUST_BE_SAVED_MESSAGE,
     KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT,
+    AREA_PART_NO_CONTROL_QUESTIONS_TEXT,
     KNOWLEDGE_REFERENCE_PHOTOS_TITLE,
     MOVE_TO_DOCUMENTATION_LABEL,
     MOVE_TO_TERRAIN_LABEL,
@@ -620,16 +621,21 @@ class BozpKnowledgeSectionWidget(QWidget):
         layout.addWidget(header)
 
         items = proverky_knowledge_service.get_active_items(section.get("kontrolni_body"))
-        items = [
+        filtered = [
             item
             for item in items
             if self._effective_type(item) == self._verification_filter
         ]
-        if not items:
-            layout.addWidget(self._build_info_label(KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT))
+        if not filtered:
+            empty_text = (
+                AREA_PART_NO_CONTROL_QUESTIONS_TEXT
+                if items
+                else KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT
+            )
+            layout.addWidget(self._build_info_label(empty_text))
         else:
             first_context: ProverkyFindingKnowledgeContext | None = None
-            for item in items:
+            for item in filtered:
                 context = self._context_for_control_point(item)
                 if first_context is None:
                     first_context = context

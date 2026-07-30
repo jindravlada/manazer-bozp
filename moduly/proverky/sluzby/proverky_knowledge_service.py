@@ -797,23 +797,11 @@ class ProverkyKnowledgeService:
 
     @staticmethod
     def normalize_verification_type(value) -> str:
-        from moduly.proverky.constants import (
-            VERIFICATION_TYPE_DOCUMENTATION,
-            VERIFICATION_TYPE_TERRAIN,
+        from moduly.proverky.sluzby.inspection_verification_service import (
+            inspection_verification_service,
         )
 
-        normalized = str(value or "").strip().lower()
-        if normalized in {
-            VERIFICATION_TYPE_DOCUMENTATION,
-            VERIFICATION_TYPE_TERRAIN,
-        }:
-            return normalized
-        if normalized in {"dokumentace", "documentation", "doc"}:
-            return VERIFICATION_TYPE_DOCUMENTATION
-        if normalized in {"terén", "teren", "terrain", "field"}:
-            return VERIFICATION_TYPE_TERRAIN
-        return VERIFICATION_TYPE_DEFAULT
-
+        return inspection_verification_service.normalize_verification_type(value)
     @classmethod
     def get_verification_type(cls, item: dict | None) -> str:
         if not isinstance(item, dict):
