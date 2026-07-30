@@ -38,10 +38,12 @@ from PySide6.QtWidgets import (
 from core.services.storage_service import storage_service
 
 PHOTO_PICKER_TITLE = "Vybrat fotografii"
+PHOTO_PICKER_TITLE_MULTI = "Vybrat fotografie"
 PHOTO_PICKER_EMPTY = "V této složce nejsou žádné podporované fotografie."
 PHOTO_PICKER_PREVIEW_UNAVAILABLE = "Náhled není dostupný"
 PHOTO_PICKER_PREVIEW_BROKEN = "Soubor nelze načíst"
 PHOTO_PICKER_SELECT_LABEL = "Vybrat fotografii"
+PHOTO_PICKER_SELECT_MULTI_LABEL = "Vybrat fotografie"
 PHOTO_PICKER_CANCEL_LABEL = "Zrušit"
 PHOTO_PICKER_UP_LABEL = "O úroveň výš"
 PHOTO_PICKER_BROWSE_LABEL = "Vybrat složku"
@@ -407,16 +409,20 @@ def _try_capture_date(path: Path) -> str | None:
 
 
 class PhotoPickerDialog(QDialog):
-    """Dialog pro výběr jedné fotografie s náhledy a navigací ve složkách."""
+    """Dialog pro výběr jedné nebo více fotografií s náhledy a navigací ve složkách."""
 
     def __init__(
         self,
         parent=None,
         *,
         initial_directory: str | Path | None = None,
+        allow_multiple: bool = False,
     ):
         super().__init__(parent)
-        self.setWindowTitle(PHOTO_PICKER_TITLE)
+        self._allow_multiple = bool(allow_multiple)
+        self.setWindowTitle(
+            PHOTO_PICKER_TITLE_MULTI if self._allow_multiple else PHOTO_PICKER_TITLE
+        )
         self.setMinimumSize(1000, 650)
         self.resize(1100, 700)
         self._focus_list_pending = True
@@ -427,6 +433,7 @@ class PhotoPickerDialog(QDialog):
         self._thumb_cache: dict[_CacheKey, tuple[QPixmap | None, bool]] = {}
         self._placeholder_icon = self._build_placeholder_icon()
         self._selected_path: Path | None = None
+        self._selected_paths: list[Path] = []
         self._pool = QThreadPool.globalInstance()
 
         self._build_ui()
@@ -440,11 +447,34 @@ class PhotoPickerDialog(QDialog):
         *,
         initial_directory: str | Path | None = None,
     ) -> Path | None:
-        dialog = cls(parent=parent, initial_directory=initial_directory)
+        """Výběr jedné fotografie (zpětná kompatibilita)."""
+        dialog = cls(
+            parent=parent,
+            initial_directory=initial_directory,
+            allow_multiple=False,
+        )
         dialog.showMaximized()
         if dialog.exec() == QDialog.DialogCode.Accepted:
             return dialog.selected_path()
         return None
+
+    @classmethod
+    def get_photos(
+        cls,
+        parent=None,
+        *,
+        initial_directory: str | Path | None = None,
+    ) -> list[Path]:
+        """Výběr jedné nebo více fotografií. Prázdný seznam = zrušeno."""
+        dialog = cls(
+            parent=parent,
+            initial_directory=initial_directory,
+            allow_multiple=True,
+        )
+        dialog.showMaximized()
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            return dialog.selected_paths()
+        return []
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
@@ -456,6 +486,13 @@ class PhotoPickerDialog(QDialog):
 
     def selected_path(self) -> Path | None:
         return self._selected_path
+
+    def selected_paths(self) -> list[Path]:
+        if self._selected_paths:
+            return list(self._selected_paths)
+        if self._selected_path is not None:
+            return [self._selected_path]
+        return []
 
     def current_directory(self) -> Path:
         return self._directory
@@ -503,7 +540,11 @@ class PhotoPickerDialog(QDialog):
         self._list.setGridSize(QSize(_GRID_WIDTH, _GRID_HEIGHT))
         self._list.setResizeMode(QListWidget.ResizeMode.Adjust)
         self._list.setMovement(QListWidget.Movement.Static)
-        self._list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
+        self._list.setSelectionMode(
+            QListWidget.SelectionMode.ExtendedSelection
+            if self._allow_multiple
+            else QListWidget.SelectionMode.SingleSelection
+        )
         self._list.setWordWrap(True)
         self._list.setUniformItemSizes(True)
         self._list.setSpacing(8)
@@ -592,7 +633,10 @@ class PhotoPickerDialog(QDialog):
             PHOTO_PICKER_CANCEL_LABEL, QDialogButtonBox.ButtonRole.RejectRole
         )
         self._select_btn = buttons.addButton(
-            PHOTO_PICKER_SELECT_LABEL, QDialogButtonBox.ButtonRole.AcceptRole
+            PHOTO_PICKER_SELECT_MULTI_LABEL
+            if self._allow_multiple
+            else PHOTO_PICKER_SELECT_LABEL,
+            QDialogButtonBox.ButtonRole.AcceptRole,
         )
         self._select_btn.setEnabled(False)
         self._select_btn.setDefault(True)
@@ -627,6 +671,7 @@ class PhotoPickerDialog(QDialog):
         self._up_btn.setEnabled(self._directory.parent != self._directory)
         self._list.clear()
         self._selected_path = None
+        self._selected_paths = []
         self._select_btn.setEnabled(False)
         self._clear_preview()
 
@@ -791,12 +836,35 @@ class PhotoPickerDialog(QDialog):
 
     def _on_selection_changed(self) -> None:
         item = self._list.currentItem()
+        self._sync_selected_paths()
         self._update_preview_for_item(item)
+
+    def _item_is_selectable(self, item: QListWidgetItem) -> bool:
+        path = Path(str(item.data(_ROLE_PATH) or ""))
+        if not path.is_file():
+            return False
+        suffix = path.suffix.lower()
+        if suffix in _HEIC_EXTENSIONS:
+            return True
+        if bool(item.data(_ROLE_PREVIEW_OK)):
+            return True
+        pixmap = QPixmap(str(path))
+        return not pixmap.isNull()
+
+    def _sync_selected_paths(self) -> None:
+        paths: list[Path] = []
+        for item in self._list.selectedItems():
+            if not self._item_is_selectable(item):
+                continue
+            path = Path(str(item.data(_ROLE_PATH) or "")).resolve()
+            paths.append(path)
+        self._selected_paths = paths
+        self._selected_path = paths[0] if paths else None
 
     def _update_preview_for_item(self, item: QListWidgetItem | None) -> None:
         if item is None:
-            self._selected_path = None
-            self._select_btn.setEnabled(False)
+            self._sync_selected_paths()
+            self._select_btn.setEnabled(bool(self._selected_paths))
             self._clear_preview()
             return
 
@@ -835,8 +903,8 @@ class PhotoPickerDialog(QDialog):
                 scaled = pixmap
             self._preview.setPixmap(scaled)
             self._preview.setText("")
-            self._selected_path = path
-            self._select_btn.setEnabled(True)
+            self._sync_selected_paths()
+            self._select_btn.setEnabled(bool(self._selected_paths))
             self._update_rotate_controls(path)
             return
 
@@ -844,13 +912,13 @@ class PhotoPickerDialog(QDialog):
         self._preview.setPixmap(QPixmap())
         if heic or preview_ok:
             self._preview.setText(PHOTO_PICKER_PREVIEW_UNAVAILABLE)
-            self._selected_path = path if path.is_file() else None
-            self._select_btn.setEnabled(self._selected_path is not None)
         else:
             self._preview.setText(PHOTO_PICKER_PREVIEW_BROKEN)
-            self._selected_path = None
-            self._select_btn.setEnabled(False)
-        self._update_rotate_controls(self._selected_path)
+        self._sync_selected_paths()
+        self._select_btn.setEnabled(bool(self._selected_paths))
+        self._update_rotate_controls(
+            path if path.is_file() and (heic or preview_ok or self._item_is_selectable(item)) else None
+        )
 
     def _update_rotate_controls(self, path: Path | None) -> None:
         supported = bool(path is not None and path.is_file() and is_rotation_supported(path))
@@ -975,18 +1043,28 @@ class PhotoPickerDialog(QDialog):
         self._list.scrollToItem(item)
 
     def _on_item_double_clicked(self, item: QListWidgetItem) -> None:
+        self._list.setCurrentItem(item)
+        if not item.isSelected():
+            if not self._allow_multiple:
+                self._list.clearSelection()
+            item.setSelected(True)
         self._update_preview_for_item(item)
         self._accept_selection()
 
     def _accept_selection(self) -> None:
-        if self._selected_path is None or not self._selected_path.is_file():
+        self._sync_selected_paths()
+        paths = self.selected_paths()
+        if not paths:
             return
+        self._selected_paths = paths
+        self._selected_path = paths[0]
         set_last_photo_directory(self._directory)
         self.accept()
 
     def reject(self) -> None:
         self._generation += 1
         self._selected_path = None
+        self._selected_paths = []
         super().reject()
 
     def closeEvent(self, event) -> None:

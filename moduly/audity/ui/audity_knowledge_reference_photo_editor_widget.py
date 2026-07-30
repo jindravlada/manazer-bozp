@@ -18,6 +18,7 @@ from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 from moduly.audity.ui.audity_knowledge_reference_photo_dialog import (
     AudityKnowledgeReferencePhotoDialog,
 )
+from core.ui.photo_picker_dialog import PhotoPickerDialog
 
 _FIELD_NAME = KNOWLEDGE_EDITOR_SECTION_REFERENCE_PHOTO_TAB[1]
 
@@ -169,23 +170,42 @@ class AudityKnowledgeReferencePhotoEditorWidget(QWidget):
         if not self._process_id or not self._section_id:
             return
 
-        dialog = AudityKnowledgeReferencePhotoDialog(
-            existing_ids=self._existing_ids(),
-            parent=self,
-        )
-        if dialog.exec() != AudityKnowledgeReferencePhotoDialog.DialogCode.Accepted:
+        paths = PhotoPickerDialog.get_photos(parent=self)
+        if not paths:
             return
 
         self.content_modified.emit()
-        errors = audit_knowledge_editor_service.save_section_list_item(
-            self._process_id,
-            self._section_id,
-            _FIELD_NAME,
-            dialog.item_payload(),
-        )
-        if errors:
-            self._show_errors(errors)
-            return
+        existing_ids = self._existing_ids()
+        next_poradi = 10
+        if self._items:
+            next_poradi = max(int(item.get("poradi") or 0) for item in self._items) + 10
+
+        for path in paths:
+            if not path.is_file():
+                continue
+            nazev = path.stem.strip() or "Fotografie"
+            photo_id = audit_knowledge_service.generate_item_id(nazev, existing_ids)
+            existing_ids.add(photo_id)
+            payload = {
+                "id": photo_id,
+                "nazev": nazev,
+                "popis": "",
+                "soubor": str(path.resolve()),
+                "poradi": next_poradi,
+                "aktivni": True,
+                "control_point_id": None,
+            }
+            next_poradi += 10
+            errors = audit_knowledge_editor_service.save_section_list_item(
+                self._process_id,
+                self._section_id,
+                _FIELD_NAME,
+                payload,
+            )
+            if errors:
+                self._show_errors(errors)
+                break
+
         self.reload_items()
 
     def _edit_selected_item(self) -> None:

@@ -3,7 +3,6 @@
 from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
-    QFileDialog,
     QFormLayout,
     QHBoxLayout,
     QLineEdit,
@@ -13,6 +12,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from core.ui.photo_picker_dialog import PhotoPickerDialog
 from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 
@@ -95,14 +95,9 @@ class AudityKnowledgeReferencePhotoDialog(QDialog):
             self._update_generated_id_preview()
 
     def _browse_file(self) -> None:
-        path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Vyberte referenční fotografii",
-            "",
-            "Obrázky (*.png *.jpg *.jpeg *.webp *.gif);;Všechny soubory (*)",
-        )
-        if path:
-            self._soubor_edit.setText(path)
+        selected = PhotoPickerDialog.get_photo(parent=self)
+        if selected is not None:
+            self._soubor_edit.setText(str(selected))
 
     def _update_generated_id_preview(self) -> None:
         if self._editing_id:

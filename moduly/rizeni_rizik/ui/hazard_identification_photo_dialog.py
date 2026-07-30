@@ -4,7 +4,6 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
     QDialogButtonBox,
-    QFileDialog,
     QFormLayout,
     QHBoxLayout,
     QLabel,
@@ -15,6 +14,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from core.ui.photo_picker_dialog import PhotoPickerDialog
 from core.widgets.dialog_utils import create_save_cancel_box
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.rizeni_rizik.constants import HAZARD_PHOTO_DIALOG_TITLE
@@ -35,6 +35,7 @@ class HazardIdentificationPhotoDialog(QDialog):
         hazard_identification_id: int,
         photo=None,
         read_only: bool = False,
+        initial_source: Path | None = None,
     ):
         super().__init__(parent)
 
@@ -87,6 +88,8 @@ class HazardIdentificationPhotoDialog(QDialog):
             self.browse_btn.setVisible(False)
         else:
             self.browse_btn.setEnabled(True)
+            if initial_source is not None:
+                self._apply_source_path(Path(initial_source))
 
         if read_only:
             self.browse_btn.setEnabled(False)
@@ -96,16 +99,7 @@ class HazardIdentificationPhotoDialog(QDialog):
             self.active_checkbox.setEnabled(False)
             buttons.button(QDialogButtonBox.StandardButton.Save).setEnabled(False)
 
-    def _browse_file(self) -> None:
-        path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Vybrat fotografii",
-            "",
-            "Fotografie (*.jpg *.jpeg *.png *.webp);;Všechny soubory (*)",
-        )
-        if not path:
-            return
-        source = Path(path)
+    def _apply_source_path(self, source: Path) -> None:
         self._source_path = source
         self.file_label.setText(source.name)
         if self.taken_at.get_date() is None:
@@ -113,6 +107,11 @@ class HazardIdentificationPhotoDialog(QDialog):
             if peeked is not None:
                 self.taken_at.set_date_value(peeked.date())
 
+    def _browse_file(self) -> None:
+        selected = PhotoPickerDialog.get_photo(parent=self)
+        if selected is None:
+            return
+        self._apply_source_path(Path(selected))
     def accept(self) -> None:
         if self.read_only:
             super().reject()

@@ -7,7 +7,6 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDialog,
-    QFileDialog,
     QFormLayout,
     QHBoxLayout,
     QLabel,
@@ -22,6 +21,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.ui.photo_picker_dialog import PhotoPickerDialog
 from core.widgets.knowledge_editor_actions import (
     clear_save_status,
     confirm_close_with_unsaved_changes,
@@ -32,7 +32,6 @@ from core.widgets.knowledge_editor_actions import (
 from moduly.proverky.constants import (
     CONTROL_POINT_SEVERITY_OPTIONS,
     KNOWLEDGE_EDITOR_SECTION_CONTROL_PROCESS_LABEL,
-    REFERENCE_PHOTO_FILTER,
     VERIFICATION_TYPE_OPTIONS,
 )
 from moduly.proverky.sluzby.proverky_knowledge_service import (
@@ -695,45 +694,51 @@ class ProverkyKnowledgeSectionEditDialog(QDialog):
         return list_widget.currentRow()
 
     def _add_reference_photo(self, list_widget: QListWidget) -> None:
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Vyberte referenční fotografii",
-            "",
-            REFERENCE_PHOTO_FILTER,
-        )
-        if not file_path:
+        paths = PhotoPickerDialog.get_photos(parent=self)
+        if not paths:
             return
 
-        default_name = Path(file_path).stem.strip() or "Fotografie"
-        photo_id = proverky_knowledge_service.generate_item_id(
-            default_name,
-            self._existing_ids(list_widget),
-        )
+        existing_ids = self._existing_ids(list_widget)
+        added = False
+        for file_path in paths:
+            if not file_path.is_file():
+                continue
+            default_name = file_path.stem.strip() or "Fotografie"
+            photo_id = proverky_knowledge_service.generate_item_id(
+                default_name,
+                existing_ids,
+            )
+            existing_ids.add(photo_id)
 
-        try:
-            relative_path = proverky_reference_photo_service.save_optimized(
-                Path(file_path),
-                area_id=self._area_id,
-                section_id=self._section_id,
-                photo_id=photo_id,
-            )
-        except Exception as exc:
-            QMessageBox.warning(
-                self,
-                self.windowTitle(),
-                f"Fotografii se nepodařilo uložit.\n\n{exc}",
-            )
+            try:
+                relative_path = proverky_reference_photo_service.save_optimized(
+                    file_path,
+                    area_id=self._area_id,
+                    section_id=self._section_id,
+                    photo_id=photo_id,
+                )
+            except Exception as exc:
+                QMessageBox.warning(
+                    self,
+                    self.windowTitle(),
+                    f"Fotografii se nepodařilo uložit.\n\n{exc}",
+                )
+                continue
+
+            item = {
+                "id": photo_id,
+                "nazev": default_name,
+                "popis": "",
+                "soubor": relative_path,
+                "control_point_id": None,
+                "aktivni": True,
+            }
+            self._add_reference_row(list_widget, item)
+            added = True
+
+        if not added:
             return
 
-        item = {
-            "id": photo_id,
-            "nazev": default_name,
-            "popis": "",
-            "soubor": relative_path,
-            "control_point_id": None,
-            "aktivni": True,
-        }
-        self._add_reference_row(list_widget, item)
         list_widget.setCurrentRow(list_widget.count() - 1)
         self._refresh_section_count(list_widget)
         self._mark_modified()

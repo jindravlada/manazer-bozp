@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.services.storage_service import storage_service
+from core.ui.photo_picker_dialog import PhotoPickerDialog
 from core.widgets.image_viewer_dialog import ImageViewerDialog
 from core.widgets.table_utils import configure_table_columns
 from moduly.rizeni_rizik.constants import (
@@ -35,6 +36,7 @@ from moduly.rizeni_rizik.sluzby.hazard_identification_working_copy import (
     find_identification_working_copy,
 )
 from moduly.rizeni_rizik.sluzby.hazard_identification_photo_service import (
+    HazardIdentificationPhotoError,
     hazard_identification_photo_service,
 )
 from moduly.rizeni_rizik.ui.hazard_identification_photo_dialog import (
@@ -153,11 +155,52 @@ class HazardIdentificationPhotosWidget(QWidget):
     def add_photo(self) -> bool:
         if not self._ensure_editable():
             return False
-        dialog = HazardIdentificationPhotoDialog(
-            self,
-            hazard_identification_id=self._identification_id,
-        )
-        if dialog.exec():
+        paths = PhotoPickerDialog.get_photos(parent=self)
+        if not paths:
+            return False
+
+        # Jedna fotografie → dialog s metadaty; více → hromadné uložení.
+        if len(paths) == 1:
+            dialog = HazardIdentificationPhotoDialog(
+                self,
+                hazard_identification_id=self._identification_id,
+                initial_source=paths[0],
+            )
+            if dialog.exec():
+                self.refresh()
+                self._notify_editor_dirty()
+                return True
+            return False
+
+        store = self._store()
+        created = 0
+        for path in paths:
+            if not path.is_file():
+                continue
+            try:
+                if store is not None:
+                    store.create_photo(
+                        source_path=path,
+                        caption=path.stem.strip(),
+                        note="",
+                        taken_at=None,
+                        active=True,
+                    )
+                else:
+                    hazard_identification_photo_service.create_photo(
+                        hazard_identification_id=self._identification_id,
+                        source_path=path,
+                        caption=path.stem.strip(),
+                        note="",
+                        taken_at=None,
+                        active=True,
+                    )
+                created += 1
+            except HazardIdentificationPhotoError as error:
+                QMessageBox.warning(self, HAZARD_PHOTO_DIALOG_TITLE, str(error))
+                break
+
+        if created:
             self.refresh()
             self._notify_editor_dirty()
             return True

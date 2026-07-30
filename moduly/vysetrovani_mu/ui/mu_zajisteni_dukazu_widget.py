@@ -5,7 +5,6 @@ from pathlib import Path
 
 from PySide6.QtWidgets import (
     QCheckBox,
-    QFileDialog,
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
@@ -22,6 +21,7 @@ from PySide6.QtWidgets import (
 
 from core.services.attachment_service import attachment_service
 from core.shared.constants import ENTITY_MU_INVESTIGATION
+from core.ui.photo_picker_dialog import PhotoPickerDialog
 from core.widgets.attachment_widget import AttachmentWidget
 from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.thp_worker_selector import ThpWorkerSelector
@@ -384,16 +384,15 @@ class MuZajisteniDukazuWidget(QWidget):
             )
             return
 
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Vyberte fotografii",
-            "",
-            "Obrázky (*.jpg *.jpeg *.png *.webp *.bmp *.tif *.tiff);;Všechny soubory (*)",
-        )
-        if not file_path:
+        selected = PhotoPickerDialog.get_photo(parent=self)
+        if selected is None:
             return
 
-        source = Path(file_path)
+        source = Path(selected)
+        if not source.is_file():
+            QMessageBox.warning(self, "Fotografie", "Vybraný soubor fotografie nebyl nalezen.")
+            return
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         new_name = f"Foto-{item_key}-{self._number_slug}_{timestamp}{source.suffix.lower()}"
         attachment = attachment_service.add_file_as(
