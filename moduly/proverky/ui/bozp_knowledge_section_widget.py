@@ -43,7 +43,6 @@ from moduly.proverky.constants import (
     FINDING_SOURCE_LABEL,
     INSPECTION_MUST_BE_SAVED_MESSAGE,
     KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT,
-    AREA_PART_NO_CONTROL_QUESTIONS_TEXT,
     KNOWLEDGE_REFERENCE_PHOTOS_TITLE,
     MOVE_TO_DOCUMENTATION_LABEL,
     MOVE_TO_TERRAIN_LABEL,
@@ -209,9 +208,22 @@ class BozpKnowledgeSectionWidget(QWidget):
         self._content_layout.addWidget(self._build_referencni_fotografie_block(section))
         self._content_layout.addWidget(self._build_columns(section), 1)
 
+    def _filtered_control_points(self, section: dict) -> list[dict]:
+        items = proverky_knowledge_service.get_active_items(section.get("kontrolni_body"))
+        return [
+            item
+            for item in items
+            if self._effective_type(item) == self._verification_filter
+        ]
+
     def _build_columns(self, section: dict) -> QWidget:
         right_host = self._build_right_column(section)
-        left_scroll = self._build_control_points_scroll_area(section)
+        filtered = self._filtered_control_points(section)
+        if not filtered:
+            # Prázdná část Dokumentace/Terén: panel Kontrolní body vůbec nevytvářet.
+            return wrap_in_scroll_area(right_host)
+
+        left_scroll = self._build_control_points_scroll_area(filtered)
 
         splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.setObjectName("KnowledgeSectionSplitter")
@@ -247,6 +259,7 @@ class BozpKnowledgeSectionWidget(QWidget):
             item = self._content_layout.takeAt(0)
             widget = item.widget()
             if widget is not None:
+                widget.setParent(None)
                 widget.deleteLater()
 
     def _build_popis_block(self, section: dict) -> QWidget:
@@ -605,8 +618,9 @@ class BozpKnowledgeSectionWidget(QWidget):
             frame.style().polish(frame)
         self._refresh_control_point_history(context)
 
-    def _build_control_points_scroll_area(self, section: dict) -> QScrollArea:
+    def _build_control_points_scroll_area(self, filtered: list[dict]) -> QScrollArea:
         scroll = QScrollArea()
+        scroll.setObjectName("ControlPointsPanel")
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QScrollArea.Shape.NoFrame)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -620,28 +634,14 @@ class BozpKnowledgeSectionWidget(QWidget):
         header.setObjectName("SectionTitle")
         layout.addWidget(header)
 
-        items = proverky_knowledge_service.get_active_items(section.get("kontrolni_body"))
-        filtered = [
-            item
-            for item in items
-            if self._effective_type(item) == self._verification_filter
-        ]
-        if not filtered:
-            empty_text = (
-                AREA_PART_NO_CONTROL_QUESTIONS_TEXT
-                if items
-                else KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT
-            )
-            layout.addWidget(self._build_info_label(empty_text))
-        else:
-            first_context: ProverkyFindingKnowledgeContext | None = None
-            for item in filtered:
-                context = self._context_for_control_point(item)
-                if first_context is None:
-                    first_context = context
-                layout.addWidget(self._build_control_point_row(item))
-            if first_context is not None:
-                self._select_control_point(first_context)
+        first_context: ProverkyFindingKnowledgeContext | None = None
+        for item in filtered:
+            context = self._context_for_control_point(item)
+            if first_context is None:
+                first_context = context
+            layout.addWidget(self._build_control_point_row(item))
+        if first_context is not None:
+            self._select_control_point(first_context)
 
         layout.addStretch()
         scroll.setWidget(content)

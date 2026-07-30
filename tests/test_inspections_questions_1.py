@@ -26,7 +26,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
-    from PySide6.QtWidgets import QApplication, QLabel
+    from PySide6.QtWidgets import QApplication, QLabel, QScrollArea
 
     from moduly.proverky.constants import (
         AREA_NOT_IMPLEMENTED_TEXT,
@@ -204,7 +204,7 @@ class InspectionsQuestions1TestCase(unittest.TestCase):
         )
         self.assertTrue(ok, errors)
 
-    def test_empty_part_message_not_area_unimplemented(self) -> None:
+    def test_empty_part_hides_control_points_panel(self) -> None:
         section = self._set_all_points_type(self._bl_section(), VERIFICATION_TYPE_TERRAIN)
         widget = BozpKnowledgeSectionWidget()
         widget.set_verification_filter(VERIFICATION_TYPE_DOCUMENTATION)
@@ -215,8 +215,10 @@ class InspectionsQuestions1TestCase(unittest.TestCase):
             section_label="Bezpečnostní listy",
         )
         labels = [label.text() for label in widget.findChildren(QLabel)]
-        self.assertIn(AREA_PART_NO_CONTROL_QUESTIONS_TEXT, labels)
+        self.assertNotIn(AREA_PART_NO_CONTROL_QUESTIONS_TEXT, labels)
         self.assertNotIn(AREA_NOT_IMPLEMENTED_TEXT, labels)
+        self.assertNotIn("Kontrolní body", labels)
+        self.assertIsNone(widget.findChild(QScrollArea, "ControlPointsPanel"))
 
     def test_area_with_questions_not_marked_unimplemented(self) -> None:
         self._set_all_points_type(self._bl_section(), VERIFICATION_TYPE_TERRAIN)
