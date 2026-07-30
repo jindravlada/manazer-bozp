@@ -1,4 +1,4 @@
-"""UX-COORD-6a – životní cyklus koordinace."""
+"""UX-COORD-6a – životní cyklus koordinace (COORDINATION-UX-1)."""
 
 from __future__ import annotations
 
@@ -35,12 +35,10 @@ with patch.object(Path, "home", return_value=_TMP):
 
     from core.database.session import get_session
     from moduly.koordinace_bozp.constants import (
-        BOZP_COORDINATION_STATUS_ARCHIVED,
-        BOZP_COORDINATION_STATUS_COMPLETED,
+        BOZP_COORDINATION_STATUS_CLOSED,
         BOZP_COORDINATION_STATUS_DRAFT,
         BOZP_COORDINATION_STATUS_ISSUED,
         BOZP_COORDINATION_STATUS_LABELS,
-        BOZP_COORDINATION_STATUS_READY,
         DEFAULT_BOZP_COORDINATION_STATUS,
         PROTOCOL_WARNING_MISSING_MEETING_PLACE,
         PROTOCOL_WARNING_MISSING_PBP_SNAPSHOT,
@@ -120,7 +118,7 @@ class UxCoord6aLifecycleTestCase(unittest.TestCase):
 
     def _create_draft(self, **kwargs) -> BozpCoordination:
         payload = {
-            "subject": "Životní cyklus",
+            "subject": "UX-COORD-6a",
             "meeting_date": date(2026, 7, 19),
             "place": "Jednací místnost",
         }
@@ -129,11 +127,11 @@ class UxCoord6aLifecycleTestCase(unittest.TestCase):
 
     def _prepare_for_protocol_gate(self, coordination: BozpCoordination) -> None:
         operation = settings_service.save_workplace(
-            name="LC provoz",
+            name="6a provoz",
             item_type=WORKPLACE_ITEM_TYPE_OPERATION,
         )
         workplace = settings_service.save_workplace(
-            name="LC pracoviště",
+            name="6a pracoviště",
             item_type=WORKPLACE_ITEM_TYPE_WORKPLACE,
             parent_id=operation.id,
         )
@@ -145,7 +143,7 @@ class UxCoord6aLifecycleTestCase(unittest.TestCase):
         main = coordination_employer_service.ensure_main_employer(coordination.id)
         coordination_coordinator_service.set_coordinator(
             coordination.id,
-            full_name="Koordinátor Test",
+            full_name="Koordinátor 6a",
             role="Koordinátor BOZP",
             employer_name=main.company_name or "Hlavní",
         )
@@ -165,55 +163,46 @@ class UxCoord6aLifecycleTestCase(unittest.TestCase):
         created = self._create_draft()
         self._prepare_for_protocol_gate(created)
 
-        with self.assertRaises(CoordinationLifecycleError):
-            coordination_lifecycle_service.transition(
-                created.id,
-                BOZP_COORDINATION_STATUS_ISSUED,
-                confirm_warnings=True,
-            )
-
         with self.assertRaises(CoordinationLifecycleNeedsConfirmation):
             coordination_lifecycle_service.transition(
                 created.id,
-                BOZP_COORDINATION_STATUS_READY,
+                BOZP_COORDINATION_STATUS_CLOSED,
             )
 
-        ready = coordination_lifecycle_service.transition(
+        closed = coordination_lifecycle_service.transition(
             created.id,
-            BOZP_COORDINATION_STATUS_READY,
+            BOZP_COORDINATION_STATUS_CLOSED,
             confirm_warnings=True,
         )
-        self.assertEqual(ready.status, BOZP_COORDINATION_STATUS_READY)
-        self.assertIsNotNone(ready.ready_at)
+        self.assertEqual(closed.status, BOZP_COORDINATION_STATUS_CLOSED)
+        self.assertIsNotNone(closed.completed_at)
 
-        issued = coordination_lifecycle_service.transition(
-            ready.id,
-            BOZP_COORDINATION_STATUS_ISSUED,
-            confirm_warnings=True,
-        )
-        self.assertEqual(issued.status, BOZP_COORDINATION_STATUS_ISSUED)
-        self.assertIsNotNone(issued.issued_at)
-
-        completed = coordination_lifecycle_service.transition(
-            issued.id,
-            BOZP_COORDINATION_STATUS_COMPLETED,
-        )
-        self.assertEqual(completed.status, BOZP_COORDINATION_STATUS_COMPLETED)
-        self.assertIsNotNone(completed.completed_at)
-
-        with self.assertRaises(CoordinationLifecycleError):
-            coordination_lifecycle_service.transition(
-                completed.id,
-                BOZP_COORDINATION_STATUS_ISSUED,
+        self.assertFalse(
+            coordination_lifecycle_service.can_transition(
+                BOZP_COORDINATION_STATUS_CLOSED,
+                BOZP_COORDINATION_STATUS_CLOSED,
             )
+        )
+        self.assertTrue(
+            coordination_lifecycle_service.can_transition(
+                BOZP_COORDINATION_STATUS_DRAFT,
+                BOZP_COORDINATION_STATUS_CLOSED,
+            )
+        )
 
-    def test_critical_warning_blocks_ready(self) -> None:
+        draft_again = coordination_lifecycle_service.transition(
+            closed.id,
+            BOZP_COORDINATION_STATUS_DRAFT,
+        )
+        self.assertEqual(draft_again.status, BOZP_COORDINATION_STATUS_DRAFT)
+
+    def test_critical_warning_blocks_close(self) -> None:
         created = self._create_draft(place="")
         self._prepare_for_protocol_gate(created)
         with self.assertRaises(CoordinationLifecycleBlocked) as ctx:
             coordination_lifecycle_service.transition(
                 created.id,
-                BOZP_COORDINATION_STATUS_READY,
+                BOZP_COORDINATION_STATUS_CLOSED,
                 confirm_warnings=True,
             )
         codes = {item.code for item in ctx.exception.warnings}
@@ -228,78 +217,47 @@ class UxCoord6aLifecycleTestCase(unittest.TestCase):
         with self.assertRaises(CoordinationLifecycleNeedsConfirmation) as ctx:
             coordination_lifecycle_service.transition(
                 created.id,
-                BOZP_COORDINATION_STATUS_READY,
+                BOZP_COORDINATION_STATUS_CLOSED,
             )
         codes = {item.code for item in ctx.exception.warnings}
         self.assertIn(PROTOCOL_WARNING_MISSING_PBP_SNAPSHOT, codes)
         self.assertFalse(ctx.exception.sensitive)
 
-    def test_issue_only_from_ready(self) -> None:
-        created = self._create_draft()
-        self._prepare_for_protocol_gate(created)
-        with self.assertRaises(CoordinationLifecycleError):
-            coordination_lifecycle_service.transition(
-                created.id,
-                BOZP_COORDINATION_STATUS_ISSUED,
-                confirm_warnings=True,
-            )
-
     def test_timestamps_updated_not_cleared_on_return(self) -> None:
         created = self._create_draft()
         self._prepare_for_protocol_gate(created)
-        ready = coordination_lifecycle_service.transition(
+        closed = coordination_lifecycle_service.transition(
             created.id,
-            BOZP_COORDINATION_STATUS_READY,
+            BOZP_COORDINATION_STATUS_CLOSED,
             confirm_warnings=True,
         )
-        first_ready_at = ready.ready_at
-        self.assertIsInstance(first_ready_at, datetime)
+        first_completed_at = closed.completed_at
+        self.assertIsInstance(first_completed_at, datetime)
 
         draft_again = coordination_lifecycle_service.transition(
-            ready.id,
+            closed.id,
             BOZP_COORDINATION_STATUS_DRAFT,
         )
         self.assertEqual(draft_again.status, BOZP_COORDINATION_STATUS_DRAFT)
-        self.assertEqual(draft_again.ready_at, first_ready_at)
+        self.assertEqual(draft_again.completed_at, first_completed_at)
 
-        ready_again = coordination_lifecycle_service.transition(
+        closed_again = coordination_lifecycle_service.transition(
             draft_again.id,
-            BOZP_COORDINATION_STATUS_READY,
+            BOZP_COORDINATION_STATUS_CLOSED,
             confirm_warnings=True,
         )
-        self.assertIsNotNone(ready_again.ready_at)
-        assert ready_again.ready_at is not None and first_ready_at is not None
-        self.assertGreaterEqual(ready_again.ready_at, first_ready_at)
-
-    def test_archive_and_restore(self) -> None:
-        created = self._create_draft()
-        archived = coordination_lifecycle_service.transition(
-            created.id,
-            BOZP_COORDINATION_STATUS_ARCHIVED,
-        )
-        self.assertEqual(archived.status, BOZP_COORDINATION_STATUS_ARCHIVED)
-        self.assertIsNotNone(archived.archived_at)
-
-        with self.assertRaises(CoordinationLifecycleNeedsConfirmation):
-            coordination_lifecycle_service.transition(
-                archived.id,
-                BOZP_COORDINATION_STATUS_DRAFT,
-            )
-
-        restored = coordination_lifecycle_service.transition(
-            archived.id,
-            BOZP_COORDINATION_STATUS_DRAFT,
-            confirm_sensitive=True,
-        )
-        self.assertEqual(restored.status, BOZP_COORDINATION_STATUS_DRAFT)
-        self.assertIsNotNone(restored.archived_at)
+        self.assertIsNotNone(closed_again.completed_at)
+        assert closed_again.completed_at is not None and first_completed_at is not None
+        self.assertGreaterEqual(closed_again.completed_at, first_completed_at)
 
     def test_legacy_status_mapping(self) -> None:
         self.assertEqual(normalize_coordination_status("in_progress"), "draft")
-        self.assertEqual(normalize_coordination_status("prepared"), "ready")
-        self.assertEqual(normalize_coordination_status("active"), "ready")
-        self.assertEqual(normalize_coordination_status("published"), "issued")
-        self.assertEqual(normalize_coordination_status("done"), "completed")
+        self.assertEqual(normalize_coordination_status("prepared"), "closed")
+        self.assertEqual(normalize_coordination_status("active"), "closed")
+        self.assertEqual(normalize_coordination_status("published"), "closed")
+        self.assertEqual(normalize_coordination_status("done"), "closed")
+        self.assertEqual(normalize_coordination_status("ready"), "closed")
+        self.assertEqual(normalize_coordination_status("issued"), "closed")
         self.assertEqual(normalize_coordination_status("weird_old"), "draft")
 
         created = self._create_draft()
@@ -316,6 +274,24 @@ class UxCoord6aLifecycleTestCase(unittest.TestCase):
         reloaded = bozp_coordination_service.get_by_id(created.id)
         assert reloaded is not None
         self.assertEqual(reloaded.status, BOZP_COORDINATION_STATUS_DRAFT)
+
+        for legacy in ("ready", "issued", "completed", "archived"):
+            with get_session() as session:
+                session.execute(
+                    text(
+                        "UPDATE bozp_coordinations SET status = :status WHERE id = :id"
+                    ),
+                    {"status": legacy, "id": created.id},
+                )
+                session.commit()
+            _ensure_bozp_coordinations_table()
+            reloaded = bozp_coordination_service.get_by_id(created.id)
+            assert reloaded is not None
+            self.assertEqual(
+                reloaded.status,
+                BOZP_COORDINATION_STATUS_CLOSED,
+                msg=legacy,
+            )
 
         with get_session() as session:
             session.execute(

@@ -1,4 +1,4 @@
-"""Životní cyklus koordinace BOZP (UX-COORD-6a)."""
+"""Životní cyklus koordinace BOZP (COORDINATION-UX-1)."""
 
 from __future__ import annotations
 
@@ -7,21 +7,17 @@ from datetime import datetime
 
 from moduly.koordinace_bozp.constants import (
     BOZP_COORDINATION_LIFECYCLE_ACTIONS,
-    BOZP_COORDINATION_STATUS_ARCHIVED,
+    BOZP_COORDINATION_STATUS_CLOSED,
     BOZP_COORDINATION_STATUS_COLORS,
-    BOZP_COORDINATION_STATUS_COMPLETED,
     BOZP_COORDINATION_STATUS_DRAFT,
-    BOZP_COORDINATION_STATUS_ISSUED,
     BOZP_COORDINATION_STATUS_LABELS,
     BOZP_COORDINATION_STATUS_LEGACY_MAP,
-    BOZP_COORDINATION_STATUS_READY,
     BOZP_COORDINATION_STATUS_TRANSITIONS,
     BOZP_COORDINATION_STATUSES,
     BOZP_COORDINATION_STATUSES_REQUIRING_PROTOCOL_CHECK,
     DEFAULT_BOZP_COORDINATION_STATUS,
     LIFECYCLE_ACTION_CONFIRM_MESSAGES,
     PROTOCOL_VERSION_MARK_DRAFT,
-    PROTOCOL_VERSION_MARK_READY,
     PROTOCOL_WARNING_SEVERITY_CRITICAL,
     PROTOCOL_WARNING_SEVERITY_WARNING,
 )
@@ -95,29 +91,19 @@ def status_color(status: str | None) -> str:
 
 
 def is_content_editable(status: str | None) -> bool:
-    """Plná / podmíněná editace obsahu (draft, ready)."""
-    return normalize_coordination_status(status) in {
-        BOZP_COORDINATION_STATUS_DRAFT,
-        BOZP_COORDINATION_STATUS_READY,
-    }
+    """Editace obsahu jen ve stavu Rozpracováno."""
+    return normalize_coordination_status(status) == BOZP_COORDINATION_STATUS_DRAFT
 
 
 def is_strict_readonly(status: str | None) -> bool:
-    """Vydáno / Ukončeno / Archivováno – bez úprav obsahu."""
-    return normalize_coordination_status(status) in {
-        BOZP_COORDINATION_STATUS_ISSUED,
-        BOZP_COORDINATION_STATUS_COMPLETED,
-        BOZP_COORDINATION_STATUS_ARCHIVED,
-    }
+    """Uzavřená schůzka – bez úprav obsahu."""
+    return normalize_coordination_status(status) == BOZP_COORDINATION_STATUS_CLOSED
 
 
 def protocol_version_mark(status: str | None) -> str | None:
-    """Označení pracovní verze pro náhled / ODT, nebo None."""
-    normalized = normalize_coordination_status(status)
-    if normalized == BOZP_COORDINATION_STATUS_DRAFT:
+    """Označení pracovní verze pro náhled / ODT, nebo None (finální)."""
+    if normalize_coordination_status(status) == BOZP_COORDINATION_STATUS_DRAFT:
         return PROTOCOL_VERSION_MARK_DRAFT
-    if normalized == BOZP_COORDINATION_STATUS_READY:
-        return PROTOCOL_VERSION_MARK_READY
     return None
 
 
@@ -125,6 +111,16 @@ def lifecycle_confirm_message(action_id: str) -> str:
     return LIFECYCLE_ACTION_CONFIRM_MESSAGES.get(
         action_id,
         "Opravdu provést změnu stavu?",
+    )
+
+
+def close_meeting_action() -> LifecycleAction:
+    """Akce uzavření schůzky (tlačítko v editoru)."""
+    return LifecycleAction(
+        action_id="close",
+        target_status=BOZP_COORDINATION_STATUS_CLOSED,
+        label="Uzavřít",
+        requires_sensitive_confirm=False,
     )
 
 
@@ -183,13 +179,6 @@ class CoordinationLifecycleService:
             )
 
         if target in BOZP_COORDINATION_STATUSES_REQUIRING_PROTOCOL_CHECK:
-            if (
-                target == BOZP_COORDINATION_STATUS_ISSUED
-                and current != BOZP_COORDINATION_STATUS_READY
-            ):
-                raise CoordinationLifecycleError(
-                    "Vydat lze pouze ze stavu Připraveno k vydání."
-                )
             self._validate_protocol_gate(
                 coordination_id,
                 confirm_warnings=confirm_warnings,
@@ -197,14 +186,8 @@ class CoordinationLifecycleService:
 
         now = datetime.now()
         coordination.status = target
-        if target == BOZP_COORDINATION_STATUS_READY:
-            coordination.ready_at = now
-        elif target == BOZP_COORDINATION_STATUS_ISSUED:
-            coordination.issued_at = now
-        elif target == BOZP_COORDINATION_STATUS_COMPLETED:
+        if target == BOZP_COORDINATION_STATUS_CLOSED:
             coordination.completed_at = now
-        elif target == BOZP_COORDINATION_STATUS_ARCHIVED:
-            coordination.archived_at = now
         coordination.updated_at = now
         return bozp_coordination_service.repository.update(coordination)
 
@@ -213,26 +196,21 @@ class CoordinationLifecycleService:
         from_status: str,
         to_status: str,
     ) -> LifecycleAction | None:
+        if (
+            from_status == BOZP_COORDINATION_STATUS_DRAFT
+            and to_status == BOZP_COORDINATION_STATUS_CLOSED
+        ):
+            return close_meeting_action()
         for action in self.list_actions(from_status):
             if action.target_status == to_status:
                 return action
         return None
 
     def _sensitive_confirm_message(self, from_status: str, to_status: str) -> str:
-        if from_status == BOZP_COORDINATION_STATUS_ISSUED:
+        if from_status == BOZP_COORDINATION_STATUS_CLOSED:
             return (
-                "Koordinace je ve stavu Vydáno. "
+                "Koordinace je uzavřená. "
                 "Opravdu ji vrátit k dopracování?"
-            )
-        if from_status == BOZP_COORDINATION_STATUS_COMPLETED:
-            return (
-                "Koordinace je ukončená. "
-                "Opravdu ji znovu otevřít do stavu Rozpracováno?"
-            )
-        if from_status == BOZP_COORDINATION_STATUS_ARCHIVED:
-            return (
-                "Koordinace je archivovaná. "
-                "Opravdu ji obnovit do stavu Rozpracováno?"
             )
         return (
             f"Opravdu provést přechod ze stavu „{status_label(from_status)}“ "

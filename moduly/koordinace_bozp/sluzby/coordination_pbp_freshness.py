@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from datetime import date
 
 from moduly.koordinace_bozp.constants import (
-    BOZP_COORDINATION_STATUS_ARCHIVED,
+    BOZP_COORDINATION_STATUS_DRAFT,
     PBP_FILTER_ALL,
     PBP_FILTER_CURRENT,
     PBP_FILTER_MISSING,
@@ -71,10 +71,11 @@ def is_pbp_freshness_eligible(
     *,
     today: date | None = None,
 ) -> bool:
-    """Kontrola jen u aktivních, nearchivovaných a dosud platných koordinací."""
+    """Kontrola jen u aktivních, rozpracovaných a dosud platných koordinací."""
     if not coordination.active:
         return False
-    if coordination.status == BOZP_COORDINATION_STATUS_ARCHIVED:
+    status = (coordination.status or "").strip().lower()
+    if status not in (BOZP_COORDINATION_STATUS_DRAFT, "in_progress", ""):
         return False
     if coordination.valid_to is None:
         return False

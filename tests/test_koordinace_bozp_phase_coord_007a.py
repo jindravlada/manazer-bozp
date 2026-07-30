@@ -33,7 +33,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
     from core.database.session import get_session
     from moduly.koordinace_bozp.constants import (
-        BOZP_COORDINATION_STATUS_ARCHIVED,
+        BOZP_COORDINATION_STATUS_CLOSED,
         BOZP_COORDINATION_STATUS_COMPLETED,
         COL_PBP,
         PBP_FILTER_MISSING,
@@ -319,15 +319,8 @@ class KoordinaceBozpPhaseCoord007aTestCase(unittest.TestCase):
     def test_archived_coordination_skipped(self) -> None:
         self._create_measure(description="Pravidlo")
         coordination = self._create_coordination_with_place(subject="Archiv")
-        from moduly.koordinace_bozp.sluzby.coordination_lifecycle_service import (
-            coordination_lifecycle_service,
-        )
-
-        coordination_lifecycle_service.transition(
-            coordination.id,
-            BOZP_COORDINATION_STATUS_ARCHIVED,
-        )
-        coordination = bozp_coordination_service.get_by_id(coordination.id)
+        coordination.status = BOZP_COORDINATION_STATUS_CLOSED
+        coordination = bozp_coordination_service.repository.update(coordination)
         result = evaluate_pbp_freshness(coordination, today=self.today)
         self.assertEqual(result.state, PBP_FRESHNESS_SKIPPED)
 
@@ -395,14 +388,8 @@ class KoordinaceBozpPhaseCoord007aTestCase(unittest.TestCase):
         self._create_measure(description="Nové pravidlo", event_name="new")
 
         archived = self._create_coordination_with_place(subject="Archiv bez PBP")
-        from moduly.koordinace_bozp.sluzby.coordination_lifecycle_service import (
-            coordination_lifecycle_service,
-        )
-
-        coordination_lifecycle_service.transition(
-            archived.id,
-            BOZP_COORDINATION_STATUS_ARCHIVED,
-        )
+        archived.status = BOZP_COORDINATION_STATUS_CLOSED
+        bozp_coordination_service.repository.update(archived)
 
         missing_ids = {
             item.id

@@ -9,12 +9,10 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QMenu,
     QMessageBox,
     QPushButton,
     QTabWidget,
     QTextEdit,
-    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -31,14 +29,11 @@ from core.widgets.editor_dialog_controller import (
     confirm_unsaved_editor_close,
 )
 from moduly.koordinace_bozp.constants import (
-    BOZP_COORDINATION_STATUS_DRAFT,
-    BOZP_COORDINATION_STATUS_READY,
     DEFAULT_BOZP_COORDINATION_STATUS,
     DIALOG_WINDOW_TITLE,
     LABEL_ACTION_NAME,
     LABEL_MEETING_DATE,
     LABEL_MEETING_PLACE,
-    READY_EDIT_REVERT_MESSAGE,
     TAB_BASICS,
     TAB_CONTACTS,
     TAB_COORDINATOR,
@@ -56,8 +51,7 @@ from moduly.koordinace_bozp.sluzby.bozp_coordination_service import (
     default_meeting_place_from_settings,
 )
 from moduly.koordinace_bozp.sluzby.coordination_lifecycle_service import (
-    LifecycleAction,
-    coordination_lifecycle_service,
+    close_meeting_action,
     is_content_editable,
     is_strict_readonly,
     normalize_coordination_status,
@@ -115,7 +109,6 @@ class BozpCoordinationDialog(QDialog):
         super().__init__(parent)
         self.coordination = coordination
         self._sync_validity_from_meeting = coordination is None
-        self._ready_edit_guard_armed = False
         self._applying_edit_policy = False
         self._dirty = False
         self._closing = False
@@ -131,15 +124,9 @@ class BozpCoordinationDialog(QDialog):
         status_font.setBold(True)
         status_font.setPointSize(status_font.pointSize() + 1)
         self.status_value.setFont(status_font)
-        self.change_status_btn = QToolButton()
-        self.change_status_btn.setText("Změnit stav")
-        self.change_status_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
-        self.change_status_menu = QMenu(self)
-        self.change_status_btn.setMenu(self.change_status_menu)
         status_bar.addWidget(self.status_caption)
         status_bar.addWidget(self.status_value)
         status_bar.addStretch()
-        status_bar.addWidget(self.change_status_btn)
         layout.addLayout(status_bar)
 
         self.tabs = QTabWidget()
@@ -233,6 +220,12 @@ class BozpCoordinationDialog(QDialog):
         self.buttons = create_save_cancel_box(self, is_new=coordination is None)
         self.save_button = self.buttons.button(QDialogButtonBox.StandardButton.Save)
         self.close_button = self.buttons.button(QDialogButtonBox.StandardButton.Cancel)
+        self.close_meeting_btn = QPushButton("Uzavřít")
+        self.close_meeting_btn.clicked.connect(self._close_meeting)
+        self.buttons.addButton(
+            self.close_meeting_btn,
+            QDialogButtonBox.ButtonRole.ActionRole,
+        )
         if self.save_button is not None:
             self.save_button.clicked.connect(self._save)
         self.buttons.rejected.connect(self.reject)
@@ -263,12 +256,6 @@ class BozpCoordinationDialog(QDialog):
             self._set_detail_tabs_enabled(True)
 
         self.meeting_date.dateChanged.connect(self._on_meeting_date_changed)
-        self.meeting_date.dateChanged.connect(self._on_content_edited)
-        self.place.textEdited.connect(self._on_content_edited)
-        self.subject.textEdited.connect(self._on_content_edited)
-        self.valid_from.dateChanged.connect(self._on_content_edited)
-        self.valid_to.dateChanged.connect(self._on_content_edited)
-        self.note.textChanged.connect(self._on_content_edited)
         self.place.textEdited.connect(self.mark_dirty)
         self.subject.textEdited.connect(self.mark_dirty)
         self.meeting_date.dateChanged.connect(self.mark_dirty)
@@ -292,15 +279,18 @@ class BozpCoordinationDialog(QDialog):
         self._update_save_enabled()
 
     def _update_save_enabled(self) -> None:
-        if self.save_button is None:
-            return
-        if self.coordination is None:
-            self.save_button.setEnabled(True)
-            self.save_button.setVisible(True)
-            return
-        editable = is_content_editable(self.coordination.status)
-        self.save_button.setVisible(editable)
-        self.save_button.setEnabled(editable and self.is_dirty())
+        editable = (
+            True
+            if self.coordination is None
+            else is_content_editable(self.coordination.status)
+        )
+        if self.save_button is not None:
+            self.save_button.setVisible(editable)
+            self.save_button.setEnabled(
+                editable and (self.coordination is None or self.is_dirty())
+            )
+        self.close_meeting_btn.setVisible(editable)
+        self.close_meeting_btn.setEnabled(editable)
 
     def _content_tabs(self):
         return (
@@ -340,8 +330,6 @@ class BozpCoordinationDialog(QDialog):
         """Uloží koordinaci (včetně koordinátora) a ponechá editor otevřený."""
         if self.coordination is not None and is_strict_readonly(self.coordination.status):
             return False
-        if self._ready_edit_guard_armed and not self.ensure_editable_for_content_change():
-            return False
         data = self.get_data()
         try:
             if self.coordination is None:
@@ -363,22 +351,27 @@ class BozpCoordinationDialog(QDialog):
         self.mark_clean()
         return True
 
+    def _close_meeting(self) -> None:
+        """Uloží změny, uzavře schůzku a uzamkne editaci."""
+        if self.coordination is not None and is_strict_readonly(self.coordination.status):
+            return
+        if not self._save():
+            return
+        assert self.coordination is not None
+        updated = run_lifecycle_transition(
+            self,
+            self.coordination.id,
+            close_meeting_action(),
+        )
+        if updated is None:
+            return
+        self.coordination = updated
+        self._refresh_status_ui(updated.status)
+
     def _refresh_status_ui(self, status: str | None) -> None:
         normalized = normalize_coordination_status(status)
         self.status_value.setText(status_label(normalized))
         self.status_value.setStyleSheet(f"color: {status_color(normalized)};")
-        self.change_status_menu.clear()
-        self.change_status_btn.setEnabled(self.coordination is not None)
-        if self.coordination is not None:
-            for action in coordination_lifecycle_service.list_actions(normalized):
-                menu_action = self.change_status_menu.addAction(action.label)
-                menu_action.triggered.connect(
-                    lambda _checked=False, act=action: self._run_lifecycle_action(act)
-                )
-            self.change_status_btn.setEnabled(
-                not self.change_status_menu.isEmpty()
-            )
-        self._ready_edit_guard_armed = normalized == BOZP_COORDINATION_STATUS_READY
         self._apply_edit_policy(normalized)
 
     def _apply_edit_policy(self, status: str | None) -> None:
@@ -395,74 +388,9 @@ class BozpCoordinationDialog(QDialog):
 
             self._update_save_enabled()
 
-            before_mutate = (
-                self.ensure_editable_for_content_change
-                if normalize_coordination_status(status) == BOZP_COORDINATION_STATUS_READY
-                else None
-            )
             for tab in self._content_tabs():
                 if hasattr(tab, "set_content_editable"):
-                    tab.set_content_editable(
-                        editable and not readonly,
-                        before_mutate=before_mutate,
-                    )
-        finally:
-            self._applying_edit_policy = False
-
-    def _revert_ready_to_draft(self) -> bool:
-        if self.coordination is None:
-            return False
-        if not self._persist_current_form():
-            return False
-        try:
-            updated = coordination_lifecycle_service.transition(
-                self.coordination.id,
-                BOZP_COORDINATION_STATUS_DRAFT,
-            )
-        except Exception as error:  # noqa: BLE001 – UI feedback
-            QMessageBox.warning(self, DIALOG_WINDOW_TITLE, str(error))
-            return False
-        self.coordination = updated
-        self._ready_edit_guard_armed = False
-        self._refresh_status_ui(updated.status)
-        return True
-
-    def ensure_editable_for_content_change(self) -> bool:
-        """Guard pro první obsahovou změnu ve stavu Připraveno k vydání."""
-        if not self._ready_edit_guard_armed or self.coordination is None:
-            return True
-        answer = QMessageBox.question(
-            self,
-            DIALOG_WINDOW_TITLE,
-            READY_EDIT_REVERT_MESSAGE,
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No,
-        )
-        if answer != QMessageBox.Yes:
-            return False
-        return self._revert_ready_to_draft()
-
-    def _on_content_edited(self, *_args) -> None:
-        if self._applying_edit_policy or not self._ready_edit_guard_armed:
-            return
-        if not self.ensure_editable_for_content_change():
-            self._reload_basics_from_coordination()
-
-    def _reload_basics_from_coordination(self) -> None:
-        coordination = self.coordination
-        if coordination is None:
-            return
-        self._applying_edit_policy = True
-        try:
-            if coordination.meeting_date:
-                self.meeting_date.setDate(_qdate_from_date(coordination.meeting_date))
-            self.place.setText(coordination.place or "")
-            self.subject.setText(coordination.subject or "")
-            if coordination.valid_from:
-                self.valid_from.setDate(_qdate_from_date(coordination.valid_from))
-            if coordination.valid_to:
-                self.valid_to.setDate(_qdate_from_date(coordination.valid_to))
-            self.note.setPlainText(coordination.note or "")
+                    tab.set_content_editable(editable and not readonly)
         finally:
             self._applying_edit_policy = False
 
@@ -485,20 +413,6 @@ class BozpCoordinationDialog(QDialog):
             return False
         self.mark_clean()
         return True
-
-    def _run_lifecycle_action(self, action: LifecycleAction) -> None:
-        if self.coordination is None:
-            return
-        updated = run_lifecycle_transition(
-            self,
-            self.coordination.id,
-            action,
-            before_transition=self._persist_current_form,
-        )
-        if updated is None:
-            return
-        self.coordination = updated
-        self._refresh_status_ui(updated.status)
 
     def _on_meeting_date_changed(self, *_args) -> None:
         if self._sync_validity_from_meeting:

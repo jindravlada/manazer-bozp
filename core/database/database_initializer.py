@@ -2089,7 +2089,7 @@ def _ensure_bozp_coordinations_table() -> None:
     if "archived_at" not in columns:
         _add_column("bozp_coordinations", "archived_at DATETIME")
 
-    # UX-COORD-6a: bezpečné mapování legacy stavů na kanonické hodnoty.
+    # COORDINATION-UX-1: mapování legacy stavů na Rozpracováno / Uzavřeno.
     with _db_engine().connect() as connection:
         connection.execute(
             text(
@@ -2106,41 +2106,13 @@ def _ensure_bozp_coordinations_table() -> None:
             text(
                 """
                 UPDATE bozp_coordinations
-                SET status = 'ready'
+                SET status = 'closed'
                 WHERE lower(trim(coalesce(status, ''))) IN (
-                    'ready', 'prepared', 'active'
+                    'ready', 'prepared', 'active',
+                    'issued', 'published',
+                    'completed', 'done',
+                    'archived', 'closed'
                 )
-                """
-            )
-        )
-        connection.execute(
-            text(
-                """
-                UPDATE bozp_coordinations
-                SET status = 'issued'
-                WHERE lower(trim(coalesce(status, ''))) IN (
-                    'issued', 'published'
-                )
-                """
-            )
-        )
-        connection.execute(
-            text(
-                """
-                UPDATE bozp_coordinations
-                SET status = 'completed'
-                WHERE lower(trim(coalesce(status, ''))) IN (
-                    'completed', 'done'
-                )
-                """
-            )
-        )
-        connection.execute(
-            text(
-                """
-                UPDATE bozp_coordinations
-                SET status = 'archived'
-                WHERE lower(trim(coalesce(status, ''))) = 'archived'
                 """
             )
         )
@@ -2150,7 +2122,7 @@ def _ensure_bozp_coordinations_table() -> None:
                 UPDATE bozp_coordinations
                 SET status = 'draft'
                 WHERE lower(trim(coalesce(status, ''))) NOT IN (
-                    'draft', 'ready', 'issued', 'completed', 'archived'
+                    'draft', 'closed'
                 )
                 """
             )

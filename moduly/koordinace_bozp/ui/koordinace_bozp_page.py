@@ -35,13 +35,11 @@ from moduly.koordinace_bozp.constants import (
     VALIDITY_FILTER_VALID,
 )
 from moduly.koordinace_bozp.sluzby.bozp_coordination_service import (
-    BozpCoordinationError,
     bozp_coordination_service,
 )
 from moduly.koordinace_bozp.sluzby.coordination_lifecycle_service import (
     LifecycleAction,
     coordination_lifecycle_service,
-    is_strict_readonly,
     normalize_coordination_status,
 )
 from moduly.koordinace_bozp.sluzby.coordination_pbp_freshness import PbpFreshnessCache
@@ -49,6 +47,9 @@ from moduly.koordinace_bozp.ui.bozp_coordination_dialog import BozpCoordinationD
 from moduly.koordinace_bozp.ui.bozp_coordination_table import BozpCoordinationTable
 from moduly.koordinace_bozp.ui.coordination_lifecycle_ui import (
     run_lifecycle_transition,
+)
+from moduly.koordinace_bozp.ui.coordination_protocol_preview_dialog import (
+    CoordinationProtocolPreviewDialog,
 )
 
 
@@ -65,11 +66,13 @@ class KoordinaceBozpPage(QWidget):
         toolbar = QHBoxLayout()
         self.new_btn = QPushButton("Nová koordinace")
         self.open_btn = QPushButton("Otevřít")
+        self.print_btn = QPushButton("Tisk protokolu")
         self.activate_btn = QPushButton("Aktivovat")
         self.deactivate_btn = QPushButton("Deaktivovat")
 
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.open_btn)
+        toolbar.addWidget(self.print_btn)
         toolbar.addWidget(self.activate_btn)
         toolbar.addWidget(self.deactivate_btn)
         self.lifecycle_toolbar = QHBoxLayout()
@@ -116,6 +119,7 @@ class KoordinaceBozpPage(QWidget):
 
         self.new_btn.clicked.connect(self.new_coordination)
         self.open_btn.clicked.connect(self.open_selected_coordination)
+        self.print_btn.clicked.connect(self.print_selected_protocol)
         self.activate_btn.clicked.connect(self.activate_selected_coordination)
         self.deactivate_btn.clicked.connect(self.deactivate_selected_coordination)
         self.status_filter.currentIndexChanged.connect(self.refresh)
@@ -210,6 +214,17 @@ class KoordinaceBozpPage(QWidget):
             preserve_scroll=True,
         )
 
+    def print_selected_protocol(self) -> None:
+        coordination = self._selected_coordination()
+        if coordination is None:
+            QMessageBox.information(self, DIALOG_WINDOW_TITLE, "Vyberte koordinaci.")
+            return
+        dialog = CoordinationProtocolPreviewDialog(
+            self,
+            coordination_id=coordination.id,
+        )
+        dialog.exec()
+
     def activate_selected_coordination(self) -> None:
         coordination = self._selected_coordination()
         if coordination is None:
@@ -282,6 +297,7 @@ class KoordinaceBozpPage(QWidget):
         coordination = self._selected_coordination()
         has_selection = coordination is not None
         self.open_btn.setEnabled(has_selection)
+        self.print_btn.setEnabled(has_selection)
         self._clear_lifecycle_buttons()
         if not has_selection:
             self.activate_btn.setEnabled(False)

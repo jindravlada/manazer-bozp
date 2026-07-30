@@ -33,8 +33,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from core.database.session import get_session
     from core.modules.module_manager import ModuleManager
     from moduly.koordinace_bozp.constants import (
-        BOZP_COORDINATION_STATUS_ARCHIVED,
-        BOZP_COORDINATION_STATUS_COMPLETED,
+        BOZP_COORDINATION_STATUS_CLOSED,
         BOZP_COORDINATION_STATUS_DRAFT,
         BOZP_COORDINATION_STATUS_LABELS,
         DEFAULT_BOZP_COORDINATION_STATUS,
@@ -206,21 +205,25 @@ class KoordinaceBozpPhaseCoord001TestCase(unittest.TestCase):
             meeting_date=created.meeting_date,
             place=created.place,
             subject=created.subject,
-            status=BOZP_COORDINATION_STATUS_COMPLETED,
+            status=BOZP_COORDINATION_STATUS_CLOSED,
             note=created.note,
         )
         self.assertIsNotNone(updated)
         assert updated is not None
         self.assertEqual(updated.status, BOZP_COORDINATION_STATUS_DRAFT)
 
-        archived = coordination_lifecycle_service.transition(
-            created.id,
-            BOZP_COORDINATION_STATUS_ARCHIVED,
-        )
-        self.assertEqual(archived.status, BOZP_COORDINATION_STATUS_ARCHIVED)
+        with patch.object(
+            coordination_lifecycle_service,
+            "_validate_protocol_gate",
+        ):
+            closed = coordination_lifecycle_service.transition(
+                created.id,
+                BOZP_COORDINATION_STATUS_CLOSED,
+            )
+        self.assertEqual(closed.status, BOZP_COORDINATION_STATUS_CLOSED)
         self.assertEqual(
-            BOZP_COORDINATION_STATUS_LABELS[archived.status],
-            "Archivováno",
+            BOZP_COORDINATION_STATUS_LABELS[closed.status],
+            "Uzavřeno",
         )
 
     def test_deactivate_without_delete(self) -> None:

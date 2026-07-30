@@ -23,7 +23,6 @@ from moduly.koordinace_bozp.constants import (
     ATTACHMENT_TYPE_LABELS,
     ATTACHMENT_TYPE_MAIN_EMPLOYER_PBP,
     ATTACHMENT_TYPE_OTHER,
-    BOZP_COORDINATION_STATUS_ARCHIVED,
     CONTACT_TYPES,
     CONTACT_TYPE_LABELS,
     COORDINATION_PBP_INFO_TEXT,
@@ -631,20 +630,13 @@ class CoordinationProtocolBuilder:
                 )
             )
 
-        if not coordination.active or coordination.status == BOZP_COORDINATION_STATUS_ARCHIVED:
-            reason = []
-            if not coordination.active:
-                reason.append("neaktivní")
-            if coordination.status == BOZP_COORDINATION_STATUS_ARCHIVED:
-                reason.append("archivovaná")
+        if not coordination.active:
             warnings.append(
                 ProtocolWarning(
                     code=PROTOCOL_WARNING_INACTIVE_OR_ARCHIVED,
                     severity=PROTOCOL_WARNING_SEVERITY_WARNING,
                     message=(
-                        "Koordinace je "
-                        + " a ".join(reason)
-                        + " – protokol může být pouze historický."
+                        "Koordinace je neaktivní – protokol může být pouze historický."
                     ),
                     related_entity_type="bozp_coordination",
                     related_entity_id=coordination.id,

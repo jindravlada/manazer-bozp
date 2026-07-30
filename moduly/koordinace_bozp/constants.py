@@ -9,6 +9,9 @@ MODULE_DESCRIPTION = (
 DIALOG_WINDOW_TITLE = "Koordinace BOZP"
 
 BOZP_COORDINATION_STATUS_DRAFT = "draft"
+BOZP_COORDINATION_STATUS_CLOSED = "closed"
+
+# Legacy hodnoty (COORDINATION-UX-1) – pouze migrace / kompatibilita importů.
 BOZP_COORDINATION_STATUS_READY = "ready"
 BOZP_COORDINATION_STATUS_ISSUED = "issued"
 BOZP_COORDINATION_STATUS_COMPLETED = "completed"
@@ -16,218 +19,97 @@ BOZP_COORDINATION_STATUS_ARCHIVED = "archived"
 
 BOZP_COORDINATION_STATUSES = (
     BOZP_COORDINATION_STATUS_DRAFT,
-    BOZP_COORDINATION_STATUS_READY,
-    BOZP_COORDINATION_STATUS_ISSUED,
-    BOZP_COORDINATION_STATUS_COMPLETED,
-    BOZP_COORDINATION_STATUS_ARCHIVED,
+    BOZP_COORDINATION_STATUS_CLOSED,
 )
 
 DEFAULT_BOZP_COORDINATION_STATUS = BOZP_COORDINATION_STATUS_DRAFT
 
 BOZP_COORDINATION_STATUS_LABELS = {
     BOZP_COORDINATION_STATUS_DRAFT: "Rozpracováno",
-    BOZP_COORDINATION_STATUS_READY: "Připraveno k vydání",
-    BOZP_COORDINATION_STATUS_ISSUED: "Vydáno",
-    BOZP_COORDINATION_STATUS_COMPLETED: "Ukončeno",
-    BOZP_COORDINATION_STATUS_ARCHIVED: "Archivováno",
+    BOZP_COORDINATION_STATUS_CLOSED: "Uzavřeno",
 }
 
-# Barvy stavu (UX-COORD-6b) – v souladu s platností / PBP.
+# Barvy stavu – v souladu s platností / PBP.
 BOZP_COORDINATION_STATUS_COLORS = {
     BOZP_COORDINATION_STATUS_DRAFT: "#ef6c00",
-    BOZP_COORDINATION_STATUS_READY: "#1565c0",
-    BOZP_COORDINATION_STATUS_ISSUED: "#2e7d32",
-    BOZP_COORDINATION_STATUS_COMPLETED: "#546e7a",
-    BOZP_COORDINATION_STATUS_ARCHIVED: "#9e9e9e",
+    BOZP_COORDINATION_STATUS_CLOSED: "#2e7d32",
 }
 
 STATUS_FILTER_ALL = "all"
 STATUS_FILTER_DRAFT = BOZP_COORDINATION_STATUS_DRAFT
-STATUS_FILTER_READY = BOZP_COORDINATION_STATUS_READY
-STATUS_FILTER_ISSUED = BOZP_COORDINATION_STATUS_ISSUED
-STATUS_FILTER_COMPLETED = BOZP_COORDINATION_STATUS_COMPLETED
-STATUS_FILTER_ARCHIVED = BOZP_COORDINATION_STATUS_ARCHIVED
+STATUS_FILTER_CLOSED = BOZP_COORDINATION_STATUS_CLOSED
 
 STATUS_FILTERS = (
     STATUS_FILTER_ALL,
     STATUS_FILTER_DRAFT,
-    STATUS_FILTER_READY,
-    STATUS_FILTER_ISSUED,
-    STATUS_FILTER_COMPLETED,
-    STATUS_FILTER_ARCHIVED,
+    STATUS_FILTER_CLOSED,
 )
 
 STATUS_FILTER_LABELS = {
     STATUS_FILTER_ALL: "Všechny",
     STATUS_FILTER_DRAFT: "Rozpracováno",
-    STATUS_FILTER_READY: "Připraveno k vydání",
-    STATUS_FILTER_ISSUED: "Vydáno",
-    STATUS_FILTER_COMPLETED: "Ukončeno",
-    STATUS_FILTER_ARCHIVED: "Archivováno",
+    STATUS_FILTER_CLOSED: "Uzavřeno",
 }
 
-# Označení verze v náhledu / ODT (UX-COORD-6b).
+# Označení verze v náhledu / ODT – jen rozpracovaná (pracovní) verze.
 PROTOCOL_VERSION_MARK_DRAFT = "PRACOVNÍ VERZE"
-PROTOCOL_VERSION_MARK_READY = "VERZE PŘIPRAVENÁ K VYDÁNÍ"
+PROTOCOL_VERSION_MARK_READY = "VERZE PŘIPRAVENÁ K VYDÁNÍ"  # legacy alias
 
 # Potvrzení akcí v UI (před validací builderem).
 LIFECYCLE_ACTION_CONFIRM_MESSAGES = {
-    "prepare": "Připravit koordinaci k vydání?",
-    "issue": (
-        "Vydáním označíte koordinační protokol jako vydaný.\n"
-        "Dokument bude možné dále upravovat pouze po návratu "
-        "do rozpracovaného stavu."
+    "close": (
+        "Uzavřít koordinační schůzku?\n"
+        "Po uzavření nebude možné běžně upravovat obsah. "
+        "Protokol bude připraven k tisku."
     ),
-    "complete": "Ukončit koordinaci?",
-    "archive": (
-        "Archivovaná koordinace nebude určena k běžným úpravám.\n"
-        "Opravdu archivovat?"
-    ),
-    "return_to_draft": "Vrátit koordinaci k dopracování?",
-    "reopen": "Znovu otevřít koordinaci do stavu Rozpracováno?",
-    "restore": "Obnovit archivovanou koordinaci do stavu Rozpracováno?",
+    "return_to_draft": "Vrátit uzavřenou koordinaci k dopracování?",
 }
 
-READY_EDIT_REVERT_MESSAGE = (
-    "Koordinace je připravena k vydání. "
-    "Pokračováním bude vrácena do stavu Rozpracováno."
-)
-
-# Mapování starých / neznámých hodnot status → kanonický stav (UX-COORD-6a).
+# Mapování starých / neznámých hodnot status → kanonický stav (COORDINATION-UX-1).
 BOZP_COORDINATION_STATUS_LEGACY_MAP = {
     "draft": BOZP_COORDINATION_STATUS_DRAFT,
     "in_progress": BOZP_COORDINATION_STATUS_DRAFT,
-    "ready": BOZP_COORDINATION_STATUS_READY,
-    "prepared": BOZP_COORDINATION_STATUS_READY,
-    "active": BOZP_COORDINATION_STATUS_READY,
-    "issued": BOZP_COORDINATION_STATUS_ISSUED,
-    "published": BOZP_COORDINATION_STATUS_ISSUED,
-    "completed": BOZP_COORDINATION_STATUS_COMPLETED,
-    "done": BOZP_COORDINATION_STATUS_COMPLETED,
-    "archived": BOZP_COORDINATION_STATUS_ARCHIVED,
+    "ready": BOZP_COORDINATION_STATUS_CLOSED,
+    "prepared": BOZP_COORDINATION_STATUS_CLOSED,
+    "active": BOZP_COORDINATION_STATUS_CLOSED,
+    "issued": BOZP_COORDINATION_STATUS_CLOSED,
+    "published": BOZP_COORDINATION_STATUS_CLOSED,
+    "completed": BOZP_COORDINATION_STATUS_CLOSED,
+    "done": BOZP_COORDINATION_STATUS_CLOSED,
+    "archived": BOZP_COORDINATION_STATUS_CLOSED,
+    "closed": BOZP_COORDINATION_STATUS_CLOSED,
 }
 
 # Povolené přechody: from → frozenset(to)
 BOZP_COORDINATION_STATUS_TRANSITIONS = {
     BOZP_COORDINATION_STATUS_DRAFT: frozenset(
         {
-            BOZP_COORDINATION_STATUS_READY,
-            BOZP_COORDINATION_STATUS_ARCHIVED,
+            BOZP_COORDINATION_STATUS_CLOSED,
         }
     ),
-    BOZP_COORDINATION_STATUS_READY: frozenset(
-        {
-            BOZP_COORDINATION_STATUS_DRAFT,
-            BOZP_COORDINATION_STATUS_ISSUED,
-            BOZP_COORDINATION_STATUS_ARCHIVED,
-        }
-    ),
-    BOZP_COORDINATION_STATUS_ISSUED: frozenset(
-        {
-            BOZP_COORDINATION_STATUS_COMPLETED,
-            BOZP_COORDINATION_STATUS_DRAFT,
-            BOZP_COORDINATION_STATUS_ARCHIVED,
-        }
-    ),
-    BOZP_COORDINATION_STATUS_COMPLETED: frozenset(
-        {
-            BOZP_COORDINATION_STATUS_DRAFT,
-            BOZP_COORDINATION_STATUS_ARCHIVED,
-        }
-    ),
-    BOZP_COORDINATION_STATUS_ARCHIVED: frozenset(
+    BOZP_COORDINATION_STATUS_CLOSED: frozenset(
         {
             BOZP_COORDINATION_STATUS_DRAFT,
         }
     ),
 }
 
-# Akce UI: (from, to) → (action_id, tlačítko, vyžaduje citlivé potvrzení)
+# Akce UI hlavního okna: (from, to) → (action_id, tlačítko, citlivé potvrzení)
+# Uzavření probíhá tlačítkem v editoru; v seznamu jen návrat k dopracování.
 BOZP_COORDINATION_LIFECYCLE_ACTIONS = (
     (
-        BOZP_COORDINATION_STATUS_DRAFT,
-        BOZP_COORDINATION_STATUS_READY,
-        "prepare",
-        "Připravit k vydání",
-        False,
-    ),
-    (
-        BOZP_COORDINATION_STATUS_DRAFT,
-        BOZP_COORDINATION_STATUS_ARCHIVED,
-        "archive",
-        "Archivovat",
-        False,
-    ),
-    (
-        BOZP_COORDINATION_STATUS_READY,
+        BOZP_COORDINATION_STATUS_CLOSED,
         BOZP_COORDINATION_STATUS_DRAFT,
         "return_to_draft",
         "Vrátit k dopracování",
         False,
-    ),
-    (
-        BOZP_COORDINATION_STATUS_READY,
-        BOZP_COORDINATION_STATUS_ISSUED,
-        "issue",
-        "Vydat",
-        False,
-    ),
-    (
-        BOZP_COORDINATION_STATUS_READY,
-        BOZP_COORDINATION_STATUS_ARCHIVED,
-        "archive",
-        "Archivovat",
-        False,
-    ),
-    (
-        BOZP_COORDINATION_STATUS_ISSUED,
-        BOZP_COORDINATION_STATUS_COMPLETED,
-        "complete",
-        "Ukončit",
-        False,
-    ),
-    (
-        BOZP_COORDINATION_STATUS_ISSUED,
-        BOZP_COORDINATION_STATUS_DRAFT,
-        "return_to_draft",
-        "Vrátit k dopracování",
-        True,
-    ),
-    (
-        BOZP_COORDINATION_STATUS_ISSUED,
-        BOZP_COORDINATION_STATUS_ARCHIVED,
-        "archive",
-        "Archivovat",
-        False,
-    ),
-    (
-        BOZP_COORDINATION_STATUS_COMPLETED,
-        BOZP_COORDINATION_STATUS_DRAFT,
-        "reopen",
-        "Znovu otevřít",
-        True,
-    ),
-    (
-        BOZP_COORDINATION_STATUS_COMPLETED,
-        BOZP_COORDINATION_STATUS_ARCHIVED,
-        "archive",
-        "Archivovat",
-        False,
-    ),
-    (
-        BOZP_COORDINATION_STATUS_ARCHIVED,
-        BOZP_COORDINATION_STATUS_DRAFT,
-        "restore",
-        "Obnovit",
-        True,
     ),
 )
 
 # Stavy, u kterých přechod vyžaduje kontrolu protokolovým builderem.
 BOZP_COORDINATION_STATUSES_REQUIRING_PROTOCOL_CHECK = frozenset(
     {
-        BOZP_COORDINATION_STATUS_READY,
-        BOZP_COORDINATION_STATUS_ISSUED,
+        BOZP_COORDINATION_STATUS_CLOSED,
     }
 )
 

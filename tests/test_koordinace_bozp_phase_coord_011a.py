@@ -35,7 +35,6 @@ with patch.object(Path, "home", return_value=_TMP):
         ATTACHMENT_TYPE_CONTRACTOR_RISKS,
         ATTACHMENT_TYPE_MAIN_EMPLOYER_PBP,
         ATTACHMENT_TYPE_OTHER,
-        BOZP_COORDINATION_STATUS_ARCHIVED,
         DEFAULT_COMMON_BOZP_RULES,
         MEASURE_CATEGORY_COMMUNICATION,
         MEASURE_CATEGORY_PPE,
@@ -492,14 +491,7 @@ class KoordinaceBozpPhaseCoord011aTestCase(unittest.TestCase):
 
     def test_archived_coordination_warning(self) -> None:
         coordination, *_ = self._complete_coordination(with_contractor=False)
-        from moduly.koordinace_bozp.sluzby.coordination_lifecycle_service import (
-            coordination_lifecycle_service,
-        )
-
-        coordination_lifecycle_service.transition(
-            coordination.id,
-            BOZP_COORDINATION_STATUS_ARCHIVED,
-        )
+        bozp_coordination_service.deactivate(coordination.id)
         result = coordination_protocol_builder.build(coordination.id, today=self.today)
         self.assertIn(
             PROTOCOL_WARNING_INACTIVE_OR_ARCHIVED,
