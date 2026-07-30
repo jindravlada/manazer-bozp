@@ -17,10 +17,6 @@ from moduly.proverky.sluzby.control_point_similarity_service import (
     ControlPointSimilarityCandidate,
     collect_control_point_candidates,
 )
-from moduly.proverky.sluzby.similarity_performance import (
-    SimilarityPerformanceTimings,
-    new_timings_if_enabled,
-)
 
 
 @dataclass(frozen=True)
@@ -52,31 +48,17 @@ def analyze_control_point_similarities(
     include_checked: bool = False,
     progress_callback=None,
     should_cancel=None,
-    performance: SimilarityPerformanceTimings | None = None,
 ) -> tuple[list[ControlPointSimilarityPair], bool]:
     """Porovná všechny kontrolní otázky prověrek a vrátí kandidátní dvojice.
 
     Zkontrolované dvojice se ve výchozím stavu do výsledků nezařazují
     (SIMILARITY-3). Při ``include_checked=True`` se vrátí i ony s ``checked=True``.
-
-    ``performance``: volitelný sběrač časů (SIMILARITY-PERF-1). Pokud je ``None``
-    a běží DEBUG, vytvoří se lokální instance jen pro datové fáze této funkce.
     """
-    perf = performance if performance is not None else new_timings_if_enabled()
-    if perf is not None:
-        perf.mark_start()
-
     catalog = collect_control_point_candidates(include_inactive=include_inactive)
-    if perf is not None:
-        perf.db_s = perf.take()
-
     by_id = {item.composite_id: item for item in catalog}
     checked_keys = similarity_checked_pair_service.list_checked_keys(
         SIMILARITY_ENTITY_PROVERKY_CONTROL_POINT
     )
-    if perf is not None:
-        perf.checked_s = perf.take()
-
     pairs, cancelled = find_similar_pairs(
         [
             SimilarityCandidate(id=item.composite_id, text=item.text)
@@ -109,10 +91,4 @@ def analyze_control_point_similarities(
                 checked=is_checked,
             )
         )
-    if perf is not None:
-        perf.prepare_s = perf.take()
-        # Pokud volající nepředal sdílený objekt, zalogujeme jen datové fáze.
-        if performance is None:
-            perf.log()
-
     return results, cancelled
