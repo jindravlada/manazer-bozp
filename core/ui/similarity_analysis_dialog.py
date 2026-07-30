@@ -119,6 +119,7 @@ class SimilarityAnalysisDialog(QDialog):
         self._worker: _ControlPointAnalysisWorker | None = None
         self._pairs: list[ControlPointSimilarityPair] = []
         self._cancelled = False
+        self._closing = False
 
         root = QVBoxLayout(self)
         self._stack = QStackedWidget()
@@ -325,9 +326,10 @@ class SimilarityAnalysisDialog(QDialog):
             "Zavřít", QDialogButtonBox.ButtonRole.RejectRole
         )
         again_btn.clicked.connect(self._back_to_setup)
-        close_btn.clicked.connect(self.accept)
+        close_btn.clicked.connect(self._request_close)
         layout.addWidget(buttons)
         return page
+
     def _start_analysis(self) -> None:
         if not self._scope_checks[SCOPE_PROVERKY].isChecked():
             QMessageBox.information(
@@ -642,8 +644,88 @@ class SimilarityAnalysisDialog(QDialog):
         self._pairs = []
         self._stack.setCurrentWidget(self._setup_page)
 
-    def closeEvent(self, event) -> None:  # noqa: N802
+    def _has_pending_bulk_selection(self) -> bool:
+        return bool(self._selected_row_indexes())
+
+    def _prompt_pending_bulk_selection_close(self) -> str:
+        """Vrátí ``mark_and_close`` / ``discard`` / ``cancel``."""
+        count = len(self._selected_row_indexes())
+        message = QMessageBox(self)
+        message.setWindowTitle(self.windowTitle())
+        message.setIcon(QMessageBox.Icon.Question)
+        message.setText(
+            f"Máte označeno {count} dvojic jako správné "
+            f"(nejde o skutečné duplicity), ale ještě nebyly označeny "
+            f"jako zkontrolované.\n\n"
+            f"Co chcete udělat?"
+        )
+        mark_btn = message.addButton(
+            "Označit a zavřít",
+            QMessageBox.ButtonRole.AcceptRole,
+        )
+        discard_btn = message.addButton(
+            "Zavřít bez uložení",
+            QMessageBox.ButtonRole.DestructiveRole,
+        )
+        cancel_btn = message.addButton(
+            "Zrušit",
+            QMessageBox.ButtonRole.RejectRole,
+        )
+        message.setDefaultButton(cancel_btn)
+        message.exec()
+
+        clicked = message.clickedButton()
+        if clicked is mark_btn:
+            return "mark_and_close"
+        if clicked is discard_btn:
+            return "discard"
+        return "cancel"
+
+    def _prepare_close_with_pending_selection(self) -> bool:
+        """True = smí se zavřít. False = zůstat otevřený."""
+        if not self._has_pending_bulk_selection():
+            return True
+        decision = self._prompt_pending_bulk_selection_close()
+        if decision == "cancel":
+            return False
+        if decision == "mark_and_close":
+            self._mark_selected_rows_checked()
+        # discard: nic neukládat, jen zavřít
+        return True
+
+    def _request_close(self) -> None:
+        if self._closing:
+            self.accept()
+            return
+        if not self._prepare_close_with_pending_selection():
+            return
+        self._closing = True
+        self._stop_worker_if_running()
+        self.accept()
+
+    def _stop_worker_if_running(self) -> None:
         if self._worker is not None and self._worker.isRunning():
             self._worker.request_cancel()
             self._worker.wait(5000)
+
+    def reject(self) -> None:
+        if self._closing:
+            super().reject()
+            return
+        if not self._prepare_close_with_pending_selection():
+            return
+        self._closing = True
+        self._stop_worker_if_running()
+        super().reject()
+
+    def closeEvent(self, event) -> None:  # noqa: N802
+        if self._closing:
+            self._stop_worker_if_running()
+            super().closeEvent(event)
+            return
+        if not self._prepare_close_with_pending_selection():
+            event.ignore()
+            return
+        self._closing = True
+        self._stop_worker_if_running()
         super().closeEvent(event)
