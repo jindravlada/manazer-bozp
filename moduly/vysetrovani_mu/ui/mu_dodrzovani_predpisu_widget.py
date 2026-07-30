@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QRadioButton,
     QScrollArea,
+    QSizePolicy,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -24,6 +25,38 @@ from core.shared.constants import ENTITY_MU_INVESTIGATION
 from core.widgets.attachment_widget import AttachmentWidget
 from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.thp_worker_selector import ThpWorkerSelector
+
+# MU-UX-5 – jednotné popisky a šířky sloupců opakovaných seznamů.
+_OOPP_HEADERS = (
+    "Název OOPP",
+    "Datum vydání",
+    "Datum ukončení používání",
+    "Poznámka",
+)
+_OOPP_STRETCHES = (3, 2, 2, 3)
+
+_SKOLENI_HEADERS = (
+    "Název školení",
+    "Datum školení",
+    "Úspěšně absolvováno",
+    "Poznámka",
+)
+_SKOLENI_STRETCHES = (3, 2, 2, 3)
+
+_ZKOUSKY_HEADERS = (
+    "Název zkoušky / odborné způsobilosti",
+    "Platnost od",
+    "Platnost do",
+    "Poznámka",
+)
+_ZKOUSKY_STRETCHES = (3, 2, 2, 3)
+
+_KONTROLA_HEADERS = (
+    "Datum",
+    "Kontroloval",
+    "Výsledek",
+)
+_KONTROLA_STRETCHES = (2, 3, 3)
 
 
 class MuDodrzovaniAttachmentWidget(AttachmentWidget):
@@ -304,10 +337,16 @@ class MuDodrzovaniPredpisuWidget(QWidget):
 
         oopp = QGroupBox("Vybavení dotčené osoby OOPP")
         of = QVBoxLayout(oopp)
+        of.setSpacing(6)
         self.dodrz_oopp_layout = of
-        of.addWidget(QLabel("<b>Typ OOPP | Datum vydání | Minimální životnost / platnost | Poznámka</b>"))
+        of.addLayout(self._column_header_row(_OOPP_HEADERS, _OOPP_STRETCHES))
         for row in self.dodrz_oopp_rows:
-            of.addLayout(self._row_widgets_layout([row["typ"], row["datum"], row["platnost"], row["poznamka"]]))
+            of.addLayout(
+                self._row_widgets_layout(
+                    [row["typ"], row["datum"], row["platnost"], row["poznamka"]],
+                    _OOPP_STRETCHES,
+                )
+            )
         btn_oopp = QPushButton("Přidat OOPP")
         btn_oopp.clicked.connect(self.add_dodrz_oopp_row)
         of.addWidget(btn_oopp)
@@ -315,10 +354,16 @@ class MuDodrzovaniPredpisuWidget(QWidget):
 
         skoleni = QGroupBox("Školení související s mimořádnou událostí a školení o BOZP")
         sf = QVBoxLayout(skoleni)
+        sf.setSpacing(6)
         self.dodrz_skoleni_layout = sf
-        sf.addWidget(QLabel("<b>Typ školení | Datum | Činnost v osnově | Poznámka</b>"))
+        sf.addLayout(self._column_header_row(_SKOLENI_HEADERS, _SKOLENI_STRETCHES))
         for row in self.dodrz_skoleni_rows:
-            sf.addLayout(self._row_widgets_layout([row["typ"], row["datum"], row["osnova"], row["poznamka"]]))
+            sf.addLayout(
+                self._row_widgets_layout(
+                    [row["typ"], row["datum"], row["osnova"], row["poznamka"]],
+                    _SKOLENI_STRETCHES,
+                )
+            )
         btn_skoleni = QPushButton("Přidat školení")
         btn_skoleni.clicked.connect(self.add_dodrz_skoleni_row)
         sf.addWidget(btn_skoleni)
@@ -344,10 +389,16 @@ class MuDodrzovaniPredpisuWidget(QWidget):
 
         zkousky = QGroupBox("Zkoušky z předpisů a odborná způsobilost")
         zf = QVBoxLayout(zkousky)
+        zf.setSpacing(6)
         self.dodrz_zkousky_layout = zf
-        zf.addWidget(QLabel("<b>Typ zkoušky | Datum | Platnost do | Poznámka</b>"))
+        zf.addLayout(self._column_header_row(_ZKOUSKY_HEADERS, _ZKOUSKY_STRETCHES))
         for row in self.dodrz_zkousky_rows:
-            zf.addLayout(self._row_widgets_layout([row["typ"], row["datum"], row["platnost"], row["poznamka"]]))
+            zf.addLayout(
+                self._row_widgets_layout(
+                    [row["typ"], row["datum"], row["platnost"], row["poznamka"]],
+                    _ZKOUSKY_STRETCHES,
+                )
+            )
         btn_zkouska = QPushButton("Přidat zkoušku")
         btn_zkouska.clicked.connect(self.add_dodrz_zkouska_row)
         zf.addWidget(btn_zkouska)
@@ -368,23 +419,43 @@ class MuDodrzovaniPredpisuWidget(QWidget):
 
         vyj = QGroupBox("Vyjádření dotčené osoby k používání OOPP")
         vyf = QFormLayout(vyj)
-        self._add_textedit_row(vyf, "", self.dodrz_vyjadreni_oopp, 180)
+        vyf.setHorizontalSpacing(12)
+        vyf.setVerticalSpacing(8)
+        # MU-UX-5: datový model má jedno textové pole – popisky nad polem.
+        self._add_textedit_row(
+            vyf,
+            "Vyjádření / stanovisko:",
+            self.dodrz_vyjadreni_oopp,
+            180,
+        )
         layout.addWidget(vyj)
 
         koopp = QGroupBox("Kontrola používání OOPP dle ZP")
         kof = QVBoxLayout(koopp)
+        kof.setSpacing(6)
         self.dodrz_kontrola_oopp_layout = kof
-        kof.addWidget(QLabel("<b>Datum | Kontroloval | Výsledek</b>"))
+        kof.addLayout(self._column_header_row(_KONTROLA_HEADERS, _KONTROLA_STRETCHES))
         for row in self.dodrz_kontrola_oopp_rows:
-            kof.addLayout(self._row_widgets_layout([row["datum"], row["kontroloval"], row["vysledek"]]))
+            kof.addLayout(
+                self._row_widgets_layout(
+                    [row["datum"], row["kontroloval"], row["vysledek"]],
+                    _KONTROLA_STRETCHES,
+                )
+            )
         layout.addWidget(koopp)
 
         kpred = QGroupBox("Kontrola dodržování předpisů a pracovních postupů")
         kpf = QVBoxLayout(kpred)
+        kpf.setSpacing(6)
         self.dodrz_kontrola_predpisu_layout = kpf
-        kpf.addWidget(QLabel("<b>Datum | Kontroloval | Výsledek</b>"))
+        kpf.addLayout(self._column_header_row(_KONTROLA_HEADERS, _KONTROLA_STRETCHES))
         for row in self.dodrz_kontrola_predpisu_rows:
-            kpf.addLayout(self._row_widgets_layout([row["datum"], row["kontroloval"], row["vysledek"]]))
+            kpf.addLayout(
+                self._row_widgets_layout(
+                    [row["datum"], row["kontroloval"], row["vysledek"]],
+                    _KONTROLA_STRETCHES,
+                )
+            )
         layout.addWidget(kpred)
 
         poruseni = QGroupBox("Porušení předpisů")
@@ -419,7 +490,10 @@ class MuDodrzovaniPredpisuWidget(QWidget):
         if hasattr(self, "dodrz_oopp_layout"):
             self.dodrz_oopp_layout.insertLayout(
                 self.dodrz_oopp_layout.count() - 1,
-                self._row_widgets_layout([row["typ"], row["datum"], row["platnost"], row["poznamka"]]),
+                self._row_widgets_layout(
+                    [row["typ"], row["datum"], row["platnost"], row["poznamka"]],
+                    _OOPP_STRETCHES,
+                ),
             )
 
     def add_dodrz_skoleni_row(self) -> None:
@@ -428,7 +502,10 @@ class MuDodrzovaniPredpisuWidget(QWidget):
         if hasattr(self, "dodrz_skoleni_layout"):
             self.dodrz_skoleni_layout.insertLayout(
                 self.dodrz_skoleni_layout.count() - 1,
-                self._row_widgets_layout([row["typ"], row["datum"], row["osnova"], row["poznamka"]]),
+                self._row_widgets_layout(
+                    [row["typ"], row["datum"], row["osnova"], row["poznamka"]],
+                    _SKOLENI_STRETCHES,
+                ),
             )
 
     def add_dodrz_zkouska_row(self) -> None:
@@ -437,7 +514,10 @@ class MuDodrzovaniPredpisuWidget(QWidget):
         if hasattr(self, "dodrz_zkousky_layout"):
             self.dodrz_zkousky_layout.insertLayout(
                 self.dodrz_zkousky_layout.count() - 1,
-                self._row_widgets_layout([row["typ"], row["datum"], row["platnost"], row["poznamka"]]),
+                self._row_widgets_layout(
+                    [row["typ"], row["datum"], row["platnost"], row["poznamka"]],
+                    _ZKOUSKY_STRETCHES,
+                ),
             )
 
     def _make_kontrola_rows(self, saved_rows) -> list[dict]:
@@ -462,6 +542,9 @@ class MuDodrzovaniPredpisuWidget(QWidget):
             "platnost": QLineEdit(data.get("platnost", "")),
             "poznamka": QLineEdit(data.get("poznamka", "")),
         }
+        row["typ"].setPlaceholderText("Název OOPP")
+        row["platnost"].setPlaceholderText("Datum ukončení používání")
+        row["poznamka"].setPlaceholderText("Poznámka")
         if data.get("datum"):
             self._set_date_widget(row["datum"], data.get("datum"))
         return row
@@ -474,6 +557,9 @@ class MuDodrzovaniPredpisuWidget(QWidget):
             "osnova": self._radio_choice(["ANO", "NE"]),
             "poznamka": QLineEdit(data.get("poznamka", "")),
         }
+        row["typ"].setPlaceholderText("Název školení")
+        row["poznamka"].setPlaceholderText("Poznámka")
+        row["osnova"].setToolTip("Úspěšně absolvováno")
         if data.get("datum"):
             self._set_date_widget(row["datum"], data.get("datum"))
         self._set_radio_choice(row["osnova"], data.get("osnova", ""))
@@ -487,6 +573,8 @@ class MuDodrzovaniPredpisuWidget(QWidget):
             "platnost": self._new_date_edit(),
             "poznamka": QLineEdit(data.get("poznamka", "")),
         }
+        row["typ"].setPlaceholderText("Název zkoušky / odborné způsobilosti")
+        row["poznamka"].setPlaceholderText("Poznámka")
         if data.get("datum"):
             self._set_date_widget(row["datum"], data.get("datum"))
         if data.get("platnost"):
@@ -515,13 +603,21 @@ class MuDodrzovaniPredpisuWidget(QWidget):
     def _rebuild_dynamic_rows(self, layout, rows: list[dict]) -> None:
         if layout is None:
             return
+        # Zachovat hlavičku (index 0) a tlačítko Přidat (poslední).
         while layout.count() > 2:
-            item = layout.takeAt(0)
+            item = layout.takeAt(1)
             if item.layout() is not None:
                 self._clear_layout(item.layout())
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+        stretches = self._stretches_for_layout(layout)
         for row in rows:
             widgets = self._row_widgets_for_row(row)
-            layout.insertLayout(layout.count() - 1, self._row_widgets_layout(widgets))
+            layout.insertLayout(
+                layout.count() - 1,
+                self._row_widgets_layout(widgets, stretches),
+            )
 
     def _rebuild_kontrola_rows(self, layout, rows: list[dict]) -> None:
         if layout is None:
@@ -530,8 +626,25 @@ class MuDodrzovaniPredpisuWidget(QWidget):
             item = layout.takeAt(1)
             if item.layout() is not None:
                 self._clear_layout(item.layout())
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
         for row in rows:
-            layout.addLayout(self._row_widgets_layout([row["datum"], row["kontroloval"], row["vysledek"]]))
+            layout.addLayout(
+                self._row_widgets_layout(
+                    [row["datum"], row["kontroloval"], row["vysledek"]],
+                    _KONTROLA_STRETCHES,
+                )
+            )
+
+    def _stretches_for_layout(self, layout) -> tuple[int, ...]:
+        if layout is self.dodrz_oopp_layout:
+            return _OOPP_STRETCHES
+        if layout is self.dodrz_skoleni_layout:
+            return _SKOLENI_STRETCHES
+        if layout is self.dodrz_zkousky_layout:
+            return _ZKOUSKY_STRETCHES
+        return _OOPP_STRETCHES
 
     def _row_widgets_for_row(self, row: dict) -> list:
         if "osnova" in row:
@@ -546,12 +659,50 @@ class MuDodrzovaniPredpisuWidget(QWidget):
             widget = child.widget()
             if widget is not None:
                 widget.deleteLater()
+            nested = child.layout()
+            if nested is not None:
+                self._clear_layout(nested)
 
-    def _row_widgets_layout(self, widgets) -> QHBoxLayout:
+    def _column_header_row(
+        self,
+        headers: tuple[str, ...],
+        stretches: tuple[int, ...],
+    ) -> QHBoxLayout:
+        row = QHBoxLayout()
+        row.setContentsMargins(0, 0, 0, 4)
+        row.setSpacing(8)
+        for text, stretch in zip(headers, stretches, strict=True):
+            label = QLabel(text)
+            label.setWordWrap(True)
+            font = label.font()
+            font.setBold(True)
+            label.setFont(font)
+            label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+            row.addWidget(label, stretch)
+        return row
+
+    def _row_widgets_layout(
+        self,
+        widgets,
+        stretches: tuple[int, ...] | None = None,
+    ) -> QHBoxLayout:
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)
-        for widget in widgets:
-            row.addWidget(widget)
+        row.setSpacing(8)
+        weights = stretches or tuple(1 for _ in widgets)
+        for widget, stretch in zip(widgets, weights, strict=True):
+            if isinstance(widget, NullableDateEdit):
+                widget.setMinimumWidth(150)
+                widget.setSizePolicy(
+                    QSizePolicy.Policy.Preferred,
+                    QSizePolicy.Policy.Fixed,
+                )
+            elif isinstance(widget, QLineEdit):
+                widget.setSizePolicy(
+                    QSizePolicy.Policy.Expanding,
+                    QSizePolicy.Policy.Fixed,
+                )
+            row.addWidget(widget, stretch)
         return row
 
     def _add_textedit_row(self, form, label, widget, height=160) -> None:
