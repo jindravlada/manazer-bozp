@@ -166,7 +166,7 @@ class Similarity2UiTestCase(unittest.TestCase):
         dialog._cancelled = False
         dialog._show_results()
         self.assertEqual(dialog._results_table.rowCount(), 2)
-        self.assertIn("100 %", dialog._results_table.item(0, 2).text())
+        self.assertIn("100 %", dialog._results_table.item(0, 1).text())
         self.assertIn("Prověrky BOZP", dialog._results_table.item(0, 4).text())
         self.assertIn("Prověrky BOZP", dialog._results_table.item(0, 6).text())
 

@@ -45,10 +45,11 @@ SCOPE_RISKS = "rizika"
 SCOPE_MEASURES = "opatreni"
 SCOPE_LEGAL = "pravni_pozadavky"
 
-# Sloupce výsledkové tabulky (SIMILARITY-UX-4 přidává výběr na začátek).
+# Sloupce výsledkové tabulky:
+# výběr uživatele | podobnost | stav z DB | texty…
 _COL_SELECT = 0
-_COL_STATUS = 1
-_COL_SIMILARITY = 2
+_COL_SIMILARITY = 1
+_COL_STATUS = 2
 _COL_LEFT_TEXT = 3
 _COL_LEFT_LOCATION = 4
 _COL_RIGHT_TEXT = 5
@@ -255,8 +256,8 @@ class SimilarityAnalysisDialog(QDialog):
         self._results_table.setHorizontalHeaderLabels(
             [
                 "",
-                "Stav",
                 "Podobnost",
+                "Stav",
                 "První otázka",
                 "Umístění první",
                 "Druhá otázka",
@@ -271,10 +272,10 @@ class SimilarityAnalysisDialog(QDialog):
         self._results_table.verticalHeader().setVisible(False)
         header = self._results_table.horizontalHeader()
         header.setSectionResizeMode(_COL_SELECT, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(_COL_STATUS, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(
             _COL_SIMILARITY, QHeaderView.ResizeMode.ResizeToContents
         )
+        header.setSectionResizeMode(_COL_STATUS, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(_COL_LEFT_TEXT, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(_COL_LEFT_LOCATION, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(_COL_RIGHT_TEXT, QHeaderView.ResizeMode.Stretch)
@@ -429,24 +430,23 @@ class SimilarityAnalysisDialog(QDialog):
         if has_pairs:
             self._results_table.setRowCount(len(self._pairs))
             for row, pair in enumerate(self._pairs):
+                # Checkbox = pouze aktuální výběr uživatele (nikdy stav z DB).
                 select_item = QTableWidgetItem()
                 select_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                select_item.setCheckState(Qt.CheckState.Unchecked)
                 if pair.checked:
+                    # Již zkontrolované nelze znovu hromadně označit.
                     select_item.setFlags(
                         Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
                     )
-                    select_item.setCheckState(Qt.CheckState.Unchecked)
-                    select_item.setToolTip("Dvojice je již evidována jako zkontrolovaná.")
                 else:
                     select_item.setFlags(
                         Qt.ItemFlag.ItemIsUserCheckable
                         | Qt.ItemFlag.ItemIsEnabled
                         | Qt.ItemFlag.ItemIsSelectable
                     )
-                    select_item.setCheckState(Qt.CheckState.Unchecked)
                     select_item.setToolTip(
-                        "Tato dvojice je v pořádku a již ji nechci při dalších "
-                        "analýzách zobrazovat."
+                        "Tuto dvojici chci nyní hromadně označit jako zkontrolovanou."
                     )
 
                 status_text = "✓ Zkontrolováno" if pair.checked else ""
@@ -455,10 +455,10 @@ class SimilarityAnalysisDialog(QDialog):
                 status_item.setData(Qt.ItemDataRole.UserRole, pair)
 
                 self._results_table.setItem(row, _COL_SELECT, select_item)
-                self._results_table.setItem(row, _COL_STATUS, status_item)
                 self._results_table.setItem(
                     row, _COL_SIMILARITY, QTableWidgetItem(similarity)
                 )
+                self._results_table.setItem(row, _COL_STATUS, status_item)
                 self._results_table.setItem(
                     row, _COL_LEFT_TEXT, QTableWidgetItem(pair.left.text)
                 )
