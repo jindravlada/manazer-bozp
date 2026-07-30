@@ -237,7 +237,7 @@ class CoordinationLifecycleService:
         if critical:
             lines = "\n".join(f"• {item.message}" for item in critical)
             raise CoordinationLifecycleBlocked(
-                "Přechod nelze dokončit kvůli kritickým problémům:\n" + lines,
+                "Schůzku nelze uzavřít. Chybí povinné údaje:\n" + lines,
                 critical,
             )
         if warnings and not confirm_warnings:

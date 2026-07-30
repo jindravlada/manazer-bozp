@@ -247,8 +247,13 @@ class CoordinationCoordinatorTab(CoordinationTabEditPolicyMixin, QWidget):
         finally:
             self._loading = False
 
-    def persist_coordinator(self) -> bool:
-        """Uloží pracovní kopii koordinátora do DB. False = chyba validace."""
+    def persist_coordinator(self, *, require_complete: bool = False) -> bool:
+        """Uloží pracovní kopii koordinátora do DB.
+
+        COORDINATION-UX-2: při běžném uložení (``require_complete=False``)
+        neúplný výběr přeskočí bez chyby. Kompletní validace je až při uzavření
+        (protokolový builder).
+        """
         if self.coordination_id is None:
             return True
         try:
@@ -258,6 +263,8 @@ class CoordinationCoordinatorTab(CoordinationTabEditPolicyMixin, QWidget):
                 if not isinstance(participant_id, int):
                     if not isinstance(employer_id, int) and not self.full_name.text().strip():
                         return True
+                    if not require_complete:
+                        return True
                     QMessageBox.warning(
                         self,
                         TAB_COORDINATOR,
@@ -265,6 +272,8 @@ class CoordinationCoordinatorTab(CoordinationTabEditPolicyMixin, QWidget):
                     )
                     return False
                 if not isinstance(employer_id, int):
+                    if not require_complete:
+                        return True
                     QMessageBox.warning(
                         self,
                         TAB_COORDINATOR,
@@ -280,9 +289,11 @@ class CoordinationCoordinatorTab(CoordinationTabEditPolicyMixin, QWidget):
             else:
                 if not self.full_name.text().strip():
                     return True
-                employer_name = self._resolve_manual_employer_name()
+                employer_name = self._resolve_manual_employer_name(
+                    require_complete=require_complete,
+                )
                 if employer_name is None:
-                    return False
+                    return not require_complete
                 coordination_coordinator_service.set_coordinator(
                     self.coordination_id,
                     full_name=self.full_name.text(),
@@ -293,38 +304,47 @@ class CoordinationCoordinatorTab(CoordinationTabEditPolicyMixin, QWidget):
                     note=self.note.toPlainText().strip(),
                 )
         except CoordinationCoordinatorError as error:
+            if not require_complete:
+                return True
             QMessageBox.warning(self, TAB_COORDINATOR, str(error))
             return False
         return True
 
-    def _resolve_manual_employer_name(self) -> str | None:
-        """Vrátí název organizace ze snapshotu, nebo None při chybě validace."""
+    def _resolve_manual_employer_name(
+        self,
+        *,
+        require_complete: bool = True,
+    ) -> str | None:
+        """Vrátí název organizace ze snapshotu, nebo None při chybě / neúplnosti."""
         selection = self.employer_combo.currentData()
         if selection == COORDINATOR_MANUAL_OTHER_ORGANIZATION:
             employer_name = (self.employer_name.text() or "").strip()
             if not employer_name:
-                QMessageBox.warning(
-                    self,
-                    TAB_COORDINATOR,
-                    "Zadejte název organizace.",
-                )
+                if require_complete:
+                    QMessageBox.warning(
+                        self,
+                        TAB_COORDINATOR,
+                        "Zadejte název organizace.",
+                    )
                 return None
             return employer_name
         if isinstance(selection, int):
             employer = coordination_employer_service.get_by_id(selection)
             if employer is None or not employer.active:
-                QMessageBox.warning(
-                    self,
-                    TAB_COORDINATOR,
-                    "Vyberte pověřeného zaměstnavatele.",
-                )
+                if require_complete:
+                    QMessageBox.warning(
+                        self,
+                        TAB_COORDINATOR,
+                        "Vyberte pověřeného zaměstnavatele.",
+                    )
                 return None
             return (employer.company_name or "").strip()
-        QMessageBox.warning(
-            self,
-            TAB_COORDINATOR,
-            "Vyberte pověřeného zaměstnavatele.",
-        )
+        if require_complete:
+            QMessageBox.warning(
+                self,
+                TAB_COORDINATOR,
+                "Vyberte pověřeného zaměstnavatele.",
+            )
         return None
 
     def _update_source_mode(self) -> None:

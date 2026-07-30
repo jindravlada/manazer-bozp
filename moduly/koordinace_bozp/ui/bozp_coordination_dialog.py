@@ -286,9 +286,8 @@ class BozpCoordinationDialog(QDialog):
         )
         if self.save_button is not None:
             self.save_button.setVisible(editable)
-            self.save_button.setEnabled(
-                editable and (self.coordination is None or self.is_dirty())
-            )
+            # COORDINATION-UX-2: Uložit je ve stavu Rozpracováno vždy aktivní.
+            self.save_button.setEnabled(editable)
         self.close_meeting_btn.setVisible(editable)
         self.close_meeting_btn.setEnabled(editable)
 
@@ -327,7 +326,7 @@ class BozpCoordinationDialog(QDialog):
         self._refresh_status_ui(coordination.status)
 
     def _save(self) -> bool:
-        """Uloží koordinaci (včetně koordinátora) a ponechá editor otevřený."""
+        """Uloží rozpracovanou koordinaci bez validačních podmínek uzavření."""
         if self.coordination is not None and is_strict_readonly(self.coordination.status):
             return False
         data = self.get_data()
@@ -346,13 +345,14 @@ class BozpCoordinationDialog(QDialog):
         except BozpCoordinationError as error:
             QMessageBox.warning(self, DIALOG_WINDOW_TITLE, str(error))
             return False
-        if not self.coordinator_tab.persist_coordinator():
+        # Soft persist: neúplný koordinátor neblokuje uložení (COORDINATION-UX-2).
+        if not self.coordinator_tab.persist_coordinator(require_complete=False):
             return False
         self.mark_clean()
         return True
 
     def _close_meeting(self) -> None:
-        """Uloží změny, uzavře schůzku a uzamkne editaci."""
+        """Uloží změny a uzavře schůzku; při validačních chybách zůstane Rozpracováno."""
         if self.coordination is not None and is_strict_readonly(self.coordination.status):
             return
         if not self._save():
@@ -364,6 +364,11 @@ class BozpCoordinationDialog(QDialog):
             close_meeting_action(),
         )
         if updated is None:
+            # Validace / zrušení – stav zůstává Rozpracováno.
+            reloaded = bozp_coordination_service.get_by_id(self.coordination.id)
+            if reloaded is not None:
+                self.coordination = reloaded
+                self._refresh_status_ui(reloaded.status)
             return
         self.coordination = updated
         self._refresh_status_ui(updated.status)
@@ -409,7 +414,7 @@ class BozpCoordinationDialog(QDialog):
             return False
         if updated is not None:
             self.coordination = updated
-        if not self.coordinator_tab.persist_coordinator():
+        if not self.coordinator_tab.persist_coordinator(require_complete=False):
             return False
         self.mark_clean()
         return True

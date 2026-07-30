@@ -13,7 +13,6 @@ from moduly.koordinace_bozp.constants import (
     PBP_FILTER_ALL,
     STATUS_FILTER_ALL,
     STATUS_FILTERS,
-    SUBJECT_REQUIRED_MESSAGE,
     VALIDITY_FILTER_ALL,
     VALIDITY_FILTER_EXPIRED,
     VALIDITY_FILTER_EXPIRING,
@@ -143,8 +142,9 @@ class BozpCoordinationService:
         workplace_handover_text: str = "",
         final_provisions_text: str = "",
     ) -> BozpCoordination:
-        normalized_subject = self._validate_subject(subject)
-        # UX-COORD-6a: nová koordinace vždy startuje jako Rozpracováno.
+        normalized_subject = self._normalize_subject(subject)
+        # COORDINATION-UX-2: nová koordinace vždy startuje jako Rozpracováno.
+        # Povinná pole se nevalidují při uložení – jen při uzavření.
         resolved_meeting = meeting_date or date.today()
         resolved_from, resolved_to = resolve_validity_dates(
             resolved_meeting,
@@ -226,7 +226,7 @@ class BozpCoordinationService:
 
         coordination.meeting_date = meeting_date or coordination.meeting_date
         coordination.place = (place or "").strip()
-        coordination.subject = self._validate_subject(subject)
+        coordination.subject = self._normalize_subject(subject)
         # UX-COORD-6a: stav se mění jen přes coordination_lifecycle_service.
         coordination.note = (note or "").strip()
         if emergency_reporting is not None:
@@ -280,11 +280,9 @@ class BozpCoordinationService:
         return True
 
     @staticmethod
-    def _validate_subject(subject: str) -> str:
-        normalized = " ".join((subject or "").strip().split())
-        if not normalized:
-            raise BozpCoordinationError(SUBJECT_REQUIRED_MESSAGE)
-        return normalized
+    def _normalize_subject(subject: str) -> str:
+        """Normalizuje název akce; prázdný text je při uložení povolen (COORDINATION-UX-2)."""
+        return " ".join((subject or "").strip().split())
 
     @staticmethod
     def _validate_validity_range(valid_from: date, valid_to: date) -> None:
