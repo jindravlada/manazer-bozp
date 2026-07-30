@@ -7,7 +7,7 @@ import unittest
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from PySide6.QtWidgets import QApplication, QFormLayout, QLabel, QLineEdit
+from PySide6.QtWidgets import QApplication, QLabel, QLineEdit
 
 from moduly.vysetrovani_mu.ui.mu_dodrzovani_predpisu_widget import (
     MuDodrzovaniPredpisuWidget,
@@ -25,7 +25,8 @@ def _header_texts(layout) -> list[str]:
     for index in range(header.count()):
         widget = header.itemAt(index).widget()
         assert isinstance(widget, QLabel)
-        texts.append(widget.text())
+        if widget.text():
+            texts.append(widget.text())
     return texts
 
 
@@ -81,8 +82,8 @@ class MuUx5DodrzovaniLabelsTestCase(unittest.TestCase):
                 label = candidate
                 break
         self.assertIsNotNone(label)
-        form = label.parentWidget().layout() if label is not None else None
-        self.assertIsInstance(form, QFormLayout)
+        self.assertIsNotNone(self.widget.dodrz_vyjadreni_oopp)
+        self.assertTrue(self.widget.dodrz_vyjadreni_oopp.isEnabled())
 
     def test_kontrola_headers_visible(self) -> None:
         self.assertEqual(

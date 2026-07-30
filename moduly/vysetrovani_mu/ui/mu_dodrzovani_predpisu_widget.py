@@ -2,10 +2,12 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
     QFormLayout,
+    QFrame,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -310,145 +312,60 @@ class MuDodrzovaniPredpisuWidget(QWidget):
         self.dodrz_ostatni_2.setPlainText(saved.get("dodrz_ostatni_2", ""))
 
     def _build_ui(self) -> None:
+        """MU-UX-6 – čtyři logické bloky podle postupu vyšetřovatele."""
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
         content = QWidget()
         layout = QVBoxLayout(content)
-        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setContentsMargins(16, 16, 16, 24)
+        layout.setSpacing(28)
 
-        layout.addWidget(QLabel("<b>1. Zaměstnavatel</b>"))
+        layout.addWidget(self._build_block_predpisy_a_kontroly())
+        layout.addWidget(self._build_block_odborna_zpusobilost())
+        layout.addWidget(self._build_block_oopp())
+        layout.addWidget(self._build_block_dalsi_skutecnosti())
 
-        pracovni_doba = QGroupBox("Pracovní doba")
-        form = QFormLayout(pracovni_doba)
+        layout.addStretch()
+        scroll.setWidget(content)
+        outer.addWidget(scroll)
+
+    def _build_block_predpisy_a_kontroly(self) -> QWidget:
+        block, body = self._make_section_block("Předpisy a kontroly")
+
+        pracovni = self._make_subsection("Pracovní doba")
+        form = QFormLayout(pracovni)
+        form.setSpacing(10)
+        form.setContentsMargins(0, 8, 0, 0)
         form.addRow("Dodržování pracovní doby:", self.dodrz_pracovni_doba)
         form.addRow("Přesčasy:", self.dodrz_prescasy)
         form.addRow("Detail přesčasové práce:", self.dodrz_prescasy_detail)
         self._connect_prescasy_detail_visibility()
-        layout.addWidget(pracovni_doba)
+        body.addWidget(pracovni)
 
-        predpisy = QGroupBox("Předpisy pro činnost, při které došlo k mimořádné události")
-        pf = QFormLayout(predpisy)
-        self.dodrz_predpisy_cinnost.setMinimumHeight(190)
-        pf.addRow(self.dodrz_predpisy_cinnost)
-        layout.addWidget(predpisy)
-
-        oopp = QGroupBox("Vybavení dotčené osoby OOPP")
-        of = QVBoxLayout(oopp)
-        of.setSpacing(6)
-        self.dodrz_oopp_layout = of
-        of.addLayout(self._column_header_row(_OOPP_HEADERS, _OOPP_STRETCHES))
-        for row in self.dodrz_oopp_rows:
-            of.addLayout(
-                self._row_widgets_layout(
-                    [row["typ"], row["datum"], row["platnost"], row["poznamka"]],
-                    _OOPP_STRETCHES,
-                )
-            )
-        btn_oopp = QPushButton("Přidat OOPP")
-        btn_oopp.clicked.connect(self.add_dodrz_oopp_row)
-        of.addWidget(btn_oopp)
-        layout.addWidget(oopp)
-
-        skoleni = QGroupBox("Školení související s mimořádnou událostí a školení o BOZP")
-        sf = QVBoxLayout(skoleni)
-        sf.setSpacing(6)
-        self.dodrz_skoleni_layout = sf
-        sf.addLayout(self._column_header_row(_SKOLENI_HEADERS, _SKOLENI_STRETCHES))
-        for row in self.dodrz_skoleni_rows:
-            sf.addLayout(
-                self._row_widgets_layout(
-                    [row["typ"], row["datum"], row["osnova"], row["poznamka"]],
-                    _SKOLENI_STRETCHES,
-                )
-            )
-        btn_skoleni = QPushButton("Přidat školení")
-        btn_skoleni.clicked.connect(self.add_dodrz_skoleni_row)
-        sf.addWidget(btn_skoleni)
-        layout.addWidget(skoleni)
-
-        lekar = QGroupBox("Lékařská prohlídka")
-        lf = QFormLayout(lekar)
-        lf.addRow("Typ prohlídky:", self.dodrz_lekar_typ)
-        lf.addRow("Datum prohlídky:", self.dodrz_lekar_datum)
-        lf.addRow("Platnost do:", self.dodrz_lekar_platnost)
-        layout.addWidget(lekar)
-
-        kval = QGroupBox("Kvalifikace k pracovní činnosti")
-        kf = QFormLayout(kval)
-        kf.addRow("Splňuje kvalifikaci:", self.dodrz_kvalifikace_splnuje)
-        self._add_textedit_row(kf, "Poznámka:", self.dodrz_kvalifikace_poznamka, 190)
-        layout.addWidget(kval)
-
-        kontroly = QGroupBox("Kontroly a revize zařízení / zjevné závady na pracovišti")
-        krf = QFormLayout(kontroly)
-        self._add_textedit_row(krf, "", self.dodrz_kontroly_reviz_zavady, 190)
-        layout.addWidget(kontroly)
-
-        zkousky = QGroupBox("Zkoušky z předpisů a odborná způsobilost")
-        zf = QVBoxLayout(zkousky)
-        zf.setSpacing(6)
-        self.dodrz_zkousky_layout = zf
-        zf.addLayout(self._column_header_row(_ZKOUSKY_HEADERS, _ZKOUSKY_STRETCHES))
-        for row in self.dodrz_zkousky_rows:
-            zf.addLayout(
-                self._row_widgets_layout(
-                    [row["typ"], row["datum"], row["platnost"], row["poznamka"]],
-                    _ZKOUSKY_STRETCHES,
-                )
-            )
-        btn_zkouska = QPushButton("Přidat zkoušku")
-        btn_zkouska.clicked.connect(self.add_dodrz_zkouska_row)
-        zf.addWidget(btn_zkouska)
-        layout.addWidget(zkousky)
-
-        ostatni1 = QGroupBox("Ostatní záznamy k 1.")
-        o1f = QFormLayout(ostatni1)
-        self._add_textedit_row(o1f, "", self.dodrz_ostatni_1, 190)
-        layout.addWidget(ostatni1)
-
-        layout.addWidget(QLabel("<b>2. Dotčená osoba</b>"))
-
-        pouzivani = QGroupBox("Používání OOPP v době události")
-        puf = QFormLayout(pouzivani)
-        puf.addRow("OOPP byly použity:", self.dodrz_oopp_pouzity)
-        self._add_textedit_row(puf, "Stav OOPP:", self.dodrz_stav_oopp, 180)
-        layout.addWidget(pouzivani)
-
-        vyj = QGroupBox("Vyjádření dotčené osoby k používání OOPP")
-        vyf = QFormLayout(vyj)
-        vyf.setHorizontalSpacing(12)
-        vyf.setVerticalSpacing(8)
-        # MU-UX-5: datový model má jedno textové pole – popisky nad polem.
-        self._add_textedit_row(
-            vyf,
-            "Vyjádření / stanovisko:",
-            self.dodrz_vyjadreni_oopp,
-            180,
+        predpisy = self._make_subsection(
+            "Předpisy pro činnost, při které došlo k mimořádné události"
         )
-        layout.addWidget(vyj)
+        pf = QVBoxLayout(predpisy)
+        pf.setContentsMargins(0, 8, 0, 0)
+        self.dodrz_predpisy_cinnost.setMinimumHeight(120)
+        self.dodrz_predpisy_cinnost.setPlaceholderText(
+            "Jaké předpisy platily pro činnost při události…"
+        )
+        pf.addWidget(self.dodrz_predpisy_cinnost)
+        body.addWidget(predpisy)
 
-        koopp = QGroupBox("Kontrola používání OOPP dle ZP")
-        kof = QVBoxLayout(koopp)
-        kof.setSpacing(6)
-        self.dodrz_kontrola_oopp_layout = kof
-        kof.addLayout(self._column_header_row(_KONTROLA_HEADERS, _KONTROLA_STRETCHES))
-        for row in self.dodrz_kontrola_oopp_rows:
-            kof.addLayout(
-                self._row_widgets_layout(
-                    [row["datum"], row["kontroloval"], row["vysledek"]],
-                    _KONTROLA_STRETCHES,
-                )
-            )
-        layout.addWidget(koopp)
-
-        kpred = QGroupBox("Kontrola dodržování předpisů a pracovních postupů")
+        kpred = self._make_subsection("Kontrola dodržování předpisů a pracovních postupů")
         kpf = QVBoxLayout(kpred)
-        kpf.setSpacing(6)
+        kpf.setContentsMargins(0, 8, 0, 0)
+        kpf.setSpacing(8)
         self.dodrz_kontrola_predpisu_layout = kpf
-        kpf.addLayout(self._column_header_row(_KONTROLA_HEADERS, _KONTROLA_STRETCHES))
+        kpf.addLayout(
+            self._column_header_row(_KONTROLA_HEADERS, _KONTROLA_STRETCHES, with_remove=False)
+        )
         for row in self.dodrz_kontrola_predpisu_rows:
             kpf.addLayout(
                 self._row_widgets_layout(
@@ -456,69 +373,286 @@ class MuDodrzovaniPredpisuWidget(QWidget):
                     _KONTROLA_STRETCHES,
                 )
             )
-        layout.addWidget(kpred)
+        body.addWidget(kpred)
 
-        poruseni = QGroupBox("Porušení předpisů")
-        prf = QFormLayout(poruseni)
-        self._add_textedit_row(prf, "", self.dodrz_poruseni_predpisu, 190)
-        layout.addWidget(poruseni)
-
-        ostatni2 = QGroupBox("Ostatní záznamy k 2.")
-        o2f = QFormLayout(ostatni2)
-        self._add_textedit_row(o2f, "", self.dodrz_ostatni_2, 190)
-        layout.addWidget(ostatni2)
-
-        prilohy = QGroupBox("Přílohy k dodržování předpisů")
-        pl = QVBoxLayout(prilohy)
-        pl.addWidget(
-            QLabel(
-                "Zde přiložte sken nebo dokument vztahující se k této části šetření. "
-                "Přílohy lze přidat až po uložení vyšetřování."
-            )
+        kontroly = self._make_subsection(
+            "Kontroly a revize zařízení / zjevné závady na pracovišti"
         )
+        krf = QVBoxLayout(kontroly)
+        krf.setContentsMargins(0, 8, 0, 0)
+        self.dodrz_kontroly_reviz_zavady.setMinimumHeight(100)
+        self.dodrz_kontroly_reviz_zavady.setPlaceholderText(
+            "Závěry kontrol a revizí, zjevné závady…"
+        )
+        krf.addWidget(self.dodrz_kontroly_reviz_zavady)
+        body.addWidget(kontroly)
+
+        poruseni = self._make_subsection("Porušení předpisů")
+        prf = QVBoxLayout(poruseni)
+        prf.setContentsMargins(0, 8, 0, 0)
+        self.dodrz_poruseni_predpisu.setMinimumHeight(100)
+        self.dodrz_poruseni_predpisu.setPlaceholderText(
+            "Zjištěná porušení předpisů…"
+        )
+        prf.addWidget(self.dodrz_poruseni_predpisu)
+        body.addWidget(poruseni)
+
+        return block
+
+    def _build_block_odborna_zpusobilost(self) -> QWidget:
+        block, body = self._make_section_block("Odborná způsobilost")
+
+        skoleni = self._make_subsection(
+            "Školení související s mimořádnou událostí a školení o BOZP"
+        )
+        sf = QVBoxLayout(skoleni)
+        sf.setContentsMargins(0, 8, 0, 0)
+        sf.setSpacing(8)
+        self.dodrz_skoleni_layout = sf
+        self._populate_dynamic_list(
+            sf,
+            self.dodrz_skoleni_rows,
+            _SKOLENI_HEADERS,
+            _SKOLENI_STRETCHES,
+            self._skoleni_row_widgets,
+            "Přidat školení",
+            self.add_dodrz_skoleni_row,
+        )
+        body.addWidget(skoleni)
+
+        zkousky = self._make_subsection("Zkoušky z předpisů a odborná způsobilost")
+        zf = QVBoxLayout(zkousky)
+        zf.setContentsMargins(0, 8, 0, 0)
+        zf.setSpacing(8)
+        self.dodrz_zkousky_layout = zf
+        self._populate_dynamic_list(
+            zf,
+            self.dodrz_zkousky_rows,
+            _ZKOUSKY_HEADERS,
+            _ZKOUSKY_STRETCHES,
+            self._zkouska_row_widgets,
+            "Přidat zkoušku",
+            self.add_dodrz_zkouska_row,
+        )
+        body.addWidget(zkousky)
+
+        lekar = self._make_subsection("Lékařská prohlídka")
+        lf = QFormLayout(lekar)
+        lf.setContentsMargins(0, 8, 0, 0)
+        lf.setSpacing(10)
+        lf.addRow("Typ prohlídky:", self.dodrz_lekar_typ)
+        lf.addRow("Datum prohlídky:", self.dodrz_lekar_datum)
+        lf.addRow("Platnost do:", self.dodrz_lekar_platnost)
+        body.addWidget(lekar)
+
+        kval = self._make_subsection("Kvalifikace k pracovní činnosti")
+        kf = QFormLayout(kval)
+        kf.setContentsMargins(0, 8, 0, 0)
+        kf.setSpacing(10)
+        kf.addRow("Splňuje kvalifikaci:", self.dodrz_kvalifikace_splnuje)
+        self.dodrz_kvalifikace_poznamka.setMinimumHeight(90)
+        kf.addRow("Poznámka:", self.dodrz_kvalifikace_poznamka)
+        body.addWidget(kval)
+
+        return block
+
+    def _build_block_oopp(self) -> QWidget:
+        block, body = self._make_section_block("Osobní ochranné pracovní prostředky")
+
+        oopp = self._make_subsection("Přidělené OOPP")
+        of = QVBoxLayout(oopp)
+        of.setContentsMargins(0, 8, 0, 0)
+        of.setSpacing(8)
+        self.dodrz_oopp_layout = of
+        self._populate_dynamic_list(
+            of,
+            self.dodrz_oopp_rows,
+            _OOPP_HEADERS,
+            _OOPP_STRETCHES,
+            self._oopp_row_widgets,
+            "Přidat OOPP",
+            self.add_dodrz_oopp_row,
+        )
+        body.addWidget(oopp)
+
+        pouzivani = self._make_subsection("Používání OOPP při události")
+        puf = QFormLayout(pouzivani)
+        puf.setContentsMargins(0, 8, 0, 0)
+        puf.setSpacing(10)
+        puf.addRow("OOPP byly použity:", self.dodrz_oopp_pouzity)
+        body.addWidget(pouzivani)
+
+        # MU-UX-6 bod 7 – vyjádření bezprostředně pod používáním OOPP.
+        vyj = self._make_subsection("Vyjádření zaměstnance k používání OOPP")
+        vyf = QVBoxLayout(vyj)
+        vyf.setContentsMargins(0, 8, 0, 0)
+        vyf.setSpacing(6)
+        vyf.addWidget(QLabel("Vyjádření / stanovisko:"))
+        self.dodrz_vyjadreni_oopp.setMinimumHeight(100)
+        self.dodrz_vyjadreni_oopp.setPlaceholderText(
+            "Co k používání OOPP uvedl zaměstnanec…"
+        )
+        vyf.addWidget(self.dodrz_vyjadreni_oopp)
+        body.addWidget(vyj)
+
+        stav = self._make_subsection("Stav OOPP")
+        stf = QVBoxLayout(stav)
+        stf.setContentsMargins(0, 8, 0, 0)
+        self.dodrz_stav_oopp.setMinimumHeight(90)
+        self.dodrz_stav_oopp.setPlaceholderText("Stav OOPP v době události…")
+        stf.addWidget(self.dodrz_stav_oopp)
+        body.addWidget(stav)
+
+        koopp = self._make_subsection("Kontrola používání OOPP dle ZP")
+        kof = QVBoxLayout(koopp)
+        kof.setContentsMargins(0, 8, 0, 0)
+        kof.setSpacing(8)
+        self.dodrz_kontrola_oopp_layout = kof
+        kof.addLayout(
+            self._column_header_row(_KONTROLA_HEADERS, _KONTROLA_STRETCHES, with_remove=False)
+        )
+        for row in self.dodrz_kontrola_oopp_rows:
+            kof.addLayout(
+                self._row_widgets_layout(
+                    [row["datum"], row["kontroloval"], row["vysledek"]],
+                    _KONTROLA_STRETCHES,
+                )
+            )
+        body.addWidget(koopp)
+
+        return block
+
+    def _build_block_dalsi_skutecnosti(self) -> QWidget:
+        block, body = self._make_section_block("Další skutečnosti")
+
+        ostatni = self._make_subsection("Ostatní záznamy")
+        of = QVBoxLayout(ostatni)
+        of.setContentsMargins(0, 8, 0, 0)
+        of.setSpacing(12)
+        of.addWidget(QLabel("Záznamy k předpisům a kontrolám:"))
+        self.dodrz_ostatni_1.setMinimumHeight(90)
+        of.addWidget(self.dodrz_ostatni_1)
+        of.addWidget(QLabel("Záznamy k dotčené osobě a OOPP:"))
+        self.dodrz_ostatni_2.setMinimumHeight(90)
+        of.addWidget(self.dodrz_ostatni_2)
+        body.addWidget(ostatni)
+
+        prilohy = self._make_subsection("Přílohy k dodržování předpisů")
+        pl = QVBoxLayout(prilohy)
+        pl.setContentsMargins(0, 8, 0, 0)
+        pl.setSpacing(8)
+        hint = QLabel(
+            "Zde přiložte sken nebo dokument vztahující se k této části šetření. "
+            "Přílohy lze přidat až po uložení vyšetřování."
+        )
+        hint.setWordWrap(True)
+        pl.addWidget(hint)
         self.dodrzovani_attachment_widget = MuDodrzovaniAttachmentWidget()
         pl.addWidget(self.dodrzovani_attachment_widget)
-        layout.addWidget(prilohy)
+        body.addWidget(prilohy)
 
-        layout.addStretch()
-        scroll.setWidget(content)
-        outer.addWidget(scroll)
+        return block
+
+    def _make_section_block(self, title: str) -> tuple[QWidget, QVBoxLayout]:
+        block = QFrame()
+        block.setObjectName("muDodrzSection")
+        block.setFrameShape(QFrame.Shape.NoFrame)
+        outer = QVBoxLayout(block)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(14)
+
+        title_label = QLabel(title)
+        title_label.setObjectName("muDodrzSectionTitle")
+        font = title_label.font()
+        font.setBold(True)
+        font.setPointSize(max(font.pointSize() + 3, 13))
+        title_label.setFont(font)
+        outer.addWidget(title_label)
+
+        body = QVBoxLayout()
+        body.setContentsMargins(4, 0, 0, 0)
+        body.setSpacing(18)
+        outer.addLayout(body)
+        return block, body
+
+    def _make_subsection(self, title: str) -> QWidget:
+        box = QGroupBox(title)
+        box.setFlat(True)
+        box.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        return box
+
+    def _populate_dynamic_list(
+        self,
+        layout: QVBoxLayout,
+        rows: list[dict],
+        headers: tuple[str, ...],
+        stretches: tuple[int, ...],
+        widgets_fn,
+        add_label: str,
+        add_slot,
+    ) -> None:
+        layout.addLayout(self._column_header_row(headers, stretches, with_remove=True))
+        for index, row in enumerate(rows):
+            layout.addLayout(
+                self._dynamic_row_layout(widgets_fn(row), stretches, rows, index, layout)
+            )
+        btn = QPushButton(add_label)
+        btn.clicked.connect(add_slot)
+        layout.addWidget(btn)
+
+    def _oopp_row_widgets(self, row: dict) -> list:
+        return [row["typ"], row["datum"], row["platnost"], row["poznamka"]]
+
+    def _skoleni_row_widgets(self, row: dict) -> list:
+        return [row["typ"], row["datum"], row["osnova"], row["poznamka"]]
+
+    def _zkouska_row_widgets(self, row: dict) -> list:
+        return [row["typ"], row["datum"], row["platnost"], row["poznamka"]]
+
+    def _dynamic_row_layout(
+        self,
+        widgets: list,
+        stretches: tuple[int, ...],
+        rows: list[dict],
+        index: int,
+        parent_layout: QVBoxLayout,
+    ) -> QHBoxLayout:
+        row_layout = self._row_widgets_layout(widgets, stretches)
+        remove_btn = QPushButton("Odebrat")
+        remove_btn.setFixedWidth(90)
+        remove_btn.clicked.connect(
+            lambda _checked=False, i=index, r=rows, lay=parent_layout: self._remove_dynamic_row(
+                r, i, lay
+            )
+        )
+        row_layout.addWidget(remove_btn, 0)
+        return row_layout
+
+    def _remove_dynamic_row(
+        self,
+        rows: list[dict],
+        index: int,
+        layout: QVBoxLayout,
+    ) -> None:
+        if len(rows) <= 1 or index < 0 or index >= len(rows):
+            return
+        rows.pop(index)
+        self._rebuild_dynamic_rows(layout, rows)
 
     def add_dodrz_oopp_row(self) -> None:
         row = self._make_oopp_row()
         self.dodrz_oopp_rows.append(row)
-        if hasattr(self, "dodrz_oopp_layout"):
-            self.dodrz_oopp_layout.insertLayout(
-                self.dodrz_oopp_layout.count() - 1,
-                self._row_widgets_layout(
-                    [row["typ"], row["datum"], row["platnost"], row["poznamka"]],
-                    _OOPP_STRETCHES,
-                ),
-            )
+        self._rebuild_dynamic_rows(self.dodrz_oopp_layout, self.dodrz_oopp_rows)
 
     def add_dodrz_skoleni_row(self) -> None:
         row = self._make_skoleni_row()
         self.dodrz_skoleni_rows.append(row)
-        if hasattr(self, "dodrz_skoleni_layout"):
-            self.dodrz_skoleni_layout.insertLayout(
-                self.dodrz_skoleni_layout.count() - 1,
-                self._row_widgets_layout(
-                    [row["typ"], row["datum"], row["osnova"], row["poznamka"]],
-                    _SKOLENI_STRETCHES,
-                ),
-            )
+        self._rebuild_dynamic_rows(self.dodrz_skoleni_layout, self.dodrz_skoleni_rows)
 
     def add_dodrz_zkouska_row(self) -> None:
         row = self._make_zkouska_row()
         self.dodrz_zkousky_rows.append(row)
-        if hasattr(self, "dodrz_zkousky_layout"):
-            self.dodrz_zkousky_layout.insertLayout(
-                self.dodrz_zkousky_layout.count() - 1,
-                self._row_widgets_layout(
-                    [row["typ"], row["datum"], row["platnost"], row["poznamka"]],
-                    _ZKOUSKY_STRETCHES,
-                ),
-            )
+        self._rebuild_dynamic_rows(self.dodrz_zkousky_layout, self.dodrz_zkousky_rows)
 
     def _make_kontrola_rows(self, saved_rows) -> list[dict]:
         rows = []
@@ -612,11 +746,17 @@ class MuDodrzovaniPredpisuWidget(QWidget):
             if widget is not None:
                 widget.deleteLater()
         stretches = self._stretches_for_layout(layout)
-        for row in rows:
-            widgets = self._row_widgets_for_row(row)
+        widgets_fn = self._widgets_fn_for_layout(layout)
+        for index, row in enumerate(rows):
             layout.insertLayout(
                 layout.count() - 1,
-                self._row_widgets_layout(widgets, stretches),
+                self._dynamic_row_layout(
+                    widgets_fn(row),
+                    stretches,
+                    rows,
+                    index,
+                    layout,
+                ),
             )
 
     def _rebuild_kontrola_rows(self, layout, rows: list[dict]) -> None:
@@ -638,20 +778,27 @@ class MuDodrzovaniPredpisuWidget(QWidget):
             )
 
     def _stretches_for_layout(self, layout) -> tuple[int, ...]:
-        if layout is self.dodrz_oopp_layout:
+        if layout is getattr(self, "dodrz_oopp_layout", None):
             return _OOPP_STRETCHES
-        if layout is self.dodrz_skoleni_layout:
+        if layout is getattr(self, "dodrz_skoleni_layout", None):
             return _SKOLENI_STRETCHES
-        if layout is self.dodrz_zkousky_layout:
+        if layout is getattr(self, "dodrz_zkousky_layout", None):
             return _ZKOUSKY_STRETCHES
         return _OOPP_STRETCHES
 
+    def _widgets_fn_for_layout(self, layout):
+        if layout is getattr(self, "dodrz_skoleni_layout", None):
+            return self._skoleni_row_widgets
+        if layout is getattr(self, "dodrz_zkousky_layout", None):
+            return self._zkouska_row_widgets
+        return self._oopp_row_widgets
+
     def _row_widgets_for_row(self, row: dict) -> list:
         if "osnova" in row:
-            return [row["typ"], row["datum"], row["osnova"], row["poznamka"]]
+            return self._skoleni_row_widgets(row)
         if isinstance(row.get("platnost"), NullableDateEdit):
-            return [row["typ"], row["datum"], row["platnost"], row["poznamka"]]
-        return [row["typ"], row["datum"], row["platnost"], row["poznamka"]]
+            return self._zkouska_row_widgets(row)
+        return self._oopp_row_widgets(row)
 
     def _clear_layout(self, layout) -> None:
         while layout.count():
@@ -667,6 +814,8 @@ class MuDodrzovaniPredpisuWidget(QWidget):
         self,
         headers: tuple[str, ...],
         stretches: tuple[int, ...],
+        *,
+        with_remove: bool = True,
     ) -> QHBoxLayout:
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 4)
@@ -679,6 +828,10 @@ class MuDodrzovaniPredpisuWidget(QWidget):
             label.setFont(font)
             label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
             row.addWidget(label, stretch)
+        if with_remove:
+            spacer = QLabel("")
+            spacer.setFixedWidth(90)
+            row.addWidget(spacer, 0)
         return row
 
     def _row_widgets_layout(
@@ -693,11 +846,13 @@ class MuDodrzovaniPredpisuWidget(QWidget):
         for widget, stretch in zip(widgets, weights, strict=True):
             if isinstance(widget, NullableDateEdit):
                 widget.setMinimumWidth(150)
+                widget.setMinimumHeight(34)
                 widget.setSizePolicy(
                     QSizePolicy.Policy.Preferred,
                     QSizePolicy.Policy.Fixed,
                 )
             elif isinstance(widget, QLineEdit):
+                widget.setMinimumHeight(34)
                 widget.setSizePolicy(
                     QSizePolicy.Policy.Expanding,
                     QSizePolicy.Policy.Fixed,
