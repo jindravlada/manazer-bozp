@@ -139,7 +139,7 @@ class CoordinationPbpAttachmentTab(CoordinationTabEditPolicyMixin, QWidget):
         toolbar = QHBoxLayout()
         self.generate_btn = QPushButton("Generovat")
         self.update_btn = QPushButton("Aktualizovat")
-        self.show_btn = QPushButton("Zobrazit")
+        self.show_btn = QPushButton("Náhled")
         self.export_btn = QPushButton("Export ODT")
         self.history_btn = QPushButton("Historie")
         toolbar.addWidget(self.generate_btn)

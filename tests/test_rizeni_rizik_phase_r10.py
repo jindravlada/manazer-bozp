@@ -274,13 +274,13 @@ class HazardRiskAssessmentPhaseR10TestCase(unittest.TestCase):
     def test_display_name_includes_status(self) -> None:
         display_name = format_risk_assessment_display_name(
             "Posunovač",
-            assessment_status_label="Dokončeno",
+            assessment_status_label="Uzavřeno",
             existing_measure_count=5,
             required_measure_count=2,
         )
         self.assertEqual(
             display_name,
-            "Posunovač — Dokončeno — 5 existujících opatření — 2 potřebná opatření",
+            "Posunovač — Uzavřeno — 5 existujících opatření — 2 potřebná opatření",
         )
 
     def test_widget_display_name_includes_status(self) -> None:

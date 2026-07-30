@@ -242,7 +242,7 @@ class MuUx7DodrzovaniSubtabsTestCase(unittest.TestCase):
         titles = [g.title() for g in self.widget.findChildren(QGroupBox)]
         expected = [
             "Přidělené OOPP",
-            "Používání OOPP při události",
+            "Používání OOPP",
             "Stav OOPP",
             "Vyjádření zaměstnance",
             "Kontrola OOPP",

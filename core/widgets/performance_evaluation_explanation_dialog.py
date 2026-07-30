@@ -30,7 +30,7 @@ class PerformanceEvaluationExplanationDialog(QDialog):
         explanation: PerformanceEvaluationExplanation,
     ):
         super().__init__(parent)
-        self.setWindowTitle("Jak bylo stanoveno hodnocení?")
+        self.setWindowTitle("Stanovení hodnocení")
         configure_resizable_form_dialog(self, width=760, height=820, min_width=560, min_height=560)
 
         self._service = performance_evaluation_methodology_service

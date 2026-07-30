@@ -2187,13 +2187,13 @@ class SetreniDialog(QDialog):
         self._connect_prescasy_detail_visibility()
         layout.addWidget(pracovni_doba)
 
-        predpisy = QGroupBox("Předpisy pro činnost, při které došlo k PÚ")
+        predpisy = QGroupBox("Platné předpisy")
         pf = QFormLayout(predpisy)
         self.dodrz_predpisy_cinnost.setMinimumHeight(190)
         pf.addRow(self.dodrz_predpisy_cinnost)
         layout.addWidget(predpisy)
 
-        oopp = QGroupBox("Vybavení zaměstnance OOPP")
+        oopp = QGroupBox("Přidělené OOPP")
         of = QVBoxLayout(oopp)
         self.dodrz_oopp_layout = of
         of.addWidget(QLabel("<b>Typ OOPP | Datum vydání | Minimální životnost / platnost | Poznámka</b>"))
@@ -2204,7 +2204,7 @@ class SetreniDialog(QDialog):
         of.addWidget(btn_oopp)
         layout.addWidget(oopp)
 
-        skoleni = QGroupBox("Školení související s PÚ a školení o BOZP")
+        skoleni = QGroupBox("Školení")
         sf = QVBoxLayout(skoleni)
         self.dodrz_skoleni_layout = sf
         sf.addWidget(QLabel("<b>Typ školení | Datum | Činnost v osnově | Poznámka</b>"))
@@ -2228,12 +2228,12 @@ class SetreniDialog(QDialog):
         self._add_textedit_row(kf, "Poznámka:", self.dodrz_kvalifikace_poznamka, 190)
         layout.addWidget(kval)
 
-        kontroly = QGroupBox("Kontroly a revize zařízení / zjevné závady na pracovišti")
+        kontroly = QGroupBox("Revize a zjevné závady")
         krf = QFormLayout(kontroly)
         self._add_textedit_row(krf, "", self.dodrz_kontroly_reviz_zavady, 190)
         layout.addWidget(kontroly)
 
-        zkousky = QGroupBox("Zkoušky z předpisů a odborná způsobilost")
+        zkousky = QGroupBox("Zkoušky a odborná způsobilost")
         zf = QVBoxLayout(zkousky)
         self.dodrz_zkousky_layout = zf
         zf.addWidget(QLabel("<b>Typ zkoušky | Datum | Platnost do | Poznámka</b>"))
@@ -2244,32 +2244,32 @@ class SetreniDialog(QDialog):
         zf.addWidget(btn_zkouska)
         layout.addWidget(zkousky)
 
-        ostatni1 = QGroupBox("Ostatní záznamy k 1.")
+        ostatni1 = QGroupBox("Další záznamy")
         o1f = QFormLayout(ostatni1)
         self._add_textedit_row(o1f, "", self.dodrz_ostatni_1, 190)
         layout.addWidget(ostatni1)
 
         layout.addWidget(QLabel("<b>2. Zaměstnanec</b>"))
 
-        pouzivani = QGroupBox("Používání OOPP v době PÚ")
+        pouzivani = QGroupBox("Používání OOPP")
         puf = QFormLayout(pouzivani)
         puf.addRow("OOPP byly použity:", self.dodrz_oopp_pouzity)
         self._add_textedit_row(puf, "Stav OOPP:", self.dodrz_stav_oopp, 180)
         layout.addWidget(pouzivani)
 
-        vyj = QGroupBox("Vyjádření zaměstnance k používání OOPP")
+        vyj = QGroupBox("Vyjádření zaměstnance")
         vyf = QFormLayout(vyj)
         self._add_textedit_row(vyf, "", self.dodrz_vyjadreni_oopp, 180)
         layout.addWidget(vyj)
 
-        koopp = QGroupBox("Kontrola používání OOPP dle ZP")
+        koopp = QGroupBox("Kontrola OOPP")
         kof = QVBoxLayout(koopp)
         kof.addWidget(QLabel("<b>Datum | Kontroloval | Výsledek</b>"))
         for row in self.dodrz_kontrola_oopp_rows:
             kof.addLayout(self._row_widgets_layout([row["datum"], row["kontroloval"], row["vysledek"]]))
         layout.addWidget(koopp)
 
-        kpred = QGroupBox("Kontrola dodržování předpisů a pracovních postupů")
+        kpred = QGroupBox("Kontrola dodržování předpisů")
         kpf = QVBoxLayout(kpred)
         kpf.addWidget(QLabel("<b>Datum | Kontroloval | Výsledek</b>"))
         for row in self.dodrz_kontrola_predpisu_rows:
@@ -2281,7 +2281,7 @@ class SetreniDialog(QDialog):
         self._add_textedit_row(prf, "", self.dodrz_poruseni_predpisu, 190)
         layout.addWidget(poruseni)
 
-        ostatni2 = QGroupBox("Ostatní záznamy k 2.")
+        ostatni2 = QGroupBox("Další záznamy k OOPP")
         o2f = QFormLayout(ostatni2)
         self._add_textedit_row(o2f, "", self.dodrz_ostatni_2, 190)
         layout.addWidget(ostatni2)
@@ -2534,7 +2534,7 @@ class SetreniDialog(QDialog):
         btn_row = QHBoxLayout()
         btn_add = QPushButton("Přidat opatření")
         btn_edit = QPushButton("Upravit")
-        btn_delete = QPushButton("Odstranit")
+        btn_delete = QPushButton("Odebrat")
         btn_add.clicked.connect(self.add_opatreni_task)
         btn_edit.clicked.connect(self.edit_opatreni_task)
         btn_delete.clicked.connect(self.delete_opatreni_task)
@@ -2662,8 +2662,8 @@ class SetreniDialog(QDialog):
 
         reply = QMessageBox.question(
             self,
-            "Odstranit opatření",
-            "Opravdu odstranit vybrané opatření?",
+            "Odebrat opatření",
+            "Opravdu odebrat vybrané opatření?",
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )

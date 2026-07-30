@@ -30,7 +30,7 @@ class ZaverecnaZpravaProgramuAudituDialog(QDialog):
 
         layout = QVBoxLayout(self)
 
-        selection_group = QGroupBox("Vyber auditní program")
+        selection_group = QGroupBox("Auditní program")
         selection_form = QFormLayout(selection_group)
         self.program_combo = QComboBox()
         selection_form.addRow("Auditní program:", self.program_combo)

@@ -221,7 +221,7 @@ class UxTable1bRiskRegisterSortTests(unittest.TestCase):
         table.sortItems(COL_STATUS, Qt.SortOrder.AscendingOrder)
         self.assertEqual(
             _column_texts(table, COL_STATUS),
-            ["Koncept", "Probíhá", "Dokončeno", "Archivováno"],
+            ["Rozpracováno", "Probíhá", "Uzavřeno", "Archivováno"],
         )
         self.assertEqual(
             _column_ids(table, COL_ID),

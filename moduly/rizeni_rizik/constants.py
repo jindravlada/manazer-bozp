@@ -34,9 +34,9 @@ HAZARD_IDENTIFICATION_STATUSES = (
 DEFAULT_HAZARD_IDENTIFICATION_STATUS = HAZARD_IDENTIFICATION_STATUS_DRAFT
 
 HAZARD_IDENTIFICATION_STATUS_LABELS = {
-    HAZARD_IDENTIFICATION_STATUS_DRAFT: "Koncept",
+    HAZARD_IDENTIFICATION_STATUS_DRAFT: "Rozpracováno",
     HAZARD_IDENTIFICATION_STATUS_IN_PROGRESS: "Probíhá",
-    HAZARD_IDENTIFICATION_STATUS_COMPLETED: "Dokončeno",
+    HAZARD_IDENTIFICATION_STATUS_COMPLETED: "Uzavřeno",
     HAZARD_IDENTIFICATION_STATUS_ARCHIVED: "Archivováno",
 }
 
@@ -63,10 +63,10 @@ TABLE_HEADERS = [
 
 TAB_BASICS = "Základní údaje"
 TAB_PHOTOS = "Fotodokumentace"
-TAB_INVENTORY = "Zdroje rizik na pracovišti"
+TAB_INVENTORY = "Zdroje rizik"
 TAB_EVENTS = "Nežádoucí události"  # odstraněno z dialogu ve fázi R15 (UI sloučeno do zdrojů rizik)
-TAB_RISK_ASSESSMENT = "Posouzení zdrojů rizik"
-TAB_AI_PEER_REVIEW = "Oponentní posouzení AI"  # R21a: skryto v Identifikaci (AI jen v Katalogu)
+TAB_RISK_ASSESSMENT = "Posouzení rizik"
+TAB_AI_PEER_REVIEW = "Oponentura AI"  # R21a: skryto v Identifikaci (AI jen v Katalogu)
 TAB_MEASURES = "Opatření"  # R21a: dočasně nezobrazeno
 TAB_PUBLICATION = "Publikace"  # R21a: dočasně nezobrazeno
 TAB_HISTORY = "Historie"  # R21a: dočasně nezobrazeno
@@ -403,7 +403,7 @@ DEFAULT_RISK_ASSESSMENT_STATUS = RISK_ASSESSMENT_STATUS_DRAFT
 
 RISK_ASSESSMENT_STATUS_LABELS = {
     RISK_ASSESSMENT_STATUS_DRAFT: "Rozpracováno",
-    RISK_ASSESSMENT_STATUS_COMPLETED: "Dokončeno",
+    RISK_ASSESSMENT_STATUS_COMPLETED: "Uzavřeno",
 }
 
 
@@ -472,7 +472,7 @@ RISK_MEASURE_REVIEW_STATUSES = (
 
 RISK_MEASURE_REVIEW_STATUS_LABELS = {
     RISK_MEASURE_REVIEW_STATUS_DRAFT: "Rozpracováno",
-    RISK_MEASURE_REVIEW_STATUS_COMPLETED: "Dokončeno",
+    RISK_MEASURE_REVIEW_STATUS_COMPLETED: "Uzavřeno",
     RISK_MEASURE_REVIEW_STATUS_ARCHIVED: "Archivováno",
 }
 

@@ -75,13 +75,13 @@ class AccidentDialog(QDialog):
             entity_id=accident.id if accident is not None else None,
         )
 
-        self.tabs.addTab(wrap_in_scroll_area(self.tab_podatel_widget), "Zapisovatel / zaměstnavatel")
+        self.tabs.addTab(wrap_in_scroll_area(self.tab_podatel_widget), "Zapisovatel")
         self.tabs.addTab(wrap_in_scroll_area(self.tab_zamestnanec_widget), "Zaměstnanec")
         self.tabs.addTab(wrap_in_scroll_area(self.tab_uraz_widget), "Údaje o úrazu")
         self.tabs.addTab(wrap_in_scroll_area(self.tab_pracoviste_widget), "Pracoviště")
         self.tabs.addTab(wrap_in_scroll_area(self.tab_dalsi_widget), "Další údaje")
         self.tabs.addTab(wrap_in_scroll_area(self.tab_attachments_widget), "Přílohy")
-        self.tabs.addTab(wrap_in_scroll_area(self.tab_svedci_widget), "Svědci / podpisy")
+        self.tabs.addTab(wrap_in_scroll_area(self.tab_svedci_widget), "Svědci")
 
         layout.addWidget(self.tabs, 1)
 
@@ -100,7 +100,7 @@ class AccidentDialog(QDialog):
 
     def accept(self):
         validations = [
-            ("Zapisovatel / zaměstnavatel", self.tab_podatel_widget),
+            ("Zapisovatel", self.tab_podatel_widget),
             ("Zaměstnanec", self.tab_zamestnanec_widget),
         ]
 
@@ -114,7 +114,7 @@ class AccidentDialog(QDialog):
             validations.append(("Další údaje", self.tab_dalsi_widget))
 
         if hasattr(self, "tab_svedci_widget"):
-            validations.append(("Svědci / podpisy", self.tab_svedci_widget))
+            validations.append(("Svědci", self.tab_svedci_widget))
 
         for tab_name, widget in validations:
             if not hasattr(widget, "validate"):

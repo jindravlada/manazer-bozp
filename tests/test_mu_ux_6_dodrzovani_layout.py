@@ -62,13 +62,13 @@ class MuUx6DodrzovaniLayoutTestCase(unittest.TestCase):
     def test_ostatni_is_in_last_block(self) -> None:
         self.assertEqual(self._tab_titles()[-1], "Další skutečnosti")
         groups = [g.title() for g in self.widget.findChildren(QGroupBox)]
-        self.assertIn("Záznamy k předpisům a kontrolám", groups)
-        self.assertIn("Záznamy k dotčené osobě a OOPP", groups)
+        self.assertIn("Záznamy k předpisům", groups)
+        self.assertIn("Záznamy k osobě a OOPP", groups)
 
     def test_lekar_inside_odborna_zpusobilost(self) -> None:
         groups = [g.title() for g in self.widget.findChildren(QGroupBox)]
         self.assertIn("Lékařská prohlídka", groups)
-        self.assertIn("Kvalifikace k pracovní činnosti", groups)
+        self.assertIn("Kvalifikace", groups)
         self.assertNotIn("Lékařská prohlídka", self._tab_titles())
 
     def test_vyjadreni_after_stav_oopp(self) -> None:

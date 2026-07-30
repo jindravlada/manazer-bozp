@@ -34,7 +34,7 @@ class RocniZpravaDialog(QDialog):
 
         layout = QVBoxLayout(self)
 
-        year_group = QGroupBox("Vyber rok")
+        year_group = QGroupBox("Rok")
         year_form = QFormLayout(year_group)
         self.year_combo = QComboBox()
         self._populate_years(year)

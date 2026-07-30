@@ -111,8 +111,8 @@ class PhaseR21bTests(unittest.TestCase):
         )
 
     def test_tab_labels(self) -> None:
-        self.assertEqual(TAB_INVENTORY, "Zdroje rizik na pracovišti")
-        self.assertEqual(TAB_RISK_ASSESSMENT, "Posouzení zdrojů rizik")
+        self.assertEqual(TAB_INVENTORY, "Zdroje rizik")
+        self.assertEqual(TAB_RISK_ASSESSMENT, "Posouzení rizik")
         self.assertEqual(
             list(HAZARD_IDENTIFICATION_VISIBLE_TABS)[2:],
             [TAB_INVENTORY, TAB_RISK_ASSESSMENT],

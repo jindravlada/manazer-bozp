@@ -456,7 +456,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
             answer = QMessageBox.question(
                 self,
                 "Obnovit požadavek",
-                "Požadavek je archivní. Chcete ho obnovit do aktivních?",
+                "Požadavek je archivní. Opravdu ho chcete obnovit do aktivních?",
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.No,
             )

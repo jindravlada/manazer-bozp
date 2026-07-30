@@ -36,7 +36,7 @@ class RocniZpravaAudituDialog(QDialog):
 
         layout = QVBoxLayout(self)
 
-        year_group = QGroupBox("Vyber rok a auditní program")
+        year_group = QGroupBox("Rok a auditní program")
         year_form = QFormLayout(year_group)
         self.year_combo = QComboBox()
         self._populate_years(year)

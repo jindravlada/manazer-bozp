@@ -140,7 +140,7 @@ class UxRisk3IdentificationListTests(unittest.TestCase):
         self.assertEqual(table.item(0, COL_IDENTIFICATION).text(), newer.identification_number)
         self.assertEqual(table.item(1, COL_IDENTIFICATION).text(), older.identification_number)
         self.assertEqual(table.item(0, COL_WORKPLACE_PART).text(), "Část Beta")
-        self.assertEqual(table.item(0, COL_STATUS).text(), "Koncept")
+        self.assertEqual(table.item(0, COL_STATUS).text(), "Rozpracováno")
         self.assertEqual(table.item(0, COL_STARTED_AT).text(), "15.06.2026")
 
     def test_search_matches_workplace_part_not_hidden_identification(self) -> None:

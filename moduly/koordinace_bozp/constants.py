@@ -114,8 +114,8 @@ BOZP_COORDINATION_STATUSES_REQUIRING_PROTOCOL_CHECK = frozenset(
 )
 
 TAB_BASICS = "Základní údaje"
-TAB_EMPLOYERS = "Zúčastnění zaměstnavatelé"
-TAB_PARTICIPANTS = "Účastníci schůzky"
+TAB_EMPLOYERS = "Zaměstnavatelé"
+TAB_PARTICIPANTS = "Účastníci"
 TAB_COORDINATOR = "Koordinátor BOZP"
 
 # Ruční koordinátor – výběr organizace (UX-COORD-4c).
@@ -155,7 +155,7 @@ AGREEMENT_FIXED_PART_ORDER = (
     AGREEMENT_PART_FINAL,
 )
 TAB_CONTACTS = "Důležité kontakty"
-TAB_RISK_SUBMISSIONS = "Předání rizik dodavatelů"
+TAB_RISK_SUBMISSIONS = "Předání rizik"
 TAB_PBP_ATTACHMENT = "Příloha PBP"
 
 # BUILDER-COORD-1 – pevné texty koordinačního protokolu (právní dokument).

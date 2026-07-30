@@ -20,7 +20,7 @@ class GenerateInspectionsDialog(QDialog):
     def __init__(self, parent=None, *, year: int | None = None):
         super().__init__(parent)
 
-        self.setWindowTitle("Generovat kontroly")
+        self.setWindowTitle("Generovat prověrky")
         self.resize(420, 180)
 
         layout = QVBoxLayout(self)
@@ -52,7 +52,7 @@ class GenerateInspectionsDialog(QDialog):
         if not result.created and result.skipped_existing:
             QMessageBox.information(
                 self,
-                "Generovat kontroly",
+                "Generovat prověrky",
                 f"Pro rok {year} už existují prověrky u všech aktivních pracovišť.\n"
                 "Stávající záznamy nebyly změněny.",
             )
@@ -61,7 +61,7 @@ class GenerateInspectionsDialog(QDialog):
         if not result.created:
             QMessageBox.information(
                 self,
-                "Generovat kontroly",
+                "Generovat prověrky",
                 "Nejsou k dispozici žádná aktivní pracoviště pro generování.",
             )
             return
@@ -74,7 +74,7 @@ class GenerateInspectionsDialog(QDialog):
 
         QMessageBox.information(
             self,
-            "Generovat kontroly",
+            "Generovat prověrky",
             f"Bylo vytvořeno {len(result.created)} prověrek pro rok {year}.{skipped_text}",
         )
         self.accept()

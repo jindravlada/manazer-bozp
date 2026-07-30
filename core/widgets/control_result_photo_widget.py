@@ -22,7 +22,7 @@ from core.widgets.image_viewer_dialog import ImageViewerDialog
 PHOTO_SECTION_LABEL = "Fotografie"
 PHOTO_ADD_LABEL = "📷 Přidat fotografii"
 PHOTO_REMOVE_LABEL = "🗑 Odebrat"
-PHOTO_VIEW_LABEL = "🔍 Zobrazit"
+PHOTO_VIEW_LABEL = "🔍 Náhled"
 
 
 class _ClickablePhotoLabel(QLabel):

@@ -36,10 +36,10 @@ from moduly.rizeni_rizik.sluzby.pravidla_bezpecne_prace_service import (
 
 DIALOG_TITLE = "Kontrola pravidel bezpečné práce"
 ALL_OK_MESSAGE = "Všechna nalezená pravidla byla zpracována."
-UNSAVED_PROMPT = "Máte neuložené změny.\nChcete je zahodit?"
+UNSAVED_PROMPT = "Máte neuložené změny.\nOpravdu je chcete zahodit?"
 APPROVE_UNSAVED_PROMPT = (
     "V editoru je neuložená změna.\n"
-    "Chcete ji zahodit a ponechat původní formulaci?"
+    "Opravdu ji chcete zahodit a ponechat původní formulaci?"
 )
 
 COL_STATUS = 0

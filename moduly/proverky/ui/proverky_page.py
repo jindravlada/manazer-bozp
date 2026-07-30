@@ -74,7 +74,7 @@ class ProverkyPage(QWidget):
         self.edit_btn = QPushButton("Upravit")
         self.delete_btn = QPushButton("Smazat")
         self.plan_btn = QPushButton("Roční plán")
-        self.generate_btn = QPushButton("Generovat kontroly")
+        self.generate_btn = QPushButton("Generovat prověrky")
         self.protocol_btn = QPushButton(INSPECTION_PROTOCOL_BUTTON_LABEL)
         self.protocol_btn.setEnabled(False)
         self.protocol_btn.setToolTip(INSPECTION_PROTOCOL_TOOLTIP)

@@ -83,7 +83,7 @@ class WorkplaceAnalysisTerminologyPhaseR05aTestCase(unittest.TestCase):
         )
 
     def test_tab_label_is_workplace_sources(self) -> None:
-        self.assertEqual(TAB_INVENTORY, "Zdroje rizik na pracovišti")
+        self.assertEqual(TAB_INVENTORY, "Zdroje rizik")
 
     def test_intro_text_updated(self) -> None:
         self.assertIn("katalogových zdrojů rizik", INVENTORY_INTRO_TEXT)

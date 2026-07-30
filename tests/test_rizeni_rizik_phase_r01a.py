@@ -136,7 +136,7 @@ class RizeniRizikModulePhaseR01aTestCase(unittest.TestCase):
         self.assertEqual(table.rowCount(), 2)
         self.assertEqual(table.item(0, 1).text(), newer.identification_number)
         self.assertNotEqual(table.item(0, 1).text(), table.item(1, 1).text())
-        self.assertEqual(table.item(0, 7).text(), "Koncept")
+        self.assertEqual(table.item(0, 7).text(), "Rozpracováno")
         self.assertEqual(table.item(0, 5).text(), "15.06.2026")
 
     def test_create_identification_uses_default_status(self) -> None:

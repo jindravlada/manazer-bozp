@@ -508,7 +508,7 @@ class MuDodrzovaniPredpisuWidget(QWidget):
         self._connect_prescasy_detail_visibility()
         layout.addWidget(pracovni)
 
-        predpisy, body = self._make_group("Předpisy pro činnost")
+        predpisy, body = self._make_group("Platné předpisy")
         self.dodrz_predpisy_cinnost.setPlaceholderText(
             "Jaké předpisy platily pro činnost při události…"
         )
@@ -530,7 +530,7 @@ class MuDodrzovaniPredpisuWidget(QWidget):
         )
         layout.addWidget(kpred)
 
-        kontroly, body = self._make_group("Kontroly, revize a zjevné závady")
+        kontroly, body = self._make_group("Revize a zjevné závady")
         self.dodrz_kontroly_reviz_zavady.setPlaceholderText(
             "Závěry kontrol a revizí, zjevné závady…"
         )
@@ -584,7 +584,7 @@ class MuDodrzovaniPredpisuWidget(QWidget):
         body.addLayout(form)
         layout.addWidget(lekar)
 
-        kval, body = self._make_group("Kvalifikace k pracovní činnosti")
+        kval, body = self._make_group("Kvalifikace")
         form = QFormLayout()
         form.setSpacing(8)
         form.setContentsMargins(0, 0, 0, 0)
@@ -612,7 +612,7 @@ class MuDodrzovaniPredpisuWidget(QWidget):
         )
         layout.addWidget(oopp)
 
-        pouzivani, body = self._make_group("Používání OOPP při události")
+        pouzivani, body = self._make_group("Používání OOPP")
         form = QFormLayout()
         form.setSpacing(8)
         form.setContentsMargins(0, 0, 0, 0)
@@ -654,15 +654,15 @@ class MuDodrzovaniPredpisuWidget(QWidget):
     def _build_tab_dalsi_skutecnosti(self) -> QWidget:
         page, layout = self._tab_page()
 
-        z1, body = self._make_group("Záznamy k předpisům a kontrolám")
+        z1, body = self._make_group("Záznamy k předpisům")
         body.addWidget(self.dodrz_ostatni_1)
         layout.addWidget(z1)
 
-        z2, body = self._make_group("Záznamy k dotčené osobě a OOPP")
+        z2, body = self._make_group("Záznamy k osobě a OOPP")
         body.addWidget(self.dodrz_ostatni_2)
         layout.addWidget(z2)
 
-        prilohy, body = self._make_group("Přílohy k dodržování předpisů")
+        prilohy, body = self._make_group("Přílohy")
         hint = QLabel(
             "Zde přiložte sken nebo dokument vztahující se k této části šetření. "
             "Přílohy lze přidat až po uložení vyšetřování."
