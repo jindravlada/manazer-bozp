@@ -540,6 +540,12 @@ class MuInvestigationDialog(QDialog):
         if tab_index >= 0:
             self.tabs.setCurrentIndex(tab_index)
 
+        # MU-UX-7 – vnitřní podzáložky Dodržování předpisů.
+        if tab_name == "Dodržování předpisů" and field_name:
+            focused = self.dodrzovani_predpisu_widget.focus_field(field_name)
+            if focused is not None:
+                return
+
         widget = self._field_widget(field_name)
         self._focus_widget(widget)
 
@@ -574,6 +580,8 @@ class MuInvestigationDialog(QDialog):
             "zaver_shrnuti": lambda: self.zaver_widget.zaverecne_shrnuti_edit,
             "shrnuti_pricin": lambda: self.zaver_widget.vysledek_hlavni_priciny_edit,
         }
+        if field_name.startswith("dodrz_"):
+            return self.dodrzovani_predpisu_widget.resolve_field_widget(field_name)
         getter = getters.get(field_name)
         if getter is None:
             return None

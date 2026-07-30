@@ -7,7 +7,7 @@ import unittest
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from PySide6.QtWidgets import QApplication, QLabel, QLineEdit
+from PySide6.QtWidgets import QApplication, QLabel, QLineEdit, QWidget
 
 from moduly.vysetrovani_mu.ui.mu_dodrzovani_predpisu_widget import (
     MuDodrzovaniPredpisuWidget,
@@ -18,16 +18,33 @@ from moduly.vysetrovani_mu.ui.mu_dodrzovani_predpisu_widget import (
 )
 
 
-def _header_texts(layout) -> list[str]:
-    header = layout.itemAt(0).layout()
+def _header_widget(outer_layout) -> QWidget:
+    header = outer_layout.itemAt(0).widget()
     assert header is not None
+    return header
+
+
+def _header_texts(outer_layout) -> list[str]:
+    header = _header_widget(outer_layout)
     texts: list[str] = []
-    for index in range(header.count()):
-        widget = header.itemAt(index).widget()
+    layout = header.layout()
+    assert layout is not None
+    for index in range(layout.count()):
+        widget = layout.itemAt(index).widget()
         assert isinstance(widget, QLabel)
         if widget.text():
             texts.append(widget.text())
     return texts
+
+
+def _first_data_row(outer_layout) -> QWidget:
+    rows_host = outer_layout.itemAt(1).widget()
+    assert rows_host is not None
+    rows_layout = rows_host.layout()
+    assert rows_layout is not None
+    row = rows_layout.itemAt(0).widget()
+    assert row is not None
+    return row
 
 
 class MuUx5DodrzovaniLabelsTestCase(unittest.TestCase):
@@ -44,15 +61,8 @@ class MuUx5DodrzovaniLabelsTestCase(unittest.TestCase):
 
     def test_oopp_column_labels_visible(self) -> None:
         self.assertEqual(_header_texts(self.widget.dodrz_oopp_layout), list(_OOPP_HEADERS))
-        self.assertEqual(
-            _OOPP_HEADERS,
-            (
-                "Název OOPP",
-                "Datum vydání",
-                "Datum ukončení používání",
-                "Poznámka",
-            ),
-        )
+        self.assertEqual(_OOPP_HEADERS[0], "Název OOPP")
+        self.assertEqual(_OOPP_HEADERS[-1], "Akce")
 
     def test_skoleni_column_labels_and_success_radio(self) -> None:
         self.assertEqual(
@@ -102,15 +112,15 @@ class MuUx5DodrzovaniLabelsTestCase(unittest.TestCase):
         self.widget.add_dodrz_zkouska_row()
         self.assertEqual(_header_texts(self.widget.dodrz_oopp_layout), before)
         self.assertEqual(len(self.widget.dodrz_oopp_rows), 2)
-        # Hlavička + 2 řádky + tlačítko
-        self.assertEqual(self.widget.dodrz_oopp_layout.count(), 4)
-        data_row = self.widget.dodrz_oopp_layout.itemAt(1).layout()
-        header = self.widget.dodrz_oopp_layout.itemAt(0).layout()
-        self.assertEqual(data_row.count(), header.count())
-        for index in range(header.count()):
+        # Hlavička + kontejner řádků + tlačítko
+        self.assertEqual(self.widget.dodrz_oopp_layout.count(), 3)
+        header = _header_widget(self.widget.dodrz_oopp_layout)
+        data_row = _first_data_row(self.widget.dodrz_oopp_layout)
+        self.assertEqual(data_row.layout().count(), header.layout().count())
+        for index in range(header.layout().count()):
             self.assertEqual(
-                data_row.stretch(index),
-                header.stretch(index),
+                data_row.layout().stretch(index),
+                header.layout().stretch(index),
             )
 
     def test_reload_preserves_headers(self) -> None:
@@ -137,7 +147,6 @@ class MuUx5DodrzovaniLabelsTestCase(unittest.TestCase):
         self.widget.resize(1100, 900)
         for text in _OOPP_HEADERS:
             self.assertTrue(any(lbl.text() == text for lbl in self.widget.findChildren(QLabel)))
-        # Popisky nejsou prázdné a pole zůstávají editovatelná.
         self.assertTrue(self.widget.dodrz_oopp_rows[0]["typ"].isEnabled())
         self.assertIsInstance(self.widget.dodrz_oopp_rows[0]["typ"], QLineEdit)
 

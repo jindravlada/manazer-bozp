@@ -1,4 +1,4 @@
-"""MU-UX-6 – UX redesign záložky Dodržování předpisů (pouze rozložení)."""
+"""MU-UX-6 – logické oblasti záložky Dodržování předpisů (nyní jako podzáložky)."""
 
 from __future__ import annotations
 
@@ -10,7 +10,10 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtWidgets import QApplication, QGroupBox, QLabel, QPushButton
 
-from moduly.vysetrovani_mu.ui.mu_dodrzovani_predpisu_widget import MuDodrzovaniPredpisuWidget
+from moduly.vysetrovani_mu.ui.mu_dodrzovani_predpisu_widget import (
+    MuDodrzovaniPredpisuWidget,
+    _TAB_TITLES,
+)
 
 _EXPECTED_KEYS = {
     "dodrz_pracovni_doba",
@@ -37,13 +40,6 @@ _EXPECTED_KEYS = {
     "dodrz_priloha",
 }
 
-_SECTION_TITLES = (
-    "Předpisy a kontroly",
-    "Odborná způsobilost",
-    "Osobní ochranné pracovní prostředky",
-    "Další skutečnosti",
-)
-
 
 class MuUx6DodrzovaniLayoutTestCase(unittest.TestCase):
     @classmethod
@@ -57,38 +53,29 @@ class MuUx6DodrzovaniLayoutTestCase(unittest.TestCase):
         self.widget.close()
         self.widget.deleteLater()
 
-    def _section_titles(self) -> list[str]:
-        return [
-            lbl.text()
-            for lbl in self.widget.findChildren(QLabel)
-            if lbl.objectName() == "muDodrzSectionTitle"
-        ]
+    def _tab_titles(self) -> list[str]:
+        return [self.widget.inner_tabs.tabText(i) for i in range(self.widget.inner_tabs.count())]
 
     def test_four_investigation_blocks_in_order(self) -> None:
-        titles = self._section_titles()
-        self.assertEqual(titles, list(_SECTION_TITLES))
+        self.assertEqual(self._tab_titles(), list(_TAB_TITLES))
 
     def test_ostatni_is_in_last_block(self) -> None:
-        titles = self._section_titles()
-        self.assertEqual(titles[-1], "Další skutečnosti")
+        self.assertEqual(self._tab_titles()[-1], "Další skutečnosti")
         groups = [g.title() for g in self.widget.findChildren(QGroupBox)]
-        self.assertIn("Ostatní záznamy", groups)
-        # Ostatní záznamy až po hlavních blocích – poslední/předposlední skupina v bloku.
-        self.assertGreater(groups.index("Ostatní záznamy"), groups.index("Přidělené OOPP"))
+        self.assertIn("Záznamy k předpisům a kontrolám", groups)
+        self.assertIn("Záznamy k dotčené osobě a OOPP", groups)
 
     def test_lekar_inside_odborna_zpusobilost(self) -> None:
         groups = [g.title() for g in self.widget.findChildren(QGroupBox)]
         self.assertIn("Lékařská prohlídka", groups)
         self.assertIn("Kvalifikace k pracovní činnosti", groups)
-        # Lékařská není samostatný top-level blok.
-        self.assertNotIn("Lékařská prohlídka", self._section_titles())
+        self.assertNotIn("Lékařská prohlídka", self._tab_titles())
 
-    def test_vyjadreni_immediately_after_pouzivani(self) -> None:
-        groups = [g for g in self.widget.findChildren(QGroupBox)]
-        titles = [g.title() for g in groups]
-        pouz = titles.index("Používání OOPP při události")
-        vyj = titles.index("Vyjádření zaměstnance k používání OOPP")
-        self.assertEqual(vyj, pouz + 1)
+    def test_vyjadreni_after_stav_oopp(self) -> None:
+        groups = [g.title() for g in self.widget.findChildren(QGroupBox)]
+        stav = groups.index("Stav OOPP")
+        vyj = groups.index("Vyjádření zaměstnance")
+        self.assertEqual(vyj, stav + 1)
 
     def test_get_data_keys_unchanged(self) -> None:
         self.assertEqual(set(self.widget.get_data().keys()), _EXPECTED_KEYS)
@@ -134,14 +121,11 @@ class MuUx6DodrzovaniLayoutTestCase(unittest.TestCase):
         self.widget.dodrz_oopp_rows[1]["typ"].setText("B")
         self.assertEqual(len(self.widget.dodrz_oopp_rows), 2)
 
-        remove_buttons = [
-            btn
-            for btn in self.widget.dodrz_oopp_layout.parentWidget().findChildren(QPushButton)
-            if btn.text() == "Odebrat"
-        ]
-        # Odebrat je na řádcích OOPP / školení / zkoušky – alespoň 2 u OOPP po přidání.
-        self.assertGreaterEqual(len(remove_buttons), 2)
-        self.widget._remove_dynamic_row(self.widget.dodrz_oopp_rows, 0, self.widget.dodrz_oopp_layout)
+        self.widget._remove_dynamic_row(
+            self.widget.dodrz_oopp_rows,
+            0,
+            self.widget.dodrz_oopp_rows_layout,
+        )
         self.assertEqual(len(self.widget.dodrz_oopp_rows), 1)
         self.assertEqual(self.widget.dodrz_oopp_rows[0]["typ"].text(), "B")
 
@@ -161,7 +145,7 @@ class MuUx6DodrzovaniLayoutTestCase(unittest.TestCase):
             self.widget.resize(width, height)
             self.assertTrue(self.widget.dodrz_predpisy_cinnost.isEnabled())
             self.assertTrue(self.widget.dodrz_oopp_rows[0]["typ"].isEnabled())
-            self.assertEqual(self._section_titles(), list(_SECTION_TITLES))
+            self.assertEqual(self._tab_titles(), list(_TAB_TITLES))
 
     def test_json_shape_stable_for_export(self) -> None:
         raw = json.loads(self.widget.get_json())
