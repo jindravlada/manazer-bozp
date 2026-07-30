@@ -37,6 +37,10 @@ from moduly.proverky.sluzby.control_point_similarity_service import (
     ControlPointSimilarityCandidate,
     parse_control_point_composite_id,
 )
+from moduly.proverky.sluzby.similarity_performance import (
+    SimilarityPerformanceTimings,
+    new_timings_if_enabled,
+)
 
 SCOPE_PBP = "pbp"
 SCOPE_PROVERKY = "proverky_kontrolni_otazky"
@@ -81,16 +85,19 @@ class _ControlPointAnalysisWorker(QThread):
         super().__init__(parent)
         self._cancel_requested = False
         self._include_checked = include_checked
+        self.performance: SimilarityPerformanceTimings | None = None
 
     def request_cancel(self) -> None:
         self._cancel_requested = True
 
     def run(self) -> None:
         try:
+            self.performance = new_timings_if_enabled()
             pairs, cancelled = analyze_control_point_similarities(
                 include_checked=self._include_checked,
                 progress_callback=self._on_progress,
                 should_cancel=lambda: self._cancel_requested,
+                performance=self.performance,
             )
         except Exception as exc:  # noqa: BLE001
             self.failed.emit(str(exc))
@@ -120,6 +127,7 @@ class SimilarityAnalysisDialog(QDialog):
         self._pairs: list[ControlPointSimilarityPair] = []
         self._cancelled = False
         self._closing = False
+        self._pending_performance: SimilarityPerformanceTimings | None = None
 
         root = QVBoxLayout(self)
         self._stack = QStackedWidget()
@@ -379,11 +387,14 @@ class SimilarityAnalysisDialog(QDialog):
     def _on_finished(self, pairs: object, cancelled: bool) -> None:
         self._pairs = list(pairs or [])
         self._cancelled = bool(cancelled)
+        if self._worker is not None:
+            self._pending_performance = self._worker.performance
         self._worker = None
         self._show_results()
 
     def _on_failed(self, message: str) -> None:
         self._worker = None
+        self._pending_performance = None
         QMessageBox.critical(
             self,
             self.windowTitle(),
@@ -404,19 +415,30 @@ class SimilarityAnalysisDialog(QDialog):
         self._show_results()
 
     def _reload_with_checked(self, *, include_checked: bool) -> None:
+        perf = new_timings_if_enabled()
         try:
             pairs, _cancelled = analyze_control_point_similarities(
                 include_checked=include_checked,
+                performance=perf,
             )
         except Exception as exc:  # noqa: BLE001
             QMessageBox.warning(self, self.windowTitle(), str(exc))
             return
         self._pairs = pairs
+        self._pending_performance = perf
         self._show_results()
 
     def _show_results(self) -> None:
         status = "Analýza byla zrušena." if self._cancelled else "Analýza dokončena."
         self._results_summary.setText(status)
+
+        perf = self._pending_performance
+        self._pending_performance = None
+        if perf is None:
+            perf = new_timings_if_enabled()
+        if perf is not None:
+            perf.mark_start()
+
         self._results_table.blockSignals(True)
         self._results_table.setRowCount(0)
 
@@ -479,6 +501,11 @@ class SimilarityAnalysisDialog(QDialog):
         self._update_action_buttons()
         self._stack.setCurrentWidget(self._results_page)
         self._refresh_result_tooltips()
+
+        if perf is not None:
+            # Zahrnuje naplnění modelu i přepnutí stránky / tooltipy (vykreslení).
+            perf.table_s = perf.take()
+            perf.log()
 
     def _refresh_result_tooltips(self, *_args) -> None:
         refresh_elided_cell_tooltips(self._results_table, _RESULT_TEXT_COLUMNS)
