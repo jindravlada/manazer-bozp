@@ -1,4 +1,9 @@
-from PySide6.QtCore import Qt
+"""Dialog s doporučeným postupem kontroly (modální s překryvem editoru)."""
+
+from __future__ import annotations
+
+from PySide6.QtCore import QEvent, QObject, Qt
+from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import (
     QDialog,
     QLabel,
@@ -18,17 +23,91 @@ _DIALOG_WIDTH = 700
 _DIALOG_HEIGHT = 450
 _SECTION_TO_CONTENT_SPACING = 12
 
+# ~43 % neprůhlednosti – podklad zůstane rozpoznatelný, dialog dominantní.
+_OVERLAY_ALPHA = 110
+_OVERLAY_OBJECT_NAME = "ProverkyControlProcedureDimOverlay"
+
+
+class ParentDimOverlay(QWidget):
+    """Poloprůhledný šedý překryv nad podkladovým editorem."""
+
+    def __init__(self, host: QWidget):
+        super().__init__(host)
+        self.setObjectName(_OVERLAY_OBJECT_NAME)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.setMouseTracking(False)
+        self._sync_geometry()
+        host.installEventFilter(self)
+        self.raise_()
+        self.show()
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:  # noqa: N802
+        if watched is self.parentWidget() and event.type() in (
+            QEvent.Type.Resize,
+            QEvent.Type.Show,
+            QEvent.Type.LayoutRequest,
+        ):
+            self._sync_geometry()
+        return False
+
+    def _sync_geometry(self) -> None:
+        parent = self.parentWidget()
+        if parent is not None:
+            self.setGeometry(parent.rect())
+
+    def paintEvent(self, event) -> None:  # noqa: N802
+        del event
+        painter = QPainter(self)
+        painter.fillRect(self.rect(), QColor(0, 0, 0, _OVERLAY_ALPHA))
+
+    def mousePressEvent(self, event) -> None:  # noqa: N802
+        event.accept()
+
+    def mouseReleaseEvent(self, event) -> None:  # noqa: N802
+        event.accept()
+
+    def mouseDoubleClickEvent(self, event) -> None:  # noqa: N802
+        event.accept()
+
+    def wheelEvent(self, event) -> None:  # noqa: N802
+        event.accept()
+
+
+def find_dim_overlays(host: QWidget | None) -> list[ParentDimOverlay]:
+    if host is None:
+        return []
+    return [
+        child
+        for child in host.findChildren(ParentDimOverlay)
+        if child.objectName() == _OVERLAY_OBJECT_NAME
+    ]
+
+
+def clear_dim_overlays(host: QWidget | None) -> None:
+    for overlay in find_dim_overlays(host):
+        parent = overlay.parentWidget()
+        if parent is not None:
+            parent.removeEventFilter(overlay)
+        overlay.hide()
+        overlay.setParent(None)
+        overlay.deleteLater()
+
 
 class ProverkyControlProcedureDialog(QDialog):
-    """Nemodální okno s doporučeným postupem kontroly."""
+    """Modální okno s doporučeným postupem kontroly a překryvem editoru."""
 
     def __init__(self, section: dict, *, section_label: str = "", parent=None):
         super().__init__(parent)
 
         self.setWindowTitle(KNOWLEDGE_CONTROL_PROCEDURE_DIALOG_TITLE)
-        self.setModal(False)
-        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        self.setWindowModality(Qt.WindowModality.WindowModal)
+        self.setModal(True)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, False)
         self.resize(_DIALOG_WIDTH, _DIALOG_HEIGHT)
+
+        self._overlay: ParentDimOverlay | None = None
+        self._overlay_host: QWidget | None = None
 
         root_layout = QVBoxLayout(self)
         root_layout.setContentsMargins(12, 12, 12, 12)
@@ -54,10 +133,57 @@ class ProverkyControlProcedureDialog(QDialog):
 
         buttons = create_close_box(self)
         configure_close_button(buttons)
-        buttons.rejected.connect(self.close)
+        buttons.rejected.connect(self.reject)
         root_layout.addWidget(buttons)
 
+        self.finished.connect(self._cleanup_overlay)
+        self.destroyed.connect(self._on_destroyed)
+
         self.set_section(section, section_label=section_label)
+
+    def overlay_host(self) -> QWidget | None:
+        """Podkladové okno/editor, nad nímž se zobrazí překryv."""
+        parent = self.parentWidget()
+        if parent is None:
+            return None
+        window = parent.window()
+        return window if window is not None else parent
+
+    def active_overlay(self) -> ParentDimOverlay | None:
+        return self._overlay
+
+    def _ensure_overlay(self) -> None:
+        host = self.overlay_host()
+        if host is None:
+            return
+        clear_dim_overlays(host)
+        self._overlay_host = host
+        self._overlay = ParentDimOverlay(host)
+        self._overlay.raise_()
+
+    def _cleanup_overlay(self, *_args) -> None:
+        host = self._overlay_host
+        if self._overlay is not None:
+            parent = self._overlay.parentWidget()
+            if parent is not None:
+                parent.removeEventFilter(self._overlay)
+            self._overlay.hide()
+            self._overlay.setParent(None)
+            self._overlay.deleteLater()
+            self._overlay = None
+        if host is not None:
+            clear_dim_overlays(host)
+        self._overlay_host = None
+
+    def _on_destroyed(self, *_args) -> None:
+        self._cleanup_overlay()
+
+    def exec(self) -> int:  # noqa: A003
+        self._ensure_overlay()
+        try:
+            return super().exec()
+        finally:
+            self._cleanup_overlay()
 
     def set_section(self, section: dict, *, section_label: str = "") -> None:
         label = section_label.strip() or str(section.get("nazev") or "").strip()

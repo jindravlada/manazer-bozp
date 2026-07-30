@@ -267,9 +267,12 @@ class BozpInspectionAreasWidget(QWidget):
             section_label=self._current_section_label,
             parent=self,
         )
-        dialog.destroyed.connect(lambda: setattr(self, "_procedure_dialog", None))
         self._procedure_dialog = dialog
-        dialog.show()
+        try:
+            dialog.exec()
+        finally:
+            self._procedure_dialog = None
+            dialog.deleteLater()
 
     def _refresh_after_knowledge_edit(self) -> None:
         area_id = self._current_area_id
