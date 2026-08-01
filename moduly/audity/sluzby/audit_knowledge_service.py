@@ -1166,7 +1166,7 @@ class AuditKnowledgeService:
         include_inactive: bool,
     ) -> list[dict]:
         collected: list[dict] = []
-        for criterion in criteria:
+        for section in sections:
             if not isinstance(section, dict):
                 continue
             if not include_inactive and not section.get("aktivni", True):
@@ -1174,7 +1174,9 @@ class AuditKnowledgeService:
             collected.append(section)
             nested = section.get("sekce") or []
             if nested:
-                collected.extend(self._collect_sections(nested, include_inactive=include_inactive))
+                collected.extend(
+                    self._collect_criteria(nested, include_inactive=include_inactive)
+                )
         collected.sort(
             key=lambda item: (
                 int(item.get("poradi") or 0),

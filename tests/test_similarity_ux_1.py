@@ -30,7 +30,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from PySide6.QtWidgets import QApplication, QMenuBar, QTabWidget
 
     from core.ui.similarity_analysis_dialog import (
-        SCOPE_PROVERKY,
         SimilarityAnalysisDialog,
     )
     from core.windows.main_window import MainWindow
@@ -85,13 +84,8 @@ class SimilarityUx1PageTestCase(unittest.TestCase):
         tab = DataQualityTab()
         self.assertTrue(hasattr(tab, "start_analysis_btn"))
         self.assertEqual(tab.start_analysis_btn.text(), "Spustit analýzu")
-        self.assertTrue(tab._scope_checks[SCOPE_PROVERKY].isEnabled())
-        self.assertTrue(tab._scope_checks[SCOPE_PROVERKY].isChecked())
         self.assertFalse(hasattr(tab, "_show_checked"))
-        for key, check in tab._scope_checks.items():
-            if key == SCOPE_PROVERKY:
-                continue
-            self.assertFalse(check.isEnabled())
+        self.assertFalse(hasattr(tab, "_scope_checks"))
 
 
 class SimilarityUx1LaunchTestCase(unittest.TestCase):
@@ -116,15 +110,18 @@ class SimilarityUx1LaunchTestCase(unittest.TestCase):
             tab._start_similarity_analysis()
 
         self.assertEqual(len(created), 1)
-        self.assertTrue(created[0]._auto_start_arg)
+        self.assertFalse(created[0]._auto_start_arg)
         exec_mock.assert_called_once()
 
-    def test_start_uses_analyze_control_point_similarities(self) -> None:
+    def test_start_uses_analyze_domain_similarities(self) -> None:
         dialog = SimilarityAnalysisDialog(auto_start=False)
-        with patch(
-            "core.ui.similarity_analysis_dialog.analyze_control_point_similarities",
+        with patch.object(dialog, "_refresh_scope_estimates"), patch(
+            "core.ui.similarity_analysis_dialog.analyze_domain_similarities",
             return_value=([], False),
-        ) as analyze_mock:
+        ) as analyze_mock, patch(
+            "core.ui.similarity_analysis_dialog.requires_large_analysis_confirmation",
+            return_value=False,
+        ):
             dialog._start_analysis()
             if dialog._worker is not None:
                 dialog._worker.wait(3000)

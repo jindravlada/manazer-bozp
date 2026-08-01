@@ -3,23 +3,16 @@
 from __future__ import annotations
 
 from PySide6.QtWidgets import (
-    QCheckBox,
-    QFormLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
-    QMessageBox,
     QPushButton,
     QScrollArea,
     QVBoxLayout,
     QWidget,
 )
 
-from core.ui.similarity_analysis_dialog import (
-    SCOPE_PROVERKY,
-    SIMILARITY_SCOPE_DEFS,
-    SimilarityAnalysisDialog,
-)
+from core.ui.similarity_analysis_dialog import SimilarityAnalysisDialog
 from moduly.sprava_dat.ui.ui_styles import apply_card_group_style
 
 
@@ -57,23 +50,12 @@ class DataQualityTab(QWidget):
 
         description = QLabel(
             "Vyhledá možné duplicitní nebo podobné záznamy v databázi. "
+            "Porovnejte jednu oblast sama se sebou, nebo dvě různé oblasti. "
             "Analýza může u většího množství dat trvat několik minut."
         )
         description.setWordWrap(True)
         description.setObjectName("InfoText")
         layout.addWidget(description)
-
-        form = QFormLayout()
-        self._scope_checks: dict[str, QCheckBox] = {}
-        for key, label, implemented in SIMILARITY_SCOPE_DEFS:
-            check = QCheckBox(label)
-            check.setChecked(implemented)
-            check.setEnabled(implemented)
-            if not implemented:
-                check.setToolTip("Připraveno pro budoucí rozšíření.")
-            self._scope_checks[key] = check
-            form.addRow(check)
-        layout.addLayout(form)
 
         buttons = QHBoxLayout()
         self.start_analysis_btn = QPushButton("Spustit analýzu")
@@ -85,14 +67,5 @@ class DataQualityTab(QWidget):
         return group
 
     def _start_similarity_analysis(self) -> None:
-        if not self._scope_checks[SCOPE_PROVERKY].isChecked():
-            QMessageBox.information(
-                self,
-                "Analýza podobností",
-                "V tomto sprintu je implementována pouze oblast "
-                "„Kontrolní otázky prověrek“.",
-            )
-            return
-
-        dialog = SimilarityAnalysisDialog(self, auto_start=True)
+        dialog = SimilarityAnalysisDialog(self, auto_start=False)
         dialog.exec()

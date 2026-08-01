@@ -126,14 +126,12 @@ class Similarity2UiTestCase(unittest.TestCase):
     def setUpClass(cls) -> None:
         _app()
 
-    def test_dialog_scope_only_proverky_enabled(self) -> None:
+    def test_dialog_has_two_scope_combos(self) -> None:
         dialog = SimilarityAnalysisDialog()
-        self.assertTrue(dialog._scope_checks[SCOPE_PROVERKY].isChecked())
-        self.assertTrue(dialog._scope_checks[SCOPE_PROVERKY].isEnabled())
-        for key, check in dialog._scope_checks.items():
-            if key == SCOPE_PROVERKY:
-                continue
-            self.assertFalse(check.isEnabled())
+        self.assertEqual(dialog._selected_scope_a(), SCOPE_PROVERKY)
+        self.assertEqual(dialog._selected_scope_b(), SCOPE_PROVERKY)
+        self.assertGreaterEqual(dialog._scope_a_combo.count(), 6)
+        self.assertEqual(dialog._scope_a_combo.count(), dialog._scope_b_combo.count())
 
     def test_empty_results_page(self) -> None:
         dialog = SimilarityAnalysisDialog()

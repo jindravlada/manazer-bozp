@@ -158,10 +158,13 @@ class SimilarityUx8SeparationTestCase(unittest.TestCase):
 
     def test_worker_never_includes_checked(self) -> None:
         dialog = SimilarityAnalysisDialog()
-        with patch(
-            "core.ui.similarity_analysis_dialog.analyze_control_point_similarities",
+        with patch.object(dialog, "_refresh_scope_estimates"), patch(
+            "core.ui.similarity_analysis_dialog.analyze_domain_similarities",
             return_value=([], False),
-        ) as analyze_mock:
+        ) as analyze_mock, patch(
+            "core.ui.similarity_analysis_dialog.requires_large_analysis_confirmation",
+            return_value=False,
+        ):
             dialog._start_analysis()
             if dialog._worker is not None:
                 dialog._worker.wait(3000)

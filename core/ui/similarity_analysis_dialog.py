@@ -1,10 +1,10 @@
-"""Dialog hromadné analýzy podobností (SIMILARITY-2 / SIMILARITY-3)."""
+"""Dialog hromadné analýzy podobností (SIMILARITY-2 / SIMILARITY-10)."""
 
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, QThread, QTimer, Signal
 from PySide6.QtWidgets import (
-    QCheckBox,
+    QComboBox,
     QDialog,
     QDialogButtonBox,
     QFormLayout,
@@ -25,24 +25,36 @@ from core.shared.sluzby.similarity_checked_pair_service import (
     SIMILARITY_ENTITY_PROVERKY_CONTROL_POINT,
     similarity_checked_pair_service,
 )
+from core.shared.sluzby.similarity_domain import (
+    SCOPE_AUDIT,
+    SCOPE_LEGAL,
+    SCOPE_MEASURES,
+    SCOPE_PBP,
+    SCOPE_PROVERKY,
+    SCOPE_RISKS,
+    SIMILARITY_DOMAINS,
+    SIMILARITY_SCOPE_DEFS,
+    domain_label,
+    estimate_comparison_count,
+    estimate_duration_label,
+    requires_large_analysis_confirmation,
+)
+from core.shared.sluzby.similarity_domain_analysis import (
+    SimilarityAnalysisPair,
+    analyze_domain_similarities,
+)
+from core.shared.sluzby.similarity_item_collectors import (
+    collect_similarity_items,
+)
 from core.ui.similarity_checked_pairs_dialog import SimilarityCheckedPairsDialog
 from core.widgets.dialog_utils import exec_maximized, prepare_work_dialog_maximized
 from core.widgets.table_utils import refresh_elided_cell_tooltips
 from moduly.proverky.sluzby.control_point_similarity_analysis import (
     ControlPointSimilarityPair,
-    analyze_control_point_similarities,
 )
 from moduly.proverky.sluzby.control_point_similarity_service import (
-    ControlPointSimilarityCandidate,
     parse_control_point_composite_id,
 )
-
-SCOPE_PBP = "pbp"
-SCOPE_PROVERKY = "proverky_kontrolni_otazky"
-SCOPE_AUDIT = "auditni_tvrzeni"
-SCOPE_RISKS = "rizika"
-SCOPE_MEASURES = "opatreni"
-SCOPE_LEGAL = "pravni_pozadavky"
 
 # Sloupce výsledkové tabulky:
 # výběr uživatele | podobnost | stav z DB | texty…
@@ -62,31 +74,26 @@ _RESULT_TEXT_COLUMNS = (
     _COL_RIGHT_LOCATION,
 )
 
-SIMILARITY_SCOPE_DEFS = (
-    (SCOPE_PBP, "PBP", False),
-    (SCOPE_PROVERKY, "Kontrolní otázky prověrek", True),
-    (SCOPE_AUDIT, "Auditní tvrzení", False),
-    (SCOPE_RISKS, "Rizika", False),
-    (SCOPE_MEASURES, "Opatření", False),
-    (SCOPE_LEGAL, "Právní požadavky", False),
-)
 
-
-class _ControlPointAnalysisWorker(QThread):
+class _DomainAnalysisWorker(QThread):
     progress = Signal(int, int, int)  # current, total, found
     finished_ok = Signal(object, bool)  # pairs, cancelled
     failed = Signal(str)
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, scope_a: str, scope_b: str, parent=None) -> None:
         super().__init__(parent)
         self._cancel_requested = False
+        self._scope_a = scope_a
+        self._scope_b = scope_b
 
     def request_cancel(self) -> None:
         self._cancel_requested = True
 
     def run(self) -> None:
         try:
-            pairs, cancelled = analyze_control_point_similarities(
+            pairs, cancelled = analyze_domain_similarities(
+                self._scope_a,
+                self._scope_b,
                 include_checked=False,
                 progress_callback=self._on_progress,
                 should_cancel=lambda: self._cancel_requested,
@@ -114,10 +121,13 @@ class SimilarityAnalysisDialog(QDialog):
         self.setModal(True)
         self.resize(980, 660)
 
-        self._worker: _ControlPointAnalysisWorker | None = None
-        self._pairs: list[ControlPointSimilarityPair] = []
+        self._worker: _DomainAnalysisWorker | None = None
+        self._pairs: list[SimilarityAnalysisPair | ControlPointSimilarityPair] = []
         self._cancelled = False
         self._closing = False
+        self._count_a = 0
+        self._count_b = 0
+        self._comparison_estimate = 0
 
         root = QVBoxLayout(self)
         self._stack = QStackedWidget()
@@ -131,6 +141,7 @@ class SimilarityAnalysisDialog(QDialog):
         self._stack.addWidget(self._results_page)
 
         self._stack.setCurrentWidget(self._setup_page)
+        self._refresh_scope_estimates()
 
         if auto_start:
             QTimer.singleShot(0, self._start_analysis)
@@ -144,24 +155,41 @@ class SimilarityAnalysisDialog(QDialog):
         layout = QVBoxLayout(page)
 
         intro = QLabel(
-            "Hromadná kontrola kvality dat. Analýza může trvat i několik minut. "
-            "Zkontrolované dvojice se při analýze znovu nenabízejí."
+            "Hromadná kontrola kvality dat. Vyberte nejvýše dvě oblasti. "
+            "Stejná oblast hledá duplicity uvnitř; dvě různé oblasti hledají "
+            "podobnosti mezi sebou. Zkontrolované dvojice se při analýze "
+            "znovu nenabízejí."
         )
         intro.setWordWrap(True)
         intro.setObjectName("InfoText")
         layout.addWidget(intro)
 
         form = QFormLayout()
-        self._scope_checks: dict[str, QCheckBox] = {}
-        for key, label, implemented in SIMILARITY_SCOPE_DEFS:
-            check = QCheckBox(label)
-            check.setChecked(implemented)
-            check.setEnabled(implemented)
-            if not implemented:
-                check.setToolTip("Připraveno pro budoucí rozšíření.")
-            self._scope_checks[key] = check
-            form.addRow(check)
+        self._scope_a_combo = QComboBox()
+        self._scope_b_combo = QComboBox()
+        for domain in SIMILARITY_DOMAINS:
+            self._scope_a_combo.addItem(domain.label, domain.key)
+            self._scope_b_combo.addItem(domain.label, domain.key)
+        proverky_index = next(
+            (
+                i
+                for i in range(self._scope_a_combo.count())
+                if self._scope_a_combo.itemData(i) == SCOPE_PROVERKY
+            ),
+            0,
+        )
+        self._scope_a_combo.setCurrentIndex(proverky_index)
+        self._scope_b_combo.setCurrentIndex(proverky_index)
+        self._scope_a_combo.currentIndexChanged.connect(self._refresh_scope_estimates)
+        self._scope_b_combo.currentIndexChanged.connect(self._refresh_scope_estimates)
+        form.addRow("Oblast A", self._scope_a_combo)
+        form.addRow("Oblast B", self._scope_b_combo)
         layout.addLayout(form)
+
+        self._estimate_label = QLabel()
+        self._estimate_label.setWordWrap(True)
+        self._estimate_label.setObjectName("InfoText")
+        layout.addWidget(self._estimate_label)
         layout.addStretch()
 
         buttons = QDialogButtonBox()
@@ -180,6 +208,46 @@ class SimilarityAnalysisDialog(QDialog):
         close_btn.clicked.connect(self.reject)
         layout.addWidget(buttons)
         return page
+
+    def _selected_scope_a(self) -> str:
+        return str(self._scope_a_combo.currentData() or SCOPE_PROVERKY)
+
+    def _selected_scope_b(self) -> str:
+        return str(self._scope_b_combo.currentData() or SCOPE_PROVERKY)
+
+    def _refresh_scope_estimates(self) -> None:
+        scope_a = self._selected_scope_a()
+        scope_b = self._selected_scope_b()
+        try:
+            items_a = collect_similarity_items(scope_a, include_inactive=True)
+            self._count_a = len(items_a)
+            if scope_a == scope_b:
+                self._count_b = self._count_a
+            else:
+                self._count_b = len(
+                    collect_similarity_items(scope_b, include_inactive=True)
+                )
+        except Exception as exc:  # noqa: BLE001
+            self._count_a = 0
+            self._count_b = 0
+            self._comparison_estimate = 0
+            self._estimate_label.setText(
+                f"Počet položek se nepodařilo načíst.\n{exc}"
+            )
+            return
+
+        self._comparison_estimate = estimate_comparison_count(
+            self._count_a,
+            self._count_b,
+            same_domain=scope_a == scope_b,
+        )
+        duration = estimate_duration_label(self._comparison_estimate)
+        self._estimate_label.setText(
+            f"Počet položek v oblasti A:\n{self._count_a}\n\n"
+            f"Počet položek v oblasti B:\n{self._count_b}\n\n"
+            f"Bude porovnáno přibližně:\n{self._comparison_estimate} dvojic\n\n"
+            f"Orientační doba:\n{duration}"
+        )
 
     def _build_progress_page(self) -> QWidget:
         page = QWidget()
@@ -323,17 +391,38 @@ class SimilarityAnalysisDialog(QDialog):
         return page
 
     def _start_analysis(self) -> None:
-        if not self._scope_checks[SCOPE_PROVERKY].isChecked():
-            QMessageBox.information(
-                self,
-                self.windowTitle(),
-                "V tomto sprintu je implementována pouze oblast "
-                "„Kontrolní otázky prověrek“.",
+        scope_a = self._selected_scope_a()
+        scope_b = self._selected_scope_b()
+        self._refresh_scope_estimates()
+
+        if requires_large_analysis_confirmation(self._comparison_estimate):
+            message = QMessageBox(self)
+            message.setWindowTitle(self.windowTitle())
+            message.setIcon(QMessageBox.Icon.Warning)
+            message.setText(
+                "Vybraná analýza může trvat delší dobu.\n\n"
+                "Přesto pokračovat?"
             )
-            return
+            continue_btn = message.addButton(
+                "Pokračovat", QMessageBox.ButtonRole.AcceptRole
+            )
+            cancel_btn = message.addButton(
+                "Zrušit", QMessageBox.ButtonRole.RejectRole
+            )
+            message.setDefaultButton(cancel_btn)
+            message.exec()
+            if message.clickedButton() is not continue_btn:
+                return
 
         self._pairs = []
         self._cancelled = False
+
+        label_a = domain_label(scope_a)
+        label_b = domain_label(scope_b)
+        if scope_a == scope_b:
+            self._progress_scope_label.setText(label_a)
+        else:
+            self._progress_scope_label.setText(f"{label_a} ↔ {label_b}")
 
         self._progress_bar.setValue(0)
         self._progress_count_label.setText("0 / 0")
@@ -341,7 +430,7 @@ class SimilarityAnalysisDialog(QDialog):
         self._cancel_btn.setEnabled(True)
         self._stack.setCurrentWidget(self._progress_page)
 
-        self._worker = _ControlPointAnalysisWorker(parent=self)
+        self._worker = _DomainAnalysisWorker(scope_a, scope_b, parent=self)
         self._worker.progress.connect(self._on_progress)
         self._worker.finished_ok.connect(self._on_finished)
         self._worker.failed.connect(self._on_failed)
@@ -461,12 +550,14 @@ class SimilarityAnalysisDialog(QDialog):
                 selected.append(row)
         return selected
 
-    def _pair_at_row(self, row: int) -> ControlPointSimilarityPair | None:
+    def _pair_at_row(self, row: int):
         item = self._results_table.item(row, _COL_STATUS)
         if item is None:
             return None
         pair = item.data(Qt.ItemDataRole.UserRole)
-        return pair if isinstance(pair, ControlPointSimilarityPair) else None
+        if isinstance(pair, (SimilarityAnalysisPair, ControlPointSimilarityPair)):
+            return pair
+        return None
 
     def _update_counts(self) -> None:
         total = len(self._pairs)
@@ -479,7 +570,7 @@ class SimilarityAnalysisDialog(QDialog):
         )
         self._bulk_mark_btn.setEnabled(selected > 0)
 
-    def _selected_pair(self) -> ControlPointSimilarityPair | None:
+    def _selected_pair(self):
         rows = self._results_table.selectionModel().selectedRows()
         if not rows:
             return None
@@ -499,9 +590,15 @@ class SimilarityAnalysisDialog(QDialog):
         if pair is None:
             return
         if which in {"first", "both"}:
-            self._open_control_point(pair.left)
+            self._open_similarity_item(pair.left)
         if which in {"second", "both"}:
-            self._open_control_point(pair.right)
+            self._open_similarity_item(pair.right)
+
+    def _pair_entity_type(self, pair) -> str:
+        entity_type = getattr(pair, "pair_entity_type", None)
+        if entity_type:
+            return str(entity_type)
+        return SIMILARITY_ENTITY_PROVERKY_CONTROL_POINT
 
     def _mark_selected_checked(self) -> None:
         pair = self._selected_pair()
@@ -521,11 +618,10 @@ class SimilarityAnalysisDialog(QDialog):
             return
 
         similarity_checked_pair_service.mark_checked(
-            SIMILARITY_ENTITY_PROVERKY_CONTROL_POINT,
+            self._pair_entity_type(pair),
             pair.left.composite_id,
             pair.right.composite_id,
         )
-        # Odstranit ze seznamu bez nutnosti nové analýzy.
         self._pairs = [
             item
             for item in self._pairs
@@ -538,7 +634,7 @@ class SimilarityAnalysisDialog(QDialog):
         if not rows:
             return
 
-        pairs: list[ControlPointSimilarityPair] = []
+        pairs = []
         for row in rows:
             pair = self._pair_at_row(row)
             if pair is None:
@@ -550,7 +646,7 @@ class SimilarityAnalysisDialog(QDialog):
         marked_ids = {pair.normalized_ids for pair in pairs}
         for pair in pairs:
             similarity_checked_pair_service.mark_checked(
-                SIMILARITY_ENTITY_PROVERKY_CONTROL_POINT,
+                self._pair_entity_type(pair),
                 pair.left.composite_id,
                 pair.right.composite_id,
             )
@@ -559,12 +655,27 @@ class SimilarityAnalysisDialog(QDialog):
         ]
         self._show_results()
 
-    def _open_control_point(self, candidate: ControlPointSimilarityCandidate) -> None:
+    def _open_similarity_item(self, item) -> None:
+        entity_type = getattr(item, "entity_type", SIMILARITY_ENTITY_PROVERKY_CONTROL_POINT)
+        composite_id = str(getattr(item, "composite_id", "") or "")
+        prefix = f"{SIMILARITY_ENTITY_PROVERKY_CONTROL_POINT}::"
+        if composite_id.startswith(prefix):
+            composite_id = composite_id[len(prefix) :]
+            entity_type = SIMILARITY_ENTITY_PROVERKY_CONTROL_POINT
+
+        if entity_type != SIMILARITY_ENTITY_PROVERKY_CONTROL_POINT:
+            QMessageBox.information(
+                self,
+                self.windowTitle(),
+                "Otevření položek této oblasti bude doplněno v dalším sprintu.",
+            )
+            return
+
         from moduly.proverky.ui.proverky_knowledge_editor_dialog import (
             ProverkyKnowledgeEditorDialog,
         )
 
-        parsed = parse_control_point_composite_id(candidate.composite_id)
+        parsed = parse_control_point_composite_id(composite_id)
         if parsed is None:
             QMessageBox.warning(
                 self,

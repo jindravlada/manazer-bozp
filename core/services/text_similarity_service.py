@@ -256,6 +256,78 @@ def find_similar_pairs(
     return pairs, cancelled
 
 
+def find_similar_pairs_between(
+    left_candidates: Iterable[SimilarityCandidate],
+    right_candidates: Iterable[SimilarityCandidate],
+    *,
+    progress_callback=None,
+    should_cancel=None,
+) -> tuple[list[SimilarityPair], bool]:
+    """Párové porovnání mezi dvěma množinami (stejný skórovací algoritmus).
+
+    Každý prvek z ``left`` se porovná s každým z ``right``. Shodná ID se
+    přeskočí (ochrana při překryvu množin).
+    """
+    left_items = [
+        candidate
+        for candidate in left_candidates
+        if str(candidate.id or "").strip()
+        and normalize_similarity_text(candidate.text or "")
+    ]
+    right_items = [
+        candidate
+        for candidate in right_candidates
+        if str(candidate.id or "").strip()
+        and normalize_similarity_text(candidate.text or "")
+    ]
+    left_norm = [normalize_similarity_text(item.text or "") for item in left_items]
+    right_norm = [normalize_similarity_text(item.text or "") for item in right_items]
+    total = len(left_items)
+    pairs: list[SimilarityPair] = []
+    cancelled = False
+
+    for index, left in enumerate(left_items):
+        if should_cancel is not None and should_cancel():
+            cancelled = True
+            break
+        left_id = str(left.id)
+        for right_index, right in enumerate(right_items):
+            if should_cancel is not None and should_cancel():
+                cancelled = True
+                break
+            if left_id == str(right.id):
+                continue
+            score = similarity_score(left_norm[index], right_norm[right_index])
+            match_type = classify_similarity(score)
+            if match_type is None:
+                continue
+            pairs.append(
+                SimilarityPair(
+                    left_id=left_id,
+                    left_text=left.text if left.text is not None else "",
+                    right_id=str(right.id),
+                    right_text=right.text if right.text is not None else "",
+                    score=score,
+                    match_type=match_type,
+                )
+            )
+        if cancelled:
+            break
+        if progress_callback is not None:
+            progress_callback(index + 1, total, len(pairs))
+
+    pairs.sort(
+        key=lambda item: (
+            -item.score,
+            item.left_text.casefold(),
+            item.right_text.casefold(),
+            item.left_id,
+            item.right_id,
+        )
+    )
+    return pairs, cancelled
+
+
 class TextSimilarityService:
     """Fasáda pro centrální textovou podobnost."""
 
@@ -264,6 +336,7 @@ class TextSimilarityService:
     classify = staticmethod(classify_similarity)
     find_similar = staticmethod(find_similar_texts)
     find_pairs = staticmethod(find_similar_pairs)
+    find_pairs_between = staticmethod(find_similar_pairs_between)
 
 
 text_similarity_service = TextSimilarityService()
