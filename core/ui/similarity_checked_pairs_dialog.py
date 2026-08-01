@@ -1,4 +1,4 @@
-"""Dialog správy již zkontrolovaných dvojic podobných záznamů (SIMILARITY-UX-8)."""
+"""Dialog správy již zkontrolovaných dvojic podobných záznamů (SIMILARITY-UX-8/9)."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QHeaderView,
     QLabel,
+    QPushButton,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -20,6 +21,8 @@ from core.shared.sluzby.similarity_checked_pair_service import (
 from moduly.proverky.sluzby.control_point_similarity_service import (
     collect_control_point_candidates,
 )
+
+_ROLE_PAIR_IDS = Qt.ItemDataRole.UserRole
 
 
 class SimilarityCheckedPairsDialog(QDialog):
@@ -34,11 +37,15 @@ class SimilarityCheckedPairsDialog(QDialog):
         root = QVBoxLayout(self)
         hint = QLabel(
             "Dvojice, které jste označili jako zkontrolované (nejde o skutečné "
-            "duplicity). Další nástroje správy budou doplněny později."
+            "duplicity). Vrácením do analýzy se znovu nabídnou při příští kontrole."
         )
         hint.setWordWrap(True)
         hint.setObjectName("InfoText")
         root.addWidget(hint)
+
+        self._count_label = QLabel()
+        self._count_label.setObjectName("InfoText")
+        root.addWidget(self._count_label)
 
         self._empty_label = QLabel("Žádné zkontrolované dvojice.")
         self._empty_label.setObjectName("InfoText")
@@ -57,7 +64,7 @@ class SimilarityCheckedPairsDialog(QDialog):
         )
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.table.setSelectionMode(QTableWidget.SelectionMode.ExtendedSelection)
         self.table.setWordWrap(False)
         self.table.setTextElideMode(Qt.TextElideMode.ElideRight)
         self.table.verticalHeader().setVisible(False)
@@ -67,15 +74,21 @@ class SimilarityCheckedPairsDialog(QDialog):
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
+        self.table.itemSelectionChanged.connect(self._update_return_button)
         root.addWidget(self.table, 1)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons = QDialogButtonBox()
+        self.return_to_analysis_btn = QPushButton("Vrátit do analýzy")
+        self.return_to_analysis_btn.setEnabled(False)
+        self.return_to_analysis_btn.clicked.connect(self._return_selected_to_analysis)
+        buttons.addButton(
+            self.return_to_analysis_btn, QDialogButtonBox.ButtonRole.ActionRole
+        )
+        close_btn = buttons.addButton(
+            "Zavřít", QDialogButtonBox.ButtonRole.RejectRole
+        )
+        close_btn.clicked.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        buttons.accepted.connect(self.accept)
-        close_btn = buttons.button(QDialogButtonBox.StandardButton.Close)
-        if close_btn is not None:
-            close_btn.setText("Zavřít")
-            close_btn.clicked.connect(self.accept)
         root.addWidget(buttons)
 
         self.refresh()
@@ -93,6 +106,8 @@ class SimilarityCheckedPairsDialog(QDialog):
         if not records:
             self._empty_label.setVisible(True)
             self.table.setVisible(False)
+            self._update_count(0)
+            self._update_return_button()
             return
 
         self._empty_label.setVisible(False)
@@ -109,8 +124,50 @@ class SimilarityCheckedPairsDialog(QDialog):
             if record.checked_at is not None:
                 checked_at = record.checked_at.strftime("%d.%m.%Y %H:%M")
 
-            self.table.setItem(row, 0, QTableWidgetItem(left_text))
+            first = QTableWidgetItem(left_text)
+            first.setData(
+                _ROLE_PAIR_IDS,
+                (record.left_entity_id, record.right_entity_id),
+            )
+            self.table.setItem(row, 0, first)
             self.table.setItem(row, 1, QTableWidgetItem(left_loc))
             self.table.setItem(row, 2, QTableWidgetItem(right_text))
             self.table.setItem(row, 3, QTableWidgetItem(right_loc))
             self.table.setItem(row, 4, QTableWidgetItem(checked_at))
+
+        self._update_count(len(records))
+        self._update_return_button()
+
+    def _update_count(self, total: int) -> None:
+        self._count_label.setText(f"Celkem zkontrolovaných:\n{total}")
+
+    def _selected_pair_ids(self) -> list[tuple[str, str]]:
+        pairs: list[tuple[str, str]] = []
+        seen: set[int] = set()
+        for index in self.table.selectionModel().selectedRows():
+            row = index.row()
+            if row in seen:
+                continue
+            seen.add(row)
+            item = self.table.item(row, 0)
+            if item is None:
+                continue
+            data = item.data(_ROLE_PAIR_IDS)
+            if isinstance(data, tuple) and len(data) == 2:
+                pairs.append((str(data[0]), str(data[1])))
+        return pairs
+
+    def _update_return_button(self) -> None:
+        self.return_to_analysis_btn.setEnabled(bool(self._selected_pair_ids()))
+
+    def _return_selected_to_analysis(self) -> None:
+        pairs = self._selected_pair_ids()
+        if not pairs:
+            return
+        for left_id, right_id in pairs:
+            similarity_checked_pair_service.unmark_checked(
+                SIMILARITY_ENTITY_PROVERKY_CONTROL_POINT,
+                left_id,
+                right_id,
+            )
+        self.refresh()
