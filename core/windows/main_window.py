@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QPushButton,
+    QScrollArea,
     QSizePolicy,
     QStackedWidget,
     QStatusBar,
@@ -50,6 +51,10 @@ class MainWindow(QMainWindow):
         layout.setSpacing(0)
 
         self.stack = QStackedWidget()
+        self.stack.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
         self._load_modules()
 
         layout.addWidget(self._sidebar())
@@ -114,7 +119,30 @@ class MainWindow(QMainWindow):
         for module in self.module_manager.get_modules():
             page = self._create_page(module)
             self._page_widgets[module.key] = page
-            self._pages[module.key] = self.stack.addWidget(page)
+            self._pages[module.key] = self.stack.addWidget(
+                self._host_module_page(module.key, page)
+            )
+
+    def _host_module_page(self, key: str, page: QWidget) -> QWidget:
+        """Vlož stránku do stacku bez propagace její minimální velikosti do okna.
+
+        QStackedWidget bere maximum minimumSizeHint všech stránek a všechny
+        se načítají při startu. Široké toolbary (Prověrky, Audity, …) by jinak
+        držely hlavní okno nad šířkou menších displejů (např. 1600×900).
+        Dashboard už má vlastní QScrollArea; ostatní stránky obalíme scroll area.
+        """
+        if key == "dashboard":
+            return page
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
+        scroll.setWidget(page)
+        return scroll
 
     def _create_page(self, module):
         if module.key == "dashboard":
@@ -139,7 +167,10 @@ class MainWindow(QMainWindow):
     def _sidebar(self):
         frame = QFrame()
         frame.setObjectName("Sidebar")
-        frame.setFixedWidth(250)
+        frame.setSizePolicy(
+            QSizePolicy.Policy.Preferred,
+            QSizePolicy.Policy.Minimum,
+        )
 
         layout = QVBoxLayout(frame)
         layout.addWidget(QLabel(app_brand_label()))
@@ -197,7 +228,19 @@ class MainWindow(QMainWindow):
         about_button.clicked.connect(self._show_about_dialog)
         layout.addWidget(about_button)
 
-        return frame
+        # Scroll při nižší výšce okna – součet tlačítek nesmí držet min. výšku MainWindow.
+        scroll = QScrollArea()
+        scroll.setObjectName("SidebarScroll")
+        scroll.setFixedWidth(250)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setWidgetResizable(True)
+        scroll.setSizePolicy(
+            QSizePolicy.Policy.Fixed,
+            QSizePolicy.Policy.Ignored,
+        )
+        scroll.setWidget(frame)
+        return scroll
 
     def _show_about_dialog(self) -> None:
         AboutDialog(self).exec()
@@ -227,6 +270,13 @@ class MainWindow(QMainWindow):
 
             self.stack.setCurrentIndex(self._pages[key])
             self.statusBar().showMessage(f"Otevřen modul: {key}")
+
+    def current_page_widget(self) -> QWidget | None:
+        """Aktuální stránka modulu (bez případného QScrollArea wrapperu ve stacku)."""
+        current = self.stack.currentWidget()
+        if isinstance(current, QScrollArea):
+            return current.widget()
+        return current
 
     def open_hazard_library_template(self, template_id: int) -> None:
         self._show("rizeni_rizik")

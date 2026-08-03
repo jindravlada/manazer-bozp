@@ -30,7 +30,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from core.dashboard.widget_calendar_placeholder import (
         _CALENDAR_HEIGHT,
         _CALENDAR_WIDTH,
-        _PANEL_HEIGHT,
+        _PANEL_MIN_HEIGHT,
         CalendarPlaceholderWidget,
     )
     from core.version import APP_AUTHOR, APP_COPYRIGHT, APP_VERSION, app_display_name
@@ -63,12 +63,19 @@ class DashboardAboutPhase96aTestCase(unittest.TestCase):
     def test_calendar_has_larger_minimum_height_and_compact_width(self) -> None:
         calendar_panel = CalendarPlaceholderWidget()
 
-        self.assertGreaterEqual(calendar_panel.minimumHeight(), 340)
-        self.assertEqual(calendar_panel.minimumHeight(), _PANEL_HEIGHT)
+        self.assertEqual(calendar_panel.minimumHeight(), _PANEL_MIN_HEIGHT)
+        self.assertGreaterEqual(calendar_panel.minimumHeight(), 280)
         self.assertEqual(calendar_panel.calendar.width(), _CALENDAR_WIDTH)
         self.assertEqual(calendar_panel.calendar.height(), _CALENDAR_HEIGHT)
         self.assertLessEqual(_CALENDAR_WIDTH, 520)
-        self.assertGreaterEqual(_CALENDAR_HEIGHT, 280)
+        self.assertGreaterEqual(_CALENDAR_HEIGHT, 260)
+        # Nesmí být Fixed – jinak drží minimální šířku dashboardu / okna.
+        from PySide6.QtWidgets import QSizePolicy
+
+        self.assertNotEqual(
+            calendar_panel.calendar.sizePolicy().horizontalPolicy(),
+            QSizePolicy.Policy.Fixed,
+        )
 
     def test_about_dialog_size_and_central_version(self) -> None:
         dialog = AboutDialog()

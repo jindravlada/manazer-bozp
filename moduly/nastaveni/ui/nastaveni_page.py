@@ -70,6 +70,11 @@ class NastaveniPage(QWidget):
         self.employer_abbreviation.setMaxLength(32)
         self.employer_nace = QComboBox()
         self.employer_nace.setEditable(True)
+        # Dlouhé položky CZ-NACE nesmí určovat minimální šířku celé stránky / okna.
+        self.employer_nace.setSizeAdjustPolicy(
+            QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+        )
+        self.employer_nace.setMinimumContentsLength(28)
 
         self._setup_cz_nace_completer()
 

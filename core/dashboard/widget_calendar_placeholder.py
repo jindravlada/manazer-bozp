@@ -13,10 +13,10 @@ from moduly.audity.sluzby.audit_service import audit_service
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 from moduly.ukoly.sluzby.task_service import task_service
 
-# Kompaktní, ale čitelný kalendář – pevná šířka, aby neroztahoval Dashboard.
-_CALENDAR_WIDTH = 480
-_CALENDAR_HEIGHT = 300
-_PANEL_HEIGHT = 360
+# Kompaktní kalendář – preferred velikost, aby při užším okně neblokoval zmenšení.
+_CALENDAR_WIDTH = 420
+_CALENDAR_HEIGHT = 280
+_PANEL_MIN_HEIGHT = 300
 _DAY_FONT_POINT_SIZE = 12
 _DAY_NUMBER_HEIGHT = 18
 _WEEK_ROW_MIN_HEIGHT = 38
@@ -34,8 +34,9 @@ class TaskCalendarWidget(QCalendarWidget):
         self.setVerticalHeaderFormat(QCalendarWidget.NoVerticalHeader)
         self.setHorizontalHeaderFormat(QCalendarWidget.ShortDayNames)
         self.setSelectedDate(QDate.currentDate())
-        self.setFixedSize(_CALENDAR_WIDTH, _CALENDAR_HEIGHT)
-        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.resize(_CALENDAR_WIDTH, _CALENDAR_HEIGHT)
+        self.setMinimumSize(280, 220)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         self.setStyleSheet(f"""
             QCalendarWidget#TaskCalendarWidget {{
                 background-color: #ffffff;
@@ -241,9 +242,8 @@ class CalendarPlaceholderWidget(DashboardPanel):
 
         self.calendar = TaskCalendarWidget()
         self.layout.addWidget(self.calendar, 0, Qt.AlignHCenter)
-        self.setFixedHeight(_PANEL_HEIGHT)
-        self.setMinimumHeight(_PANEL_HEIGHT)
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self.setMinimumHeight(_PANEL_MIN_HEIGHT)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         self.refresh()
 
     def refresh(self):

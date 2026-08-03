@@ -92,18 +92,18 @@ class MainWindowSpravaDatTestCase(unittest.TestCase):
     def test_show_sprava_dat_opens_page(self) -> None:
         self.window._show("sprava_dat")
 
-        self.assertIs(self.window.stack.currentWidget(), self.window._page_widgets["sprava_dat"])
+        self.assertIs(self.window.current_page_widget(), self.window._page_widgets["sprava_dat"])
         self.assertIsInstance(self.window._page_widgets["sprava_dat"], SpravaDatPage)
 
     def test_other_menu_items_remain_functional(self) -> None:
         self.window._show("ukoly")
-        self.assertIs(self.window.stack.currentWidget(), self.window._page_widgets["ukoly"])
+        self.assertIs(self.window.current_page_widget(), self.window._page_widgets["ukoly"])
 
         self.window._show("sprava_dat")
-        self.assertIs(self.window.stack.currentWidget(), self.window._page_widgets["sprava_dat"])
+        self.assertIs(self.window.current_page_widget(), self.window._page_widgets["sprava_dat"])
 
         self.window._show("nastaveni")
-        self.assertIs(self.window.stack.currentWidget(), self.window._page_widgets["nastaveni"])
+        self.assertIs(self.window.current_page_widget(), self.window._page_widgets["nastaveni"])
 
 
 if __name__ == "__main__":
