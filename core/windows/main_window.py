@@ -1,6 +1,6 @@
 from datetime import date
 
-from PySide6.QtCore import QStringListModel, Qt
+from PySide6.QtCore import QSize, QStringListModel, Qt
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QCompleter,
@@ -20,6 +20,10 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+# Strop minimální velikosti okna – musí jít zúžit pod šířku 1600×900.
+_MAX_WINDOW_MIN_WIDTH = 1100
+_MAX_WINDOW_MIN_HEIGHT = 650
 
 from core.modules.module_manager import ModuleManager
 from core.navigation.source_navigator import source_navigator
@@ -68,7 +72,17 @@ class MainWindow(QMainWindow):
 
         source_navigator.configure(self)
 
+        # Explicitní strop: layout/modul nesmí vynutit min. šířku nad obrazovku.
+        self.setMinimumSize(0, 0)
+
         self._show("dashboard")
+
+    def minimumSizeHint(self) -> QSize:
+        hint = super().minimumSizeHint()
+        return QSize(
+            min(max(hint.width(), 0), _MAX_WINDOW_MIN_WIDTH),
+            min(max(hint.height(), 0), _MAX_WINDOW_MIN_HEIGHT),
+        )
 
     def _create_toolbar(self):
         toolbar = QToolBar("Hlavní")
