@@ -49,7 +49,7 @@ END_BEFORE_START_MESSAGE = "Konec události nesmí být dříve než začátek."
 
 TAB_MEETING = "Událost"
 TAB_MINUTES = "Záznam z jednání"  # legacy – nahrazeno TAB_DISCUSSION
-TAB_DISCUSSION = "Jednání"
+TAB_DISCUSSION = "Zápisky"
 
 AGENDA_ITEM_STATUS_READY = "Připraveno"
 AGENDA_ITEM_STATUS_DISCUSSED = "Projednáno"

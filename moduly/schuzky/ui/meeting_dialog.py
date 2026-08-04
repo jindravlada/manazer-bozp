@@ -1,4 +1,4 @@
-"""Editor události – záložky Událost a Jednání."""
+"""Editor události – záložky Událost a Zápisky."""
 
 from __future__ import annotations
 
@@ -17,7 +17,6 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
-from core.widgets.nullable_datetime_edit import NullableDateTimeEdit
 from moduly.schuzky.constants import (
     DEFAULT_EVENT_TYPE,
     DEFAULT_MEETING_STATUS,
@@ -29,6 +28,7 @@ from moduly.schuzky.constants import (
 )
 from moduly.schuzky.sluzby.meeting_event_type_service import meeting_event_type_service
 from moduly.schuzky.sluzby.meeting_service import meeting_service
+from moduly.schuzky.ui.event_datetime_fields import EventDateTimeFields
 from moduly.schuzky.ui.meeting_agenda_items_widget import MeetingAgendaItemsWidget
 from moduly.schuzky.ui.meeting_people_widgets import (
     MeetingOrganizerWidget,
@@ -94,8 +94,8 @@ class MeetingDialog(QDialog):
         self.title_edit = QLineEdit()
         self.title_edit.setPlaceholderText("Název události")
 
-        self.starts_at_edit = NullableDateTimeEdit()
-        self.ends_at_edit = NullableDateTimeEdit()
+        self.starts_at_edit = EventDateTimeFields()
+        self.ends_at_edit = EventDateTimeFields()
 
         self.location_edit = QLineEdit()
         self.location_edit.setPlaceholderText("Místo konání")
@@ -115,8 +115,8 @@ class MeetingDialog(QDialog):
 
         form.addRow("Typ události:", self.event_type_combo)
         form.addRow("Název události:", self.title_edit)
-        form.addRow("Datum a čas zahájení:", self.starts_at_edit)
-        form.addRow("Datum a čas ukončení:", self.ends_at_edit)
+        form.addRow("Datum zahájení:", self.starts_at_edit)
+        form.addRow("Datum ukončení:", self.ends_at_edit)
         form.addRow("Místo:", self.location_edit)
         form.addRow("Organizátor:", self.organizer_selector)
         form.addRow("Účastníci:", self.participants_selector)

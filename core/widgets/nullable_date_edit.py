@@ -1,3 +1,7 @@
+"""Volitelné datum (prázdná hodnota je platná) s českým zápisem z klávesnice."""
+
+from __future__ import annotations
+
 from datetime import date
 
 from PySide6.QtCore import QDate, QPoint, Signal
@@ -10,6 +14,68 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+
+def parse_czech_date(text: str, *, today: date | None = None) -> date | None:
+    """Parsování běžných českých zápisů data.
+
+    Podporuje mimo jiné:
+    - 10.8.2026 / 10.08.2026
+    - 10.8. / 10.8
+    - 10 / 10.
+    - 10082026 / 100826 / 1008
+    """
+    today = today or date.today()
+    raw = (text or "").strip()
+    if not raw:
+        return None
+
+    normalized = raw
+    while normalized.endswith("."):
+        normalized = normalized[:-1].rstrip()
+
+    if "." in normalized:
+        parts = [part.strip() for part in normalized.split(".") if part.strip() != ""]
+        try:
+            if len(parts) == 1:
+                return date(today.year, today.month, int(parts[0]))
+            if len(parts) == 2:
+                return date(today.year, int(parts[1]), int(parts[0]))
+            if len(parts) == 3:
+                day = int(parts[0])
+                month = int(parts[1])
+                year = int(parts[2])
+                if year < 100:
+                    year += 2000
+                return date(year, month, day)
+        except ValueError:
+            return None
+        return None
+
+    digits = "".join(ch for ch in normalized if ch.isdigit())
+    if not digits:
+        return None
+
+    try:
+        if len(digits) <= 2:
+            return date(today.year, today.month, int(digits))
+        if len(digits) == 4:
+            return date(today.year, int(digits[2:4]), int(digits[0:2]))
+        if len(digits) == 6:
+            return date(
+                2000 + int(digits[4:6]),
+                int(digits[2:4]),
+                int(digits[0:2]),
+            )
+        if len(digits) == 8:
+            return date(
+                int(digits[4:8]),
+                int(digits[2:4]),
+                int(digits[0:2]),
+            )
+    except ValueError:
+        return None
+    return None
 
 
 class NullableDateEdit(QWidget):
@@ -74,42 +140,7 @@ class NullableDateEdit(QWidget):
         self.set_date_value(parsed)
 
     def _parse_date(self, text: str) -> date | None:
-        text = text.strip()
-
-        if "." in text:
-            parts = text.split(".")
-            if len(parts) == 3:
-                try:
-                    day = int(parts[0])
-                    month = int(parts[1])
-                    year = int(parts[2])
-                    if year < 100:
-                        year += 2000
-                    return date(year, month, day)
-                except ValueError:
-                    return None
-
-        digits = "".join(ch for ch in text if ch.isdigit())
-
-        if len(digits) == 8:
-            try:
-                return date(int(digits[4:8]), int(digits[2:4]), int(digits[0:2]))
-            except ValueError:
-                return None
-
-        if len(digits) == 6:
-            try:
-                return date(2000 + int(digits[4:6]), int(digits[2:4]), int(digits[0:2]))
-            except ValueError:
-                return None
-
-        if len(digits) == 4:
-            try:
-                return date(2000 + int(digits[2:4]), int(digits[1:2]), int(digits[0:1]))
-            except ValueError:
-                return None
-
-        return None
+        return parse_czech_date(text)
 
     def open_calendar(self):
         selected_date = self.get_date() or date.today()

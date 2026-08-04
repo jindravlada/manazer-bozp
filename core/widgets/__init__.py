@@ -8,6 +8,7 @@ from .workplace_selector import WorkplaceSelector
 from .date_edit import DateEdit
 from .datetime_edit import DateTimeEdit
 from .nullable_date_edit import NullableDateEdit
+from .nullable_time_edit import NullableTimeEdit
 from .code_selector import CodeSelector
 from .attachment_widget import AttachmentWidget
 from .notes_widget import NotesWidget

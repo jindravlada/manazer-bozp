@@ -177,7 +177,19 @@ class MainWindow(QMainWindow):
             from moduly.kniha_urazu.ui.kniha_urazu_page import KnihaUrazuPage
             return KnihaUrazuPage(open_mu_investigation_callback=self._open_mu_from_accident)
 
+        if module.key == "schuzky":
+            from moduly.schuzky.ui.schuzky_page import SchuzkyPage
+
+            page = SchuzkyPage()
+            page.set_dashboard_refresh_callback(self._refresh_dashboard_page)
+            return page
+
         return module.page_factory()
+
+    def _refresh_dashboard_page(self) -> None:
+        dashboard = self._page_widgets.get("dashboard")
+        if dashboard is not None and hasattr(dashboard, "refresh"):
+            dashboard.refresh()
 
     def _sidebar(self):
         frame = QFrame()

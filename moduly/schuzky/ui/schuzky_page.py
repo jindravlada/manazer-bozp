@@ -27,6 +27,7 @@ from moduly.schuzky.ui.meeting_table import MeetingTable
 class SchuzkyPage(QWidget):
     def __init__(self):
         super().__init__()
+        self._dashboard_refresh_callback = None
 
         layout = QVBoxLayout(self)
 
@@ -54,6 +55,9 @@ class SchuzkyPage(QWidget):
         self.table.doubleClicked.connect(self.open_selected_meeting)
 
         self.refresh()
+
+    def set_dashboard_refresh_callback(self, callback) -> None:
+        self._dashboard_refresh_callback = callback
 
     def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)
@@ -120,10 +124,16 @@ class SchuzkyPage(QWidget):
         self._refresh_dashboard()
 
     def _refresh_dashboard(self) -> None:
-        window = self.window()
-        page_widgets = getattr(window, "_page_widgets", None)
-        if not isinstance(page_widgets, dict):
+        if callable(self._dashboard_refresh_callback):
+            self._dashboard_refresh_callback()
             return
-        dashboard = page_widgets.get("dashboard")
-        if dashboard is not None and hasattr(dashboard, "refresh"):
-            dashboard.refresh()
+
+        widget = self
+        while widget is not None:
+            page_widgets = getattr(widget, "_page_widgets", None)
+            if isinstance(page_widgets, dict):
+                dashboard = page_widgets.get("dashboard")
+                if dashboard is not None and hasattr(dashboard, "refresh"):
+                    dashboard.refresh()
+                return
+            widget = widget.parent()

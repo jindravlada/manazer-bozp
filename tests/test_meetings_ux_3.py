@@ -44,8 +44,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.schuzky.ui.meeting_people_widgets import (
         MeetingOrganizerWidget,
         MeetingParticipantsWidget,
-        _MultiPersonPickDialog,
-        _MultiThpPickDialog,
+        MeetingPersonTypeahead,
         _SinglePersonPickDialog,
     )
 
@@ -154,13 +153,9 @@ class MeetingsUx3TestCase(unittest.TestCase):
             position="Technik BOZP",
         )
         organizer = MeetingOrganizerWidget()
-        organizer.thp_selector.set_person_id(worker.id)
-        organizer._on_thp_changed()
-        person_id = organizer.current_person_id()
-        self.assertIsNotNone(person_id)
-        person = person_service.get_by_id(person_id)
-        self.assertEqual(person.first_name, "Tomáš")
-        self.assertEqual(person.last_name, "THPák")
+        person = ensure_person_for_thp_worker(worker)
+        organizer.set_person_id(person.id)
+        self.assertEqual(organizer.current_person_id(), person.id)
         self.assertTrue(person.is_employee)
 
         external = person_service.create_person(
@@ -170,9 +165,7 @@ class MeetingsUx3TestCase(unittest.TestCase):
         )
         organizer.set_person_id(external.id)
         self.assertEqual(organizer.current_person_id(), external.id)
-        self.assertIsNone(organizer.thp_selector.current_person_id())
-        self.assertFalse(organizer.person_label.isHidden())
-        self.assertIn("Eva Externí", organizer.person_label.text())
+        self.assertEqual(organizer.typeahead.currentText(), "Eva Externí")
 
     def test_participants_from_thp_and_persons_dedup(self) -> None:
         worker = settings_service.save_worker(
@@ -232,8 +225,7 @@ class MeetingsUx3TestCase(unittest.TestCase):
 
     def test_pick_dialogs_exist(self) -> None:
         self.assertTrue(issubclass(_SinglePersonPickDialog, QDialog))
-        self.assertTrue(issubclass(_MultiThpPickDialog, QDialog))
-        self.assertTrue(issubclass(_MultiPersonPickDialog, QDialog))
+        self.assertTrue(issubclass(MeetingPersonTypeahead, object))
         self.assertIsNotNone(find_person_matching_thp)
 
 
