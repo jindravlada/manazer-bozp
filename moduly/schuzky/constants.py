@@ -25,12 +25,12 @@ TAB_MEETING = "Schůzka"
 TAB_MINUTES = "Záznam z jednání"  # legacy – nahrazeno TAB_DISCUSSION
 TAB_DISCUSSION = "Jednání"
 
-AGENDA_ITEM_DIALOG_TITLE = "Bod jednání"
+AGENDA_ITEM_DIALOG_TITLE = "Bod jednání"  # legacy – dialog zrušen v MEETINGS-2c
 AGENDA_ITEMS_SECTION = "Body jednání"
 AGENDA_ITEMS_EMPTY = "Zatím nejsou evidovány žádné body jednání."
 AGENDA_SELECT_ITEM_MESSAGE = "Vyberte bod jednání."
 
-ACTION_ADD_AGENDA_ITEM = "Přidat bod"
+ACTION_ADD_AGENDA_ITEM = "Přidat"
 ACTION_EDIT = "Upravit"
 ACTION_REMOVE = "Odebrat"
 ACTION_MOVE_UP = "Nahoru"

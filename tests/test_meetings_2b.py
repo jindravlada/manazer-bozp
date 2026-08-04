@@ -1,4 +1,4 @@
-"""MEETINGS-2b: karta bodu jednání."""
+"""MEETINGS-2b: karta bodu jednání (pole v modelu a integrovaném editoru)."""
 
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ with patch.object(Path, "home", return_value=_TMP):
         meeting_agenda_item_service,
     )
     from moduly.schuzky.sluzby.meeting_service import meeting_service
-    from moduly.schuzky.ui.meeting_agenda_item_dialog import MeetingAgendaItemDialog
+    from moduly.schuzky.ui.meeting_agenda_items_widget import MeetingAgendaItemsWidget
     from moduly.schuzky.ui.meeting_dialog import MeetingDialog
 
 
@@ -64,25 +64,18 @@ class Meetings2bTestCase(unittest.TestCase):
         self.assertEqual(item.prubeh_jednani, "Diskuze o kontrolách na provozu.")
         self.assertEqual(item.zaver, "Doplnit opatření do registru.")
 
-        dialog = MeetingAgendaItemDialog(
-            item=meeting_agenda_item_service.item_to_dict(item)
-        )
-        self.assertEqual(dialog.title_edit.text(), "Bezpečnost práce")
+        widget = MeetingAgendaItemsWidget()
+        widget.load_for_meeting(meeting.id)
+        self.assertEqual(widget.title_edit.text(), "Bezpečnost práce")
         self.assertEqual(
-            dialog.moje_sdeleni_edit.toPlainText(),
+            widget.moje_sdeleni_edit.toPlainText(),
             "Připravit shrnutí kontrol.",
         )
-        self.assertEqual(
-            dialog.prubeh_jednani_edit.toPlainText(),
-            "Diskuze o kontrolách na provozu.",
-        )
-        self.assertEqual(dialog.zaver_edit.toPlainText(), "Doplnit opatření do registru.")
-
-        dialog.title_edit.setText("Aktualizovaná bezpečnost")
-        dialog.moje_sdeleni_edit.setPlainText("Nové sdělení")
-        dialog.prubeh_jednani_edit.setPlainText("Nový průběh")
-        dialog.zaver_edit.setPlainText("Nový závěr")
-        meeting_agenda_item_service.save_items(meeting.id, [dialog.get_data()])
+        widget.title_edit.setText("Aktualizovaná bezpečnost")
+        widget.moje_sdeleni_edit.setPlainText("Nové sdělení")
+        widget.prubeh_jednani_edit.setPlainText("Nový průběh")
+        widget.zaver_edit.setPlainText("Nový závěr")
+        meeting_agenda_item_service.save_items(meeting.id, widget.get_items())
 
         reloaded = meeting_agenda_item_service.get_for_meeting(meeting.id)
         self.assertEqual(len(reloaded), 1)
@@ -97,8 +90,10 @@ class Meetings2bTestCase(unittest.TestCase):
         self.assertEqual(items[0]["title"], "Aktualizovaná bezpečnost")
         self.assertEqual(items[0]["moje_sdeleni"], "Nové sdělení")
         self.assertEqual(
-            [meeting_dialog.agenda_items_widget.table.horizontalHeaderItem(i).text()
-             for i in range(meeting_dialog.agenda_items_widget.table.columnCount())],
+            [
+                meeting_dialog.agenda_items_widget.table.horizontalHeaderItem(i).text()
+                for i in range(meeting_dialog.agenda_items_widget.table.columnCount())
+            ],
             ["Pořadí", "Název tématu"],
         )
 
@@ -115,7 +110,9 @@ class Meetings2bTestCase(unittest.TestCase):
         self.assertEqual(loaded[0].prubeh_jednani, "")
         self.assertEqual(loaded[0].zaver, "")
 
-        data = MeetingAgendaItemDialog().get_data()
+        widget = MeetingAgendaItemsWidget()
+        widget.add_item()
+        data = widget.get_items()[0]
         self.assertEqual(data["title"], "")
         self.assertEqual(data["moje_sdeleni"], "")
         self.assertEqual(data["prubeh_jednani"], "")
