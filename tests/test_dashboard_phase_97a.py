@@ -143,10 +143,11 @@ class DashboardPhase97aTestCase(unittest.TestCase):
         )
         panel = CalendarPlaceholderWidget()
         events = panel.calendar._day_events.get(due, [])
-        self.assertTrue(
-            any(label.startswith("Úkol – Objednat měření") for label in events)
-        )
-        self.assertTrue(any("Audit – Provoz Delta" in label for label in events))
+        joined = "\n".join(events)
+        self.assertIn("Úkol", joined)
+        self.assertIn("Objednat měření", joined)
+        # Audity zatím nejsou součástí Agendy / kalendáře (budoucí rozšíření).
+        self.assertNotIn("Audit – Provoz Delta", joined)
 
         empty_day = due + timedelta(days=20)
         self.assertNotIn(empty_day, panel.calendar._day_events)

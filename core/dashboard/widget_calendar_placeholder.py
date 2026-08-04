@@ -1,17 +1,25 @@
-from datetime import date
+"""Kalendář úkolů a událostí na pracovní ploše."""
+
+from __future__ import annotations
+
+from datetime import date, datetime
 
 from PySide6.QtCore import QDate, QEvent, QPoint, QRect, Qt
 from PySide6.QtGui import QColor, QPainter, QTextCharFormat
 from PySide6.QtWidgets import QCalendarWidget, QSizePolicy, QTableView, QToolTip
 
-from core.dashboard.attention_service import (
-    audit_title,
-    inspection_title,
-)
 from core.dashboard.widget_base import DashboardPanel
-from moduly.audity.sluzby.audit_service import audit_service
-from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
-from moduly.ukoly.sluzby.task_service import task_service
+from moduly.agenda.constants import (
+    ITEM_TYPE_MEETING,
+    ITEM_TYPE_TASK,
+    ROW_STATE_CANCELED,
+    ROW_STATE_DONE,
+    ROW_STATE_OVERDUE,
+    ROW_STATE_WAITING,
+    TYPE_LABEL_MEETING,
+    TYPE_LABEL_TASK,
+)
+from moduly.agenda.sluzby.agenda_service import AgendaItem, agenda_service
 
 # Kompaktní kalendář – preferred velikost, aby při užším okně neblokoval zmenšení.
 _CALENDAR_WIDTH = 420
@@ -21,11 +29,15 @@ _DAY_FONT_POINT_SIZE = 12
 _DAY_NUMBER_HEIGHT = 18
 _WEEK_ROW_MIN_HEIGHT = 38
 
+# Model QCalendarWidget při NoVerticalHeader:
+# řádek 0 = názvy dnů, sloupce 0–6 = po–ne (bez sloupce čísla týdne).
+_HEADER_ROW = 0
+
 
 class TaskCalendarWidget(QCalendarWidget):
     def __init__(self):
         super().__init__()
-        self._task_dates = {}
+        self._task_dates: dict[date, set[str]] = {}
         self._day_events: dict[date, list[str]] = {}
         self._tooltip_date: date | None = None
         self._view: QTableView | None = None
@@ -126,6 +138,7 @@ class TaskCalendarWidget(QCalendarWidget):
         return super().eventFilter(obj, event)
 
     def _date_at(self, pos: QPoint) -> date | None:
+        """Mapuje pozici kurzoru na den – počítá s řádkem názvů dnů."""
         view = self._view
         if view is None:
             return None
@@ -136,11 +149,24 @@ class TaskCalendarWidget(QCalendarWidget):
             return None
         if not index.isValid():
             return None
+        if index.row() <= _HEADER_ROW:
+            return None
 
         first = QDate(self.yearShown(), self.monthShown(), 1)
         first_dow = int(self.firstDayOfWeek().value)
         start_col = (first.dayOfWeek() - first_dow) % 7
-        day_offset = index.row() * 7 + index.column() - start_col
+        week_row = index.row() - _HEADER_ROW - 1
+        week_col = index.column()
+        # Při zapnutém sloupci čísla týdne (8 sloupců) přeskočit první sloupec.
+        try:
+            if view.model() is not None and view.model().columnCount() >= 8:
+                if week_col <= 0:
+                    return None
+                week_col -= 1
+        except RuntimeError:
+            self._view = None
+            return None
+        day_offset = week_row * 7 + week_col - start_col
         qdate = first.addDays(day_offset)
         if not qdate.isValid():
             return None
@@ -151,18 +177,18 @@ class TaskCalendarWidget(QCalendarWidget):
         if day == self._tooltip_date:
             return
         self._tooltip_date = day
-        events = self._day_events.get(day) if day is not None else None
+        events = self._day_events.get(day, []) if day is not None else []
         if not events:
             QToolTip.hideText()
             return
-        lines = [day.strftime("%d.%m.%Y")]
-        lines.extend(f"• {label}" for label in events)
+        # Text tooltipu vždy z aktuálních dat daného dne (žádná stará cache textu).
+        text = "\n".join([day.strftime("%d.%m.%Y"), ""] + events)
         view = self._view
         if view is None:
             return
         try:
             global_pos = view.viewport().mapToGlobal(pos)
-            QToolTip.showText(global_pos, "\n".join(lines), view.viewport())
+            QToolTip.showText(global_pos, text, view.viewport())
         except RuntimeError:
             self._view = None
             QToolTip.hideText()
@@ -236,9 +262,84 @@ class TaskCalendarWidget(QCalendarWidget):
         painter.restore()
 
 
+def _dot_kind(item: AgendaItem, *, today: date) -> str | None:
+    if item.row_state == ROW_STATE_CANCELED:
+        return None
+    if item.row_state == ROW_STATE_DONE:
+        return "done"
+    if item.row_state == ROW_STATE_WAITING:
+        return "waiting"
+    if item.row_state == ROW_STATE_OVERDUE:
+        return "overdue"
+    day = item.due_date
+    if day is None:
+        return None
+    if day < today:
+        return "overdue"
+    if day == today:
+        return "today"
+    return "future"
+
+
+def _format_time_range(starts: datetime | None, ends: datetime | None) -> str:
+    if starts is None:
+        return ""
+    text = f"{starts.hour:02d}:{starts.minute:02d}"
+    if ends is not None:
+        text += f"–{ends.hour:02d}:{ends.minute:02d}"
+    return text
+
+
+def _tooltip_block(item: AgendaItem) -> str:
+    type_label = item.type_label or (
+        TYPE_LABEL_MEETING if item.item_type == ITEM_TYPE_MEETING else TYPE_LABEL_TASK
+    )
+    title = item.tooltip_title
+    if item.item_type == ITEM_TYPE_MEETING and item.event_at is not None:
+        time_line = _format_time_range(item.event_at, item.ends_at)
+        return f"• {time_line}\n  {type_label}\n  {title}"
+    return f"• {type_label}\n  {title}"
+
+
+def build_calendar_day_data(
+    *,
+    today: date | None = None,
+    now: datetime | None = None,
+) -> tuple[dict[date, set[str]], dict[date, list[str]]]:
+    """Sestaví tečky a tooltipy z collectorů Agendy (úkoly + události)."""
+    now = now or datetime.now()
+    today = today or now.date()
+    items = [
+        item
+        for item in agenda_service.get_items(today=today, now=now)
+        if item.due_date is not None and item.row_state != ROW_STATE_CANCELED
+    ]
+
+    by_day: dict[date, list[AgendaItem]] = {}
+    for item in items:
+        by_day.setdefault(item.due_date, []).append(item)
+
+    task_dates: dict[date, set[str]] = {}
+    day_events: dict[date, list[str]] = {}
+    for day, day_items in by_day.items():
+        day_items.sort(key=lambda item: item.sort_key)
+        kinds: set[str] = set()
+        blocks: list[str] = []
+        for item in day_items:
+            kind = _dot_kind(item, today=today)
+            if kind is not None:
+                kinds.add(kind)
+            blocks.append(_tooltip_block(item))
+        if kinds:
+            task_dates[day] = kinds
+        if blocks:
+            day_events[day] = blocks
+    return task_dates, day_events
+
+
 class CalendarPlaceholderWidget(DashboardPanel):
     def __init__(self):
-        super().__init__("Kalendář úkolů")
+        super().__init__("Kalendář")
 
         self.calendar = TaskCalendarWidget()
         self.layout.addWidget(self.calendar, 0, Qt.AlignHCenter)
@@ -247,42 +348,6 @@ class CalendarPlaceholderWidget(DashboardPanel):
         self.refresh()
 
     def refresh(self):
-        today = date.today()
-        task_dates = {}
-        day_events: dict[date, list[str]] = {}
-
-        for task in task_service.get_all_tasks():
-            status = task.computed_status
-            title = (task.title or "").strip() or f"Úkol #{task.id}"
-            label = f"Úkol – {title}"
-            if task.due_date and status not in ["Ukončeno", "Zrušeno"]:
-                if task.due_date < today:
-                    kind = "overdue"
-                elif task.due_date == today:
-                    kind = "today"
-                else:
-                    kind = "future"
-                task_dates.setdefault(task.due_date, set()).add(kind)
-                day_events.setdefault(task.due_date, []).append(label)
-            if status == "Splněno - čeká na kontrolu" and task.check_due_date:
-                task_dates.setdefault(task.check_due_date, set()).add("waiting")
-                day_events.setdefault(task.check_due_date, []).append(label)
-            if status == "Ukončeno" and (task.checked_date or task.completed_date):
-                done_date = task.checked_date or task.completed_date
-                task_dates.setdefault(done_date, set()).add("done")
-                day_events.setdefault(done_date, []).append(label)
-
-        for audit in audit_service.get_all():
-            due = audit.started_at
-            if due is None:
-                continue
-            day_events.setdefault(due, []).append(audit_title(audit))
-
-        for inspection in bozp_inspection_service.get_all():
-            due = inspection.started_at
-            if due is None:
-                continue
-            day_events.setdefault(due, []).append(inspection_title(inspection))
-
+        task_dates, day_events = build_calendar_day_data()
         self.calendar.set_task_dates(task_dates)
         self.calendar.set_day_events(day_events)

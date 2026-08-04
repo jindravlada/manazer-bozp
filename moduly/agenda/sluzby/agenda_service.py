@@ -48,6 +48,8 @@ class AgendaItem:
     row_state: str = ROW_STATE_ACTIVE
     due_date: date | None = None
     event_at: datetime | None = None
+    ends_at: datetime | None = None
+    base_title: str = ""
     sort_key: tuple = ()
 
     @property
@@ -57,6 +59,10 @@ class AgendaItem:
         if self.due_date is not None:
             return datetime.combine(self.due_date, time.min)
         return None
+
+    @property
+    def tooltip_title(self) -> str:
+        return (self.base_title or self.title or "").strip() or "Bez názvu"
 
 
 def _task_row_state(task, *, today: date) -> str:
@@ -107,6 +113,7 @@ def _from_tasks(*, today: date) -> list[AgendaItem]:
                 source=source,
                 row_state=_task_row_state(task, today=today),
                 due_date=task.due_date,
+                base_title=title,
                 sort_key=build_sort_key(
                     task.due_date,
                     item_type=ITEM_TYPE_TASK,
@@ -122,6 +129,7 @@ def _from_meetings(*, now: datetime) -> list[AgendaItem]:
     items: list[AgendaItem] = []
     for meeting in meeting_service.get_all():
         title = (meeting.title or "").strip() or "Bez názvu"
+        base_title = title
         event_type = (getattr(meeting, "event_type", None) or "").strip()
         if event_type:
             title = f"{event_type} – {title}"
@@ -140,6 +148,8 @@ def _from_meetings(*, now: datetime) -> list[AgendaItem]:
                 row_state=_meeting_row_state(meeting, now=now),
                 due_date=starts.date() if starts is not None else None,
                 event_at=starts,
+                ends_at=meeting.ends_at,
+                base_title=base_title,
                 sort_key=build_sort_key(
                     starts.date() if starts is not None else None,
                     item_type=ITEM_TYPE_MEETING,
