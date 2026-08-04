@@ -179,6 +179,30 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         for column in (COL_STARTS_AT, COL_TYPE, COL_LOCATION, COL_ORGANIZER, COL_STATUS):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 
+    elif profile == "agenda":
+        from moduly.agenda.constants import (
+            COL_DUE,
+            COL_PERSON,
+            COL_SOURCE,
+            COL_STATUS,
+            COL_TITLE,
+            COL_TYPE,
+        )
+
+        widths = {
+            COL_TYPE: 90,
+            COL_DUE: 140,
+            COL_TITLE: 280,
+            COL_PERSON: 200,
+            COL_STATUS: 140,
+            COL_SOURCE: 120,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        header.setSectionResizeMode(COL_TITLE, QHeaderView.Stretch)
+        for column in (COL_TYPE, COL_DUE, COL_PERSON, COL_STATUS, COL_SOURCE):
+            header.setSectionResizeMode(column, QHeaderView.Fixed)
+
     elif profile == "mu_investigations":
         widths = {
             0: 0,    # ID

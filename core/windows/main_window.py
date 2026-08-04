@@ -184,6 +184,13 @@ class MainWindow(QMainWindow):
             page.set_dashboard_refresh_callback(self._refresh_dashboard_page)
             return page
 
+        if module.key == "agenda":
+            from moduly.agenda.ui.agenda_page import AgendaPage
+
+            page = AgendaPage()
+            page.set_dashboard_refresh_callback(self._refresh_dashboard_page)
+            return page
+
         return module.page_factory()
 
     def _refresh_dashboard_page(self) -> None:
@@ -207,6 +214,7 @@ class MainWindow(QMainWindow):
         layout.addSpacing(6)
 
         preferred_order = [
+            "agenda",
             "ukoly",
             "schuzky",
             "kniha_urazu",
