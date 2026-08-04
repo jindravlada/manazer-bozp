@@ -2,6 +2,7 @@ ENTITY_AUDITY = "audity"
 ENTITY_PROVERKY = "proverky"
 ENTITY_ACCIDENT = "accident"
 ENTITY_MU_INVESTIGATION = "mu_investigation"
+ENTITY_MEETING = "schuzky"
 
 ENTITY_FINDING = "finding"
 ENTITY_TASK = "task"
@@ -84,6 +85,7 @@ ENTITY_TYPE_LABELS: dict[str, str] = {
     ENTITY_PROVERKY: "Prověrka BOZP",
     ENTITY_MU_INVESTIGATION: "Vyšetřování MU",
     ENTITY_FINDING: "Zjištění",
+    ENTITY_MEETING: "Schůzka",
 }
 
 LINK_TYPE_LABELS: dict[str, str] = {

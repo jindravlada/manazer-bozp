@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QLineEdit,
     QMessageBox,
+    QScrollArea,
     QTabWidget,
     QTextEdit,
     QVBoxLayout,
@@ -27,6 +28,7 @@ from moduly.schuzky.constants import (
     TAB_MINUTES,
 )
 from moduly.schuzky.sluzby.meeting_service import meeting_service
+from moduly.schuzky.ui.meeting_conclusion_tasks_widget import MeetingConclusionTasksWidget
 
 
 def _plain_text_edit(*, placeholder: str, min_height: int) -> QTextEdit:
@@ -42,7 +44,7 @@ class MeetingDialog(QDialog):
         super().__init__(parent)
         self.meeting = meeting
         self.setWindowTitle(DIALOG_WINDOW_TITLE)
-        self.resize(720, 680)
+        self.resize(740, 720)
 
         layout = QVBoxLayout(self)
 
@@ -58,6 +60,11 @@ class MeetingDialog(QDialog):
 
         if meeting is not None:
             self._load_meeting(meeting)
+        else:
+            self.conclusion_tasks.configure(
+                meeting_id=None,
+                get_conclusions_text=self.conclusions_edit.toPlainText,
+            )
 
     def _meeting_tab(self) -> QWidget:
         page = QWidget()
@@ -97,7 +104,13 @@ class MeetingDialog(QDialog):
 
     def _minutes_tab(self) -> QWidget:
         page = QWidget()
-        form = QFormLayout(page)
+        outer = QVBoxLayout(page)
+        outer.setContentsMargins(0, 0, 0, 0)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        content = QWidget()
+        form = QFormLayout(content)
 
         # Rozsáhlé / běžné / krátké podle UI_KOMPONENTY.md
         self.proceedings_edit = _plain_text_edit(
@@ -113,9 +126,16 @@ class MeetingDialog(QDialog):
             min_height=70,
         )
 
+        self.conclusion_tasks = MeetingConclusionTasksWidget()
+        self.conclusions_edit.textChanged.connect(self.conclusion_tasks.refresh)
+
         form.addRow("Průběh jednání:", self.proceedings_edit)
         form.addRow("Závěry jednání:", self.conclusions_edit)
+        form.addRow(self.conclusion_tasks)
         form.addRow("Poznámky:", self.notes_edit)
+
+        scroll.setWidget(content)
+        outer.addWidget(scroll)
         return page
 
     def _load_meeting(self, meeting) -> None:
@@ -133,8 +153,15 @@ class MeetingDialog(QDialog):
             self.status_combo.setCurrentText(status)
 
         self.proceedings_edit.setPlainText(getattr(meeting, "proceedings", None) or "")
+        self.conclusions_edit.blockSignals(True)
         self.conclusions_edit.setPlainText(getattr(meeting, "conclusions", None) or "")
+        self.conclusions_edit.blockSignals(False)
         self.notes_edit.setPlainText(getattr(meeting, "notes", None) or "")
+
+        self.conclusion_tasks.configure(
+            meeting_id=getattr(meeting, "id", None),
+            get_conclusions_text=self.conclusions_edit.toPlainText,
+        )
 
     def get_data(self) -> dict:
         return {

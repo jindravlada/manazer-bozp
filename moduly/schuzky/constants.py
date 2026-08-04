@@ -24,6 +24,14 @@ END_BEFORE_START_MESSAGE = "Konec schůzky nesmí být dříve než začátek."
 TAB_MEETING = "Schůzka"
 TAB_MINUTES = "Záznam z jednání"
 
+SAVE_MEETING_BEFORE_TASK_MESSAGE = "Nejprve uložte schůzku."
+SECTION_CONCLUSION_TASKS = "Úkoly ze závěrů"
+SECTION_LINKED_TASKS = "Navázané úkoly"
+ACTION_CREATE_TASK = "Vytvořit úkol"
+ACTION_OPEN_TASK = "Otevřít úkol"
+
+CONCLUSION_CHECK_PREFIX = "concl:"
+
 COL_ID = 0
 COL_STARTS_AT = 1
 COL_TITLE = 2

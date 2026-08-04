@@ -3,6 +3,7 @@ from core.shared.constants import (
     ENTITY_AUDITY,
     ENTITY_FINDING,
     ENTITY_LEGAL_REQUIREMENT,
+    ENTITY_MEETING,
     ENTITY_MU_INVESTIGATION,
     ENTITY_PROVERKY,
 )
@@ -25,6 +26,8 @@ def task_source_short_label(task) -> str:
         return _entity_source_short_label(ENTITY_MU_INVESTIGATION)
     if source_module == ENTITY_ACCIDENT:
         return _entity_source_short_label(ENTITY_ACCIDENT)
+    if source_module == ENTITY_MEETING:
+        return "Schůzka"
     if source_module == ENTITY_RISK_MEASURE_REVIEW:
         return "Přezkoumání"
     if source_module == ENTITY_FINDING and task.source_record_id:
@@ -42,6 +45,7 @@ def _entity_source_short_label(entity_type: str) -> str:
         ENTITY_ACCIDENT: "Úraz",
         ENTITY_MU_INVESTIGATION: "MU",
         ENTITY_PROVERKY: "Prověrka",
+        ENTITY_MEETING: "Schůzka",
     }
     return labels.get(entity_type, entity_type or "—")
 
@@ -63,6 +67,7 @@ def _legacy_source_short_label(source: str) -> str:
         ENTITY_FINDING: "Zjištění",
         ENTITY_MU_INVESTIGATION: "MU",
         ENTITY_LEGAL_REQUIREMENT: "Právní pož.",
+        ENTITY_MEETING: "Schůzka",
         ENTITY_RISK_MEASURE_REVIEW: "Přezkoumání",
     }
     return mapping.get(source or "", source or "—")
@@ -78,6 +83,8 @@ def task_source_label(task) -> str:
         return _finding_entity_source_label(ENTITY_MU_INVESTIGATION, task.source_record_id)
     if source_module == ENTITY_ACCIDENT and task.source_record_id:
         return _finding_entity_source_label(ENTITY_ACCIDENT, task.source_record_id)
+    if source_module == ENTITY_MEETING and task.source_record_id:
+        return _meeting_source_label(task.source_record_id)
     if source_module == ENTITY_RISK_MEASURE_REVIEW and task.source_record_id:
         return _risk_measure_review_source_label(task.source_record_id)
     if source_module == ENTITY_FINDING and task.source_record_id:
@@ -99,6 +106,18 @@ def _risk_measure_review_source_label(review_id: int) -> str:
     if review.review_number:
         return f"Přezkoumání opatření {review.review_number}"
     return f"Přezkoumání opatření #{review_id}"
+
+
+def _meeting_source_label(meeting_id: int) -> str:
+    from moduly.schuzky.sluzby.meeting_service import meeting_service
+
+    meeting = meeting_service.get_by_id(meeting_id)
+    if meeting is None:
+        return "Schůzka"
+    title = (meeting.title or "").strip()
+    if title:
+        return f"Schůzka – {title}"
+    return f"Schůzka #{meeting_id}"
 
 
 def _legal_requirement_source_label(requirement_id: int) -> str:
@@ -166,6 +185,7 @@ def _legacy_source_label(source: str) -> str:
         ENTITY_FINDING: "Zjištění",
         ENTITY_MU_INVESTIGATION: "Vyšetřování MU",
         ENTITY_LEGAL_REQUIREMENT: "Právní požadavek",
+        ENTITY_MEETING: "Schůzka",
         ENTITY_RISK_MEASURE_REVIEW: "Přezkoumání opatření",
     }
     return mapping.get(source or "", source or "—")
