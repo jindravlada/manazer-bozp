@@ -29,6 +29,9 @@ _DAY_FONT_POINT_SIZE = 12
 _DAY_NUMBER_HEIGHT = 18
 _WEEK_ROW_MIN_HEIGHT = 38
 
+# Doba zobrazení tooltipu dne – dostatečná pro delší obsah.
+_TOOLTIP_DURATION_MS = 15_000
+
 # Model QCalendarWidget při NoVerticalHeader:
 # řádek 0 = názvy dnů, sloupce 0–6 = po–ne (bez sloupce čísla týdne).
 _HEADER_ROW = 0
@@ -174,7 +177,8 @@ class TaskCalendarWidget(QCalendarWidget):
 
     def _update_day_tooltip(self, pos: QPoint) -> None:
         day = self._date_at(pos)
-        if day == self._tooltip_date:
+        # Stejný den + stále viditelný tooltip → nic neměnit (pohyb uvnitř buňky).
+        if day is not None and day == self._tooltip_date and QToolTip.isVisible():
             return
         self._tooltip_date = day
         events = self._day_events.get(day, []) if day is not None else []
@@ -187,8 +191,17 @@ class TaskCalendarWidget(QCalendarWidget):
         if view is None:
             return
         try:
-            global_pos = view.viewport().mapToGlobal(pos)
-            QToolTip.showText(global_pos, text, view.viewport())
+            viewport = view.viewport()
+            index = view.indexAt(pos)
+            cell_rect = view.visualRect(index) if index.isValid() else QRect()
+            global_pos = viewport.mapToGlobal(pos)
+            QToolTip.showText(
+                global_pos,
+                text,
+                viewport,
+                cell_rect,
+                _TOOLTIP_DURATION_MS,
+            )
         except RuntimeError:
             self._view = None
             QToolTip.hideText()
