@@ -36,13 +36,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from core.windows.main_window import MainWindow
     from moduly.agenda.constants import (
         MODULE_NAME,
-        STATUS_FILTER_MEETING_CLOSED,
-        STATUS_FILTER_MEETING_HELD,
-        STATUS_FILTER_MEETING_CANCELLED,
-        STATUS_FILTER_TASK_CANCELLED,
-        STATUS_FILTER_TASK_DONE,
-        WORKSPACE_MEETING_STATUS_FILTERS,
-        WORKSPACE_TASK_STATUS_FILTERS,
+        STATUS_MODE_ACTIVE,
     )
     from moduly.agenda.ui.agenda_page import AgendaPage
     from moduly.dashboard.ui.dashboard_page import DashboardPage
@@ -81,29 +75,7 @@ class Agenda2TestCase(unittest.TestCase):
         page = self.window._page_widgets["agenda"]
         for check in page.type_checks.values():
             self.assertTrue(check.isChecked())
-        for key, check in page.status_checks.items():
-            prefix, label = key.split(":", 1)
-            allowed = (
-                WORKSPACE_TASK_STATUS_FILTERS
-                if prefix == "task"
-                else WORKSPACE_MEETING_STATUS_FILTERS
-            )
-            self.assertEqual(check.isChecked(), label in allowed)
-
-        for label in (
-            STATUS_FILTER_TASK_DONE,
-            STATUS_FILTER_TASK_CANCELLED,
-            STATUS_FILTER_MEETING_HELD,
-            STATUS_FILTER_MEETING_CLOSED,
-            STATUS_FILTER_MEETING_CANCELLED,
-        ):
-            # hotové / uzavřené / zrušené nejsou ve výchozím pohledu
-            task_key = f"task:{label}"
-            meeting_key = f"meeting:{label}"
-            if task_key in page.status_checks:
-                self.assertFalse(page.status_checks[task_key].isChecked())
-            if meeting_key in page.status_checks:
-                self.assertFalse(page.status_checks[meeting_key].isChecked())
+        self.assertEqual(page.status_filter.currentText(), STATUS_MODE_ACTIVE)
 
     def test_no_tasks_or_events_buttons_on_panel(self) -> None:
         dashboard = self.window._page_widgets["dashboard"]

@@ -10,15 +10,19 @@ from core.shared.task_source_display import task_source_short_label
 from moduly.agenda.constants import (
     ITEM_TYPE_MEETING,
     ITEM_TYPE_TASK,
+    ROW_STATE_ACTIVE,
+    ROW_STATE_CANCELED,
+    ROW_STATE_DONE,
+    ROW_STATE_OVERDUE,
+    ROW_STATE_WAITING,
     SOURCE_LABEL_MEETING,
-    STATUS_FILTER_MEETING_CANCELLED,
-    STATUS_FILTER_MEETING_CLOSED,
-    STATUS_FILTER_MEETING_HELD,
-    STATUS_FILTER_MEETING_PLANNED,
-    STATUS_FILTER_OVERDUE,
-    STATUS_FILTER_TASK_CANCELLED,
-    STATUS_FILTER_TASK_DONE,
-    STATUS_FILTER_TASK_OPEN,
+    STATUS_MODE_ACTIVE,
+    STATUS_MODE_ALL,
+    STATUS_MODE_CANCELLED,
+    STATUS_MODE_CLOSED,
+    STATUS_MODE_DONE,
+    STATUS_MODE_HELD,
+    STATUS_MODE_PLANNED,
     TYPE_LABEL_MEETING,
     TYPE_LABEL_TASK,
 )
@@ -41,10 +45,10 @@ class AgendaItem:
     person: str
     status: str
     source: str
+    row_state: str = ROW_STATE_ACTIVE
     due_date: date | None = None
     event_at: datetime | None = None
     sort_key: tuple = ()
-    status_tags: frozenset[str] = frozenset()
 
     @property
     def due_sort_datetime(self) -> datetime | None:
@@ -55,49 +59,34 @@ class AgendaItem:
         return None
 
 
-def _task_status_tags(task, *, today: date) -> frozenset[str]:
-    tags: set[str] = set()
-    status = task.computed_status or ""
-    if status in ("Aktivní", "Splněno - čeká na kontrolu"):
-        tags.add(STATUS_FILTER_TASK_OPEN)
-    if status == "Ukončeno":
-        tags.add(STATUS_FILTER_TASK_DONE)
+def _task_row_state(task, *, today: date) -> str:
+    """Stejná logika jako TaskTable._row_state."""
+    status = task.computed_status
     if status == "Zrušeno":
-        tags.add(STATUS_FILTER_TASK_CANCELLED)
-    if _is_task_overdue(task, today=today):
-        tags.add(STATUS_FILTER_OVERDUE)
-    return frozenset(tags)
+        return ROW_STATE_CANCELED
+    if status == "Ukončeno":
+        return ROW_STATE_DONE
+    if task.due_date is not None and task.due_date < today:
+        return ROW_STATE_OVERDUE
+    if status == "Splněno - čeká na kontrolu":
+        return ROW_STATE_WAITING
+    return ROW_STATE_ACTIVE
 
 
-def _meeting_status_tags(meeting, *, now: datetime) -> frozenset[str]:
-    tags: set[str] = set()
+def _meeting_row_state(meeting, *, now: datetime) -> str:
     status = (meeting.status or "").strip()
-    mapping = {
-        STATUS_PLANNED: STATUS_FILTER_MEETING_PLANNED,
-        STATUS_HELD: STATUS_FILTER_MEETING_HELD,
-        STATUS_CLOSED: STATUS_FILTER_MEETING_CLOSED,
-        STATUS_CANCELLED: STATUS_FILTER_MEETING_CANCELLED,
-    }
-    mapped = mapping.get(status)
-    if mapped:
-        tags.add(mapped)
-    if _is_meeting_overdue(meeting, now=now):
-        tags.add(STATUS_FILTER_OVERDUE)
-    return frozenset(tags)
-
-
-def _is_task_overdue(task, *, today: date) -> bool:
-    if task.computed_status in ("Ukončeno", "Zrušeno"):
-        return False
-    due = task.due_date
-    return due is not None and due < today
-
-
-def _is_meeting_overdue(meeting, *, now: datetime) -> bool:
-    if (meeting.status or "") != STATUS_PLANNED:
-        return False
-    starts = meeting.starts_at
-    return starts is not None and starts < now
+    if status == STATUS_CANCELLED:
+        return ROW_STATE_CANCELED
+    if status == STATUS_CLOSED:
+        return ROW_STATE_DONE
+    if status == STATUS_HELD:
+        return ROW_STATE_WAITING
+    if status == STATUS_PLANNED:
+        starts = meeting.starts_at
+        if starts is not None and starts < now:
+            return ROW_STATE_OVERDUE
+        return ROW_STATE_ACTIVE
+    return ROW_STATE_ACTIVE
 
 
 def _from_tasks(*, today: date) -> list[AgendaItem]:
@@ -116,6 +105,7 @@ def _from_tasks(*, today: date) -> list[AgendaItem]:
                 person=person,
                 status=status,
                 source=source,
+                row_state=_task_row_state(task, today=today),
                 due_date=task.due_date,
                 sort_key=build_sort_key(
                     task.due_date,
@@ -123,7 +113,6 @@ def _from_tasks(*, today: date) -> list[AgendaItem]:
                     title=title,
                     source_id=task.id,
                 ),
-                status_tags=_task_status_tags(task, today=today),
             )
         )
     return items
@@ -148,6 +137,7 @@ def _from_meetings(*, now: datetime) -> list[AgendaItem]:
                 person=person,
                 status=status,
                 source=SOURCE_LABEL_MEETING,
+                row_state=_meeting_row_state(meeting, now=now),
                 due_date=starts.date() if starts is not None else None,
                 event_at=starts,
                 sort_key=build_sort_key(
@@ -157,7 +147,6 @@ def _from_meetings(*, now: datetime) -> list[AgendaItem]:
                     source_id=meeting.id,
                     due_datetime=starts,
                 ),
-                status_tags=_meeting_status_tags(meeting, now=now),
             )
         )
     return items
@@ -176,19 +165,47 @@ def get_agenda_items(
     return items
 
 
+def _task_matches_status_mode(item: AgendaItem, mode: str) -> bool:
+    status = item.status or ""
+    if mode == STATUS_MODE_ALL:
+        return True
+    if mode == STATUS_MODE_ACTIVE:
+        return status not in ("Ukončeno", "Zrušeno")
+    if mode == STATUS_MODE_DONE:
+        return status == "Ukončeno"
+    if mode == STATUS_MODE_CANCELLED:
+        return status == "Zrušeno"
+    return False
+
+
+def _meeting_matches_status_mode(item: AgendaItem, mode: str) -> bool:
+    status = (item.status or "").strip()
+    if mode == STATUS_MODE_ALL:
+        return True
+    if mode == STATUS_MODE_ACTIVE:
+        # Aktivní = naplánované (včetně po termínu).
+        return status == STATUS_PLANNED
+    if mode == STATUS_MODE_PLANNED:
+        return status == STATUS_PLANNED
+    if mode == STATUS_MODE_HELD:
+        return status == STATUS_HELD
+    if mode == STATUS_MODE_CLOSED:
+        return status == STATUS_CLOSED
+    if mode == STATUS_MODE_CANCELLED:
+        return status == STATUS_CANCELLED
+    if mode == STATUS_MODE_DONE:
+        # Splněné v kombinovaném pohledu = uzavřené události.
+        return status == STATUS_CLOSED
+    return False
+
+
 def filter_agenda_items(
     items: list[AgendaItem],
     *,
     type_filters: set[str],
-    task_status_filters: set[str],
-    meeting_status_filters: set[str],
+    status_mode: str,
 ) -> list[AgendaItem]:
-    """
-    Filtry Typ a Stav fungují společně (AND mezi skupinami, OR uvnitř skupiny).
-
-    type_filters: ITEM_TYPE_TASK / ITEM_TYPE_MEETING
-    *_status_filters: názvy z constants (Otevřený, Naplánováno, Po termínu, …)
-    """
+    """Filtr Typ (checkboxy) + společný režim stavu (combobox)."""
     if not type_filters:
         return []
 
@@ -197,13 +214,11 @@ def filter_agenda_items(
         if item.item_type not in type_filters:
             continue
         if item.item_type == ITEM_TYPE_TASK:
-            status_filters = task_status_filters
+            if not _task_matches_status_mode(item, status_mode):
+                continue
         else:
-            status_filters = meeting_status_filters
-        if not status_filters:
-            continue
-        if not (item.status_tags & status_filters):
-            continue
+            if not _meeting_matches_status_mode(item, status_mode):
+                continue
         result.append(item)
     return result
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget
 
 from core.widgets.typed_table_sort import (
@@ -21,6 +22,8 @@ from moduly.agenda.constants import (
     COL_TITLE,
     COL_TYPE,
     COLUMN_HEADERS,
+    ROW_COLORS,
+    ROW_STATE_ACTIVE,
 )
 from moduly.agenda.sluzby.agenda_service import AgendaItem
 
@@ -53,7 +56,7 @@ class AgendaTable(QTableWidget):
         rows = self.selectionModel().selectedRows()
         if not rows:
             return None
-        cell = self.item(rows[0].row(), COL_TYPE)
+        cell = self.item(rows[0].row(), COL_TITLE)
         if cell is None:
             return None
         payload = cell.data(_ROLE_ITEM)
@@ -68,55 +71,57 @@ class AgendaTable(QTableWidget):
                     _TYPE_STABLE_PREFIX.get(agenda.item_type, 9) * 1_000_000_000
                     + int(agenda.source_id)
                 )
+                brush = QBrush(self._row_color(agenda.row_state))
+
+                title_item = create_typed_item(
+                    agenda.title,
+                    typed_text(agenda.title),
+                    stable_id=stable_id,
+                )
+                title_item.setData(_ROLE_ITEM, agenda)
+                title_item.setBackground(brush)
+                self.setItem(row, COL_TITLE, title_item)
+
+                due_text = self._format_due(agenda)
+                due_dt = agenda.due_sort_datetime
+                due_sort = typed_datetime(due_dt) if due_dt is not None else typed_empty()
+                due_item = create_typed_item(due_text, due_sort, stable_id=stable_id)
+                due_item.setBackground(brush)
+                self.setItem(row, COL_DUE, due_item)
+
+                person = agenda.person or "—"
+                person_sort = typed_text(person) if agenda.person else typed_empty()
+                person_item = create_typed_item(person, person_sort, stable_id=stable_id)
+                person_item.setBackground(brush)
+                self.setItem(row, COL_PERSON, person_item)
+
+                status = agenda.status or "—"
+                status_item = create_typed_item(status, typed_text(status), stable_id=stable_id)
+                status_item.setBackground(brush)
+                self.setItem(row, COL_STATUS, status_item)
+
+                source = agenda.source or "—"
+                source_sort = (
+                    typed_text(source) if agenda.source and agenda.source != "—" else typed_empty()
+                )
+                source_item = create_typed_item(source, source_sort, stable_id=stable_id)
+                source_item.setBackground(brush)
+                self.setItem(row, COL_SOURCE, source_item)
+
                 type_item = create_typed_item(
                     agenda.type_label,
                     typed_text(agenda.type_label),
                     stable_id=stable_id,
                 )
-                type_item.setData(_ROLE_ITEM, agenda)
+                type_item.setBackground(brush)
                 self.setItem(row, COL_TYPE, type_item)
 
-                due_text = self._format_due(agenda)
-                due_dt = agenda.due_sort_datetime
-                due_sort = typed_datetime(due_dt) if due_dt is not None else typed_empty()
-                self.setItem(
-                    row,
-                    COL_DUE,
-                    create_typed_item(due_text, due_sort, stable_id=stable_id),
-                )
-
-                self.setItem(
-                    row,
-                    COL_TITLE,
-                    create_typed_item(agenda.title, typed_text(agenda.title), stable_id=stable_id),
-                )
-
-                person = agenda.person or "—"
-                person_sort = typed_text(person) if agenda.person else typed_empty()
-                self.setItem(
-                    row,
-                    COL_PERSON,
-                    create_typed_item(person, person_sort, stable_id=stable_id),
-                )
-
-                status = agenda.status or "—"
-                self.setItem(
-                    row,
-                    COL_STATUS,
-                    create_typed_item(status, typed_text(status), stable_id=stable_id),
-                )
-
-                source = agenda.source or "—"
-                source_sort = typed_text(source) if agenda.source and agenda.source != "—" else typed_empty()
-                self.setItem(
-                    row,
-                    COL_SOURCE,
-                    create_typed_item(source, source_sort, stable_id=stable_id),
-                )
-
         if items:
-            # Výchozí chronologické řazení (stejná osa jako dashboard).
             self.sortItems(COL_DUE, Qt.SortOrder.AscendingOrder)
+
+    @staticmethod
+    def _row_color(row_state: str) -> QColor:
+        return QColor(ROW_COLORS.get(row_state, ROW_COLORS[ROW_STATE_ACTIVE]))
 
     @staticmethod
     def _format_due(agenda: AgendaItem) -> str:

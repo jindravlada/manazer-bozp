@@ -37,10 +37,8 @@ with patch.object(Path, "home", return_value=_TMP):
         ITEM_TYPE_TASK,
         MODULE_KEY,
         MODULE_NAME,
-        STATUS_FILTER_MEETING_PLANNED,
-        STATUS_FILTER_OVERDUE,
-        STATUS_FILTER_TASK_DONE,
-        STATUS_FILTER_TASK_OPEN,
+        STATUS_MODE_ACTIVE,
+        STATUS_MODE_DONE,
         TYPE_FILTER_MEETINGS,
         TYPE_FILTER_TASKS,
     )
@@ -79,7 +77,7 @@ class Agenda1TestCase(unittest.TestCase):
                 notes=meeting.notes or "",
             )
         for task in list(task_service.get_all_tasks()):
-            if task.computed_status not in ("Ukončeno", "Zrušeno"):
+            if task.computed_status != "Zrušeno":
                 task_service.cancel_task(task.id)
 
     def test_module_registered_in_menu(self) -> None:
@@ -105,7 +103,7 @@ class Agenda1TestCase(unittest.TestCase):
         page = AgendaPage()
         page.refresh()
         titles = [
-            page.table.item(row, 2).text()
+            page.table.item(row, 0).text()
             for row in range(page.table.rowCount())
         ]
         self.assertTrue(any("Úkol v agendě" in t for t in titles))
@@ -122,8 +120,7 @@ class Agenda1TestCase(unittest.TestCase):
         only_tasks = filter_agenda_items(
             all_items,
             type_filters={ITEM_TYPE_TASK},
-            task_status_filters={STATUS_FILTER_TASK_OPEN, STATUS_FILTER_OVERDUE},
-            meeting_status_filters={STATUS_FILTER_MEETING_PLANNED},
+            status_mode=STATUS_MODE_ACTIVE,
         )
         self.assertEqual({i.source_id for i in only_tasks}, {task.id})
         self.assertTrue(all(i.item_type == ITEM_TYPE_TASK for i in only_tasks))
@@ -131,8 +128,7 @@ class Agenda1TestCase(unittest.TestCase):
         only_meetings = filter_agenda_items(
             all_items,
             type_filters={ITEM_TYPE_MEETING},
-            task_status_filters={STATUS_FILTER_TASK_OPEN},
-            meeting_status_filters={STATUS_FILTER_MEETING_PLANNED, STATUS_FILTER_OVERDUE},
+            status_mode=STATUS_MODE_ACTIVE,
         )
         self.assertEqual({i.source_id for i in only_meetings}, {meeting.id})
 
@@ -165,13 +161,7 @@ class Agenda1TestCase(unittest.TestCase):
         )
 
         page = AgendaPage()
-        # jen otevřené úkoly + naplánované události
-        for key, check in page.status_checks.items():
-            label = key.split(":", 1)[1]
-            if key.startswith("task:"):
-                check.setChecked(label == STATUS_FILTER_TASK_OPEN)
-            else:
-                check.setChecked(label == STATUS_FILTER_MEETING_PLANNED)
+        page.status_filter.setCurrentText(STATUS_MODE_ACTIVE)
         page.refresh()
 
         payloads = [
@@ -183,13 +173,8 @@ class Agenda1TestCase(unittest.TestCase):
         self.assertIn((ITEM_TYPE_MEETING, planned.id), ids)
         self.assertNotIn((ITEM_TYPE_TASK, done_task.id), ids)
 
-        # jen splněné úkoly
-        for key, check in page.status_checks.items():
-            label = key.split(":", 1)[1]
-            if key.startswith("task:"):
-                check.setChecked(label == STATUS_FILTER_TASK_DONE)
-            else:
-                check.setChecked(False)
+        page.type_checks[ITEM_TYPE_MEETING].setChecked(False)
+        page.status_filter.setCurrentText(STATUS_MODE_DONE)
         page.refresh()
         payloads = [
             page.table.item(row, 0).data(Qt.ItemDataRole.UserRole)
@@ -254,25 +239,47 @@ class Agenda1TestCase(unittest.TestCase):
             due_date=date(2026, 8, 15),
         )
 
+        wanted = {
+            (ITEM_TYPE_MEETING, early_meeting.id),
+            (ITEM_TYPE_TASK, mid_task.id),
+            (ITEM_TYPE_TASK, later_task.id),
+        }
         items = [
             i
             for i in agenda_service.get_items()
-            if i.source_id in {later_task.id, early_meeting.id, mid_task.id}
+            if (i.item_type, i.source_id) in wanted
         ]
         self.assertEqual(
-            [i.source_id for i in items],
-            [early_meeting.id, mid_task.id, later_task.id],
+            [(i.item_type, i.source_id) for i in items],
+            [
+                (ITEM_TYPE_MEETING, early_meeting.id),
+                (ITEM_TYPE_TASK, mid_task.id),
+                (ITEM_TYPE_TASK, later_task.id),
+            ],
         )
 
         page = AgendaPage()
         page.refresh()
         ordered = [
-            page.table.item(row, 0).data(Qt.ItemDataRole.UserRole).source_id
+            (
+                page.table.item(row, 0).data(Qt.ItemDataRole.UserRole).item_type,
+                page.table.item(row, 0).data(Qt.ItemDataRole.UserRole).source_id,
+            )
             for row in range(page.table.rowCount())
-            if page.table.item(row, 0).data(Qt.ItemDataRole.UserRole).source_id
-            in {later_task.id, early_meeting.id, mid_task.id}
+            if (
+                page.table.item(row, 0).data(Qt.ItemDataRole.UserRole).item_type,
+                page.table.item(row, 0).data(Qt.ItemDataRole.UserRole).source_id,
+            )
+            in wanted
         ]
-        self.assertEqual(ordered, [early_meeting.id, mid_task.id, later_task.id])
+        self.assertEqual(
+            ordered,
+            [
+                (ITEM_TYPE_MEETING, early_meeting.id),
+                (ITEM_TYPE_TASK, mid_task.id),
+                (ITEM_TYPE_TASK, later_task.id),
+            ],
+        )
 
     def test_refresh_after_save(self) -> None:
         page = AgendaPage()

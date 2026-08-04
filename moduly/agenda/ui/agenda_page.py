@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QHideEvent, QShowEvent
 from PySide6.QtWidgets import (
     QCheckBox,
-    QGroupBox,
+    QComboBox,
     QHBoxLayout,
     QLabel,
     QMessageBox,
@@ -23,18 +23,20 @@ from moduly.agenda.constants import (
     ACTION_NEW_MEETING,
     ACTION_NEW_TASK,
     ACTION_OPEN,
+    DEFAULT_STATUS_MODE,
     EMPTY_STATE_TEXT,
     ITEM_NOT_FOUND_MESSAGE,
     ITEM_TYPE_MEETING,
     ITEM_TYPE_TASK,
     LIST_WINDOW_TITLE,
-    MEETING_STATUS_FILTERS,
+    ROW_LEGEND,
     SELECT_ITEM_MESSAGE,
-    TASK_STATUS_FILTERS,
+    STATUS_MODE_ACTIVE,
+    STATUS_MODES_BOTH,
+    STATUS_MODES_MEETINGS_ONLY,
+    STATUS_MODES_TASKS_ONLY,
     TYPE_FILTER_MEETINGS,
     TYPE_FILTER_TASKS,
-    WORKSPACE_MEETING_STATUS_FILTERS,
-    WORKSPACE_TASK_STATUS_FILTERS,
 )
 from moduly.agenda.sluzby.agenda_service import agenda_service
 from moduly.agenda.ui.agenda_table import AgendaTable
@@ -53,6 +55,7 @@ class AgendaPage(QWidget):
     def __init__(self):
         super().__init__()
         self._dashboard_refresh_callback = None
+        self._updating_status_filter = False
 
         layout = QVBoxLayout(self)
 
@@ -73,52 +76,29 @@ class AgendaPage(QWidget):
         }
         for check in self.type_checks.values():
             check.setChecked(True)
-            check.toggled.connect(self.refresh)
+            check.toggled.connect(self._on_type_filter_changed)
 
-        type_row = QHBoxLayout()
-        type_row.addWidget(QLabel("Typ:"))
+        toolbar.addWidget(QLabel("Typ:"))
         for check in self.type_checks.values():
-            type_row.addWidget(check)
-        type_row.addStretch()
+            toolbar.addWidget(check)
 
-        self.status_checks: dict[str, QCheckBox] = {}
-        status_box = QGroupBox("Stav")
-        status_layout = QVBoxLayout(status_box)
-
-        task_row = QHBoxLayout()
-        task_row.addWidget(QLabel("Úkoly:"))
-        for label in TASK_STATUS_FILTERS:
-            check = QCheckBox(label)
-            check.setChecked(label in WORKSPACE_TASK_STATUS_FILTERS)
-            check.toggled.connect(self.refresh)
-            self.status_checks[f"task:{label}"] = check
-            task_row.addWidget(check)
-        task_row.addStretch()
-        status_layout.addLayout(task_row)
-
-        meeting_row = QHBoxLayout()
-        meeting_row.addWidget(QLabel("Události:"))
-        for label in MEETING_STATUS_FILTERS:
-            check = QCheckBox(label)
-            check.setChecked(label in WORKSPACE_MEETING_STATUS_FILTERS)
-            check.toggled.connect(self.refresh)
-            self.status_checks[f"meeting:{label}"] = check
-            meeting_row.addWidget(check)
-        meeting_row.addStretch()
-        status_layout.addLayout(meeting_row)
+        toolbar.addWidget(QLabel("Zobrazit:"))
+        self.status_filter = QComboBox()
+        self.status_filter.currentIndexChanged.connect(self._on_status_filter_changed)
+        toolbar.addWidget(self.status_filter)
 
         self.table = AgendaTable()
         configure_table_columns(self.table, "agenda")
         self.text_filter = FilterBar(self.table, placeholder="🔍 Hledat v agendě...")
+        self.legend = QLabel(ROW_LEGEND)
         self.empty_label = QLabel(EMPTY_STATE_TEXT)
         self.empty_label.setWordWrap(True)
         self.empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.empty_label.hide()
 
         layout.addLayout(toolbar)
-        layout.addLayout(type_row)
-        layout.addWidget(status_box)
         layout.addWidget(self.text_filter)
+        layout.addWidget(self.legend)
         layout.addWidget(self.empty_label)
         layout.addWidget(self.table)
 
@@ -128,29 +108,19 @@ class AgendaPage(QWidget):
         self.edit_btn.clicked.connect(self.open_selected)
         self.table.doubleClicked.connect(self.open_selected)
 
+        self._rebuild_status_filter(preferred=DEFAULT_STATUS_MODE)
         self.refresh()
 
     def set_dashboard_refresh_callback(self, callback) -> None:
         self._dashboard_refresh_callback = callback
 
     def apply_workspace_filters(self) -> None:
-        """Výchozí filtr z pracovní plochy: aktivní + po termínu."""
+        """Výchozí filtr z pracovní plochy: oba typy + Aktivní."""
         for check in self.type_checks.values():
             check.blockSignals(True)
             check.setChecked(True)
             check.blockSignals(False)
-
-        for key, check in self.status_checks.items():
-            prefix, label = key.split(":", 1)
-            allowed = (
-                WORKSPACE_TASK_STATUS_FILTERS
-                if prefix == "task"
-                else WORKSPACE_MEETING_STATUS_FILTERS
-            )
-            check.blockSignals(True)
-            check.setChecked(label in allowed)
-            check.blockSignals(False)
-
+        self._rebuild_status_filter(preferred=STATUS_MODE_ACTIVE)
         self.refresh()
 
     def showEvent(self, event: QShowEvent) -> None:
@@ -168,20 +138,46 @@ class AgendaPage(QWidget):
             if check.isChecked()
         }
 
-    def _selected_status_filters_for(self, item_type: str) -> set[str]:
-        prefix = f"{item_type}:"
-        return {
-            key.split(":", 1)[1]
-            for key, check in self.status_checks.items()
-            if key.startswith(prefix) and check.isChecked()
-        }
+    def _status_modes_for_types(self, type_filters: set[str]) -> tuple[str, ...]:
+        has_tasks = ITEM_TYPE_TASK in type_filters
+        has_meetings = ITEM_TYPE_MEETING in type_filters
+        if has_tasks and has_meetings:
+            return STATUS_MODES_BOTH
+        if has_tasks:
+            return STATUS_MODES_TASKS_ONLY
+        if has_meetings:
+            return STATUS_MODES_MEETINGS_ONLY
+        return STATUS_MODES_BOTH
+
+    def _rebuild_status_filter(self, preferred: str | None = None) -> None:
+        type_filters = self._selected_type_filters()
+        modes = self._status_modes_for_types(type_filters)
+        current = preferred or self.status_filter.currentText()
+        if current not in modes:
+            current = DEFAULT_STATUS_MODE if DEFAULT_STATUS_MODE in modes else modes[0]
+
+        self._updating_status_filter = True
+        self.status_filter.blockSignals(True)
+        self.status_filter.clear()
+        self.status_filter.addItems(list(modes))
+        self.status_filter.setCurrentText(current)
+        self.status_filter.blockSignals(False)
+        self._updating_status_filter = False
+
+    def _on_type_filter_changed(self) -> None:
+        self._rebuild_status_filter()
+        self.refresh()
+
+    def _on_status_filter_changed(self) -> None:
+        if self._updating_status_filter:
+            return
+        self.refresh()
 
     def refresh(self) -> None:
         items = agenda_service.filter_items(
             agenda_service.get_items(),
             type_filters=self._selected_type_filters(),
-            task_status_filters=self._selected_status_filters_for(ITEM_TYPE_TASK),
-            meeting_status_filters=self._selected_status_filters_for(ITEM_TYPE_MEETING),
+            status_mode=self.status_filter.currentText() or DEFAULT_STATUS_MODE,
         )
         self.table.load_items(items)
         configure_table_columns(self.table, "agenda")
