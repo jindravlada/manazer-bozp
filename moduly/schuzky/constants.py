@@ -21,6 +21,9 @@ DEFAULT_MEETING_STATUS = STATUS_PLANNED
 
 END_BEFORE_START_MESSAGE = "Konec schůzky nesmí být dříve než začátek."
 
+TAB_MEETING = "Schůzka"
+TAB_MINUTES = "Záznam z jednání"
+
 COL_ID = 0
 COL_STARTS_AT = 1
 COL_TITLE = 2

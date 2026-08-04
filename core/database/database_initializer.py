@@ -213,6 +213,7 @@ def initialize_database() -> None:
     _ensure_ai_unassigned_proposals_table()
     _ensure_ai_proposal_packages_table()
     _migrate_legal_document_types()
+    _ensure_meeting_minutes_columns()
     _normalize_task_status_values()
     _normalize_accident_legacy_values()
 
@@ -257,6 +258,18 @@ def _add_column(table_name: str, column_sql: str) -> None:
     with _db_engine().connect() as connection:
         connection.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column_sql}"))
         connection.commit()
+
+
+def _ensure_meeting_minutes_columns() -> None:
+    columns = _table_columns("meetings")
+    if not columns:
+        return
+    if "proceedings" not in columns:
+        _add_column("meetings", "proceedings TEXT DEFAULT ''")
+    if "conclusions" not in columns:
+        _add_column("meetings", "conclusions TEXT DEFAULT ''")
+    if "notes" not in columns:
+        _add_column("meetings", "notes TEXT DEFAULT ''")
 
 
 def _ensure_thp_worker_title_columns() -> None:

@@ -28,6 +28,11 @@ class Meeting(Base):
 
     agenda: Mapped[str] = mapped_column(Text, default="")
 
+    # Záznam z jednání (volitelné)
+    proceedings: Mapped[str] = mapped_column(Text, default="")
+    conclusions: Mapped[str] = mapped_column(Text, default="")
+    notes: Mapped[str] = mapped_column(Text, default="")
+
     status: Mapped[str] = mapped_column(String(30), default="Naplánováno", nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)

@@ -1,4 +1,4 @@
-"""Editor schůzky – záložka Schůzka (MEETINGS-1a)."""
+"""Editor schůzky – záložky Schůzka a Záznam z jednání."""
 
 from __future__ import annotations
 
@@ -6,11 +6,12 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QFormLayout,
-    QGroupBox,
     QLineEdit,
     QMessageBox,
+    QTabWidget,
     QTextEdit,
     QVBoxLayout,
+    QWidget,
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
@@ -22,8 +23,18 @@ from moduly.schuzky.constants import (
     DIALOG_WINDOW_TITLE,
     END_BEFORE_START_MESSAGE,
     MEETING_STATUSES,
+    TAB_MEETING,
+    TAB_MINUTES,
 )
 from moduly.schuzky.sluzby.meeting_service import meeting_service
+
+
+def _plain_text_edit(*, placeholder: str, min_height: int) -> QTextEdit:
+    edit = QTextEdit()
+    edit.setPlaceholderText(placeholder)
+    edit.setAcceptRichText(False)
+    edit.setMinimumHeight(min_height)
+    return edit
 
 
 class MeetingDialog(QDialog):
@@ -31,12 +42,26 @@ class MeetingDialog(QDialog):
         super().__init__(parent)
         self.meeting = meeting
         self.setWindowTitle(DIALOG_WINDOW_TITLE)
-        self.resize(720, 640)
+        self.resize(720, 680)
 
         layout = QVBoxLayout(self)
 
-        group = QGroupBox("Schůzka")
-        form = QFormLayout(group)
+        self.tabs = QTabWidget()
+        self.tabs.addTab(self._meeting_tab(), TAB_MEETING)
+        self.tabs.addTab(self._minutes_tab(), TAB_MINUTES)
+        layout.addWidget(self.tabs, 1)
+
+        buttons = create_save_cancel_box(self, is_new=meeting is None)
+        buttons.accepted.connect(self._on_accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+        if meeting is not None:
+            self._load_meeting(meeting)
+
+    def _meeting_tab(self) -> QWidget:
+        page = QWidget()
+        form = QFormLayout(page)
 
         self.title_edit = QLineEdit()
         self.title_edit.setPlaceholderText("Název schůzky")
@@ -50,11 +75,11 @@ class MeetingDialog(QDialog):
         self.organizer_selector = PersonSelector(include_empty=True, allow_add_new=True)
         self.participants_selector = MultiPersonSelector()
 
-        self.agenda_edit = QTextEdit()
-        self.agenda_edit.setPlaceholderText("Program / poznámka")
-        self.agenda_edit.setAcceptRichText(False)
         # Běžné textové pole – přibližně 4–6 řádků.
-        self.agenda_edit.setMinimumHeight(110)
+        self.agenda_edit = _plain_text_edit(
+            placeholder="Program / poznámka",
+            min_height=110,
+        )
 
         self.status_combo = QComboBox()
         self.status_combo.addItems(list(MEETING_STATUSES))
@@ -68,16 +93,30 @@ class MeetingDialog(QDialog):
         form.addRow("Účastníci:", self.participants_selector)
         form.addRow("Program / poznámka:", self.agenda_edit)
         form.addRow("Stav:", self.status_combo)
+        return page
 
-        layout.addWidget(group)
+    def _minutes_tab(self) -> QWidget:
+        page = QWidget()
+        form = QFormLayout(page)
 
-        buttons = create_save_cancel_box(self, is_new=meeting is None)
-        buttons.accepted.connect(self._on_accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        # Rozsáhlé / běžné / krátké podle UI_KOMPONENTY.md
+        self.proceedings_edit = _plain_text_edit(
+            placeholder="Průběh jednání",
+            min_height=150,
+        )
+        self.conclusions_edit = _plain_text_edit(
+            placeholder="Závěry jednání",
+            min_height=110,
+        )
+        self.notes_edit = _plain_text_edit(
+            placeholder="Poznámky",
+            min_height=70,
+        )
 
-        if meeting is not None:
-            self._load_meeting(meeting)
+        form.addRow("Průběh jednání:", self.proceedings_edit)
+        form.addRow("Závěry jednání:", self.conclusions_edit)
+        form.addRow("Poznámky:", self.notes_edit)
+        return page
 
     def _load_meeting(self, meeting) -> None:
         self.title_edit.setText(meeting.title or "")
@@ -93,6 +132,10 @@ class MeetingDialog(QDialog):
         if self.status_combo.findText(status) >= 0:
             self.status_combo.setCurrentText(status)
 
+        self.proceedings_edit.setPlainText(getattr(meeting, "proceedings", None) or "")
+        self.conclusions_edit.setPlainText(getattr(meeting, "conclusions", None) or "")
+        self.notes_edit.setPlainText(getattr(meeting, "notes", None) or "")
+
     def get_data(self) -> dict:
         return {
             "title": self.title_edit.text().strip(),
@@ -103,6 +146,9 @@ class MeetingDialog(QDialog):
             "participant_ids": self.participants_selector.selected_person_ids(),
             "agenda": self.agenda_edit.toPlainText(),
             "status": self.status_combo.currentText(),
+            "proceedings": self.proceedings_edit.toPlainText(),
+            "conclusions": self.conclusions_edit.toPlainText(),
+            "notes": self.notes_edit.toPlainText(),
         }
 
     def _on_accept(self) -> None:

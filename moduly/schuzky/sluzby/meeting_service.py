@@ -40,6 +40,9 @@ class MeetingService:
         participant_ids: list[int] | None = None,
         agenda: str = "",
         status: str = DEFAULT_MEETING_STATUS,
+        proceedings: str = "",
+        conclusions: str = "",
+        notes: str = "",
     ) -> Meeting:
         self.validate_times(starts_at, ends_at)
         status = status if status in MEETING_STATUSES else DEFAULT_MEETING_STATUS
@@ -53,6 +56,9 @@ class MeetingService:
             participant_ids_json=self._encode_ids(participant_ids),
             participant_names=self._participant_names(participant_ids),
             agenda=agenda or "",
+            proceedings=proceedings or "",
+            conclusions=conclusions or "",
+            notes=notes or "",
             status=status,
         )
         return self.repository.add(meeting)
@@ -69,6 +75,9 @@ class MeetingService:
         participant_ids: list[int] | None = None,
         agenda: str = "",
         status: str = DEFAULT_MEETING_STATUS,
+        proceedings: str = "",
+        conclusions: str = "",
+        notes: str = "",
     ) -> Meeting:
         meeting = self.repository.get_by_id(meeting_id)
         if meeting is None:
@@ -86,6 +95,9 @@ class MeetingService:
         meeting.participant_ids_json = self._encode_ids(participant_ids)
         meeting.participant_names = self._participant_names(participant_ids)
         meeting.agenda = agenda or ""
+        meeting.proceedings = proceedings or ""
+        meeting.conclusions = conclusions or ""
+        meeting.notes = notes or ""
         meeting.status = status
         meeting.updated_at = datetime.now()
         return self.repository.update(meeting)
