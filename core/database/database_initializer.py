@@ -289,6 +289,11 @@ def _ensure_meeting_agenda_items_table() -> None:
         _add_column("meeting_agenda_items", "prubeh_jednani TEXT DEFAULT ''")
     if "zaver" not in columns:
         _add_column("meeting_agenda_items", "zaver TEXT DEFAULT ''")
+    if "status" not in columns:
+        _add_column(
+            "meeting_agenda_items",
+            "status VARCHAR(30) DEFAULT 'Připraveno' NOT NULL",
+        )
 
 
 def _ensure_thp_worker_title_columns() -> None:

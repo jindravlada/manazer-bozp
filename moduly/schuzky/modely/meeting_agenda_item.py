@@ -19,6 +19,7 @@ class MeetingAgendaItem(Base):
 
     display_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     title: Mapped[str] = mapped_column(String(250), default="", nullable=False)
+    status: Mapped[str] = mapped_column(String(30), default="Připraveno", nullable=False)
 
     moje_sdeleni: Mapped[str] = mapped_column(Text, default="")
     prubeh_jednani: Mapped[str] = mapped_column(Text, default="")

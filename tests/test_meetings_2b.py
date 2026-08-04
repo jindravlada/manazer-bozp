@@ -94,7 +94,7 @@ class Meetings2bTestCase(unittest.TestCase):
                 meeting_dialog.agenda_items_widget.table.horizontalHeaderItem(i).text()
                 for i in range(meeting_dialog.agenda_items_widget.table.columnCount())
             ],
-            ["Pořadí", "Název tématu"],
+            ["Stav", "Pořadí", "Název tématu"],
         )
 
     def test_empty_fields_allowed(self) -> None:

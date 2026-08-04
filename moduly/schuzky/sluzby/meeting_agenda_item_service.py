@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from moduly.schuzky.constants import (
+    AGENDA_ITEM_STATUSES,
+    DEFAULT_AGENDA_ITEM_STATUS,
+)
 from moduly.schuzky.modely.meeting_agenda_item import MeetingAgendaItem
 from moduly.schuzky.repository.meeting_agenda_item_repository import (
     MeetingAgendaItemRepository,
@@ -18,12 +22,19 @@ class MeetingAgendaItemService:
     def get_by_id(self, item_id: int) -> MeetingAgendaItem | None:
         return self.repository.get_by_id(item_id)
 
+    def normalize_status(self, status: str | None) -> str:
+        value = (status or "").strip()
+        if value in AGENDA_ITEM_STATUSES:
+            return value
+        return DEFAULT_AGENDA_ITEM_STATUS
+
     def item_to_dict(self, item: MeetingAgendaItem) -> dict:
         return {
             "id": item.id,
             "meeting_id": item.meeting_id,
             "display_order": int(item.display_order or 0),
             "title": item.title or "",
+            "status": self.normalize_status(getattr(item, "status", None)),
             "moje_sdeleni": getattr(item, "moje_sdeleni", None) or "",
             "prubeh_jednani": getattr(item, "prubeh_jednani", None) or "",
             "zaver": getattr(item, "zaver", None) or "",
@@ -48,6 +59,7 @@ class MeetingAgendaItemService:
                 item = existing[int(item_id)]
                 item.display_order = int(data["display_order"])
                 item.title = data["title"]
+                item.status = data["status"]
                 item.moje_sdeleni = data["moje_sdeleni"]
                 item.prubeh_jednani = data["prubeh_jednani"]
                 item.zaver = data["zaver"]
@@ -59,6 +71,7 @@ class MeetingAgendaItemService:
                     meeting_id=int(meeting_id),
                     display_order=int(data["display_order"]),
                     title=data["title"],
+                    status=data["status"],
                     moje_sdeleni=data["moje_sdeleni"],
                     prubeh_jednani=data["prubeh_jednani"],
                     zaver=data["zaver"],
@@ -80,6 +93,7 @@ class MeetingAgendaItemService:
         for index, raw in enumerate(items or []):
             data = {
                 "title": str(raw.get("title") or "").strip(),
+                "status": self.normalize_status(raw.get("status")),
                 "moje_sdeleni": str(raw.get("moje_sdeleni") or ""),
                 "prubeh_jednani": str(raw.get("prubeh_jednani") or ""),
                 "zaver": str(raw.get("zaver") or ""),
