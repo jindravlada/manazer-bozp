@@ -423,7 +423,9 @@ class MainWindow(QMainWindow):
 
         parent = dashboard if dashboard is not None else self
         dialog = MeetingDialog(parent, meeting=meeting)
-        if dialog.exec():
+        from core.widgets.dialog_utils import exec_maximized
+
+        if exec_maximized(dialog):
             try:
                 meeting_service.update_meeting(meeting_id, **dialog.get_data())
                 meeting_agenda_item_service.save_items(

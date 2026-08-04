@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
 from moduly.schuzky.constants import LIST_WINDOW_TITLE
@@ -80,7 +81,7 @@ class SchuzkyPage(QWidget):
 
     def new_meeting(self) -> None:
         dialog = MeetingDialog(self)
-        if not dialog.exec():
+        if not exec_maximized(dialog):
             return
         try:
             meeting = meeting_service.create_meeting(**dialog.get_data())
@@ -107,7 +108,7 @@ class SchuzkyPage(QWidget):
             return
 
         dialog = MeetingDialog(self, meeting=meeting)
-        if not dialog.exec():
+        if not exec_maximized(dialog):
             return
         try:
             meeting_service.update_meeting(meeting_id, **dialog.get_data())

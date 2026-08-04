@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QFormLayout
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")

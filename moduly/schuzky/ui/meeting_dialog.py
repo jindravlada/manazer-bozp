@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -15,9 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
-from core.widgets.multi_person_selector import MultiPersonSelector
 from core.widgets.nullable_datetime_edit import NullableDateTimeEdit
-from core.widgets.person_selector import PersonSelector
 from moduly.schuzky.constants import (
     DEFAULT_EVENT_TYPE,
     DEFAULT_MEETING_STATUS,
@@ -30,6 +30,12 @@ from moduly.schuzky.constants import (
 from moduly.schuzky.sluzby.meeting_event_type_service import meeting_event_type_service
 from moduly.schuzky.sluzby.meeting_service import meeting_service
 from moduly.schuzky.ui.meeting_agenda_items_widget import MeetingAgendaItemsWidget
+from moduly.schuzky.ui.meeting_people_widgets import (
+    MeetingOrganizerWidget,
+    MeetingParticipantsWidget,
+)
+
+DEFAULT_EVENT_DURATION = timedelta(hours=1)
 
 
 def _plain_text_edit(*, placeholder: str, min_height: int) -> QTextEdit:
@@ -48,6 +54,8 @@ class MeetingDialog(QDialog):
         self._legacy_proceedings = ""
         self._legacy_conclusions = ""
         self._legacy_notes = ""
+        self._ends_manually_edited = False
+        self._suppress_datetime = False
 
         self.setWindowTitle(DIALOG_WINDOW_TITLE)
         self.resize(740, 720)
@@ -63,6 +71,9 @@ class MeetingDialog(QDialog):
         buttons.accepted.connect(self._on_accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
+
+        self.starts_at_edit.dateTimeChanged.connect(self._on_starts_changed)
+        self.ends_at_edit.dateTimeChanged.connect(self._on_ends_changed)
 
         if meeting is not None:
             self._load_meeting(meeting)
@@ -89,8 +100,8 @@ class MeetingDialog(QDialog):
         self.location_edit = QLineEdit()
         self.location_edit.setPlaceholderText("Místo konání")
 
-        self.organizer_selector = PersonSelector(include_empty=True, allow_add_new=True)
-        self.participants_selector = MultiPersonSelector()
+        self.organizer_selector = MeetingOrganizerWidget()
+        self.participants_selector = MeetingParticipantsWidget()
 
         # Běžné textové pole – přibližně 4–6 řádků.
         self.agenda_edit = _plain_text_edit(
@@ -129,8 +140,14 @@ class MeetingDialog(QDialog):
         self.event_type_combo.setCurrentText(event_type)
 
         self.title_edit.setText(meeting.title or "")
+
+        self._suppress_datetime = True
         self.starts_at_edit.set_datetime(meeting.starts_at)
         self.ends_at_edit.set_datetime(meeting.ends_at)
+        self._suppress_datetime = False
+        # Existující ukončení považujeme za vědomě nastavené (nepřepisovat).
+        self._ends_manually_edited = meeting.ends_at is not None
+
         self.location_edit.setText(meeting.location or "")
         self.organizer_selector.set_person_id(meeting.organizer_person_id)
         self.participants_selector.set_person_ids(
@@ -165,6 +182,23 @@ class MeetingDialog(QDialog):
 
     def get_agenda_items(self) -> list[dict]:
         return self.agenda_items_widget.get_items()
+
+    def _on_starts_changed(self) -> None:
+        if self._suppress_datetime:
+            return
+        starts = self.starts_at_edit.get_datetime()
+        if starts is None:
+            return
+        if self._ends_manually_edited:
+            return
+        self._suppress_datetime = True
+        self.ends_at_edit.set_datetime(starts + DEFAULT_EVENT_DURATION)
+        self._suppress_datetime = False
+
+    def _on_ends_changed(self) -> None:
+        if self._suppress_datetime:
+            return
+        self._ends_manually_edited = True
 
     def _on_accept(self) -> None:
         data = self.get_data()
