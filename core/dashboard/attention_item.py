@@ -18,7 +18,7 @@ TYPE_LABELS = {
     ITEM_TYPE_TASK: "Úkol",
     ITEM_TYPE_AUDIT: "Audit",
     ITEM_TYPE_INSPECTION: "Prověrka",
-    ITEM_TYPE_MEETING: "Schůzka",
+    ITEM_TYPE_MEETING: "Událost",
 }
 
 SOURCE_LABEL_AUDIT = "Audit systému řízení"

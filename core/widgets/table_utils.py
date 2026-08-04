@@ -161,11 +161,13 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             COL_STARTS_AT,
             COL_STATUS,
             COL_TITLE,
+            COL_TYPE,
         )
 
         widths = {
             COL_STARTS_AT: 140,
-            COL_TITLE: 280,
+            COL_TYPE: 130,
+            COL_TITLE: 260,
             COL_LOCATION: 160,
             COL_ORGANIZER: 180,
             COL_STATUS: 120,
@@ -174,7 +176,7 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
         header.setSectionResizeMode(COL_TITLE, QHeaderView.Stretch)
-        for column in (COL_STARTS_AT, COL_LOCATION, COL_ORGANIZER, COL_STATUS):
+        for column in (COL_STARTS_AT, COL_TYPE, COL_LOCATION, COL_ORGANIZER, COL_STATUS):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 
     elif profile == "mu_investigations":

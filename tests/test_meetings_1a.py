@@ -171,13 +171,14 @@ class Meetings1aTestCase(unittest.TestCase):
 
         found_row = None
         for row in range(page.table.rowCount()):
-            if page.table.item(row, 2).text() == "Schůzka v přehledu":
+            if page.table.item(row, 3).text() == "Schůzka v přehledu":
                 found_row = row
                 break
         self.assertIsNotNone(found_row)
         assert found_row is not None
         self.assertEqual(page.table.item(found_row, 0).text(), str(meeting.id))
-        self.assertEqual(page.table.item(found_row, 3).text(), "Halová")
+        self.assertEqual(page.table.item(found_row, 2).text(), "Schůzka")
+        self.assertEqual(page.table.item(found_row, 4).text(), "Halová")
 
         page.table.selectRow(found_row)
         opened: list[int] = []
@@ -201,19 +202,23 @@ class Meetings1aTestCase(unittest.TestCase):
         buttons = [
             btn.text()
             for btn in widget.findChildren(QPushButton)
-            if btn.text() == "Schůzky"
+            if btn.text() == "Události"
         ]
-        self.assertEqual(buttons, ["Schůzky"])
+        self.assertEqual(buttons, ["Události"])
         widget.meetings_button.click()
         self.assertEqual(opened, ["schuzky"])
 
     def test_module_registered(self) -> None:
         from core.modules.module_manager import ModuleManager
+        from moduly.schuzky.constants import MODULE_NAME
 
         keys = [module.key for module in ModuleManager().get_modules()]
         self.assertIn("schuzky", keys)
+        names = [module.name for module in ModuleManager().get_modules()]
+        self.assertIn(MODULE_NAME, names)
+        self.assertEqual(MODULE_NAME, "Události")
         page = SchuzkyPage()
-        self.assertEqual(page.new_btn.text(), "Nová schůzka")
+        self.assertEqual(page.new_btn.text(), "Nová událost")
 
 
 if __name__ == "__main__":

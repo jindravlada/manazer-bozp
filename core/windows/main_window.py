@@ -416,7 +416,7 @@ class MainWindow(QMainWindow):
         dashboard = self._page_widgets.get("dashboard")
 
         if meeting is None:
-            QMessageBox.warning(self, "Schůzky", "Schůzka nebyla nalezena.")
+            QMessageBox.warning(self, "Události", "Událost nebyla nalezena.")
             if dashboard is not None and hasattr(dashboard, "refresh"):
                 dashboard.refresh()
             return
@@ -431,7 +431,7 @@ class MainWindow(QMainWindow):
                     dialog.get_agenda_items(),
                 )
             except MeetingValidationError as error:
-                QMessageBox.warning(self, "Schůzky", str(error))
+                QMessageBox.warning(self, "Události", str(error))
 
         if dashboard is not None and hasattr(dashboard, "refresh"):
             dashboard.refresh()

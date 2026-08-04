@@ -95,7 +95,7 @@ class Meetings1bTestCase(unittest.TestCase):
         self.assertEqual(item.item_type, ITEM_TYPE_MEETING)
         self.assertEqual(item.source_type, ITEM_TYPE_MEETING)
         self.assertEqual(item.source_id, meeting.id)
-        self.assertEqual(item.title, "Plánovaná schůzka")
+        self.assertEqual(item.title, "Schůzka – Plánovaná schůzka")
         self.assertEqual(item.event_at, starts)
         self.assertEqual(item.ends_at, ends)
         self.assertIn("Místnost 1", item.subtitle)
@@ -109,7 +109,11 @@ class Meetings1bTestCase(unittest.TestCase):
                 found = True
                 due_text = widget.table.item(row, 1).text()
                 self.assertNotIn("Po termínu", due_text)
-                self.assertEqual(widget.table.item(row, 0).text(), "Schůzka")
+                self.assertEqual(widget.table.item(row, 0).text(), "Událost")
+                self.assertEqual(
+                    widget.table.item(row, 2).text(),
+                    "Schůzka – Plánovaná schůzka",
+                )
                 self.assertIn("Místnost 1", widget.table.item(row, 4).text())
                 break
         self.assertTrue(found)

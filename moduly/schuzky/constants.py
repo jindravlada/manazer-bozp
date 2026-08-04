@@ -1,9 +1,9 @@
-"""Konstanty modulu Schůzky (MEETINGS-1a)."""
+"""Konstanty modulu Události (interně schuzky)."""
 
 MODULE_KEY = "schuzky"
-MODULE_NAME = "Schůzky"
-DIALOG_WINDOW_TITLE = "Schůzka"
-LIST_WINDOW_TITLE = "Schůzky"
+MODULE_NAME = "Události"
+DIALOG_WINDOW_TITLE = "Událost"
+LIST_WINDOW_TITLE = "Události"
 
 STATUS_PLANNED = "Naplánováno"
 STATUS_HELD = "Proběhlo"
@@ -19,9 +19,35 @@ MEETING_STATUSES = (
 
 DEFAULT_MEETING_STATUS = STATUS_PLANNED
 
-END_BEFORE_START_MESSAGE = "Konec schůzky nesmí být dříve než začátek."
+EVENT_TYPE_MEETING = "Schůzka"
+EVENT_TYPE_TRAINING = "Školení"
+EVENT_TYPE_BRIEFING = "Porada"
+EVENT_TYPE_DISCUSSION = "Jednání"
+EVENT_TYPE_MEETING_EN = "Meeting"
+EVENT_TYPE_CONSULTATION = "Konzultace"
+EVENT_TYPE_WALKTHROUGH = "Kontrolní pochůzka"
+EVENT_TYPE_PHONE = "Telefonát"
+EVENT_TYPE_ONLINE = "Online schůzka"
+EVENT_TYPE_OTHER = "Jiné"
 
-TAB_MEETING = "Schůzka"
+DEFAULT_EVENT_TYPES = (
+    EVENT_TYPE_MEETING,
+    EVENT_TYPE_TRAINING,
+    EVENT_TYPE_BRIEFING,
+    EVENT_TYPE_DISCUSSION,
+    EVENT_TYPE_MEETING_EN,
+    EVENT_TYPE_CONSULTATION,
+    EVENT_TYPE_WALKTHROUGH,
+    EVENT_TYPE_PHONE,
+    EVENT_TYPE_ONLINE,
+    EVENT_TYPE_OTHER,
+)
+
+DEFAULT_EVENT_TYPE = EVENT_TYPE_MEETING
+
+END_BEFORE_START_MESSAGE = "Konec události nesmí být dříve než začátek."
+
+TAB_MEETING = "Událost"
 TAB_MINUTES = "Záznam z jednání"  # legacy – nahrazeno TAB_DISCUSSION
 TAB_DISCUSSION = "Jednání"
 
@@ -62,7 +88,7 @@ SECTION_ITEM_TASKS = "Úkoly"
 ACTION_ADD_TASK = "Přidat úkol"
 ACTION_OPEN_TASK = "Otevřít úkol"
 ACTION_UNLINK_TASK = "Odpojit od bodu"
-SAVE_MEETING_BEFORE_TASK_MESSAGE = "Nejprve uložte schůzku."
+SAVE_MEETING_BEFORE_TASK_MESSAGE = "Nejprve uložte událost."
 AGENDA_ITEM_CHECK_PREFIX = "item:"
 
 # Legacy MEETINGS-1d (sekce na úrovni schůzky zrušeny v MEETINGS-2d)
@@ -73,15 +99,17 @@ CONCLUSION_CHECK_PREFIX = "concl:"
 
 COL_ID = 0
 COL_STARTS_AT = 1
-COL_TITLE = 2
-COL_LOCATION = 3
-COL_ORGANIZER = 4
-COL_STATUS = 5
+COL_TYPE = 2
+COL_TITLE = 3
+COL_LOCATION = 4
+COL_ORGANIZER = 5
+COL_STATUS = 6
 
 COLUMN_HEADERS = [
     "ID",
     "Datum a čas",
-    "Název",
+    "Typ",
+    "Název události",
     "Místo",
     "Organizátor",
     "Stav",

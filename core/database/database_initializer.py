@@ -25,6 +25,7 @@ def initialize_database() -> None:
     from moduly.ukoly.modely.task import Task  # noqa: F401
     from moduly.schuzky.modely.meeting import Meeting  # noqa: F401
     from moduly.schuzky.modely.meeting_agenda_item import MeetingAgendaItem  # noqa: F401
+    from moduly.schuzky.modely.meeting_event_type import MeetingEventType  # noqa: F401
     from moduly.kontroly.modely.control import Control  # noqa: F401
     from moduly.kontroly.modely.thp_monthly_control import ThpMonthlyControl  # noqa: F401
     from moduly.kontroly.modely.thp_yearly_kl_usage import ThpYearlyKlUsage  # noqa: F401
@@ -215,6 +216,8 @@ def initialize_database() -> None:
     _ensure_ai_proposal_packages_table()
     _migrate_legal_document_types()
     _ensure_meeting_minutes_columns()
+    _ensure_meeting_event_type_column()
+    _ensure_meeting_event_types_table()
     _ensure_meeting_agenda_items_table()
     _normalize_task_status_values()
     _normalize_accident_legacy_values()
@@ -272,6 +275,69 @@ def _ensure_meeting_minutes_columns() -> None:
         _add_column("meetings", "conclusions TEXT DEFAULT ''")
     if "notes" not in columns:
         _add_column("meetings", "notes TEXT DEFAULT ''")
+
+
+def _ensure_meeting_event_type_column() -> None:
+    columns = _table_columns("meetings")
+    if not columns:
+        return
+    if "event_type" not in columns:
+        _add_column("meetings", "event_type VARCHAR(100) DEFAULT 'Schůzka' NOT NULL")
+
+
+def _ensure_meeting_event_types_table() -> None:
+    columns = _table_columns("meeting_event_types")
+    if not columns:
+        from moduly.schuzky.modely.meeting_event_type import MeetingEventType
+
+        MeetingEventType.__table__.create(bind=_db_engine(), checkfirst=True)
+    _seed_meeting_event_types()
+
+
+DEFAULT_MEETING_EVENT_TYPES = (
+    "Schůzka",
+    "Školení",
+    "Porada",
+    "Jednání",
+    "Meeting",
+    "Konzultace",
+    "Kontrolní pochůzka",
+    "Telefonát",
+    "Online schůzka",
+    "Jiné",
+)
+
+
+def _seed_meeting_event_types() -> None:
+    """Vloží výchozí typy pouze do prázdné tabulky."""
+    if not _table_exists("meeting_event_types"):
+        return
+    with _db_engine().connect() as connection:
+        existing_count = connection.execute(
+            text("SELECT COUNT(*) FROM meeting_event_types"),
+        ).scalar_one()
+        if existing_count:
+            return
+
+        now = datetime.now()
+        for index, name in enumerate(DEFAULT_MEETING_EVENT_TYPES, start=1):
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO meeting_event_types
+                        (name, active, sort_order, created_at, updated_at)
+                    VALUES
+                        (:name, 1, :sort_order, :created_at, :updated_at)
+                    """,
+                ),
+                {
+                    "name": name,
+                    "sort_order": index,
+                    "created_at": now,
+                    "updated_at": now,
+                },
+            )
+        connection.commit()
 
 
 def _ensure_meeting_agenda_items_table() -> None:

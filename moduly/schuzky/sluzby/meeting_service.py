@@ -1,4 +1,4 @@
-"""Služba evidence schůzek."""
+"""Služba evidence událostí (interně schůzky)."""
 
 from __future__ import annotations
 
@@ -13,10 +13,11 @@ from moduly.schuzky.constants import (
 )
 from moduly.schuzky.modely.meeting import Meeting
 from moduly.schuzky.repository.meeting_repository import MeetingRepository
+from moduly.schuzky.sluzby.meeting_event_type_service import meeting_event_type_service
 
 
 class MeetingValidationError(ValueError):
-    """Neplatná data schůzky."""
+    """Neplatná data události."""
 
 
 class MeetingService:
@@ -33,6 +34,7 @@ class MeetingService:
         self,
         *,
         title: str = "",
+        event_type: str = "",
         starts_at: datetime | None = None,
         ends_at: datetime | None = None,
         location: str = "",
@@ -48,6 +50,7 @@ class MeetingService:
         status = status if status in MEETING_STATUSES else DEFAULT_MEETING_STATUS
         meeting = Meeting(
             title=(title or "").strip(),
+            event_type=meeting_event_type_service.normalize(event_type),
             starts_at=starts_at,
             ends_at=ends_at,
             location=(location or "").strip(),
@@ -68,6 +71,7 @@ class MeetingService:
         meeting_id: int,
         *,
         title: str = "",
+        event_type: str = "",
         starts_at: datetime | None = None,
         ends_at: datetime | None = None,
         location: str = "",
@@ -81,12 +85,13 @@ class MeetingService:
     ) -> Meeting:
         meeting = self.repository.get_by_id(meeting_id)
         if meeting is None:
-            raise MeetingValidationError("Schůzka nebyla nalezena.")
+            raise MeetingValidationError("Událost nebyla nalezena.")
 
         self.validate_times(starts_at, ends_at)
         status = status if status in MEETING_STATUSES else DEFAULT_MEETING_STATUS
 
         meeting.title = (title or "").strip()
+        meeting.event_type = meeting_event_type_service.normalize(event_type)
         meeting.starts_at = starts_at
         meeting.ends_at = ends_at
         meeting.location = (location or "").strip()

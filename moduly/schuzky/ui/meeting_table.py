@@ -1,4 +1,4 @@
-"""Tabulka přehledu schůzek."""
+"""Tabulka přehledu událostí."""
 
 from __future__ import annotations
 
@@ -22,9 +22,12 @@ from moduly.schuzky.constants import (
     COL_STARTS_AT,
     COL_STATUS,
     COL_TITLE,
+    COL_TYPE,
     COLUMN_HEADERS,
+    DEFAULT_EVENT_TYPE,
     MEETING_STATUSES,
 )
+from moduly.schuzky.sluzby.meeting_event_type_service import meeting_event_type_service
 
 
 class MeetingTable(QTableWidget):
@@ -64,6 +67,14 @@ class MeetingTable(QTableWidget):
                     row,
                     COL_STARTS_AT,
                     create_typed_item(starts_text, starts_sort, stable_id=stable_id),
+                )
+                event_type = meeting_event_type_service.normalize(
+                    getattr(meeting, "event_type", None) or DEFAULT_EVENT_TYPE
+                )
+                self.setItem(
+                    row,
+                    COL_TYPE,
+                    create_typed_item(event_type, typed_text(event_type), stable_id=stable_id),
                 )
                 title = meeting.title or "—"
                 self.setItem(

@@ -1,4 +1,4 @@
-"""Přehled schůzek."""
+"""Přehled událostí."""
 
 from __future__ import annotations
 
@@ -30,7 +30,7 @@ class SchuzkyPage(QWidget):
         layout = QVBoxLayout(self)
 
         toolbar = QHBoxLayout()
-        self.new_btn = QPushButton("Nová schůzka")
+        self.new_btn = QPushButton("Nová událost")
         self.open_btn = QPushButton("Otevřít")
         self.edit_btn = QPushButton("Upravit")
 
@@ -41,7 +41,7 @@ class SchuzkyPage(QWidget):
 
         self.table = MeetingTable()
         configure_table_columns(self.table, "meetings")
-        self.text_filter = FilterBar(self.table, placeholder="🔍 Hledat schůzku...")
+        self.text_filter = FilterBar(self.table, placeholder="🔍 Hledat událost...")
 
         layout.addLayout(toolbar)
         layout.addWidget(self.text_filter)
@@ -94,14 +94,14 @@ class SchuzkyPage(QWidget):
     def open_selected_meeting(self) -> None:
         meeting_id = self._selected_meeting_id()
         if meeting_id is None:
-            QMessageBox.information(self, LIST_WINDOW_TITLE, "Vyberte schůzku.")
+            QMessageBox.information(self, LIST_WINDOW_TITLE, "Vyberte událost.")
             return
         self.open_meeting(meeting_id)
 
     def open_meeting(self, meeting_id: int) -> None:
         meeting = meeting_service.get_by_id(meeting_id)
         if meeting is None:
-            QMessageBox.warning(self, LIST_WINDOW_TITLE, "Schůzka nebyla nalezena.")
+            QMessageBox.warning(self, LIST_WINDOW_TITLE, "Událost nebyla nalezena.")
             self.refresh()
             self._refresh_dashboard()
             return

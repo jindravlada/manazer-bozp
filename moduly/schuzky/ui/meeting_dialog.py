@@ -1,4 +1,4 @@
-"""Editor schůzky – záložky Schůzka a Jednání."""
+"""Editor události – záložky Událost a Jednání."""
 
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ from core.widgets.multi_person_selector import MultiPersonSelector
 from core.widgets.nullable_datetime_edit import NullableDateTimeEdit
 from core.widgets.person_selector import PersonSelector
 from moduly.schuzky.constants import (
+    DEFAULT_EVENT_TYPE,
     DEFAULT_MEETING_STATUS,
     DIALOG_WINDOW_TITLE,
     END_BEFORE_START_MESSAGE,
@@ -26,6 +27,7 @@ from moduly.schuzky.constants import (
     TAB_DISCUSSION,
     TAB_MEETING,
 )
+from moduly.schuzky.sluzby.meeting_event_type_service import meeting_event_type_service
 from moduly.schuzky.sluzby.meeting_service import meeting_service
 from moduly.schuzky.ui.meeting_agenda_items_widget import MeetingAgendaItemsWidget
 
@@ -71,8 +73,15 @@ class MeetingDialog(QDialog):
         page = QWidget()
         form = QFormLayout(page)
 
+        self.event_type_combo = QComboBox()
+        self.event_type_combo.setEditable(False)
+        for name in meeting_event_type_service.get_active_names():
+            self.event_type_combo.addItem(name)
+        if self.event_type_combo.findText(DEFAULT_EVENT_TYPE) >= 0:
+            self.event_type_combo.setCurrentText(DEFAULT_EVENT_TYPE)
+
         self.title_edit = QLineEdit()
-        self.title_edit.setPlaceholderText("Název schůzky")
+        self.title_edit.setPlaceholderText("Název události")
 
         self.starts_at_edit = NullableDateTimeEdit()
         self.ends_at_edit = NullableDateTimeEdit()
@@ -93,7 +102,8 @@ class MeetingDialog(QDialog):
         self.status_combo.addItems(list(MEETING_STATUSES))
         self.status_combo.setCurrentText(DEFAULT_MEETING_STATUS)
 
-        form.addRow("Název:", self.title_edit)
+        form.addRow("Typ události:", self.event_type_combo)
+        form.addRow("Název události:", self.title_edit)
         form.addRow("Datum a čas zahájení:", self.starts_at_edit)
         form.addRow("Datum a čas ukončení:", self.ends_at_edit)
         form.addRow("Místo:", self.location_edit)
@@ -111,6 +121,13 @@ class MeetingDialog(QDialog):
         return page
 
     def _load_meeting(self, meeting) -> None:
+        event_type = meeting_event_type_service.normalize(
+            getattr(meeting, "event_type", None)
+        )
+        if self.event_type_combo.findText(event_type) < 0:
+            self.event_type_combo.addItem(event_type)
+        self.event_type_combo.setCurrentText(event_type)
+
         self.title_edit.setText(meeting.title or "")
         self.starts_at_edit.set_datetime(meeting.starts_at)
         self.ends_at_edit.set_datetime(meeting.ends_at)
@@ -133,6 +150,7 @@ class MeetingDialog(QDialog):
     def get_data(self) -> dict:
         return {
             "title": self.title_edit.text().strip(),
+            "event_type": self.event_type_combo.currentText().strip(),
             "starts_at": self.starts_at_edit.get_datetime(),
             "ends_at": self.ends_at_edit.get_datetime(),
             "location": self.location_edit.text().strip(),

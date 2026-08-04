@@ -15,6 +15,8 @@ class Meeting(Base):
 
     title: Mapped[str] = mapped_column(String(250), default="", nullable=False)
 
+    event_type: Mapped[str] = mapped_column(String(100), default="Schůzka", nullable=False)
+
     starts_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     ends_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 

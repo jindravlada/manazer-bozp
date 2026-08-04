@@ -117,8 +117,8 @@ class UpcomingTasksWidget(DashboardPanel):
         self.open_button.setEnabled(False)
         self.open_button.clicked.connect(self._open_selected)
 
-        self.meetings_button = QPushButton("Schůzky")
-        self.meetings_button.setToolTip("Evidence schůzek")
+        self.meetings_button = QPushButton("Události")
+        self.meetings_button.setToolTip("Evidence událostí")
         if self.open_schuzky_callback:
             self.meetings_button.clicked.connect(self.open_schuzky_callback)
         else:
