@@ -15,6 +15,9 @@ class MeetingAgendaItemService:
     def get_for_meeting(self, meeting_id: int) -> list[MeetingAgendaItem]:
         return self.repository.get_for_meeting(meeting_id)
 
+    def get_by_id(self, item_id: int) -> MeetingAgendaItem | None:
+        return self.repository.get_by_id(item_id)
+
     def item_to_dict(self, item: MeetingAgendaItem) -> dict:
         return {
             "id": item.id,
@@ -27,34 +30,68 @@ class MeetingAgendaItemService:
         }
 
     def save_items(self, meeting_id: int, items: list[dict]) -> list[MeetingAgendaItem]:
-        normalized = self._normalize_items(items)
-        self.repository.delete_for_meeting(meeting_id)
+        """Uloží body a zachová existující ID (kvůli vazbám úkolů)."""
+        from moduly.schuzky.sluzby.meeting_item_task_service import (
+            meeting_item_task_service,
+        )
 
+        normalized = self._normalize_items(items)
+        existing = {
+            item.id: item for item in self.repository.get_for_meeting(meeting_id)
+        }
+        keep_ids: set[int] = set()
         saved: list[MeetingAgendaItem] = []
-        for index, data in enumerate(normalized):
-            item = MeetingAgendaItem(
-                meeting_id=int(meeting_id),
-                display_order=int(data.get("display_order", (index + 1) * 10)),
-                title=(data.get("title") or "").strip(),
-                moje_sdeleni=data.get("moje_sdeleni") or "",
-                prubeh_jednani=data.get("prubeh_jednani") or "",
-                zaver=data.get("zaver") or "",
-            )
-            saved.append(self.repository.add(item))
+
+        for data in normalized:
+            item_id = data.get("id")
+            if item_id is not None and int(item_id) in existing:
+                item = existing[int(item_id)]
+                item.display_order = int(data["display_order"])
+                item.title = data["title"]
+                item.moje_sdeleni = data["moje_sdeleni"]
+                item.prubeh_jednani = data["prubeh_jednani"]
+                item.zaver = data["zaver"]
+                saved_item = self.repository.update(item)
+                saved.append(saved_item)
+                keep_ids.add(saved_item.id)
+            else:
+                item = MeetingAgendaItem(
+                    meeting_id=int(meeting_id),
+                    display_order=int(data["display_order"]),
+                    title=data["title"],
+                    moje_sdeleni=data["moje_sdeleni"],
+                    prubeh_jednani=data["prubeh_jednani"],
+                    zaver=data["zaver"],
+                )
+                saved_item = self.repository.add(item)
+                saved.append(saved_item)
+                keep_ids.add(saved_item.id)
+
+        for existing_id in existing:
+            if existing_id in keep_ids:
+                continue
+            meeting_item_task_service.unlink_all_for_item(meeting_id, existing_id)
+            self.repository.delete_by_id(existing_id)
+
         return saved
 
     def _normalize_items(self, items: list[dict]) -> list[dict]:
         normalized: list[dict] = []
         for index, raw in enumerate(items or []):
-            normalized.append(
-                {
-                    "title": str(raw.get("title") or "").strip(),
-                    "moje_sdeleni": str(raw.get("moje_sdeleni") or ""),
-                    "prubeh_jednani": str(raw.get("prubeh_jednani") or ""),
-                    "zaver": str(raw.get("zaver") or ""),
-                    "display_order": (index + 1) * 10,
-                }
-            )
+            data = {
+                "title": str(raw.get("title") or "").strip(),
+                "moje_sdeleni": str(raw.get("moje_sdeleni") or ""),
+                "prubeh_jednani": str(raw.get("prubeh_jednani") or ""),
+                "zaver": str(raw.get("zaver") or ""),
+                "display_order": (index + 1) * 10,
+            }
+            raw_id = raw.get("id")
+            if raw_id is not None and str(raw_id).strip() != "":
+                try:
+                    data["id"] = int(raw_id)
+                except (TypeError, ValueError):
+                    pass
+            normalized.append(data)
         return normalized
 
 

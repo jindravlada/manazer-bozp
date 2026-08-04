@@ -18,6 +18,10 @@ class MeetingAgendaItemRepository:
             )
             return list(session.scalars(stmt))
 
+    def get_by_id(self, item_id: int) -> MeetingAgendaItem | None:
+        with get_session() as session:
+            return session.get(MeetingAgendaItem, int(item_id))
+
     def delete_for_meeting(self, meeting_id: int) -> int:
         with get_session() as session:
             result = session.execute(
@@ -28,9 +32,23 @@ class MeetingAgendaItemRepository:
             session.commit()
             return int(result.rowcount or 0)
 
+    def delete_by_id(self, item_id: int) -> None:
+        with get_session() as session:
+            item = session.get(MeetingAgendaItem, int(item_id))
+            if item is not None:
+                session.delete(item)
+                session.commit()
+
     def add(self, item: MeetingAgendaItem) -> MeetingAgendaItem:
         with get_session() as session:
             session.add(item)
+            session.commit()
+            session.refresh(item)
+            return item
+
+    def update(self, item: MeetingAgendaItem) -> MeetingAgendaItem:
+        with get_session() as session:
+            item = session.merge(item)
             session.commit()
             session.refresh(item)
             return item

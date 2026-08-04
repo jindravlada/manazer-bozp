@@ -36,12 +36,17 @@ ACTION_REMOVE = "Odebrat"
 ACTION_MOVE_UP = "Nahoru"
 ACTION_MOVE_DOWN = "Dolů"
 
+SECTION_ITEM_TASKS = "Úkoly"
+ACTION_ADD_TASK = "Přidat úkol"
+ACTION_OPEN_TASK = "Otevřít úkol"
+ACTION_UNLINK_TASK = "Odpojit od bodu"
 SAVE_MEETING_BEFORE_TASK_MESSAGE = "Nejprve uložte schůzku."
+AGENDA_ITEM_CHECK_PREFIX = "item:"
+
+# Legacy MEETINGS-1d (sekce na úrovni schůzky zrušeny v MEETINGS-2d)
 SECTION_CONCLUSION_TASKS = "Úkoly ze závěrů"
 SECTION_LINKED_TASKS = "Navázané úkoly"
 ACTION_CREATE_TASK = "Vytvořit úkol"
-ACTION_OPEN_TASK = "Otevřít úkol"
-
 CONCLUSION_CHECK_PREFIX = "concl:"
 
 COL_ID = 0
