@@ -192,21 +192,21 @@ class Meetings1aTestCase(unittest.TestCase):
         self.assertEqual(opened, [meeting.id])
         page.open_meeting = original  # type: ignore[method-assign]
 
-    def test_dashboard_has_meetings_button(self) -> None:
+    def test_dashboard_has_agenda_button(self) -> None:
         opened: list[str] = []
 
         def _open() -> None:
-            opened.append("schuzky")
+            opened.append("agenda")
 
-        widget = UpcomingTasksWidget(open_schuzky_callback=_open)
+        widget = UpcomingTasksWidget(open_agenda_callback=_open)
         buttons = [
             btn.text()
             for btn in widget.findChildren(QPushButton)
-            if btn.text() == "Události"
+            if btn.text() in ("Agenda", "Úkoly", "Události")
         ]
-        self.assertEqual(buttons, ["Události"])
-        widget.meetings_button.click()
-        self.assertEqual(opened, ["schuzky"])
+        self.assertEqual(buttons, ["Agenda"])
+        widget.agenda_button.click()
+        self.assertEqual(opened, ["agenda"])
 
     def test_module_registered(self) -> None:
         from core.modules.module_manager import ModuleManager

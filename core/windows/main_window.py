@@ -163,12 +163,13 @@ class MainWindow(QMainWindow):
             from moduly.dashboard.ui.dashboard_page import DashboardPage
             return DashboardPage(
                 open_tasks_callback=self._open_new_task,
+                open_new_meeting_callback=self._open_new_meeting,
                 open_task_by_id_callback=self._open_task_by_id,
                 open_attention_callback=self._open_attention_item,
                 open_accidents_callback=self._open_new_accident,
                 open_kontroly_callback=self._open_kontroly,
                 open_kniha_urazu_callback=self._open_kniha_urazu,
-                open_schuzky_callback=self._open_schuzky,
+                open_agenda_callback=self._open_agenda_from_dashboard,
                 open_sprava_dat_callback=self._open_sprava_dat,
                 refresh_sprava_dat_callback=self._refresh_sprava_dat_status,
             )
@@ -181,14 +182,14 @@ class MainWindow(QMainWindow):
             from moduly.schuzky.ui.schuzky_page import SchuzkyPage
 
             page = SchuzkyPage()
-            page.set_dashboard_refresh_callback(self._refresh_dashboard_page)
+            page.set_dashboard_refresh_callback(self._refresh_dashboard_and_agenda)
             return page
 
         if module.key == "agenda":
             from moduly.agenda.ui.agenda_page import AgendaPage
 
             page = AgendaPage()
-            page.set_dashboard_refresh_callback(self._refresh_dashboard_page)
+            page.set_dashboard_refresh_callback(self._refresh_dashboard_and_agenda)
             return page
 
         return module.page_factory()
@@ -197,6 +198,18 @@ class MainWindow(QMainWindow):
         dashboard = self._page_widgets.get("dashboard")
         if dashboard is not None and hasattr(dashboard, "refresh"):
             dashboard.refresh()
+
+    def _refresh_dashboard_and_agenda(self) -> None:
+        self._refresh_dashboard_page()
+        agenda = self._page_widgets.get("agenda")
+        if agenda is not None and hasattr(agenda, "refresh"):
+            agenda.refresh()
+
+    def _open_agenda_from_dashboard(self) -> None:
+        page = self._page_widgets.get("agenda")
+        if page is not None and hasattr(page, "apply_workspace_filters"):
+            page.apply_workspace_filters()
+        self._show("agenda")
 
     def _sidebar(self):
         frame = QFrame()
@@ -215,8 +228,6 @@ class MainWindow(QMainWindow):
 
         preferred_order = [
             "agenda",
-            "ukoly",
-            "schuzky",
             "kniha_urazu",
             "vysetrovani_mu",
             "kontroly",
@@ -321,10 +332,41 @@ class MainWindow(QMainWindow):
             page.open_library_template_editor(template_id)
 
     def _open_new_task(self):
-        self._show("ukoly")
-        page = self._page_widgets.get("ukoly")
-        if page is not None:
-            page.new_task()
+        from moduly.ukoly.sluzby.task_service import task_service
+        from moduly.ukoly.ui.task_dialog import TaskDialog
+
+        dashboard = self._page_widgets.get("dashboard")
+        parent = dashboard if dashboard is not None else self
+        dialog = TaskDialog(parent)
+        if dialog.exec():
+            data = dialog.get_data()
+            if data["title"]:
+                task_service.create_task(**data)
+        self._refresh_dashboard_and_agenda()
+
+    def _open_new_meeting(self) -> None:
+        from core.widgets.dialog_utils import exec_maximized
+        from moduly.schuzky.sluzby.meeting_agenda_item_service import (
+            meeting_agenda_item_service,
+        )
+        from moduly.schuzky.sluzby.meeting_service import (
+            MeetingValidationError,
+            meeting_service,
+        )
+        from moduly.schuzky.ui.meeting_dialog import MeetingDialog
+
+        dashboard = self._page_widgets.get("dashboard")
+        parent = dashboard if dashboard is not None else self
+        dialog = MeetingDialog(parent)
+        if not exec_maximized(dialog):
+            return
+        try:
+            meeting = meeting_service.create_meeting(**dialog.get_data())
+            meeting_agenda_item_service.save_items(meeting.id, dialog.get_agenda_items())
+        except MeetingValidationError as error:
+            QMessageBox.warning(self, "Události", str(error))
+            return
+        self._refresh_dashboard_and_agenda()
 
     def _open_task_by_id(self, task_id: int) -> None:
         from moduly.ukoly.sluzby.task_service import task_service
@@ -335,8 +377,7 @@ class MainWindow(QMainWindow):
 
         if task is None:
             QMessageBox.warning(self, "Úkoly", "Opatření nebylo nalezeno.")
-            if dashboard is not None and hasattr(dashboard, "refresh"):
-                dashboard.refresh()
+            self._refresh_dashboard_and_agenda()
             return
 
         parent = dashboard if dashboard is not None else self
@@ -346,8 +387,7 @@ class MainWindow(QMainWindow):
             if data["title"]:
                 task_service.update_task(task_id=task_id, **data)
 
-        if dashboard is not None and hasattr(dashboard, "refresh"):
-            dashboard.refresh()
+        self._refresh_dashboard_and_agenda()
 
     def _open_attention_item(self, item) -> None:
         from core.dashboard.attention_item import (
@@ -437,8 +477,7 @@ class MainWindow(QMainWindow):
 
         if meeting is None:
             QMessageBox.warning(self, "Události", "Událost nebyla nalezena.")
-            if dashboard is not None and hasattr(dashboard, "refresh"):
-                dashboard.refresh()
+            self._refresh_dashboard_and_agenda()
             return
 
         parent = dashboard if dashboard is not None else self
@@ -455,8 +494,7 @@ class MainWindow(QMainWindow):
             except MeetingValidationError as error:
                 QMessageBox.warning(self, "Události", str(error))
 
-        if dashboard is not None and hasattr(dashboard, "refresh"):
-            dashboard.refresh()
+        self._refresh_dashboard_and_agenda()
 
     def _open_schuzky(self):
         self._show("schuzky")

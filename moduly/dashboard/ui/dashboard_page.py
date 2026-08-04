@@ -44,23 +44,25 @@ class DashboardPage(QWidget):
     def __init__(
         self,
         open_tasks_callback=None,
+        open_new_meeting_callback=None,
         open_task_by_id_callback=None,
         open_attention_callback=None,
         open_accidents_callback=None,
         open_kontroly_callback=None,
         open_kniha_urazu_callback=None,
-        open_schuzky_callback=None,
+        open_agenda_callback=None,
         open_sprava_dat_callback=None,
         refresh_sprava_dat_callback=None,
     ) -> None:
         super().__init__()
         self.open_tasks_callback = open_tasks_callback
+        self.open_new_meeting_callback = open_new_meeting_callback
         self.open_task_by_id_callback = open_task_by_id_callback
         self.open_attention_callback = open_attention_callback
         self.open_accidents_callback = open_accidents_callback
         self.open_kontroly_callback = open_kontroly_callback
         self.open_kniha_urazu_callback = open_kniha_urazu_callback
-        self.open_schuzky_callback = open_schuzky_callback
+        self.open_agenda_callback = open_agenda_callback
         self.open_sprava_dat_callback = open_sprava_dat_callback
         self.refresh_sprava_dat_callback = refresh_sprava_dat_callback
 
@@ -140,10 +142,9 @@ class DashboardPage(QWidget):
 
         self.today = TodayWidget(open_task_callback=self.open_task_by_id_callback)
         self.upcoming = UpcomingTasksWidget(
-            open_tasks_callback=self.open_tasks_callback,
             open_task_callback=self.open_task_by_id_callback,
             open_attention_callback=self.open_attention_callback,
-            open_schuzky_callback=self.open_schuzky_callback,
+            open_agenda_callback=self.open_agenda_callback,
         )
         self.calendar = CalendarPlaceholderWidget()
         self.activity = RecentActivityWidget()
@@ -257,7 +258,8 @@ class DashboardPage(QWidget):
 
         buttons = [
             ("+ Úraz", True),
-            ("✓ Úkol", True),
+            ("Nový úkol", True),
+            ("Nová událost", True),
             ("💾 Záloha", True),
             ("♻ Obnova", True),
         ]
@@ -269,8 +271,10 @@ class DashboardPage(QWidget):
 
             if text == "+ Úraz" and self.open_accidents_callback:
                 button.clicked.connect(self.open_accidents_callback)
-            elif text == "✓ Úkol" and self.open_tasks_callback:
+            elif text == "Nový úkol" and self.open_tasks_callback:
                 button.clicked.connect(self.open_tasks_callback)
+            elif text == "Nová událost" and self.open_new_meeting_callback:
+                button.clicked.connect(self.open_new_meeting_callback)
             elif text == "💾 Záloha":
                 button.clicked.connect(self._show_backup_dialog)
             elif text == "♻ Obnova":

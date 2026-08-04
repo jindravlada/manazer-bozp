@@ -54,7 +54,7 @@ class DashboardAboutPhase96aTestCase(unittest.TestCase):
 
         self.assertEqual(
             quick_buttons,
-            ["+ Úraz", "✓ Úkol", "💾 Záloha", "♻ Obnova"],
+            ["+ Úraz", "Nový úkol", "Nová událost", "💾 Záloha", "♻ Obnova"],
         )
         self.assertNotIn("📋 Kontrola", quick_buttons)
         self.assertNotIn("Kontrola", quick_buttons)

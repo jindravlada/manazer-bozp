@@ -33,6 +33,8 @@ from moduly.agenda.constants import (
     TASK_STATUS_FILTERS,
     TYPE_FILTER_MEETINGS,
     TYPE_FILTER_TASKS,
+    WORKSPACE_MEETING_STATUS_FILTERS,
+    WORKSPACE_TASK_STATUS_FILTERS,
 )
 from moduly.agenda.sluzby.agenda_service import agenda_service
 from moduly.agenda.ui.agenda_table import AgendaTable
@@ -87,7 +89,7 @@ class AgendaPage(QWidget):
         task_row.addWidget(QLabel("Úkoly:"))
         for label in TASK_STATUS_FILTERS:
             check = QCheckBox(label)
-            check.setChecked(True)
+            check.setChecked(label in WORKSPACE_TASK_STATUS_FILTERS)
             check.toggled.connect(self.refresh)
             self.status_checks[f"task:{label}"] = check
             task_row.addWidget(check)
@@ -98,7 +100,7 @@ class AgendaPage(QWidget):
         meeting_row.addWidget(QLabel("Události:"))
         for label in MEETING_STATUS_FILTERS:
             check = QCheckBox(label)
-            check.setChecked(True)
+            check.setChecked(label in WORKSPACE_MEETING_STATUS_FILTERS)
             check.toggled.connect(self.refresh)
             self.status_checks[f"meeting:{label}"] = check
             meeting_row.addWidget(check)
@@ -130,6 +132,26 @@ class AgendaPage(QWidget):
 
     def set_dashboard_refresh_callback(self, callback) -> None:
         self._dashboard_refresh_callback = callback
+
+    def apply_workspace_filters(self) -> None:
+        """Výchozí filtr z pracovní plochy: aktivní + po termínu."""
+        for check in self.type_checks.values():
+            check.blockSignals(True)
+            check.setChecked(True)
+            check.blockSignals(False)
+
+        for key, check in self.status_checks.items():
+            prefix, label = key.split(":", 1)
+            allowed = (
+                WORKSPACE_TASK_STATUS_FILTERS
+                if prefix == "task"
+                else WORKSPACE_MEETING_STATUS_FILTERS
+            )
+            check.blockSignals(True)
+            check.setChecked(label in allowed)
+            check.blockSignals(False)
+
+        self.refresh()
 
     def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)

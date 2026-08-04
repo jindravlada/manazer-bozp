@@ -42,6 +42,17 @@ ACTION_NEW_TASK = "Nový úkol"
 ACTION_NEW_MEETING = "Nová událost"
 ACTION_OPEN = "Otevřít"
 ACTION_EDIT = "Upravit"
+ACTION_AGENDA = "Agenda"
+
+# Výchozí filtr při otevření z pracovní plochy (aktivní + po termínu).
+WORKSPACE_TASK_STATUS_FILTERS = (
+    STATUS_FILTER_TASK_OPEN,
+    STATUS_FILTER_OVERDUE,
+)
+WORKSPACE_MEETING_STATUS_FILTERS = (
+    STATUS_FILTER_MEETING_PLANNED,
+    STATUS_FILTER_OVERDUE,
+)
 
 EMPTY_STATE_TEXT = "Nejsou evidovány žádné položky agendy odpovídající filtrům."
 SELECT_ITEM_MESSAGE = "Vyberte položku agendy."

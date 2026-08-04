@@ -65,16 +65,14 @@ class UpcomingTasksWidget(DashboardPanel):
 
     def __init__(
         self,
-        open_tasks_callback=None,
         open_task_callback=None,
         open_attention_callback=None,
-        open_schuzky_callback=None,
+        open_agenda_callback=None,
     ):
         super().__init__("Nadcházející události a úkoly")
-        self.open_tasks_callback = open_tasks_callback
         self.open_task_callback = open_task_callback
         self.open_attention_callback = open_attention_callback
-        self.open_schuzky_callback = open_schuzky_callback
+        self.open_agenda_callback = open_agenda_callback
 
         self.empty_label = QLabel(_EMPTY_TEXT)
         self.empty_label.setWordWrap(True)
@@ -116,15 +114,15 @@ class UpcomingTasksWidget(DashboardPanel):
         self.open_button.setEnabled(False)
         self.open_button.clicked.connect(self._open_selected)
 
-        self.meetings_button = QPushButton("Události")
-        self.meetings_button.setToolTip("Evidence událostí")
-        if self.open_schuzky_callback:
-            self.meetings_button.clicked.connect(self.open_schuzky_callback)
+        self.agenda_button = QPushButton("Agenda")
+        self.agenda_button.setToolTip("Společný přehled úkolů a událostí")
+        if self.open_agenda_callback:
+            self.agenda_button.clicked.connect(self.open_agenda_callback)
         else:
-            self.meetings_button.setEnabled(False)
+            self.agenda_button.setEnabled(False)
 
         buttons_layout.addWidget(self.open_button)
-        buttons_layout.addWidget(self.meetings_button)
+        buttons_layout.addWidget(self.agenda_button)
         buttons_layout.addStretch(1)
 
         self.layout.addWidget(self.empty_label, 1)
