@@ -192,7 +192,7 @@ def _from_meetings(_today: date) -> list[AttentionItem]:
         starts_at = meeting.starts_at
         if starts_at is None:
             continue
-        title = (meeting.title or "").strip() or f"Událost #{meeting.id}"
+        title = (meeting.title or "").strip() or "Bez názvu"
         event_type = (getattr(meeting, "event_type", None) or "").strip()
         if event_type:
             title = f"{event_type} – {title}"

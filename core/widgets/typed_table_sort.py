@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, time
 from enum import Enum
 from typing import Any, Iterator
 
@@ -143,10 +143,18 @@ def _comparable_payload(sort_value: TypedSortValue) -> Any:
     if sort_value.kind == SortKind.STATUS:
         return sort_value.payload
     if sort_value.kind == SortKind.DATE:
-        return sort_value.payload.toordinal()
+        # Stejná časová osa jako DATETIME – den začíná o půlnoci.
+        return datetime.combine(sort_value.payload, time.min).timestamp()
     if sort_value.kind == SortKind.DATETIME:
         return sort_value.payload.timestamp()
     return sort_value.payload
+
+
+def _normalized_kind(kind: SortKind) -> SortKind:
+    """DATE a DATETIME řadit na společné časové ose."""
+    if kind in (SortKind.DATE, SortKind.DATETIME):
+        return SortKind.DATETIME
+    return kind
 
 
 def _kind_rank(kind: SortKind) -> int:
@@ -154,12 +162,12 @@ def _kind_rank(kind: SortKind) -> int:
         SortKind.BOOL,
         SortKind.INT,
         SortKind.FLOAT,
-        SortKind.DATE,
-        SortKind.DATETIME,
+        SortKind.DATETIME,  # včetně DATE (viz _normalized_kind)
         SortKind.STATUS,
         SortKind.TEXT,
         SortKind.EMPTY,
     )
+    kind = _normalized_kind(kind)
     try:
         return order.index(kind)
     except ValueError:
@@ -185,7 +193,9 @@ def compare_typed_sort_values(
             return 1 if left_empty else -1
         return -1 if left_empty else 1
 
-    if left.kind != right.kind:
+    left_kind = _normalized_kind(left.kind)
+    right_kind = _normalized_kind(right.kind)
+    if left_kind != right_kind:
         rank = _kind_rank(left.kind) - _kind_rank(right.kind)
         return -1 if rank < 0 else 1
 

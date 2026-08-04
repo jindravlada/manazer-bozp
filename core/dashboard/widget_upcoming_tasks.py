@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor
@@ -30,7 +30,6 @@ from core.widgets.typed_table_sort import (
     create_typed_item,
     enable_typed_sorting,
     sorting_paused,
-    typed_date,
     typed_datetime,
     typed_empty,
     typed_status,
@@ -212,11 +211,15 @@ class UpcomingTasksWidget(DashboardPanel):
                 type_item.setData(_ROLE_ITEM, attention)
 
                 due_text = self._format_due_text(attention, now)
-                due_sort = (
-                    typed_datetime(attention.event_at)
-                    if attention.event_at is not None
-                    else typed_date(attention.due_date)
-                )
+                if attention.event_at is not None:
+                    due_sort = typed_datetime(attention.event_at)
+                elif attention.due_date is not None:
+                    # Stejná osa jako u událostí s časem (půlnoc daného dne).
+                    due_sort = typed_datetime(
+                        datetime.combine(attention.due_date, time.min)
+                    )
+                else:
+                    due_sort = typed_empty()
                 due_item = create_typed_item(
                     due_text,
                     due_sort,
