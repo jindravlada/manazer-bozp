@@ -403,6 +403,9 @@ class MainWindow(QMainWindow):
         self._show("kontroly")
 
     def _open_meeting_by_id(self, meeting_id: int) -> None:
+        from moduly.schuzky.sluzby.meeting_agenda_item_service import (
+            meeting_agenda_item_service,
+        )
         from moduly.schuzky.sluzby.meeting_service import (
             MeetingValidationError,
             meeting_service,
@@ -423,6 +426,10 @@ class MainWindow(QMainWindow):
         if dialog.exec():
             try:
                 meeting_service.update_meeting(meeting_id, **dialog.get_data())
+                meeting_agenda_item_service.save_items(
+                    meeting_id,
+                    dialog.get_agenda_items(),
+                )
             except MeetingValidationError as error:
                 QMessageBox.warning(self, "Schůzky", str(error))
 

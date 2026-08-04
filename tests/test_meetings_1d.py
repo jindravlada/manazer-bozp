@@ -167,9 +167,12 @@ class Meetings1dTestCase(unittest.TestCase):
             title="Prefill",
             conclusions="Připravit zápis",
         )
-        dialog = MeetingDialog(meeting=meeting)
-        dialog.tabs.setCurrentIndex(1)
         created: dict = {}
+        widget = MeetingConclusionTasksWidget()
+        widget.configure(
+            meeting_id=meeting.id,
+            get_conclusions_text=lambda: "Připravit zápis",
+        )
 
         class FakeTaskDialog:
             Accepted = 1
@@ -208,7 +211,7 @@ class Meetings1dTestCase(unittest.TestCase):
             "moduly.schuzky.ui.meeting_conclusion_tasks_widget.TaskDialog",
             FakeTaskDialog,
         ):
-            dialog.conclusion_tasks._create_task("Připravit zápis")
+            widget._create_task("Připravit zápis")
 
         self.assertEqual(created["title"], "Připravit zápis")
         tasks = task_service.repository.list_by_source(
@@ -233,7 +236,6 @@ class Meetings1dTestCase(unittest.TestCase):
         self.assertEqual(loaded.conclusions, text)
 
         dialog = MeetingDialog(meeting=loaded)
-        self.assertEqual(dialog.conclusions_edit.toPlainText(), text)
         data = dialog.get_data()
         self.assertEqual(data["conclusions"], text)
 

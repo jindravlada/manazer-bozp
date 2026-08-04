@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
 from moduly.schuzky.constants import LIST_WINDOW_TITLE
+from moduly.schuzky.sluzby.meeting_agenda_item_service import meeting_agenda_item_service
 from moduly.schuzky.sluzby.meeting_service import (
     MeetingValidationError,
     meeting_service,
@@ -82,7 +83,8 @@ class SchuzkyPage(QWidget):
         if not dialog.exec():
             return
         try:
-            meeting_service.create_meeting(**dialog.get_data())
+            meeting = meeting_service.create_meeting(**dialog.get_data())
+            meeting_agenda_item_service.save_items(meeting.id, dialog.get_agenda_items())
         except MeetingValidationError as error:
             QMessageBox.warning(self, LIST_WINDOW_TITLE, str(error))
             return
@@ -109,6 +111,7 @@ class SchuzkyPage(QWidget):
             return
         try:
             meeting_service.update_meeting(meeting_id, **dialog.get_data())
+            meeting_agenda_item_service.save_items(meeting_id, dialog.get_agenda_items())
         except MeetingValidationError as error:
             QMessageBox.warning(self, LIST_WINDOW_TITLE, str(error))
             return

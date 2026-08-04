@@ -22,7 +22,19 @@ DEFAULT_MEETING_STATUS = STATUS_PLANNED
 END_BEFORE_START_MESSAGE = "Konec schůzky nesmí být dříve než začátek."
 
 TAB_MEETING = "Schůzka"
-TAB_MINUTES = "Záznam z jednání"
+TAB_MINUTES = "Záznam z jednání"  # legacy – nahrazeno TAB_DISCUSSION
+TAB_DISCUSSION = "Jednání"
+
+AGENDA_ITEM_DIALOG_TITLE = "Bod jednání"
+AGENDA_ITEMS_SECTION = "Body jednání"
+AGENDA_ITEMS_EMPTY = "Zatím nejsou evidovány žádné body jednání."
+AGENDA_SELECT_ITEM_MESSAGE = "Vyberte bod jednání."
+
+ACTION_ADD_AGENDA_ITEM = "Přidat bod"
+ACTION_EDIT = "Upravit"
+ACTION_REMOVE = "Odebrat"
+ACTION_MOVE_UP = "Nahoru"
+ACTION_MOVE_DOWN = "Dolů"
 
 SAVE_MEETING_BEFORE_TASK_MESSAGE = "Nejprve uložte schůzku."
 SECTION_CONCLUSION_TASKS = "Úkoly ze závěrů"

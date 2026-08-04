@@ -1,4 +1,4 @@
-"""MEETINGS-1c: záložka Záznam z jednání."""
+"""MEETINGS-1c: textová pole zápisu v modelu (UI nahrazeno body jednání)."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
-    from moduly.schuzky.constants import TAB_MEETING, TAB_MINUTES
+    from moduly.schuzky.constants import TAB_DISCUSSION, TAB_MEETING
     from moduly.schuzky.sluzby.meeting_service import meeting_service
     from moduly.schuzky.ui.meeting_dialog import MeetingDialog
 
@@ -39,10 +39,10 @@ class Meetings1cTestCase(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls._app = QApplication.instance() or QApplication([])
 
-    def test_dialog_has_minutes_tab(self) -> None:
+    def test_dialog_has_discussion_tab(self) -> None:
         dialog = MeetingDialog()
         titles = [dialog.tabs.tabText(i) for i in range(dialog.tabs.count())]
-        self.assertEqual(titles, [TAB_MEETING, TAB_MINUTES])
+        self.assertEqual(titles, [TAB_MEETING, TAB_DISCUSSION])
 
     def test_save_and_reload_minutes_fields(self) -> None:
         meeting = meeting_service.create_meeting(
@@ -59,9 +59,10 @@ class Meetings1cTestCase(unittest.TestCase):
         self.assertEqual(loaded.notes, "Přítomni všichni.")
 
         dialog = MeetingDialog(meeting=loaded)
-        self.assertEqual(dialog.proceedings_edit.toPlainText(), loaded.proceedings)
-        self.assertEqual(dialog.conclusions_edit.toPlainText(), loaded.conclusions)
-        self.assertEqual(dialog.notes_edit.toPlainText(), loaded.notes)
+        data = dialog.get_data()
+        self.assertEqual(data["proceedings"], loaded.proceedings)
+        self.assertEqual(data["conclusions"], loaded.conclusions)
+        self.assertEqual(data["notes"], loaded.notes)
 
     def test_empty_minutes_allowed(self) -> None:
         meeting = meeting_service.create_meeting(title="Bez zápisu")
@@ -99,9 +100,9 @@ class Meetings1cTestCase(unittest.TestCase):
         self.assertEqual(loaded.notes, "Upravená poznámka")
 
         dialog = MeetingDialog(meeting=loaded)
-        dialog.proceedings_edit.setPlainText("Finální průběh")
-        dialog.conclusions_edit.setPlainText("Finální závěry")
-        dialog.notes_edit.setPlainText("Finální poznámka")
+        dialog._legacy_proceedings = "Finální průběh"
+        dialog._legacy_conclusions = "Finální závěry"
+        dialog._legacy_notes = "Finální poznámka"
         data = dialog.get_data()
         meeting_service.update_meeting(meeting.id, **data)
         reloaded = meeting_service.get_by_id(meeting.id)
