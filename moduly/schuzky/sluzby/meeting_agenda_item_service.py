@@ -21,6 +21,9 @@ class MeetingAgendaItemService:
             "meeting_id": item.meeting_id,
             "display_order": int(item.display_order or 0),
             "title": item.title or "",
+            "moje_sdeleni": getattr(item, "moje_sdeleni", None) or "",
+            "prubeh_jednani": getattr(item, "prubeh_jednani", None) or "",
+            "zaver": getattr(item, "zaver", None) or "",
         }
 
     def save_items(self, meeting_id: int, items: list[dict]) -> list[MeetingAgendaItem]:
@@ -33,6 +36,9 @@ class MeetingAgendaItemService:
                 meeting_id=int(meeting_id),
                 display_order=int(data.get("display_order", (index + 1) * 10)),
                 title=(data.get("title") or "").strip(),
+                moje_sdeleni=data.get("moje_sdeleni") or "",
+                prubeh_jednani=data.get("prubeh_jednani") or "",
+                zaver=data.get("zaver") or "",
             )
             saved.append(self.repository.add(item))
         return saved
@@ -40,10 +46,12 @@ class MeetingAgendaItemService:
     def _normalize_items(self, items: list[dict]) -> list[dict]:
         normalized: list[dict] = []
         for index, raw in enumerate(items or []):
-            title = str(raw.get("title") or "").strip()
             normalized.append(
                 {
-                    "title": title,
+                    "title": str(raw.get("title") or "").strip(),
+                    "moje_sdeleni": str(raw.get("moje_sdeleni") or ""),
+                    "prubeh_jednani": str(raw.get("prubeh_jednani") or ""),
+                    "zaver": str(raw.get("zaver") or ""),
                     "display_order": (index + 1) * 10,
                 }
             )

@@ -100,6 +100,9 @@ class MeetingAgendaItemsWidget(QWidget):
         self._items.append(
             {
                 "title": data["title"],
+                "moje_sdeleni": data.get("moje_sdeleni") or "",
+                "prubeh_jednani": data.get("prubeh_jednani") or "",
+                "zaver": data.get("zaver") or "",
                 "display_order": (len(self._items) + 1) * 10,
             }
         )
@@ -118,6 +121,9 @@ class MeetingAgendaItemsWidget(QWidget):
         self._items[index] = {
             **self._items[index],
             "title": data["title"],
+            "moje_sdeleni": data.get("moje_sdeleni") or "",
+            "prubeh_jednani": data.get("prubeh_jednani") or "",
+            "zaver": data.get("zaver") or "",
         }
         self._refresh_table()
         self.table.selectRow(index)

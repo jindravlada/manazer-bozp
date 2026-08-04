@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from sqlalchemy import Index, Integer, String
+from sqlalchemy import Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database.base import Base
@@ -19,3 +19,7 @@ class MeetingAgendaItem(Base):
 
     display_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     title: Mapped[str] = mapped_column(String(250), default="", nullable=False)
+
+    moje_sdeleni: Mapped[str] = mapped_column(Text, default="")
+    prubeh_jednani: Mapped[str] = mapped_column(Text, default="")
+    zaver: Mapped[str] = mapped_column(Text, default="")

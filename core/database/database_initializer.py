@@ -275,11 +275,20 @@ def _ensure_meeting_minutes_columns() -> None:
 
 
 def _ensure_meeting_agenda_items_table() -> None:
-    if _table_exists("meeting_agenda_items"):
-        return
-    from moduly.schuzky.modely.meeting_agenda_item import MeetingAgendaItem
+    if not _table_exists("meeting_agenda_items"):
+        from moduly.schuzky.modely.meeting_agenda_item import MeetingAgendaItem
 
-    MeetingAgendaItem.__table__.create(bind=_db_engine(), checkfirst=True)
+        MeetingAgendaItem.__table__.create(bind=_db_engine(), checkfirst=True)
+
+    columns = _table_columns("meeting_agenda_items")
+    if not columns:
+        return
+    if "moje_sdeleni" not in columns:
+        _add_column("meeting_agenda_items", "moje_sdeleni TEXT DEFAULT ''")
+    if "prubeh_jednani" not in columns:
+        _add_column("meeting_agenda_items", "prubeh_jednani TEXT DEFAULT ''")
+    if "zaver" not in columns:
+        _add_column("meeting_agenda_items", "zaver TEXT DEFAULT ''")
 
 
 def _ensure_thp_worker_title_columns() -> None:
