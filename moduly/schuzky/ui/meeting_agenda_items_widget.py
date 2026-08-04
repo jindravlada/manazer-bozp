@@ -12,10 +12,13 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QLabel,
     QLineEdit,
+    QListWidget,
+    QListWidgetItem,
     QMenu,
     QMessageBox,
     QPushButton,
     QSplitter,
+    QStackedWidget,
     QTableWidget,
     QTableWidgetItem,
     QTextEdit,
@@ -31,11 +34,12 @@ from moduly.schuzky.constants import (
     ACTION_OPEN_TASK,
     ACTION_REMOVE,
     ACTION_UNLINK_TASK,
+    AGENDA_ITEM_NONE_SELECTED,
     AGENDA_ITEM_STATUS_ICONS,
     AGENDA_ITEM_STATUS_MENU_TITLE,
     AGENDA_ITEM_STATUSES,
+    AGENDA_ITEMS_COUNT_TEMPLATE,
     AGENDA_ITEMS_EMPTY,
-    AGENDA_ITEMS_SECTION,
     AGENDA_SELECT_ITEM_MESSAGE,
     DEFAULT_AGENDA_ITEM_STATUS,
     DIALOG_WINDOW_TITLE,
@@ -47,10 +51,28 @@ from moduly.schuzky.sluzby.meeting_item_task_service import meeting_item_task_se
 from moduly.ukoly.sluzby.task_service import task_service
 from moduly.ukoly.ui.task_dialog import TaskDialog
 
-
-COL_STATUS = 0
-COL_ORDER = 1
-COL_TITLE = 2
+_LIST_STYLE = """
+QListWidget {
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    outline: none;
+    padding: 2px;
+}
+QListWidget::item {
+    padding: 8px 10px;
+    margin: 1px 0;
+    border-radius: 3px;
+}
+QListWidget::item:selected {
+    background: #dbeafe;
+    color: #0f172a;
+    border-left: 4px solid #2563eb;
+    font-weight: 600;
+}
+QListWidget::item:hover:!selected {
+    background: #f1f5f9;
+}
+"""
 
 
 def _plain_text_edit(*, placeholder: str, min_height: int) -> QTextEdit:
@@ -77,6 +99,12 @@ def _status_icon(status: str | None) -> str:
     return AGENDA_ITEM_STATUS_ICONS.get(normalized, "🟡")
 
 
+def _item_label(index: int, item: dict) -> str:
+    icon = _status_icon(item.get("status"))
+    title = (item.get("title") or "").strip() or "Bez názvu"
+    return f"{icon} {index + 1}. {title}"
+
+
 def _format_due(due_date) -> str:
     if due_date is None:
         return "—"
@@ -95,14 +123,17 @@ class MeetingAgendaItemsWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        header = QLabel(AGENDA_ITEMS_SECTION)
-        layout.addWidget(header)
-
         splitter = QSplitter(Qt.Orientation.Horizontal)
 
         left = QWidget()
         left_layout = QVBoxLayout(left)
         left_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.count_label = QLabel(AGENDA_ITEMS_COUNT_TEMPLATE.format(count=0))
+        count_font = self.count_label.font()
+        count_font.setBold(True)
+        self.count_label.setFont(count_font)
+        left_layout.addWidget(self.count_label)
 
         toolbar = QHBoxLayout()
         self.add_btn = QPushButton(ACTION_ADD_AGENDA_ITEM)
@@ -114,24 +145,34 @@ class MeetingAgendaItemsWidget(QWidget):
         toolbar.addStretch(1)
         left_layout.addLayout(toolbar)
 
-        self.table = QTableWidget(0, 3)
-        self.table.setHorizontalHeaderLabels(["Stav", "Pořadí", "Název tématu"])
-        self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
-        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.table.setAlternatingRowColors(True)
-        self.table.verticalHeader().setVisible(False)
-        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        header_view = self.table.horizontalHeader()
-        header_view.setSectionResizeMode(COL_STATUS, QHeaderView.ResizeMode.ResizeToContents)
-        header_view.setSectionResizeMode(COL_ORDER, QHeaderView.ResizeMode.ResizeToContents)
-        header_view.setSectionResizeMode(COL_TITLE, QHeaderView.ResizeMode.Stretch)
-        self.table.setColumnWidth(COL_STATUS, 44)
-        left_layout.addWidget(self.table, 1)
+        self.list_widget = QListWidget()
+        self.list_widget.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
+        self.list_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.list_widget.setStyleSheet(_LIST_STYLE)
+        self.list_widget.setUniformItemSizes(True)
+        # Zpětná kompatibilita testů (dříve QTableWidget).
+        self.list_widget.selectRow = self.selectRow  # type: ignore[method-assign]
+        self.table = self.list_widget
+        left_layout.addWidget(self.list_widget, 1)
 
         self.empty_label = QLabel(AGENDA_ITEMS_EMPTY)
         self.empty_label.setWordWrap(True)
         left_layout.addWidget(self.empty_label)
+
+        self.editor_stack = QStackedWidget()
+
+        self.none_selected_label = QLabel(AGENDA_ITEM_NONE_SELECTED)
+        self.none_selected_label.setWordWrap(True)
+        self.none_selected_label.setAlignment(
+            Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft
+        )
+        self.none_selected_label.setObjectName("MutedText")
+        none_page = QWidget()
+        none_layout = QVBoxLayout(none_page)
+        none_layout.setContentsMargins(8, 0, 0, 0)
+        none_layout.addWidget(self.none_selected_label)
+        none_layout.addStretch(1)
+        self.editor_stack.addWidget(none_page)
 
         self.editor_panel = QWidget()
         editor_layout = QVBoxLayout(self.editor_panel)
@@ -196,19 +237,21 @@ class MeetingAgendaItemsWidget(QWidget):
         self.tasks_table.setMinimumHeight(140)
         editor_layout.addWidget(self.tasks_table, 1)
 
+        self.editor_stack.addWidget(self.editor_panel)
+
         splitter.addWidget(left)
-        splitter.addWidget(self.editor_panel)
+        splitter.addWidget(self.editor_stack)
         splitter.setStretchFactor(0, 1)
         splitter.setStretchFactor(1, 2)
-        splitter.setSizes([280, 460])
+        splitter.setSizes([300, 460])
         layout.addWidget(splitter, 1)
 
         self.add_btn.clicked.connect(self.add_item)
         self.remove_btn.clicked.connect(self.remove_item)
         self.up_btn.clicked.connect(lambda: self.move_item(-1))
         self.down_btn.clicked.connect(lambda: self.move_item(1))
-        self.table.itemSelectionChanged.connect(self._on_selection_changed)
-        self.table.customContextMenuRequested.connect(self._show_status_context_menu)
+        self.list_widget.currentRowChanged.connect(self._on_current_row_changed)
+        self.list_widget.customContextMenuRequested.connect(self._show_status_context_menu)
         self.title_edit.textChanged.connect(self._on_title_edited)
         self.status_combo.currentTextChanged.connect(self._on_status_edited)
         self.add_task_btn.clicked.connect(self.add_task)
@@ -217,8 +260,12 @@ class MeetingAgendaItemsWidget(QWidget):
         self.tasks_table.doubleClicked.connect(self.open_selected_task)
         self.tasks_table.itemSelectionChanged.connect(self._update_task_buttons)
 
-        self._set_editor_enabled(False)
-        self._refresh_table()
+        self._show_none_selected()
+        self._refresh_list()
+
+    def selectRow(self, row: int) -> None:
+        """Kompatibilita se staršími testy (QTableWidget.selectRow)."""
+        self.list_widget.setCurrentRow(row)
 
     def load_for_meeting(self, meeting_id: int | None) -> None:
         self._flush_editor_to_item()
@@ -228,7 +275,7 @@ class MeetingAgendaItemsWidget(QWidget):
             for item in meeting_agenda_item_service.get_for_meeting(meeting_id):
                 self._items.append(meeting_agenda_item_service.item_to_dict(item))
         self._current_index = None
-        self._refresh_table(select_row=0 if self._items else None)
+        self._refresh_list(select_row=0 if self._items else None)
 
     def get_items(self) -> list[dict]:
         self._flush_editor_to_item()
@@ -238,7 +285,7 @@ class MeetingAgendaItemsWidget(QWidget):
         self._flush_editor_to_item()
         self._items.append(_empty_item(display_order=(len(self._items) + 1) * 10))
         new_index = len(self._items) - 1
-        self._refresh_table(select_row=new_index)
+        self._refresh_list(select_row=new_index)
         self.title_edit.setFocus()
         self.title_edit.selectAll()
 
@@ -251,10 +298,10 @@ class MeetingAgendaItemsWidget(QWidget):
         del self._items[index]
         if not self._items:
             self._current_index = None
-            self._refresh_table(select_row=None)
+            self._refresh_list(select_row=None)
             return
         next_index = min(index, len(self._items) - 1)
-        self._refresh_table(select_row=next_index)
+        self._refresh_list(select_row=next_index)
 
     def move_item(self, direction: int) -> None:
         index = self._selected_index()
@@ -266,7 +313,7 @@ class MeetingAgendaItemsWidget(QWidget):
             return
         self._flush_editor_to_item()
         self._items[index], self._items[target] = self._items[target], self._items[index]
-        self._refresh_table(select_row=target)
+        self._refresh_list(select_row=target)
 
     def add_task(self) -> None:
         meeting_id, item_id = self._current_meeting_and_item_ids()
@@ -378,10 +425,10 @@ class MeetingAgendaItemsWidget(QWidget):
             self.tasks_table.setItem(row, 3, QTableWidgetItem(status))
         self._update_task_buttons()
 
-    def _on_selection_changed(self) -> None:
+    def _on_current_row_changed(self, row: int) -> None:
         if self._suppress_selection:
             return
-        new_index = self._selected_index()
+        new_index = row if row >= 0 else None
         if new_index == self._current_index:
             return
         self._flush_editor_to_item()
@@ -394,9 +441,7 @@ class MeetingAgendaItemsWidget(QWidget):
         if not (0 <= self._current_index < len(self._items)):
             return
         self._items[self._current_index]["title"] = text
-        cell = self.table.item(self._current_index, COL_TITLE)
-        if cell is not None:
-            cell.setText(text)
+        self._update_list_item_text(self._current_index)
 
     def _on_status_edited(self, status: str) -> None:
         if self._suppress_selection or self._current_index is None:
@@ -408,21 +453,28 @@ class MeetingAgendaItemsWidget(QWidget):
             return
         normalized = meeting_agenda_item_service.normalize_status(status)
         self._items[index]["status"] = normalized
-        status_cell = self.table.item(index, COL_STATUS)
-        if status_cell is not None:
-            status_cell.setText(_status_icon(normalized))
-            status_cell.setToolTip(normalized)
-            status_cell.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._update_list_item_text(index)
         if index == self._current_index and self.status_combo.currentText() != normalized:
             self._suppress_selection = True
             self.status_combo.setCurrentText(normalized)
             self._suppress_selection = False
 
+    def _update_list_item_text(self, index: int) -> None:
+        if not (0 <= index < self.list_widget.count()):
+            return
+        list_item = self.list_widget.item(index)
+        if list_item is None:
+            return
+        list_item.setText(_item_label(index, self._items[index]))
+        list_item.setToolTip(
+            meeting_agenda_item_service.normalize_status(self._items[index].get("status"))
+        )
+
     def _show_status_context_menu(self, pos) -> None:
-        index = self.table.indexAt(pos).row()
+        index = self.list_widget.indexAt(pos).row()
         if index < 0:
             return
-        self.table.selectRow(index)
+        self.list_widget.setCurrentRow(index)
         menu = QMenu(self)
         submenu = menu.addMenu(AGENDA_ITEM_STATUS_MENU_TITLE)
         group = QActionGroup(submenu)
@@ -442,18 +494,18 @@ class MeetingAgendaItemsWidget(QWidget):
             )
             group.addAction(action)
             submenu.addAction(action)
-        menu.exec(self.table.viewport().mapToGlobal(pos))
+        menu.exec(self.list_widget.viewport().mapToGlobal(pos))
 
     def _selected_index(self) -> int | None:
-        rows = self.table.selectionModel().selectedRows()
-        if not rows:
-            return None
-        return rows[0].row()
+        row = self.list_widget.currentRow()
+        return row if row >= 0 else None
 
     def _flush_editor_to_item(self) -> None:
         if self._current_index is None:
             return
         if not (0 <= self._current_index < len(self._items)):
+            return
+        if self.editor_stack.currentWidget() is not self.editor_panel:
             return
         self._items[self._current_index].update(
             {
@@ -466,19 +518,13 @@ class MeetingAgendaItemsWidget(QWidget):
                 "zaver": self.zaver_edit.toPlainText(),
             }
         )
-        self._set_item_status(
-            self._current_index,
-            self._items[self._current_index]["status"],
-        )
-        title_cell = self.table.item(self._current_index, COL_TITLE)
-        if title_cell is not None:
-            title_cell.setText(self._items[self._current_index]["title"])
+        self._update_list_item_text(self._current_index)
 
     def _load_editor_from_item(self) -> None:
         if self._current_index is None or not (
             0 <= self._current_index < len(self._items)
         ):
-            self._clear_editor()
+            self._show_none_selected()
             return
 
         item = self._items[self._current_index]
@@ -490,10 +536,10 @@ class MeetingAgendaItemsWidget(QWidget):
         self.prubeh_jednani_edit.setPlainText(item.get("prubeh_jednani") or "")
         self.zaver_edit.setPlainText(item.get("zaver") or "")
         self._suppress_selection = False
-        self._set_editor_enabled(True)
+        self.editor_stack.setCurrentWidget(self.editor_panel)
         self._refresh_tasks()
 
-    def _clear_editor(self) -> None:
+    def _show_none_selected(self) -> None:
         self._suppress_selection = True
         self.status_combo.setCurrentText(DEFAULT_AGENDA_ITEM_STATUS)
         self.title_edit.clear()
@@ -503,11 +549,15 @@ class MeetingAgendaItemsWidget(QWidget):
         self._suppress_selection = False
         self.tasks_table.setRowCount(0)
         self._task_ids = []
-        self._set_editor_enabled(False)
         self._update_task_buttons()
+        self.editor_stack.setCurrentWidget(self.editor_stack.widget(0))
 
-    def _set_editor_enabled(self, enabled: bool) -> None:
-        self.editor_panel.setEnabled(enabled)
+    def _clear_editor(self) -> None:
+        self._show_none_selected()
+
+    def _refresh_list(self, *, select_row: int | None = None) -> None:
+        # Alias for older tests calling _refresh_table.
+        self._refresh_table(select_row=select_row)
 
     def _refresh_table(self, *, select_row: int | None = None) -> None:
         for index, item in enumerate(self._items):
@@ -517,29 +567,30 @@ class MeetingAgendaItemsWidget(QWidget):
             )
 
         self._suppress_selection = True
-        self.table.setRowCount(len(self._items))
-        for row, item in enumerate(self._items):
-            status = item.get("status") or DEFAULT_AGENDA_ITEM_STATUS
-            status_item = QTableWidgetItem(_status_icon(status))
-            status_item.setToolTip(status)
-            status_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.table.setItem(row, COL_STATUS, status_item)
-            self.table.setItem(row, COL_ORDER, QTableWidgetItem(str(row + 1)))
-            self.table.setItem(row, COL_TITLE, QTableWidgetItem(item.get("title") or ""))
+        self.list_widget.clear()
+        for index, item in enumerate(self._items):
+            list_item = QListWidgetItem(_item_label(index, item))
+            list_item.setToolTip(
+                meeting_agenda_item_service.normalize_status(item.get("status"))
+            )
+            self.list_widget.addItem(list_item)
 
-        has_items = bool(self._items)
+        count = len(self._items)
+        self.count_label.setText(AGENDA_ITEMS_COUNT_TEMPLATE.format(count=count))
+        has_items = count > 0
         self.empty_label.setVisible(not has_items)
-        self.table.setVisible(True)
+        self.list_widget.setVisible(has_items)
 
         if select_row is None or not has_items:
-            self.table.clearSelection()
+            self.list_widget.clearSelection()
+            self.list_widget.setCurrentRow(-1)
             self._current_index = None
             self._suppress_selection = False
-            self._clear_editor()
+            self._show_none_selected()
             return
 
-        select_row = max(0, min(select_row, len(self._items) - 1))
-        self.table.selectRow(select_row)
+        select_row = max(0, min(select_row, count - 1))
+        self.list_widget.setCurrentRow(select_row)
         self._current_index = select_row
         self._suppress_selection = False
         self._load_editor_from_item()

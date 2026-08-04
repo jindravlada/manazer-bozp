@@ -78,7 +78,7 @@ class Meetings2cTestCase(unittest.TestCase):
     def test_edit_without_dialog(self) -> None:
         widget = MeetingAgendaItemsWidget()
         widget.add_item()
-        self.assertTrue(widget.editor_panel.isEnabled())
+        self.assertIs(widget.editor_stack.currentWidget(), widget.editor_panel)
         widget.title_edit.setText("Téma bez dialogu")
         widget.moje_sdeleni_edit.setPlainText("Sdělení")
         items = widget.get_items()
@@ -115,7 +115,11 @@ class Meetings2cTestCase(unittest.TestCase):
         widget.remove_item()
         self.assertEqual(widget.get_items(), [])
         self.assertIsNone(widget._selected_index())
-        self.assertFalse(widget.editor_panel.isEnabled())
+        self.assertIsNot(widget.editor_stack.currentWidget(), widget.editor_panel)
+        self.assertEqual(
+            widget.none_selected_label.text(),
+            "Není vybrán žádný bod jednání.",
+        )
 
     def test_data_preserved_through_meeting_dialog(self) -> None:
         meeting = meeting_service.create_meeting(title="Zachování")

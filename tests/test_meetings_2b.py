@@ -89,13 +89,8 @@ class Meetings2bTestCase(unittest.TestCase):
         self.assertEqual(len(items), 1)
         self.assertEqual(items[0]["title"], "Aktualizovaná bezpečnost")
         self.assertEqual(items[0]["moje_sdeleni"], "Nové sdělení")
-        self.assertEqual(
-            [
-                meeting_dialog.agenda_items_widget.table.horizontalHeaderItem(i).text()
-                for i in range(meeting_dialog.agenda_items_widget.table.columnCount())
-            ],
-            ["Stav", "Pořadí", "Název tématu"],
-        )
+        label = meeting_dialog.agenda_items_widget.table.item(0).text()
+        self.assertIn("1. Aktualizovaná bezpečnost", label)
 
     def test_empty_fields_allowed(self) -> None:
         meeting = meeting_service.create_meeting(title="Prázdný bod")

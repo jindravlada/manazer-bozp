@@ -40,12 +40,7 @@ with patch.object(Path, "home", return_value=_TMP):
         meeting_agenda_item_service,
     )
     from moduly.schuzky.sluzby.meeting_service import meeting_service
-    from moduly.schuzky.ui.meeting_agenda_items_widget import (
-        COL_ORDER,
-        COL_STATUS,
-        COL_TITLE,
-        MeetingAgendaItemsWidget,
-    )
+    from moduly.schuzky.ui.meeting_agenda_items_widget import MeetingAgendaItemsWidget
     from moduly.schuzky.ui.meeting_dialog import MeetingDialog
 
 
@@ -80,9 +75,10 @@ class Meetings2eTestCase(unittest.TestCase):
             dialog.agenda_items_widget.status_combo.currentText(),
             AGENDA_ITEM_STATUS_DISCUSSED,
         )
+        icon = AGENDA_ITEM_STATUS_ICONS[AGENDA_ITEM_STATUS_DISCUSSED]
         self.assertEqual(
-            dialog.agenda_items_widget.table.item(0, COL_STATUS).text(),
-            AGENDA_ITEM_STATUS_ICONS[AGENDA_ITEM_STATUS_DISCUSSED],
+            dialog.agenda_items_widget.table.item(0).text(),
+            f"{icon} 1. Téma 1",
         )
 
     def test_change_via_editor_combo(self) -> None:
@@ -96,13 +92,8 @@ class Meetings2eTestCase(unittest.TestCase):
         )
         widget = MeetingAgendaItemsWidget()
         widget.load_for_meeting(meeting.id)
-        orders_before = [
-            widget.table.item(row, COL_ORDER).text()
-            for row in range(widget.table.rowCount())
-        ]
-        titles_before = [
-            widget.table.item(row, COL_TITLE).text()
-            for row in range(widget.table.rowCount())
+        labels_before = [
+            widget.table.item(row).text() for row in range(widget.table.count())
         ]
 
         widget.status_combo.setCurrentText(AGENDA_ITEM_STATUS_POSTPONED)
@@ -110,18 +101,13 @@ class Meetings2eTestCase(unittest.TestCase):
             widget._items[0]["status"],
             AGENDA_ITEM_STATUS_POSTPONED,
         )
+        icon = AGENDA_ITEM_STATUS_ICONS[AGENDA_ITEM_STATUS_POSTPONED]
+        self.assertEqual(widget.table.item(0).text(), f"{icon} 1. A")
         self.assertEqual(
-            widget.table.item(0, COL_STATUS).text(),
-            AGENDA_ITEM_STATUS_ICONS[AGENDA_ITEM_STATUS_POSTPONED],
+            [widget.table.item(row).text() for row in range(2)][1],
+            labels_before[1],
         )
-        self.assertEqual(
-            [widget.table.item(row, COL_ORDER).text() for row in range(2)],
-            orders_before,
-        )
-        self.assertEqual(
-            [widget.table.item(row, COL_TITLE).text() for row in range(2)],
-            titles_before,
-        )
+        self.assertIn("2. B", widget.table.item(1).text())
 
         meeting_agenda_item_service.save_items(meeting.id, widget.get_items())
         reloaded = meeting_agenda_item_service.get_for_meeting(meeting.id)
@@ -154,13 +140,15 @@ class Meetings2eTestCase(unittest.TestCase):
         reloaded = meeting_agenda_item_service.get_for_meeting(meeting.id)
         self.assertEqual(reloaded[0].status, AGENDA_ITEM_STATUS_DISCUSSED)
 
-    def test_list_headers_include_status_first(self) -> None:
+    def test_list_shows_compact_status_order_title(self) -> None:
         widget = MeetingAgendaItemsWidget()
-        headers = [
-            widget.table.horizontalHeaderItem(i).text()
-            for i in range(widget.table.columnCount())
+        widget._items = [
+            {"title": "Revize", "status": AGENDA_ITEM_STATUS_READY, "display_order": 10},
         ]
-        self.assertEqual(headers, ["Stav", "Pořadí", "Název tématu"])
+        widget._refresh_table(select_row=0)
+        icon = AGENDA_ITEM_STATUS_ICONS[AGENDA_ITEM_STATUS_READY]
+        self.assertEqual(widget.table.item(0).text(), f"{icon} 1. Revize")
+        self.assertIn("item:selected", widget.table.styleSheet())
 
 
 if __name__ == "__main__":

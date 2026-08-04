@@ -47,7 +47,9 @@ AGENDA_ITEM_STATUS_MENU_TITLE = "Označit jako"
 
 AGENDA_ITEM_DIALOG_TITLE = "Bod jednání"  # legacy – dialog zrušen v MEETINGS-2c
 AGENDA_ITEMS_SECTION = "Body jednání"
+AGENDA_ITEMS_COUNT_TEMPLATE = "Body jednání: {count}"
 AGENDA_ITEMS_EMPTY = "Zatím nejsou evidovány žádné body jednání."
+AGENDA_ITEM_NONE_SELECTED = "Není vybrán žádný bod jednání."
 AGENDA_SELECT_ITEM_MESSAGE = "Vyberte bod jednání."
 
 ACTION_ADD_AGENDA_ITEM = "Přidat"
