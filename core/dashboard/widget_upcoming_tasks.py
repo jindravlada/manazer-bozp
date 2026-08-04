@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import datetime, timedelta
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor
@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 from core.dashboard.attention_item import (
     ITEM_TYPE_AUDIT,
     ITEM_TYPE_INSPECTION,
+    ITEM_TYPE_MEETING,
     ITEM_TYPE_TASK,
     PRIORITY_RANK,
     AttentionItem,
@@ -30,6 +31,7 @@ from core.widgets.typed_table_sort import (
     enable_typed_sorting,
     sorting_paused,
     typed_date,
+    typed_datetime,
     typed_empty,
     typed_status,
     typed_text,
@@ -39,6 +41,7 @@ _TYPE_STABLE_PREFIX = {
     ITEM_TYPE_TASK: 1,
     ITEM_TYPE_AUDIT: 2,
     ITEM_TYPE_INSPECTION: 3,
+    ITEM_TYPE_MEETING: 4,
 }
 
 _EMPTY_TEXT = "Nejsou evidovány žádné nadcházející události ani úkoly."
@@ -93,9 +96,9 @@ class UpcomingTasksWidget(DashboardPanel):
         header.setStretchLastSection(False)
         header.setSectionResizeMode(COL_TITLE, QHeaderView.ResizeMode.Stretch)
         self.table.setColumnWidth(COL_TYPE, 80)
-        self.table.setColumnWidth(COL_DUE, 90)
+        self.table.setColumnWidth(COL_DUE, 150)
         self.table.setColumnWidth(COL_PRIORITY, 80)
-        self.table.setColumnWidth(COL_SOURCE, 90)
+        self.table.setColumnWidth(COL_SOURCE, 120)
         self.table.doubleClicked.connect(self._open_selected)
         self.table.itemSelectionChanged.connect(self._update_open_button)
         enable_typed_sorting(self.table)
@@ -131,9 +134,24 @@ class UpcomingTasksWidget(DashboardPanel):
 
         self.refresh()
 
-    def _due_color(self, due_date: date | None, today: date) -> QColor | None:
+    def _is_overdue(self, attention: AttentionItem, now: datetime) -> bool:
+        if attention.event_at is not None:
+            return attention.event_at < now
+        if attention.due_date is None:
+            return False
+        return attention.due_date < now.date()
+
+    def _due_color(self, attention: AttentionItem, now: datetime) -> QColor | None:
+        if attention.event_at is not None:
+            if attention.event_at < now:
+                return _COLOR_OVERDUE
+            if attention.event_at.date() <= now.date() + timedelta(days=_APPROACHING_DAYS):
+                return _COLOR_APPROACHING
+            return _COLOR_FUTURE
+        due_date = attention.due_date
         if due_date is None:
             return None
+        today = now.date()
         if due_date < today:
             return _COLOR_OVERDUE
         if due_date <= today + timedelta(days=_APPROACHING_DAYS):
@@ -176,7 +194,7 @@ class UpcomingTasksWidget(DashboardPanel):
 
         self.empty_label.hide()
         self.table.show()
-        today = date.today()
+        now = datetime.now()
 
         with sorting_paused(self.table):
             self.table.setRowCount(len(items))
@@ -193,13 +211,18 @@ class UpcomingTasksWidget(DashboardPanel):
                 )
                 type_item.setData(_ROLE_ITEM, attention)
 
-                due_text = self._format_due_text(attention.due_date, today)
+                due_text = self._format_due_text(attention, now)
+                due_sort = (
+                    typed_datetime(attention.event_at)
+                    if attention.event_at is not None
+                    else typed_date(attention.due_date)
+                )
                 due_item = create_typed_item(
                     due_text,
-                    typed_date(attention.due_date),
+                    due_sort,
                     stable_id=stable_id,
                 )
-                due_color = self._due_color(attention.due_date, today)
+                due_color = self._due_color(attention, now)
                 if due_color is not None:
                     due_item.setForeground(QBrush(due_color))
 
@@ -236,10 +259,24 @@ class UpcomingTasksWidget(DashboardPanel):
         self.table.resizeRowsToContents()
         self._update_open_button()
 
-    def _format_due_text(self, due_date: date | None, today: date) -> str:
+    def _format_due_text(self, attention: AttentionItem, now: datetime) -> str:
+        if attention.event_at is not None:
+            starts = attention.event_at
+            text = (
+                f"{starts.day}. {starts.month}. {starts.year} "
+                f"{starts.hour}:{starts.minute:02d}"
+            )
+            if attention.ends_at is not None:
+                ends = attention.ends_at
+                text += f"–{ends.hour}:{ends.minute:02d}"
+            if self._is_overdue(attention, now):
+                return f"{text} (Po termínu)"
+            return text
+
+        due_date = attention.due_date
         if due_date is None:
             return "bez termínu"
         text = f"{due_date.day}. {due_date.month}. {due_date.year}"
-        if due_date < today:
+        if self._is_overdue(attention, now):
             return f"{text} (Po termínu)"
         return text

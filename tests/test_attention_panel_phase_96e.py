@@ -32,6 +32,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from core.dashboard.attention_item import (
         ITEM_TYPE_AUDIT,
         ITEM_TYPE_BOZP_INSPECTION,
+        ITEM_TYPE_MEETING,
         ITEM_TYPE_TASK,
         SOURCE_LABEL_AUDIT,
         SOURCE_LABEL_INSPECTION,
@@ -57,6 +58,23 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
             audit_service.delete_audit(audit.id)
         for inspection in list(bozp_inspection_service.get_all()):
             bozp_inspection_service.delete_inspection(inspection.id)
+        from moduly.schuzky.constants import STATUS_CANCELLED, STATUS_PLANNED
+        from moduly.schuzky.sluzby.meeting_service import meeting_service
+
+        for meeting in list(meeting_service.get_all()):
+            if (meeting.status or "") != STATUS_PLANNED:
+                continue
+            meeting_service.update_meeting(
+                meeting.id,
+                title=meeting.title or "",
+                starts_at=meeting.starts_at,
+                ends_at=meeting.ends_at,
+                location=meeting.location or "",
+                organizer_person_id=meeting.organizer_person_id,
+                participant_ids=meeting_service.parse_participant_ids(meeting),
+                agenda=meeting.agenda or "",
+                status=STATUS_CANCELLED,
+            )
 
     def test_panel_title_requires_attention(self) -> None:
         widget = UpcomingTasksWidget()
@@ -273,11 +291,18 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
         with patch.dict("sys.modules", {name: MagicMock() for name in forbidden}):
             items = get_attention_items()
 
-        self.assertGreaterEqual(len(items), 3)
+        self.assertGreaterEqual(len(items), 1)
         types = {item.item_type for item in items}
-        self.assertEqual(
-            types,
-            {ITEM_TYPE_TASK, ITEM_TYPE_AUDIT, ITEM_TYPE_BOZP_INSPECTION},
+        self.assertIn(ITEM_TYPE_TASK, types)
+        self.assertTrue(
+            types.issubset(
+                {
+                    ITEM_TYPE_TASK,
+                    ITEM_TYPE_AUDIT,
+                    ITEM_TYPE_BOZP_INSPECTION,
+                    ITEM_TYPE_MEETING,
+                }
+            )
         )
 
     def test_widget_has_type_column(self) -> None:

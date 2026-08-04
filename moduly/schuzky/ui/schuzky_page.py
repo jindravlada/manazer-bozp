@@ -87,6 +87,7 @@ class SchuzkyPage(QWidget):
             QMessageBox.warning(self, LIST_WINDOW_TITLE, str(error))
             return
         self.refresh()
+        self._refresh_dashboard()
 
     def open_selected_meeting(self) -> None:
         meeting_id = self._selected_meeting_id()
@@ -100,6 +101,7 @@ class SchuzkyPage(QWidget):
         if meeting is None:
             QMessageBox.warning(self, LIST_WINDOW_TITLE, "Schůzka nebyla nalezena.")
             self.refresh()
+            self._refresh_dashboard()
             return
 
         dialog = MeetingDialog(self, meeting=meeting)
@@ -111,3 +113,13 @@ class SchuzkyPage(QWidget):
             QMessageBox.warning(self, LIST_WINDOW_TITLE, str(error))
             return
         self.refresh()
+        self._refresh_dashboard()
+
+    def _refresh_dashboard(self) -> None:
+        window = self.window()
+        page_widgets = getattr(window, "_page_widgets", None)
+        if not isinstance(page_widgets, dict):
+            return
+        dashboard = page_widgets.get("dashboard")
+        if dashboard is not None and hasattr(dashboard, "refresh"):
+            dashboard.refresh()

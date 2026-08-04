@@ -333,11 +333,14 @@ class MainWindow(QMainWindow):
         from core.dashboard.attention_item import (
             ITEM_TYPE_AUDIT,
             ITEM_TYPE_INSPECTION,
+            ITEM_TYPE_MEETING,
             ITEM_TYPE_TASK,
         )
 
-        item_type = getattr(item, "item_type", None)
-        entity_id = getattr(item, "entity_id", None)
+        item_type = getattr(item, "item_type", None) or getattr(item, "source_type", None)
+        entity_id = getattr(item, "source_id", None)
+        if entity_id is None:
+            entity_id = getattr(item, "entity_id", None)
         if item_type == ITEM_TYPE_TASK and entity_id is not None:
             self._open_task_by_id(entity_id)
             return
@@ -346,6 +349,9 @@ class MainWindow(QMainWindow):
             return
         if item_type == ITEM_TYPE_INSPECTION and entity_id is not None:
             self._open_inspection_by_id(entity_id)
+            return
+        if item_type == ITEM_TYPE_MEETING and entity_id is not None:
+            self._open_meeting_by_id(entity_id)
 
     def _open_audit_by_id(self, audit_id: int) -> None:
         from moduly.audity.sluzby.audit_service import audit_service
@@ -395,6 +401,33 @@ class MainWindow(QMainWindow):
 
     def _open_kontroly(self):
         self._show("kontroly")
+
+    def _open_meeting_by_id(self, meeting_id: int) -> None:
+        from moduly.schuzky.sluzby.meeting_service import (
+            MeetingValidationError,
+            meeting_service,
+        )
+        from moduly.schuzky.ui.meeting_dialog import MeetingDialog
+
+        meeting = meeting_service.get_by_id(meeting_id)
+        dashboard = self._page_widgets.get("dashboard")
+
+        if meeting is None:
+            QMessageBox.warning(self, "Schůzky", "Schůzka nebyla nalezena.")
+            if dashboard is not None and hasattr(dashboard, "refresh"):
+                dashboard.refresh()
+            return
+
+        parent = dashboard if dashboard is not None else self
+        dialog = MeetingDialog(parent, meeting=meeting)
+        if dialog.exec():
+            try:
+                meeting_service.update_meeting(meeting_id, **dialog.get_data())
+            except MeetingValidationError as error:
+                QMessageBox.warning(self, "Schůzky", str(error))
+
+        if dashboard is not None and hasattr(dashboard, "refresh"):
+            dashboard.refresh()
 
     def _open_schuzky(self):
         self._show("schuzky")

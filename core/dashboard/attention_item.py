@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 from typing import Any
 
 
 ITEM_TYPE_TASK = "task"
 ITEM_TYPE_AUDIT = "audit"
 ITEM_TYPE_INSPECTION = "inspection"
+ITEM_TYPE_MEETING = "meeting"
 # Zpětná kompatibilita staršího interního názvu.
 ITEM_TYPE_BOZP_INSPECTION = ITEM_TYPE_INSPECTION
 
@@ -17,6 +18,7 @@ TYPE_LABELS = {
     ITEM_TYPE_TASK: "Úkol",
     ITEM_TYPE_AUDIT: "Audit",
     ITEM_TYPE_INSPECTION: "Prověrka",
+    ITEM_TYPE_MEETING: "Schůzka",
 }
 
 SOURCE_LABEL_AUDIT = "Audit systému řízení"
@@ -40,6 +42,8 @@ class AttentionItem:
     status: str
     source_type: str = ""
     priority: str = ""
+    event_at: datetime | None = None
+    ends_at: datetime | None = None
     open_metadata: dict[str, Any] = field(default_factory=dict)
     sort_key: tuple = ()
 

@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime, time
 
 from core.dashboard.attention_item import (
     ITEM_TYPE_AUDIT,
     ITEM_TYPE_INSPECTION,
+    ITEM_TYPE_MEETING,
     ITEM_TYPE_TASK,
     SOURCE_LABEL_AUDIT,
     SOURCE_LABEL_INSPECTION,
@@ -15,6 +16,8 @@ from core.dashboard.attention_item import (
 from core.shared.task_source_display import task_source_short_label
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
+from moduly.schuzky.constants import STATUS_PLANNED
+from moduly.schuzky.sluzby.meeting_service import meeting_service
 from moduly.ukoly.sluzby.task_service import task_service
 
 
@@ -25,15 +28,18 @@ def build_sort_key(
     title: str = "",
     source_id: int = 0,
     today: date | None = None,
+    due_datetime: datetime | None = None,
 ) -> tuple:
-    """Řazení: datum vzestupně, potom typ, název, source_id."""
-    if due_date is None:
-        date_key = date.max
+    """Řazení: datum/čas vzestupně, potom typ, název, source_id."""
+    if due_datetime is not None:
+        dt_key = due_datetime
+    elif due_date is None:
+        dt_key = datetime.max
     else:
-        date_key = due_date
+        dt_key = datetime.combine(due_date, time.min)
 
     return (
-        date_key,
+        dt_key,
         (item_type or "").casefold(),
         (title or "").casefold(),
         int(source_id),
@@ -167,9 +173,63 @@ def _from_inspections(_today: date) -> list[AttentionItem]:
     return items
 
 
+def _meeting_subtitle(meeting) -> str:
+    parts: list[str] = []
+    location = (meeting.location or "").strip()
+    organizer = (meeting.organizer_name or "").strip()
+    if location:
+        parts.append(location)
+    if organizer:
+        parts.append(organizer)
+    return " · ".join(parts)
+
+
+def _from_meetings(_today: date) -> list[AttentionItem]:
+    items: list[AttentionItem] = []
+    for meeting in meeting_service.get_all():
+        if (meeting.status or "") != STATUS_PLANNED:
+            continue
+        starts_at = meeting.starts_at
+        if starts_at is None:
+            continue
+        title = (meeting.title or "").strip() or f"Schůzka #{meeting.id}"
+        ends_at = meeting.ends_at
+        items.append(
+            AttentionItem(
+                item_type=ITEM_TYPE_MEETING,
+                source_type=ITEM_TYPE_MEETING,
+                source_id=meeting.id,
+                title=title,
+                date=starts_at.date(),
+                subtitle=_meeting_subtitle(meeting),
+                status=meeting.status or "",
+                priority="",
+                event_at=starts_at,
+                ends_at=ends_at,
+                open_metadata={
+                    "source_type": ITEM_TYPE_MEETING,
+                    "source_id": meeting.id,
+                },
+                sort_key=build_sort_key(
+                    starts_at.date(),
+                    item_type=ITEM_TYPE_MEETING,
+                    title=title,
+                    source_id=meeting.id,
+                    due_datetime=starts_at,
+                ),
+            )
+        )
+    return items
+
+
 def get_attention_items(*, today: date | None = None) -> list[AttentionItem]:
-    """Vrátí společně seřazené úkoly, audity a prověrky vyžadující pozornost."""
+    """Vrátí společně seřazené úkoly, audity, prověrky a schůzky."""
     today = today or date.today()
-    items = _from_tasks(today) + _from_audits(today) + _from_inspections(today)
+    items = (
+        _from_tasks(today)
+        + _from_audits(today)
+        + _from_inspections(today)
+        + _from_meetings(today)
+    )
     items.sort(key=lambda item: item.sort_key)
     return items
