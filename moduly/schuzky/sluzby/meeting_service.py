@@ -3,15 +3,17 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from moduly.nastaveni.sluzby.person_service import person_service
 from moduly.schuzky.constants import (
+    DEFAULT_EVENT_DURATION_HOURS,
     DEFAULT_MEETING_PRIORITY,
     DEFAULT_MEETING_STATUS,
     END_BEFORE_START_MESSAGE,
     MEETING_PRIORITIES,
     MEETING_STATUSES,
+    STATUS_PLANNED,
 )
 from moduly.schuzky.modely.meeting import Meeting
 from moduly.schuzky.repository.meeting_repository import MeetingRepository
@@ -129,6 +131,123 @@ class MeetingService:
     ) -> None:
         if starts_at is not None and ends_at is not None and ends_at < starts_at:
             raise MeetingValidationError(END_BEFORE_START_MESSAGE)
+
+    @staticmethod
+    def effective_ends_at(
+        starts_at: datetime | None,
+        ends_at: datetime | None,
+    ) -> datetime | None:
+        """Ukončení pro kontrolu konfliktů; chybějící konec → +1 hodina (data nemění)."""
+        if starts_at is None:
+            return None
+        if ends_at is not None:
+            return ends_at
+        return starts_at + timedelta(hours=DEFAULT_EVENT_DURATION_HOURS)
+
+    @staticmethod
+    def intervals_overlap(
+        start_a: datetime,
+        end_a: datetime,
+        start_b: datetime,
+        end_b: datetime,
+    ) -> bool:
+        """Překryv intervalů; navazující (konec == začátek) není konflikt."""
+        return start_a < end_b and end_a > start_b
+
+    @staticmethod
+    def _normalize_dt(value: datetime | None) -> datetime | None:
+        if value is None:
+            return None
+        return value.replace(second=0, microsecond=0)
+
+    def is_planned_start_in_past_forbidden(
+        self,
+        *,
+        status: str,
+        starts_at: datetime | None,
+        existing: Meeting | None = None,
+        now: datetime | None = None,
+    ) -> bool:
+        """
+        True = uložení jako Naplánováno s minulým zahájením zakázat.
+
+        Existující Naplánováno se stejným minulým zahájením (už v DB) neblokovat.
+        """
+        if (status or "").strip() != STATUS_PLANNED:
+            return False
+        start = self._normalize_dt(starts_at)
+        if start is None:
+            return False
+        current = self._normalize_dt(now or datetime.now())
+        assert current is not None
+        if start >= current:
+            return False
+
+        if existing is None:
+            return True
+
+        was_planned = (existing.status or "").strip() == STATUS_PLANNED
+        existing_start = self._normalize_dt(existing.starts_at)
+        if was_planned and existing_start == start:
+            return False
+        return True
+
+    def find_planned_conflicts(
+        self,
+        *,
+        starts_at: datetime | None,
+        ends_at: datetime | None,
+        exclude_id: int | None = None,
+    ) -> list[Meeting]:
+        """Naplanované události s časovým překryvem (bez exclude_id)."""
+        if starts_at is None:
+            return []
+        new_start = starts_at
+        new_end = self.effective_ends_at(starts_at, ends_at)
+        if new_end is None:
+            return []
+
+        conflicts: list[Meeting] = []
+        for meeting in self.get_all():
+            if exclude_id is not None and int(meeting.id) == int(exclude_id):
+                continue
+            if (meeting.status or "").strip() != STATUS_PLANNED:
+                continue
+            other_start = meeting.starts_at
+            if other_start is None:
+                continue
+            other_end = self.effective_ends_at(other_start, meeting.ends_at)
+            if other_end is None:
+                continue
+            if self.intervals_overlap(new_start, new_end, other_start, other_end):
+                conflicts.append(meeting)
+        conflicts.sort(key=lambda item: item.starts_at or datetime.max)
+        return conflicts
+
+    @staticmethod
+    def format_conflict_line(meeting: Meeting) -> str:
+        starts = meeting.starts_at
+        if starts is None:
+            return (meeting.title or "").strip() or "Bez názvu"
+        ends = MeetingService.effective_ends_at(starts, meeting.ends_at)
+        assert ends is not None
+        if starts.date() == ends.date():
+            when = (
+                f"{starts.strftime('%d.%m.%Y')} "
+                f"{starts.strftime('%H:%M')}–{ends.strftime('%H:%M')}"
+            )
+        else:
+            when = (
+                f"{starts.strftime('%d.%m.%Y %H:%M')}–"
+                f"{ends.strftime('%d.%m.%Y %H:%M')}"
+            )
+        event_type = (getattr(meeting, "event_type", None) or "").strip() or "—"
+        title = (meeting.title or "").strip() or "Bez názvu"
+        parts = [when, event_type, title]
+        location = (meeting.location or "").strip()
+        if location:
+            parts.append(location)
+        return " · ".join(parts)
 
     def parse_participant_ids(self, meeting: Meeting) -> list[int]:
         raw = (meeting.participant_ids_json or "").strip()

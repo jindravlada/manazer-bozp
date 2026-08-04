@@ -69,6 +69,22 @@ DEFAULT_EVENT_TYPE = EVENT_TYPE_MEETING
 
 END_BEFORE_START_MESSAGE = "Konec události nesmí být dříve než začátek."
 
+PAST_PLANNED_START_MESSAGE = (
+    "Naplánovanou událost nelze uložit se zahájením v minulosti."
+)
+PAST_PLANNED_BACK_BUTTON = "Zpět k úpravě"
+
+CONFLICT_DIALOG_TITLE = "Časový konflikt událostí"
+CONFLICT_DIALOG_TEXT = (
+    "Tato událost se časově překrývá s jinou naplánovanou událostí."
+)
+CONFLICT_BTN_EDIT = "Upravit čas"
+CONFLICT_BTN_SAVE = "Uložit přesto"
+CONFLICT_BTN_CANCEL = "Zrušit"
+
+# Pomocná délka jen pro kontrolu konfliktů, pokud chybí ukončení.
+DEFAULT_EVENT_DURATION_HOURS = 1
+
 TAB_MEETING = "Událost"
 TAB_MINUTES = "Záznam z jednání"  # legacy – nahrazeno TAB_DISCUSSION
 TAB_DISCUSSION = "Zápisky"

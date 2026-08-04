@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 
 from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.schuzky.constants import (
+    DEFAULT_EVENT_DURATION_HOURS,
     DEFAULT_EVENT_TYPE,
     DEFAULT_MEETING_PRIORITY,
     DEFAULT_MEETING_STATUS,
@@ -25,6 +26,9 @@ from moduly.schuzky.constants import (
     END_BEFORE_START_MESSAGE,
     MEETING_PRIORITIES,
     MEETING_STATUSES,
+    PAST_PLANNED_BACK_BUTTON,
+    PAST_PLANNED_START_MESSAGE,
+    STATUS_PLANNED,
     TAB_DISCUSSION,
     TAB_MEETING,
 )
@@ -32,12 +36,17 @@ from moduly.schuzky.sluzby.meeting_event_type_service import meeting_event_type_
 from moduly.schuzky.sluzby.meeting_service import meeting_service
 from moduly.schuzky.ui.event_datetime_fields import EventDateTimeFields
 from moduly.schuzky.ui.meeting_agenda_items_widget import MeetingAgendaItemsWidget
+from moduly.schuzky.ui.meeting_conflict_dialog import (
+    CONFLICT_CHOICE_EDIT,
+    CONFLICT_CHOICE_SAVE,
+    MeetingConflictDialog,
+)
 from moduly.schuzky.ui.meeting_people_widgets import (
     MeetingOrganizerWidget,
     MeetingParticipantsWidget,
 )
 
-DEFAULT_EVENT_DURATION = timedelta(hours=1)
+DEFAULT_EVENT_DURATION = timedelta(hours=DEFAULT_EVENT_DURATION_HOURS)
 
 
 def _plain_text_edit(*, placeholder: str, min_height: int) -> QTextEdit:
@@ -211,6 +220,20 @@ class MeetingDialog(QDialog):
             return
         self._ends_manually_edited = True
 
+    def _focus_starts_at(self) -> None:
+        self.tabs.setCurrentIndex(0)
+        self.starts_at_edit.date_edit.setFocus()
+
+    def _show_past_start_blocked(self) -> None:
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Warning)
+        box.setWindowTitle(DIALOG_WINDOW_TITLE)
+        box.setText(PAST_PLANNED_START_MESSAGE)
+        back = box.addButton(PAST_PLANNED_BACK_BUTTON, QMessageBox.ButtonRole.AcceptRole)
+        box.setDefaultButton(back)
+        box.exec()
+        self._focus_starts_at()
+
     def _on_accept(self) -> None:
         data = self.get_data()
         try:
@@ -218,4 +241,30 @@ class MeetingDialog(QDialog):
         except ValueError:
             QMessageBox.warning(self, DIALOG_WINDOW_TITLE, END_BEFORE_START_MESSAGE)
             return
+
+        if meeting_service.is_planned_start_in_past_forbidden(
+            status=data["status"],
+            starts_at=data["starts_at"],
+            existing=self.meeting,
+        ):
+            self._show_past_start_blocked()
+            return
+
+        if data["status"] == STATUS_PLANNED:
+            exclude_id = getattr(self.meeting, "id", None) if self.meeting else None
+            conflicts = meeting_service.find_planned_conflicts(
+                starts_at=data["starts_at"],
+                ends_at=data["ends_at"],
+                exclude_id=exclude_id,
+            )
+            if conflicts:
+                conflict_dialog = MeetingConflictDialog(conflicts, self)
+                choice = conflict_dialog.exec()
+                if choice == CONFLICT_CHOICE_EDIT:
+                    self._focus_starts_at()
+                    return
+                if choice != CONFLICT_CHOICE_SAVE:
+                    return
+                # Uložit přesto – konflikt není chyba; další uložení kontrolu zopakuje.
+
         self.accept()
